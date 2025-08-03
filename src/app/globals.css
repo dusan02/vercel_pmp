@@ -907,6 +907,14 @@ table th:nth-child(8), table td:nth-child(8) { width: 10%; text-align: center; }
   color: #1f2937;
 }
 
+.hours-subtitle {
+  text-align: center;
+  color: #6b7280;
+  font-size: 0.8rem;
+  font-weight: 400;
+  margin-top: 0.5rem;
+}
+
 .hours-list {
   list-style: none;
   padding: 0;

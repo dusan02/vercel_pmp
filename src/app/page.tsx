@@ -424,28 +424,14 @@ export default function HomePage() {
                      <div className="actions-section">
              {/* Trading Hours Info Box */}
              <div className="trading-hours-box">
-               <h3 className="trading-hours-title">⏰ Market Hours</h3>
+               <h3 className="trading-hours-title">⏰ Market Status</h3>
                <div className="trading-hours-content">
                  <div className="hours-main">
-                   <strong>Live prices: 4:00 AM - 8:00 PM EST</strong>
+                   <strong>Market is closed today</strong>
                  </div>
-                 <ul className="hours-list">
-                   <li className={`hours-item pre-market ${currentSession === 'pre-market' ? 'active' : 'inactive'}`}>
-                     <span className="bullet">•</span>
-                     <span className="session-name">Pre-market</span>
-                     <span className="session-time">4:00 - 9:30 AM</span>
-                   </li>
-                   <li className={`hours-item market-hours ${currentSession === 'market-hours' ? 'active' : 'inactive'}`}>
-                     <span className="bullet">•</span>
-                     <span className="session-name">Market hours</span>
-                     <span className="session-time">9:30 AM - 4:00 PM</span>
-                   </li>
-                   <li className={`hours-item after-hours ${currentSession === 'after-hours' ? 'active' : 'inactive'}`}>
-                     <span className="bullet">•</span>
-                     <span className="session-name">After-hours</span>
-                     <span className="session-time">4:00 - 8:00 PM</span>
-                   </li>
-                 </ul>
+                 <div className="hours-subtitle">
+                   <span>Next trading day: Monday, August 4th</span>
+                 </div>
                </div>
              </div>
 
