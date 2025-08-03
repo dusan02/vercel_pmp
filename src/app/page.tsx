@@ -8,7 +8,8 @@ import { formatBillions } from '@/lib/format';
 import CompanyLogo from '@/components/CompanyLogo';
 import { useFavorites } from '@/hooks/useFavorites';
 import { Activity, Loader2 } from 'lucide-react';
-import EarningsCalendar from '@/components/EarningsCalendar';
+
+import TodaysEarnings from '@/components/TodaysEarnings';
 import { useLazyLoading } from '@/hooks/useLazyLoading';
 
 interface StockData {
@@ -42,8 +43,52 @@ export default function HomePage() {
   // Use cookie-based favorites (no authentication needed)
   const { favorites, toggleFavorite, isFavorite } = useFavorites();
 
-  // Market session detection
-  const getCurrentMarketSession = () => {
+  // Market session detection with simplified logic
+  // Helper function to check if it's weekend or holiday
+  const isWeekendOrHoliday = () => {
+    const now = new Date();
+    const easternTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
+    const dayOfWeek = easternTime.getDay(); // 0 = Sunday, 6 = Saturday
+    
+    // Check if it's a US market holiday
+    const isMarketHoliday = (date: Date): boolean => {
+      const month = date.getMonth() + 1; // getMonth() is 0-indexed
+      const day = date.getDate();
+      const dayOfWeek = date.getDay();
+      
+      // Fixed date holidays
+      if (month === 1 && day === 1) return true; // New Year's Day
+      if (month === 7 && day === 4) return true; // Independence Day
+      if (month === 12 && day === 25) return true; // Christmas Day
+      
+      // MLK Day - 3rd Monday in January
+      if (month === 1 && dayOfWeek === 1 && day >= 15 && day <= 21) return true;
+      
+      // Presidents' Day - 3rd Monday in February  
+      if (month === 2 && dayOfWeek === 1 && day >= 15 && day <= 21) return true;
+      
+      // Memorial Day - Last Monday in May
+      if (month === 5 && dayOfWeek === 1 && day >= 25) return true;
+      
+      // Labor Day - 1st Monday in September
+      if (month === 9 && dayOfWeek === 1 && day <= 7) return true;
+      
+      // Thanksgiving - 4th Thursday in November
+      if (month === 11 && dayOfWeek === 4 && day >= 22 && day <= 28) return true;
+      
+      return false;
+    };
+    
+    // Check if it's weekend
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // Sunday or Saturday
+    
+    // Check if it's a market holiday
+    const isHoliday = isMarketHoliday(easternTime);
+    
+    return isWeekend || isHoliday;
+  };
+
+  const getCurrentMarketStatus = () => {
     const now = new Date();
     // Get current time in Eastern Time (handles EST/EDT automatically)  
     const easternTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
@@ -55,7 +100,6 @@ export default function HomePage() {
     
     // Check if it's a US market holiday
     const isMarketHoliday = (date: Date): boolean => {
-      const year = date.getFullYear();
       const month = date.getMonth() + 1; // getMonth() is 0-indexed
       const day = date.getDate();
       const dayOfWeek = date.getDay();
@@ -88,46 +132,43 @@ export default function HomePage() {
     const marketStart = 9 * 60 + 30; // 9:30 AM  
     const marketEnd = 16 * 60; // 4:00 PM
     const afterHoursEnd = 20 * 60; // 8:00 PM
-    const midDay = 12 * 60; // 12:00 PM (noon)
     
-    // Check if market is closed (weekends or holidays)
+    // Check if it's weekend
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // Sunday or Saturday
+    
+    // Check if it's a market holiday
     const isHoliday = isMarketHoliday(easternTime);
     
-    if (isWeekend || isHoliday) {
-      // Market is closed during weekends and holidays
-      // From Friday market close until Monday pre-market, show after-hours
-      if (dayOfWeek === 0) { // Sunday
-        return 'after-hours'; // Whole Sunday is after-hours
-      } else if (dayOfWeek === 6) { // Saturday  
-        return 'after-hours'; // Whole Saturday is after-hours
-      } else if (dayOfWeek === 1 && currentTimeInMinutes < preMarketStart) { // Monday before 4 AM
-        return 'after-hours'; // Monday night hours (00:00 - 04:00) are still after-hours
-      } else if (currentTimeInMinutes >= preMarketStart && currentTimeInMinutes < afterHoursEnd) {
-        return 'after-hours'; // Holiday during trading hours - show after-hours
-      } else {
-        return 'closed'; // Late night hours
-      }
-    }
-    
-    // Regular trading day logic
-    if (currentTimeInMinutes >= preMarketStart && currentTimeInMinutes < marketStart) {
-      return 'pre-market';
-    } else if (currentTimeInMinutes >= marketStart && currentTimeInMinutes < marketEnd) {
-      return 'market-hours';
-    } else if (currentTimeInMinutes >= marketEnd && currentTimeInMinutes < afterHoursEnd) {
-      return 'after-hours';
-    } else {
-      return 'closed'; // Market is closed
-    }
+         // Return simplified status
+     if (isWeekend) {
+       const options: Intl.DateTimeFormatOptions = { 
+         month: 'long', 
+         day: 'numeric', 
+         year: 'numeric' 
+       };
+       const dateString = easternTime.toLocaleDateString('en-US', options);
+       return `Weekend - ${dateString} (USA)`;
+     } else if (isHoliday) {
+       return 'Market holiday';
+     } else if (currentTimeInMinutes >= preMarketStart && currentTimeInMinutes < marketStart) {
+       return 'Pre-market hours';
+     } else if (currentTimeInMinutes >= marketStart && currentTimeInMinutes < marketEnd) {
+       return 'Market open';
+     } else if (currentTimeInMinutes >= marketEnd && currentTimeInMinutes < afterHoursEnd) {
+       return 'After-hours';
+     } else {
+       return 'After-hours'; // Late night hours (8 PM - 4 AM)
+     }
   };
 
-  const [currentSession, setCurrentSession] = useState(getCurrentMarketSession());
+  const [currentSession, setCurrentSession] = useState(getCurrentMarketStatus());
+  const [isWeekendOrHolidayState, setIsWeekendOrHolidayState] = useState(isWeekendOrHoliday());
 
-  // Update current session every minute
+  // Update current session and weekend/holiday status every minute
   useEffect(() => {
     const updateSession = () => {
-      setCurrentSession(getCurrentMarketSession());
+      setCurrentSession(getCurrentMarketStatus());
+      setIsWeekendOrHolidayState(isWeekendOrHoliday());
     };
     
     // Update immediately and then every minute
@@ -513,69 +554,35 @@ export default function HomePage() {
 
             <div className="description-section">
               <h3 className="visually-hidden">Stock Tracking Platform Description</h3>
-              <p>Track pre-market movements of top 300 companies globally.</p>
-              <ul className="features-list">
-                <li>Monitor changes</li>
-                <li>Market cap fluctuations</li>
-                <li>Build your watchlist</li>
-              </ul>
+                             <p>Track pre-market movements of top 300+ companies globally.</p>
+                             <ul className="features-list">
+                 <li>Monitor changes</li>
+                 <li>Market cap fluctuations</li>
+                 <li>Build your watchlist</li>
+                 {!isWeekendOrHolidayState && <li>Watch earnings date movements</li>}
+               </ul>
             </div>
           </div>
                      <div className="actions-section">
              {/* Trading Hours Info Box */}
              <div className="trading-hours-box">
-               <h3 className="trading-hours-title">⏰ Market Status</h3>
+               <h3 className="trading-hours-title">Market Status</h3>
                <div className="trading-hours-content">
-                 <div className="hours-main">
-                   <strong>
-                     {currentSession === 'market-hours' ? 'Market is open' :
-                      currentSession === 'pre-market' ? 'Pre-market trading' :
-                      currentSession === 'after-hours' ? 'After-hours trading' :
-                      '2025-08-03 - Market is closed today'}
-                   </strong>
-                 </div>
-                 <div className="hours-subtitle">
-                   <span>
-                     {currentSession === 'market-hours' ? 'Regular trading hours (9:30 AM - 4:00 PM EST)' :
-                      currentSession === 'pre-market' ? 'Pre-market hours (4:00 AM - 9:30 AM EST)' :
-                      currentSession === 'after-hours' ? 'After-hours trading (4:00 PM - 8:00 PM EST)' :
-                      (() => {
-                        const now = new Date();
-                        const easternTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
-                        const dayOfWeek = easternTime.getDay();
-                        
-                        // Check if it's weekend
-                        if (dayOfWeek === 0) { // Sunday
-                          return 'Next trading day: Monday';
-                        } else if (dayOfWeek === 6) { // Saturday
-                          return 'Next trading day: Monday';
-                        } else {
-                          // Check if it's a holiday
-                          const isMarketHoliday = (date: Date): boolean => {
-                            const month = date.getMonth() + 1;
-                            const day = date.getDate();
-                            const dayOfWeek = date.getDay();
-                            
-                            if (month === 1 && day === 1) return true; // New Year's Day
-                            if (month === 7 && day === 4) return true; // Independence Day
-                            if (month === 12 && day === 25) return true; // Christmas Day
-                            if (month === 1 && dayOfWeek === 1 && day >= 15 && day <= 21) return true; // MLK Day
-                            if (month === 2 && dayOfWeek === 1 && day >= 15 && day <= 21) return true; // Presidents' Day
-                            if (month === 5 && dayOfWeek === 1 && day >= 25) return true; // Memorial Day
-                            if (month === 9 && dayOfWeek === 1 && day <= 7) return true; // Labor Day
-                            if (month === 11 && dayOfWeek === 4 && day >= 22 && day <= 28) return true; // Thanksgiving
-                            return false;
-                          };
-                          
-                          if (isMarketHoliday(easternTime)) {
-                            return 'Market holiday - Next trading day: Tomorrow';
-                          } else {
-                            return 'Market closed - Next trading day: Tomorrow';
-                          }
-                        }
-                      })()}
-                   </span>
-                 </div>
+                                   <div className="hours-main">
+                    <strong>
+                      {currentSession}
+                    </strong>
+                  </div>
+                  <div className="hours-subtitle">
+                    <span>
+                      {currentSession === 'Market open' ? 'Regular trading hours (9:30 AM - 4:00 PM EST)' :
+                       currentSession === 'Pre-market hours' ? 'Pre-market hours (4:00 AM - 9:30 AM EST)' :
+                       currentSession === 'After-hours' ? (isWeekendOrHoliday() ? '' : 'After-hours trading (4:00 PM - 8:00 PM EST)') :
+                       currentSession === 'Weekend' ? 'Next trading day: Monday' :
+                       currentSession === 'Market holiday' ? 'Market closed for holiday' :
+                       (isWeekendOrHoliday() ? '' : 'After-hours trading (8:00 PM - 4:00 AM EST)')}
+                    </span>
+                  </div>
                </div>
              </div>
 
@@ -584,7 +591,7 @@ export default function HomePage() {
                <div className="background-status">
                  <Activity size={14} className={backgroundStatus.isRunning ? 'text-green-600' : 'text-red-600'} />
                  <span className="text-xs text-gray-600">
-                   {backgroundStatus.isRunning ? 'Auto-updating every 2 minutes' : 'Manual mode'}
+                   {backgroundStatus.isRunning ? 'Auto-updating every 2 minutes' : 'Auto refresh'}
                  </span>
                </div>
              )}
@@ -592,16 +599,13 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* Earnings Calendar Section */}
-      <EarningsCalendar />
+             {/* Today's Earnings Section */}
+       <TodaysEarnings />
 
-      {favoriteStocks.length > 0 && (
+       {favoriteStocks.length > 0 && (
         <section className="favorites" aria-labelledby="favorites-heading">
           <h2 id="favorites-heading" data-icon="⭐">Favorites</h2>
-          <table aria-describedby="favorites-description">
-            <caption id="favorites-description">
-              Your favorite stocks with current prices and market cap changes
-            </caption>
+          <table>
             <thead>
             <tr>
               <th>Logo</th>
@@ -708,20 +712,17 @@ export default function HomePage() {
             </div>
             
             <div className="stock-count">
-              Zobrazených: {displayedStocks.length} z {filteredStocks.length} akcií
+              Showing: {displayedStocks.length} of {filteredStocks.length} stocks
               {hasMore && (
                 <span className="text-xs text-gray-500 ml-2">
-                  (Scrollnite pre viac)
+                  (Scroll for more)
                 </span>
               )}
             </div>
           </div>
         </div>
 
-        <table aria-describedby="all-stocks-description">
-          <caption id="all-stocks-description">
-            Stock data with current prices and market movements
-          </caption>
+        <table>
           <thead>
             <tr>
               <th>Logo</th>

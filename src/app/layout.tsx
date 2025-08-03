@@ -5,9 +5,9 @@ import { initializePWA } from '@/lib/sw-register'
 import { blogScheduler } from '@/lib/blogScheduler'
 
 export const metadata: Metadata = {
-  title: 'Pre-Market Stock Tracking | Top 300 Companies - PreMarketPrice',
-  description: 'Track pre-market movements of top 300 companies globally. Monitor changes, market cap fluctuations and build your watchlist free.',
-  keywords: 'pre-market stocks, stock tracking, market cap, stock prices, global stocks, stock portfolio, pre-market trading, stock analysis, market movements',
+  title: 'Pre-Market Stock Tracking & Earnings Calendar | 300+ Global Companies - PreMarketPrice',
+  description: 'Track pre-market movements and earnings calendar of 300+ global companies. Monitor EPS estimates, revenue reports, market cap changes and build your watchlist free.',
+  keywords: 'pre-market stocks, earnings calendar, earnings reports, stock tracking, market cap, stock prices, global stocks, stock portfolio, pre-market trading, stock analysis, market movements, EPS tracking, revenue estimates, pre-market earnings, after-market earnings',
   authors: [{ name: 'PreMarketPrice.com' }],
   creator: 'PreMarketPrice.com',
   publisher: 'PreMarketPrice.com',
@@ -21,8 +21,8 @@ export const metadata: Metadata = {
     canonical: '/',
   },
   openGraph: {
-    title: 'Pre-Market Stock Tracking | Top 300 Companies - PreMarketPrice',
-    description: 'Track pre-market movements of top 300 companies globally. Monitor changes, market cap fluctuations and build your watchlist free.',
+    title: 'Pre-Market Stock Tracking & Earnings Calendar | 300+ Global Companies - PreMarketPrice',
+    description: 'Track pre-market movements and earnings calendar of 300+ global companies. Monitor EPS estimates, revenue reports, market cap changes and build your watchlist free.',
     url: 'https://premarketprice.com',
     siteName: 'PreMarketPrice.com',
     images: [
@@ -38,8 +38,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Pre-Market Stock Tracking | Top 300 Companies - PreMarketPrice',
-    description: 'Track pre-market movements of top 300 companies globally. Build your watchlist free.',
+    title: 'Pre-Market Stock Tracking & Earnings Calendar | 300+ Global Companies - PreMarketPrice',
+    description: 'Track pre-market movements and earnings calendar of 300+ global companies. Monitor EPS estimates, revenue reports, market cap changes and build your watchlist free.',
     images: ['/og-image.png'],
   },
   robots: {
@@ -101,7 +101,7 @@ export default function RootLayout({
               "@context": "https://schema.org",
               "@type": "WebApplication",
               "name": "PreMarketPrice.com",
-              "description": "Track pre-market movements of top 300 companies globally. Build your watchlist free.",
+              "description": "Track pre-market movements and earnings calendar of 300+ global companies. Monitor EPS estimates, revenue reports, market cap changes and build your watchlist free.",
               "url": "https://premarketprice.com",
               "applicationCategory": "FinanceApplication",
               "operatingSystem": "Web Browser",
@@ -122,7 +122,26 @@ export default function RootLayout({
                 "@type": "SearchAction",
                 "target": "https://premarketprice.com/?search={search_term_string}",
                 "query-input": "required name=search_term_string"
-              }
+              },
+              "hasPart": [
+                {
+                  "@type": "DataCatalog",
+                  "name": "Stock Market Data",
+                  "description": "Real-time stock prices and market data for 300+ global companies",
+                  "dataset": [
+                    {
+                      "@type": "Dataset",
+                      "name": "Pre-market Stock Prices",
+                      "description": "Pre-market trading data and price movements"
+                    },
+                    {
+                      "@type": "Dataset", 
+                      "name": "Earnings Calendar",
+                      "description": "Earnings reports, EPS estimates, and revenue data"
+                    }
+                  ]
+                }
+              ]
             })
           }}
         />

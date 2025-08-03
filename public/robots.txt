@@ -17,5 +17,7 @@ Allow: /
 Allow: /stocks/
 Allow: /company/
 Allow: /blog/
+Allow: /earnings/
+Allow: /earnings-calendar/
 Allow: /faq/
 Allow: /glossary/ 

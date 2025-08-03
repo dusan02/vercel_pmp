@@ -334,6 +334,7 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--clr-subtext);
   line-height: 1.6;
   margin: 0;
+  white-space: nowrap;
 }
 
 /* Header Actions */
@@ -678,15 +679,48 @@ tr:hover{background:var(--clr-bg)}
 .positive{color:var(--clr-positive);font-weight:600}
 .negative{color:var(--clr-negative);font-weight:600}
 
-/* Column specific alignments */
-table th:nth-child(1), table td:nth-child(1) { width: 6%; text-align: center; } /* Logo */
-table th:nth-child(2), table td:nth-child(2) { width: 10%; text-align: center; } /* Ticker */
-table th:nth-child(3), table td:nth-child(3) { width: 20%; text-align: left; } /* Company Name */
-table th:nth-child(4), table td:nth-child(4) { width: 12%; text-align: center; } /* Market Cap */
-table th:nth-child(5), table td:nth-child(5) { width: 15%; text-align: center; } /* Pre-Market Price */
-table th:nth-child(6), table td:nth-child(6) { width: 12%; text-align: center; } /* % Change */
-table th:nth-child(7), table td:nth-child(7) { width: 15%; text-align: center; } /* Market Cap Diff */
-table th:nth-child(8), table td:nth-child(8) { width: 10%; text-align: center; } /* Favorite */
+/* Column specific alignments for main stock tables */
+.all-stocks table th:nth-child(1), .all-stocks table td:nth-child(1) { width: 6%; text-align: center; } /* Logo */
+.all-stocks table th:nth-child(2), .all-stocks table td:nth-child(2) { width: 10%; text-align: center; } /* Ticker */
+.all-stocks table th:nth-child(3), .all-stocks table td:nth-child(3) { width: 20%; text-align: left; } /* Company Name */
+.all-stocks table th:nth-child(4), .all-stocks table td:nth-child(4) { width: 12%; text-align: center; } /* Market Cap */
+.all-stocks table th:nth-child(5), .all-stocks table td:nth-child(5) { width: 15%; text-align: center; } /* Pre-Market Price */
+.all-stocks table th:nth-child(6), .all-stocks table td:nth-child(6) { width: 12%; text-align: center; } /* % Change */
+.all-stocks table th:nth-child(7), .all-stocks table td:nth-child(7) { width: 15%; text-align: center; } /* Market Cap Diff */
+.all-stocks table th:nth-child(8), .all-stocks table td:nth-child(8) { width: 10%; text-align: center; } /* Favorite */
+
+/* Column specific alignments for favorites table */
+.favorites table th:nth-child(1), .favorites table td:nth-child(1) { width: 6%; text-align: center; } /* Logo */
+.favorites table th:nth-child(2), .favorites table td:nth-child(2) { width: 10%; text-align: center; } /* Ticker */
+.favorites table th:nth-child(3), .favorites table td:nth-child(3) { width: 20%; text-align: left; } /* Company Name */
+.favorites table th:nth-child(4), .favorites table td:nth-child(4) { width: 12%; text-align: center; } /* Market Cap */
+.favorites table th:nth-child(5), .favorites table td:nth-child(5) { width: 15%; text-align: center; } /* Current Price */
+.favorites table th:nth-child(6), .favorites table td:nth-child(6) { width: 12%; text-align: center; } /* % Change */
+.favorites table th:nth-child(7), .favorites table td:nth-child(7) { width: 15%; text-align: center; } /* Market Cap Diff */
+.favorites table th:nth-child(8), .favorites table td:nth-child(8) { width: 10%; text-align: center; } /* Favorite */
+
+/* Column specific alignments for earnings tables */
+.todays-earnings table th:nth-child(1), .todays-earnings table td:nth-child(1) { width: 5%; text-align: center; } /* Logo */
+.todays-earnings table th:nth-child(2), .todays-earnings table td:nth-child(2) { width: 8%; text-align: center; } /* Ticker */
+.todays-earnings table th:nth-child(3), .todays-earnings table td:nth-child(3) { width: 18%; text-align: left; } /* Company Name */
+.todays-earnings table th:nth-child(4), .todays-earnings table td:nth-child(4) { width: 10%; text-align: center; } /* Market Cap */
+.todays-earnings table th:nth-child(5), .todays-earnings table td:nth-child(5) { width: 8%; text-align: center; } /* Est. EPS */
+.todays-earnings table th:nth-child(6), .todays-earnings table td:nth-child(6) { width: 8%; text-align: center; } /* Actual EPS */
+.todays-earnings table th:nth-child(7), .todays-earnings table td:nth-child(7) { width: 10%; text-align: center; } /* Est. Revenue */
+.todays-earnings table th:nth-child(8), .todays-earnings table td:nth-child(8) { width: 10%; text-align: center; } /* Actual Revenue */
+.todays-earnings table th:nth-child(9), .todays-earnings table td:nth-child(9) { width: 8%; text-align: center; } /* % Change */
+.todays-earnings table th:nth-child(10), .todays-earnings table td:nth-child(10) { width: 13%; text-align: center; } /* Market Cap Diff */
+
+/* Color formatting for earnings table */
+.todays-earnings table td.positive {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.todays-earnings table td.negative {
+  color: #ef4444;
+  font-weight: 600;
+}
 
 /* === COMPANY LOGO ======================================= */
 .company-logo{
@@ -746,6 +780,10 @@ table th:nth-child(8), table td:nth-child(8) { width: 10%; text-align: center; }
 .section-header h2 {
   margin: 0;
   flex-shrink: 0;
+  height: 42px; /* Konzistentná výška s ostatnými prvkami */
+  display: flex;
+  align-items: center;
+  line-height: 1;
 }
 
 .favorites h2::before,.all-stocks h2::before,.section-title::before{
@@ -801,6 +839,8 @@ table th:nth-child(8), table td:nth-child(8) { width: 10%; text-align: center; }
 .search-container {
   flex: 1;
   min-width: 200px;
+  display: flex;
+  align-items: center;
 }
 
 .search-input {
@@ -813,6 +853,8 @@ table th:nth-child(8), table td:nth-child(8) { width: 10%; text-align: center; }
   background: var(--clr-bg);
   color: var(--clr-text);
   transition: border-color 0.2s ease;
+  height: 42px; /* Zvýšená výška pre lepšie zarovnanie s h2 */
+  box-sizing: border-box;
 }
 
 .search-input:focus {
@@ -840,6 +882,7 @@ table th:nth-child(8), table td:nth-child(8) { width: 10%; text-align: center; }
   font-size: 0.875rem;
   cursor: pointer;
   user-select: none;
+  height: 42px; /* Zvýšená výška pre lepšie zarovnanie s h2 */
 }
 
 .favorites-toggle input[type="checkbox"] {
@@ -857,6 +900,8 @@ table th:nth-child(8), table td:nth-child(8) { width: 10%; text-align: center; }
   color: var(--clr-text);
   cursor: pointer;
   transition: border-color 0.2s ease;
+  height: 42px; /* Zvýšená výška pre lepšie zarovnanie s h2 */
+  box-sizing: border-box;
 }
 
 .category-filter:focus {
@@ -869,6 +914,9 @@ table th:nth-child(8), table td:nth-child(8) { width: 10%; text-align: center; }
   font-size: 0.875rem;
   color: var(--clr-subtext);
   white-space: nowrap;
+  height: 42px; /* Zvýšená výška pre lepšie zarovnanie s h2 */
+  display: flex;
+  align-items: center;
 }
 
 .logo-container {
@@ -914,15 +962,37 @@ table th:nth-child(8), table td:nth-child(8) { width: 10%; text-align: center; }
     max-width: none;
   }
   
-  /* Mobile column adjustments */
-  table th:nth-child(1), table td:nth-child(1) { width: 8%; text-align: center; } /* Logo */
-  table th:nth-child(2), table td:nth-child(2) { width: 12%; text-align: center; } /* Ticker */
-  table th:nth-child(3), table td:nth-child(3) { width: 18%; text-align: left; } /* Company Name */
-  table th:nth-child(4), table td:nth-child(4) { width: 15%; text-align: center; } /* Market Cap */
-  table th:nth-child(5), table td:nth-child(5) { width: 18%; text-align: center; } /* Pre-Market Price */
-  table th:nth-child(6), table td:nth-child(6) { width: 12%; text-align: center; } /* % Change */
-  table th:nth-child(7), table td:nth-child(7) { width: 12%; text-align: center; } /* Market Cap Diff */
-  table th:nth-child(8), table td:nth-child(8) { width: 5%; text-align: center; } /* Favorite */
+     /* Mobile column adjustments for main stock tables */
+   .all-stocks table th:nth-child(1), .all-stocks table td:nth-child(1) { width: 8%; text-align: center; } /* Logo */
+   .all-stocks table th:nth-child(2), .all-stocks table td:nth-child(2) { width: 12%; text-align: center; } /* Ticker */
+   .all-stocks table th:nth-child(3), .all-stocks table td:nth-child(3) { width: 18%; text-align: left; } /* Company Name */
+   .all-stocks table th:nth-child(4), .all-stocks table td:nth-child(4) { width: 15%; text-align: center; } /* Market Cap */
+   .all-stocks table th:nth-child(5), .all-stocks table td:nth-child(5) { width: 18%; text-align: center; } /* Pre-Market Price */
+   .all-stocks table th:nth-child(6), .all-stocks table td:nth-child(6) { width: 12%; text-align: center; } /* % Change */
+   .all-stocks table th:nth-child(7), .all-stocks table td:nth-child(7) { width: 12%; text-align: center; } /* Market Cap Diff */
+      .all-stocks table th:nth-child(8), .all-stocks table td:nth-child(8) { width: 5%; text-align: center; } /* Favorite */
+
+   /* Mobile column adjustments for favorites table */
+   .favorites table th:nth-child(1), .favorites table td:nth-child(1) { width: 8%; text-align: center; } /* Logo */
+   .favorites table th:nth-child(2), .favorites table td:nth-child(2) { width: 12%; text-align: center; } /* Ticker */
+   .favorites table th:nth-child(3), .favorites table td:nth-child(3) { width: 18%; text-align: left; } /* Company Name */
+   .favorites table th:nth-child(4), .favorites table td:nth-child(4) { width: 15%; text-align: center; } /* Market Cap */
+   .favorites table th:nth-child(5), .favorites table td:nth-child(5) { width: 18%; text-align: center; } /* Current Price */
+   .favorites table th:nth-child(6), .favorites table td:nth-child(6) { width: 12%; text-align: center; } /* % Change */
+   .favorites table th:nth-child(7), .favorites table td:nth-child(7) { width: 12%; text-align: center; } /* Market Cap Diff */
+   .favorites table th:nth-child(8), .favorites table td:nth-child(8) { width: 5%; text-align: center; } /* Favorite */
+
+        /* Mobile column adjustments for earnings tables */
+    .todays-earnings table th:nth-child(1), .todays-earnings table td:nth-child(1) { width: 6%; text-align: center; } /* Logo */
+    .todays-earnings table th:nth-child(2), .todays-earnings table td:nth-child(2) { width: 10%; text-align: center; } /* Ticker */
+    .todays-earnings table th:nth-child(3), .todays-earnings table td:nth-child(3) { width: 16%; text-align: left; } /* Company Name */
+    .todays-earnings table th:nth-child(4), .todays-earnings table td:nth-child(4) { width: 10%; text-align: center; } /* Market Cap */
+    .todays-earnings table th:nth-child(5), .todays-earnings table td:nth-child(5) { width: 8%; text-align: center; } /* Est. EPS */
+    .todays-earnings table th:nth-child(6), .todays-earnings table td:nth-child(6) { width: 8%; text-align: center; } /* Actual EPS */
+    .todays-earnings table th:nth-child(7), .todays-earnings table td:nth-child(7) { width: 10%; text-align: center; } /* Est. Revenue */
+    .todays-earnings table th:nth-child(8), .todays-earnings table td:nth-child(8) { width: 10%; text-align: center; } /* Actual Revenue */
+    .todays-earnings table th:nth-child(9), .todays-earnings table td:nth-child(9) { width: 8%; text-align: center; } /* % Change */
+    .todays-earnings table th:nth-child(10), .todays-earnings table td:nth-child(10) { width: 14%; text-align: center; } /* Market Cap Diff */
 }
 
 /* === TRADING HOURS INFO BOX ========================== */
@@ -965,7 +1035,9 @@ table th:nth-child(8), table td:nth-child(8) { width: 10%; text-align: center; }
   margin: 0 0 0.75rem 0;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
+  text-align: center;
 }
 
 .trading-hours-content {
@@ -1180,6 +1252,93 @@ table th:nth-child(8), table td:nth-child(8) { width: 10%; text-align: center; }
   color: var(--clr-subtext);
   font-size: 0.875rem;
   font-style: italic;
+}
+
+/* === TODAY'S EARNINGS STYLES ===================================== */
+.todays-earnings {
+  margin-bottom: 1.5rem;
+}
+
+.todays-earnings h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 1.5rem 0 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.earnings-section {
+  margin-bottom: 1.5rem;
+}
+
+.section-subtitle {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 1rem 0 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--clr-text);
+}
+
+.section-subtitle::before {
+  content: attr(data-icon);
+  font-size: 1em;
+}
+
+.no-earnings {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  margin: 1rem 0;
+  background: var(--clr-bg);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius);
+  color: var(--clr-subtext);
+  font-size: 0.875rem;
+  font-style: italic;
+}
+
+.report-time {
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.report-time.pre-market {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #f59e0b;
+}
+
+.report-time.after-market {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #3b82f6;
+}
+
+@media (prefers-color-scheme: dark) {
+  .report-time.pre-market {
+    background: #451a03;
+    color: #fbbf24;
+    border-color: #f59e0b;
+  }
+  
+  .report-time.after-market {
+    background: #1e3a8a;
+    color: #93c5fd;
+    border-color: #3b82f6;
+  }
+  
+  .no-earnings {
+    background: var(--clr-surface);
+    border-color: var(--clr-border);
+  }
 }
 
 @media (prefers-color-scheme: dark) {

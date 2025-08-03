@@ -1,5 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Import tickers directly to avoid import issues
+const DEFAULT_TICKERS = {
+  pmp: [
+    // Premium tier (50) - 1 min updates
+    'NVDA', 'MSFT', 'AAPL', 'GOOG', 'GOOGL', 'AMZN', 'META', 'AVGO', 'BRK.B', 'TSLA', 'TSM', 'JPM', 'WMT', 'ORCL', 'LLY', 'V', 'MA', 'NFLX', 'XOM', 'COST', 'JNJ', 'HD', 'PLTR', 'PG', 'ABBV', 'BAC', 'CVX', 'KO', 'GE', 'AMD', 'TMUS', 'CSCO', 'PM', 'WFC', 'CRM', 'IBM', 'MS', 'ABT', 'GS', 'MCD', 'INTU', 'UNH', 'RTX', 'DIS', 'AXP', 'CAT', 'MRK', 'T', 'PEP', 'NOW',
+    
+    // Standard tier (100) - 3 min updates
+    'UBER', 'VZ', 'TMO', 'BKNG', 'SCHW', 'ISRG', 'BLK', 'C', 'BA', 'SPGI', 'TXN', 'AMGN', 'QCOM', 'BSX', 'ANET', 'ADBE', 'NEE', 'SYK', 'AMAT', 'PGR', 'GILD', 'DHR', 'TJX', 'HON', 'DE', 'PFE', 'BX', 'COF', 'UNP', 'APH', 'KKR', 'LOW', 'LRCX', 'ADP', 'CMCSA', 'VRTX', 'KLAC', 'COP', 'MU', 'PANW', 'SNPS', 'CRWD', 'WELL', 'NKE', 'ADI', 'CEG', 'ICE', 'DASH', 'SO', 'MO', 'CME', 'AMT', 'SBUX', 'LMT', 'PLD', 'MMC', 'CDNS', 'DUK', 'WM', 'PH', 'BMY', 'MCK', 'DELL', 'HCA', 'SHW', 'RCL', 'INTC', 'NOC', 'ORLY', 'GD', 'MDLZ', 'COIN', 'EMR', 'ABNB', 'CVS', 'APO', 'MMM', 'EQIX', 'FTNT', 'HWM', 'ECL', 'WMB', 'ITW', 'FI', 'PNC', 'MSI', 'AJG', 'RSG', 'UPS', 'VST', 'BK', 'CI', 'MAR', 'GEV', 'APP', 'IBKR', 'MSTR', 'MCO', 'CTAS', 'TDG', 'HOOD', 'RBLX', 'SCCO', 'NET', 'BNS', 'BCS', 'NEM', 'USB', 'ING', 'SNOW', 'CL', 'EPD', 'ZTS', 'CSX', 'AZO',
+    
+    // Extended tier (150) - 5 min updates
+    'MRVL', 'PYPL', 'CRH', 'DB', 'EOG', 'ADSK', 'AEM', 'APD', 'KMI', 'ELV', 'NSC', 'GBTC', 'HLT', 'ET', 'AEP', 'SPG', 'REGN', 'ARES', 'DLR', 'TEL', 'FIG', 'WDAY', 'PWR', 'ROP', 'TRV', 'NU', 'CNI', 'AXON', 'MNST', 'CMG', 'CARR', 'DEO', 'FCX', 'COR', 'TFC', 'URI', 'AMX', 'NDAQ', 'VRT', 'GLW', 'AFL', 'MPLX', 'NXPI', 'LNG', 'SRE', 'FLUT', 'ALL', 'ALNY', 'CPNG', 'FAST', 'LHX', 'MFC', 'E', 'D', 'FDX', 'O', 'MPC', 'PCAR', 'BDX', 'TRP', 'PAYX', 'CRWV', 'GM', 'MET', 'OKE', 'SLB', 'CMI', 'PSA', 'CTVA', 'PSX', 'WCN', 'TEAM', 'SU', 'GMBXF', 'AMP', 'CCEP', 'KR', 'DDOG', 'CCI', 'EW', 'VEEV', 'TAK', 'CBRE', 'XYZ', 'TGT', 'KDP', 'EXC', 'HLN', 'ROST', 'DHI', 'GWW', 'FERG', 'JD', 'PEG', 'AIG', 'CPRT', 'ALC', 'ZS', 'KMB', 'HMC', 'MSCI', 'IDXX', 'F', 'CVNA', 'BKR', 'OXY', 'FANG', 'IMO', 'XEL', 'EBAY', 'GRMN', 'AME', 'TTD', 'KBCSF', 'VALE', 'WPM', 'CRCL', 'KVUE', 'VLO', 'ARGX', 'FIS', 'RMD', 'TTWO', 'TCOM', 'CSGP', 'ETR', 'HEI', 'EA', 'CCL', 'ROK', 'HSY', 'SYY', 'VRSK', 'ED', 'MPWR', 'CAH', 'ABEV', 'B',
+    
+    // Extended+ tier (60) - 15 min updates
+    'BABA', 'ASML', 'TM', 'AZN', 'NVS', 'LIN', 'NVO', 'HSBC', 'SHEL', 'HDB', 'RY', 'UL', 'SHOP', 'ETN', 'SONY', 'ARM', 'TTE', 'BHP', 'SPOT', 'SAN', 'TD', 'UBS', 'MDT', 'SNY', 'BUD', 'CB', 'TT', 'RIO', 'SMFG', 'BBVA', 'RELX', 'SE', 'TRI', 'PBR', 'NTES', 'BMO', 'RACE', 'AON', 'GSK', 'NWG', 'LYG', 'EQNR', 'CNQ', 'ITUB', 'ACN', 'MUFG', 'PDD', 'SAP', 'JCI', 'NGG', 'TCEHY', 'MELI', 'BAM', 'EXPGF', 'GLCNF', 'NPSNY', 'GMBXF'
+  ]
+};
+
+function getDefaultTickers(project: string): string[] {
+  return DEFAULT_TICKERS[project as keyof typeof DEFAULT_TICKERS] || DEFAULT_TICKERS.pmp;
+}
+
 interface EarningsData {
   ticker: string;
   company_name: string;
@@ -7,13 +28,28 @@ interface EarningsData {
   fiscal_period: string;
   report_date: string;
   report_time: 'BMO' | 'AMC' | 'DMT';
+  estimate_eps?: number;
+  estimate_revenue?: number;
+  actual_eps?: number;
+  actual_revenue?: number;
+  percent_change?: number;
+  market_cap_diff?: number;
+}
+
+interface PolygonEarningsData {
+  ticker: string;
+  company_name: string;
+  market_cap: number;
+  fiscal_period: string;
+  report_date: string;
+  report_time: 'BMO' | 'AMC' | 'DMT';
   estimate?: {
-    revenue?: number;
     eps?: number;
+    revenue?: number;
   };
   actual?: {
-    revenue?: number;
     eps?: number;
+    revenue?: number;
   };
 }
 
@@ -103,12 +139,17 @@ export async function GET(request: NextRequest) {
       });
     }
     
-    // Filter and sort by market cap (top 10)
-    const topEarnings = data.results
-      .filter((earnings: EarningsData) => earnings.market_cap > 0)
-      .sort((a: EarningsData, b: EarningsData) => b.market_cap - a.market_cap)
-      .slice(0, 10)
-      .map((earnings: EarningsData) => ({
+    // Get our default tickers to filter earnings
+    const defaultTickers = DEFAULT_TICKERS.pmp;
+
+    // Filter earnings to only include our tracked tickers and sort by market cap
+    const filteredEarnings = data.results
+      .filter((earnings: PolygonEarningsData) => 
+        earnings.market_cap > 0 && 
+        defaultTickers.includes(earnings.ticker)
+      )
+      .sort((a: PolygonEarningsData, b: PolygonEarningsData) => b.market_cap - a.market_cap)
+      .map((earnings: PolygonEarningsData) => ({
         ticker: earnings.ticker,
         company_name: earnings.company_name,
         market_cap: earnings.market_cap,
@@ -121,13 +162,13 @@ export async function GET(request: NextRequest) {
         report_date: earnings.report_date
       }));
     
-    console.log(`✅ Found ${topEarnings.length} earnings for ${date}`);
+    console.log(`✅ Found ${filteredEarnings.length} earnings for ${date}`);
     
     return NextResponse.json({
-      earnings: topEarnings,
+      earnings: filteredEarnings,
       date,
-      count: topEarnings.length,
-      message: `Top ${topEarnings.length} earnings by market cap`
+      count: filteredEarnings.length,
+      message: `${filteredEarnings.length} earnings from tracked companies`
     });
     
   } catch (error) {

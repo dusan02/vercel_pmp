@@ -1,7 +1,7 @@
 {
-    "name": "PreMarketPrice.com - Real-Time Stock Tracking",
+    "name": "PreMarketPrice.com - Stock Tracking & Earnings Calendar",
     "short_name": "PreMarketPrice",
-    "description": "Track real-time pre-market movements of the top 200 US companies",
+    "description": "Track pre-market movements and earnings calendar of 300+ global companies",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#ffffff",
@@ -24,7 +24,8 @@
     "categories": [
         "finance",
         "business",
-        "productivity"
+        "productivity",
+        "earnings analysis"
     ],
     "lang": "en",
     "dir": "ltr"
