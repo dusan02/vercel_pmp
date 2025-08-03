@@ -293,6 +293,19 @@ class StockDataCache {
             // Get current price using consistent source
             const currentPrice = getCurrentPrice(snapshotData);
             
+            // Enhanced validation - check for null/undefined/zero prices
+            if (!currentPrice || currentPrice === 0 || !isFinite(currentPrice)) {
+              console.error(`⚠️ Invalid currentPrice for ${ticker}:`, currentPrice);
+              console.error(`📊 Snapshot data:`, JSON.stringify(snapshotData, null, 2));
+              return null;
+            }
+            
+            // Additional validation - check for reasonable price range
+            if (currentPrice < 0.01 || currentPrice > 1000000) {
+              console.error(`⚠️ Price out of reasonable range for ${ticker}: $${currentPrice}`);
+              return null;
+            }
+            
             // Validate price data for extreme changes
             validatePriceChange(currentPrice, prevClose);
             

@@ -151,15 +151,36 @@ export async function getPreviousClose(ticker: string): Promise<number> {
 }
 
 /**
- * Get current price from Polygon snapshot data - ONLY lastTrade.p
+ * Get current price from Polygon snapshot data with robust fallbacks
  */
 export function getCurrentPrice(snapshotData: any): number {
-  // STRICT: Only use lastTrade.p, no fallbacks
+  // Priority 1: lastTrade.p (most current)
   if (snapshotData?.ticker?.lastTrade?.p && snapshotData.ticker.lastTrade.p > 0) {
+    console.log(`✅ Using lastTrade.p: $${snapshotData.ticker.lastTrade.p}`);
     return snapshotData.ticker.lastTrade.p;
   }
   
-  throw new Error('No valid lastTrade.p found in snapshot data');
+  // Priority 2: min.c (current minute data)
+  if (snapshotData?.ticker?.min?.c && snapshotData.ticker.min.c > 0) {
+    console.log(`✅ Using min.c: $${snapshotData.ticker.min.c}`);
+    return snapshotData.ticker.min.c;
+  }
+  
+  // Priority 3: day.c (day close - most reliable fallback)
+  if (snapshotData?.ticker?.day?.c && snapshotData.ticker.day.c > 0) {
+    console.log(`✅ Using day.c: $${snapshotData.ticker.day.c}`);
+    return snapshotData.ticker.day.c;
+  }
+  
+  // Priority 4: prevDay.c (previous day close)
+  if (snapshotData?.ticker?.prevDay?.c && snapshotData.ticker.prevDay.c > 0) {
+    console.log(`✅ Using prevDay.c: $${snapshotData.ticker.prevDay.c}`);
+    return snapshotData.ticker.prevDay.c;
+  }
+  
+  // Log the full snapshot data for debugging
+  console.error('❌ No valid price found in snapshot data:', JSON.stringify(snapshotData, null, 2));
+  throw new Error('No valid price found in snapshot data - all fallbacks exhausted');
 }
 
 /**
