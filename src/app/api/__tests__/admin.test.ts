@@ -203,8 +203,8 @@ describe('Admin Authentication', () => {
   it('should require admin key in production', async () => {
     const originalNodeEnv = process.env.NODE_ENV;
     const originalAdminKey = process.env.ADMIN_SECRET_KEY;
-    process.env.NODE_ENV = 'production';
-    process.env.ADMIN_SECRET_KEY = 'correct-key';
+    Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', writable: true });
+    Object.defineProperty(process.env, 'ADMIN_SECRET_KEY', { value: 'correct-key', writable: true });
 
     const request = new NextRequest('http://localhost:3000/api/admin/cache/keys?admin_key=wrong-key');
     const response = await getCacheKeys(request);
@@ -214,15 +214,15 @@ describe('Admin Authentication', () => {
     expect(data.error).toBe('Unauthorized');
     
     // Restore original environment
-    process.env.NODE_ENV = originalNodeEnv;
-    process.env.ADMIN_SECRET_KEY = originalAdminKey;
+    Object.defineProperty(process.env, 'NODE_ENV', { value: originalNodeEnv, writable: true });
+    Object.defineProperty(process.env, 'ADMIN_SECRET_KEY', { value: originalAdminKey, writable: true });
   });
 
   it('should allow access with correct admin key in production', async () => {
     const originalNodeEnv = process.env.NODE_ENV;
     const originalAdminKey = process.env.ADMIN_SECRET_KEY;
-    process.env.NODE_ENV = 'production';
-    process.env.ADMIN_SECRET_KEY = 'correct-key';
+    Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', writable: true });
+    Object.defineProperty(process.env, 'ADMIN_SECRET_KEY', { value: 'correct-key', writable: true });
     mockRedisClient.keys.mockResolvedValue([]);
 
     const request = new NextRequest('http://localhost:3000/api/admin/cache/keys?admin_key=correct-key');
@@ -233,13 +233,13 @@ describe('Admin Authentication', () => {
     expect(data.success).toBe(true);
     
     // Restore original environment
-    process.env.NODE_ENV = originalNodeEnv;
-    process.env.ADMIN_SECRET_KEY = originalAdminKey;
+    Object.defineProperty(process.env, 'NODE_ENV', { value: originalNodeEnv, writable: true });
+    Object.defineProperty(process.env, 'ADMIN_SECRET_KEY', { value: originalAdminKey, writable: true });
   });
 
   it('should allow access without admin key in development', async () => {
     const originalNodeEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'development';
+    Object.defineProperty(process.env, 'NODE_ENV', { value: 'development', writable: true });
     mockRedisClient.keys.mockResolvedValue([]);
 
     const request = new NextRequest('http://localhost:3000/api/admin/cache/keys');
@@ -250,6 +250,6 @@ describe('Admin Authentication', () => {
     expect(data.success).toBe(true);
     
     // Restore original environment
-    process.env.NODE_ENV = originalNodeEnv;
+    Object.defineProperty(process.env, 'NODE_ENV', { value: originalNodeEnv, writable: true });
   });
 }); 

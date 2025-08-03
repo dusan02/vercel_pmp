@@ -1,7 +1,6 @@
 import rateLimit from 'express-rate-limit';
 import cors from 'cors';
 import { NextRequest, NextResponse } from 'next/server';
-import { recordSecurityEvent, recordRateLimitExceeded } from './prometheus';
 
 // Rate limiting configuration
 export const createRateLimiter = (options: {
@@ -129,13 +128,6 @@ export function logSecurityEvent(event: {
     userAgent: event.userAgent,
     details: event.details,
   });
-
-  // Record metrics
-  recordSecurityEvent(event.type);
-  
-  if (event.type === 'rate_limit_exceeded') {
-    recordRateLimitExceeded(event.endpoint);
-  }
 
   // Store event in memory for API access
   try {

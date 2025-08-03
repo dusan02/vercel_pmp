@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     const config = getEnvConfig();
     const health = await checkRedisHealth();
     
-    const response = {
+    const response: any = {
       success: true,
       timestamp: new Date().toISOString(),
       environment: {
@@ -33,13 +33,10 @@ export async function GET(request: NextRequest) {
 
     // Add detailed information if requested
     if (detailed) {
-      response.redis = {
-        ...response.redis,
-        config: {
-          url: process.env.UPSTASH_REDIS_REST_URL ? 'configured' : 'not configured',
-          token: process.env.UPSTASH_REDIS_REST_TOKEN ? 'configured' : 'not configured',
-          environment: process.env.NODE_ENV,
-        }
+      response.redisConfig = {
+        url: process.env.UPSTASH_REDIS_REST_URL ? 'configured' : 'not configured',
+        token: process.env.UPSTASH_REDIS_REST_TOKEN ? 'configured' : 'not configured',
+        environment: process.env.NODE_ENV,
       };
     }
 

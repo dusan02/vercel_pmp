@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { recordHttpRequest } from './prometheus';
+import { recordHttpMetrics } from './prometheus';
 
 export function metricsMiddleware(request: NextRequest, response: NextResponse) {
   const startTime = Date.now();
@@ -14,7 +14,7 @@ export function metricsMiddleware(request: NextRequest, response: NextResponse) 
   const duration = (Date.now() - startTime) / 1000; // Convert to seconds
   
   // Record metrics
-  recordHttpRequest(method, route, statusCode, duration);
+  recordHttpMetrics(method, route, statusCode, duration);
   
   return response;
 }
@@ -34,7 +34,7 @@ export function withMetrics(handler: Function) {
       const statusCode = response?.status || 200;
       const duration = (Date.now() - startTime) / 1000;
       
-      recordHttpRequest(method, route, statusCode, duration);
+      recordHttpMetrics(method, route, statusCode, duration);
       
       return response;
     } catch (error) {
@@ -44,7 +44,7 @@ export function withMetrics(handler: Function) {
       const route = url.pathname;
       const duration = (Date.now() - startTime) / 1000;
       
-      recordHttpRequest(method, route, 500, duration);
+      recordHttpMetrics(method, route, 500, duration);
       
       throw error;
     }

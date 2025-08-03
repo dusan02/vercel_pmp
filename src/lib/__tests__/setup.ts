@@ -1,10 +1,10 @@
 // Test setup file for Jest
 
-// Mock environment variables
-process.env.NODE_ENV = 'test';
-process.env.POLYGON_API_KEY = 'test-api-key';
-process.env.UPSTASH_REDIS_REST_URL = 'https://test-redis.upstash.io';
-process.env.UPSTASH_REDIS_REST_TOKEN = 'test-token';
+// Mock environment variables using Object.defineProperty to avoid read-only errors
+Object.defineProperty(process.env, 'NODE_ENV', { value: 'test', writable: true });
+Object.defineProperty(process.env, 'POLYGON_API_KEY', { value: 'test-api-key', writable: true });
+Object.defineProperty(process.env, 'UPSTASH_REDIS_REST_URL', { value: 'https://test-redis.upstash.io', writable: true });
+Object.defineProperty(process.env, 'UPSTASH_REDIS_REST_TOKEN', { value: 'test-token', writable: true });
 
 // Mock console methods to reduce noise in tests
 const originalConsoleLog = console.log;
@@ -49,15 +49,6 @@ global.testUtils = {
   // Helper to wait for async operations
   wait: (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 };
-
-// Extend Jest matchers if needed
-declare global {
-  namespace jest {
-    interface Matchers<R> {
-      toBeValidStockData(): R;
-    }
-  }
-}
 
 // Custom matcher for stock data validation
 expect.extend({

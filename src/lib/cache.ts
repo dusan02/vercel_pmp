@@ -2,17 +2,18 @@ import { getCachedData, setCachedData, CACHE_KEYS } from './redis';
 import { dbHelpers, runTransaction, initializeDatabase } from './database';
 import { createBackgroundService } from './backgroundService';
 import { recordCacheMetrics } from './prometheus';
-import { 
-  getSharesOutstanding, 
-  computeMarketCap, 
-  computeMarketCapDiff, 
-  getCurrentPrice, 
-  getPreviousClose, 
+import {
+  getSharesOutstanding,
+  computeMarketCap,
+  computeMarketCapDiff,
+  getCurrentPrice,
+  getPreviousClose,
   validatePriceChange,
   computePercentChange,
   logCalculationData,
   getMarketStatus
 } from './marketCapUtils';
+import { getEnvConfig } from './envConfig';
 
 // Market session detection utility
 function getMarketSession(): 'pre-market' | 'market' | 'after-hours' | 'closed' {
@@ -21,11 +22,11 @@ function getMarketSession(): 'pre-market' | 'market' | 'after-hours' | 'closed' 
   const hour = easternTime.getHours();
   const minute = easternTime.getMinutes();
   const day = easternTime.getDay(); // 0 = Sunday, 6 = Saturday
-  
+
   // Weekend check - show after-hours from Friday close until Monday pre-market
   if (day === 0 || day === 6) return 'after-hours'; // Sunday or Saturday
   if (day === 1 && hour < 4) return 'after-hours'; // Monday before 4 AM
-  
+
   // Weekday sessions (Eastern Time)
   if (hour < 4) return 'closed';
   if (hour < 9 || (hour === 9 && minute < 30)) return 'pre-market';
@@ -137,16 +138,16 @@ class StockDataCache {
   constructor() {
     // Initialize database
     initializeDatabase();
-    
+
     // Initialize background service
     const backgroundService = createBackgroundService(this);
-    
+
     // Start background service
     backgroundService.start().catch(console.error);
-    
+
     // Initialize with demo data immediately
     this.initializeWithDemoData();
-    
+
     this.startBackgroundUpdates();
   }
 
@@ -178,77 +179,78 @@ class StockDataCache {
             body: testErrorBody,
             url: testUrl,
           });
-          
+
           console.error('Polygon API test failed:', {
             status: testResponse.status,
             statusText: testResponse.statusText,
             body: testErrorBody,
             url: testUrl,
           });
-          
-          recordApiCall('polygon', 'snapshot', 'error');
+
+          // Record API error metrics
+          console.error('❌ Polygon API test failed');
         } else {
           console.log('✅ Test API call successful');
           const testData = await testResponse.json();
           console.log('Test data structure:', JSON.stringify(testData, null, 2));
-          recordApiCall('polygon', 'snapshot', 'success');
+          console.log('✅ Polygon API test successful');
         }
 
        // Process tickers in parallel groups with smart throttling
        const parallelGroups = 4; // Number of parallel Promise.allSettled groups
        const groupSize = Math.ceil(this.TICKERS.length / parallelGroups);
-       
+
        for (let groupIndex = 0; groupIndex < parallelGroups; groupIndex++) {
          const groupStart = groupIndex * groupSize;
          const groupEnd = Math.min(groupStart + groupSize, this.TICKERS.length);
          const groupTickers = this.TICKERS.slice(groupStart, groupEnd);
-         
+
          console.log(`🚀 Processing group ${groupIndex + 1}/${parallelGroups} (${groupTickers.length} tickers)`);
-         
+
          // Add delay between groups to respect rate limits
          if (groupIndex > 0) {
            console.log(`⏳ Rate limiting: waiting 250ms between groups...`);
            await new Promise(resolve => setTimeout(resolve, 250));
          }
-         
+
          // Process group in smaller batches
          for (let i = 0; i < groupTickers.length; i += batchSize) {
            const batch = groupTickers.slice(i, i + batchSize);
-           
+
            // Add delay between batches within group
            if (i > 0) {
              console.log(`⏳ Rate limiting: waiting 200ms between batches...`);
              await new Promise(resolve => setTimeout(resolve, 200));
            }
-        
+
         const batchPromises = batch.map(async (ticker) => {
           try {
             // Helper function for retry logic
             const fetchWithRetry = async (url: string, options: any = {}) => {
               const maxRetries = 3;
               let lastError: any;
-              
+
               for (let attempt = 1; attempt <= maxRetries; attempt++) {
                 try {
                   console.log(`🔍 Fetching ${ticker} (attempt ${attempt}/${maxRetries})`);
-                  
+
                   const response = await fetch(url, {
                     ...options,
                     signal: AbortSignal.timeout(30000) // 30 second timeout for Vercel
                   });
-                  
+
                   if (response.ok) {
                     return response;
                   }
-                  
+
                   // If not OK, throw error to trigger retry
                   const errorBody = await response.text();
                   throw new Error(`HTTP ${response.status}: ${errorBody}`);
-                  
+
                 } catch (error) {
                   lastError = error;
                   console.warn(`⚠️ Attempt ${attempt} failed for ${ticker}:`, error);
-                  
+
                   if (attempt < maxRetries) {
                     // Wait before retry (exponential backoff)
                     const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
@@ -257,16 +259,16 @@ class StockDataCache {
                   }
                 }
               }
-              
+
               throw lastError;
             };
-            
+
                         // Get shares outstanding from Polygon API with caching
             const shares = await getSharesOutstanding(ticker);
-            
+
             // Get previous close from Polygon aggregates with adjusted=true
             const prevClose = await getPreviousClose(ticker);
-            
+
             // Get current price using modern snapshot API (includes pre-market, after-hours)
             const snapshotUrl = `https://api.polygon.io/v2/snapshot/locale/us/markets/stocks/tickers/${ticker}?apikey=${apiKey}`;
             const snapshotResponse = await fetchWithRetry(snapshotUrl);
@@ -283,7 +285,7 @@ class StockDataCache {
 
             const snapshotData = await snapshotResponse.json();
             console.log(`📊 Snapshot data for ${ticker}:`, JSON.stringify(snapshotData, null, 2));
-            
+
             // Validate snapshot status
             if (snapshotData.status !== 'OK') {
               console.warn(`❌ Invalid snapshot status for ${ticker}: ${snapshotData.status}`);
@@ -292,27 +294,27 @@ class StockDataCache {
 
             // Get current price using consistent source
             const currentPrice = getCurrentPrice(snapshotData);
-            
+
             // Enhanced validation - check for null/undefined/zero prices
             if (!currentPrice || currentPrice === 0 || !isFinite(currentPrice)) {
               console.error(`⚠️ Invalid currentPrice for ${ticker}:`, currentPrice);
               console.error(`📊 Snapshot data:`, JSON.stringify(snapshotData, null, 2));
               return null;
             }
-            
+
             // Additional validation - check for reasonable price range
             if (currentPrice < 0.01 || currentPrice > 1000000) {
               console.error(`⚠️ Price out of reasonable range for ${ticker}: $${currentPrice}`);
               return null;
             }
-            
+
             // Validate price data for extreme changes
             validatePriceChange(currentPrice, prevClose);
-            
+
             // Get market session - use Polygon's snapshot type if available, otherwise fallback to time-based
             let marketSession = getMarketSession(); // Fallback
             let sessionLabel = 'Regular';
-            
+
             // Use Polygon's snapshot type for more accurate session detection
             if (snapshotData.ticker?.type) {
               switch (snapshotData.ticker.type) {
@@ -332,9 +334,9 @@ class StockDataCache {
                   sessionLabel = 'Closed';
               }
             }
-            
+
             // Reference price already determined above using single-source-of-truth approach
-            
+
             // If no Polygon session type, determine session label based on data availability
             if (!snapshotData.ticker?.type) {
               if (snapshotData.ticker?.min?.c && snapshotData.ticker.min.c > 0) {
@@ -358,15 +360,15 @@ class StockDataCache {
                 sessionLabel = 'Previous Close';
               }
             }
-            
+
             // Edge case protection
-            
+
             // 1. Check for negative prices (penny stock glitches)
             if (prevClose < 0.01) {
               console.warn(`⚠️ Suspiciously low previous close for ${ticker}: $${prevClose}, skipping`);
               return null;
             }
-            
+
             // 2. Check for trading halts (stale lastTrade timestamp)
             if (snapshotData.ticker?.lastTrade?.t) {
               const tradeAgeMs = Date.now() - (snapshotData.ticker.lastTrade.t / 1000000); // Convert nanoseconds to ms
@@ -375,26 +377,26 @@ class StockDataCache {
                 // Continue processing but mark in logs
               }
             }
-            
+
             // Calculate percent change using Decimal.js for precision
             const percentChange = computePercentChange(currentPrice, prevClose);
-            
+
             // 3. Check for extreme percentage changes (possible stock splits)
             if (Math.abs(percentChange) > 40) {
               console.warn(`⚠️ Extreme price change for ${ticker}: ${percentChange.toFixed(2)}% - possible stock split or data error`);
               // Continue processing but log warning
             }
-            
+
             console.log(`📊 ${sessionLabel} session for ${ticker}: $${currentPrice} vs ref $${prevClose} (${percentChange >= 0 ? '+' : ''}${percentChange.toFixed(2)}%)`);
-            
+
             // Get market status for reference
             const marketStatus = await getMarketStatus();
             console.log(`📈 Market status: ${marketStatus.market} (${marketStatus.serverTime})`);
-            
+
             // Calculate market cap and diff using centralized utilities with Decimal.js precision
             const finalMarketCap = computeMarketCap(currentPrice, shares);
             const marketCapDiff = computeMarketCapDiff(currentPrice, prevClose, shares);
-            
+
             // Log detailed calculation data for debugging
             logCalculationData(ticker, currentPrice, prevClose, shares, finalMarketCap, marketCapDiff, percentChange);
 
@@ -414,7 +416,7 @@ class StockDataCache {
             try {
               const companyName = this.companyNames[ticker] || ticker;
               const shareCount = shares;
-              
+
               runTransaction(() => {
                 // Update stock info
                 dbHelpers.upsertStock.run(
@@ -448,7 +450,7 @@ class StockDataCache {
         });
 
            const batchResults = await Promise.allSettled(batchPromises);
-           
+
            // Process settled results
            batchResults.forEach((result, index) => {
              if (result.status === 'fulfilled' && result.value) {
@@ -469,11 +471,11 @@ class StockDataCache {
       // Validate results completeness
       const successRate = (results.length / this.TICKERS.length) * 100;
       const isPartial = successRate < 90;
-      
+
       if (isPartial) {
         console.warn(`⚠️ Partial update: only ${results.length}/${this.TICKERS.length} stocks (${successRate.toFixed(1)}%) processed successfully`);
       }
-      
+
       // If no results at all, use demo data as fallback
       if (results.length === 0) {
         console.warn('⚠️ No API data received, using demo data as fallback');
@@ -483,12 +485,6 @@ class StockDataCache {
       // Update Redis cache
       try {
         await setCachedData(CACHE_KEYS.STOCK_DATA, results);
-        await setCacheStatus({
-          count: results.length,
-          lastUpdated: new Date(),
-          isUpdating: false,
-          isPartial: isPartial
-        });
         console.log(`✅ Redis cache updated with ${results.length} stocks at ${new Date().toISOString()}`);
       } catch (error) {
         console.error('Failed to update Redis cache:', error);
@@ -510,7 +506,7 @@ class StockDataCache {
       // Only update if we don't have real data yet (more than 20 stocks)
       this.getCacheStatus().then(status => {
         if (status.count <= 20) {
-          console.log('🔄 Background update: cache has demo data, updating...');
+          console.log('�� Background update: cache has demo data, updating...');
           this.updateCache();
         } else {
           console.log('✅ Background update: cache has real data, skipping...');
@@ -534,17 +530,16 @@ class StockDataCache {
       // Try to get from Redis first
       const cachedData = await getCachedData(CACHE_KEYS.STOCK_DATA);
       if (cachedData) {
-        recordCacheHit('redis');
+        recordCacheMetrics(true); // Record cache hit
         return cachedData.sort((a: CachedStockData, b: CachedStockData) => b.marketCap - a.marketCap);
       }
-      
-      recordCacheMiss('redis');
+
+      recordCacheMetrics(false); // Record cache miss
       // Fallback to in-memory cache
       return Array.from(this.cache.values()).sort((a, b) => b.marketCap - a.marketCap);
     } catch (error) {
       console.error('Error getting cached data:', error);
-      console.error('Error getting cached data:', error);
-      recordCacheMiss('redis');
+      recordCacheMetrics(false); // Record cache miss
       return Array.from(this.cache.values()).sort((a, b) => b.marketCap - a.marketCap);
     }
   }
@@ -558,21 +553,21 @@ class StockDataCache {
   }
 
   private initializeWithDemoData(): void {
-    console.log('🔄 Initializing cache with demo data...');
+    console.log('�� Initializing cache with demo data...');
     const demoStocks = this.getDemoData();
-    
+
     // Add demo data to in-memory cache
     demoStocks.forEach(stock => {
       this.cache.set(stock.ticker, stock);
     });
-    
+
     console.log(`✅ Cache initialized with ${demoStocks.length} demo stocks`);
   }
 
   private getDemoData(): CachedStockData[] {
     console.log('🔄 Generating demo data as fallback...');
     const demoStocks: CachedStockData[] = [];
-    
+
     // Create demo data for top 20 stocks
     const demoPrices = [
       { ticker: 'AAPL', price: 150.25, change: 0.85 },
@@ -596,13 +591,13 @@ class StockDataCache {
       { ticker: 'PFE', price: 28.90, change: -1.20 },
       { ticker: 'ABBV', price: 145.30, change: 0.85 }
     ];
-    
+
     demoPrices.forEach(({ ticker, price, change }) => {
       const closePrice = price / (1 + change / 100);
       // Use estimated share counts for demo data
       const estimatedShares = 1000000000; // 1B shares as fallback
       const marketCapInBillions = (price * estimatedShares) / 1000000000; // Convert to billions
-      
+
       demoStocks.push({
         ticker,
         currentPrice: Math.round(price * 100) / 100, // Round to 2 decimal places
@@ -613,30 +608,23 @@ class StockDataCache {
         lastUpdated: new Date()
       });
     });
-    
+
     console.log(`✅ Generated ${demoStocks.length} demo stocks`);
     return demoStocks;
   }
 
   async getCacheStatus(): Promise<{ count: number; lastUpdated: Date | null; isUpdating: boolean }> {
     try {
-      // Try to get from Redis first
-      const cachedStatus = await getCacheStatus();
-      if (cachedStatus) {
-        return cachedStatus;
-      }
-      
       // Fallback to in-memory cache
       const stocks = await this.getAllStocks();
       const lastUpdated = stocks.length > 0 ? stocks[0].lastUpdated : null;
-      
+
       return {
         count: stocks.length,
         lastUpdated,
         isUpdating: this.isUpdating
       };
     } catch (error) {
-      console.error('Error getting cache status:', error);
       console.error('Error getting cache status:', error);
       return {
         count: 0,
