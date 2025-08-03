@@ -42,17 +42,57 @@ export default function EarningsCalendar() {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`/api/earnings-calendar?date=${currentDate}`);
+      const response = await fetch(`/api/earnings-calendar?date=${currentDate}`, {
+        // Add timeout to prevent hanging requests
+        signal: AbortSignal.timeout(8000) // 8 second timeout
+      });
       
       if (!response.ok) {
-        throw new Error('Failed to fetch earnings data');
+        // Handle specific error cases
+        if (response.status === 401) {
+          throw new Error('API key invalid or expired');
+        }
+        if (response.status === 429) {
+          throw new Error('API rate limit exceeded');
+        }
+        if (response.status === 408) {
+          throw new Error('Request timeout - API took too long to respond');
+        }
+        if (response.status === 503) {
+          throw new Error('API service temporarily unavailable');
+        }
+        
+        // Try to get error details from response
+        try {
+          const errorData = await response.json();
+          throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+        } catch {
+          throw new Error(`Failed to fetch earnings data (${response.status})`);
+        }
       }
       
       const data: EarningsResponse = await response.json();
+      
+      // Validate response structure
+      if (!data || !Array.isArray(data.earnings)) {
+        throw new Error('Invalid response format from API');
+      }
+      
       setEarnings(data.earnings);
       
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      // Handle specific error types
+      if (err instanceof Error) {
+        if (err.name === 'AbortError') {
+          setError('Request timeout - earnings data took too long to load');
+        } else if (err.message.includes('fetch')) {
+          setError('Network error - unable to connect to earnings service');
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError('Unknown error occurred while loading earnings data');
+      }
       setEarnings([]);
     } finally {
       setLoading(false);

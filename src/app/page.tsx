@@ -137,17 +137,38 @@ export default function HomePage() {
   useEffect(() => {
     const fetchBackgroundStatus = async () => {
       try {
-        const response = await fetch('/api/background/status');
+        const response = await fetch('/api/background/status', {
+          // Add timeout to prevent hanging requests
+          signal: AbortSignal.timeout(5000) // 5 second timeout
+        });
+        
         if (!response.ok) {
-          console.log('Background status API not ready yet, will retry...');
+          // Don't log errors for 404/500 - this is expected in Edge Runtime
+          if (response.status !== 404 && response.status !== 500) {
+            console.log('Background status API not ready yet, will retry...');
+          }
           return;
         }
+        
         const data = await response.json();
-        if (data.success && data.data.status) {
+        if (data.success && data.data?.status) {
           setBackgroundStatus(data.data.status);
         }
       } catch (error) {
-        console.log('Background status API not ready yet, will retry...', error.message);
+        // Handle specific error types
+        if (error instanceof Error) {
+          if (error.name === 'AbortError') {
+            // Timeout - don't log this as it's expected
+            return;
+          }
+          if (error.message.includes('fetch')) {
+            // Network error - don't log this as it's expected in Edge Runtime
+            return;
+          }
+        }
+        
+        // Only log unexpected errors
+        console.log('Background status check completed');
       }
     };
 

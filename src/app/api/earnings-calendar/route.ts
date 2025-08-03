@@ -20,33 +20,71 @@ interface EarningsData {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const date = searchParams.get('date') || new Date().toISOString().split('T')[0];
+    let date = searchParams.get('date');
     
-    const apiKey = 'Vi_pMLcusE8RA_SUvkPAmiyziVzlmOoX';
+    // Validate and format date
+    if (!date) {
+      date = new Date().toISOString().split('T')[0];
+    } else {
+      // Validate date format (YYYY-MM-DD)
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(date)) {
+        return NextResponse.json({ 
+          error: 'Invalid date format. Use YYYY-MM-DD',
+          date: date
+        }, { status: 400 });
+      }
+    }
+    
+    const apiKey = process.env.POLYGON_API_KEY || 'Vi_pMLcusE8RA_SUvkPAmiyziVzlmOoX';
     
     // Get earnings calendar for the specified date
     const url = `https://api.polygon.io/v2/reference/calendar/earnings?apiKey=${apiKey}&date=${date}`;
     
     console.log('🔍 Fetching earnings calendar for:', date);
     
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: {
+        'Accept': 'application/json',
+      },
+      // Add timeout
+      signal: AbortSignal.timeout(10000) // 10 second timeout
+    });
     
     if (!response.ok) {
       console.error('❌ Earnings API error:', response.status, response.statusText);
+      
+      // Handle specific error cases
+      if (response.status === 401) {
+        return NextResponse.json({ 
+          error: 'API key invalid or expired',
+          status: response.status 
+        }, { status: 401 });
+      }
+      
+      if (response.status === 429) {
+        return NextResponse.json({ 
+          error: 'API rate limit exceeded',
+          status: response.status 
+        }, { status: 429 });
+      }
+      
       return NextResponse.json({ 
         error: 'Failed to fetch earnings data',
-        status: response.status 
-      }, { status: 500 });
+        status: response.status,
+        message: response.statusText
+      }, { status: response.status });
     }
     
     const data = await response.json();
     
-    if (!data.results) {
+    if (!data.results || !Array.isArray(data.results)) {
       console.log('📅 No earnings data for:', date);
       return NextResponse.json({
         earnings: [],
         date,
-        message: 'No earnings scheduled for this date'
+        message: 'No earnings scheduled for this date',
+        count: 0
       });
     }
     
@@ -79,8 +117,26 @@ export async function GET(request: NextRequest) {
     
   } catch (error) {
     console.error('❌ Earnings calendar error:', error);
+    
+    // Handle specific error types
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') {
+        return NextResponse.json(
+          { error: 'Request timeout - API took too long to respond' },
+          { status: 408 }
+        );
+      }
+      
+      if (error.message.includes('fetch')) {
+        return NextResponse.json(
+          { error: 'Network error - unable to connect to API' },
+          { status: 503 }
+        );
+      }
+    }
+    
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
