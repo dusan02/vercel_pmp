@@ -34,7 +34,9 @@ export default function EarningsCalendar() {
   }, []);
 
   useEffect(() => {
-    fetchEarnings();
+    if (currentDate) {
+      fetchEarnings();
+    }
   }, [currentDate]);
 
   const fetchEarnings = async () => {
@@ -42,12 +44,26 @@ export default function EarningsCalendar() {
       setLoading(true);
       setError(null);
       
+      if (!currentDate) {
+        console.log('⚠️ No date set, skipping earnings fetch');
+        setLoading(false);
+        return;
+      }
+      
+      console.log('🔍 Fetching earnings for date:', currentDate);
+      console.log('🔍 API URL:', `/api/earnings-calendar?date=${currentDate}`);
+      
+      // 🚀 OPTIMIZATION: Reduced timeout for faster failure detection
       const response = await fetch(`/api/earnings-calendar?date=${currentDate}`, {
-        // Add timeout to prevent hanging requests
-        signal: AbortSignal.timeout(8000) // 8 second timeout
+        signal: AbortSignal.timeout(5000) // Increased timeout for better reliability
       });
       
+      console.log('🔍 Earnings API response status:', response.status);
+      console.log('🔍 Earnings API response headers:', response.headers);
+      
       if (!response.ok) {
+        console.error('❌ Earnings API error:', response.status, response.statusText);
+        
         // Handle specific error cases
         if (response.status === 401) {
           throw new Error('API key invalid or expired');
@@ -61,6 +77,9 @@ export default function EarningsCalendar() {
         if (response.status === 503) {
           throw new Error('API service temporarily unavailable');
         }
+        if (response.status === 404) {
+          throw new Error('Earnings API endpoint not found - please check server configuration');
+        }
         
         // Try to get error details from response
         try {
@@ -72,6 +91,7 @@ export default function EarningsCalendar() {
       }
       
       const data: EarningsResponse = await response.json();
+      console.log('🔍 Earnings API response data:', data);
       
       // Validate response structure
       if (!data || !Array.isArray(data.earnings)) {
@@ -81,6 +101,7 @@ export default function EarningsCalendar() {
       setEarnings(data.earnings);
       
     } catch (err) {
+      console.error('❌ Earnings fetch error:', err);
       // Handle specific error types
       if (err instanceof Error) {
         if (err.name === 'AbortError') {
@@ -127,9 +148,8 @@ export default function EarningsCalendar() {
   if (loading) {
     return (
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center mb-4">
           <h2 className="section-title" data-icon="📅">Today's Earnings</h2>
-          <div className="text-sm text-gray-500">{currentDate}</div>
         </div>
         <div className="animate-pulse">
           <div className="h-4 bg-gray-200 rounded mb-2"></div>
@@ -143,13 +163,8 @@ export default function EarningsCalendar() {
   if (error) {
     return (
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center mb-4">
           <h2 className="section-title" data-icon="📅">Today's Earnings</h2>
-          <div className="text-sm text-gray-500">{currentDate}</div>
-        </div>
-        <div className="text-center py-8">
-          <div className="text-red-500 mb-2">❌ Error loading earnings data</div>
-          <div className="text-sm text-gray-500">{error}</div>
         </div>
       </div>
     );
@@ -158,13 +173,8 @@ export default function EarningsCalendar() {
   if (earnings.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center mb-4">
           <h2 className="section-title" data-icon="📅">Today's Earnings</h2>
-          <div className="text-sm text-gray-500">{currentDate}</div>
-        </div>
-        <div className="text-center py-8">
-          <div className="text-gray-500 mb-2">📅 No earnings scheduled for today</div>
-          <div className="text-sm text-gray-400">Check back tomorrow for upcoming earnings</div>
         </div>
       </div>
     );
@@ -172,9 +182,8 @@ export default function EarningsCalendar() {
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center mb-4">
         <h2 className="section-title" data-icon="📅">Today's Earnings</h2>
-        <div className="text-sm text-gray-500">{currentDate}</div>
       </div>
       
       <div className="overflow-x-auto">

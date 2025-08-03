@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
         // Get snapshot data from Polygon.io v2 API
         const snapshotUrl = `https://api.polygon.io/v2/snapshot/locale/us/markets/stocks/tickers/${ticker}?apikey=${apiKey}`;
         const snapshotResponse = await fetch(snapshotUrl, {
-          signal: AbortSignal.timeout(10000) // 10 second timeout
+          signal: AbortSignal.timeout(5000) // Reduced from 10s to 5s for faster failure detection
         });
         
         if (!snapshotResponse.ok) {

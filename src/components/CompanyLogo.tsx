@@ -1,7 +1,6 @@
 'use client';
 
-import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface CompanyLogoProps {
   ticker: string;
@@ -17,10 +16,20 @@ export default function CompanyLogo({
   priority = false
 }: CompanyLogoProps) {
   const [hasError, setHasError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   
   // Determine which size variant to use (32 or 64 for retina)
   const logoSize = size <= 32 ? 32 : 64;
   const logoSrc = `/logos/${ticker.toLowerCase()}-${logoSize}.webp`;
+  
+  // Reset state when ticker changes
+  useEffect(() => {
+    setHasError(false);
+    setIsLoading(true);
+    
+    // Debug: Log the logo path being requested
+    console.log(`🔍 Loading logo for ${ticker}: ${logoSrc}`);
+  }, [ticker, logoSrc]);
   
   // Fallback placeholder component
   const LogoPlaceholder = () => (
@@ -31,6 +40,7 @@ export default function CompanyLogo({
         height: size,
         fontSize: size * 0.3
       }}
+      title={`${ticker} - Logo not available`}
     >
       {ticker.slice(0, 2)}
     </div>
@@ -42,20 +52,32 @@ export default function CompanyLogo({
   }
 
   return (
-    <Image
-      src={logoSrc}
-      alt={`${ticker} company logo`}
-      width={size}
-      height={size}
-      className={`rounded-full ${className}`}
-      style={{ 
-        objectFit: 'contain'
-      }}
-      priority={priority}
-      onError={() => {
-        console.log(`❌ Logo not found for ${ticker}, using placeholder`);
-        setHasError(true);
-      }}
-    />
+    <div style={{ width: size, height: size, position: 'relative' }}>
+      <img
+        src={logoSrc}
+        alt={`${ticker} company logo`}
+        width={size}
+        height={size}
+        className={`rounded-full ${className}`}
+        style={{ 
+          objectFit: 'contain'
+        }}
+        onLoad={() => {
+          console.log(`✅ Logo loaded successfully for ${ticker}`);
+          setIsLoading(false);
+        }}
+        onError={(e) => {
+          console.log(`❌ Logo failed to load for ${ticker} at ${logoSrc}`, e);
+          setHasError(true);
+          setIsLoading(false);
+        }}
+      />
+      {isLoading && (
+        <div 
+          className="absolute inset-0 rounded-full bg-gray-200 animate-pulse"
+          style={{ width: size, height: size }}
+        />
+      )}
+    </div>
   );
 } 

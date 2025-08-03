@@ -1147,4 +1147,49 @@ table th:nth-child(8), table td:nth-child(8) { width: 10%; text-align: center; }
       var(--clr-bg) 75%
     );
   }
+}
+
+/* === LAZY LOADING STYLES ===================================== */
+.loading-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  margin: 1rem 0;
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius);
+  color: var(--clr-subtext);
+  font-size: 0.875rem;
+}
+
+.loading-indicator svg {
+  color: var(--clr-primary);
+}
+
+.end-of-list {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  margin: 1rem 0;
+  background: var(--clr-bg);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius);
+  color: var(--clr-subtext);
+  font-size: 0.875rem;
+  font-style: italic;
+}
+
+@media (prefers-color-scheme: dark) {
+  .loading-indicator {
+    background: var(--clr-surface);
+    border-color: var(--clr-border);
+  }
+  
+  .end-of-list {
+    background: var(--clr-surface);
+    border-color: var(--clr-border);
+  }
 } 

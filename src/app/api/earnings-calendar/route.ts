@@ -19,8 +19,12 @@ interface EarningsData {
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('🔍 Earnings calendar API called');
+    
     const { searchParams } = new URL(request.url);
     let date = searchParams.get('date');
+    
+    console.log('🔍 Date parameter:', date);
     
     // Validate and format date
     if (!date) {
@@ -42,6 +46,7 @@ export async function GET(request: NextRequest) {
     const url = `https://api.polygon.io/v2/reference/calendar/earnings?apiKey=${apiKey}&date=${date}`;
     
     console.log('🔍 Fetching earnings calendar for:', date);
+    console.log('🔍 API URL:', url);
     
     const response = await fetch(url, {
       headers: {
@@ -67,6 +72,16 @@ export async function GET(request: NextRequest) {
           error: 'API rate limit exceeded',
           status: response.status 
         }, { status: 429 });
+      }
+      
+      if (response.status === 404) {
+        console.log('📅 No earnings data available for this date, returning empty array');
+        return NextResponse.json({
+          earnings: [],
+          date,
+          message: 'No earnings scheduled for this date',
+          count: 0
+        });
       }
       
       return NextResponse.json({ 

@@ -7,8 +7,9 @@ import { formatBillions } from '@/lib/format';
 
 import CompanyLogo from '@/components/CompanyLogo';
 import { useFavorites } from '@/hooks/useFavorites';
-import { Activity } from 'lucide-react';
+import { Activity, Loader2 } from 'lucide-react';
 import EarningsCalendar from '@/components/EarningsCalendar';
+import { useLazyLoading } from '@/hooks/useLazyLoading';
 
 interface StockData {
   ticker: string;
@@ -23,6 +24,9 @@ interface StockData {
 // Using SortKey from useSortableData hook
 
 export default function HomePage() {
+  console.log('🏠 HomePage component rendering');
+  
+  // State for stock data
   const [stockData, setStockData] = useState<StockData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -134,50 +138,42 @@ export default function HomePage() {
   }, []);
 
   // Fetch background service status
-  useEffect(() => {
-    const fetchBackgroundStatus = async () => {
-      try {
-        const response = await fetch('/api/background/status', {
-          // Add timeout to prevent hanging requests
-          signal: AbortSignal.timeout(5000) // 5 second timeout
-        });
-        
-        if (!response.ok) {
-          // Don't log errors for 404/500 - this is expected in Edge Runtime
-          if (response.status !== 404 && response.status !== 500) {
-            console.log('Background status API not ready yet, will retry...');
-          }
+  const fetchBackgroundStatus = async () => {
+    try {
+      const response = await fetch('/api/background/status', {
+        // Add timeout to prevent hanging requests
+        signal: AbortSignal.timeout(5000) // 5 second timeout
+      });
+      
+      if (!response.ok) {
+        // Don't log errors for 404/500 - this is expected in Edge Runtime
+        if (response.status !== 404 && response.status !== 500) {
+          console.log('Background status API not ready yet, will retry...');
+        }
+        return;
+      }
+      
+      const data = await response.json();
+      if (data.success && data.data?.status) {
+        setBackgroundStatus(data.data.status);
+      }
+    } catch (error) {
+      // Handle specific error types
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          // Timeout - don't log this as it's expected
           return;
         }
-        
-        const data = await response.json();
-        if (data.success && data.data?.status) {
-          setBackgroundStatus(data.data.status);
+        if (error.message.includes('fetch')) {
+          // Network error - don't log this as it's expected in Edge Runtime
+          return;
         }
-      } catch (error) {
-        // Handle specific error types
-        if (error instanceof Error) {
-          if (error.name === 'AbortError') {
-            // Timeout - don't log this as it's expected
-            return;
-          }
-          if (error.message.includes('fetch')) {
-            // Network error - don't log this as it's expected in Edge Runtime
-            return;
-          }
-        }
-        
-        // Only log unexpected errors
-        console.log('Background status check completed');
       }
-    };
-
-    // Start background status check immediately (non-blocking)
-    fetchBackgroundStatus();
-    const interval = setInterval(fetchBackgroundStatus, 30000); // Check every 30 seconds
-    return () => clearInterval(interval);
-  }, []);
-
+      
+      // Only log unexpected errors
+      console.log('Background status check completed');
+    }
+  };
 
   // Mock data for demonstration
   const mockStocks: StockData[] = [
@@ -191,32 +187,10 @@ export default function HomePage() {
     { ticker: 'BRK.B', currentPrice: 380.40, closePrice: 378.89, percentChange: 0.40, marketCapDiff: 1.6, marketCap: 300 }
   ];
 
-  useEffect(() => {
-    // Load cached data immediately for fast page load
-    console.log('🚀 App starting, loading cached data...');
-    
-    const initializeData = async () => {
-      // Load cached data first (fast)
-      console.log('📊 Loading cached data for instant display...');
-      fetchStockData(false); // Use cache first for speed
-    };
-    
-    initializeData();
-    
-    // Auto-refresh every 30 seconds to ensure data is up to date
-    const interval = setInterval(() => {
-      fetchStockData(false);
-    }, 30000);
-    
-    return () => clearInterval(interval);
-  }, []);
-
   const fetchStockData = async (refresh = false) => {
-    setLoading(true);
-    setError(null); // Clear any previous errors
-    console.log('🔄 Fetching stock data...');
-
     try {
+      console.log('🚀 Starting fetchStockData, refresh:', refresh);
+      
       // Use new centralized API endpoint with project detection
       // Get project from window.location only if available (client-side)
       let project = 'pmp'; // default
@@ -227,35 +201,64 @@ export default function HomePage() {
                   window.location.hostname.includes('stockcv.com') ? 'cv' : 'pmp';
       }
       
-      // Get default tickers for the project
-      const tickersResponse = await fetch(`/api/tickers/default?project=${project}&limit=50`);
-      const tickersData = await tickersResponse.json();
+      console.log('🔍 Detected project:', project);
+      
+      // 🚀 OPTIMIZATION: Load tickers and stocks data in parallel
+      const [tickersResponse, stocksResponse] = await Promise.all([
+        fetch(`/api/tickers/default?project=${project}&limit=3000`),
+        fetch(`/api/stocks?tickers=NVDA,MSFT,AAPL,GOOGL,AMZN,META,TSLA,BRK.B,AVGO,LLY&project=${project}&limit=10&t=${Date.now()}`, {
+          cache: 'no-store'
+        })
+      ]);
+
+      console.log('🔍 Tickers response status:', tickersResponse.status);
+      console.log('🔍 Stocks response status:', stocksResponse.status);
+
+      const [tickersData, stocksResult] = await Promise.all([
+        tickersResponse.json(),
+        stocksResponse.json()
+      ]);
+
+      console.log('🔍 Tickers data:', tickersData);
+      console.log('🔍 Stocks result:', stocksResult);
+
       const tickers = tickersData.success ? tickersData.data : ['AAPL', 'MSFT', 'GOOGL', 'NVDA'];
       
-      const response = await fetch(`/api/stocks?tickers=${tickers.join(',')}&project=${project}&limit=50&t=${Date.now()}`, {
+      // 🚀 OPTIMIZATION: If we have initial data, show it immediately
+      if (stocksResult.data && stocksResult.data.length > 0) {
+        console.log('✅ Quick initial data loaded:', stocksResult.data.length, 'stocks');
+        setStockData(stocksResult.data);
+        setError(null);
+      }
+
+      // 🚀 OPTIMIZATION: Load full data in background
+      const fullStocksResponse = await fetch(`/api/stocks?tickers=${tickers.join(',')}&project=${project}&limit=3000&t=${Date.now()}`, {
         cache: 'no-store'
       });
-      const result = await response.json();
-      console.log('API response:', result);
-      console.log('Stock data length:', result.data?.length);
+      const fullResult = await fullStocksResponse.json();
+      
+      console.log('API response:', fullResult);
+      console.log('Stock data length:', fullResult.data?.length);
       
       // Check if API returned an error
-      if (!response.ok || result.error) {
-        console.log('API error:', result.error || result.message);
-        setError(result.message || 'API temporarily unavailable. Please try again later.');
-        setStockData(mockStocks);
+      if (!fullStocksResponse.ok || fullResult.error) {
+        console.log('API error:', fullResult.error || fullResult.message);
+        setError(fullResult.message || 'API temporarily unavailable. Please try again later.');
+        if (!stocksResult.data || stocksResult.data.length === 0) {
+          setStockData(mockStocks);
+        }
         return;
       }
       
       // Check if we have valid data
-      if (result.data && result.data.length > 0) {
-        console.log('✅ Received real data from API:', result.data.length, 'stocks');
-        console.log('🔍 DEBUG: First stock data:', JSON.stringify(result.data[0], null, 2));
-        console.log('🔍 DEBUG: First stock currentPrice type:', typeof result.data[0].currentPrice);
-        console.log('🔍 DEBUG: First stock currentPrice value:', result.data[0].currentPrice);
+      if (fullResult.data && fullResult.data.length > 0) {
+        console.log('✅ Received real data from API:', fullResult.data.length, 'stocks');
+        console.log('🔍 DEBUG: First stock data:', JSON.stringify(fullResult.data[0], null, 2));
+        console.log('🔍 DEBUG: First stock currentPrice type:', typeof fullResult.data[0].currentPrice);
+        console.log('🔍 DEBUG: First stock currentPrice value:', fullResult.data[0].currentPrice);
         
         // 💡 FIX: Ensure all numeric fields are actually numbers with validation
-        const normalised = result.data.map((s: any) => {
+        const normalised = fullResult.data.map((s: any) => {
           const currentPrice = Number(s.currentPrice);
           const closePrice = Number(s.closePrice);
           const percentChange = Number(s.percentChange);
@@ -280,12 +283,12 @@ export default function HomePage() {
         console.log('🔍 DEBUG: After normalisation - first stock currentPrice:', normalised[0].currentPrice, typeof normalised[0].currentPrice);
         
         // Enhanced fallback strategy
-        if (result.data.length > 20) {
+        if (fullResult.data.length > 20) {
           // Real data available (260+ stocks)
           setStockData(normalised);
           setError(null);
           console.log('✅ Real data loaded:', normalised.length, 'stocks');
-        } else if (result.data.length > 0) {
+        } else if (fullResult.data.length > 0) {
           // Demo data available, but show loading message
           setStockData(normalised);
           setError('Loading real data in background... (showing demo data)');
@@ -298,11 +301,11 @@ export default function HomePage() {
         }
       } else {
         // No data from API, but API is working - might be loading
-        console.log('⚠️ API response OK but no data yet, data length:', result.data?.length);
-        console.log('API message:', result.message);
+        console.log('⚠️ API response OK but no data yet, data length:', fullResult.data?.length);
+        console.log('API message:', fullResult.message);
         
         // If cache is updating, show loading message instead of error
-        if (result.message && (result.message.includes('cache') || result.message.includes('Cache'))) {
+        if (fullResult.message && (fullResult.message.includes('cache') || fullResult.message.includes('Cache'))) {
           setError('Auto-updating every 2 minutes - Loading fresh data... Please wait.');
           // Keep existing data if we have it, otherwise use mock
           if (stockData.length === 0) {
@@ -315,8 +318,8 @@ export default function HomePage() {
       }
       
       // Log cache status
-      if (result.cacheStatus) {
-        console.log('Cache status:', result.cacheStatus);
+      if (fullResult.cacheStatus) {
+        console.log('Cache status:', fullResult.cacheStatus);
       }
     } catch (err) {
       console.log('API error, using mock data:', err);
@@ -327,6 +330,35 @@ export default function HomePage() {
       setLoading(false);
     }
   };
+
+  // 🚀 OPTIMIZATION: Load data and background status in parallel
+  useEffect(() => {
+    console.log('🔄 useEffect triggered - loading initial data');
+    console.log('🔍 Window object available:', typeof window !== 'undefined');
+    
+    const loadInitialData = async () => {
+      try {
+        console.log('🚀 Starting loadInitialData');
+        await Promise.all([
+          fetchStockData(false),
+          fetchBackgroundStatus()
+        ]);
+        console.log('✅ loadInitialData completed');
+      } catch (error) {
+        console.error('❌ Error loading initial data:', error);
+      }
+    };
+
+    loadInitialData();
+  }, []); // Empty dependency array for initial load only
+
+  // Background status check
+  useEffect(() => {
+    // Start background status check immediately (non-blocking)
+    fetchBackgroundStatus();
+    const interval = setInterval(fetchBackgroundStatus, 30000); // Check every 30 seconds
+    return () => clearInterval(interval);
+  }, []);
 
   const favoriteStocks = stockData.filter(stock => favorites.some(fav => fav.ticker === stock.ticker));
   
@@ -428,6 +460,27 @@ export default function HomePage() {
   const { sorted: allStocksSorted, sortKey: allSortKey, ascending: allAscending, requestSort: requestAllSort } = 
     useSortableData(filteredStocks, "marketCap", false);
 
+  // Lazy loading hook
+  const {
+    displayLimit,
+    isLoading: lazyLoading,
+    hasMore,
+    reset: resetLazyLoading
+  } = useLazyLoading({
+    initialLimit: 30,
+    incrementSize: 30,
+    totalItems: allStocksSorted.length,
+    threshold: 200
+  });
+
+  // Reset lazy loading when filters change
+  useEffect(() => {
+    resetLazyLoading();
+  }, [searchTerm, favoritesOnly, filterCategory, resetLazyLoading]);
+
+  // Get only the stocks to display based on lazy loading
+  const displayedStocks = allStocksSorted.slice(0, displayLimit);
+
   // DEBUG: Log stockData changes
   useEffect(() => {
     if (stockData.length > 0) {
@@ -478,7 +531,7 @@ export default function HomePage() {
                      {currentSession === 'market-hours' ? 'Market is open' :
                       currentSession === 'pre-market' ? 'Pre-market trading' :
                       currentSession === 'after-hours' ? 'After-hours trading' :
-                      'Market is closed today'}
+                      '2025-08-03 - Market is closed today'}
                    </strong>
                  </div>
                  <div className="hours-subtitle">
@@ -542,14 +595,6 @@ export default function HomePage() {
       {/* Earnings Calendar Section */}
       <EarningsCalendar />
 
-      {error && (
-        <div className="error">
-          <strong>Error:</strong> {error}
-          <br />
-          <small>Showing demo data for testing purposes.</small>
-        </div>
-      )}
-
       {favoriteStocks.length > 0 && (
         <section className="favorites" aria-labelledby="favorites-heading">
           <h2 id="favorites-heading" data-icon="⭐">Favorites</h2>
@@ -590,7 +635,6 @@ export default function HomePage() {
                   <td>
                     <div className="logo-container">
                       <CompanyLogo ticker={stock.ticker} size={32} />
-                      <span className="data-source" title="Data source: Cache">⚡</span>
                     </div>
                   </td>
                   <td><strong>{stock.ticker}</strong></td>
@@ -664,7 +708,12 @@ export default function HomePage() {
             </div>
             
             <div className="stock-count">
-              Zobrazených: {filteredStocks.length} / Limit: 50
+              Zobrazených: {displayedStocks.length} z {filteredStocks.length} akcií
+              {hasMore && (
+                <span className="text-xs text-gray-500 ml-2">
+                  (Scrollnite pre viac)
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -701,14 +750,13 @@ export default function HomePage() {
             </tr>
           </thead>
           <tbody>
-            {allStocksSorted.map((stock) => {
+            {displayedStocks.map((stock) => {
               const isFavorited = isFavorite(stock.ticker);
               return (
                 <tr key={stock.ticker}>
                   <td>
                     <div className="logo-container">
                       <CompanyLogo ticker={stock.ticker} size={32} />
-                      <span className="data-source" title="Data source: Cache">⚡</span>
                     </div>
                   </td>
                   <td><strong>{stock.ticker}</strong></td>
@@ -740,6 +788,21 @@ export default function HomePage() {
             })}
           </tbody>
         </table>
+
+        {/* Loading indicator for lazy loading */}
+        {lazyLoading && (
+          <div className="loading-indicator">
+            <Loader2 className="animate-spin" size={20} />
+            <span>Načítavam ďalšie akcie...</span>
+          </div>
+        )}
+
+        {/* End of list indicator */}
+        {!hasMore && displayedStocks.length > 0 && (
+          <div className="end-of-list">
+            <span>Všetky akcie sú zobrazené</span>
+          </div>
+        )}
 
 
       </section>
