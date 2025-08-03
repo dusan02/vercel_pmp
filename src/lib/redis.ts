@@ -107,7 +107,7 @@ export async function getCachedData(key: string) {
     const responseTime = Date.now() - startTime;
     // Update metrics if available
     try {
-      const { updateCacheMetrics } = await import('@/app/api/cache/status/route');
+      const { updateCacheMetrics } = await import('@/lib/cacheMetrics');
       updateCacheMetrics(hit, responseTime, error);
     } catch {
       // Metrics module not available, ignore
