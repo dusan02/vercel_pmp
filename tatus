@@ -1,13 +1,3 @@
-warning: in the working copy of 'yarn.lock', LF will be replaced by CRLF the next time Git touches it
-data/premarket.db
-data/premarket.db-shm
-data/premarket.db-wal
-docker-compose.yml
-package-lock.json
-package.json
-src/app/globals.css
-src/app/page.tsx
-src/lib/backgroundService.ts
-src/lib/cache.ts
-src/lib/security.ts
-yarn.lock
+[33m946d86d[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Fix currentPrice extraction with robust fallbacks - resolves 0.00 price issue
+[33m38d0028[m  Update after-hours trading hours: 4:00 PM - 4:00 AM EST (corrected from 4:00-8:00 PM)
+[33m317d3f7[m  Fix duplicate percentChange declaration and undefined variables in cache.ts

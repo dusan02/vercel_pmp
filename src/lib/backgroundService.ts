@@ -1,5 +1,5 @@
 import { stockDataCache } from './cache';
-import { setCacheStatus, getCacheStatus } from './redis';
+import { setCachedData, getCachedData } from './redis';
 import { dbHelpers } from './database';
 import { 
   updateBackgroundServiceStatus, 
@@ -148,7 +148,7 @@ class BackgroundDataService {
     nextUpdate: string;
   }): Promise<void> {
     try {
-      await setCacheStatus(status);
+      await setCachedData('background_service_status', status, 300); // 5 minutes TTL
     } catch (error) {
       console.error('Failed to store background service status:', error);
     }
@@ -166,7 +166,7 @@ class BackgroundDataService {
     lastError?: string;
   } | null> {
     try {
-      const status = await getCacheStatus();
+      const status = await getCachedData('background_service_status');
       return status;
     } catch (error) {
       console.error('Failed to get background service status:', error);

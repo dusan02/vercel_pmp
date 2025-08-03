@@ -8,6 +8,7 @@ import { formatBillions } from '@/lib/format';
 import CompanyLogo from '@/components/CompanyLogo';
 import { useFavorites } from '@/hooks/useFavorites';
 import { Activity } from 'lucide-react';
+import EarningsCalendar from '@/components/EarningsCalendar';
 
 interface StockData {
   ticker: string;
@@ -193,8 +194,18 @@ export default function HomePage() {
     console.log('🔄 Fetching stock data...');
 
     try {
-      // Use cached API endpoint with cache busting
-      const response = await fetch(`/api/prices/cached?refresh=${refresh}&t=${Date.now()}`, {
+      // Use new centralized API endpoint with project detection
+      const project = window.location.hostname.includes('premarketprice.com') ? 'pmp' : 
+                     window.location.hostname.includes('capmovers.com') ? 'cm' :
+                     window.location.hostname.includes('gainerslosers.com') ? 'gl' :
+                     window.location.hostname.includes('stockcv.com') ? 'cv' : 'pmp';
+      
+      // Get default tickers for the project
+      const tickersResponse = await fetch(`/api/tickers/default?project=${project}&limit=50`);
+      const tickersData = await tickersResponse.json();
+      const tickers = tickersData.success ? tickersData.data : ['AAPL', 'MSFT', 'GOOGL', 'NVDA'];
+      
+      const response = await fetch(`/api/stocks?tickers=${tickers.join(',')}&project=${project}&limit=50&t=${Date.now()}`, {
         cache: 'no-store'
       });
       const result = await response.json();
@@ -216,25 +227,48 @@ export default function HomePage() {
         console.log('🔍 DEBUG: First stock currentPrice type:', typeof result.data[0].currentPrice);
         console.log('🔍 DEBUG: First stock currentPrice value:', result.data[0].currentPrice);
         
-        // 💡 FIX: Ensure all numeric fields are actually numbers
-        const normalised = result.data.map((s: any) => ({
-          ...s,
-          currentPrice: Number(s.currentPrice),
-          closePrice: Number(s.closePrice),
-          percentChange: Number(s.percentChange),
-          marketCapDiff: Number(s.marketCapDiff),
-          marketCap: Number(s.marketCap),
-        }));
+        // 💡 FIX: Ensure all numeric fields are actually numbers with validation
+        const normalised = result.data.map((s: any) => {
+          const currentPrice = Number(s.currentPrice);
+          const closePrice = Number(s.closePrice);
+          const percentChange = Number(s.percentChange);
+          const marketCapDiff = Number(s.marketCapDiff);
+          const marketCap = Number(s.marketCap);
+          
+          // Validate each field
+          if (!isFinite(currentPrice) || currentPrice === 0) {
+            console.warn(`⚠️ Invalid currentPrice for ${s.ticker}:`, s.currentPrice, '-> using fallback');
+          }
+          
+          return {
+            ...s,
+            currentPrice: isFinite(currentPrice) && currentPrice > 0 ? currentPrice : 0,
+            closePrice: isFinite(closePrice) && closePrice > 0 ? closePrice : currentPrice,
+            percentChange: isFinite(percentChange) ? percentChange : 0,
+            marketCapDiff: isFinite(marketCapDiff) ? marketCapDiff : 0,
+            marketCap: isFinite(marketCap) && marketCap > 0 ? marketCap : 0,
+          };
+        });
         
         console.log('🔍 DEBUG: After normalisation - first stock currentPrice:', normalised[0].currentPrice, typeof normalised[0].currentPrice);
         
-        // Set data and log state change
-        setStockData(normalised);
-        console.log('🔍 DEBUG: setStockData called with', normalised.length, 'stocks');
-        
-        // Explicitly clear any previous errors when we have valid data
-        setError(null);
-        console.log('✅ Error state cleared - showing real data');
+        // Enhanced fallback strategy
+        if (result.data.length > 20) {
+          // Real data available (260+ stocks)
+          setStockData(normalised);
+          setError(null);
+          console.log('✅ Real data loaded:', normalised.length, 'stocks');
+        } else if (result.data.length > 0) {
+          // Demo data available, but show loading message
+          setStockData(normalised);
+          setError('Loading real data in background... (showing demo data)');
+          console.log('⚠️ Demo data loaded:', normalised.length, 'stocks');
+        } else {
+          // No data at all, use mock
+          setStockData(mockStocks);
+          setError('API temporarily unavailable - using demo data');
+          console.log('❌ No data, using mock stocks');
+        }
       } else {
         // No data from API, but API is working - might be loading
         console.log('⚠️ API response OK but no data yet, data length:', result.data?.length);
@@ -427,6 +461,9 @@ export default function HomePage() {
            </div>
         </div>
       </header>
+
+      {/* Earnings Calendar Section */}
+      <EarningsCalendar />
 
       {error && (
         <div className="error">

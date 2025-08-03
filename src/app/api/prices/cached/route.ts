@@ -8,8 +8,9 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const tickers = searchParams.get('tickers');
     const refresh = searchParams.get('refresh') === 'true';
+    const forceUpdate = searchParams.get('forceUpdate') === 'true';
 
-    console.log('🔍 Request params:', { tickers, refresh });
+    console.log('🔍 Request params:', { tickers, refresh, forceUpdate });
 
     // Hardcoded API key for reliability (avoids .env.local issues)
     const apiKey = 'Vi_pMLcusE8RA_SUvkPAmiyziVzlmOoX';
@@ -28,15 +29,32 @@ export async function GET(request: NextRequest) {
           body: errorBody,
           url: testUrl
         });
+        return NextResponse.json({ error: 'API key invalid or expired' }, { status: 401 });
       } else {
         console.log('✅ Test API call successful');
+        const testData = await testResponse.json();
+        console.log('🔍 Test API response data:', JSON.stringify(testData, null, 2));
       }
     } catch (error) {
       console.error('❌ Test API call exception:', error);
+      return NextResponse.json({ error: 'API connection failed' }, { status: 500 });
     }
 
     // Get current cache status
     const cacheStatus = await stockDataCache.getCacheStatus();
+    console.log('📊 Current cache status:', cacheStatus);
+    
+    // Manual force update trigger
+    if (forceUpdate) {
+      console.log('🔄 Manual cache update triggered');
+      try {
+        await stockDataCache.updateCache();
+        console.log('✅ Manual cache update completed');
+      } catch (error) {
+        console.error('❌ Manual cache update failed:', error);
+        return NextResponse.json({ error: 'Manual cache update failed' }, { status: 500 });
+      }
+    }
     
     // If cache is empty or has only demo data (20 stocks), trigger background update
     if ((cacheStatus.count === 0 || cacheStatus.count <= 20) && !cacheStatus.isUpdating) {
@@ -57,18 +75,26 @@ export async function GET(request: NextRequest) {
         .filter(Boolean);
 
       return NextResponse.json({
+        success: true,
         data: results,
+        source: 'cache',
+        timestamp: new Date().toISOString(),
         cacheStatus,
         message: refresh ? 'Cache refreshed and data returned' : 'Data from cache'
       });
     } else {
       // Return all stocks
       const allStocks = await stockDataCache.getAllStocks();
+      console.log('📦 Returning', allStocks.length, 'stocks from cache');
+      console.log('📦 First stock from cache:', allStocks[0]);
       
       // If no cached data available or only demo data, return demo data with update message
       if (allStocks.length === 0) {
         return NextResponse.json({
+          success: true,
           data: [],
+          source: 'cache',
+          timestamp: new Date().toISOString(),
           cacheStatus,
           message: 'Cache is updating in background, please wait...'
         });
@@ -80,7 +106,10 @@ export async function GET(request: NextRequest) {
         : refresh ? 'Cache refreshing in background' : 'All data from cache';
       
       return NextResponse.json({
+        success: true,
         data: allStocks,
+        source: 'cache',
+        timestamp: new Date().toISOString(),
         cacheStatus,
         message
       });
@@ -89,7 +118,11 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Cached API Error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        success: false,
+        error: 'Internal server error',
+        timestamp: new Date().toISOString()
+      },
       { status: 500 }
     );
   }

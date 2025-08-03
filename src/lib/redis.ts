@@ -8,19 +8,16 @@ let cacheTimestamps = new Map();
 // Check if we're in a serverless environment (Vercel)
 const isServerless = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
 
-// Try to initialize Redis client only if not in serverless environment
-if (!isServerless) {
-  try {
-    // Use Upstash Redis if available, otherwise fallback to local Redis
-    const redisUrl = process.env.UPSTASH_REDIS_REST_URL 
-      ? `redis://default:${process.env.UPSTASH_REDIS_REST_TOKEN}@${process.env.UPSTASH_REDIS_REST_URL.replace('https://', '')}:6379`
-      : process.env.REDIS_URL || 'redis://localhost:6379';
+// Initialize Redis client for both serverless and non-serverless environments
+try {
+  // Use Upstash Redis if available
+  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+    const redisUrl = `redis://default:${process.env.UPSTASH_REDIS_REST_TOKEN}@${process.env.UPSTASH_REDIS_REST_URL.replace('https://', '')}:6379`;
     
-    console.log('🔍 Redis URL:', process.env.UPSTASH_REDIS_REST_URL ? 'Using Upstash Redis' : 'Using local Redis');
+    console.log('🔍 Using Upstash Redis');
     console.log('🔍 Environment check:', {
-      UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL ? 'SET' : 'NOT SET',
-      UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN ? 'SET' : 'NOT SET',
-      REDIS_URL: process.env.REDIS_URL ? 'SET' : 'NOT SET'
+      UPSTASH_REDIS_REST_URL: 'SET',
+      UPSTASH_REDIS_REST_TOKEN: 'SET'
     });
       
     redisClient = createClient({
@@ -56,12 +53,12 @@ if (!isServerless) {
         redisClient = null;
       });
     }
-  } catch (error) {
-    console.log('⚠️ Redis not available, using in-memory cache');
+  } else {
+    console.log('⚠️ Upstash Redis not configured, using in-memory cache');
     redisClient = null;
   }
-} else {
-  console.log('⚠️ Serverless environment detected, using in-memory cache only');
+} catch (error) {
+  console.log('⚠️ Redis not available, using in-memory cache');
   redisClient = null;
 }
 
@@ -129,35 +126,26 @@ export async function deleteCachedData(key: string) {
   }
 }
 
-export async function getCacheStatus() {
-  try {
-    if (redisClient && redisClient.isOpen) {
-      const status = await redisClient.get(CACHE_KEYS.CACHE_STATUS);
-      return status ? JSON.parse(status.toString()) : null;
-    } else {
-      // Use in-memory cache as fallback
-      return inMemoryCache.get(CACHE_KEYS.CACHE_STATUS) || null;
-    }
-  } catch (error) {
-    console.error('Cache status error:', error);
-    return null;
-  }
+// Helper function to generate cache keys with project prefix
+export function getCacheKey(project: string, ticker: string, type: string = 'price'): string {
+  return `${type}:${project}:${ticker}`;
 }
 
-export async function setCacheStatus(status: any) {
-  try {
-    if (redisClient && redisClient.isOpen) {
-      await redisClient.setEx(CACHE_KEYS.CACHE_STATUS, CACHE_TTL, JSON.stringify(status));
-    } else {
-      // Use in-memory cache as fallback
-      inMemoryCache.set(CACHE_KEYS.CACHE_STATUS, status);
-      cacheTimestamps.set(CACHE_KEYS.CACHE_STATUS, Date.now());
-    }
-    return true;
-  } catch (error) {
-    console.error('Cache status set error:', error);
-    return false;
-  }
+// Helper function to get all cache keys for a project
+export function getProjectCacheKeys(project: string, type: string = 'price'): string {
+  return `${type}:${project}:*`;
 }
 
-export default redisClient; 
+// Health check function
+export async function checkRedisHealth(): Promise<{ status: 'healthy' | 'unhealthy'; message: string }> {
+  try {
+    if (redisClient && redisClient.isOpen) {
+      await redisClient.ping();
+      return { status: 'healthy', message: 'Redis is connected and responding' };
+    } else {
+      return { status: 'unhealthy', message: 'Redis is not connected, using in-memory cache' };
+    }
+  } catch (error) {
+    return { status: 'unhealthy', message: `Redis health check failed: ${error}` };
+  }
+} 

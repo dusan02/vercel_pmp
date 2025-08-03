@@ -1,4 +1,7 @@
+'use client';
+
 import { useState, useEffect, useCallback } from 'react';
+import { getFavoritesKey } from '@/lib/projectUtils';
 
 interface Favorite {
   ticker: string;
@@ -9,39 +12,35 @@ export function useFavorites() {
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Load favorites from cookies
+  // Load favorites from localStorage
   const loadFavorites = useCallback(() => {
     setLoading(true);
     try {
-      const favoritesCookie = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('favorites='));
+      const favoritesKey = getFavoritesKey();
+      const favoritesData = localStorage.getItem(favoritesKey);
       
-      if (favoritesCookie) {
-        const favoritesData = favoritesCookie.split('=')[1];
-        const favoritesList = JSON.parse(decodeURIComponent(favoritesData));
+      if (favoritesData) {
+        const favoritesList = JSON.parse(favoritesData);
         setFavorites(favoritesList);
       } else {
         setFavorites([]);
       }
     } catch (err) {
-      console.error('Error loading favorites from cookies:', err);
+      console.error('Error loading favorites from localStorage:', err);
       setFavorites([]);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Save favorites to cookies
+  // Save favorites to localStorage
   const saveFavorites = useCallback((favoritesList: Favorite[]) => {
     try {
+      const favoritesKey = getFavoritesKey();
       const favoritesData = JSON.stringify(favoritesList);
-      // Set cookie to expire in 1 year
-      const expires = new Date();
-      expires.setFullYear(expires.getFullYear() + 1);
-      document.cookie = `favorites=${encodeURIComponent(favoritesData)}; expires=${expires.toUTCString()}; path=/`;
+      localStorage.setItem(favoritesKey, favoritesData);
     } catch (err) {
-      console.error('Error saving favorites to cookies:', err);
+      console.error('Error saving favorites to localStorage:', err);
     }
   }, []);
 
