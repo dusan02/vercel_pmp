@@ -1,5 +1,4 @@
 import { stockDataCache } from './cache';
-import { setCachedData, getCachedData } from './redis';
 import { dbHelpers } from './database';
 import { 
   updateBackgroundServiceStatus, 
@@ -97,7 +96,7 @@ class BackgroundDataService {
       // Update last update time
       this.lastUpdateTime = new Date();
 
-      // Store update status in Redis
+      // Store update status in memory (Redis not available in Edge Runtime)
       await this.storeUpdateStatus({
         lastUpdate: this.lastUpdateTime.toISOString(),
         updateCount: this.updateCount,
@@ -121,18 +120,9 @@ class BackgroundDataService {
         updateCount: this.updateCount,
         errorCount: this.errorCount,
         isRunning: this.isRunning,
-        lastError: error instanceof Error ? error.message : String(error),
+        lastError: error instanceof Error ? error.message : 'Unknown error',
         nextUpdate: new Date(Date.now() + this.config.updateInterval).toISOString()
       });
-
-      // Retry logic
-      if (this.errorCount <= this.config.maxRetries) {
-        console.log(`🔄 Retrying in ${this.config.retryDelay}ms (attempt ${this.errorCount}/${this.config.maxRetries})`);
-        setTimeout(() => this.performUpdate(), this.config.retryDelay);
-      } else {
-        console.error('❌ Max retries exceeded, stopping background service');
-        this.stop();
-      }
     }
   }
 
@@ -148,7 +138,8 @@ class BackgroundDataService {
     nextUpdate: string;
   }): Promise<void> {
     try {
-      await setCachedData('background_service_status', status, 300); // 5 minutes TTL
+      // Log status since Redis is not available in Edge Runtime
+      console.log('📊 Background service status:', status);
     } catch (error) {
       console.error('Failed to store background service status:', error);
     }
@@ -166,8 +157,14 @@ class BackgroundDataService {
     lastError?: string;
   } | null> {
     try {
-      const status = await getCachedData('background_service_status');
-      return status;
+      // Return current service status since Redis is not available in Edge Runtime
+      return {
+        isRunning: this.isRunning,
+        lastUpdate: this.lastUpdateTime.toISOString(),
+        updateCount: this.updateCount,
+        errorCount: this.errorCount,
+        nextUpdate: new Date(Date.now() + this.config.updateInterval).toISOString()
+      };
     } catch (error) {
       console.error('Failed to get background service status:', error);
       return null;

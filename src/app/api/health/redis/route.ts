@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { checkRedisHealth } from '@/lib/redis';
 import { getEnvConfig } from '@/lib/envConfig';
 
 export async function GET(request: NextRequest) {
@@ -8,7 +7,6 @@ export async function GET(request: NextRequest) {
     const detailed = searchParams.get('detailed') === 'true';
     
     const config = getEnvConfig();
-    const health = await checkRedisHealth();
     
     const response: any = {
       success: true,
@@ -20,22 +18,22 @@ export async function GET(request: NextRequest) {
         isProduction: config.isProduction,
       },
       redis: {
-        status: health.status,
-        message: health.message,
-        connected: health.status === 'healthy',
+        status: 'unhealthy',
+        message: 'Redis not available in Edge Runtime',
+        connected: false,
       },
       cache: {
         enabled: true,
-        type: config.isProduction ? 'redis' : 'memory',
-        fallback: !config.isProduction || !process.env.UPSTASH_REDIS_REST_URL,
+        type: 'memory',
+        fallback: true,
       }
     };
 
     // Add detailed information if requested
     if (detailed) {
       response.redisConfig = {
-        url: process.env.UPSTASH_REDIS_REST_URL ? 'configured' : 'not configured',
-        token: process.env.UPSTASH_REDIS_REST_TOKEN ? 'configured' : 'not configured',
+        url: 'not available in Edge Runtime',
+        token: 'not available in Edge Runtime',
         environment: process.env.NODE_ENV,
       };
     }

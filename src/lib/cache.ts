@@ -1,4 +1,3 @@
-import { getCachedData, setCachedData, CACHE_KEYS } from './redis';
 import { dbHelpers, runTransaction, initializeDatabase } from './database';
 import { createBackgroundService } from './backgroundService';
 import { recordCacheMetrics } from './prometheus';
@@ -14,6 +13,40 @@ import {
   getMarketStatus
 } from './marketCapUtils';
 import { getEnvConfig } from './envConfig';
+
+// In-memory cache for Edge Runtime compatibility
+const inMemoryCache = new Map<string, any>();
+const cacheTimestamps = new Map<string, number>();
+const CACHE_TTL = {
+  DEFAULT: 300, // 5 minutes
+  STOCK_DATA: 120, // 2 minutes
+  PRICE: 60, // 1 minute
+  SHARES: 3600, // 1 hour
+  PREV_CLOSE: 3600 // 1 hour
+};
+
+const CACHE_KEYS = {
+  STOCK_DATA: 'stock_data',
+  PRICE: 'price',
+  SHARES: 'shares',
+  PREV_CLOSE: 'prev_close'
+};
+
+// In-memory cache functions
+async function getCachedData(key: string) {
+  const data = inMemoryCache.get(key);
+  const timestamp = cacheTimestamps.get(key);
+  if (data && timestamp && Date.now() - timestamp < CACHE_TTL.DEFAULT * 1000) {
+    return data;
+  }
+  return null;
+}
+
+async function setCachedData(key: string, data: any, ttl: number = CACHE_TTL.DEFAULT) {
+  inMemoryCache.set(key, data);
+  cacheTimestamps.set(key, Date.now());
+  return true;
+}
 
 // Market session detection utility
 function getMarketSession(): 'pre-market' | 'market' | 'after-hours' | 'closed' {

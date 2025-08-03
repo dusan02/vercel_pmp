@@ -19,40 +19,9 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Update Redis connection status
-    try {
-      const { redisClient } = await import('@/lib/redis');
-      const isConnected = redisClient && redisClient.isOpen;
-      prometheusMetrics.updateRedisConnections(isConnected ? 1 : 0);
-    } catch (error) {
-      prometheusMetrics.updateRedisConnections(0);
-    }
-
-    // Update cache size
-    try {
-      const { redisClient } = await import('@/lib/redis');
-      if (redisClient && redisClient.isOpen) {
-        const keys = await redisClient.keys('*');
-        let totalSize = 0;
-        
-        for (const key of keys.slice(0, 10)) { // Sample first 10 keys
-          try {
-            const value = await redisClient.get(key);
-            if (value) {
-              totalSize += Buffer.byteLength(value, 'utf8');
-            }
-          } catch (error) {
-            // Ignore individual key errors
-          }
-        }
-        
-        // Estimate total size based on sample
-        const estimatedSize = keys.length > 0 ? (totalSize / 10) * keys.length : 0;
-        prometheusMetrics.updateCacheSize(estimatedSize);
-      }
-    } catch (error) {
-      prometheusMetrics.updateCacheSize(0);
-    }
+    // Set Redis connection status to 0 for Edge Runtime (no Redis support)
+    prometheusMetrics.updateRedisConnections(0);
+    prometheusMetrics.updateCacheSize(0);
 
     if (format === 'json') {
       return NextResponse.json({

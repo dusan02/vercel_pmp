@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { redisClient, deleteCachedData } from '@/lib/redis';
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,27 +14,12 @@ export async function POST(request: NextRequest) {
     }
 
     const { key } = await request.json();
-    let deletedCount = 0;
 
-    if (key) {
-      // Delete specific key
-      const success = await deleteCachedData(key);
-      deletedCount = success ? 1 : 0;
-    } else {
-      // Delete all keys
-      if (redisClient && redisClient.isOpen) {
-        const keys = await redisClient.keys('*');
-        if (keys.length > 0) {
-          await redisClient.del(keys);
-          deletedCount = keys.length;
-        }
-      }
-    }
-
+    // Cache invalidation is not available in Edge Runtime
     return NextResponse.json({
       success: true,
-      message: key ? `Key "${key}" invalidated` : 'All cache keys invalidated',
-      deletedCount,
+      message: 'Cache invalidation not available in Edge Runtime',
+      deletedCount: 0,
       timestamp: new Date().toISOString()
     });
 

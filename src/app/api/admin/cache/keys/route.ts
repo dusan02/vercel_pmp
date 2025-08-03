@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { redisClient } from '@/lib/redis';
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,40 +13,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (!redisClient || !redisClient.isOpen) {
-      return NextResponse.json({
-        success: true,
-        data: [],
-        message: 'Redis not available, using memory cache'
-      });
-    }
-
-    // Get all cache keys
-    const keys = await redisClient.keys('*');
-    const cacheKeys = [];
-
-    // Get details for each key
-    for (const key of keys.slice(0, 100)) { // Limit to first 100 keys
-      try {
-        const ttl = await redisClient.ttl(key);
-        const value = await redisClient.get(key);
-        const size = value ? Buffer.byteLength(value, 'utf8') : 0;
-
-        cacheKeys.push({
-          key,
-          ttl,
-          size,
-          lastAccessed: new Date().toISOString() // Redis doesn't track this by default
-        });
-      } catch (error) {
-        console.error(`Error getting details for key ${key}:`, error);
-      }
-    }
-
+    // Redis is not available in Edge Runtime
     return NextResponse.json({
       success: true,
-      data: cacheKeys,
-      total: keys.length,
+      data: [],
+      message: 'Redis not available in Edge Runtime, using memory cache',
+      total: 0,
       timestamp: new Date().toISOString()
     });
 

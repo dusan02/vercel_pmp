@@ -147,12 +147,11 @@ export async function deleteCachedData(key: string) {
   }
 }
 
-import { createHash } from 'crypto';
-
-// Helper function to generate cache keys with project prefix and hash
+// Helper function to generate cache keys with project prefix and simple hash
 export function getCacheKey(project: string, ticker: string, type: string = 'price'): string {
   const key = `${type}:${project}:${ticker}`;
-  const hash = createHash('sha1').update(key).digest('hex').substring(0, 8);
+  // Simple hash function that works in Edge Runtime
+  const hash = simpleHash(key).substring(0, 8);
   return `${type}:${project}:${hash}:${ticker}`;
 }
 
@@ -160,8 +159,19 @@ export function getCacheKey(project: string, ticker: string, type: string = 'pri
 export function getCacheKeyForTickers(project: string, tickers: string[], type: string = 'batch'): string {
   const sortedTickers = [...tickers].sort();
   const key = `${type}:${project}:${sortedTickers.join(',')}`;
-  const hash = createHash('sha1').update(key).digest('hex').substring(0, 12);
+  const hash = simpleHash(key).substring(0, 12);
   return `${type}:${project}:${hash}`;
+}
+
+// Simple hash function that works in Edge Runtime
+function simpleHash(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return Math.abs(hash).toString(16);
 }
 
 // Helper function to get all cache keys for a project
