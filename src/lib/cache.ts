@@ -1,7 +1,7 @@
-import { getCachedData, setCachedData, getCacheStatus, setCacheStatus, CACHE_KEYS } from './redis';
+import { getCachedData, setCachedData, CACHE_KEYS } from './redis';
 import { dbHelpers, runTransaction, initializeDatabase } from './database';
 import { createBackgroundService } from './backgroundService';
-import { recordCacheHit, recordCacheMiss, recordApiCall } from './prometheus';
+import { recordCacheMetrics } from './prometheus';
 import { 
   getSharesOutstanding, 
   computeMarketCap, 

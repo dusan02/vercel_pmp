@@ -77,10 +77,11 @@ export function getProjectFromHost(hostname?: string): string {
  * Detect project from domain (alias for getProjectFromHost with type safety)
  */
 export function detectProjectFromDomain(domain: string): 'pmp' | 'cm' | 'gl' | 'cv' {
-  if (domain.includes("premarketprice")) return "pmp";
-  if (domain.includes("capmovers")) return "cm";
-  if (domain.includes("gainerslosers")) return "gl";
-  if (domain.includes("stockcv")) return "cv";
+  const lowerDomain = domain.toLowerCase();
+  if (lowerDomain.includes("premarketprice")) return "pmp";
+  if (lowerDomain.includes("capmovers")) return "cm";
+  if (lowerDomain.includes("gainerslosers")) return "gl";
+  if (lowerDomain.includes("stockcv")) return "cv";
   return "pmp"; // fallback
 }
 
@@ -97,7 +98,11 @@ export function getProjectConfig(projectCode?: string): ProjectConfig {
  */
 export function getProjectCachePrefix(projectCode?: string): string {
   const code = projectCode || getProjectFromHost();
-  return code;
+  // Validate that the code is a valid project
+  if (['pmp', 'cm', 'gl', 'cv'].includes(code)) {
+    return code;
+  }
+  return 'pmp'; // fallback to PMP for invalid codes
 }
 
 /**

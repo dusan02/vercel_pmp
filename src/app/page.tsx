@@ -27,6 +27,8 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [filterCategory, setFilterCategory] = useState<'all' | 'gainers' | 'losers' | 'movers' | 'custom'>('all');
   const [backgroundStatus, setBackgroundStatus] = useState<{
     isRunning: boolean;
     lastUpdate: string;
@@ -195,10 +197,14 @@ export default function HomePage() {
 
     try {
       // Use new centralized API endpoint with project detection
-      const project = window.location.hostname.includes('premarketprice.com') ? 'pmp' : 
-                     window.location.hostname.includes('capmovers.com') ? 'cm' :
-                     window.location.hostname.includes('gainerslosers.com') ? 'gl' :
-                     window.location.hostname.includes('stockcv.com') ? 'cv' : 'pmp';
+      // Get project from window.location only if available (client-side)
+      let project = 'pmp'; // default
+      if (typeof window !== 'undefined') {
+        project = window.location.hostname.includes('premarketprice.com') ? 'pmp' : 
+                  window.location.hostname.includes('capmovers.com') ? 'cm' :
+                  window.location.hostname.includes('gainerslosers.com') ? 'gl' :
+                  window.location.hostname.includes('stockcv.com') ? 'cv' : 'pmp';
+      }
       
       // Get default tickers for the project
       const tickersResponse = await fetch(`/api/tickers/default?project=${project}&limit=50`);
@@ -370,11 +376,31 @@ export default function HomePage() {
     return companyNames[ticker] || ticker;
   };
 
-  // Filter by search term
-  const filteredStocks = stockData.filter(stock => 
-    stock.ticker.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    getCompanyName(stock.ticker).toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter stocks based on various criteria
+  const filteredStocks = stockData.filter(stock => {
+    // Search filter
+    const matchesSearch = stock.ticker.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      getCompanyName(stock.ticker).toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (!matchesSearch) return false;
+    
+    // Favorites-only filter
+    if (favoritesOnly && !isFavorite(stock.ticker)) return false;
+    
+    // Category filter
+    switch (filterCategory) {
+      case 'gainers':
+        return stock.percentChange > 0;
+      case 'losers':
+        return stock.percentChange < 0;
+      case 'movers':
+        return Math.abs(stock.percentChange) > 2; // Stocks with >2% movement
+      case 'custom':
+        return favorites.some(fav => fav.ticker === stock.ticker);
+      default:
+        return true;
+    }
+  });
   
   const { sorted: favoriteStocksSorted, sortKey: favSortKey, ascending: favAscending, requestSort: requestFavSort } = 
     useSortableData(favoriteStocks, "marketCap", false);
@@ -427,10 +453,54 @@ export default function HomePage() {
                <h3 className="trading-hours-title">⏰ Market Status</h3>
                <div className="trading-hours-content">
                  <div className="hours-main">
-                   <strong>Market is closed today</strong>
+                   <strong>
+                     {currentSession === 'market-hours' ? 'Market is open' :
+                      currentSession === 'pre-market' ? 'Pre-market trading' :
+                      currentSession === 'after-hours' ? 'After-hours trading' :
+                      'Market is closed today'}
+                   </strong>
                  </div>
                  <div className="hours-subtitle">
-                   <span>Next trading day: Monday, August 4th</span>
+                   <span>
+                     {currentSession === 'market-hours' ? 'Regular trading hours (9:30 AM - 4:00 PM EST)' :
+                      currentSession === 'pre-market' ? 'Pre-market hours (4:00 AM - 9:30 AM EST)' :
+                      currentSession === 'after-hours' ? 'After-hours trading (4:00 PM - 8:00 PM EST)' :
+                      (() => {
+                        const now = new Date();
+                        const easternTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
+                        const dayOfWeek = easternTime.getDay();
+                        
+                        // Check if it's weekend
+                        if (dayOfWeek === 0) { // Sunday
+                          return 'Next trading day: Monday';
+                        } else if (dayOfWeek === 6) { // Saturday
+                          return 'Next trading day: Monday';
+                        } else {
+                          // Check if it's a holiday
+                          const isMarketHoliday = (date: Date): boolean => {
+                            const month = date.getMonth() + 1;
+                            const day = date.getDate();
+                            const dayOfWeek = date.getDay();
+                            
+                            if (month === 1 && day === 1) return true; // New Year's Day
+                            if (month === 7 && day === 4) return true; // Independence Day
+                            if (month === 12 && day === 25) return true; // Christmas Day
+                            if (month === 1 && dayOfWeek === 1 && day >= 15 && day <= 21) return true; // MLK Day
+                            if (month === 2 && dayOfWeek === 1 && day >= 15 && day <= 21) return true; // Presidents' Day
+                            if (month === 5 && dayOfWeek === 1 && day >= 25) return true; // Memorial Day
+                            if (month === 9 && dayOfWeek === 1 && day <= 7) return true; // Labor Day
+                            if (month === 11 && dayOfWeek === 4 && day >= 22 && day <= 28) return true; // Thanksgiving
+                            return false;
+                          };
+                          
+                          if (isMarketHoliday(easternTime)) {
+                            return 'Market holiday - Next trading day: Tomorrow';
+                          } else {
+                            return 'Market closed - Next trading day: Tomorrow';
+                          }
+                        }
+                      })()}
+                   </span>
                  </div>
                </div>
              </div>
@@ -497,7 +567,10 @@ export default function HomePage() {
               {favoriteStocksSorted.map((stock) => (
                 <tr key={stock.ticker}>
                   <td>
-                    <CompanyLogo ticker={stock.ticker} size={32} />
+                    <div className="logo-container">
+                      <CompanyLogo ticker={stock.ticker} size={32} />
+                      <span className="data-source" title="Data source: Cache">⚡</span>
+                    </div>
                   </td>
                   <td><strong>{stock.ticker}</strong></td>
                   <td className="company-name">{getCompanyName(stock.ticker)}</td>
@@ -533,15 +606,45 @@ export default function HomePage() {
       <section className="all-stocks" aria-labelledby="all-stocks-heading">
         <div className="section-header">
           <h2 id="all-stocks-heading" data-icon="📊">All Stocks</h2>
-          <div className="search-container">
-            <input
-              type="text"
-              placeholder="Find company"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="search-input"
-              aria-label="Search stocks by company name or ticker"
-            />
+          <div className="controls-container">
+            <div className="search-container">
+              <input
+                type="text"
+                placeholder="Find company"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="search-input"
+                aria-label="Search stocks by company name or ticker"
+              />
+            </div>
+            
+            <div className="filter-controls">
+              <label className="favorites-toggle">
+                <input
+                  type="checkbox"
+                  checked={favoritesOnly}
+                  onChange={(e) => setFavoritesOnly(e.target.checked)}
+                />
+                <span>Favorites Only</span>
+              </label>
+              
+              <select
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value as any)}
+                className="category-filter"
+                aria-label="Filter by category"
+              >
+                <option value="all">All Stocks</option>
+                <option value="gainers">Gainers</option>
+                <option value="losers">Losers</option>
+                <option value="movers">Movers (&gt;2%)</option>
+                <option value="custom">Custom</option>
+              </select>
+            </div>
+            
+            <div className="stock-count">
+              Zobrazených: {filteredStocks.length} / Limit: 50
+            </div>
           </div>
         </div>
 
@@ -582,7 +685,10 @@ export default function HomePage() {
               return (
                 <tr key={stock.ticker}>
                   <td>
-                    <CompanyLogo ticker={stock.ticker} size={32} />
+                    <div className="logo-container">
+                      <CompanyLogo ticker={stock.ticker} size={32} />
+                      <span className="data-source" title="Data source: Cache">⚡</span>
+                    </div>
                   </td>
                   <td><strong>{stock.ticker}</strong></td>
                   <td className="company-name">{getCompanyName(stock.ticker)}</td>

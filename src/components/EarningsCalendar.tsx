@@ -26,7 +26,12 @@ export default function EarningsCalendar() {
   const [earnings, setEarnings] = useState<EarningsData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentDate, setCurrentDate] = useState(new Date().toISOString().split('T')[0]);
+  const [currentDate, setCurrentDate] = useState('');
+
+  useEffect(() => {
+    // Set current date only on client-side to avoid hydration mismatch
+    setCurrentDate(new Date().toISOString().split('T')[0]);
+  }, []);
 
   useEffect(() => {
     fetchEarnings();
@@ -83,7 +88,7 @@ export default function EarningsCalendar() {
     return (
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">📅 Today's Earnings</h2>
+          <h2 className="section-title" data-icon="📅">Today's Earnings</h2>
           <div className="text-sm text-gray-500">{currentDate}</div>
         </div>
         <div className="animate-pulse">
@@ -99,7 +104,7 @@ export default function EarningsCalendar() {
     return (
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">📅 Today's Earnings</h2>
+          <h2 className="section-title" data-icon="📅">Today's Earnings</h2>
           <div className="text-sm text-gray-500">{currentDate}</div>
         </div>
         <div className="text-center py-8">
@@ -114,7 +119,7 @@ export default function EarningsCalendar() {
     return (
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">📅 Today's Earnings</h2>
+          <h2 className="section-title" data-icon="📅">Today's Earnings</h2>
           <div className="text-sm text-gray-500">{currentDate}</div>
         </div>
         <div className="text-center py-8">
@@ -128,7 +133,7 @@ export default function EarningsCalendar() {
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">📅 Today's Earnings</h2>
+        <h2 className="section-title" data-icon="📅">Today's Earnings</h2>
         <div className="text-sm text-gray-500">{currentDate}</div>
       </div>
       

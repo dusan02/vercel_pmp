@@ -108,12 +108,12 @@ class BackgroundDataService {
 
       const duration = Date.now() - startTime;
       console.log(`✅ Background update completed in ${duration}ms`);
-      recordBackgroundUpdate(duration / 1000); // Convert to seconds
+      recordBackgroundUpdate(); // Duration will be set by withMetrics
 
     } catch (error) {
       this.errorCount++;
       console.error('❌ Background update failed:', error);
-      recordBackgroundError();
+      recordBackgroundError(error.message || 'Unknown error');
 
       // Store error status
       await this.storeUpdateStatus({

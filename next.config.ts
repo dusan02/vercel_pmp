@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Environment configuration
+  env: {
+    CUSTOM_KEY: process.env.CUSTOM_KEY,
+  },
+
   // Image optimization for local logos
   images: {
     // No remote patterns needed - all logos are local now

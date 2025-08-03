@@ -1,7 +1,7 @@
 import { createClient } from 'redis';
 
 // Redis client configuration with fallback to in-memory cache
-let redisClient: any = null;
+export let redisClient: any = null;
 let inMemoryCache = new Map();
 let cacheTimestamps = new Map();
 
@@ -70,31 +70,52 @@ export const CACHE_KEYS = {
   STOCK_COUNT: 'stock_count'
 } as const;
 
-// Cache TTL (Time To Live) - 2 minutes
-export const CACHE_TTL = 120; // seconds
+// Cache TTL (Time To Live) configuration
+export const CACHE_TTL = {
+  DEFAULT: 120, // 2 minutes
+  FALLBACK: 60, // 1 minute for fallback data
+  LONG: 300, // 5 minutes for stable data
+  SHORT: 30, // 30 seconds for volatile data
+} as const;
 
 // Helper functions with fallback to in-memory cache
 export async function getCachedData(key: string) {
+  const startTime = Date.now();
+  let hit = false;
+  let error: string | undefined;
+  
   try {
     if (redisClient && redisClient.isOpen) {
       const data = await redisClient.get(key);
+      hit = data !== null;
       return data ? JSON.parse(data.toString()) : null;
     } else {
       // Use in-memory cache as fallback
       const data = inMemoryCache.get(key);
       const timestamp = cacheTimestamps.get(key);
-      if (data && timestamp && Date.now() - timestamp < CACHE_TTL * 1000) {
+      if (data && timestamp && Date.now() - timestamp < CACHE_TTL.DEFAULT * 1000) {
+        hit = true;
         return data;
       }
       return null;
     }
-  } catch (error) {
+  } catch (err) {
+    error = err instanceof Error ? err.message : 'Unknown cache error';
     console.error('Cache get error:', error);
     return null;
+  } finally {
+    const responseTime = Date.now() - startTime;
+    // Update metrics if available
+    try {
+      const { updateCacheMetrics } = await import('@/app/api/cache/status/route');
+      updateCacheMetrics(hit, responseTime, error);
+    } catch {
+      // Metrics module not available, ignore
+    }
   }
 }
 
-export async function setCachedData(key: string, data: any, ttl: number = CACHE_TTL) {
+export async function setCachedData(key: string, data: any, ttl: number = CACHE_TTL.DEFAULT) {
   try {
     if (redisClient && redisClient.isOpen) {
       await redisClient.setEx(key, ttl, JSON.stringify(data));
@@ -126,9 +147,21 @@ export async function deleteCachedData(key: string) {
   }
 }
 
-// Helper function to generate cache keys with project prefix
+import { createHash } from 'crypto';
+
+// Helper function to generate cache keys with project prefix and hash
 export function getCacheKey(project: string, ticker: string, type: string = 'price'): string {
-  return `${type}:${project}:${ticker}`;
+  const key = `${type}:${project}:${ticker}`;
+  const hash = createHash('sha1').update(key).digest('hex').substring(0, 8);
+  return `${type}:${project}:${hash}:${ticker}`;
+}
+
+// Helper function to generate cache key for multiple tickers
+export function getCacheKeyForTickers(project: string, tickers: string[], type: string = 'batch'): string {
+  const sortedTickers = [...tickers].sort();
+  const key = `${type}:${project}:${sortedTickers.join(',')}`;
+  const hash = createHash('sha1').update(key).digest('hex').substring(0, 12);
+  return `${type}:${project}:${hash}`;
 }
 
 // Helper function to get all cache keys for a project

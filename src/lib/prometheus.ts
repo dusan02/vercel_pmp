@@ -1,190 +1,259 @@
-import { register, collectDefaultMetrics, Counter, Histogram, Gauge } from 'prom-client';
+/**
+ * Prometheus metrics implementation for monitoring
+ */
 
-// Enable default metrics collection
-collectDefaultMetrics({ register });
-
-// Application Metrics
-export const httpRequestTotal = new Counter({
-  name: 'http_requests_total',
-  help: 'Total number of HTTP requests',
-  labelNames: ['method', 'route', 'status_code'],
-});
-
-export const httpRequestDuration = new Histogram({
-  name: 'http_request_duration_seconds',
-  help: 'HTTP request duration in seconds',
-  labelNames: ['method', 'route'],
-  buckets: [0.1, 0.5, 1, 2, 5],
-});
-
-// Business Metrics
-export const stockUpdatesTotal = new Counter({
-  name: 'stock_updates_total',
-  help: 'Total number of stock updates',
-  labelNames: ['status'],
-});
-
-export const cacheHitsTotal = new Counter({
-  name: 'cache_hits_total',
-  help: 'Total number of cache hits',
-  labelNames: ['cache_type'],
-});
-
-export const cacheMissesTotal = new Counter({
-  name: 'cache_misses_total',
-  help: 'Total number of cache misses',
-  labelNames: ['cache_type'],
-});
-
-export const apiCallsTotal = new Counter({
-  name: 'api_calls_total',
-  help: 'Total number of API calls to external services',
-  labelNames: ['service', 'endpoint', 'status'],
-});
-
-// System Metrics
-export const activeConnections = new Gauge({
-  name: 'active_connections',
-  help: 'Number of active connections',
-});
-
-export const memoryUsage = new Gauge({
-  name: 'memory_usage_bytes',
-  help: 'Memory usage in bytes',
-  labelNames: ['type'],
-});
-
-export const cpuUsage = new Gauge({
-  name: 'cpu_usage_percent',
-  help: 'CPU usage percentage',
-});
-
-// Background Service Metrics
-export const backgroundServiceStatus = new Gauge({
-  name: 'background_service_status',
-  help: 'Background service status (1 = running, 0 = stopped)',
-});
-
-export const backgroundUpdateDuration = new Histogram({
-  name: 'background_update_duration_seconds',
-  help: 'Background update duration in seconds',
-  buckets: [1, 5, 10, 30, 60],
-});
-
-export const backgroundUpdateErrors = new Counter({
-  name: 'background_update_errors_total',
-  help: 'Total number of background update errors',
-});
-
-// User Activity Metrics
-export const userFavoritesTotal = new Counter({
-  name: 'user_favorites_total',
-  help: 'Total number of user favorite actions',
-  labelNames: ['action'], // 'add' or 'remove'
-});
-
-export const activeUsers = new Gauge({
-  name: 'active_users',
-  help: 'Number of active users',
-});
-
-// Security Metrics
-export const securityEventsTotal = new Counter({
-  name: 'security_events_total',
-  help: 'Total number of security events',
-  labelNames: ['event_type'],
-});
-
-export const rateLimitExceeded = new Counter({
-  name: 'rate_limit_exceeded_total',
-  help: 'Total number of rate limit violations',
-  labelNames: ['endpoint'],
-});
-
-// Error Tracking Metrics
-export const errorsTotal = new Counter({
-  name: 'errors_total',
-  help: 'Total number of errors tracked',
-  labelNames: ['severity', 'type'],
-});
-
-export const errorOccurrences = new Counter({
-  name: 'error_occurrences_total',
-  help: 'Total number of error occurrences',
-  labelNames: ['error_id', 'severity'],
-});
-
-export const errorResolutionTime = new Histogram({
-  name: 'error_resolution_time_seconds',
-  help: 'Time taken to resolve errors',
-  labelNames: ['severity'],
-  buckets: [60, 300, 900, 1800, 3600, 7200, 14400, 28800], // 1min to 8hours
-});
-
-// Helper functions
-export function recordHttpRequest(method: string, route: string, statusCode: number, duration: number) {
-  httpRequestTotal.inc({ method, route, status_code: statusCode.toString() });
-  httpRequestDuration.observe({ method, route }, duration);
+export interface MetricsData {
+  http_requests_total: number;
+  http_request_duration_seconds: number;
+  cache_hits_total: number;
+  cache_misses_total: number;
+  cache_size_bytes: number;
+  redis_connections_active: number;
+  api_errors_total: number;
+  background_jobs_total: number;
+  background_job_duration_seconds: number;
 }
 
-export function recordStockUpdate(status: 'success' | 'error') {
-  stockUpdatesTotal.inc({ status });
+class PrometheusMetrics {
+  private metrics: MetricsData = {
+    http_requests_total: 0,
+    http_request_duration_seconds: 0,
+    cache_hits_total: 0,
+    cache_misses_total: 0,
+    cache_size_bytes: 0,
+    redis_connections_active: 0,
+    api_errors_total: 0,
+    background_jobs_total: 0,
+    background_job_duration_seconds: 0,
+  };
+
+  private startTimes: Map<string, number> = new Map();
+
+  /**
+   * Record HTTP request
+   */
+  recordHttpRequest(method: string, path: string, statusCode: number, duration: number) {
+    this.metrics.http_requests_total++;
+    this.metrics.http_request_duration_seconds += duration;
+    
+    if (statusCode >= 400) {
+      this.metrics.api_errors_total++;
+    }
+  }
+
+  /**
+   * Record cache hit
+   */
+  recordCacheHit() {
+    this.metrics.cache_hits_total++;
+  }
+
+  /**
+   * Record cache miss
+   */
+  recordCacheMiss() {
+    this.metrics.cache_misses_total++;
+  }
+
+  /**
+   * Update cache size
+   */
+  updateCacheSize(size: number) {
+    this.metrics.cache_size_bytes = size;
+  }
+
+  /**
+   * Update Redis connections
+   */
+  updateRedisConnections(count: number) {
+    this.metrics.redis_connections_active = count;
+  }
+
+  /**
+   * Record background job
+   */
+  recordBackgroundJob(duration: number) {
+    this.metrics.background_jobs_total++;
+    this.metrics.background_job_duration_seconds += duration;
+  }
+
+  /**
+   * Start timing an operation
+   */
+  startTimer(operation: string): string {
+    const id = `${operation}_${Date.now()}_${Math.random()}`;
+    this.startTimes.set(id, Date.now());
+    return id;
+  }
+
+  /**
+   * End timing an operation
+   */
+  endTimer(id: string): number {
+    const startTime = this.startTimes.get(id);
+    if (!startTime) {
+      return 0;
+    }
+    
+    const duration = (Date.now() - startTime) / 1000; // Convert to seconds
+    this.startTimes.delete(id);
+    return duration;
+  }
+
+  /**
+   * Get all metrics in Prometheus format
+   */
+  getMetrics(): string {
+    const timestamp = Date.now();
+    const lines = [
+      '# HELP http_requests_total Total number of HTTP requests',
+      '# TYPE http_requests_total counter',
+      `http_requests_total ${this.metrics.http_requests_total} ${timestamp}`,
+      '',
+      '# HELP http_request_duration_seconds Total duration of HTTP requests in seconds',
+      '# TYPE http_request_duration_seconds counter',
+      `http_request_duration_seconds ${this.metrics.http_request_duration_seconds} ${timestamp}`,
+      '',
+      '# HELP cache_hits_total Total number of cache hits',
+      '# TYPE cache_hits_total counter',
+      `cache_hits_total ${this.metrics.cache_hits_total} ${timestamp}`,
+      '',
+      '# HELP cache_misses_total Total number of cache misses',
+      '# TYPE cache_misses_total counter',
+      `cache_misses_total ${this.metrics.cache_misses_total} ${timestamp}`,
+      '',
+      '# HELP cache_hit_ratio Cache hit ratio (0-1)',
+      '# TYPE cache_hit_ratio gauge',
+      `cache_hit_ratio ${this.getCacheHitRatio()} ${timestamp}`,
+      '',
+      '# HELP cache_size_bytes Current cache size in bytes',
+      '# TYPE cache_size_bytes gauge',
+      `cache_size_bytes ${this.metrics.cache_size_bytes} ${timestamp}`,
+      '',
+      '# HELP redis_connections_active Number of active Redis connections',
+      '# TYPE redis_connections_active gauge',
+      `redis_connections_active ${this.metrics.redis_connections_active} ${timestamp}`,
+      '',
+      '# HELP api_errors_total Total number of API errors',
+      '# TYPE api_errors_total counter',
+      `api_errors_total ${this.metrics.api_errors_total} ${timestamp}`,
+      '',
+      '# HELP background_jobs_total Total number of background jobs',
+      '# TYPE background_jobs_total counter',
+      `background_jobs_total ${this.metrics.background_jobs_total} ${timestamp}`,
+      '',
+      '# HELP background_job_duration_seconds Total duration of background jobs in seconds',
+      '# TYPE background_job_duration_seconds counter',
+      `background_job_duration_seconds ${this.metrics.background_job_duration_seconds} ${timestamp}`,
+      '',
+      '# HELP app_uptime_seconds Application uptime in seconds',
+      '# TYPE app_uptime_seconds gauge',
+      `app_uptime_seconds ${this.getUptime()} ${timestamp}`,
+    ];
+
+    return lines.join('\n');
+  }
+
+  /**
+   * Get cache hit ratio
+   */
+  private getCacheHitRatio(): number {
+    const total = this.metrics.cache_hits_total + this.metrics.cache_misses_total;
+    return total > 0 ? this.metrics.cache_hits_total / total : 0;
+  }
+
+  /**
+   * Get application uptime
+   */
+  private getUptime(): number {
+    return process.uptime();
+  }
+
+  /**
+   * Reset all metrics (useful for testing)
+   */
+  reset() {
+    this.metrics = {
+      http_requests_total: 0,
+      http_request_duration_seconds: 0,
+      cache_hits_total: 0,
+      cache_misses_total: 0,
+      cache_size_bytes: 0,
+      redis_connections_active: 0,
+      api_errors_total: 0,
+      background_jobs_total: 0,
+      background_job_duration_seconds: 0,
+    };
+    this.startTimes.clear();
+  }
+
+  /**
+   * Get metrics as JSON for API responses
+   */
+  getMetricsJson() {
+    return {
+      ...this.metrics,
+      cache_hit_ratio: this.getCacheHitRatio(),
+      uptime_seconds: this.getUptime(),
+      timestamp: new Date().toISOString(),
+    };
+  }
 }
 
-export function recordCacheHit(cacheType: 'redis' | 'memory') {
-  cacheHitsTotal.inc({ cache_type: cacheType });
+// Global metrics instance
+export const prometheusMetrics = new PrometheusMetrics();
+
+/**
+ * Middleware to record HTTP metrics
+ */
+export function recordHttpMetrics(method: string, path: string, statusCode: number, duration: number) {
+  prometheusMetrics.recordHttpRequest(method, path, statusCode, duration);
 }
 
-export function recordCacheMiss(cacheType: 'redis' | 'memory') {
-  cacheMissesTotal.inc({ cache_type: cacheType });
+/**
+ * Middleware to record cache metrics
+ */
+export function recordCacheMetrics(hit: boolean) {
+  if (hit) {
+    prometheusMetrics.recordCacheHit();
+  } else {
+    prometheusMetrics.recordCacheMiss();
+  }
 }
 
-export function recordApiCall(service: string, endpoint: string, status: 'success' | 'error') {
-  apiCallsTotal.inc({ service, endpoint, status });
+/**
+ * Utility to time operations
+ */
+export function withMetrics<T>(operation: string, fn: () => Promise<T>): Promise<T> {
+  const timerId = prometheusMetrics.startTimer(operation);
+  
+  return fn().finally(() => {
+    const duration = prometheusMetrics.endTimer(timerId);
+    if (operation.includes('background')) {
+      prometheusMetrics.recordBackgroundJob(duration);
+    }
+  });
 }
 
+/**
+ * Record background service status update
+ */
 export function updateBackgroundServiceStatus(isRunning: boolean) {
-  backgroundServiceStatus.set(isRunning ? 1 : 0);
+  // This could be expanded to track service status metrics
+  console.log(`📊 Background service status: ${isRunning ? 'running' : 'stopped'}`);
 }
 
-export function recordBackgroundUpdate(duration: number) {
-  backgroundUpdateDuration.observe(duration);
+/**
+ * Record background update
+ */
+export function recordBackgroundUpdate() {
+  prometheusMetrics.recordBackgroundJob(0); // Duration will be set by withMetrics
 }
 
-export function recordBackgroundError() {
-  backgroundUpdateErrors.inc();
-}
-
-export function recordUserFavorite(action: 'add' | 'remove') {
-  userFavoritesTotal.inc({ action });
-}
-
-export function recordSecurityEvent(eventType: string) {
-  securityEventsTotal.inc({ event_type: eventType });
-}
-
-export function recordRateLimitExceeded(endpoint: string) {
-  rateLimitExceeded.inc({ endpoint });
-}
-
-export function recordError(severity: string, type: string) {
-  errorsTotal.inc({ severity, type });
-}
-
-export function recordErrorOccurrence(errorId: string, severity: string) {
-  errorOccurrences.inc({ error_id: errorId, severity });
-}
-
-export function recordErrorResolution(severity: string, resolutionTime: number) {
-  errorResolutionTime.observe({ severity }, resolutionTime);
-}
-
-// Get metrics as string
-export async function getMetrics(): Promise<string> {
-  return register.metrics();
-}
-
-// Get metrics as JSON
-export async function getMetricsJson(): Promise<any> {
-  return register.getMetricsAsJSON();
+/**
+ * Record background error
+ */
+export function recordBackgroundError(error: string) {
+  prometheusMetrics.recordHttpRequest('BACKGROUND', 'error', 500, 0);
+  console.error(`❌ Background service error: ${error}`);
 } 

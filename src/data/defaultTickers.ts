@@ -46,5 +46,12 @@ export function getDefaultTickers(project: string): string[] {
 
 export function getProjectTickers(project: string, limit?: number): string[] {
   const tickers = getDefaultTickers(project);
-  return limit ? tickers.slice(0, limit) : tickers;
+  if (limit === undefined || limit === null) {
+    return tickers;
+  }
+  // Handle negative or zero limits
+  if (limit <= 0) {
+    return [];
+  }
+  return tickers.slice(0, limit);
 } 
