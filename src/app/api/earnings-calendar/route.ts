@@ -1,39 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { DEFAULT_TICKERS } from '@/data/defaultTickers';
 
-// Import tickers directly to avoid import issues
-const DEFAULT_TICKERS = {
-  pmp: [
-    // Premium tier (50) - 1 min updates
-    'NVDA', 'MSFT', 'AAPL', 'GOOG', 'GOOGL', 'AMZN', 'META', 'AVGO', 'BRK.B', 'TSLA', 'TSM', 'JPM', 'WMT', 'ORCL', 'LLY', 'V', 'MA', 'NFLX', 'XOM', 'COST', 'JNJ', 'HD', 'PLTR', 'PG', 'ABBV', 'BAC', 'CVX', 'KO', 'GE', 'AMD', 'TMUS', 'CSCO', 'PM', 'WFC', 'CRM', 'IBM', 'MS', 'ABT', 'GS', 'MCD', 'INTU', 'UNH', 'RTX', 'DIS', 'AXP', 'CAT', 'MRK', 'T', 'PEP', 'NOW',
-    
-    // Standard tier (100) - 3 min updates
-    'UBER', 'VZ', 'TMO', 'BKNG', 'SCHW', 'ISRG', 'BLK', 'C', 'BA', 'SPGI', 'TXN', 'AMGN', 'QCOM', 'BSX', 'ANET', 'ADBE', 'NEE', 'SYK', 'AMAT', 'PGR', 'GILD', 'DHR', 'TJX', 'HON', 'DE', 'PFE', 'BX', 'COF', 'UNP', 'APH', 'KKR', 'LOW', 'LRCX', 'ADP', 'CMCSA', 'VRTX', 'KLAC', 'COP', 'MU', 'PANW', 'SNPS', 'CRWD', 'WELL', 'NKE', 'ADI', 'CEG', 'ICE', 'DASH', 'SO', 'MO', 'CME', 'AMT', 'SBUX', 'LMT', 'PLD', 'MMC', 'CDNS', 'DUK', 'WM', 'PH', 'BMY', 'MCK', 'DELL', 'HCA', 'SHW', 'RCL', 'INTC', 'NOC', 'ORLY', 'GD', 'MDLZ', 'COIN', 'EMR', 'ABNB', 'CVS', 'APO', 'MMM', 'EQIX', 'FTNT', 'HWM', 'ECL', 'WMB', 'ITW', 'FI', 'PNC', 'MSI', 'AJG', 'RSG', 'UPS', 'VST', 'BK', 'CI', 'MAR', 'GEV', 'APP', 'IBKR', 'MSTR', 'MCO', 'CTAS', 'TDG', 'HOOD', 'RBLX', 'SCCO', 'NET', 'BNS', 'BCS', 'NEM', 'USB', 'ING', 'SNOW', 'CL', 'EPD', 'ZTS', 'CSX', 'AZO',
-    
-    // Extended tier (150) - 5 min updates
-    'MRVL', 'PYPL', 'CRH', 'DB', 'EOG', 'ADSK', 'AEM', 'APD', 'KMI', 'ELV', 'NSC', 'GBTC', 'HLT', 'ET', 'AEP', 'SPG', 'REGN', 'ARES', 'DLR', 'TEL', 'FIG', 'WDAY', 'PWR', 'ROP', 'TRV', 'NU', 'CNI', 'AXON', 'MNST', 'CMG', 'CARR', 'DEO', 'FCX', 'COR', 'TFC', 'URI', 'AMX', 'NDAQ', 'VRT', 'GLW', 'AFL', 'MPLX', 'NXPI', 'LNG', 'SRE', 'FLUT', 'ALL', 'ALNY', 'CPNG', 'FAST', 'LHX', 'MFC', 'E', 'D', 'FDX', 'O', 'MPC', 'PCAR', 'BDX', 'TRP', 'PAYX', 'CRWV', 'GM', 'MET', 'OKE', 'SLB', 'CMI', 'PSA', 'CTVA', 'PSX', 'WCN', 'TEAM', 'SU', 'GMBXF', 'AMP', 'CCEP', 'KR', 'DDOG', 'CCI', 'EW', 'VEEV', 'TAK', 'CBRE', 'XYZ', 'TGT', 'KDP', 'EXC', 'HLN', 'ROST', 'DHI', 'GWW', 'FERG', 'JD', 'PEG', 'AIG', 'CPRT', 'ALC', 'ZS', 'KMB', 'HMC', 'MSCI', 'IDXX', 'F', 'CVNA', 'BKR', 'OXY', 'FANG', 'IMO', 'XEL', 'EBAY', 'GRMN', 'AME', 'TTD', 'KBCSF', 'VALE', 'WPM', 'CRCL', 'KVUE', 'VLO', 'ARGX', 'FIS', 'RMD', 'TTWO', 'TCOM', 'CSGP', 'ETR', 'HEI', 'EA', 'CCL', 'ROK', 'HSY', 'SYY', 'VRSK', 'ED', 'MPWR', 'CAH', 'ABEV', 'B',
-    
-    // Extended+ tier (60) - 15 min updates
-    'BABA', 'ASML', 'TM', 'AZN', 'NVS', 'LIN', 'NVO', 'HSBC', 'SHEL', 'HDB', 'RY', 'UL', 'SHOP', 'ETN', 'SONY', 'ARM', 'TTE', 'BHP', 'SPOT', 'SAN', 'TD', 'UBS', 'MDT', 'SNY', 'BUD', 'CB', 'TT', 'RIO', 'SMFG', 'BBVA', 'RELX', 'SE', 'TRI', 'PBR', 'NTES', 'BMO', 'RACE', 'AON', 'GSK', 'NWG', 'LYG', 'EQNR', 'CNQ', 'ITUB', 'ACN', 'MUFG', 'PDD', 'SAP', 'JCI', 'NGG', 'TCEHY', 'MELI', 'BAM', 'EXPGF', 'GLCNF', 'NPSNY', 'GMBXF'
-  ]
-};
+// Create a Set for O(1) lookup performance - ALL 360 TICKERS FROM ALL TIERS
+const allTickers = [
+  ...DEFAULT_TICKERS.pmp,        // Premium tier (50)
+  ...DEFAULT_TICKERS.standard,   // Standard tier (100)
+  ...DEFAULT_TICKERS.extended,   // Extended tier (150)
+  ...DEFAULT_TICKERS.extendedPlus // Extended+ tier (60)
+];
+const TRACKED_TICKERS_SET = new Set(allTickers);
 
-function getDefaultTickers(project: string): string[] {
-  return DEFAULT_TICKERS[project as keyof typeof DEFAULT_TICKERS] || DEFAULT_TICKERS.pmp;
+// Enhanced types based on blueprint
+interface EarningsRow {
+  ticker: string;
+  companyName: string;
+  logo: string;
+  marketCap: number;
+  epsEstimate: number | null;
+  epsActual: number | null;
+  revenueEstimate: number | null;
+  revenueActual: number | null;
+  percentChange: number | null;
+  marketCapDiff: number | null;
+  reportTime: 'BMO' | 'AMC';
+  fiscalPeriod: string;
+  reportDate: string;
 }
 
-interface EarningsData {
-  ticker: string;
-  company_name: string;
-  market_cap: number;
-  fiscal_period: string;
-  report_date: string;
-  report_time: 'BMO' | 'AMC' | 'DMT';
-  estimate_eps?: number;
-  estimate_revenue?: number;
-  actual_eps?: number;
-  actual_revenue?: number;
-  percent_change?: number;
-  market_cap_diff?: number;
+interface EarningsCalendar {
+  date: string;
+  preMarket: EarningsRow[];
+  afterMarket: EarningsRow[];
+  cached?: boolean;
+  partial?: boolean;
+  message?: string;
 }
 
 interface PolygonEarningsData {
@@ -53,9 +53,165 @@ interface PolygonEarningsData {
   };
 }
 
+interface PolygonResponse {
+  results: PolygonEarningsData[];
+  status: string;
+}
+
+// Cache interface (simplified for now, can be enhanced with Redis)
+const earningsCache = new Map<string, { data: EarningsCalendar; timestamp: number }>();
+const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
+function getCachedEarnings(date: string): EarningsCalendar | null {
+  const cached = earningsCache.get(date);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return { ...cached.data, cached: true };
+  }
+  return null;
+}
+
+function setCachedEarnings(date: string, data: EarningsCalendar): void {
+  earningsCache.set(date, { data, timestamp: Date.now() });
+}
+
+// Mock data for fallback
+function getMockEarningsData(date: string): EarningsCalendar {
+  return {
+    date,
+    preMarket: [
+      {
+        ticker: 'PLTR',
+        companyName: 'Palantir Technologies Inc.',
+        logo: 'https://logo.clearbit.com/pltr.com',
+        marketCap: 45000000000,
+        epsEstimate: 0.08,
+        epsActual: 0.09,
+        revenueEstimate: 600000000,
+        revenueActual: 620000000,
+        percentChange: 12.5,
+        marketCapDiff: 5000000000,
+        reportTime: 'BMO',
+        fiscalPeriod: 'Q2 2024',
+        reportDate: date
+      },
+      {
+        ticker: 'MUFG',
+        companyName: 'Mitsubishi UFJ Financial Group',
+        logo: 'https://logo.clearbit.com/mufg.com',
+        marketCap: 120000000000,
+        epsEstimate: 0.15,
+        epsActual: 0.17,
+        revenueEstimate: 8000000000,
+        revenueActual: 8200000000,
+        percentChange: 8.2,
+        marketCapDiff: 9000000000,
+        reportTime: 'BMO',
+        fiscalPeriod: 'Q2 2024',
+        reportDate: date
+      }
+    ],
+    afterMarket: [
+      {
+        ticker: 'MELI',
+        companyName: 'MercadoLibre Inc.',
+        logo: 'https://logo.clearbit.com/mercadolibre.com',
+        marketCap: 85000000000,
+        epsEstimate: 1.20,
+        epsActual: 1.35,
+        revenueEstimate: 4200000000,
+        revenueActual: 4500000000,
+        percentChange: 15.8,
+        marketCapDiff: 12000000000,
+        reportTime: 'AMC',
+        fiscalPeriod: 'Q2 2024',
+        reportDate: date
+      },
+      {
+        ticker: 'NVDA',
+        companyName: 'NVIDIA Corporation',
+        logo: 'https://logo.clearbit.com/nvidia.com',
+        marketCap: 2800000000000,
+        epsEstimate: 4.50,
+        epsActual: 4.85,
+        revenueEstimate: 28000000000,
+        revenueActual: 30000000000,
+        percentChange: 7.8,
+        marketCapDiff: 200000000000,
+        reportTime: 'AMC',
+        fiscalPeriod: 'Q2 2024',
+        reportDate: date
+      }
+    ],
+    cached: true,
+    partial: true,
+    message: 'Showing mock data - API temporarily unavailable'
+  };
+}
+
+// Enhanced data processing with better error handling
+function processEarningsData(rawData: PolygonEarningsData[]): EarningsCalendar {
+  const preMarket: EarningsRow[] = [];
+  const afterMarket: EarningsRow[] = [];
+  
+  try {
+    for (const item of rawData) {
+      // Validate required fields
+      if (!item.ticker || !item.company_name) {
+        console.warn('⚠️ Skipping item with missing required fields:', item);
+        continue;
+      }
+      
+      // Filter to tracked tickers
+      if (!TRACKED_TICKERS_SET.has(item.ticker)) {
+        continue;
+      }
+      
+      // Classify BMO vs AMC
+      const isBMO = item.report_time === 'BMO';
+      
+      const earningsRow: EarningsRow = {
+        ticker: item.ticker,
+        companyName: item.company_name,
+        logo: `https://logo.clearbit.com/${item.ticker.toLowerCase()}.com`,
+        marketCap: item.market_cap || 0,
+        epsEstimate: item.estimate?.eps || null,
+        epsActual: item.actual?.eps || null,
+        revenueEstimate: item.estimate?.revenue || null,
+        revenueActual: item.actual?.revenue || null,
+        percentChange: null, // Will be calculated separately
+        marketCapDiff: null, // Will be calculated separately
+        reportTime: isBMO ? 'BMO' : 'AMC',
+        fiscalPeriod: item.fiscal_period || '',
+        reportDate: item.report_date || ''
+      };
+      
+      if (isBMO) {
+        preMarket.push(earningsRow);
+      } else {
+        afterMarket.push(earningsRow);
+      }
+    }
+  } catch (error) {
+    console.error('❌ Error processing earnings data:', error);
+    // Return empty result if processing fails
+    return {
+      date: new Date().toISOString().split('T')[0],
+      preMarket: [],
+      afterMarket: [],
+      message: 'Error processing earnings data'
+    };
+  }
+  
+  return {
+    date: rawData[0]?.report_date || new Date().toISOString().split('T')[0],
+    preMarket,
+    afterMarket
+  };
+}
+
 export async function GET(request: NextRequest) {
   try {
-    console.log('🔍 Earnings calendar API called');
+    console.log('🔍 Enhanced earnings calendar API called');
     
     const { searchParams } = new URL(request.url);
     let date = searchParams.get('date');
@@ -64,7 +220,9 @@ export async function GET(request: NextRequest) {
     
     // Validate and format date
     if (!date) {
-      date = new Date().toISOString().split('T')[0];
+      const now = new Date();
+      const easternTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
+      date = easternTime.toISOString().split('T')[0];
     } else {
       // Validate date format (YYYY-MM-DD)
       const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
@@ -76,10 +234,26 @@ export async function GET(request: NextRequest) {
       }
     }
     
+    // Check cache first (but skip if it's mock data)
+    const cachedData = getCachedEarnings(date);
+    if (cachedData && !cachedData.partial) {
+      console.log('✅ Serving cached earnings data for:', date);
+      return NextResponse.json(cachedData);
+    }
+    
+    // Clear any cached mock data
+    if (cachedData && cachedData.partial) {
+      console.log('🗑️ Clearing cached mock data for:', date);
+      earningsCache.delete(date);
+    }
+    
     const apiKey = process.env.POLYGON_API_KEY || 'Vi_pMLcusE8RA_SUvkPAmiyziVzlmOoX';
+    console.log('🔑 API Key (first 10 chars):', apiKey.substring(0, 10) + '...');
+    console.log('🔑 API Key length:', apiKey.length);
     
     // Get earnings calendar for the specified date
-    const url = `https://api.polygon.io/v2/reference/calendar/earnings?apiKey=${apiKey}&date=${date}`;
+    // Use the basic Polygon API endpoint for earnings calendar
+    const url = `https://api.polygon.io/v2/reference/calendar/earnings?apiKey=${apiKey}&date=${date}&limit=1000`;
     
     console.log('🔍 Fetching earnings calendar for:', date);
     console.log('🔍 API URL:', url);
@@ -88,112 +262,88 @@ export async function GET(request: NextRequest) {
       headers: {
         'Accept': 'application/json',
       },
-      // Add timeout
       signal: AbortSignal.timeout(10000) // 10 second timeout
     });
     
     if (!response.ok) {
-      console.error('❌ Earnings API error:', response.status, response.statusText);
+      const errorBody = await response.text();
+      console.error('❌ Polygon API Error:', response.status, response.statusText, errorBody);
       
-      // Handle specific error cases
+      // Enhanced error handling with specific messages
+      let errorMessage = 'Unable to fetch earnings data from Polygon.io';
       if (response.status === 401) {
-        return NextResponse.json({ 
-          error: 'API key invalid or expired',
-          status: response.status 
-        }, { status: 401 });
+        errorMessage = 'Invalid API key - please check your Polygon.io API key';
+      } else if (response.status === 403) {
+        errorMessage = 'API access denied - earnings data requires premium plan';
+        // Return mock data for testing when API access is denied
+        console.log('🔄 Returning mock data due to API access restrictions...');
+        const mockData = getMockEarningsData(date);
+        return NextResponse.json(mockData);
+      } else if (response.status === 429) {
+        errorMessage = 'API rate limit exceeded - please try again later';
+      } else if (response.status === 404) {
+        errorMessage = 'Earnings data not found for this date';
+        // Return mock data for testing when API is not available
+        console.log('🔄 Returning mock data for testing...');
+        const mockData = getMockEarningsData(date);
+        return NextResponse.json(mockData);
       }
       
-      if (response.status === 429) {
-        return NextResponse.json({ 
-          error: 'API rate limit exceeded',
-          status: response.status 
-        }, { status: 429 });
-      }
-      
-      if (response.status === 404) {
-        console.log('📅 No earnings data available for this date, returning empty array');
-        return NextResponse.json({
-          earnings: [],
-          date,
-          message: 'No earnings scheduled for this date',
-          count: 0
-        });
-      }
-      
-      return NextResponse.json({ 
-        error: 'Failed to fetch earnings data',
-        status: response.status,
-        message: response.statusText
+      return NextResponse.json({
+        error: `API Error: ${response.status}`,
+        message: errorMessage,
+        details: errorBody,
+        status: response.status
       }, { status: response.status });
     }
     
-    const data = await response.json();
+    let data: PolygonResponse;
+    try {
+      data = await response.json();
+    } catch (parseError) {
+      console.error('❌ Error parsing JSON response:', parseError);
+      return NextResponse.json({
+        error: 'JSON Parse Error',
+        message: 'Unable to parse API response',
+        details: parseError instanceof Error ? parseError.message : 'Unknown parse error'
+      }, { status: 500 });
+    }
     
     if (!data.results || !Array.isArray(data.results)) {
-      console.log('📅 No earnings data for:', date);
-      return NextResponse.json({
-        earnings: [],
+      console.log('📅 No earnings data available for date:', date);
+      const emptyResult: EarningsCalendar = {
         date,
-        message: 'No earnings scheduled for this date',
-        count: 0
-      });
+        preMarket: [],
+        afterMarket: [],
+        message: 'No earnings data available for this date'
+      };
+      setCachedEarnings(date, emptyResult);
+      return NextResponse.json(emptyResult);
     }
     
-    // Get our default tickers to filter earnings
-    const defaultTickers = DEFAULT_TICKERS.pmp;
-
-    // Filter earnings to only include our tracked tickers and sort by market cap
-    const filteredEarnings = data.results
-      .filter((earnings: PolygonEarningsData) => 
-        earnings.market_cap > 0 && 
-        defaultTickers.includes(earnings.ticker)
-      )
-      .sort((a: PolygonEarningsData, b: PolygonEarningsData) => b.market_cap - a.market_cap)
-      .map((earnings: PolygonEarningsData) => ({
-        ticker: earnings.ticker,
-        company_name: earnings.company_name,
-        market_cap: earnings.market_cap,
-        fiscal_period: earnings.fiscal_period,
-        report_time: earnings.report_time,
-        estimate_eps: earnings.estimate?.eps || null,
-        estimate_revenue: earnings.estimate?.revenue || null,
-        actual_eps: earnings.actual?.eps || null,
-        actual_revenue: earnings.actual?.revenue || null,
-        report_date: earnings.report_date
-      }));
+    // Process and filter the data
+    const processedData = processEarningsData(data.results);
     
-    console.log(`✅ Found ${filteredEarnings.length} earnings for ${date}`);
+    console.log(`✅ Processed ${processedData.preMarket.length} pre-market and ${processedData.afterMarket.length} after-market earnings for ${date}`);
+    console.log(`✅ Filtered from ${data.results.length} total results to ${processedData.preMarket.length + processedData.afterMarket.length} tracked tickers`);
+    console.log(`🔍 Raw Results Count:`, data.results?.length);
+    console.log(`🔍 Tracked Tickers Found:`, data.results?.filter(r => TRACKED_TICKERS_SET.has(r.ticker)).length);
+    console.log(`🔍 Tracked Tickers:`, data.results?.filter(r => TRACKED_TICKERS_SET.has(r.ticker)).map(r => r.ticker));
+    console.log(`🔍 Total Tracked Tickers Set Size:`, TRACKED_TICKERS_SET.size);
+    console.log(`🔍 Sample Tracked Tickers:`, Array.from(TRACKED_TICKERS_SET).slice(0, 10));
     
-    return NextResponse.json({
-      earnings: filteredEarnings,
-      date,
-      count: filteredEarnings.length,
-      message: `${filteredEarnings.length} earnings from tracked companies`
-    });
+    // Cache the result
+    setCachedEarnings(date, processedData);
+    
+    return NextResponse.json(processedData);
     
   } catch (error) {
-    console.error('❌ Earnings calendar error:', error);
+    console.error('❌ Unexpected error in earnings calendar API:', error);
     
-    // Handle specific error types
-    if (error instanceof Error) {
-      if (error.name === 'AbortError') {
-        return NextResponse.json(
-          { error: 'Request timeout - API took too long to respond' },
-          { status: 408 }
-        );
-      }
-      
-      if (error.message.includes('fetch')) {
-        return NextResponse.json(
-          { error: 'Network error - unable to connect to API' },
-          { status: 503 }
-        );
-      }
-    }
-    
-    return NextResponse.json(
-      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      error: 'Unexpected Error',
+      message: 'An unexpected error occurred while fetching earnings data',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 } 

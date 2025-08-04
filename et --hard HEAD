@@ -1,0 +1,10 @@
+[33mcb0a08b[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Earnings today tabulky 03.08.2025 v5
+[33mc496857[m 360 tickers 03.08.2025 v4
+[33m59326f7[m Fix console errors: earnings-calendar API, background status, and error handling
+[33m604f655[m Milestones 1 - 4, 03.08.2025 v3 - Fix Vercel build errors
+[33m7035a38[m Milestones 1 - 4, 03.08.2025 v3
+[33m43fcd48[m Milestones 1 - 4, 03.08.2025 v2
+[33m29bdbed[m Milestones 1 - 4, 03.08.2025 v1
+[33m9c7168f[m Update Market Hours to show 'Market is closed today'
+[33m8fe4a35[m Milestone 2,3
+[33m5d33d86[m Add Vercel config and npmrc for deployment stability

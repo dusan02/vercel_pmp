@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDefaultTickers, getProjectTickers } from '@/data/defaultTickers';
+import { getAllProjectTickers } from '@/data/defaultTickers';
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,15 +10,17 @@ export async function GET(request: NextRequest) {
     // Handle invalid numbers (NaN)
     const finalLimit = isNaN(limit!) ? null : limit;
 
-    console.log(`🔍 Getting default tickers for project: ${project}, limit: ${finalLimit !== null ? finalLimit : 'none'}`);
+    console.log(`🔍 Getting all project tickers for project: ${project}, limit: ${finalLimit !== null ? finalLimit : 'none'}`);
 
-    const tickers = getProjectTickers(project, finalLimit !== null ? finalLimit : undefined);
+    const tickers = getAllProjectTickers(project);
+    const limitedTickers = finalLimit !== null ? tickers.slice(0, finalLimit) : tickers;
 
     return NextResponse.json({
       success: true,
-      data: tickers,
+      data: limitedTickers,
       project,
-      count: tickers.length,
+      count: limitedTickers.length,
+      totalAvailable: tickers.length,
       limit: finalLimit,
       timestamp: new Date().toISOString()
     });

@@ -6,11 +6,13 @@ import { useSortableData, SortKey } from '@/hooks/useSortableData';
 import { formatBillions } from '@/lib/format';
 
 import CompanyLogo from '@/components/CompanyLogo';
+import TodaysEarningsFinnhub from '@/components/TodaysEarningsFinnhub';
+
 import { useFavorites } from '@/hooks/useFavorites';
 import { Activity, Loader2 } from 'lucide-react';
 
-import TodaysEarnings from '@/components/TodaysEarnings';
 import { useLazyLoading } from '@/hooks/useLazyLoading';
+import { getCompanyName } from '@/lib/companyNames';
 
 interface StockData {
   ticker: string;
@@ -19,21 +21,35 @@ interface StockData {
   percentChange: number;
   marketCapDiff: number;
   marketCap: number;
+  sector?: string;
+  industry?: string;
   lastUpdated?: string;
 }
 
-// Using SortKey from useSortableData hook
+// Loading states for different sections
+interface LoadingStates {
+  favorites: boolean;
+  earnings: boolean;
+  allStocks: boolean;
+  background: boolean;
+}
 
 export default function HomePage() {
   console.log('🏠 HomePage component rendering');
   
   // State for stock data
   const [stockData, setStockData] = useState<StockData[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loadingStates, setLoadingStates] = useState<LoadingStates>({
+    favorites: false,
+    earnings: false,
+    allStocks: false,
+    background: false
+  });
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [favoritesOnly, setFavoritesOnly] = useState(false);
-  const [filterCategory, setFilterCategory] = useState<'all' | 'gainers' | 'losers' | 'movers' | 'custom'>('all');
+  const [filterCategory, setFilterCategory] = useState<'all' | 'gainers' | 'losers' | 'movers' | 'bigMovers'>('all');
+  const [selectedSector, setSelectedSector] = useState<string>('all');
   const [backgroundStatus, setBackgroundStatus] = useState<{
     isRunning: boolean;
     lastUpdate: string;
@@ -180,6 +196,7 @@ export default function HomePage() {
 
   // Fetch background service status
   const fetchBackgroundStatus = async () => {
+    setLoadingStates(prev => ({ ...prev, background: true }));
     try {
       const response = await fetch('/api/background/status', {
         // Add timeout to prevent hanging requests
@@ -213,6 +230,8 @@ export default function HomePage() {
       
       // Only log unexpected errors
       console.log('Background status check completed');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, background: false }));
     }
   };
 
@@ -228,11 +247,12 @@ export default function HomePage() {
     { ticker: 'BRK.B', currentPrice: 380.40, closePrice: 378.89, percentChange: 0.40, marketCapDiff: 1.6, marketCap: 300 }
   ];
 
-  const fetchStockData = async (refresh = false) => {
+  // 🚀 OPTIMIZED: Load favorites data first (priority 1)
+  const fetchFavoritesData = async () => {
+    setLoadingStates(prev => ({ ...prev, favorites: true }));
     try {
-      console.log('🚀 Starting fetchStockData, refresh:', refresh);
+      console.log('🚀 Loading favorites data (priority 1)');
       
-      // Use new centralized API endpoint with project detection
       // Get project from window.location only if available (client-side)
       let project = 'pmp'; // default
       if (typeof window !== 'undefined') {
@@ -242,9 +262,49 @@ export default function HomePage() {
                   window.location.hostname.includes('stockcv.com') ? 'cv' : 'pmp';
       }
       
-      console.log('🔍 Detected project:', project);
+      // Load only favorite tickers first
+      const favoriteTickers = favorites.map(fav => fav.ticker);
+      if (favoriteTickers.length > 0) {
+        const response = await fetch(`/api/stocks?tickers=${favoriteTickers.join(',')}&project=${project}&limit=50&t=${Date.now()}`, {
+          cache: 'no-store'
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          if (result.data && result.data.length > 0) {
+            console.log('✅ Favorites data loaded:', result.data.length, 'stocks');
+            setStockData(prev => {
+              // Merge with existing data, avoiding duplicates
+              const existingTickers = new Set(prev.map(s => s.ticker));
+              const newStocks = result.data.filter((s: StockData) => !existingTickers.has(s.ticker));
+              return [...prev, ...newStocks];
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error loading favorites data:', error);
+    } finally {
+      setLoadingStates(prev => ({ ...prev, favorites: false }));
+    }
+  };
+
+  // 🚀 OPTIMIZED: Load all stocks data (priority 2 - lazy loaded)
+  const fetchAllStocksData = async () => {
+    setLoadingStates(prev => ({ ...prev, allStocks: true }));
+    try {
+      console.log('🚀 Loading all stocks data (priority 2)');
       
-      // 🚀 OPTIMIZATION: Load tickers and stocks data in parallel
+      // Get project from window.location only if available (client-side)
+      let project = 'pmp'; // default
+      if (typeof window !== 'undefined') {
+        project = window.location.hostname.includes('premarketprice.com') ? 'pmp' : 
+                  window.location.hostname.includes('capmovers.com') ? 'cm' :
+                  window.location.hostname.includes('gainerslosers.com') ? 'gl' :
+                  window.location.hostname.includes('stockcv.com') ? 'cv' : 'pmp';
+      }
+      
+      // Load tickers and stocks data in parallel
       const [tickersResponse, stocksResponse] = await Promise.all([
         fetch(`/api/tickers/default?project=${project}&limit=3000`),
         fetch(`/api/stocks?tickers=NVDA,MSFT,AAPL,GOOGL,AMZN,META,TSLA,BRK.B,AVGO,LLY&project=${project}&limit=10&t=${Date.now()}`, {
@@ -252,34 +312,29 @@ export default function HomePage() {
         })
       ]);
 
-      console.log('🔍 Tickers response status:', tickersResponse.status);
-      console.log('🔍 Stocks response status:', stocksResponse.status);
-
       const [tickersData, stocksResult] = await Promise.all([
         tickersResponse.json(),
         stocksResponse.json()
       ]);
 
-      console.log('🔍 Tickers data:', tickersData);
-      console.log('🔍 Stocks result:', stocksResult);
-
       const tickers = tickersData.success ? tickersData.data : ['AAPL', 'MSFT', 'GOOGL', 'NVDA'];
       
-      // 🚀 OPTIMIZATION: If we have initial data, show it immediately
+      // Show initial data immediately if available
       if (stocksResult.data && stocksResult.data.length > 0) {
         console.log('✅ Quick initial data loaded:', stocksResult.data.length, 'stocks');
-        setStockData(stocksResult.data);
+        setStockData(prev => {
+          const existingTickers = new Set(prev.map(s => s.ticker));
+          const newStocks = stocksResult.data.filter((s: StockData) => !existingTickers.has(s.ticker));
+          return [...prev, ...newStocks];
+        });
         setError(null);
       }
 
-      // 🚀 OPTIMIZATION: Load full data in background
+      // Load full data in background
       const fullStocksResponse = await fetch(`/api/stocks?tickers=${tickers.join(',')}&project=${project}&limit=3000&t=${Date.now()}`, {
         cache: 'no-store'
       });
       const fullResult = await fullStocksResponse.json();
-      
-      console.log('API response:', fullResult);
-      console.log('Stock data length:', fullResult.data?.length);
       
       // Check if API returned an error
       if (!fullStocksResponse.ok || fullResult.error) {
@@ -294,22 +349,21 @@ export default function HomePage() {
       // Check if we have valid data
       if (fullResult.data && fullResult.data.length > 0) {
         console.log('✅ Received real data from API:', fullResult.data.length, 'stocks');
-        console.log('🔍 DEBUG: First stock data:', JSON.stringify(fullResult.data[0], null, 2));
-        console.log('🔍 DEBUG: First stock currentPrice type:', typeof fullResult.data[0].currentPrice);
-        console.log('🔍 DEBUG: First stock currentPrice value:', fullResult.data[0].currentPrice);
         
-        // 💡 FIX: Ensure all numeric fields are actually numbers with validation
+        // Debug: Check if sector data is present
+        const stocksWithSectors = fullResult.data.filter((s: any) => s.sector);
+        console.log('🔍 Debug - Stocks with sector data:', stocksWithSectors.length);
+        if (stocksWithSectors.length > 0) {
+          console.log('🔍 Debug - Sample stocks with sectors:', stocksWithSectors.slice(0, 3).map((s: any) => ({ ticker: s.ticker, sector: s.sector })));
+        }
+        
+        // Normalize data
         const normalised = fullResult.data.map((s: any) => {
           const currentPrice = Number(s.currentPrice);
           const closePrice = Number(s.closePrice);
           const percentChange = Number(s.percentChange);
           const marketCapDiff = Number(s.marketCapDiff);
           const marketCap = Number(s.marketCap);
-          
-          // Validate each field
-          if (!isFinite(currentPrice) || currentPrice === 0) {
-            console.warn(`⚠️ Invalid currentPrice for ${s.ticker}:`, s.currentPrice, '-> using fallback');
-          }
           
           return {
             ...s,
@@ -321,34 +375,25 @@ export default function HomePage() {
           };
         });
         
-        console.log('🔍 DEBUG: After normalisation - first stock currentPrice:', normalised[0].currentPrice, typeof normalised[0].currentPrice);
-        
         // Enhanced fallback strategy
         if (fullResult.data.length > 20) {
-          // Real data available (260+ stocks)
           setStockData(normalised);
           setError(null);
           console.log('✅ Real data loaded:', normalised.length, 'stocks');
         } else if (fullResult.data.length > 0) {
-          // Demo data available, but show loading message
           setStockData(normalised);
           setError('Loading real data in background... (showing demo data)');
           console.log('⚠️ Demo data loaded:', normalised.length, 'stocks');
         } else {
-          // No data at all, use mock
           setStockData(mockStocks);
           setError('API temporarily unavailable - using demo data');
           console.log('❌ No data, using mock stocks');
         }
       } else {
-        // No data from API, but API is working - might be loading
         console.log('⚠️ API response OK but no data yet, data length:', fullResult.data?.length);
-        console.log('API message:', fullResult.message);
         
-        // If cache is updating, show loading message instead of error
         if (fullResult.message && (fullResult.message.includes('cache') || fullResult.message.includes('Cache'))) {
           setError('Auto-updating every 2 minutes - Loading fresh data... Please wait.');
-          // Keep existing data if we have it, otherwise use mock
           if (stockData.length === 0) {
             setStockData(mockStocks);
           }
@@ -365,33 +410,43 @@ export default function HomePage() {
     } catch (err) {
       console.log('API error, using mock data:', err);
       setError('Using demo data - API temporarily unavailable. To get live data, please set up your Polygon.io API key. See ENV_SETUP.md for instructions.');
-      // Fallback to mock data
       setStockData(mockStocks);
     } finally {
-      setLoading(false);
+      setLoadingStates(prev => ({ ...prev, allStocks: false }));
     }
   };
 
-  // 🚀 OPTIMIZATION: Load data and background status in parallel
+  // 🚀 OPTIMIZED: Prioritized loading sequence
   useEffect(() => {
-    console.log('🔄 useEffect triggered - loading initial data');
-    console.log('🔍 Window object available:', typeof window !== 'undefined');
+    console.log('🔄 useEffect triggered - starting prioritized loading');
     
-    const loadInitialData = async () => {
+    const loadData = async () => {
       try {
-        console.log('🚀 Starting loadInitialData');
+        // Phase 1: Load favorites first (highest priority)
+        console.log('📋 Phase 1: Loading favorites...');
+        await fetchFavoritesData();
+        
+        // Phase 2: Load background status and earnings in parallel (medium priority)
+        console.log('📋 Phase 2: Loading background status and earnings...');
         await Promise.all([
-          fetchStockData(false),
-          fetchBackgroundStatus()
+          fetchBackgroundStatus(),
+          // Earnings component will load its own data
         ]);
-        console.log('✅ loadInitialData completed');
+        
+        // Phase 3: Load all stocks data (lowest priority - lazy loaded)
+        console.log('📋 Phase 3: Loading all stocks data...');
+        // Use setTimeout to defer this to avoid blocking the UI
+        setTimeout(() => {
+          fetchAllStocksData();
+        }, 100);
+        
       } catch (error) {
-        console.error('❌ Error loading initial data:', error);
+        console.error('❌ Error in prioritized loading:', error);
       }
     };
 
-    loadInitialData();
-  }, []); // Empty dependency array for initial load only
+    loadData();
+  }, [favorites]); // Re-run when favorites change
 
   // Background status check
   useEffect(() => {
@@ -403,73 +458,18 @@ export default function HomePage() {
 
   const favoriteStocks = stockData.filter(stock => favorites.some(fav => fav.ticker === stock.ticker));
   
-  // Company name mapping for search
-  const getCompanyName = (ticker: string): string => {
-    const companyNames: Record<string, string> = {
-      'NVDA': 'NVIDIA', 'MSFT': 'Microsoft', 'AAPL': 'Apple', 'AMZN': 'Amazon', 'GOOGL': 'Alphabet', 'GOOG': 'Alphabet',
-      'META': 'Meta', 'AVGO': 'Broadcom', 'BRK.A': 'Berkshire Hathaway', 'BRK.B': 'Berkshire Hathaway', 'TSLA': 'Tesla', 'JPM': 'JPMorgan Chase',
-      'WMT': 'Walmart', 'LLY': 'Eli Lilly', 'ORCL': 'Oracle', 'V': 'Visa', 'MA': 'Mastercard', 'NFLX': 'Netflix',
-      'XOM': 'ExxonMobil', 'COST': 'Costco', 'JNJ': 'Johnson & Johnson', 'HD': 'Home Depot', 'PLTR': 'Palantir',
-      'PG': 'Procter & Gamble', 'BAC': 'Bank of America', 'ABBV': 'AbbVie', 'CVX': 'Chevron', 'KO': 'Coca-Cola',
-      'AMD': 'Advanced Micro Devices', 'GE': 'General Electric', 'CSCO': 'Cisco', 'TMUS': 'T-Mobile', 'WFC': 'Wells Fargo',
-      'CRM': 'Salesforce', 'PM': 'Philip Morris', 'IBM': 'IBM', 'UNH': 'UnitedHealth', 'MS': 'Morgan Stanley',
-      'GS': 'Goldman Sachs', 'INTU': 'Intuit', 'LIN': 'Linde', 'ABT': 'Abbott', 'AXP': 'American Express',
-      'BX': 'Blackstone', 'DIS': 'Disney', 'MCD': 'McDonald\'s', 'RTX': 'Raytheon', 'NOW': 'ServiceNow',
-      'MRK': 'Merck', 'CAT': 'Caterpillar', 'T': 'AT&T', 'PEP': 'PepsiCo', 'UBER': 'Uber', 'BKNG': 'Booking',
-      'TMO': 'Thermo Fisher', 'VZ': 'Verizon', 'SCHW': 'Charles Schwab', 'ISRG': 'Intuitive Surgical',
-      'QCOM': 'Qualcomm', 'C': 'Citigroup', 'TXN': 'Texas Instruments', 'BA': 'Boeing', 'BLK': 'BlackRock',
-      'GEV': 'GE Vernova', 'ACN': 'Accenture', 'SPGI': 'S&P Global', 'AMGN': 'Amgen', 'ADBE': 'Adobe',
-      'BSX': 'Boston Scientific', 'SYK': 'Stryker', 'ETN': 'Eaton', 'AMAT': 'Applied Materials', 'ANET': 'Arista Networks',
-      'NEE': 'NextEra Energy', 'DHR': 'Danaher', 'HON': 'Honeywell', 'TJX': 'TJX Companies', 'PGR': 'Progressive',
-      'GILD': 'Gilead Sciences', 'DE': 'Deere', 'PFE': 'Pfizer', 'COF': 'Capital One', 'KKR': 'KKR',
-      'PANW': 'Palo Alto Networks', 'UNP': 'Union Pacific', 'APH': 'Amphenol', 'LOW': 'Lowe\'s', 'LRCX': 'Lam Research',
-      'MU': 'Micron Technology', 'ADP': 'Automatic Data Processing', 'CMCSA': 'Comcast', 'COP': 'ConocoPhillips',
-      'KLAC': 'KLA Corporation', 'VRTX': 'Vertex Pharmaceuticals', 'MDT': 'Medtronic', 'SNPS': 'Synopsys',
-      'NKE': 'Nike', 'CRWD': 'CrowdStrike', 'ADI': 'Analog Devices', 'WELL': 'Welltower', 'CB': 'Chubb',
-      'ICE': 'Intercontinental Exchange', 'SBUX': 'Starbucks', 'TT': 'Trane Technologies', 'SO': 'Southern Company',
-      'CEG': 'Constellation Energy', 'PLD': 'Prologis', 'DASH': 'DoorDash', 'AMT': 'American Tower',
-      'MO': 'Altria', 'MMC': 'Marsh & McLennan', 'CME': 'CME Group', 'CDNS': 'Cadence Design Systems',
-      'LMT': 'Lockheed Martin', 'BMY': 'Bristol-Myers Squibb', 'WM': 'Waste Management', 'PH': 'Parker-Hannifin',
-      'COIN': 'Coinbase', 'DUK': 'Duke Energy', 'RCL': 'Royal Caribbean', 'MCO': 'Moody\'s', 'MDLZ': 'Mondelez',
-      'DELL': 'Dell Technologies', 'TDG': 'TransDigm', 'CTAS': 'Cintas', 'INTC': 'Intel', 'MCK': 'McKesson',
-      'ABNB': 'Airbnb', 'GD': 'General Dynamics', 'ORLY': 'O\'Reilly Automotive', 'APO': 'Apollo Global Management',
-      'SHW': 'Sherwin-Williams', 'HCA': 'HCA Healthcare', 'EMR': 'Emerson Electric', 'NOC': 'Northrop Grumman',
-      'MMM': '3M', 'FTNT': 'Fortinet', 'EQIX': 'Equinix', 'CI': 'Cigna', 'UPS': 'United Parcel Service',
-      'FI': 'Fiserv', 'HWM': 'Howmet Aerospace', 'AON': 'Aon', 'PNC': 'PNC Financial', 'CVS': 'CVS Health',
-      'RSG': 'Republic Services', 'AJG': 'Arthur J. Gallagher', 'ITW': 'Illinois Tool Works', 'MAR': 'Marriott',
-      'ECL': 'Ecolab', 'MSI': 'Motorola Solutions', 'USB': 'U.S. Bancorp', 'WMB': 'Williams Companies',
-      'BK': 'Bank of New York Mellon', 'CL': 'Colgate-Palmolive', 'NEM': 'Newmont', 'PYPL': 'PayPal',
-      'JCI': 'Johnson Controls', 'ZTS': 'Zoetis', 'VST': 'Vistra', 'EOG': 'EOG Resources', 'CSX': 'CSX',
-      'ELV': 'Elevance Health', 'ADSK': 'Autodesk', 'APD': 'Air Products', 'AZO': 'AutoZone', 'HLT': 'Hilton',
-      'WDAY': 'Workday', 'SPG': 'Simon Property Group', 'NSC': 'Norfolk Southern', 'KMI': 'Kinder Morgan',
-      'TEL': 'TE Connectivity', 'FCX': 'Freeport-McMoRan', 'CARR': 'Carrier Global', 'PWR': 'Quanta Services',
-      'REGN': 'Regeneron Pharmaceuticals', 'ROP': 'Roper Technologies', 'CMG': 'Chipotle Mexican Grill',
-      'DLR': 'Digital Realty Trust', 'MNST': 'Monster Beverage', 'TFC': 'Truist Financial', 'TRV': 'Travelers',
-      'AEP': 'American Electric Power', 'NXPI': 'NXP Semiconductors', 'AXON': 'Axon Enterprise', 'URI': 'United Rentals',
-      'COR': 'Cencora', 'FDX': 'FedEx', 'NDAQ': 'Nasdaq', 'AFL': 'Aflac', 'GLW': 'Corning', 'FAST': 'Fastenal',
-      'MPC': 'Marathon Petroleum', 'SLB': 'Schlumberger', 'SRE': 'Sempra Energy', 'PAYX': 'Paychex',
-      'PCAR': 'PACCAR', 'MET': 'MetLife', 'BDX': 'Becton Dickinson', 'OKE': 'ONEOK', 'DDOG': 'Datadog',
-      // International companies
-      'TSM': 'Taiwan Semiconductor', 'SAP': 'SAP SE', 'ASML': 'ASML Holding', 'BABA': 'Alibaba Group', 'TM': 'Toyota Motor',
-      'AZN': 'AstraZeneca', 'HSBC': 'HSBC Holdings', 'NVS': 'Novartis', 'SHEL': 'Shell',
-      'HDB': 'HDFC Bank', 'RY': 'Royal Bank of Canada', 'NVO': 'Novo Nordisk', 'ARM': 'ARM Holdings',
-      'SHOP': 'Shopify', 'MUFG': 'Mitsubishi UFJ Financial', 'PDD': 'Pinduoduo', 'UL': 'Unilever',
-      'SONY': 'Sony Group', 'TTE': 'TotalEnergies', 'BHP': 'BHP Group', 'SAN': 'Banco Santander', 'TD': 'Toronto-Dominion Bank',
-      'SPOT': 'Spotify', 'UBS': 'UBS Group', 'IBN': 'ICICI Bank', 'SNY': 'Sanofi',
-      'BUD': 'Anheuser-Busch InBev', 'BTI': 'British American Tobacco', 'BN': 'Brookfield',
-      'SMFG': 'Sumitomo Mitsui Financial', 'ENB': 'Enbridge', 'RELX': 'RELX Group', 'TRI': 'Thomson Reuters', 'RACE': 'Ferrari',
-      'BBVA': 'Banco Bilbao Vizcaya', 'SE': 'Sea Limited', 'BP': 'BP', 'NTES': 'NetEase', 'BMO': 'Bank of Montreal',
-      'RIO': 'Rio Tinto', 'GSK': 'GlaxoSmithKline', 'MFG': 'Mizuho Financial', 'INFY': 'Infosys',
-      'CP': 'Canadian Pacific', 'BCS': 'Barclays', 'NGG': 'National Grid', 'BNS': 'Bank of Nova Scotia', 'ING': 'ING Group',
-      'EQNR': 'Equinor', 'CM': 'Canadian Imperial Bank', 'CNQ': 'Canadian Natural Resources', 'LYG': 'Lloyds Banking Group',
-      'AEM': 'Agnico Eagle Mines', 'DB': 'Deutsche Bank', 'NU': 'Nu Holdings', 'CNI': 'Canadian National Railway',
-      'DEO': 'Diageo', 'NWG': 'NatWest Group', 'AMX': 'America Movil', 'MFC': 'Manulife Financial',
-      'E': 'Eni', 'WCN': 'Waste Connections', 'SU': 'Suncor Energy', 'TRP': 'TC Energy', 'PBR': 'Petrobras',
-      'HMC': 'Honda Motor', 'GRMN': 'Garmin', 'CCEP': 'Coca-Cola Europacific', 'ALC': 'Alcon', 'TAK': 'Takeda Pharmaceutical'
-    };
-    return companyNames[ticker] || ticker;
-  };
-
+  // Get unique sectors for the dropdown
+  const uniqueSectors = Array.from(new Set(stockData
+    .map(stock => stock.sector)
+    .filter(sector => sector && sector.trim() !== '')
+  )).sort();
+  
+  // Debug: Log sector data
+  console.log('🔍 Debug - Total stockData length:', stockData.length);
+  console.log('🔍 Debug - stockData with sectors:', stockData.filter(stock => stock.sector).map(stock => ({ ticker: stock.ticker, sector: stock.sector })));
+  console.log('🔍 Debug - uniqueSectors:', uniqueSectors);
+  console.log('🔍 Debug - uniqueSectors length:', uniqueSectors.length);
+  
   // Filter stocks based on various criteria
   const filteredStocks = stockData.filter(stock => {
     // Search filter
@@ -481,6 +481,9 @@ export default function HomePage() {
     // Favorites-only filter
     if (favoritesOnly && !isFavorite(stock.ticker)) return false;
     
+    // Sector filter
+    if (selectedSector !== 'all' && stock.sector !== selectedSector) return false;
+    
     // Category filter
     switch (filterCategory) {
       case 'gainers':
@@ -489,8 +492,8 @@ export default function HomePage() {
         return stock.percentChange < 0;
       case 'movers':
         return Math.abs(stock.percentChange) > 2; // Stocks with >2% movement
-      case 'custom':
-        return favorites.some(fav => fav.ticker === stock.ticker);
+      case 'bigMovers':
+        return Math.abs(stock.marketCapDiff) > 10; // Stocks with >10B$ market cap difference
       default:
         return true;
     }
@@ -517,21 +520,10 @@ export default function HomePage() {
   // Reset lazy loading when filters change
   useEffect(() => {
     resetLazyLoading();
-  }, [searchTerm, favoritesOnly, filterCategory, resetLazyLoading]);
+  }, [searchTerm, favoritesOnly, filterCategory, selectedSector, resetLazyLoading]);
 
   // Get only the stocks to display based on lazy loading
   const displayedStocks = allStocksSorted.slice(0, displayLimit);
-
-  // DEBUG: Log stockData changes
-  useEffect(() => {
-    if (stockData.length > 0) {
-      console.log('🔍 STOCKDATA STATE UPDATE:', stockData.length, 'stocks');
-      console.log('🔍 FIRST STOCK IN STATE:', stockData[0]);
-      console.log('🔍 FIRST STOCK currentPrice:', stockData[0].currentPrice, typeof stockData[0].currentPrice);
-    }
-  }, [stockData]);
-
-
 
   const renderSortIcon = (key: SortKey, currentSortKey: SortKey, ascending: boolean) => {
     if (key === currentSortKey) {
@@ -540,7 +532,18 @@ export default function HomePage() {
     return null;
   };
 
-
+  // Loading component for sections
+  const SectionLoader = ({ section }: { section: keyof LoadingStates }) => (
+    <div className="flex items-center justify-center p-4">
+      <Loader2 className="animate-spin h-4 w-4 mr-2" />
+      <span className="text-sm text-gray-600">
+        {section === 'favorites' && 'Loading favorites...'}
+        {section === 'earnings' && 'Loading earnings...'}
+        {section === 'allStocks' && 'Loading stocks...'}
+        {section === 'background' && 'Checking status...'}
+      </span>
+    </div>
+  );
 
   return (
     <main className="container">
@@ -559,7 +562,6 @@ export default function HomePage() {
                  <li>Monitor changes</li>
                  <li>Market cap fluctuations</li>
                  <li>Build your watchlist</li>
-                 {!isWeekendOrHolidayState && <li>Watch earnings date movements</li>}
                </ul>
             </div>
           </div>
@@ -595,14 +597,23 @@ export default function HomePage() {
                  </span>
                </div>
              )}
+             {loadingStates.background && (
+               <div className="background-status">
+                 <Loader2 className="animate-spin h-3 w-3" />
+                 <span className="text-xs text-gray-600">Checking status...</span>
+               </div>
+             )}
            </div>
         </div>
       </header>
 
-             {/* Today's Earnings Section */}
-       <TodaysEarnings />
-
-       {favoriteStocks.length > 0 && (
+      {/* 🚀 OPTIMIZED: Favorites section with loading state */}
+      {loadingStates.favorites ? (
+        <section className="favorites" aria-labelledby="favorites-heading">
+          <h2 id="favorites-heading" data-icon="⭐">Favorites</h2>
+          <SectionLoader section="favorites" />
+        </section>
+      ) : favoriteStocks.length > 0 && (
         <section className="favorites" aria-labelledby="favorites-heading">
           <h2 id="favorites-heading" data-icon="⭐">Favorites</h2>
           <table>
@@ -615,11 +626,11 @@ export default function HomePage() {
               </th>
               <th>Company Name</th>
               <th onClick={() => requestFavSort("marketCap" as SortKey)} className="sortable">
-                Market Cap&nbsp;(B)
+                Market Cap
                 {renderSortIcon("marketCap", favSortKey, favAscending)}
               </th>
               <th onClick={() => requestFavSort("currentPrice" as SortKey)} className="sortable">
-                Current Price ($)
+                Current Price
                 {renderSortIcon("currentPrice", favSortKey, favAscending)}
               </th>
               <th onClick={() => requestFavSort("percentChange" as SortKey)} className="sortable">
@@ -627,11 +638,11 @@ export default function HomePage() {
                 {renderSortIcon("percentChange", favSortKey, favAscending)}
               </th>
               <th onClick={() => requestFavSort("marketCapDiff" as SortKey)} className="sortable">
-                Market Cap Diff (B $)
+                Market Cap Diff
                 {renderSortIcon("marketCapDiff", favSortKey, favAscending)}
               </th>
               <th>Favorites</th>
-              </tr>
+            </tr>
             </thead>
             <tbody>
               {favoriteStocksSorted.map((stock) => (
@@ -669,12 +680,16 @@ export default function HomePage() {
               ))}
             </tbody>
           </table>
-        </section>
+                </section>
       )}
-
+      
+      {/* 🚀 OPTIMIZED: Earnings section */}
+      <TodaysEarningsFinnhub />
+      
+      {/* 🚀 OPTIMIZED: All stocks section with loading state */}
       <section className="all-stocks" aria-labelledby="all-stocks-heading">
         <div className="section-header">
-          <h2 id="all-stocks-heading" data-icon="📊">All Stocks</h2>
+          <h2 id="all-stocks-heading" data-icon="📈">All Stocks</h2>
           <div className="controls-container">
             <div className="search-container">
               <input
@@ -687,125 +702,145 @@ export default function HomePage() {
               />
             </div>
             
-            <div className="filter-controls">
-              <label className="favorites-toggle">
-                <input
-                  type="checkbox"
-                  checked={favoritesOnly}
-                  onChange={(e) => setFavoritesOnly(e.target.checked)}
-                />
-                <span>Favorites Only</span>
-              </label>
-              
-              <select
-                value={filterCategory}
-                onChange={(e) => setFilterCategory(e.target.value as any)}
-                className="category-filter"
-                aria-label="Filter by category"
-              >
-                <option value="all">All Stocks</option>
-                <option value="gainers">Gainers</option>
-                <option value="losers">Losers</option>
-                <option value="movers">Movers (&gt;2%)</option>
-                <option value="custom">Custom</option>
-              </select>
-            </div>
+                         <div className="filter-controls">
+               <label className="favorites-toggle">
+                 <input
+                   type="checkbox"
+                   checked={favoritesOnly}
+                   onChange={(e) => setFavoritesOnly(e.target.checked)}
+                 />
+                 <span>Favorites Only</span>
+               </label>
+               
+               <select
+                 value={filterCategory}
+                 onChange={(e) => setFilterCategory(e.target.value as any)}
+                 className="category-filter"
+                 aria-label="Filter by category"
+               >
+                 <option value="all">All Stocks</option>
+                 <option value="gainers">Gainers</option>
+                 <option value="losers">Losers</option>
+                 <option value="movers">Movers (&gt;2%)</option>
+                 <option value="bigMovers">Movers &gt; 10 B $</option>
+               </select>
+               
+               <select
+                 value={selectedSector}
+                 onChange={(e) => setSelectedSector(e.target.value)}
+                 className="sector-filter"
+                 aria-label="Filter by sector"
+               >
+                 <option value="all">
+                   {uniqueSectors.length > 0 
+                     ? `All Sectors (${uniqueSectors.length} available)` 
+                     : 'All Sectors (loading...)'}
+                 </option>
+                 {uniqueSectors.map(sector => (
+                   <option key={sector} value={sector}>{sector}</option>
+                 ))}
+               </select>
+             </div>
             
             <div className="stock-count">
-              Showing: {displayedStocks.length} of {filteredStocks.length} stocks
-              {hasMore && (
-                <span className="text-xs text-gray-500 ml-2">
-                  (Scroll for more)
-                </span>
+              {loadingStates.allStocks ? (
+                <span className="text-sm text-gray-500">Loading stocks...</span>
+              ) : (
+                <div className="stock-count-content">
+                  <span className="stock-count-main">
+                    Showing: {displayedStocks.length} of {filteredStocks.length} stocks
+                  </span>
+                  {hasMore && (
+                    <span className="stock-count-hint">
+                      (Scroll for more)
+                    </span>
+                  )}
+                </div>
               )}
             </div>
           </div>
         </div>
 
-        <table>
-          <thead>
-            <tr>
-              <th>Logo</th>
-              <th onClick={() => requestAllSort("ticker" as SortKey)} className="sortable">
-                Ticker
-                {renderSortIcon("ticker", allSortKey, allAscending)}
-              </th>
-              <th>Company Name</th>
-              <th onClick={() => requestAllSort("marketCap" as SortKey)} className="sortable">
-                Market Cap&nbsp;(B)
-                {renderSortIcon("marketCap", allSortKey, allAscending)}
-              </th>
-              <th onClick={() => requestAllSort("currentPrice" as SortKey)} className="sortable">
-                Current Price ($)
-                {renderSortIcon("currentPrice", allSortKey, allAscending)}
-              </th>
-              <th onClick={() => requestAllSort("percentChange" as SortKey)} className="sortable">
-                % Change
-                {renderSortIcon("percentChange", allSortKey, allAscending)}
-              </th>
-              <th onClick={() => requestAllSort("marketCapDiff" as SortKey)} className="sortable">
-                Market Cap Diff (B $)
-                {renderSortIcon("marketCapDiff", allSortKey, allAscending)}
-              </th>
-              <th>Favorites</th>
-            </tr>
-          </thead>
-          <tbody>
-            {displayedStocks.map((stock) => {
-              const isFavorited = isFavorite(stock.ticker);
-              return (
-                <tr key={stock.ticker}>
-                  <td>
-                    <div className="logo-container">
-                      <CompanyLogo ticker={stock.ticker} size={32} />
-                    </div>
-                  </td>
-                  <td><strong>{stock.ticker}</strong></td>
-                  <td className="company-name">{getCompanyName(stock.ticker)}</td>
-                  <td>{formatBillions(stock.marketCap)}</td>
-                  <td>
-                    {/* 💡 Type-safe rendering with Number conversion */}
-                    {isFinite(Number(stock.currentPrice)) 
-                      ? Number(stock.currentPrice).toFixed(2) 
-                      : '0.00'}
-                  </td>
-                  <td className={stock.percentChange >= 0 ? 'positive' : 'negative'}>
-                    {stock.percentChange >= 0 ? '+' : ''}{stock.percentChange?.toFixed(2) || '0.00'}%
-                  </td>
-                  <td className={stock.marketCapDiff >= 0 ? 'positive' : 'negative'}>
-                    {stock.marketCapDiff >= 0 ? '+' : ''}{stock.marketCapDiff?.toFixed(2) || '0.00'}
-                  </td>
-                  <td>
-                    <button 
-                      className={`favorite-btn ${isFavorited ? 'favorited' : ''}`}
-                      onClick={() => toggleFavorite(stock.ticker)}
-                      title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
-                    >
-                      {isFavorited ? '★' : '☆'}
-                    </button>
-                  </td>
+        {loadingStates.allStocks ? (
+          <SectionLoader section="allStocks" />
+        ) : (
+          <>
+            <table>
+              <thead>
+                <tr>
+                  <th>Logo</th>
+                  <th onClick={() => requestAllSort("ticker" as SortKey)} className="sortable">
+                    Ticker
+                    {renderSortIcon("ticker", allSortKey, allAscending)}
+                  </th>
+                  <th>Company Name</th>
+                  <th onClick={() => requestAllSort("marketCap" as SortKey)} className="sortable">
+                    Market Cap
+                    {renderSortIcon("marketCap", allSortKey, allAscending)}
+                  </th>
+                  <th onClick={() => requestAllSort("currentPrice" as SortKey)} className="sortable">
+                    Current Price
+                    {renderSortIcon("currentPrice", allSortKey, allAscending)}
+                  </th>
+                  <th onClick={() => requestAllSort("percentChange" as SortKey)} className="sortable">
+                    % Change
+                    {renderSortIcon("percentChange", allSortKey, allAscending)}
+                  </th>
+                  <th onClick={() => requestAllSort("marketCapDiff" as SortKey)} className="sortable">
+                    Market Cap Diff
+                    {renderSortIcon("marketCapDiff", allSortKey, allAscending)}
+                  </th>
+                  <th>Favorites</th>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
+              </thead>
+              <tbody>
+                {displayedStocks.map((stock) => {
+                  const isFavorited = isFavorite(stock.ticker);
+                  return (
+                    <tr key={stock.ticker}>
+                      <td>
+                        <div className="logo-container">
+                          <CompanyLogo ticker={stock.ticker} size={32} />
+                        </div>
+                      </td>
+                      <td><strong>{stock.ticker}</strong></td>
+                      <td className="company-name">{getCompanyName(stock.ticker)}</td>
+                      <td>{formatBillions(stock.marketCap)}</td>
+                      <td>
+                        {/* 💡 Type-safe rendering with Number conversion */}
+                        {isFinite(Number(stock.currentPrice)) 
+                          ? Number(stock.currentPrice).toFixed(2) 
+                          : '0.00'}
+                      </td>
+                      <td className={stock.percentChange >= 0 ? 'positive' : 'negative'}>
+                        {stock.percentChange >= 0 ? '+' : ''}{stock.percentChange?.toFixed(2) || '0.00'}%
+                      </td>
+                      <td className={stock.marketCapDiff >= 0 ? 'positive' : 'negative'}>
+                        {stock.marketCapDiff >= 0 ? '+' : ''}{stock.marketCapDiff?.toFixed(2) || '0.00'}
+                      </td>
+                      <td>
+                        <button 
+                          className={`favorite-btn ${isFavorited ? 'favorited' : ''}`}
+                          onClick={() => toggleFavorite(stock.ticker)}
+                          title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+                        >
+                          {isFavorited ? '★' : '☆'}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
 
-        {/* Loading indicator for lazy loading */}
-        {lazyLoading && (
-          <div className="loading-indicator">
-            <Loader2 className="animate-spin" size={20} />
-            <span>Načítavam ďalšie akcie...</span>
-          </div>
+            {/* End of list indicator */}
+            {!hasMore && displayedStocks.length > 0 && (
+              <div className="end-of-list">
+                <span>Všetky akcie sú zobrazené</span>
+              </div>
+            )}
+          </>
         )}
-
-        {/* End of list indicator */}
-        {!hasMore && displayedStocks.length > 0 && (
-          <div className="end-of-list">
-            <span>Všetky akcie sú zobrazené</span>
-          </div>
-        )}
-
-
       </section>
 
       <footer className="footer" aria-label="Site footer">

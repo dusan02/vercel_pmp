@@ -38,11 +38,13 @@ export default function CompanyLogo({
       style={{ 
         width: size, 
         height: size,
-        fontSize: size * 0.3
+        fontSize: Math.max(8, size * 0.3),
+        minWidth: size,
+        minHeight: size
       }}
       title={`${ticker} - Logo not available`}
     >
-      {ticker.slice(0, 2)}
+      {ticker.slice(0, 2).toUpperCase()}
     </div>
   );
 

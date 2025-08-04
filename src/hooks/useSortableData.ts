@@ -22,7 +22,7 @@ export function useSortableData<T extends Record<string, any>>(items: T[], initK
       setAscending(!ascending);
     } else {
       setSortKey(key);
-      setAscending(true);
+      setAscending(false); // Start with DESC (false = descending)
     }
   }
 
