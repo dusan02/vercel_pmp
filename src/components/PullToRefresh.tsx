@@ -22,6 +22,12 @@ export function PullToRefresh({
   const containerRef = useRef<HTMLDivElement>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
+  const [isClient, setIsClient] = useState(false);
+
+  // Ensure we're on the client side to prevent hydration mismatches
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const handleRefresh = async () => {
     if (disabled || isRefreshing) return;
@@ -36,14 +42,16 @@ export function PullToRefresh({
     }
   };
 
-  // Always call the hook, but it will handle client-side logic internally
+  // Only call the hook on the client side
   const { isPulling } = usePullToRefresh(containerRef, handleRefresh, {
     threshold,
     resistance
   });
 
-  // Update pull distance for visual feedback
+  // Update pull distance for visual feedback - only on client
   useEffect(() => {
+    if (!isClient) return;
+    
     const element = containerRef.current;
     if (!element) return;
 
@@ -68,10 +76,12 @@ export function PullToRefresh({
       element.removeEventListener('touchmove', handleTouchMove);
       element.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [disabled, resistance]);
+  }, [isClient, disabled, resistance]);
 
-  // Add spinner styles
+  // Add spinner styles - only on client
   useEffect(() => {
+    if (!isClient) return;
+    
     const spinnerStyles = `
       @keyframes spin {
         0% { transform: rotate(0deg); }
@@ -94,10 +104,11 @@ export function PullToRefresh({
         style.remove();
       }
     };
-  }, []);
+  }, [isClient]);
 
-  const showRefreshIndicator = pullDistance > 20;
-  const shouldTriggerRefresh = pullDistance >= threshold;
+  // Only calculate these values on the client side
+  const showRefreshIndicator = isClient && pullDistance > 20;
+  const shouldTriggerRefresh = isClient && pullDistance >= threshold;
 
   return (
     <div
@@ -109,8 +120,8 @@ export function PullToRefresh({
         touchAction: 'pan-y'
       }}
     >
-      {/* Pull-to-refresh indicator */}
-      {showRefreshIndicator && (
+      {/* Pull-to-refresh indicator - only render on client */}
+      {isClient && showRefreshIndicator && (
         <div
           className="pull-to-refresh-indicator"
           style={{
@@ -159,15 +170,15 @@ export function PullToRefresh({
       <div
         className="pull-to-refresh-content"
         style={{
-          transform: showRefreshIndicator ? `translateY(${Math.min(pullDistance, threshold)}px)` : 'none',
-          transition: showRefreshIndicator ? 'none' : 'transform 0.3s ease'
+          transform: isClient && showRefreshIndicator ? `translateY(${Math.min(pullDistance, threshold)}px)` : 'none',
+          transition: isClient && showRefreshIndicator ? 'none' : 'transform 0.3s ease'
         }}
       >
         {children}
       </div>
 
-      {/* Loading overlay during refresh */}
-      {isRefreshing && (
+      {/* Loading overlay during refresh - only render on client */}
+      {isClient && isRefreshing && (
         <div
           className="refresh-overlay"
           style={{

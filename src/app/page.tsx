@@ -340,23 +340,30 @@ export default function HomePage() {
       
       // Load only favorite tickers first
       const favoriteTickers = favorites.map(fav => fav.ticker);
-      if (favoriteTickers.length > 0) {
-        const response = await fetch(`/api/stocks?tickers=${favoriteTickers.join(',')}&project=${project}&limit=50&t=${Date.now()}`, {
-          cache: 'no-store'
-        });
-        
-        if (response.ok) {
-          const result = await response.json();
-          if (result.data && result.data.length > 0) {
-            console.log('✅ Favorites data loaded:', result.data.length, 'stocks');
-            setStockData(prev => {
-              // Merge with existing data, avoiding duplicates
-              const existingTickers = new Set(prev.map(s => s.ticker));
-              const newStocks = result.data.filter((s: StockData) => !existingTickers.has(s.ticker));
-              return [...prev, ...newStocks];
-            });
-          }
+      
+      // Skip API call if no favorites
+      if (favoriteTickers.length === 0) {
+        console.log('ℹ️ No favorites to load, skipping API call');
+        return;
+      }
+      
+      const response = await fetch(`/api/stocks?tickers=${favoriteTickers.join(',')}&project=${project}&limit=50&t=${Date.now()}`, {
+        cache: 'no-store'
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.data && result.data.length > 0) {
+          console.log('✅ Favorites data loaded:', result.data.length, 'stocks');
+          setStockData(prev => {
+            // Merge with existing data, avoiding duplicates
+            const existingTickers = new Set(prev.map(s => s.ticker));
+            const newStocks = result.data.filter((s: StockData) => !existingTickers.has(s.ticker));
+            return [...prev, ...newStocks];
+          });
         }
+      } else {
+        console.error('❌ Failed to load favorites data:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('Error loading favorites data:', error);
