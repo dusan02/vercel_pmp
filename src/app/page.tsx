@@ -1,15 +1,23 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ChevronUp, ChevronDown } from 'lucide-react';
+import { ChevronUp, ChevronDown, WifiOff } from 'lucide-react';
 import { useSortableData, SortKey } from '@/hooks/useSortableData';
 import { formatBillions } from '@/lib/format';
 
 import CompanyLogo from '@/components/CompanyLogo';
 import TodaysEarningsFinnhub from '@/components/TodaysEarningsFinnhub';
+import { PullToRefresh } from '@/components/PullToRefresh';
+import { SwipeableTableRow } from '@/components/SwipeableTableRow';
+import { BottomNavigation } from '@/components/BottomNavigation';
+import { FloatingActionButton } from '@/components/FloatingActionButton';
+import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
+import { PerformanceOptimizer } from '@/components/PerformanceOptimizer';
+import { MobileTester } from '@/components/MobileTester';
 
 import { useFavorites } from '@/hooks/useFavorites';
-import { Activity, Loader2 } from 'lucide-react';
+import { usePWA } from '@/hooks/usePWA';
+import { Loader2 } from 'lucide-react';
 
 import { useLazyLoading } from '@/hooks/useLazyLoading';
 import { getCompanyName } from '@/lib/companyNames';
@@ -56,8 +64,24 @@ export default function HomePage() {
     nextUpdate: string;
   } | null>(null);
   
+  // Mobile navigation state
+  const [activeSection, setActiveSection] = useState<'home' | 'favorites' | 'earnings' | 'allStocks'>('home');
+  
   // Use cookie-based favorites (no authentication needed)
   const { favorites, toggleFavorite, isFavorite } = useFavorites();
+
+  // PWA functionality
+  const { isOnline, isOfflineReady, isLoading: pwaLoading } = usePWA();
+  
+  // Client-side rendering state
+  const [isClient, setIsClient] = useState(false);
+  const [hasHydrated, setHasHydrated] = useState(false);
+
+  // Set isClient to true once on client
+  useEffect(() => {
+    setIsClient(true);
+    setHasHydrated(true);
+  }, []);
 
   // Market session detection with simplified logic
   // Helper function to check if it's weekend or holiday
@@ -96,12 +120,64 @@ export default function HomePage() {
     };
     
     // Check if it's weekend
-    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // Sunday or Saturday
+    if (dayOfWeek === 0 || dayOfWeek === 6) return true;
     
-    // Check if it's a market holiday
-    const isHoliday = isMarketHoliday(easternTime);
+    // Check if it's a holiday
+    return isMarketHoliday(easternTime);
+  };
+
+  // FAB action functions
+  const handleQuickSearch = () => {
+    // Focus on search input
+    const searchInput = document.querySelector('.search-input') as HTMLInputElement;
+    if (searchInput) {
+      searchInput.focus();
+      searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
+
+  const handleQuickFavorite = () => {
+    // Scroll to favorites section
+    const favoritesSection = document.querySelector('.favorites');
+    if (favoritesSection) {
+      favoritesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const handleAddStock = () => {
+    // For now, just show a message - could be expanded to add custom stocks
+    alert('Add Stock functionality coming soon!');
+  };
+
+  // Handle section navigation
+  const handleSectionChange = (section: 'home' | 'favorites' | 'earnings' | 'allStocks') => {
+    setActiveSection(section);
     
-    return isWeekend || isHoliday;
+    // Scroll to appropriate section
+    switch (section) {
+      case 'home':
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        break;
+      case 'favorites':
+        const favoritesSection = document.querySelector('.favorites');
+        if (favoritesSection) {
+          favoritesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        break;
+      case 'earnings':
+        const earningsSection = document.querySelector('.todays-earnings');
+        if (earningsSection) {
+          earningsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        break;
+      case 'allStocks':
+        // Scroll to All Stocks section
+        const allStocksSection = document.querySelector('.all-stocks');
+        if (allStocksSection) {
+          allStocksSection.scrollIntoView({ behavior: 'smooth' });
+        }
+        break;
+    }
   };
 
   const getCurrentMarketStatus = () => {
@@ -416,35 +492,26 @@ export default function HomePage() {
     }
   };
 
+  // Create a loadData function that can be used by PullToRefresh
+  const loadData = async () => {
+    try {
+      setError(null);
+      await fetchFavoritesData();
+      await Promise.all([
+        fetchBackgroundStatus(),
+      ]);
+      setTimeout(() => {
+        fetchAllStocksData();
+      }, 100);
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+      setError('Failed to refresh data. Please try again.');
+    }
+  };
+
   // 🚀 OPTIMIZED: Prioritized loading sequence
   useEffect(() => {
     console.log('🔄 useEffect triggered - starting prioritized loading');
-    
-    const loadData = async () => {
-      try {
-        // Phase 1: Load favorites first (highest priority)
-        console.log('📋 Phase 1: Loading favorites...');
-        await fetchFavoritesData();
-        
-        // Phase 2: Load background status and earnings in parallel (medium priority)
-        console.log('📋 Phase 2: Loading background status and earnings...');
-        await Promise.all([
-          fetchBackgroundStatus(),
-          // Earnings component will load its own data
-        ]);
-        
-        // Phase 3: Load all stocks data (lowest priority - lazy loaded)
-        console.log('📋 Phase 3: Loading all stocks data...');
-        // Use setTimeout to defer this to avoid blocking the UI
-        setTimeout(() => {
-          fetchAllStocksData();
-        }, 100);
-        
-      } catch (error) {
-        console.error('❌ Error in prioritized loading:', error);
-      }
-    };
-
     loadData();
   }, [favorites]); // Re-run when favorites change
 
@@ -517,344 +584,417 @@ export default function HomePage() {
     threshold: 200
   });
 
+  // Display only the limited number of stocks
+  const displayedStocks = allStocksSorted.slice(0, displayLimit);
+
   // Reset lazy loading when filters change
   useEffect(() => {
     resetLazyLoading();
   }, [searchTerm, favoritesOnly, filterCategory, selectedSector, resetLazyLoading]);
 
-  // Get only the stocks to display based on lazy loading
-  const displayedStocks = allStocksSorted.slice(0, displayLimit);
-
   const renderSortIcon = (key: SortKey, currentSortKey: SortKey, ascending: boolean) => {
-    if (key === currentSortKey) {
-      return ascending ? <ChevronUp size={14} className="inline ml-1" /> : <ChevronDown size={14} className="inline ml-1" />;
-    }
-    return null;
+    if (key !== currentSortKey) return null;
+    return ascending ? <ChevronUp size={16} /> : <ChevronDown size={16} />;
   };
 
-  // Loading component for sections
   const SectionLoader = ({ section }: { section: keyof LoadingStates }) => (
-    <div className="flex items-center justify-center p-4">
-      <Loader2 className="animate-spin h-4 w-4 mr-2" />
-      <span className="text-sm text-gray-600">
-        {section === 'favorites' && 'Loading favorites...'}
-        {section === 'earnings' && 'Loading earnings...'}
-        {section === 'allStocks' && 'Loading stocks...'}
-        {section === 'background' && 'Checking status...'}
-      </span>
+    <div className="loading-indicator">
+      <Loader2 className="animate-spin" size={16} />
+      <span>Loading {section}...</span>
     </div>
   );
 
   return (
-    <main className="container">
-      <header className="header" aria-label="Main site header">
-        {/* Top Row: Brand + Market Indicators */}
-        <div className="header-top">
-          <div className="brand-section">
-            <h1 className="brand">
-              Pre<span className="brand--bold">MarketPrice</span><span className="brand--accent">.com</span>
-            </h1>
-
-            <div className="description-section">
-              <h3 className="visually-hidden">Stock Tracking Platform Description</h3>
-                             <p>Track pre-market movements of top 300+ companies globally.</p>
-                             <ul className="features-list">
-                 <li>Monitor changes</li>
-                 <li>Market cap fluctuations</li>
-                 <li>Build your watchlist</li>
-               </ul>
-            </div>
-          </div>
-                     <div className="actions-section">
-             {/* Trading Hours Info Box */}
-             <div className="trading-hours-box">
-               <h3 className="trading-hours-title">Market Status</h3>
-               <div className="trading-hours-content">
-                                   <div className="hours-main">
-                    <strong>
-                      {currentSession}
-                    </strong>
-                  </div>
-                  <div className="hours-subtitle">
-                    <span>
-                      {currentSession === 'Market open' ? 'Regular trading hours (9:30 AM - 4:00 PM EST)' :
-                       currentSession === 'Pre-market hours' ? 'Pre-market hours (4:00 AM - 9:30 AM EST)' :
-                       currentSession === 'After-hours' ? (isWeekendOrHoliday() ? '' : 'After-hours trading (4:00 PM - 8:00 PM EST)') :
-                       currentSession === 'Weekend' ? 'Next trading day: Monday' :
-                       currentSession === 'Market holiday' ? 'Market closed for holiday' :
-                       (isWeekendOrHoliday() ? '' : 'After-hours trading (8:00 PM - 4:00 AM EST)')}
-                    </span>
-                  </div>
-               </div>
-             </div>
-
-             {/* Background Status */}
-             {backgroundStatus && (
-               <div className="background-status">
-                 <Activity size={14} className={backgroundStatus.isRunning ? 'text-green-600' : 'text-red-600'} />
-                 <span className="text-xs text-gray-600">
-                   {backgroundStatus.isRunning ? 'Auto-updating every 2 minutes' : 'Auto refresh'}
-                 </span>
-               </div>
-             )}
-             {loadingStates.background && (
-               <div className="background-status">
-                 <Loader2 className="animate-spin h-3 w-3" />
-                 <span className="text-xs text-gray-600">Checking status...</span>
-               </div>
-             )}
-           </div>
+    <>
+      {/* PWA Status Bar */}
+      <div className="pwa-status-bar"></div>
+      
+      {/* Offline Indicator - only render on client */}
+      {hasHydrated && !isOnline && (
+        <div className="offline-indicator">
+          <WifiOff size={16} />
+          <span>You're offline - using cached data</span>
         </div>
-      </header>
-
-      {/* 🚀 OPTIMIZED: Favorites section with loading state */}
-      {loadingStates.favorites ? (
-        <section className="favorites" aria-labelledby="favorites-heading">
-          <h2 id="favorites-heading" data-icon="⭐">Favorites</h2>
-          <SectionLoader section="favorites" />
-        </section>
-      ) : favoriteStocks.length > 0 && (
-        <section className="favorites" aria-labelledby="favorites-heading">
-          <h2 id="favorites-heading" data-icon="⭐">Favorites</h2>
-          <table>
-            <thead>
-            <tr>
-              <th>Logo</th>
-              <th onClick={() => requestFavSort("ticker" as SortKey)} className="sortable">
-                Ticker
-                {renderSortIcon("ticker", favSortKey, favAscending)}
-              </th>
-              <th>Company Name</th>
-              <th onClick={() => requestFavSort("marketCap" as SortKey)} className="sortable">
-                Market Cap
-                {renderSortIcon("marketCap", favSortKey, favAscending)}
-              </th>
-              <th onClick={() => requestFavSort("currentPrice" as SortKey)} className="sortable">
-                Current Price
-                {renderSortIcon("currentPrice", favSortKey, favAscending)}
-              </th>
-              <th onClick={() => requestFavSort("percentChange" as SortKey)} className="sortable">
-                % Change
-                {renderSortIcon("percentChange", favSortKey, favAscending)}
-              </th>
-              <th onClick={() => requestFavSort("marketCapDiff" as SortKey)} className="sortable">
-                Market Cap Diff
-                {renderSortIcon("marketCapDiff", favSortKey, favAscending)}
-              </th>
-              <th>Favorites</th>
-            </tr>
-            </thead>
-            <tbody>
-              {favoriteStocksSorted.map((stock) => (
-                <tr key={stock.ticker}>
-                  <td>
-                    <div className="logo-container">
-                      <CompanyLogo ticker={stock.ticker} size={32} />
-                    </div>
-                  </td>
-                  <td><strong>{stock.ticker}</strong></td>
-                  <td className="company-name">{getCompanyName(stock.ticker)}</td>
-                  <td>{formatBillions(stock.marketCap)}</td>
-                  <td>
-                    {/* 💡 Type-safe rendering with Number conversion */}
-                    {isFinite(Number(stock.currentPrice)) 
-                      ? Number(stock.currentPrice).toFixed(2) 
-                      : '0.00'}
-                  </td>
-                  <td className={stock.percentChange >= 0 ? 'positive' : 'negative'}>
-                    {stock.percentChange >= 0 ? '+' : ''}{stock.percentChange?.toFixed(2) || '0.00'}%
-                  </td>
-                  <td className={stock.marketCapDiff >= 0 ? 'positive' : 'negative'}>
-                    {stock.marketCapDiff >= 0 ? '+' : ''}{stock.marketCapDiff?.toFixed(2) || '0.00'}
-                  </td>
-                  <td>
-                    <button 
-                      className={`favorite-btn ${isFavorite(stock.ticker) ? 'favorited' : ''}`}
-                      onClick={() => toggleFavorite(stock.ticker)}
-                      title={isFavorite(stock.ticker) ? "Remove from favorites" : "Add to favorites"}
-                    >
-                      {isFavorite(stock.ticker) ? '★' : '☆'}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-                </section>
       )}
       
-      {/* 🚀 OPTIMIZED: Earnings section */}
-      <TodaysEarningsFinnhub />
-      
-      {/* 🚀 OPTIMIZED: All stocks section with loading state */}
-      <section className="all-stocks" aria-labelledby="all-stocks-heading">
-        <div className="section-header">
-          <h2 id="all-stocks-heading" data-icon="📈">All Stocks</h2>
-          <div className="controls-container">
-            <div className="search-container">
-              <input
-                type="text"
-                placeholder="Find company"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="search-input"
-                aria-label="Search stocks by company name or ticker"
-              />
-            </div>
-            
-                         <div className="filter-controls">
-               <label className="favorites-toggle">
-                 <input
-                   type="checkbox"
-                   checked={favoritesOnly}
-                   onChange={(e) => setFavoritesOnly(e.target.checked)}
-                 />
-                 <span>Favorites Only</span>
-               </label>
-               
-               <select
-                 value={filterCategory}
-                 onChange={(e) => setFilterCategory(e.target.value as any)}
-                 className="category-filter"
-                 aria-label="Filter by category"
-               >
-                 <option value="all">All Stocks</option>
-                 <option value="gainers">Gainers</option>
-                 <option value="losers">Losers</option>
-                 <option value="movers">Movers (&gt;2%)</option>
-                 <option value="bigMovers">Movers &gt; 10 B $</option>
-               </select>
-               
-               <select
-                 value={selectedSector}
-                 onChange={(e) => setSelectedSector(e.target.value)}
-                 className="sector-filter"
-                 aria-label="Filter by sector"
-               >
-                 <option value="all">
-                   {uniqueSectors.length > 0 
-                     ? `All Sectors (${uniqueSectors.length} available)` 
-                     : 'All Sectors (loading...)'}
-                 </option>
-                 {uniqueSectors.map(sector => (
-                   <option key={sector} value={sector}>{sector}</option>
-                 ))}
-               </select>
-             </div>
-            
-            <div className="stock-count">
-              {loadingStates.allStocks ? (
-                <span className="text-sm text-gray-500">Loading stocks...</span>
-              ) : (
-                <div className="stock-count-content">
-                  <span className="stock-count-main">
-                    Showing: {displayedStocks.length} of {filteredStocks.length} stocks
-                  </span>
-                  {hasMore && (
-                    <span className="stock-count-hint">
-                      (Scroll for more)
-                    </span>
-                  )}
+      <PerformanceOptimizer
+        enableMonitoring={process.env.NODE_ENV === 'development'}
+        enableLazyLoading={true}
+        enableImageOptimization={true}
+      >
+        <MobileTester
+          enableTesting={process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_ENABLE_MOBILE_TESTING === 'true'}
+          showDeviceFrame={true}
+        >
+          <PullToRefresh onRefresh={loadData}>
+        <main className="container">
+          {/* Header Section */}
+          <header className="header">
+            <div className="header-top">
+              <div className="brand-section">
+                <h1 className="brand">
+                  <span className="brand--bold">PreMarket</span>
+                  <span className="brand--accent">Price</span>
+                  <span className="brand--bold">.com</span>
+                </h1>
+                
+                <div className="trading-hours-info">
+                  <p>
+                    📈 Track pre-market movements and earnings calendar of 300+ global companies
+                  </p>
                 </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {loadingStates.allStocks ? (
-          <SectionLoader section="allStocks" />
-        ) : (
-          <>
-            <table>
-              <thead>
-                <tr>
-                  <th>Logo</th>
-                  <th onClick={() => requestAllSort("ticker" as SortKey)} className="sortable">
-                    Ticker
-                    {renderSortIcon("ticker", allSortKey, allAscending)}
-                  </th>
-                  <th>Company Name</th>
-                  <th onClick={() => requestAllSort("marketCap" as SortKey)} className="sortable">
-                    Market Cap
-                    {renderSortIcon("marketCap", allSortKey, allAscending)}
-                  </th>
-                  <th onClick={() => requestAllSort("currentPrice" as SortKey)} className="sortable">
-                    Current Price
-                    {renderSortIcon("currentPrice", allSortKey, allAscending)}
-                  </th>
-                  <th onClick={() => requestAllSort("percentChange" as SortKey)} className="sortable">
-                    % Change
-                    {renderSortIcon("percentChange", allSortKey, allAscending)}
-                  </th>
-                  <th onClick={() => requestAllSort("marketCapDiff" as SortKey)} className="sortable">
-                    Market Cap Diff
-                    {renderSortIcon("marketCapDiff", allSortKey, allAscending)}
-                  </th>
-                  <th>Favorites</th>
-                </tr>
-              </thead>
-              <tbody>
-                {displayedStocks.map((stock) => {
-                  const isFavorited = isFavorite(stock.ticker);
-                  return (
-                    <tr key={stock.ticker}>
-                      <td>
-                        <div className="logo-container">
-                          <CompanyLogo ticker={stock.ticker} size={32} />
-                        </div>
-                      </td>
-                      <td><strong>{stock.ticker}</strong></td>
-                      <td className="company-name">{getCompanyName(stock.ticker)}</td>
-                      <td>{formatBillions(stock.marketCap)}</td>
-                      <td>
-                        {/* 💡 Type-safe rendering with Number conversion */}
-                        {isFinite(Number(stock.currentPrice)) 
-                          ? Number(stock.currentPrice).toFixed(2) 
-                          : '0.00'}
-                      </td>
-                      <td className={stock.percentChange >= 0 ? 'positive' : 'negative'}>
-                        {stock.percentChange >= 0 ? '+' : ''}{stock.percentChange?.toFixed(2) || '0.00'}%
-                      </td>
-                      <td className={stock.marketCapDiff >= 0 ? 'positive' : 'negative'}>
-                        {stock.marketCapDiff >= 0 ? '+' : ''}{stock.marketCapDiff?.toFixed(2) || '0.00'}
-                      </td>
-                      <td>
-                        <button 
-                          className={`favorite-btn ${isFavorited ? 'favorited' : ''}`}
-                          onClick={() => toggleFavorite(stock.ticker)}
-                          title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
-                        >
-                          {isFavorited ? '★' : '☆'}
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-
-            {/* End of list indicator */}
-            {!hasMore && displayedStocks.length > 0 && (
-              <div className="end-of-list">
-                <span>Všetky akcie sú zobrazené</span>
               </div>
-            )}
-          </>
-        )}
-      </section>
 
-      <footer className="footer" aria-label="Site footer">
-        <p>Data provided by Polygon.io • Powered by Next.js</p>
-        <p className="disclaimer">
-          Data is for informational purposes only. We are not responsible for its accuracy.
-        </p>
-        <p>
-          Need help? Contact us: 
-          <a href="mailto:support@premarketprice.com" className="support-email">
-            support@premarketprice.com
-          </a>
-        </p>
-      </footer>
-     </main>
-   );
- } 
+              <div className="market-indicators-section">
+                <div className="market-indicators">
+                  <div className="market-indicator">
+                    <div className="indicator-header">
+                      <h3 className="indicator-name">S&P 500</h3>
+                      <span className="indicator-symbol">SPY</span>
+                    </div>
+                    <div className="indicator-values">
+                      <div className="indicator-price">$4,123.45</div>
+                      <div className="indicator-change positive">
+                        <span>+0.85%</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="market-indicator">
+                    <div className="indicator-header">
+                      <h3 className="indicator-name">NASDAQ</h3>
+                      <span className="indicator-symbol">QQQ</span>
+                    </div>
+                    <div className="indicator-values">
+                      <div className="indicator-price">$3,456.78</div>
+                      <div className="indicator-change positive">
+                        <span>+1.23%</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="market-indicator">
+                    <div className="indicator-header">
+                      <h3 className="indicator-name">DOW</h3>
+                      <span className="indicator-symbol">DIA</span>
+                    </div>
+                    <div className="indicator-values">
+                      <div className="indicator-price">$32,456.78</div>
+                      <div className="indicator-change negative">
+                        <span>-0.45%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="header-bottom">
+              <div className="description-section">
+                <p>
+                  Real-time pre-market stock data, earnings calendar, and market analysis. 
+                  Track your favorite stocks and stay ahead of market movements.
+                </p>
+              </div>
+              
+
+            </div>
+          </header>
+
+          {/* Error Display */}
+          {error && (
+            <div className="error" role="alert">
+              <strong>Error:</strong> {error}
+            </div>
+          )}
+
+          {/* Favorites Section */}
+          {favoriteStocks.length > 0 && (
+            <section className="favorites">
+              <div className="section-header">
+                <h2 data-icon="⭐">Favorites ({favoriteStocks.length})</h2>
+              </div>
+              
+              {loadingStates.favorites ? (
+                <SectionLoader section="favorites" />
+              ) : (
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Logo</th>
+                      <th onClick={() => requestFavSort("ticker" as SortKey)} className="sortable">
+                        Ticker
+                        {renderSortIcon("ticker", favSortKey, favAscending)}
+                      </th>
+                      <th>Company Name</th>
+                      <th onClick={() => requestFavSort("marketCap" as SortKey)} className="sortable">
+                        Market Cap
+                        {renderSortIcon("marketCap", favSortKey, favAscending)}
+                      </th>
+                      <th onClick={() => requestFavSort("currentPrice" as SortKey)} className="sortable">
+                        Current Price
+                        {renderSortIcon("currentPrice", favSortKey, favAscending)}
+                      </th>
+                      <th onClick={() => requestFavSort("percentChange" as SortKey)} className="sortable">
+                        % Change
+                        {renderSortIcon("percentChange", favSortKey, favAscending)}
+                      </th>
+                      <th onClick={() => requestFavSort("marketCapDiff" as SortKey)} className="sortable">
+                        Market Cap Diff
+                        {renderSortIcon("marketCapDiff", favSortKey, favAscending)}
+                      </th>
+                      <th>Favorites</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {favoriteStocksSorted.map((stock) => {
+                      const isFavorited = isFavorite(stock.ticker);
+                      return (
+                        <SwipeableTableRow
+                          key={stock.ticker}
+                          onToggleFavorite={() => toggleFavorite(stock.ticker)}
+                          isFavorite={isFavorited}
+                        >
+                          <td>
+                            <div className="logo-container">
+                              <CompanyLogo ticker={stock.ticker} size={32} />
+                            </div>
+                          </td>
+                          <td><strong>{stock.ticker}</strong></td>
+                          <td className="company-name">{getCompanyName(stock.ticker)}</td>
+                          <td>{formatBillions(stock.marketCap)}</td>
+                          <td>
+                            {isFinite(Number(stock.currentPrice)) 
+                              ? Number(stock.currentPrice).toFixed(2) 
+                              : '0.00'}
+                          </td>
+                          <td className={stock.percentChange >= 0 ? 'positive' : 'negative'}>
+                            {stock.percentChange >= 0 ? '+' : ''}{stock.percentChange?.toFixed(2) || '0.00'}%
+                          </td>
+                          <td className={stock.marketCapDiff >= 0 ? 'positive' : 'negative'}>
+                            {stock.marketCapDiff >= 0 ? '+' : ''}{stock.marketCapDiff?.toFixed(2) || '0.00'}
+                          </td>
+                          <td>
+                            <button 
+                              className={`favorite-btn ${isFavorited ? 'favorited' : ''}`}
+                              onClick={() => toggleFavorite(stock.ticker)}
+                              title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+                            >
+                              {isFavorited ? '★' : '☆'}
+                            </button>
+                          </td>
+                        </SwipeableTableRow>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </section>
+          )}
+
+          {/* Today's Earnings Section */}
+          <section className="todays-earnings">
+            <div className="section-header">
+              <h2 data-icon="📅">Today's Earnings</h2>
+            </div>
+            
+            {loadingStates.earnings ? (
+              <SectionLoader section="earnings" />
+            ) : (
+              <TodaysEarningsFinnhub />
+            )}
+          </section>
+
+          {/* All Stocks Section */}
+          <section className="all-stocks">
+            <div className="section-header">
+              <h2 data-icon="📊">All Stocks</h2>
+              
+              <div className="search-container">
+                <input
+                  type="text"
+                  placeholder="Search by ticker or company name..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="search-input"
+                  aria-label="Search stocks by company name or ticker"
+                />
+              </div>
+              
+              <div className="filter-controls">
+                <label className="favorites-toggle">
+                  <input
+                    type="checkbox"
+                    checked={favoritesOnly}
+                    onChange={(e) => setFavoritesOnly(e.target.checked)}
+                  />
+                  <span>Favorites Only</span>
+                </label>
+                
+                <select
+                  value={filterCategory}
+                  onChange={(e) => setFilterCategory(e.target.value as any)}
+                  className="category-filter"
+                  aria-label="Filter by category"
+                >
+                  <option value="all">All Stocks</option>
+                  <option value="gainers">Gainers</option>
+                  <option value="losers">Losers</option>
+                  <option value="movers">Movers (&gt;2%)</option>
+                  <option value="bigMovers">Movers &gt; 10 B $</option>
+                </select>
+                
+                <select
+                  value={selectedSector}
+                  onChange={(e) => setSelectedSector(e.target.value)}
+                  className="sector-filter"
+                  aria-label="Filter by sector"
+                >
+                  <option value="all">
+                    {uniqueSectors.length > 0 
+                      ? `All Sectors (${uniqueSectors.length} available)` 
+                      : 'All Sectors (loading...)'}
+                  </option>
+                  {uniqueSectors.map(sector => (
+                    <option key={sector} value={sector}>{sector}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="stock-count">
+                {loadingStates.allStocks ? (
+                  <span className="text-sm text-gray-500">Loading stocks...</span>
+                ) : (
+                  <div className="stock-count-content">
+                    <span className="stock-count-main">
+                      Showing: {displayedStocks.length} of {filteredStocks.length} stocks
+                    </span>
+                    {hasMore && (
+                      <span className="stock-count-hint">
+                        (Scroll for more)
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {loadingStates.allStocks ? (
+              <SectionLoader section="allStocks" />
+            ) : (
+              <>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Logo</th>
+                      <th onClick={() => requestAllSort("ticker" as SortKey)} className="sortable">
+                        Ticker
+                        {renderSortIcon("ticker", allSortKey, allAscending)}
+                      </th>
+                      <th>Company Name</th>
+                      <th onClick={() => requestAllSort("marketCap" as SortKey)} className="sortable">
+                        Market Cap
+                        {renderSortIcon("marketCap", allSortKey, allAscending)}
+                      </th>
+                      <th onClick={() => requestAllSort("currentPrice" as SortKey)} className="sortable">
+                        Current Price
+                        {renderSortIcon("currentPrice", allSortKey, allAscending)}
+                      </th>
+                      <th onClick={() => requestAllSort("percentChange" as SortKey)} className="sortable">
+                        % Change
+                        {renderSortIcon("percentChange", allSortKey, allAscending)}
+                      </th>
+                      <th onClick={() => requestAllSort("marketCapDiff" as SortKey)} className="sortable">
+                        Market Cap Diff
+                        {renderSortIcon("marketCapDiff", allSortKey, allAscending)}
+                      </th>
+                      <th>Favorites</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {displayedStocks.map((stock) => {
+                      const isFavorited = isFavorite(stock.ticker);
+                      return (
+                        <SwipeableTableRow
+                          key={stock.ticker}
+                          onToggleFavorite={() => toggleFavorite(stock.ticker)}
+                          isFavorite={isFavorited}
+                        >
+                          <td>
+                            <div className="logo-container">
+                              <CompanyLogo ticker={stock.ticker} size={32} />
+                            </div>
+                          </td>
+                          <td><strong>{stock.ticker}</strong></td>
+                          <td className="company-name">{getCompanyName(stock.ticker)}</td>
+                          <td>{formatBillions(stock.marketCap)}</td>
+                          <td>
+                            {isFinite(Number(stock.currentPrice)) 
+                              ? Number(stock.currentPrice).toFixed(2) 
+                              : '0.00'}
+                          </td>
+                          <td className={stock.percentChange >= 0 ? 'positive' : 'negative'}>
+                            {stock.percentChange >= 0 ? '+' : ''}{stock.percentChange?.toFixed(2) || '0.00'}%
+                          </td>
+                          <td className={stock.marketCapDiff >= 0 ? 'positive' : 'negative'}>
+                            {stock.marketCapDiff >= 0 ? '+' : ''}{stock.marketCapDiff?.toFixed(2) || '0.00'}
+                          </td>
+                          <td>
+                            <button 
+                              className={`favorite-btn ${isFavorited ? 'favorited' : ''}`}
+                              onClick={() => toggleFavorite(stock.ticker)}
+                              title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+                            >
+                              {isFavorited ? '★' : '☆'}
+                            </button>
+                          </td>
+                        </SwipeableTableRow>
+                      );
+                    })}
+                  </tbody>
+                </table>
+
+                {/* End of list indicator */}
+                {!hasMore && displayedStocks.length > 0 && (
+                  <div className="end-of-list">
+                    <span>Všetky akcie sú zobrazené</span>
+                  </div>
+                )}
+              </>
+            )}
+          </section>
+
+          <footer className="footer" aria-label="Site footer">
+            <p>Data provided by Polygon.io • Powered by Next.js</p>
+            <p className="disclaimer">
+              Data is for informational purposes only. We are not responsible for its accuracy.
+            </p>
+            <p>
+              Need help? Contact us: 
+              <a href="mailto:support@premarketprice.com" className="support-email">
+                support@premarketprice.com
+              </a>
+            </p>
+          </footer>
+        </main>
+          </PullToRefresh>
+        </MobileTester>
+      </PerformanceOptimizer>
+
+      {/* Mobile Navigation Components */}
+      <BottomNavigation 
+        activeSection={activeSection}
+        onSectionChange={handleSectionChange}
+      />
+      
+      <FloatingActionButton
+        onSearch={handleQuickSearch}
+        onQuickFavorite={handleQuickFavorite}
+        onAddStock={handleAddStock}
+      />
+
+      {/* PWA Install Prompt */}
+      <PWAInstallPrompt />
+    </>
+  );
+} 

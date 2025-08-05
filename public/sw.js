@@ -1,51 +1,75 @@
-const CACHE_NAME = "premarket-cache-v1";
-const STATIC_CACHE = "premarket-static-v1";
-const DYNAMIC_CACHE = "premarket-dynamic-v1";
+const CACHE_NAME = "premarketprice-v1.0.0";
+const STATIC_CACHE = "premarketprice-static-v1.0.0";
+const DYNAMIC_CACHE = "premarketprice-dynamic-v1.0.0";
+const API_CACHE = "premarketprice-api-v1.0.0";
 
-// Assets to cache immediately
-const STATIC_ASSETS = [
+// Files to cache immediately
+const STATIC_FILES = [
   "/",
-  "/favicon.ico",
   "/manifest.json",
-  "/og-image.png",
-  "/api/prices/cached",
+  "/icon-192.png",
+  "/icon-512.png",
+  "/apple-touch-icon.png",
+  "/offline.html",
 ];
 
-// External CDN domains to cache
-const CDN_DOMAINS = [
-  "logo.clearbit.com",
-  "ui-avatars.com",
-  "fonts.googleapis.com",
-  "fonts.gstatic.com",
+// API endpoints to cache
+const API_ENDPOINTS = [
+  "/api/stocks",
+  "/api/earnings-calendar",
+  "/api/background/status",
 ];
 
-// Install event - cache static assets
+// Install event - cache static files
 self.addEventListener("install", (event) => {
+  console.log("Service Worker: Installing...");
+
   event.waitUntil(
-    caches.open(STATIC_CACHE).then((cache) => {
-      return cache.addAll(STATIC_ASSETS);
-    })
+    caches
+      .open(STATIC_CACHE)
+      .then((cache) => {
+        console.log("Service Worker: Caching static files");
+        return cache.addAll(STATIC_FILES);
+      })
+      .then(() => {
+        console.log("Service Worker: Static files cached");
+        return self.skipWaiting();
+      })
+      .catch((error) => {
+        console.error("Service Worker: Error caching static files:", error);
+      })
   );
-  self.skipWaiting();
 });
 
 // Activate event - clean up old caches
 self.addEventListener("activate", (event) => {
+  console.log("Service Worker: Activating...");
+
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== STATIC_CACHE && cacheName !== DYNAMIC_CACHE) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
+    caches
+      .keys()
+      .then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            if (
+              cacheName !== STATIC_CACHE &&
+              cacheName !== DYNAMIC_CACHE &&
+              cacheName !== API_CACHE
+            ) {
+              console.log("Service Worker: Deleting old cache:", cacheName);
+              return caches.delete(cacheName);
+            }
+          })
+        );
+      })
+      .then(() => {
+        console.log("Service Worker: Activated");
+        return self.clients.claim();
+      })
   );
-  self.clients.claim();
 });
 
-// Fetch event - serve from cache or network
+// Fetch event - handle requests
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -61,15 +85,15 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Handle static assets
-  if (url.pathname.startsWith("/") || STATIC_ASSETS.includes(url.pathname)) {
+  // Handle static file requests
+  if (url.origin === location.origin) {
     event.respondWith(handleStaticRequest(request));
     return;
   }
 
-  // Handle CDN requests
-  if (CDN_DOMAINS.some((domain) => url.hostname.includes(domain))) {
-    event.respondWith(handleCdnRequest(request));
+  // Handle external requests (logos, etc.)
+  if (url.pathname.startsWith("/logos/")) {
+    event.respondWith(handleLogoRequest(request));
     return;
   }
 });
@@ -77,18 +101,28 @@ self.addEventListener("fetch", (event) => {
 // Handle API requests with cache-first strategy
 async function handleApiRequest(request) {
   try {
-    // Try network first for API requests
+    // Try network first
     const networkResponse = await fetch(request);
 
     if (networkResponse.ok) {
-      // Cache successful responses
-      const cache = await caches.open(DYNAMIC_CACHE);
+      // Cache the successful response
+      const cache = await caches.open(API_CACHE);
       cache.put(request, networkResponse.clone());
+      return networkResponse;
     }
 
+    // If network fails, try cache
+    const cachedResponse = await caches.match(request);
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+
+    // If no cache, return network response (even if it failed)
     return networkResponse;
   } catch (error) {
-    // Fallback to cache
+    console.log("Service Worker: Network failed, trying cache:", error);
+
+    // Try cache as fallback
     const cachedResponse = await caches.match(request);
     if (cachedResponse) {
       return cachedResponse;
@@ -96,7 +130,10 @@ async function handleApiRequest(request) {
 
     // Return offline response for API requests
     return new Response(
-      JSON.stringify({ error: "Offline - No cached data available" }),
+      JSON.stringify({
+        error: "Offline mode",
+        message: "Data not available offline",
+      }),
       {
         status: 503,
         headers: { "Content-Type": "application/json" },
@@ -105,116 +142,180 @@ async function handleApiRequest(request) {
   }
 }
 
-// Handle static assets with cache-first strategy
+// Handle static file requests with cache-first strategy
 async function handleStaticRequest(request) {
-  const cachedResponse = await caches.match(request);
-
-  if (cachedResponse) {
-    return cachedResponse;
-  }
-
   try {
+    // Try cache first
+    const cachedResponse = await caches.match(request);
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+
+    // If not in cache, try network
     const networkResponse = await fetch(request);
 
     if (networkResponse.ok) {
-      const cache = await caches.open(STATIC_CACHE);
-      cache.put(request, networkResponse.clone());
-    }
-
-    return networkResponse;
-  } catch (error) {
-    // Return offline page for navigation requests
-    if (request.mode === "navigate") {
-      return caches.match("/");
-    }
-
-    throw error;
-  }
-}
-
-// Handle CDN requests with stale-while-revalidate strategy
-async function handleCdnRequest(request) {
-  const cachedResponse = await caches.match(request);
-
-  // Return cached response immediately if available
-  if (cachedResponse) {
-    // Update cache in background
-    fetch(request)
-      .then((response) => {
-        if (response.ok) {
-          caches.open(DYNAMIC_CACHE).then((cache) => {
-            cache.put(request, response);
-          });
-        }
-      })
-      .catch(() => {
-        // Ignore background fetch errors
-      });
-
-    return cachedResponse;
-  }
-
-  try {
-    const networkResponse = await fetch(request);
-
-    if (networkResponse.ok) {
+      // Cache the response for next time
       const cache = await caches.open(DYNAMIC_CACHE);
       cache.put(request, networkResponse.clone());
     }
 
     return networkResponse;
   } catch (error) {
-    // Return placeholder for failed CDN requests
-    if (request.url.includes("logo.clearbit.com")) {
-      return new Response(
-        `<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-          <rect width="32" height="32" fill="#f3f4f6"/>
-          <text x="16" y="20" text-anchor="middle" font-family="Arial" font-size="12" fill="#6b7280">?</text>
-        </svg>`,
-        {
-          headers: { "Content-Type": "image/svg+xml" },
-        }
-      );
+    console.log("Service Worker: Static file not found:", error);
+
+    // Return offline page for navigation requests
+    if (request.destination === "document") {
+      return caches.match("/offline.html");
     }
 
-    throw error;
+    // Return empty response for other static files
+    return new Response("", { status: 404 });
   }
 }
 
-// Background sync for offline data
+// Handle logo requests with cache-first strategy
+async function handleLogoRequest(request) {
+  try {
+    // Try cache first
+    const cachedResponse = await caches.match(request);
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+
+    // If not in cache, try network
+    const networkResponse = await fetch(request);
+
+    if (networkResponse.ok) {
+      // Cache the logo for next time
+      const cache = await caches.open(DYNAMIC_CACHE);
+      cache.put(request, networkResponse.clone());
+    }
+
+    return networkResponse;
+  } catch (error) {
+    console.log("Service Worker: Logo not found:", error);
+
+    // Return a placeholder or empty response
+    return new Response("", { status: 404 });
+  }
+}
+
+// Background sync for offline actions
 self.addEventListener("sync", (event) => {
+  console.log("Service Worker: Background sync triggered:", event.tag);
+
   if (event.tag === "background-sync") {
-    event.waitUntil(doBackgroundSync());
+    event.waitUntil(performBackgroundSync());
   }
 });
 
-async function doBackgroundSync() {
+// Perform background sync
+async function performBackgroundSync() {
   try {
-    // Sync any pending data when connection is restored
-    const response = await fetch("/api/prices/cached?refresh=true");
-    if (response.ok) {
-      const cache = await caches.open(DYNAMIC_CACHE);
-      cache.put("/api/prices/cached", response.clone());
-    }
+    console.log("Service Worker: Performing background sync...");
+
+    // Sync any pending data
+    const clients = await self.clients.matchAll();
+    clients.forEach((client) => {
+      client.postMessage({
+        type: "BACKGROUND_SYNC",
+        data: { timestamp: Date.now() },
+      });
+    });
+
+    console.log("Service Worker: Background sync completed");
   } catch (error) {
-    console.error("Background sync failed:", error);
+    console.error("Service Worker: Background sync failed:", error);
   }
 }
 
-// Push notifications (if needed in the future)
+// Push notification handling
 self.addEventListener("push", (event) => {
+  console.log("Service Worker: Push notification received");
+
   const options = {
-    body: event.data ? event.data.text() : "New market data available",
-    icon: "/favicon.ico",
-    badge: "/favicon.ico",
+    body: event.data ? event.data.text() : "New market data available!",
+    icon: "/icon-192.png",
+    badge: "/icon-192.png",
     vibrate: [100, 50, 100],
     data: {
       dateOfArrival: Date.now(),
       primaryKey: 1,
     },
+    actions: [
+      {
+        action: "explore",
+        title: "View Data",
+        icon: "/icon-192.png",
+      },
+      {
+        action: "close",
+        title: "Close",
+        icon: "/icon-192.png",
+      },
+    ],
   };
 
   event.waitUntil(
     self.registration.showNotification("PreMarketPrice", options)
   );
 });
+
+// Notification click handling
+self.addEventListener("notificationclick", (event) => {
+  console.log("Service Worker: Notification clicked");
+
+  event.notification.close();
+
+  if (event.action === "explore") {
+    event.waitUntil(clients.openWindow("/"));
+  }
+});
+
+// Message handling for communication with main thread
+self.addEventListener("message", (event) => {
+  console.log("Service Worker: Message received:", event.data);
+
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+
+  if (event.data && event.data.type === "GET_VERSION") {
+    event.ports[0].postMessage({ version: CACHE_NAME });
+  }
+});
+
+// Periodic background sync (if supported)
+self.addEventListener("periodicsync", (event) => {
+  console.log("Service Worker: Periodic sync triggered:", event.tag);
+
+  if (event.tag === "market-data-sync") {
+    event.waitUntil(syncMarketData());
+  }
+});
+
+// Sync market data periodically
+async function syncMarketData() {
+  try {
+    console.log("Service Worker: Syncing market data...");
+
+    // Fetch latest market data
+    const response = await fetch("/api/stocks?limit=10");
+    if (response.ok) {
+      const cache = await caches.open(API_CACHE);
+      cache.put("/api/stocks?limit=10", response.clone());
+
+      // Notify clients of new data
+      const clients = await self.clients.matchAll();
+      clients.forEach((client) => {
+        client.postMessage({
+          type: "MARKET_DATA_UPDATED",
+          data: { timestamp: Date.now() },
+        });
+      });
+    }
+  } catch (error) {
+    console.error("Service Worker: Market data sync failed:", error);
+  }
+}

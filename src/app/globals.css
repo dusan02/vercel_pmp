@@ -2,6 +2,151 @@
 @tailwind components;
 @tailwind utilities;
 
+/* === TOUCH TARGET OPTIMIZATION ===================================== */
+/* Mobile touch targets - minimum 44px for accessibility */
+
+/* Base touch target styles */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Mobile-specific touch target improvements */
+@media (max-width: 768px) {
+  /* Increase all button sizes on mobile */
+  button, .header-btn, .logout-btn, .signin-btn {
+    min-height: 48px;
+    min-width: 48px;
+    padding: 0.875rem 1.5rem;
+    font-size: 1rem;
+    border-radius: 0.75rem;
+    touch-action: manipulation;
+  }
+
+  /* Favorite button optimization */
+  .favorite-btn {
+    min-height: 48px;
+    min-width: 48px;
+    padding: 0.75rem;
+    font-size: 1.5rem;
+    border-radius: 0.5rem;
+    touch-action: manipulation;
+  }
+
+  /* Search input optimization */
+  .search-input {
+    min-height: 48px;
+    padding: 0.875rem 1rem;
+    font-size: 1rem;
+    border-radius: 0.75rem;
+  }
+
+  /* Filter controls optimization */
+  .category-filter, .sector-filter {
+    min-height: 48px;
+    padding: 0.875rem 1rem;
+    font-size: 1rem;
+    border-radius: 0.75rem;
+  }
+
+  /* Table row touch targets */
+  table tr {
+    min-height: 48px;
+  }
+
+  /* Table cell touch targets */
+  table td, table th {
+    padding: 0.75rem 0.5rem;
+    min-height: 48px;
+  }
+
+  /* Interactive table cells */
+  table td[onclick], table td[data-clickable] {
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  /* Market indicator touch targets */
+  .market-indicator {
+    min-height: 48px;
+    padding: 1rem;
+    border-radius: 0.75rem;
+    touch-action: manipulation;
+  }
+
+  /* Trading hours items */
+  .hours-item {
+    min-height: 48px;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    touch-action: manipulation;
+  }
+
+  /* Header actions spacing */
+  .header-actions {
+    gap: 1rem;
+  }
+
+  /* Controls container spacing */
+  .controls-container {
+    gap: 1rem;
+  }
+}
+
+/* Enhanced mobile breakpoints for better responsive design */
+@media (max-width: 480px) {
+  button, .header-btn, .logout-btn, .signin-btn {
+    min-height: 52px;
+    min-width: 52px;
+    padding: 1rem 1.75rem;
+    font-size: 1.1rem;
+    border-radius: 0.875rem;
+  }
+
+  .favorite-btn {
+    min-height: 52px;
+    min-width: 52px;
+    padding: 0.875rem;
+    font-size: 1.75rem;
+    border-radius: 0.625rem;
+  }
+
+  .search-input {
+    min-height: 52px;
+    padding: 1rem 1.25rem;
+    font-size: 1.1rem;
+    border-radius: 0.875rem;
+  }
+
+  .header-actions {
+    gap: 1.25rem;
+  }
+
+  .controls-container {
+    gap: 1.25rem;
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  /* Remove hover effects on touch devices */
+  button:active, .header-btn:active, .favorite-btn:active {
+    transform: scale(0.95);
+    transition: transform 0.1s ease;
+  }
+
+  /* Disable hover effects on touch devices */
+  button:hover, .header-btn:hover, .favorite-btn:hover {
+    transform: none;
+  }
+}
+
 /* === RESET & BASE ======================================= */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -646,23 +791,7 @@ button:disabled{background:#9ca3af;cursor:not-allowed}
 
 /* Column alignments and color formatting now standardized above */
 
-/* Override text overflow for earnings table headers */
-.todays-earnings table th {
-  overflow: visible;
-  text-overflow: clip;
-  white-space: normal;
-  word-wrap: break-word;
-  vertical-align: middle;
-  line-height: 1.2;
-}
-
-/* Override text overflow for earnings table cells */
-.todays-earnings table td {
-  overflow: visible;
-  text-overflow: clip;
-  white-space: normal;
-  word-wrap: break-word;
-}
+/* Today's Earnings table specific styles - now using global table styles */
 
 
 
@@ -930,7 +1059,7 @@ button:disabled{background:#9ca3af;cursor:not-allowed}
 @media(max-width:640px){
   body{padding:0.25rem}
   .container{padding:0.75rem}
-  th,td{padding:0.375rem 0.125rem;font-size:0.8rem}
+  th,td{padding:0.75rem 0.5rem;font-size:0.8rem}
   .header h1{font-size:1.75rem}
   /* .brand uses inline spans, no gap needed */
   .header p{font-size:0.875rem;max-width:100%}
@@ -982,7 +1111,7 @@ button:disabled{background:#9ca3af;cursor:not-allowed}
         /* Mobile column adjustments for earnings tables */
        .todays-earnings table th:nth-child(1), .todays-earnings table td:nth-child(1) { width: 6%; text-align: center; } /* Logo */
    .todays-earnings table th:nth-child(2), .todays-earnings table td:nth-child(2) { width: 10%; text-align: center; } /* Ticker */
-   .todays-earnings table th:nth-child(3), .todays-earnings table td:nth-child(3) { width: 16%; text-align: left; white-space: normal; word-wrap: break-word; } /* Company Name */
+   .todays-earnings table th:nth-child(3), .todays-earnings table td:nth-child(3) { width: 16%; text-align: left; } /* Company Name */
    .todays-earnings table th:nth-child(4), .todays-earnings table td:nth-child(4) { width: 10%; text-align: center; } /* Report time */
    .todays-earnings table th:nth-child(5), .todays-earnings table td:nth-child(5) { width: 10%; text-align: center; } /* Market Cap */
    .todays-earnings table th:nth-child(6), .todays-earnings table td:nth-child(6) { width: 8%; text-align: center; } /* Est. EPS */
@@ -1357,7 +1486,12 @@ th, td {
   text-align: left;
   border-bottom: 1px solid var(--clr-border);
   font-size: 0.875rem;
-  line-height: 1.25rem;
+  line-height: 1.2;
+  vertical-align: middle;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  word-wrap: break-word;
 }
 
 th {
@@ -1425,7 +1559,7 @@ tr:hover {
 /* Standardized table column widths for earnings table */
 .todays-earnings table th:nth-child(1), .todays-earnings table td:nth-child(1) { width: 5%; text-align: center; } /* Logo */
 .todays-earnings table th:nth-child(2), .todays-earnings table td:nth-child(2) { width: 8%; text-align: center; } /* Ticker */
-.todays-earnings table th:nth-child(3), .todays-earnings table td:nth-child(3) { width: 18%; text-align: left; white-space: normal; word-wrap: break-word; } /* Company Name */
+.todays-earnings table th:nth-child(3), .todays-earnings table td:nth-child(3) { width: 18%; text-align: left; } /* Company Name */
 .todays-earnings table th:nth-child(4), .todays-earnings table td:nth-child(4) { width: 10%; text-align: center; } /* Report Time */
 .todays-earnings table th:nth-child(5), .todays-earnings table td:nth-child(5) { width: 10%; text-align: center; } /* Market Cap */
 .todays-earnings table th:nth-child(6), .todays-earnings table td:nth-child(6) { width: 8%; text-align: center; } /* Est. EPS */
@@ -1447,15 +1581,7 @@ tr:hover {
 }
 
 /* Standardized text overflow handling for earnings table */
-.todays-earnings table th,
-.todays-earnings table td {
-  overflow: visible;
-  text-overflow: clip;
-  white-space: normal;
-  word-wrap: break-word;
-  vertical-align: middle;
-  line-height: 1.2;
-}
+/* Today's Earnings table specific styles - now using global table styles */
 
 /* Standardized section headers */
 .favorites, .all-stocks {
@@ -1520,7 +1646,7 @@ tr:hover {
   }
   
   th, td {
-    padding: 0.375rem 0.125rem;
+    padding: 0.75rem 0.5rem;
     font-size: 0.8rem;
   }
   
@@ -1571,7 +1697,7 @@ tr:hover {
   /* Mobile column widths for earnings table */
   .todays-earnings table th:nth-child(1), .todays-earnings table td:nth-child(1) { width: 6%; text-align: center; } /* Logo */
   .todays-earnings table th:nth-child(2), .todays-earnings table td:nth-child(2) { width: 10%; text-align: center; } /* Ticker */
-  .todays-earnings table th:nth-child(3), .todays-earnings table td:nth-child(3) { width: 16%; text-align: left; white-space: normal; word-wrap: break-word; } /* Company Name */
+  .todays-earnings table th:nth-child(3), .todays-earnings table td:nth-child(3) { width: 16%; text-align: left; } /* Company Name */
   .todays-earnings table th:nth-child(4), .todays-earnings table td:nth-child(4) { width: 10%; text-align: center; } /* Report time */
   .todays-earnings table th:nth-child(5), .todays-earnings table td:nth-child(5) { width: 10%; text-align: center; } /* Market Cap */
   .todays-earnings table th:nth-child(6), .todays-earnings table td:nth-child(6) { width: 8%; text-align: center; } /* Est. EPS */
@@ -1581,3 +1707,1164 @@ tr:hover {
   .todays-earnings table th:nth-child(10), .todays-earnings table td:nth-child(10) { width: 8%; text-align: center; } /* % Change */
   .todays-earnings table th:nth-child(11), .todays-earnings table td:nth-child(11) { width: 14%; text-align: center; } /* Market Cap Diff */
 } 
+
+/* Ultra-mobile optimization for very small screens */
+@media (max-width: 480px) {
+  body {
+    padding: 0.125rem;
+    font-size: 0.85rem;
+  }
+  
+  .container {
+    padding: 0.5rem;
+  }
+  
+  /* Even more compact table layout */
+  th, td {
+    padding: 0.5rem 0.25rem;
+    font-size: 0.75rem;
+  }
+  
+  .header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .header p {
+    font-size: 0.8rem;
+  }
+  
+  .company-logo {
+    width: 18px;
+    height: 18px;
+  }
+  
+  /* Compact section headers */
+  .section-header h2 {
+    font-size: 1.1rem;
+  }
+  
+  /* Optimized search input */
+  .search-input {
+    font-size: 0.9rem;
+    padding: 0.75rem 0.875rem;
+  }
+  
+  /* Compact filter controls */
+  .sector-filter {
+    font-size: 0.9rem;
+    padding: 0.75rem 0.875rem;
+  }
+}
+
+/* Landscape mobile optimization */
+@media (max-width: 768px) and (orientation: landscape) {
+  .header-top {
+    flex-direction: row;
+    gap: 1.5rem;
+  }
+  
+  .market-indicators-section .market-indicators {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  
+  .trading-hours-box {
+    max-width: 300px;
+  }
+}
+
+/* High-DPI display optimization */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .company-logo {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+  
+  table {
+    border-width: 0.5px;
+  }
+}
+
+/* === MILESTONE 2: ADDITIONAL MOBILE ENHANCEMENTS ================== */
+
+/* Mobile table scrolling optimization */
+@media (max-width: 640px) {
+  /* Enable horizontal scrolling for tables on mobile */
+  .favorites, .all-stocks, .todays-earnings {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--clr-border) transparent;
+  }
+  
+  .favorites::-webkit-scrollbar,
+  .all-stocks::-webkit-scrollbar,
+  .todays-earnings::-webkit-scrollbar {
+    height: 4px;
+  }
+  
+  .favorites::-webkit-scrollbar-track,
+  .all-stocks::-webkit-scrollbar-track,
+  .todays-earnings::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .favorites::-webkit-scrollbar-thumb,
+  .all-stocks::-webkit-scrollbar-thumb,
+  .todays-earnings::-webkit-scrollbar-thumb {
+    background: var(--clr-border);
+    border-radius: 2px;
+  }
+  
+  /* Ensure tables don't break layout */
+  table {
+    min-width: 600px; /* Minimum width to prevent squishing */
+    white-space: nowrap;
+  }
+  
+  /* Allow text wrapping in specific columns */
+  .all-stocks table td:nth-child(3),
+  .favorites table td:nth-child(3),
+  .todays-earnings table td:nth-child(3) {
+    white-space: normal;
+    word-break: break-word;
+    max-width: 120px;
+  }
+}
+
+/* Enhanced mobile loading states */
+@media (max-width: 768px) {
+  .loading-indicator {
+    padding: 2rem 1rem;
+  }
+  
+  .loading-indicator svg {
+    width: 2rem;
+    height: 2rem;
+  }
+  
+  /* Improved skeleton loading for mobile */
+  .stock-row-skeleton {
+    height: 60px;
+    margin: 0.5rem 0;
+    border-radius: 0.5rem;
+  }
+  
+  .company-logo-placeholder {
+    width: 24px;
+    height: 24px;
+    border-radius: 0.25rem;
+  }
+}
+
+/* Mobile navigation improvements */
+@media (max-width: 640px) {
+  /* Better section spacing */
+  .favorites, .all-stocks, .todays-earnings {
+    margin-bottom: 2rem;
+    padding: 1rem;
+    background: var(--clr-surface);
+    border-radius: 0.75rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+  
+  /* Enhanced section headers */
+  .favorites h2, .all-stocks h2, .todays-earnings h2 {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--clr-border);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  /* Improved controls layout */
+  .controls-container {
+    background: var(--clr-bg);
+    padding: 1rem;
+    border-radius: 0.75rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+  
+  /* Better search input styling */
+  .search-input {
+    border: 2px solid var(--clr-border);
+    transition: border-color 0.2s ease;
+  }
+  
+  .search-input:focus {
+    border-color: var(--clr-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  }
+  
+  /* Enhanced filter controls */
+  .filter-controls {
+    background: var(--clr-surface);
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--clr-border);
+  }
+  
+  .sector-filter {
+    border: 2px solid var(--clr-border);
+    transition: border-color 0.2s ease;
+  }
+  
+  .sector-filter:focus {
+    border-color: var(--clr-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  }
+}
+
+/* Mobile performance optimizations */
+@media (max-width: 768px) {
+  /* Reduce animations on mobile for better performance */
+  * {
+    animation-duration: 0.2s !important;
+    transition-duration: 0.2s !important;
+  }
+  
+  /* Optimize table rendering */
+  table {
+    contain: layout style paint;
+  }
+  
+  /* Reduce box-shadow complexity on mobile */
+  .container, .favorites, .all-stocks, .todays-earnings {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* Mobile accessibility improvements */
+@media (max-width: 640px) {
+  /* Ensure sufficient color contrast */
+  .positive {
+    color: #059669;
+    font-weight: 700;
+  }
+  
+  .negative {
+    color: #dc2626;
+    font-weight: 700;
+  }
+  
+  /* Better focus indicators */
+  button:focus,
+  .search-input:focus,
+  .sector-filter:focus,
+  .favorite-btn:focus {
+    outline: 2px solid var(--clr-primary);
+    outline-offset: 2px;
+  }
+  
+  /* Improved touch feedback */
+  button:active,
+  .favorite-btn:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+  }
+}
+
+/* Mobile-specific error handling */
+@media (max-width: 640px) {
+  .error {
+    margin: 1rem 0;
+    padding: 1rem;
+    border-radius: 0.75rem;
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+  
+  .end-of-list {
+    padding: 1.5rem 1rem;
+    margin: 1rem 0;
+    border-radius: 0.75rem;
+    background: var(--clr-bg);
+    text-align: center;
+    font-size: 0.9rem;
+    color: var(--clr-subtext);
+  }
+}
+
+/* Mobile footer optimization */
+@media (max-width: 640px) {
+  .footer {
+    margin-top: 2rem;
+    padding: 1.5rem 1rem;
+    font-size: 0.8rem;
+    line-height: 1.5;
+  }
+  
+  .footer p {
+    margin-bottom: 0.5rem;
+  }
+  
+  .support-email {
+    word-break: break-all;
+  }
+} 
+
+/* === MILESTONE 2: BOTTOM NAVIGATION & FAB ================== */
+
+/* Bottom Navigation */
+.bottom-navigation {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--clr-surface);
+  border-top: 1px solid var(--clr-border);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 0.5rem 0;
+  z-index: 1000;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  min-height: 60px;
+  min-width: 60px;
+  border-radius: 0.5rem;
+}
+
+.nav-item:hover {
+  background: var(--clr-bg);
+  transform: translateY(-2px);
+}
+
+.nav-item.active {
+  background: rgba(37, 99, 235, 0.1);
+}
+
+.nav-icon {
+  margin-bottom: 0.25rem;
+  transition: all 0.2s ease;
+}
+
+.nav-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.active-indicator {
+  position: absolute;
+  top: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  background: var(--clr-primary);
+  border-radius: 50%;
+}
+
+/* Floating Action Button */
+.fab-container {
+  position: fixed;
+  bottom: 80px;
+  right: 1rem;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1rem;
+}
+
+.fab-main {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--clr-primary);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+  transition: all 0.3s ease;
+  z-index: 1001;
+}
+
+.fab-main:hover {
+  background: var(--clr-primary-hover);
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.5);
+}
+
+.fab-main:active {
+  transform: scale(0.95);
+}
+
+.fab-main.expanded {
+  background: #dc2626;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+}
+
+.fab-main.expanded:hover {
+  background: #b91c1c;
+  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.5);
+}
+
+.fab-action {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--clr-surface);
+  color: var(--clr-text);
+  border: 2px solid var(--clr-border);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  position: relative;
+  animation: fabSlideIn 0.3s ease forwards;
+}
+
+.fab-action:hover {
+  background: var(--clr-bg);
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.fab-action:active {
+  transform: scale(0.95);
+}
+
+.fab-search {
+  animation-delay: 0.1s;
+}
+
+.fab-favorite {
+  animation-delay: 0.2s;
+}
+
+.fab-add {
+  animation-delay: 0.3s;
+}
+
+.fab-tooltip {
+  position: absolute;
+  right: 60px;
+  background: var(--clr-text);
+  color: var(--clr-surface);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateX(10px);
+  transition: all 0.2s ease;
+  pointer-events: none;
+}
+
+.fab-tooltip::after {
+  content: '';
+  position: absolute;
+  right: -4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-left: 4px solid var(--clr-text);
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+}
+
+.fab-action:hover .fab-tooltip {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+@keyframes fabSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Mobile-specific adjustments */
+@media (max-width: 768px) {
+  .bottom-navigation {
+    padding: 0.75rem 0;
+  }
+  
+  .nav-item {
+    min-height: 70px;
+    min-width: 70px;
+  }
+  
+  .nav-label {
+    font-size: 0.8rem;
+  }
+  
+  .fab-container {
+    bottom: 90px;
+    right: 1.5rem;
+  }
+  
+  .fab-main {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .fab-action {
+    width: 52px;
+    height: 52px;
+  }
+}
+
+@media (max-width: 480px) {
+  .bottom-navigation {
+    padding: 0.5rem 0;
+  }
+  
+  .nav-item {
+    min-height: 60px;
+    min-width: 60px;
+    padding: 0.375rem;
+  }
+  
+  .nav-label {
+    font-size: 0.7rem;
+  }
+  
+  .fab-container {
+    bottom: 80px;
+    right: 1rem;
+  }
+  
+  .fab-main {
+    width: 56px;
+    height: 56px;
+  }
+  
+  .fab-action {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .bottom-navigation {
+    background: rgba(30, 41, 59, 0.95);
+    border-top-color: var(--clr-border);
+  }
+  
+  .fab-action {
+    background: var(--clr-surface);
+    border-color: var(--clr-border);
+    color: var(--clr-text);
+  }
+  
+  .fab-action:hover {
+    background: var(--clr-bg);
+  }
+  
+  .fab-tooltip {
+    background: var(--clr-text);
+    color: var(--clr-surface);
+  }
+  
+  .fab-tooltip::after {
+    border-left-color: var(--clr-text);
+  }
+}
+
+/* Adjust main content for bottom navigation */
+@media (max-width: 768px) {
+  .container {
+    padding-bottom: 100px;
+  }
+  
+  .footer {
+    margin-bottom: 80px;
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .nav-item:hover {
+    transform: none;
+  }
+  
+  .fab-main:hover {
+    transform: none;
+  }
+  
+  .fab-action:hover {
+    transform: none;
+  }
+  
+  .nav-item:active {
+    background: var(--clr-bg);
+    transform: scale(0.95);
+  }
+  
+  .fab-main:active {
+    transform: scale(0.9);
+  }
+  
+  .fab-action:active {
+    transform: scale(0.9);
+  }
+} 
+
+/* === MILESTONE 5: PERFORMANCE OPTIMIZATION ================== */
+
+/* Core Web Vitals Optimization */
+.performance-optimizer {
+  contain: layout style paint;
+  will-change: auto;
+}
+
+.performance-optimizer.optimized {
+  contain: layout style paint;
+}
+
+/* Lazy loading styles */
+.lazy-hidden {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.lazy-loaded {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Image optimization */
+img[data-src] {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+img[data-src].loaded {
+  opacity: 1;
+}
+
+/* Content-visibility optimization */
+.content-visibility-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 500px;
+}
+
+/* Reduce motion for performance */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Performance monitoring styles */
+.performance-monitor {
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Mobile testing styles */
+.mobile-tester {
+  position: relative;
+}
+
+.device-selector button:hover,
+.recording-controls button:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.touch-events-log,
+.performance-metrics {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Bundle size optimization */
+@media (max-width: 640px) {
+  /* Hide non-essential elements on mobile for performance */
+  .performance-monitor {
+    display: none;
+  }
+}
+
+/* === MILESTONE 4: PWA ENHANCEMENT ================== */
+
+/* PWA Install Prompt */
+.pwa-install-prompt {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 10000;
+  animation: pwaSlideUp 0.3s ease-out;
+}
+
+.pwa-install-content {
+  background: var(--clr-surface);
+  border-radius: 20px 20px 0 0;
+  padding: 1.5rem;
+  margin: 0 1rem;
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--clr-border);
+}
+
+.pwa-install-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.pwa-install-icon {
+  width: 48px;
+  height: 48px;
+  background: var(--clr-primary);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.pwa-install-title h3 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--clr-text);
+  margin: 0 0 0.25rem 0;
+}
+
+.pwa-install-title p {
+  font-size: 0.9rem;
+  color: var(--clr-text-secondary);
+  margin: 0;
+}
+
+.pwa-install-close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--clr-text-secondary);
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.pwa-install-close:hover {
+  background: var(--clr-bg);
+  color: var(--clr-text);
+}
+
+.pwa-install-features {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.pwa-feature {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+  color: var(--clr-text);
+}
+
+.pwa-feature-icon {
+  width: 32px;
+  height: 32px;
+  background: var(--clr-bg);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--clr-primary);
+  flex-shrink: 0;
+}
+
+.pwa-install-actions {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.pwa-install-button {
+  flex: 1;
+  background: var(--clr-primary);
+  color: white;
+  border: none;
+  padding: 1rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.pwa-install-button:hover:not(:disabled) {
+  background: var(--clr-primary-hover);
+  transform: translateY(-1px);
+}
+
+.pwa-install-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.pwa-dismiss-button {
+  background: transparent;
+  color: var(--clr-text-secondary);
+  border: 2px solid var(--clr-border);
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pwa-dismiss-button:hover {
+  background: var(--clr-bg);
+  border-color: var(--clr-text-secondary);
+  color: var(--clr-text);
+}
+
+.pwa-offline-notice {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: #92400e;
+}
+
+.pwa-loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: pwaSpin 1s linear infinite;
+}
+
+@keyframes pwaSlideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes pwaSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Offline Indicator */
+.offline-indicator {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: #dc2626;
+  color: white;
+  padding: 0.5rem 1rem;
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 500;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  animation: offlineSlideDown 0.3s ease-out;
+}
+
+.offline-indicator.online {
+  background: #16a34a;
+  animation: offlineSlideUp 0.3s ease-out;
+}
+
+@keyframes offlineSlideDown {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes offlineSlideUp {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-100%);
+  }
+}
+
+/* PWA Status Bar */
+.pwa-status-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 20px;
+  background: var(--clr-primary);
+  z-index: 9998;
+  display: none;
+}
+
+/* Show status bar only in standalone mode */
+@media (display-mode: standalone) {
+  .pwa-status-bar {
+    display: block;
+  }
+  
+  .container {
+    padding-top: 20px;
+  }
+}
+
+/* PWA App Shell */
+.pwa-app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.pwa-app-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* PWA Loading Screen */
+.pwa-loading-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--clr-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10001;
+  animation: pwaFadeOut 0.5s ease-out 1s forwards;
+}
+
+.pwa-loading-content {
+  text-align: center;
+}
+
+.pwa-loading-logo {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 2rem;
+  background: var(--clr-primary);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.pwa-loading-spinner-large {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--clr-border);
+  border-top: 4px solid var(--clr-primary);
+  border-radius: 50%;
+  animation: pwaSpin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+.pwa-loading-text {
+  font-size: 1.1rem;
+  color: var(--clr-text);
+  font-weight: 500;
+}
+
+@keyframes pwaFadeOut {
+  from {
+    opacity: 1;
+    visibility: visible;
+  }
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+/* PWA Update Notification */
+.pwa-update-notification {
+  position: fixed;
+  bottom: 80px;
+  left: 1rem;
+  right: 1rem;
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
+  animation: pwaSlideUp 0.3s ease-out;
+}
+
+.pwa-update-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.pwa-update-icon {
+  width: 40px;
+  height: 40px;
+  background: #f59e0b;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.pwa-update-text h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--clr-text);
+  margin: 0 0 0.25rem 0;
+}
+
+.pwa-update-text p {
+  font-size: 0.9rem;
+  color: var(--clr-text-secondary);
+  margin: 0;
+}
+
+.pwa-update-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.pwa-update-button {
+  flex: 1;
+  background: var(--clr-primary);
+  color: white;
+  border: none;
+  padding: 0.75rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pwa-update-button:hover {
+  background: var(--clr-primary-hover);
+}
+
+.pwa-update-dismiss {
+  background: transparent;
+  color: var(--clr-text-secondary);
+  border: 1px solid var(--clr-border);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pwa-update-dismiss:hover {
+  background: var(--clr-bg);
+  color: var(--clr-text);
+}
+
+/* Mobile optimizations for PWA */
+@media (max-width: 768px) {
+  .pwa-install-content {
+    margin: 0 0.5rem;
+    padding: 1.25rem;
+  }
+  
+  .pwa-install-features {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  
+  .pwa-install-actions {
+    flex-direction: column;
+  }
+  
+  .pwa-update-notification {
+    bottom: 100px;
+    left: 0.5rem;
+    right: 0.5rem;
+  }
+}
+
+/* Dark mode support for PWA */
+@media (prefers-color-scheme: dark) {
+  .pwa-offline-notice {
+    background: #451a03;
+    border-color: #f59e0b;
+    color: #fbbf24;
+  }
+  
+  .pwa-loading-screen {
+    background: var(--clr-surface);
+  }
+}

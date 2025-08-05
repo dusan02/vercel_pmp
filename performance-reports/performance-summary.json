@@ -1,0 +1,12 @@
+{
+  "timestamp": "2025-08-05T09:41:39.927Z",
+  "url": "http://localhost:3000",
+  "scores": {
+    "performance": 10,
+    "accessibility": 0,
+    "bestPractices": 5,
+    "seo": 35769
+  },
+  "averageScore": 8946,
+  "reportPath": "performance-reports\\lighthouse-report-2025-08-05T09-40-51-150Z.html"
+}

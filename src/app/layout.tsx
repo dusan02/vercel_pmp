@@ -1,14 +1,14 @@
 import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
 import './globals.css'
-import { initializePreloading } from '@/lib/preload'
-import { initializePWA } from '@/lib/sw-register'
-import { blogScheduler } from '@/lib/blogScheduler'
+
+const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Pre-Market Stock Tracking & Earnings Calendar | 300+ Global Companies - PreMarketPrice',
-  description: 'Track pre-market movements and earnings calendar of 300+ global companies. Monitor EPS estimates, revenue reports, market cap changes and build your watchlist free.',
-  keywords: 'pre-market stocks, earnings calendar, earnings reports, stock tracking, market cap, stock prices, global stocks, stock portfolio, pre-market trading, stock analysis, market movements, EPS tracking, revenue estimates, pre-market earnings, after-market earnings',
-  authors: [{ name: 'PreMarketPrice.com' }],
+  title: 'PreMarketPrice.com - Real-time Stock Data & Earnings Calendar',
+  description: 'Track pre-market movements and earnings calendar of 300+ global companies. Real-time stock data, market analysis, and portfolio tracking.',
+  keywords: 'stocks, pre-market, earnings, stock market, trading, portfolio, real-time data',
+  authors: [{ name: 'PreMarketPrice Team' }],
   creator: 'PreMarketPrice.com',
   publisher: 'PreMarketPrice.com',
   formatDetection: {
@@ -21,8 +21,8 @@ export const metadata: Metadata = {
     canonical: '/',
   },
   openGraph: {
-    title: 'Pre-Market Stock Tracking & Earnings Calendar | 300+ Global Companies - PreMarketPrice',
-    description: 'Track pre-market movements and earnings calendar of 300+ global companies. Monitor EPS estimates, revenue reports, market cap changes and build your watchlist free.',
+    title: 'PreMarketPrice.com - Real-time Stock Data',
+    description: 'Track pre-market movements and earnings calendar of 300+ global companies',
     url: 'https://premarketprice.com',
     siteName: 'PreMarketPrice.com',
     images: [
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'PreMarketPrice.com - Stock Tracking Dashboard',
+        alt: 'PreMarketPrice.com - Stock Data Platform',
       },
     ],
     locale: 'en_US',
@@ -38,8 +38,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Pre-Market Stock Tracking & Earnings Calendar | 300+ Global Companies - PreMarketPrice',
-    description: 'Track pre-market movements and earnings calendar of 300+ global companies. Monitor EPS estimates, revenue reports, market cap changes and build your watchlist free.',
+    title: 'PreMarketPrice.com - Real-time Stock Data',
+    description: 'Track pre-market movements and earnings calendar of 300+ global companies',
     images: ['/og-image.png'],
   },
   robots: {
@@ -56,6 +56,26 @@ export const metadata: Metadata = {
   verification: {
     google: 'your-google-verification-code',
   },
+  // PWA specific metadata
+  manifest: '/manifest.json',
+  themeColor: '#2563eb',
+  colorScheme: 'light dark',
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+    viewportFit: 'cover',
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'PreMarketPrice',
+  },
+  applicationName: 'PreMarketPrice',
+  category: 'finance',
+  classification: 'Business',
+  referrer: 'origin-when-cross-origin',
 }
 
 export default function RootLayout({
@@ -63,92 +83,48 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  // Initialize preloading optimizations and PWA features
-  if (typeof window !== 'undefined') {
-    initializePreloading();
-    initializePWA();
-  }
-
-  // Initialize blog scheduler (server-side only)
-  if (typeof window === 'undefined') {
-    blogScheduler.start();
-  }
-
   return (
     <html lang="en">
       <head>
-        {/* Preload critical resources */}
-        <link rel="preload" href="/favicon.ico" as="image" type="image/x-icon" />
-        <link rel="preload" href="/og-image.png" as="image" type="image/png" />
-        <link rel="preload" href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700;800&display=swap" as="style" crossOrigin="anonymous" />
+        {/* PWA Meta Tags */}
+        <meta name="application-name" content="PreMarketPrice" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="PreMarketPrice" />
+        <meta name="description" content="Track pre-market movements and earnings calendar of 300+ global companies" />
+        <meta name="format-detection" content="telephone=no" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="msapplication-config" content="/browserconfig.xml" />
+        <meta name="msapplication-TileColor" content="#2563eb" />
+        <meta name="msapplication-tap-highlight" content="no" />
+        <meta name="theme-color" content="#2563eb" />
+        
+        {/* Apple Touch Icons */}
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon.png" />
+        
+        {/* Favicons */}
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico" />
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="mask-icon" href="/icon-192.png" color="#2563eb" />
+        <link rel="shortcut icon" href="/favicon.ico" />
+        
+        {/* PWA Splash Screens */}
+        <link rel="apple-touch-startup-image" href="/apple-touch-icon.png" />
         
         {/* Preconnect to external domains */}
-        <link rel="preconnect" href="https://logo.clearbit.com" />
-        <link rel="preconnect" href="https://ui-avatars.com" />
-        <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
-        <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
-        
-        {/* Standard meta tags */}
-        <link rel="icon" href="/favicon.ico" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-        <link rel="manifest" href="/manifest.json" />
-        
-        {/* Structured Data - JSON-LD */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "WebApplication",
-              "name": "PreMarketPrice.com",
-              "description": "Track pre-market movements and earnings calendar of 300+ global companies. Monitor EPS estimates, revenue reports, market cap changes and build your watchlist free.",
-              "url": "https://premarketprice.com",
-              "applicationCategory": "FinanceApplication",
-              "operatingSystem": "Web Browser",
-              "offers": {
-                "@type": "Offer",
-                "price": "0",
-                "priceCurrency": "USD"
-              },
-              "author": {
-                "@type": "Organization",
-                "name": "PreMarketPrice.com"
-              },
-              "publisher": {
-                "@type": "Organization",
-                "name": "PreMarketPrice.com"
-              },
-              "potentialAction": {
-                "@type": "SearchAction",
-                "target": "https://premarketprice.com/?search={search_term_string}",
-                "query-input": "required name=search_term_string"
-              },
-              "hasPart": [
-                {
-                  "@type": "DataCatalog",
-                  "name": "Stock Market Data",
-                  "description": "Real-time stock prices and market data for 300+ global companies",
-                  "dataset": [
-                    {
-                      "@type": "Dataset",
-                      "name": "Pre-market Stock Prices",
-                      "description": "Pre-market trading data and price movements"
-                    },
-                    {
-                      "@type": "Dataset", 
-                      "name": "Earnings Calendar",
-                      "description": "Earnings reports, EPS estimates, and revenue data"
-                    }
-                  ]
-                }
-              ]
-            })
-          }}
-        />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
-      <body>
-        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet" />
-        {children}
+      <body className={inter.className}>
+        <div className="pwa-app-shell">
+          <div className="pwa-app-content">
+            {children}
+          </div>
+        </div>
       </body>
     </html>
   )

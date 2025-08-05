@@ -1,0 +1,26 @@
+{
+  "timestamp": "2025-08-05T09:42:26.599Z",
+  "url": "http://localhost:3000",
+  "metrics": {
+    "fcp": {
+      "value": 0,
+      "rating": "unknown"
+    },
+    "lcp": {
+      "value": 0,
+      "rating": "unknown"
+    },
+    "fid": {
+      "value": 0,
+      "rating": "unknown"
+    },
+    "cls": {
+      "value": 0,
+      "rating": "unknown"
+    },
+    "ttfb": {
+      "value": 0,
+      "rating": "unknown"
+    }
+  }
+}
