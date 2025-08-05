@@ -1,0 +1,274 @@
+[
+  {
+    "device": "iPhone 12",
+    "timestamp": "2025-08-05T10:08:06.019Z",
+    "tests": {
+      "pageLoad": {
+        "success": true,
+        "time": 7172
+      },
+      "pwaFeatures": {
+        "success": true,
+        "features": {
+          "hasServiceWorker": true,
+          "hasManifest": true,
+          "hasAppleTouchIcon": true,
+          "isStandalone": false
+        }
+      },
+      "touchTargets": {
+        "success": true,
+        "data": {
+          "totalTargets": 35,
+          "largeTargets": 35,
+          "percentage": 100
+        }
+      },
+      "responsiveDesign": {
+        "success": true,
+        "data": {
+          "hasBottomNav": true,
+          "hasFab": true,
+          "isMobileLayout": true,
+          "viewportWidth": 390,
+          "viewportHeight": 844
+        }
+      },
+      "performance": {
+        "success": true,
+        "metrics": {
+          "domContentLoaded": 0.10000002384185791,
+          "loadComplete": 0,
+          "firstPaint": 1092,
+          "firstContentfulPaint": 1092
+        }
+      },
+      "contentVisibility": {
+        "success": true,
+        "data": {
+          "tablesCount": 2,
+          "sectionsCount": 3,
+          "imagesCount": 43,
+          "visibleTables": 2,
+          "visibleSections": 3
+        }
+      },
+      "accessibility": {
+        "success": true,
+        "data": {
+          "buttonsWithAria": 35,
+          "inputsWithLabels": 1,
+          "linksWithText": 1,
+          "totalButtons": 35,
+          "totalInputs": 2,
+          "totalLinks": 1
+        }
+      }
+    },
+    "screenshot": "mobile-test-reports\\iPhone-12-screenshot.png"
+  },
+  {
+    "device": "Samsung Galaxy S21",
+    "timestamp": "2025-08-05T10:08:14.713Z",
+    "tests": {
+      "pageLoad": {
+        "success": true,
+        "time": 4602
+      },
+      "pwaFeatures": {
+        "success": true,
+        "features": {
+          "hasServiceWorker": true,
+          "hasManifest": true,
+          "hasAppleTouchIcon": true,
+          "isStandalone": false
+        }
+      },
+      "touchTargets": {
+        "success": true,
+        "data": {
+          "totalTargets": 35,
+          "largeTargets": 35,
+          "percentage": 100
+        }
+      },
+      "responsiveDesign": {
+        "success": true,
+        "data": {
+          "hasBottomNav": true,
+          "hasFab": true,
+          "isMobileLayout": true,
+          "viewportWidth": 360,
+          "viewportHeight": 800
+        }
+      },
+      "performance": {
+        "success": true,
+        "metrics": {
+          "domContentLoaded": 0.09999999403953552,
+          "loadComplete": 0,
+          "firstPaint": 368,
+          "firstContentfulPaint": 368
+        }
+      },
+      "contentVisibility": {
+        "success": true,
+        "data": {
+          "tablesCount": 2,
+          "sectionsCount": 3,
+          "imagesCount": 43,
+          "visibleTables": 2,
+          "visibleSections": 3
+        }
+      },
+      "accessibility": {
+        "success": true,
+        "data": {
+          "buttonsWithAria": 35,
+          "inputsWithLabels": 1,
+          "linksWithText": 1,
+          "totalButtons": 35,
+          "totalInputs": 2,
+          "totalLinks": 1
+        }
+      }
+    },
+    "screenshot": "mobile-test-reports\\Samsung-Galaxy-S21-screenshot.png"
+  },
+  {
+    "device": "iPad Air",
+    "timestamp": "2025-08-05T10:08:19.871Z",
+    "tests": {
+      "pageLoad": {
+        "success": true,
+        "time": 4441
+      },
+      "pwaFeatures": {
+        "success": true,
+        "features": {
+          "hasServiceWorker": true,
+          "hasManifest": true,
+          "hasAppleTouchIcon": true,
+          "isStandalone": false
+        }
+      },
+      "touchTargets": {
+        "success": true,
+        "data": {
+          "totalTargets": 35,
+          "largeTargets": 5,
+          "percentage": 14.285714285714285
+        }
+      },
+      "responsiveDesign": {
+        "success": true,
+        "data": {
+          "hasBottomNav": true,
+          "hasFab": true,
+          "isMobileLayout": false,
+          "viewportWidth": 820,
+          "viewportHeight": 1180
+        }
+      },
+      "performance": {
+        "success": true,
+        "metrics": {
+          "domContentLoaded": 0.19999998807907104,
+          "loadComplete": 0,
+          "firstPaint": 172,
+          "firstContentfulPaint": 172
+        }
+      },
+      "contentVisibility": {
+        "success": true,
+        "data": {
+          "tablesCount": 2,
+          "sectionsCount": 3,
+          "imagesCount": 43,
+          "visibleTables": 2,
+          "visibleSections": 3
+        }
+      },
+      "accessibility": {
+        "success": true,
+        "data": {
+          "buttonsWithAria": 35,
+          "inputsWithLabels": 1,
+          "linksWithText": 1,
+          "totalButtons": 35,
+          "totalInputs": 2,
+          "totalLinks": 1
+        }
+      }
+    },
+    "screenshot": "mobile-test-reports\\iPad-Air-screenshot.png"
+  },
+  {
+    "device": "Desktop",
+    "timestamp": "2025-08-05T10:08:25.475Z",
+    "tests": {
+      "pageLoad": {
+        "success": true,
+        "time": 7126
+      },
+      "pwaFeatures": {
+        "success": true,
+        "features": {
+          "hasServiceWorker": true,
+          "hasManifest": true,
+          "hasAppleTouchIcon": true,
+          "isStandalone": false
+        }
+      },
+      "touchTargets": {
+        "success": true,
+        "data": {
+          "totalTargets": 35,
+          "largeTargets": 5,
+          "percentage": 14.285714285714285
+        }
+      },
+      "responsiveDesign": {
+        "success": true,
+        "data": {
+          "hasBottomNav": true,
+          "hasFab": true,
+          "isMobileLayout": false,
+          "viewportWidth": 1920,
+          "viewportHeight": 1080
+        }
+      },
+      "performance": {
+        "success": true,
+        "metrics": {
+          "domContentLoaded": 0.19999998807907104,
+          "loadComplete": 0,
+          "firstPaint": 220,
+          "firstContentfulPaint": 220
+        }
+      },
+      "contentVisibility": {
+        "success": true,
+        "data": {
+          "tablesCount": 2,
+          "sectionsCount": 3,
+          "imagesCount": 43,
+          "visibleTables": 2,
+          "visibleSections": 3
+        }
+      },
+      "accessibility": {
+        "success": true,
+        "data": {
+          "buttonsWithAria": 35,
+          "inputsWithLabels": 1,
+          "linksWithText": 1,
+          "totalButtons": 35,
+          "totalInputs": 2,
+          "totalLinks": 1
+        }
+      }
+    },
+    "screenshot": "mobile-test-reports\\Desktop-screenshot.png"
+  }
+]

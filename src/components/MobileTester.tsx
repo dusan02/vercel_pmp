@@ -53,11 +53,16 @@ export function MobileTester({
   enableTesting = false,
   showDeviceFrame = true
 }: MobileTesterProps) {
+  const [isClient, setIsClient] = useState(false);
   const [selectedDevice, setSelectedDevice] = useState<DeviceConfig>(DEVICES[0]);
   const [isRecording, setIsRecording] = useState(false);
   const [touchEvents, setTouchEvents] = useState<TouchEvent[]>([]);
   const [performanceMetrics, setPerformanceMetrics] = useState<any>({});
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Touch event tracking
   useEffect(() => {
@@ -141,15 +146,17 @@ export function MobileTester({
     if (!enableTesting || typeof window === 'undefined') return;
 
     const measurePerformance = () => {
-      const navigationEntry = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
-      const paintEntries = performance.getEntriesByType('paint');
+      if (typeof window === 'undefined' || !window.performance) return;
+      
+      const navigationEntry = window.performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+      const paintEntries = window.performance.getEntriesByType('paint');
       
       const metrics = {
         loadTime: navigationEntry?.loadEventEnd - navigationEntry?.loadEventStart || 0,
         domContentLoaded: navigationEntry?.domContentLoadedEventEnd - navigationEntry?.domContentLoadedEventStart || 0,
         firstPaint: paintEntries.find(entry => entry.name === 'first-paint')?.startTime || 0,
         firstContentfulPaint: paintEntries.find(entry => entry.name === 'first-contentful-paint')?.startTime || 0,
-        memoryUsage: (performance as any).memory?.usedJSHeapSize || 0,
+        memoryUsage: (window.performance as any).memory?.usedJSHeapSize || 0,
         timestamp: Date.now()
       };
 
@@ -177,7 +184,7 @@ export function MobileTester({
     boxShadow: showDeviceFrame ? '0 10px 30px rgba(0,0,0,0.3)' : 'none'
   };
 
-  if (!enableTesting) {
+  if (!enableTesting || !isClient) {
     return <>{children}</>;
   }
 
@@ -296,7 +303,7 @@ export function MobileTester({
             width: '100%',
             height: '100%',
             overflow: 'auto',
-            transform: `scale(${isFullscreen ? 1 : Math.min(window.innerWidth / selectedDevice.width, window.innerHeight / selectedDevice.height)})`,
+            transform: `scale(${isFullscreen ? 1 : (typeof window !== 'undefined' ? Math.min(window.innerWidth / selectedDevice.width, window.innerHeight / selectedDevice.height) : 1)})`,
             transformOrigin: 'top left'
           }}>
             {children}

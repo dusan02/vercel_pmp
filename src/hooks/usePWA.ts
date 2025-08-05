@@ -178,9 +178,6 @@ export const usePWA = () => {
   useEffect(() => {
     if (!isClient) return;
     
-    // Update online status immediately after hydration
-    updateOnlineStatus();
-    
     const initPWA = async () => {
       setIsLoading(true);
       
@@ -198,6 +195,9 @@ export const usePWA = () => {
       window.addEventListener('appinstalled', handleAppInstalled);
       window.addEventListener('online', updateOnlineStatus);
       window.addEventListener('offline', updateOnlineStatus);
+      
+      // Update online status after everything is initialized
+      updateOnlineStatus();
       
       setIsLoading(false);
     };

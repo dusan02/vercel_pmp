@@ -1,0 +1,96 @@
+{
+  "timestamp": "2025-08-05T10:08:34.187Z",
+  "totalDevices": 4,
+  "successfulTests": 4,
+  "failedTests": 0,
+  "devices": [
+    {
+      "name": "iPhone 12",
+      "success": true,
+      "loadTime": 7172,
+      "pwaFeatures": {
+        "hasServiceWorker": true,
+        "hasManifest": true,
+        "hasAppleTouchIcon": true,
+        "isStandalone": false
+      },
+      "touchTargets": {
+        "totalTargets": 35,
+        "largeTargets": 35,
+        "percentage": 100
+      },
+      "performance": {
+        "domContentLoaded": 0.10000002384185791,
+        "loadComplete": 0,
+        "firstPaint": 1092,
+        "firstContentfulPaint": 1092
+      }
+    },
+    {
+      "name": "Samsung Galaxy S21",
+      "success": true,
+      "loadTime": 4602,
+      "pwaFeatures": {
+        "hasServiceWorker": true,
+        "hasManifest": true,
+        "hasAppleTouchIcon": true,
+        "isStandalone": false
+      },
+      "touchTargets": {
+        "totalTargets": 35,
+        "largeTargets": 35,
+        "percentage": 100
+      },
+      "performance": {
+        "domContentLoaded": 0.09999999403953552,
+        "loadComplete": 0,
+        "firstPaint": 368,
+        "firstContentfulPaint": 368
+      }
+    },
+    {
+      "name": "iPad Air",
+      "success": true,
+      "loadTime": 4441,
+      "pwaFeatures": {
+        "hasServiceWorker": true,
+        "hasManifest": true,
+        "hasAppleTouchIcon": true,
+        "isStandalone": false
+      },
+      "touchTargets": {
+        "totalTargets": 35,
+        "largeTargets": 5,
+        "percentage": 14.285714285714285
+      },
+      "performance": {
+        "domContentLoaded": 0.19999998807907104,
+        "loadComplete": 0,
+        "firstPaint": 172,
+        "firstContentfulPaint": 172
+      }
+    },
+    {
+      "name": "Desktop",
+      "success": true,
+      "loadTime": 7126,
+      "pwaFeatures": {
+        "hasServiceWorker": true,
+        "hasManifest": true,
+        "hasAppleTouchIcon": true,
+        "isStandalone": false
+      },
+      "touchTargets": {
+        "totalTargets": 35,
+        "largeTargets": 5,
+        "percentage": 14.285714285714285
+      },
+      "performance": {
+        "domContentLoaded": 0.19999998807907104,
+        "loadComplete": 0,
+        "firstPaint": 220,
+        "firstContentfulPaint": 220
+      }
+    }
+  ]
+}

@@ -610,7 +610,7 @@ export default function HomePage() {
       <div className="pwa-status-bar"></div>
       
       {/* Offline Indicator - only render on client */}
-      {hasHydrated && !isOnline && (
+      {isClient && hasHydrated && !isOnline && (
         <div className="offline-indicator">
           <WifiOff size={16} />
           <span>You're offline - using cached data</span>
