@@ -6,7 +6,7 @@
         "dev": "cross-env ENABLE_WEBSOCKET=true tsx server.ts",
         "dev:next": "cross-env ENABLE_WEBSOCKET=true next dev --turbopack -H 127.0.0.1 -p 3000",
         "dev:no-websocket": "next dev --turbopack -H 127.0.0.1 -p 3000",
-        "build": "next build",
+        "build": "prisma generate && next build",
         "start": "cross-env ENABLE_WEBSOCKET=true tsx server.ts",
         "start:no-websocket": "next start",
         "lint": "next lint",

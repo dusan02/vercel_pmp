@@ -1,8 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { checkEarningsForOurTickers } from '@/lib/yahooFinanceScraper';
 
-const prisma = new PrismaClient();
+// Move Prisma Client inside functions to avoid build-time issues
+let prisma: any = null;
+
+function getPrismaClient() {
+  if (!prisma) {
+    try {
+      const { PrismaClient } = require('@prisma/client');
+      prisma = new PrismaClient();
+    } catch (error) {
+      console.error('❌ Prisma Client not available:', error);
+      return null;
+    }
+  }
+  return prisma;
+}
 
 interface EarningsData {
   ticker: string;
@@ -34,8 +47,14 @@ function getAllTickers(): string[] {
  * Vyčistí earnings calendar pre daný dátum
  */
 async function clearEarningsCalendar(date: string): Promise<void> {
+  const prismaClient = getPrismaClient();
+  if (!prismaClient) {
+    console.log('⚠️ Prisma not available, skipping database clear');
+    return;
+  }
+
   try {
-    const deleteCount = await prisma.earningsCalendar.deleteMany({
+    const deleteCount = await prismaClient.earningsCalendar.deleteMany({
       where: {
         date: {
           gte: new Date(date + 'T00:00:00Z'),
@@ -54,6 +73,12 @@ async function clearEarningsCalendar(date: string): Promise<void> {
  * Uloží earnings data do databázy
  */
 async function saveEarningsToDatabase(earningsData: EarningsData[], date: string): Promise<void> {
+  const prismaClient = getPrismaClient();
+  if (!prismaClient) {
+    console.log('⚠️ Prisma not available, skipping database save');
+    return;
+  }
+
   try {
     const records = earningsData.map(earning => ({
       ticker: earning.ticker,
@@ -69,12 +94,12 @@ async function saveEarningsToDatabase(earningsData: EarningsData[], date: string
     // Použij upsert pre každý záznam
     for (const record of records) {
       try {
-        await prisma.earningsCalendar.create({
+        await prismaClient.earningsCalendar.create({
           data: record
         });
       } catch (error) {
         // If record exists, update it
-        await prisma.earningsCalendar.updateMany({
+        await prismaClient.earningsCalendar.updateMany({
           where: {
             ticker: record.ticker,
             date: record.date
