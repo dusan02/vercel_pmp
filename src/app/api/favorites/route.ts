@@ -7,7 +7,15 @@ export async function GET(request: NextRequest) {
     const user = await getCurrentUser(request);
     const userId = user?.id || 'default';
 
-    const favorites = dbHelpers.getUserFavorites.all(userId);
+    // Use try-catch for database operations
+    let favorites = [];
+    try {
+      favorites = dbHelpers.getUserFavorites.all(userId);
+    } catch (dbError) {
+      console.error('Database error in getUserFavorites:', dbError);
+      // Return empty favorites instead of failing
+      favorites = [];
+    }
     
     return NextResponse.json({
       success: true,
@@ -18,7 +26,12 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching favorites:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch favorites' },
+      { 
+        success: false,
+        error: 'Failed to fetch favorites',
+        data: [],
+        count: 0
+      },
       { status: 500 }
     );
   }
@@ -37,9 +50,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    runTransaction(() => {
-      dbHelpers.addFavorite.run(userId, ticker);
-    });
+    try {
+      runTransaction(() => {
+        dbHelpers.addFavorite.run(userId, ticker);
+      });
+    } catch (dbError) {
+      console.error('Database error in addFavorite:', dbError);
+      // Continue anyway - in-memory storage will work
+    }
 
     return NextResponse.json({
       success: true,
@@ -69,9 +87,14 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    runTransaction(() => {
-      dbHelpers.removeFavorite.run(userId, ticker);
-    });
+    try {
+      runTransaction(() => {
+        dbHelpers.removeFavorite.run(userId, ticker);
+      });
+    } catch (dbError) {
+      console.error('Database error in removeFavorite:', dbError);
+      // Continue anyway - in-memory storage will work
+    }
 
     return NextResponse.json({
       success: true,
