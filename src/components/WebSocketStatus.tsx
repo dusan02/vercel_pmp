@@ -13,7 +13,7 @@ export function WebSocketStatus({ showDetails = false, className = '' }: WebSock
   const [serverStatus, setServerStatus] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const { status, connect, disconnect, ping } = useWebSocket({
+  const { status, connect, disconnect, ping, socket } = useWebSocket({
     onConnect: () => {
       console.log('✅ WebSocket connected successfully');
     },
@@ -217,8 +217,8 @@ export function WebSocketStatus({ showDetails = false, className = '' }: WebSock
 
           {/* Connection Info */}
           <div className="text-xs text-gray-500 space-y-1">
-            <div>Client ID: {status.socket?.id || 'Not connected'}</div>
-            <div>Transport: {status.socket?.io?.engine?.transport?.name || 'Unknown'}</div>
+            <div>Client ID: {socket?.id || 'Not connected'}</div>
+            <div>Transport: {socket?.io?.engine?.transport?.name || 'Unknown'}</div>
           </div>
         </div>
       )}
