@@ -76,7 +76,7 @@ export default function CompanyLogo({
       />
       {isLoading && (
         <div 
-          className="absolute inset-0 rounded-full bg-gray-200 animate-pulse"
+          className="absolute inset-0 rounded-full bg-gray-200"
           style={{ width: size, height: size }}
         />
       )}

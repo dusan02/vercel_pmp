@@ -20,6 +20,7 @@ interface UseWebSocketOptions {
   onConnect?: () => void;
   onDisconnect?: () => void;
   onError?: (error: string) => void;
+  favorites?: string[]; // New: Favorites tickers to subscribe to
 }
 
 export function useWebSocket(options: UseWebSocketOptions = {}) {
@@ -30,7 +31,8 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     onPriceUpdate,
     onConnect,
     onDisconnect,
-    onError
+    onError,
+    favorites = []
   } = options;
 
   const [status, setStatus] = useState<WebSocketStatus>({
@@ -187,6 +189,14 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     }
   }, []);
 
+  // Subscribe to favorites tickers
+  const subscribeFavorites = useCallback((favorites: string[]) => {
+    if (socketRef.current?.connected && favorites.length > 0) {
+      console.log('📡 Subscribing to favorites:', favorites);
+      socketRef.current.emit('subscribeFavorites', favorites);
+    }
+  }, []);
+
   // Auto-connect on mount
   useEffect(() => {
     if (autoConnect) {
@@ -199,12 +209,20 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     };
   }, [autoConnect]); // Removed connect and disconnect from dependencies
 
+  // Subscribe to favorites when connected and favorites change
+  useEffect(() => {
+    if (status.isConnected && favorites.length > 0) {
+      subscribeFavorites(favorites);
+    }
+  }, [status.isConnected, favorites, subscribeFavorites]);
+
   return {
     status,
     connect,
     disconnect,
     ping,
     subscribe,
+    subscribeFavorites,
     socket: socketRef.current
   };
 } 

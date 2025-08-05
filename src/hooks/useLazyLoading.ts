@@ -5,16 +5,21 @@ interface UseLazyLoadingOptions {
   incrementSize: number;
   totalItems: number;
   threshold?: number; // Distance from bottom to trigger loading
+  onLoadRemaining?: () => void; // Callback for loading remaining stocks
+  enableProgressiveLoading?: boolean; // Enable progressive loading
 }
 
 export function useLazyLoading({
   initialLimit,
   incrementSize,
   totalItems,
-  threshold = 100
+  threshold = 100,
+  onLoadRemaining,
+  enableProgressiveLoading = false
 }: UseLazyLoadingOptions) {
   const [displayLimit, setDisplayLimit] = useState(initialLimit);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasTriggeredRemaining, setHasTriggeredRemaining] = useState(false);
 
   const loadMore = useCallback(() => {
     if (displayLimit < totalItems && !isLoading) {
@@ -25,9 +30,16 @@ export function useLazyLoading({
         const newLimit = Math.min(displayLimit + incrementSize, totalItems);
         setDisplayLimit(newLimit);
         setIsLoading(false);
+        
+        // 🚀 PROGRESSIVE: Trigger remaining stocks loading if enabled
+        if (enableProgressiveLoading && onLoadRemaining && !hasTriggeredRemaining) {
+          console.log('🔄 Lazy loading triggered remaining stocks load');
+          setHasTriggeredRemaining(true);
+          onLoadRemaining();
+        }
       }, 150); // Reduced from 300ms to 150ms
     }
-  }, [displayLimit, totalItems, isLoading, incrementSize]);
+  }, [displayLimit, totalItems, isLoading, incrementSize, enableProgressiveLoading, onLoadRemaining, hasTriggeredRemaining]);
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
@@ -57,6 +69,7 @@ export function useLazyLoading({
   const reset = useCallback(() => {
     setDisplayLimit(initialLimit);
     setIsLoading(false);
+    setHasTriggeredRemaining(false);
   }, [initialLimit]);
 
   return {
@@ -64,6 +77,7 @@ export function useLazyLoading({
     isLoading,
     loadMore,
     reset,
-    hasMore: displayLimit < totalItems
+    hasMore: displayLimit < totalItems,
+    hasTriggeredRemaining
   };
 } 

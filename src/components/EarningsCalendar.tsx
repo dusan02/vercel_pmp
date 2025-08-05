@@ -151,7 +151,7 @@ export default function EarningsCalendar() {
         <div className="flex items-center mb-4">
           <h2 className="section-title" data-icon="📅">Today's Earnings</h2>
         </div>
-        <div className="animate-pulse">
+        <div>
           <div className="h-4 bg-gray-200 rounded mb-2"></div>
           <div className="h-4 bg-gray-200 rounded mb-2"></div>
           <div className="h-4 bg-gray-200 rounded"></div>

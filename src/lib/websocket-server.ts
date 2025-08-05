@@ -30,10 +30,79 @@ class WebSocketPriceServer {
   private io: SocketIOServer;
   private updateInterval: NodeJS.Timeout | null = null;
   private isRunning = false;
+  
+  // New: Dynamic tickers management
+  private dynamicTickers: Set<string> = new Set();
+  private userTickers: Map<string, Set<string>> = new Map(); // socketId -> Set<ticker>
+  private readonly MAX_FAVORITES_PER_USER = 50;
+  private readonly MAX_DYNAMIC_TICKERS = 100;
 
   constructor(io: SocketIOServer) {
     this.io = io;
     this.setupEventHandlers();
+  }
+
+  // New: Add user favorites tickers
+  private addUserTickers(socketId: string, tickers: string[]): void {
+    // Validate and limit tickers
+    const validTickers = tickers
+      .filter(ticker => typeof ticker === 'string' && ticker.length > 0)
+      .map(ticker => ticker.toUpperCase())
+      .slice(0, this.MAX_FAVORITES_PER_USER);
+
+    if (validTickers.length === 0) {
+      console.log('📡 No valid tickers to add for socket:', socketId);
+      return;
+    }
+
+    // Remove old tickers for this user
+    this.removeUserTickers(socketId);
+
+    // Add new tickers
+    const userTickerSet = new Set(validTickers);
+    this.userTickers.set(socketId, userTickerSet);
+
+    // Add to dynamic tickers (if not already in TOP_TICKERS)
+    validTickers.forEach(ticker => {
+      if (!TOP_TICKERS.includes(ticker)) {
+        this.dynamicTickers.add(ticker);
+      }
+    });
+
+    console.log(`📡 Added ${validTickers.length} favorites for socket ${socketId}:`, validTickers);
+    console.log(`📊 Total dynamic tickers: ${this.dynamicTickers.size}`);
+  }
+
+  // New: Remove user favorites tickers
+  private removeUserTickers(socketId: string): void {
+    const userTickers = this.userTickers.get(socketId);
+    if (!userTickers) return;
+
+    // Remove from dynamic tickers if no other user has them
+    userTickers.forEach(ticker => {
+      if (!TOP_TICKERS.includes(ticker)) {
+        let stillInUse = false;
+        for (const [otherSocketId, otherTickers] of this.userTickers.entries()) {
+          if (otherSocketId !== socketId && otherTickers.has(ticker)) {
+            stillInUse = true;
+            break;
+          }
+        }
+        if (!stillInUse) {
+          this.dynamicTickers.delete(ticker);
+        }
+      }
+    });
+
+    this.userTickers.delete(socketId);
+    console.log(`📡 Removed favorites for socket ${socketId}`);
+    console.log(`📊 Total dynamic tickers: ${this.dynamicTickers.size}`);
+  }
+
+  // New: Get all active tickers (TOP_TICKERS + dynamic favorites)
+  private getActiveTickers(): string[] {
+    const allTickers = [...TOP_TICKERS, ...this.dynamicTickers];
+    return [...new Set(allTickers)]; // Remove duplicates
   }
 
   private setupEventHandlers() {
@@ -45,11 +114,18 @@ class WebSocketPriceServer {
 
       socket.on('disconnect', () => {
         console.log('🔌 WebSocket client disconnected:', socket.id);
+        this.removeUserTickers(socket.id);
       });
 
       socket.on('subscribe', (tickers: string[]) => {
         console.log('📡 Client subscribed to tickers:', tickers);
         // Could implement individual ticker subscriptions here
+      });
+
+      // New: Handle favorites subscription
+      socket.on('subscribeFavorites', (tickers: string[]) => {
+        console.log('📡 Client subscribed to favorites:', tickers);
+        this.addUserTickers(socket.id, tickers);
       });
 
       socket.on('ping', () => {
@@ -98,7 +174,7 @@ class WebSocketPriceServer {
       return;
     }
 
-    console.log('🚀 Starting WebSocket real-time price updates for TOP', TOP_TICKERS.length, 'tickers');
+    console.log('🚀 Starting WebSocket real-time price updates for TOP', TOP_TICKERS.length, 'tickers + dynamic favorites');
     this.isRunning = true;
 
     this.updateInterval = setInterval(async () => {
@@ -125,10 +201,13 @@ class WebSocketPriceServer {
         return;
       }
 
-      // Process TOP tickers in batches for better performance
+      // Get all active tickers (TOP_TICKERS + dynamic favorites)
+      const activeTickers = this.getActiveTickers();
+      
+      // Process all active tickers in batches for better performance
       const batchSize = 10;
-      for (let i = 0; i < TOP_TICKERS.length; i += batchSize) {
-        const batch = TOP_TICKERS.slice(i, i + batchSize);
+      for (let i = 0; i < activeTickers.length; i += batchSize) {
+        const batch = activeTickers.slice(i, i + batchSize);
         
         await Promise.all(batch.map(async (ticker) => {
           try {
@@ -220,6 +299,9 @@ class WebSocketPriceServer {
       isRunning: this.isRunning,
       connectedClients: this.io.engine.clientsCount,
       topTickers: TOP_TICKERS.length,
+      dynamicTickers: this.dynamicTickers.size,
+      totalActiveTickers: this.getActiveTickers().length,
+      activeUsers: this.userTickers.size,
       lastUpdate: this.isRunning ? new Date().toISOString() : null
     };
   }

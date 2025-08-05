@@ -77,7 +77,7 @@ export default function OptimizedImage({
     return (
       <div
         ref={imgRef}
-        className={`bg-gray-200 animate-pulse rounded ${className}`}
+        className={`bg-gray-200 rounded ${className}`}
         style={{ width, height }}
       />
     );
@@ -99,7 +99,7 @@ export default function OptimizedImage({
   return (
     <div className={`relative ${className}`} style={{ width, height }}>
       {isLoading && (
-        <div className="absolute inset-0 bg-gray-200 animate-pulse rounded" />
+        <div className="absolute inset-0 bg-gray-200 rounded" />
       )}
       
       <Image
