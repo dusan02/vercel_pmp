@@ -23,6 +23,7 @@ module.exports = {
       statements: 70,
     },
   },
-  setupFilesAfterEnv: ["<rootDir>/src/lib/__tests__/setup.ts"],
+  setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
+  testPathIgnorePatterns: ['/node_modules/', '/.next/'],
   testTimeout: 10000,
 };

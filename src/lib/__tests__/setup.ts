@@ -12,10 +12,18 @@ const originalConsoleError = console.error;
 const originalConsoleWarn = console.warn;
 
 beforeAll(() => {
+  // jednotný fetch mock
+  global.fetch = jest.fn();
+  
   // Suppress console output during tests unless explicitly needed
   console.log = jest.fn();
   console.error = jest.fn();
   console.warn = jest.fn();
+});
+
+afterEach(() => {
+  jest.resetAllMocks();         // vrátane redis mockov
+  (global.fetch as jest.Mock).mockReset();
 });
 
 afterAll(() => {

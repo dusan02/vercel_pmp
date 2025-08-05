@@ -183,8 +183,14 @@ export async function GET(request: NextRequest) {
     const apiKey = process.env.POLYGON_API_KEY;
 
     if (!apiKey) {
+      console.error('❌ Polygon API key not configured');
       return NextResponse.json(
-        { error: 'Polygon API key not configured' },
+        { 
+          success: false,
+          error: 'Polygon API key not configured',
+          message: 'Please configure POLYGON_API_KEY environment variable',
+          timestamp: new Date().toISOString()
+        },
         { status: 500 }
       );
     }
@@ -192,10 +198,16 @@ export async function GET(request: NextRequest) {
     console.log(`🔍 Fetching stocks for project: ${project}, tickers: ${tickerList.join(',')}`);
 
     const results: StockData[] = [];
+    const errors: string[] = [];
 
-    // Process tickers in parallel
-    const promises = tickerList.map(async (ticker) => {
+    // Process tickers in parallel with better error handling
+    const promises = tickerList.map(async (ticker, index) => {
       try {
+        // Add delay between requests to avoid rate limiting
+        if (index > 0) {
+          await new Promise(resolve => setTimeout(resolve, 100)); // 100ms delay between requests
+        }
+
         // Try to get from cache first
         const cacheKey = getCacheKey(project, ticker, 'stock');
         const cachedData = await getCachedData(cacheKey);
@@ -208,25 +220,73 @@ export async function GET(request: NextRequest) {
 
         console.log(`🔄 Cache miss for ${ticker} in project ${project}, fetching from Polygon...`);
 
-        // Fetch fresh data from Polygon
+        // Fetch fresh data from Polygon with better error handling
         const shares = await getSharesOutstanding(ticker);
         const prevClose = await getPreviousClose(ticker);
         
-        // Get snapshot data from Polygon.io v2 API
+        // Get snapshot data from Polygon.io v2 API with timeout and retry logic
         const snapshotUrl = `https://api.polygon.io/v2/snapshot/locale/us/markets/stocks/tickers/${ticker}?apikey=${apiKey}`;
-        const snapshotResponse = await fetch(snapshotUrl, {
-          signal: AbortSignal.timeout(5000) // Reduced from 10s to 5s for faster failure detection
-        });
+        
+        let snapshotResponse;
+        try {
+          snapshotResponse = await fetch(snapshotUrl, {
+            signal: AbortSignal.timeout(5000), // 5 second timeout
+            headers: {
+              'Accept': 'application/json',
+              'User-Agent': 'PremarketPrice/1.0'
+            }
+          });
+        } catch (fetchError) {
+          console.error(`❌ Fetch error for ${ticker}:`, fetchError);
+          errors.push(`${ticker}: Network error - ${fetchError instanceof Error ? fetchError.message : 'Unknown error'}`);
+          return;
+        }
         
         if (!snapshotResponse.ok) {
-          console.error(`Failed to fetch data for ${ticker}:`, snapshotResponse.statusText);
-          return null;
+          const errorMessage = `HTTP ${snapshotResponse.status}: ${snapshotResponse.statusText}`;
+          console.error(`❌ API error for ${ticker}:`, errorMessage);
+          
+          // Handle specific error codes
+          if (snapshotResponse.status === 429) {
+            errors.push(`${ticker}: Rate limit exceeded - please try again later`);
+          } else if (snapshotResponse.status === 401) {
+            errors.push(`${ticker}: API key invalid or expired`);
+          } else if (snapshotResponse.status === 403) {
+            errors.push(`${ticker}: API access forbidden`);
+          } else if (snapshotResponse.status === 404) {
+            errors.push(`${ticker}: Ticker not found`);
+          } else if (snapshotResponse.status >= 500) {
+            errors.push(`${ticker}: Server error (${snapshotResponse.status})`);
+          } else {
+            errors.push(`${ticker}: ${errorMessage}`);
+          }
+          return;
         }
 
-        const snapshotData = await snapshotResponse.json();
+        let snapshotData;
+        try {
+          snapshotData = await snapshotResponse.json();
+        } catch (parseError) {
+          console.error(`❌ JSON parse error for ${ticker}:`, parseError);
+          errors.push(`${ticker}: Invalid response format`);
+          return;
+        }
+
+        // Validate response structure
+        if (!snapshotData || typeof snapshotData !== 'object') {
+          console.error(`❌ Invalid response structure for ${ticker}:`, snapshotData);
+          errors.push(`${ticker}: Invalid response structure`);
+          return;
+        }
 
         // Get current price using robust fallback logic
         const currentPrice = getCurrentPrice(snapshotData);
+        
+        if (currentPrice === null || currentPrice === undefined) {
+          console.error(`❌ No valid price data for ${ticker}:`, snapshotData);
+          errors.push(`${ticker}: No valid price data`);
+          return;
+        }
         
         // Calculate derived values
         const percentChange = computePercentChange(currentPrice, prevClose);
@@ -241,7 +301,7 @@ export async function GET(request: NextRequest) {
           console.log(`🔍 Debug - Sector data for ${ticker}:`, sectorData);
         }
 
-                         // Intelligent sector data generation for all stocks
+        // Intelligent sector data generation for all stocks
         let finalSectorData = sectorData;
         if (!sectorData.sector && !sectorData.industry) {
           // Core fallback mapping for major stocks
@@ -446,15 +506,15 @@ export async function GET(request: NextRequest) {
             'SLV': { sector: 'Basic Materials', industry: 'Silver' }
           };
           
-                     // Check if ticker is in core sectors
-           if (coreSectors[ticker]) {
-             finalSectorData = coreSectors[ticker];
-             console.log(`🔍 Using core sector data for ${ticker}:`, finalSectorData);
-           } else {
-             // Generate sector data based on ticker patterns and company names
-             finalSectorData = generateSectorFromTicker(ticker);
-             console.log(`🔍 Generated sector data for ${ticker}:`, finalSectorData);
-           }
+          // Check if ticker is in core sectors
+          if (coreSectors[ticker]) {
+            finalSectorData = coreSectors[ticker];
+            console.log(`🔍 Using core sector data for ${ticker}:`, finalSectorData);
+          } else {
+            // Generate sector data based on ticker patterns and company names
+            finalSectorData = generateSectorFromTicker(ticker);
+            console.log(`🔍 Generated sector data for ${ticker}:`, finalSectorData);
+          }
         }
 
         const stockData: StockData = {
@@ -477,6 +537,7 @@ export async function GET(request: NextRequest) {
 
       } catch (error) {
         console.error(`❌ Error processing ${ticker}:`, error);
+        errors.push(`${ticker}: ${error instanceof Error ? error.message : 'Unknown error'}`);
         return null;
       }
     });
@@ -488,14 +549,24 @@ export async function GET(request: NextRequest) {
 
     console.log(`✅ Returning ${validResults.length} stocks for project ${project}`);
 
-    return NextResponse.json({
+    // Return response with error information if there were any errors
+    const response: any = {
       success: true,
       data: validResults,
       source: 'polygon',
       project,
       count: validResults.length,
       timestamp: new Date().toISOString()
-    });
+    };
+
+    // Add error information if there were any errors
+    if (errors.length > 0) {
+      response.warnings = errors;
+      response.partial = true;
+      response.message = `Successfully fetched ${validResults.length} stocks, but encountered ${errors.length} errors`;
+    }
+
+    return NextResponse.json(response);
 
   } catch (error) {
     console.error('❌ Error in /api/stocks:', error);

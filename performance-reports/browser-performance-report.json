@@ -1,0 +1,52 @@
+{
+  "timestamp": "2025-08-05T18:40:51.243Z",
+  "url": "http://localhost:3000",
+  "results": [
+    {
+      "test": "First Load (No Cache)",
+      "loadTime": 2606,
+      "metrics": {
+        "domContentLoaded": 0,
+        "loadComplete": 0,
+        "firstPaint": 860,
+        "firstContentfulPaint": 860,
+        "totalLoadTime": null
+      }
+    },
+    {
+      "test": "Cached Load (With User Preferences)",
+      "loadTime": 1961,
+      "metrics": {
+        "domContentLoaded": 0.19999998807907104,
+        "loadComplete": 0,
+        "firstPaint": 288,
+        "firstContentfulPaint": 288,
+        "totalLoadTime": null
+      }
+    },
+    {
+      "test": "Earnings Calendar Load",
+      "loadTime": 11998,
+      "metrics": {
+        "domContentLoaded": 0.09999999403953552,
+        "loadComplete": 0,
+        "firstPaint": 220,
+        "firstContentfulPaint": 220,
+        "totalLoadTime": null
+      }
+    },
+    {
+      "test": "Interactive Elements Load",
+      "loadTime": 0.30000001192092896,
+      "metrics": {
+        "interactiveTime": 0.30000001192092896
+      }
+    }
+  ],
+  "summary": {
+    "averageLoadTime": 4141.32500000298,
+    "fastestLoad": 0.30000001192092896,
+    "slowestLoad": 11998,
+    "improvement": "24.8"
+  }
+}

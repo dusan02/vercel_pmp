@@ -10,6 +10,7 @@ interface WebSocketStatus {
   error: string | null;
   lastUpdate: number | null;
   connectedClients: number;
+  isImplemented: boolean; // New: Track if WebSocket is actually implemented
 }
 
 interface UseWebSocketOptions {
@@ -40,7 +41,8 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     isConnecting: false,
     error: null,
     lastUpdate: null,
-    connectedClients: 0
+    connectedClients: 0,
+    isImplemented: false // Default to false
   });
 
   const socketRef = useRef<Socket | null>(null);
@@ -61,12 +63,52 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     onPriceUpdateRef.current = onPriceUpdate;
   }, [onConnect, onDisconnect, onError, onPriceUpdate]);
 
+  // Check if WebSocket server is implemented
+  const checkWebSocketStatus = useCallback(async () => {
+    try {
+      const response = await fetch('/api/websocket');
+      const data = await response.json();
+      
+      if (data.success && data.data) {
+        // WebSocket je implementovaný len ak isRunning je true a message neobsahuje "not yet implemented"
+        const isImplemented = data.data.isRunning === true && 
+                             !data.data.message?.includes('not yet implemented');
+        
+        setStatus(prev => ({ ...prev, isImplemented }));
+        
+        if (!isImplemented) {
+          console.log('ℹ️ WebSocket server not yet implemented - using background updates');
+          setStatus(prev => ({ 
+            ...prev, 
+            error: 'WebSocket server not yet implemented - using background updates',
+            isConnecting: false,
+            isConnected: false
+          }));
+          return false;
+        }
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.warn('⚠️ Could not check WebSocket status:', error);
+      return false;
+    }
+  }, []);
+
   // Initialize socket connection
-  const connect = useCallback(() => {
+  const connect = useCallback(async () => {
     if (socketRef.current?.connected) {
       return;
     }
 
+    // Check if WebSocket is implemented first
+    const isImplemented = await checkWebSocketStatus();
+    if (!isImplemented) {
+      console.log('🚫 WebSocket not implemented - skipping connection attempt');
+      return; // Don't try to connect if not implemented
+    }
+
+    console.log('🔌 Attempting to connect to WebSocket server...');
     setStatus(prev => ({ ...prev, isConnecting: true, error: null }));
 
     try {
@@ -149,10 +191,10 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
         ...prev,
         isConnecting: false,
         error: error instanceof Error ? error.message : 'Unknown error'
-              }));
+      }));
       onErrorRef.current?.(error instanceof Error ? error.message : 'Unknown error');
     }
-  }, [reconnectAttempts, reconnectDelay]); // Removed callback dependencies
+  }, [reconnectAttempts, reconnectDelay, checkWebSocketStatus]); // Added checkWebSocketStatus dependency
 
   // Disconnect socket
   const disconnect = useCallback(() => {
@@ -166,13 +208,14 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       socketRef.current = null;
     }
 
-    setStatus({
+    setStatus(prev => ({
+      ...prev,
       isConnected: false,
       isConnecting: false,
       error: null,
       lastUpdate: null,
       connectedClients: 0
-    });
+    }));
   }, []);
 
   // Send ping to test connection

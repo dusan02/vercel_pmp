@@ -17,7 +17,10 @@ import { MobileTester } from '@/components/MobileTester';
 
 import { useFavorites } from '@/hooks/useFavorites';
 import { usePWA } from '@/hooks/usePWA';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Settings } from 'lucide-react';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
+import CookieConsent from '@/components/CookieConsent';
+import UserPreferencesManager from '@/components/UserPreferencesManager';
 
 import { useLazyLoading } from '@/hooks/useLazyLoading';
 import { getCompanyName } from '@/lib/companyNames';
@@ -89,6 +92,18 @@ export default function HomePage() {
   
   // Use cookie-based favorites (no authentication needed)
   const { favorites, toggleFavorite, isFavorite } = useFavorites();
+  
+  // User preferences and cookie consent
+  const { 
+    preferences, 
+    hasConsent, 
+    isLoaded: prefsLoaded,
+    setConsent,
+    savePreferences 
+  } = useUserPreferences();
+  
+  // Settings modal state
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // PWA functionality
   const { isOnline, isOfflineReady, isLoading: pwaLoading } = usePWA();
@@ -226,6 +241,11 @@ export default function HomePage() {
   // Handle section navigation
   const handleSectionChange = (section: 'home' | 'favorites' | 'earnings' | 'allStocks') => {
     setActiveSection(section);
+    
+    // Save to user preferences if consent given
+    if (hasConsent) {
+      savePreferences({ defaultTab: section as any });
+    }
     
     // Scroll to appropriate section
     switch (section) {
@@ -724,7 +744,15 @@ export default function HomePage() {
   useEffect(() => {
     console.log('🔄 useEffect triggered - starting progressive loading');
     loadDataProgressive();
-  }, [favorites]); // Re-run when favorites change
+  }, []); // Only run once on mount
+
+  // Handle favorites changes separately
+  useEffect(() => {
+    if (favorites.length > 0) {
+      console.log('🔄 Favorites changed, reloading favorites data');
+      fetchFavoritesData();
+    }
+  }, [favorites.map(fav => fav.ticker).join(',')]); // Only depend on ticker string, not the full favorites array
 
   // Background status check
   useEffect(() => {
@@ -804,7 +832,7 @@ export default function HomePage() {
   // Reset lazy loading when filters change
   useEffect(() => {
     resetLazyLoading();
-  }, [searchTerm, favoritesOnly, filterCategory, selectedSector, resetLazyLoading]);
+  }, [searchTerm, favoritesOnly, filterCategory, selectedSector]); // Remove resetLazyLoading from dependencies
 
 
 
@@ -1290,6 +1318,29 @@ export default function HomePage() {
 
       {/* PWA Install Prompt */}
       <PWAInstallPrompt />
+
+      {/* Cookie Consent Banner */}
+      <CookieConsent onAccept={() => {
+        // Load saved preferences after consent
+        if (preferences.defaultTab !== 'all') {
+          handleSectionChange(preferences.defaultTab as any);
+        }
+      }} />
+
+      {/* Settings Modal */}
+      <UserPreferencesManager 
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+      />
+
+      {/* Settings Button */}
+      <button
+        onClick={() => setIsSettingsOpen(true)}
+        className="fixed top-4 right-4 z-40 p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-lg hover:bg-white transition-colors"
+        title="Nastavenia"
+      >
+        <Settings size={20} />
+      </button>
     </>
   );
 } 

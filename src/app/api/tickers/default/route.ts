@@ -13,7 +13,16 @@ export async function GET(request: NextRequest) {
     console.log(`🔍 Getting all project tickers for project: ${project}, limit: ${finalLimit !== null ? finalLimit : 'none'}`);
 
     const tickers = getAllProjectTickers(project);
-    const limitedTickers = finalLimit !== null ? tickers.slice(0, finalLimit) : tickers;
+    
+    // Handle negative or zero limits
+    let limitedTickers: string[];
+    if (finalLimit !== null && finalLimit <= 0) {
+      limitedTickers = [];
+    } else if (finalLimit !== null) {
+      limitedTickers = tickers.slice(0, finalLimit);
+    } else {
+      limitedTickers = tickers;
+    }
 
     return NextResponse.json({
       success: true,

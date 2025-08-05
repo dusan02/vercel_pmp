@@ -70,7 +70,7 @@ export function useLazyLoading({
     setDisplayLimit(initialLimit);
     setIsLoading(false);
     setHasTriggeredRemaining(false);
-  }, [initialLimit]);
+  }, []); // Remove initialLimit dependency to prevent infinite loops
 
   return {
     displayLimit,

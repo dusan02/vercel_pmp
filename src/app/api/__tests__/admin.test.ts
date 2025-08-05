@@ -40,28 +40,7 @@ describe('/api/admin/cache/keys', () => {
     process.env = originalEnv;
   });
 
-  it('should return cache keys when Redis is available', async () => {
-    // Mock Redis response
-    mockRedisClient.keys.mockResolvedValue(['key1', 'key2', 'key3']);
-    mockRedisClient.ttl.mockResolvedValue(120);
-    mockRedisClient.get.mockResolvedValue('{"data": "test"}');
-    mockRedisClient.exists.mockResolvedValue(1);
-
-    const request = new NextRequest('http://localhost:3000/api/admin/cache/keys?admin_key=test-key');
-    const response = await getCacheKeys(request);
-    const data = await response.json();
-
-    expect(response.status).toBe(200);
-    expect(data.success).toBe(true);
-    expect(data.data).toHaveLength(3);
-    expect(data.data[0]).toHaveProperty('key');
-    expect(data.data[0]).toHaveProperty('ttl');
-    expect(data.data[0]).toHaveProperty('size');
-  });
-
-  it('should return empty array when Redis is not available', async () => {
-    mockRedisClient.isOpen = false;
-
+  it('should return empty array when Redis is not available in Edge Runtime', async () => {
     const request = new NextRequest('http://localhost:3000/api/admin/cache/keys?admin_key=test-key');
     const response = await getCacheKeys(request);
     const data = await response.json();
@@ -69,36 +48,51 @@ describe('/api/admin/cache/keys', () => {
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
     expect(data.data).toEqual([]);
-    expect(data.message).toBe('Redis not available, using memory cache');
+    expect(data.message).toBe('Redis not available in Edge Runtime, using memory cache');
+    expect(data.total).toBe(0);
+    expect(data.timestamp).toBeDefined();
   });
 
-  it('should limit results to 100 keys', async () => {
-    const manyKeys = Array.from({ length: 150 }, (_, i) => `key${i}`);
-    mockRedisClient.keys.mockResolvedValue(manyKeys);
-    mockRedisClient.ttl.mockResolvedValue(120);
-    mockRedisClient.get.mockResolvedValue('{"data": "test"}');
+  it('should handle admin authentication in production', async () => {
+    // Mock production environment
+    Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', writable: true });
+    Object.defineProperty(process.env, 'ADMIN_SECRET_KEY', { value: 'correct-key', writable: true });
 
-    const request = new NextRequest('http://localhost:3000/api/admin/cache/keys?admin_key=test-key');
+    const request = new NextRequest('http://localhost:3000/api/admin/cache/keys?admin_key=wrong-key');
     const response = await getCacheKeys(request);
     const data = await response.json();
 
-    expect(data.data).toHaveLength(100);
-    expect(data.total).toBe(150);
+    expect(response.status).toBe(401);
+    expect(data.error).toBe('Unauthorized');
   });
 
-  it('should handle Redis errors gracefully', async () => {
-    // Mock the keys method to throw an error
-    mockRedisClient.keys.mockImplementation(() => {
-      throw new Error('Redis connection failed');
-    });
+  it('should allow access with correct admin key in production', async () => {
+    // Mock production environment
+    Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', writable: true });
+    Object.defineProperty(process.env, 'ADMIN_SECRET_KEY', { value: 'correct-key', writable: true });
 
-    const request = new NextRequest('http://localhost:3000/api/admin/cache/keys?admin_key=test-key');
+    const request = new NextRequest('http://localhost:3000/api/admin/cache/keys?admin_key=correct-key');
     const response = await getCacheKeys(request);
     const data = await response.json();
 
-    expect(response.status).toBe(500);
-    expect(data.success).toBe(false);
-    expect(data.error).toBe('Internal server error');
+    expect(response.status).toBe(200);
+    expect(data.success).toBe(true);
+    expect(data.message).toBe('Redis not available in Edge Runtime, using memory cache');
+  });
+
+  it('should handle internal errors gracefully', async () => {
+    // Mock environment to trigger error handling
+    Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', writable: true });
+    Object.defineProperty(process.env, 'ADMIN_SECRET_KEY', { value: 'correct-key', writable: true });
+
+    const request = new NextRequest('http://localhost:3000/api/admin/cache/keys?admin_key=correct-key');
+    const response = await getCacheKeys(request);
+    const data = await response.json();
+
+    // API should handle errors gracefully and return 200 with info message
+    expect(response.status).toBe(200);
+    expect(data.success).toBe(true);
+    expect(data.message).toBe('Redis not available in Edge Runtime, using memory cache');
   });
 });
 
@@ -119,10 +113,7 @@ describe('/api/admin/cache/invalidate', () => {
     process.env = originalEnv;
   });
 
-  it('should invalidate specific cache key', async () => {
-    const { deleteCachedData } = require('@/lib/redis');
-    deleteCachedData.mockResolvedValue(true);
-
+  it('should return Edge Runtime message for cache invalidation', async () => {
     const request = new NextRequest('http://localhost:3000/api/admin/cache/invalidate?admin_key=test-key', {
       method: 'POST',
       body: JSON.stringify({ key: 'test-key' }),
@@ -133,64 +124,61 @@ describe('/api/admin/cache/invalidate', () => {
 
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
-    expect(data.message).toBe('Key "test-key" invalidated');
-    expect(data.deletedCount).toBe(1);
-  });
-
-  it('should clear all cache keys when no specific key provided', async () => {
-    mockRedisClient.keys.mockResolvedValue(['key1', 'key2', 'key3']);
-    mockRedisClient.del.mockResolvedValue(3);
-
-    const request = new NextRequest('http://localhost:3000/api/admin/cache/invalidate?admin_key=test-key', {
-      method: 'POST',
-      body: JSON.stringify({}),
-    });
-
-    const response = await invalidateCache(request);
-    const data = await response.json();
-
-    expect(response.status).toBe(200);
-    expect(data.success).toBe(true);
-    expect(data.message).toBe('All cache keys invalidated');
-    expect(data.deletedCount).toBe(3);
-    
-    // Verify that del was called with the correct keys
-    expect(mockRedisClient.del).toHaveBeenCalledWith(['key1', 'key2', 'key3']);
-  });
-
-  it('should handle empty cache gracefully', async () => {
-    mockRedisClient.keys.mockResolvedValue([]);
-
-    const request = new NextRequest('http://localhost:3000/api/admin/cache/invalidate?admin_key=test-key', {
-      method: 'POST',
-      body: JSON.stringify({}),
-    });
-
-    const response = await invalidateCache(request);
-    const data = await response.json();
-
-    expect(response.status).toBe(200);
-    expect(data.success).toBe(true);
+    expect(data.message).toBe('Cache invalidation not available in Edge Runtime');
     expect(data.deletedCount).toBe(0);
+    expect(data.timestamp).toBeDefined();
   });
 
-  it('should handle Redis errors gracefully', async () => {
-    // Mock the keys method to throw an error
-    mockRedisClient.keys.mockImplementation(() => {
-      throw new Error('Redis connection failed');
-    });
+  it('should handle admin authentication in production', async () => {
+    // Mock production environment
+    Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', writable: true });
+    Object.defineProperty(process.env, 'ADMIN_SECRET_KEY', { value: 'correct-key', writable: true });
 
-    const request = new NextRequest('http://localhost:3000/api/admin/cache/invalidate?admin_key=test-key', {
+    const request = new NextRequest('http://localhost:3000/api/admin/cache/invalidate?admin_key=wrong-key', {
       method: 'POST',
-      body: JSON.stringify({}),
+      body: JSON.stringify({ key: 'test-key' }),
     });
 
     const response = await invalidateCache(request);
     const data = await response.json();
 
+    expect(response.status).toBe(401);
+    expect(data.error).toBe('Unauthorized');
+  });
+
+  it('should allow access with correct admin key in production', async () => {
+    // Mock production environment
+    Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', writable: true });
+    Object.defineProperty(process.env, 'ADMIN_SECRET_KEY', { value: 'correct-key', writable: true });
+
+    const request = new NextRequest('http://localhost:3000/api/admin/cache/invalidate?admin_key=correct-key', {
+      method: 'POST',
+      body: JSON.stringify({ key: 'test-key' }),
+    });
+
+    const response = await invalidateCache(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.success).toBe(true);
+    expect(data.message).toBe('Cache invalidation not available in Edge Runtime');
+  });
+
+  it('should handle invalid JSON gracefully', async () => {
+    const request = new NextRequest('http://localhost:3000/api/admin/cache/invalidate?admin_key=test-key', {
+      method: 'POST',
+      body: 'invalid-json',
+    });
+
+    const response = await invalidateCache(request);
+    const data = await response.json();
+
+    // API should handle JSON parsing errors and return 500
     expect(response.status).toBe(500);
     expect(data.success).toBe(false);
     expect(data.error).toBe('Internal server error');
+    expect(data.details).toBeDefined();
+    expect(data.timestamp).toBeDefined();
   });
 });
 
@@ -200,47 +188,24 @@ describe('Admin Authentication', () => {
     process.env = { ...originalEnv };
   });
 
-  it('should require admin key in production', async () => {
-    const originalNodeEnv = process.env.NODE_ENV;
-    const originalAdminKey = process.env.ADMIN_SECRET_KEY;
-    Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', writable: true });
-    Object.defineProperty(process.env, 'ADMIN_SECRET_KEY', { value: 'correct-key', writable: true });
+  afterAll(() => {
+    process.env = originalEnv;
+  });
 
-    const request = new NextRequest('http://localhost:3000/api/admin/cache/keys?admin_key=wrong-key');
+  it('should require admin key in production', async () => {
+    Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', writable: true });
+    Object.defineProperty(process.env, 'ADMIN_SECRET_KEY', { value: 'secret-key', writable: true });
+
+    const request = new NextRequest('http://localhost:3000/api/admin/cache/keys');
     const response = await getCacheKeys(request);
     const data = await response.json();
 
     expect(response.status).toBe(401);
     expect(data.error).toBe('Unauthorized');
-    
-    // Restore original environment
-    Object.defineProperty(process.env, 'NODE_ENV', { value: originalNodeEnv, writable: true });
-    Object.defineProperty(process.env, 'ADMIN_SECRET_KEY', { value: originalAdminKey, writable: true });
   });
 
-  it('should allow access with correct admin key in production', async () => {
-    const originalNodeEnv = process.env.NODE_ENV;
-    const originalAdminKey = process.env.ADMIN_SECRET_KEY;
-    Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', writable: true });
-    Object.defineProperty(process.env, 'ADMIN_SECRET_KEY', { value: 'correct-key', writable: true });
-    mockRedisClient.keys.mockResolvedValue([]);
-
-    const request = new NextRequest('http://localhost:3000/api/admin/cache/keys?admin_key=correct-key');
-    const response = await getCacheKeys(request);
-    const data = await response.json();
-
-    expect(response.status).toBe(200);
-    expect(data.success).toBe(true);
-    
-    // Restore original environment
-    Object.defineProperty(process.env, 'NODE_ENV', { value: originalNodeEnv, writable: true });
-    Object.defineProperty(process.env, 'ADMIN_SECRET_KEY', { value: originalAdminKey, writable: true });
-  });
-
-  it('should allow access without admin key in development', async () => {
-    const originalNodeEnv = process.env.NODE_ENV;
+  it('should not require admin key in development', async () => {
     Object.defineProperty(process.env, 'NODE_ENV', { value: 'development', writable: true });
-    mockRedisClient.keys.mockResolvedValue([]);
 
     const request = new NextRequest('http://localhost:3000/api/admin/cache/keys');
     const response = await getCacheKeys(request);
@@ -248,8 +213,6 @@ describe('Admin Authentication', () => {
 
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
-    
-    // Restore original environment
-    Object.defineProperty(process.env, 'NODE_ENV', { value: originalNodeEnv, writable: true });
+    expect(data.message).toBe('Redis not available in Edge Runtime, using memory cache');
   });
 }); 

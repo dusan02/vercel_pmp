@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Wifi, WifiOff, RefreshCw, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { Wifi, WifiOff, RefreshCw, AlertCircle, CheckCircle, Clock, Info } from 'lucide-react';
 import { useWebSocket } from '@/hooks/useWebSocket';
 
 interface WebSocketStatusProps {
@@ -70,6 +70,11 @@ export function WebSocketStatus({ showDetails = false, className = '' }: WebSock
   }, []);
 
   const getStatusIcon = () => {
+    // Check if WebSocket is not implemented
+    if (status.error?.includes('not yet implemented') || !status.isImplemented) {
+      return <Info className="w-4 h-4 text-blue-500" />;
+    }
+    
     if (status.isConnecting) {
       return <RefreshCw className="w-4 h-4 animate-spin text-yellow-500" />;
     }
@@ -83,6 +88,11 @@ export function WebSocketStatus({ showDetails = false, className = '' }: WebSock
   };
 
   const getStatusText = () => {
+    // Check if WebSocket is not implemented
+    if (status.error?.includes('not yet implemented') || !status.isImplemented) {
+      return 'Background Updates';
+    }
+    
     if (status.isConnecting) return 'Connecting...';
     if (status.isConnected) return 'Connected';
     if (status.error) return 'Error';
@@ -90,6 +100,11 @@ export function WebSocketStatus({ showDetails = false, className = '' }: WebSock
   };
 
   const getStatusColor = () => {
+    // Check if WebSocket is not implemented
+    if (status.error?.includes('not yet implemented') || !status.isImplemented) {
+      return 'text-blue-600';
+    }
+    
     if (status.isConnecting) return 'text-yellow-600';
     if (status.isConnected) return 'text-green-600';
     if (status.error) return 'text-red-600';
@@ -102,6 +117,9 @@ export function WebSocketStatus({ showDetails = false, className = '' }: WebSock
     return date.toLocaleTimeString();
   };
 
+  // Check if WebSocket is not implemented
+  const isNotImplemented = status.error?.includes('not yet implemented') || !status.isImplemented;
+
   return (
     <div className={`websocket-status ${className}`}>
       {/* Basic Status */}
@@ -111,25 +129,37 @@ export function WebSocketStatus({ showDetails = false, className = '' }: WebSock
           {getStatusText()}
         </span>
         
-        {status.lastUpdate && (
+        {status.lastUpdate && !isNotImplemented && (
           <div className="flex items-center gap-1 text-xs text-gray-500">
             <Clock className="w-3 h-3" />
             <span>Last update: {formatTimestamp(status.lastUpdate)}</span>
           </div>
         )}
 
-        <button
-          onClick={() => ping()}
-          disabled={!status.isConnected}
-          className="ml-auto p-1 text-gray-500 hover:text-gray-700 disabled:opacity-50"
-          title="Ping WebSocket"
-        >
-          <RefreshCw className="w-3 h-3" />
-        </button>
+        {!isNotImplemented && (
+          <button
+            onClick={() => ping()}
+            disabled={!status.isConnected}
+            className="ml-auto p-1 text-gray-500 hover:text-gray-700 disabled:opacity-50"
+            title="Ping WebSocket"
+          >
+            <RefreshCw className="w-3 h-3" />
+          </button>
+        )}
       </div>
 
+      {/* Not Implemented Message */}
+      {isNotImplemented && (
+        <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded text-xs text-blue-700 dark:text-blue-300">
+          <div className="flex items-center gap-1">
+            <Info className="w-3 h-3" />
+            <span>WebSocket real-time updates not yet implemented. Using background data updates.</span>
+          </div>
+        </div>
+      )}
+
       {/* Detailed Status */}
-      {showDetails && (
+      {showDetails && !isNotImplemented && (
         <div className="mt-3 space-y-3">
           {/* Client Controls */}
           <div className="flex gap-2">
@@ -206,7 +236,7 @@ export function WebSocketStatus({ showDetails = false, className = '' }: WebSock
           )}
 
           {/* Error Display */}
-          {status.error && (
+          {status.error && !status.error.includes('not yet implemented') && (
             <div className="p-2 bg-red-50 dark:bg-red-900/20 rounded text-xs text-red-700 dark:text-red-300">
               <div className="flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" />

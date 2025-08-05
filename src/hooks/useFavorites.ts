@@ -1,96 +1,56 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { getFavoritesKey } from '@/lib/projectUtils';
-
-interface Favorite {
-  ticker: string;
-  added_at: string;
-}
+import { useCallback } from 'react';
+import { useUserPreferences } from './useUserPreferences';
 
 export function useFavorites() {
-  const [favorites, setFavorites] = useState<Favorite[]>([]);
-  const [loading, setLoading] = useState(false);
+  const { 
+    preferences, 
+    hasConsent, 
+    addFavorite: addPrefFavorite, 
+    removeFavorite: removePrefFavorite,
+    toggleFavorite: togglePrefFavorite 
+  } = useUserPreferences();
 
-  // Load favorites from localStorage
-  const loadFavorites = useCallback(() => {
-    setLoading(true);
-    try {
-      const favoritesKey = getFavoritesKey();
-      const favoritesData = localStorage.getItem(favoritesKey);
-      
-      if (favoritesData) {
-        const favoritesList = JSON.parse(favoritesData);
-        setFavorites(favoritesList);
-      } else {
-        setFavorites([]);
-      }
-    } catch (err) {
-      console.error('Error loading favorites from localStorage:', err);
-      setFavorites([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // Save favorites to localStorage
-  const saveFavorites = useCallback((favoritesList: Favorite[]) => {
-    try {
-      const favoritesKey = getFavoritesKey();
-      const favoritesData = JSON.stringify(favoritesList);
-      localStorage.setItem(favoritesKey, favoritesData);
-    } catch (err) {
-      console.error('Error saving favorites to localStorage:', err);
-    }
-  }, []);
+  // Convert string array to Favorite objects for backward compatibility
+  const favorites = preferences.favorites.map(ticker => ({
+    ticker,
+    added_at: new Date().toISOString() // We don't store timestamps anymore, but keep interface
+  }));
 
   // Add favorite
   const addFavorite = useCallback((ticker: string) => {
-    const newFavorite: Favorite = {
-      ticker,
-      added_at: new Date().toISOString()
-    };
-    
-    const updatedFavorites = [...favorites, newFavorite];
-    setFavorites(updatedFavorites);
-    saveFavorites(updatedFavorites);
+    if (!hasConsent) return false;
+    addPrefFavorite(ticker);
     return true;
-  }, [favorites, saveFavorites]);
+  }, [hasConsent, addPrefFavorite]);
 
   // Remove favorite
   const removeFavorite = useCallback((ticker: string) => {
-    const updatedFavorites = favorites.filter(fav => fav.ticker !== ticker);
-    setFavorites(updatedFavorites);
-    saveFavorites(updatedFavorites);
+    if (!hasConsent) return false;
+    removePrefFavorite(ticker);
     return true;
-  }, [favorites, saveFavorites]);
+  }, [hasConsent, removePrefFavorite]);
 
   // Check if ticker is in favorites
   const isFavorite = useCallback((ticker: string) => {
-    return favorites.some(fav => fav.ticker === ticker);
-  }, [favorites]);
+    return preferences.favorites.includes(ticker);
+  }, [preferences.favorites]);
 
   // Toggle favorite status
   const toggleFavorite = useCallback((ticker: string) => {
-    if (isFavorite(ticker)) {
-      return removeFavorite(ticker);
-    } else {
-      return addFavorite(ticker);
-    }
-  }, [isFavorite, addFavorite, removeFavorite]);
-
-  // Load favorites on mount
-  useEffect(() => {
-    loadFavorites();
-  }, [loadFavorites]);
+    if (!hasConsent) return false;
+    togglePrefFavorite(ticker);
+    return true;
+  }, [hasConsent, togglePrefFavorite]);
 
   return {
     favorites,
-    loading,
+    loading: false, // No loading state needed with new system
     addFavorite,
     removeFavorite,
     toggleFavorite,
     isFavorite,
-    refresh: loadFavorites,
+    refresh: () => {}, // No refresh needed
   };
 } 

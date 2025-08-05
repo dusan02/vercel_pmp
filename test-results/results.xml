@@ -1,0 +1,1575 @@
+<testsuites id="" name="" tests="62" failures="35" skipped="0" errors="0" time="157.47630999999998">
+<testsuite name="api.spec.ts" timestamp="2025-08-05T20:19:18.557Z" hostname="chromium" tests="20" failures="2" skipped="0" time="20.852" errors="0">
+<testcase name="API Endpoints › /api/stocks › should return stock data for valid tickers" classname="api.spec.ts" time="2.225">
+</testcase>
+<testcase name="API Endpoints › /api/stocks › should apply limit parameter correctly" classname="api.spec.ts" time="2.462">
+</testcase>
+<testcase name="API Endpoints › /api/stocks › should handle invalid tickers gracefully" classname="api.spec.ts" time="1.656">
+</testcase>
+<testcase name="API Endpoints › /api/stocks › should use default project when not specified" classname="api.spec.ts" time="2.204">
+</testcase>
+<testcase name="API Endpoints › /api/stocks › should handle missing tickers parameter" classname="api.spec.ts" time="1.087">
+</testcase>
+<testcase name="API Endpoints › /api/tickers/default › should return default tickers for pmp project" classname="api.spec.ts" time="0.716">
+</testcase>
+<testcase name="API Endpoints › /api/tickers/default › should handle all project types" classname="api.spec.ts" time="1.201">
+</testcase>
+<testcase name="API Endpoints › /api/tickers/default › should handle non-existent project gracefully" classname="api.spec.ts" time="0.694">
+</testcase>
+<testcase name="API Endpoints › /api/tickers/default › should apply limit parameter correctly" classname="api.spec.ts" time="0.127">
+</testcase>
+<testcase name="API Endpoints › /api/tickers/default › should handle negative limit" classname="api.spec.ts" time="0.148">
+</testcase>
+<testcase name="API Endpoints › /api/earnings-calendar › should return earnings data for current date" classname="api.spec.ts" time="0.909">
+</testcase>
+<testcase name="API Endpoints › /api/earnings-calendar › should accept valid date format" classname="api.spec.ts" time="0.876">
+</testcase>
+<testcase name="API Endpoints › /api/earnings-calendar › should reject invalid date format" classname="api.spec.ts" time="0.115">
+</testcase>
+<testcase name="API Endpoints › /api/earnings/yahoo › should return earnings data from Yahoo Finance" classname="api.spec.ts" time="4.748">
+<failure message="api.spec.ts:167:9 should return earnings data from Yahoo Finance" type="FAILURE">
+<![CDATA[  [chromium] › api.spec.ts:167:9 › API Endpoints › /api/earnings/yahoo › should return earnings data from Yahoo Finance 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "yahoo"
+    Received: undefined
+
+      172 |       
+      173 |       expect(data.success).toBe(true);
+    > 174 |       expect(data.source).toBe('yahoo');
+          |                           ^
+      175 |       expect(data.timestamp).toBeDefined();
+      176 |     });
+      177 |   });
+        at D:\Projects\PMP5\tests\api.spec.ts:174:27
+]]>
+</failure>
+</testcase>
+<testcase name="API Endpoints › /api/admin/cache/keys › should return cache keys info" classname="api.spec.ts" time="0.158">
+</testcase>
+<testcase name="API Endpoints › /api/admin/cache/invalidate › should handle cache invalidation request" classname="api.spec.ts" time="0.553">
+</testcase>
+<testcase name="API Endpoints › /api/websocket › should return WebSocket status" classname="api.spec.ts" time="0.07">
+</testcase>
+<testcase name="API Endpoints › /api/websocket › should handle WebSocket start action" classname="api.spec.ts" time="0.129">
+</testcase>
+<testcase name="API Endpoints › /api/websocket › should handle invalid action" classname="api.spec.ts" time="0.117">
+</testcase>
+<testcase name="API Endpoints › /api/earnings/today › should return today earnings data" classname="api.spec.ts" time="0.657">
+<failure message="api.spec.ts:245:9 should return today earnings data" type="FAILURE">
+<![CDATA[  [chromium] › api.spec.ts:245:9 › API Endpoints › /api/earnings/today › should return today earnings data 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      246 |       const response = await request.get(`${baseURL}/api/earnings/today`);
+      247 |       
+    > 248 |       expect(response.status()).toBe(200);
+          |                                 ^
+      249 |       const data = await response.json();
+      250 |       
+      251 |       expect(data.success).toBe(true);
+        at D:\Projects\PMP5\tests\api.spec.ts:248:33
+]]>
+</failure>
+</testcase>
+</testsuite>
+<testsuite name="e2e.spec.ts" timestamp="2025-08-05T20:19:18.557Z" hostname="chromium" tests="13" failures="13" skipped="0" time="401.023" errors="0">
+<testcase name="End-to-End User Journey › Complete Stock Analysis Flow › should complete full stock analysis workflow" classname="e2e.spec.ts" time="31.134">
+<failure message="e2e.spec.ts:11:9 should complete full stock analysis workflow" type="FAILURE">
+<![CDATA[  [chromium] › e2e.spec.ts:11:9 › End-to-End User Journey › Complete Stock Analysis Flow › should complete full stock analysis workflow 
+
+    Test timeout of 30000ms exceeded while running "beforeEach" hook.
+
+      3 | // End-to-End Test Suite - testuje kompletnú user journey
+      4 | test.describe('End-to-End User Journey', () => {
+    > 5 |   test.beforeEach(async ({ page }) => {
+        |        ^
+      6 |     await page.goto('/');
+      7 |     await page.waitForLoadState('networkidle');
+      8 |   });
+        at D:\Projects\PMP5\tests\e2e.spec.ts:5:8
+
+    Error: page.waitForLoadState: Test timeout of 30000ms exceeded.
+
+       5 |   test.beforeEach(async ({ page }) => {
+       6 |     await page.goto('/');
+    >  7 |     await page.waitForLoadState('networkidle');
+         |                ^
+       8 |   });
+       9 |
+      10 |   test.describe('Complete Stock Analysis Flow', () => {
+        at D:\Projects\PMP5\tests\e2e.spec.ts:7:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\e2e-End-to-End-User-Journe-a9204-ull-stock-analysis-workflow-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\e2e-End-to-End-User-Journe-a9204-ull-stock-analysis-workflow-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\e2e-End-to-End-User-Journe-a9204-ull-stock-analysis-workflow-chromium\error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|e2e-End-to-End-User-Journe-a9204-ull-stock-analysis-workflow-chromium\test-failed-1.png]]
+
+[[ATTACHMENT|e2e-End-to-End-User-Journe-a9204-ull-stock-analysis-workflow-chromium\video.webm]]
+
+[[ATTACHMENT|e2e-End-to-End-User-Journe-a9204-ull-stock-analysis-workflow-chromium\error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="End-to-End User Journey › Complete Stock Analysis Flow › should handle favorite stocks functionality" classname="e2e.spec.ts" time="31.032">
+<failure message="e2e.spec.ts:51:9 should handle favorite stocks functionality" type="FAILURE">
+<![CDATA[  [chromium] › e2e.spec.ts:51:9 › End-to-End User Journey › Complete Stock Analysis Flow › should handle favorite stocks functionality 
+
+    Test timeout of 30000ms exceeded while running "beforeEach" hook.
+
+      3 | // End-to-End Test Suite - testuje kompletnú user journey
+      4 | test.describe('End-to-End User Journey', () => {
+    > 5 |   test.beforeEach(async ({ page }) => {
+        |        ^
+      6 |     await page.goto('/');
+      7 |     await page.waitForLoadState('networkidle');
+      8 |   });
+        at D:\Projects\PMP5\tests\e2e.spec.ts:5:8
+
+    Error: page.waitForLoadState: Test timeout of 30000ms exceeded.
+
+       5 |   test.beforeEach(async ({ page }) => {
+       6 |     await page.goto('/');
+    >  7 |     await page.waitForLoadState('networkidle');
+         |                ^
+       8 |   });
+       9 |
+      10 |   test.describe('Complete Stock Analysis Flow', () => {
+        at D:\Projects\PMP5\tests\e2e.spec.ts:7:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\e2e-End-to-End-User-Journe-efa55-vorite-stocks-functionality-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\e2e-End-to-End-User-Journe-efa55-vorite-stocks-functionality-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\e2e-End-to-End-User-Journe-efa55-vorite-stocks-functionality-chromium\error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|e2e-End-to-End-User-Journe-efa55-vorite-stocks-functionality-chromium\test-failed-1.png]]
+
+[[ATTACHMENT|e2e-End-to-End-User-Journe-efa55-vorite-stocks-functionality-chromium\video.webm]]
+
+[[ATTACHMENT|e2e-End-to-End-User-Journe-efa55-vorite-stocks-functionality-chromium\error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="End-to-End User Journey › Complete Stock Analysis Flow › should display company logos correctly" classname="e2e.spec.ts" time="31.065">
+<failure message="e2e.spec.ts:67:9 should display company logos correctly" type="FAILURE">
+<![CDATA[  [chromium] › e2e.spec.ts:67:9 › End-to-End User Journey › Complete Stock Analysis Flow › should display company logos correctly 
+
+    Test timeout of 30000ms exceeded while running "beforeEach" hook.
+
+      3 | // End-to-End Test Suite - testuje kompletnú user journey
+      4 | test.describe('End-to-End User Journey', () => {
+    > 5 |   test.beforeEach(async ({ page }) => {
+        |        ^
+      6 |     await page.goto('/');
+      7 |     await page.waitForLoadState('networkidle');
+      8 |   });
+        at D:\Projects\PMP5\tests\e2e.spec.ts:5:8
+
+    Error: page.waitForLoadState: Test timeout of 30000ms exceeded.
+
+       5 |   test.beforeEach(async ({ page }) => {
+       6 |     await page.goto('/');
+    >  7 |     await page.waitForLoadState('networkidle');
+         |                ^
+       8 |   });
+       9 |
+      10 |   test.describe('Complete Stock Analysis Flow', () => {
+        at D:\Projects\PMP5\tests\e2e.spec.ts:7:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\e2e-End-to-End-User-Journe-10f05-lay-company-logos-correctly-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\e2e-End-to-End-User-Journe-10f05-lay-company-logos-correctly-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\e2e-End-to-End-User-Journe-10f05-lay-company-logos-correctly-chromium\error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|e2e-End-to-End-User-Journe-10f05-lay-company-logos-correctly-chromium\test-failed-1.png]]
+
+[[ATTACHMENT|e2e-End-to-End-User-Journe-10f05-lay-company-logos-correctly-chromium\video.webm]]
+
+[[ATTACHMENT|e2e-End-to-End-User-Journe-10f05-lay-company-logos-correctly-chromium\error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="End-to-End User Journey › Earnings Calendar Workflow › should navigate through earnings calendar" classname="e2e.spec.ts" time="30.801">
+<failure message="e2e.spec.ts:81:9 should navigate through earnings calendar" type="FAILURE">
+<![CDATA[  [chromium] › e2e.spec.ts:81:9 › End-to-End User Journey › Earnings Calendar Workflow › should navigate through earnings calendar 
+
+    Test timeout of 30000ms exceeded while running "beforeEach" hook.
+
+      3 | // End-to-End Test Suite - testuje kompletnú user journey
+      4 | test.describe('End-to-End User Journey', () => {
+    > 5 |   test.beforeEach(async ({ page }) => {
+        |        ^
+      6 |     await page.goto('/');
+      7 |     await page.waitForLoadState('networkidle');
+      8 |   });
+        at D:\Projects\PMP5\tests\e2e.spec.ts:5:8
+
+    Error: page.waitForLoadState: Test timeout of 30000ms exceeded.
+
+       5 |   test.beforeEach(async ({ page }) => {
+       6 |     await page.goto('/');
+    >  7 |     await page.waitForLoadState('networkidle');
+         |                ^
+       8 |   });
+       9 |
+      10 |   test.describe('Complete Stock Analysis Flow', () => {
+        at D:\Projects\PMP5\tests\e2e.spec.ts:7:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\e2e-End-to-End-User-Journe-6d171-e-through-earnings-calendar-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\e2e-End-to-End-User-Journe-6d171-e-through-earnings-calendar-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\e2e-End-to-End-User-Journe-6d171-e-through-earnings-calendar-chromium\error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|e2e-End-to-End-User-Journe-6d171-e-through-earnings-calendar-chromium\test-failed-1.png]]
+
+[[ATTACHMENT|e2e-End-to-End-User-Journe-6d171-e-through-earnings-calendar-chromium\video.webm]]
+
+[[ATTACHMENT|e2e-End-to-End-User-Journe-6d171-e-through-earnings-calendar-chromium\error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="End-to-End User Journey › User Preferences Workflow › should manage user preferences" classname="e2e.spec.ts" time="30.808">
+<failure message="e2e.spec.ts:122:9 should manage user preferences" type="FAILURE">
+<![CDATA[  [chromium] › e2e.spec.ts:122:9 › End-to-End User Journey › User Preferences Workflow › should manage user preferences 
+
+    Test timeout of 30000ms exceeded while running "beforeEach" hook.
+
+      3 | // End-to-End Test Suite - testuje kompletnú user journey
+      4 | test.describe('End-to-End User Journey', () => {
+    > 5 |   test.beforeEach(async ({ page }) => {
+        |        ^
+      6 |     await page.goto('/');
+      7 |     await page.waitForLoadState('networkidle');
+      8 |   });
+        at D:\Projects\PMP5\tests\e2e.spec.ts:5:8
+
+    Error: page.waitForLoadState: Test timeout of 30000ms exceeded.
+
+       5 |   test.beforeEach(async ({ page }) => {
+       6 |     await page.goto('/');
+    >  7 |     await page.waitForLoadState('networkidle');
+         |                ^
+       8 |   });
+       9 |
+      10 |   test.describe('Complete Stock Analysis Flow', () => {
+        at D:\Projects\PMP5\tests\e2e.spec.ts:7:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\e2e-End-to-End-User-Journe-efc30-uld-manage-user-preferences-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\e2e-End-to-End-User-Journe-efc30-uld-manage-user-preferences-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\e2e-End-to-End-User-Journe-efc30-uld-manage-user-preferences-chromium\error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|e2e-End-to-End-User-Journe-efc30-uld-manage-user-preferences-chromium\test-failed-1.png]]
+
+[[ATTACHMENT|e2e-End-to-End-User-Journe-efc30-uld-manage-user-preferences-chromium\video.webm]]
+
+[[ATTACHMENT|e2e-End-to-End-User-Journe-efc30-uld-manage-user-preferences-chromium\error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="End-to-End User Journey › WebSocket Status Monitoring › should display WebSocket status correctly" classname="e2e.spec.ts" time="30.28">
+<failure message="e2e.spec.ts:152:9 should display WebSocket status correctly" type="FAILURE">
+<![CDATA[  [chromium] › e2e.spec.ts:152:9 › End-to-End User Journey › WebSocket Status Monitoring › should display WebSocket status correctly 
+
+    Test timeout of 30000ms exceeded while running "beforeEach" hook.
+
+      3 | // End-to-End Test Suite - testuje kompletnú user journey
+      4 | test.describe('End-to-End User Journey', () => {
+    > 5 |   test.beforeEach(async ({ page }) => {
+        |        ^
+      6 |     await page.goto('/');
+      7 |     await page.waitForLoadState('networkidle');
+      8 |   });
+        at D:\Projects\PMP5\tests\e2e.spec.ts:5:8
+
+    Error: page.waitForLoadState: Test timeout of 30000ms exceeded.
+
+       5 |   test.beforeEach(async ({ page }) => {
+       6 |     await page.goto('/');
+    >  7 |     await page.waitForLoadState('networkidle');
+         |                ^
+       8 |   });
+       9 |
+      10 |   test.describe('Complete Stock Analysis Flow', () => {
+        at D:\Projects\PMP5\tests\e2e.spec.ts:7:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\e2e-End-to-End-User-Journe-dbeac--WebSocket-status-correctly-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\e2e-End-to-End-User-Journe-dbeac--WebSocket-status-correctly-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\e2e-End-to-End-User-Journe-dbeac--WebSocket-status-correctly-chromium\error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|e2e-End-to-End-User-Journe-dbeac--WebSocket-status-correctly-chromium\test-failed-1.png]]
+
+[[ATTACHMENT|e2e-End-to-End-User-Journe-dbeac--WebSocket-status-correctly-chromium\video.webm]]
+
+[[ATTACHMENT|e2e-End-to-End-User-Journe-dbeac--WebSocket-status-correctly-chromium\error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="End-to-End User Journey › Responsive Design Testing › should work correctly on desktop" classname="e2e.spec.ts" time="30.604">
+<failure message="e2e.spec.ts:175:9 should work correctly on desktop" type="FAILURE">
+<![CDATA[  [chromium] › e2e.spec.ts:175:9 › End-to-End User Journey › Responsive Design Testing › should work correctly on desktop 
+
+    Test timeout of 30000ms exceeded while running "beforeEach" hook.
+
+      3 | // End-to-End Test Suite - testuje kompletnú user journey
+      4 | test.describe('End-to-End User Journey', () => {
+    > 5 |   test.beforeEach(async ({ page }) => {
+        |        ^
+      6 |     await page.goto('/');
+      7 |     await page.waitForLoadState('networkidle');
+      8 |   });
+        at D:\Projects\PMP5\tests\e2e.spec.ts:5:8
+
+    Error: page.waitForLoadState: Test timeout of 30000ms exceeded.
+
+       5 |   test.beforeEach(async ({ page }) => {
+       6 |     await page.goto('/');
+    >  7 |     await page.waitForLoadState('networkidle');
+         |                ^
+       8 |   });
+       9 |
+      10 |   test.describe('Complete Stock Analysis Flow', () => {
+        at D:\Projects\PMP5\tests\e2e.spec.ts:7:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\e2e-End-to-End-User-Journe-326b3-d-work-correctly-on-desktop-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\e2e-End-to-End-User-Journe-326b3-d-work-correctly-on-desktop-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\e2e-End-to-End-User-Journe-326b3-d-work-correctly-on-desktop-chromium\error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|e2e-End-to-End-User-Journe-326b3-d-work-correctly-on-desktop-chromium\test-failed-1.png]]
+
+[[ATTACHMENT|e2e-End-to-End-User-Journe-326b3-d-work-correctly-on-desktop-chromium\video.webm]]
+
+[[ATTACHMENT|e2e-End-to-End-User-Journe-326b3-d-work-correctly-on-desktop-chromium\error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="End-to-End User Journey › Responsive Design Testing › should work correctly on tablet" classname="e2e.spec.ts" time="30.758">
+<failure message="e2e.spec.ts:195:9 should work correctly on tablet" type="FAILURE">
+<![CDATA[  [chromium] › e2e.spec.ts:195:9 › End-to-End User Journey › Responsive Design Testing › should work correctly on tablet 
+
+    Test timeout of 30000ms exceeded while running "beforeEach" hook.
+
+      3 | // End-to-End Test Suite - testuje kompletnú user journey
+      4 | test.describe('End-to-End User Journey', () => {
+    > 5 |   test.beforeEach(async ({ page }) => {
+        |        ^
+      6 |     await page.goto('/');
+      7 |     await page.waitForLoadState('networkidle');
+      8 |   });
+        at D:\Projects\PMP5\tests\e2e.spec.ts:5:8
+
+    Error: page.waitForLoadState: Test timeout of 30000ms exceeded.
+
+       5 |   test.beforeEach(async ({ page }) => {
+       6 |     await page.goto('/');
+    >  7 |     await page.waitForLoadState('networkidle');
+         |                ^
+       8 |   });
+       9 |
+      10 |   test.describe('Complete Stock Analysis Flow', () => {
+        at D:\Projects\PMP5\tests\e2e.spec.ts:7:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\e2e-End-to-End-User-Journe-762e9-ld-work-correctly-on-tablet-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\e2e-End-to-End-User-Journe-762e9-ld-work-correctly-on-tablet-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\e2e-End-to-End-User-Journe-762e9-ld-work-correctly-on-tablet-chromium\error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|e2e-End-to-End-User-Journe-762e9-ld-work-correctly-on-tablet-chromium\test-failed-1.png]]
+
+[[ATTACHMENT|e2e-End-to-End-User-Journe-762e9-ld-work-correctly-on-tablet-chromium\video.webm]]
+
+[[ATTACHMENT|e2e-End-to-End-User-Journe-762e9-ld-work-correctly-on-tablet-chromium\error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="End-to-End User Journey › Responsive Design Testing › should work correctly on mobile" classname="e2e.spec.ts" time="30.887">
+<failure message="e2e.spec.ts:209:9 should work correctly on mobile" type="FAILURE">
+<![CDATA[  [chromium] › e2e.spec.ts:209:9 › End-to-End User Journey › Responsive Design Testing › should work correctly on mobile 
+
+    Test timeout of 30000ms exceeded while running "beforeEach" hook.
+
+      3 | // End-to-End Test Suite - testuje kompletnú user journey
+      4 | test.describe('End-to-End User Journey', () => {
+    > 5 |   test.beforeEach(async ({ page }) => {
+        |        ^
+      6 |     await page.goto('/');
+      7 |     await page.waitForLoadState('networkidle');
+      8 |   });
+        at D:\Projects\PMP5\tests\e2e.spec.ts:5:8
+
+    Error: page.waitForLoadState: Test timeout of 30000ms exceeded.
+
+       5 |   test.beforeEach(async ({ page }) => {
+       6 |     await page.goto('/');
+    >  7 |     await page.waitForLoadState('networkidle');
+         |                ^
+       8 |   });
+       9 |
+      10 |   test.describe('Complete Stock Analysis Flow', () => {
+        at D:\Projects\PMP5\tests\e2e.spec.ts:7:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\e2e-End-to-End-User-Journe-7c1a0-ld-work-correctly-on-mobile-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\e2e-End-to-End-User-Journe-7c1a0-ld-work-correctly-on-mobile-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\e2e-End-to-End-User-Journe-7c1a0-ld-work-correctly-on-mobile-chromium\error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|e2e-End-to-End-User-Journe-7c1a0-ld-work-correctly-on-mobile-chromium\test-failed-1.png]]
+
+[[ATTACHMENT|e2e-End-to-End-User-Journe-7c1a0-ld-work-correctly-on-mobile-chromium\video.webm]]
+
+[[ATTACHMENT|e2e-End-to-End-User-Journe-7c1a0-ld-work-correctly-on-mobile-chromium\error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="End-to-End User Journey › Error Handling and Recovery › should handle network errors gracefully" classname="e2e.spec.ts" time="31.005">
+<failure message="e2e.spec.ts:235:9 should handle network errors gracefully" type="FAILURE">
+<![CDATA[  [chromium] › e2e.spec.ts:235:9 › End-to-End User Journey › Error Handling and Recovery › should handle network errors gracefully 
+
+    Test timeout of 30000ms exceeded while running "beforeEach" hook.
+
+      3 | // End-to-End Test Suite - testuje kompletnú user journey
+      4 | test.describe('End-to-End User Journey', () => {
+    > 5 |   test.beforeEach(async ({ page }) => {
+        |        ^
+      6 |     await page.goto('/');
+      7 |     await page.waitForLoadState('networkidle');
+      8 |   });
+        at D:\Projects\PMP5\tests\e2e.spec.ts:5:8
+
+    Error: page.waitForLoadState: Test timeout of 30000ms exceeded.
+
+       5 |   test.beforeEach(async ({ page }) => {
+       6 |     await page.goto('/');
+    >  7 |     await page.waitForLoadState('networkidle');
+         |                ^
+       8 |   });
+       9 |
+      10 |   test.describe('Complete Stock Analysis Flow', () => {
+        at D:\Projects\PMP5\tests\e2e.spec.ts:7:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\e2e-End-to-End-User-Journe-52def-e-network-errors-gracefully-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\e2e-End-to-End-User-Journe-52def-e-network-errors-gracefully-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\e2e-End-to-End-User-Journe-52def-e-network-errors-gracefully-chromium\error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|e2e-End-to-End-User-Journe-52def-e-network-errors-gracefully-chromium\test-failed-1.png]]
+
+[[ATTACHMENT|e2e-End-to-End-User-Journe-52def-e-network-errors-gracefully-chromium\video.webm]]
+
+[[ATTACHMENT|e2e-End-to-End-User-Journe-52def-e-network-errors-gracefully-chromium\error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="End-to-End User Journey › Error Handling and Recovery › should handle API errors gracefully" classname="e2e.spec.ts" time="30.907">
+<failure message="e2e.spec.ts:257:9 should handle API errors gracefully" type="FAILURE">
+<![CDATA[  [chromium] › e2e.spec.ts:257:9 › End-to-End User Journey › Error Handling and Recovery › should handle API errors gracefully 
+
+    Test timeout of 30000ms exceeded while running "beforeEach" hook.
+
+      3 | // End-to-End Test Suite - testuje kompletnú user journey
+      4 | test.describe('End-to-End User Journey', () => {
+    > 5 |   test.beforeEach(async ({ page }) => {
+        |        ^
+      6 |     await page.goto('/');
+      7 |     await page.waitForLoadState('networkidle');
+      8 |   });
+        at D:\Projects\PMP5\tests\e2e.spec.ts:5:8
+
+    Error: page.waitForLoadState: Test timeout of 30000ms exceeded.
+
+       5 |   test.beforeEach(async ({ page }) => {
+       6 |     await page.goto('/');
+    >  7 |     await page.waitForLoadState('networkidle');
+         |                ^
+       8 |   });
+       9 |
+      10 |   test.describe('Complete Stock Analysis Flow', () => {
+        at D:\Projects\PMP5\tests\e2e.spec.ts:7:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\e2e-End-to-End-User-Journe-66ae9-andle-API-errors-gracefully-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\e2e-End-to-End-User-Journe-66ae9-andle-API-errors-gracefully-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\e2e-End-to-End-User-Journe-66ae9-andle-API-errors-gracefully-chromium\error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|e2e-End-to-End-User-Journe-66ae9-andle-API-errors-gracefully-chromium\test-failed-1.png]]
+
+[[ATTACHMENT|e2e-End-to-End-User-Journe-66ae9-andle-API-errors-gracefully-chromium\video.webm]]
+
+[[ATTACHMENT|e2e-End-to-End-User-Journe-66ae9-andle-API-errors-gracefully-chromium\error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="End-to-End User Journey › Performance and Loading States › should show appropriate loading states" classname="e2e.spec.ts" time="30.785">
+<failure message="e2e.spec.ts:282:9 should show appropriate loading states" type="FAILURE">
+<![CDATA[  [chromium] › e2e.spec.ts:282:9 › End-to-End User Journey › Performance and Loading States › should show appropriate loading states 
+
+    Test timeout of 30000ms exceeded while running "beforeEach" hook.
+
+      3 | // End-to-End Test Suite - testuje kompletnú user journey
+      4 | test.describe('End-to-End User Journey', () => {
+    > 5 |   test.beforeEach(async ({ page }) => {
+        |        ^
+      6 |     await page.goto('/');
+      7 |     await page.waitForLoadState('networkidle');
+      8 |   });
+        at D:\Projects\PMP5\tests\e2e.spec.ts:5:8
+
+    Error: page.waitForLoadState: Test timeout of 30000ms exceeded.
+
+       5 |   test.beforeEach(async ({ page }) => {
+       6 |     await page.goto('/');
+    >  7 |     await page.waitForLoadState('networkidle');
+         |                ^
+       8 |   });
+       9 |
+      10 |   test.describe('Complete Stock Analysis Flow', () => {
+        at D:\Projects\PMP5\tests\e2e.spec.ts:7:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\e2e-End-to-End-User-Journe-2efc3--appropriate-loading-states-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\e2e-End-to-End-User-Journe-2efc3--appropriate-loading-states-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\e2e-End-to-End-User-Journe-2efc3--appropriate-loading-states-chromium\error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|e2e-End-to-End-User-Journe-2efc3--appropriate-loading-states-chromium\test-failed-1.png]]
+
+[[ATTACHMENT|e2e-End-to-End-User-Journe-2efc3--appropriate-loading-states-chromium\video.webm]]
+
+[[ATTACHMENT|e2e-End-to-End-User-Journe-2efc3--appropriate-loading-states-chromium\error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="End-to-End User Journey › Performance and Loading States › should handle slow network conditions" classname="e2e.spec.ts" time="30.957">
+<failure message="e2e.spec.ts:297:9 should handle slow network conditions" type="FAILURE">
+<![CDATA[  [chromium] › e2e.spec.ts:297:9 › End-to-End User Journey › Performance and Loading States › should handle slow network conditions 
+
+    Test timeout of 30000ms exceeded while running "beforeEach" hook.
+
+      3 | // End-to-End Test Suite - testuje kompletnú user journey
+      4 | test.describe('End-to-End User Journey', () => {
+    > 5 |   test.beforeEach(async ({ page }) => {
+        |        ^
+      6 |     await page.goto('/');
+      7 |     await page.waitForLoadState('networkidle');
+      8 |   });
+        at D:\Projects\PMP5\tests\e2e.spec.ts:5:8
+
+    Error: page.waitForLoadState: Test timeout of 30000ms exceeded.
+
+       5 |   test.beforeEach(async ({ page }) => {
+       6 |     await page.goto('/');
+    >  7 |     await page.waitForLoadState('networkidle');
+         |                ^
+       8 |   });
+       9 |
+      10 |   test.describe('Complete Stock Analysis Flow', () => {
+        at D:\Projects\PMP5\tests\e2e.spec.ts:7:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\e2e-End-to-End-User-Journe-a4965-dle-slow-network-conditions-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\e2e-End-to-End-User-Journe-a4965-dle-slow-network-conditions-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\e2e-End-to-End-User-Journe-a4965-dle-slow-network-conditions-chromium\error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|e2e-End-to-End-User-Journe-a4965-dle-slow-network-conditions-chromium\test-failed-1.png]]
+
+[[ATTACHMENT|e2e-End-to-End-User-Journe-a4965-dle-slow-network-conditions-chromium\video.webm]]
+
+[[ATTACHMENT|e2e-End-to-End-User-Journe-a4965-dle-slow-network-conditions-chromium\error-context.md]]
+]]>
+</system-out>
+</testcase>
+</testsuite>
+<testsuite name="performance.spec.ts" timestamp="2025-08-05T20:19:18.557Z" hostname="chromium" tests="11" failures="6" skipped="0" time="186.058" errors="0">
+<testcase name="Performance Tests › Page Load Performance › should load main page within performance budget" classname="performance.spec.ts" time="30.793">
+<failure message="performance.spec.ts:6:9 should load main page within performance budget" type="FAILURE">
+<![CDATA[  [chromium] › performance.spec.ts:6:9 › Performance Tests › Page Load Performance › should load main page within performance budget 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: page.waitForLoadState: Test timeout of 30000ms exceeded.
+
+       8 |       
+       9 |       await page.goto('/');
+    > 10 |       await page.waitForLoadState('networkidle');
+         |                  ^
+      11 |       
+      12 |       const loadTime = Date.now() - startTime;
+      13 |       
+        at D:\Projects\PMP5\tests\performance.spec.ts:10:18
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\performance-Performance-Te-b0e69-e-within-performance-budget-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\performance-Performance-Te-b0e69-e-within-performance-budget-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\performance-Performance-Te-b0e69-e-within-performance-budget-chromium\error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|performance-Performance-Te-b0e69-e-within-performance-budget-chromium\test-failed-1.png]]
+
+[[ATTACHMENT|performance-Performance-Te-b0e69-e-within-performance-budget-chromium\video.webm]]
+
+[[ATTACHMENT|performance-Performance-Te-b0e69-e-within-performance-budget-chromium\error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="Performance Tests › Page Load Performance › should have good Core Web Vitals" classname="performance.spec.ts" time="30.438">
+<failure message="performance.spec.ts:20:9 should have good Core Web Vitals" type="FAILURE">
+<![CDATA[  [chromium] › performance.spec.ts:20:9 › Performance Tests › Page Load Performance › should have good Core Web Vitals 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: page.evaluate: Test timeout of 30000ms exceeded.
+
+      23 |       
+      24 |       // Meranie LCP (Largest Contentful Paint)
+    > 25 |       const lcp = await page.evaluate(() => {
+         |                              ^
+      26 |         return new Promise((resolve) => {
+      27 |           new PerformanceObserver((list) => {
+      28 |             const entries = list.getEntries();
+        at D:\Projects\PMP5\tests\performance.spec.ts:25:30
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\performance-Performance-Te-36db9-d-have-good-Core-Web-Vitals-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\performance-Performance-Te-36db9-d-have-good-Core-Web-Vitals-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\performance-Performance-Te-36db9-d-have-good-Core-Web-Vitals-chromium\error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|performance-Performance-Te-36db9-d-have-good-Core-Web-Vitals-chromium\test-failed-1.png]]
+
+[[ATTACHMENT|performance-Performance-Te-36db9-d-have-good-Core-Web-Vitals-chromium\video.webm]]
+
+[[ATTACHMENT|performance-Performance-Te-36db9-d-have-good-Core-Web-Vitals-chromium\error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="Performance Tests › API Performance › should load stock data within reasonable time" classname="performance.spec.ts" time="24.284">
+<failure message="performance.spec.ts:62:9 should load stock data within reasonable time" type="FAILURE">
+<![CDATA[  [chromium] › performance.spec.ts:62:9 › Performance Tests › API Performance › should load stock data within reasonable time 
+
+    Error: Timed out 5000ms waiting for expect(locator).toBeVisible()
+
+    Locator: locator('[data-testid="stock-table"]').locator('tbody tr').first()
+    Expected: visible
+    Received: <element(s) not found>
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('[data-testid="stock-table"]').locator('tbody tr').first()
+
+
+      70 |       const rows = table.locator('tbody tr');
+      71 |       
+    > 72 |       await expect(rows.first()).toBeVisible();
+         |                                  ^
+      73 |       
+      74 |       // Kontrola počtu načítaných riadkov
+      75 |       const rowCount = await rows.count();
+        at D:\Projects\PMP5\tests\performance.spec.ts:72:34
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\performance-Performance-Te-b3117-data-within-reasonable-time-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\performance-Performance-Te-b3117-data-within-reasonable-time-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\performance-Performance-Te-b3117-data-within-reasonable-time-chromium\error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|performance-Performance-Te-b3117-data-within-reasonable-time-chromium\test-failed-1.png]]
+
+[[ATTACHMENT|performance-Performance-Te-b3117-data-within-reasonable-time-chromium\video.webm]]
+
+[[ATTACHMENT|performance-Performance-Te-b3117-data-within-reasonable-time-chromium\error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="Performance Tests › API Performance › should load earnings data efficiently" classname="performance.spec.ts" time="31.462">
+<failure message="performance.spec.ts:81:9 should load earnings data efficiently" type="FAILURE">
+<![CDATA[  [chromium] › performance.spec.ts:81:9 › Performance Tests › API Performance › should load earnings data efficiently 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('[role="tab"]').nth(1)
+
+
+      83 |       
+      84 |       // Prepneme na Earnings tab
+    > 85 |       await page.locator('[role="tab"]').nth(1).click();
+         |                                                 ^
+      86 |       await page.waitForTimeout(2000);
+      87 |       
+      88 |       // Kontrola či sa earnings načítali
+        at D:\Projects\PMP5\tests\performance.spec.ts:85:49
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\performance-Performance-Te-71923-d-earnings-data-efficiently-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\performance-Performance-Te-71923-d-earnings-data-efficiently-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\performance-Performance-Te-71923-d-earnings-data-efficiently-chromium\error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|performance-Performance-Te-71923-d-earnings-data-efficiently-chromium\test-failed-1.png]]
+
+[[ATTACHMENT|performance-Performance-Te-71923-d-earnings-data-efficiently-chromium\video.webm]]
+
+[[ATTACHMENT|performance-Performance-Te-71923-d-earnings-data-efficiently-chromium\error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="Performance Tests › Memory Usage › should not have memory leaks" classname="performance.spec.ts" time="8.829">
+<system-out>
+<![CDATA[Memory increase: 0.00%
+]]>
+</system-out>
+</testcase>
+<testcase name="Performance Tests › Network Performance › should optimize network requests" classname="performance.spec.ts" time="10.348">
+<failure message="performance.spec.ts:132:9 should optimize network requests" type="FAILURE">
+<![CDATA[  [chromium] › performance.spec.ts:132:9 › Performance Tests › Network Performance › should optimize network requests 
+
+    Error: expect(received).toBeLessThan(expected)
+
+    Expected: < 50
+    Received:   76
+
+      141 |       
+      142 |       // Kontrola počtu requestov
+    > 143 |       expect(requests.length).toBeLessThan(50); // Menej ako 50 requestov
+          |                               ^
+      144 |       
+      145 |       // Kontrola duplicitných requestov
+      146 |       const uniqueRequests = new Set(requests);
+        at D:\Projects\PMP5\tests\performance.spec.ts:143:31
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\performance-Performance-Te-7dda8-d-optimize-network-requests-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\performance-Performance-Te-7dda8-d-optimize-network-requests-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\performance-Performance-Te-7dda8-d-optimize-network-requests-chromium\error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|performance-Performance-Te-7dda8-d-optimize-network-requests-chromium\test-failed-1.png]]
+
+[[ATTACHMENT|performance-Performance-Te-7dda8-d-optimize-network-requests-chromium\video.webm]]
+
+[[ATTACHMENT|performance-Performance-Te-7dda8-d-optimize-network-requests-chromium\error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="Performance Tests › Network Performance › should use caching effectively" classname="performance.spec.ts" time="20.7">
+<system-out>
+<![CDATA[First load requests: 75
+Second load requests: 75
+]]>
+</system-out>
+</testcase>
+<testcase name="Performance Tests › Rendering Performance › should render components efficiently" classname="performance.spec.ts" time="2.812">
+<system-out>
+<![CDATA[Render time: 0.00ms
+]]>
+</system-out>
+</testcase>
+<testcase name="Performance Tests › Rendering Performance › should handle large datasets efficiently" classname="performance.spec.ts" time="6.281">
+</testcase>
+<testcase name="Performance Tests › Mobile Performance › should perform well on mobile devices" classname="performance.spec.ts" time="5.569">
+<failure message="performance.spec.ts:244:9 should perform well on mobile devices" type="FAILURE">
+<![CDATA[  [chromium] › performance.spec.ts:244:9 › Performance Tests › Mobile Performance › should perform well on mobile devices 
+
+    Error: expect(received).toBeLessThan(expected)
+
+    Expected: < 4000
+    Received:   4499
+
+      252 |       
+      253 |       // Mobile load time by mal byť menej ako 4 sekundy
+    > 254 |       expect(loadTime).toBeLessThan(4000);
+          |                        ^
+      255 |       
+      256 |       // Kontrola či sa aplikácia správne zobrazuje na mobile
+      257 |       const table = page.locator('[data-testid="stock-table"]');
+        at D:\Projects\PMP5\tests\performance.spec.ts:254:24
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\performance-Performance-Te-64040-form-well-on-mobile-devices-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\performance-Performance-Te-64040-form-well-on-mobile-devices-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\performance-Performance-Te-64040-form-well-on-mobile-devices-chromium\error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|performance-Performance-Te-64040-form-well-on-mobile-devices-chromium\test-failed-1.png]]
+
+[[ATTACHMENT|performance-Performance-Te-64040-form-well-on-mobile-devices-chromium\video.webm]]
+
+[[ATTACHMENT|performance-Performance-Te-64040-form-well-on-mobile-devices-chromium\error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="Performance Tests › Mobile Performance › should handle touch interactions efficiently" classname="performance.spec.ts" time="14.542">
+</testcase>
+</testsuite>
+<testsuite name="ui.spec.ts" timestamp="2025-08-05T20:19:18.557Z" hostname="chromium" tests="18" failures="14" skipped="0" time="430.846" errors="0">
+<testcase name="UI Components › Main Page › should load main page successfully" classname="ui.spec.ts" time="30.645">
+<failure message="ui.spec.ts:12:9 should load main page successfully" type="FAILURE">
+<![CDATA[  [chromium] › ui.spec.ts:12:9 › UI Components › Main Page › should load main page successfully ────
+
+    Test timeout of 30000ms exceeded.
+
+    Error: expect(locator).toBeVisible()
+
+    Locator: locator('[data-testid="stock-table"]')
+    Expected: visible
+    Received: <element(s) not found>
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('[data-testid="stock-table"]')
+
+
+      13 |       // Kontrola základných elementov
+      14 |       await expect(page.locator('h1')).toBeVisible();
+    > 15 |       await expect(page.locator('[data-testid="stock-table"]')).toBeVisible();
+         |                                                                 ^
+      16 |       await expect(page.locator('[data-testid="earnings-calendar"]')).toBeVisible();
+      17 |     });
+      18 |
+        at D:\Projects\PMP5\tests\ui.spec.ts:15:65
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\ui-UI-Components-Main-Page-9eead-load-main-page-successfully-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\ui-UI-Components-Main-Page-9eead-load-main-page-successfully-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\ui-UI-Components-Main-Page-9eead-load-main-page-successfully-chromium\error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|ui-UI-Components-Main-Page-9eead-load-main-page-successfully-chromium\test-failed-1.png]]
+
+[[ATTACHMENT|ui-UI-Components-Main-Page-9eead-load-main-page-successfully-chromium\video.webm]]
+
+[[ATTACHMENT|ui-UI-Components-Main-Page-9eead-load-main-page-successfully-chromium\error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="UI Components › Main Page › should display stock data table" classname="ui.spec.ts" time="23.756">
+<failure message="ui.spec.ts:19:9 should display stock data table" type="FAILURE">
+<![CDATA[  [chromium] › ui.spec.ts:19:9 › UI Components › Main Page › should display stock data table ───────
+
+    Error: Timed out 5000ms waiting for expect(locator).toBeVisible()
+
+    Locator: locator('[data-testid="stock-table"]')
+    Expected: visible
+    Received: <element(s) not found>
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('[data-testid="stock-table"]')
+
+
+      19 |     test('should display stock data table', async ({ page }) => {
+      20 |       const table = page.locator('[data-testid="stock-table"]');
+    > 21 |       await expect(table).toBeVisible();
+         |                           ^
+      22 |       
+      23 |       // Počkáme na načítanie dát
+      24 |       await page.waitForTimeout(2000);
+        at D:\Projects\PMP5\tests\ui.spec.ts:21:27
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\ui-UI-Components-Main-Page-should-display-stock-data-table-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\ui-UI-Components-Main-Page-should-display-stock-data-table-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\ui-UI-Components-Main-Page-should-display-stock-data-table-chromium\error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|ui-UI-Components-Main-Page-should-display-stock-data-table-chromium\test-failed-1.png]]
+
+[[ATTACHMENT|ui-UI-Components-Main-Page-should-display-stock-data-table-chromium\video.webm]]
+
+[[ATTACHMENT|ui-UI-Components-Main-Page-should-display-stock-data-table-chromium\error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="UI Components › Main Page › should display earnings calendar" classname="ui.spec.ts" time="30.435">
+<failure message="ui.spec.ts:31:9 should display earnings calendar" type="FAILURE">
+<![CDATA[  [chromium] › ui.spec.ts:31:9 › UI Components › Main Page › should display earnings calendar ──────
+
+    Test timeout of 30000ms exceeded.
+
+    Error: expect(locator).toBeVisible()
+
+    Locator: locator('[data-testid="earnings-calendar"]')
+    Expected: visible
+    Received: <element(s) not found>
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('[data-testid="earnings-calendar"]')
+
+
+      31 |     test('should display earnings calendar', async ({ page }) => {
+      32 |       const calendar = page.locator('[data-testid="earnings-calendar"]');
+    > 33 |       await expect(calendar).toBeVisible();
+         |                              ^
+      34 |       
+      35 |       // Kontrola či sa zobrazuje dátum
+      36 |       const dateElement = calendar.locator('[data-testid="earnings-date"]');
+        at D:\Projects\PMP5\tests\ui.spec.ts:33:30
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\ui-UI-Components-Main-Page-should-display-earnings-calendar-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\ui-UI-Components-Main-Page-should-display-earnings-calendar-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\ui-UI-Components-Main-Page-should-display-earnings-calendar-chromium\error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|ui-UI-Components-Main-Page-should-display-earnings-calendar-chromium\test-failed-1.png]]
+
+[[ATTACHMENT|ui-UI-Components-Main-Page-should-display-earnings-calendar-chromium\video.webm]]
+
+[[ATTACHMENT|ui-UI-Components-Main-Page-should-display-earnings-calendar-chromium\error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="UI Components › Main Page › should handle tab switching" classname="ui.spec.ts" time="24.715">
+<failure message="ui.spec.ts:40:9 should handle tab switching" type="FAILURE">
+<![CDATA[  [chromium] › ui.spec.ts:40:9 › UI Components › Main Page › should handle tab switching ───────────
+
+    Error: Timed out 5000ms waiting for expect(locator).toHaveCount(expected)
+
+    Locator: locator('[role="tab"]')
+    Expected: 3
+    Received: 0
+    Call log:
+      - Expect "toHaveCount" with timeout 5000ms
+      - waiting for locator('[role="tab"]')
+        8 × locator resolved to 0 elements
+          - unexpected value "0"
+
+
+      41 |       // Kontrola prepínania medzi sekciami
+      42 |       const tabs = page.locator('[role="tab"]');
+    > 43 |       await expect(tabs).toHaveCount(3); // Stocks, Earnings, Settings
+         |                          ^
+      44 |       
+      45 |       // Kliknutie na Earnings tab
+      46 |       await tabs.nth(1).click();
+        at D:\Projects\PMP5\tests\ui.spec.ts:43:26
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\ui-UI-Components-Main-Page-should-handle-tab-switching-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\ui-UI-Components-Main-Page-should-handle-tab-switching-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\ui-UI-Components-Main-Page-should-handle-tab-switching-chromium\error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|ui-UI-Components-Main-Page-should-handle-tab-switching-chromium\test-failed-1.png]]
+
+[[ATTACHMENT|ui-UI-Components-Main-Page-should-handle-tab-switching-chromium\video.webm]]
+
+[[ATTACHMENT|ui-UI-Components-Main-Page-should-handle-tab-switching-chromium\error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="UI Components › Stock Table › should display stock information correctly" classname="ui.spec.ts" time="30.628">
+<failure message="ui.spec.ts:56:9 should display stock information correctly" type="FAILURE">
+<![CDATA[  [chromium] › ui.spec.ts:56:9 › UI Components › Stock Table › should display stock information correctly 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: expect(locator).toBeVisible()
+
+    Locator: locator('[data-testid="stock-table"]').locator('tbody tr').first().locator('[data-testid="ticker"]')
+    Expected: visible
+    Received: <element(s) not found>
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('[data-testid="stock-table"]').locator('tbody tr').first().locator('[data-testid="ticker"]')
+
+
+      61 |       
+      62 |       // Kontrola základných stĺpcov
+    > 63 |       await expect(firstRow.locator('[data-testid="ticker"]')).toBeVisible();
+         |                                                                ^
+      64 |       await expect(firstRow.locator('[data-testid="price"]')).toBeVisible();
+      65 |       await expect(firstRow.locator('[data-testid="change"]')).toBeVisible();
+      66 |       await expect(firstRow.locator('[data-testid="market-cap"]')).toBeVisible();
+        at D:\Projects\PMP5\tests\ui.spec.ts:63:64
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\ui-UI-Components-Stock-Tab-ab4c2-stock-information-correctly-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\ui-UI-Components-Stock-Tab-ab4c2-stock-information-correctly-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\ui-UI-Components-Stock-Tab-ab4c2-stock-information-correctly-chromium\error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|ui-UI-Components-Stock-Tab-ab4c2-stock-information-correctly-chromium\test-failed-1.png]]
+
+[[ATTACHMENT|ui-UI-Components-Stock-Tab-ab4c2-stock-information-correctly-chromium\video.webm]]
+
+[[ATTACHMENT|ui-UI-Components-Stock-Tab-ab4c2-stock-information-correctly-chromium\error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="UI Components › Stock Table › should handle favorite toggling" classname="ui.spec.ts" time="16.442">
+<failure message="ui.spec.ts:69:9 should handle favorite toggling" type="FAILURE">
+<![CDATA[  [chromium] › ui.spec.ts:69:9 › UI Components › Stock Table › should handle favorite toggling ─────
+
+    Error: Timed out 5000ms waiting for expect(locator).toBeVisible()
+
+    Locator: locator('[data-testid="stock-table"] tbody tr').first().locator('[data-testid="favorite-button"]')
+    Expected: visible
+    Received: <element(s) not found>
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('[data-testid="stock-table"] tbody tr').first().locator('[data-testid="favorite-button"]')
+
+
+      74 |       
+      75 |       // Kontrola či je tlačidlo viditeľné
+    > 76 |       await expect(favoriteButton).toBeVisible();
+         |                                    ^
+      77 |       
+      78 |       // Kliknutie na favorite (ak je implementované)
+      79 |       await favoriteButton.click();
+        at D:\Projects\PMP5\tests\ui.spec.ts:76:36
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\ui-UI-Components-Stock-Table-should-handle-favorite-toggling-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\ui-UI-Components-Stock-Table-should-handle-favorite-toggling-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\ui-UI-Components-Stock-Table-should-handle-favorite-toggling-chromium\error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|ui-UI-Components-Stock-Table-should-handle-favorite-toggling-chromium\test-failed-1.png]]
+
+[[ATTACHMENT|ui-UI-Components-Stock-Table-should-handle-favorite-toggling-chromium\video.webm]]
+
+[[ATTACHMENT|ui-UI-Components-Stock-Table-should-handle-favorite-toggling-chromium\error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="UI Components › Stock Table › should display company logos" classname="ui.spec.ts" time="28.437">
+<failure message="ui.spec.ts:83:9 should display company logos" type="FAILURE">
+<![CDATA[  [chromium] › ui.spec.ts:83:9 › UI Components › Stock Table › should display company logos ────────
+
+    Error: Timed out 5000ms waiting for expect(locator).toBeVisible()
+
+    Locator: locator('[data-testid="company-logo"]').first()
+    Expected: visible
+    Received: <element(s) not found>
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('[data-testid="company-logo"]').first()
+
+
+      85 |       
+      86 |       const logos = page.locator('[data-testid="company-logo"]');
+    > 87 |       await expect(logos.first()).toBeVisible();
+         |                                   ^
+      88 |     });
+      89 |   });
+      90 |
+        at D:\Projects\PMP5\tests\ui.spec.ts:87:35
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\ui-UI-Components-Stock-Table-should-display-company-logos-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\ui-UI-Components-Stock-Table-should-display-company-logos-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\ui-UI-Components-Stock-Table-should-display-company-logos-chromium\error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|ui-UI-Components-Stock-Table-should-display-company-logos-chromium\test-failed-1.png]]
+
+[[ATTACHMENT|ui-UI-Components-Stock-Table-should-display-company-logos-chromium\video.webm]]
+
+[[ATTACHMENT|ui-UI-Components-Stock-Table-should-display-company-logos-chromium\error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="UI Components › Earnings Calendar › should display pre-market and after-market earnings" classname="ui.spec.ts" time="30.837">
+<failure message="ui.spec.ts:92:9 should display pre-market and after-market earnings" type="FAILURE">
+<![CDATA[  [chromium] › ui.spec.ts:92:9 › UI Components › Earnings Calendar › should display pre-market and after-market earnings 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('[role="tab"]').nth(1)
+
+
+      92 |     test('should display pre-market and after-market earnings', async ({ page }) => {
+      93 |       // Prepneme na Earnings tab
+    > 94 |       await page.locator('[role="tab"]').nth(1).click();
+         |                                                 ^
+      95 |       await page.waitForTimeout(1000);
+      96 |       
+      97 |       const calendar = page.locator('[data-testid="earnings-calendar"]');
+        at D:\Projects\PMP5\tests\ui.spec.ts:94:49
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\ui-UI-Components-Earnings--71bf8-t-and-after-market-earnings-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\ui-UI-Components-Earnings--71bf8-t-and-after-market-earnings-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\ui-UI-Components-Earnings--71bf8-t-and-after-market-earnings-chromium\error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|ui-UI-Components-Earnings--71bf8-t-and-after-market-earnings-chromium\test-failed-1.png]]
+
+[[ATTACHMENT|ui-UI-Components-Earnings--71bf8-t-and-after-market-earnings-chromium\video.webm]]
+
+[[ATTACHMENT|ui-UI-Components-Earnings--71bf8-t-and-after-market-earnings-chromium\error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="UI Components › Earnings Calendar › should handle date navigation" classname="ui.spec.ts" time="30.755">
+<failure message="ui.spec.ts:105:9 should handle date navigation" type="FAILURE">
+<![CDATA[  [chromium] › ui.spec.ts:105:9 › UI Components › Earnings Calendar › should handle date navigation 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('[role="tab"]').nth(1)
+
+
+      105 |     test('should handle date navigation', async ({ page }) => {
+      106 |       // Prepneme na Earnings tab
+    > 107 |       await page.locator('[role="tab"]').nth(1).click();
+          |                                                 ^
+      108 |       await page.waitForTimeout(1000);
+      109 |       
+      110 |       const dateNav = page.locator('[data-testid="date-navigation"]');
+        at D:\Projects\PMP5\tests\ui.spec.ts:107:49
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\ui-UI-Components-Earnings--da5d8-ould-handle-date-navigation-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\ui-UI-Components-Earnings--da5d8-ould-handle-date-navigation-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\ui-UI-Components-Earnings--da5d8-ould-handle-date-navigation-chromium\error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|ui-UI-Components-Earnings--da5d8-ould-handle-date-navigation-chromium\test-failed-1.png]]
+
+[[ATTACHMENT|ui-UI-Components-Earnings--da5d8-ould-handle-date-navigation-chromium\video.webm]]
+
+[[ATTACHMENT|ui-UI-Components-Earnings--da5d8-ould-handle-date-navigation-chromium\error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="UI Components › User Preferences › should display user preferences panel" classname="ui.spec.ts" time="30.798">
+<failure message="ui.spec.ts:125:9 should display user preferences panel" type="FAILURE">
+<![CDATA[  [chromium] › ui.spec.ts:125:9 › UI Components › User Preferences › should display user preferences panel 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('[role="tab"]').nth(2)
+
+
+      125 |     test('should display user preferences panel', async ({ page }) => {
+      126 |       // Prepneme na Settings tab
+    > 127 |       await page.locator('[role="tab"]').nth(2).click();
+          |                                                 ^
+      128 |       await page.waitForTimeout(1000);
+      129 |       
+      130 |       const preferences = page.locator('[data-testid="user-preferences"]');
+        at D:\Projects\PMP5\tests\ui.spec.ts:127:49
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\ui-UI-Components-User-Pref-462c7-play-user-preferences-panel-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\ui-UI-Components-User-Pref-462c7-play-user-preferences-panel-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\ui-UI-Components-User-Pref-462c7-play-user-preferences-panel-chromium\error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|ui-UI-Components-User-Pref-462c7-play-user-preferences-panel-chromium\test-failed-1.png]]
+
+[[ATTACHMENT|ui-UI-Components-User-Pref-462c7-play-user-preferences-panel-chromium\video.webm]]
+
+[[ATTACHMENT|ui-UI-Components-User-Pref-462c7-play-user-preferences-panel-chromium\error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="UI Components › User Preferences › should handle theme switching" classname="ui.spec.ts" time="30.518">
+<failure message="ui.spec.ts:134:9 should handle theme switching" type="FAILURE">
+<![CDATA[  [chromium] › ui.spec.ts:134:9 › UI Components › User Preferences › should handle theme switching ─
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('[role="tab"]').nth(2)
+
+
+      134 |     test('should handle theme switching', async ({ page }) => {
+      135 |       // Prepneme na Settings tab
+    > 136 |       await page.locator('[role="tab"]').nth(2).click();
+          |                                                 ^
+      137 |       await page.waitForTimeout(1000);
+      138 |       
+      139 |       const themeToggle = page.locator('[data-testid="theme-toggle"]');
+        at D:\Projects\PMP5\tests\ui.spec.ts:136:49
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\ui-UI-Components-User-Pref-386ed-ould-handle-theme-switching-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\ui-UI-Components-User-Pref-386ed-ould-handle-theme-switching-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\ui-UI-Components-User-Pref-386ed-ould-handle-theme-switching-chromium\error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|ui-UI-Components-User-Pref-386ed-ould-handle-theme-switching-chromium\test-failed-1.png]]
+
+[[ATTACHMENT|ui-UI-Components-User-Pref-386ed-ould-handle-theme-switching-chromium\video.webm]]
+
+[[ATTACHMENT|ui-UI-Components-User-Pref-386ed-ould-handle-theme-switching-chromium\error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="UI Components › WebSocket Status › should display WebSocket status correctly" classname="ui.spec.ts" time="28.178">
+<failure message="ui.spec.ts:148:9 should display WebSocket status correctly" type="FAILURE">
+<![CDATA[  [chromium] › ui.spec.ts:148:9 › UI Components › WebSocket Status › should display WebSocket status correctly 
+
+    Error: Timed out 5000ms waiting for expect(locator).toBeVisible()
+
+    Locator: locator('[data-testid="websocket-status"]')
+    Expected: visible
+    Received: <element(s) not found>
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('[data-testid="websocket-status"]')
+
+
+      148 |     test('should display WebSocket status correctly', async ({ page }) => {
+      149 |       const wsStatus = page.locator('[data-testid="websocket-status"]');
+    > 150 |       await expect(wsStatus).toBeVisible();
+          |                              ^
+      151 |       
+      152 |       // Kontrola či sa zobrazuje správny status
+      153 |       const statusText = wsStatus.locator('[data-testid="status-text"]');
+        at D:\Projects\PMP5\tests\ui.spec.ts:150:30
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\ui-UI-Components-WebSocket-f7909--WebSocket-status-correctly-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\ui-UI-Components-WebSocket-f7909--WebSocket-status-correctly-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\ui-UI-Components-WebSocket-f7909--WebSocket-status-correctly-chromium\error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|ui-UI-Components-WebSocket-f7909--WebSocket-status-correctly-chromium\test-failed-1.png]]
+
+[[ATTACHMENT|ui-UI-Components-WebSocket-f7909--WebSocket-status-correctly-chromium\video.webm]]
+
+[[ATTACHMENT|ui-UI-Components-WebSocket-f7909--WebSocket-status-correctly-chromium\error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="UI Components › Responsive Design › should work on mobile viewport" classname="ui.spec.ts" time="30.3">
+<failure message="ui.spec.ts:159:9 should work on mobile viewport" type="FAILURE">
+<![CDATA[  [chromium] › ui.spec.ts:159:9 › UI Components › Responsive Design › should work on mobile viewport 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: page.waitForLoadState: Test timeout of 30000ms exceeded.
+
+      160 |       await page.setViewportSize({ width: 375, height: 667 });
+      161 |       await page.reload();
+    > 162 |       await page.waitForLoadState('networkidle');
+          |                  ^
+      163 |       
+      164 |       // Kontrola či sa aplikácia načíta na mobile
+      165 |       await expect(page.locator('h1')).toBeVisible();
+        at D:\Projects\PMP5\tests\ui.spec.ts:162:18
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\ui-UI-Components-Responsiv-5966a-uld-work-on-mobile-viewport-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\ui-UI-Components-Responsiv-5966a-uld-work-on-mobile-viewport-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\ui-UI-Components-Responsiv-5966a-uld-work-on-mobile-viewport-chromium\error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|ui-UI-Components-Responsiv-5966a-uld-work-on-mobile-viewport-chromium\test-failed-1.png]]
+
+[[ATTACHMENT|ui-UI-Components-Responsiv-5966a-uld-work-on-mobile-viewport-chromium\video.webm]]
+
+[[ATTACHMENT|ui-UI-Components-Responsiv-5966a-uld-work-on-mobile-viewport-chromium\error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="UI Components › Responsive Design › should work on tablet viewport" classname="ui.spec.ts" time="30.191">
+<failure message="ui.spec.ts:169:9 should work on tablet viewport" type="FAILURE">
+<![CDATA[  [chromium] › ui.spec.ts:169:9 › UI Components › Responsive Design › should work on tablet viewport 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: expect(locator).toBeVisible()
+
+    Locator: locator('[data-testid="stock-table"]')
+    Expected: visible
+    Received: <element(s) not found>
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('[data-testid="stock-table"]')
+
+
+      174 |       // Kontrola či sa aplikácia načíta na tablete
+      175 |       await expect(page.locator('h1')).toBeVisible();
+    > 176 |       await expect(page.locator('[data-testid="stock-table"]')).toBeVisible();
+          |                                                                 ^
+      177 |     });
+      178 |   });
+      179 |
+        at D:\Projects\PMP5\tests\ui.spec.ts:176:65
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\ui-UI-Components-Responsiv-e896b-uld-work-on-tablet-viewport-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ..\test-results\ui-UI-Components-Responsiv-e896b-uld-work-on-tablet-viewport-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\ui-UI-Components-Responsiv-e896b-uld-work-on-tablet-viewport-chromium\error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|ui-UI-Components-Responsiv-e896b-uld-work-on-tablet-viewport-chromium\test-failed-1.png]]
+
+[[ATTACHMENT|ui-UI-Components-Responsiv-e896b-uld-work-on-tablet-viewport-chromium\video.webm]]
+
+[[ATTACHMENT|ui-UI-Components-Responsiv-e896b-uld-work-on-tablet-viewport-chromium\error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="UI Components › Loading States › should show loading indicators" classname="ui.spec.ts" time="17.224">
+</testcase>
+<testcase name="UI Components › Loading States › should handle error states gracefully" classname="ui.spec.ts" time="4.559">
+</testcase>
+<testcase name="UI Components › Performance › should load within reasonable time" classname="ui.spec.ts" time="6.33">
+</testcase>
+<testcase name="UI Components › Performance › should not have console errors" classname="ui.spec.ts" time="6.098">
+</testcase>
+</testsuite>
+</testsuites>

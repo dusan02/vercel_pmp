@@ -1,25 +1,29 @@
 import { NextRequest } from 'next/server';
 import { GET } from '../tickers/default/route';
 
-// Mock the default tickers data
-jest.mock('@/data/defaultTickers', () => ({
-  getDefaultTickers: jest.fn(() => ['AAPL', 'MSFT', 'GOOGL', 'NVDA']),
-  getProjectTickers: jest.fn((project: string, limit?: number) => {
-    const tickers = ['AAPL', 'MSFT', 'GOOGL', 'NVDA', 'TSLA', 'META', 'AMZN', 'NFLX'];
-    if (limit === undefined || limit === null) {
-      return tickers;
-    }
-    // Handle negative or zero limits
-    if (limit <= 0) {
-      return [];
-    }
-    return tickers.slice(0, limit);
-  })
-}));
+// Import the actual module to spy on it
+import * as defaultTickers from '@/data/defaultTickers';
 
 describe('/api/tickers/default', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    
+    // Spy on getAllProjectTickers and mock its implementation
+    jest.spyOn(defaultTickers, 'getAllProjectTickers').mockImplementation((project: string) => {
+      // Inteligentný mock pre rôzne projekty
+      const mockData = {
+        pmp: ['AAPL', 'MSFT', 'GOOGL', 'NVDA', 'TSLA', 'META', 'AMZN', 'NFLX'],
+        cm: ['AAPL', 'MSFT', 'GOOGL', 'NVDA', 'TSLA', 'META', 'AMZN', 'NFLX'],
+        standard: ['AAPL', 'MSFT', 'GOOGL', 'NVDA', 'TSLA', 'META', 'AMZN', 'NFLX'],
+        extended: ['AAPL', 'MSFT', 'GOOGL', 'NVDA', 'TSLA', 'META', 'AMZN', 'NFLX']
+      };
+      // Vráti dáta pre daný projekt alebo defaultné pole
+      return mockData[project] || ['DEFAULT', 'MOCK'];
+    });
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   it('should return default tickers for PMP project', async () => {
@@ -90,6 +94,7 @@ describe('/api/tickers/default', () => {
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
     expect(data.limit).toBe(-5);
+    // API should return empty array for negative limits
     expect(data.data).toEqual([]);
     expect(data.count).toBe(0);
   });
@@ -107,9 +112,8 @@ describe('/api/tickers/default', () => {
   });
 
   it('should return error response on internal error', async () => {
-    // Mock the getProjectTickers to throw an error
-    const { getProjectTickers } = require('@/data/defaultTickers');
-    (getProjectTickers as jest.Mock).mockImplementationOnce(() => {
+    // Mock getAllProjectTickers to throw an error
+    jest.spyOn(defaultTickers, 'getAllProjectTickers').mockImplementation(() => {
       throw new Error('Database connection failed');
     });
 
@@ -124,19 +128,30 @@ describe('/api/tickers/default', () => {
     expect(data.timestamp).toBeDefined();
   });
 
-  it('should handle all project types', async () => {
-    const projects = ['pmp', 'cm', 'gl', 'cv'];
-    
-    for (const project of projects) {
-      const request = new NextRequest(`http://localhost:3000/api/tickers/default?project=${project}`);
-      const response = await GET(request);
-      const data = await response.json();
+  // Vylepšená testovacia stratégia s it.each
+  it.each(['pmp', 'cm', 'standard', 'extended'])
+  ('should return a valid response for project: %s', async (project) => {
+    const request = new NextRequest(`http://localhost:3000/api/tickers/default?project=${project}`);
+    const response = await GET(request);
+    const data = await response.json();
 
-      expect(response.status).toBe(200);
-      expect(data.success).toBe(true);
-      expect(data.project).toBe(project);
-      expect(Array.isArray(data.data)).toBe(true);
-      expect(data.count).toBeGreaterThan(0);
-    }
+    expect(response.status).toBe(200);
+    expect(data.success).toBe(true);
+    expect(data.project).toBe(project);
+    expect(Array.isArray(data.data)).toBe(true);
+    expect(data.count).toBeGreaterThan(0);
+  });
+
+  it('should handle non-existent project gracefully', async () => {
+    const request = new NextRequest('http://localhost:3000/api/tickers/default?project=nonexistent');
+    const response = await GET(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.success).toBe(true);
+    expect(data.project).toBe('nonexistent');
+    expect(Array.isArray(data.data)).toBe(true);
+    // Should return default mock data for non-existent project
+    expect(data.data).toEqual(['DEFAULT', 'MOCK']);
   });
 }); 

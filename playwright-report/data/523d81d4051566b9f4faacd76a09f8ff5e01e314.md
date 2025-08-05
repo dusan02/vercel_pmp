@@ -1,0 +1,709 @@
+# Page snapshot
+
+```yaml
+- text: Background Updates WebSocket real-time updates not yet implemented. Using background data updates. Loading Progress Favorites Earnings Top 50 Stocks Remaining Stocks
+- main:
+  - heading "PreMarketPrice.com" [level=1]
+  - paragraph: 📈 Track pre-market movements and earnings calendar of 300+ global companies
+  - heading "S&P 500" [level=3]
+  - text: SPY $4,123.45 +0.85%
+  - heading "NASDAQ" [level=3]
+  - text: QQQ $3,456.78 +1.23%
+  - heading "DOW" [level=3]
+  - text: DIA $32,456.78 -0.45%
+  - paragraph: Real-time pre-market stock data, earnings calendar, and market analysis. Track your favorite stocks and stay ahead of market movements.
+  - heading "⭐ Favorites (0)" [level=2]
+  - text: Favorites
+  - table:
+    - rowgroup:
+      - row "Logo Ticker Company Name Market Cap Current Price % Change Market Cap Diff Favorites":
+        - cell "Logo"
+        - cell "Ticker"
+        - cell "Company Name"
+        - cell "Market Cap"
+        - cell "Current Price"
+        - cell "% Change"
+        - cell "Market Cap Diff"
+        - cell "Favorites"
+    - rowgroup
+  - heading "📅 Today's Earnings" [level=2]
+  - text: Earnings
+  - region "📊 Today's Earnings (18)":
+    - heading "📊 Today's Earnings (18)" [level=2]
+    - table:
+      - rowgroup:
+        - row "Logo Ticker Company Name Report Time Market Cap EPS Est EPS Rep Rev Est Rev Rep % Change Market Cap Diff":
+          - cell "Logo"
+          - cell "Ticker"
+          - cell "Company Name"
+          - cell "Report Time"
+          - cell "Market Cap"
+          - cell "EPS Est"
+          - cell "EPS Rep"
+          - cell "Rev Est"
+          - cell "Rev Rep"
+          - cell "% Change"
+          - cell "Market Cap Diff"
+      - rowgroup:
+        - row "AMD company logo AMD Advanced Micro Devices After market 283 $0.50 - 7494.39 - -1.29% -3.70":
+          - cell "AMD company logo":
+            - img "AMD company logo"
+          - cell "AMD":
+            - strong: AMD
+          - cell "Advanced Micro Devices"
+          - cell "After market"
+          - cell "283"
+          - cell "$0.50"
+          - cell "-"
+          - cell "7494.39"
+          - cell "-"
+          - cell "-1.29%"
+          - cell "-3.70"
+        - row "CAT company logo CAT Caterpillar After market 204 $4.95 $4.72 16420.90 16569.00 +0.07% +0.14":
+          - cell "CAT company logo":
+            - img "CAT company logo"
+          - cell "CAT":
+            - strong: CAT
+          - cell "Caterpillar"
+          - cell "After market"
+          - cell "204"
+          - cell "$4.95"
+          - cell "$4.72"
+          - cell "16420.90"
+          - cell "16569.00"
+          - cell "+0.07%"
+          - cell "+0.14"
+        - row "AMGN company logo AMGN Amgen After market 163 $5.39 - 9116.85 - +0.18% +0.29":
+          - cell "AMGN company logo":
+            - img "AMGN company logo"
+          - cell "AMGN":
+            - strong: AMGN
+          - cell "Amgen"
+          - cell "After market"
+          - cell "163"
+          - cell "$5.39"
+          - cell "-"
+          - cell "9116.85"
+          - cell "-"
+          - cell "+0.18%"
+          - cell "+0.29"
+        - row "ANET company logo ANET Arista Networks After market 153 $0.66 - 2149.68 - +1.37% +2.07":
+          - cell "ANET company logo":
+            - img "ANET company logo"
+          - cell "ANET":
+            - strong: ANET
+          - cell "Arista Networks"
+          - cell "After market"
+          - cell "153"
+          - cell "$0.66"
+          - cell "-"
+          - cell "2149.68"
+          - cell "-"
+          - cell "+1.37%"
+          - cell "+2.07"
+        - row "PFE company logo PFE Pfizer After market 140 $0.59 $0.78 13698.56 14653.00 +4.97% +6.65":
+          - cell "PFE company logo":
+            - img "PFE company logo"
+          - cell "PFE":
+            - strong: PFE
+          - cell "Pfizer"
+          - cell "After market"
+          - cell "140"
+          - cell "$0.59"
+          - cell "$0.78"
+          - cell "13698.56"
+          - cell "14653.00"
+          - cell "+4.97%"
+          - cell "+6.65"
+        - row "ETN company logo ETN Eaton After market 140 $2.95 $2.95 6979.67 7028.00 -7.19% -10.82":
+          - cell "ETN company logo":
+            - img "ETN company logo"
+          - cell "ETN":
+            - strong: ETN
+          - cell "Eaton"
+          - cell "After market"
+          - cell "140"
+          - cell "$2.95"
+          - cell "$2.95"
+          - cell "6979.67"
+          - cell "7028.00"
+          - cell "-7.19%"
+          - cell "-10.82"
+        - row "DUK company logo DUK Duke Energy After market 96 $1.19 $1.25 7286.71 7508.00 -0.14% -0.13":
+          - cell "DUK company logo":
+            - img "DUK company logo"
+          - cell "DUK":
+            - strong: DUK
+          - cell "Duke Energy"
+          - cell "After market"
+          - cell "96"
+          - cell "$1.19"
+          - cell "$1.25"
+          - cell "7286.71"
+          - cell "7508.00"
+          - cell "-0.14%"
+          - cell "-0.13"
+        - row "APO company logo APO Apollo Global Management After market 83 $1.86 $1.92 4648.02 1095.00 +2.33% +1.89":
+          - cell "APO company logo":
+            - img "APO company logo"
+          - cell "APO":
+            - strong: APO
+          - cell "Apollo Global Management"
+          - cell "After market"
+          - cell "83"
+          - cell "$1.86"
+          - cell "$1.92"
+          - cell "4648.02"
+          - cell "1095.00"
+          - cell "+2.33%"
+          - cell "+1.89"
+        - row "TDG company logo TDG TransDigm After market 80 $10.07 $9.60 2316.47 2237.00 -11.38% -10.29":
+          - cell "TDG company logo":
+            - img "TDG company logo"
+          - cell "TDG":
+            - strong: TDG
+          - cell "TransDigm"
+          - cell "After market"
+          - cell "80"
+          - cell "$10.07"
+          - cell "$9.60"
+          - cell "2316.47"
+          - cell "2237.00"
+          - cell "-11.38%"
+          - cell "-10.29"
+        - row "MAR company logo MAR Marriott After market 71 $2.65 $2.65 6726.14 6744.00 +0.23% +0.16":
+          - cell "MAR company logo":
+            - img "MAR company logo"
+          - cell "MAR":
+            - strong: MAR
+          - cell "Marriott"
+          - cell "After market"
+          - cell "71"
+          - cell "$2.65"
+          - cell "$2.65"
+          - cell "6726.14"
+          - cell "6744.00"
+          - cell "+0.23%"
+          - cell "+0.16"
+        - row "ZTS company logo ZTS Zoetis After market 65 $1.63 $1.76 2432.92 2460.00 -3.75% -2.53":
+          - cell "ZTS company logo":
+            - img "ZTS company logo"
+          - cell "ZTS":
+            - strong: ZTS
+          - cell "Zoetis"
+          - cell "After market"
+          - cell "65"
+          - cell "$1.63"
+          - cell "$1.76"
+          - cell "2432.92"
+          - cell "2460.00"
+          - cell "-3.75%"
+          - cell "-2.53"
+        - row "AFL company logo AFL Aflac After market 53 $1.72 - 4368.15 - +0.37% +0.19":
+          - cell "AFL company logo":
+            - img "AFL company logo"
+          - cell "AFL":
+            - strong: AFL
+          - cell "Aflac"
+          - cell "After market"
+          - cell "53"
+          - cell "$1.72"
+          - cell "-"
+          - cell "4368.15"
+          - cell "-"
+          - cell "+0.37%"
+          - cell "+0.19"
+        - row "CP CPNG CPNG After market 52 $0.07 - 8640.21 - -3.14% -1.69":
+          - cell "CP"
+          - cell "CPNG":
+            - strong: CPNG
+          - cell "CPNG"
+          - cell "After market"
+          - cell "52"
+          - cell "$0.07"
+          - cell "-"
+          - cell "8640.21"
+          - cell "-"
+          - cell "-3.14%"
+          - cell "-1.69"
+        - row "MP MPLX MPLX After market 52 $1.09 $1.03 3204.61 3003.00 -3.51% -1.89":
+          - cell "MP"
+          - cell "MPLX":
+            - strong: MPLX
+          - cell "MPLX"
+          - cell "After market"
+          - cell "52"
+          - cell "$1.09"
+          - cell "$1.03"
+          - cell "3204.61"
+          - cell "3003.00"
+          - cell "-3.51%"
+          - cell "-1.89"
+        - row "MPC company logo MPC Marathon Petroleum After market 52 $3.34 $3.96 31163.27 34101.00 +0.57% +0.29":
+          - cell "MPC company logo":
+            - img "MPC company logo"
+          - cell "MPC":
+            - strong: MPC
+          - cell "Marathon Petroleum"
+          - cell "After market"
+          - cell "52"
+          - cell "$3.34"
+          - cell "$3.96"
+          - cell "31163.27"
+          - cell "34101.00"
+          - cell "+0.57%"
+          - cell "+0.29"
+        - row "CM CMI CMI After market 51 $5.18 $6.43 8520.33 8643.00 +3.22% +1.60":
+          - cell "CM"
+          - cell "CMI":
+            - strong: CMI
+          - cell "CMI"
+          - cell "After market"
+          - cell "51"
+          - cell "$5.18"
+          - cell "$6.43"
+          - cell "8520.33"
+          - cell "8643.00"
+          - cell "+3.22%"
+          - cell "+1.60"
+        - row "PE PEG PEG After market 44 $0.71 $0.77 2506.71 2805.00 -2.19% -0.98":
+          - cell "PE"
+          - cell "PEG":
+            - strong: PEG
+          - cell "PEG"
+          - cell "After market"
+          - cell "44"
+          - cell "$0.71"
+          - cell "$0.77"
+          - cell "2506.71"
+          - cell "2805.00"
+          - cell "-2.19%"
+          - cell "-0.98"
+        - row "FI FIS FIS After market 38 $1.37 $1.36 2604.30 2616.00 -8.81% -3.66":
+          - cell "FI"
+          - cell "FIS":
+            - strong: FIS
+          - cell "FIS"
+          - cell "After market"
+          - cell "38"
+          - cell "$1.37"
+          - cell "$1.36"
+          - cell "2604.30"
+          - cell "2616.00"
+          - cell "-8.81%"
+          - cell "-3.66"
+  - heading "📊 All Stocks" [level=2]
+  - text: Top 50 Stocks Remaining Stocks
+  - textbox "Search stocks by company name or ticker"
+  - checkbox "Favorites Only"
+  - text: Favorites Only
+  - combobox "Filter by category":
+    - option "All Stocks" [selected]
+    - option "Gainers"
+    - option "Losers"
+    - option "Movers (>2%)"
+    - option "Movers > 10 B $"
+  - combobox "Filter by sector":
+    - option "All Sectors (9 available)" [selected]
+    - option "Communication Services"
+    - option "Consumer Cyclical"
+    - option "Consumer Defensive"
+    - option "Energy"
+    - option "Financial Services"
+    - option "Healthcare"
+    - option "Industrials"
+    - option "Real Estate"
+    - option "Technology"
+  - text: "Showing: 30 of 50 stocks (Scroll for more)"
+  - table:
+    - rowgroup:
+      - row "Logo Ticker Company Name Market Cap Current Price % Change Market Cap Diff Favorites":
+        - cell "Logo"
+        - cell "Ticker"
+        - cell "Company Name"
+        - cell "Market Cap"
+        - cell "Current Price"
+        - cell "% Change"
+        - cell "Market Cap Diff"
+        - cell "Favorites"
+    - rowgroup:
+      - row "NVDA company logo NVDA NVIDIA 4,347 178.24 -0.98% -42.92 ☆":
+        - cell "NVDA company logo":
+          - img "NVDA company logo"
+        - cell "NVDA":
+          - strong: NVDA
+        - cell "NVIDIA"
+        - cell "4,347"
+        - cell "178.24"
+        - cell "-0.98%"
+        - cell "-42.92"
+        - cell "☆":
+          - button "☆"
+      - row "MSFT company logo MSFT Microsoft 3,925 528.01 -1.42% -56.72 ☆":
+        - cell "MSFT company logo":
+          - img "MSFT company logo"
+        - cell "MSFT":
+          - strong: MSFT
+        - cell "Microsoft"
+        - cell "3,925"
+        - cell "528.01"
+        - cell "-1.42%"
+        - cell "-56.72"
+        - cell "☆":
+          - button "☆"
+      - row "AAPL company logo AAPL Apple 3,013 203.00 -0.17% -5.19 ☆":
+        - cell "AAPL company logo":
+          - img "AAPL company logo"
+        - cell "AAPL":
+          - strong: AAPL
+        - cell "Apple"
+        - cell "3,013"
+        - cell "203.00"
+        - cell "-0.17%"
+        - cell "-5.19"
+        - cell "☆":
+          - button "☆"
+      - row "GOOG company logo GOOG Alphabet 2,363 195.41 -0.17% -4.11 ☆":
+        - cell "GOOG company logo":
+          - img "GOOG company logo"
+        - cell "GOOG":
+          - strong: GOOG
+        - cell "Alphabet"
+        - cell "2,363"
+        - cell "195.41"
+        - cell "-0.17%"
+        - cell "-4.11"
+        - cell "☆":
+          - button "☆"
+      - row "GOOGL company logo GOOGL Alphabet 2,355 194.70 -0.17% -4.11 ☆":
+        - cell "GOOGL company logo":
+          - img "GOOGL company logo"
+        - cell "GOOGL":
+          - strong: GOOGL
+        - cell "Alphabet"
+        - cell "2,355"
+        - cell "194.70"
+        - cell "-0.17%"
+        - cell "-4.11"
+        - cell "☆":
+          - button "☆"
+      - row "AMZN company logo AMZN Amazon 2,281 213.87 +1.05% +23.68 ☆":
+        - cell "AMZN company logo":
+          - img "AMZN company logo"
+        - cell "AMZN":
+          - strong: AMZN
+        - cell "Amazon"
+        - cell "2,281"
+        - cell "213.87"
+        - cell "+1.05%"
+        - cell "+23.68"
+        - cell "☆":
+          - button "☆"
+      - row "META company logo META Meta 1,918 763.46 -1.66% -32.43 ☆":
+        - cell "META company logo":
+          - img "META company logo"
+        - cell "META":
+          - strong: META
+        - cell "Meta"
+        - cell "1,918"
+        - cell "763.46"
+        - cell "-1.66%"
+        - cell "-32.43"
+        - cell "☆":
+          - button "☆"
+      - row "AVGO company logo AVGO Broadcom 1,378 293.05 -1.57% -21.97 ☆":
+        - cell "AVGO company logo":
+          - img "AVGO company logo"
+        - cell "AVGO":
+          - strong: AVGO
+        - cell "Broadcom"
+        - cell "1,378"
+        - cell "293.05"
+        - cell "-1.57%"
+        - cell "-21.97"
+        - cell "☆":
+          - button "☆"
+      - row "TSM company logo TSM Taiwan Semiconductor 1,205 232.35 -2.78% -34.49 ☆":
+        - cell "TSM company logo":
+          - img "TSM company logo"
+        - cell "TSM":
+          - strong: TSM
+        - cell "Taiwan Semiconductor"
+        - cell "1,205"
+        - cell "232.35"
+        - cell "-2.78%"
+        - cell "-34.49"
+        - cell "☆":
+          - button "☆"
+      - row "BRK.B company logo BRK.B Berkshire Hathaway 1,001 463.91 +1.05% +10.36 ☆":
+        - cell "BRK.B company logo":
+          - img "BRK.B company logo"
+        - cell "BRK.B":
+          - strong: BRK.B
+        - cell "Berkshire Hathaway"
+        - cell "1,001"
+        - cell "463.91"
+        - cell "+1.05%"
+        - cell "+10.36"
+        - cell "☆":
+          - button "☆"
+      - row "TSLA company logo TSLA Tesla 993 308.00 -0.41% -4.06 ☆":
+        - cell "TSLA company logo":
+          - img "TSLA company logo"
+        - cell "TSLA":
+          - strong: TSLA
+        - cell "Tesla"
+        - cell "993"
+        - cell "308.00"
+        - cell "-0.41%"
+        - cell "-4.06"
+        - cell "☆":
+          - button "☆"
+      - row "JPM company logo JPM JPMorgan Chase 800 291.10 -1.07% -8.69 ☆":
+        - cell "JPM company logo":
+          - img "JPM company logo"
+        - cell "JPM":
+          - strong: JPM
+        - cell "JPMorgan Chase"
+        - cell "800"
+        - cell "291.10"
+        - cell "-1.07%"
+        - cell "-8.69"
+        - cell "☆":
+          - button "☆"
+      - row "WMT company logo WMT Walmart 793 99.31 -0.28% -2.23 ☆":
+        - cell "WMT company logo":
+          - img "WMT company logo"
+        - cell "WMT":
+          - strong: WMT
+        - cell "Walmart"
+        - cell "793"
+        - cell "99.31"
+        - cell "-0.28%"
+        - cell "-2.23"
+        - cell "☆":
+          - button "☆"
+      - row "ORCL company logo ORCL Oracle 718 255.67 +1.24% +8.82 ☆":
+        - cell "ORCL company logo":
+          - img "ORCL company logo"
+        - cell "ORCL":
+          - strong: ORCL
+        - cell "Oracle"
+        - cell "718"
+        - cell "255.67"
+        - cell "+1.24%"
+        - cell "+8.82"
+        - cell "☆":
+          - button "☆"
+      - row "LLY company logo LLY Eli Lilly 688 765.95 -0.40% -2.74 ☆":
+        - cell "LLY company logo":
+          - img "LLY company logo"
+        - cell "LLY":
+          - strong: LLY
+        - cell "Eli Lilly"
+        - cell "688"
+        - cell "765.95"
+        - cell "-0.40%"
+        - cell "-2.74"
+        - cell "☆":
+          - button "☆"
+      - row "V company logo V Visa 653 336.64 -1.61% -10.69 ☆":
+        - cell "V company logo":
+          - img "V company logo"
+        - cell "V":
+          - strong: V
+        - cell "Visa"
+        - cell "653"
+        - cell "336.64"
+        - cell "-1.61%"
+        - cell "-10.69"
+        - cell "☆":
+          - button "☆"
+      - row "MA company logo MA Mastercard 512 566.04 -0.66% -3.41 ☆":
+        - cell "MA company logo":
+          - img "MA company logo"
+        - cell "MA":
+          - strong: MA
+        - cell "Mastercard"
+        - cell "512"
+        - cell "566.04"
+        - cell "-0.66%"
+        - cell "-3.41"
+        - cell "☆":
+          - button "☆"
+      - row "NFLX company logo NFLX Netflix 488 1147.87 -1.97% -9.82 ☆":
+        - cell "NFLX company logo":
+          - img "NFLX company logo"
+        - cell "NFLX":
+          - strong: NFLX
+        - cell "Netflix"
+        - cell "488"
+        - cell "1147.87"
+        - cell "-1.97%"
+        - cell "-9.82"
+        - cell "☆":
+          - button "☆"
+      - row "XOM company logo XOM ExxonMobil 456 107.01 -0.34% -1.53 ☆":
+        - cell "XOM company logo":
+          - img "XOM company logo"
+        - cell "XOM":
+          - strong: XOM
+        - cell "ExxonMobil"
+        - cell "456"
+        - cell "107.01"
+        - cell "-0.34%"
+        - cell "-1.53"
+        - cell "☆":
+          - button "☆"
+      - row "COST company logo COST Costco 418 943.00 -1.29% -5.49 ☆":
+        - cell "COST company logo":
+          - img "COST company logo"
+        - cell "COST":
+          - strong: COST
+        - cell "Costco"
+        - cell "418"
+        - cell "943.00"
+        - cell "-1.29%"
+        - cell "-5.49"
+        - cell "☆":
+          - button "☆"
+      - row "JNJ company logo JNJ Johnson & Johnson 411 170.74 -0.18% -0.72 ☆":
+        - cell "JNJ company logo":
+          - img "JNJ company logo"
+        - cell "JNJ":
+          - strong: JNJ
+        - cell "Johnson & Johnson"
+        - cell "411"
+        - cell "170.74"
+        - cell "-0.18%"
+        - cell "-0.72"
+        - cell "☆":
+          - button "☆"
+      - row "PLTR company logo PLTR Palantir 408 172.84 +7.58% +28.74 ☆":
+        - cell "PLTR company logo":
+          - img "PLTR company logo"
+        - cell "PLTR":
+          - strong: PLTR
+        - cell "Palantir"
+        - cell "408"
+        - cell "172.84"
+        - cell "+7.58%"
+        - cell "+28.74"
+        - cell "☆":
+          - button "☆"
+      - row "HD company logo HD Home Depot 383 385.30 +1.18% +4.46 ☆":
+        - cell "HD company logo":
+          - img "HD company logo"
+        - cell "HD":
+          - strong: HD
+        - cell "Home Depot"
+        - cell "383"
+        - cell "385.30"
+        - cell "+1.18%"
+        - cell "+4.46"
+        - cell "☆":
+          - button "☆"
+      - row "PG company logo PG Procter & Gamble 352 150.51 -0.17% -0.59 ☆":
+        - cell "PG company logo":
+          - img "PG company logo"
+        - cell "PG":
+          - strong: PG
+        - cell "Procter & Gamble"
+        - cell "352"
+        - cell "150.51"
+        - cell "-0.17%"
+        - cell "-0.59"
+        - cell "☆":
+          - button "☆"
+      - row "ABBV company logo ABBV AbbVie 350 198.35 +0.59% +2.05 ☆":
+        - cell "ABBV company logo":
+          - img "ABBV company logo"
+        - cell "ABBV":
+          - strong: ABBV
+        - cell "AbbVie"
+        - cell "350"
+        - cell "198.35"
+        - cell "+0.59%"
+        - cell "+2.05"
+        - cell "☆":
+          - button "☆"
+      - row "BAC company logo BAC Bank of America 337 45.56 -0.63% -2.15 ☆":
+        - cell "BAC company logo":
+          - img "BAC company logo"
+        - cell "BAC":
+          - strong: BAC
+        - cell "Bank of America"
+        - cell "337"
+        - cell "45.56"
+        - cell "-0.63%"
+        - cell "-2.15"
+        - cell "☆":
+          - button "☆"
+      - row "CVX company logo CVX Chevron 311 153.12 +1.38% +4.23 ☆":
+        - cell "CVX company logo":
+          - img "CVX company logo"
+        - cell "CVX":
+          - strong: CVX
+        - cell "Chevron"
+        - cell "311"
+        - cell "153.12"
+        - cell "+1.38%"
+        - cell "+4.23"
+        - cell "☆":
+          - button "☆"
+      - row "KO company logo KO Coca-Cola 297 69.05 +0.13% +0.39 ☆":
+        - cell "KO company logo":
+          - img "KO company logo"
+        - cell "KO":
+          - strong: KO
+        - cell "Coca-Cola"
+        - cell "297"
+        - cell "69.05"
+        - cell "+0.13%"
+        - cell "+0.39"
+        - cell "☆":
+          - button "☆"
+      - row "GE company logo GE General Electric 289 272.12 -1.49% -4.36 ☆":
+        - cell "GE company logo":
+          - img "GE company logo"
+        - cell "GE":
+          - strong: GE
+        - cell "General Electric"
+        - cell "289"
+        - cell "272.12"
+        - cell "-1.49%"
+        - cell "-4.36"
+        - cell "☆":
+          - button "☆"
+      - row "AMD company logo AMD Advanced Micro Devices 283 174.50 -1.29% -3.70 ☆":
+        - cell "AMD company logo":
+          - img "AMD company logo"
+        - cell "AMD":
+          - strong: AMD
+        - cell "Advanced Micro Devices"
+        - cell "283"
+        - cell "174.50"
+        - cell "-1.29%"
+        - cell "-3.70"
+        - cell "☆":
+          - button "☆"
+  - paragraph: Data provided by Polygon.io • Powered by Next.js
+  - paragraph: Data is for informational purposes only. We are not responsible for its accuracy.
+  - paragraph:
+    - text: "Need help? Contact us:"
+    - link "support@premarketprice.com":
+      - /url: mailto:support@premarketprice.com
+- text: "FCP: ... LCP: ... CLS: ..."
+- navigation:
+  - button "Home"
+  - button "Favorites"
+  - button "Earnings"
+  - button "All Stocks"
+- button "Open quick actions"
+- heading "🍪 Cookies & Privacy" [level=3]
+- paragraph: Používame cookies na uloženie vašich preferencií a obľúbených akcií. Vaše dáta zostávajú na vašom zariadení a nie sú odosielané na servery.
+- button "Odmietnuť"
+- button "Prijať"
+- button "Nastavenia"
+- alert
+```

@@ -22,16 +22,26 @@ export function getDefaultTickers(project: string): string[] {
 }
 
 export function getAllProjectTickers(project: string): string[] {
-  // For pmp project, combine all tiers to get more stocks
-  if (project === 'pmp') {
-    return [
-      ...DEFAULT_TICKERS.pmp,
-      ...DEFAULT_TICKERS.standard,
-      ...DEFAULT_TICKERS.extended,
-      ...DEFAULT_TICKERS.extendedPlus
-    ];
+  // Normalize project name to lowercase for case-insensitive matching
+  const projectKey = project.toLowerCase() as keyof typeof DEFAULT_TICKERS;
+  
+  // Check if project exists in DEFAULT_TICKERS
+  if (DEFAULT_TICKERS[projectKey]) {
+    // For pmp project, combine all tiers to get more stocks
+    if (projectKey === 'pmp') {
+      return [
+        ...DEFAULT_TICKERS.pmp,
+        ...DEFAULT_TICKERS.standard,
+        ...DEFAULT_TICKERS.extended,
+        ...DEFAULT_TICKERS.extendedPlus
+      ];
+    }
+    return DEFAULT_TICKERS[projectKey];
   }
-  return getDefaultTickers(project);
+  
+  // Fallback to pmp if project doesn't exist
+  console.warn(`⚠️ Project '${project}' not found, falling back to 'pmp'`);
+  return DEFAULT_TICKERS.pmp;
 }
 
 export function getProjectTickers(project: string, limit?: number): string[] {

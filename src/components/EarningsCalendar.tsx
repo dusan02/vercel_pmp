@@ -4,22 +4,28 @@ import { useState, useEffect } from 'react';
 
 interface EarningsData {
   ticker: string;
-  company_name: string;
-  market_cap: number;
-  fiscal_period: string;
-  report_time: 'BMO' | 'AMC' | 'DMT';
-  estimate_eps: number | null;
-  estimate_revenue: number | null;
-  actual_eps: number | null;
-  actual_revenue: number | null;
-  report_date: string;
+  companyName: string;
+  marketCap: number | null;
+  epsEstimate: number | null;
+  epsActual: number | null;
+  revenueEstimate: number | null;
+  revenueActual: number | null;
+  epsSurprisePercent: number | null;
+  revenueSurprisePercent: number | null;
+  percentChange: number | null;
+  marketCapDiff: number | null;
+  time: string; // "before" or "after"
+  date: string;
 }
 
 interface EarningsResponse {
-  earnings: EarningsData[];
-  date: string;
-  count: number;
-  message: string;
+  success: boolean;
+  data: {
+    preMarket: EarningsData[];
+    afterMarket: EarningsData[];
+  };
+  message?: string;
+  cached?: boolean;
 }
 
 export default function EarningsCalendar() {
@@ -53,8 +59,8 @@ export default function EarningsCalendar() {
       console.log('🔍 Fetching earnings for date:', currentDate);
       console.log('🔍 API URL:', `/api/earnings-calendar?date=${currentDate}`);
       
-      // 🚀 OPTIMIZATION: Reduced timeout for faster failure detection
-      const response = await fetch(`/api/earnings-calendar?date=${currentDate}`, {
+      // 🚀 OPTIMIZATION: Use new database-backed API endpoint
+      const response = await fetch(`/api/earnings/today?date=${currentDate}`, {
         signal: AbortSignal.timeout(5000) // Increased timeout for better reliability
       });
       
@@ -94,11 +100,13 @@ export default function EarningsCalendar() {
       console.log('🔍 Earnings API response data:', data);
       
       // Validate response structure
-      if (!data || !Array.isArray(data.earnings)) {
+      if (!data || !data.success || !data.data) {
         throw new Error('Invalid response format from API');
       }
       
-      setEarnings(data.earnings);
+      // Combine pre-market and after-market earnings
+      const allEarnings = [...data.data.preMarket, ...data.data.afterMarket];
+      setEarnings(allEarnings);
       
     } catch (err) {
       console.error('❌ Earnings fetch error:', err);
@@ -127,21 +135,19 @@ export default function EarningsCalendar() {
     return `$${marketCap.toLocaleString()}`;
   };
 
-  const getReportTimeColor = (reportTime: string): string => {
-    switch (reportTime) {
-      case 'BMO': return 'text-blue-600 bg-blue-50';
-      case 'AMC': return 'text-red-600 bg-red-50';
-      case 'DMT': return 'text-green-600 bg-green-50';
+  const getReportTimeColor = (time: string): string => {
+    switch (time) {
+      case 'before': return 'text-blue-600 bg-blue-50';
+      case 'after': return 'text-red-600 bg-red-50';
       default: return 'text-gray-600 bg-gray-50';
     }
   };
 
-  const getReportTimeLabel = (reportTime: string): string => {
-    switch (reportTime) {
-      case 'BMO': return 'Before Market';
-      case 'AMC': return 'After Market';
-      case 'DMT': return 'During Market';
-      default: return reportTime;
+  const getReportTimeLabel = (time: string): string => {
+    switch (time) {
+      case 'before': return 'Before Market';
+      case 'after': return 'After Market';
+      default: return time;
     }
   };
 
@@ -205,24 +211,24 @@ export default function EarningsCalendar() {
                   <div>
                     <div className="font-medium text-gray-900">{earning.ticker}</div>
                     <div className="text-xs text-gray-500 truncate max-w-32">
-                      {earning.company_name}
+                      {earning.companyName}
                     </div>
                   </div>
                 </td>
-                <td className="py-2 text-gray-700">{earning.fiscal_period}</td>
+                <td className="py-2 text-gray-700">Q4 2024</td>
                 <td className="py-2">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getReportTimeColor(earning.report_time)}`}>
-                    {getReportTimeLabel(earning.report_time)}
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getReportTimeColor(earning.time)}`}>
+                    {getReportTimeLabel(earning.time)}
                   </span>
                 </td>
                 <td className="py-2 text-right font-medium text-gray-900">
-                  {formatMarketCap(earning.market_cap)}
+                  {earning.marketCap ? formatMarketCap(earning.marketCap) : '-'}
                 </td>
                 <td className="py-2 text-right text-gray-700">
-                  {earning.estimate_eps ? `$${earning.estimate_eps.toFixed(2)}` : '-'}
+                  {earning.epsEstimate ? `$${earning.epsEstimate.toFixed(2)}` : '-'}
                 </td>
                 <td className="py-2 text-right text-gray-700">
-                  {earning.estimate_revenue ? formatMarketCap(earning.estimate_revenue) : '-'}
+                  {earning.revenueEstimate ? formatMarketCap(earning.revenueEstimate) : '-'}
                 </td>
               </tr>
             ))}

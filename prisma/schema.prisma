@@ -1,0 +1,49 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model EarningsCalendar {
+  id              String   @id @default(cuid())
+  ticker          String
+  companyName     String
+  date            DateTime
+  time            String   // "before" or "after"
+  epsEstimate     Float?
+  epsActual       Float?
+  revenueEstimate Float?
+  revenueActual   Float?
+  epsSurprisePercent Float?
+  revenueSurprisePercent Float?
+  marketCap       Float?
+  percentChange   Float?
+  marketCapDiff   Float?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([ticker, date])
+  @@index([date])
+  @@index([ticker])
+}
+
+model UserPreferences {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  favorites String   // JSON string of favorite tickers
+  theme     String   @default("auto")
+  defaultTab String  @default("all")
+  autoRefresh Boolean @default(true)
+  refreshInterval Int @default(30)
+  showEarnings Boolean @default(true)
+  showNews   Boolean @default(true)
+  tableColumns String // JSON string of column preferences
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+} 
