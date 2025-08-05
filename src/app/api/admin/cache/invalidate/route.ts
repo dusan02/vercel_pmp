@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+export async function GET(request: NextRequest) {
+  return NextResponse.json({
+    success: true,
+    message: 'Cache invalidation endpoint - use POST method',
+    timestamp: new Date().toISOString()
+  });
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Basic admin check (in production, you'd want proper authentication)

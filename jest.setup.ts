@@ -16,8 +16,8 @@ const originalConsoleError = console.error;
 const originalConsoleWarn = console.warn;
 
 beforeAll(() => {
-  // jednotný fetch mock
-  global.fetch = jest.fn();
+  // jednotný fetch mock s správnym typom
+  global.fetch = jest.fn() as jest.MockedFunction<typeof fetch>;
   
   // Suppress console output during tests unless explicitly needed
   //console.log = jest.fn(); // <--- DOČASNE ZAKOMENTOVANÉ pre debug
