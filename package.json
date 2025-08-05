@@ -3,9 +3,12 @@
     "version": "0.1.0",
     "private": true,
     "scripts": {
-        "dev": "next dev --turbopack -H 127.0.0.1 -p 3000",
+        "dev": "cross-env ENABLE_WEBSOCKET=true tsx server.ts",
+        "dev:next": "cross-env ENABLE_WEBSOCKET=true next dev --turbopack -H 127.0.0.1 -p 3000",
+        "dev:no-websocket": "next dev --turbopack -H 127.0.0.1 -p 3000",
         "build": "next build",
-        "start": "next start",
+        "start": "cross-env ENABLE_WEBSOCKET=true tsx server.ts",
+        "start:no-websocket": "next start",
         "lint": "next lint",
         "test": "jest",
         "test:watch": "jest --watch",
@@ -18,7 +21,10 @@
         "db:seed": "tsx prisma/seed.ts",
         "fetch-logos": "tsx scripts/fetch-logos.ts",
         "test:performance": "node scripts/performance-test.js",
-        "test:mobile": "NEXT_PUBLIC_ENABLE_MOBILE_TESTING=true npm run dev"
+        "test:mobile": "NEXT_PUBLIC_ENABLE_MOBILE_TESTING=true npm run dev",
+        "websocket:status": "curl http://localhost:3000/api/websocket",
+        "websocket:start": "curl -X POST http://localhost:3000/api/websocket -H 'Content-Type: application/json' -d '{\"action\":\"start\"}'",
+        "websocket:stop": "curl -X POST http://localhost:3000/api/websocket -H 'Content-Type: application/json' -d '{\"action\":\"stop\"}'"
     },
     "dependencies": {
         "@prisma/client": "^5.22.0",
@@ -41,6 +47,8 @@
         "react-dom": "19.1.0",
         "redis": "^5.6.1",
         "simple-icons": "^15.8.0",
+        "socket.io": "^4.8.1",
+        "socket.io-client": "^4.8.1",
         "sqlite3": "^5.1.7"
     },
     "devDependencies": {
@@ -51,6 +59,7 @@
         "@types/react": "19.1.9",
         "@types/react-dom": "^19",
         "autoprefixer": "^10",
+        "cross-env": "^10.0.0",
         "eslint": "^9",
         "eslint-config-next": "15.4.4",
         "jest": "^30.0.5",

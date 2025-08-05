@@ -21,6 +21,9 @@ import { Loader2 } from 'lucide-react';
 
 import { useLazyLoading } from '@/hooks/useLazyLoading';
 import { getCompanyName } from '@/lib/companyNames';
+import { useWebSocket } from '@/hooks/useWebSocket';
+import { WebSocketStatus } from '@/components/WebSocketStatus';
+import { PriceUpdate } from '@/lib/websocket-server';
 
 interface StockData {
   ticker: string;
@@ -82,6 +85,59 @@ export default function HomePage() {
     setIsClient(true);
     setHasHydrated(true);
   }, []);
+
+  // WebSocket functionality
+  const { status: websocketStatus } = useWebSocket({
+    onPriceUpdate: (updates: PriceUpdate[]) => {
+      console.log('📡 WebSocket price updates received:', updates.length, 'tickers');
+      
+      // Update stock data with real-time prices
+      setStockData(prev => {
+        const updated = [...prev];
+        
+        updates.forEach(update => {
+          const index = updated.findIndex(stock => stock.ticker === update.ticker);
+          if (index !== -1) {
+            // Create animation effect by temporarily highlighting the change
+            const oldPrice = updated[index].currentPrice;
+            const priceChange = update.currentPrice - oldPrice;
+            
+            updated[index] = {
+              ...updated[index],
+              currentPrice: update.currentPrice,
+              closePrice: update.previousClose,
+              percentChange: update.percentChange,
+              marketCap: update.marketCap,
+              marketCapDiff: update.marketCapDiff,
+              lastUpdated: new Date().toISOString()
+            };
+
+            // Add visual feedback for price changes
+            if (Math.abs(priceChange) > 0.01) { // Only animate significant changes
+              const element = document.querySelector(`[data-ticker="${update.ticker}"]`);
+              if (element) {
+                element.classList.add(priceChange > 0 ? 'price-up' : 'price-down');
+                setTimeout(() => {
+                  element.classList.remove('price-up', 'price-down');
+                }, 1000);
+              }
+            }
+          }
+        });
+        
+        return updated;
+      });
+    },
+    onConnect: () => {
+      console.log('✅ WebSocket connected - real-time updates enabled');
+    },
+    onDisconnect: () => {
+      console.log('❌ WebSocket disconnected - falling back to background updates');
+    },
+    onError: (error) => {
+      console.error('❌ WebSocket error:', error);
+    }
+  });
 
   // Market session detection with simplified logic
   // Helper function to check if it's weekend or holiday
@@ -621,6 +677,13 @@ export default function HomePage() {
         <div className="offline-indicator">
           <WifiOff size={16} />
           <span>You're offline - using cached data</span>
+        </div>
+      )}
+
+      {/* WebSocket Status - only in development */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="fixed top-20 right-4 z-50">
+          <WebSocketStatus showDetails={true} />
         </div>
       )}
       

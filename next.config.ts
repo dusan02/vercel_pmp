@@ -127,7 +127,7 @@ const nextConfig: NextConfig = {
   },
 
   // Output configuration for static optimization
-  output: 'standalone',
+  // output: 'standalone', // Disabled for development
   trailingSlash: false,
   skipTrailingSlashRedirect: true,
 };

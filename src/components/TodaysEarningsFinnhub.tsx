@@ -176,7 +176,7 @@ function VirtualizedTable({
 }) {
   const renderSortIcon = (key: keyof EarningsData) => {
     if (key === sortKey) {
-      return ascending ? <ChevronUp size={14} className="inline ml-1" /> : <ChevronDown size={14} className="inline ml-1" />;
+      return ascending ? <ChevronUp size={16} /> : <ChevronDown size={16} />;
     }
     return null;
   };

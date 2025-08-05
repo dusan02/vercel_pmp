@@ -1506,6 +1506,13 @@ th {
 th.sortable {
   cursor: pointer;
   transition: background-color 0.15s ease;
+  position: relative;
+}
+
+th.sortable svg {
+  margin-left: 4px;
+  vertical-align: baseline;
+  display: inline-block;
 }
 
 th.sortable:hover {
@@ -2911,7 +2918,8 @@ img[data-src].loaded {
 
 .adaptive-table th.sortable svg {
   margin-left: 4px;
-  vertical-align: middle;
+  vertical-align: baseline;
+  display: inline-block;
 }
 
 .adaptive-table tbody tr {
@@ -3154,4 +3162,130 @@ img[data-src].loaded {
 .page-footer li {
   color: #64748b;
   margin-bottom: 5px;
+}
+
+/* WebSocket Real-time Price Animations */
+.price-up {
+  animation: priceUpAnimation 1s ease-out;
+}
+
+.price-down {
+  animation: priceDownAnimation 1s ease-out;
+}
+
+@keyframes priceUpAnimation {
+  0% {
+    background-color: transparent;
+    transform: scale(1);
+  }
+  50% {
+    background-color: rgba(34, 197, 94, 0.2);
+    transform: scale(1.02);
+  }
+  100% {
+    background-color: transparent;
+    transform: scale(1);
+  }
+}
+
+@keyframes priceDownAnimation {
+  0% {
+    background-color: transparent;
+    transform: scale(1);
+  }
+  50% {
+    background-color: rgba(239, 68, 68, 0.2);
+    transform: scale(1.02);
+  }
+  100% {
+    background-color: transparent;
+    transform: scale(1);
+  }
+}
+
+/* WebSocket Status Component */
+.websocket-status {
+  max-width: 300px;
+}
+
+.websocket-status .price-up,
+.websocket-status .price-down {
+  animation: none; /* Disable animations in status component */
+}
+
+/* Real-time indicator */
+.real-time-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--clr-primary);
+  font-weight: 500;
+}
+
+.real-time-indicator::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background-color: var(--clr-primary);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Stock row with data-ticker attribute for animations */
+.stock-row[data-ticker] {
+  transition: all 0.3s ease;
+}
+
+.stock-row[data-ticker].price-up {
+  background-color: rgba(34, 197, 94, 0.1);
+  border-left: 3px solid #22c55e;
+}
+
+.stock-row[data-ticker].price-down {
+  background-color: rgba(239, 68, 68, 0.1);
+  border-left: 3px solid #ef4444;
+}
+
+/* WebSocket connection status in header */
+.websocket-connection-status {
+  position: fixed;
+  top: 0;
+  right: 0;
+  padding: 0.5rem;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  font-size: 0.75rem;
+  border-radius: 0 0 0 0.5rem;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.websocket-connection-status.connected {
+  background: rgba(34, 197, 94, 0.8);
+}
+
+.websocket-connection-status.connecting {
+  background: rgba(245, 158, 11, 0.8);
+}
+
+.websocket-connection-status.error {
+  background: rgba(239, 68, 68, 0.8);
 }
