@@ -1,8 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
-import CompanyLogo from './CompanyLogo';
 import { formatBillions } from '@/lib/format';
 import { getCompanyName } from '@/lib/companyNames';
 import { SectionIcon } from './SectionIcon';
@@ -359,7 +357,7 @@ export default function TodaysEarningsFinnhub() {
                   <tr key={`${earning.ticker}-${index}`}>
                     <td>
                       <div className="logo-container">
-                        <CompanyLogo ticker={earning.ticker} size={32} />
+                        <span style={{ fontSize: '1.5rem' }}>{earning.ticker}</span>
                       </div>
                     </td>
                     <td><strong>{earning.ticker}</strong></td>

@@ -1,12 +1,28 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { WifiOff } from 'lucide-react';
 import { useSortableData } from '@/hooks/useSortableData';
 import { formatBillions } from '@/lib/format';
 
-import CompanyLogo from '@/components/CompanyLogo';
-import TodaysEarningsFinnhub from '@/components/TodaysEarningsFinnhub';
+// Conditional import wrapper for TodaysEarningsFinnhub to avoid webpack issues
+function TodaysEarningsFinnhubWrapper() {
+  const [Component, setComponent] = React.useState<React.ComponentType<any> | null>(null);
+  
+  React.useEffect(() => {
+    import('@/components/TodaysEarningsFinnhub').then(mod => {
+      setComponent(() => mod.default);
+    }).catch(err => {
+      console.error('Failed to load TodaysEarningsFinnhub:', err);
+    });
+  }, []);
+  
+  if (!Component) {
+    return <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--clr-subtext)' }}>Loading earnings...</div>;
+  }
+  
+  return <Component />;
+}
+
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { SwipeableTableRow } from '@/components/SwipeableTableRow';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
@@ -40,6 +56,24 @@ interface LoadingStates {
   background: boolean;
 }
 
+// Conditional import wrapper for StockHeatmap to avoid webpack issues
+function StockHeatmapWrapper() {
+  const [Component, setComponent] = React.useState<React.ComponentType<any> | null>(null);
+  
+  React.useEffect(() => {
+    import('@/components/StockHeatmap').then(mod => {
+      setComponent(() => mod.default);
+    }).catch(err => {
+      console.error('Failed to load StockHeatmap:', err);
+    });
+  }, []);
+  
+  if (!Component) {
+    return <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--clr-subtext)' }}>Loading heatmap...</div>;
+  }
+  
+  return <Component />;
+}
 
 export default function HomePage() {
   // State for stock data
@@ -58,10 +92,11 @@ export default function HomePage() {
   const [selectedSector, setSelectedSector] = useState<string>('all');
   
   // Section visibility state
-  const [showFavoritesSection, setShowFavoritesSection] = useState(true);
+  const [showHeatmapSection, setShowHeatmapSection] = useState(true); // Heatmap first and default ON
   const [showPortfolioSection, setShowPortfolioSection] = useState(true);
-  const [showAllStocksSection, setShowAllStocksSection] = useState(true);
+  const [showFavoritesSection, setShowFavoritesSection] = useState(true);
   const [showEarningsSection, setShowEarningsSection] = useState(true);
+  const [showAllStocksSection, setShowAllStocksSection] = useState(true);
   
   // Use portfolio hook with localStorage persistence
   const { portfolioHoldings, updateQuantity, removeStock, addStock } = usePortfolio();
@@ -780,7 +815,7 @@ export default function HomePage() {
       {/* Offline Indicator - only render on client */}
       {isClient && hasHydrated && !isOnline && (
         <div className="offline-indicator">
-          <WifiOff size={16} />
+          <span>📡</span>
           <span>You're offline - using cached data</span>
         </div>
       )}
@@ -803,10 +838,12 @@ export default function HomePage() {
             showPortfolioSection={showPortfolioSection}
             showAllStocksSection={showAllStocksSection}
             showEarningsSection={showEarningsSection}
+            showHeatmapSection={showHeatmapSection}
             onToggleFavorites={setShowFavoritesSection}
             onTogglePortfolio={setShowPortfolioSection}
             onToggleAllStocks={setShowAllStocksSection}
             onToggleEarnings={setShowEarningsSection}
+            onToggleHeatmap={setShowHeatmapSection}
           />
 
           {/* Error Display */}
@@ -814,6 +851,13 @@ export default function HomePage() {
             <div className="error" role="alert">
               <strong>Error:</strong> {error}
             </div>
+          )}
+
+          {/* Heatmap Section - FIRST */}
+          {showHeatmapSection && (
+            <section className="heatmap-section" style={{ marginBottom: '2rem' }}>
+              <StockHeatmapWrapper />
+            </section>
           )}
 
           {/* Portfolio Section */}
@@ -859,7 +903,7 @@ export default function HomePage() {
                 <TableSkeleton rows={5} />
               </section>
             ) : (
-              <TodaysEarningsFinnhub />
+              <TodaysEarningsFinnhubWrapper />
             )
           )}
 

@@ -5,18 +5,10 @@
 
 import { NextResponse } from 'next/server';
 import { logger } from './logger';
+import { ApiResponse } from './types';
 
-export interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  message?: string;
-  cached?: boolean;
-  cacheAge?: number;
-  duration?: number;
-  count?: number;
-  [key: string]: any;
-}
+// Re-export ApiResponse from types.ts for convenience
+export type { ApiResponse };
 
 /**
  * Create success response

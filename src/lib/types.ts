@@ -132,12 +132,17 @@ export interface CachedStockData {
   lastUpdated: Date;
 }
 
-// API response wrapper
-export interface ApiResponse<T> {
+// API response wrapper - unified definition
+export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
   error?: string;
   message?: string;
+  cached?: boolean;
+  cacheAge?: number;
+  duration?: number;
+  count?: number;
+  [key: string]: any;
 }
 
 // Ingest result from worker
