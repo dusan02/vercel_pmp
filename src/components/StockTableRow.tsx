@@ -40,6 +40,8 @@ export const StockTableRow = memo(({
       </td>
       <td><strong>{stock.ticker}</strong></td>
       <td className="company-name">{companyName}</td>
+      <td>{stock.sector || 'N/A'}</td>
+      <td>{stock.industry || 'N/A'}</td>
       <td>{formattedMarketCap}</td>
       <td>${formattedPrice}</td>
       <td className={stock.percentChange >= 0 ? 'positive' : 'negative'}>

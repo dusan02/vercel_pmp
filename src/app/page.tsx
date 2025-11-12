@@ -56,24 +56,16 @@ interface LoadingStates {
   background: boolean;
 }
 
-// Conditional import wrapper for StockHeatmap to avoid webpack issues
-function StockHeatmapWrapper() {
-  const [Component, setComponent] = React.useState<React.ComponentType<any> | null>(null);
-  
-  React.useEffect(() => {
-    import('@/components/StockHeatmap').then(mod => {
-      setComponent(() => mod.default);
-    }).catch(err => {
-      console.error('Failed to load StockHeatmap:', err);
-    });
-  }, []);
-  
-  if (!Component) {
-    return <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--clr-subtext)' }}>Loading heatmap...</div>;
+// Dynamic import for StockHeatmap using next/dynamic to avoid webpack issues
+import dynamic from 'next/dynamic';
+
+const StockHeatmap = dynamic(
+  () => import('@/components/StockHeatmap'),
+  {
+    ssr: false,
+    loading: () => <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--clr-subtext)' }}>Loading heatmap...</div>
   }
-  
-  return <Component />;
-}
+);
 
 export default function HomePage() {
   // State for stock data
@@ -856,7 +848,7 @@ export default function HomePage() {
           {/* Heatmap Section - FIRST */}
           {showHeatmapSection && (
             <section className="heatmap-section" style={{ marginBottom: '2rem' }}>
-              <StockHeatmapWrapper />
+              <StockHeatmap />
             </section>
           )}
 

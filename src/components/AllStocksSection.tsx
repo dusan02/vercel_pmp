@@ -65,6 +65,12 @@ export function AllStocksSection({
                   Ticker
                 </th>
                 <th>Company Name</th>
+                <th onClick={() => onSort("sector" as SortKey)} className={`sortable ${sortKey === "sector" ? "active-sort" : ""}`}>
+                  Sector
+                </th>
+                <th onClick={() => onSort("industry" as SortKey)} className={`sortable ${sortKey === "industry" ? "active-sort" : ""}`}>
+                  Industry
+                </th>
                 <th onClick={() => onSort("marketCap" as SortKey)} className={`sortable ${sortKey === "marketCap" ? "active-sort" : ""}`}>
                   Market Cap
                 </th>
@@ -83,7 +89,7 @@ export function AllStocksSection({
             <tbody>
               {displayedStocks.length === 0 ? (
                 <tr>
-                  <td colSpan={8} style={{ textAlign: 'center', padding: '2rem', color: 'var(--clr-subtext)' }}>
+                  <td colSpan={10} style={{ textAlign: 'center', padding: '2rem', color: 'var(--clr-subtext)' }}>
                     No stocks to display.
                   </td>
                 </tr>

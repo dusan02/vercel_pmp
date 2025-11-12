@@ -2491,6 +2491,21 @@ table {
   border-collapse: collapse;
   margin-bottom: 1rem;
   table-layout: fixed;
+  overflow-x: auto;
+}
+
+/* Ensure tables can scroll horizontally on smaller screens */
+.favorites,
+.all-stocks,
+.portfolio {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.favorites table,
+.all-stocks table,
+.portfolio table {
+  min-width: 1000px; /* Minimum width to prevent squishing */
 }
 
 th, td {
@@ -2519,27 +2534,28 @@ table td.negative {
 }
 
 /* Center align numeric columns by position - unified for all tables */
+/* Logo, Ticker, Market Cap, Current Price, % Change, Cap Diff, Favorites */
 .favorites table td:nth-child(1),
 .favorites table td:nth-child(2),
-.favorites table td:nth-child(4),
-.favorites table td:nth-child(5),
 .favorites table td:nth-child(6),
 .favorites table td:nth-child(7),
 .favorites table td:nth-child(8),
+.favorites table td:nth-child(9),
+.favorites table td:nth-child(10),
 .all-stocks table td:nth-child(1),
 .all-stocks table td:nth-child(2),
-.all-stocks table td:nth-child(4),
-.all-stocks table td:nth-child(5),
 .all-stocks table td:nth-child(6),
 .all-stocks table td:nth-child(7),
 .all-stocks table td:nth-child(8),
+.all-stocks table td:nth-child(9),
+.all-stocks table td:nth-child(10),
 .portfolio table td:nth-child(1),
 .portfolio table td:nth-child(2),
-.portfolio table td:nth-child(4),
-.portfolio table td:nth-child(5),
 .portfolio table td:nth-child(6),
 .portfolio table td:nth-child(7),
-.portfolio table td:nth-child(8) {
+.portfolio table td:nth-child(8),
+.portfolio table td:nth-child(9),
+.portfolio table td:nth-child(10) {
   text-align: center;
 }
 
@@ -2614,90 +2630,116 @@ tr:hover {
   font-weight: 600;
 }
 
-/* Standardized table column widths - all tables have 8 columns with equal widths */
+/* Standardized table column widths - all tables now have 10 columns (added Sector and Industry) */
 /* Column 1: Logo */
 .favorites table th:nth-child(1), .favorites table td:nth-child(1),
 .all-stocks table th:nth-child(1), .all-stocks table td:nth-child(1),
 .portfolio table th:nth-child(1), .portfolio table td:nth-child(1) {
-  width: 7%;
+  width: 5%;
   text-align: center;
+  min-width: 50px;
 }
 
 /* Column 2: Ticker */
 .favorites table th:nth-child(2), .favorites table td:nth-child(2),
 .all-stocks table th:nth-child(2), .all-stocks table td:nth-child(2),
 .portfolio table th:nth-child(2), .portfolio table td:nth-child(2) {
-  width: 9%;
+  width: 7%;
   text-align: center;
+  min-width: 70px;
 }
 
 /* Column 3: Company Name */
 .favorites table th:nth-child(3), .favorites table td:nth-child(3),
 .all-stocks table th:nth-child(3), .all-stocks table td:nth-child(3),
 .portfolio table th:nth-child(3), .portfolio table td:nth-child(3) {
-  width: 18%;
+  width: 15%;
   text-align: left;
+  min-width: 120px;
 }
 
-/* Column 4: Market Cap / # */
+/* Column 4: Sector (NEW) */
 .favorites table th:nth-child(4), .favorites table td:nth-child(4),
 .all-stocks table th:nth-child(4), .all-stocks table td:nth-child(4),
 .portfolio table th:nth-child(4), .portfolio table td:nth-child(4) {
-  width: 11%;
-  text-align: center;
+  width: 12%;
+  text-align: left;
+  min-width: 100px;
 }
 
-/* Column 5: Current Price */
+/* Column 5: Industry (NEW) */
 .favorites table th:nth-child(5), .favorites table td:nth-child(5),
 .all-stocks table th:nth-child(5), .all-stocks table td:nth-child(5),
 .portfolio table th:nth-child(5), .portfolio table td:nth-child(5) {
-  width: 13%;
-  text-align: center;
+  width: 12%;
+  text-align: left;
+  min-width: 100px;
 }
 
-/* Column 6: % Change */
+/* Column 6: Market Cap / # */
 .favorites table th:nth-child(6), .favorites table td:nth-child(6),
 .all-stocks table th:nth-child(6), .all-stocks table td:nth-child(6),
 .portfolio table th:nth-child(6), .portfolio table td:nth-child(6) {
-  width: 11%;
+  width: 10%;
   text-align: center;
+  min-width: 90px;
 }
 
-/* Column 7: Market Cap Diff / Value */
+/* Column 7: Current Price */
 .favorites table th:nth-child(7), .favorites table td:nth-child(7),
 .all-stocks table th:nth-child(7), .all-stocks table td:nth-child(7),
 .portfolio table th:nth-child(7), .portfolio table td:nth-child(7) {
-  width: 13%;
+  width: 10%;
   text-align: center;
+  min-width: 90px;
 }
 
-/* Column 8: Favorite / Delete - Expanded */
+/* Column 8: % Change */
 .favorites table th:nth-child(8), .favorites table td:nth-child(8),
 .all-stocks table th:nth-child(8), .all-stocks table td:nth-child(8),
 .portfolio table th:nth-child(8), .portfolio table td:nth-child(8) {
-  width: 17%;
+  width: 9%;
   text-align: center;
+  min-width: 80px;
 }
 
-/* Ensure 8th column content (favorites star, delete button) is perfectly centered */
-.favorites table td:nth-child(8),
-.all-stocks table td:nth-child(8),
-.portfolio table td:nth-child(8) {
+/* Column 9: Market Cap Diff / Value */
+.favorites table th:nth-child(9), .favorites table td:nth-child(9),
+.all-stocks table th:nth-child(9), .all-stocks table td:nth-child(9),
+.portfolio table th:nth-child(9), .portfolio table td:nth-child(9) {
+  width: 10%;
+  text-align: center;
+  min-width: 90px;
+}
+
+/* Column 10: Favorite / Delete */
+.favorites table th:nth-child(10), .favorites table td:nth-child(10),
+.all-stocks table th:nth-child(10), .all-stocks table td:nth-child(10),
+.portfolio table th:nth-child(10), .portfolio table td:nth-child(10) {
+  width: 10%;
+  text-align: center;
+  min-width: 80px;
+}
+
+/* Ensure 10th column content (favorites star, delete button) is perfectly centered */
+.favorites table td:nth-child(10),
+.all-stocks table td:nth-child(10),
+.portfolio table td:nth-child(10) {
   text-align: center !important;
   padding: 0.75rem 0.5rem;
   vertical-align: middle;
 }
 
 /* Ensure favorite button is centered - override any other display rules */
-.favorites table td:nth-child(8) .favorite-btn,
-.all-stocks table td:nth-child(8) .favorite-btn {
+.favorites table td:nth-child(10) .favorite-btn,
+.all-stocks table td:nth-child(10) .favorite-btn {
   display: inline-block !important;
   margin: 0 !important;
   vertical-align: middle;
 }
 
 /* Ensure delete button is centered - override flex display */
-.portfolio table td:nth-child(8) .portfolio-delete-button {
+.portfolio table td:nth-child(10) .portfolio-delete-button {
   display: inline-flex !important;
   margin: 0 !important;
   vertical-align: middle;
@@ -2727,11 +2769,14 @@ tr:hover {
 }
 
 /* Highlight entire column when sorted - using :has() selector for modern browsers */
+/* Updated for 10 columns: Ticker(2), Sector(4), Industry(5), Market Cap(6), Current Price(7), % Change(8), Cap Diff(9) */
 .favorites table thead tr:has(th.active-sort:nth-child(2)) ~ tbody tr td:nth-child(2),
 .favorites table thead tr:has(th.active-sort:nth-child(4)) ~ tbody tr td:nth-child(4),
 .favorites table thead tr:has(th.active-sort:nth-child(5)) ~ tbody tr td:nth-child(5),
 .favorites table thead tr:has(th.active-sort:nth-child(6)) ~ tbody tr td:nth-child(6),
-.favorites table thead tr:has(th.active-sort:nth-child(7)) ~ tbody tr td:nth-child(7) {
+.favorites table thead tr:has(th.active-sort:nth-child(7)) ~ tbody tr td:nth-child(7),
+.favorites table thead tr:has(th.active-sort:nth-child(8)) ~ tbody tr td:nth-child(8),
+.favorites table thead tr:has(th.active-sort:nth-child(9)) ~ tbody tr td:nth-child(9) {
   background-color: rgba(229, 229, 229, 0.2); /* Light gray tint for sorted column */
 }
 
@@ -2739,7 +2784,9 @@ tr:hover {
 .all-stocks table thead tr:has(th.active-sort:nth-child(4)) ~ tbody tr td:nth-child(4),
 .all-stocks table thead tr:has(th.active-sort:nth-child(5)) ~ tbody tr td:nth-child(5),
 .all-stocks table thead tr:has(th.active-sort:nth-child(6)) ~ tbody tr td:nth-child(6),
-.all-stocks table thead tr:has(th.active-sort:nth-child(7)) ~ tbody tr td:nth-child(7) {
+.all-stocks table thead tr:has(th.active-sort:nth-child(7)) ~ tbody tr td:nth-child(7),
+.all-stocks table thead tr:has(th.active-sort:nth-child(8)) ~ tbody tr td:nth-child(8),
+.all-stocks table thead tr:has(th.active-sort:nth-child(9)) ~ tbody tr td:nth-child(9) {
   background-color: rgba(229, 229, 229, 0.2);
 }
 
@@ -2932,43 +2979,59 @@ table td strong {
     text-align: left;
   }
 
-  /* Column 4: Market Cap / # */
+  /* Column 4: Sector (NEW) */
   .favorites table th:nth-child(4), .favorites table td:nth-child(4),
   .all-stocks table th:nth-child(4), .all-stocks table td:nth-child(4),
   .portfolio table th:nth-child(4), .portfolio table td:nth-child(4) {
-    width: 11%;
-    text-align: center;
+    width: 10%;
+    text-align: left;
   }
 
-  /* Column 5: Current Price */
+  /* Column 5: Industry (NEW) */
   .favorites table th:nth-child(5), .favorites table td:nth-child(5),
   .all-stocks table th:nth-child(5), .all-stocks table td:nth-child(5),
   .portfolio table th:nth-child(5), .portfolio table td:nth-child(5) {
-    width: 13%;
-    text-align: center;
+    width: 10%;
+    text-align: left;
   }
 
-  /* Column 6: % Change */
+  /* Column 6: Market Cap / # */
   .favorites table th:nth-child(6), .favorites table td:nth-child(6),
   .all-stocks table th:nth-child(6), .all-stocks table td:nth-child(6),
   .portfolio table th:nth-child(6), .portfolio table td:nth-child(6) {
-    width: 11%;
+    width: 10%;
     text-align: center;
   }
 
-  /* Column 7: Market Cap Diff / Value */
+  /* Column 7: Current Price */
   .favorites table th:nth-child(7), .favorites table td:nth-child(7),
   .all-stocks table th:nth-child(7), .all-stocks table td:nth-child(7),
   .portfolio table th:nth-child(7), .portfolio table td:nth-child(7) {
-    width: 13%;
+    width: 10%;
     text-align: center;
   }
 
-  /* Column 8: Favorite / Delete - Expanded */
+  /* Column 8: % Change */
   .favorites table th:nth-child(8), .favorites table td:nth-child(8),
   .all-stocks table th:nth-child(8), .all-stocks table td:nth-child(8),
   .portfolio table th:nth-child(8), .portfolio table td:nth-child(8) {
-    width: 17%;
+    width: 9%;
+    text-align: center;
+  }
+
+  /* Column 9: Market Cap Diff / Value */
+  .favorites table th:nth-child(9), .favorites table td:nth-child(9),
+  .all-stocks table th:nth-child(9), .all-stocks table td:nth-child(9),
+  .portfolio table th:nth-child(9), .portfolio table td:nth-child(9) {
+    width: 10%;
+    text-align: center;
+  }
+
+  /* Column 10: Favorite / Delete */
+  .favorites table th:nth-child(10), .favorites table td:nth-child(10),
+  .all-stocks table th:nth-child(10), .all-stocks table td:nth-child(10),
+  .portfolio table th:nth-child(10), .portfolio table td:nth-child(10) {
+    width: 10%;
     text-align: center;
   }
 

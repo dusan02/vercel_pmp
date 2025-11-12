@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from "react"
+import React, { useState, useEffect, useMemo, useRef } from "react"
 import { calculateUnifiedTreemap } from "@/lib/unifiedTreemap"
 
 // ============================================================================
@@ -61,11 +61,12 @@ const COLOR_SCALE = {
 const LAYOUT_CONFIG = {
   containerHeight: 800,
   minContainerWidth: 1000,
-  maxContainerWidth: 1800,
+  maxContainerWidth: 1200, // Similar to Finviz max-width: 1199px
   sectorLabelHeight: 24,
   minCellArea: 9000,
   minCellSize: 38,
-  largeCellArea: 12000
+  largeCellArea: 12000,
+  sidebarWidth: 200 // Sidebar width similar to Finviz (w-50 = 200px)
 } as const
 
 // ============================================================================
@@ -120,29 +121,133 @@ const Header: React.FC<HeaderProps> = ({ stockCount, totalMarketCap, date }) => 
   </div>
 )
 
-const Legend: React.FC = () => (
+interface LegendProps {
+  position?: 'top' | 'bottom'
+}
+
+const Legend: React.FC<LegendProps> = ({ position = 'top' }) => (
   <div style={{ 
     display: 'flex', 
-    flexWrap: 'wrap', 
-    gap: '1rem', 
-    fontSize: '0.75rem', 
-    color: 'var(--clr-subtext)', 
-    marginBottom: '1rem' 
+    justifyContent: position === 'bottom' ? 'space-between' : 'flex-end',
+    alignItems: 'center',
+    gap: '2px',
+    fontSize: '0.75rem',
+    marginTop: position === 'bottom' ? '1rem' : '0',
+    marginBottom: position === 'top' ? '1rem' : '0',
+    paddingTop: position === 'bottom' ? '1rem' : '0',
+    flexWrap: 'wrap'
   }}>
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-      <div style={{ width: '16px', height: '16px', backgroundColor: COLOR_SCALE.positive.strong, borderRadius: '4px' }}></div>
-      <span>Positive change</span>
-    </div>
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-      <div style={{ width: '16px', height: '16px', backgroundColor: COLOR_SCALE.negative.strong, borderRadius: '4px' }}></div>
-      <span>Negative change</span>
-    </div>
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-      <div style={{ width: '16px', height: '16px', backgroundColor: COLOR_SCALE.neutral, borderRadius: '4px' }}></div>
-      <span>No change</span>
-    </div>
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-      <span>Size = Market Cap</span>
+    <div style={{ 
+      display: 'flex', 
+      gap: '2px',
+      alignItems: 'center',
+      flexWrap: 'wrap'
+    }}>
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        padding: '0 8px',
+        height: '24px',
+        minWidth: '50px',
+        backgroundColor: COLOR_SCALE.negative.strong,
+        color: 'white',
+        fontSize: '0.75rem',
+        fontWeight: 'normal',
+        textShadow: 'rgba(0, 0, 0, 0.25) 0px 1px 0px'
+      }}>
+        -3%
+      </div>
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        padding: '0 8px',
+        height: '24px',
+        minWidth: '50px',
+        backgroundColor: COLOR_SCALE.negative.high,
+        color: 'white',
+        fontSize: '0.75rem',
+        fontWeight: 'normal',
+        textShadow: 'rgba(0, 0, 0, 0.25) 0px 1px 0px'
+      }}>
+        -2%
+      </div>
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        padding: '0 8px',
+        height: '24px',
+        minWidth: '50px',
+        backgroundColor: COLOR_SCALE.negative.medium,
+        color: 'white',
+        fontSize: '0.75rem',
+        fontWeight: 'normal',
+        textShadow: 'rgba(0, 0, 0, 0.25) 0px 1px 0px'
+      }}>
+        -1%
+      </div>
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        padding: '0 8px',
+        height: '24px',
+        minWidth: '50px',
+        backgroundColor: COLOR_SCALE.neutral,
+        color: 'white',
+        fontSize: '0.75rem',
+        fontWeight: 'normal',
+        textShadow: 'rgba(0, 0, 0, 0.25) 0px 1px 0px'
+      }}>
+        0%
+      </div>
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        padding: '0 8px',
+        height: '24px',
+        minWidth: '50px',
+        backgroundColor: COLOR_SCALE.positive.medium,
+        color: 'white',
+        fontSize: '0.75rem',
+        fontWeight: 'normal',
+        textShadow: 'rgba(0, 0, 0, 0.25) 0px 1px 0px'
+      }}>
+        +1%
+      </div>
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        padding: '0 8px',
+        height: '24px',
+        minWidth: '50px',
+        backgroundColor: COLOR_SCALE.positive.high,
+        color: 'white',
+        fontSize: '0.75rem',
+        fontWeight: 'normal',
+        textShadow: 'rgba(0, 0, 0, 0.25) 0px 1px 0px'
+      }}>
+        +2%
+      </div>
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        padding: '0 8px',
+        height: '24px',
+        minWidth: '50px',
+        backgroundColor: COLOR_SCALE.positive.strong,
+        color: 'white',
+        fontSize: '0.75rem',
+        fontWeight: 'normal',
+        textShadow: 'rgba(0, 0, 0, 0.25) 0px 1px 0px'
+      }}>
+        +3%
+      </div>
     </div>
   </div>
 )
@@ -216,6 +321,38 @@ const SectorLabel: React.FC<SectorLabelProps> = ({ sector, x, width, onClick }) 
   )
 }
 
+interface IndustryLabelProps {
+  industry: string
+  x: number
+  y: number
+  width: number
+}
+
+const IndustryLabel: React.FC<IndustryLabelProps> = ({ industry, x, y, width }) => (
+  <div
+    style={{
+      position: 'absolute',
+      left: `${x}px`,
+      top: `${y}px`,
+      width: `${width}px`,
+      height: '20px',
+      display: 'flex',
+      alignItems: 'center',
+      paddingLeft: '0.5rem',
+      fontSize: '0.5rem',
+      fontWeight: '500',
+      letterSpacing: '0.02em',
+      textTransform: 'uppercase',
+      color: 'var(--clr-subtext)',
+      backgroundColor: 'rgba(0,0,0,0.05)',
+      borderBottom: '1px solid var(--clr-border)',
+      zIndex: 15
+    }}
+  >
+    {industry}
+  </div>
+)
+
 interface StockTooltipProps {
   stock: HeatmapStock
   isOther?: boolean
@@ -277,7 +414,7 @@ const StockBlock: React.FC<StockBlockProps> = ({ node, isHovered, onMouseEnter, 
       style={{
         position: 'absolute',
         left: `${Math.round(node.x)}px`,
-        top: `${Math.round(node.y + LAYOUT_CONFIG.sectorLabelHeight)}px`,
+        top: `${Math.round(node.y)}px`,
         width: `${Math.round(node.width)}px`,
         height: `${Math.round(node.height)}px`,
         backgroundColor: bgColor,
@@ -373,7 +510,7 @@ const StockBlock: React.FC<StockBlockProps> = ({ node, isHovered, onMouseEnter, 
 
 export default function StockHeatmap({
   autoRefresh = true,
-  refreshInterval = 60000,
+  refreshInterval = 180000, // 3 minutes default (reduced from 60s to avoid rate limits)
 }: StockHeatmapProps = {}) {
   const [hoveredStock, setHoveredStock] = useState<string | null>(null)
   const [data, setData] = useState<HeatmapData | null>(null)
@@ -381,34 +518,85 @@ export default function StockHeatmap({
   const [error, setError] = useState<string | null>(null)
   const [containerWidth, setContainerWidth] = useState(1200)
   const [activeSector, setActiveSector] = useState<string | null>(null)
+  const [isRateLimited, setIsRateLimited] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedSector, setSelectedSector] = useState<string | null>(null)
   
-  const mainContainerRef = React.useRef<HTMLDivElement>(null)
-  const treemapSectionRef = React.useRef<HTMLElement>(null)
-  const innerContainerRef = React.useRef<HTMLDivElement>(null)
+  const mainContainerRef = useRef<HTMLDivElement>(null)
+  const treemapSectionRef = useRef<HTMLElement>(null)
+  const innerContainerRef = useRef<HTMLDivElement>(null)
+  const fetchAbortControllerRef = useRef<AbortController | null>(null)
 
   // ============================================================================
   // Data Fetching
   // ============================================================================
 
-  const fetchData = async () => {
+  const fetchData = async (retryCount = 0, maxRetries = 2) => {
+    // Cancel previous request if still pending
+    if (fetchAbortControllerRef.current) {
+      fetchAbortControllerRef.current.abort()
+    }
+    
+    const abortController = new AbortController()
+    fetchAbortControllerRef.current = abortController
+    
     try {
       setLoading(true)
       setError(null)
-      const response = await fetch(`/api/heatmap/treemap`)
+      setIsRateLimited(false)
+      
+      const response = await fetch(`/api/heatmap/treemap`, {
+        signal: abortController.signal,
+        cache: 'no-store'
+      })
       
       if (!response.ok) {
-        throw new Error(`API error: ${response.status}`)
+        // Handle rate limit (429)
+        if (response.status === 429) {
+          setIsRateLimited(true)
+          const retryAfter = response.headers.get('Retry-After')
+          const delay = retryAfter ? parseInt(retryAfter) * 1000 : 60000 // Default 60s
+          
+          if (retryCount < maxRetries) {
+            console.log(`⏳ Rate limited (429), retrying in ${delay}ms (attempt ${retryCount + 1}/${maxRetries + 1})`)
+            await new Promise(resolve => setTimeout(resolve, delay))
+            return fetchData(retryCount + 1, maxRetries)
+          } else {
+            throw new Error(`Rate limit exceeded. Please wait ${Math.ceil(delay / 1000)} seconds before refreshing.`)
+          }
+        }
+        
+        const errorText = await response.text()
+        console.error(`API error ${response.status}:`, errorText)
+        throw new Error(`API error: ${response.status} ${response.statusText}`)
       }
       
       const result = await response.json()
       
       if (result.success && result.data) {
-        setData(result.data)
+        // Check if we have any sectors with stocks
+        if (result.data.sectors && result.data.sectors.length > 0) {
+          const totalStocks = result.data.sectors.reduce((sum: number, sector: SectorGroup) => sum + sector.stocks.length, 0)
+          if (totalStocks > 0) {
+            setData(result.data)
+            setIsRateLimited(false)
+          } else {
+            throw new Error("No stocks found in sectors")
+          }
+        } else {
+          throw new Error("No sectors found in response")
+        }
       } else {
         throw new Error(result.error || "Invalid API response")
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load data")
+      // Don't set error if request was aborted
+      if (err instanceof Error && err.name === 'AbortError') {
+        return
+      }
+      
+      const errorMessage = err instanceof Error ? err.message : "Failed to load data"
+      setError(errorMessage)
       console.error("Error fetching heatmap data:", err)
     } finally {
       setLoading(false)
@@ -417,9 +605,19 @@ export default function StockHeatmap({
 
   useEffect(() => {
     fetchData()
+    
     if (autoRefresh) {
-      const interval = setInterval(fetchData, refreshInterval)
-      return () => clearInterval(interval)
+      const interval = setInterval(() => {
+        fetchData()
+      }, refreshInterval)
+      
+      return () => {
+        clearInterval(interval)
+        // Cancel any pending request on unmount
+        if (fetchAbortControllerRef.current) {
+          fetchAbortControllerRef.current.abort()
+        }
+      }
     }
   }, [autoRefresh, refreshInterval])
 
@@ -429,13 +627,12 @@ export default function StockHeatmap({
 
   useEffect(() => {
     const updateWidth = () => {
-      // Calculate available width from main container (accounting for padding)
-      if (mainContainerRef.current) {
+      // Calculate available width from main container (accounting for sidebar)
+      if (mainContainerRef.current && innerContainerRef.current) {
         const containerElement = mainContainerRef.current
-        const computedStyle = window.getComputedStyle(containerElement)
-        const paddingLeft = parseFloat(computedStyle.paddingLeft) || 0
-        const paddingRight = parseFloat(computedStyle.paddingRight) || 0
-        const availableWidth = containerElement.offsetWidth - paddingLeft - paddingRight
+        const sidebarWidth = LAYOUT_CONFIG.sidebarWidth
+        const padding = 32 // 1rem padding on each side
+        const availableWidth = containerElement.offsetWidth - sidebarWidth - padding
         
         const calculatedWidth = Math.min(
           Math.max(availableWidth, LAYOUT_CONFIG.minContainerWidth), 
@@ -454,11 +651,55 @@ export default function StockHeatmap({
     }
   }, [data]) // Recalculate when data changes
 
-  const sectorsForLayout = useMemo(() => {
+  // ============================================================================
+  // Data Filtering
+  // ============================================================================
+
+  // Get unique sectors for sidebar filter
+  const allSectors = useMemo(() => {
     if (!data) return []
-    if (!activeSector) return data.sectors
-    return data.sectors.filter(s => s.sector === activeSector)
-  }, [data, activeSector])
+    return Array.from(new Set(data.sectors.map(s => s.sector))).sort()
+  }, [data])
+
+  // Filter stocks by search term and selected sector
+  // Initialize with null to ensure it's always defined
+  const filteredData: HeatmapData | null = useMemo(() => {
+    if (!data) return null
+    if (!searchTerm && !selectedSector) return data
+
+    const filteredSectors = data.sectors
+      .filter(sector => !selectedSector || sector.sector === selectedSector)
+      .map(sector => ({
+        ...sector,
+        stocks: sector.stocks.filter(stock => 
+          !searchTerm || 
+          stock.ticker.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (stock.name && stock.name.toLowerCase().includes(searchTerm.toLowerCase()))
+        )
+      }))
+      .filter(sector => sector.stocks.length > 0) // Remove empty sectors
+
+    // Recalculate total market cap for filtered data
+    const totalMarketCap = filteredSectors.reduce((sum, sector) => 
+      sum + sector.stocks.reduce((sectorSum, stock) => sectorSum + stock.marketCap, 0), 
+      0
+    )
+
+    const stockCount = filteredSectors.reduce((sum, sector) => sum + sector.stocks.length, 0)
+
+    return {
+      sectors: filteredSectors,
+      totalMarketCap,
+      stockCount,
+      date: data.date
+    }
+  }, [data, searchTerm, selectedSector])
+
+  const sectorsForLayout = useMemo(() => {
+    if (!filteredData) return []
+    if (!activeSector) return filteredData.sectors
+    return filteredData.sectors.filter(s => s.sector === activeSector)
+  }, [filteredData, activeSector])
 
   const layoutOpts = useMemo(() => ({
     alpha: 1,
@@ -515,22 +756,34 @@ export default function StockHeatmap({
         justifyContent: 'center' 
       }}>
         <div style={{ textAlign: 'center', maxWidth: '28rem' }}>
-          <div style={{ fontSize: '3rem' }}>⚠️</div>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginTop: '1rem' }}>Error Loading Data</h3>
+          <div style={{ fontSize: '3rem' }}>{isRateLimited ? '⏳' : '⚠️'}</div>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginTop: '1rem' }}>
+            {isRateLimited ? 'Rate Limit Exceeded' : 'Error Loading Data'}
+          </h3>
           <p style={{ color: 'var(--clr-subtext)', marginTop: '1rem' }}>{error}</p>
+          {isRateLimited && (
+            <p style={{ color: 'var(--clr-subtext)', marginTop: '0.5rem', fontSize: '0.875rem' }}>
+              Auto-refresh is paused. The page will automatically retry in a few minutes.
+            </p>
+          )}
           <button
-            onClick={fetchData}
+            onClick={() => {
+              setIsRateLimited(false)
+              fetchData()
+            }}
+            disabled={isRateLimited}
             style={{
               marginTop: '1rem',
               padding: '0.5rem 1rem',
-              backgroundColor: 'var(--clr-primary)',
-              color: 'var(--clr-bg)',
+              backgroundColor: isRateLimited ? 'var(--clr-border)' : 'var(--clr-primary)',
+              color: isRateLimited ? 'var(--clr-subtext)' : 'var(--clr-bg)',
               borderRadius: '0.375rem',
               border: 'none',
-              cursor: 'pointer'
+              cursor: isRateLimited ? 'not-allowed' : 'pointer',
+              opacity: isRateLimited ? 0.6 : 1
             }}
           >
-            Try Again
+            {isRateLimited ? 'Please Wait...' : 'Try Again'}
           </button>
         </div>
       </div>
@@ -561,86 +814,254 @@ export default function StockHeatmap({
     <div 
       ref={mainContainerRef}
       style={{ 
-        width: '100%', 
-        maxWidth: '1800px', 
-        margin: '0 auto',
-        padding: '0 1rem'
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '600px'
       }}
     >
-      <Header 
-        stockCount={data.stockCount}
-        totalMarketCap={data.totalMarketCap}
-        date={data.date}
-      />
-      
-      <Legend />
-      
-      {activeSector && (
-        <BackButton 
-          activeSector={activeSector}
-          onBack={() => setActiveSector(null)}
-        />
-      )}
+      {/* Header */}
+      <div style={{
+        backgroundColor: '#363a46',
+        color: '#94a3b8',
+        padding: '0.75rem 1rem',
+        borderBottom: '1px solid #444a57',
+        marginBottom: '0.5rem'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <h2 style={{ 
+            margin: 0, 
+            fontSize: '0.75rem', 
+            textTransform: 'uppercase', 
+            opacity: 0.5,
+            fontWeight: 'normal'
+          }}>
+            View
+          </h2>
+          <div style={{ 
+            display: 'flex', 
+            gap: '0.5rem',
+            fontSize: '0.75rem',
+            color: 'white',
+            fontWeight: '600'
+          }}>
+            <span>Market Heatmap</span>
+          </div>
+          <div style={{ 
+            marginLeft: 'auto',
+            fontSize: '0.75rem',
+            color: '#94a3b8'
+          }}>
+            {data ? (
+              filteredData ? (
+                `${filteredData.stockCount || 0} stocks • $${(filteredData.totalMarketCap || 0).toFixed(2)}B total market cap`
+              ) : (
+                `${data.stockCount || 0} stocks • $${(data.totalMarketCap || 0).toFixed(2)}B total market cap`
+              )
+            ) : (
+              '0 stocks • $0.00B total market cap'
+            )}
+          </div>
+        </div>
+      </div>
 
-      {treemapLayout && (
-        <section
-          ref={treemapSectionRef}
-          style={{
-            position: 'relative',
-            width: '100%',
-            marginBottom: '1rem',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'flex-start'
-          }}
-        >
-          <div
-            ref={innerContainerRef}
-            style={{
-              position: 'relative',
-              width: `${containerWidth}px`,
-              maxWidth: '100%'
-            }}
-          >
-            <div style={{ 
-              position: 'relative', 
-              width: `${containerWidth}px`,
-              height: `${LAYOUT_CONFIG.containerHeight}px`,
-              border: '1px solid var(--clr-border)',
-              borderRadius: '0.5rem',
-              overflow: 'visible',
-              backgroundColor: 'var(--clr-surface)',
-              margin: '0 auto',
-              isolation: 'isolate'
+      {/* Main Content: Sidebar + Map */}
+      <div style={{
+        display: 'flex',
+        width: '100%',
+        gap: '0.5rem'
+      }}>
+        {/* Sidebar - Similar to Finviz */}
+        <div style={{
+          width: `${LAYOUT_CONFIG.sidebarWidth}px`,
+          minWidth: `${LAYOUT_CONFIG.sidebarWidth}px`,
+          backgroundColor: '#363a46',
+          display: 'flex',
+          flexDirection: 'column',
+          borderRight: '1px solid #444a57'
+        }}>
+          {/* Search */}
+          <div style={{
+            padding: '0.75rem',
+            borderBottom: '1px solid #444a57'
+          }}>
+            <input
+              type="text"
+              placeholder="Quick search ticker"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '0.5rem',
+                backgroundColor: 'transparent',
+                border: '1px solid #585f72',
+                borderRadius: '0.25rem',
+                color: '#94a3b8',
+                fontSize: '0.75rem',
+                outline: 'none'
+              }}
+            />
+          </div>
+
+          {/* Sector Filter */}
+          <div style={{
+            padding: '1rem',
+            borderBottom: '1px solid #444a57'
+          }}>
+            <h3 style={{
+              margin: '0 0 0.75rem 0',
+              fontSize: '0.75rem',
+              textTransform: 'uppercase',
+              color: '#94a3b8',
+              opacity: 0.5,
+              fontWeight: 'normal'
             }}>
-              {treemapLayout.sectors.map((sectorLayout) => (
-                <SectorLabel
-                  key={sectorLayout.sector}
-                  sector={sectorLayout.sector}
-                  x={sectorLayout.x}
-                  width={sectorLayout.width}
-                  onClick={() => setActiveSector(sectorLayout.sector)}
-                />
+              Sectors
+            </h3>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.25rem',
+              maxHeight: '400px',
+              overflowY: 'auto'
+            }}>
+              <button
+                onClick={() => setSelectedSector(null)}
+                style={{
+                  padding: '0.5rem',
+                  textAlign: 'left',
+                  backgroundColor: selectedSector === null ? '#4a505f' : 'transparent',
+                  border: 'none',
+                  color: selectedSector === null ? 'white' : '#94a3b8',
+                  fontSize: '0.75rem',
+                  cursor: 'pointer',
+                  borderRadius: '0.25rem'
+                }}
+              >
+                All Sectors
+              </button>
+              {allSectors.map(sector => (
+                <button
+                  key={sector}
+                  onClick={() => setSelectedSector(sector)}
+                  style={{
+                    padding: '0.5rem',
+                    textAlign: 'left',
+                    backgroundColor: selectedSector === sector ? '#4a505f' : 'transparent',
+                    border: 'none',
+                    color: selectedSector === sector ? 'white' : '#94a3b8',
+                    fontSize: '0.75rem',
+                    cursor: 'pointer',
+                    borderRadius: '0.25rem'
+                  }}
+                >
+                  {sector}
+                </button>
               ))}
-              
-              {treemapLayout.allNodes.map((node, nodeIndex) => {
-                const stock = node.data as HeatmapStock
-                const uniqueKey = `${node.sector || 'unknown'}-${stock.ticker}-${node.x}-${node.y}-${nodeIndex}`
-                
-                return (
-                  <StockBlock
-                    key={uniqueKey}
-                    node={node}
-                    isHovered={hoveredStock === stock.ticker}
-                    onMouseEnter={() => setHoveredStock(stock.ticker)}
-                    onMouseLeave={() => setHoveredStock(null)}
-                  />
-                )
-              })}
             </div>
           </div>
-        </section>
-      )}
+        </div>
+
+        {/* Map Area */}
+        <div style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          paddingLeft: '1rem',
+          paddingTop: '0.25rem'
+        }}>
+          {activeSector && (
+            <BackButton 
+              activeSector={activeSector}
+              onBack={() => setActiveSector(null)}
+            />
+          )}
+
+          {treemapLayout && (
+            <div style={{
+              position: 'relative',
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'column'
+            }}>
+              {/* Legend at top */}
+              <Legend position="top" />
+
+              {/* Map Canvas */}
+              <div
+                ref={innerContainerRef}
+                style={{
+                  position: 'relative',
+                  width: '100%',
+                  maxWidth: `${LAYOUT_CONFIG.maxContainerWidth}px`,
+                  margin: '0 auto'
+                }}
+              >
+                <div style={{ 
+                  position: 'relative', 
+                  width: '100%',
+                  height: `${LAYOUT_CONFIG.containerHeight}px`,
+                  border: '1px solid #444a57',
+                  borderRadius: '0.25rem',
+                  overflow: 'visible',
+                  backgroundColor: '#404553',
+                  margin: '0 auto'
+                }}>
+                  {treemapLayout.sectors.map((sectorLayout) => (
+                    <React.Fragment key={sectorLayout.sector}>
+                      <SectorLabel
+                        sector={sectorLayout.sector}
+                        x={sectorLayout.x}
+                        width={sectorLayout.width}
+                        onClick={() => setActiveSector(sectorLayout.sector)}
+                      />
+                      {sectorLayout.industries?.map((industryLayout) => (
+                        <IndustryLabel
+                          key={`${sectorLayout.sector}-${industryLayout.industry}`}
+                          industry={industryLayout.industry}
+                          x={industryLayout.x}
+                          y={industryLayout.y}
+                          width={industryLayout.width}
+                        />
+                      ))}
+                    </React.Fragment>
+                  ))}
+                  
+                  {treemapLayout.allNodes.map((node, nodeIndex) => {
+                    const stock = node.data as HeatmapStock
+                    const uniqueKey = `${node.sector || 'unknown'}-${stock.ticker}-${node.x}-${node.y}-${nodeIndex}`
+                    
+                    return (
+                      <StockBlock
+                        key={uniqueKey}
+                        node={node}
+                        isHovered={hoveredStock === stock.ticker}
+                        onMouseEnter={() => setHoveredStock(stock.ticker)}
+                        onMouseLeave={() => setHoveredStock(null)}
+                      />
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Legend at bottom */}
+              <Legend position="bottom" />
+
+              {/* Info text */}
+              <div style={{
+                marginTop: '1rem',
+                fontSize: '0.75rem',
+                color: '#94a3b8',
+                paddingBottom: '1rem'
+              }}>
+                Use mouse to hover over stocks. Click on sector labels to zoom in.
+                <br />
+                Size represents market capitalization.
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }

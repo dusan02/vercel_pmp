@@ -63,11 +63,6 @@ export async function GET(request: NextRequest) {
         date: {
           gte: today,
           lt: tomorrow
-        },
-        ticker: {
-          sector: {
-            not: null // Only stocks with sector data
-          }
         }
       },
       orderBy: {
@@ -83,26 +78,22 @@ export async function GET(request: NextRequest) {
             sharesOutstanding: true
           }
         }
-      }
+      },
+      take: 1000 // Limit to prevent too many results
     });
 
-    // If no data for today, try yesterday
+    console.log(`📊 Found ${allPrices.length} SessionPrice records for today`);
+
+    // If no data for today, try last 7 days
     if (allPrices.length === 0) {
-      const yesterday = new Date(today);
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayEnd = new Date(yesterday);
-      yesterdayEnd.setDate(yesterdayEnd.getDate() + 1);
+      const weekAgo = new Date(today);
+      weekAgo.setDate(weekAgo.getDate() - 7);
       
       allPrices = await prisma.sessionPrice.findMany({
         where: {
           date: {
-            gte: yesterday,
-            lt: yesterdayEnd
-          },
-          ticker: {
-            sector: {
-              not: null
-            }
+            gte: weekAgo,
+            lt: tomorrow
           }
         },
         orderBy: {
@@ -118,8 +109,11 @@ export async function GET(request: NextRequest) {
               sharesOutstanding: true
             }
           }
-        }
+        },
+        take: 1000
       });
+      
+      console.log(`📊 Found ${allPrices.length} SessionPrice records in last 7 days`);
     }
 
     // Get latest price for each symbol (most recent across all sessions)
@@ -178,14 +172,20 @@ export async function GET(request: NextRequest) {
     
     for (const sessionPrice of tickersWithPrices) {
       const ticker = sessionPrice.ticker;
-      if (!ticker.sector) continue;
+      
+      // All tickers should have sector now, but keep fallback for safety
+      const sector = ticker.sector || 'Other';
       
       const sharesOutstanding = ticker.sharesOutstanding || 0;
       const currentPrice = sessionPrice.lastPrice;
+      
+      // Skip if price is invalid
+      if (!currentPrice || currentPrice <= 0) continue;
+      
       const marketCap = computeMarketCap(currentPrice, sharesOutstanding);
       
       // Skip stocks with invalid data
-      if (marketCap <= 0) continue;
+      if (marketCap <= 0 || !isFinite(marketCap)) continue;
       
       // Get previousClose from DailyRef, calculate percentChange
       // Fallback to changePct from SessionPrice if DailyRef not available
@@ -197,26 +197,28 @@ export async function GET(request: NextRequest) {
         percentChange = computePercentChange(currentPrice, previousClose);
       } else {
         // Fallback: use changePct from SessionPrice (already calculated vs previousClose)
-        percentChange = sessionPrice.changePct;
+        percentChange = sessionPrice.changePct || 0;
       }
       
       stocks.push({
         ticker: ticker.symbol,
         name: ticker.name,
-        sector: ticker.sector,
-        industry: ticker.industry,
+        sector: sector,
+        industry: ticker.industry || 'Uncategorized',
         marketCap,
         percentChange,
         currentPrice,
         sharesOutstanding
       });
     }
+    
+    console.log(`📊 Processed ${stocks.length} stocks for heatmap`);
 
     // Group by sector
     const sectorMap = new Map<string, HeatmapStock[]>();
     
     for (const stock of stocks) {
-      const sector = stock.sector || 'Unknown';
+      const sector = stock.sector || 'Other';
       if (!sectorMap.has(sector)) {
         sectorMap.set(sector, []);
       }
@@ -242,6 +244,13 @@ export async function GET(request: NextRequest) {
 
     // Calculate total market cap
     const totalMarketCap = sectors.reduce((sum, sector) => sum + sector.totalMarketCap, 0);
+
+    console.log(`📊 Heatmap response: ${sectors.length} sectors, ${stocks.length} stocks, $${totalMarketCap.toFixed(2)}B total market cap`);
+
+    // If no stocks found, return empty response but still success
+    if (stocks.length === 0) {
+      console.warn('⚠️ No stocks found for heatmap - returning empty response');
+    }
 
     const response: HeatmapResponse = {
       sectors,

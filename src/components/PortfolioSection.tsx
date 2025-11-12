@@ -144,6 +144,8 @@ export function PortfolioSection({
             <th>Logo</th>
             <th>Ticker</th>
             <th>Company Name</th>
+            <th>Sector</th>
+            <th>Industry</th>
             <th>#</th>
             <th>Current Price</th>
             <th>% Change</th>
@@ -154,7 +156,7 @@ export function PortfolioSection({
         <tbody>
           {portfolioStocks.length === 0 ? (
             <tr>
-              <td colSpan={8} style={{ textAlign: 'center', padding: '2rem', color: 'var(--clr-subtext)' }}>
+              <td colSpan={10} style={{ textAlign: 'center', padding: '2rem', color: 'var(--clr-subtext)' }}>
                 No portfolio holdings. Add stocks by entering quantity in the # column.
               </td>
             </tr>
@@ -177,6 +179,8 @@ export function PortfolioSection({
                     <td className="company-name">
                       {getCompanyName(stock.ticker)}
                     </td>
+                    <td>{stock.sector || 'N/A'}</td>
+                    <td>{stock.industry || 'N/A'}</td>
                     <td>
                       <input
                         type="text"
@@ -269,7 +273,7 @@ export function PortfolioSection({
               })}
               {/* Total row */}
               <tr className="portfolio-total-row">
-                <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, padding: '1rem 0.5rem' }}>
+                <td colSpan={8} style={{ textAlign: 'right', fontWeight: 600, padding: '1rem 0.5rem' }}>
                   Total:
                 </td>
                 <td className={totalPortfolioValue >= 0 ? 'positive' : 'negative'} style={{ fontWeight: 600, padding: '1rem 0.5rem' }}>
