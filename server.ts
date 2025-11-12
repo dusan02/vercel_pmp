@@ -39,7 +39,8 @@ app.prepare().then(() => {
 
   // Initialize WebSocket price server
   const websocketServer = new WebSocketPriceServer(io);
-  global.websocketServer = websocketServer;
+  // Type assertion for global assignment
+  (global as any).websocketServer = websocketServer;
 
   // Start WebSocket real-time updates (only in production or when explicitly enabled)
   if (process.env.NODE_ENV === 'production' || process.env.ENABLE_WEBSOCKET === 'true') {

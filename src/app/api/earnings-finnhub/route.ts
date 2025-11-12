@@ -383,8 +383,8 @@ async function enrichEarningsData(earnings: EarningsData[]): Promise<EarningsDat
       }
       
       // Use updated earnings data if available
-      const finalEpsActual = updatedEarnings?.epsActual !== null ? updatedEarnings.epsActual : earning.epsActual;
-      const finalRevenueActual = updatedEarnings?.revenueActual !== null ? updatedEarnings.revenueActual : earning.revenueActual;
+      const finalEpsActual = updatedEarnings && updatedEarnings.epsActual !== null ? updatedEarnings.epsActual : earning.epsActual;
+      const finalRevenueActual = updatedEarnings && updatedEarnings.revenueActual !== null ? updatedEarnings.revenueActual : earning.revenueActual;
       
       // Ensure we have valid data before pushing
       const enrichedEarning = {

@@ -195,7 +195,7 @@ function processEarningsData(rawData: PolygonEarningsData[]): EarningsCalendar {
     console.error('❌ Error processing earnings data:', error);
     // Return empty result if processing fails
     return {
-      date: new Date().toISOString().split('T')[0],
+      date: new Date().toISOString().split('T')[0]!,
       preMarket: [],
       afterMarket: [],
       message: 'Error processing earnings data'
@@ -203,7 +203,7 @@ function processEarningsData(rawData: PolygonEarningsData[]): EarningsCalendar {
   }
   
   return {
-    date: rawData[0]?.report_date || new Date().toISOString().split('T')[0],
+    date: rawData[0]?.report_date || new Date().toISOString().split('T')[0]!,
     preMarket,
     afterMarket
   };
@@ -222,7 +222,7 @@ export async function GET(request: NextRequest) {
     if (!date) {
       const now = new Date();
       const easternTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
-      date = easternTime.toISOString().split('T')[0];
+      date = easternTime.toISOString().split('T')[0]!;
     } else {
       // Validate date format (YYYY-MM-DD)
       const dateRegex = /^\d{4}-\d{2}-\d{2}$/;

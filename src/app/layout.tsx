@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 
@@ -58,15 +58,6 @@ export const metadata: Metadata = {
   },
   // PWA specific metadata
   manifest: '/manifest.json',
-  themeColor: '#2563eb',
-  colorScheme: 'light dark',
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-    viewportFit: 'cover',
-  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -76,6 +67,16 @@ export const metadata: Metadata = {
   category: 'finance',
   classification: 'Business',
   referrer: 'origin-when-cross-origin',
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
+  themeColor: '#2563eb',
+  colorScheme: 'light dark',
 }
 
 export default function RootLayout({
@@ -106,6 +107,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon.png" />
         
         {/* Favicons */}
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico" />
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico" />
         <link rel="manifest" href="/manifest.json" />

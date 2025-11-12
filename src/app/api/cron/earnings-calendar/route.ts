@@ -36,7 +36,7 @@ function getAllTickers(): string[] {
   const allTickers = new Set<string>();
   
   // Pridaj všetky tickery zo všetkých tierov
-  Object.values(DEFAULT_TICKERS).forEach((tier: string[]) => {
+  (Object.values(DEFAULT_TICKERS) as string[][]).forEach((tier: string[]) => {
     tier.forEach(ticker => allTickers.add(ticker));
   });
   
@@ -144,11 +144,8 @@ async function fetchEarningsFromYahoo(date: string): Promise<EarningsData[]> {
         earningsData.push({
           ticker: ticker,
           companyName: ticker, // Budeme aktualizovať neskôr z Polygon API
-          time: 'before',
-          epsEstimate: undefined,
-          epsActual: undefined,
-          revenueEstimate: undefined,
-          revenueActual: undefined
+          time: 'before'
+          // Optional properties omitted (exactOptionalPropertyTypes: true)
         });
       });
     }
@@ -159,11 +156,8 @@ async function fetchEarningsFromYahoo(date: string): Promise<EarningsData[]> {
         earningsData.push({
           ticker: ticker,
           companyName: ticker, // Budeme aktualizovať neskôr z Polygon API
-          time: 'after',
-          epsEstimate: undefined,
-          epsActual: undefined,
-          revenueEstimate: undefined,
-          revenueActual: undefined
+          time: 'after'
+          // Optional properties omitted (exactOptionalPropertyTypes: true)
         });
       });
     }
@@ -189,6 +183,9 @@ export async function POST(request: NextRequest) {
     console.log(`🚀 Starting daily earnings calendar update for ${today}`);
 
     // 1. Vyčisti existujúce záznamy pre dnešný dátum
+    if (!today) {
+      return NextResponse.json({ error: 'Date parameter is required' }, { status: 400 });
+    }
     await clearEarningsCalendar(today);
 
     // 2. Získaj earnings data z Yahoo Finance
@@ -221,6 +218,9 @@ export async function GET(request: NextRequest) {
     console.log(`🔧 Manual earnings calendar update for ${today}`);
 
     // 1. Vyčisti existujúce záznamy
+    if (!today) {
+      return NextResponse.json({ error: 'Date parameter is required' }, { status: 400 });
+    }
     await clearEarningsCalendar(today);
 
     // 2. Získaj earnings data

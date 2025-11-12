@@ -95,8 +95,12 @@ export function PerformanceOptimizer({
         entries.forEach(entry => {
           if (entry.isIntersecting) {
             const img = entry.target as HTMLImageElement;
-            img.src = img.dataset.src || '';
-            img.classList.remove('lazy');
+            const dataSrc = img.dataset.src;
+            // Only set src if dataSrc exists and is not empty
+            if (dataSrc && dataSrc.trim() !== '') {
+              img.src = dataSrc;
+              img.classList.remove('lazy');
+            }
             imageObserver.unobserve(img);
           }
         });
@@ -175,25 +179,6 @@ export function PerformanceOptimizer({
     <div className={`performance-optimizer ${isOptimized ? 'optimized' : ''}`}>
       {children}
       
-      {/* Performance monitoring overlay (development only) */}
-      {process.env.NODE_ENV === 'development' && enableMonitoring && (
-        <div className="performance-monitor" style={{
-          position: 'fixed',
-          top: '10px',
-          right: '10px',
-          background: 'rgba(0, 0, 0, 0.8)',
-          color: 'white',
-          padding: '10px',
-          borderRadius: '5px',
-          fontSize: '12px',
-          zIndex: 10000,
-          fontFamily: 'monospace'
-        }}>
-          <div>FCP: {metrics.fcp ? `${metrics.fcp.toFixed(0)}ms` : '...'}</div>
-          <div>LCP: {metrics.lcp ? `${metrics.lcp.toFixed(0)}ms` : '...'}</div>
-          <div>CLS: {metrics.cls ? metrics.cls.toFixed(4) : '...'}</div>
-        </div>
-      )}
     </div>
   );
 }

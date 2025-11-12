@@ -1,17 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { 
-  getSharesOutstanding, 
-  computeMarketCap, 
-  computeMarketCapDiff, 
-  getCurrentPrice, 
-  getPreviousClose, 
-  validatePriceChange,
-  computePercentChange,
-  logCalculationData,
-  getMarketStatus
-} from '@/lib/marketCapUtils';
-// import { prisma } from '@/lib/prisma';
 
+/**
+ * DEPRECATED: This endpoint has been replaced by /api/stocks
+ * Use /api/stocks instead (reads from Redis/DB, not Polygon API)
+ */
+export async function GET(request: NextRequest) {
+  return NextResponse.json(
+    { 
+      error: 'This endpoint has been deprecated',
+      message: 'Please use /api/stocks instead',
+      migration: 'https://github.com/your-repo/wiki/api-migration'
+    },
+    { 
+      status: 410, // Gone
+      headers: {
+        'Cache-Control': 'no-store',
+        'X-Deprecated': 'true',
+        'X-Alternative': '/api/stocks'
+      }
+    }
+  );
+}
+
+// Legacy code below (kept for reference, not executed)
+/*
 interface StockData {
   ticker: string;
   preMarketPrice: number;
@@ -46,7 +58,7 @@ interface PolygonV2Response {
   };
 }
 
-export async function GET(request: NextRequest) {
+export async function GET_LEGACY(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const tickers = searchParams.get('tickers');
@@ -145,4 +157,5 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}
+*/ 

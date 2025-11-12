@@ -204,8 +204,9 @@ export async function GET(request: NextRequest) {
     const promises = tickerList.map(async (ticker, index) => {
       try {
         // Add delay between requests to avoid rate limiting
+        // Increased delay to reduce rate limiting issues
         if (index > 0) {
-          await new Promise(resolve => setTimeout(resolve, 100)); // 100ms delay between requests
+          await new Promise(resolve => setTimeout(resolve, 200)); // 200ms delay between requests
         }
 
         // Try to get from cache first

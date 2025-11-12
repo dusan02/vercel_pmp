@@ -1,20 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ChevronUp, ChevronDown, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import CompanyLogo from './CompanyLogo';
 import { formatBillions } from '@/lib/format';
 import { getCompanyName } from '@/lib/companyNames';
-
-interface StockData {
-  ticker: string;
-  currentPrice: number;
-  closePrice: number;
-  percentChange: number;
-  marketCapDiff: number;
-  marketCap: number;
-  lastUpdated?: string;
-}
+import { SectionIcon } from './SectionIcon';
+import { StockData } from '@/lib/types';
 
 interface EarningsData {
   ticker: string;
@@ -133,7 +125,6 @@ function useEarningsData(date: string) {
       // Fallback to original earnings data if stock data fetch fails
       setData(earningsResult);
     } catch (err) {
-      console.error('Error fetching earnings:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch earnings data');
     } finally {
       setIsLoading(false);
@@ -144,13 +135,12 @@ function useEarningsData(date: string) {
     if (date) {
       fetchData();
       
-      // Auto-refresh for today's earnings every 5 minutes
+      // Auto-refresh for today's earnings every 10 minutes (reduced frequency to avoid rate limiting)
       const today = new Date().toISOString().split('T')[0];
       if (date === today) {
         const interval = setInterval(() => {
-          console.log('🔄 Auto-refreshing today\'s earnings data...');
           fetchData(true);
-        }, 5 * 60 * 1000); // 5 minutes
+        }, 10 * 60 * 1000); // 10 minutes
         
         return () => clearInterval(interval);
       }
@@ -160,132 +150,18 @@ function useEarningsData(date: string) {
   return { data, isLoading, error, refetch: () => fetchData(true) };
 }
 
-// Virtualized table component
-function VirtualizedTable({ 
-  data, 
-  title, 
-  onSort, 
-  sortKey, 
-  ascending 
-}: {
-  data: EarningsData[];
-  title: string;
-  onSort: (key: keyof EarningsData) => void;
-  sortKey: keyof EarningsData;
-  ascending: boolean;
-}) {
-  const renderSortIcon = (key: keyof EarningsData) => {
-    if (key === sortKey) {
-      return ascending ? <ChevronUp size={16} /> : <ChevronDown size={16} />;
-    }
-    return null;
-  };
-
-  const formatValue = (value: number | null, isPercent = false, isCurrency = false) => {
-    if (value === null || value === undefined) return '-';
-    
-    if (isPercent) {
-      return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
-    }
-    
-    if (isCurrency) {
-      return `$${value.toFixed(2)}`;
-    }
-    
-    return value.toFixed(2);
-  };
-
-  if (data.length === 0) {
-    return (
-      <div className="text-center p-4 text-gray-500">
-        No {title.toLowerCase()} earnings found for today
-      </div>
-    );
-  }
-
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-gray-200 bg-gray-50">
-            <th className="text-left py-2 px-1 font-medium text-gray-700 w-12">Logo</th>
-            <th onClick={() => onSort('ticker')} className="text-left py-2 px-1 font-medium text-gray-700 sortable cursor-pointer hover:bg-gray-100 w-16">
-              Ticker {renderSortIcon('ticker')}
-            </th>
-            <th onClick={() => onSort('companyName')} className="text-left py-2 px-1 font-medium text-gray-700 sortable cursor-pointer hover:bg-gray-100 w-32">
-              Company Name {renderSortIcon('companyName')}
-            </th>
-            <th onClick={() => onSort('time')} className="text-left py-2 px-1 font-medium text-gray-700 sortable cursor-pointer hover:bg-gray-100 w-24">
-              Report Time {renderSortIcon('time')}
-            </th>
-            <th onClick={() => onSort('marketCap')} className="text-right py-2 px-1 font-medium text-gray-700 sortable cursor-pointer hover:bg-gray-100 w-20">
-              Market Cap {renderSortIcon('marketCap')}
-            </th>
-            <th onClick={() => onSort('epsEstimate')} className="text-right py-2 px-1 font-medium text-gray-700 sortable cursor-pointer hover:bg-gray-100 w-16">
-              EPS Est {renderSortIcon('epsEstimate')}
-            </th>
-            <th onClick={() => onSort('epsActual')} className="text-right py-2 px-1 font-medium text-gray-700 sortable cursor-pointer hover:bg-gray-100 w-16">
-              EPS Rep {renderSortIcon('epsActual')}
-            </th>
-            <th onClick={() => onSort('revenueEstimate')} className="text-right py-2 px-1 font-medium text-gray-700 sortable cursor-pointer hover:bg-gray-100 w-16">
-              Rev Est {renderSortIcon('revenueEstimate')}
-            </th>
-            <th onClick={() => onSort('revenueActual')} className="text-right py-2 px-1 font-medium text-gray-700 sortable cursor-pointer hover:bg-gray-100 w-16">
-              Rev Rep {renderSortIcon('revenueActual')}
-            </th>
-            <th onClick={() => onSort('percentChange')} className="text-right py-2 px-1 font-medium text-gray-700 sortable cursor-pointer hover:bg-gray-100 w-20">
-              % Change {renderSortIcon('percentChange')}
-            </th>
-            <th onClick={() => onSort('marketCapDiff')} className="text-right py-2 px-1 font-medium text-gray-700 sortable cursor-pointer hover:bg-gray-100 w-24">
-              Market Cap Diff {renderSortIcon('marketCapDiff')}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((earning, index) => (
-            <tr key={`${earning.ticker}-${index}`} className="border-b border-gray-100 hover:bg-gray-50">
-              <td className="py-2 px-1">
-                <div className="flex justify-center">
-                  <CompanyLogo ticker={earning.ticker} size={28} />
-                </div>
-              </td>
-              <td className="py-2 px-1"><strong>{earning.ticker}</strong></td>
-              <td className="py-2 px-1 text-gray-700 truncate">{getCompanyName(earning.ticker)}</td>
-              <td className="py-2 px-1 text-gray-700 text-xs">
-                {earning.time === 'bmo' ? 'Before market' : 'After market'}
-              </td>
-              <td className="py-2 px-1 text-right">{earning.marketCap !== null ? formatBillions(earning.marketCap) : '-'}</td>
-              <td className="py-2 px-1 text-right">{formatValue(earning.epsEstimate, false, true)}</td>
-              <td className={`py-2 px-1 text-right font-medium ${earning.epsActual !== null && earning.epsEstimate !== null ? (earning.epsActual >= earning.epsEstimate ? 'positive' : 'negative') : ''}`}>
-                {formatValue(earning.epsActual, false, true)}
-              </td>
-              <td className="py-2 px-1 text-right">{formatValue(earning.revenueEstimate ? earning.revenueEstimate / 1000000 : null)}</td>
-              <td className={`py-2 px-1 text-right font-medium ${earning.revenueActual !== null && earning.revenueEstimate !== null ? (earning.revenueActual >= earning.revenueEstimate ? 'positive' : 'negative') : ''}`}>
-                {formatValue(earning.revenueActual ? earning.revenueActual / 1000000 : null)}
-              </td>
-              <td className={`py-2 px-1 text-right font-medium ${earning.percentChange !== null && earning.percentChange >= 0 ? 'positive' : earning.percentChange !== null && earning.percentChange < 0 ? 'negative' : ''}`}>
-                {earning.percentChange !== null ? (earning.percentChange >= 0 ? '+' : '') + earning.percentChange.toFixed(2) + '%' : '-'}
-              </td>
-              <td className={`py-2 px-1 text-right font-medium ${earning.marketCapDiff !== null && earning.marketCapDiff >= 0 ? 'positive' : earning.marketCapDiff !== null && earning.marketCapDiff < 0 ? 'negative' : ''}`}>
-                {earning.marketCapDiff !== null ? (earning.marketCapDiff >= 0 ? '+' : '') + earning.marketCapDiff.toFixed(2) : '-'}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
 // Loading component for earnings
 const EarningsLoader = () => (
-  <section className="todays-earnings bg-white p-4 rounded-lg shadow-sm border border-gray-200" aria-labelledby="earnings-heading">
-    <h2 id="earnings-heading" className="text-xl font-bold mb-4 flex items-center">
-      <span className="mr-2">📊</span>
-      Today's Earnings
-    </h2>
+  <section className="todays-earnings">
+    <div className="section-header">
+      <div className="header-main">
+        <h2>
+          <SectionIcon type="calendar" size={20} className="section-icon" />
+          <span>Today's Earnings</span>
+        </h2>
+      </div>
+    </div>
     <div className="flex items-center justify-center p-8">
-      <Loader2 className="animate-spin h-6 w-6 mr-3 text-blue-600" />
       <span className="text-gray-600">Loading today's earnings...</span>
     </div>
   </section>
@@ -293,11 +169,15 @@ const EarningsLoader = () => (
 
 // Error component for earnings
 const EarningsError = ({ error, onRetry }: { error: string; onRetry: () => void }) => (
-  <section className="todays-earnings bg-white p-4 rounded-lg shadow-sm border border-gray-200" aria-labelledby="earnings-heading">
-    <h2 id="earnings-heading" className="text-xl font-bold mb-4 flex items-center">
-      <span className="mr-2">📊</span>
-      Today's Earnings
-    </h2>
+  <section className="todays-earnings">
+    <div className="section-header">
+      <div className="header-main">
+        <h2>
+          <SectionIcon type="calendar" size={20} className="section-icon" />
+          <span>Today's Earnings</span>
+        </h2>
+      </div>
+    </div>
     <div className="text-center p-8">
       <p className="text-red-600 mb-4">Error loading earnings data: {error}</p>
       <button 
@@ -312,11 +192,15 @@ const EarningsError = ({ error, onRetry }: { error: string; onRetry: () => void 
 
 // Empty state component for earnings
 const EarningsEmpty = () => (
-  <section className="todays-earnings bg-white p-4 rounded-lg shadow-sm border border-gray-200" aria-labelledby="earnings-heading">
-    <h2 id="earnings-heading" className="text-xl font-bold mb-4 flex items-center">
-      <span className="mr-2">📊</span>
-      Today's Earnings
-    </h2>
+  <section className="todays-earnings">
+    <div className="section-header">
+      <div className="header-main">
+        <h2>
+          <SectionIcon type="calendar" size={20} className="section-icon" />
+          <span>Today's Earnings</span>
+        </h2>
+      </div>
+    </div>
     <div className="text-center p-8 text-gray-500">
       <p>No earnings reports scheduled for today from tracked companies</p>
     </div>
@@ -335,7 +219,6 @@ export default function TodaysEarningsFinnhub() {
       // Get current date in Eastern Time
       const easternTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
       const dateString = easternTime.toISOString().split('T')[0];
-      console.log('🔍 Setting earnings date to:', dateString);
       setCurrentDate(dateString);
     };
     
@@ -351,7 +234,6 @@ export default function TodaysEarningsFinnhub() {
     const timeUntilMidnight = tomorrowEastern.getTime() - easternTime.getTime();
     
     const midnightTimeout = setTimeout(() => {
-      console.log('🔄 Midnight refresh - checking for new earnings data');
       updateDate();
     }, timeUntilMidnight);
     
@@ -404,43 +286,114 @@ export default function TodaysEarningsFinnhub() {
     return <EarningsEmpty />;
   }
 
-  const totalEarnings = data.data.preMarket.length + data.data.afterMarket.length;
   const sortedPreMarket = sortData(data.data.preMarket);
   const sortedAfterMarket = sortData(data.data.afterMarket);
   
+  // Combine pre-market and after-market into one table
+  const allEarnings = [...sortedPreMarket, ...sortedAfterMarket];
+  
   return (
-    <section className="todays-earnings bg-white p-4 rounded-lg shadow-sm border border-gray-200" aria-labelledby="earnings-heading">
-      <h2 id="earnings-heading" data-icon="📊">
-        Today's Earnings ({totalEarnings})
-      </h2>
-      
-      <div className="space-y-6">
-        {/* Pre-Market Earnings */}
-        {sortedPreMarket.length > 0 && (
-          <div className="earnings-section">
-            <VirtualizedTable 
-              data={sortedPreMarket}
-              title="Pre-Market"
-              onSort={handleSort}
-              sortKey={sortKey}
-              ascending={ascending}
-            />
-          </div>
-        )}
-
-        {/* After-Market Earnings */}
-        {sortedAfterMarket.length > 0 && (
-          <div className="earnings-section">
-            <VirtualizedTable 
-              data={sortedAfterMarket}
-              title="After-Market"
-              onSort={handleSort}
-              sortKey={sortKey}
-              ascending={ascending}
-            />
-          </div>
-        )}
+    <section className="todays-earnings">
+      <div className="section-header">
+        <div className="header-main">
+          <h2>
+            <SectionIcon type="calendar" size={20} className="section-icon" />
+            <span>Today's Earnings</span>
+          </h2>
+        </div>
       </div>
+      
+      {allEarnings.length > 0 ? (
+        <div className="overflow-x-auto">
+          <table>
+            <thead>
+              <tr>
+                <th>Logo</th>
+                <th onClick={() => handleSort('ticker')} className={`sortable ${sortKey === 'ticker' ? 'active-sort' : ''}`}>
+                  Ticker
+                </th>
+                <th onClick={() => handleSort('companyName')} className={`sortable ${sortKey === 'companyName' ? 'active-sort' : ''}`}>
+                  Company Name
+                </th>
+                    <th onClick={() => handleSort('marketCap')} className={`sortable ${sortKey === 'marketCap' ? 'active-sort' : ''}`}>
+                      Market Cap
+                    </th>
+                <th className="grouped-header">
+                  <div>EPS</div>
+                  <div className="sub-header">
+                    <span onClick={() => handleSort('epsEstimate')} className="sortable sub-sortable">Est</span>
+                    <span className="separator">/</span>
+                    <span onClick={() => handleSort('epsActual')} className="sortable sub-sortable">Rep</span>
+                  </div>
+                </th>
+                <th className="grouped-header">
+                  <div>Revenue</div>
+                  <div className="sub-header">
+                    <span onClick={() => handleSort('revenueEstimate')} className="sortable sub-sortable">Est</span>
+                    <span className="separator">/</span>
+                    <span onClick={() => handleSort('revenueActual')} className="sortable sub-sortable">Rep</span>
+                  </div>
+                </th>
+                <th onClick={() => handleSort('percentChange')} className={`sortable ${sortKey === 'percentChange' ? 'active-sort' : ''}`}>
+                  % Change
+                </th>
+                <th onClick={() => handleSort('marketCapDiff')} className={`sortable ${sortKey === 'marketCapDiff' ? 'active-sort' : ''}`}>
+                  Cap Diff
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {allEarnings.map((earning, index) => {
+                const formatValue = (value: number | null, isPercent = false, isCurrency = false) => {
+                  if (value === null || value === undefined) return '-';
+                  if (isPercent) {
+                    return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
+                  }
+                  if (isCurrency) {
+                    return `$${value.toFixed(2)}`;
+                  }
+                  return value.toFixed(2);
+                };
+                
+                return (
+                  <tr key={`${earning.ticker}-${index}`}>
+                    <td>
+                      <div className="logo-container">
+                        <CompanyLogo ticker={earning.ticker} size={32} />
+                      </div>
+                    </td>
+                    <td><strong>{earning.ticker}</strong></td>
+                    <td className="company-name">{getCompanyName(earning.ticker)}</td>
+                    <td>{earning.marketCap !== null ? formatBillions(earning.marketCap) : '-'}</td>
+                    <td className="grouped-cell">
+                      <div className="cell-value">{formatValue(earning.epsEstimate, false, true)}</div>
+                      <div className={`cell-value ${earning.epsActual !== null && earning.epsEstimate !== null ? (earning.epsActual >= earning.epsEstimate ? 'positive' : 'negative') : ''}`}>
+                        {formatValue(earning.epsActual, false, true)}
+                      </div>
+                    </td>
+                    <td className="grouped-cell">
+                      <div className="cell-value">{formatValue(earning.revenueEstimate ? earning.revenueEstimate / 1000000 : null)}</div>
+                      <div className={`cell-value ${earning.revenueActual !== null && earning.revenueEstimate !== null ? (earning.revenueActual >= earning.revenueEstimate ? 'positive' : 'negative') : ''}`}>
+                        {formatValue(earning.revenueActual ? earning.revenueActual / 1000000 : null)}
+                      </div>
+                    </td>
+                    <td className={earning.percentChange !== null && earning.percentChange >= 0 ? 'positive' : earning.percentChange !== null && earning.percentChange < 0 ? 'negative' : ''}>
+                      {earning.percentChange !== null ? (earning.percentChange >= 0 ? '+' : '') + earning.percentChange.toFixed(2) + '%' : '-'}
+                    </td>
+                    <td className={earning.marketCapDiff !== null && earning.marketCapDiff >= 0 ? 'positive' : earning.marketCapDiff !== null && earning.marketCapDiff < 0 ? 'negative' : ''}>
+                      {earning.marketCapDiff !== null ? (earning.marketCapDiff >= 0 ? '+' : '') + earning.marketCapDiff.toFixed(2) : '-'}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="text-center p-8 text-gray-500">
+          <p>No earnings reports scheduled for today from tracked companies</p>
+        </div>
+      )}
     </section>
   );
 } 

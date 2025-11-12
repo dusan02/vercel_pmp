@@ -1,15 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { checkRedisHealth } from '@/lib/redis';
 
 export async function GET(request: NextRequest) {
   try {
-    const redisHealth = await checkRedisHealth();
-    
+    // Simple health check with timeout protection
     const healthStatus = {
       status: 'healthy',
       timestamp: new Date().toISOString(),
       services: {
-        redis: redisHealth,
         api: {
           status: 'healthy',
           message: 'API is responding'
@@ -21,8 +18,25 @@ export async function GET(request: NextRequest) {
       }
     };
 
-    // If Redis is unhealthy, mark overall status as degraded
-    if (redisHealth.status === 'unhealthy') {
+    // Try Redis check with timeout (optional)
+    try {
+      const redisCheckPromise = import('@/lib/redis').then(m => m.checkRedisHealth());
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Redis check timeout')), 1000)
+      );
+      
+      const redisHealth = await Promise.race([redisCheckPromise, timeoutPromise]) as any;
+      healthStatus.services.redis = redisHealth;
+      
+      if (redisHealth?.status === 'unhealthy') {
+        healthStatus.status = 'degraded';
+      }
+    } catch (error) {
+      // Redis check failed or timed out - mark as degraded but still return healthy
+      healthStatus.services.redis = {
+        status: 'unavailable',
+        message: error instanceof Error ? error.message : 'Redis check failed'
+      };
       healthStatus.status = 'degraded';
     }
 

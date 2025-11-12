@@ -1,23 +1,11 @@
 'use client';
 import React from 'react';
 import { useStockTable } from '@/hooks/useAdaptiveTable';
-import { ChevronUp, ChevronDown } from 'lucide-react';
 import { SortKey } from '@/hooks/useSortableData';
 import CompanyLogo from './CompanyLogo';
 import { formatBillions } from '@/lib/format';
 import { getCompanyName } from '@/lib/companyNames';
-
-interface StockData {
-  ticker: string;
-  currentPrice: number;
-  closePrice: number;
-  percentChange: number;
-  marketCapDiff: number;
-  marketCap: number;
-  sector?: string;
-  industry?: string;
-  lastUpdated?: string;
-}
+import { StockData } from '@/lib/types';
 
 interface AdaptiveTableProps {
   stocks: StockData[];
@@ -40,10 +28,6 @@ export const AdaptiveTable: React.FC<AdaptiveTableProps> = ({
 }) => {
   const { visibleColumns, isMobile, isTablet, isDesktop } = useStockTable();
 
-  const renderSortIcon = (key: SortKey) => {
-    if (key !== sortKey) return null;
-    return ascending ? <ChevronUp size={16} /> : <ChevronDown size={16} />;
-  };
 
   const renderHeader = () => {
     const headers: React.ReactElement[] = [];
@@ -55,8 +39,8 @@ export const AdaptiveTable: React.FC<AdaptiveTableProps> = ({
           break;
         case 'ticker':
           headers.push(
-            <th key="ticker" onClick={() => onSort('ticker' as SortKey)} className="sortable">
-              Ticker {renderSortIcon('ticker' as SortKey)}
+            <th key="ticker" onClick={() => onSort('ticker' as SortKey)} className={`sortable ${sortKey === 'ticker' ? 'active-sort' : ''}`}>
+              Ticker
             </th>
           );
           break;
@@ -65,29 +49,29 @@ export const AdaptiveTable: React.FC<AdaptiveTableProps> = ({
           break;
         case 'currentPrice':
           headers.push(
-            <th key="currentPrice" onClick={() => onSort('currentPrice' as SortKey)} className="sortable">
-              Current Price {renderSortIcon('currentPrice' as SortKey)}
+            <th key="currentPrice" onClick={() => onSort('currentPrice' as SortKey)} className={`sortable ${sortKey === 'currentPrice' ? 'active-sort' : ''}`}>
+              Current Price
             </th>
           );
           break;
         case 'percentChange':
           headers.push(
-            <th key="percentChange" onClick={() => onSort('percentChange' as SortKey)} className="sortable">
-              % Change {renderSortIcon('percentChange' as SortKey)}
+            <th key="percentChange" onClick={() => onSort('percentChange' as SortKey)} className={`sortable ${sortKey === 'percentChange' ? 'active-sort' : ''}`}>
+              % Change
             </th>
           );
           break;
         case 'marketCap':
           headers.push(
-            <th key="marketCap" onClick={() => onSort('marketCap' as SortKey)} className="sortable">
-              Market Cap {renderSortIcon('marketCap' as SortKey)}
+            <th key="marketCap" onClick={() => onSort('marketCap' as SortKey)} className={`sortable ${sortKey === 'marketCap' ? 'active-sort' : ''}`}>
+              Market Cap
             </th>
           );
           break;
         case 'marketCapDiff':
           headers.push(
-            <th key="marketCapDiff" onClick={() => onSort('marketCapDiff' as SortKey)} className="sortable">
-              Market Cap Diff {renderSortIcon('marketCapDiff' as SortKey)}
+            <th key="marketCapDiff" onClick={() => onSort('marketCapDiff' as SortKey)} className={`sortable ${sortKey === 'marketCapDiff' ? 'active-sort' : ''}`}>
+              Cap Diff
             </th>
           );
           break;

@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stockDataCache } from '@/lib/cache';
 
+/**
+ * DEPRECATED: This endpoint has been replaced by /api/stocks
+ * Use /api/stocks instead (reads from Redis/DB with better caching)
+ */
 export async function GET(request: NextRequest) {
   console.log('🚀 /api/prices/cached route called at:', new Date().toISOString());
   
@@ -67,6 +71,26 @@ export async function GET(request: NextRequest) {
       stockDataCache.updateCache().catch(err => console.error('Background cache refresh failed:', err));
     }
 
+    // Return deprecation warning with redirect info
+    return NextResponse.json(
+      {
+        error: 'This endpoint has been deprecated',
+        message: 'Please use /api/stocks instead',
+        alternative: '/api/stocks',
+        migration: 'https://github.com/your-repo/wiki/api-migration'
+      },
+      {
+        status: 410, // Gone
+        headers: {
+          'Cache-Control': 'no-store',
+          'X-Deprecated': 'true',
+          'X-Alternative': '/api/stocks'
+        }
+      }
+    );
+
+    // Legacy code below (kept for reference, not executed)
+    /*
     if (tickers) {
       // Return specific tickers
       const tickerList = tickers.split(',').map(t => t.trim().toUpperCase());
@@ -114,6 +138,7 @@ export async function GET(request: NextRequest) {
         message
       });
     }
+    */
 
   } catch (error) {
     console.error('Cached API Error:', error);

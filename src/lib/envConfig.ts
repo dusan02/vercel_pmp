@@ -138,4 +138,61 @@ export function getEnvironmentSettings() {
       enableMetrics: config.isProduction,
     }
   };
+}
+
+/**
+ * Get database configuration
+ */
+export function getDatabaseConfig() {
+  return {
+    url: process.env.DATABASE_URL || 'file:./prisma/dev.db',
+    poolSize: process.env.DATABASE_POOL_SIZE ? parseInt(process.env.DATABASE_POOL_SIZE) : 10,
+  };
+}
+
+/**
+ * Get all environment variables in one place
+ * Use this instead of direct process.env access
+ */
+export function getEnv() {
+  const config = getEnvConfig();
+  const redisConfig = getRedisConfig();
+  const dbConfig = getDatabaseConfig();
+  const settings = getEnvironmentSettings();
+
+  return {
+    // API Keys
+    polygonApiKey: config.polygonApiKey,
+    fallbackApiKey: config.fallbackApiKey,
+    
+    // Project
+    project: config.project,
+    domain: config.domain,
+    
+    // Environment
+    nodeEnv: process.env.NODE_ENV || 'development',
+    isProduction: config.isProduction,
+    isDevelopment: config.isDevelopment,
+    isTest: config.isTest,
+    
+    // Redis
+    redis: redisConfig,
+    
+    // Database
+    database: dbConfig,
+    
+    // Settings
+    settings,
+    
+    // Feature flags
+    features: {
+      websocket: process.env.ENABLE_WEBSOCKET === 'true',
+      metrics: process.env.ENABLE_METRICS === 'true',
+      mobileTesting: process.env.NEXT_PUBLIC_ENABLE_MOBILE_TESTING === 'true',
+    },
+    
+    // Ports
+    port: parseInt(process.env.PORT || '3000', 10),
+    wsPort: parseInt(process.env.WS_PORT || '3002', 10),
+  };
 } 

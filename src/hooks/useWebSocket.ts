@@ -63,11 +63,29 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     onPriceUpdateRef.current = onPriceUpdate;
   }, [onConnect, onDisconnect, onError, onPriceUpdate]);
 
-  // Check if WebSocket server is implemented
+  // Check if WebSocket server is implemented (with throttling)
   const checkWebSocketStatus = useCallback(async () => {
+    // Throttle: only check once per 60 seconds
+    const lastCheckKey = 'websocket_last_check';
+    const lastCheck = typeof window !== 'undefined' ? parseInt(sessionStorage.getItem(lastCheckKey) || '0', 10) : 0;
+    const now = Date.now();
+    if (now - lastCheck < 60000) {
+      // Return cached status if available
+      const cachedStatus = typeof window !== 'undefined' ? sessionStorage.getItem('websocket_status') : null;
+      if (cachedStatus === 'false') {
+        return false;
+      }
+    }
+    
     try {
       const response = await fetch('/api/websocket');
       const data = await response.json();
+      
+      // Cache the check time
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem(lastCheckKey, now.toString());
+        sessionStorage.setItem('websocket_status', data.success && data.data?.isRunning ? 'true' : 'false');
+      }
       
       if (data.success && data.data) {
         // WebSocket je implementovaný len ak isRunning je true a message neobsahuje "not yet implemented"

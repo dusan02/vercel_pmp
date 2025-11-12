@@ -46,10 +46,15 @@ try {
       console.log('✅ Redis ready for operations');
     });
 
-    // Initialize connection
+    // Initialize connection with timeout
     if (!redisClient.isOpen) {
-      redisClient.connect().catch((err: any) => {
-        console.log('⚠️ Redis not available, using in-memory cache');
+      const connectPromise = redisClient.connect();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Redis connection timeout')), 3000)
+      );
+      
+      Promise.race([connectPromise, timeoutPromise]).catch((err: any) => {
+        console.log('⚠️ Redis not available, using in-memory cache:', err.message);
         redisClient = null;
       });
     }

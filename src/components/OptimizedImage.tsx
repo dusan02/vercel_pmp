@@ -25,7 +25,7 @@ export default function OptimizedImage({
   fallback,
   onError
 }: OptimizedImageProps) {
-  const [imageSrc, setImageSrc] = useState(src);
+  const [imageSrc, setImageSrc] = useState<string | null>(src && src.trim() !== '' ? src : null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [isInView, setIsInView] = useState(priority);
@@ -83,8 +83,8 @@ export default function OptimizedImage({
     );
   }
 
-  // Show error fallback
-  if (hasError && !fallback) {
+  // Show error fallback or if no src
+  if ((hasError && !fallback) || !imageSrc) {
     return (
       <div
         className={`bg-gray-100 flex items-center justify-center rounded ${className}`}

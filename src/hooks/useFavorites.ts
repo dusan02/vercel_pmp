@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useUserPreferences } from './useUserPreferences';
 
 export function useFavorites() {
@@ -13,10 +13,14 @@ export function useFavorites() {
   } = useUserPreferences();
 
   // Convert string array to Favorite objects for backward compatibility
-  const favorites = preferences.favorites.map(ticker => ({
-    ticker,
-    added_at: new Date().toISOString() // We don't store timestamps anymore, but keep interface
-  }));
+  // Use useMemo to prevent creating new objects on every render
+  const favorites = useMemo(() => 
+    preferences.favorites.map(ticker => ({
+      ticker,
+      added_at: new Date().toISOString() // We don't store timestamps anymore, but keep interface
+    })),
+    [preferences.favorites] // Only recreate when favorites array changes
+  );
 
   // Add favorite
   const addFavorite = useCallback((ticker: string) => {
@@ -39,7 +43,11 @@ export function useFavorites() {
 
   // Toggle favorite status
   const toggleFavorite = useCallback((ticker: string) => {
-    if (!hasConsent) return false;
+    if (!hasConsent) {
+      console.warn('Cannot toggle favorite: Cookie consent not given');
+      return false;
+    }
+    console.log('Toggling favorite for:', ticker);
     togglePrefFavorite(ticker);
     return true;
   }, [hasConsent, togglePrefFavorite]);

@@ -38,6 +38,13 @@ export function useSwipeGestures(
 
   const handleTouchStart = useCallback((e: TouchEvent) => {
     if (!isClient) return;
+    
+    // Don't handle touch events on buttons or interactive elements
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'BUTTON' || target.closest('button')) {
+      return;
+    }
+    
     if (preventDefault) {
       e.preventDefault();
     }
@@ -52,6 +59,13 @@ export function useSwipeGestures(
 
   const handleTouchMove = useCallback((e: TouchEvent) => {
     if (!isClient) return;
+    
+    // Don't handle touch events on buttons or interactive elements
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'BUTTON' || target.closest('button')) {
+      return;
+    }
+    
     if (preventDefault) {
       e.preventDefault();
     }
@@ -59,6 +73,13 @@ export function useSwipeGestures(
 
   const handleTouchEnd = useCallback((e: TouchEvent) => {
     if (!isClient) return;
+    
+    // Don't handle touch events on buttons or interactive elements
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'BUTTON' || target.closest('button')) {
+      return;
+    }
+    
     if (preventDefault) {
       e.preventDefault();
     }

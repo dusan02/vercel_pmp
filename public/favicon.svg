@@ -1,0 +1,28 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Candlestick chart favicon - matching BrandLogo component design -->
+  <!-- Four candlesticks with varying heights: short, tall, medium, tall -->
+  <!-- Alternating style: outlined (white with blue border) and filled (fully blue) -->
+  
+  <!-- Dimensions based on BrandLogo calculations for size=32 -->
+  <!-- wickWidth = 1.92, bodyWidth = 5.76, spacing = 2.56, startX = 1.6, baseY = 27.2 -->
+  
+  <!-- Candlestick 1: Short, outlined (white with blue border) -->
+  <rect x="1.6" y="16" width="5.76" height="6.4" fill="#ffffff" stroke="rgb(30, 58, 138)" stroke-width="0.64" rx="0.864"/>
+  <rect x="3.52" y="12.8" width="1.92" height="3.2" fill="rgb(30, 58, 138)"/>
+  <rect x="3.52" y="22.4" width="1.92" height="4.8" fill="rgb(30, 58, 138)"/>
+  
+  <!-- Candlestick 2: Tall, filled (fully blue) -->
+  <rect x="9.92" y="4.8" width="5.76" height="17.6" fill="rgb(30, 58, 138)"/>
+  <rect x="11.84" y="1.6" width="1.92" height="3.2" fill="rgb(30, 58, 138)"/>
+  <rect x="11.84" y="22.4" width="1.92" height="4.8" fill="rgb(30, 58, 138)"/>
+  
+  <!-- Candlestick 3: Medium, outlined (white with blue border) -->
+  <rect x="18.24" y="12.8" width="5.76" height="9.6" fill="#ffffff" stroke="rgb(30, 58, 138)" stroke-width="0.64" rx="0.864"/>
+  <rect x="20.16" y="9.6" width="1.92" height="3.2" fill="rgb(30, 58, 138)"/>
+  <rect x="20.16" y="22.4" width="1.92" height="4.8" fill="rgb(30, 58, 138)"/>
+  
+  <!-- Candlestick 4: Tall, filled (fully blue) -->
+  <rect x="26.56" y="8" width="5.76" height="14.4" fill="rgb(30, 58, 138)"/>
+  <rect x="28.48" y="4.8" width="1.92" height="3.2" fill="rgb(30, 58, 138)"/>
+  <rect x="28.48" y="22.4" width="1.92" height="4.8" fill="rgb(30, 58, 138)"/>
+</svg>

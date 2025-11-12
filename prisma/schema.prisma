@@ -11,22 +11,22 @@ datasource db {
 }
 
 model EarningsCalendar {
-  id              String   @id @default(cuid())
-  ticker          String
-  companyName     String
-  date            DateTime
-  time            String   // "before" or "after"
-  epsEstimate     Float?
-  epsActual       Float?
-  revenueEstimate Float?
-  revenueActual   Float?
-  epsSurprisePercent Float?
+  id                     String   @id @default(cuid())
+  ticker                 String
+  companyName            String
+  date                   DateTime
+  time                   String // "before" or "after"
+  epsEstimate            Float?
+  epsActual              Float?
+  revenueEstimate        Float?
+  revenueActual          Float?
+  epsSurprisePercent     Float?
   revenueSurprisePercent Float?
-  marketCap       Float?
-  percentChange   Float?
-  marketCapDiff   Float?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  marketCap              Float?
+  percentChange          Float?
+  marketCapDiff          Float?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
 
   @@unique([ticker, date])
   @@index([date])
@@ -34,16 +34,75 @@ model EarningsCalendar {
 }
 
 model UserPreferences {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  favorites       String // JSON string of favorite tickers
+  theme           String   @default("auto")
+  defaultTab      String   @default("all")
+  autoRefresh     Boolean  @default(true)
+  refreshInterval Int      @default(30)
+  showEarnings    Boolean  @default(true)
+  showNews        Boolean  @default(true)
+  tableColumns    String // JSON string of column preferences
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Ticker reference data
+model Ticker {
+  symbol            String   @id
+  name              String?
+  sector            String?
+  industry          String?
+  sharesOutstanding Float?
+  adrRatio          Float? // For ADR stocks (DECIMAL(6,3) equivalent)
+  isAdr             Boolean  @default(false)
+  updatedAt         DateTime @updatedAt
+
+  dailyRefs     DailyRef[]
+  sessionPrices SessionPrice[]
+
+  @@index([sector])
+  @@index([sharesOutstanding])
+}
+
+// Daily reference prices (previous close, today open, regular close)
+model DailyRef {
+  id            String   @id @default(cuid())
+  symbol        String
+  date          DateTime
+  previousClose Float
+  todayOpen     Float?
+  regularClose  Float?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  ticker Ticker @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+
+  @@unique([symbol, date])
+  @@index([date])
+  @@index([symbol])
+}
+
+// Session prices (pre-market, live, after-hours)
+model SessionPrice {
   id        String   @id @default(cuid())
-  userId    String   @unique
-  favorites String   // JSON string of favorite tickers
-  theme     String   @default("auto")
-  defaultTab String  @default("all")
-  autoRefresh Boolean @default(true)
-  refreshInterval Int @default(30)
-  showEarnings Boolean @default(true)
-  showNews   Boolean @default(true)
-  tableColumns String // JSON string of column preferences
+  symbol    String
+  date      DateTime
+  session   String // 'pre', 'live', 'after'
+  lastPrice Float
+  lastTs    DateTime
+  changePct Float
+  source    String // 'delayed_15m', 'rest', 'snapshot'
+  quality   String // 'delayed_15m', 'rest', 'snapshot'
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-} 
+
+  ticker Ticker @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+
+  @@unique([symbol, date, session])
+  @@index([date, session]) // For date+session lookups
+  @@index([symbol, session]) // For symbol+session lookups
+  @@index([lastTs]) // For latest data queries
+  @@index([changePct]) // For heatmap queries (sorting done in query)
+}
