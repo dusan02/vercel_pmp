@@ -22,6 +22,17 @@ export type ResponsiveMarketHeatmapProps = {
 };
 
 /**
+ * Default tickery pre heatmapu (top 50 spoločností)
+ */
+const DEFAULT_HEATMAP_TICKERS = [
+  'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA', 'BRK.B', 'AVGO', 'LLY',
+  'JPM', 'V', 'MA', 'UNH', 'HD', 'PG', 'JNJ', 'DIS', 'BAC', 'ADBE',
+  'CRM', 'COST', 'ABBV', 'WMT', 'NFLX', 'AMD', 'NKE', 'TMO', 'LIN', 'PM',
+  'QCOM', 'INTU', 'AMGN', 'AXP', 'BKNG', 'LOW', 'HON', 'AMAT', 'SBUX', 'ADI',
+  'ISRG', 'GILD', 'C', 'VRTX', 'REGN', 'CDNS', 'SNPS', 'KLAC', 'FTNT', 'ANSS'
+];
+
+/**
  * Transformuje StockData z API na CompanyNode pre heatmapu
  */
 function transformStockDataToCompanyNode(stock: StockData): CompanyNode | null {
@@ -42,45 +53,23 @@ function transformStockDataToCompanyNode(stock: StockData): CompanyNode | null {
 
 /**
  * Načíta dáta z API endpointu
- * Pre heatmapu potrebujeme sektor a industry, takže preferujeme /api/stocks
+ * Pre heatmapu používame optimalizovaný /api/heatmap endpoint, ktorý vracia všetky firmy s cache
  */
 async function fetchHeatmapData(
   endpoint: string,
   timeframe: 'day' | 'week' | 'month'
 ): Promise<CompanyNode[]> {
   try {
-    // Ak je to optimized endpoint, použijeme /api/stocks namiesto toho
-    // pretože optimized nevracia sektor a industry
+    // Použijeme optimalizovaný heatmap endpoint, ktorý vracia všetky firmy s cache
     let url: URL;
-    if (endpoint.includes('/optimized')) {
-      // Použijeme hlavný stocks endpoint s default tickers
-      url = new URL('/api/stocks', window.location.origin);
-      // Načítame top tickers - môžeme použiť default tickers alebo načítať z iného endpointu
-      // Pre teraz použijeme známe tickery
-      const defaultTickers = [
-        'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA', 'BRK.B', 'AVGO', 'LLY',
-        'JPM', 'V', 'MA', 'UNH', 'HD', 'PG', 'JNJ', 'DIS', 'BAC', 'ADBE',
-        'CRM', 'COST', 'ABBV', 'WMT', 'NFLX', 'AMD', 'NKE', 'TMO', 'LIN', 'PM',
-        'QCOM', 'INTU', 'AMGN', 'AXP', 'BKNG', 'LOW', 'HON', 'AMAT', 'SBUX', 'ADI',
-        'ISRG', 'GILD', 'C', 'VRTX', 'REGN', 'CDNS', 'SNPS', 'KLAC', 'FTNT', 'ANSS'
-      ];
-      url.searchParams.set('tickers', defaultTickers.join(','));
-      url.searchParams.set('limit', '500');
+    if (endpoint.includes('/heatmap')) {
+      url = new URL('/api/heatmap', window.location.origin);
+    } else if (endpoint.includes('/optimized')) {
+      // Fallback na heatmap endpoint
+      url = new URL('/api/heatmap', window.location.origin);
     } else {
-      url = new URL(endpoint, window.location.origin);
-      // Pre /api/stocks endpoint
-      if (endpoint.includes('/stocks') && !endpoint.includes('tickers')) {
-        // Ak nie sú tickers, použijeme default
-        const defaultTickers = [
-          'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA', 'BRK.B', 'AVGO', 'LLY',
-          'JPM', 'V', 'MA', 'UNH', 'HD', 'PG', 'JNJ', 'DIS', 'BAC', 'ADBE',
-          'CRM', 'COST', 'ABBV', 'WMT', 'NFLX', 'AMD', 'NKE', 'TMO', 'LIN', 'PM',
-          'QCOM', 'INTU', 'AMGN', 'AXP', 'BKNG', 'LOW', 'HON', 'AMAT', 'SBUX', 'ADI',
-          'ISRG', 'GILD', 'C', 'VRTX', 'REGN', 'CDNS', 'SNPS', 'KLAC', 'FTNT', 'ANSS'
-        ];
-        url.searchParams.set('tickers', defaultTickers.join(','));
-        url.searchParams.set('limit', '500');
-      }
+      // Pre /api/stocks endpoint - použijeme heatmap endpoint namiesto toho
+      url = new URL('/api/heatmap', window.location.origin);
     }
 
     const response = await fetch(url.toString(), {
@@ -88,10 +77,24 @@ async function fetchHeatmapData(
     });
 
     if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
+      const errorText = await response.text();
+      let errorMessage = `API error: ${response.status}`;
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorMessage = errorJson.error || errorJson.message || errorMessage;
+      } catch {
+        errorMessage = errorText || errorMessage;
+      }
+      console.error('❌ Heatmap API error:', errorMessage);
+      throw new Error(errorMessage);
     }
 
     const result = await response.json();
+    
+    if (!result.success) {
+      console.error('❌ Heatmap API returned error:', result.error);
+      throw new Error(result.error || 'Failed to load heatmap data');
+    }
 
     // API môže vracať rôzne formáty
     let stocks: StockData[] = [];
@@ -122,6 +125,8 @@ async function fetchHeatmapData(
       .map(transformStockDataToCompanyNode)
       .filter((node): node is CompanyNode => node !== null);
 
+    console.log(`📊 Heatmap API: Prijatých ${stocks.length} firiem z API, po transformácii ${companies.length} firiem s sector/industry`);
+
     return companies;
   } catch (error) {
     console.error('Error fetching heatmap data:', error);
@@ -134,19 +139,19 @@ async function fetchHeatmapData(
  * a načítava dáta z API
  */
 export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = ({
-  apiEndpoint = '/api/stocks',
+  apiEndpoint = '/api/heatmap',
   onTileClick,
   autoRefresh = true,
   refreshInterval = 60000,
   initialTimeframe = 'day',
 }) => {
   // Všetky hooks musia byť na začiatku, pred akýmkoľvek podmieneným returnom
+  // Poradie: useRef, useState, useEffect, useCallback, useMemo
   const { ref, size } = useElementResize();
   const [data, setData] = useState<CompanyNode[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month'>(initialTimeframe);
-  // Fallback veľkosť ak ResizeObserver ešte nezaznamenal veľkosť
   const [fallbackSize, setFallbackSize] = useState({ width: 800, height: 600 });
 
   // Načítanie dát
@@ -155,6 +160,7 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
     setError(null);
     try {
       const companies = await fetchHeatmapData(apiEndpoint, timeframe);
+      console.log(`📊 Heatmap: Načítaných ${companies.length} firiem`);
       setData(companies);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load data');
@@ -244,14 +250,13 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
   }
 
   return (
-    <div ref={ref} className="h-full w-full relative">
+    <div ref={ref} className="h-full w-full relative" style={{ overflow: 'hidden' }}>
       <MarketHeatmap
         data={data}
         width={width}
         height={height}
         onTileClick={handleTileClick}
         timeframe={timeframe}
-        onTimeframeChange={handleTimeframeChange}
       />
     </div>
   );
