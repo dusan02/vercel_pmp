@@ -119,7 +119,7 @@ export async function checkEarningsForOurTickers(date: string, project: string =
 export async function startEarningsMonitoring(project: string = 'pmp'): Promise<void> {
   const now = new Date();
   const easternTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
-  const today = easternTime.toISOString().split('T')[0];
+  const today = (easternTime.toISOString().split('T')[0] || new Date().toISOString().split('T')[0]) as string;
   
   try {
     console.log(`🕛 Starting earnings monitoring for ${today}...`);
@@ -146,7 +146,7 @@ export async function startEarningsMonitoring(project: string = 'pmp'): Promise<
  * Funkcia pre manuálne spustenie monitorovania
  */
 export async function manualEarningsCheck(date?: string, project: string = 'pmp'): Promise<ProcessedEarnings> {
-  const checkDate = date || new Date().toISOString().split('T')[0];
+  const checkDate = (date || new Date().toISOString().split('T')[0]) as string;
   return await checkEarningsForOurTickers(checkDate, project);
 }
 

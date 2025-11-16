@@ -33,7 +33,7 @@ export async function checkRateLimit(
   identifier: string,
   type: keyof typeof rateLimitConfigs
 ): Promise<{ allowed: boolean; limit: number; remaining: number; reset: number }> {
-  const config = rateLimitConfigs[type] || rateLimitConfigs.api;
+  const config = (rateLimitConfigs[type] || rateLimitConfigs.api) as RateLimitConfig;
   const now = Date.now();
   const key = `ratelimit:${type}:${identifier}`;
   const windowStart = Math.floor(now / config.windowMs) * config.windowMs;
@@ -79,7 +79,7 @@ export async function checkRateLimit(
     }
   } catch (error) {
     // If Redis is unavailable, allow the request but log the error
-    logger.error('Rate limiter error, allowing request', error);
+    logger.error({ err: error }, 'Rate limiter error, allowing request');
     return {
       allowed: true,
       limit: config.limit,
@@ -96,7 +96,10 @@ export function getClientIP(request: Request | { headers: Headers }): string {
   // Check various headers for IP (handles proxies/load balancers)
   const forwarded = request.headers.get('x-forwarded-for');
   if (forwarded) {
-    return forwarded.split(',')[0].trim();
+    const firstIP = forwarded.split(',')[0];
+    if (firstIP) {
+      return firstIP.trim();
+    }
   }
   
   const realIP = request.headers.get('x-real-ip');

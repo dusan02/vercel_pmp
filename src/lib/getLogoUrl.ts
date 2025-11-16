@@ -461,7 +461,7 @@ export function getLogoUrl(ticker: string): string {
   ];
   
   // Return the first source (Clearbit) - fallback logic is in the component
-  return logoSources[0];
+  return logoSources[0] || `https://ui-avatars.com/api/?name=${ticker}&background=0066CC&size=32&color=fff&font-size=0.4&bold=true&format=png`;
 }
 
 // Helper function to get just the domain

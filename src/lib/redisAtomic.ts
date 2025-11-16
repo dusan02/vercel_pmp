@@ -3,7 +3,8 @@
  */
 
 import { redisClient } from './redis';
-import { REDIS_KEYS, REDIS_TTL, PriceData } from './redisHelpers';
+import { REDIS_KEYS, REDIS_TTL } from './redisHelpers';
+import { PriceData } from './types';
 
 /**
  * Atomically update last price and heatmap

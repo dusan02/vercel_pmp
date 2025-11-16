@@ -79,7 +79,8 @@ export function validateRequest(request: NextRequest): {
   error?: string;
   apiKey?: string;
 } {
-  const apiKey = request.headers.get('X-API-Key') || request.headers.get('Authorization')?.replace('Bearer ', '');
+  const apiKeyRaw = request.headers.get('X-API-Key') || request.headers.get('Authorization')?.replace('Bearer ', '');
+  const apiKey = apiKeyRaw || null;
   
   // Check if API key is required for this endpoint
   const url = new URL(request.url);
@@ -94,10 +95,13 @@ export function validateRequest(request: NextRequest): {
     };
   }
 
-  return {
-    isValid: true,
-    apiKey,
+  const result: { isValid: boolean; apiKey?: string } = {
+    isValid: true
   };
+  if (apiKey) {
+    result.apiKey = apiKey;
+  }
+  return result;
 }
 
 // IP address extraction (handles proxy headers)
@@ -108,7 +112,12 @@ export function getClientIP(request: NextRequest): string {
   
   if (cfConnectingIP) return cfConnectingIP;
   if (realIP) return realIP;
-  if (forwarded) return forwarded.split(',')[0].trim();
+  if (forwarded) {
+    const firstIP = forwarded.split(',')[0];
+    if (firstIP) {
+      return firstIP.trim();
+    }
+  }
   
   return 'unknown';
 }

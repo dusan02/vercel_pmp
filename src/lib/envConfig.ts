@@ -47,15 +47,18 @@ export function getEnvConfig(hostname?: string): EnvConfig {
   // Fallback API key for development or when primary key fails
   const fallbackApiKey = process.env.FALLBACK_POLYGON_API_KEY;
 
-  return {
+  const config: EnvConfig = {
     polygonApiKey,
-    fallbackApiKey,
     project,
     domain,
     isProduction,
     isDevelopment,
     isTest
   };
+  if (fallbackApiKey) {
+    config.fallbackApiKey = fallbackApiKey;
+  }
+  return config;
 }
 
 /**

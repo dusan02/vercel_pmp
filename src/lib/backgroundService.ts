@@ -64,7 +64,7 @@ class BackgroundDataService {
 
     if (this.updateTimer) {
       clearTimeout(this.updateTimer);
-      this.updateTimer = undefined;
+      delete this.updateTimer;
     }
 
     console.log('✅ Background service stopped');
@@ -112,7 +112,7 @@ class BackgroundDataService {
     } catch (error) {
       this.errorCount++;
       console.error('❌ Background update failed:', error);
-      recordBackgroundError(error.message || 'Unknown error');
+      recordBackgroundError(error instanceof Error ? error.message : 'Unknown error');
 
       // Store error status
       await this.storeUpdateStatus({

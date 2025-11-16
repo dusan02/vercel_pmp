@@ -54,8 +54,10 @@ function getAllTickers(): string[] {
   const allTickers = new Set<string>();
   
   // Pridaj všetky tickery zo všetkých tierov
-  Object.values(DEFAULT_TICKERS).forEach((tier: string[]) => {
-    tier.forEach(ticker => allTickers.add(ticker));
+  Object.values(DEFAULT_TICKERS).forEach((tier) => {
+    if (Array.isArray(tier)) {
+      tier.forEach(ticker => allTickers.add(ticker));
+    }
   });
   
   return Array.from(allTickers);
@@ -313,7 +315,8 @@ async function fetchPolygonCompanyData(ticker: string): Promise<{ companyName: s
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const date = searchParams.get('date') || new Date().toISOString().split('T')[0];
+    const dateParam = searchParams.get('date');
+    const date = (dateParam || new Date().toISOString().split('T')[0]) as string;
     const refresh = searchParams.get('refresh') === 'true';
     
     console.log(`🔍 Yahoo Finance earnings request:`, { date, refresh });

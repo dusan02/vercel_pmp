@@ -36,7 +36,8 @@ function decCursor(c?: string | null): { score: number; sym?: string } | null {
   if (!c) return null;
   const [s, sym] = c.split(':');
   const score = Number(s);
-  return Number.isFinite(score) ? { score, sym } : null;
+  if (!Number.isFinite(score)) return null;
+  return sym ? { score, sym } : { score };
 }
 
 /**
@@ -201,18 +202,23 @@ export async function GET(req: NextRequest) {
         const results = await pipe.exec();
         
         for (let i = 0; i < pagePairs.length; i++) {
-          const { sym } = pagePairs[i];
+          const pair = pagePairs[i];
+          if (!pair) continue;
+          const { sym } = pair;
           const result = results?.[i];
           
           if (result && Array.isArray(result) && result[1] && typeof result[1] === 'object') {
             const h = result[1] as Record<string, string>;
-            rows.push({
+            const row: MinimalRow = {
               t: sym,
               p: Number(h.p || 0),
               c: Number(h.c || 0),
-              m: Number(h.m || 0),
-              d: h.d !== undefined ? Number(h.d) : undefined
-            });
+              m: Number(h.m || 0)
+            };
+            if (h.d !== undefined) {
+              row.d = Number(h.d);
+            }
+            rows.push(row);
           } else {
             // Fallback: try to get from last:date:session:symbol (legacy format)
             try {
@@ -220,13 +226,16 @@ export async function GET(req: NextRequest) {
               const lastValue = await redisClient.get(lastKey);
               if (lastValue) {
                 const lastData = JSON.parse(lastValue as string);
-                rows.push({
+                const row: MinimalRow = {
                   t: sym,
                   p: Number(lastData.p || lastData.price || 0),
                   c: Number(lastData.change_pct || lastData.changePct || 0),
-                  m: Number(lastData.cap || lastData.marketCap || 0),
-                  d: lastData.cap_diff !== undefined ? Number(lastData.cap_diff) : undefined
-                });
+                  m: Number(lastData.cap || lastData.marketCap || 0)
+                };
+                if (lastData.cap_diff !== undefined) {
+                  row.d = Number(lastData.cap_diff);
+                }
+                rows.push(row);
               } else {
                 // No data available
                 rows.push({
@@ -278,8 +287,9 @@ export async function GET(req: NextRequest) {
     }
     
     // Calculate next cursor
-    const nextCursor = pagePairs.length > 0
-      ? encCursor(pagePairs[pagePairs.length - 1].score, pagePairs[pagePairs.length - 1].sym)
+    const lastPair = pagePairs[pagePairs.length - 1];
+    const nextCursor = lastPair
+      ? encCursor(lastPair.score, lastPair.sym)
       : null;
     
     const duration = Date.now() - startTime;

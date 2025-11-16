@@ -31,11 +31,12 @@ export function withErrorHandler(handler: ApiHandler): ApiHandler {
     } catch (error: unknown) {
       const duration = Date.now() - startTime;
       
-      logger.error('API request failed', error, {
+      logger.error({
+        err: error,
         method: req.method,
         path,
         duration
-      });
+      }, 'API request failed');
       
       // Don't expose internal error details in production
       const isDevelopment = process.env.NODE_ENV === 'development';
@@ -64,7 +65,7 @@ export function createErrorResponse(
   const isDevelopment = process.env.NODE_ENV === 'development';
   const errorDetails = error instanceof Error ? error.message : String(error);
   
-  logger.error(message, error);
+  logger.error({ err: error }, message);
   
   return NextResponse.json(
     {

@@ -41,7 +41,7 @@ export async function parseRequestBody<T>(
     if (!parsed.success) {
       return {
         success: false,
-        error: `Validation error: ${parsed.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`
+        error: `Validation error: ${parsed.error.issues.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`
       };
     }
     
@@ -77,7 +77,7 @@ export function parseQueryParams<T>(
     if (!parsed.success) {
       return {
         success: false,
-        error: `Validation error: ${parsed.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`
+        error: `Validation error: ${parsed.error.issues.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`
       };
     }
     

@@ -38,7 +38,9 @@ class BlogScheduler {
   }
 
   private scheduleDaily(timeString: string) {
-    const [hours, minutes] = timeString.split(':').map(Number);
+    const parts = timeString.split(':');
+    const hours = parts[0] ? Number(parts[0]) : 0;
+    const minutes = parts[1] ? Number(parts[1]) : 0;
     
     const scheduleNext = () => {
       const now = new Date();

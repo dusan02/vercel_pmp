@@ -116,8 +116,9 @@ export class PolygonClient {
         options.cache
       );
 
-      if (data?.results && data.results.length > 0 && data.results[0].c) {
-        return data.results[0].c;
+      const firstResult = data?.results?.[0];
+      if (firstResult?.c) {
+        return firstResult.c;
       }
     } catch (error) {
       console.error(`Error fetching previous close for ${ticker}:`, error);

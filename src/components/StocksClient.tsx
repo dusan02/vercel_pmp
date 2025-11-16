@@ -75,15 +75,15 @@ export default function StocksClient({ initial }: StocksClientProps) {
 
   // SWR with fallbackData
   const { data, error, isLoading, isValidating } = useSWR<ApiResp>(
-    apiKey,
-    fetcher,
+    apiKey as any,
+    fetcher as any,
     {
-      fallbackData: cursor ? undefined : initial, // Only use initial for first page
+      ...(cursor ? {} : { fallbackData: initial }), // Only use initial for first page
       keepPreviousData: true,
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
       dedupingInterval: 2000
-    }
+    } as any
   );
 
   const handleSortChange = useCallback((newSort: 'mcap' | 'chgPct' | 'price') => {

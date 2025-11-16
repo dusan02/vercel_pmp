@@ -43,7 +43,7 @@ export function PullToRefresh({
   };
 
   // Only call the hook on the client side
-  const { isPulling } = usePullToRefresh(containerRef, handleRefresh, {
+  const { isPulling } = usePullToRefresh(containerRef as React.RefObject<HTMLElement>, handleRefresh, {
     threshold,
     resistance
   });
@@ -59,6 +59,7 @@ export function PullToRefresh({
       if (disabled) return;
       
       const touch = e.touches[0];
+      if (!touch) return;
       const rect = element.getBoundingClientRect();
       const pullDistance = Math.max(0, (rect.top - touch.clientY) * resistance);
       

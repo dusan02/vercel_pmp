@@ -92,7 +92,8 @@ export class WebSocketPriceServer {
           
           WebSocketPriceServer.sharedSubscriber.on(
             'message',
-            (channel: string, message: string) => {
+            (channel: unknown, message: unknown) => {
+              if (typeof channel !== 'string' || typeof message !== 'string') return;
               if (channel === 'pmp:tick') {
                 try {
                   const data: TickData = JSON.parse(message);

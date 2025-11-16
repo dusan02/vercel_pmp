@@ -29,7 +29,7 @@ export function SwipeableTableRow({
   const [swipeFeedback, setSwipeFeedback] = useState<'left' | 'right' | null>(null);
 
   // Handle swipe gestures
-  useSwipeGestures(rowRef, {
+  useSwipeGestures(rowRef as React.RefObject<HTMLElement>, {
     onSwipeLeft: () => {
       if (!disabled && onSwipeLeft) {
         onSwipeLeft();

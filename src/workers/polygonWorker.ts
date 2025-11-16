@@ -16,9 +16,9 @@ import {
   getPrevClose,
   publishTick,
   getUniverse,
-  addToUniverse,
-  PriceData 
+  addToUniverse
 } from '@/lib/redisHelpers';
+import { PriceData } from '@/lib/types';
 import { nowET, detectSession, isMarketOpen, mapToRedisSession } from '@/lib/timeUtils';
 import { withRetry, circuitBreaker } from '@/lib/rateLimiter';
 // DLQ import - commented out to avoid startup issues
@@ -346,7 +346,7 @@ export async function ingestBatch(
   apiKey: string
 ): Promise<IngestResult[]> {
   const session = detectSession(nowET());
-  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  const today = (new Date().toISOString().split('T')[0] || '') as string; // YYYY-MM-DD
   const results: IngestResult[] = [];
 
   // Fetch previous closes from Redis

@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       });
     } else {
       // Manuálna kontrola
-      const checkDate = date || new Date().toISOString().split('T')[0];
+      const checkDate = (date || new Date().toISOString().split('T')[0]) as string;
       const result = await checkEarningsForOurTickers(checkDate, project);
       
       return NextResponse.json({

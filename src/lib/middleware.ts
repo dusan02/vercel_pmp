@@ -53,12 +53,16 @@ export function middleware(request: NextRequest) {
 
   // Detect suspicious activity
   if (detectSuspiciousActivity(request)) {
-    logSecurityEvent({
+    const userAgent = request.headers.get('User-Agent');
+    const event: any = {
       type: 'suspicious_activity',
       ip,
-      endpoint: request.url,
-      userAgent: request.headers.get('User-Agent') || undefined,
-    });
+      endpoint: request.url
+    };
+    if (userAgent) {
+      event.userAgent = userAgent;
+    }
+    logSecurityEvent(event);
     
     // Return 403 for suspicious requests
     return new NextResponse('Forbidden', { status: 403 });
@@ -82,12 +86,16 @@ export function middleware(request: NextRequest) {
   }
 
   if (!rateLimitPassed) {
-    logSecurityEvent({
+    const userAgent2 = request.headers.get('User-Agent');
+    const event2: any = {
       type: 'rate_limit_exceeded',
       ip,
-      endpoint: request.url,
-      userAgent: request.headers.get('User-Agent') || undefined,
-    });
+      endpoint: request.url
+    };
+    if (userAgent2) {
+      event2.userAgent = userAgent2;
+    }
+    logSecurityEvent(event2);
     
     return new NextResponse('Too Many Requests', { 
       status: 429,
@@ -105,12 +113,16 @@ export function middleware(request: NextRequest) {
     const validation = validateRequest(request);
     
     if (!validation.isValid) {
-      logSecurityEvent({
+      const userAgent3 = request.headers.get('User-Agent');
+      const event3: any = {
         type: 'invalid_api_key',
         ip,
-        endpoint: request.url,
-        userAgent: request.headers.get('User-Agent') || undefined,
-      });
+        endpoint: request.url
+      };
+      if (userAgent3) {
+        event3.userAgent = userAgent3;
+      }
+      logSecurityEvent(event3);
       
       return new NextResponse('Unauthorized', { status: 401 });
     }

@@ -14,7 +14,7 @@ import { LoadingStates } from '@/lib/types';
 interface FavoritesSectionProps {
   favoriteStocks: StockData[];
   loading: boolean;
-  sortKey: SortKey;
+  sortKey: SortKey | null;
   ascending: boolean;
   onSort: (key: SortKey) => void;
   onToggleFavorite: (ticker: string) => void;

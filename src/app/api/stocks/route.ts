@@ -525,10 +525,14 @@ export async function GET(request: NextRequest) {
           percentChange,
           marketCap,
           marketCapDiff,
-          sector: finalSectorData.sector,
-          industry: finalSectorData.industry,
           lastUpdated: new Date().toISOString()
         };
+        if (finalSectorData.sector) {
+          stockData.sector = finalSectorData.sector;
+        }
+        if (finalSectorData.industry) {
+          stockData.industry = finalSectorData.industry;
+        }
 
         // Cache the result for 2 minutes
         await setCachedData(cacheKey, stockData, 120);

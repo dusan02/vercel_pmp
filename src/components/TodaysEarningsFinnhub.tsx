@@ -217,7 +217,7 @@ export default function TodaysEarningsFinnhub() {
       // Get current date in Eastern Time
       const easternTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
       const dateString = easternTime.toISOString().split('T')[0];
-      setCurrentDate(dateString);
+      setCurrentDate(dateString || '');
     };
     
     updateDate();

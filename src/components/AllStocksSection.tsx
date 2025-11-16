@@ -13,7 +13,7 @@ import { StockData } from '@/lib/types';
 interface AllStocksSectionProps {
   displayedStocks: StockData[];
   loading: boolean;
-  sortKey: SortKey;
+  sortKey: SortKey | null;
   ascending: boolean;
   onSort: (key: SortKey) => void;
   onToggleFavorite: (ticker: string) => void;

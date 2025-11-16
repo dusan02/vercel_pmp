@@ -152,10 +152,10 @@ export class TieredUpdateService {
     const tickerIndex = this.allTickers.indexOf(ticker);
     if (tickerIndex === -1) return null;
 
-    if (tickerIndex < 50) return this.tiers[0]; // premium
-    if (tickerIndex < 150) return this.tiers[1]; // standard
-    if (tickerIndex < 300) return this.tiers[2]; // extended
-    if (tickerIndex < 360) return this.tiers[3]; // extendedPlus - Changed from 400 to 360
+    if (tickerIndex < 50) return this.tiers[0] || null; // premium
+    if (tickerIndex < 150) return this.tiers[1] || null; // standard
+    if (tickerIndex < 300) return this.tiers[2] || null; // extended
+    if (tickerIndex < 360) return this.tiers[3] || null; // extendedPlus - Changed from 400 to 360
     
     return null;
   }

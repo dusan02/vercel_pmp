@@ -2,30 +2,8 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSortableData } from '@/hooks/useSortableData';
-import { formatBillions } from '@/lib/format';
-
-// Conditional import wrapper for TodaysEarningsFinnhub to avoid webpack issues
-function TodaysEarningsFinnhubWrapper() {
-  const [Component, setComponent] = React.useState<React.ComponentType<any> | null>(null);
-  
-  React.useEffect(() => {
-    import('@/components/TodaysEarningsFinnhub').then(mod => {
-      setComponent(() => mod.default);
-    }).catch(err => {
-      console.error('Failed to load TodaysEarningsFinnhub:', err);
-    });
-  }, []);
-  
-  if (!Component) {
-    return <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--clr-subtext)' }}>Loading earnings...</div>;
-  }
-  
-  return <Component />;
-}
-
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { SwipeableTableRow } from '@/components/SwipeableTableRow';
-import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { PerformanceOptimizer } from '@/components/PerformanceOptimizer';
 import { MobileTester } from '@/components/MobileTester';
 import { PageHeader } from '@/components/PageHeader';
@@ -33,6 +11,7 @@ import { PortfolioSection } from '@/components/PortfolioSection';
 import { FavoritesSection } from '@/components/FavoritesSection';
 import { AllStocksSection } from '@/components/AllStocksSection';
 import { SectionIcon } from '@/components/SectionIcon';
+import TodaysEarningsFinnhub from '@/components/TodaysEarningsFinnhub';
 
 import { useFavorites } from '@/hooks/useFavorites';
 import { usePortfolio } from '@/hooks/usePortfolio';
@@ -56,16 +35,6 @@ interface LoadingStates {
   background: boolean;
 }
 
-// Dynamic import for StockHeatmap using next/dynamic to avoid webpack issues
-import dynamic from 'next/dynamic';
-
-const StockHeatmap = dynamic(
-  () => import('@/components/StockHeatmap'),
-  {
-    ssr: false,
-    loading: () => <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--clr-subtext)' }}>Loading heatmap...</div>
-  }
-);
 
 export default function HomePage() {
   // State for stock data
@@ -84,7 +53,6 @@ export default function HomePage() {
   const [selectedSector, setSelectedSector] = useState<string>('all');
   
   // Section visibility state
-  const [showHeatmapSection, setShowHeatmapSection] = useState(true); // Heatmap first and default ON
   const [showPortfolioSection, setShowPortfolioSection] = useState(true);
   const [showFavoritesSection, setShowFavoritesSection] = useState(true);
   const [showEarningsSection, setShowEarningsSection] = useState(true);
@@ -109,6 +77,12 @@ export default function HomePage() {
   // Client-side rendering state
   const [isClient, setIsClient] = useState(false);
   const [hasHydrated, setHasHydrated] = useState(false);
+  
+  // Background status state
+  const [backgroundStatus, setBackgroundStatus] = useState<string | null>(null);
+  
+  // Mock stocks for fallback
+  const mockStocks: StockData[] = [];
 
   // Set isClient to true once on client
   useEffect(() => {
@@ -127,7 +101,7 @@ export default function HomePage() {
         
         updates.forEach(update => {
           const index = updated.findIndex(stock => stock.ticker === update.ticker);
-          if (index !== -1) {
+          if (index !== -1 && updated[index]) {
             // Create animation effect by temporarily highlighting the change
             const oldPrice = updated[index].currentPrice;
             const priceChange = update.currentPrice - oldPrice;
@@ -529,7 +503,7 @@ export default function HomePage() {
     } catch (err) {
       console.log('API error, using mock data:', err);
       setError('Using demo data - API temporarily unavailable. To get live data, please set up your Polygon.io API key. See ENV_SETUP.md for instructions.');
-      setStockData(mockStocks);
+        setStockData(mockStocks);
           } finally {
         setLoadingStates(prev => ({ ...prev, top50Stocks: false }));
       }
@@ -703,6 +677,35 @@ export default function HomePage() {
     return () => clearInterval(interval);
   }, [fetchBackgroundStatus]);
 
+  // Count companies by sector
+  useEffect(() => {
+    if (stockData.length === 0) {
+      console.log('📊 Sector count: No stock data yet');
+      return;
+    }
+    
+    console.log('📊 Sector count: Processing', stockData.length, 'stocks');
+    
+    const sectorCounts: { [key: string]: number } = {};
+    
+    stockData.forEach(stock => {
+      const sector = stock.sector || 'Unknown';
+      sectorCounts[sector] = (sectorCounts[sector] || 0) + 1;
+    });
+    
+    // Sort by count (descending)
+    const sortedSectors = Object.entries(sectorCounts)
+      .sort((a, b) => b[1] - a[1]);
+    
+    console.log('\n📊 Počet spoločností podľa sektorov:');
+    console.log('=====================================');
+    sortedSectors.forEach(([sector, count]) => {
+      console.log(`${sector}: ${count}`);
+    });
+    console.log(`\nCelkom spoločností: ${stockData.length}`);
+    console.log('=====================================\n');
+  }, [stockData]);
+
   const favoriteStocks = stockData.filter(stock => favorites.some(fav => fav.ticker === stock.ticker));
   
   
@@ -830,12 +833,10 @@ export default function HomePage() {
             showPortfolioSection={showPortfolioSection}
             showAllStocksSection={showAllStocksSection}
             showEarningsSection={showEarningsSection}
-            showHeatmapSection={showHeatmapSection}
             onToggleFavorites={setShowFavoritesSection}
             onTogglePortfolio={setShowPortfolioSection}
             onToggleAllStocks={setShowAllStocksSection}
             onToggleEarnings={setShowEarningsSection}
-            onToggleHeatmap={setShowHeatmapSection}
           />
 
           {/* Error Display */}
@@ -843,13 +844,6 @@ export default function HomePage() {
             <div className="error" role="alert">
               <strong>Error:</strong> {error}
             </div>
-          )}
-
-          {/* Heatmap Section - FIRST */}
-          {showHeatmapSection && (
-            <section className="heatmap-section" style={{ marginBottom: '2rem' }}>
-              <StockHeatmap />
-            </section>
           )}
 
           {/* Portfolio Section */}
@@ -882,21 +876,7 @@ export default function HomePage() {
 
           {/* Today's Earnings Section */}
           {showEarningsSection && (
-            loadingStates.earnings ? (
-              <section className="todays-earnings">
-                <div className="section-header">
-                  <div className="header-main">
-                    <h2>
-                      <SectionIcon type="calendar" size={20} className="section-icon" />
-                      <span>Today's Earnings</span>
-                    </h2>
-                  </div>
-                </div>
-                <TableSkeleton rows={5} />
-              </section>
-            ) : (
-              <TodaysEarningsFinnhubWrapper />
-            )
+            <TodaysEarningsFinnhub />
           )}
 
           {/* All Stocks Section */}
@@ -933,9 +913,6 @@ export default function HomePage() {
       </PerformanceOptimizer>
 
       {/* Mobile Navigation Components */}
-
-      {/* PWA Install Prompt */}
-      <PWAInstallPrompt />
 
       {/* Cookie Consent Banner */}
       <CookieConsent onAccept={() => {

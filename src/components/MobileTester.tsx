@@ -54,7 +54,13 @@ export function MobileTester({
   showDeviceFrame = true
 }: MobileTesterProps) {
   const [isClient, setIsClient] = useState(false);
-  const [selectedDevice, setSelectedDevice] = useState<DeviceConfig>(DEVICES[0]);
+  const [selectedDevice, setSelectedDevice] = useState<DeviceConfig>(DEVICES[0] || {
+    name: 'iPhone 14',
+    width: 390,
+    height: 844,
+    icon: Smartphone,
+    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15'
+  });
   const [isRecording, setIsRecording] = useState(false);
   const [touchEvents, setTouchEvents] = useState<TouchEvent[]>([]);
   const [performanceMetrics, setPerformanceMetrics] = useState<any>({});

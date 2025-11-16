@@ -36,7 +36,8 @@ export default function EarningsCalendar() {
 
   useEffect(() => {
     // Set current date only on client-side to avoid hydration mismatch
-    setCurrentDate(new Date().toISOString().split('T')[0]);
+    const dateStr = new Date().toISOString().split('T')[0];
+    setCurrentDate(dateStr || '');
   }, []);
 
   useEffect(() => {

@@ -650,7 +650,8 @@ class StockDataCache {
     try {
       // Fallback to in-memory cache
       const stocks = await this.getAllStocks();
-      const lastUpdated = stocks.length > 0 ? stocks[0].lastUpdated : null;
+      const firstStock = stocks[0];
+      const lastUpdated = firstStock?.lastUpdated || null;
 
       return {
         count: stocks.length,

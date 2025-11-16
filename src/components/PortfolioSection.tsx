@@ -44,13 +44,15 @@ export function PortfolioSection({
     }
     
     const term = searchTerm.toLowerCase().trim();
-    const currentHoldings = Object.keys(portfolioHoldings).filter(t => portfolioHoldings[t] > 0);
+    const currentHoldings = Object.keys(portfolioHoldings).filter(t => (portfolioHoldings[t] || 0) > 0);
     const results = allStocks
       .filter(stock => 
-        stock.ticker.toLowerCase().includes(term) ||
-        getCompanyName(stock.ticker).toLowerCase().includes(term)
+        stock && stock.ticker && (
+          stock.ticker.toLowerCase().includes(term) ||
+          getCompanyName(stock.ticker).toLowerCase().includes(term)
+        )
       )
-      .filter(stock => !currentHoldings.includes(stock.ticker))
+      .filter(stock => stock && stock.ticker && !currentHoldings.includes(stock.ticker))
       .slice(0, 10);
     
     setPortfolioSearchResults(results);

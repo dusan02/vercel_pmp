@@ -50,6 +50,7 @@ export function useSwipeGestures(
     }
     
     const touch = e.touches[0];
+    if (!touch) return;
     touchStartRef.current = {
       x: touch.clientX,
       y: touch.clientY,
@@ -87,6 +88,7 @@ export function useSwipeGestures(
     if (!touchStartRef.current) return;
 
     const touch = e.changedTouches[0];
+    if (!touch) return;
     touchEndRef.current = {
       x: touch.clientX,
       y: touch.clientY,
@@ -184,7 +186,9 @@ export function usePullToRefresh(
 
     // Only trigger pull-to-refresh when at the top of the page
     if (element.scrollTop === 0) {
-      pullStartRef.current = e.touches[0].clientY;
+      const touch = e.touches[0];
+      if (!touch) return;
+      pullStartRef.current = touch.clientY;
       isPullingRef.current = true;
     }
   }, [isClient, elementRef]);
@@ -194,6 +198,7 @@ export function usePullToRefresh(
     if (!isPullingRef.current || !pullStartRef.current) return;
 
     const touch = e.touches[0];
+    if (!touch) return;
     const pullDistance = (touch.clientY - pullStartRef.current) * resistance;
 
     if (pullDistance > 0) {

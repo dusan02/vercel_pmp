@@ -34,7 +34,7 @@ try {
     });
 
     // Connect to Redis
-    redisClient.on('error', (err) => {
+    redisClient.on('error', (err: Error) => {
       console.error('Redis Client Error:', err);
     });
 
@@ -104,7 +104,7 @@ export async function getCachedData(key: string) {
       }
       return null;
     }
-  } catch (err) {
+    } catch (err: unknown) {
     error = err instanceof Error ? err.message : 'Unknown cache error';
     console.error('Cache get error:', error);
     return null;

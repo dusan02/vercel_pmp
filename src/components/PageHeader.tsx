@@ -12,12 +12,10 @@ interface PageHeaderProps {
   showPortfolioSection: boolean;
   showAllStocksSection: boolean;
   showEarningsSection: boolean;
-  showHeatmapSection?: boolean;
   onToggleFavorites: (value: boolean) => void;
   onTogglePortfolio: (value: boolean) => void;
   onToggleAllStocks: (value: boolean) => void;
   onToggleEarnings: (value: boolean) => void;
-  onToggleHeatmap?: (value: boolean) => void;
 }
 
 export function PageHeader({
@@ -25,12 +23,10 @@ export function PageHeader({
   showPortfolioSection,
   showAllStocksSection,
   showEarningsSection,
-  showHeatmapSection = false,
   onToggleFavorites,
   onTogglePortfolio,
   onToggleAllStocks,
-  onToggleEarnings,
-  onToggleHeatmap
+  onToggleEarnings
 }: PageHeaderProps) {
   return (
     <header className="header">
@@ -97,23 +93,7 @@ export function PageHeader({
             </div>
             
             <div className="section-toggles-card">
-              {/* Heatmap - 1. sekcia (prvá) */}
-              {onToggleHeatmap && (
-                <label className="favorites-toggle-switch">
-                  <span className="toggle-label-text">
-                    <SectionIcon type="grid" size={20} className="toggle-icon" />
-                  </span>
-                  <div className="toggle-controls">
-                    <input
-                      type="checkbox"
-                      checked={showHeatmapSection}
-                      onChange={(e) => onToggleHeatmap(e.target.checked)}
-                      className="toggle-input"
-                    />
-                  </div>
-                </label>
-              )}
-              {/* Portfolio - 2. sekcia */}
+              {/* Portfolio - 1. sekcia */}
               <label className="favorites-toggle-switch">
                 <span className="toggle-label-text">
                   <SectionIcon type="pie" size={20} className="toggle-icon" />

@@ -62,7 +62,7 @@ export async function addToDLQ(
 
     logger.warn({ jobId, type, attempts }, 'Job added to DLQ');
   } catch (err) {
-    logger.error('Failed to add job to DLQ', err);
+    logger.error({ err }, 'Failed to add job to DLQ');
   }
 }
 
@@ -85,23 +85,23 @@ export async function getDLQJobs(
     });
 
     const failedJobs = jobs
-      .map(job => {
+      .map((job: string) => {
         try {
           return JSON.parse(job) as FailedJob;
-        } catch {
+        } catch (_err) {
           return null;
         }
       })
-      .filter((job): job is FailedJob => job !== null);
+      .filter((job: FailedJob | null): job is FailedJob => job !== null);
 
     // Filter by type if specified
     if (type) {
-      return failedJobs.filter(job => job.type === type);
+      return failedJobs.filter((job: FailedJob) => job.type === type);
     }
 
     return failedJobs;
   } catch (err) {
-    logger.error('Failed to get DLQ jobs', err);
+    logger.error({ err }, 'Failed to get DLQ jobs');
     return [];
   }
 }
@@ -131,7 +131,7 @@ export async function removeFromDLQ(jobId: string): Promise<void> {
       }
     }
   } catch (err) {
-    logger.error('Failed to remove job from DLQ', err);
+    logger.error({ err }, 'Failed to remove job from DLQ');
   }
 }
 
@@ -150,7 +150,7 @@ export async function clearDLQ(): Promise<number> {
     logger.info({ count }, 'DLQ cleared');
     return count;
   } catch (err) {
-    logger.error('Failed to clear DLQ', err);
+    logger.error({ err }, 'Failed to clear DLQ');
     return 0;
   }
 }
@@ -184,7 +184,7 @@ export async function getDLQStats(): Promise<{
       byType
     };
   } catch (err) {
-    logger.error('Failed to get DLQ stats', err);
+    logger.error({ err }, 'Failed to get DLQ stats');
     return { total: 0, byType: {} };
   }
 }
@@ -195,7 +195,7 @@ export async function getDLQStats(): Promise<{
 function calculateNextRetry(attempts: number): number {
   // Exponential backoff: 1s, 5s, 20s, 60s, 300s (5min)
   const delays = [1000, 5000, 20000, 60000, 300000];
-  const delay = delays[Math.min(attempts - 1, delays.length - 1)];
+  const delay = delays[Math.min(attempts - 1, delays.length - 1)] || 300000;
   return Date.now() + delay;
 }
 

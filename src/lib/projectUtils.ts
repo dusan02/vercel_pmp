@@ -90,7 +90,8 @@ export function detectProjectFromDomain(domain: string): 'pmp' | 'cm' | 'gl' | '
  */
 export function getProjectConfig(projectCode?: string): ProjectConfig {
   const code = projectCode || getProjectFromHost();
-  return PROJECTS[code] || PROJECTS.pmp;
+  const config = PROJECTS[code as keyof typeof PROJECTS];
+  return (config || PROJECTS.pmp) as ProjectConfig;
 }
 
 /**

@@ -425,7 +425,8 @@ async function enrichEarningsData(earnings: EarningsData[]): Promise<EarningsDat
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const date = searchParams.get('date') || new Date().toISOString().split('T')[0];
+    const dateParam = searchParams.get('date');
+    const date = (dateParam || new Date().toISOString().split('T')[0]) as string;
     const refresh = searchParams.get('refresh') === 'true';
     
     console.log('🔍 Fetching Finnhub earnings for date:', date, refresh ? '(forced refresh)' : '');

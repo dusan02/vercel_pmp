@@ -67,7 +67,7 @@ export function createSuccessResponse<T>(
     },
     { 
       status: statusCode,
-      headers
+      ...(headers ? { headers } : {})
     }
   );
 }

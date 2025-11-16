@@ -1,0 +1,205 @@
+{
+  "description": "Ukážka dát z heatmap API pre návrh Finviz-style layout algoritmu",
+  "sampleStocks": [
+    {
+      "ticker": "NVDA",
+      "marketCap": 4702.87,
+      "sector": "Technology",
+      "industry": "Semiconductors",
+      "changePercent": -2.96
+    },
+    {
+      "ticker": "AAPL",
+      "marketCap": 4067.19,
+      "sector": "Technology",
+      "industry": "Consumer Electronics",
+      "changePercent": 2.16
+    },
+    {
+      "ticker": "MSFT",
+      "marketCap": 3780.7,
+      "sector": "Technology",
+      "industry": "Software",
+      "changePercent": 0.53
+    },
+    {
+      "ticker": "GOOG",
+      "marketCap": 3520.43,
+      "sector": "Technology",
+      "industry": "Internet Content & Information",
+      "changePercent": 0.40
+    },
+    {
+      "ticker": "BRK.B",
+      "marketCap": 1072.35,
+      "sector": "Financial Services",
+      "industry": "Insurance—Diversified",
+      "changePercent": 0.02
+    },
+    {
+      "ticker": "JPM",
+      "marketCap": 859.2,
+      "sector": "Financial Services",
+      "industry": "Banks",
+      "changePercent": -0.40
+    },
+    {
+      "ticker": "V",
+      "marketCap": 654.08,
+      "sector": "Financial Services",
+      "industry": "Credit Services",
+      "changePercent": 1.22
+    },
+    {
+      "ticker": "MA",
+      "marketCap": 501.4,
+      "sector": "Financial Services",
+      "industry": "Credit Services",
+      "changePercent": 0.97
+    },
+    {
+      "ticker": "AMZN",
+      "marketCap": 2662.93,
+      "sector": "Consumer Cyclical",
+      "industry": "Internet Retail",
+      "changePercent": 0.28
+    },
+    {
+      "ticker": "TSLA",
+      "marketCap": 1462.1,
+      "sector": "Consumer Cyclical",
+      "industry": "Auto Manufacturers",
+      "changePercent": -1.26
+    }
+  ],
+  "uniqueSectors": [
+    "Basic Materials",
+    "Communication Services",
+    "Consumer Cyclical",
+    "Consumer Defensive",
+    "Energy",
+    "Financial Services",
+    "Healthcare",
+    "Industrials",
+    "Other",
+    "Real Estate",
+    "Technology",
+    "Utilities"
+  ],
+  "sectorIndustries": {
+    "Technology": [
+      "Communication Equipment",
+      "Consumer Electronics",
+      "Internet Content & Information",
+      "Semiconductor Equipment",
+      "Semiconductors",
+      "Software",
+      "Software—Application"
+    ],
+    "Financial Services": [
+      "Asset Management",
+      "Banks",
+      "Capital Markets",
+      "Credit Services",
+      "Insurance",
+      "Insurance—Diversified"
+    ],
+    "Consumer Cyclical": [
+      "Apparel Retail",
+      "Auto Manufacturers",
+      "Discount Stores",
+      "Footwear & Accessories",
+      "Home Improvement Retail",
+      "Internet Retail",
+      "Lodging",
+      "Restaurants",
+      "Travel Services"
+    ],
+    "Healthcare": [
+      "Biotechnology",
+      "Diagnostics & Research",
+      "Drug Manufacturers",
+      "Healthcare Plans",
+      "Medical Devices"
+    ],
+    "Industrials": [
+      "Aerospace & Defense",
+      "Electrical Equipment & Parts",
+      "Farm & Heavy Construction Machinery",
+      "Integrated Freight & Logistics",
+      "Railroads",
+      "Specialty Industrial Machinery"
+    ],
+    "Consumer Defensive": [
+      "Beverages - Alcoholic",
+      "Beverages—Non-Alcoholic",
+      "Discount Stores",
+      "Household & Personal Products",
+      "Packaged Foods",
+      "Tobacco"
+    ],
+    "Energy": [
+      "Oil & Gas E&P",
+      "Oil & Gas Equipment & Services",
+      "Oil & Gas Integrated"
+    ],
+    "Real Estate": [
+      "REIT - Specialty",
+      "REIT—Industrial",
+      "REIT—Specialty"
+    ],
+    "Other": [
+      "Uncategorized"
+    ],
+    "Communication Services": [
+      "Entertainment",
+      "Telecom Services"
+    ],
+    "Basic Materials": [
+      "Chemicals",
+      "Copper",
+      "Other Industrial Metals & Mining",
+      "Specialty Chemicals"
+    ],
+    "Utilities": [
+      "Utilities - Regulated Electric",
+      "Utilities—Regulated Electric",
+      "Utilities—Renewable"
+    ]
+  },
+  "statistics": {
+    "totalStocks": 595,
+    "totalMarketCap": 76329.21,
+    "date": "2025-11-13"
+  },
+  "dataStructure": {
+    "note": "Toto je štruktúra dát, ktorú vracia /api/heatmap/treemap",
+    "apiResponse": {
+      "success": true,
+      "data": {
+        "sectors": [
+          {
+            "sector": "Technology",
+            "totalMarketCap": 15000.5,
+            "stocks": [
+              {
+                "ticker": "AAPL",
+                "name": "Apple Inc.",
+                "sector": "Technology",
+                "industry": "Consumer Electronics",
+                "marketCap": 3500.2,
+                "percentChange": 2.45,
+                "currentPrice": 175.50,
+                "sharesOutstanding": 20000000000
+              }
+            ]
+          }
+        ],
+        "totalMarketCap": 50000.0,
+        "stockCount": 615,
+        "date": "2025-11-13"
+      }
+    }
+  }
+}
+

@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function GET(request: NextRequest) {
   try {
     // Simple health check with timeout protection
-    const healthStatus = {
+    const healthStatus: any = {
       status: 'healthy',
       timestamp: new Date().toISOString(),
       services: {
