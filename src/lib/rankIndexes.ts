@@ -14,9 +14,9 @@ export interface RankIndexData {
   marketCap: number;
   marketCapDiff: number;
   changePct: number;
-  name?: string;
-  sector?: string;
-  industry?: string;
+  name?: string | undefined;
+  sector?: string | undefined;
+  industry?: string | undefined;
   [key: string]: any; // Allow additional fields
 }
 

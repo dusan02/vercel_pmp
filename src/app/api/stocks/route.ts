@@ -13,7 +13,7 @@ function generateSectorFromTicker(ticker: string): { sector: string; industry: s
   if (['CHIP', 'SEMI', 'INTEL', 'AMD', 'NVDA', 'QCOM', 'TXN', 'MU', 'AVGO', 'TSM', 'ASML', 'KLAC', 'LRCX', 'AMAT', 'ADI', 'NXPI', 'MRVL'].some(pattern => upperTicker.includes(pattern))) {
     return { sector: 'Technology', industry: 'Semiconductors' };
   }
-  if (['PHONE', 'MOBILE', 'TEL', 'COMM', 'WIFI', '5G', '6G', 'TMUS', 'VZ', 'T', 'TM'].some(pattern => upperTicker.includes(pattern))) {
+  if (['PHONE', 'MOBILE', 'TEL', 'COMM', 'WIFI', '5G', '6G', 'TMUS', 'VZ', 'T'].some(pattern => upperTicker.includes(pattern))) {
     return { sector: 'Technology', industry: 'Communication Equipment' };
   }
   
@@ -32,7 +32,7 @@ function generateSectorFromTicker(ticker: string): { sector: string; industry: s
   }
   
   // Healthcare patterns (expanded)
-  if (['PHARMA', 'DRUG', 'MED', 'BIO', 'GEN', 'THERA', 'CURE', 'HEALTH', 'MEDICAL', 'DIAG', 'LAB', 'CLINIC', 'LLY', 'JNJ', 'PFE', 'ABBV', 'MRK', 'BMY', 'AMGN', 'GILD', 'REGN', 'VRTX', 'BIIB', 'ALNY', 'ARGX', 'TAK', 'NVS', 'AZN', 'GSK', 'SNY', 'MDT'].some(pattern => upperTicker.includes(pattern))) {
+  if (['PHARMA', 'DRUG', 'MED', 'BIO', 'GEN', 'THERA', 'CURE', 'HEALTH', 'MEDICAL', 'DIAG', 'LAB', 'CLINIC', 'LLY', 'JNJ', 'PFE', 'ABBV', 'MRK', 'BMY', 'AMGN', 'GILD', 'REGN', 'VRTX', 'BIIB', 'ALNY', 'ARGX', 'TAK', 'NVS', 'AZN', 'GSK', 'SNY', 'MDT', 'NVO'].some(pattern => upperTicker.includes(pattern))) {
     return { sector: 'Healthcare', industry: 'Drug Manufacturers' };
   }
   if (['DEVICE', 'EQUIP', 'SURG', 'IMPLANT', 'PROSTH', 'MONITOR', 'SCAN', 'XRAY', 'MRI', 'CT', 'ABT', 'BSX', 'ISRG', 'ZTS', 'IDXX', 'RMD', 'EW', 'DHR', 'TMO'].some(pattern => upperTicker.includes(pattern))) {
@@ -82,6 +82,7 @@ function generateSectorFromTicker(ticker: string): { sector: string; industry: s
   }
   
   // Real Estate patterns (expanded)
+  // POZNÁMKA: NVO, SONY, RIO, AON, DOV, POOL, MOS, AOS, ROL, BRO, LDOS, PODD, SOLV, AXON, DDOG, IMO, ON sú v coreSectors a NESMIE byť tu
   if (['REIT', 'REAL', 'ESTATE', 'PROPERTY', 'LAND', 'BUILDING', 'OFFICE', 'WAREHOUSE', 'MALL', 'APARTMENT', 'CONDO', 'AMT', 'PLD', 'EQIX', 'CCI', 'DLR', 'PSA', 'SPG', 'O', 'VICI', 'WELL', 'VTR', 'EQR', 'AVB', 'MAA', 'ESS', 'UDR', 'CPT', 'AIV', 'AVB', 'BRX', 'BXP', 'CDR', 'CIO', 'CLDT', 'CUZ', 'DEI', 'DLR', 'EQR', 'ESS', 'FRT', 'GEO', 'GTY', 'HCP', 'HST', 'HR', 'IRM', 'KIM', 'KRC', 'LAMR', 'MAC', 'MAA', 'MPW', 'NHI', 'NLY', 'NNN', 'O', 'OHI', 'OUT', 'PEAK', 'PLD', 'PSA', 'REG', 'ROIC', 'SBRA', 'SKT', 'SPG', 'SRC', 'STAG', 'STOR', 'TCO', 'UDR', 'VICI', 'VNO', 'VTR', 'WELL', 'WPC', 'WY'].some(pattern => upperTicker.includes(pattern))) {
     return { sector: 'Real Estate', industry: 'REIT - Specialty' };
   }
@@ -323,11 +324,17 @@ export async function GET(request: NextRequest) {
             'QCOM': { sector: 'Technology', industry: 'Semiconductors' },
             'TXN': { sector: 'Technology', industry: 'Semiconductors' },
             'MU': { sector: 'Technology', industry: 'Semiconductors' },
+            'LDOS': { sector: 'Technology', industry: 'IT Services' }, // Leidos Holdings - IT services
+            'AXON': { sector: 'Technology', industry: 'Scientific & Technical Instruments' }, // Axon Enterprise - police equipment
+            'DDOG': { sector: 'Technology', industry: 'Software' }, // Datadog - software
+            'ON': { sector: 'Technology', industry: 'Semiconductors' }, // ON Semiconductor
             
             // Consumer Cyclical (major players)
             'AMZN': { sector: 'Consumer Cyclical', industry: 'Internet Retail' },
             'TSLA': { sector: 'Consumer Cyclical', industry: 'Auto Manufacturers' },
+            'TM': { sector: 'Consumer Cyclical', industry: 'Auto Manufacturers' }, // Toyota Motor Corporation
             'HD': { sector: 'Consumer Cyclical', industry: 'Home Improvement Retail' },
+            'POOL': { sector: 'Consumer Cyclical', industry: 'Leisure' }, // Pool Corporation - pool equipment
             'MCD': { sector: 'Consumer Cyclical', industry: 'Restaurants' },
             'SBUX': { sector: 'Consumer Cyclical', industry: 'Restaurants' },
             'NKE': { sector: 'Consumer Cyclical', industry: 'Footwear & Accessories' },
@@ -361,6 +368,8 @@ export async function GET(request: NextRequest) {
             'MET': { sector: 'Financial Services', industry: 'Insurance' },
             'AIG': { sector: 'Financial Services', industry: 'Insurance' },
             'PRU': { sector: 'Financial Services', industry: 'Insurance' },
+            'AON': { sector: 'Financial Services', industry: 'Insurance' }, // Aon plc - insurance brokerage
+            'BRO': { sector: 'Financial Services', industry: 'Insurance' }, // Brown & Brown Inc. - insurance
             
             // Healthcare (major players)
             'LLY': { sector: 'Healthcare', industry: 'Drug Manufacturers' },
@@ -382,6 +391,8 @@ export async function GET(request: NextRequest) {
             'REGN': { sector: 'Healthcare', industry: 'Biotechnology' },
             'VRTX': { sector: 'Healthcare', industry: 'Biotechnology' },
             'BIIB': { sector: 'Healthcare', industry: 'Biotechnology' },
+            'NVO': { sector: 'Healthcare', industry: 'Drug Manufacturers' }, // Novo Nordisk - pharmaceutical company
+            'PODD': { sector: 'Healthcare', industry: 'Medical Devices' }, // Insulet Corporation - medical devices
             
             // Communication Services (major players)
             'VZ': { sector: 'Communication Services', industry: 'Telecom Services' },
@@ -393,6 +404,7 @@ export async function GET(request: NextRequest) {
             'FOXA': { sector: 'Communication Services', industry: 'Entertainment' },
             'PARA': { sector: 'Communication Services', industry: 'Entertainment' },
             'LYV': { sector: 'Communication Services', industry: 'Entertainment' },
+            'SONY': { sector: 'Communication Services', industry: 'Entertainment' }, // Sony Corporation
             
             // Industrials (major players)
             'BA': { sector: 'Industrials', industry: 'Aerospace & Defense' },
@@ -412,6 +424,8 @@ export async function GET(request: NextRequest) {
             'PH': { sector: 'Industrials', industry: 'Specialty Industrial Machinery' },
             'DOV': { sector: 'Industrials', industry: 'Specialty Industrial Machinery' },
             'XYL': { sector: 'Industrials', industry: 'Specialty Industrial Machinery' },
+            'AOS': { sector: 'Industrials', industry: 'Specialty Industrial Machinery' }, // A.O. Smith Corporation
+            'ROL': { sector: 'Industrials', industry: 'Specialty Industrial Machinery' }, // Rollins Inc.
             
             // Consumer Defensive (major players)
             'PG': { sector: 'Consumer Defensive', industry: 'Household & Personal Products' },
@@ -445,6 +459,7 @@ export async function GET(request: NextRequest) {
             'ET': { sector: 'Energy', industry: 'Oil & Gas Midstream' },
             'WMB': { sector: 'Energy', industry: 'Oil & Gas Midstream' },
             'OKE': { sector: 'Energy', industry: 'Oil & Gas Midstream' },
+            'IMO': { sector: 'Energy', industry: 'Oil & Gas Integrated' }, // Imperial Oil - Canadian oil company
             
             // Real Estate (major players)
             'AMT': { sector: 'Real Estate', industry: 'REIT - Specialty' },
@@ -495,6 +510,8 @@ export async function GET(request: NextRequest) {
             'BHP': { sector: 'Basic Materials', industry: 'Other Industrial Metals & Mining' },
             'RIO': { sector: 'Basic Materials', industry: 'Other Industrial Metals & Mining' },
             'VALE': { sector: 'Basic Materials', industry: 'Other Industrial Metals & Mining' },
+            'MOS': { sector: 'Basic Materials', industry: 'Agricultural Inputs' }, // Mosaic Company - fertilizer
+            'SOLV': { sector: 'Basic Materials', industry: 'Chemicals' }, // Solvay SA - chemicals
             'NUE': { sector: 'Basic Materials', industry: 'Steel' },
             'X': { sector: 'Basic Materials', industry: 'Steel' },
             'STLD': { sector: 'Basic Materials', industry: 'Steel' },

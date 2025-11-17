@@ -22,6 +22,8 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ['lucide-react'],
   },
 
+  // Removed webpackDevMiddleware config - may interfere with webpack runtime
+
   // Turbopack configuration (moved from experimental)
   turbopack: {
     rules: {
@@ -96,9 +98,21 @@ const nextConfig: NextConfig = {
   },
 
   // Webpack configuration for optimization
-  webpack: (config, { dev, isServer }) => {
-    // Optimize bundle size
-    if (!dev && !isServer) {
+  webpack: (config, { isServer }) => {
+    // Only add fallbacks for Node.js modules - DO NOT modify optimization.runtimeChunk
+    // Modifying runtimeChunk can break Next.js webpack runtime initialization
+    if (!isServer) {
+      config.resolve = config.resolve || {};
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+      };
+    }
+
+    // Optimize bundle size (only in production)
+    if (!isServer) {
       config.optimization.splitChunks = {
         chunks: 'all',
         cacheGroups: {

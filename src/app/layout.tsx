@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
+import ErrorBoundaryWrapper from '@/components/ErrorBoundaryWrapper'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -122,11 +123,13 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body className={inter.className}>
-        <div className="pwa-app-shell">
-          <div className="pwa-app-content">
-            {children}
+        <ErrorBoundaryWrapper>
+          <div className="pwa-app-shell">
+            <div className="pwa-app-content">
+              {children}
+            </div>
           </div>
-        </div>
+        </ErrorBoundaryWrapper>
       </body>
     </html>
   )

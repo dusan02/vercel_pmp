@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { PriceUpdate, BatchPriceUpdate } from '@/lib/websocket-server';
+import { PriceUpdate, BatchPriceUpdate } from '@/lib/types';
 
 interface WebSocketStatus {
   isConnected: boolean;

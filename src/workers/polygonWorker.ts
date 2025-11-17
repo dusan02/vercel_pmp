@@ -422,9 +422,9 @@ export async function ingestBatch(
         marketCap,
         marketCapDiff,
         changePct: normalized.changePct,
-        name: ticker?.name,
-        sector: ticker?.sector,
-        industry: ticker?.industry
+        name: ticker?.name ?? undefined,
+        sector: ticker?.sector ?? undefined,
+        industry: ticker?.industry ?? undefined
       }, false); // Don't update stats here, we'll do it separately after checking min/max
 
       // Check and update stats cache (min/max) - only if this is a new min/max
@@ -565,10 +565,10 @@ async function main() {
       }
       
       // Bootstrap previous closes (04:00 ET or if missing)
-      const today = easternTime.toISOString().split('T')[0];
+      const today = easternTime.toISOString().split('T')[0] || '';
       const tickers = await getUniverse('sp500');
       
-      if (tickers.length > 0) {
+      if (tickers.length > 0 && today) {
         const { getPrevClose } = await import('@/lib/redisHelpers');
         const samplePrevCloses = await getPrevClose(today, tickers.slice(0, 10));
         
@@ -611,7 +611,8 @@ async function main() {
       
       // If market is closed, still try to bootstrap previous closes if missing
       if (session === 'closed' || !isMarketOpen(etNow)) {
-        const today = new Date().toISOString().split('T')[0];
+        const today = new Date().toISOString().split('T')[0] || '';
+        if (!today) return;
         const { getPrevClose } = await import('@/lib/redisHelpers');
         const samplePrevCloses = await getPrevClose(today, tickers.slice(0, 10));
         
