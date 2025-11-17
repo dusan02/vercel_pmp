@@ -67,8 +67,18 @@ export async function middleware(request: NextRequest) {
       const ip = getClientIP(request);
       const isLocalhost = ip === '127.0.0.1' || ip === '::1' || ip === 'unknown' || request.nextUrl.hostname === 'localhost';
       
+      // Heatmap endpoint has higher limits (no fallback, only DB queries)
+      const isHeatmapEndpoint = request.nextUrl.pathname === '/api/heatmap';
+      
       // Higher limits for localhost/development
-      const maxRequests = isLocalhost ? 300 : 100; // 300/min for localhost, 100/min for production
+      // Heatmap endpoint: much higher limit (no external API calls, only DB)
+      // Other endpoints: standard limits
+      let maxRequests: number;
+      if (isHeatmapEndpoint) {
+        maxRequests = isLocalhost ? 1000 : 500; // Heatmap: 1000/min localhost, 500/min production
+      } else {
+        maxRequests = isLocalhost ? 300 : 100; // Other: 300/min localhost, 100/min production
+      }
       const windowMs = 60000; // 1 minute
       
       const isAllowed = rateLimit(ip, { maxRequests, windowMs });
