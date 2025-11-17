@@ -193,6 +193,82 @@ const formatMarketCap = (value: number) => {
   }
 };
 
+// --- KONFIGURÁCIA TEXTU V DLAŽDICIACH ---
+
+/**
+ * Konfigurácia textu pre dlaždicu podľa jej veľkosti
+ */
+type TileLabelConfig = {
+  showSymbol: boolean;
+  showPercent: boolean;
+  symbolFontPx: number;
+  percentFontPx?: number;
+  align: 'center' | 'top-left';
+};
+
+/**
+ * Obmedzí číslo na rozsah min-max
+ */
+const clampNumber = (value: number, min: number, max: number) =>
+  Math.max(min, Math.min(max, value));
+
+/**
+ * Vypočíta konfiguráciu textu pre dlaždicu podľa jej veľkosti
+ * @param widthPx Šírka dlaždice v pixeloch
+ * @param heightPx Výška dlaždice v pixeloch
+ * @returns Konfigurácia textu
+ */
+function getTileLabelConfig(widthPx: number, heightPx: number): TileLabelConfig {
+  const area = widthPx * heightPx;
+
+  // 1) Extra small dlaždice – úplne bez textu (iba farba)
+  //    => malé firmy nebudú „fake“ popísané miniatúrnym textom
+  if (widthPx < 26 || heightPx < 18 || area < 450) {
+    return {
+      showSymbol: false,
+      showPercent: false,
+      symbolFontPx: 0,
+      align: 'center',
+    };
+  }
+
+  // 2) Small tiles – len ticker, ale čitateľný (min. 12 px)
+  if (area < 1500) {
+    const base = Math.min(widthPx, heightPx);
+    const symbolFontPx = clampNumber(base * 0.6, 12, 16);
+    return {
+      showSymbol: true,
+      showPercent: false,
+      symbolFontPx,
+      align: 'center',
+    };
+  }
+
+  // 3) Medium tiles – ticker + % v strede, stále rozumné rozmery
+  if (area < 4500) {
+    const symbolFontPx = clampNumber(heightPx * 0.55, 14, 20);
+    const percentFontPx = clampNumber(heightPx * 0.4, 11, 16);
+    return {
+      showSymbol: true,
+      showPercent: true,
+      symbolFontPx,
+      percentFontPx,
+      align: 'center',
+    };
+  }
+
+  // 4) Big tiles – megacapy: veľký text hore-vľavo
+  const symbolFontPx = clampNumber(heightPx * 0.6, 18, 26);
+  const percentFontPx = clampNumber(heightPx * 0.45, 13, 18);
+  return {
+    showSymbol: true,
+    showPercent: true,
+    symbolFontPx,
+    percentFontPx,
+    align: 'top-left',
+  };
+}
+
 // --- POD-KOMPONENTY ---
 
 /**
@@ -379,7 +455,9 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
 
   const allLeaves = useMemo(() => {
     const leaves = treemapLayout ? (treemapLayout.leaves() as TreemapLeaf[]) : [];
-    console.log(`📊 MarketHeatmap: Rendering ${leaves.length} companies from ${data.length} total companies`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`📊 MarketHeatmap: Rendering ${leaves.length} companies from ${data.length} total companies`);
+    }
     return leaves;
   }, [treemapLayout, data.length]);
 
@@ -566,46 +644,18 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
         const company = leaf.data.meta.companyData;
         const tileColor = colorScale(company.changePercent);
 
-        // Logika pre zobrazenie textu podľa veľkosti dlaždice (market cap)
+        // Skutočné rozmery dlaždice v pixeloch
         const scaledWidth = tileWidth * scale;
         const scaledHeight = tileHeight * scale;
-        const tileArea = scaledWidth * scaledHeight;
-        const marketCap = company.marketCap || 0;
-        
-        // Dynamický výpočet font-size na základe plochy dlaždice
-        // Použijeme kombináciu plochy a market cap pre lepšie rozhodovanie
-        let symbolFontSize: string;
-        let percentFontSize: string | null = null;
-        let showText = false;
-        
-        // Kombinovaný prístup: použijeme plochu dlaždice (skutočná veľkosť na obrazovke)
-        // ale upravíme prahy podľa market cap, aby sme mali lepšie rozloženie
-        if (tileArea > 2500) {
-          // Veľké dlaždice (>50x50px) - plný text
-          symbolFontSize = 'text-xl';
-          percentFontSize = 'text-base';
-          showText = true;
-        } else if (tileArea > 1000) {
-          // Stredné dlaždice (~30-50px) - symbol + percent
-          symbolFontSize = 'text-lg';
-          percentFontSize = 'text-sm';
-          showText = true;
-        } else if (tileArea > 400) {
-          // Menšie dlaždice (~20-30px) - iba symbol väčší
-          symbolFontSize = 'text-base';
-          showText = true;
-        } else if (tileArea > 150) {
-          // Malé dlaždice (~12-20px) - symbol menší
-          symbolFontSize = 'text-sm';
-          showText = true;
-        } else if (tileArea > 50) {
-          // Veľmi malé dlaždice (~7-12px) - symbol veľmi malý
-          symbolFontSize = 'text-xs';
-          showText = true;
-        } else {
-          // Extrémne malé dlaždice (<50px²) - bez textu (názov firmy sa vynechá)
-          showText = false;
-        }
+
+        // Konfigurácia textu podľa veľkosti dlaždice
+        const {
+          showSymbol,
+          showPercent,
+          symbolFontPx,
+          percentFontPx,
+          align,
+        } = getTileLabelConfig(scaledWidth, scaledHeight);
 
         return (
           <div
@@ -623,14 +673,37 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
             onMouseLeave={() => setHoveredNode(null)}
             onClick={() => onTileClick && onTileClick(company)}
           >
-            {/* Obal pre text, ktorý zosvetlí/zosilní na hover */}
-            {showText && (
-              <div className="relative z-10 flex flex-col items-center justify-center w-full h-full transition-opacity opacity-90 group-hover:opacity-100">
-                <div className={`font-bold text-white ${symbolFontSize} drop-shadow-lg leading-tight`}>
-                  {company.symbol}
-                </div>
-                {percentFontSize && (
-                  <div className={`${percentFontSize} text-white drop-shadow-lg font-medium leading-tight mt-0.5`}>
+            {/* Text v dlaždici */}
+            {(showSymbol || showPercent) && (
+              <div
+                className={`relative z-10 flex flex-col w-full h-full transition-opacity opacity-90 group-hover:opacity-100 ${
+                  align === 'center'
+                    ? 'items-center justify-center'
+                    : 'items-start justify-start'
+                }`}
+                style={align === 'top-left' ? { padding: 4 } : undefined}
+              >
+                {showSymbol && (
+                  <div
+                    className="font-bold text-white leading-tight tracking-tight"
+                    style={{
+                      fontSize: symbolFontPx,
+                      lineHeight: 1.05,
+                      WebkitTextStroke: '0.6px rgba(0,0,0,0.9)', // hrana textu, lepšie na svetlozelenej
+                    }}
+                  >
+                    {company.symbol}
+                  </div>
+                )}
+                {showPercent && typeof percentFontPx === 'number' && (
+                  <div
+                    className="text-white/90 font-medium leading-tight mt-0.5"
+                    style={{
+                      fontSize: percentFontPx,
+                      lineHeight: 1.05,
+                      WebkitTextStroke: '0.4px rgba(0,0,0,0.85)',
+                    }}
+                  >
                     {formatPercent(company.changePercent)}
                   </div>
                 )}

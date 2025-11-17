@@ -22,17 +22,6 @@ export type ResponsiveMarketHeatmapProps = {
 };
 
 /**
- * Default tickery pre heatmapu (top 50 spoločností)
- */
-const DEFAULT_HEATMAP_TICKERS = [
-  'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA', 'BRK.B', 'AVGO', 'LLY',
-  'JPM', 'V', 'MA', 'UNH', 'HD', 'PG', 'JNJ', 'DIS', 'BAC', 'ADBE',
-  'CRM', 'COST', 'ABBV', 'WMT', 'NFLX', 'AMD', 'NKE', 'TMO', 'LIN', 'PM',
-  'QCOM', 'INTU', 'AMGN', 'AXP', 'BKNG', 'LOW', 'HON', 'AMAT', 'SBUX', 'ADI',
-  'ISRG', 'GILD', 'C', 'VRTX', 'REGN', 'CDNS', 'SNPS', 'KLAC', 'FTNT', 'ANSS'
-];
-
-/**
  * Transformuje StockData z API na CompanyNode pre heatmapu
  */
 function transformStockDataToCompanyNode(stock: StockData): CompanyNode | null {
