@@ -27,15 +27,28 @@ describe('Yahoo Finance API Test', () => {
 
   it('should return error when API key is not configured', async () => {
     // Remove API key to test error handling
-    delete process.env.POLYGON_API_KEY;
+    const originalApiKey = process.env.POLYGON_API_KEY;
+    Object.defineProperty(process.env, 'POLYGON_API_KEY', {
+        value: undefined,
+        writable: true
+    });
 
-    const request = new NextRequest('http://localhost:3000/api/earnings/yahoo');
+    try {
+        const request = new NextRequest('http://localhost:3000/api/earnings/yahoo');
+        const response = await GET(request);
+        const data = await response.json();
 
-    const response = await GET(request);
-    const data = await response.json();
-
-    expect(response.status).toBe(500);
-    expect(data.error).toBeDefined();
+        expect(response.status).toBe(500);
+        expect(data.error).toBeDefined();
+    } finally {
+        // Restore environment variable
+        if (originalApiKey !== undefined) {
+            Object.defineProperty(process.env, 'POLYGON_API_KEY', {
+                value: originalApiKey,
+                writable: true
+            });
+        }
+    }
   });
 
   it('should return 200 OK with earnings data on success', async () => {
