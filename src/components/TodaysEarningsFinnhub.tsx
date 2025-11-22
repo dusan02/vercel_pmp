@@ -228,12 +228,12 @@ const EarningsLoader = () => (
       <div className="header-main">
         <h2>
           <SectionIcon type="calendar" size={20} className="section-icon" />
-          <span>Today's Earnings</span>
+          <span>Today&apos;s Earnings</span>
         </h2>
       </div>
     </div>
     <div className="flex items-center justify-center p-8">
-      <span className="text-gray-600">Loading today's earnings...</span>
+      <span className="text-gray-600">Loading today&apos;s earnings...</span>
     </div>
   </section>
 );
@@ -245,7 +245,7 @@ const EarningsError = ({ error, onRetry }: { error: string; onRetry: () => void 
       <div className="header-main">
         <h2>
           <SectionIcon type="calendar" size={20} className="section-icon" />
-          <span>Today's Earnings</span>
+          <span>Today&apos;s Earnings</span>
         </h2>
       </div>
     </div>
@@ -268,7 +268,7 @@ const EarningsEmpty = () => (
       <div className="header-main">
         <h2>
           <SectionIcon type="calendar" size={20} className="section-icon" />
-          <span>Today's Earnings</span>
+          <span>Today&apos;s Earnings</span>
         </h2>
       </div>
     </div>
@@ -369,7 +369,7 @@ export default function TodaysEarningsFinnhub() {
         <div className="header-main">
           <h2>
             <SectionIcon type="calendar" size={20} className="section-icon" />
-            <span>Today's Earnings</span>
+            <span>Today&apos;s Earnings</span>
           </h2>
         </div>
       </div>

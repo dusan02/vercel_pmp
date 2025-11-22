@@ -1,4 +1,6 @@
 import { NextRequest } from 'next/server';
+import { getSharesOutstanding, getPreviousClose, getCurrentPrice } from '@/lib/marketCapUtils';
+import { __resetCache } from '@/lib/redis';
 
 // 1. Mockujeme závislosti na najvyššej úrovni.
 // Tieto mocky sa aktivujú pre všetky testy v tomto súbore.
@@ -8,19 +10,19 @@ jest.mock('@/lib/redis');
 describe('/api/stocks', () => {
 
   // Až tu, vnútri describe, importujeme naše mocky a typy, ktoré budeme potrebovať.
-  const { getSharesOutstanding, getPreviousClose, getCurrentPrice } = require('@/lib/marketCapUtils');
-  const { __resetCache } = require('@/lib/redis');
+  // const { getSharesOutstanding, getPreviousClose, getCurrentPrice } = require('@/lib/marketCapUtils');
+  // const { __resetCache } = require('@/lib/redis');
 
   // Helper funkcia pre dynamické nastavenie mockov pred každým testom
   const setupMocks = () => {
     // 2. Nastavíme implementácie pre každý test znova.
     // Toto je kľúčové, pretože `resetModules` ich vymaže.
-    getSharesOutstanding.mockResolvedValue(1_000_000_000);
-    getPreviousClose.mockImplementation((ticker: string) => {
+    (getSharesOutstanding as jest.Mock).mockResolvedValue(1_000_000_000);
+    (getPreviousClose as jest.Mock).mockImplementation((ticker: string) => {
         const prices: { [key: string]: number } = { NVDA: 780, MCD: 315, AAPL: 195, MSFT: 395 };
         return Promise.resolve(prices[ticker] || 145);
     });
-    getCurrentPrice.mockImplementation((snapshotData: any) => snapshotData?.lastTrade?.p || null);
+    (getCurrentPrice as jest.Mock).mockImplementation((snapshotData: any) => snapshotData?.lastTrade?.p || null);
 
     // 3. Nastavíme mock pre fetch
     (global.fetch as jest.Mock).mockImplementation((url: string) => {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkEarningsForOurTickers } from '@/lib/clients/yahooFinanceScraper';
 import { computePercentChange, computeMarketCapDiff, getSharesOutstanding, getCurrentPrice, getPreviousClose, computeMarketCap } from '@/lib/utils/marketCapUtils';
+import { DEFAULT_TICKERS } from '@/data/defaultTickers';
 
 interface EarningsData {
   ticker: string;
@@ -49,8 +50,6 @@ function setCachedEarnings(date: string, data: ProcessedEarningsResponse): void 
  * Získa kompletný zoznam tickerov zo všetkých tierov
  */
 function getAllTickers(): string[] {
-  const { DEFAULT_TICKERS } = require('@/data/defaultTickers');
-
   const allTickers = new Set<string>();
 
   // Pridaj všetky tickery zo všetkých tierov

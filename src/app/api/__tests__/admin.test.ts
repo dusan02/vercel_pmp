@@ -16,9 +16,7 @@ jest.mock('@/lib/redis', () => ({
 import { NextRequest } from 'next/server';
 import { GET as getCacheKeys } from '../admin/cache/keys/route';
 import { POST as invalidateCache } from '../admin/cache/invalidate/route';
-
-// Get the mocked redis client
-const { redisClient: mockRedisClient, deleteCachedData } = require('@/lib/redis');
+import { redisClient as mockRedisClient } from '@/lib/redis';
 
 // Mock environment variables
 const originalEnv = process.env;

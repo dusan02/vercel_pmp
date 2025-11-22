@@ -1,21 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkEarningsForOurTickers } from '@/lib/clients/yahooFinanceScraper';
+import { prisma } from '@/lib/db/prisma';
+import { DEFAULT_TICKERS } from '@/data/defaultTickers';
 
 // Move Prisma Client inside functions to avoid build-time issues
-let prisma: any = null;
+// let prisma: any = null;
 
-function getPrismaClient() {
-  if (!prisma) {
-    try {
-      const { PrismaClient } = require('@prisma/client');
-      prisma = new PrismaClient();
-    } catch (error) {
-      console.error('❌ Prisma Client not available:', error);
-      return null;
-    }
-  }
-  return prisma;
-}
+// function getPrismaClient() {
+//   if (!prisma) {
+//     try {
+//       const { PrismaClient } = require('@prisma/client');
+//       prisma = new PrismaClient();
+//     } catch (error) {
+//       console.error('❌ Prisma Client not available:', error);
+//       return null;
+//     }
+//   }
+//   return prisma;
+// }
 
 interface EarningsData {
   ticker: string;
@@ -31,8 +33,6 @@ interface EarningsData {
  * Získa kompletný zoznam tickerov zo všetkých tierov
  */
 function getAllTickers(): string[] {
-  const { DEFAULT_TICKERS } = require('@/data/defaultTickers');
-
   const allTickers = new Set<string>();
 
   // Pridaj všetky tickery zo všetkých tierov
@@ -47,7 +47,7 @@ function getAllTickers(): string[] {
  * Vyčistí earnings calendar pre daný dátum
  */
 async function clearEarningsCalendar(date: string): Promise<void> {
-  const prismaClient = getPrismaClient();
+  const prismaClient = prisma;
   if (!prismaClient) {
     console.log('⚠️ Prisma not available, skipping database clear');
     return;
@@ -73,7 +73,7 @@ async function clearEarningsCalendar(date: string): Promise<void> {
  * Uloží earnings data do databázy
  */
 async function saveEarningsToDatabase(earningsData: EarningsData[], date: string): Promise<void> {
-  const prismaClient = getPrismaClient();
+  const prismaClient = prisma;
   if (!prismaClient) {
     console.log('⚠️ Prisma not available, skipping database save');
     return;

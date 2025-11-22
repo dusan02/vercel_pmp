@@ -738,14 +738,6 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
       : allLeaves;
   }, [allLeaves, zoomedSector, belongsToSector]);
 
-  if (width === 0 || height === 0) {
-    return (
-      <div className="flex items-center justify-center w-full h-full bg-black text-gray-500">
-        Loading layout...
-      </div>
-    );
-  }
-
   // Vypočítame rozsah treemapy (spoločný výpočet pre scale a offset)
   const treemapBounds = useMemo(() => {
     if (!treemapLayout || width === 0 || height === 0) return null;
@@ -829,6 +821,12 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
       style={{ overflow: 'hidden' }}
       onMouseMove={renderMode === 'dom' ? handleMouseMove : undefined}
     >
+      {(width === 0 || height === 0) && (
+        <div className="absolute inset-0 flex items-center justify-center text-gray-500 z-50">
+          Loading layout...
+        </div>
+      )}
+
       {/* Controls */}
       <div className="absolute top-4 right-4 z-50 flex gap-2">
         <button

@@ -156,7 +156,7 @@ export default function EarningsCalendar() {
     return (
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
         <div className="flex items-center mb-4">
-          <h2 className="section-title" data-icon="📅">Today's Earnings</h2>
+          <h2 className="section-title" data-icon="📅">Today&apos;s Earnings</h2>
         </div>
         <div>
           <div className="h-4 bg-gray-200 rounded mb-2"></div>
@@ -171,7 +171,7 @@ export default function EarningsCalendar() {
     return (
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
         <div className="flex items-center mb-4">
-          <h2 className="section-title" data-icon="📅">Today's Earnings</h2>
+          <h2 className="section-title" data-icon="📅">Today&apos;s Earnings</h2>
         </div>
       </div>
     );
@@ -181,7 +181,7 @@ export default function EarningsCalendar() {
     return (
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
         <div className="flex items-center mb-4">
-          <h2 className="section-title" data-icon="📅">Today's Earnings</h2>
+          <h2 className="section-title" data-icon="📅">Today&apos;s Earnings</h2>
         </div>
       </div>
     );

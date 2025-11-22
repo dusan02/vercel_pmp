@@ -20,7 +20,7 @@ export function metricsMiddleware(request: NextRequest, response: NextResponse) 
 }
 
 // Middleware wrapper for API routes
-export function withMetrics(handler: Function) {
+export function withMetrics(handler: (request: NextRequest, ...args: any[]) => Promise<NextResponse | Response>) {
   return async (request: NextRequest, ...args: any[]) => {
     const startTime = Date.now();
     

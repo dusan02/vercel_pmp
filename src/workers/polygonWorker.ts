@@ -10,8 +10,6 @@
  */
 
 import {
-  setLast,
-  updateHeatmap,
   setPrevClose,
   getPrevClose,
   publishTick,

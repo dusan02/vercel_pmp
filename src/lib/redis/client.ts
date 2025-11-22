@@ -2,8 +2,8 @@ import { createClient } from 'redis';
 
 // Redis client configuration with fallback to in-memory cache
 export let redisClient: any = null;
-let inMemoryCache = new Map();
-let cacheTimestamps = new Map();
+const inMemoryCache = new Map();
+const cacheTimestamps = new Map();
 
 // Check if we're in a serverless environment (Vercel)
 const isServerless = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
@@ -107,7 +107,6 @@ export async function getRedisSubscriber(): Promise<any> {
 
     try {
         if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
-            const { createClient } = require('redis');
             const redisUrl = `redis://default:${process.env.UPSTASH_REDIS_REST_TOKEN}@${process.env.UPSTASH_REDIS_REST_URL.replace('https://', '')}:6379`;
 
             redisSub = createClient({ url: redisUrl });

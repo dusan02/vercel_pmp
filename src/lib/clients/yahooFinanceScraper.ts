@@ -27,7 +27,7 @@ interface ProcessedEarnings {
 /**
  * Manuálne test dáta na základe Yahoo Finance kalendára pre 4. august 2025
  */
-function getManualTestData(date: string): YahooEarningsItem[] {
+function getManualTestData(_date: string): YahooEarningsItem[] {
   // Na základe Yahoo Finance kalendára z obrázka
   const testData: YahooEarningsItem[] = [
     {
@@ -132,12 +132,6 @@ async function fetchYahooFinanceEarnings(date: string): Promise<YahooEarningsRes
     }
 
     // Yahoo Finance earnings calendar URL
-    // Konvertujeme dátum do formátu, ktorý Yahoo Finance používa
-    const dateObj = new Date(date);
-    const month = dateObj.getMonth() + 1; // getMonth() vracia 0-11
-    const day = dateObj.getDate();
-    const year = dateObj.getFullYear();
-
     // Yahoo Finance používa URL ako: https://finance.yahoo.com/calendar/earnings?day=2025-08-04
     const url = `https://finance.yahoo.com/calendar/earnings?day=${date}`;
 
