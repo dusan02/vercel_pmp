@@ -1,31 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { blogScheduler } from '@/lib/blogScheduler';
+import { blogScheduler } from '@/lib/jobs/blogScheduler';
 
 export async function POST(request: NextRequest) {
   try {
     // Check for basic authentication or API key
     const authHeader = request.headers.get('authorization');
     const apiKey = request.headers.get('x-api-key');
-    
+
     // Simple API key check (you should use a proper secret)
     const validApiKey = process.env.BLOG_API_KEY || 'dev-key-12345';
-    
+
     if (!apiKey || apiKey !== validApiKey) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Trigger blog generation manually
     await blogScheduler.triggerNow();
-    
-    return NextResponse.json({ 
-      success: true, 
+
+    return NextResponse.json({
+      success: true,
       message: 'Blog report generated successfully',
       timestamp: new Date().toISOString()
     });
 
   } catch (error) {
     console.error('Manual blog generation error:', error);
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: 'Failed to generate blog report',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });

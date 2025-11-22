@@ -27,7 +27,7 @@ module.exports = {
     {
       name: 'pmp-polygon-worker',
       script: 'src/workers/polygonWorker.ts',
-      interpreter: 'ts-node',
+      interpreter: 'tsx',
       instances: 1,
       exec_mode: 'fork',
       env: {
@@ -47,7 +47,7 @@ module.exports = {
     {
       name: 'pmp-bulk-preloader',
       script: 'src/workers/backgroundPreloader.ts',
-      interpreter: 'ts-node',
+      interpreter: 'tsx',
       instances: 1,
       exec_mode: 'fork',
       env: {
@@ -70,7 +70,7 @@ module.exports = {
     {
       name: 'pmp-refs-worker',
       script: 'src/workers/polygonWorker.ts',
-      interpreter: 'ts-node',
+      interpreter: 'tsx',
       instances: 1,
       exec_mode: 'fork',
       env: {

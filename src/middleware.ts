@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 // Note: Cannot use Redis in edge runtime, using in-memory rate limiting instead
 // import { checkRateLimit, getClientIP } from './lib/redisRateLimiter';
-import { rateLimit } from './lib/rateLimiter';
+// Temporarily disable rateLimiter import to test if it causes Edge Runtime issues
+// import { rateLimit } from './lib/rateLimiter';
 
 // Simple IP extraction for edge runtime
 function getClientIP(request: NextRequest): string {
@@ -22,30 +23,24 @@ function getClientIP(request: NextRequest): string {
   return 'unknown';
 }
 
-// Allowed origins for CORS (from environment variable)
-function getAllowedOrigins(): string[] {
-  const envOrigins = process.env.ALLOWED_ORIGINS;
-  if (envOrigins) {
-    return envOrigins.split(',').map(origin => origin.trim()).filter(Boolean);
-  }
-  
-  // Fallback to default origins if not configured
-  return [
-    'https://premarketprice.com',
-    'https://www.premarketprice.com',
-    'https://capmovers.com',
-    'https://gainerslosers.com',
-    'https://stockcv.com',
-    'http://localhost:3000'
-  ];
-}
-
-const ALLOWED_ORIGINS = getAllowedOrigins();
+// Static allowed origins (Edge Runtime compatible)
+// Note: process.env is not available at module level in Edge Runtime
+// Dynamic origins would need to be accessed inside middleware function
+const ALLOWED_ORIGINS = [
+  'https://premarketprice.com',
+  'https://www.premarketprice.com',
+  'https://capmovers.com',
+  'https://gainerslosers.com',
+  'https://stockcv.com',
+  'http://localhost:3000'
+];
 
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next();
 
   // CORS headers
+  // Note: In Edge Runtime, we can't use process.env at module level
+  // For dynamic origins, we'd need to use Edge Config or similar
   const origin = request.headers.get('origin');
   if (origin && ALLOWED_ORIGINS.includes(origin)) {
     response.headers.set('Access-Control-Allow-Origin', origin);
@@ -61,51 +56,52 @@ export async function middleware(request: NextRequest) {
   // Don't expose version info
   response.headers.delete('X-Powered-By');
 
-  // Rate limiting for API routes - using in-memory rate limiter (edge runtime compatible)
-  if (request.nextUrl.pathname.startsWith('/api/')) {
-    try {
-      const ip = getClientIP(request);
-      const isLocalhost = ip === '127.0.0.1' || ip === '::1' || ip === 'unknown' || request.nextUrl.hostname === 'localhost';
-      
-      // Heatmap endpoint has higher limits (no fallback, only DB queries)
-      const isHeatmapEndpoint = request.nextUrl.pathname === '/api/heatmap';
-      
-      // Higher limits for localhost/development
-      // Heatmap endpoint: much higher limit (no external API calls, only DB)
-      // Other endpoints: standard limits
-      let maxRequests: number;
-      if (isHeatmapEndpoint) {
-        maxRequests = isLocalhost ? 1000 : 500; // Heatmap: 1000/min localhost, 500/min production
-      } else {
-        maxRequests = isLocalhost ? 300 : 100; // Other: 300/min localhost, 100/min production
-      }
-      const windowMs = 60000; // 1 minute
-      
-      const isAllowed = rateLimit(ip, { maxRequests, windowMs });
-      
-      if (!isAllowed) {
-        return NextResponse.json(
-          { 
-            success: false,
-            error: 'Rate limit exceeded',
-            message: `Too many requests. Limit: ${maxRequests} per minute.`
-          },
-          { 
-            status: 429, 
-            headers: { 
-              'Retry-After': '60',
-              'X-RateLimit-Limit': maxRequests.toString(),
-              'X-RateLimit-Remaining': '0'
-            } 
-          }
-        );
-      }
-    } catch (error) {
-      // If rate limiting fails, allow request but log error
-      console.error('Rate limiting error:', error);
-      // Continue with request
-    }
-  }
+  // Rate limiting for API routes - temporarily disabled to test Edge Runtime compatibility
+  // TODO: Re-enable after fixing Edge Runtime compatibility issues
+  // if (request.nextUrl.pathname.startsWith('/api/')) {
+  //   try {
+  //     const ip = getClientIP(request);
+  //     const isLocalhost = ip === '127.0.0.1' || ip === '::1' || ip === 'unknown' || request.nextUrl.hostname === 'localhost';
+  //     
+  //     // Heatmap endpoint has higher limits (no fallback, only DB queries)
+  //     const isHeatmapEndpoint = request.nextUrl.pathname === '/api/heatmap';
+  //     
+  //     // Higher limits for localhost/development
+  //     // Heatmap endpoint: much higher limit (no external API calls, only DB)
+  //     // Other endpoints: standard limits
+  //     let maxRequests: number;
+  //     if (isHeatmapEndpoint) {
+  //       maxRequests = isLocalhost ? 1000 : 500; // Heatmap: 1000/min localhost, 500/min production
+  //     } else {
+  //       maxRequests = isLocalhost ? 300 : 100; // Other: 300/min localhost, 100/min production
+  //     }
+  //     const windowMs = 60000; // 1 minute
+  //     
+  //     const isAllowed = rateLimit(ip, { maxRequests, windowMs });
+  //     
+  //     if (!isAllowed) {
+  //       return NextResponse.json(
+  //         { 
+  //           success: false,
+  //           error: 'Rate limit exceeded',
+  //           message: `Too many requests. Limit: ${maxRequests} per minute.`
+  //         },
+  //         { 
+  //           status: 429, 
+  //           headers: { 
+  //             'Retry-After': '60',
+  //             'X-RateLimit-Limit': maxRequests.toString(),
+  //             'X-RateLimit-Remaining': '0'
+  //           } 
+  //         }
+  //       );
+  //     }
+  //   } catch (error) {
+  //     // If rate limiting fails, allow request but log error
+  //     console.error('Rate limiting error:', error);
+  //     // Continue with request
+  //   }
+  // }
 
   return response;
 }

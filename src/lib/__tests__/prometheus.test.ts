@@ -1,4 +1,4 @@
-import { prometheusMetrics, recordHttpMetrics, recordCacheMetrics, withMetrics } from '../prometheus';
+import { prometheusMetrics, recordHttpMetrics, recordCacheMetrics, withMetrics } from '../api/prometheus';
 
 describe('Prometheus Metrics', () => {
   beforeEach(() => {
@@ -12,7 +12,7 @@ describe('Prometheus Metrics', () => {
       recordHttpMetrics('GET', '/api/health', 404, 0.1);
 
       const metrics = prometheusMetrics.getMetricsJson();
-      
+
       expect(metrics.http_requests_total).toBe(3);
       expect(metrics.http_request_duration_seconds).toBe(0.9);
       expect(metrics.api_errors_total).toBe(1); // 404 is an error
@@ -37,7 +37,7 @@ describe('Prometheus Metrics', () => {
       recordCacheMetrics(true);  // hit
 
       const metrics = prometheusMetrics.getMetricsJson();
-      
+
       expect(metrics.cache_hits_total).toBe(3);
       expect(metrics.cache_misses_total).toBe(1);
       expect(metrics.cache_hit_ratio).toBe(0.75); // 3/4 = 0.75
@@ -55,7 +55,7 @@ describe('Prometheus Metrics', () => {
       prometheusMetrics.recordBackgroundJob(2.3);
 
       const metrics = prometheusMetrics.getMetricsJson();
-      
+
       expect(metrics.background_jobs_total).toBe(2);
       expect(metrics.background_job_duration_seconds).toBe(7.8);
     });
@@ -64,12 +64,12 @@ describe('Prometheus Metrics', () => {
   describe('Timer Operations', () => {
     it('should time operations correctly', async () => {
       const timerId = prometheusMetrics.startTimer('test-operation');
-      
+
       // Simulate some work
       await new Promise(resolve => setTimeout(resolve, 100));
-      
+
       const duration = prometheusMetrics.endTimer(timerId);
-      
+
       expect(duration).toBeGreaterThan(0.09); // Should be around 0.1 seconds
       expect(duration).toBeLessThan(0.2); // But not too much more
     });
@@ -86,7 +86,7 @@ describe('Prometheus Metrics', () => {
       });
 
       expect(result).toBe('success');
-      
+
       const metrics = prometheusMetrics.getMetricsJson();
       expect(metrics.background_jobs_total).toBe(1);
       expect(metrics.background_job_duration_seconds).toBeGreaterThan(0.04);
@@ -101,7 +101,7 @@ describe('Prometheus Metrics', () => {
       prometheusMetrics.updateRedisConnections(1);
 
       const prometheusFormat = prometheusMetrics.getMetrics();
-      
+
       expect(prometheusFormat).toContain('# HELP http_requests_total');
       expect(prometheusFormat).toContain('# TYPE http_requests_total counter');
       expect(prometheusFormat).toContain('http_requests_total 1');
@@ -112,7 +112,7 @@ describe('Prometheus Metrics', () => {
 
     it('should include all required metrics', () => {
       const prometheusFormat = prometheusMetrics.getMetrics();
-      
+
       const requiredMetrics = [
         'http_requests_total',
         'http_request_duration_seconds',
@@ -141,14 +141,14 @@ describe('Prometheus Metrics', () => {
       prometheusMetrics.updateCacheSize(2048);
 
       const jsonMetrics = prometheusMetrics.getMetricsJson();
-      
+
       expect(jsonMetrics).toHaveProperty('http_requests_total');
       expect(jsonMetrics).toHaveProperty('cache_hits_total');
       expect(jsonMetrics).toHaveProperty('cache_size_bytes');
       expect(jsonMetrics).toHaveProperty('cache_hit_ratio');
       expect(jsonMetrics).toHaveProperty('uptime_seconds');
       expect(jsonMetrics).toHaveProperty('timestamp');
-      
+
       expect(jsonMetrics.http_requests_total).toBe(1);
       expect(jsonMetrics.cache_hits_total).toBe(1);
       expect(jsonMetrics.cache_size_bytes).toBe(2048);

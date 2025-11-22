@@ -23,6 +23,7 @@
         "db:add-sp500": "tsx scripts/add-sp500-tickers.ts",
         "db:add-international": "tsx scripts/add-international-tickers.ts",
         "db:bootstrap-static": "tsx scripts/bootstrap-static-data.ts",
+        "db:verify-sector": "tsx scripts/verify-fix-sector-industry.ts",
         "fetch-logos": "tsx scripts/fetch-logos.ts",
         "test:performance": "node scripts/performance-test.js",
         "test:mobile": "NEXT_PUBLIC_ENABLE_MOBILE_TESTING=true npm run dev",

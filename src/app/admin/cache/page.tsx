@@ -33,13 +33,13 @@ export default function AdminCachePage() {
     try {
       const response = await fetch('/api/cache/status?test=true');
       const data = await response.json();
-      
+
       if (data.success) {
         setCacheStatus(data.data);
       } else {
         setError(data.error || 'Failed to fetch cache status');
       }
-    } catch (err) {
+    } catch (_err) {
       setError('Failed to fetch cache status');
     }
   };
@@ -48,13 +48,13 @@ export default function AdminCachePage() {
     try {
       const response = await fetch('/api/admin/cache/keys');
       const data = await response.json();
-      
+
       if (data.success) {
         setCacheKeys(data.data);
       } else {
         setError(data.error || 'Failed to fetch cache keys');
       }
-    } catch (err) {
+    } catch (_err) {
       setError('Failed to fetch cache keys');
     }
   };
@@ -64,13 +64,13 @@ export default function AdminCachePage() {
       const url = key ? `/api/admin/cache/invalidate?key=${encodeURIComponent(key)}` : '/api/admin/cache/invalidate';
       const response = await fetch(url, { method: 'POST' });
       const data = await response.json();
-      
+
       if (data.success) {
         await refreshData();
       } else {
         setError(data.error || 'Failed to invalidate cache');
       }
-    } catch (err) {
+    } catch (_err) {
       setError('Failed to invalidate cache');
     }
   };
@@ -98,8 +98,8 @@ export default function AdminCachePage() {
     <div className="container">
       <div className="admin-header">
         <h1>Cache Administration</h1>
-        <button 
-          onClick={refreshData} 
+        <button
+          onClick={refreshData}
           disabled={refreshing}
           className="refresh-btn"
         >
@@ -175,8 +175,8 @@ export default function AdminCachePage() {
       <section className="cache-keys">
         <div className="section-header">
           <h2>Cache Keys ({cacheKeys.length})</h2>
-          <button 
-            onClick={() => invalidateCache()} 
+          <button
+            onClick={() => invalidateCache()}
             className="invalidate-all-btn"
             title="Invalidate all cache keys"
           >
@@ -204,7 +204,7 @@ export default function AdminCachePage() {
                   <td>{cacheKey.size} bytes</td>
                   <td>{cacheKey.lastAccessed || 'Unknown'}</td>
                   <td>
-                    <button 
+                    <button
                       onClick={() => invalidateCache(cacheKey.key)}
                       className="invalidate-btn"
                       title="Invalidate this key"

@@ -8,7 +8,7 @@ export const getSharesOutstanding = jest.fn(() => Promise.resolve(shares));
 export const getPreviousClose = jest.fn((ticker: string) =>
   Promise.resolve(({ NVDA: 780, MCD: 315, AAPL: 195, MSFT: 395 } as Record<string, number>)[ticker] ?? 145));
 
-export const getCurrentPrice = jest.fn((snap: any) => snap?.lastTrade?.p ?? null);
+export const getCurrentPrice = jest.fn((snap: unknown) => (snap as { lastTrade?: { p?: number } })?.lastTrade?.p ?? null);
 
 export const computeMarketCap = jest.fn((p: number) => p * shares);
 export const computePercentChange = jest.fn((c: number, pc: number) => ((c - pc) / pc) * 100);

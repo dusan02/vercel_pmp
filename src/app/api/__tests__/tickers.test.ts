@@ -5,23 +5,6 @@ import { GET } from '../tickers/default/route';
 import * as defaultTickers from '@/data/defaultTickers';
 
 describe('/api/tickers/default', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    
-    // Spy on getAllProjectTickers and mock its implementation
-    jest.spyOn(defaultTickers, 'getAllProjectTickers').mockImplementation((project: string) => {
-      // Inteligentný mock pre rôzne projekty
-      const mockData = {
-        pmp: ['AAPL', 'MSFT', 'GOOGL', 'NVDA', 'TSLA', 'META', 'AMZN', 'NFLX'],
-        cm: ['AAPL', 'MSFT', 'GOOGL', 'NVDA', 'TSLA', 'META', 'AMZN', 'NFLX'],
-        standard: ['AAPL', 'MSFT', 'GOOGL', 'NVDA', 'TSLA', 'META', 'AMZN', 'NFLX'],
-        extended: ['AAPL', 'MSFT', 'GOOGL', 'NVDA', 'TSLA', 'META', 'AMZN', 'NFLX']
-      };
-      // Vráti dáta pre daný projekt alebo defaultné pole
-      return mockData[project] || ['DEFAULT', 'MOCK'];
-    });
-  });
-
   afterEach(() => {
     jest.restoreAllMocks();
   });
@@ -130,17 +113,17 @@ describe('/api/tickers/default', () => {
 
   // Vylepšená testovacia stratégia s it.each
   it.each(['pmp', 'cm', 'standard', 'extended'])
-  ('should return a valid response for project: %s', async (project) => {
-    const request = new NextRequest(`http://localhost:3000/api/tickers/default?project=${project}`);
-    const response = await GET(request);
-    const data = await response.json();
+    ('should return a valid response for project: %s', async (project) => {
+      const request = new NextRequest(`http://localhost:3000/api/tickers/default?project=${project}`);
+      const response = await GET(request);
+      const data = await response.json();
 
-    expect(response.status).toBe(200);
-    expect(data.success).toBe(true);
-    expect(data.project).toBe(project);
-    expect(Array.isArray(data.data)).toBe(true);
-    expect(data.count).toBeGreaterThan(0);
-  });
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(data.project).toBe(project);
+      expect(Array.isArray(data.data)).toBe(true);
+      expect(data.count).toBeGreaterThan(0);
+    });
 
   it('should handle non-existent project gracefully', async () => {
     const request = new NextRequest('http://localhost:3000/api/tickers/default?project=nonexistent');

@@ -1,24 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dbHelpers } from '@/lib/database';
+import { dbHelpers } from '@/lib/db/database';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type') || 'all';
 
-    let data: any = {};
+    const data: Record<string, unknown> = {};
 
-    if (type === 'all' || type === 'gainers') {
-      data.topGainers = dbHelpers.getTopGainers.all();
+    const gainersNeeded = type === 'all' || type === 'gainers';
+    const losersNeeded = type === 'all' || type === 'losers';
+
+    const [topGainers, topLosers] = await Promise.all([
+      gainersNeeded ? dbHelpers.getTopGainers.all() : Promise.resolve(null),
+      losersNeeded ? dbHelpers.getTopLosers.all() : Promise.resolve(null)
+    ]);
+
+    if (gainersNeeded && topGainers) {
+      data.topGainers = topGainers;
     }
 
-    if (type === 'all' || type === 'losers') {
-      data.topLosers = dbHelpers.getTopLosers.all();
+    if (losersNeeded && topLosers) {
+      data.topLosers = topLosers;
     }
 
-    // Get overall stats
-    const totalStocks = dbHelpers.getAllStocks.all().length;
-    const totalFavorites = dbHelpers.getUserFavorites.all('default').length;
+    const [allStocks, favoriteRows] = await Promise.all([
+      dbHelpers.getAllStocks.all(),
+      dbHelpers.getUserFavorites.all('default')
+    ]);
+
+    const totalStocks = allStocks.length;
+    const totalFavorites = favoriteRows.length;
 
     data.stats = {
       totalStocks,

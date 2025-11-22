@@ -2,7 +2,7 @@ export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
 import { checkRedisHealth } from '@/lib/redis';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db/prisma';
 
 export async function GET() {
   // Simplified health check with timeout
@@ -15,10 +15,10 @@ export async function GET() {
   // Redis check with timeout (2 seconds)
   try {
     const redisCheckPromise = checkRedisHealth();
-    const timeoutPromise = new Promise((_, reject) => 
+    const timeoutPromise = new Promise((_, reject) =>
       setTimeout(() => reject(new Error('Redis check timeout')), 2000)
     );
-    
+
     const redisHealth = await Promise.race([redisCheckPromise, timeoutPromise]) as any;
     if (redisHealth?.status !== 'healthy') {
       health.redis = 'error';
@@ -30,10 +30,10 @@ export async function GET() {
   // Database check with timeout (2 seconds)
   try {
     const dbCheckPromise = prisma.$queryRaw`SELECT 1`;
-    const timeoutPromise = new Promise((_, reject) => 
+    const timeoutPromise = new Promise((_, reject) =>
       setTimeout(() => reject(new Error('DB check timeout')), 2000)
     );
-    
+
     await Promise.race([dbCheckPromise, timeoutPromise]);
     health.db = 'ok';
   } catch (error) {

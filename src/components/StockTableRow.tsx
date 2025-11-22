@@ -5,7 +5,7 @@
 
 import React, { useMemo, memo } from 'react';
 import { StockData } from '@/lib/types';
-import { formatBillions, formatPrice, formatPercent, formatMarketCapDiff } from '@/lib/format';
+import { formatBillions, formatPrice, formatPercent, formatMarketCapDiff } from '@/lib/utils/format';
 import { getCompanyName } from '@/lib/companyNames';
 import CompanyLogo from './CompanyLogo';
 import { SwipeableTableRow } from './SwipeableTableRow';
@@ -14,12 +14,14 @@ interface StockTableRowProps {
   stock: StockData;
   isFavorite: boolean;
   onToggleFavorite: () => void;
+  priority?: boolean; // Pre priority loading logov (above the fold)
 }
 
-export const StockTableRow = memo(({ 
-  stock, 
-  isFavorite, 
-  onToggleFavorite 
+export const StockTableRow = memo(({
+  stock,
+  isFavorite,
+  onToggleFavorite,
+  priority = false
 }: StockTableRowProps) => {
   // Memoize formatted values to prevent recalculation
   const formattedPrice = useMemo(() => formatPrice(stock.currentPrice), [stock.currentPrice]);
@@ -35,7 +37,7 @@ export const StockTableRow = memo(({
     >
       <td>
         <div className="logo-container">
-          <CompanyLogo ticker={stock.ticker} size={32} />
+          <CompanyLogo ticker={stock.ticker} size={32} priority={priority} />
         </div>
       </td>
       <td><strong>{stock.ticker}</strong></td>
@@ -51,7 +53,7 @@ export const StockTableRow = memo(({
         {formattedMarketCapDiff}
       </td>
       <td>
-        <button 
+        <button
           className={`favorite-btn ${isFavorite ? 'favorited' : ''}`}
           onClick={(e) => {
             e.preventDefault();

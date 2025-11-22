@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCachedData, setCachedData, getCacheKey } from '@/lib/redis';
-import { getCurrentPrice, getPreviousClose, getSharesOutstanding, computeMarketCap, computeMarketCapDiff, computePercentChange } from '@/lib/marketCapUtils';
+import { getCachedData, setCachedData } from '@/lib/redis/operations';
+import { getCacheKey } from '@/lib/redis/keys';
+import { computeMarketCap, computeMarketCapDiff, computePercentChange } from '@/lib/utils/marketCapUtils';
+import { prisma } from '@/lib/db/prisma';
+import { nowET } from '@/lib/utils/timeUtils';
 
 // Function to generate sector data based on ticker patterns
 function generateSectorFromTicker(ticker: string): { sector: string; industry: string } {
   const upperTicker = ticker.toUpperCase();
-  
+
   // Technology patterns (expanded)
   if (['AI', 'ML', 'SAAS', 'CLOUD', 'DATA', 'CYBER', 'SEC', 'NET', 'WEB', 'APP', 'SOFT', 'TECH', 'IT', 'COMP', 'PLTR', 'SNOW', 'NET', 'TEAM', 'WDAY', 'TTD', 'ZS', 'CRWD', 'PANW', 'FTNT', 'VEEV', 'TTWO', 'EA', 'SPOT', 'SHOP', 'MELI', 'NTES', 'PDD', 'BABA', 'TCEHY'].some(pattern => upperTicker.includes(pattern))) {
     return { sector: 'Technology', industry: 'Software' };
@@ -16,7 +19,7 @@ function generateSectorFromTicker(ticker: string): { sector: string; industry: s
   if (['PHONE', 'MOBILE', 'TEL', 'COMM', 'WIFI', '5G', '6G', 'TMUS', 'VZ', 'T'].some(pattern => upperTicker.includes(pattern))) {
     return { sector: 'Technology', industry: 'Communication Equipment' };
   }
-  
+
   // Financial patterns (expanded)
   if (['BANK', 'FIN', 'INS', 'CREDIT', 'LOAN', 'MORT', 'INVEST', 'CAP', 'TRUST', 'FUND', 'ASSET', 'WEALTH', 'JPM', 'BAC', 'WFC', 'C', 'USB', 'PNC', 'TFC', 'BK', 'BNS', 'BCS', 'HSBC', 'HDB', 'RY', 'UBS', 'SMFG', 'BBVA', 'MUFG', 'ITUB', 'BMO', 'LYG', 'NWG', 'TD'].some(pattern => upperTicker.includes(pattern))) {
     return { sector: 'Financial Services', industry: 'Banks' };
@@ -30,7 +33,7 @@ function generateSectorFromTicker(ticker: string): { sector: string; industry: s
   if (['PAY', 'PAYMENT', 'VISA', 'MASTERCARD', 'V', 'MA', 'PYPL', 'SQ', 'STRIPE', 'PAYX', 'GPN', 'FIS'].some(pattern => upperTicker.includes(pattern))) {
     return { sector: 'Financial Services', industry: 'Credit Services' };
   }
-  
+
   // Healthcare patterns (expanded)
   if (['PHARMA', 'DRUG', 'MED', 'BIO', 'GEN', 'THERA', 'CURE', 'HEALTH', 'MEDICAL', 'DIAG', 'LAB', 'CLINIC', 'LLY', 'JNJ', 'PFE', 'ABBV', 'MRK', 'BMY', 'AMGN', 'GILD', 'REGN', 'VRTX', 'BIIB', 'ALNY', 'ARGX', 'TAK', 'NVS', 'AZN', 'GSK', 'SNY', 'MDT', 'NVO'].some(pattern => upperTicker.includes(pattern))) {
     return { sector: 'Healthcare', industry: 'Drug Manufacturers' };
@@ -41,7 +44,7 @@ function generateSectorFromTicker(ticker: string): { sector: string; industry: s
   if (['HOSP', 'CLINIC', 'CARE', 'NURS', 'DOCTOR', 'PHYSICIAN', 'DENTAL', 'VET', 'UNH', 'CVS', 'ANTM', 'CI', 'HUM', 'HCA', 'CAH', 'DHI', 'WELL', 'VTR'].some(pattern => upperTicker.includes(pattern))) {
     return { sector: 'Healthcare', industry: 'Healthcare Plans' };
   }
-  
+
   // Consumer patterns (expanded)
   if (['FOOD', 'BEV', 'DRINK', 'REST', 'CAFE', 'DINE', 'EAT', 'MEAL', 'SNACK', 'CANDY', 'CHOCO', 'KO', 'PEP', 'HSY', 'KDP', 'MNST', 'CCL', 'ROST', 'HLT', 'MAR', 'SBUX', 'MCD', 'CMG', 'YUM', 'DRI', 'DPZ', 'WING', 'SHAK', 'CHIP', 'PZZA'].some(pattern => upperTicker.includes(pattern))) {
     return { sector: 'Consumer Defensive', industry: 'Packaged Foods' };
@@ -58,7 +61,7 @@ function generateSectorFromTicker(ticker: string): { sector: string; industry: s
   if (['GAME', 'GAMING', 'PLAY', 'FUN', 'ENTERTAIN', 'DIS', 'NFLX', 'RBLX', 'ATVI', 'EA', 'TTWO', 'ZNGA', 'GLUU', 'SCPL', 'SKLZ', 'U', 'PLTK', 'HUYA', 'DOYU', 'BILI', 'IQ', 'TME', 'SPOT', 'PINS', 'SNAP', 'TWTR', 'META', 'GOOGL', 'GOOG', 'BIDU', 'SINA', 'WB', 'YELP', 'GRUB', 'UBER', 'LYFT', 'DASH', 'SQ', 'SHOP', 'ETSY', 'AMZN', 'EBAY', 'JD', 'PDD', 'VIPS', 'TCEHY', 'BABA', 'TME', 'NIO', 'XPEV', 'LI', 'TSLA', 'RIVN', 'LCID', 'FSR', 'WKHS', 'NKLA', 'HYLN', 'CANOO', 'ARVL', 'LEV', 'GOEV', 'SOLO', 'WKHS', 'IDEX', 'AYRO', 'BLNK', 'CHPT', 'EVGO', 'VLTA', 'SBE', 'TPGY', 'CLII', 'DCRB', 'GIK', 'LGVW', 'THBR', 'PSTH', 'IPOB', 'IPOC', 'IPOD', 'IPOE', 'IPOF', 'IPOG', 'IPOH', 'IPOI', 'IPOJ', 'IPOK', 'IPOL', 'IPOM', 'IPON', 'IPOO', 'IPOP', 'IPOQ', 'IPOR', 'IPOS', 'IPOT', 'IPOU', 'IPOV', 'IPOW', 'IPOX', 'IPOY', 'IPOZ'].some(pattern => upperTicker.includes(pattern))) {
     return { sector: 'Consumer Cyclical', industry: 'Entertainment' };
   }
-  
+
   // Energy patterns (expanded)
   if (['OIL', 'GAS', 'PETRO', 'FUEL', 'ENERGY', 'POWER', 'ELECTRIC', 'SOLAR', 'WIND', 'RENEW', 'GREEN', 'XOM', 'CVX', 'COP', 'EOG', 'SLB', 'HAL', 'BKR', 'PSX', 'VLO', 'MPC', 'KMI', 'ENB', 'ET', 'WMB', 'OKE', 'SHEL', 'TTE', 'BP', 'RDS', 'TTE', 'EQNR', 'CNQ', 'PBR', 'VALE', 'RIO', 'BHP', 'FCX', 'NEM', 'GOLD', 'KL', 'AEM', 'AG', 'PAAS', 'SLV', 'WPM', 'CRCL', 'KVUE', 'ARGX', 'FANG', 'OXY', 'IMO', 'SU', 'CVE', 'CNQ', 'AR', 'DVN', 'PXD', 'EOG', 'MRO', 'APA', 'HES', 'XEC', 'CXO', 'FANG', 'PARR', 'VLO', 'MPC', 'PSX', 'DK', 'CVI', 'ALTO', 'REGI', 'GPRE', 'PEIX', 'GPP', 'CLNE', 'BLDP', 'PLUG', 'FCEL', 'BE', 'HYZN', 'NKLA', 'WKHS', 'RIDE', 'GOEV', 'SOLO', 'AYRO', 'IDEX', 'CANOO', 'ARVL', 'LEV', 'RIVN', 'LCID', 'FSR', 'NIO', 'XPEV', 'LI', 'TSLA', 'GM', 'F', 'TM', 'HMC', 'PCAR', 'CTVA', 'BLL', 'CCK', 'OI', 'WRK', 'IP', 'PKG', 'SEE', 'AVY', 'SLGN'].some(pattern => upperTicker.includes(pattern))) {
     return { sector: 'Energy', industry: 'Oil & Gas Integrated' };
@@ -69,7 +72,7 @@ function generateSectorFromTicker(ticker: string): { sector: string; industry: s
   if (['CHEM', 'PLASTIC', 'POLYMER', 'FERTIL', 'PESTIC', 'DYES', 'PAINT', 'COAT', 'LIN', 'APD', 'ECL', 'SHW', 'DD', 'DOW', 'CTVA', 'NEM', 'GOLD', 'KL', 'AEM', 'AG', 'PAAS', 'SLV', 'WPM', 'CRCL', 'KVUE', 'ARGX', 'FANG', 'OXY', 'IMO', 'SU', 'CVE', 'CNQ', 'AR', 'DVN', 'PXD', 'EOG', 'MRO', 'APA', 'HES', 'XEC', 'CXO', 'FANG', 'PARR', 'VLO', 'MPC', 'PSX', 'DK', 'CVI', 'ALTO', 'REGI', 'GPRE', 'PEIX', 'GPP', 'CLNE', 'BLDP', 'PLUG', 'FCEL', 'BE', 'HYZN', 'NKLA', 'WKHS', 'RIDE', 'GOEV', 'SOLO', 'AYRO', 'IDEX', 'CANOO', 'ARVL', 'LEV', 'RIVN', 'LCID', 'FSR', 'NIO', 'XPEV', 'LI', 'TSLA', 'GM', 'F', 'TM', 'HMC', 'PCAR', 'CTVA', 'BLL', 'CCK', 'OI', 'WRK', 'IP', 'PKG', 'SEE', 'AVY', 'SLGN'].some(pattern => upperTicker.includes(pattern))) {
     return { sector: 'Basic Materials', industry: 'Chemicals' };
   }
-  
+
   // Industrial patterns (expanded)
   if (['MANUF', 'FACTORY', 'PLANT', 'MACHINE', 'TOOL', 'EQUIP', 'INDUST', 'ENGINEER', 'CONSTR', 'BUILD', 'CAT', 'DE', 'CNH', 'AGCO', 'TEX', 'OSK', 'ALG', 'MTW', 'TWI', 'ASTE', 'CMCO', 'GENC', 'HY', 'LNN', 'LECO', 'MIDD', 'MOG.A', 'MOG.B', 'RBC', 'SNA', 'SWK', 'TTC', 'WCC', 'WWD', 'XYL', 'ZBRA', 'ZWS', 'AOS', 'AOSL', 'APPH', 'ARLO', 'AVT', 'BELFB', 'BGG', 'BIOX', 'BLDR', 'BMI', 'BRC', 'CARR', 'CBRL', 'CCK', 'CHD', 'CLH', 'CLX', 'COKE', 'CPB', 'CRL', 'CSL', 'CTAS', 'CTVA', 'CVGW', 'DAN', 'DCI', 'DORM', 'DOV', 'EME', 'EMR', 'ENR', 'EPC', 'ESNT', 'FAST', 'FERG', 'FLO', 'FLS', 'FMC', 'FOXA', 'FOX', 'FRT', 'GATX', 'GEF', 'GEF.B', 'GPC', 'GWW', 'HII', 'HON', 'HWM', 'IEX', 'IP', 'IR', 'ITT', 'J', 'JBHT', 'JBL', 'JBT', 'K', 'KMB', 'KWR', 'LEA', 'LII', 'LKQ', 'LOW', 'MAS', 'MAT', 'MCD', 'MHK', 'MLM', 'MMM', 'MOS', 'MSM', 'NEM', 'NOC', 'NSC', 'NUE', 'NWL', 'ODFL', 'OI', 'ORLY', 'PACK', 'PCAR', 'PH', 'PKG', 'PNR', 'POOL', 'PPG', 'PWR', 'R', 'RHI', 'ROL', 'ROP', 'RSG', 'SEE', 'SHW', 'SJM', 'SLGN', 'SON', 'SPGI', 'STE', 'SWK', 'TEL', 'TEX', 'TMO', 'TNC', 'TXT', 'UFPI', 'UNP', 'VMC', 'WAT', 'WCC', 'WMS', 'WRK', 'WSO', 'WWD', 'XYL', 'ZBRA'].some(pattern => upperTicker.includes(pattern))) {
     return { sector: 'Industrials', industry: 'Specialty Industrial Machinery' };
@@ -80,18 +83,18 @@ function generateSectorFromTicker(ticker: string): { sector: string; industry: s
   if (['SHIP', 'BOAT', 'MARINE', 'NAVAL', 'PORT', 'HARBOR', 'DOCK', 'CARGO', 'CONTAINER', 'UPS', 'FDX', 'EXPD', 'CHRW', 'XPO', 'ODFL', 'SAIA', 'LTLF', 'YRCW', 'ARCB', 'KNX', 'HTLD', 'WERN', 'MRTN', 'PTSI', 'CVLG', 'DSKE', 'HUBG', 'JBHT', 'LSTR', 'MATW', 'R', 'RHI', 'ROL', 'ROP', 'RSG', 'SEE', 'SHW', 'SJM', 'SLGN', 'SON', 'SPGI', 'STE', 'SWK', 'TEL', 'TEX', 'TMO', 'TNC', 'TXT', 'UFPI', 'UNP', 'VMC', 'WAT', 'WCC', 'WMS', 'WRK', 'WSO', 'WWD', 'XYL', 'ZBRA'].some(pattern => upperTicker.includes(pattern))) {
     return { sector: 'Industrials', industry: 'Integrated Freight & Logistics' };
   }
-  
+
   // Real Estate patterns (expanded)
   // POZNÁMKA: NVO, SONY, RIO, AON, DOV, POOL, MOS, AOS, ROL, BRO, LDOS, PODD, SOLV, AXON, DDOG, IMO, ON sú v coreSectors a NESMIE byť tu
   if (['REIT', 'REAL', 'ESTATE', 'PROPERTY', 'LAND', 'BUILDING', 'OFFICE', 'WAREHOUSE', 'MALL', 'APARTMENT', 'CONDO', 'AMT', 'PLD', 'EQIX', 'CCI', 'DLR', 'PSA', 'SPG', 'O', 'VICI', 'WELL', 'VTR', 'EQR', 'AVB', 'MAA', 'ESS', 'UDR', 'CPT', 'AIV', 'AVB', 'BRX', 'BXP', 'CDR', 'CIO', 'CLDT', 'CUZ', 'DEI', 'DLR', 'EQR', 'ESS', 'FRT', 'GEO', 'GTY', 'HCP', 'HST', 'HR', 'IRM', 'KIM', 'KRC', 'LAMR', 'MAC', 'MAA', 'MPW', 'NHI', 'NLY', 'NNN', 'O', 'OHI', 'OUT', 'PEAK', 'PLD', 'PSA', 'REG', 'ROIC', 'SBRA', 'SKT', 'SPG', 'SRC', 'STAG', 'STOR', 'TCO', 'UDR', 'VICI', 'VNO', 'VTR', 'WELL', 'WPC', 'WY'].some(pattern => upperTicker.includes(pattern))) {
     return { sector: 'Real Estate', industry: 'REIT - Specialty' };
   }
-  
+
   // Utilities patterns (expanded)
   if (['UTIL', 'POWER', 'ELECTRIC', 'GAS', 'WATER', 'SEWER', 'WASTE', 'RECYCLE', 'RENEW', 'SOLAR', 'WIND', 'NEE', 'DUK', 'SO', 'D', 'AEP', 'XEL', 'DTE', 'ED', 'EIX', 'WEC', 'PEG', 'AEE', 'CMS', 'CNP', 'ATO', 'NI', 'SRE', 'DTM', 'AES', 'AEE', 'ALE', 'ATO', 'BKH', 'CMS', 'CNP', 'CPK', 'DTE', 'DUK', 'ED', 'EIX', 'ES', 'ETR', 'EVRG', 'FE', 'LNT', 'NEE', 'NI', 'NRG', 'OGE', 'OKE', 'PCG', 'PEG', 'PNW', 'PPL', 'SRE', 'SO', 'SRE', 'WEC', 'XEL'].some(pattern => upperTicker.includes(pattern))) {
     return { sector: 'Utilities', industry: 'Utilities - Regulated Electric' };
   }
-  
+
   // Communication patterns (expanded)
   if (['TELECOM', 'PHONE', 'MOBILE', 'CELL', 'WIRELESS', 'BROADBAND', 'INTERNET', 'FIBER', 'CABLE', 'SATELLITE', 'VZ', 'T', 'TMUS', 'CMCSA', 'CHTR', 'LBRDK', 'LBRDA', 'CABO', 'ATUS', 'CTL', 'FTR', 'IRDM', 'ORBC', 'SATS', 'VSAT', 'GILT', 'IDT', 'LUMN', 'Q', 'SHEN', 'TDS', 'TU', 'USM', 'VZ', 'T', 'TMUS', 'CMCSA', 'CHTR', 'LBRDK', 'LBRDA', 'CABO', 'ATUS', 'CTL', 'FTR', 'IRDM', 'ORBC', 'SATS', 'VSAT', 'GILT', 'IDT', 'LUMN', 'Q', 'SHEN', 'TDS', 'TU', 'USM'].some(pattern => upperTicker.includes(pattern))) {
     return { sector: 'Communication Services', industry: 'Telecom Services' };
@@ -99,13 +102,13 @@ function generateSectorFromTicker(ticker: string): { sector: string; industry: s
   if (['MEDIA', 'NEWS', 'PRESS', 'PUBLISH', 'BROADCAST', 'TV', 'RADIO', 'STREAM', 'GAME', 'ENTERTAIN', 'DIS', 'NFLX', 'FOX', 'FOXA', 'PARA', 'LYV', 'CMCSA', 'CHTR', 'LBRDK', 'LBRDA', 'CABO', 'ATUS', 'CTL', 'FTR', 'IRDM', 'ORBC', 'SATS', 'VSAT', 'GILT', 'IDT', 'LUMN', 'Q', 'SHEN', 'TDS', 'TU', 'USM', 'VZ', 'T', 'TMUS', 'CMCSA', 'CHTR', 'LBRDK', 'LBRDA', 'CABO', 'ATUS', 'CTL', 'FTR', 'IRDM', 'ORBC', 'SATS', 'VSAT', 'GILT', 'IDT', 'LUMN', 'Q', 'SHEN', 'TDS', 'TU', 'USM'].some(pattern => upperTicker.includes(pattern))) {
     return { sector: 'Communication Services', industry: 'Entertainment' };
   }
-  
+
   // Default fallback based on common patterns
   if (upperTicker.length <= 3) {
     // Short tickers are often major companies - assign based on common patterns
     return { sector: 'Technology', industry: 'Software' };
   }
-  
+
   // Final fallback: Ak sa nenašla žiadna zhoda, vrátiť generický sektor
   return { sector: 'Other', industry: 'Uncategorized' };
 }
@@ -121,7 +124,7 @@ async function fetchSectorData(ticker: string): Promise<{ sector?: string; indus
 
     const url = `https://api.polygon.io/v3/reference/tickers/${ticker}?apiKey=${apiKey}`;
     console.log(`🔍 Fetching sector data for ${ticker} from: ${url.replace(apiKey, '***')}`);
-    
+
     const response = await fetch(url, {
       headers: { 'Accept': 'application/json' },
       signal: AbortSignal.timeout(5000)
@@ -134,12 +137,12 @@ async function fetchSectorData(ticker: string): Promise<{ sector?: string; indus
 
     const data = await response.json();
     console.log(`🔍 Sector data response for ${ticker}:`, JSON.stringify(data, null, 2));
-    
+
     const result = {
       sector: data.results?.sector || undefined,
       industry: data.results?.industry || undefined
     };
-    
+
     console.log(`🔍 Extracted sector data for ${ticker}:`, result);
     return result;
   } catch (error) {
@@ -158,6 +161,7 @@ interface StockData {
   sector?: string;
   industry?: string;
   lastUpdated: string;
+  companyName?: string;
 }
 
 export async function GET(request: NextRequest) {
@@ -175,7 +179,7 @@ export async function GET(request: NextRequest) {
     }
 
     let tickerList = tickers.split(',').map(t => t.trim().toUpperCase());
-    
+
     // Apply limit if specified
     if (limit && limit > 0) {
       tickerList = tickerList.slice(0, limit);
@@ -186,7 +190,7 @@ export async function GET(request: NextRequest) {
     if (!apiKey) {
       console.error('❌ Polygon API key not configured');
       return NextResponse.json(
-        { 
+        {
           success: false,
           error: 'Polygon API key not configured',
           message: 'Please configure POLYGON_API_KEY environment variable',
@@ -201,112 +205,264 @@ export async function GET(request: NextRequest) {
     const results: StockData[] = [];
     const errors: string[] = [];
 
-    // Process tickers in parallel with better error handling
-    const promises = tickerList.map(async (ticker, index) => {
+    // Batch fetch cache pre všetky tickery naraz (normalizované API s fallback)
+    const cacheKeys = tickerList.map(ticker => getCacheKey(project, ticker, 'stock'));
+    const cachedDataMap = new Map<string, StockData>();
+
+    try {
+      const { mGetJsonMap } = await import('@/lib/redis/operations');
+      if (cacheKeys.length > 0) {
+        const cachedData = await mGetJsonMap<StockData>(cacheKeys);
+        // Map keys back to tickers
+        tickerList.forEach((ticker, index) => {
+          const cacheKey = cacheKeys[index]!;
+          const data = cachedData.get(cacheKey);
+          if (data) {
+            cachedDataMap.set(ticker, data);
+          }
+        });
+      }
+    } catch (e) {
+      console.warn('Batch cache fetch failed, fallback handled by mGetJson:', e);
+      // Continue without cache - will fetch from DB
+    }
+
+    // Zozbieraj tickery, ktoré potrebujú fetch z DB (cache miss)
+    const tickersNeedingFetch = tickerList.filter(ticker => !cachedDataMap.has(ticker));
+
+    // Batch fetch statických dát z DB (namiesto Polygon API)
+    const staticDataMap = new Map<string, {
+      name: string | null;
+      sector: string | null;
+      industry: string | null;
+      sharesOutstanding: number | null;
+    }>();
+    const prevCloseMap = new Map<string, number>();
+    const sessionPriceMap = new Map<string, { price: number; changePct: number }>();
+
+    if (tickersNeedingFetch.length > 0) {
+      console.log(`🔄 Loading data from DB for ${tickersNeedingFetch.length} tickers...`);
+
       try {
-        // Add delay between requests to avoid rate limiting
-        // Increased delay to reduce rate limiting issues
-        if (index > 0) {
-          await new Promise(resolve => setTimeout(resolve, 200)); // 200ms delay between requests
-        }
+        // Načítaj statické dáta z Ticker tabuľky (vrátane denormalizovaného latestPrevClose)
+        const tickers = await prisma.ticker.findMany({
+          where: {
+            symbol: { in: tickersNeedingFetch }
+          },
+          select: {
+            symbol: true,
+            name: true,
+            sector: true,
+            industry: true,
+            sharesOutstanding: true,
+            latestPrevClose: true, // Denormalized previous close
+            latestPrevCloseDate: true,
+          }
+        });
 
-        // Try to get from cache first
-        const cacheKey = getCacheKey(project, ticker, 'stock');
-        const cachedData = await getCachedData(cacheKey);
+        tickers.forEach(ticker => {
+          staticDataMap.set(ticker.symbol, {
+            name: ticker.name,
+            sector: ticker.sector,
+            industry: ticker.industry,
+            sharesOutstanding: ticker.sharesOutstanding,
+          });
 
-        if (cachedData) {
-          console.log(`✅ Cache hit for ${ticker} in project ${project}`);
-          results.push(cachedData);
-          return;
-        }
+          // Use denormalized latestPrevClose from Ticker (fastest)
+          if (ticker.latestPrevClose && ticker.latestPrevClose > 0) {
+            prevCloseMap.set(ticker.symbol, ticker.latestPrevClose);
+          }
+        });
 
-        console.log(`🔄 Cache miss for ${ticker} in project ${project}, fetching from Polygon...`);
+        // Fallback: Načítaj previousClose z DailyRef pre tickery, ktoré nemajú latestPrevClose
+        const tickersWithoutPrevClose = tickersNeedingFetch.filter(t => !prevCloseMap.has(t));
+        if (tickersWithoutPrevClose.length > 0) {
+          const today = nowET();
+          today.setHours(0, 0, 0, 0);
+          const weekAgo = new Date(today);
+          weekAgo.setDate(weekAgo.getDate() - 7);
 
-        // Fetch fresh data from Polygon with better error handling
-        const shares = await getSharesOutstanding(ticker);
-        const prevClose = await getPreviousClose(ticker);
-        
-        // Get snapshot data from Polygon.io v2 API with timeout and retry logic
-        const snapshotUrl = `https://api.polygon.io/v2/snapshot/locale/us/markets/stocks/tickers/${ticker}?apikey=${apiKey}`;
-        
-        let snapshotResponse;
-        try {
-          snapshotResponse = await fetch(snapshotUrl, {
-            signal: AbortSignal.timeout(5000), // 5 second timeout
-            headers: {
-              'Accept': 'application/json',
-              'User-Agent': 'PremarketPrice/1.0'
+          const dailyRefs = await prisma.dailyRef.findMany({
+            where: {
+              symbol: { in: tickersWithoutPrevClose },
+              date: { gte: weekAgo, lte: today } // <= today (not < tomorrow) - get last trading day
+            },
+            orderBy: {
+              date: 'desc'
             }
           });
-        } catch (fetchError) {
-          console.error(`❌ Fetch error for ${ticker}:`, fetchError);
-          errors.push(`${ticker}: Network error - ${fetchError instanceof Error ? fetchError.message : 'Unknown error'}`);
-          return;
+
+          // Vytvor mapu pre najnovší previousClose pre každý ticker
+          dailyRefs.forEach(dr => {
+            if (!prevCloseMap.has(dr.symbol)) {
+              prevCloseMap.set(dr.symbol, dr.previousClose);
+            }
+          });
         }
-        
-        if (!snapshotResponse.ok) {
-          const errorMessage = `HTTP ${snapshotResponse.status}: ${snapshotResponse.statusText}`;
-          console.error(`❌ API error for ${ticker}:`, errorMessage);
-          
-          // Handle specific error codes
-          if (snapshotResponse.status === 429) {
-            errors.push(`${ticker}: Rate limit exceeded - please try again later`);
-          } else if (snapshotResponse.status === 401) {
-            errors.push(`${ticker}: API key invalid or expired`);
-          } else if (snapshotResponse.status === 403) {
-            errors.push(`${ticker}: API access forbidden`);
-          } else if (snapshotResponse.status === 404) {
-            errors.push(`${ticker}: Ticker not found`);
-          } else if (snapshotResponse.status >= 500) {
-            errors.push(`${ticker}: Server error (${snapshotResponse.status})`);
-          } else {
-            errors.push(`${ticker}: ${errorMessage}`);
+
+        // Batch fetch SessionPrice (current prices) - NO Polygon API!
+        const today = nowET();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const weekAgo = new Date(today);
+        weekAgo.setDate(weekAgo.getDate() - 7);
+
+        const sessionPrices = await prisma.sessionPrice.findMany({
+          where: {
+            symbol: { in: tickersNeedingFetch },
+            date: { gte: weekAgo, lt: tomorrow },
+          },
+          orderBy: [
+            { lastTs: 'desc' }, // Most recent first
+            { session: 'asc' },
+          ],
+        });
+
+        // Get latest price per ticker (manual distinct)
+        const latestSessionPrices = new Map<string, typeof sessionPrices[0]>();
+        sessionPrices.forEach(sp => {
+          const existing = latestSessionPrices.get(sp.symbol);
+          if (!existing || (sp.lastTs && existing.lastTs && sp.lastTs > existing.lastTs)) {
+            latestSessionPrices.set(sp.symbol, sp);
           }
-          return;
+        });
+
+        latestSessionPrices.forEach((sp, symbol) => {
+          sessionPriceMap.set(symbol, {
+            price: sp.lastPrice,
+            changePct: sp.changePct,
+          });
+        });
+
+        console.log(`✅ Loaded ${staticDataMap.size} static records, ${prevCloseMap.size} previousClose values, and ${sessionPriceMap.size} current prices from DB`);
+      } catch (dbError) {
+        console.error('❌ Error loading data from DB:', dbError);
+        // Continue - will skip tickers without data
+      }
+    }
+
+    // Process tickers with concurrency limit (10 paralelných requestov)
+    const { processBatchWithConcurrency } = await import('@/lib/batchProcessor');
+
+    const processTicker = async (ticker: string, index: number): Promise<StockData | null> => {
+      try {
+        // Check cache first (už máme v mape)
+        const cachedData = cachedDataMap.get(ticker);
+        if (cachedData) {
+          console.log(`✅ Cache hit for ${ticker} in project ${project}`);
+          return cachedData;
         }
 
-        let snapshotData;
-        try {
-          snapshotData = await snapshotResponse.json();
-        } catch (parseError) {
-          console.error(`❌ JSON parse error for ${ticker}:`, parseError);
-          errors.push(`${ticker}: Invalid response format`);
-          return;
+        console.log(`🔄 Cache miss for ${ticker} in project ${project}, loading from DB...`);
+
+        // Get static data from DB (loaded in batch above)
+        const staticData = staticDataMap.get(ticker);
+        const shares = staticData?.sharesOutstanding || 0;
+        let prevClose = prevCloseMap.get(ticker) || 0;
+
+        // Get sector/industry from DB (already loaded)
+        const sector = staticData?.sector || null;
+        const industry = staticData?.industry || null;
+        const companyName = staticData?.name || null;
+
+        // Get current price from SessionPrice (batch-loaded above) - NO Polygon API call!
+        const sessionPriceData = sessionPriceMap.get(ticker);
+        let currentPrice = sessionPriceData?.price || null;
+        const percentChangeFromDB = sessionPriceData?.changePct || 0;
+
+        // CRITICAL: Never use currentPrice as previousClose fallback!
+        // If we don't have previousClose, try to fetch from Polygon API as last resort
+        if (prevClose === 0) {
+          console.warn(`⚠️ No previousClose in DB for ${ticker}, trying Polygon API...`);
+          try {
+            const { getPreviousClose } = await import('@/lib/utils/marketCapUtils');
+            const polygonPrevClose = await getPreviousClose(ticker);
+            if (polygonPrevClose > 0) {
+              prevCloseMap.set(ticker, polygonPrevClose);
+              // Update DB for future use
+              const lastTradingDay = (await import('@/lib/utils/timeUtils')).getLastTradingDay();
+              lastTradingDay.setHours(0, 0, 0, 0);
+              await prisma.dailyRef.upsert({
+                where: { symbol_date: { symbol: ticker, date: lastTradingDay } },
+                update: { previousClose: polygonPrevClose },
+                create: { symbol: ticker, date: lastTradingDay, previousClose: polygonPrevClose }
+              });
+              // Denormalize
+              await prisma.ticker.update({
+                where: { symbol: ticker },
+                data: { latestPrevClose: polygonPrevClose, latestPrevCloseDate: lastTradingDay }
+              });
+              console.log(`✅ Fetched previousClose from Polygon for ${ticker}: $${polygonPrevClose}`);
+            } else {
+              console.warn(`⚠️ Skipping ${ticker} - no previousClose available from Polygon either`);
+              errors.push(`${ticker}: Missing previous close data`);
+              return null;
+            }
+          } catch (polygonError) {
+            console.warn(`⚠️ Skipping ${ticker} - failed to fetch previousClose from Polygon:`, polygonError);
+            errors.push(`${ticker}: Missing previous close data`);
+            return null;
+          }
         }
 
-        // Validate response structure
-        if (!snapshotData || typeof snapshotData !== 'object') {
-          console.error(`❌ Invalid response structure for ${ticker}:`, snapshotData);
-          errors.push(`${ticker}: Invalid response structure`);
-          return;
+        // If no current price from SessionPrice, try to use previousClose as fallback (at least show something)
+        if (currentPrice === null || currentPrice === undefined || currentPrice === 0) {
+          if (prevClose > 0) {
+            console.warn(`⚠️ No current price for ${ticker}, using previousClose as fallback`);
+            currentPrice = prevClose; // Use previousClose as currentPrice fallback
+          } else {
+            console.warn(`⚠️ Skipping ${ticker} - no current price data available`);
+            errors.push(`${ticker}: No current price data`);
+            return null;
+          }
         }
 
-        // Get current price using robust fallback logic
-        const currentPrice = getCurrentPrice(snapshotData);
-        
-        if (currentPrice === null || currentPrice === undefined) {
-          console.error(`❌ No valid price data for ${ticker}:`, snapshotData);
-          errors.push(`${ticker}: No valid price data`);
-          return;
-        }
-        
         // Calculate derived values
-        const percentChange = computePercentChange(currentPrice, prevClose);
+        // Use percentChange from SessionPrice if available, otherwise calculate
+        // Note: If currentPrice === prevClose (fallback), percentChange should be 0
+        const finalPercentChange = (currentPrice === prevClose)
+          ? 0
+          : (percentChangeFromDB !== 0
+            ? percentChangeFromDB
+            : computePercentChange(currentPrice, prevClose));
         const marketCap = computeMarketCap(currentPrice, shares);
         const marketCapDiff = computeMarketCapDiff(currentPrice, prevClose, shares);
 
-        // Fetch sector data (non-blocking)
-        const sectorData = await fetchSectorData(ticker);
-        
-        // Debug: Log sector data for first few tickers
-        if (ticker === 'AAPL' || ticker === 'MSFT') {
-          console.log(`🔍 Debug - Sector data for ${ticker}:`, sectorData);
+        // Use sector/industry from DB (already loaded in staticDataMap)
+        // Fallback to pattern-based if not in DB
+        let finalSector = sector;
+        let finalIndustry = industry;
+
+        if (!finalSector || !finalIndustry) {
+          // Fallback to pattern-based sector detection
+          const fallbackData = generateSectorFromTicker(ticker);
+          finalSector = finalSector || fallbackData.sector;
+          finalIndustry = finalIndustry || fallbackData.industry;
         }
 
-        // Intelligent sector data generation for all stocks
-        let finalSectorData = sectorData;
-        if (!sectorData.sector && !sectorData.industry) {
-          // Core fallback mapping for major stocks
+        const stockData: StockData = {
+          ticker,
+          currentPrice,
+          closePrice: prevClose,
+          percentChange: finalPercentChange,
+          marketCap,
+          marketCapDiff,
+          lastUpdated: new Date().toISOString()
+        };
+
+        // Add sector/industry if available
+        if (finalSector) {
+          stockData.sector = finalSector;
+        }
+        if (finalIndustry) {
+          stockData.industry = finalIndustry;
+        }
+        if (companyName) {
+          stockData.companyName = companyName;
+        }
+
+        /* Legacy code - removed to use DB instead of Polygon API
           const coreSectors: { [key: string]: { sector: string; industry: string } } = {
             // Technology (major players)
             'AAPL': { sector: 'Technology', industry: 'Consumer Electronics' },
@@ -523,48 +679,36 @@ export async function GET(request: NextRequest) {
             'PAAS': { sector: 'Basic Materials', industry: 'Silver' },
             'SLV': { sector: 'Basic Materials', industry: 'Silver' }
           };
-          
-          // Check if ticker is in core sectors
-          if (coreSectors[ticker]) {
-            finalSectorData = coreSectors[ticker];
-            console.log(`🔍 Using core sector data for ${ticker}:`, finalSectorData);
-          } else {
-            // Generate sector data based on ticker patterns and company names
-            finalSectorData = generateSectorFromTicker(ticker);
-            console.log(`🔍 Generated sector data for ${ticker}:`, finalSectorData);
-          }
-        }
+        */
 
-        const stockData: StockData = {
-          ticker,
-          currentPrice,
-          closePrice: prevClose,
-          percentChange,
-          marketCap,
-          marketCapDiff,
-          lastUpdated: new Date().toISOString()
-        };
-        if (finalSectorData.sector) {
-          stockData.sector = finalSectorData.sector;
-        }
-        if (finalSectorData.industry) {
-          stockData.industry = finalSectorData.industry;
-        }
+        // Cache the result for 5 minutes (increased from 2 minutes)
+        const cacheKey = getCacheKey(project, ticker, 'stock');
+        await setCachedData(cacheKey, stockData, 300);
 
-        // Cache the result for 2 minutes
-        await setCachedData(cacheKey, stockData, 120);
-
-        results.push(stockData);
         console.log(`✅ Fetched and cached ${ticker} for project ${project}`);
+        return stockData;
 
       } catch (error) {
         console.error(`❌ Error processing ${ticker}:`, error);
         errors.push(`${ticker}: ${error instanceof Error ? error.message : 'Unknown error'}`);
         return null;
       }
-    });
+    };
 
-    await Promise.all(promises);
+    // Process all tickers with concurrency limit (10 paralelných requestov)
+    const processedResults = await processBatchWithConcurrency(
+      tickerList,
+      processTicker,
+      10, // concurrency limit
+      100 // delay between batches (ms)
+    );
+
+    // Filter out null results and add to results array
+    processedResults.forEach((result) => {
+      if (result) {
+        results.push(result);
+      }
+    });
 
     // Filter out null results
     const validResults = results.filter(result => result !== null);
@@ -593,9 +737,9 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('❌ Error in /api/stocks:', error);
     return NextResponse.json(
-      { 
+      {
         success: false,
-        error: 'Internal server error', 
+        error: 'Internal server error',
         details: error instanceof Error ? error.message : 'Unknown error',
         timestamp: new Date().toISOString()
       },

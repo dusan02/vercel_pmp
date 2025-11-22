@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prometheusMetrics } from '@/lib/prometheus';
+import { prometheusMetrics } from '@/lib/api/prometheus';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const format = searchParams.get('format') || 'prometheus';
-    
+
     // Basic security check for production
     if (process.env.NODE_ENV === 'production') {
       const authHeader = request.headers.get('authorization');
       const expectedAuth = `Bearer ${process.env.METRICS_SECRET_KEY || 'default-metrics-key'}`;
-      
+
       if (authHeader !== expectedAuth) {
         return NextResponse.json(
           { error: 'Unauthorized' },
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
 
     // Default Prometheus format
     const metrics = prometheusMetrics.getMetrics();
-    
+
     return new NextResponse(metrics, {
       status: 200,
       headers: {
@@ -44,11 +44,11 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('❌ Error in /api/metrics:', error);
-    
+
     return NextResponse.json(
-      { 
+      {
         success: false,
-        error: 'Metrics collection failed', 
+        error: 'Metrics collection failed',
         details: error instanceof Error ? error.message : 'Unknown error',
         timestamp: new Date().toISOString()
       },

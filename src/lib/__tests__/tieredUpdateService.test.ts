@@ -1,4 +1,4 @@
-import { TieredUpdateService, createTieredUpdateService } from '../tieredUpdateService';
+import { TieredUpdateService, createTieredUpdateService } from '../jobs/tieredUpdateService';
 
 describe('TieredUpdateService', () => {
   let service: TieredUpdateService;
@@ -51,7 +51,7 @@ describe('TieredUpdateService', () => {
   describe('getUpdateStats', () => {
     it('should return valid statistics', () => {
       const stats = service.getUpdateStats();
-      
+
       expect(stats.totalCompanies).toBe(360); // Changed from 400 to 360
       expect(stats.premiumCount).toBe(50);
       expect(stats.standardCount).toBe(100);
@@ -96,26 +96,26 @@ describe('TieredUpdateService', () => {
   describe('getTickersByTier', () => {
     it('should return all tiers grouped correctly', () => {
       const tiers = service.getTickersByTier();
-      
+
       expect(Object.keys(tiers)).toHaveLength(4);
-      expect(tiers.premium.length).toBeGreaterThan(0);
-      expect(tiers.standard.length).toBeGreaterThan(0);
-      expect(tiers.extended.length).toBeGreaterThan(0);
-      expect(tiers.extendedPlus.length).toBeGreaterThan(0);
+      expect(tiers.premium!.length).toBeGreaterThan(0);
+      expect(tiers.standard!.length).toBeGreaterThan(0);
+      expect(tiers.extended!.length).toBeGreaterThan(0);
+      expect(tiers.extendedPlus!.length).toBeGreaterThan(0);
     });
   });
 
   describe('API calls calculation', () => {
     it('should calculate API calls per hour correctly', () => {
       const stats = service.getUpdateStats();
-      
+
       // Verify the calculation logic works
-      const expectedCalculation = 
-        (stats.premiumCount * 60) + 
-        (stats.standardCount * 20) + 
-        (stats.extendedCount * 12) + 
+      const expectedCalculation =
+        (stats.premiumCount * 60) +
+        (stats.standardCount * 20) +
+        (stats.extendedCount * 12) +
         (stats.extendedPlusCount * 4); // 15 min = 4 calls/hour
-      
+
       expect(stats.apiCallsPerHour).toBe(expectedCalculation);
     });
   });
@@ -126,4 +126,4 @@ describe('TieredUpdateService', () => {
       expect(Array.isArray(tickersForUpdate)).toBe(true);
     });
   });
-}); 
+});

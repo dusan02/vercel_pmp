@@ -1,5 +1,5 @@
 // Blog Scheduler Runner - Standalone worker process
-import { BlogScheduler } from '../src/lib/blogSchedulerCore';
+import { BlogScheduler } from '../src/lib/jobs/blogSchedulerCore';
 
 console.log('🚀 Starting Blog Scheduler Runner...');
 

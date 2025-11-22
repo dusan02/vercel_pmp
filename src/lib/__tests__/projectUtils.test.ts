@@ -1,4 +1,4 @@
-import { detectProjectFromDomain, getProjectFromHost, getProjectConfig, getProjectCachePrefix } from '../projectUtils';
+import { detectProjectFromDomain, getProjectFromHost, getProjectConfig, getProjectCachePrefix } from '../utils/projectUtils';
 
 describe('Project Utils', () => {
   describe('detectProjectFromDomain', () => {

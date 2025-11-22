@@ -7,14 +7,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createHash } from 'crypto';
 import { redisClient } from '@/lib/redis';
-import { getDateET } from '@/lib/rankIndexes';
-import { detectSession, nowET } from '@/lib/timeUtils';
-import { logger } from '@/lib/logger';
+import { getDateET } from '@/lib/redis/ranking';
+import { logger } from '@/lib/utils/logger';
+import { detectSession, nowET } from '@/lib/utils/timeUtils';
+
 
 export const dynamic = 'force-dynamic'; // Allow dynamic rendering
 export const runtime = 'nodejs';
 
-type MinimalRow = { 
+type MinimalRow = {
   t: string;  // ticker
   p: number;  // price
   c: number;  // changePct
@@ -60,33 +61,33 @@ function getRankKey(
 
 export async function GET(req: NextRequest) {
   const startTime = Date.now();
-  
+
   try {
     const { searchParams } = new URL(req.url);
-    
+
     // Parse query parameters
     const sortParam = searchParams.get('sort') || 'mcap';
-    const sort = (['mcap', 'chgPct', 'price'].includes(sortParam) 
-      ? sortParam 
+    const sort = (['mcap', 'chgPct', 'price'].includes(sortParam)
+      ? sortParam
       : 'mcap') as 'mcap' | 'chgPct' | 'price';
-    
+
     const dirParam = searchParams.get('dir') || 'desc';
     const dir = (dirParam === 'asc' ? 'asc' : 'desc') as 'asc' | 'desc';
-    
+
     const limitParam = parseInt(searchParams.get('limit') || '50', 10);
     const limit = Math.min(Math.max(1, limitParam), 200); // Max 200
-    
+
     const q = (searchParams.get('q') || '').trim().toUpperCase();
     const cursor = decCursor(searchParams.get('cursor'));
-    
+
     // Get date and session
     const date = getDateET();
     const etNow = nowET();
     const session = detectSession(etNow);
-    
+
     // Get ZSET key
     const zKey = getRankKey(sort, date, session, dir);
-    
+
     // Check ETag version
     const verKey = `meta:${zKey}:v`;
     let ver = '0';
@@ -98,16 +99,16 @@ export async function GET(req: NextRequest) {
     } catch (e) {
       logger.warn({ err: e }, 'Could not get version for ETag');
     }
-    
+
     // Get ranked symbols from ZSET
     let withScores: string[] = [];
     const isDesc = dir === 'desc';
-    
+
     try {
       if (!redisClient || !redisClient.isOpen) {
         throw new Error('Redis not available');
       }
-      
+
       if (!cursor) {
         // First page: use ZRANGE (desc uses negated scores, so always ZRANGE)
         const result = await redisClient.zRange(zKey, 0, limit - 1, { WITHSCORES: true });
@@ -124,7 +125,7 @@ export async function GET(req: NextRequest) {
         // Note: For desc, scores are negated, so we use ZRANGEBYSCORE with proper bounds
         const s = cursor.score;
         const extra = limit + 20; // Get extra to filter
-        
+
         if (isDesc) {
           // For desc with negated scores: cursor.score is negative, so we need <= cursor.score (more negative)
           const result = await redisClient.zRangeByScore(zKey, s, '-inf', {
@@ -161,7 +162,7 @@ export async function GET(req: NextRequest) {
         { status: 503 }
       );
     }
-    
+
     // Parse pairs: [symbol, score, symbol, score, ...]
     // Handle both flat array format and object format
     const pairs: Array<{ sym: string; score: number }> = [];
@@ -174,24 +175,24 @@ export async function GET(req: NextRequest) {
         pairs.push({ sym, score });
       }
     }
-    
+
     // Tiebreaker: skip cursor entry if present
     let sliced = pairs;
     if (cursor?.sym) {
       sliced = pairs.filter(p => !(p.score === cursor.score && p.sym === cursor.sym));
     }
-    
+
     // Prefix filter for search (q)
     if (q) {
       sliced = sliced.filter(p => p.sym.startsWith(q));
     }
-    
+
     // Limit to requested size
     const pagePairs = sliced.slice(0, limit);
-    
+
     // Get minimal payload from Redis hashes `stock:<SYM>`
     const rows: MinimalRow[] = [];
-    
+
     if (pagePairs.length > 0 && redisClient && redisClient.isOpen) {
       try {
         // Batch get from Redis hashes using pipeline
@@ -200,13 +201,13 @@ export async function GET(req: NextRequest) {
           pipe.hGetAll(`stock:${sym}`);
         }
         const results = await pipe.exec();
-        
+
         for (let i = 0; i < pagePairs.length; i++) {
           const pair = pagePairs[i];
           if (!pair) continue;
           const { sym } = pair;
           const result = results?.[i];
-          
+
           if (result && Array.isArray(result) && result[1] && typeof result[1] === 'object') {
             const h = result[1] as Record<string, string>;
             const row: MinimalRow = {
@@ -267,11 +268,11 @@ export async function GET(req: NextRequest) {
         })));
       }
     }
-    
+
     // Calculate ETag
     const etagInput = JSON.stringify({ ver, n: rows.length, f: rows[0]?.t, l: rows.at(-1)?.t });
     const etag = createHash('sha1').update(etagInput).digest('hex');
-    
+
     // Check If-None-Match
     const ifNoneMatch = req.headers.get('if-none-match');
     if (ifNoneMatch === etag) {
@@ -285,15 +286,15 @@ export async function GET(req: NextRequest) {
         }
       });
     }
-    
+
     // Calculate next cursor
     const lastPair = pagePairs[pagePairs.length - 1];
     const nextCursor = lastPair
       ? encCursor(lastPair.score, lastPair.sym)
       : null;
-    
+
     const duration = Date.now() - startTime;
-    
+
     return NextResponse.json(
       { rows, nextCursor },
       {
@@ -306,13 +307,13 @@ export async function GET(req: NextRequest) {
         }
       }
     );
-    
+
   } catch (error) {
     logger.error({ err: error }, 'Optimized stocks API error');
-    
+
     return NextResponse.json(
       { rows: [], nextCursor: null, error: 'Internal server error' },
-      { 
+      {
         status: 500,
         headers: {
           'Cache-Control': 'no-store'

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dbHelpers } from '@/lib/database';
+import { dbHelpers } from '@/lib/db/database';
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,13 +17,13 @@ export async function GET(request: NextRequest) {
     }
 
     let history;
-    
+
     if (startDate && endDate) {
       // Get history for specific date range
-      history = dbHelpers.getPriceHistoryRange.all(ticker, startDate, endDate);
+      history = await dbHelpers.getPriceHistoryRange.all(ticker, startDate, endDate);
     } else {
       // Get recent history
-      history = dbHelpers.getPriceHistory.all(ticker, limit);
+      history = await dbHelpers.getPriceHistory.all(ticker, limit);
     }
 
     return NextResponse.json({

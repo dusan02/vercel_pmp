@@ -1,8 +1,8 @@
 // Global test utilities type declarations
 declare global {
   var testUtils: {
-    createMockStockData: (ticker: string, overrides?: any) => any;
-    createMockApiResponse: (data: any, success?: boolean) => any;
+    createMockStockData: (ticker: string, overrides?: Record<string, unknown>) => Record<string, unknown>;
+    createMockApiResponse: (data: unknown, success?: boolean) => unknown;
     wait: (ms: number) => Promise<void>;
   };
 
@@ -13,4 +13,4 @@ declare global {
   }
 }
 
-export {}; 
+export { };

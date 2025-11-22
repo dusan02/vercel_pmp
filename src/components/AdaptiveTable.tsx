@@ -3,7 +3,7 @@ import React from 'react';
 import { useStockTable } from '@/hooks/useAdaptiveTable';
 import { SortKey } from '@/hooks/useSortableData';
 import CompanyLogo from './CompanyLogo';
-import { formatBillions } from '@/lib/format';
+import { formatBillions } from '@/lib/utils/format';
 import { getCompanyName } from '@/lib/companyNames';
 import { StockData } from '@/lib/types';
 
@@ -84,7 +84,7 @@ export const AdaptiveTable: React.FC<AdaptiveTableProps> = ({
     return headers;
   };
 
-  const renderRow = (stock: StockData) => {
+  const renderRow = (stock: StockData, priority: boolean = false) => {
     const cells: React.ReactElement[] = [];
 
     visibleColumns.forEach(column => {
@@ -93,7 +93,7 @@ export const AdaptiveTable: React.FC<AdaptiveTableProps> = ({
           cells.push(
             <td key="logo">
               <div className="logo-container">
-                <CompanyLogo ticker={stock.ticker} size={32} />
+                <CompanyLogo ticker={stock.ticker} size={32} priority={priority} />
               </div>
             </td>
           );
@@ -115,8 +115,8 @@ export const AdaptiveTable: React.FC<AdaptiveTableProps> = ({
         case 'currentPrice':
           cells.push(
             <td key="currentPrice">
-              {isFinite(Number(stock.currentPrice)) 
-                ? Number(stock.currentPrice).toFixed(2) 
+              {isFinite(Number(stock.currentPrice))
+                ? Number(stock.currentPrice).toFixed(2)
                 : '0.00'}
             </td>
           );
@@ -146,7 +146,7 @@ export const AdaptiveTable: React.FC<AdaptiveTableProps> = ({
           const isFavorited = isFavorite(stock.ticker);
           cells.push(
             <td key="favorites">
-              <button 
+              <button
                 className={`favorite-btn ${isFavorited ? 'favorited' : ''}`}
                 onClick={() => onToggleFavorite(stock.ticker)}
                 title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
@@ -175,11 +175,11 @@ export const AdaptiveTable: React.FC<AdaptiveTableProps> = ({
       {/* Device indicator for debugging */}
       {process.env.NODE_ENV === 'development' && (
         <div className="device-indicator">
-          {isMobile ? '📱 Mobile' : isTablet ? '📱 Tablet' : '🖥️ Desktop'} 
+          {isMobile ? '📱 Mobile' : isTablet ? '📱 Tablet' : '🖥️ Desktop'}
           - {visibleColumns.length} columns visible
         </div>
       )}
-      
+
       <table className="adaptive-table">
         <thead>
           <tr>
@@ -187,9 +187,9 @@ export const AdaptiveTable: React.FC<AdaptiveTableProps> = ({
           </tr>
         </thead>
         <tbody>
-          {stocks.map((stock) => (
+          {stocks.map((stock, index) => (
             <tr key={stock.ticker}>
-              {renderRow(stock)}
+              {renderRow(stock, index < 25)} {/* Priority loading pre prvých 25 logov */}
             </tr>
           ))}
         </tbody>

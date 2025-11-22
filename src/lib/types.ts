@@ -133,7 +133,7 @@ export interface CachedStockData {
 }
 
 // API response wrapper - unified definition
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
@@ -142,7 +142,7 @@ export interface ApiResponse<T = any> {
   cacheAge?: number;
   duration?: number;
   count?: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // Ingest result from worker

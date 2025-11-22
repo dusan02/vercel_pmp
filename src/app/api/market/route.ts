@@ -2,6 +2,10 @@
  * Market API - Server-side sorted listing with Redis ZSET indexes
  * Provides <100ms responses for 100-600 rows
  */
+/**
+ * Market API - Server-side sorted listing with Redis ZSET indexes
+ * Provides <100ms responses for 100-600 rows
+ */
 
 export const runtime = 'nodejs';
 
@@ -11,25 +15,24 @@ import {
   getRankCount,
   getRankMinMax,
   getManyLastWithDate,
-  getDateET,
   getStatsFromCache,
-  type RankField
-} from '@/lib/rankIndexes';
-import { mapToRedisSession, detectSession } from '@/lib/timeUtils';
+  RankField
+} from '@/lib/redis/ranking';
+import { detectSession, mapToRedisSession } from '@/lib/utils/timeUtils';
+import { getDateET } from '@/lib/redis/ranking';
 
-export async function GET(req: NextRequest) {
+export async function GET(request: NextRequest) {
   const startTime = Date.now();
-  
+  const searchParams = request.nextUrl.searchParams;
+
+  // Parse query parameters
+  const sort = (searchParams.get('sort') ?? 'chg') as RankField;
+  const order = (searchParams.get('order') ?? 'desc') as 'asc' | 'desc';
+  const limit = Math.min(Number(searchParams.get('limit') ?? 100), 600);
+  const cursor = Number(searchParams.get('cursor') ?? 0);
+  const sessionParam = searchParams.get('session') ?? 'live';
+
   try {
-    const { searchParams } = new URL(req.url);
-    
-    // Parse query parameters
-    const sort = (searchParams.get('sort') ?? 'chg') as RankField;
-    const order = (searchParams.get('order') ?? 'desc') as 'asc' | 'desc';
-    const limit = Math.min(Number(searchParams.get('limit') ?? 100), 600);
-    const cursor = Number(searchParams.get('cursor') ?? 0);
-    const sessionParam = searchParams.get('session') ?? 'live';
-    
     // Map session to Redis-compatible session
     // Handle 'closed' -> use 'after' (last available data) or detect current session
     let mappedSession = sessionParam as 'pre' | 'live' | 'after' | 'closed';
@@ -38,7 +41,7 @@ export async function GET(req: NextRequest) {
       const currentSession = detectSession();
       mappedSession = currentSession === 'closed' ? 'after' : mapToRedisSession(currentSession) || 'after';
     }
-    
+
     const session = mapToRedisSession(mappedSession);
     if (!session) {
       return NextResponse.json(
@@ -52,7 +55,7 @@ export async function GET(req: NextRequest) {
 
     // Get ranked symbols
     const symbols = await getRankedSymbols(date, session, sort, order, cursor, limit);
-    
+
     if (symbols.length === 0) {
       return NextResponse.json({
         date,
@@ -73,13 +76,13 @@ export async function GET(req: NextRequest) {
 
     // MGET last:date:session:symbol for batch
     const lastData = await getManyLastWithDate(date, session, symbols);
-    
+
     // Build items array
     const items = symbols
       .map(symbol => {
         const data = lastData.get(symbol);
         if (!data || data.p == null) return null;
-        
+
         return {
           symbol,
           p: data.p,
@@ -96,7 +99,7 @@ export async function GET(req: NextRequest) {
 
     // Get stats from cache (HSET) - faster than 4x ZSET operations
     let stats = await getStatsFromCache(date, session);
-    
+
     // Fallback to ZSET min/max if cache not available
     if (!stats) {
       const [priceStats, capStats, capdiffStats, chgStats] = await Promise.all([
@@ -135,8 +138,8 @@ export async function GET(req: NextRequest) {
       nextCursor: cursor + items.length
     }, {
       headers: {
-        'Cache-Control': session === 'live' 
-          ? 'no-store' 
+        'Cache-Control': session === 'live'
+          ? 'no-store'
           : 'public, s-maxage=15, stale-while-revalidate=30',
         'X-Response-Time': `${duration}ms`,
         'X-Session': sessionParam,
@@ -151,4 +154,3 @@ export async function GET(req: NextRequest) {
     );
   }
 }
-

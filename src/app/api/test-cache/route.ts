@@ -1,24 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentPrice } from '@/lib/marketCapUtils';
+import { getCurrentPrice } from '@/lib/utils/marketCapUtils';
 
 export async function GET(request: NextRequest) {
   console.log('🧪 Test cache endpoint called');
-  
+
   try {
     const apiKey = 'Vi_pMLcusE8RA_SUvkPAmiyziVzlmOoX';
     const testTickers = ['AAPL', 'MSFT', 'GOOGL', 'NVDA'];
-    
+
     const results = [];
-    
+
     for (const ticker of testTickers) {
       try {
         console.log(`🧪 Testing ${ticker}...`);
-        
+
         const url = `https://api.polygon.io/v2/snapshot/locale/us/markets/stocks/tickers/${ticker}?apikey=${apiKey}`;
         const response = await fetch(url, {
           signal: AbortSignal.timeout(10000)
         });
-        
+
         if (!response.ok) {
           results.push({
             ticker,
@@ -27,9 +27,9 @@ export async function GET(request: NextRequest) {
           });
           continue;
         }
-        
+
         const data = await response.json();
-        
+
         if (data.status !== 'OK') {
           results.push({
             ticker,
@@ -38,10 +38,10 @@ export async function GET(request: NextRequest) {
           });
           continue;
         }
-        
+
         // Test the price extraction
         const price = getCurrentPrice(data);
-        
+
         results.push({
           ticker,
           success: true,
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
           prevDayClose: data.ticker?.prevDay?.c,
           timestamp: new Date().toISOString()
         });
-        
+
       } catch (error) {
         results.push({
           ticker,
@@ -61,12 +61,12 @@ export async function GET(request: NextRequest) {
         });
       }
     }
-    
+
     return NextResponse.json({
       testResults: results,
       timestamp: new Date().toISOString()
     });
-    
+
   } catch (error) {
     console.error('Test cache error:', error);
     return NextResponse.json(

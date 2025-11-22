@@ -1,9 +1,23 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import React from 'react';
-import { MarketHeatmap, CompanyNode, useElementResize } from './MarketHeatmap';
+import { MarketHeatmap, CompanyNode, useElementResize, HeatmapMetric } from './MarketHeatmap';
 import { StockData } from '@/lib/types';
+
+/**
+ * Typ pre API response z /api/heatmap endpointu
+ */
+interface HeatmapApiResponse {
+  success: boolean;
+  data?: StockData[];
+  error?: string;
+  message?: string;
+  count?: number;
+  lastUpdatedAt?: string;
+  cached?: boolean;
+  timestamp?: string;
+}
 
 /**
  * Props pre ResponsiveMarketHeatmap
@@ -19,8 +33,6 @@ export type ResponsiveMarketHeatmapProps = {
   refreshInterval?: number;
   /** Počiatočný timeframe */
   initialTimeframe?: 'day' | 'week' | 'month';
-  /** Fullscreen režim - heatmapa zaberie celú obrazovku bez okrajov */
-  fullscreen?: boolean;
 };
 
 /**
@@ -31,6 +43,9 @@ function transformStockDataToCompanyNode(stock: StockData): CompanyNode | null {
     return null;
   }
 
+  const marketCapDiff = stock.marketCapDiff || 0;
+  const marketCapDiffAbs = Math.abs(marketCapDiff);
+
   return {
     symbol: stock.ticker,
     name: stock.companyName || stock.ticker,
@@ -38,7 +53,8 @@ function transformStockDataToCompanyNode(stock: StockData): CompanyNode | null {
     industry: stock.industry,
     marketCap: stock.marketCap || 0,
     changePercent: stock.percentChange || 0,
-    marketCapDiff: stock.marketCapDiff,
+    marketCapDiff: marketCapDiff,
+    marketCapDiffAbs: marketCapDiffAbs,
     currentPrice: stock.currentPrice,
   };
 }
@@ -52,8 +68,10 @@ async function fetchHeatmapData(
   endpoint: string,
   timeframe: 'day' | 'week' | 'month',
   lastEtag: string | null = null,
-  setEtag?: (etag: string | null) => void
-): Promise<CompanyNode[]> {
+  setEtag?: (etag: string | null) => void,
+  forceRefresh: boolean = false,
+  abortController?: AbortController
+): Promise<[CompanyNode[], string | null]> {
   try {
     // Použijeme optimalizovaný heatmap endpoint, ktorý vracia všetky firmy s cache
     let url: URL;
@@ -67,31 +85,52 @@ async function fetchHeatmapData(
       url = new URL('/api/heatmap', window.location.origin);
     }
 
+    // Pridaj force=true parameter ak je potrebný (napr. po vyčistení cache)
+    if (forceRefresh) {
+      url.searchParams.set('force', 'true');
+    }
+
     const headers: HeadersInit = {
       'Accept': 'application/json',
     };
-    
-    // Pridaj If-None-Match header pre ETag support
-    if (lastEtag) {
+
+    // Pridaj If-None-Match header pre ETag support (iba ak nie je force refresh)
+    if (lastEtag && !forceRefresh) {
       headers['If-None-Match'] = lastEtag;
     }
 
-    // Pridaj timeout (90 sekúnd) pre pomalé requesty - /api/stocks môže trvať dlhšie kvôli cache
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 90000); // 90s timeout
-    
+    // Použijeme poskytnutý controller alebo vytvoríme nový
+    const controller = abortController || new AbortController();
+    let timeoutId: NodeJS.Timeout | null = null;
+
+    // Timeout len ak sme vytvorili nový controller
+    if (!abortController) {
+      timeoutId = setTimeout(() => {
+        if (!controller.signal.aborted) {
+          controller.abort();
+        }
+      }, 30000); // 30s timeout
+    }
+
     const response = await fetch(url.toString(), {
       cache: 'no-store',
       headers,
       signal: controller.signal,
     });
-    
-    clearTimeout(timeoutId);
-    
+
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+
+    // Skontroluj, či bol request abortovaný
+    if (controller.signal.aborted) {
+      throw new DOMException('Request was aborted', 'AbortError');
+    }
+
     // 304 Not Modified - dáta sa nezmenili, použijeme existujúce
     if (response.status === 304) {
       console.log('📊 Heatmap: 304 Not Modified - using cached data');
-      return []; // Vráť prázdne pole, aby sa nezmenili dáta
+      return [[], null]; // Vráť prázdne pole, aby sa nezmenili dáta
     }
 
     if (!response.ok) {
@@ -113,50 +152,77 @@ async function fetchHeatmapData(
       setEtag(etag);
     }
 
-    const result = await response.json();
-    
+    const result: HeatmapApiResponse = await response.json();
+
+    // Skontroluj znovu, či bol request abortovaný počas parsovania
+    if (controller.signal.aborted) {
+      throw new DOMException('Request was aborted', 'AbortError');
+    }
+
     console.log('📊 Heatmap API response:', {
       success: result.success,
       hasData: !!result.data,
       dataLength: result.data?.length || 0,
       error: result.error,
       count: result.count,
+      lastUpdatedAt: result.lastUpdatedAt,
+      cached: result.cached,
     });
-    
+
+    // Log data freshness
+    if (result.lastUpdatedAt) {
+      const dataAge = Date.now() - new Date(result.lastUpdatedAt).getTime();
+      const dataAgeMinutes = Math.floor(dataAge / 60000);
+      if (dataAgeMinutes > 10) {
+        console.warn(`⚠️ Heatmap data is ${dataAgeMinutes} minutes old (lastUpdated: ${result.lastUpdatedAt})`);
+      } else {
+        console.log(`✅ Heatmap data is fresh (${dataAgeMinutes} minutes old)`);
+      }
+    }
+
     if (!result.success) {
       const errorMsg = result.error || 'Failed to load heatmap data';
       console.error('❌ Heatmap API returned error:', errorMsg);
       throw new Error(errorMsg);
     }
 
-    // API môže vracať rôzne formáty
-    let stocks: StockData[] = [];
-
-    if (result.data && Array.isArray(result.data)) {
+    // Helper funkcia pre parsovanie rôznych formátov API response
+    const parseApiResponse = (result: any): StockData[] => {
       // Formát z /api/heatmap (preferovaný, má sektor a industry)
-      stocks = result.data;
-      console.log(`📊 Parsed ${stocks.length} stocks from result.data`);
-    } else if (result.rows && Array.isArray(result.rows)) {
+      if (result.data && Array.isArray(result.data)) {
+        console.log(`📊 Parsed ${result.data.length} stocks from result.data`);
+        return result.data;
+      }
+
       // Formát z /api/stocks/optimized (fallback, nemá sektor/industry)
-      stocks = result.rows.map((row: any) => ({
-        ticker: row.t || row.ticker,
-        currentPrice: row.p || row.currentPrice || 0,
-        closePrice: row.p || row.currentPrice || 0,
-        percentChange: row.c || row.percentChange || 0,
-        marketCap: row.m || row.marketCap || 0,
-        marketCapDiff: row.d || row.marketCapDiff || 0,
-        companyName: row.n || row.companyName,
-        // Optimized endpoint nemá sektor/industry, použijeme fallback
-        sector: row.s || 'Unknown',
-        industry: row.i || 'Unknown',
-      }));
-      console.log(`📊 Parsed ${stocks.length} stocks from result.rows`);
-    } else if (Array.isArray(result)) {
-      stocks = result;
-      console.log(`📊 Parsed ${stocks.length} stocks from result array`);
-    } else {
+      if (result.rows && Array.isArray(result.rows)) {
+        const stocks = result.rows.map((row: any) => ({
+          ticker: row.t || row.ticker,
+          currentPrice: row.p || row.currentPrice || 0,
+          closePrice: row.p || row.currentPrice || 0,
+          percentChange: row.c || row.percentChange || 0,
+          marketCap: row.m || row.marketCap || 0,
+          marketCapDiff: row.d || row.marketCapDiff || 0,
+          companyName: row.n || row.companyName,
+          // Optimized endpoint nemá sektor/industry, použijeme fallback
+          sector: row.s || 'Unknown',
+          industry: row.i || 'Unknown',
+        }));
+        console.log(`📊 Parsed ${stocks.length} stocks from result.rows`);
+        return stocks;
+      }
+
+      // Priamy array formát
+      if (Array.isArray(result)) {
+        console.log(`📊 Parsed ${result.length} stocks from result array`);
+        return result;
+      }
+
       console.warn('⚠️ Unexpected API response format:', result);
-    }
+      return [];
+    };
+
+    const stocks = parseApiResponse(result);
 
     // Transformujeme na CompanyNode a filtrujeme neplatné
     const companies = stocks
@@ -165,12 +231,31 @@ async function fetchHeatmapData(
 
     console.log(`📊 Heatmap API: Prijatých ${stocks.length} firiem z API, po transformácii ${companies.length} firiem s sector/industry`);
 
-    return companies;
+    return [companies, result.lastUpdatedAt || null];
   } catch (error) {
+    // Skontroluj, či bol request abortovaný
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw error; // Re-throw AbortError, aby sa mohol správne spracovať v loadData
+    }
+
+    // Skontroluj, či bol abortovaný cez signal
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw error; // Re-throw AbortError
+    }
+
     console.error('Error fetching heatmap data:', error);
-    return [];
+    throw error; // Re-throw ostatné chyby
   }
 }
+
+/**
+ * Wrapper komponent, ktorý poskytuje responzívnu veľkosť
+ * a načítava dáta z API
+ */
+import { useWebSocket } from '@/hooks/useWebSocket';
+import { PriceUpdate } from '@/lib/types';
+
+// ... existing imports ...
 
 /**
  * Wrapper komponent, ktorý poskytuje responzívnu veľkosť
@@ -182,63 +267,191 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
   autoRefresh = true,
   refreshInterval = 30000, // 30s - zladené s CACHE_TTL (30s)
   initialTimeframe = 'day',
-  fullscreen = false,
 }) => {
   // Všetky hooks musia byť na začiatku, pred akýmkoľvek podmieneným returnom
   // Poradie: useRef, useState, useEffect, useCallback, useMemo
   const { ref, size } = useElementResize();
-  const [data, setData] = useState<CompanyNode[]>([]);
+  // CRITICAL: Použijeme null pre počiatočný stav, aby sme zabránili hydration mismatch
+  // SSR renderuje null, client hydration tiež začína s null, potom sa načítajú dáta
+  const [data, setData] = useState<CompanyNode[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month'>(initialTimeframe);
+  const [metric, setMetric] = useState<HeatmapMetric>('percent');
   const [fallbackSize, setFallbackSize] = useState({ width: 800, height: 600 });
   const [lastEtag, setLastEtag] = useState<string | null>(null);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
+  const isInitialLoadRef = useRef(true);
+  const currentDataRef = useRef<CompanyNode[]>([]);
+  const isLoadingRef = useRef(false);
+  const lastLoadTimeRef = useRef<number>(0);
+  const [isMounted, setIsMounted] = useState(false);
 
-  // Načítanie dát s ETag support
-  const loadData = useCallback(async () => {
+  // Ref pre AbortController - používa sa na cleanup pri unmount alebo zmenách
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Zabezpeč, že komponent je mounted pred načítaním dát (hydration safety)
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Aktualizuj ref pri každej zmene dát
+  useEffect(() => {
+    if (data) {
+      currentDataRef.current = data;
+    }
+  }, [data]);
+
+  // WebSocket integration
+  useWebSocket({
+    onPriceUpdate: (updates: PriceUpdate[]) => {
+      if (!data || data.length === 0) return;
+
+      console.log('📡 Heatmap: WebSocket price updates received:', updates.length);
+
+      setData(prevData => {
+        if (!prevData) return null;
+
+        // Create a map of updates for faster lookup
+        const updateMap = new Map(updates.map(u => [u.ticker, u]));
+        let hasChanges = false;
+
+        const newData = prevData.map(node => {
+          const update = updateMap.get(node.symbol);
+          if (update) {
+            hasChanges = true;
+            return {
+              ...node,
+              currentPrice: update.currentPrice,
+              changePercent: update.percentChange,
+              marketCap: update.marketCap,
+              marketCapDiff: update.marketCapDiff,
+              marketCapDiffAbs: Math.abs(update.marketCapDiff || 0)
+            };
+          }
+          return node;
+        });
+
+        if (hasChanges) {
+          setLastUpdatedAt(new Date().toISOString());
+          return newData;
+        }
+        return prevData;
+      });
+    },
+    onConnect: () => console.log('✅ Heatmap: WebSocket connected'),
+    onDisconnect: () => console.log('❌ Heatmap: WebSocket disconnected'),
+    // We don't filter by favorites here, we want updates for all visible stocks
+    // If needed, we could extract tickers from 'data' but that might be too many subscriptions
+    // For now, let's rely on the server broadcasting relevant updates or the hook handling it
+    favorites: []
+  });
+
+  // Načítanie dát s ETag support (s throttling)
+  const loadData = useCallback(async (force: boolean = false) => {
+    // Throttling - minimálne 1 sekunda medzi requestmi (iba ak nie je force)
+    const now = Date.now();
+    const timeSinceLastLoad = now - lastLoadTimeRef.current;
+    const minInterval = force ? 0 : 1000; // 1 sekunda (alebo 0 ak je force)
+
+    if (isLoadingRef.current && !force) {
+      console.log('⏳ Heatmap: Load already in progress, skipping...');
+      return;
+    }
+
+    if (timeSinceLastLoad < minInterval && lastLoadTimeRef.current > 0 && !force) {
+      console.log(`⏳ Heatmap: Throttling - waiting ${minInterval - timeSinceLastLoad}ms...`);
+      return;
+    }
     // Pri auto-refresh nechceme zobrazovať loading, ak už máme dáta
-    const hasData = data.length > 0;
-    if (!hasData) {
+    const hasData = currentDataRef.current && currentDataRef.current.length > 0;
+    const isFirstLoad = isInitialLoadRef.current;
+
+    isLoadingRef.current = true;
+    lastLoadTimeRef.current = now;
+
+    // Zobraz loading ak nemáme dáta alebo je to force refresh
+    if (!hasData || force) {
       setLoading(true);
     }
     setError(null);
-    
+
     const loadStartTime = Date.now();
-    
+
     try {
-      console.log('🔄 Heatmap: Starting data fetch...');
-      const companies = await fetchHeatmapData(apiEndpoint, timeframe, lastEtag, setLastEtag);
+      console.log('🔄 Heatmap: Starting data fetch...', { hasData, isFirstLoad, force, lastEtag: lastEtag ? 'present' : 'null' });
+
+      // Pri prvom načítaní, force refresh alebo po vyčistení cache nepoužívame ETag
+      const etagToUse = (isFirstLoad || !hasData || force) ? null : lastEtag;
+      const shouldForce = force || isFirstLoad || !hasData;
+
+      // Vytvor nový AbortController pre tento request
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
+      const [companies, updatedAt] = await fetchHeatmapData(
+        apiEndpoint,
+        timeframe,
+        etagToUse,
+        setLastEtag,
+        shouldForce,
+        controller // Predaj controller do fetchHeatmapData
+      );
       const loadDuration = Date.now() - loadStartTime;
-      
+
       // Prázdne pole znamená 304 Not Modified - dáta sa nezmenili
       if (companies.length > 0) {
         console.log(`✅ Heatmap: Načítaných ${companies.length} firiem za ${loadDuration}ms`);
         setData(companies);
+        if (updatedAt) {
+          setLastUpdatedAt(updatedAt);
+        }
         setLoading(false);
-      } else if (!hasData) {
-        // Ak nemáme dáta a dostali sme 304, musíme načítať znovu bez ETag
-        console.log('🔄 Heatmap: 304 on initial load, retrying without ETag...');
+        isInitialLoadRef.current = false;
+        isLoadingRef.current = false;
+      } else if (!hasData || isFirstLoad || force) {
+        // Ak nemáme dáta alebo je to prvý load/force a dostali sme 304/prázdne pole, musíme načítať znovu s force
+        console.log('🔄 Heatmap: No data received on initial load/force, retrying with force=true...');
         const retryStartTime = Date.now();
-        const companiesRetry = await fetchHeatmapData(apiEndpoint, timeframe, null, setLastEtag);
+        const [companiesRetry, updatedAtRetry] = await fetchHeatmapData(
+          apiEndpoint,
+          timeframe,
+          null,
+          setLastEtag,
+          true // Force refresh pri retry
+        );
         const retryDuration = Date.now() - retryStartTime;
         if (companiesRetry.length > 0) {
           console.log(`✅ Heatmap: Načítaných ${companiesRetry.length} firiem po retry za ${retryDuration}ms`);
           setData(companiesRetry);
+          if (updatedAtRetry) {
+            setLastUpdatedAt(updatedAtRetry);
+          }
+          isInitialLoadRef.current = false;
         } else {
-          console.warn('⚠️ Heatmap: No data received after retry');
-          setError('No data available - please check server logs');
+          console.warn('⚠️ Heatmap: No data received after retry - server may be processing data');
+          setError('No data available - server may be processing data. Please wait a moment and refresh.');
         }
         setLoading(false);
+        isLoadingRef.current = false;
       } else {
+        // Máme už dáta a dostali sme 304 - dáta sa nezmenili, nič nerobíme
         console.log(`📊 Heatmap: 304 Not Modified - data unchanged (${loadDuration}ms)`);
         setLoading(false);
+        isLoadingRef.current = false;
       }
     } catch (err) {
+      // Ignoruj AbortError ak bol request úmyselne abortovaný (cleanup)
+      if (err instanceof Error && err.name === 'AbortError') {
+        console.log('🔄 Heatmap: Request aborted (component unmounted or dependency changed)');
+        return; // Nezobrazuj error, ak bol request úmyselne abortovaný
+      }
+
       const loadDuration = Date.now() - loadStartTime;
       const errorMessage = err instanceof Error ? err.message : 'Failed to load data';
-      
+
       console.error(`❌ Heatmap load error after ${loadDuration}ms:`, err);
-      
+
       // Špecifická správa pre timeout
       if (err instanceof Error && (err.name === 'AbortError' || errorMessage.includes('timeout'))) {
         setError('Request timeout - server is processing data, please wait and refresh');
@@ -246,16 +459,36 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
         setError(`Error: ${errorMessage}`);
       }
       setLoading(false);
+      isLoadingRef.current = false;
     }
-  }, [apiEndpoint, timeframe, lastEtag, data]);
+  }, [apiEndpoint, timeframe, lastEtag]);
 
   // Počiatočné načítanie a auto-refresh
   useEffect(() => {
-    loadData();
+    // Reset initial load flag when component mounts
+    isInitialLoadRef.current = true;
+    // Pri prvom načítaní použijeme force=false, aby sme použili cache (ak existuje)
+    // Force=true len ak cache neexistuje alebo je prázdny
+    loadData(false);
 
     if (autoRefresh) {
-      const interval = setInterval(loadData, refreshInterval);
-      return () => clearInterval(interval);
+      const interval = setInterval(() => loadData(false), refreshInterval);
+      return () => {
+        clearInterval(interval);
+        // Abort aktuálny request pri cleanup
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
+          abortControllerRef.current = null;
+        }
+      };
+    } else {
+      // Cleanup aj ak nie je auto-refresh
+      return () => {
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
+          abortControllerRef.current = null;
+        }
+      };
     }
   }, [loadData, autoRefresh, refreshInterval]);
 
@@ -276,177 +509,148 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
     // Dáta sa načítajú automaticky cez useEffect
   }, []);
 
-  // Ulož pomer strán z normálneho režimu (pred prepnutím do fullscreen)
-  const [aspectRatio, setAspectRatio] = useState<number | null>(null);
+  // Handler pre zmenu metriky
+  const handleMetricChange = useCallback((newMetric: HeatmapMetric) => {
+    setMetric(newMetric);
+    // Dáta sa nemusia načítavať znova, len sa zmení výpočet veľkosti dlaždíc
+  }, []);
 
-  // Ulož pomer strán z normálneho režimu (keď nie sme vo fullscreen)
-  useEffect(() => {
-    if (fullscreen || typeof window === 'undefined') return;
-    
-    // V normálnom režime uložíme pomer strán z aktuálnej veľkosti
-    if (size.width > 0 && size.height > 0) {
-      const ratio = size.width / size.height;
-      if (ratio > 0 && ratio !== aspectRatio) {
-        console.log(`📐 Aspect ratio saved: ${ratio.toFixed(3)} (${size.width}x${size.height})`);
-        setAspectRatio(ratio);
-      }
-    } else if (size.width === 0 && size.height === 0) {
-      // Fallback - použijeme window size mínus header
-      const normalWidth = window.innerWidth;
-      const normalHeight = window.innerHeight - 100;
-      if (normalHeight > 0) {
-        const ratio = normalWidth / normalHeight;
-        if (ratio > 0 && ratio !== aspectRatio) {
-          console.log(`📐 Aspect ratio saved (fallback): ${ratio.toFixed(3)} (${normalWidth}x${normalHeight})`);
-          setAspectRatio(ratio);
-        }
-      }
-    }
-  }, [size.width, size.height, fullscreen, aspectRatio]);
+  // Použijeme size z ResizeObserver
+  // Odstránený fallbackSize, ktorý spôsoboval problémy s layoutom (používal window rozmery namiesto kontajnera)
+  const width = size.width;
+  const height = size.height;
 
-  // Fallback size pre normálny režim
   useEffect(() => {
-    if (fullscreen || typeof window === 'undefined') return;
-    
-    if (size.width === 0 && size.height === 0) {
-      const normalWidth = window.innerWidth;
-      const normalHeight = window.innerHeight - 100;
-      setFallbackSize({
-        width: normalWidth,
-        height: normalHeight,
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('📏 Heatmap Dimensions:', {
+        observed: size,
+        final: { width, height }
       });
     }
-  }, [size.width, size.height, fullscreen]);
+  }, [size, width, height]);
 
-  // State pre fullscreen veľkosť s zachovaním pomeru strán
-  const [fullscreenSize, setFullscreenSize] = useState({ width: 0, height: 0 });
+  // Vypočítaj vek dát pre zobrazenie
+  const getDataAgeDisplay = (): string | null => {
+    if (!lastUpdatedAt) return null;
+    const ageMs = Date.now() - new Date(lastUpdatedAt).getTime();
+    const ageMinutes = Math.floor(ageMs / 60000);
+    if (ageMinutes < 1) return 'just now';
+    if (ageMinutes === 1) return '1 min ago';
+    return `${ageMinutes} min ago`;
+  };
 
-  // Vypočítaj fullscreen veľkosť - použijeme celý viewport (okrem offsetu na Exit button)
-  // Vo fullscreen režime ignorujeme aspect ratio a vyplníme celú obrazovku
-  useEffect(() => {
-    if (!fullscreen || typeof window === 'undefined') {
-      setFullscreenSize({ width: 0, height: 0 });
-      return;
-    }
-
-    const calculateSize = () => {
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-
-      // Použijeme celý viewport - Exit button je absolute, takže neobmedzuje kontajner
-      // Použijeme presné viewport hodnoty bez akýchkoľvek odčítaní
-      setFullscreenSize({
-        width: viewportWidth,
-        height: viewportHeight,
-      });
-
-      console.log(
-        `📐 Fullscreen size (full viewport): ${viewportWidth}x${viewportHeight} (viewport: ${viewportWidth}x${viewportHeight})`
-      );
-    };
-
-    calculateSize();
-
-    // Pridaj resize listener
-    window.addEventListener('resize', calculateSize);
-    return () => window.removeEventListener('resize', calculateSize);
-  }, [fullscreen]);
-
-  // V fullscreen režime IGNORUJEME size z ResizeObserver a používame iba fullscreenSize
-  // V normálnom režime používame size z ResizeObserver alebo fallbackSize
-  const width = fullscreen 
-    ? (fullscreenSize.width || (typeof window !== 'undefined' ? window.innerWidth : 1920))
-    : (size.width || fallbackSize.width);
-  const height = fullscreen
-    ? (fullscreenSize.height || (typeof window !== 'undefined' ? window.innerHeight : 1080))
-    : (size.height || fallbackSize.height);
-
-  // Debug log pre fullscreen veľkosti
-  useEffect(() => {
-    if (fullscreen) {
-      console.log(`🔍 Fullscreen container size: ${width}px x ${height}px`);
-      console.log(`🔍 FullscreenSize state: ${fullscreenSize.width}px x ${fullscreenSize.height}px`);
-      console.log(`🔍 Viewport: ${typeof window !== 'undefined' ? window.innerWidth : 'N/A'}px x ${typeof window !== 'undefined' ? window.innerHeight : 'N/A'}px`);
-    }
-  }, [fullscreen, width, height, fullscreenSize]);
+  const dataAgeDisplay = getDataAgeDisplay();
+  const isDataStale = lastUpdatedAt ? (Date.now() - new Date(lastUpdatedAt).getTime()) > 10 * 60 * 1000 : false;
 
   // Podmienené returny až po všetkých hookoch
-  if (loading && data.length === 0) {
-    return (
-      <div className="h-full w-full bg-black flex items-center justify-center text-gray-500">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="mb-2">Loading heatmap data...</p>
-          <p className="text-xs text-gray-600">This may take up to 90 seconds on first load</p>
-          <p className="text-xs text-gray-600 mt-1">Please wait while we fetch the latest stock data</p>
+  // CRITICAL: Počas SSR a hydration, data je null, takže zobrazíme loading
+  const renderContent = () => {
+    if (!isMounted || (loading && (!data || data.length === 0))) {
+      return (
+        <div className="absolute inset-0 flex items-center justify-center text-gray-500 bg-black z-40">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+            <p className="mb-2">Loading heatmap data...</p>
+            <p className="text-xs text-gray-600">This may take up to 30 seconds on first load</p>
+            <p className="text-xs text-gray-600 mt-1">Please wait while we fetch the latest stock data</p>
+          </div>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  if (error && data.length === 0) {
-    return (
-      <div className="h-full w-full bg-black flex items-center justify-center text-red-500">
-        <div className="text-center">
-          <p className="mb-2">Error loading heatmap</p>
-          <p className="text-sm text-gray-500">{error}</p>
-          <button
-            onClick={loadData}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Retry
-          </button>
+    if (error && (!data || data.length === 0)) {
+      return (
+        <div className="absolute inset-0 flex items-center justify-center text-red-500 bg-black z-40">
+          <div className="text-center">
+            <p className="mb-2">Error loading heatmap</p>
+            <p className="text-sm text-gray-500">{error}</p>
+            <button
+              onClick={() => loadData(true)}
+              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Retry (Force Refresh)
+            </button>
+          </div>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  if (data.length === 0) {
+    if (!data || data.length === 0) {
+      return (
+        <div className="absolute inset-0 flex items-center justify-center text-gray-500 bg-black z-40">
+          <p>No data available</p>
+        </div>
+      );
+    }
+
     return (
-      <div className="h-full w-full bg-black flex items-center justify-center text-gray-500">
-        <p>No data available</p>
-      </div>
-    );
-  }
+      <>
+        {/* Metric selector - top left */}
+        <div className="absolute top-2 left-2 z-50 flex gap-2">
+          <div className="bg-black/70 backdrop-blur-sm rounded-lg p-1 flex gap-1">
+            <button
+              onClick={() => handleMetricChange('percent')}
+              className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${metric === 'percent'
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                }`}
+            >
+              % Change
+            </button>
+            <button
+              onClick={() => handleMetricChange('mcap')}
+              className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${metric === 'mcap'
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                }`}
+            >
+              Mcap Change
+            </button>
+          </div>
+        </div>
 
-        return (
-          <div 
-            ref={fullscreen ? null : ref} 
-            className={fullscreen ? "" : "h-full w-full relative"}
-            style={{ 
-              overflow: 'hidden', 
-              margin: 0, 
-              padding: 0,
-              boxSizing: 'border-box',
-              // Vo fullscreen režime - absolute positioning, natiahnuté na celú obrazovku
-              ...(fullscreen ? {
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                width: '100vw',
-                height: '100vh',
-                minWidth: '100vw',
-                minHeight: '100vh',
-                maxWidth: '100vw',
-                maxHeight: '100vh',
-              } : {
-                position: 'relative',
-                width: '100%',
-                height: '100%',
-              }),
-            }}
+        <MarketHeatmap
+          data={data}
+          width={width}
+          height={height}
+          onTileClick={handleTileClick}
+          timeframe={timeframe}
+          metric={metric}
+        />
+        {/* Last updated indicator */}
+        {dataAgeDisplay && (
+          <div
+            className={`absolute bottom-2 right-2 px-2 py-1 rounded text-xs z-50 ${isDataStale
+              ? 'bg-yellow-500/80 text-yellow-900'
+              : 'bg-black/60 text-gray-300'
+              }`}
+            title={`Last updated: ${lastUpdatedAt}`}
           >
-      <MarketHeatmap
-        data={data}
-        width={width}
-        height={height}
-        onTileClick={handleTileClick}
-        timeframe={timeframe}
-      />
+            Updated {dataAgeDisplay}
+            {isDataStale && ' ⚠️'}
+          </div>
+        )}
+      </>
+    );
+  };
+
+  return (
+    <div
+      ref={ref}
+      className="h-full w-full relative"
+      style={{
+        overflow: 'hidden',
+        margin: 0,
+        padding: 0,
+        boxSizing: 'border-box',
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+      }}
+    >
+      {renderContent()}
     </div>
-          );
+  );
 };
 
 export default ResponsiveMarketHeatmap;

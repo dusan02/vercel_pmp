@@ -2,7 +2,7 @@
  * All Stocks Section Component
  */
 
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { SortKey } from '@/hooks/useSortableData';
 import { SectionIcon } from './SectionIcon';
 import { StockSearchBar } from './StockSearchBar';
@@ -23,7 +23,7 @@ interface AllStocksSectionProps {
   hasMore: boolean;
 }
 
-export function AllStocksSection({
+export const AllStocksSection = React.memo(function AllStocksSection({
   displayedStocks,
   loading,
   sortKey,
@@ -35,6 +35,23 @@ export function AllStocksSection({
   onSearchChange,
   hasMore
 }: AllStocksSectionProps) {
+  // Memoize sort handlers to prevent unnecessary re-renders
+  const handleSortTicker = useCallback(() => onSort("ticker" as SortKey), [onSort]);
+  const handleSortSector = useCallback(() => onSort("sector" as SortKey), [onSort]);
+  const handleSortIndustry = useCallback(() => onSort("industry" as SortKey), [onSort]);
+  const handleSortMarketCap = useCallback(() => onSort("marketCap" as SortKey), [onSort]);
+  const handleSortCurrentPrice = useCallback(() => onSort("currentPrice" as SortKey), [onSort]);
+  const handleSortPercentChange = useCallback(() => onSort("percentChange" as SortKey), [onSort]);
+  const handleSortMarketCapDiff = useCallback(() => onSort("marketCapDiff" as SortKey), [onSort]);
+
+  // Memoize favorite handlers per stock
+  const favoriteHandlers = useMemo(() => {
+    const handlers = new Map<string, () => void>();
+    displayedStocks.forEach(stock => {
+      handlers.set(stock.ticker, () => onToggleFavorite(stock.ticker));
+    });
+    return handlers;
+  }, [displayedStocks, onToggleFavorite]);
 
   return (
     <section className="all-stocks">
@@ -61,26 +78,26 @@ export function AllStocksSection({
             <thead>
               <tr>
                 <th>Logo</th>
-                <th onClick={() => onSort("ticker" as SortKey)} className={`sortable ${sortKey === "ticker" ? "active-sort" : ""}`}>
+                <th onClick={handleSortTicker} className={`sortable ${sortKey === "ticker" ? "active-sort" : ""}`}>
                   Ticker
                 </th>
                 <th>Company Name</th>
-                <th onClick={() => onSort("sector" as SortKey)} className={`sortable ${sortKey === "sector" ? "active-sort" : ""}`}>
+                <th onClick={handleSortSector} className={`sortable ${sortKey === "sector" ? "active-sort" : ""}`}>
                   Sector
                 </th>
-                <th onClick={() => onSort("industry" as SortKey)} className={`sortable ${sortKey === "industry" ? "active-sort" : ""}`}>
+                <th onClick={handleSortIndustry} className={`sortable ${sortKey === "industry" ? "active-sort" : ""}`}>
                   Industry
                 </th>
-                <th onClick={() => onSort("marketCap" as SortKey)} className={`sortable ${sortKey === "marketCap" ? "active-sort" : ""}`}>
+                <th onClick={handleSortMarketCap} className={`sortable ${sortKey === "marketCap" ? "active-sort" : ""}`}>
                   Market Cap
                 </th>
-                <th onClick={() => onSort("currentPrice" as SortKey)} className={`sortable ${sortKey === "currentPrice" ? "active-sort" : ""}`}>
+                <th onClick={handleSortCurrentPrice} className={`sortable ${sortKey === "currentPrice" ? "active-sort" : ""}`}>
                   Current Price
                 </th>
-                <th onClick={() => onSort("percentChange" as SortKey)} className={`sortable ${sortKey === "percentChange" ? "active-sort" : ""}`}>
+                <th onClick={handleSortPercentChange} className={`sortable ${sortKey === "percentChange" ? "active-sort" : ""}`}>
                   % Change
                 </th>
-                <th onClick={() => onSort("marketCapDiff" as SortKey)} className={`sortable ${sortKey === "marketCapDiff" ? "active-sort" : ""}`}>
+                <th onClick={handleSortMarketCapDiff} className={`sortable ${sortKey === "marketCapDiff" ? "active-sort" : ""}`}>
                   Cap Diff
                 </th>
                 <th>Favorites</th>
@@ -94,12 +111,13 @@ export function AllStocksSection({
                   </td>
                 </tr>
               ) : (
-                displayedStocks.map((stock) => (
+                displayedStocks.map((stock, index) => (
                   <StockTableRow
                     key={stock.ticker}
                     stock={stock}
                     isFavorite={isFavorite(stock.ticker)}
-                    onToggleFavorite={() => onToggleFavorite(stock.ticker)}
+                    onToggleFavorite={favoriteHandlers.get(stock.ticker) || (() => onToggleFavorite(stock.ticker))}
+                    priority={index < 25} // Priority loading pre prvých 25 logov (above the fold)
                   />
                 ))
               )}
@@ -116,5 +134,4 @@ export function AllStocksSection({
       )}
     </section>
   );
-}
-
+});

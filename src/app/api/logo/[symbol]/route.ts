@@ -1,22 +1,13 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { readFile, access } from 'fs/promises';
+import { createHash } from 'crypto';
+import { join } from 'path';
+import { redisClient } from '@/lib/redis/client';
+import { getLogoUrl } from '@/lib/utils/getLogoUrl';
+
 /**
  * Logo Proxy API - Caches and optimizes logo loading
- * Provides long cache headers and fallback handling
- * 
- * Features:
- * - Size parameter (?s=) for different sizes
- * - Request deduplication (in-flight requests)
- * - Redis cache for external API responses
- * - ETag support for 304 responses
  */
-
-export const runtime = 'nodejs';
-
-import { NextRequest, NextResponse } from 'next/server';
-import { getLogoUrl, getDomain } from '@/lib/getLogoUrl';
-import { readFile, access } from 'fs/promises';
-import { join } from 'path';
-import { createHash } from 'crypto';
-import { redisClient } from '@/lib/redis';
 
 // In-flight request deduplication
 const inFlightRequests = new Map<string, Promise<NextResponse>>();
@@ -60,7 +51,7 @@ function generatePlaceholderSVG(symbol: string, size: number): string {
   ];
   const color = colors[symbol.charCodeAt(0) % colors.length];
   const fontSize = Math.max(8, size * 0.4);
-  
+
   return `<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
     <rect width="${size}" height="${size}" fill="${color}" rx="4"/>
     <text x="50%" y="50%" font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="bold" 
@@ -74,12 +65,12 @@ function createResponse(
   headers: Record<string, string>,
   etag?: string
 ): NextResponse {
-  const response = new NextResponse(body, { headers });
-  
+  const response = new NextResponse(body as any, { headers });
+
   if (etag) {
     response.headers.set('ETag', etag);
   }
-  
+
   return response;
 }
 
@@ -103,33 +94,33 @@ export async function GET(
   { params }: { params: Promise<{ symbol: string }> }
 ) {
   const startTime = Date.now();
-  
+
   try {
     const { symbol: symbolParam } = await params;
     const symbol = symbolParam?.toUpperCase();
-    
+
     // Parse size parameter (default: 32, clamp between 16-64)
     const url = new URL(req.url);
     const sizeParam = parseInt(url.searchParams.get('s') || '32', 10);
     const size = Math.max(16, Math.min(64, sizeParam));
-    
+
     // Create cache key for deduplication
     const cacheKey = `logo:${symbol}:${size}`;
-    
+
     // Check if request is already in-flight
     if (inFlightRequests.has(cacheKey)) {
       return inFlightRequests.get(cacheKey)!;
     }
-    
+
     // Validate symbol
     if (!symbol || symbol.length === 0 || symbol.length > 10) {
       const placeholder = generatePlaceholderSVG('?', size);
       const svgBuffer = Buffer.from(placeholder);
       const etag = generateETag(svgBuffer);
-      
+
       const notModified = checkETag(req, etag, 'public, max-age=86400, stale-while-revalidate=86400');
       if (notModified) return notModified;
-      
+
       return createResponse(placeholder, {
         'Content-Type': 'image/svg+xml',
         'Cache-Control': 'public, max-age=86400, stale-while-revalidate=86400',
@@ -147,10 +138,10 @@ export async function GET(
         if (await fileExists(staticPath)) {
           const fileBuffer = await readFile(staticPath);
           const etag = generateETag(fileBuffer);
-          
+
           const notModified = checkETag(req, etag, 'public, max-age=31536000, immutable');
           if (notModified) return notModified;
-          
+
           return createResponse(fileBuffer, {
             'Content-Type': 'image/webp',
             'Cache-Control': 'public, max-age=31536000, immutable',
@@ -168,14 +159,14 @@ export async function GET(
             const cachedBuffer = await redisClient.get(redisKey);
             if (cachedBuffer) {
               // Handle both Buffer and string responses from Redis
-              const buffer = Buffer.isBuffer(cachedBuffer) 
-                ? cachedBuffer 
+              const buffer = Buffer.isBuffer(cachedBuffer)
+                ? cachedBuffer
                 : Buffer.from(cachedBuffer);
               const etag = generateETag(buffer);
-              
+
               const notModified = checkETag(req, etag, 'public, max-age=86400, stale-while-revalidate=86400');
               if (notModified) return notModified;
-              
+
               return createResponse(buffer, {
                 'Content-Type': 'image/webp',
                 'Cache-Control': 'public, max-age=86400, stale-while-revalidate=86400',
@@ -218,19 +209,33 @@ export async function GET(
           }
         }
 
-        // 5. Fetch from external API
+        // 5. Fetch from external API with retry
         try {
-          const response = await fetch(logoUrl, {
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (compatible; PreMarketPrice/1.0)'
-            },
-            signal: AbortSignal.timeout(5000)
-          });
+          let response;
+          let lastError;
 
-          if (response.ok && response.headers.get('content-type')?.startsWith('image/')) {
+          // Try up to 2 times
+          for (let i = 0; i < 2; i++) {
+            try {
+              response = await fetch(logoUrl, {
+                headers: {
+                  'User-Agent': 'Mozilla/5.0 (compatible; PreMarketPrice/1.0)'
+                },
+                signal: AbortSignal.timeout(8000) // Increased to 8s
+              });
+
+              if (response.ok) break;
+            } catch (e) {
+              lastError = e;
+              // Wait 500ms before retry
+              if (i === 0) await new Promise(r => setTimeout(r, 500));
+            }
+          }
+
+          if (response && response.ok && response.headers.get('content-type')?.startsWith('image/')) {
             const imageBuffer = await response.arrayBuffer();
             const buffer = Buffer.from(imageBuffer);
-            
+
             // Cache in Redis for 24h
             if (redisClient && redisClient.isOpen) {
               try {
@@ -239,11 +244,11 @@ export async function GET(
                 // Ignore cache errors
               }
             }
-            
+
             const etag = generateETag(buffer);
             const notModified = checkETag(req, etag, 'public, max-age=86400, stale-while-revalidate=86400');
             if (notModified) return notModified;
-            
+
             const contentType = response.headers.get('content-type') || 'image/png';
             return createResponse(buffer, {
               'Content-Type': contentType,
@@ -254,6 +259,8 @@ export async function GET(
               'X-Logo-Format': contentType.split('/')[1] || 'unknown',
               'X-Logo-Duration-ms': (Date.now() - startTime).toString()
             }, etag);
+          } else if (lastError) {
+            throw lastError;
           }
         } catch (fetchError) {
           console.warn(`Failed to fetch logo for ${symbol} from external API:`, fetchError);
@@ -263,10 +270,10 @@ export async function GET(
         const placeholder = generatePlaceholderSVG(symbol, size);
         const svgBuffer = Buffer.from(placeholder);
         const etag = generateETag(svgBuffer);
-        
+
         const notModified = checkETag(req, etag, 'public, max-age=3600, stale-while-revalidate=86400');
         if (notModified) return notModified;
-        
+
         return createResponse(placeholder, {
           'Content-Type': 'image/svg+xml',
           'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
@@ -275,7 +282,7 @@ export async function GET(
           'X-Logo-Format': 'svg',
           'X-Logo-Duration-ms': (Date.now() - startTime).toString()
         }, etag);
-        
+
       } catch (error) {
         console.error(`Error processing logo for ${symbol}:${size}:`, error);
         throw error;
@@ -284,18 +291,18 @@ export async function GET(
 
     // Store promise for deduplication
     inFlightRequests.set(cacheKey, requestPromise);
-    
+
     // Clean up after request completes
     requestPromise.finally(() => {
       inFlightRequests.delete(cacheKey);
     });
 
     return requestPromise;
-    
+
   } catch (error) {
     const { symbol: symbolParam } = await params;
     console.error(`Error in logo API for ${symbolParam}:`, error);
-    
+
     // Return error placeholder
     const placeholder = generatePlaceholderSVG('?', 32);
     return createResponse(placeholder, {

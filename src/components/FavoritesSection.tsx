@@ -5,7 +5,7 @@
 import React from 'react';
 import { SortKey } from '@/hooks/useSortableData';
 import { SectionIcon } from './SectionIcon';
-import { formatBillions } from '@/lib/format';
+import { formatBillions } from '@/lib/utils/format';
 import { StockTableRow } from './StockTableRow';
 import { SectionLoader } from './SectionLoader';
 import { StockData } from '@/lib/types';
@@ -57,7 +57,7 @@ export function FavoritesSection({
           </h2>
         </div>
       </div>
-    
+
       <table>
         <thead>
           <tr>
@@ -88,12 +88,13 @@ export function FavoritesSection({
           </tr>
         </thead>
         <tbody>
-          {favoriteStocks.map((stock) => (
+          {favoriteStocks.map((stock, index) => (
             <StockTableRow
               key={stock.ticker}
               stock={stock}
               isFavorite={isFavorite(stock.ticker)}
               onToggleFavorite={() => onToggleFavorite(stock.ticker)}
+              priority={index < 20} // Priority loading pre prvých 20 logov (above the fold)
             />
           ))}
         </tbody>

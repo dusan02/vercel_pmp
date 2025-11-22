@@ -82,11 +82,11 @@ function generateBasicInsights(marketData: MarketData[]): string {
   const losers = marketData.filter(s => s.percentChange < 0).length;
   const avgChange = marketData.reduce((sum, s) => sum + s.percentChange, 0) / marketData.length;
   const volatileStocks = marketData.filter(s => Math.abs(s.percentChange) > 3).length;
-  
+
   const topGainer = marketData
     .filter(s => s.percentChange > 0)
     .sort((a, b) => b.percentChange - a.percentChange)[0];
-  
+
   const topLoser = marketData
     .filter(s => s.percentChange < 0)
     .sort((a, b) => a.percentChange - b.percentChange)[0];
@@ -106,17 +106,18 @@ function generateBasicInsights(marketData: MarketData[]): string {
   `.trim();
 }
 
-export async function GET(request: NextRequest) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function GET(_request: NextRequest) {
   try {
     // Get cached stock data
     const cachedData = await getCachedData('stock_data');
-    
+
     if (!cachedData) {
       return NextResponse.json({ error: 'No stock data available' }, { status: 404 });
     }
 
     const stocksData: MarketData[] = Object.values(cachedData);
-    
+
     if (stocksData.length === 0) {
       return NextResponse.json({ error: 'No stock data found' }, { status: 404 });
     }
@@ -155,14 +156,15 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('AI insights API error:', error);
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: 'Failed to generate AI insights',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 }
 
-export async function POST(request: NextRequest) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function POST(_request: NextRequest) {
   return NextResponse.json({
     info: 'AI Insights API',
     description: 'Generate AI-powered market insights from current stock data',

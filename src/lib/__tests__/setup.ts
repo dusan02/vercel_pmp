@@ -14,7 +14,7 @@ const originalConsoleWarn = console.warn;
 beforeAll(() => {
   // jednotný fetch mock
   global.fetch = jest.fn();
-  
+
   // Suppress console output during tests unless explicitly needed
   console.log = jest.fn();
   console.error = jest.fn();
@@ -36,7 +36,7 @@ afterAll(() => {
 // Global test utilities
 global.testUtils = {
   // Helper to create mock stock data
-  createMockStockData: (ticker: string, overrides: any = {}) => ({
+  createMockStockData: (ticker: string, overrides: Record<string, unknown> = {}) => ({
     ticker,
     currentPrice: 150.0,
     closePrice: 145.0,
@@ -48,7 +48,7 @@ global.testUtils = {
   }),
 
   // Helper to create mock API response
-  createMockApiResponse: (data: any, success: boolean = true) => ({
+  createMockApiResponse: (data: unknown, success: boolean = true) => ({
     success,
     data,
     timestamp: new Date().toISOString()
@@ -60,20 +60,28 @@ global.testUtils = {
 
 // Custom matcher for stock data validation
 expect.extend({
-  toBeValidStockData(received: any) {
+  toBeValidStockData(received: unknown) {
+    if (typeof received !== 'object' || received === null) {
+      return {
+        message: () => 'Expected stock data to be an object',
+        pass: false,
+      };
+    }
+
+    const data = received as Record<string, unknown>;
     const requiredFields = ['ticker', 'currentPrice', 'closePrice', 'percentChange', 'marketCap'];
-    const missingFields = requiredFields.filter(field => !(field in received));
-    
+    const missingFields = requiredFields.filter(field => !(field in data));
+
     if (missingFields.length > 0) {
       return {
         message: () => `Expected stock data to have fields: ${missingFields.join(', ')}`,
         pass: false,
       };
     }
-    
+
     return {
       message: () => 'Expected stock data to be valid',
       pass: true,
     };
   },
-}); 
+});

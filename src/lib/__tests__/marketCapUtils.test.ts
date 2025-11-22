@@ -1,4 +1,4 @@
-import { computeMarketCap, computeMarketCapDiff, computePercentChange } from '../marketCapUtils';
+import { computeMarketCap, computeMarketCapDiff, computePercentChange } from '../utils/marketCapUtils';
 
 describe('Market Cap Calculations', () => {
   describe('NVDA - NVIDIA Corporation', () => {
@@ -19,7 +19,7 @@ describe('Market Cap Calculations', () => {
     it('should match expected values from image data', () => {
       const marketCap = computeMarketCap(currentPrice, shares);
       const marketCapDiff = computeMarketCapDiff(currentPrice, prevClose, shares);
-      
+
       // From image: Market Cap ~10,987B, Diff ~345.85B
       // Our calculation with correct shares: Market Cap ~11,077B, Diff ~359.41B
       // The difference is due to using actual share counts from Polygon vs estimated
@@ -46,7 +46,7 @@ describe('Market Cap Calculations', () => {
     it('should match expected values from image data', () => {
       const marketCap = computeMarketCap(currentPrice, shares);
       const marketCapDiff = computeMarketCapDiff(currentPrice, prevClose, shares);
-      
+
       // From image: Market Cap ~728,000B, Diff ~3,621.89B
       // Our calculation with correct shares: Market Cap ~728,000B, Diff ~3,640B
       // The difference is due to using actual share counts from Polygon vs estimated

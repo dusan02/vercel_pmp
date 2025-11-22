@@ -8,20 +8,20 @@
 export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getDLQJobs, removeFromDLQ, clearDLQ, getDLQStats, shouldRetry, type FailedJob } from '@/lib/dlq';
-import { logger } from '@/lib/logger';
+import { getDLQJobs, removeFromDLQ, clearDLQ, getDLQStats, shouldRetry } from '@/lib/dlq';
+import { logger } from '@/lib/utils/logger';
 import { ingestBatch } from '@/workers/polygonWorker';
 
 // Simple auth check (in production, use proper authentication)
 function isAuthorized(request: NextRequest): boolean {
   const authHeader = request.headers.get('authorization');
   const apiKey = process.env.ADMIN_API_KEY;
-  
+
   if (!apiKey) {
     // If no API key is set, allow in development
     return process.env.NODE_ENV === 'development';
   }
-  
+
   return authHeader === `Bearer ${apiKey}`;
 }
 
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
     }
 
     const jobs = await getDLQJobs(type, limit);
-    
+
     return NextResponse.json({
       success: true,
       data: {
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
       // Requeue all jobs that should be retried
       const jobs = await getDLQJobs();
       const jobsToRequeue = jobs.filter(shouldRetry);
-      
+
       let requeued = 0;
       let failed = 0;
 
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
           if (job.type === 'ingest' && job.payload && typeof job.payload === 'object') {
             const payload = job.payload as { symbol?: string; tickers?: string[] };
             const apiKey = process.env.POLYGON_API_KEY;
-            
+
             if (!apiKey) {
               logger.error('POLYGON_API_KEY not set');
               failed++;
@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
     if (job.type === 'ingest' && job.payload && typeof job.payload === 'object') {
       const payload = job.payload as { symbol?: string; tickers?: string[] };
       const apiKey = process.env.POLYGON_API_KEY;
-      
+
       if (!apiKey) {
         return NextResponse.json(
           { success: false, error: 'POLYGON_API_KEY not set' },
@@ -209,7 +209,7 @@ export async function DELETE(request: NextRequest) {
 
   try {
     const count = await clearDLQ();
-    
+
     return NextResponse.json({
       success: true,
       data: { message: `Cleared ${count} jobs from DLQ`, count }

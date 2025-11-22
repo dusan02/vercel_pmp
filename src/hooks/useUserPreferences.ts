@@ -11,6 +11,11 @@ export interface UserPreferences {
   showEarnings: boolean;
   showNews: boolean;
   tableColumns: string[];
+  // Section visibility toggles
+  showPortfolioSection?: boolean;
+  showFavoritesSection?: boolean;
+  showEarningsSection?: boolean;
+  showAllStocksSection?: boolean;
 }
 
 const DEFAULT_PREFERENCES: UserPreferences = {
@@ -21,7 +26,12 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   refreshInterval: 30,
   showEarnings: true,
   showNews: true,
-  tableColumns: ['symbol', 'price', 'change', 'changePercent', 'marketCap', 'volume']
+  tableColumns: ['symbol', 'price', 'change', 'changePercent', 'marketCap', 'volume'],
+  // Default section visibility
+  showPortfolioSection: true,
+  showFavoritesSection: true,
+  showEarningsSection: true,
+  showAllStocksSection: true
 };
 
 const STORAGE_KEY = 'pmp-user-preferences';

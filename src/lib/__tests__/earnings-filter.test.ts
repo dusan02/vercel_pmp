@@ -13,10 +13,10 @@ const mockEarnings = [
 ];
 
 // Filter function to test
-const filterAllowedTickers = (earnings: any[]) => {
+const filterAllowedTickers = (earnings: Array<{ ticker: string; company_name: string; market_cap: number }>) => {
   const allowedTickers = DEFAULT_TICKERS.pmp;
-  return earnings.filter(earning => 
-    earning.market_cap > 0 && 
+  return earnings.filter(earning =>
+    earning.market_cap > 0 &&
     allowedTickers.includes(earning.ticker)
   );
 };
@@ -25,7 +25,7 @@ describe('Earnings Filter Tests', () => {
   it('filters out non-default tickers', () => {
     const filtered = filterAllowedTickers(mockEarnings);
     const tickers = filtered.map(e => e.ticker);
-    
+
     // Should only include allowed tickers
     expect(tickers).toContain('AAPL');
     expect(tickers).toContain('PLTR');
@@ -33,7 +33,7 @@ describe('Earnings Filter Tests', () => {
     expect(tickers).toContain('VRTX');
     expect(tickers).toContain('WMB');
     expect(tickers).toContain('MUFG');
-    
+
     // Should NOT include invalid tickers
     expect(tickers).not.toContain('INVALID');
     expect(tickers).not.toContain('UNKNOWN');
@@ -45,10 +45,10 @@ describe('Earnings Filter Tests', () => {
       { ticker: 'PLTR', company_name: 'Palantir Technologies', market_cap: 45000000000 },
       { ticker: 'MELI', company_name: 'MercadoLibre', market_cap: -1000 }
     ];
-    
+
     const filtered = filterAllowedTickers(earningsWithZeroCap);
     const tickers = filtered.map(e => e.ticker);
-    
+
     expect(tickers).toContain('PLTR');
     expect(tickers).not.toContain('AAPL'); // Zero market cap
     expect(tickers).not.toContain('MELI'); // Negative market cap
@@ -59,7 +59,7 @@ describe('Earnings Filter Tests', () => {
       { ticker: 'INVALID1', company_name: 'Invalid 1', market_cap: 1000000 },
       { ticker: 'INVALID2', company_name: 'Invalid 2', market_cap: 0 }
     ];
-    
+
     const filtered = filterAllowedTickers(invalidEarnings);
     expect(filtered).toEqual([]);
   });
@@ -67,7 +67,7 @@ describe('Earnings Filter Tests', () => {
   it('preserves all properties of filtered earnings', () => {
     const filtered = filterAllowedTickers(mockEarnings);
     const pltrEarning = filtered.find(e => e.ticker === 'PLTR');
-    
+
     expect(pltrEarning).toBeDefined();
     expect(pltrEarning?.company_name).toBe('Palantir Technologies');
     expect(pltrEarning?.market_cap).toBe(45000000000);

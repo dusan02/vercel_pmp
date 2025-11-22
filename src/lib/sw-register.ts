@@ -1,24 +1,28 @@
 // Service Worker Registration Utility
 
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt(): void;
+  userChoice: Promise<{ outcome: string }>;
+}
+
+// Global variables to store the deferred prompt and install button reference
+let deferredPrompt: BeforeInstallPromptEvent | null = null;
+let installButton: HTMLButtonElement | null = null;
+
 export async function registerServiceWorker() {
   if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
     return;
   }
-
   try {
-    const registration = await navigator.serviceWorker.register('/sw.js', {
-      scope: '/',
-    });
-
+    const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
     console.log('Service Worker registered successfully:', registration);
-
     // Handle service worker updates
     registration.addEventListener('updatefound', () => {
       const newWorker = registration.installing;
       if (newWorker) {
         newWorker.addEventListener('statechange', () => {
           if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            // New service worker available
             if (confirm('New version available! Reload to update?')) {
               window.location.reload();
             }
@@ -26,14 +30,12 @@ export async function registerServiceWorker() {
         });
       }
     });
-
     // Handle service worker messages
     navigator.serviceWorker.addEventListener('message', (event) => {
       if (event.data && event.data.type === 'SKIP_WAITING') {
         window.location.reload();
       }
     });
-
     return registration;
   } catch (error) {
     console.error('Service Worker registration failed:', error);
@@ -44,7 +46,6 @@ export async function unregisterServiceWorker() {
   if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
     return;
   }
-
   try {
     const registration = await navigator.serviceWorker.getRegistration();
     if (registration) {
@@ -56,30 +57,20 @@ export async function unregisterServiceWorker() {
   }
 }
 
-// Check if app is installed as PWA
 export function isPWAInstalled(): boolean {
   if (typeof window === 'undefined') return false;
-  
   return (
     window.matchMedia('(display-mode: standalone)').matches ||
-    (window.navigator as any).standalone === true
+    (window.navigator as { standalone?: boolean }).standalone === true
   );
 }
 
-// Request notification permission
 export async function requestNotificationPermission(): Promise<boolean> {
   if (typeof window === 'undefined' || !('Notification' in window)) {
     return false;
   }
-
-  if (Notification.permission === 'granted') {
-    return true;
-  }
-
-  if (Notification.permission === 'denied') {
-    return false;
-  }
-
+  if (Notification.permission === 'granted') return true;
+  if (Notification.permission === 'denied') return false;
   try {
     const permission = await Notification.requestPermission();
     return permission === 'granted';
@@ -89,12 +80,10 @@ export async function requestNotificationPermission(): Promise<boolean> {
   }
 }
 
-// Send notification
 export function sendNotification(title: string, options?: NotificationOptions) {
   if (typeof window === 'undefined' || !('Notification' in window)) {
     return;
   }
-
   if (Notification.permission === 'granted') {
     new Notification(title, {
       icon: '/favicon.ico',
@@ -104,20 +93,16 @@ export function sendNotification(title: string, options?: NotificationOptions) {
   }
 }
 
-// Background sync registration
 export async function registerBackgroundSync(tag: string): Promise<boolean> {
   if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
     return false;
   }
-
   try {
     const registration = await navigator.serviceWorker.ready;
-    
     if ('sync' in registration) {
-      await (registration as any).sync.register(tag);
+      await (registration as { sync?: { register: (tag: string) => Promise<void> } }).sync?.register(tag);
       return true;
     }
-    
     return false;
   } catch (error) {
     console.error('Background sync registration failed:', error);
@@ -125,29 +110,15 @@ export async function registerBackgroundSync(tag: string): Promise<boolean> {
   }
 }
 
-// Initialize PWA features
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function initializePWA() {
   if (typeof window === 'undefined') return;
-
-  // Register service worker
   await registerServiceWorker();
-
-  // Request notification permission on user interaction
-  document.addEventListener('click', async () => {
-    if (Notification.permission === 'default') {
-      await requestNotificationPermission();
-    }
-  }, { once: true });
-
-  // Add to home screen prompt
-  let deferredPrompt: any;
-  
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    
-    // Show install prompt when appropriate
-    const installButton = document.getElementById('install-pwa');
+  window.addEventListener('beforeinstallprompt', (e: any) => {
+    const event = e as BeforeInstallPromptEvent;
+    event.preventDefault();
+    deferredPrompt = event;
+    installButton = document.getElementById('install-pwa') as HTMLButtonElement | null;
     if (installButton) {
       installButton.style.display = 'block';
       installButton.addEventListener('click', async () => {
@@ -156,9 +127,9 @@ export async function initializePWA() {
           const { outcome } = await deferredPrompt.userChoice;
           console.log(`User response to the install prompt: ${outcome}`);
           deferredPrompt = null;
-          installButton.style.display = 'none';
+          if (installButton) installButton.style.display = 'none';
         }
-      });
+      }, { once: true });
     }
   });
-} 
+}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 
 interface CompanyLogoProps {
   ticker: string;
@@ -17,7 +17,7 @@ function generateLQPlaceholder(ticker: string, size: number): string {
     '#EC4899', '#06B6D4', '#84CC16', '#F97316', '#6366F1'
   ];
   const color = colors[ticker.charCodeAt(0) % colors.length];
-  
+
   return `data:image/svg+xml,${encodeURIComponent(
     `<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
       <rect width="${size}" height="${size}" fill="${color}" rx="4"/>
@@ -36,28 +36,68 @@ export default function CompanyLogo({
   const [hasError, setHasError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [logoSrc, setLogoSrc] = useState<string | null>(null);
-  
+  const [isVisible, setIsVisible] = useState(priority); // Start visible if priority
+  const containerRef = useRef<HTMLDivElement>(null);
+
   // Generate lightweight placeholder immediately (no layout shift)
   const placeholderSrc = useMemo(() => generateLQPlaceholder(ticker, size), [ticker, size]);
-  
-  // Reset state when ticker changes
+
+  // Intersection Observer for lazy loading (only if not priority)
   useEffect(() => {
-    setHasError(false);
-    setIsLoading(true);
-    
-    // Strategy: Use API endpoint as primary source
-    // API will try: static file -> external API -> placeholder
-    // This ensures consistent behavior and proper fallbacks
-    const apiSrc = `/api/logo/${ticker}?s=${size}`;
-    setLogoSrc(apiSrc);
-  }, [ticker, size]);
-  
+    if (priority) {
+      // Pre priority logá nastav isVisible okamžite (synchronne)
+      setIsVisible(true);
+      return;
+    }
+
+    // Pre non-priority logá použij Intersection Observer
+    if (!containerRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+            observer.disconnect();
+          }
+        });
+      },
+      {
+        rootMargin: '50px', // Start loading 50px before visible
+        threshold: 0.01
+      }
+    );
+
+    observer.observe(containerRef.current);
+
+    return () => observer.disconnect();
+  }, [priority]);
+
+  // Fetch logo when ticker changes, size changes, visibility changes, or priority changes
+  // Zjednodušená logika - jeden useEffect namiesto dvoch
+  useEffect(() => {
+    // Pre priority logá alebo viditeľné logá nastav logoSrc
+    if (priority || isVisible) {
+      setHasError(false);
+      setIsLoading(true);
+
+      // Strategy: Use API endpoint as primary source
+      // API will try: static file -> external API -> placeholder
+      // This ensures consistent behavior and proper fallbacks
+      const apiSrc = `/api/logo/${ticker}?s=${size}`;
+      setLogoSrc(apiSrc);
+    } else {
+      // Pre non-priority a neviditeľné logá vymaž logoSrc
+      setLogoSrc(null);
+    }
+  }, [ticker, size, isVisible, priority]);
+
   // Fallback placeholder component (used when image fails to load)
   const LogoPlaceholder = () => (
-    <div 
+    <div
       className={`rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold ${className}`}
-      style={{ 
-        width: size, 
+      style={{
+        width: size,
         height: size,
         fontSize: Math.max(8, size * 0.3),
         minWidth: size,
@@ -97,33 +137,37 @@ export default function CompanyLogo({
   }
 
   return (
-    <div 
-      style={{ 
-        width: size, 
-        height: size, 
+    <div
+      ref={containerRef}
+      data-logo-ticker={ticker}
+      style={{
+        width: size,
+        height: size,
         position: 'relative',
         flexShrink: 0 // Prevent layout shift
       }}
       className={className}
     >
-      <img
-        src={logoSrc}
-        srcSet={srcSet}
-        sizes={`${size}px`}
-        alt={`${ticker} company logo`}
-        width={size}
-        height={size}
-        className="rounded-full"
-        style={{ 
-          objectFit: 'contain',
-          display: 'block' // Remove inline spacing
-        }}
-        loading={priority ? 'eager' : 'lazy'}
-        decoding="async"
-        fetchPriority={priority ? 'high' : 'low'}
-        onLoad={handleLoad}
-        onError={handleError}
-      />
+      {isVisible && logoSrc && (
+        <img
+          src={logoSrc}
+          srcSet={srcSet}
+          sizes={`${size}px`}
+          alt={`${ticker} company logo`}
+          width={size}
+          height={size}
+          className="rounded-full"
+          style={{
+            objectFit: 'contain',
+            display: 'block' // Remove inline spacing
+          }}
+          loading={priority ? 'eager' : 'lazy'}
+          decoding="async"
+          fetchPriority={priority ? 'high' : 'low'}
+          onLoad={handleLoad}
+          onError={handleError}
+        />
+      )}
       {isLoading && (
         <img
           src={placeholderSrc}
@@ -131,7 +175,7 @@ export default function CompanyLogo({
           width={size}
           height={size}
           className="absolute inset-0 rounded-full"
-          style={{ 
+          style={{
             objectFit: 'contain',
             display: 'block'
           }}
@@ -140,4 +184,4 @@ export default function CompanyLogo({
       )}
     </div>
   );
-} 
+}

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { checkEarningsForOurTickers } from '@/lib/yahooFinanceScraper';
+import { checkEarningsForOurTickers } from '@/lib/clients/yahooFinanceScraper';
 
 // Move Prisma Client inside functions to avoid build-time issues
 let prisma: any = null;
@@ -32,14 +32,14 @@ interface EarningsData {
  */
 function getAllTickers(): string[] {
   const { DEFAULT_TICKERS } = require('@/data/defaultTickers');
-  
+
   const allTickers = new Set<string>();
-  
+
   // Pridaj všetky tickery zo všetkých tierov
   (Object.values(DEFAULT_TICKERS) as string[][]).forEach((tier: string[]) => {
     tier.forEach(ticker => allTickers.add(ticker));
   });
-  
+
   return Array.from(allTickers);
 }
 
@@ -62,7 +62,7 @@ async function clearEarningsCalendar(date: string): Promise<void> {
         }
       }
     });
-    
+
     console.log(`🗑️ Cleared ${deleteCount.count} earnings records for ${date}`);
   } catch (error) {
     console.error('❌ Error clearing earnings calendar:', error);
@@ -122,14 +122,14 @@ async function saveEarningsToDatabase(earningsData: EarningsData[], date: string
 async function fetchEarningsFromYahoo(date: string): Promise<EarningsData[]> {
   try {
     console.log(`🔍 Fetching earnings data from Yahoo Finance for ${date}...`);
-    
+
     // Získaj všetky tickery
     const allTickers = getAllTickers();
     console.log(`📊 Total tickers to check: ${allTickers.length}`);
-    
+
     // Použij náš Yahoo Finance scraper
     const yahooResult = await checkEarningsForOurTickers(date, 'all');
-    
+
     if (yahooResult.totalFound === 0) {
       console.log(`⚠️ No earnings found for ${date}`);
       return [];
@@ -137,7 +137,7 @@ async function fetchEarningsFromYahoo(date: string): Promise<EarningsData[]> {
 
     // Konvertuj výsledky do formátu pre databázu
     const earningsData: EarningsData[] = [];
-    
+
     // Pre-market earnings (string array)
     if (yahooResult.preMarket && yahooResult.preMarket.length > 0) {
       yahooResult.preMarket.forEach(ticker => {
@@ -164,7 +164,7 @@ async function fetchEarningsFromYahoo(date: string): Promise<EarningsData[]> {
 
     console.log(`✅ Found ${earningsData.length} earnings records for ${date}`);
     return earningsData;
-    
+
   } catch (error) {
     console.error('❌ Error fetching earnings from Yahoo Finance:', error);
     throw error;

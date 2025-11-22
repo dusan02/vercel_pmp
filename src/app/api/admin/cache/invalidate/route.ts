@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(request: NextRequest) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function GET(_request: NextRequest) {
   return NextResponse.json({
     success: true,
     message: 'Cache invalidation endpoint - use POST method',
@@ -13,7 +14,7 @@ export async function POST(request: NextRequest) {
     // Basic admin check (in production, you'd want proper authentication)
     const { searchParams } = new URL(request.url);
     const adminKey = searchParams.get('admin_key');
-    
+
     if (process.env.NODE_ENV === 'production' && adminKey !== process.env.ADMIN_SECRET_KEY) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -21,7 +22,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { key } = await request.json();
+    // Key parameter not needed since cache invalidation is not available
 
     // Cache invalidation is not available in Edge Runtime
     return NextResponse.json({
@@ -34,9 +35,9 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('❌ Error in /api/admin/cache/invalidate:', error);
     return NextResponse.json(
-      { 
+      {
         success: false,
-        error: 'Internal server error', 
+        error: 'Internal server error',
         details: error instanceof Error ? error.message : 'Unknown error',
         timestamp: new Date().toISOString()
       },

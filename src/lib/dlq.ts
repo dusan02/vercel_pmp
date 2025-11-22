@@ -4,7 +4,7 @@
  */
 
 import { redisClient } from './redis';
-import { logger } from './logger';
+import { logger } from './utils/logger';
 
 export interface FailedJob {
   id: string;
@@ -36,7 +36,7 @@ export async function addToDLQ(
 
     const jobId = `${type}:${Date.now()}:${Math.random().toString(36).substring(7)}`;
     const timestamp = Date.now();
-    
+
     const failedJob: FailedJob = {
       id: jobId,
       type,

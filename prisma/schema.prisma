@@ -57,13 +57,17 @@ model Ticker {
   sharesOutstanding Float?
   adrRatio          Float? // For ADR stocks (DECIMAL(6,3) equivalent)
   isAdr             Boolean  @default(false)
+  latestPrevClose   Float?  // Denormalized from DailyRef - latest previous close for quick access
+  latestPrevCloseDate DateTime? // Date of the latest previous close
   updatedAt         DateTime @updatedAt
 
   dailyRefs     DailyRef[]
   sessionPrices SessionPrice[]
+  userFavorites UserFavorite[]
 
   @@index([sector])
   @@index([sharesOutstanding])
+  @@index([latestPrevCloseDate])
 }
 
 // Daily reference prices (previous close, today open, regular close)
@@ -105,4 +109,17 @@ model SessionPrice {
   @@index([symbol, session]) // For symbol+session lookups
   @@index([lastTs]) // For latest data queries
   @@index([changePct]) // For heatmap queries (sorting done in query)
+}
+
+model UserFavorite {
+  id        String   @id @default(cuid())
+  userId    String
+  ticker    String
+  createdAt DateTime @default(now())
+
+  tickerRef Ticker @relation(fields: [ticker], references: [symbol], onDelete: Cascade)
+
+  @@unique([userId, ticker])
+  @@index([userId])
+  @@index([ticker])
 }

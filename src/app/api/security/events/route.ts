@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { validateRequest } from '@/lib/security';
-import { getSecurityEvents } from '@/lib/security-events';
+import { validateRequest } from '@/lib/security/security';
+import { getSecurityEvents } from '@/lib/security/security-events';
 
 export async function GET(request: NextRequest) {
   // Validate API key

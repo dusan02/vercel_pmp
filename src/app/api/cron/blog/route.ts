@@ -1,4 +1,4 @@
-import { BlogScheduler } from '@/lib/blogSchedulerCore';
+import { BlogScheduler } from '@/lib/jobs/blogSchedulerCore';
 
 export const dynamic = 'force-dynamic';               // → edge/serverless
 

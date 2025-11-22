@@ -3,6 +3,7 @@ import { parse } from 'url';
 import next from 'next';
 import { Server as SocketIOServer } from 'socket.io';
 import { WebSocketPriceServer } from './src/lib/websocket-server';
+import { initializeSectorIndustryScheduler } from './src/lib/jobs/sectorIndustryScheduler';
 
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = 'localhost';
@@ -28,7 +29,7 @@ app.prepare().then(() => {
   // Create Socket.io server
   const io = new SocketIOServer(server, {
     cors: {
-      origin: process.env.NODE_ENV === 'production' 
+      origin: process.env.NODE_ENV === 'production'
         ? ['https://premarketprice.com', 'https://www.premarketprice.com']
         : ['http://localhost:3000', 'http://localhost:3001'],
       methods: ['GET', 'POST'],
@@ -49,11 +50,14 @@ app.prepare().then(() => {
     });
   }
 
+  // Initialize sector/industry scheduler (runs daily at 02:00 UTC)
+  initializeSectorIndustryScheduler();
+
   // Start the server
   server.listen(port, () => {
     console.log(`🚀 Next.js server ready on http://${hostname}:${port}`);
     console.log(`🔌 WebSocket server ready on ws://${hostname}:${port}`);
-    
+
     if (process.env.NODE_ENV === 'production' || process.env.ENABLE_WEBSOCKET === 'true') {
       console.log('📡 WebSocket real-time updates: ENABLED');
     } else {

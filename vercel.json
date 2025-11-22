@@ -7,6 +7,12 @@
             "maxDuration": 30
         }
     },
+    "crons": [
+        {
+            "path": "/api/cron/verify-sector-industry",
+            "schedule": "0 2 * * *"
+        }
+    ],
     "env": {
         "NODE_ENV": "production"
     }

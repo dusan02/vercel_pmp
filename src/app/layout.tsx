@@ -100,37 +100,25 @@ export default function RootLayout({
         <meta name="msapplication-TileColor" content="#2563eb" />
         <meta name="msapplication-tap-highlight" content="no" />
         <meta name="theme-color" content="#2563eb" />
-        
+
         {/* Apple Touch Icons */}
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon.png" />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon.png" />
-        
+
         {/* Favicons */}
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon.ico" />
-        <link rel="manifest" href="/manifest.json" />
-        <link rel="mask-icon" href="/icon-192.png" color="#2563eb" />
-        <link rel="shortcut icon" href="/favicon.ico" />
-        
-        {/* PWA Splash Screens */}
-        <link rel="apple-touch-startup-image" href="/apple-touch-icon.png" />
-        
-        {/* Preconnect to external domains */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+
+        {/* Resource Hints - Preconnect to external APIs */}
+        <link rel="preconnect" href="https://api.polygon.io" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://finnhub.io" crossOrigin="anonymous" />
       </head>
       <body className={inter.className}>
         <ErrorBoundaryWrapper>
-          <div className="pwa-app-shell">
-            <div className="pwa-app-content">
-              {children}
-            </div>
-          </div>
+          {children}
         </ErrorBoundaryWrapper>
       </body>
     </html>
   )
-} 
+}
