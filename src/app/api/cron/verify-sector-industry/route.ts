@@ -89,7 +89,7 @@ async function verifyAndFixSectorIndustry() {
     console.log(`📊 Found ${allTickers.length} tickers with sector/industry data\n`);
 
     let fixed = 0;
-    let errors: Array<{ ticker: string; current: string; fixed: string }> = [];
+    const errors: Array<{ ticker: string; current: string; fixed: string }> = [];
     let verified = 0;
 
     for (const ticker of allTickers) {
