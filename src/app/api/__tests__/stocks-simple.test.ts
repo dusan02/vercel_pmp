@@ -1,11 +1,56 @@
-import { NextRequest } from 'next/server';
-import { getSharesOutstanding, getPreviousClose, getCurrentPrice } from '@/lib/marketCapUtils';
-import { __resetCache } from '@/lib/redis';
-
 // 1. Mockujeme závislosti na najvyššej úrovni.
 // Tieto mocky sa aktivujú pre všetky testy v tomto súbore.
-jest.mock('@/lib/marketCapUtils');
-jest.mock('@/lib/redis');
+jest.mock('@/lib/utils/marketCapUtils');
+jest.mock('@/lib/redis', () => {
+  return {
+    __esModule: true,
+    __resetCache: jest.fn(),
+    getCachedData: jest.fn().mockResolvedValue(null),
+    setCachedData: jest.fn().mockResolvedValue(undefined),
+    getCacheKey: jest.fn((project, ticker, type) => `test-cache-${project}-${ticker}-${type}`)
+  };
+});
+jest.mock('@/lib/db/prisma', () => ({
+  prisma: {
+    ticker: {
+      findMany: jest.fn().mockResolvedValue([
+        { 
+          symbol: 'NVDA', 
+          name: 'NVIDIA Corp', 
+          sector: 'Technology', 
+          industry: 'Semiconductors', 
+          sharesOutstanding: 1_000_000_000,
+          latestPrevClose: 780.0,
+          latestPrevCloseDate: new Date()
+        },
+        { 
+          symbol: 'MCD', 
+          name: 'McDonalds', 
+          sector: 'Consumer Cyclical', 
+          industry: 'Restaurants', 
+          sharesOutstanding: 500_000_000,
+          latestPrevClose: 315.0,
+          latestPrevCloseDate: new Date()
+        },
+      ]),
+      update: jest.fn().mockResolvedValue({}),
+    },
+    dailyRef: {
+      findMany: jest.fn().mockResolvedValue([]),
+      upsert: jest.fn().mockResolvedValue({}),
+    },
+    sessionPrice: {
+      findMany: jest.fn().mockResolvedValue([
+        { symbol: 'NVDA', lastPrice: 800.0, changePct: 2.56, lastTs: new Date() },
+        { symbol: 'MCD', lastPrice: 320.0, changePct: 1.58, lastTs: new Date() },
+      ]),
+    },
+  },
+}));
+
+import { NextRequest } from 'next/server';
+import { getSharesOutstanding, getPreviousClose, getCurrentPrice } from '@/lib/utils/marketCapUtils';
+import { __resetCache } from '@/lib/redis';
 
 describe('/api/stocks - Robust Tests', () => {
 

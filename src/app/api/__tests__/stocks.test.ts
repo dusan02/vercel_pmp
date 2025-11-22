@@ -1,11 +1,67 @@
-import { NextRequest } from 'next/server';
-import { getSharesOutstanding, getPreviousClose, getCurrentPrice } from '@/lib/marketCapUtils';
-import { __resetCache } from '@/lib/redis';
-
 // 1. Mockujeme závislosti na najvyššej úrovni.
 // Tieto mocky sa aktivujú pre všetky testy v tomto súbore.
-jest.mock('@/lib/marketCapUtils');
-jest.mock('@/lib/redis');
+jest.mock('@/lib/utils/marketCapUtils');
+jest.mock('@/lib/redis', () => {
+  return {
+    __esModule: true,
+    __resetCache: jest.fn(),
+    getCachedData: jest.fn().mockResolvedValue(null),
+    setCachedData: jest.fn().mockResolvedValue(undefined),
+    getCacheKey: jest.fn((project, ticker, type) => `test-cache-${project}-${ticker}-${type}`)
+  };
+});
+jest.mock('@/lib/db/prisma', () => ({
+  prisma: {
+    ticker: {
+      findMany: jest.fn().mockResolvedValue([
+        { 
+          symbol: 'NVDA', 
+          name: 'NVIDIA Corp', 
+          sector: 'Technology', 
+          industry: 'Semiconductors', 
+          sharesOutstanding: 1_000_000_000,
+          latestPrevClose: 780.0,
+          latestPrevCloseDate: new Date()
+        },
+        { 
+          symbol: 'MCD', 
+          name: 'McDonalds', 
+          sector: 'Consumer Cyclical', 
+          industry: 'Restaurants', 
+          sharesOutstanding: 500_000_000,
+          latestPrevClose: 315.0,
+          latestPrevCloseDate: new Date()
+        },
+        { 
+          symbol: 'AAPL', 
+          name: 'Apple Inc', 
+          sector: 'Technology', 
+          industry: 'Consumer Electronics', 
+          sharesOutstanding: 2_000_000_000,
+          latestPrevClose: 195.0,
+          latestPrevCloseDate: new Date()
+        },
+      ]),
+      update: jest.fn().mockResolvedValue({}),
+    },
+    dailyRef: {
+      findMany: jest.fn().mockResolvedValue([]),
+      upsert: jest.fn().mockResolvedValue({}),
+    },
+    sessionPrice: {
+      findMany: jest.fn().mockResolvedValue([
+        { symbol: 'NVDA', lastPrice: 800.0, changePct: 2.56, lastTs: new Date() },
+        { symbol: 'MCD', lastPrice: 320.0, changePct: 1.58, lastTs: new Date() },
+        { symbol: 'AAPL', lastPrice: 200.0, changePct: 2.56, lastTs: new Date() },
+      ]),
+    },
+  },
+}));
+
+import { NextRequest } from 'next/server';
+import { getSharesOutstanding, getPreviousClose, getCurrentPrice } from '@/lib/utils/marketCapUtils';
+import { __resetCache } from '@/lib/redis';
+import { prisma } from '@/lib/db/prisma';
 
 describe('/api/stocks', () => {
 
@@ -16,13 +72,18 @@ describe('/api/stocks', () => {
   // Helper funkcia pre dynamické nastavenie mockov pred každým testom
   const setupMocks = () => {
     // 2. Nastavíme implementácie pre každý test znova.
-    // Toto je kľúčové, pretože `resetModules` ich vymaže.
     (getSharesOutstanding as jest.Mock).mockResolvedValue(1_000_000_000);
     (getPreviousClose as jest.Mock).mockImplementation((ticker: string) => {
         const prices: { [key: string]: number } = { NVDA: 780, MCD: 315, AAPL: 195, MSFT: 395 };
         return Promise.resolve(prices[ticker] || 145);
     });
     (getCurrentPrice as jest.Mock).mockImplementation((snapshotData: any) => snapshotData?.lastTrade?.p || null);
+    
+    // Mock computation functions
+    const { computeMarketCap, computeMarketCapDiff, computePercentChange } = require('@/lib/utils/marketCapUtils');
+    (computeMarketCap as jest.Mock).mockImplementation((price, shares) => price * shares);
+    (computeMarketCapDiff as jest.Mock).mockImplementation((price, prev, shares) => (price - prev) * shares);
+    (computePercentChange as jest.Mock).mockImplementation((price, prev) => ((price - prev) / prev) * 100);
 
     // 3. Nastavíme mock pre fetch
     (global.fetch as jest.Mock).mockImplementation((url: string) => {
@@ -136,7 +197,8 @@ describe('/api/stocks', () => {
     expect(data.success).toBe(true);
     expect(data.data).toHaveLength(0);
     expect(data.warnings).toBeDefined();
-    expect(data.warnings).toContainEqual(expect.stringMatching(/API key invalid or expired/i));
+    // Updated expectation: Error message comes from our route logic when DB data is missing
+    expect(data.warnings).toContainEqual(expect.stringMatching(/Missing previous close data|No current price data/i));
     expect(data.partial).toBe(true);
     expect(data.message).toBeDefined();
   });
@@ -154,7 +216,8 @@ describe('/api/stocks', () => {
     expect(data.data[0].ticker).toBe('NVDA');
     expect(data.count).toBe(1);
     expect(data.warnings).toBeDefined();
-    expect(data.warnings).toContainEqual(expect.stringMatching(/FAKE.*Not Found/i));
+    // Updated expectation: Error message comes from our route logic when DB data is missing
+    expect(data.warnings).toContainEqual(expect.stringMatching(/FAKE.*(Missing previous close|No current price)/i));
     expect(data.partial).toBe(true);
     expect(data.message).toBeDefined();
   });

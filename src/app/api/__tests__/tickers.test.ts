@@ -1,10 +1,44 @@
 import { NextRequest } from 'next/server';
 import { GET } from '../tickers/default/route';
 
-// Import the actual module to spy on it
+// Mock defaultTickers to return stable data for tests
+jest.mock('@/data/defaultTickers', () => ({
+  __esModule: true,
+  getAllProjectTickers: jest.fn((project: string) => {
+    if (project === 'pmp' || project === 'cm') {
+      return ['AAPL', 'MSFT', 'GOOGL', 'NVDA', 'TSLA', 'META', 'AMZN', 'NFLX'];
+    }
+    if (project === 'nonexistent') {
+      return ['DEFAULT', 'MOCK'];
+    }
+    return ['AAPL', 'MSFT', 'GOOGL']; // Default fallback
+  }),
+  DEFAULT_TICKERS: {
+    pmp: ['AAPL', 'MSFT', 'GOOGL', 'NVDA', 'TSLA', 'META', 'AMZN', 'NFLX'],
+    cm: ['AAPL', 'MSFT', 'GOOGL', 'NVDA', 'TSLA', 'META', 'AMZN', 'NFLX']
+  }
+}));
+
+import { NextRequest } from 'next/server';
+import { GET } from '../tickers/default/route';
+// Import the mocked module to spy on it if needed, though we defined the mock above
 import * as defaultTickers from '@/data/defaultTickers';
 
 describe('/api/tickers/default', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    // Reset default implementation for successful response
+    (defaultTickers.getAllProjectTickers as jest.Mock).mockImplementation((project: string) => {
+      if (project === 'pmp' || project === 'cm' || project === 'standard' || project === 'extended') {
+        return ['AAPL', 'MSFT', 'GOOGL', 'NVDA', 'TSLA', 'META', 'AMZN', 'NFLX'];
+      }
+      if (project === 'nonexistent') {
+        return ['DEFAULT', 'MOCK'];
+      }
+      return ['AAPL', 'MSFT', 'GOOGL'];
+    });
+  });
+
   afterEach(() => {
     jest.restoreAllMocks();
   });
@@ -96,7 +130,8 @@ describe('/api/tickers/default', () => {
 
   it('should return error response on internal error', async () => {
     // Mock getAllProjectTickers to throw an error
-    jest.spyOn(defaultTickers, 'getAllProjectTickers').mockImplementation(() => {
+    const { getAllProjectTickers } = require('@/data/defaultTickers');
+    (getAllProjectTickers as jest.Mock).mockImplementationOnce(() => {
       throw new Error('Database connection failed');
     });
 

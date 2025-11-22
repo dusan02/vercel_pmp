@@ -1,6 +1,6 @@
 // Mockovanie na najvyššej úrovni súboru
-jest.mock('@/lib/yahooFinanceScraper');
-jest.mock('@/lib/marketCapUtils'); // Mock marketCapUtils pre tento test
+jest.mock('@/lib/clients/yahooFinanceScraper');
+jest.mock('@/lib/utils/marketCapUtils'); // Mock marketCapUtils pre tento test
 jest.mock('@/data/defaultTickers', () => ({
   DEFAULT_TICKERS: {
     pmp: ['AAPL', 'MSFT', 'GOOGL', 'NVDA', 'TSLA', 'META', 'AMZN', 'NFLX'],
