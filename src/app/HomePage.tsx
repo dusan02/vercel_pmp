@@ -2,7 +2,7 @@
 
 // Client component containing all page logic
 // This is imported by page.tsx (server component)
-import React, { useState, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import dynamic from 'next/dynamic';
 
 // All component imports moved to dynamic imports to fix webpack require error
@@ -58,16 +58,49 @@ interface HomePageProps {
 }
 
 export default function HomePage({ initialData = [] }: HomePageProps) {
+  // Use user preferences hook for persistence
+  const { preferences, savePreferences, isLoaded, setConsent } = useUserPreferences();
+
   // Section visibility state
   const [showPortfolioSection, setShowPortfolioSection] = useState(true);
   const [showFavoritesSection, setShowFavoritesSection] = useState(true);
   const [showEarningsSection, setShowEarningsSection] = useState(true);
   const [showAllStocksSection, setShowAllStocksSection] = useState(true);
   
+  // Sync local state with preferences when loaded
+  useEffect(() => {
+    if (isLoaded) {
+      setShowPortfolioSection(preferences.showPortfolioSection ?? true);
+      setShowFavoritesSection(preferences.showFavoritesSection ?? true);
+      setShowEarningsSection(preferences.showEarningsSection ?? true);
+      setShowAllStocksSection(preferences.showAllStocksSection ?? true);
+    }
+  }, [isLoaded, preferences]);
+
+  // Handlers for toggling sections with persistence
+  const handleTogglePortfolio = (value: boolean) => {
+    setShowPortfolioSection(value);
+    savePreferences({ showPortfolioSection: value });
+  };
+
+  const handleToggleFavorites = (value: boolean) => {
+    setShowFavoritesSection(value);
+    savePreferences({ showFavoritesSection: value });
+  };
+
+  const handleToggleEarnings = (value: boolean) => {
+    setShowEarningsSection(value);
+    savePreferences({ showEarningsSection: value });
+  };
+
+  const handleToggleAllStocks = (value: boolean) => {
+    setShowAllStocksSection(value);
+    savePreferences({ showAllStocksSection: value });
+  };
+
   // Hooks for core functionality
   const { portfolioHoldings, updateQuantity, removeStock, addStock } = usePortfolio();
   const { favorites, toggleFavorite, isFavorite } = useFavorites();
-  const { setConsent } = useUserPreferences();
   const { isOnline } = usePWA();
 
   // Custom hooks for data and filtering - REFACTORED
@@ -162,10 +195,10 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
                   showPortfolioSection={showPortfolioSection}
                   showAllStocksSection={showAllStocksSection}
                   showEarningsSection={showEarningsSection}
-                  onToggleFavorites={setShowFavoritesSection}
-                  onTogglePortfolio={setShowPortfolioSection}
-                  onToggleAllStocks={setShowAllStocksSection}
-                  onToggleEarnings={setShowEarningsSection}
+                  onToggleFavorites={handleToggleFavorites}
+                  onTogglePortfolio={handleTogglePortfolio}
+                  onToggleAllStocks={handleToggleAllStocks}
+                  onToggleEarnings={handleToggleEarnings}
                 />
 
                 {/* Error Display */}
