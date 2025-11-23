@@ -4,8 +4,25 @@ import React, { useEffect, useState } from 'react';
 import ResponsiveMarketHeatmap from '@/components/ResponsiveMarketHeatmap';
 import { CompanyNode, HeatmapLegend } from '@/components/MarketHeatmap';
 
+// Timeframe selector component
+const TimeframeSelector = ({ value, onChange }: { value: 'day' | 'week' | 'month', onChange: (v: 'day' | 'week' | 'month') => void }) => (
+  <div className="flex bg-gray-800 rounded-md p-1 mr-4">
+    {['day', 'week', 'month'].map((t) => (
+      <button
+        key={t}
+        onClick={() => onChange(t as 'day' | 'week' | 'month')}
+        className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+          value === t ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-700'
+        }`}
+      >
+        {t === 'day' ? '1D' : t === 'week' ? '1W' : '1M'}
+      </button>
+    ))}
+  </div>
+);
+
 /**
- * Testovacia stránka pre novú heatmapu
+ * Stránka pre heatmapu
  */
 export default function HeatmapPage() {
   const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month'>('day');
@@ -33,7 +50,6 @@ export default function HeatmapPage() {
     };
   }, []);
 
-  // Odstránený Google search - jednoklik nič nerobí
   const handleTileClick = (company: CompanyNode) => {
     // Jednoklik - nič nerobíme (iba tooltip)
     console.log('Clicked on:', company.symbol);
@@ -45,18 +61,26 @@ export default function HeatmapPage() {
       style={{ overflow: 'hidden' }} 
       suppressHydrationWarning
     >
-      <div className="px-2 py-1 z-50 text-white flex-shrink-0 flex items-center justify-between bg-black">
-        <div>
-          <h1 className="text-xl font-bold mb-0">
-            Heatmap<span className="text-green-500">.today</span>
-          </h1>
-          <p className="text-[9px] text-gray-400">
-            Interactive treemap visualization of stock market data
-          </p>
-        </div>
+      <div className="px-2 py-1 z-50 text-white flex-shrink-0 flex items-center justify-between bg-black border-b border-gray-800">
         <div className="flex items-center gap-4">
-          {/* Legenda vedľa nadpisu */}
-          <HeatmapLegend timeframe={timeframe} />
+          <div>
+            <h1 className="text-xl font-bold mb-0 leading-none">
+              Heatmap<span className="text-green-500">.today</span>
+            </h1>
+            <p className="text-[9px] text-gray-400 hidden sm:block">
+              Interactive visualization
+            </p>
+          </div>
+          
+          {/* Timeframe selector in header */}
+          <TimeframeSelector value={timeframe} onChange={setTimeframe} />
+        </div>
+        
+        <div className="flex items-center gap-4">
+          {/* Legenda (farebná škála) */}
+          <div className="hidden sm:block">
+            <HeatmapLegend timeframe={timeframe} />
+          </div>
         </div>
       </div>
       <div 
@@ -74,4 +98,3 @@ export default function HeatmapPage() {
     </div>
   );
 }
-
