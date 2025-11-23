@@ -247,6 +247,7 @@ export async function getStocksData(
         marketCap,
         marketCapDiff,
         lastUpdated: new Date().toISOString(),
+        logoUrl: `/logos/${ticker.toLowerCase()}-32.webp`,
         ...(finalSector ? { sector: finalSector } : {}),
         ...(finalIndustry ? { industry: finalIndustry } : {}),
         ...(staticData?.name ? { companyName: staticData.name } : {})
