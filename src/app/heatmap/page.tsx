@@ -1,31 +1,15 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import ResponsiveMarketHeatmap from '@/components/ResponsiveMarketHeatmap';
 import { CompanyNode, HeatmapLegend } from '@/components/MarketHeatmap';
-
-// Timeframe selector component
-const TimeframeSelector = ({ value, onChange }: { value: 'day' | 'week' | 'month', onChange: (v: 'day' | 'week' | 'month') => void }) => (
-  <div className="flex bg-gray-800 rounded-md p-1 mr-4">
-    {['day', 'week', 'month'].map((t) => (
-      <button
-        key={t}
-        onClick={() => onChange(t as 'day' | 'week' | 'month')}
-        className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
-          value === t ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-700'
-        }`}
-      >
-        {t === 'day' ? '1D' : t === 'week' ? '1W' : '1M'}
-      </button>
-    ))}
-  </div>
-);
 
 /**
  * Stránka pre heatmapu
  */
 export default function HeatmapPage() {
-  const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month'>('day');
+  // Timeframe je fixne nastavený na 'day'
+  const timeframe = 'day';
 
   // Odstránenie scrollbarov z body a html
   useEffect(() => {
@@ -71,9 +55,6 @@ export default function HeatmapPage() {
               Interactive visualization
             </p>
           </div>
-          
-          {/* Timeframe selector in header */}
-          <TimeframeSelector value={timeframe} onChange={setTimeframe} />
         </div>
         
         <div className="flex items-center gap-4">
