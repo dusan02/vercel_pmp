@@ -71,9 +71,13 @@ interface LoadingStates {
   background: boolean;
 }
 
-export default function HomePage() {
+interface HomePageProps {
+  initialData?: StockData[];
+}
+
+export default function HomePage({ initialData = [] }: HomePageProps) {
   // State for stock data
-  const [stockData, setStockData] = useState<StockData[]>([]);
+  const [stockData, setStockData] = useState<StockData[]>(initialData);
   const [loadingStates, setLoadingStates] = useState<LoadingStates>({
     favorites: false,
     earnings: false,
@@ -641,11 +645,15 @@ export default function HomePage() {
       ]);
       
       // Phase 3: Top 50 stocks (deferred - medium priority)
-      // Add delay to avoid rate limiting after favorites request
-      console.log('🔄 Phase 3: Loading top 50 stocks...');
-      setTimeout(() => {
-        fetchTop50StocksData();
-      }, 2000); // Increased delay to 2 seconds to avoid rate limiting
+      if (initialData.length > 0) {
+        console.log('✅ SSR Data: Top 50 stocks already loaded');
+      } else {
+        // Add delay to avoid rate limiting after favorites request
+        console.log('🔄 Phase 3: Loading top 50 stocks...');
+        setTimeout(() => {
+          fetchTop50StocksData();
+        }, 2000); // Increased delay to 2 seconds to avoid rate limiting
+      }
       
       // Phase 4: Remaining stocks (lazy - lowest priority)
       console.log('🔄 Phase 4: Remaining stocks will load on scroll');
