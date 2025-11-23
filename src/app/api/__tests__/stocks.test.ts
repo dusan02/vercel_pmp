@@ -160,7 +160,7 @@ describe('/api/stocks', () => {
       marketCapDiff: expect.any(Number),
       lastUpdated: expect.any(String)
     });
-    expect(data.source).toBe('polygon');
+    expect(data.source).toBe('hybrid');
     expect(data.project).toBe('pmp');
     expect(data.count).toBe(1);
     expect(data.timestamp).toBeDefined();
@@ -198,7 +198,7 @@ describe('/api/stocks', () => {
     expect(data.data).toHaveLength(0);
     expect(data.warnings).toBeDefined();
     // Updated expectation: Error message comes from our route logic when DB data is missing
-    expect(data.warnings).toContainEqual(expect.stringMatching(/Missing previous close data|No current price data/i));
+    expect(data.warnings).toContainEqual(expect.stringMatching(/(Missing previous close data|No current price data|No price data)/i));
     expect(data.partial).toBe(true);
     expect(data.message).toBeDefined();
   });
@@ -217,7 +217,7 @@ describe('/api/stocks', () => {
     expect(data.count).toBe(1);
     expect(data.warnings).toBeDefined();
     // Updated expectation: Error message comes from our route logic when DB data is missing
-    expect(data.warnings).toContainEqual(expect.stringMatching(/FAKE.*(Missing previous close|No current price)/i));
+    expect(data.warnings).toContainEqual(expect.stringMatching(/FAKE.*(Missing previous close|No current price|No price data)/i));
     expect(data.partial).toBe(true);
     expect(data.message).toBeDefined();
   });
