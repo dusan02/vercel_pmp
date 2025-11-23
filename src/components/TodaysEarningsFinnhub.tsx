@@ -21,6 +21,7 @@ interface EarningsData {
   marketCapDiff: number | null;
   time: string;
   date: string;
+  logoUrl?: string;
 }
 
 interface EarningsResponse {
@@ -55,7 +56,8 @@ const mergeStockDataWithEarnings = (
         ...earning,
         marketCap: stock.marketCap,
         percentChange: stock.percentChange,
-        marketCapDiff: stock.marketCapDiff
+        marketCapDiff: stock.marketCapDiff,
+        logoUrl: stock.logoUrl
       };
     }
     return earning;
@@ -440,6 +442,7 @@ export default function TodaysEarningsFinnhub() {
                         {/* Priority loading for first 15 logos (above the fold) */}
                         <CompanyLogo
                           ticker={earning.ticker}
+                          logoUrl={earning.logoUrl}
                           size={40}
                           priority={index < 15}
                         />

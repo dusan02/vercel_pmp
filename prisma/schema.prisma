@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -15,7 +12,7 @@ model EarningsCalendar {
   ticker                 String
   companyName            String
   date                   DateTime
-  time                   String // "before" or "after"
+  time                   String
   epsEstimate            Float?
   epsActual              Float?
   revenueEstimate        Float?
@@ -36,41 +33,39 @@ model EarningsCalendar {
 model UserPreferences {
   id              String   @id @default(cuid())
   userId          String   @unique
-  favorites       String // JSON string of favorite tickers
+  favorites       String
   theme           String   @default("auto")
   defaultTab      String   @default("all")
   autoRefresh     Boolean  @default(true)
   refreshInterval Int      @default(30)
   showEarnings    Boolean  @default(true)
   showNews        Boolean  @default(true)
-  tableColumns    String // JSON string of column preferences
+  tableColumns    String
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
 
-// Ticker reference data
 model Ticker {
-  symbol            String   @id
-  name              String?
-  sector            String?
-  industry          String?
-  sharesOutstanding Float?
-  adrRatio          Float? // For ADR stocks (DECIMAL(6,3) equivalent)
-  isAdr             Boolean  @default(false)
-  latestPrevClose   Float?  // Denormalized from DailyRef - latest previous close for quick access
-  latestPrevCloseDate DateTime? // Date of the latest previous close
-  updatedAt         DateTime @updatedAt
-
-  dailyRefs     DailyRef[]
-  sessionPrices SessionPrice[]
-  userFavorites UserFavorite[]
+  symbol              String         @id
+  name                String?
+  sector              String?
+  industry            String?
+  logoUrl             String?
+  sharesOutstanding   Float?
+  adrRatio            Float?
+  isAdr               Boolean        @default(false)
+  latestPrevClose     Float?
+  latestPrevCloseDate DateTime?
+  updatedAt           DateTime       @updatedAt
+  dailyRefs           DailyRef[]
+  sessionPrices       SessionPrice[]
+  userFavorites       UserFavorite[]
 
   @@index([sector])
   @@index([sharesOutstanding])
   @@index([latestPrevCloseDate])
 }
 
-// Daily reference prices (previous close, today open, regular close)
 model DailyRef {
   id            String   @id @default(cuid())
   symbol        String
@@ -80,35 +75,32 @@ model DailyRef {
   regularClose  Float?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-
-  ticker Ticker @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+  ticker        Ticker   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
 
   @@unique([symbol, date])
   @@index([date])
   @@index([symbol])
 }
 
-// Session prices (pre-market, live, after-hours)
 model SessionPrice {
   id        String   @id @default(cuid())
   symbol    String
   date      DateTime
-  session   String // 'pre', 'live', 'after'
+  session   String
   lastPrice Float
   lastTs    DateTime
   changePct Float
-  source    String // 'delayed_15m', 'rest', 'snapshot'
-  quality   String // 'delayed_15m', 'rest', 'snapshot'
+  source    String
+  quality   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  ticker Ticker @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+  ticker    Ticker   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
 
   @@unique([symbol, date, session])
-  @@index([date, session]) // For date+session lookups
-  @@index([symbol, session]) // For symbol+session lookups
-  @@index([lastTs]) // For latest data queries
-  @@index([changePct]) // For heatmap queries (sorting done in query)
+  @@index([date, session])
+  @@index([symbol, session])
+  @@index([lastTs])
+  @@index([changePct])
 }
 
 model UserFavorite {
@@ -116,8 +108,7 @@ model UserFavorite {
   userId    String
   ticker    String
   createdAt DateTime @default(now())
-
-  tickerRef Ticker @relation(fields: [ticker], references: [symbol], onDelete: Cascade)
+  tickerRef Ticker   @relation(fields: [ticker], references: [symbol], onDelete: Cascade)
 
   @@unique([userId, ticker])
   @@index([userId])

@@ -93,7 +93,7 @@ export const AdaptiveTable: React.FC<AdaptiveTableProps> = ({
           cells.push(
             <td key="logo">
               <div className="logo-container">
-                <CompanyLogo ticker={stock.ticker} size={32} priority={priority} />
+                <CompanyLogo ticker={stock.ticker} logoUrl={stock.logoUrl} size={32} priority={priority} />
               </div>
             </td>
           );

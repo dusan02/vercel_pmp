@@ -113,7 +113,7 @@ export function PortfolioSection({
                     }}
                   >
                     <div className="portfolio-search-result-logo">
-                      <CompanyLogo ticker={stock.ticker} size={24} priority={true} /> {/* Search results sú vždy priority */}
+                      <CompanyLogo ticker={stock.ticker} logoUrl={stock.logoUrl} size={24} priority={true} /> {/* Search results sú vždy priority */}
                     </div>
                     <div className="portfolio-search-result-info">
                       <div className="portfolio-search-result-ticker">{stock.ticker}</div>
@@ -172,7 +172,7 @@ export function PortfolioSection({
                   <tr key={stock.ticker}>
                     <td>
                       <div className="logo-container">
-                        <CompanyLogo ticker={stock.ticker} size={32} />
+                        <CompanyLogo ticker={stock.ticker} logoUrl={stock.logoUrl} size={32} />
                       </div>
                     </td>
                     <td>

@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 
 interface CompanyLogoProps {
   ticker: string;
+  logoUrl?: string;
   size?: number;
   className?: string;
   priority?: boolean;
@@ -29,6 +30,7 @@ function generateLQPlaceholder(ticker: string, size: number): string {
 
 export default function CompanyLogo({
   ticker,
+  logoUrl,
   size = 32,
   className = '',
   priority = false
@@ -81,16 +83,20 @@ export default function CompanyLogo({
       setHasError(false);
       setIsLoading(true);
 
-      // Strategy: Use API endpoint as primary source
-      // API will try: static file -> external API -> placeholder
-      // This ensures consistent behavior and proper fallbacks
-      const apiSrc = `/api/logo/${ticker}?s=${size}`;
-      setLogoSrc(apiSrc);
+      // Strategy: Use provided logoUrl if available (direct static file access)
+      // Otherwise use API endpoint as primary source
+      if (logoUrl) {
+        setLogoSrc(logoUrl);
+      } else {
+        // API will try: static file -> external API -> placeholder
+        const apiSrc = `/api/logo/${ticker}?s=${size}`;
+        setLogoSrc(apiSrc);
+      }
     } else {
       // Pre non-priority a neviditeľné logá vymaž logoSrc
       setLogoSrc(null);
     }
-  }, [ticker, size, isVisible, priority]);
+  }, [ticker, size, isVisible, priority, logoUrl]);
 
   // Fallback placeholder component (used when image fails to load)
   const LogoPlaceholder = () => (

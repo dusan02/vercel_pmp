@@ -77,6 +77,7 @@ export async function getStocksData(
     name: string | null;
     sector: string | null;
     industry: string | null;
+    logoUrl: string | null;
     sharesOutstanding: number | null;
   }>();
   const prevCloseMap = new Map<string, number>();
@@ -92,6 +93,7 @@ export async function getStocksData(
           name: true,
           sector: true,
           industry: true,
+          logoUrl: true,
           sharesOutstanding: true,
           latestPrevClose: true,
         }
@@ -102,6 +104,7 @@ export async function getStocksData(
           name: ticker.name,
           sector: ticker.sector,
           industry: ticker.industry,
+          logoUrl: ticker.logoUrl,
           sharesOutstanding: ticker.sharesOutstanding,
         });
         if (ticker.latestPrevClose && ticker.latestPrevClose > 0) {
@@ -249,7 +252,8 @@ export async function getStocksData(
         lastUpdated: new Date().toISOString(),
         ...(finalSector ? { sector: finalSector } : {}),
         ...(finalIndustry ? { industry: finalIndustry } : {}),
-        ...(staticData?.name ? { companyName: staticData.name } : {})
+        ...(staticData?.name ? { companyName: staticData.name } : {}),
+        ...(staticData?.logoUrl ? { logoUrl: staticData.logoUrl } : {})
       };
 
       // Cache the result

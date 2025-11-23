@@ -20,6 +20,7 @@ export interface StockData {
   companyName?: string;
   sector?: string;
   industry?: string;
+  logoUrl?: string;
   volume?: number;
   timestamp?: Date;
   lastUpdated?: string;

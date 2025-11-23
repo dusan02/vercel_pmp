@@ -4,345 +4,40 @@ import fs from 'fs/promises';
 import path from 'path';
 import sharp from 'sharp';
 import * as si from 'simple-icons';
+import { PrismaClient } from '@prisma/client';
+import { getAllProjectTickers } from '../src/data/defaultTickers';
 
-// Import our existing ticker mappings
+// Initialize Prisma with logging
+const prisma = new PrismaClient({
+  log: ['warn', 'error'],
+});
+
+// Domain mappings
 const TICKER_DOMAINS: Record<string, string> = {
-  // Top US Tech & Major Companies
-  'NVDA': 'nvidia.com',
-  'MSFT': 'microsoft.com',
-  'AAPL': 'apple.com',
-  'AMZN': 'amazon.com',
-  'GOOGL': 'google.com',
-  'GOOG': 'google.com',
-  'META': 'meta.com',
-  'AVGO': 'broadcom.com',
-  'BRK.A': 'berkshirehathaway.com',
-  'BRK.B': 'berkshirehathaway.com',
-  'BRKA': 'berkshirehathaway.com',
-  'BRKB': 'berkshirehathaway.com',
-  'TSLA': 'tesla.com',
-  'JPM': 'jpmorganchase.com',
-  'WMT': 'walmart.com',
-  'LLY': 'lilly.com',
-  'ORCL': 'oracle.com',
-  'V': 'visa.com',
-  'MA': 'mastercard.com',
-  'NFLX': 'netflix.com',
-  'XOM': 'exxonmobil.com',
-  'COST': 'costco.com',
-  'JNJ': 'jnj.com',
-  'HD': 'homedepot.com',
-  'PLTR': 'palantir.com',
-  'PG': 'pg.com',
-  'BAC': 'bankofamerica.com',
-  'ABBV': 'abbvie.com',
-  'CVX': 'chevron.com',
-  'KO': 'coca-cola.com',
-  'AMD': 'amd.com',
-  'GE': 'ge.com',
-  'CSCO': 'cisco.com',
-  'TMUS': 't-mobile.com',
-  'WFC': 'wellsfargo.com',
-  'CRM': 'salesforce.com',
-  'PM': 'pmi.com',
-  'IBM': 'ibm.com',
-  'UNH': 'unitedhealthgroup.com',
-  'MS': 'morganstanley.com',
-  'GS': 'goldmansachs.com',
-  'INTU': 'intuit.com',
-  'LIN': 'linde.com',
-  'ABT': 'abbott.com',
-  'AXP': 'americanexpress.com',
-  'BX': 'blackstone.com',
-  'DIS': 'disney.com',
-  'MCD': 'mcdonalds.com',
-  'RTX': 'rtx.com',
-  'NOW': 'servicenow.com',
-  'MRK': 'merck.com',
-  'CAT': 'caterpillar.com',
-  'T': 'att.com',
-  'PEP': 'pepsi.com',
-  'UBER': 'uber.com',
-  'BKNG': 'booking.com',
-  'TMO': 'thermofisher.com',
-  'VZ': 'verizon.com',
-  'SCHW': 'schwab.com',
-  'ISRG': 'intuitive.com',
-  'QCOM': 'qualcomm.com',
-  'C': 'citigroup.com',
-  'TXN': 'ti.com',
-  'BA': 'boeing.com',
-  'BLK': 'blackrock.com',
-  'ACN': 'accenture.com',
-  'SPGI': 'spglobal.com',
-  'AMGN': 'amgen.com',
-  'ADBE': 'adobe.com',
-  'BSX': 'bostonscientific.com',
-  'SYK': 'stryker.com',
-  'ETN': 'eaton.com',
-  'AMAT': 'appliedmaterials.com',
-  'ANET': 'arista.com',
-  'NEE': 'nexteraenergy.com',
-  'DHR': 'danaher.com',
-  'HON': 'honeywell.com',
-  'TJX': 'tjx.com',
-  'PGR': 'progressive.com',
-  'GILD': 'gilead.com',
-  'DE': 'deere.com',
-  'PFE': 'pfizer.com',
-  'COF': 'capitalone.com',
-  'KKR': 'kkr.com',
-  'PANW': 'paloaltonetworks.com',
-  'UNP': 'up.com',
-  'APH': 'amphenol.com',
-  'LOW': 'lowes.com',
-  'LRCX': 'lamresearch.com',
-  'MU': 'micron.com',
-  'ADP': 'adp.com',
-  'CMCSA': 'comcast.com',
-  'COP': 'conocophillips.com',
-  'KLAC': 'kla.com',
-  'VRTX': 'vrtx.com',
-  'MDT': 'medtronic.com',
-  'SNPS': 'synopsys.com',
-  'NKE': 'nike.com',
-  'CRWD': 'crowdstrike.com',
-  'ADI': 'analog.com',
-  'WELL': 'welltower.com',
-  'CB': 'chubb.com',
-  'ICE': 'ice.com',
-  'SBUX': 'starbucks.com',
-  'TT': 'trane.com',
-  'SO': 'southerncompany.com',
-  'CEG': 'constellationenergy.com',
-  'PLD': 'prologis.com',
-  'DASH': 'doordash.com',
-  'AMT': 'americantower.com',
-  'MO': 'altria.com',
-  'MMC': 'mmc.com',
-  'CME': 'cmegroup.com',
-  'CDNS': 'cadence.com',
-  'LMT': 'lockheedmartin.com',
-  'BMY': 'bms.com',
-  'WM': 'wm.com',
-  'PH': 'parker.com',
-  'COIN': 'coinbase.com',
-  'DUK': 'duke-energy.com',
-  'RCL': 'rcl.com',
-  'MCO': 'moodys.com',
-  'MDLZ': 'mondelez.com',
-  'DELL': 'dell.com',
-  'TDG': 'transdigm.com',
-  'CTAS': 'cintas.com',
-  'INTC': 'intel.com',
-  'MCK': 'mckesson.com',
-  'ABNB': 'airbnb.com',
-  'GD': 'gd.com',
-  'ORLY': 'oreillyauto.com',
-  'APO': 'apollo.com',
-  'SHW': 'sherwin-williams.com',
-  'HCA': 'hcahealthcare.com',
-  'EMR': 'emerson.com',
-  'NOC': 'northropgrumman.com',
-  'MMM': '3m.com',
-  'FTNT': 'fortinet.com',
-  'EQIX': 'equinix.com',
-  'CI': 'cigna.com',
-  'UPS': 'ups.com',
-  'FI': 'fiserv.com',
-  'HWM': 'howmet.com',
-  'AON': 'aon.com',
-  'PNC': 'pnc.com',
-  'CVS': 'cvshealth.com',
-  'RSG': 'republicservices.com',
-  'AJG': 'ajg.com',
-  'ITW': 'itw.com',
-  'MAR': 'marriott.com',
-  'ECL': 'ecolab.com',
-  'MSI': 'motorolasolutions.com',
-  'USB': 'usbank.com',
-  'WMB': 'westernmidstream.com',
-  'BK': 'bnymellon.com',
-  'CL': 'colgatepalmolive.com',
-  'NEM': 'newmont.com',
-  'PYPL': 'paypal.com',
-  'JCI': 'johnsoncontrols.com',
-  'ZTS': 'zoetis.com',
-  'VST': 'vistra.com',
-  'EOG': 'eogresources.com',
-  'CSX': 'csx.com',
-  'ELV': 'elevancehealth.com',
-  'ADSK': 'autodesk.com',
-  'APD': 'airproducts.com',
-  'AZO': 'autozone.com',
-  'HLT': 'hilton.com',
-  'WDAY': 'workday.com',
-  'SPG': 'simon.com',
-  'NSC': 'nscorp.com',
-  'KMI': 'kindermorgan.com',
-  'TEL': 'te.com',
-  'FCX': 'freeportmcmoran.com',
-  'CARR': 'carrier.com',
-  'PWR': 'quanta.com',
-  'REGN': 'regeneron.com',
-  'ROP': 'ropertech.com',
-  'CMG': 'chipotle.com',
-  'DLR': 'digitalrealty.com',
-  'MNST': 'monsterenergy.com',
-  'TFC': 'truist.com',
-  'TRV': 'travelers.com',
-  'AEP': 'aep.com',
-  'NXPI': 'nxp.com',
-  'AXON': 'axon.com',
-  'URI': 'united-rentals.com',
-  'COR': 'corning.com',
-  'FDX': 'fedex.com',
-  'NDAQ': 'nasdaq.com',
-  'AFL': 'aflac.com',
-  'GLW': 'corning.com',
-  'FAST': 'fastenal.com',
-  'MPC': 'marathonpetroleum.com',
-  'SLB': 'slb.com',
-  'SRE': 'sdge.com',
-  'PAYX': 'paychex.com',
-  'PCAR': 'paccar.com',
-  'MET': 'metlife.com',
-  'BDX': 'bd.com',
-  'OKE': 'oneok.com',
-  'DDOG': 'datadoghq.com',
-
-  // International Companies
-  'TSM': 'tsmc.com',
-  'SAP': 'sap.com',
-  'ASML': 'asml.com',
-  'BABA': 'alibaba.com',
-  'TM': 'toyota.com',
-  'AZN': 'astrazeneca.com',
-  'HSBC': 'hsbc.com',
-  'NVS': 'novartis.com',
-  'SHEL': 'shell.com',
-  'HDB': 'hdfcbank.com',
-  'RY': 'rbc.com',
-  'NVO': 'novonordisk.com',
-  'ARM': 'arm.com',
-  'SHOP': 'shopify.com',
-  'MUFG': 'mufg.jp',
-  'PDD': 'pdd.com',
-  'UL': 'unilever.com',
-  'SONY': 'sony.com',
-  'TTE': 'totalenergies.com',
-  'BHP': 'bhp.com',
-  'SAN': 'santander.com',
-  'TD': 'td.com',
-  'SPOT': 'spotify.com',
-  'UBS': 'ubs.com',
-  'IBN': 'icicibank.com',
-  'SNY': 'sanofi.com',
-  'BUD': 'ab-inbev.com',
-  'BTI': 'bat.com',
-  'BN': 'brookfield.com',
-  'SMFG': 'smfg.co.jp',
-  'ENB': 'enbridge.com',
-  'RELX': 'relx.com',
-  'TRI': 'thomsonreuters.com',
-  'RACE': 'ferrari.com',
-  'BBVA': 'bbva.com',
-  'SE': 'sea.com',
-  'BP': 'bp.com',
-  'NTES': 'netease.com',
-  'BMO': 'bmo.com',
-  'RIO': 'riotinto.com',
-  'GSK': 'gsk.com',
-  'MFG': 'mizuho-fg.com',
-  'INFY': 'infosys.com',
-  'CP': 'cpr.ca',
-  'BCS': 'barclays.com',
-  'NGG': 'nationalgrid.com',
-  'BNS': 'scotiabank.com',
-  'ING': 'ing.com',
-  'EQNR': 'equinor.com',
-  'CM': 'cibc.com',
-  'CNQ': 'cnq.com',
-  'LYG': 'lloydsbank.com',
-  'AEM': 'agnicoeagle.com',
-  'DB': 'db.com',
-  'NU': 'nu.com',
-  'CNI': 'cn.ca',
-  'DEO': 'diageo.com',
-  'NWG': 'natwestgroup.com',
-  'AMX': 'americamovil.com',
-  'MFC': 'manulife.com',
-  'E': 'eni.com',
-  'WCN': 'wasteconnections.com',
-  'SU': 'suncor.com',
-  'TRP': 'tcenergy.com',
-  'PBR': 'petrobras.com.br',
-  'HMC': 'honda.com',
-  'GRMN': 'garmin.com',
-  'CCEP': 'ccep.com',
-  'ALC': 'alcon.com',
-  'TAK': 'takeda.com',
-
-  // Additional mappings
-  'NESN': 'nestle.com',
-  'ROCHE': 'roche.com',
-  'NOVN': 'novartis.com',
-  'MC': 'lvmh.com',
-  'OR': 'loreal.com',
-  'CDI': 'dior.com',
-  'HERMÈS': 'hermes.com',
-  'RDSA': 'shell.com',
-  'GOLD': 'barrick.com',
-  'VALE': 'vale.com',
-  'NTR': 'nutrien.com',
-  'SCCO': 'scco.com.pe',
-  'CNC': 'centene.com',
-  'WBA': 'walgreensbootsalliance.com',
-  'HUM': 'humana.com',
-  'ANTM': 'anthem.com',
-  'CHRW': 'chrobinson.com',
-  'XPO': 'xpo.com',
-  'ODFL': 'odfl.com',
-  'JBHT': 'jbhunt.com',
-  'KNX': 'knight-swift.com',
-  'SAIA': 'saia.com',
-  'LSTR': 'landstar.com',
-  'WERN': 'werner.com',
-  'MATX': 'matson.com',
-  'KEX': 'kirbylogistics.com',
-  'HUBG': 'hubgroup.com',
-  'SNDR': 'schneider.com',
-  'ARCB': 'arcb.com',
-  'CVTI': 'covenant.com',
-  'MNTV': 'viacomcbs.com',
-  'TCEHY': 'tencent.com',
-  'TEAM': 'atlassian.com',
-  'DXCM': 'dexcom.com',
-  'DOCU': 'docusign.com',
-  'ZM': 'zoom.us',
-  'ROKU': 'roku.com',
-  'SQ': 'squareup.com',
-  'SNOW': 'snowflake.com',
-  'LYFT': 'lyft.com',
-  'TWLO': 'twilio.com',
-  'OKTA': 'okta.com',
-  'U': 'unity.com',
-  'NET': 'cloudflare.com',
-  'ZS': 'zscaler.com',
-  'GRAB': 'grab.com',
-  'MRVL': 'marvell.com'
+  'NVDA': 'nvidia.com', 'MSFT': 'microsoft.com', 'AAPL': 'apple.com', 'AMZN': 'amazon.com',
+  'GOOGL': 'google.com', 'GOOG': 'google.com', 'META': 'meta.com', 'AVGO': 'broadcom.com',
+  'TSLA': 'tesla.com', 'JPM': 'jpmorganchase.com', 'WMT': 'walmart.com', 'LLY': 'lilly.com',
+  'V': 'visa.com', 'MA': 'mastercard.com', 'NFLX': 'netflix.com', 'XOM': 'exxonmobil.com',
+  'COST': 'costco.com', 'JNJ': 'jnj.com', 'HD': 'homedepot.com', 'PLTR': 'palantir.com',
+  'PG': 'pg.com', 'BAC': 'bankofamerica.com', 'ABBV': 'abbvie.com', 'CVX': 'chevron.com',
+  'KO': 'coca-cola.com', 'AMD': 'amd.com', 'GE': 'ge.com', 'CSCO': 'cisco.com',
+  'PEP': 'pepsi.com', 'ADBE': 'adobe.com', 'CRM': 'salesforce.com', 'DIS': 'disney.com',
+  'MCD': 'mcdonalds.com', 'ABT': 'abbott.com', 'DHR': 'danaher.com', 'INTC': 'intel.com',
+  'VZ': 'verizon.com', 'CMCSA': 'comcast.com', 'NKE': 'nike.com', 'PFE': 'pfizer.com',
+  'WFC': 'wellsfargo.com', 'TMUS': 't-mobile.com', 'INTU': 'intuit.com', 'QCOM': 'qualcomm.com',
+  'IBM': 'ibm.com', 'NOW': 'servicenow.com', 'UBER': 'uber.com', 'TXN': 'ti.com',
+  'BA': 'boeing.com', 'AMGN': 'amgen.com', 'SPGI': 'spglobal.com', 'HON': 'honeywell.com',
+  'UNP': 'up.com', 'CAT': 'caterpillar.com', 'LMT': 'lockheedmartin.com', 'RTX': 'rtx.com',
+  'GS': 'goldmansachs.com', 'MS': 'morganstanley.com', 'BLK': 'blackrock.com',
+  'C': 'citigroup.com', 'AXP': 'americanexpress.com', 'RY': 'rbc.com', 'TD': 'td.com',
+  'SHOP': 'shopify.com', 'SONY': 'sony.com', 'BABA': 'alibaba.com', 'TSM': 'tsmc.com',
+  'ASML': 'asml.com', 'SAP': 'sap.com', 'AZN': 'astrazeneca.com', 'NVO': 'novonordisk.com',
+  'SHEL': 'shell.com', 'TTE': 'totalenergies.com', 'BP': 'bp.com', 'TM': 'toyota.com'
 };
 
-interface LogoFetchResult {
-  ticker: string;
-  success: boolean;
-  source: 'clearbit' | 'unavatar' | 'simple-icons' | 'ui-avatars';
-  error?: string;
-}
-
 const LOGOS_DIR = path.join(process.cwd(), 'public', 'logos');
-const BATCH_SIZE = 5; // Parallel requests
-const TIMEOUT = 8000; // 8 seconds timeout
+const BATCH_SIZE = 20; // Increased batch size since we handle timeouts well
+const TIMEOUT = 5000;
 
 async function ensureDir(dir: string) {
   try {
@@ -352,6 +47,11 @@ async function ensureDir(dir: string) {
   }
 }
 
+function getDomainForTicker(ticker: string): string {
+  if (TICKER_DOMAINS[ticker]) return TICKER_DOMAINS[ticker];
+  return `${ticker.toLowerCase()}.com`;
+}
+
 async function fetchWithTimeout(url: string, timeout = TIMEOUT): Promise<Response> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -359,9 +59,7 @@ async function fetchWithTimeout(url: string, timeout = TIMEOUT): Promise<Respons
   try {
     const response = await fetch(url, { 
       signal: controller.signal,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; LogoCrawler/1.0)'
-      }
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; PMPLogoBot/1.0)' }
     });
     clearTimeout(timeoutId);
     return response;
@@ -371,173 +69,157 @@ async function fetchWithTimeout(url: string, timeout = TIMEOUT): Promise<Respons
   }
 }
 
-async function fetchLogo(ticker: string, domain: string): Promise<LogoFetchResult> {
-  console.log(`🔍 Fetching logo for ${ticker} (${domain})`);
+async function saveBufferToWebP(buffer: Buffer, ticker: string): Promise<string> {
+  const size = 32; 
+  const filename = `${ticker.toLowerCase()}-${size}.webp`;
+  const filepath = path.join(LOGOS_DIR, filename);
   
+  const sizeLarge = 64;
+  const filenameLarge = `${ticker.toLowerCase()}-${sizeLarge}.webp`;
+  const filepathLarge = path.join(LOGOS_DIR, filenameLarge);
+
+  try {
+    // Save 32px
+    await sharp(buffer)
+      .resize(size, size, { fit: 'contain', background: { r: 255, g: 255, b: 255, alpha: 0 } })
+      .webp({ quality: 90 })
+      .toFile(filepath);
+
+    // Save 64px
+    await sharp(buffer)
+      .resize(sizeLarge, sizeLarge, { fit: 'contain', background: { r: 255, g: 255, b: 255, alpha: 0 } })
+      .webp({ quality: 90 })
+      .toFile(filepathLarge);
+
+    return `/logos/${filename}`;
+  } catch (e) {
+    console.error(`Error saving image for ${ticker}:`, e);
+    throw e;
+  }
+}
+
+async function processTicker(ticker: string): Promise<string | null> {
+  const domain = getDomainForTicker(ticker);
+  
+  // Sources - prioritized
   const sources = [
-    {
-      name: 'clearbit' as const,
-      url: `https://logo.clearbit.com/${domain}?size=128&format=png`
-    },
-    {
-      name: 'unavatar' as const,
-      url: `https://unavatar.io/${domain}?fallback=false&size=128`
-    }
+    `https://logo.clearbit.com/${domain}?size=128`,
+    `https://unavatar.io/${domain}?fallback=false`
   ];
 
-  // Try external sources first
-  for (const source of sources) {
-    try {
-      const response = await fetchWithTimeout(source.url);
-      if (response.ok && response.headers.get('content-type')?.startsWith('image/')) {
-        const buffer = Buffer.from(await response.arrayBuffer());
-        if (buffer.length > 100) { // Valid image should be > 100 bytes
-          await saveLogos(ticker, buffer);
-          console.log(`✅ ${ticker}: Success from ${source.name}`);
-          return { ticker, success: true, source: source.name };
-        }
-      }
-    } catch (error) {
-      console.log(`❌ ${ticker}: ${source.name} failed - ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
-
-  // Try Simple Icons SVG
+  // Try Simple Icons first (fastest, local-ish)
   try {
     const slug = domain.split('.')[0].toLowerCase();
+    // @ts-ignore - simple-icons types can be tricky
     const icon = Object.values(si).find((i: any) => 
-      i && typeof i === 'object' && 'slug' in i && (
-        i.slug === slug || 
-        i.slug === ticker.toLowerCase() ||
-        i.title.toLowerCase().includes(slug)
-      )
+      i.slug === slug || i.slug === ticker.toLowerCase()
     ) as any;
     
     if (icon) {
-      // Convert SVG to PNG using Sharp
       const svgBuffer = Buffer.from(icon.svg);
-      const buffer = await sharp(svgBuffer)
-        .resize(128, 128)
-        .png()
-        .toBuffer();
-      
-      await saveLogos(ticker, buffer);
-      console.log(`✅ ${ticker}: Success from simple-icons (${icon.title})`);
-      return { ticker, success: true, source: 'simple-icons' };
+      const pngBuffer = await sharp(svgBuffer).resize(128, 128).png().toBuffer();
+      // console.log(`✅ ${ticker}: Found in Simple Icons`);
+      return await saveBufferToWebP(pngBuffer, ticker);
     }
-  } catch (error) {
-    console.log(`❌ ${ticker}: simple-icons failed - ${error instanceof Error ? error.message : 'Unknown error'}`);
+  } catch (e) {}
+
+  // Try External URLs
+  for (const url of sources) {
+    try {
+      const res = await fetchWithTimeout(url);
+      if (res.ok && res.headers.get('content-type')?.startsWith('image/')) {
+        const buffer = Buffer.from(await res.arrayBuffer());
+        if (buffer.length > 100) {
+          // console.log(`✅ ${ticker}: Found at ${url}`);
+          return await saveBufferToWebP(buffer, ticker);
+        }
+      }
+    } catch (e) {}
   }
 
-  // Fallback to UI Avatars
-  try {
-    const fallbackUrl = `https://ui-avatars.com/api/?name=${ticker}&background=0066CC&color=fff&size=128&font-size=0.4&bold=true&format=png`;
-    const response = await fetchWithTimeout(fallbackUrl);
-    
-    if (response.ok) {
-      const buffer = Buffer.from(await response.arrayBuffer());
-      await saveLogos(ticker, buffer);
-      console.log(`✅ ${ticker}: Success from ui-avatars (fallback)`);
-      return { ticker, success: true, source: 'ui-avatars' };
-    }
-  } catch (error) {
-    console.log(`❌ ${ticker}: ui-avatars failed - ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-
-  return { 
-    ticker, 
-    success: false, 
-    source: 'ui-avatars',
-    error: 'All sources failed' 
-  };
-}
-
-async function saveLogos(ticker: string, sourceBuffer: Buffer) {
-  const sizes = [32, 64];
-  
-  await Promise.all(
-    sizes.map(async (size) => {
-      const filename = `${ticker.toLowerCase()}-${size}.webp`;
-      const filepath = path.join(LOGOS_DIR, filename);
-      
-      await sharp(sourceBuffer)
-        .resize(size, size, { fit: 'contain', background: { r: 255, g: 255, b: 255, alpha: 0 } })
-        .webp({ quality: 90 })
-        .toFile(filepath);
-    })
-  );
-}
-
-async function processBatch(batch: [string, string][]): Promise<LogoFetchResult[]> {
-  return Promise.all(
-    batch.map(([ticker, domain]) => fetchLogo(ticker, domain))
-  );
+  return null;
 }
 
 async function main() {
-  console.log('🚀 Starting logo crawler...');
-  
-  // Ensure logos directory exists
+  console.log('🚀 Starting logo population (Hardcoded Mode)...');
   await ensureDir(LOGOS_DIR);
-  
-  const entries = Object.entries(TICKER_DOMAINS);
-  const totalCount = entries.length;
-  
-  console.log(`📊 Processing ${totalCount} tickers in batches of ${BATCH_SIZE}`);
-  
-  const results: LogoFetchResult[] = [];
-  
-  // Process in batches to avoid overwhelming external APIs
-  for (let i = 0; i < entries.length; i += BATCH_SIZE) {
-    const batch = entries.slice(i, i + BATCH_SIZE);
-    const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
-    const totalBatches = Math.ceil(entries.length / BATCH_SIZE);
-    
-    console.log(`\n📦 Processing batch ${batchNumber}/${totalBatches}`);
-    
-    const batchResults = await processBatch(batch);
-    results.push(...batchResults);
-    
-    // Rate limiting - wait between batches
-    if (i + BATCH_SIZE < entries.length) {
-      console.log('⏳ Waiting 1s before next batch...');
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    }
-  }
-  
-  // Summary
-  const successful = results.filter(r => r.success).length;
-  const failed = results.filter(r => !r.success).length;
-  
-  const sourceStats = results.reduce((acc, r) => {
-    if (r.success) {
-      acc[r.source] = (acc[r.source] || 0) + 1;
-    }
-    return acc;
-  }, {} as Record<string, number>);
-  
-  console.log('\n📊 SUMMARY:');
-  console.log(`✅ Successful: ${successful}/${totalCount} (${Math.round(successful/totalCount*100)}%)`);
-  console.log(`❌ Failed: ${failed}/${totalCount} (${Math.round(failed/totalCount*100)}%)`);
-  console.log('\n📈 Source breakdown:');
-  Object.entries(sourceStats).forEach(([source, count]) => {
-    console.log(`  ${source}: ${count} logos`);
-  });
-  
-  if (failed > 0) {
-    console.log('\n❌ Failed tickers:');
-    results.filter(r => !r.success).forEach(r => {
-      console.log(`  ${r.ticker}: ${r.error}`);
+
+  // 1. Get tickers from CODE (definitive list)
+  const codeTickers = getAllProjectTickers('pmp');
+  console.log(`📋 Target: ${codeTickers.length} tickers from codebase.`);
+
+  // 2. Get tickers from DB to check existing logos
+  // Note: DB might be empty or missing logoUrl, so we iterate codeTickers mainly
+  let dbTickers: Record<string, string | null> = {};
+  try {
+    const tickersFromDb = await prisma.ticker.findMany({
+        select: { symbol: true, logoUrl: true }
     });
+    tickersFromDb.forEach(t => {
+        dbTickers[t.symbol] = t.logoUrl;
+    });
+    console.log(`📊 DB state: ${tickersFromDb.length} tickers known.`);
+  } catch (e) {
+    console.warn("⚠️ Could not read DB state, assuming empty/init.");
   }
-  
-  console.log('\n🎉 Logo crawler completed!');
-  console.log(`📁 Logos saved to: ${LOGOS_DIR}`);
+
+  // Filter those needing update
+  const toProcess = [];
+  for (const ticker of codeTickers) {
+    const existingUrl = dbTickers[ticker];
+    if (existingUrl) {
+      // Check if file actually exists
+      const localPath = path.join(process.cwd(), 'public', existingUrl);
+      try {
+        await fs.access(localPath);
+        continue; // Skip if exists in DB AND on disk
+      } catch {
+        // File missing, re-download
+      }
+    }
+    toProcess.push(ticker);
+  }
+
+  console.log(`🔄 Processing ${toProcess.length} tickers...`);
+
+  // Process in batches
+  for (let i = 0; i < toProcess.length; i += BATCH_SIZE) {
+    const batch = toProcess.slice(i, i + BATCH_SIZE);
+    process.stdout.write(`\r📦 Batch ${Math.floor(i/BATCH_SIZE) + 1}/${Math.ceil(toProcess.length/BATCH_SIZE)}: `);
+    
+    await Promise.all(batch.map(async (ticker) => {
+      try {
+        let logoPath = await processTicker(ticker);
+        
+        if (logoPath) {
+        //   process.stdout.write('.');
+          await prisma.ticker.upsert({
+            where: { symbol: ticker },
+            update: { logoUrl: logoPath },
+            create: { symbol: ticker, logoUrl: logoPath }
+          });
+        } else {
+        //   process.stdout.write('x');
+          // Ensure ticker exists even if logo fails
+           await prisma.ticker.upsert({
+            where: { symbol: ticker },
+            update: {}, // nothing to update
+            create: { symbol: ticker }
+          });
+        }
+      } catch (e) {
+        console.error(`\nError processing ${ticker}:`, e);
+      }
+    }));
+    
+    // Small delay
+    await new Promise(r => setTimeout(r, 200));
+  }
+
+  console.log('\n🎉 Done!');
+  await prisma.$disconnect();
 }
 
-// Run the script
 if (require.main === module) {
   main().catch(console.error);
 }
-
-export { main as fetchLogos };
