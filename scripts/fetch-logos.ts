@@ -116,7 +116,10 @@ async function processTicker(ticker: string): Promise<string | null> {
     ) as any;
     
     if (icon) {
-      const svgBuffer = Buffer.from(icon.svg);
+      // Fix: Inject brand color into SVG to avoid black default
+      const coloredSvg = icon.svg.replace('<svg', `<svg fill="#${icon.hex}"`);
+      const svgBuffer = Buffer.from(coloredSvg);
+      
       const pngBuffer = await sharp(svgBuffer).resize(128, 128).png().toBuffer();
       // console.log(`✅ ${ticker}: Found in Simple Icons`);
       return await saveBufferToWebP(pngBuffer, ticker);
@@ -141,7 +144,7 @@ async function processTicker(ticker: string): Promise<string | null> {
 }
 
 async function main() {
-  console.log('🚀 Starting logo population (Hardcoded Mode)...');
+  console.log('🚀 Starting logo population (Hardcoded Mode) with Color Fix...');
   await ensureDir(LOGOS_DIR);
 
   // 1. Get tickers from CODE (definitive list)
@@ -149,7 +152,6 @@ async function main() {
   console.log(`📋 Target: ${codeTickers.length} tickers from codebase.`);
 
   // 2. Get tickers from DB to check existing logos
-  // Note: DB might be empty or missing logoUrl, so we iterate codeTickers mainly
   let dbTickers: Record<string, string | null> = {};
   try {
     const tickersFromDb = await prisma.ticker.findMany({
@@ -167,15 +169,13 @@ async function main() {
   const toProcess = [];
   for (const ticker of codeTickers) {
     const existingUrl = dbTickers[ticker];
+    // Check if file exists
     if (existingUrl) {
-      // Check if file actually exists
       const localPath = path.join(process.cwd(), 'public', existingUrl);
       try {
         await fs.access(localPath);
         continue; // Skip if exists in DB AND on disk
-      } catch {
-        // File missing, re-download
-      }
+      } catch {}
     }
     toProcess.push(ticker);
   }
@@ -192,15 +192,12 @@ async function main() {
         let logoPath = await processTicker(ticker);
         
         if (logoPath) {
-        //   process.stdout.write('.');
           await prisma.ticker.upsert({
             where: { symbol: ticker },
             update: { logoUrl: logoPath },
             create: { symbol: ticker, logoUrl: logoPath }
           });
         } else {
-        //   process.stdout.write('x');
-          // Ensure ticker exists even if logo fails
            await prisma.ticker.upsert({
             where: { symbol: ticker },
             update: {}, // nothing to update
