@@ -76,6 +76,7 @@ export const StockTableRow = memo(({
     prevProps.stock.percentChange === nextProps.stock.percentChange &&
     prevProps.stock.marketCap === nextProps.stock.marketCap &&
     prevProps.stock.marketCapDiff === nextProps.stock.marketCapDiff &&
+    prevProps.stock.logoUrl === nextProps.stock.logoUrl &&
     prevProps.isFavorite === nextProps.isFavorite
   );
 });

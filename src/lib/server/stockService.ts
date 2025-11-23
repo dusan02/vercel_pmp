@@ -172,11 +172,19 @@ export async function getStocksData(
   }
 
   // 4. Process Tickers
-  const processTicker = async (ticker: string): Promise<StockData | null> => {
+    const processTicker = async (ticker: string): Promise<StockData | null> => {
     try {
+      const logoUrl = `/logos/${ticker.toLowerCase()}-32.webp`;
+      console.log(`[FIX-V2] Processing ${ticker}, logoUrl: ${logoUrl}`); 
+
       // Cache hit
       const cachedData = cachedDataMap.get(ticker);
-      if (cachedData) return cachedData;
+      if (cachedData) {
+        return {
+          ...cachedData,
+          logoUrl // Ensure logoUrl is present even in cached data
+        };
+      }
 
       // Build from DB data
       const staticData = staticDataMap.get(ticker);
@@ -247,7 +255,7 @@ export async function getStocksData(
         marketCap,
         marketCapDiff,
         lastUpdated: new Date().toISOString(),
-        logoUrl: `/logos/${ticker.toLowerCase()}-32.webp`,
+        logoUrl,
         ...(finalSector ? { sector: finalSector } : {}),
         ...(finalIndustry ? { industry: finalIndustry } : {}),
         ...(staticData?.name ? { companyName: staticData.name } : {})

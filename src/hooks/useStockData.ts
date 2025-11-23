@@ -230,6 +230,9 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
         const result = await response.json();
         if (result.data && result.data.length > 0) {
           console.log('✅ Remaining stocks data loaded:', result.data.length, 'stocks');
+          if (result.data.length > 0) {
+             console.log('🔍 Sample remaining stock:', result.data[0].ticker, 'LogoURL:', result.data[0].logoUrl);
+          }
           setStockData(prev => {
             const existingTickers = new Set(prev.map(s => s.ticker));
             const newStocks = result.data.filter((s: StockData) => !existingTickers.has(s.ticker));
