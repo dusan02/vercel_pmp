@@ -46,24 +46,22 @@ export function useUserPreferences() {
   // Load preferences from localStorage
   const loadPreferences = useCallback(() => {
     try {
-      // Check cookie consent first
+      // Check cookie consent state
       const consent = localStorage.getItem(CONSENT_KEY);
       setHasConsent(consent === 'true');
 
-      if (consent === 'true') {
-        // Load user preferences
-        const storedPrefs = localStorage.getItem(STORAGE_KEY);
-        if (storedPrefs) {
-          const parsedPrefs = JSON.parse(storedPrefs);
-          setPreferences({ ...DEFAULT_PREFERENCES, ...parsedPrefs });
-        }
+      // Load user preferences regardless of consent (functional storage)
+      const storedPrefs = localStorage.getItem(STORAGE_KEY);
+      if (storedPrefs) {
+        const parsedPrefs = JSON.parse(storedPrefs);
+        setPreferences({ ...DEFAULT_PREFERENCES, ...parsedPrefs });
+      }
 
-        // Load favorites separately for backward compatibility
-        const storedFavorites = localStorage.getItem(FAVORITES_KEY);
-        if (storedFavorites) {
-          const favorites = JSON.parse(storedFavorites);
-          setPreferences(prev => ({ ...prev, favorites }));
-        }
+      // Load favorites separately for backward compatibility
+      const storedFavorites = localStorage.getItem(FAVORITES_KEY);
+      if (storedFavorites) {
+        const favorites = JSON.parse(storedFavorites);
+        setPreferences(prev => ({ ...prev, favorites }));
       }
     } catch (error) {
       console.error('Error loading user preferences:', error);
@@ -74,8 +72,7 @@ export function useUserPreferences() {
 
   // Save preferences to localStorage
   const savePreferences = useCallback((newPreferences: Partial<UserPreferences>) => {
-    if (!hasConsent) return;
-
+    // We allow saving functional preferences without explicit tracking consent
     try {
       setPreferences(prevPrefs => {
         const updatedPrefs = { ...prevPrefs, ...newPreferences };
@@ -92,12 +89,10 @@ export function useUserPreferences() {
     } catch (error) {
       console.error('Error saving user preferences:', error);
     }
-  }, [hasConsent]);
+  }, []);
 
   // Add favorite
   const addFavorite = useCallback((symbol: string) => {
-    if (!hasConsent) return;
-    
     setPreferences(prevPrefs => {
       const newFavorites = [...prevPrefs.favorites];
       if (!newFavorites.includes(symbol)) {
@@ -112,12 +107,10 @@ export function useUserPreferences() {
       }
       return prevPrefs;
     });
-  }, [hasConsent]);
+  }, []);
 
   // Remove favorite
   const removeFavorite = useCallback((symbol: string) => {
-    if (!hasConsent) return;
-    
     setPreferences(prevPrefs => {
       const newFavorites = prevPrefs.favorites.filter(fav => fav !== symbol);
       
@@ -128,12 +121,10 @@ export function useUserPreferences() {
       
       return updatedPrefs;
     });
-  }, [hasConsent]);
+  }, []);
 
   // Toggle favorite
   const toggleFavorite = useCallback((symbol: string) => {
-    if (!hasConsent) return;
-    
     setPreferences(prevPrefs => {
       const isCurrentlyFavorite = prevPrefs.favorites.includes(symbol);
       const newFavorites = isCurrentlyFavorite 
@@ -147,7 +138,7 @@ export function useUserPreferences() {
       
       return updatedPrefs;
     });
-  }, [hasConsent]);
+  }, []);
 
   // Clear all preferences
   const clearPreferences = useCallback(() => {
@@ -184,4 +175,4 @@ export function useUserPreferences() {
     setConsent,
     loadPreferences
   };
-} 
+}
