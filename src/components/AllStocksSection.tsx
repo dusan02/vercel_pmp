@@ -81,7 +81,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
                 <th onClick={handleSortTicker} className={`sortable ${sortKey === "ticker" ? "active-sort" : ""}`}>
                   Ticker
                 </th>
-                <th>Company Name</th>
+                <th>Company</th>
                 <th onClick={handleSortSector} className={`sortable ${sortKey === "sector" ? "active-sort" : ""}`}>
                   Sector
                 </th>
@@ -92,7 +92,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
                   Market Cap
                 </th>
                 <th onClick={handleSortCurrentPrice} className={`sortable ${sortKey === "currentPrice" ? "active-sort" : ""}`}>
-                  Current Price
+                  Price
                 </th>
                 <th onClick={handleSortPercentChange} className={`sortable ${sortKey === "percentChange" ? "active-sort" : ""}`}>
                   % Change

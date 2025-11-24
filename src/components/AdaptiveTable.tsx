@@ -45,12 +45,12 @@ export const AdaptiveTable: React.FC<AdaptiveTableProps> = ({
           );
           break;
         case 'companyName':
-          headers.push(<th key="companyName">Company Name</th>);
+          headers.push(<th key="companyName">Company</th>);
           break;
         case 'currentPrice':
           headers.push(
             <th key="currentPrice" onClick={() => onSort('currentPrice' as SortKey)} className={`sortable ${sortKey === 'currentPrice' ? 'active-sort' : ''}`}>
-              Current Price
+              Price
             </th>
           );
           break;

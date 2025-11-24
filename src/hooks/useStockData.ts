@@ -230,9 +230,6 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
         const result = await response.json();
         if (result.data && result.data.length > 0) {
           console.log('✅ Remaining stocks data loaded:', result.data.length, 'stocks');
-          if (result.data.length > 0) {
-             console.log('🔍 Sample remaining stock:', result.data[0].ticker, 'LogoURL:', result.data[0].logoUrl);
-          }
           setStockData(prev => {
             const existingTickers = new Set(prev.map(s => s.ticker));
             const newStocks = result.data.filter((s: StockData) => !existingTickers.has(s.ticker));
@@ -295,11 +292,12 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
     }
   }, [fetchFavoritesData, fetchBackgroundStatus, fetchTop50StocksData]);
 
-  // Initial load effect
+  // Initial load effect - run only once on mount
   useEffect(() => {
     console.log('🔄 useEffect triggered - starting progressive loading');
     loadDataProgressive();
-  }, [loadDataProgressive]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty deps - run only once on mount
 
   // Background polling
   useEffect(() => {
@@ -308,7 +306,7 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
     return () => clearInterval(interval);
   }, [fetchBackgroundStatus]);
 
-  // Favorites polling
+  // Favorites polling - only when favorites change, not when function changes
   useEffect(() => {
     if (favorites.length > 0) {
       const timeoutId = setTimeout(() => {
@@ -316,7 +314,37 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
       }, 500);
       return () => clearTimeout(timeoutId);
     }
-  }, [favorites, fetchFavoritesData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [favorites.map(f => f.ticker).join(',')]); // Only depend on favorites content, not function
+
+  // Function to fetch specific tickers (e.g., for portfolio)
+  const fetchSpecificTickers = useCallback(async (tickers: string[]) => {
+    if (tickers.length === 0) return;
+    
+    setLoadingStates(prev => ({ ...prev, remainingStocks: true }));
+    try {
+      console.log('🚀 Loading specific tickers:', tickers);
+      const project = getProjectName();
+      
+      const response = await fetchWithRetry(`/api/stocks?tickers=${tickers.join(',')}&project=${project}&limit=${tickers.length}&t=${Date.now()}`, 3, 2000);
+      
+      if (response && response.ok) {
+        const result = await response.json();
+        if (result.data && result.data.length > 0) {
+          console.log('✅ Specific tickers loaded:', result.data.length, 'stocks');
+          setStockData(prev => {
+            const existingTickers = new Set(prev.map(s => s.ticker));
+            const newStocks = result.data.filter((s: StockData) => !existingTickers.has(s.ticker));
+            return [...prev, ...newStocks];
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error loading specific tickers:', error);
+    } finally {
+      setLoadingStates(prev => ({ ...prev, remainingStocks: false }));
+    }
+  }, []);
 
   return {
     stockData,
@@ -324,6 +352,7 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
     error,
     backgroundStatus,
     fetchRemainingStocksData,
+    fetchSpecificTickers, // New function for fetching specific tickers
     loadData // For pull to refresh
   };
 }

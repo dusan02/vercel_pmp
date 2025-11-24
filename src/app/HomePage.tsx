@@ -108,12 +108,27 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
     stockData, 
     loadingStates, 
     error, 
-    fetchRemainingStocksData, 
+    fetchRemainingStocksData,
+    fetchSpecificTickers,
     loadData 
   } = useStockData({ 
     initialData, 
     favorites 
   });
+
+  // Load portfolio tickers that are not in stockData
+  useEffect(() => {
+    const portfolioTickers = Object.keys(portfolioHoldings).filter(ticker => (portfolioHoldings[ticker] || 0) > 0);
+    const missingTickers = portfolioTickers.filter(ticker => !stockData.some(s => s.ticker === ticker));
+    
+    if (missingTickers.length > 0) {
+      // Debounce to avoid too many requests
+      const timeoutId = setTimeout(() => {
+        fetchSpecificTickers(missingTickers);
+      }, 500);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [portfolioHoldings, stockData, fetchSpecificTickers]);
 
   const {
     searchTerm, setSearchTerm,
@@ -162,7 +177,33 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
   }, 0);
 
   // Get portfolio stocks (stocks that have holdings > 0)
-  const portfolioStocks = stockData.filter(stock => (portfolioHoldings[stock.ticker] || 0) > 0);
+  // Ensure all portfolio stocks have logoUrl - if missing, add fallback
+  // Also handle tickers that are in portfolio but not yet in stockData
+  const portfolioTickers = Object.keys(portfolioHoldings).filter(ticker => (portfolioHoldings[ticker] || 0) > 0);
+  const portfolioStocksFromData = stockData.filter(stock => portfolioTickers.includes(stock.ticker));
+  const missingTickers = portfolioTickers.filter(ticker => !stockData.some(s => s.ticker === ticker));
+  
+  // Create placeholder stocks for missing tickers (they will be loaded later)
+  const missingStocks: StockData[] = missingTickers.map(ticker => ({
+    ticker,
+    currentPrice: 0,
+    closePrice: 0,
+    percentChange: 0,
+    marketCap: 0,
+    marketCapDiff: 0,
+    lastUpdated: new Date().toISOString(),
+    logoUrl: `/logos/${ticker.toLowerCase()}-32.webp`, // Fallback logoUrl
+    companyName: '',
+    sector: '',
+    industry: ''
+  }));
+  
+  const portfolioStocks = [...portfolioStocksFromData, ...missingStocks]
+    .map(stock => ({
+      ...stock,
+      // Ensure logoUrl is always present - use fallback if missing
+      logoUrl: stock.logoUrl || `/logos/${stock.ticker.toLowerCase()}-32.webp`
+    }));
 
   return (
     <>

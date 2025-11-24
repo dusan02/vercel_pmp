@@ -2104,7 +2104,7 @@ h2:hover .section-icon {
   }
   
      /* Mobile column adjustments for main stock tables */
-   .all-stocks table th:nth-child(1), .all-stocks table td:nth-child(1) { width: 8%; text-align: center; } /* Logo */
+   .all-stocks table th:nth-child(1), .all-stocks table td:nth-child(1) { width: 10%; text-align: center; } /* Logo */
    .all-stocks table th:nth-child(2), .all-stocks table td:nth-child(2) { width: 12%; text-align: center; } /* Ticker */
    .all-stocks table th:nth-child(3), .all-stocks table td:nth-child(3) { width: 18%; text-align: left; } /* Company Name */
    .all-stocks table th:nth-child(4), .all-stocks table td:nth-child(4) { width: 15%; text-align: center; } /* Market Cap */
@@ -2114,7 +2114,7 @@ h2:hover .section-icon {
       .all-stocks table th:nth-child(8), .all-stocks table td:nth-child(8) { width: 12%; text-align: center; } /* Favorite */
 
    /* Mobile column adjustments for favorites table */
-   .favorites table th:nth-child(1), .favorites table td:nth-child(1) { width: 7%; text-align: center; } /* Logo */
+   .favorites table th:nth-child(1), .favorites table td:nth-child(1) { width: 9%; text-align: center; } /* Logo */
    .favorites table th:nth-child(2), .favorites table td:nth-child(2) { width: 10%; text-align: center; } /* Ticker */
    .favorites table th:nth-child(3), .favorites table td:nth-child(3) { width: 16%; text-align: left; } /* Company Name */
    .favorites table th:nth-child(4), .favorites table td:nth-child(4) { width: 13%; text-align: center; } /* Market Cap */
@@ -2635,9 +2635,9 @@ tr:hover {
 .favorites table th:nth-child(1), .favorites table td:nth-child(1),
 .all-stocks table th:nth-child(1), .all-stocks table td:nth-child(1),
 .portfolio table th:nth-child(1), .portfolio table td:nth-child(1) {
-  width: 5%;
+  width: 6%;
   text-align: center;
-  min-width: 50px;
+  min-width: 70px;
 }
 
 /* Column 2: Ticker */
@@ -2959,8 +2959,9 @@ table td strong {
   .favorites table th:nth-child(1), .favorites table td:nth-child(1),
   .all-stocks table th:nth-child(1), .all-stocks table td:nth-child(1),
   .portfolio table th:nth-child(1), .portfolio table td:nth-child(1) {
-    width: 7%;
+    width: 9%;
     text-align: center;
+    min-width: 60px;
   }
 
   /* Column 2: Ticker */

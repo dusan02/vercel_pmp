@@ -180,7 +180,9 @@ async function upsertToDB(
   symbol: string,
   session: MarketSession,
   normalized: ReturnType<typeof normalizeSnapshot>,
-  previousClose: number | null
+  previousClose: number | null,
+  marketCap: number,
+  marketCapDiff: number
 ): Promise<boolean> {
   if (!normalized) return false;
 
@@ -189,18 +191,27 @@ async function upsertToDB(
     today.setHours(0, 0, 0, 0);
 
     // Upsert ticker if not exists
-    // NOTE: Don't update name/sector/industry here - these are static data
-    // that should be updated only via bootstrap script (rarely)
+    // Update price/market cap columns for sorting
     await prisma.ticker.upsert({
       where: { symbol },
       update: {
-        // Only update updatedAt, don't touch static fields (name, sector, industry)
-        updatedAt: new Date()
+        // Only update updatedAt and dynamic columns
+        updatedAt: new Date(),
+        lastPrice: normalized.price,
+        lastChangePct: normalized.changePct,
+        lastMarketCap: marketCap,
+        lastMarketCapDiff: marketCapDiff,
+        lastPriceUpdated: normalized.timestamp
       },
       create: {
         symbol,
         // Static fields will be populated by bootstrap script
-        updatedAt: new Date()
+        updatedAt: new Date(),
+        lastPrice: normalized.price,
+        lastChangePct: normalized.changePct,
+        lastMarketCap: marketCap,
+        lastMarketCapDiff: marketCapDiff,
+        lastPriceUpdated: normalized.timestamp
       }
     });
 
@@ -409,8 +420,19 @@ export async function ingestBatch(
         continue;
       }
 
-      // Upsert to DB
-      const dbSuccess = await upsertToDB(symbol, session, normalized, previousClose);
+      // Get batch-fetched shares (ak existuje), inak fetch jednotlivo
+      let shares = sharesMap.get(symbol) || 0;
+      if (shares === 0) {
+        shares = await getSharesOutstanding(symbol);
+      }
+
+      const marketCap = computeMarketCap(normalized.price, shares);
+      const marketCapDiff = previousClose
+        ? computeMarketCapDiff(normalized.price, previousClose, shares)
+        : 0;
+
+      // Upsert to DB (includes updating Ticker table for sorting)
+      const dbSuccess = await upsertToDB(symbol, session, normalized, previousClose, marketCap, marketCapDiff);
 
       // Write to Redis (atomic operation)
       const priceData: PriceData = {
@@ -426,17 +448,6 @@ export async function ingestBatch(
 
       // Atomic update: last price + heatmap
       await atomicUpdatePrice(redisSession, symbol, priceData, normalized.changePct);
-
-      // Get batch-fetched shares (ak existuje), inak fetch jednotlivo
-      let shares = sharesMap.get(symbol) || 0;
-      if (shares === 0) {
-        shares = await getSharesOutstanding(symbol);
-      }
-
-      const marketCap = computeMarketCap(normalized.price, shares);
-      const marketCapDiff = previousClose
-        ? computeMarketCapDiff(normalized.price, previousClose, shares)
-        : 0;
 
       // Get ticker info for name/sector
       const ticker = await prisma.ticker.findUnique({

@@ -145,11 +145,11 @@ export function PortfolioSection({
           <tr>
             <th>Logo</th>
             <th>Ticker</th>
-            <th>Company Name</th>
+            <th>Company</th>
             <th>Sector</th>
             <th>Industry</th>
             <th>#</th>
-            <th>Current Price</th>
+            <th>Price</th>
             <th>% Change</th>
             <th>Value</th>
             <th></th>
@@ -172,7 +172,12 @@ export function PortfolioSection({
                   <tr key={stock.ticker}>
                     <td>
                       <div className="logo-container">
-                        <CompanyLogo ticker={stock.ticker} logoUrl={stock.logoUrl} size={32} />
+                        <CompanyLogo 
+                          ticker={stock.ticker} 
+                          logoUrl={stock.logoUrl || `/logos/${stock.ticker.toLowerCase()}-32.webp`} 
+                          size={32} 
+                          priority={true}
+                        />
                       </div>
                     </td>
                     <td>

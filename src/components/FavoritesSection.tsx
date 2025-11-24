@@ -65,7 +65,7 @@ export function FavoritesSection({
             <th onClick={() => onSort("ticker" as SortKey)} className={`sortable ${sortKey === "ticker" ? "active-sort" : ""}`}>
               Ticker
             </th>
-            <th>Company Name</th>
+            <th>Company</th>
             <th onClick={() => onSort("sector" as SortKey)} className={`sortable ${sortKey === "sector" ? "active-sort" : ""}`}>
               Sector
             </th>
@@ -76,7 +76,7 @@ export function FavoritesSection({
               Market Cap
             </th>
             <th onClick={() => onSort("currentPrice" as SortKey)} className={`sortable ${sortKey === "currentPrice" ? "active-sort" : ""}`}>
-              Current Price
+              Price
             </th>
             <th onClick={() => onSort("percentChange" as SortKey)} className={`sortable ${sortKey === "percentChange" ? "active-sort" : ""}`}>
               % Change

@@ -98,7 +98,18 @@ const nextConfig: NextConfig = {
   },
 
   // Webpack configuration for optimization
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer, dev }) => {
+    // Fix HMR issues in development
+    if (dev && !isServer) {
+      config.optimization = config.optimization || {};
+      // Ensure HMR works properly
+      config.watchOptions = {
+        ...config.watchOptions,
+        poll: false,
+        ignored: /node_modules/,
+      };
+    }
+    
     // Only add fallbacks for Node.js modules - DO NOT modify optimization.runtimeChunk
     // Modifying runtimeChunk can break Next.js webpack runtime initialization
     if (!isServer) {
