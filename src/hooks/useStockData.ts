@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { StockData, LoadingStates, PriceUpdate } from '@/lib/types';
-import { useWebSocket } from '@/hooks/useWebSocket';
 import { getProjectTickers } from '@/data/defaultTickers';
+import { useThrottle } from '@/hooks/useThrottle';
 
 // Helper function for retry with exponential backoff
 const fetchWithRetry = async (url: string, maxRetries = 3, initialDelay = 1000): Promise<Response | null> => {
@@ -58,7 +58,10 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
   // Track if initial load happened
   const initialDataLoaded = useRef(initialData.length > 0);
 
-  // WebSocket functionality
+  // WebSocket functionality - temporarily disabled to fix webpack error
+  // Will be re-enabled after webpack issue is resolved
+  // TODO: Re-enable WebSocket after fixing webpack import issue
+  /*
   useWebSocket({
     onPriceUpdate: (updates: PriceUpdate[]) => {
       console.log('📡 WebSocket price updates received:', updates.length, 'tickers');
@@ -114,6 +117,7 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
     },
     favorites: favorites.map(fav => fav.ticker)
   });
+  */
 
   // Fetch background service status
   const fetchBackgroundStatus = useCallback(async () => {
@@ -211,36 +215,62 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
     }
   }, []);
 
-  // Phase 4: Remaining
+  // Phase 4: Remaining - Load ALL stocks from database
+  // Optimized to prevent scroll stuttering
   const fetchRemainingStocksData = useCallback(async () => {
-    setLoadingStates(prev => ({ ...prev, remainingStocks: true }));
-    try {
-      console.log('🚀 Loading remaining stocks data (phase 4 - lazy loaded)');
-      const project = getProjectName();
-      const allTickers = getProjectTickers(project, 1000);
-      const top50Tickers = getProjectTickers(project, 50);
-      const remainingTickers = allTickers.filter(ticker => !top50Tickers.includes(ticker));
-      
-      // Limit per request
-      const limitedTickers = remainingTickers.slice(0, 500);
-      
-      const response = await fetchWithRetry(`/api/stocks?tickers=${limitedTickers.join(',')}&project=${project}&limit=500&t=${Date.now()}`, 3, 2000);
-      
-      if (response && response.ok) {
-        const result = await response.json();
-        if (result.data && result.data.length > 0) {
-          console.log('✅ Remaining stocks data loaded:', result.data.length, 'stocks');
-          setStockData(prev => {
-            const existingTickers = new Set(prev.map(s => s.ticker));
-            const newStocks = result.data.filter((s: StockData) => !existingTickers.has(s.ticker));
-            return [...prev, ...newStocks];
-          });
+    // Use requestIdleCallback for non-blocking load
+    const loadInBackground = async () => {
+      setLoadingStates(prev => ({ ...prev, remainingStocks: true }));
+      try {
+        console.log('🚀 Loading ALL remaining stocks from database (phase 4)');
+        const project = getProjectName();
+        
+        // Get all stocks from database, sorted by marketCapDiff DESC
+        // This ensures we get all tickers that are in the database, not just from getProjectTickers
+        const response = await fetchWithRetry(
+          `/api/stocks?getAll=true&project=${project}&sort=marketCapDiff&order=desc&limit=10000&t=${Date.now()}`, 
+          3, 
+          2000
+        );
+        
+        if (response && response.ok) {
+          const result = await response.json();
+          if (result.data && result.data.length > 0) {
+            console.log('✅ All stocks loaded from database:', result.data.length, 'stocks');
+            
+            // Use requestAnimationFrame for smooth state update
+            requestAnimationFrame(() => {
+              setStockData(prev => {
+                // Merge with existing data, avoiding duplicates
+                const existingTickers = new Set(prev.map(s => s.ticker));
+                const newStocks = result.data.filter((s: StockData) => !existingTickers.has(s.ticker));
+                // Combine and maintain sort order
+                const combined = [...prev, ...newStocks];
+                // Sort by marketCapDiff DESC to maintain order
+                combined.sort((a, b) => (b.marketCapDiff || 0) - (a.marketCapDiff || 0));
+                return combined;
+              });
+              
+              // Set loading to false in next frame
+              requestAnimationFrame(() => {
+                setLoadingStates(prev => ({ ...prev, remainingStocks: false }));
+              });
+            });
+          }
         }
+      } catch (error) {
+        console.error('Error loading remaining stocks data:', error);
+        setLoadingStates(prev => ({ ...prev, remainingStocks: false }));
       }
-    } catch (error) {
-      console.error('Error loading remaining stocks data:', error);
-    } finally {
-      setLoadingStates(prev => ({ ...prev, remainingStocks: false }));
+    };
+
+    // Use requestIdleCallback if available, otherwise setTimeout
+    if ('requestIdleCallback' in window) {
+      const idleCallback = window.requestIdleCallback || ((cb: () => void) => setTimeout(cb, 1));
+      idleCallback(loadInBackground, { timeout: 1000 });
+    } else {
+      // Fallback: load in next tick
+      setTimeout(loadInBackground, 0);
     }
   }, []);
 
@@ -299,12 +329,15 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty deps - run only once on mount
 
-  // Background polling
+  // Throttled background status fetch to prevent too frequent calls
+  const throttledFetchBackgroundStatus = useThrottle(fetchBackgroundStatus, 30000); // Max once per 30s
+
+  // Background polling - use throttled version
   useEffect(() => {
-    fetchBackgroundStatus();
-    const interval = setInterval(fetchBackgroundStatus, 60000);
+    throttledFetchBackgroundStatus();
+    const interval = setInterval(throttledFetchBackgroundStatus, 60000);
     return () => clearInterval(interval);
-  }, [fetchBackgroundStatus]);
+  }, [throttledFetchBackgroundStatus]);
 
   // Favorites polling - only when favorites change, not when function changes
   useEffect(() => {

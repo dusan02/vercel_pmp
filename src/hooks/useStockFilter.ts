@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { StockData } from '@/lib/types';
 import { useSortableData } from '@/hooks/useSortableData';
 import { getCompanyName } from '@/lib/companyNames';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface UseStockFilterProps {
   stockData: StockData[];
@@ -15,12 +16,15 @@ export function useStockFilter({ stockData, favorites, isFavorite }: UseStockFil
   const [filterCategory, setFilterCategory] = useState<'all' | 'gainers' | 'losers' | 'movers' | 'bigMovers'>('all');
   const [selectedSector, setSelectedSector] = useState<string>('all');
 
-  // Base filtering logic
+  // Debounce search term to reduce filtering computations
+  const debouncedSearchTerm = useDebounce(searchTerm, 200);
+
+  // Base filtering logic - use debounced search term for better performance
   const filteredStocks = useMemo(() => {
     return stockData.filter(stock => {
-      // Search filter
-      const matchesSearch = stock.ticker.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        getCompanyName(stock.ticker).toLowerCase().includes(searchTerm.toLowerCase());
+      // Search filter - use debounced term
+      const matchesSearch = stock.ticker.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        getCompanyName(stock.ticker).toLowerCase().includes(debouncedSearchTerm.toLowerCase());
       
       if (!matchesSearch) return false;
       
@@ -44,7 +48,7 @@ export function useStockFilter({ stockData, favorites, isFavorite }: UseStockFil
           return true;
       }
     });
-  }, [stockData, searchTerm, favoritesOnly, selectedSector, filterCategory, isFavorite]);
+  }, [stockData, debouncedSearchTerm, favoritesOnly, selectedSector, filterCategory, isFavorite]);
 
   // Favorite stocks subset (always filtered by favorites logic, independent of UI toggle)
   const favoriteStocks = useMemo(() => {

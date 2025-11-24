@@ -46,24 +46,36 @@ model UserPreferences {
 }
 
 model Ticker {
-  symbol              String         @id
+  symbol              String    @id
   name                String?
   sector              String?
   industry            String?
   logoUrl             String?
   sharesOutstanding   Float?
   adrRatio            Float?
-  isAdr               Boolean        @default(false)
+  isAdr               Boolean   @default(false)
   latestPrevClose     Float?
   latestPrevCloseDate DateTime?
-  updatedAt           DateTime       @updatedAt
-  dailyRefs           DailyRef[]
-  sessionPrices       SessionPrice[]
-  userFavorites       UserFavorite[]
+
+  // Cached values for efficient sorting (SQL-first architecture)
+  lastPrice         Float?
+  lastChangePct     Float?
+  lastMarketCap     Float?
+  lastMarketCapDiff Float?
+  lastPriceUpdated  DateTime?
+
+  updatedAt     DateTime       @updatedAt
+  dailyRefs     DailyRef[]
+  sessionPrices SessionPrice[]
+  userFavorites UserFavorite[]
 
   @@index([sector])
   @@index([sharesOutstanding])
   @@index([latestPrevCloseDate])
+  @@index([lastPrice])
+  @@index([lastChangePct])
+  @@index([lastMarketCap])
+  @@index([lastMarketCapDiff])
 }
 
 model DailyRef {

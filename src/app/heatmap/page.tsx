@@ -47,20 +47,20 @@ export default function HeatmapPage() {
     >
       <div className="px-2 py-1 z-50 text-white flex-shrink-0 flex items-center justify-between bg-black border-b border-gray-800">
         <div className="flex items-center gap-4">
-          <div>
+        <div>
             <h1 className="text-xl font-bold mb-0 leading-none">
-              Heatmap<span className="text-green-500">.today</span>
-            </h1>
+            Heatmap<span className="text-green-500">.today</span>
+          </h1>
             <p className="text-[9px] text-gray-400 hidden sm:block">
               Interactive visualization
-            </p>
+          </p>
           </div>
         </div>
         
         <div className="flex items-center gap-4">
           {/* Legenda (farebná škála) */}
           <div className="hidden sm:block">
-            <HeatmapLegend timeframe={timeframe} />
+          <HeatmapLegend timeframe={timeframe} />
           </div>
         </div>
       </div>

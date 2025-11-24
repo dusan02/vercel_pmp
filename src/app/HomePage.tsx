@@ -2,7 +2,7 @@
 
 // Client component containing all page logic
 // This is imported by page.tsx (server component)
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 
 // All component imports moved to dynamic imports to fix webpack require error
@@ -52,6 +52,8 @@ import { useLazyLoading } from '@/hooks/useLazyLoading';
 import { StockData } from '@/lib/types';
 import { useStockData } from '@/hooks/useStockData';
 import { useStockFilter } from '@/hooks/useStockFilter';
+import { useLogoLoader } from '@/hooks/useLogoLoader';
+import { useTablePerformance } from '@/hooks/useTablePerformance';
 
 interface HomePageProps {
   initialData?: StockData[];
@@ -116,26 +118,24 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
     favorites 
   });
 
-  // Load portfolio tickers that are not in stockData
+  // Load portfolio tickers that are not in stockData - optimized with debounce
   useEffect(() => {
     const portfolioTickers = Object.keys(portfolioHoldings).filter(ticker => (portfolioHoldings[ticker] || 0) > 0);
     const missingTickers = portfolioTickers.filter(ticker => !stockData.some(s => s.ticker === ticker));
     
     if (missingTickers.length > 0) {
-      // Debounce to avoid too many requests
+      // Debounce to avoid too many requests when portfolio changes rapidly
       const timeoutId = setTimeout(() => {
         fetchSpecificTickers(missingTickers);
-      }, 500);
+      }, 300); // Reduced from 500ms for faster response
       return () => clearTimeout(timeoutId);
     }
   }, [portfolioHoldings, stockData, fetchSpecificTickers]);
 
   const {
     searchTerm, setSearchTerm,
-    favoritesOnly, setFavoritesOnly, // Aj keď sa nepoužíva priamo v UI (filter logic je v hooku), môžeme použiť pre custom filtre
-    // filterCategory, setFilterCategory, // Ak by sme chceli pridať tabs
-    // selectedSector, setSelectedSector, // Ak by sme chceli pridať sector filter
-    filteredStocks, // Toto sú už vyfiltrované akcie
+    favoritesOnly, setFavoritesOnly,
+    filteredStocks,
     favoriteStocksSorted,
     allStocksSorted,
     favSortKey, favAscending, requestFavSort,
@@ -146,22 +146,63 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
     isFavorite 
   });
 
-  // Lazy loading hook
+  // Optimized table performance hook for All Stocks section
+  // This provides memoized sorting and filtering for better performance
+  const { filteredStocks: optimizedAllStocks } = useTablePerformance({
+    stocks: allStocksSorted,
+    sortKey: allSortKey,
+    ascending: allAscending,
+    searchTerm
+  });
+
+  // Trigger fetchRemainingStocksData early to ensure all data is loaded
+  useEffect(() => {
+    // Load all remaining stocks after initial load completes
+    const timer = setTimeout(() => {
+      if (allStocksSorted.length < 200) { // If we have less than 200 stocks, trigger load
+        console.log('🔄 Auto-triggering remaining stocks load (low count detected)');
+        fetchRemainingStocksData();
+      }
+    }, 3000); // Wait 3 seconds after initial load
+    
+    return () => clearTimeout(timer);
+  }, [allStocksSorted.length, fetchRemainingStocksData]);
+
+  // Lazy loading hook - optimized for smooth scrolling
   const {
     displayLimit,
     hasMore,
     reset: resetLazyLoading,
+    loadMore,
   } = useLazyLoading({
-    initialLimit: 30,
-    incrementSize: 30,
-    totalItems: allStocksSorted.length,
-    threshold: 200,
+    initialLimit: 50, // Increased initial limit for smoother initial load
+    incrementSize: 50, // Increased increment for fewer re-renders
+    totalItems: optimizedAllStocks.length, // Use optimized stocks count
+    threshold: 500, // Increased threshold - load earlier to prevent stuttering
     onLoadRemaining: fetchRemainingStocksData,
     enableProgressiveLoading: true
   });
 
-  // Display only the limited number of stocks
-  const displayedStocks = allStocksSorted.slice(0, displayLimit);
+  // Auto-increase displayLimit when new stocks are loaded (handled by useLazyLoading hook)
+
+  // Display only the limited number of stocks (use optimized filtered stocks)
+  // Ensure we show all stocks if displayLimit exceeds the array length
+  const displayedStocks = optimizedAllStocks.slice(0, Math.min(displayLimit, optimizedAllStocks.length));
+  
+  // Debug: Log when stocks are loaded (only in development)
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development' && optimizedAllStocks.length > 0) {
+      console.log(`📊 Stocks available: ${optimizedAllStocks.length}, Displayed: ${displayedStocks.length}, Limit: ${displayLimit}`);
+    }
+  }, [optimizedAllStocks.length, displayedStocks.length, displayLimit]);
+
+  // Optimized logo loading hook
+  const displayedTickers = useMemo(() => displayedStocks.map(s => s.ticker), [displayedStocks]);
+  useLogoLoader({
+    tickers: displayedTickers,
+    priorityCount: 100, // Preload first 100 logos
+    size: 32
+  });
 
   // Calculate portfolio value
   const calculatePortfolioValue = (stock: StockData): number => {

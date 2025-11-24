@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Wifi, WifiOff, RefreshCw, AlertCircle, CheckCircle, Clock, Info } from 'lucide-react';
-import { useWebSocket } from '@/hooks/useWebSocket';
+// import { useWebSocket } from '@/hooks/useWebSocket'; // Temporarily disabled to fix webpack error
 
 interface WebSocketStatusProps {
   showDetails?: boolean;
@@ -13,6 +13,14 @@ export function WebSocketStatus({ showDetails = false, className = '' }: WebSock
   const [serverStatus, setServerStatus] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Temporarily disabled to fix webpack error
+  const status = { isConnected: false, isConnecting: false, error: 'WebSocket temporarily disabled', lastUpdate: null, connectedClients: 0, isImplemented: false };
+  const connect = () => {};
+  const disconnect = () => {};
+  const ping = () => {};
+  const socket = null;
+  
+  /*
   const { status, connect, disconnect, ping, socket } = useWebSocket({
     onConnect: () => {
       console.log('✅ WebSocket connected successfully');
@@ -24,6 +32,7 @@ export function WebSocketStatus({ showDetails = false, className = '' }: WebSock
       console.error('❌ WebSocket error:', error);
     }
   });
+  */
 
   // Fetch server status
   const fetchServerStatus = async () => {

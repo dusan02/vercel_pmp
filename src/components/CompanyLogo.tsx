@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useLayoutEffect } from 'react';
 
 interface CompanyLogoProps {
   ticker: string;
@@ -37,66 +37,86 @@ export default function CompanyLogo({
 }: CompanyLogoProps) {
   const [hasError, setHasError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [logoSrc, setLogoSrc] = useState<string | null>(null);
-  const [isVisible, setIsVisible] = useState(priority); // Start visible if priority
-  const containerRef = useRef<HTMLDivElement>(null);
-
+  const imgRef = useRef<HTMLImageElement>(null);
+  
   // Generate lightweight placeholder immediately (no layout shift)
   const placeholderSrc = useMemo(() => generateLQPlaceholder(ticker, size), [ticker, size]);
 
-  // Intersection Observer for lazy loading (only if not priority)
+  // Unified strategy: Always use API endpoint for consistent behavior
+  // API will try: static file -> Redis cache -> external API -> placeholder
+  const logoSrc = `/api/logo/${ticker}?s=${size}`;
+
+  // Reset error state and loading state when ticker changes
   useEffect(() => {
+    setHasError(false);
+    setIsLoading(true);
+  }, [ticker, size]);
+
+  // Intersection Observer for ALL logos (including priority) to handle sorting/reordering
+  // This ensures logos load correctly even when table is sorted and rows change position
+  // Optimized: Only set up observer for non-priority logos, priority logos load immediately
+  useEffect(() => {
+    // Priority logos load immediately, no observer needed
     if (priority) {
-      // Pre priority logá nastav isVisible okamžite (synchronne)
-      setIsVisible(true);
+      if (imgRef.current && !imgRef.current.complete) {
+        imgRef.current.loading = 'eager';
+      }
       return;
     }
 
-    // Pre non-priority logá použij Intersection Observer
-    if (!containerRef.current) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsVisible(true);
-            observer.disconnect();
-          }
-        });
-      },
-      {
-        rootMargin: '50px', // Start loading 50px before visible
-        threshold: 0.01
-      }
-    );
-
-    observer.observe(containerRef.current);
-
-    return () => observer.disconnect();
-  }, [priority]);
-
-  // Fetch logo when ticker changes, size changes, visibility changes, or priority changes
-  // Zjednodušená logika - jeden useEffect namiesto dvoch
-  useEffect(() => {
-    // Pre priority logá alebo viditeľné logá nastav logoSrc
-    if (priority || isVisible) {
-      setHasError(false);
-      setIsLoading(true);
-
-      // Strategy: Use provided logoUrl if available (direct static file access)
-      // Otherwise use API endpoint as primary source
-      if (logoUrl) {
-        setLogoSrc(logoUrl);
-      } else {
-        // API will try: static file -> external API -> placeholder
-        const apiSrc = `/api/logo/${ticker}?s=${size}`;
-        setLogoSrc(apiSrc);
-      }
+    if (!imgRef.current) return;
+    
+    const img = imgRef.current;
+    let observer: IntersectionObserver | null = null;
+    
+    // For non-priority logos, use large rootMargin to preload before visible
+    const rootMargin = '2000px';
+    
+    // Use Intersection Observer to ensure images load when near viewport
+    // This works even when table is sorted and rows change position
+    if ('IntersectionObserver' in window) {
+      observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting && img && !img.complete) {
+              // Force eager loading when visible
+              img.loading = 'eager';
+              observer?.disconnect();
+            }
+          });
+        },
+        {
+          rootMargin,
+          threshold: 0.01
+        }
+      );
+      
+      observer.observe(img);
     } else {
-      // Pre non-priority a neviditeľné logá vymaž logoSrc
-      setLogoSrc(null);
+      // Fallback: check if near viewport and force load
+      const checkAndLoad = () => {
+        if (img && !img.complete) {
+          const rect = img.getBoundingClientRect();
+          const isNearViewport = rect.top < window.innerHeight + 2000;
+          
+          if (isNearViewport) {
+            img.loading = 'eager';
+          }
+        }
+      };
+      
+      checkAndLoad();
+      const timeout = setTimeout(checkAndLoad, 200);
+      
+      return () => clearTimeout(timeout);
     }
-  }, [ticker, size, isVisible, priority, logoUrl]);
+    
+    return () => {
+      if (observer) {
+        observer.disconnect();
+      }
+    };
+  }, [ticker, priority]); // Re-run when priority changes (e.g., after sorting)
 
   // Fallback placeholder component (used when image fails to load)
   const LogoPlaceholder = () => (
@@ -137,14 +157,15 @@ export default function CompanyLogo({
   }, [logoSrc, size]);
 
   // If logo failed to load after all attempts, show placeholder
-  // Also check if logoSrc is empty string (should not happen, but safety check)
-  if (hasError || !logoSrc || logoSrc.trim() === '') {
+  if (hasError) {
     return <LogoPlaceholder />;
   }
 
+  // Always show placeholder while loading
+  const showPlaceholder = isLoading;
+
   return (
     <div
-      ref={containerRef}
       data-logo-ticker={ticker}
       style={{
         width: size,
@@ -154,27 +175,8 @@ export default function CompanyLogo({
       }}
       className={className}
     >
-      {isVisible && logoSrc && (
-        <img
-          src={logoSrc}
-          srcSet={srcSet}
-          sizes={`${size}px`}
-          alt={`${ticker} company logo`}
-          width={size}
-          height={size}
-          className="rounded-full"
-          style={{
-            objectFit: 'contain',
-            display: 'block' // Remove inline spacing
-          }}
-          loading={priority ? 'eager' : 'lazy'}
-          decoding="async"
-          fetchPriority={priority ? 'high' : 'low'}
-          onLoad={handleLoad}
-          onError={handleError}
-        />
-      )}
-      {isLoading && (
+      {/* Show placeholder if loading */}
+      {showPlaceholder && (
         <img
           src={placeholderSrc}
           alt=""
@@ -183,11 +185,38 @@ export default function CompanyLogo({
           className="absolute inset-0 rounded-full"
           style={{
             objectFit: 'contain',
-            display: 'block'
+            display: 'block',
+            zIndex: 1
           }}
           aria-hidden="true"
         />
       )}
+      {/* Show actual logo - native lazy loading handles visibility */}
+      <img
+        ref={imgRef}
+        src={logoSrc}
+        srcSet={srcSet}
+        sizes={`${size}px`}
+        alt={`${ticker} company logo`}
+        width={size}
+        height={size}
+        className="rounded-full"
+        style={{
+          objectFit: 'contain',
+          display: 'block',
+          position: 'relative',
+          zIndex: 2,
+          opacity: isLoading ? 0 : 1,
+          transition: 'opacity 0.2s ease-in-out'
+        }}
+        // Native lazy loading: eager for priority (first 50), lazy for others
+        // useLayoutEffect will force eager loading for non-priority images near viewport
+        loading={priority ? 'eager' : 'lazy'}
+        decoding="async"
+        fetchPriority={priority ? 'high' : 'auto'}
+        onLoad={handleLoad}
+        onError={handleError}
+      />
     </div>
   );
 }

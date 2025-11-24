@@ -94,7 +94,7 @@ export function FavoritesSection({
               stock={stock}
               isFavorite={isFavorite(stock.ticker)}
               onToggleFavorite={() => onToggleFavorite(stock.ticker)}
-              priority={index < 20} // Priority loading pre prvých 20 logov (above the fold)
+              priority={true} // All favorites are priority (usually small list)
             />
           ))}
         </tbody>

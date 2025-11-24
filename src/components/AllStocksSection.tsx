@@ -117,7 +117,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
                     stock={stock}
                     isFavorite={isFavorite(stock.ticker)}
                     onToggleFavorite={favoriteHandlers.get(stock.ticker) || (() => onToggleFavorite(stock.ticker))}
-                    priority={index < 25} // Priority loading pre prvých 25 logov (above the fold)
+                    priority={index < 100} // Priority loading pre prvých 100 viditeľných riadkov (aj po sortovaní)
                   />
                 ))
               )}

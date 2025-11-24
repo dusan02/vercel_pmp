@@ -25,52 +25,96 @@ export function useLazyLoading({
     if (displayLimit < totalItems && !isLoading) {
       setIsLoading(true);
       
-      // Reduced delay for smoother experience
-      setTimeout(() => {
+      // Use requestAnimationFrame for smoother rendering
+      // Load immediately without delay for better UX
+      requestAnimationFrame(() => {
         const newLimit = Math.min(displayLimit + incrementSize, totalItems);
         setDisplayLimit(newLimit);
-        setIsLoading(false);
+        
+        // Use another RAF to set loading to false after render
+        requestAnimationFrame(() => {
+          setIsLoading(false);
+        });
         
         // 🚀 PROGRESSIVE: Trigger remaining stocks loading if enabled
-        if (enableProgressiveLoading && onLoadRemaining && !hasTriggeredRemaining) {
-          console.log('🔄 Lazy loading triggered remaining stocks load');
-          setHasTriggeredRemaining(true);
-          onLoadRemaining();
+        // Trigger when we're close to the limit (not just once)
+        if (enableProgressiveLoading && onLoadRemaining) {
+          // Trigger if we haven't triggered yet OR if we're loading more than 80% of total
+          const shouldTrigger = !hasTriggeredRemaining || (newLimit / totalItems > 0.8);
+          if (shouldTrigger && !hasTriggeredRemaining) {
+            console.log('🔄 Lazy loading triggered remaining stocks load');
+            setHasTriggeredRemaining(true);
+            // Load remaining stocks in background (non-blocking)
+            setTimeout(() => {
+              onLoadRemaining();
+            }, 0);
+          }
         }
-      }, 150); // Reduced from 300ms to 150ms
+      });
     }
   }, [displayLimit, totalItems, isLoading, incrementSize, enableProgressiveLoading, onLoadRemaining, hasTriggeredRemaining]);
 
   useEffect(() => {
+    let rafId: number | null = null;
     let timeoutId: NodeJS.Timeout;
+    let lastScrollTop = 0;
     
     const handleScroll = () => {
-      const scrollTop = window.scrollY;
-      const windowHeight = window.innerHeight;
-      const documentHeight = document.documentElement.scrollHeight;
-      
-      // Check if user is near bottom
-      if (documentHeight - scrollTop - windowHeight < threshold) {
-        // Debounce scroll events to prevent rapid loading
-        clearTimeout(timeoutId);
-        timeoutId = setTimeout(() => {
-          loadMore();
-        }, 50); // Small delay to prevent rapid triggers
+      // Use requestAnimationFrame for smooth scroll handling
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
       }
+      
+      rafId = requestAnimationFrame(() => {
+        const scrollTop = window.scrollY;
+        const windowHeight = window.innerHeight;
+        const documentHeight = document.documentElement.scrollHeight;
+        const distanceFromBottom = documentHeight - scrollTop - windowHeight;
+        
+        // Increased threshold for earlier loading (prevent stuttering)
+        // Load more when user is 500px from bottom (instead of 200px)
+        // Also trigger if we're at the bottom and there's more to load
+        const isNearBottom = distanceFromBottom < Math.max(threshold, 500);
+        const isAtBottom = distanceFromBottom < 100; // Very close to bottom
+        if ((isNearBottom || isAtBottom) && !isLoading && displayLimit < totalItems) {
+          // Debounce to prevent rapid triggers, but use shorter delay
+          clearTimeout(timeoutId);
+          timeoutId = setTimeout(() => {
+            loadMore();
+          }, 16); // ~1 frame at 60fps for smoother experience
+        }
+        
+        lastScrollTop = scrollTop;
+        rafId = null;
+      });
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => {
       window.removeEventListener('scroll', handleScroll);
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+      }
       clearTimeout(timeoutId);
     };
-  }, [loadMore, threshold]);
+  }, [loadMore, threshold, isLoading]);
 
   const reset = useCallback(() => {
     setDisplayLimit(initialLimit);
     setIsLoading(false);
     setHasTriggeredRemaining(false);
   }, []); // Remove initialLimit dependency to prevent infinite loops
+
+  // Auto-update displayLimit when totalItems increases (new data loaded)
+  useEffect(() => {
+    if (totalItems > displayLimit && !isLoading) {
+      // Automatically increase limit to show new data
+      const newLimit = Math.min(displayLimit + incrementSize, totalItems);
+      if (newLimit > displayLimit) {
+        setDisplayLimit(newLimit);
+      }
+    }
+  }, [totalItems, displayLimit, incrementSize, isLoading]);
 
   return {
     displayLimit,

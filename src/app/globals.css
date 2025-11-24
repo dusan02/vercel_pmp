@@ -2500,6 +2500,13 @@ table {
 .portfolio {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  /* Optimize for smooth scrolling */
+  scroll-behavior: smooth;
+  will-change: scroll-position;
+  /* Use GPU acceleration */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
 }
 
 .favorites table,
@@ -2596,6 +2603,18 @@ th.sortable:hover {
 
 tr:not(:last-child) td {
   border-bottom: 1px solid var(--clr-border);
+}
+
+/* Optimize table rows for smooth scrolling */
+.favorites tbody tr,
+.all-stocks tbody tr,
+.portfolio tbody tr {
+  /* Use GPU acceleration for smoother scrolling */
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  /* Prevent layout shifts */
+  contain: layout style paint;
 }
 
 tr:hover {

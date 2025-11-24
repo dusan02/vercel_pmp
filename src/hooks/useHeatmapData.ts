@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useWebSocket } from '@/hooks/useWebSocket';
+// import { useWebSocket } from '@/hooks/useWebSocket'; // Temporarily disabled to fix webpack error
 import { StockData, PriceUpdate } from '@/lib/types';
 import { CompanyNode, HeatmapMetric } from '@/components/MarketHeatmap';
 
@@ -206,7 +206,8 @@ export function useHeatmapData({
     }
   }, [apiEndpoint, timeframe, metric, lastEtag]);
 
-  // WebSocket integration
+  // WebSocket integration - temporarily disabled to fix webpack error
+  /*
   useWebSocket({
     onPriceUpdate: (updates: PriceUpdate[]) => {
       if (!data || data.length === 0) return;
@@ -259,6 +260,7 @@ export function useHeatmapData({
     },
     favorites: [] // Listen to all
   });
+  */
 
   // Initial load and auto-refresh
   useEffect(() => {

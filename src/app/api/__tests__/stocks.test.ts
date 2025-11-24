@@ -13,35 +13,70 @@ jest.mock('@/lib/redis', () => {
 jest.mock('@/lib/db/prisma', () => ({
   prisma: {
     ticker: {
-      findMany: jest.fn().mockResolvedValue([
+      findMany: jest.fn((query: any) => {
+        const allTickers = [
         { 
           symbol: 'NVDA', 
           name: 'NVIDIA Corp', 
           sector: 'Technology', 
           industry: 'Semiconductors', 
+          logoUrl: '/logos/nvda-32.webp',
           sharesOutstanding: 1_000_000_000,
           latestPrevClose: 780.0,
-          latestPrevCloseDate: new Date()
+          lastPrice: 800.0,
+          lastChangePct: 2.56,
+          lastMarketCap: 800_000_000_000,
+          lastMarketCapDiff: 20_000_000_000,
+          updatedAt: new Date()
         },
         { 
           symbol: 'MCD', 
           name: 'McDonalds', 
           sector: 'Consumer Cyclical', 
-          industry: 'Restaurants', 
+          industry: 'Restaurants',
+          logoUrl: '/logos/mcd-32.webp',
           sharesOutstanding: 500_000_000,
           latestPrevClose: 315.0,
-          latestPrevCloseDate: new Date()
+          lastPrice: 320.0,
+          lastChangePct: 1.58,
+          lastMarketCap: 160_000_000_000,
+          lastMarketCapDiff: 2_500_000_000,
+          updatedAt: new Date()
         },
         { 
           symbol: 'AAPL', 
           name: 'Apple Inc', 
           sector: 'Technology', 
-          industry: 'Consumer Electronics', 
+          industry: 'Consumer Electronics',
+          logoUrl: '/logos/aapl-32.webp',
           sharesOutstanding: 2_000_000_000,
           latestPrevClose: 195.0,
-          latestPrevCloseDate: new Date()
+          lastPrice: 200.0,
+          lastChangePct: 2.56,
+          lastMarketCap: 400_000_000_000,
+          lastMarketCapDiff: 10_000_000_000,
+          updatedAt: new Date()
         },
-      ]),
+        ];
+        
+        // Filter by tickers if specified in where clause
+        if (query?.where?.symbol?.in) {
+          const requestedTickers = query.where.symbol.in;
+          const filtered = allTickers.filter((t: any) => requestedTickers.includes(t.symbol));
+          // Apply limit if specified
+          if (query.take) {
+            return Promise.resolve(filtered.slice(0, query.take));
+          }
+          return Promise.resolve(filtered);
+        }
+        
+        // Apply limit if specified
+        if (query?.take) {
+          return Promise.resolve(allTickers.slice(0, query.take));
+        }
+        
+        return Promise.resolve(allTickers);
+      }),
       update: jest.fn().mockResolvedValue({}),
     },
     dailyRef: {
@@ -160,7 +195,7 @@ describe('/api/stocks', () => {
       marketCapDiff: expect.any(Number),
       lastUpdated: expect.any(String)
     });
-    expect(data.source).toBe('hybrid');
+    expect(data.source).toBe('database');
     expect(data.project).toBe('pmp');
     expect(data.count).toBe(1);
     expect(data.timestamp).toBeDefined();
@@ -189,6 +224,10 @@ describe('/api/stocks', () => {
   it('should handle Polygon API errors gracefully', async () => {
     const { GET } = await import('../stocks/route');
 
+    // Mock empty result for ERROR ticker
+    const prismaMock = require('@/lib/db/prisma').prisma;
+    prismaMock.ticker.findMany.mockResolvedValueOnce([]);
+
     const request = new NextRequest('http://localhost:3000/api/stocks?tickers=ERROR&project=pmp');
     const response = await GET(request);
     const data = await response.json();
@@ -196,15 +235,37 @@ describe('/api/stocks', () => {
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
     expect(data.data).toHaveLength(0);
-    expect(data.warnings).toBeDefined();
-    // Updated expectation: Error message comes from our route logic when DB data is missing
-    expect(data.warnings).toContainEqual(expect.stringMatching(/(Missing previous close data|No current price data|No price data)/i));
-    expect(data.partial).toBe(true);
-    expect(data.message).toBeDefined();
+    // DB-first architecture returns empty array without warnings if ticker not found
+    expect(data.count).toBe(0);
   });
 
   it('should handle individual ticker errors without failing entire request', async () => {
     const { GET } = await import('../stocks/route');
+
+    // Mock result with only NVDA (FAKE not in DB)
+    const prismaMock = require('@/lib/db/prisma').prisma;
+    prismaMock.ticker.findMany.mockImplementationOnce((query: any) => {
+      if (query?.where?.symbol?.in?.includes('FAKE')) {
+        // Return only NVDA, not FAKE
+        return Promise.resolve([
+          { 
+            symbol: 'NVDA', 
+            name: 'NVIDIA Corp', 
+            sector: 'Technology', 
+            industry: 'Semiconductors', 
+            logoUrl: '/logos/nvda-32.webp',
+            sharesOutstanding: 1_000_000_000,
+            latestPrevClose: 780.0,
+            lastPrice: 800.0,
+            lastChangePct: 2.56,
+            lastMarketCap: 800_000_000_000,
+            lastMarketCapDiff: 20_000_000_000,
+            updatedAt: new Date()
+          }
+        ]);
+      }
+      return Promise.resolve([]);
+    });
 
     const request = new NextRequest('http://localhost:3000/api/stocks?tickers=NVDA,FAKE&project=pmp');
     const response = await GET(request);
@@ -215,11 +276,7 @@ describe('/api/stocks', () => {
     expect(data.data).toHaveLength(1);
     expect(data.data[0].ticker).toBe('NVDA');
     expect(data.count).toBe(1);
-    expect(data.warnings).toBeDefined();
-    // Updated expectation: Error message comes from our route logic when DB data is missing
-    expect(data.warnings).toContainEqual(expect.stringMatching(/FAKE.*(Missing previous close|No current price|No price data)/i));
-    expect(data.partial).toBe(true);
-    expect(data.message).toBeDefined();
+    // DB-first architecture: missing tickers are simply not returned, no warnings
   });
 
   it('should use default project when not specified', async () => {

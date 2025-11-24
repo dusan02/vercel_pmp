@@ -121,6 +121,16 @@ const nextConfig: NextConfig = {
         tls: false,
       };
     }
+    
+    // Mark socket.io-client as external on server to prevent webpack from analyzing it
+    if (isServer) {
+      config.externals = config.externals || [];
+      if (Array.isArray(config.externals)) {
+        config.externals.push('socket.io-client');
+      } else if (typeof config.externals === 'object') {
+        config.externals['socket.io-client'] = 'socket.io-client';
+      }
+    }
 
     // Optimize bundle size (only in production)
     if (!isServer) {
