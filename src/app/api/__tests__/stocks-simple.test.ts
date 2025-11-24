@@ -13,26 +13,56 @@ jest.mock('@/lib/redis', () => {
 jest.mock('@/lib/db/prisma', () => ({
   prisma: {
     ticker: {
-      findMany: jest.fn().mockResolvedValue([
-        { 
-          symbol: 'NVDA', 
-          name: 'NVIDIA Corp', 
-          sector: 'Technology', 
-          industry: 'Semiconductors', 
-          sharesOutstanding: 1_000_000_000,
-          latestPrevClose: 780.0,
-          latestPrevCloseDate: new Date()
-        },
-        { 
-          symbol: 'MCD', 
-          name: 'McDonalds', 
-          sector: 'Consumer Cyclical', 
-          industry: 'Restaurants', 
-          sharesOutstanding: 500_000_000,
-          latestPrevClose: 315.0,
-          latestPrevCloseDate: new Date()
-        },
-      ]),
+      findMany: jest.fn((query: any) => {
+        const allTickers = [
+          { 
+            symbol: 'NVDA', 
+            name: 'NVIDIA Corp', 
+            sector: 'Technology', 
+            industry: 'Semiconductors',
+            logoUrl: '/logos/nvda-32.webp',
+            sharesOutstanding: 1_000_000_000,
+            latestPrevClose: 780.0,
+            lastPrice: 800.0,
+            lastChangePct: 2.56,
+            lastMarketCap: 800_000_000_000,
+            lastMarketCapDiff: 20_000_000_000,
+            updatedAt: new Date()
+          },
+          { 
+            symbol: 'MCD', 
+            name: 'McDonalds', 
+            sector: 'Consumer Cyclical', 
+            industry: 'Restaurants',
+            logoUrl: '/logos/mcd-32.webp',
+            sharesOutstanding: 500_000_000,
+            latestPrevClose: 315.0,
+            lastPrice: 320.0,
+            lastChangePct: 1.58,
+            lastMarketCap: 160_000_000_000,
+            lastMarketCapDiff: 2_500_000_000,
+            updatedAt: new Date()
+          },
+        ];
+        
+        // Filter by tickers if specified in where clause
+        if (query?.where?.symbol?.in) {
+          const requestedTickers = query.where.symbol.in;
+          const filtered = allTickers.filter((t: any) => requestedTickers.includes(t.symbol));
+          // Apply limit if specified
+          if (query.take) {
+            return Promise.resolve(filtered.slice(0, query.take));
+          }
+          return Promise.resolve(filtered);
+        }
+        
+        // Apply limit if specified
+        if (query?.take) {
+          return Promise.resolve(allTickers.slice(0, query.take));
+        }
+        
+        return Promise.resolve(allTickers);
+      }),
       update: jest.fn().mockResolvedValue({}),
     },
     dailyRef: {
