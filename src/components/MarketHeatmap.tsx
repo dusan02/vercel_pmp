@@ -10,83 +10,17 @@ import {
 import { scaleLinear } from 'd3-scale';
 
 import { CanvasHeatmap } from './CanvasHeatmap';
+import { HeatmapTile } from './HeatmapTile';
+import { HeatmapTooltip } from './HeatmapTooltip';
+import { buildHeatmapHierarchy } from '@/lib/utils/heatmapLayout';
+import { createHeatmapColorScale } from '@/lib/utils/heatmapColors';
+import { formatPercent, formatMarketCapDiff, formatPrice, formatMarketCap } from '@/lib/utils/heatmapFormat';
+import { LAYOUT_CONFIG } from '@/lib/utils/heatmapConfig';
+import { getTileLabelConfig } from '@/lib/utils/heatmapLabelUtils';
+import styles from '@/styles/heatmap.module.css';
 
-// --- KONŠTANTY ---
-
-/**
- * Konštanty pre veľkosti a thresholdy dlaždíc
- */
-const TILE_SIZE_THRESHOLDS = {
-  MIN_WIDTH: 30,
-  MIN_HEIGHT: 20,
-  MIN_AREA: 900, // Najmenšia plocha - bez textu
-  SMALL_AREA: 2500, // Menšia plocha - len ticker (menší font)
-  MEDIUM_AREA: 5000, // Malá plocha - len ticker (väčší font)
-  LARGE_AREA: 10000, // Stredná plocha - ticker + % change
-  MIN_INDUSTRY_WIDTH: 140,
-  MIN_INDUSTRY_HEIGHT: 50,
-} as const;
-
-/**
- * Konštanty pre font sizing - úmerné škálovanie podľa plochy
- */
-const FONT_SIZE_CONFIG = {
-  // Minimálna veľkosť písma pre čitateľnosť
-  MIN_READABLE_SIZE: 8, // Znížené z 10px - najmenší čitateľný font
-  MIN_SYMBOL_SIZE: 8, // Znížené z 11px - minimálna veľkosť pre ticker
-  MIN_PERCENT_SIZE: 7, // Znížené z 9px - minimálna veľkosť pre % change
-
-  // Maximálna veľkosť písma
-  MAX_SYMBOL_SIZE: 28, // Maximálna veľkosť pre ticker
-  MAX_PERCENT_SIZE: 20, // Maximálna veľkosť pre % change
-
-  // Multiplikátory pre výpočet veľkosti písma z plochy
-  // Použijeme logaritmickú škálu pre plynulejší prechod
-  AREA_TO_FONT_BASE: 0.15, // Základný koeficient pre výpočet z plochy
-  AREA_TO_FONT_LOG_BASE: 2.5, // Logaritmická báza pre plynulejší prechod
-} as const;
-
-/**
- * Konštanty pre layout a positioning
- */
-const LAYOUT_CONFIG = {
-  SCALE_MARGIN: 0.85, // 15% okraj pri scale výpočte
-  TOOLTIP_OFFSET: 15, // Offset tooltipu od kurzora
-  SECTOR_GAP: 4, // Jednotná medzera medzi sektormi (v pixeloch) - čierna farba
-  SECTOR_LABEL: {
-    FONT_SIZE: 14,
-    PADDING: '2px 6px',
-    TOP: 2,
-    LEFT: 6,
-    LETTER_SPACING: '0.08em',
-    BG_OPACITY: 0.85,
-  },
-  INDUSTRY_LABEL: {
-    FONT_SIZE: 11,
-    PADDING: '1px 4px',
-    TOP: 4,
-    LEFT: 6,
-    LETTER_SPACING: '0.04em',
-    BG_OPACITY: 0.65,
-  },
-} as const;
-
-/**
- * Text shadow pre čitateľnosť textu na dlaždiciach
- */
-const TEXT_SHADOW = `
-  -0.5px -0.5px 0 rgba(0,0,0,1),
-  0.5px -0.5px 0 rgba(0,0,0,1),
-  -0.5px 0.5px 0 rgba(0,0,0,1),
-  0.5px 0.5px 0 rgba(0,0,0,1),
-  0 0 0.5px rgba(0,0,0,1),
-  0 0 1px rgba(0,0,0,0.9)
-`.trim();
-
-/**
- * Text shadow pre sektor/industry labely
- */
-const LABEL_TEXT_SHADOW = '2px 2px 4px rgba(0,0,0,0.9)';
+// --- CONSTANTS ---
+// Constants moved to @/lib/utils/heatmapConfig.ts
 
 // --- TYPY ---
 
@@ -169,399 +103,31 @@ export type TreemapNode = HierarchyNode<HierarchyData> & {
 
 // --- POMOCNÉ FUNKCIE ---
 
-/**
- * Transformuje plochý zoznam firiem na hierarchickú štruktúru.
- * @param data Zoznam CompanyNode[]
- * @param metric Metrika pre výpočet veľkosti dlaždice
- * @returns Koreňový uzol pre D3
- */
-function buildHierarchy(data: CompanyNode[], metric: HeatmapMetric = 'percent'): HierarchyData {
-  const root: HierarchyData = { name: 'Market', children: [], meta: { type: 'root' } };
-  const sectorMap = new Map<string, HierarchyData>();
-  const industryMap = new Map<string, HierarchyData>(); // Map pre industries (key: sector-industry)
+// buildHierarchy moved to @/lib/utils/heatmapLayout.ts
+// Imported as buildHeatmapHierarchy
 
-  let skippedCount = 0;
+// createColorScale moved to @/lib/utils/heatmapColors.ts
+// Imported as createHeatmapColorScale
 
-  for (const company of data) {
-    // Podľa metriky vyberieme hodnotu pre veľkosť dlaždice
-    let tileValue: number;
-    if (metric === 'mcap') {
-      // V režime Market Cap Change používame absolútnu hodnotu marketCapDiff
-      tileValue = company.marketCapDiffAbs || Math.abs(company.marketCapDiff || 0);
-    } else {
-      // V režime % Change používame marketCap (pôvodné správanie)
-      tileValue = company.marketCap || 0;
-    }
+// Formatting functions moved to @/lib/utils/heatmapFormat.ts
+// Imported as: formatPercent, formatMarketCapDiff, formatPrice, formatMarketCap
 
-    // Skontrolujme, či má firma platnú hodnotu (D3 ignoruje hodnoty <= 0)
-    if (tileValue <= 0) {
-      skippedCount++;
-      continue; // Preskočíme firmy bez platnej hodnoty
-    }
-
-    // 1. Nájdi alebo vytvor Sektor
-    let sectorNode = sectorMap.get(company.sector);
-    if (!sectorNode) {
-      sectorNode = { name: company.sector, children: [], meta: { type: 'sector' } };
-      sectorMap.set(company.sector, sectorNode);
-      root.children!.push(sectorNode);
-    }
-
-    // 2. Nájdi alebo vytvor Industry (priamo pod sektorom)
-    // Použijeme kombinovaný kľúč pre jednoznačnú identifikáciu industry v rámci sektora
-    const industryKey = `${company.sector}-${company.industry}`;
-    let industryNode = industryMap.get(industryKey);
-    if (!industryNode) {
-      industryNode = {
-        name: company.industry,
-        children: [],
-        meta: { type: 'industry' },
-      };
-      industryMap.set(industryKey, industryNode);
-      sectorNode.children!.push(industryNode);
-    }
-
-    // 3. Pridaj list (Firmu) priamo pod industry
-    const companyLeaf: HierarchyData = {
-      name: company.symbol,
-      value: tileValue, // d3.sum() bude sčítať túto hodnotu (marketCap alebo marketCapDiffAbs)
-      meta: {
-        type: 'company',
-        companyData: company,
-      },
-    };
-    industryNode.children!.push(companyLeaf);
-  }
-
-  if (skippedCount > 0) {
-    const metricName = metric === 'mcap' ? 'marketCapDiffAbs' : 'marketCap';
-    console.warn(`⚠️ buildHierarchy: Preskočených ${skippedCount} firiem bez ${metricName} z ${data.length} celkom`);
-  }
-
-  return root;
-}
-
-/**
- * Farebná škála pre percentuálnu zmenu.
- * Definuje prechod od červenej (pokles) po zelenú (rast).
- */
-const createColorScale = (timeframe: 'day' | 'week' | 'month' = 'day') => {
-  // Rôzne škály pre rôzne timeframy
-  const scales = {
-    day: {
-      domain: [-5, -2, 0, 2, 5],
-      range: ['#ef4444', '#f87171', '#374151', '#4ade80', '#22c55e'],
-    },
-    week: {
-      domain: [-10, -5, 0, 5, 10],
-      range: ['#dc2626', '#ef4444', '#374151', '#22c55e', '#16a34a'],
-    },
-    month: {
-      domain: [-20, -10, 0, 10, 20],
-      range: ['#b91c1c', '#dc2626', '#374151', '#16a34a', '#15803d'],
-    },
-  };
-
-  const config = scales[timeframe];
-  return scaleLinear<string>()
-    .domain(config.domain)
-    .range(config.range)
-    .clamp(true);
-};
-
-/**
- * Formátuje percentuálnu zmenu.
- */
-const formatPercent = (value: number) =>
-  `${value > 0 ? '+' : ''}${value.toFixed(2)}%`;
-
-/**
- * Formátuje market cap diff na kompaktný tvar (napr. +$34.2B alebo -$1.5B).
- */
-const formatMarketCapDiff = (value: number | undefined): string => {
-  if (value === undefined || value === null || !isFinite(value) || value === 0) {
-    return '';
-  }
-  const absValue = Math.abs(value);
-  const sign = value >= 0 ? '+' : '-';
-
-  if (absValue >= 1_000_000_000_000) {
-    // Trillions
-    return `${sign}$${(absValue / 1_000_000_000_000).toFixed(1)}T`;
-  } else if (absValue >= 1_000_000_000) {
-    // Billions
-    return `${sign}$${(absValue / 1_000_000_000).toFixed(1)}B`;
-  } else if (absValue >= 1_000_000) {
-    // Millions
-    return `${sign}$${(absValue / 1_000_000).toFixed(1)}M`;
-  } else {
-    return `${sign}$${absValue.toFixed(0)}`;
-  }
-};
-
-/**
- * Formátuje cenu akcie na formát s dolármi (napr. $185.50).
- */
-const formatPrice = (value: number | undefined): string => {
-  if (value === undefined || value === null || !isFinite(value) || value === 0) {
-    return '';
-  }
-  return `$${value.toFixed(2)}`;
-};
-
-/**
- * Formátuje market cap na kompaktný tvar (napr. 1.2T alebo 350.5B).
- * Market cap je v miliardách, takže:
- * - >= 1000 miliárd = trilióny (T)
- * - < 1000 miliárd = miliardy (B)
- */
-const formatMarketCap = (value: number) => {
-  if (!isFinite(value) || value === 0) return '0.00';
-
-  if (value >= 1000) {
-    // Trilióny
-    const trillions = value / 1000;
-    return `${trillions.toFixed(2)}T`;
-  } else {
-    // Miliardy
-    return `${value.toFixed(2)}B`;
-  }
-};
-
-// --- KONFIGURÁCIA TEXTU V DLAŽDICIACH ---
-
-/**
- * Konfigurácia textu pre dlaždicu podľa jej veľkosti
- */
-type TileLabelConfig = {
-  showSymbol: boolean;
-  showPercent: boolean;
-  symbolFontPx: number;
-  percentFontPx?: number;
-  align: 'center' | 'top-left';
-};
-
-/**
- * Obmedzí číslo na rozsah min-max
- */
-const clampNumber = (value: number, min: number, max: number) =>
-  Math.max(min, Math.min(max, value));
-
-/**
- * Vypočíta veľkosť písma na základe plochy dlaždice
- * Používa logaritmickú škálu pre plynulejší prechod medzi veľkosťami
- * @param area Plocha dlaždice v px²
- * @param minSize Minimálna veľkosť písma
- * @param maxSize Maximálna veľkosť písma
- * @returns Veľkosť písma v px
- */
-function calculateFontSizeFromArea(
-  area: number,
-  minSize: number,
-  maxSize: number
-): number {
-  // Použijeme logaritmickú škálu pre plynulejší prechod
-  // Vzorec: minSize + (maxSize - minSize) * log(area / minArea) / log(maxArea / minArea)
-  const minArea = TILE_SIZE_THRESHOLDS.MIN_AREA;
-  const maxArea = TILE_SIZE_THRESHOLDS.LARGE_AREA * 2; // Rozšírený max pre veľké dlaždice
-
-  if (area <= minArea) {
-    return minSize;
-  }
-
-  // Logaritmická škála
-  const logArea = Math.log(area / minArea);
-  const logMaxArea = Math.log(maxArea / minArea);
-  const ratio = Math.min(logArea / logMaxArea, 1); // Obmedzíme na 0-1
-
-  const fontSize = minSize + (maxSize - minSize) * ratio;
-  return clampNumber(fontSize, minSize, maxSize);
-}
-
-/**
- * Vypočíta konfiguráciu textu pre dlaždicu podľa jej veľkosti
- * Písmo sa úmerne zmenšuje s plochou, ale zostáva čitateľné
- * @param widthPx Šírka dlaždice v pixeloch
- * @param heightPx Výška dlaždice v pixeloch
- * @returns Konfigurácia textu
- */
-function getTileLabelConfig(widthPx: number, heightPx: number): TileLabelConfig {
-  const area = widthPx * heightPx;
-  const minDimension = Math.min(widthPx, heightPx);
-
-  // 1) Najmenšia plocha – bez textu (iba farba)
-  //    tu sa budeme spoliehať na tooltip
-  if (
-    widthPx < TILE_SIZE_THRESHOLDS.MIN_WIDTH ||
-    heightPx < TILE_SIZE_THRESHOLDS.MIN_HEIGHT ||
-    area < TILE_SIZE_THRESHOLDS.MIN_AREA
-  ) {
-    return {
-      showSymbol: false,
-      showPercent: false,
-      symbolFontPx: 0,
-      align: 'center',
-    };
-  }
-
-  // 2) Menšia plocha – len ticker (menší font, ale čitateľný)
-  //    Plocha: MIN_AREA až SMALL_AREA
-  if (area < TILE_SIZE_THRESHOLDS.SMALL_AREA) {
-    // Agresívnejšie zmenšovanie pre menšie dlaždice
-    // Použijeme lineárnu škálu namiesto logaritmickej pre presnejšie zmenšovanie
-    const minArea = TILE_SIZE_THRESHOLDS.MIN_AREA;
-    const maxArea = TILE_SIZE_THRESHOLDS.SMALL_AREA;
-    const ratio = Math.min((area - minArea) / (maxArea - minArea), 1);
-    const minFont = 8; // Znížené z 11px na 8px pre menšie dlaždice
-    const maxFont = 11; // Znížené z 14px na 11px
-    const symbolFontPx = minFont + (maxFont - minFont) * ratio;
-    return {
-      showSymbol: true,
-      showPercent: false,
-      symbolFontPx: Math.round(symbolFontPx),
-      align: 'center',
-    };
-  }
-
-  // 3) Malá plocha – len ticker (väčší font)
-  //    Plocha: SMALL_AREA až MEDIUM_AREA
-  if (area < TILE_SIZE_THRESHOLDS.MEDIUM_AREA) {
-    // Agresívnejšie zmenšovanie pre stredné dlaždice
-    const minArea = TILE_SIZE_THRESHOLDS.SMALL_AREA;
-    const maxArea = TILE_SIZE_THRESHOLDS.MEDIUM_AREA;
-    const ratio = Math.min((area - minArea) / (maxArea - minArea), 1);
-    const minFont = 10; // Znížené z 13px na 10px
-    const maxFont = 14; // Znížené z 17px na 14px
-    const symbolFontPx = minFont + (maxFont - minFont) * ratio;
-    return {
-      showSymbol: true,
-      showPercent: false,
-      symbolFontPx: Math.round(symbolFontPx),
-      align: 'center',
-    };
-  }
-
-  // 4) Stredná plocha – ticker + % change
-  //    Plocha: MEDIUM_AREA až LARGE_AREA
-  if (area < TILE_SIZE_THRESHOLDS.LARGE_AREA) {
-    const symbolFontPx = calculateFontSizeFromArea(
-      area,
-      FONT_SIZE_CONFIG.MIN_SYMBOL_SIZE + 5, // 13px (znížené z 15px)
-      FONT_SIZE_CONFIG.MAX_SYMBOL_SIZE - 8 // 20px
-    );
-    const percentFontPx = calculateFontSizeFromArea(
-      area,
-      FONT_SIZE_CONFIG.MIN_PERCENT_SIZE, // 7px (znížené z 9px)
-      FONT_SIZE_CONFIG.MAX_PERCENT_SIZE - 4 // 16px
-    );
-    return {
-      showSymbol: true,
-      showPercent: true,
-      symbolFontPx: Math.round(symbolFontPx),
-      percentFontPx: Math.round(percentFontPx),
-      align: 'center',
-    };
-  }
-
-  // 5) Veľká plocha – ticker + % change (maximálna veľkosť)
-  //    Plocha: LARGE_AREA+
-  const symbolFontPx = calculateFontSizeFromArea(
-    area,
-    FONT_SIZE_CONFIG.MAX_SYMBOL_SIZE - 6, // 22px
-    FONT_SIZE_CONFIG.MAX_SYMBOL_SIZE // 28px
-  );
-  const percentFontPx = calculateFontSizeFromArea(
-    area,
-    FONT_SIZE_CONFIG.MAX_PERCENT_SIZE - 4, // 16px
-    FONT_SIZE_CONFIG.MAX_PERCENT_SIZE // 20px
-  );
-
-  return {
-    showSymbol: true,
-    showPercent: true,
-    symbolFontPx: Math.round(symbolFontPx),
-    percentFontPx: Math.round(percentFontPx),
-    align: 'center',
-  };
-}
+// --- HELPER FUNCTIONS ---
+// Helper functions (calculateFontSizeFromArea, getTileLabelConfig) moved to @/lib/utils/heatmapLabelUtils.ts
 
 // --- POD-KOMPONENTY ---
 
 /**
  * Komponent pre Tooltip.
  */
-type TooltipProps = {
-  company: CompanyNode;
-  position: { x: number; y: number };
-  timeframe?: 'day' | 'week' | 'month';
-};
 
-const Tooltip: React.FC<TooltipProps> = ({ company, position, timeframe = 'day' }) => {
-  // Odstránime duplicitu tickera - ak name je rovnaké ako symbol, zobrazíme iba symbol
-  const displayName = company.name && company.name !== company.symbol
-    ? `${company.symbol} - ${company.name}`
-    : company.symbol;
-
-  return (
-    <div
-      className="absolute z-50 p-3 bg-slate-800 text-white rounded-lg shadow-xl pointer-events-none transition-opacity duration-100"
-      style={{
-        left: position.x + LAYOUT_CONFIG.TOOLTIP_OFFSET,
-        top: position.y + LAYOUT_CONFIG.TOOLTIP_OFFSET,
-      }}
-    >
-      {/* Horná časť: Ticker a Sector / Industry */}
-      <h3 className="font-bold text-lg">
-        {displayName}
-      </h3>
-      <p className="text-sm text-slate-300">
-        {company.sector} / {company.industry}
-      </p>
-
-      {/* Dolná časť: Price + Change, Market Cap + Cap Diff */}
-      <div className="mt-2 border-t border-slate-700 pt-2 space-y-1">
-        {/* Price a Change na jednom riadku */}
-        <div className="flex items-center gap-2">
-          <span className="text-slate-400">Price</span>
-          {company.currentPrice && (
-            <span className="font-medium">{formatPrice(company.currentPrice)}</span>
-          )}
-          <span className="text-slate-400">,</span>
-          <span
-            className={`font-medium ${company.changePercent >= 0 ? 'text-green-400' : 'text-red-400'
-              }`}
-          >
-            {formatPercent(company.changePercent)}
-          </span>
-        </div>
-
-        {/* Market Cap a Cap Diff na jednom riadku */}
-        <div className="flex items-center gap-2">
-          <span className="text-slate-400">MktCap</span>
-          <span className="font-medium">{formatMarketCap(company.marketCap)}</span>
-          {company.marketCapDiff !== undefined && company.marketCapDiff !== null && (
-            <>
-              <span className="text-slate-400">,</span>
-              <span
-                className={`font-medium ${company.marketCapDiff >= 0 ? 'text-green-400' : 'text-red-400'
-                  }`}
-              >
-                {formatMarketCapDiff(company.marketCapDiff)}B
-              </span>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
 
 /**
  * Komponent pre Legendu.
  * Exportovaný, aby sa mohol použiť aj v page komponente.
  */
 export const HeatmapLegend: React.FC<{ timeframe: 'day' | 'week' | 'month' }> = ({ timeframe }) => {
-  const colorScale = createColorScale(timeframe);
+  const colorScale = createHeatmapColorScale(timeframe);
   const scales = {
     day: [-5, -3, -1, 0, 1, 3, 5],
     week: [-10, -6, -3, 0, 3, 6, 10],
@@ -622,7 +188,7 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
   }, [timeframe]);
 
   // 1. Transformácia dát
-  const hierarchyRoot = useMemo(() => buildHierarchy(data, metric), [data, metric]);
+  const hierarchyRoot = useMemo(() => buildHeatmapHierarchy(data, metric), [data, metric]);
 
   // 2. Výpočet D3 Treemap layoutu
   // Optimized: Round width/height to nearest 10px to prevent recalculation on tiny resizes
@@ -652,6 +218,9 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
         return 0;
       })
       .paddingTop(0) // Žiadna rezerva hore - roztiahnuť hore
+      .paddingLeft(0) // Žiadna rezerva vľavo - roztiahnuť doľava
+      .paddingRight(0) // Žiadna rezerva vpravo - roztiahnuť doprava
+      .paddingBottom(0) // Žiadna rezerva dole - roztiahnuť dole
       .tile(treemapSquarify); // Algoritmus pre "štvorcovejší" layout
 
     // Spustíme výpočet layoutu
@@ -665,15 +234,13 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
 
 
   // Farebná škála pre aktuálny timeframe
-  const colorScale = useMemo(() => createColorScale(timeframe), [timeframe]);
+  const colorScale = useMemo(() => createHeatmapColorScale(timeframe), [timeframe]);
 
-  // Handler pre pohyb myši (pre pozíciu tooltipu, relatívne k kontajneru)
+  // Handler pre pohyb myši (pre pozíciu tooltipu - globálne súradnice pre fixed tooltip)
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
     setMousePosition({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
+      x: e.clientX,
+      y: e.clientY,
     });
   }, []);
 
@@ -706,7 +273,7 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
 
   // Tile virtualization - filter out tiny tiles that are barely visible
   // This significantly reduces DOM nodes and improves rendering performance
-  const MIN_VISIBLE_AREA = 500; // px² - tiles smaller than this won't render
+  const MIN_VISIBLE_AREA = 0; // px² - render ALL tiles to prevent black holes
 
   const allLeaves = useMemo(() => {
     const leaves = treemapLayout ? (treemapLayout.leaves() as TreemapLeaf[]) : [];
@@ -765,24 +332,25 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
   const scale = useMemo(() => {
     if (!treemapBounds) return 1;
 
-    // Vypočítame skálu, aby sa mapa zmestila s okrajom (zmenšená mapa)
-    const scaleX = (width * LAYOUT_CONFIG.SCALE_MARGIN) / treemapBounds.treemapWidth;
-    const scaleY = (height * LAYOUT_CONFIG.SCALE_MARGIN) / treemapBounds.treemapHeight;
-    return Math.min(scaleX, scaleY, 1); // Nezvětšujeme, iba zmenšujeme ak je potrebné
+    // Vypočítame skálu, aby sa mapa roztiahla na celú plochu (bez okrajov)
+    const scaleX = width / treemapBounds.treemapWidth;
+    const scaleY = height / treemapBounds.treemapHeight;
+    return Math.min(scaleX, scaleY); // Použijeme menšiu škálu, aby sa mapa zmestila
   }, [treemapBounds, width, height]);
 
-  // Offset pre centrovanie
+  // Offset pre roztiahnutie na celú plochu (bez centrovania)
   const offset = useMemo(() => {
     if (!treemapBounds || scale === 0) return { x: 0, y: 0 };
 
     const treemapWidth = treemapBounds.treemapWidth * scale;
     const treemapHeight = treemapBounds.treemapHeight * scale;
 
+    // Roztiahnuť na celú plochu - začať od (0,0) a roztiahnuť do (width, height)
     return {
-      x: (width - treemapWidth) / 2 - treemapBounds.minX * scale,
-      y: (height - treemapHeight) / 2 - treemapBounds.minY * scale,
+      x: -treemapBounds.minX * scale,
+      y: -treemapBounds.minY * scale,
     };
-  }, [treemapBounds, width, height, scale]);
+  }, [treemapBounds, scale]);
 
   // Progressive loading state
   const [visibleCount, setVisibleCount] = useState(50); // Start with 50 items
@@ -817,31 +385,31 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-full bg-black text-white overflow-hidden"
+      className={styles.heatmapContainer}
       style={{ overflow: 'hidden' }}
       onMouseMove={renderMode === 'dom' ? handleMouseMove : undefined}
     >
       {(width === 0 || height === 0) && (
-        <div className="absolute inset-0 flex items-center justify-center text-gray-500 z-50">
+        <div className={styles.heatmapLoading}>
           Loading layout...
         </div>
       )}
 
-      {/* Controls */}
-      <div className="absolute top-4 right-4 z-50 flex gap-2">
+      {/* Controls - Render mode toggle removed per design request */}
+      {/* <div className={styles.heatmapControls}>
         <button
           onClick={() => setRenderMode(prev => prev === 'dom' ? 'canvas' : 'dom')}
-          className="px-3 py-1 bg-slate-700 text-white text-xs font-medium rounded hover:bg-slate-600 transition-colors opacity-80 hover:opacity-100"
+          className={styles.heatmapControlButton}
         >
           Mode: {renderMode === 'dom' ? 'DOM (Slow)' : 'Canvas (Fast)'}
         </button>
-      </div>
+      </div> */}
 
       {/* Zoom back button */}
       {zoomedSector && (
         <button
           onClick={() => setZoomedSector(null)}
-          className="absolute top-4 left-4 z-40 px-3 py-1 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 transition-colors"
+          className={styles.heatmapZoomButton}
         >
           ← Back to All Sectors
         </button>
@@ -895,7 +463,7 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
               );
             })}
 
-          {/* 2. Renderujeme Listy (Firmy) */}
+          {/* 2. Renderujeme Listy (Firmy) - Using memoized HeatmapTile component */}
           {visibleLeaves.map((leaf) => {
             const { x0, y0, x1, y1 } = leaf;
             const tileWidth = x1 - x0;
@@ -908,71 +476,22 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
             const scaledHeight = tileHeight * scale;
 
             // Konfigurácia textu podľa veľkosti dlaždice
-            const {
-              showSymbol,
-              showPercent,
-              symbolFontPx,
-              percentFontPx,
-              align,
-            } = getTileLabelConfig(scaledWidth, scaledHeight);
+            const labelConfig = getTileLabelConfig(scaledWidth, scaledHeight);
 
             return (
-              <div
+              <HeatmapTile
                 key={`${company.symbol}-${x0}-${y0}`}
-                className="absolute flex flex-col items-center justify-center box-border transition-all duration-300 ease-out cursor-pointer group"
-                style={{
-                  left: x0 * scale + offset.x,
-                  top: y0 * scale + offset.y,
-                  width: tileWidth * scale,
-                  height: tileHeight * scale,
-                  backgroundColor: tileColor,
-                  border: '1px solid rgba(0, 0, 0, 0.3)', // Tenká čierna čiara na okraj každej plochy
-                  transitionProperty: colorTransition ? 'background-color' : 'all',
-                }}
+                leaf={leaf}
+                scale={scale}
+                offset={offset}
+                color={tileColor}
+                labelConfig={labelConfig}
+                metric={metric}
+                colorTransition={colorTransition}
                 onMouseEnter={() => setHoveredNode(company)}
                 onMouseLeave={() => setHoveredNode(null)}
                 onClick={() => onTileClick && onTileClick(company)}
-              >
-                {/* Text v dlaždici - vždy vycentrovaný */}
-                {(showSymbol || showPercent) && (
-                  <div
-                    className="relative z-10 flex flex-col w-full h-full items-center justify-center transition-opacity opacity-90 group-hover:opacity-100"
-                  >
-                    {showSymbol && (
-                      <div
-                        className="font-bold text-white leading-tight tracking-tight"
-                        style={{
-                          fontSize: symbolFontPx,
-                          lineHeight: 1.05,
-                          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-                          textRendering: 'optimizeLegibility',
-                          textShadow: TEXT_SHADOW,
-                        }}
-                      >
-                        {company.symbol}
-                      </div>
-                    )}
-                    {showPercent && typeof percentFontPx === 'number' && (
-                      <div
-                        className="text-white/90 font-medium leading-tight mt-0.5"
-                        style={{
-                          fontSize: percentFontPx,
-                          lineHeight: 1.05,
-                          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-                          textRendering: 'optimizeLegibility',
-                          textShadow: TEXT_SHADOW,
-                        }}
-                      >
-                        {metric === 'mcap'
-                          ? formatMarketCapDiff(company.marketCapDiff)
-                          : formatPercent(company.changePercent)}
-                      </div>
-                    )}
-                  </div>
-                )}
-                {/* Jemné zosvetlenie pozadia pri hoveri */}
-                <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-100" />
-              </div>
+              />
             );
           })}
         </>
@@ -982,7 +501,12 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
 
       {/* 4. Tooltip (renderuje sa mimo) */}
       {hoveredNode && (
-        <Tooltip company={hoveredNode} position={mousePosition} timeframe={timeframe} />
+        <HeatmapTooltip
+          company={hoveredNode}
+          position={mousePosition}
+          timeframe={timeframe}
+          metric={metric}
+        />
       )}
     </div>
   );

@@ -57,7 +57,7 @@ const mergeStockDataWithEarnings = (
         marketCap: stock.marketCap,
         percentChange: stock.percentChange,
         marketCapDiff: stock.marketCapDiff,
-        logoUrl: stock.logoUrl
+        ...(stock.logoUrl ? { logoUrl: stock.logoUrl } : {})
       };
     }
     return earning;
@@ -93,7 +93,7 @@ function useEarningsData(date: string) {
 
       // Use AbortController for better timeout handling
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 12000); // 12s timeout
+      const timeoutId = setTimeout(() => controller.abort(), 20000); // Increased to 20s timeout to handle cold starts
 
       let earningsResponse: Response;
       try {
@@ -104,7 +104,13 @@ function useEarningsData(date: string) {
       } catch (fetchError) {
         clearTimeout(timeoutId);
         if (fetchError instanceof Error && fetchError.name === 'AbortError') {
-          throw new Error('Request timeout - earnings API took too long to respond');
+          // Timeout - handle gracefully without throwing error
+          setData({
+            success: true,
+            data: { preMarket: [], afterMarket: [] }
+          });
+          setIsLoading(false);
+          return;
         }
         throw fetchError;
       }
@@ -192,11 +198,11 @@ function useEarningsData(date: string) {
       // Fallback to original earnings data if stock data fetch fails
       setData(earningsResult);
     } catch (err) {
+      // Timeout errors are already handled in the inner catch block above
+      // This catch block only handles other errors
       const errorMessage = err instanceof Error
         ? err.message
-        : err instanceof DOMException && err.name === 'AbortError'
-          ? 'Request timeout - please try again'
-          : 'Failed to fetch earnings data';
+        : 'Failed to fetch earnings data';
       setError(errorMessage);
       console.error('Error fetching earnings data:', err);
     } finally {
@@ -223,6 +229,22 @@ function useEarningsData(date: string) {
   return { data, isLoading, error, refetch: () => fetchData(true) };
 }
 
+const EarningsInfoBanner = () => (
+  <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg mx-4 mb-4">
+    <p className="text-sm text-blue-800 dark:text-blue-200 text-center">
+      For a complete earnings table with all companies, visit{' '}
+      <a
+        href="https://www.earningstable.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="font-semibold underline hover:text-blue-600 dark:hover:text-blue-300 transition-colors"
+      >
+        www.earningstable.com
+      </a>
+    </p>
+  </div>
+);
+
 // Loading component for earnings
 const EarningsLoader = () => (
   <section className="todays-earnings">
@@ -237,6 +259,7 @@ const EarningsLoader = () => (
     <div className="flex items-center justify-center p-8">
       <span className="text-gray-600">Loading today&apos;s earnings...</span>
     </div>
+    <EarningsInfoBanner />
   </section>
 );
 
@@ -260,6 +283,7 @@ const EarningsError = ({ error, onRetry }: { error: string; onRetry: () => void 
         Try Again
       </button>
     </div>
+    <EarningsInfoBanner />
   </section>
 );
 
@@ -275,8 +299,9 @@ const EarningsEmpty = () => (
       </div>
     </div>
     <div className="text-center p-8 text-gray-500">
-      <p>No earnings reports scheduled for today from tracked companies</p>
+      <p>No major company earnings scheduled for today</p>
     </div>
+    <EarningsInfoBanner />
   </section>
 );
 
@@ -442,7 +467,7 @@ export default function TodaysEarningsFinnhub() {
                         {/* Priority loading for first 15 logos (above the fold) */}
                         <CompanyLogo
                           ticker={earning.ticker}
-                          logoUrl={earning.logoUrl}
+                          {...(earning.logoUrl ? { logoUrl: earning.logoUrl } : {})}
                           size={40}
                           priority={index < 15}
                         />
@@ -480,6 +505,8 @@ export default function TodaysEarningsFinnhub() {
           <p>No earnings reports scheduled for today from tracked companies</p>
         </div>
       )}
+
+      <EarningsInfoBanner />
     </section>
   );
 } 

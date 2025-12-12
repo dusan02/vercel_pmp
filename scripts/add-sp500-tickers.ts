@@ -4,8 +4,8 @@
  * Usage: tsx scripts/add-sp500-tickers.ts
  */
 
-import { prisma } from '../src/lib/prisma';
-import { addTickersToUniverse, UNIVERSE_TYPES } from '../src/lib/universeHelpers';
+import { prisma } from '../src/lib/db/prisma';
+import { addTickersToUniverse, UNIVERSE_TYPES } from '../src/lib/utils/universeHelpers';
 
 // SP500 tickers extracted from the provided list
 const SP500_TICKERS = [
@@ -120,7 +120,7 @@ async function main() {
   console.log(`\n📊 Verification: ${dbCount} tickers found in database`);
 
   // Check universe
-  const { getAllTrackedTickers } = await import('../src/lib/universeHelpers');
+  const { getAllTrackedTickers } = await import('../src/lib/utils/universeHelpers');
   const universeTickers = await getAllTrackedTickers();
   console.log(`📊 Universe count: ${universeTickers.length} total tracked tickers`);
 }

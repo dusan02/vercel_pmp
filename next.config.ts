@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 const nextConfig: NextConfig = {
   // Environment configuration
@@ -120,6 +121,14 @@ const nextConfig: NextConfig = {
         net: false,
         tls: false,
       };
+      
+      // Add alias for useWebSocket to prevent webpack resolution issues
+      /*
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        '@/hooks/useWebSocket': path.resolve(__dirname, 'src/lib/stubs/useWebSocket.ts'),
+      };
+      */
     }
     
     // Mark socket.io-client as external on server to prevent webpack from analyzing it
@@ -132,25 +141,10 @@ const nextConfig: NextConfig = {
       }
     }
 
-    // Optimize bundle size (only in production)
-    if (!isServer) {
-      config.optimization.splitChunks = {
-        chunks: 'all',
-        cacheGroups: {
-          vendor: {
-            test: /[\\/]node_modules[\\/]/,
-            name: 'vendors',
-            chunks: 'all',
-          },
-          common: {
-            name: 'common',
-            minChunks: 2,
-            chunks: 'all',
-            enforce: true,
-          },
-        },
-      };
-    }
+    // Note: Removed custom splitChunks configuration
+    // Next.js handles CSS/JS chunking automatically and custom config can cause
+    // MIME type errors (CSS files being loaded as scripts)
+    // Next.js default splitChunks is optimized and should be used instead
 
     // SVG optimization
     config.module.rules.push({

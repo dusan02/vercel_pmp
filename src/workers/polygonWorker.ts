@@ -192,6 +192,10 @@ async function upsertToDB(
 
     // Upsert ticker if not exists
     // Update price/market cap columns for sorting
+    if (symbol === 'GOOG' || symbol === 'GOOGL') {
+      console.log(`🔍 Debug DB Upsert ${symbol}: Attempting to set latestPrevClose=${previousClose || 0}`);
+    }
+
     await prisma.ticker.upsert({
       where: { symbol },
       update: {
@@ -201,7 +205,9 @@ async function upsertToDB(
         lastChangePct: normalized.changePct,
         lastMarketCap: marketCap,
         lastMarketCapDiff: marketCapDiff,
-        lastPriceUpdated: normalized.timestamp
+        lastPriceUpdated: normalized.timestamp,
+        // Always update latestPrevClose if we have it
+        ...(previousClose ? { latestPrevClose: previousClose } : {})
       },
       create: {
         symbol,
@@ -211,7 +217,8 @@ async function upsertToDB(
         lastChangePct: normalized.changePct,
         lastMarketCap: marketCap,
         lastMarketCapDiff: marketCapDiff,
-        lastPriceUpdated: normalized.timestamp
+        lastPriceUpdated: normalized.timestamp,
+        latestPrevClose: previousClose || 0
       }
     });
 
@@ -360,10 +367,50 @@ export async function ingestBatch(
 
   // Fetch previous closes from Redis
   const prevCloseMap = await getPrevClose(today, tickers);
+  
+  // If no previous closes in Redis, try to load from DB
   if (prevCloseMap.size === 0) {
-    console.log('⚠️ No previous closes found in Redis, will use snapshot data');
+    console.log('⚠️ No previous closes found in Redis, checking DB...');
+    try {
+      const dailyRefs = await prisma.dailyRef.findMany({
+        where: {
+          symbol: { in: tickers },
+          date: new Date(today)
+        },
+        select: { symbol: true, previousClose: true }
+      });
+      
+      if (dailyRefs.length > 0) {
+        console.log(`✅ Loaded ${dailyRefs.length} previous closes from DB`);
+        for (const ref of dailyRefs) {
+          prevCloseMap.set(ref.symbol, ref.previousClose);
+          // Also update Redis cache
+          await setPrevClose(today, ref.symbol, ref.previousClose);
+        }
+      }
+    } catch (dbError) {
+      console.error('Error loading previous closes from DB:', dbError);
+    }
+  }
+
+  // If still missing previous closes, try to fetch from Polygon (even if market closed)
+  // This handles the case where Redis/DB are empty after restart
+  const missingPrevClose = tickers.filter(t => !prevCloseMap.has(t));
+  if (missingPrevClose.length > 0) {
+    console.log(`⚠️ Missing previous close for ${missingPrevClose.length} tickers, attempting to fetch...`);
+    // Only fetch a few to avoid rate limits if many are missing
+    const toFetch = missingPrevClose.slice(0, 50); 
+    await bootstrapPreviousCloses(toFetch, apiKey, today);
+    
+    // Reload map after bootstrap
+    const refreshedMap = await getPrevClose(today, toFetch);
+    refreshedMap.forEach((val, key) => prevCloseMap.set(key, val));
+  }
+
+  if (prevCloseMap.size === 0) {
+    console.log('⚠️ Still no previous closes found, change % will be 0');
   } else {
-    console.log(`✅ Loaded ${prevCloseMap.size} previous closes from Redis`);
+    console.log(`✅ Using ${prevCloseMap.size} previous closes`);
   }
 
   // Fetch snapshots from Polygon
@@ -403,6 +450,14 @@ export async function ingestBatch(
   for (const snapshot of snapshots) {
     const symbol = snapshot.ticker;
     const previousClose = prevCloseMap.get(symbol) || null;
+    
+    // Determine effective previous close (used for calculation)
+    const snapshotPrevClose = snapshot.prevDay?.c || snapshot.day?.c || null;
+    const effectivePrevClose = previousClose || snapshotPrevClose;
+
+    if (symbol === 'AAPL' || symbol === 'GOOGL') {
+      console.log(`🔍 Debug ${symbol}: MapPrevClose=${previousClose}, SnapPrevClose=${snapshotPrevClose}, Effective=${effectivePrevClose}`);
+    }
 
     try {
       // Normalize
@@ -427,12 +482,13 @@ export async function ingestBatch(
       }
 
       const marketCap = computeMarketCap(normalized.price, shares);
-      const marketCapDiff = previousClose
-        ? computeMarketCapDiff(normalized.price, previousClose, shares)
+      const marketCapDiff = effectivePrevClose
+        ? computeMarketCapDiff(normalized.price, effectivePrevClose, shares)
         : 0;
 
       // Upsert to DB (includes updating Ticker table for sorting)
-      const dbSuccess = await upsertToDB(symbol, session, normalized, previousClose, marketCap, marketCapDiff);
+      // Pass effectivePrevClose to update Ticker.latestPrevClose
+      const dbSuccess = await upsertToDB(symbol, session, normalized, effectivePrevClose, marketCap, marketCapDiff);
 
       // Write to Redis (atomic operation)
       const priceData: PriceData = {
@@ -537,23 +593,42 @@ export async function bootstrapPreviousCloses(
   // Fetch previous day's close prices from Polygon aggregates
   for (const symbol of tickers) {
     try {
-      const prevDate = new Date(date);
-      prevDate.setDate(prevDate.getDate() - 1);
-      const prevDateStr = prevDate.toISOString().split('T')[0];
+      let prevClose = 0;
+      // Look back up to 3 days (to handle weekends/holidays)
+      for (let i = 1; i <= 3; i++) {
+        const prevDate = new Date(date);
+        prevDate.setDate(prevDate.getDate() - i);
+        const prevDateStr = prevDate.toISOString().split('T')[0];
 
-      // Use adjusted=true for split-adjusted prices
-      const url = `https://api.polygon.io/v2/aggs/ticker/${symbol}/range/1/day/${prevDateStr}/${prevDateStr}?adjusted=true&apiKey=${apiKey}`;
-      const response = await withRetry(async () => fetch(url));
+        // Use adjusted=true for split-adjusted prices
+        const url = `https://api.polygon.io/v2/aggs/ticker/${symbol}/range/1/day/${prevDateStr}/${prevDateStr}?adjusted=true&apiKey=${apiKey}`;
+        const response = await withRetry(async () => fetch(url));
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.results && data.results.length > 0) {
-          const prevClose = data.results[0].c; // close price
-          if (prevClose > 0) {
-            await setPrevClose(date, symbol, prevClose);
-            console.log(`✅ Set previous close for ${symbol}: $${prevClose}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.results && data.results.length > 0) {
+            prevClose = data.results[0].c; // close price
+            if (prevClose > 0) {
+              await setPrevClose(date, symbol, prevClose);
+              
+              // Save to DB immediately for persistence
+              try {
+                await prisma.dailyRef.upsert({
+                  where: { symbol_date: { symbol, date: new Date(date) } },
+                  update: { previousClose: prevClose, updatedAt: new Date() },
+                  create: { symbol, date: new Date(date), previousClose: prevClose }
+                });
+              } catch (dbErr) {
+                console.warn(`⚠️ Failed to save bootstrapped prevClose to DB for ${symbol}:`, dbErr);
+              }
+
+              console.log(`✅ Set previous close for ${symbol} (from ${prevDateStr}): $${prevClose}`);
+              break; // Found it, stop looking back
+            }
           }
         }
+        // Small delay between attempts
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
 
       // Rate limiting

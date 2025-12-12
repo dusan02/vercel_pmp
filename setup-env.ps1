@@ -28,4 +28,4 @@ Write-Host "Next steps:" -ForegroundColor Yellow
 Write-Host "1. Edit .env.local and replace 'your_actual_api_key_here' with your real Polygon.io API key" -ForegroundColor White
 Write-Host "2. Restart the application with: npm run dev" -ForegroundColor White
 Write-Host ""
-Read-Host "Press Enter to continue" 
+Write-Host "Setup complete!" 

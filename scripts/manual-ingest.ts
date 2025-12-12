@@ -14,7 +14,7 @@ try {
   console.warn('⚠️ dotenv not found, using existing environment variables');
 }
 
-import { getUniverse } from '@/lib/redisHelpers';
+import { getUniverse } from '@/lib/redis/operations';
 import { ingestBatch } from '@/workers/polygonWorker';
 
 async function main() {

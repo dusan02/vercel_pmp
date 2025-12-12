@@ -5,7 +5,7 @@
  * Usage: tsx scripts/verify-fix-sector-industry.ts
  */
 
-import { prisma } from '../src/lib/prisma';
+import { prisma } from '../src/lib/db/prisma';
 
 // Known correct mappings for major pharmaceutical and healthcare companies
 const knownCorrectMappings: { [key: string]: { sector: string; industry: string } } = {
@@ -22,32 +22,32 @@ const knownCorrectMappings: { [key: string]: { sector: string; industry: string 
   'BMY': { sector: 'Healthcare', industry: 'Drug Manufacturers' }, // Bristol-Myers Squibb
   'NVO': { sector: 'Healthcare', industry: 'Drug Manufacturers' }, // Novo Nordisk
   'TAK': { sector: 'Healthcare', industry: 'Drug Manufacturers' }, // Takeda
-  
+
   // Healthcare - Biotechnology
   'AMGN': { sector: 'Healthcare', industry: 'Biotechnology' },
   'GILD': { sector: 'Healthcare', industry: 'Biotechnology' },
   'REGN': { sector: 'Healthcare', industry: 'Biotechnology' },
   'VRTX': { sector: 'Healthcare', industry: 'Biotechnology' },
   'BIIB': { sector: 'Healthcare', industry: 'Biotechnology' },
-  
+
   // Healthcare - Medical Devices
   'MDT': { sector: 'Healthcare', industry: 'Medical Devices' }, // Medtronic
   'ABT': { sector: 'Healthcare', industry: 'Medical Devices' },
   'BSX': { sector: 'Healthcare', industry: 'Medical Devices' },
   'ISRG': { sector: 'Healthcare', industry: 'Medical Devices' },
   'ZTS': { sector: 'Healthcare', industry: 'Medical Devices' },
-  
+
   // Healthcare - Diagnostics & Research
   'TMO': { sector: 'Healthcare', industry: 'Diagnostics & Research' },
   'DHR': { sector: 'Healthcare', industry: 'Diagnostics & Research' },
-  
+
   // Healthcare - Healthcare Plans
   'UNH': { sector: 'Healthcare', industry: 'Healthcare Plans' },
   'CVS': { sector: 'Healthcare', industry: 'Healthcare Plans' },
   'CI': { sector: 'Healthcare', industry: 'Healthcare Plans' },
   'HUM': { sector: 'Healthcare', industry: 'Healthcare Plans' },
   'ELV': { sector: 'Healthcare', industry: 'Healthcare Plans' },
-  
+
   // Financial Services - should NOT be Healthcare
   // (These are correctly Financial Services)
   'JPM': { sector: 'Financial Services', industry: 'Banks' },
@@ -82,7 +82,7 @@ const incorrectPatterns = [
 
 async function verifyAndFixSectorIndustry() {
   console.log('🔍 Starting sector/industry verification and fix...\n');
-  
+
   try {
     // Get all tickers with sector/industry
     const allTickers = await prisma.ticker.findMany({
@@ -102,27 +102,27 @@ async function verifyAndFixSectorIndustry() {
         symbol: 'asc'
       }
     });
-    
+
     console.log(`📊 Found ${allTickers.length} tickers with sector/industry data\n`);
-    
+
     let fixed = 0;
     let errors: Array<{ ticker: string; current: string; fixed: string }> = [];
     let verified = 0;
-    
+
     for (const ticker of allTickers) {
       const symbol = ticker.symbol;
       const currentSector = ticker.sector;
       const currentIndustry = ticker.industry;
-      
+
       // Check if we have a known correct mapping
       if (knownCorrectMappings[symbol]) {
         const correct = knownCorrectMappings[symbol];
-        
+
         if (currentSector !== correct.sector || currentIndustry !== correct.industry) {
           console.log(`❌ ${symbol} (${ticker.name || 'N/A'}):`);
           console.log(`   Current: ${currentSector || 'NULL'} / ${currentIndustry || 'NULL'}`);
           console.log(`   Should be: ${correct.sector} / ${correct.industry}`);
-          
+
           // Fix it
           await prisma.ticker.update({
             where: { symbol },
@@ -132,13 +132,13 @@ async function verifyAndFixSectorIndustry() {
               updatedAt: new Date()
             }
           });
-          
+
           errors.push({
             ticker: symbol,
             current: `${currentSector || 'NULL'} / ${currentIndustry || 'NULL'}`,
             fixed: `${correct.sector} / ${correct.industry}`
           });
-          
+
           fixed++;
           console.log(`   ✅ Fixed!\n`);
         } else {
@@ -148,7 +148,7 @@ async function verifyAndFixSectorIndustry() {
         // Check against incorrect patterns
         let needsFix = false;
         let fixData: { sector: string; industry: string } | null = null;
-        
+
         for (const pattern of incorrectPatterns) {
           if (pattern.check(symbol, currentSector, currentIndustry)) {
             fixData = pattern.fix(symbol);
@@ -156,12 +156,12 @@ async function verifyAndFixSectorIndustry() {
             break;
           }
         }
-        
+
         if (needsFix && fixData) {
           console.log(`❌ ${symbol} (${ticker.name || 'N/A'}):`);
           console.log(`   Current: ${currentSector || 'NULL'} / ${currentIndustry || 'NULL'}`);
           console.log(`   Should be: ${fixData.sector} / ${fixData.industry}`);
-          
+
           await prisma.ticker.update({
             where: { symbol },
             data: {
@@ -170,13 +170,13 @@ async function verifyAndFixSectorIndustry() {
               updatedAt: new Date()
             }
           });
-          
+
           errors.push({
             ticker: symbol,
             current: `${currentSector || 'NULL'} / ${currentIndustry || 'NULL'}`,
             fixed: `${fixData.sector} / ${fixData.industry}`
           });
-          
+
           fixed++;
           console.log(`   ✅ Fixed!\n`);
         } else {
@@ -184,23 +184,23 @@ async function verifyAndFixSectorIndustry() {
         }
       }
     }
-    
+
     console.log('\n' + '='.repeat(60));
     console.log('📊 Summary:');
     console.log(`   Total tickers checked: ${allTickers.length}`);
     console.log(`   Verified correct: ${verified}`);
     console.log(`   Fixed: ${fixed}`);
     console.log('='.repeat(60));
-    
+
     if (errors.length > 0) {
       console.log('\n🔧 Fixed tickers:');
       errors.forEach(e => {
         console.log(`   ${e.ticker}: ${e.current} → ${e.fixed}`);
       });
     }
-    
+
     console.log('\n✅ Verification complete!');
-    
+
   } catch (error) {
     console.error('❌ Error during verification:', error);
     throw error;

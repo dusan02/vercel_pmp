@@ -1,23 +1,37 @@
+# Robots.txt for PreMarketPrice.com
+# Updated: 2025-01-29
+
+# Allow all search engines
 User-agent: *
 Allow: /
+Allow: /heatmap
+Allow: /earnings
+Allow: /company/
 
-# Sitemap
-Sitemap: https://premarketprice.com/sitemap.xml
-
-# Crawl-delay
-Crawl-delay: 1
-
-# Disallow admin areas (if any)
+# Disallow admin and API endpoints
 Disallow: /api/
 Disallow: /_next/
 Disallow: /admin/
+Disallow: /_vercel/
 
-# Allow important pages
+# Sitemap location
+Sitemap: https://premarketprice.com/sitemap.xml
+
+# Crawl-delay for respectful crawling
+Crawl-delay: 1
+
+# Google-specific rules
+User-agent: Googlebot
 Allow: /
-Allow: /stocks/
-Allow: /company/
-Allow: /blog/
-Allow: /earnings/
-Allow: /earnings-calendar/
-Allow: /faq/
-Allow: /glossary/ 
+Disallow: /api/
+Disallow: /_next/
+Disallow: /admin/
+Crawl-delay: 0
+
+# Bing-specific rules
+User-agent: Bingbot
+Allow: /
+Disallow: /api/
+Disallow: /_next/
+Disallow: /admin/
+Crawl-delay: 1 

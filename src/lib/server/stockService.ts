@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db/prisma';
-import { computeMarketCap, computeMarketCapDiff } from '@/lib/utils/marketCapUtils';
+import { computeMarketCap, computeMarketCapDiff, computePercentChange } from '@/lib/utils/marketCapUtils';
 
 import { StockData } from '@/lib/types';
 
@@ -52,7 +52,7 @@ export async function getStocksList(options: {
 
     const stocks = await prisma.ticker.findMany({
       where,
-      take: effectiveLimit,
+      ...(effectiveLimit ? { take: effectiveLimit } : {}),
       skip: offset,
       orderBy: {
         [dbSortColumn]: order
@@ -73,25 +73,44 @@ export async function getStocksList(options: {
       }
     });
 
-    const results: StockData[] = stocks.map(s => ({
-      ticker: s.symbol,
-      companyName: s.name || '',
-      sector: s.sector || '',
-      industry: s.industry || '',
-      // Use DB logoUrl if present, otherwise construct it
-      logoUrl: s.logoUrl || `/logos/${s.symbol.toLowerCase()}-32.webp`,
-      currentPrice: s.lastPrice || 0,
-      closePrice: s.latestPrevClose || 0,
-      percentChange: s.lastChangePct || 0,
-      marketCap: s.lastMarketCap || 0,
-      // Calculate marketCapDiff dynamically if not in DB or if it's 0 but prices differ
-      marketCapDiff: (s.lastMarketCapDiff && s.lastMarketCapDiff !== 0) 
-        ? s.lastMarketCapDiff 
-        : ((s.lastPrice && s.latestPrevClose && s.lastPrice !== s.latestPrevClose && s.sharesOutstanding && s.sharesOutstanding > 0)
-          ? computeMarketCapDiff(s.lastPrice, s.latestPrevClose, s.sharesOutstanding)
-          : 0),
-      lastUpdated: s.updatedAt.toISOString()
-    }));
+    const results: StockData[] = stocks.map(s => {
+      const currentPrice = s.lastPrice || 0;
+      const previousClose = s.latestPrevClose || 0;
+      const sharesOutstanding = s.sharesOutstanding || 0;
+      
+      // VŽDY počítať percentChange z aktuálnych hodnôt pre konzistentnosť s heatmapou
+      // Toto zabezpečuje, že tabuľky a heatmapa zobrazujú rovnaké hodnoty
+      const percentChange = (currentPrice > 0 && previousClose > 0)
+        ? computePercentChange(currentPrice, previousClose)
+        : (s.lastChangePct || 0); // Fallback na DB hodnotu ak nemáme obe ceny
+      
+      // VŽDY počítať marketCapDiff z aktuálnych hodnôt pre konzistentnosť
+      const marketCapDiff = (currentPrice > 0 && previousClose > 0 && sharesOutstanding > 0)
+        ? computeMarketCapDiff(currentPrice, previousClose, sharesOutstanding)
+        : ((s.lastMarketCapDiff && s.lastMarketCapDiff !== 0) 
+          ? s.lastMarketCapDiff 
+          : 0);
+      
+      // Vypočítaj market cap z aktuálnych hodnôt
+      const marketCap = (currentPrice > 0 && sharesOutstanding > 0)
+        ? computeMarketCap(currentPrice, sharesOutstanding)
+        : (s.lastMarketCap || 0);
+      
+      return {
+        ticker: s.symbol,
+        companyName: s.name || '',
+        sector: s.sector || '',
+        industry: s.industry || '',
+        // Use DB logoUrl if present, otherwise construct it
+        logoUrl: s.logoUrl || `/logos/${s.symbol.toLowerCase()}-32.webp`,
+        currentPrice,
+        closePrice: previousClose,
+        percentChange,
+        marketCap,
+        marketCapDiff,
+        lastUpdated: s.updatedAt.toISOString()
+      };
+    });
 
     return { data: results, errors: [] };
 

@@ -21,9 +21,9 @@ const DATA_FRESHNESS = {
   OLD_DATA_THRESHOLD: 30, // minút - ak sú dáta staršie, varovanie
 } as const;
 
-// Konštanty pre date range
+// Konštanty pre date range - 24h okno pre heatmap.today
 const DATE_RANGE = {
-  DAYS_BACK: 7, // Posledných 7 dní pre lepšie pokrytie
+  DAYS_BACK: 1, // Posledných 24h (1 deň) pre heatmap.today
   MAX_TICKERS: 3000, // Maximálny počet tickerov
 } as const;
 
@@ -129,7 +129,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Získaj všetky tickery s sector/industry
+    // Získaj všetky tickery s sector/industry - INKLÚZNE lastPrice a latestPrevClose
+    // Toto je primárny zdroj dát (rovnaký ako /api/stocks používa)
     let tickers;
     try {
       tickers = await prisma.ticker.findMany({
@@ -143,8 +144,12 @@ export async function GET(request: NextRequest) {
           sector: true,
           industry: true,
           sharesOutstanding: true,
-          latestPrevClose: true, // Denormalized previous close
+          lastPrice: true, // Denormalized current price - PRIORITA 1
+          latestPrevClose: true, // Denormalized previous close - PRIORITA 1
           latestPrevCloseDate: true,
+          lastChangePct: true, // Pre referenciu
+          lastMarketCap: true, // Pre referenciu
+          lastMarketCapDiff: true, // Pre referenciu
         },
         take: DATE_RANGE.MAX_TICKERS,
       });
@@ -181,22 +186,24 @@ export async function GET(request: NextRequest) {
         sector: t.sector!,
         industry: t.industry!,
         sharesOutstanding: t.sharesOutstanding,
-        latestPrevClose: t.latestPrevClose, // Denormalized
+        lastPrice: t.lastPrice, // Denormalized current price
+        latestPrevClose: t.latestPrevClose, // Denormalized previous close
         latestPrevCloseDate: t.latestPrevCloseDate,
       }])
     );
 
     // Načítaj SessionPrice (posledné ceny) - berieme najnovšie pre každý ticker
-    // Použijeme 7 dní pre lepšie pokrytie (vrátane víkendov a starších dát)
+    // Použijeme 24h okno pre heatmap.today (posledných 24 hodín)
     const now = new Date();
     const today = new Date(now);
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    const weekAgo = new Date(today);
-    weekAgo.setDate(weekAgo.getDate() - DATE_RANGE.DAYS_BACK);
+    // 24h okno: od teraz späť 24 hodín
+    const dayAgo = new Date(now);
+    dayAgo.setHours(dayAgo.getHours() - 24);
 
-    console.log(`📅 Date range: ${weekAgo.toISOString()} to ${tomorrow.toISOString()} (last 7 days)`);
+    console.log(`📅 Date range: ${dayAgo.toISOString()} to ${tomorrow.toISOString()} (last 24 hours for heatmap.today)`);
 
     // Parallel fetch SessionPrice and DailyRef for better performance
     let allSessionPrices: SessionPrice[] = [];
@@ -204,11 +211,12 @@ export async function GET(request: NextRequest) {
 
     try {
       // Execute both queries in parallel using Promise.all()
+      // 24h okno pre heatmap.today
       const [sessionPricesResult, dailyRefsResult] = await Promise.all([
         prisma.sessionPrice.findMany({
           where: {
             symbol: { in: tickerSymbols },
-            date: { gte: weekAgo, lt: tomorrow },
+            date: { gte: dayAgo, lt: tomorrow },
           },
           orderBy: [
             { lastTs: 'desc' },
@@ -218,7 +226,7 @@ export async function GET(request: NextRequest) {
         prisma.dailyRef.findMany({
           where: {
             symbol: { in: tickerSymbols },
-            date: { gte: weekAgo, lte: today }, // <= today to get last trading day
+            date: { gte: dayAgo, lte: today }, // <= today to get last trading day (24h okno)
           },
           orderBy: {
             date: 'desc',
@@ -296,7 +304,20 @@ export async function GET(request: NextRequest) {
     console.log(`📊 Unique DailyRef records: ${dailyRefs.length}`);
 
     // Vytvor mapy pre rýchle lookup
+    // PRIORITA 1: Použi Ticker.lastPrice (denormalized, aktuálnejšie) - rovnaký zdroj ako /api/stocks
+    // Toto zabezpečuje konzistentnosť dát medzi tabuľkami a heatmapou
     const priceMap = new Map<string, { price: number; changePct: number }>();
+    for (const [symbol, info] of tickerMap.entries()) {
+      if (info.lastPrice && info.lastPrice > 0) {
+        priceMap.set(symbol, {
+          price: info.lastPrice,
+          changePct: 0, // Bude prepočítané neskôr z currentPrice a previousClose
+        });
+      }
+    }
+
+    // PRIORITA 2: Fallback na SessionPrice ak Ticker.lastPrice nie je dostupné
+    // (len pre tickery, ktoré nemajú lastPrice v Ticker tabuľke)
     for (const sp of sessionPrices) {
       if (!priceMap.has(sp.symbol)) {
         priceMap.set(sp.symbol, {
@@ -428,11 +449,20 @@ export async function GET(request: NextRequest) {
         marketCapDiff = cachedStockData.marketCapDiff || 0;
         cacheHits++;
       } else {
-        // Fallback na DB dáta (SessionPrice, DailyRef)
-        const priceInfo = priceMap.get(ticker);
-        previousClose = previousCloseMap.get(ticker) || 0;
-        currentPrice = priceInfo?.price || 0;
-        dbHits++;
+        // Použi dáta z Ticker tabuľky (denormalized) - PRIORITA 1
+        // Toto zabezpečuje konzistentnosť s /api/stocks endpointom
+        const tickerInfoFromMap = tickerMap.get(ticker);
+        if (tickerInfoFromMap && tickerInfoFromMap.lastPrice && tickerInfoFromMap.lastPrice > 0) {
+          currentPrice = tickerInfoFromMap.lastPrice;
+          previousClose = tickerInfoFromMap.latestPrevClose || 0;
+          dbHits++;
+        } else {
+          // Fallback na SessionPrice/DailyRef ak Ticker nemá dáta
+          const priceInfo = priceMap.get(ticker);
+          previousClose = previousCloseMap.get(ticker) || 0;
+          currentPrice = priceInfo?.price || 0;
+          dbHits++;
+        }
 
         // Ak nemáme currentPrice, použijeme previousClose (fallback)
         if (currentPrice === 0 && previousClose > 0) {
@@ -508,7 +538,7 @@ export async function GET(request: NextRequest) {
       console.warn(`  - No SessionPrice records found for ${tickerSymbols.length} tickers`);
       console.warn(`  - No DailyRef records found`);
       console.warn(`  - All tickers skipped due to missing price or market cap`);
-      console.warn(`  - Date range: ${weekAgo.toISOString()} to ${tomorrow.toISOString()}`);
+      console.warn(`  - Date range: ${dayAgo.toISOString()} to ${tomorrow.toISOString()} (24h window)`);
     }
 
     // Zoraď podľa market cap desc

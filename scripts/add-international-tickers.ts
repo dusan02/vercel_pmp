@@ -3,10 +3,10 @@
  * Run: npm run db:add-international
  */
 
-import { prisma } from '@/lib/prisma';
-import { addTickersToUniverse, UNIVERSE_TYPES } from '@/lib/universeHelpers';
-import { getInternationalNYSETickers } from '@/data/internationalTickers';
-import { logger } from '@/lib/logger';
+import { prisma } from '../src/lib/db/prisma';
+import { addTickersToUniverse, UNIVERSE_TYPES } from '../src/lib/utils/universeHelpers';
+import { getInternationalNYSETickers } from '../src/data/internationalTickers';
+import { logger } from '../src/lib/utils/logger';
 
 async function main() {
   logger.info('🚀 Adding international NYSE tickers to database...');
@@ -62,7 +62,7 @@ async function main() {
   logger.info(`📊 Verification: ${dbTickers.length} of ${sampleTickers.length} sample international NYSE tickers found in database`);
 
   // Verify universe count
-  const { getTickersByUniverseType } = await import('@/lib/universeHelpers');
+  const { getTickersByUniverseType } = await import('../src/lib/utils/universeHelpers');
   const universeTickers = await getTickersByUniverseType(UNIVERSE_TYPES.INTERNATIONAL);
   logger.info(`📊 Universe count: ${universeTickers.length} international tickers in Redis universe`);
 }

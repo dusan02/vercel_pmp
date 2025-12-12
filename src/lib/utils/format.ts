@@ -1,11 +1,23 @@
 /**
- * Formátuje číslo na miliardy s "B" suffixom
- * Príklad: 3500 → "3,500 B"
+ * Formátuje číslo na miliardy s "B" alebo bilióny s "T" suffixom
+ * Vstup je v miliardách.
+ * Príklad: 3.5 → "3.50 B", 1200 → "1.20 T"
  */
-export const formatBillions = (num: number) =>
-  Intl.NumberFormat("en-US", { 
-    maximumFractionDigits: 0 
-  }).format(num);
+export const formatMarketCap = (value: number | null | undefined): string => {
+  if (value === null || value === undefined || !isFinite(value) || value === 0) {
+    return '0.00';
+  }
+
+  if (Math.abs(value) >= 1000) {
+    return `${(value / 1000).toFixed(2)}T`;
+  }
+  return `${value.toFixed(2)}B`;
+};
+
+/**
+ * Legacy wrapper for formatMarketCap
+ */
+export const formatBillions = (num: number) => formatMarketCap(num);
 
 /**
  * Formátuje cenu na formát s 2 desatinnými miestami
@@ -34,13 +46,20 @@ export const formatPercent = (percent: number | null | undefined): string => {
 };
 
 /**
- * Formátuje market cap diff s + alebo - prefixom
- * Príklad: 1.23 → "+1.23", -2.45 → "-2.45"
+ * Formátuje market cap diff s + alebo - prefixom a "B" alebo "T" suffixom
+ * Vstup je v miliardách.
+ * Príklad: 1.23 → "+1.23 B", 1500 → "+1.50 T"
  */
 export const formatMarketCapDiff = (diff: number | null | undefined): string => {
-  if (diff === null || diff === undefined) {
+  if (diff === null || diff === undefined || diff === 0) {
     return '0.00';
   }
   const value = Number(diff);
-  return `${value >= 0 ? '+' : ''}${value.toFixed(2)}`;
+  const absValue = Math.abs(value);
+  const sign = value >= 0 ? '+' : '';
+  
+  if (absValue >= 1000) {
+    return `${sign}${(value / 1000).toFixed(2)}T`;
+  }
+  return `${sign}${value.toFixed(2)}B`;
 }; 

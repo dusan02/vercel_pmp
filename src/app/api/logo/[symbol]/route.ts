@@ -3,7 +3,7 @@ import { readFile, access } from 'fs/promises';
 import { createHash } from 'crypto';
 import { join } from 'path';
 import { redisClient } from '@/lib/redis/client';
-import { getLogoUrl } from '@/lib/utils/getLogoUrl';
+import { getLogoCandidates } from '@/lib/utils/getLogoUrl';
 
 /**
  * Logo Proxy API - Caches and optimizes logo loading
@@ -196,40 +196,43 @@ export async function GET(
           }
         }
 
-        // 4. Resolve logo URL if not cached
-        if (!logoUrl) {
-          logoUrl = getLogoUrl(symbol);
-          // Cache URL for 24h
-          if (redisClient && redisClient.isOpen) {
-            try {
-              await redisClient.setEx(`logo:url:${symbol}`, 86400, logoUrl);
-            } catch (redisError) {
-              // Ignore cache errors
-            }
-          }
-        }
+        // 4. Resolve logo URLs (candidates)
+        const logoCandidates = getLogoCandidates(symbol);
 
-        // 5. Fetch from external API with retry
+        // 5. Try each candidate URL until one works
         try {
           let response;
           let lastError;
+          let successUrl = null;
 
-          // Try up to 2 times
-          for (let i = 0; i < 2; i++) {
-            try {
-              response = await fetch(logoUrl, {
-                headers: {
-                  'User-Agent': 'Mozilla/5.0 (compatible; PreMarketPrice/1.0)'
-                },
-                signal: AbortSignal.timeout(8000) // Increased to 8s
-              });
+          for (const candidateUrl of logoCandidates) {
+            // Try up to 2 times per candidate
+            for (let i = 0; i < 2; i++) {
+              try {
+                // If we already found a working URL in previous iterations, no need to continue (logic handled by break outer loop)
 
-              if (response.ok) break;
-            } catch (e) {
-              lastError = e;
-              // Wait 500ms before retry
-              if (i === 0) await new Promise(r => setTimeout(r, 500));
+                // Skip ui-avatars fallback here, we handle fallback separately at the end (or we can let it be fetched if it's the last candidate)
+                // Actually, fetch ui-avatars is fine if it's in the list.
+
+                response = await fetch(candidateUrl, {
+                  headers: {
+                    'User-Agent': 'Mozilla/5.0 (compatible; PreMarketPrice/1.0)'
+                  },
+                  signal: AbortSignal.timeout(5000) // 5s timeout per attempt
+                });
+
+                if (response.ok && response.headers.get('content-type')?.startsWith('image/')) {
+                  successUrl = candidateUrl;
+                  break; // Break retry loop
+                }
+              } catch (e) {
+                lastError = e;
+                // Wait 200ms before retry
+                if (i === 0) await new Promise(r => setTimeout(r, 200));
+              }
             }
+
+            if (successUrl) break; // Break candidate loop
           }
 
           if (response && response.ok && response.headers.get('content-type')?.startsWith('image/')) {
@@ -240,6 +243,10 @@ export async function GET(
             if (redisClient && redisClient.isOpen) {
               try {
                 await redisClient.setEx(`logo:img:${symbol}:${size}`, 86400, buffer);
+                // Also cache the working URL so we can skip candidate resolution next time (optional optimization)
+                if (successUrl) {
+                  await redisClient.setEx(`logo:url:${symbol}`, 86400, successUrl);
+                }
               } catch (redisError) {
                 // Ignore cache errors
               }
@@ -254,16 +261,17 @@ export async function GET(
               'Content-Type': contentType,
               'Cache-Control': 'public, max-age=86400, stale-while-revalidate=86400',
               'X-Logo-Status': 'external',
-              'X-Logo-Source': 'api',
+              'X-Logo-Source': successUrl?.includes('clearbit') ? 'clearbit' : (successUrl?.includes('google') ? 'google' : 'other'),
               'X-Logo-Size': size.toString(),
               'X-Logo-Format': contentType.split('/')[1] || 'unknown',
               'X-Logo-Duration-ms': (Date.now() - startTime).toString()
             }, etag);
           } else if (lastError) {
-            throw lastError;
+            // Log only if all candidates failed
+            console.warn(`Failed to fetch logo for ${symbol} from all candidates. Last error:`, lastError);
           }
         } catch (fetchError) {
-          console.warn(`Failed to fetch logo for ${symbol} from external API:`, fetchError);
+          console.warn(`Unexpected error fetching logo for ${symbol}:`, fetchError);
         }
 
         // 6. Fallback: return placeholder SVG

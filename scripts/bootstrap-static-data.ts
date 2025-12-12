@@ -9,10 +9,10 @@
  * Usage: npm run db:bootstrap-static
  */
 
-import { prisma } from '@/lib/prisma';
-import { getAllTrackedTickers } from '@/lib/universeHelpers';
-import { companyNames } from '@/lib/companyNames';
-import { logger } from '@/lib/logger';
+import { prisma } from '../src/lib/db/prisma';
+import { getAllTrackedTickers } from '../src/lib/utils/universeHelpers';
+import { companyNames } from '../src/lib/companyNames';
+import { logger } from '../src/lib/utils/logger';
 
 // Sector a industry mapping (môže byť rozšírené)
 const sectorIndustryMap: Record<string, { sector?: string; industry?: string }> = {
@@ -38,7 +38,7 @@ const sectorIndustryMap: Record<string, { sector?: string; industry?: string }> 
   'INTU': { sector: 'Technology', industry: 'Software' },
   'ANET': { sector: 'Technology', industry: 'Communication Equipment' },
   'CSCO': { sector: 'Technology', industry: 'Communication Equipment' },
-  
+
   // Finance
   'JPM': { sector: 'Financial Services', industry: 'Banks' },
   'BAC': { sector: 'Financial Services', industry: 'Banks' },
@@ -51,7 +51,7 @@ const sectorIndustryMap: Record<string, { sector?: string; industry?: string }> 
   'V': { sector: 'Financial Services', industry: 'Credit Services' },
   'MA': { sector: 'Financial Services', industry: 'Credit Services' },
   'AXP': { sector: 'Financial Services', industry: 'Credit Services' },
-  
+
   // Healthcare
   'JNJ': { sector: 'Healthcare', industry: 'Drug Manufacturers' },
   'UNH': { sector: 'Healthcare', industry: 'Healthcare Plans' },
@@ -66,7 +66,7 @@ const sectorIndustryMap: Record<string, { sector?: string; industry?: string }> 
   'BSX': { sector: 'Healthcare', industry: 'Medical Devices' },
   'SYK': { sector: 'Healthcare', industry: 'Medical Devices' },
   'MDT': { sector: 'Healthcare', industry: 'Medical Devices' },
-  
+
   // Consumer
   'WMT': { sector: 'Consumer Defensive', industry: 'Discount Stores' },
   'COST': { sector: 'Consumer Defensive', industry: 'Discount Stores' },
@@ -79,14 +79,14 @@ const sectorIndustryMap: Record<string, { sector?: string; industry?: string }> 
   'T': { sector: 'Communication Services', industry: 'Telecom Services' },
   'VZ': { sector: 'Communication Services', industry: 'Telecom Services' },
   'TMUS': { sector: 'Communication Services', industry: 'Telecom Services' },
-  
+
   // Energy
   'XOM': { sector: 'Energy', industry: 'Oil & Gas Integrated' },
   'CVX': { sector: 'Energy', industry: 'Oil & Gas Integrated' },
   'COP': { sector: 'Energy', industry: 'Oil & Gas E&P' },
   'EOG': { sector: 'Energy', industry: 'Oil & Gas E&P' },
   'SLB': { sector: 'Energy', industry: 'Oil & Gas Equipment & Services' },
-  
+
   // Industrial
   'BA': { sector: 'Industrials', industry: 'Aerospace & Defense' },
   'RTX': { sector: 'Industrials', industry: 'Aerospace & Defense' },
@@ -96,98 +96,101 @@ const sectorIndustryMap: Record<string, { sector?: string; industry?: string }> 
   'HON': { sector: 'Industrials', industry: 'Specialty Industrial Machinery' },
   'ETN': { sector: 'Industrials', industry: 'Electrical Equipment & Parts' },
   'EMR': { sector: 'Industrials', industry: 'Specialty Industrial Machinery' },
-  
+
   // Materials
   'LIN': { sector: 'Basic Materials', industry: 'Specialty Chemicals' },
   'APD': { sector: 'Basic Materials', industry: 'Specialty Chemicals' },
   'ECL': { sector: 'Basic Materials', industry: 'Specialty Chemicals' },
   'FCX': { sector: 'Basic Materials', industry: 'Copper' },
-  
+
   // Utilities
   'NEE': { sector: 'Utilities', industry: 'Utilities—Renewable' },
   'SO': { sector: 'Utilities', industry: 'Utilities—Regulated Electric' },
   'DUK': { sector: 'Utilities', industry: 'Utilities—Regulated Electric' },
-  
+
   // Real Estate
   'PLD': { sector: 'Real Estate', industry: 'REIT—Industrial' },
   'AMT': { sector: 'Real Estate', industry: 'REIT—Specialty' },
   'EQIX': { sector: 'Real Estate', industry: 'REIT—Specialty' },
-  
+
   // Consumer Staples
   'PG': { sector: 'Consumer Defensive', industry: 'Household & Personal Products' },
   'KO': { sector: 'Consumer Defensive', industry: 'Beverages—Non-Alcoholic' },
   'PEP': { sector: 'Consumer Defensive', industry: 'Beverages—Non-Alcoholic' },
   'PM': { sector: 'Consumer Defensive', industry: 'Tobacco' },
-  
+
   // Others
   'TSLA': { sector: 'Consumer Cyclical', industry: 'Auto Manufacturers' },
   'BRK.B': { sector: 'Financial Services', industry: 'Insurance—Diversified' },
   'AMZN': { sector: 'Consumer Cyclical', industry: 'Internet Retail' },
   'UBER': { sector: 'Technology', industry: 'Software—Application' },
   'PLTR': { sector: 'Technology', industry: 'Software—Application' },
+  'GBTC': { sector: 'Financial Services', industry: 'Asset Management' },
 };
 
 async function bootstrapStaticData() {
   logger.info('🚀 Starting static data bootstrap...');
-  
+
   try {
     // Get all tracked tickers (500-600)
     const allTickers = await getAllTrackedTickers();
     logger.info({ totalTickers: allTickers.length }, 'Loaded tracked tickers');
-    
+
     if (allTickers.length === 0) {
       logger.warn('No tickers to bootstrap');
       return;
     }
-    
+
     let added = 0;
     let updated = 0;
     let skipped = 0;
     let errors = 0;
-    
+
     // Process in batches
     const batchSize = 50;
     for (let i = 0; i < allTickers.length; i += batchSize) {
       const batch = allTickers.slice(i, i + batchSize);
       const batchNum = Math.floor(i / batchSize) + 1;
       const totalBatches = Math.ceil(allTickers.length / batchSize);
-      
-      logger.info({ 
-        batch: batchNum, 
-        totalBatches, 
-        batchSize: batch.length 
+
+      logger.info({
+        batch: batchNum,
+        totalBatches,
+        batchSize: batch.length
       }, `Processing batch ${batchNum}/${totalBatches}`);
-      
+
       for (const ticker of batch) {
         try {
           // Get company name from mapping
           const companyName = companyNames[ticker] || ticker;
-          
+
           // Get sector and industry from mapping
           const sectorIndustry = sectorIndustryMap[ticker] || {};
-          
+
           // Check if ticker already exists
           const existing = await prisma.ticker.findUnique({
             where: { symbol: ticker },
-            select: { name: true, sector: true, industry: true }
+            select: { name: true, sector: true, industry: true, logoUrl: true }
           });
-          
+
           if (existing) {
             // Update only if name is missing or different
             // Don't update sector/industry if they exist (preserve existing data)
-            const needsUpdate = 
-              !existing.name || 
+            const needsUpdate =
+              !existing.name ||
               existing.name === ticker ||
-              (companyName !== ticker && existing.name !== companyName);
-            
+              (companyName !== ticker && existing.name !== companyName) ||
+              (sectorIndustry.sector && existing.sector !== sectorIndustry.sector) ||
+              (sectorIndustry.industry && existing.industry !== sectorIndustry.industry);
+
             if (needsUpdate) {
               await prisma.ticker.update({
                 where: { symbol: ticker },
                 data: {
                   name: companyName,
-                  // Only update sector/industry if they don't exist
-                  sector: existing.sector || sectorIndustry.sector || null,
-                  industry: existing.industry || sectorIndustry.industry || null,
+                  // Only update sector/industry if they don't exist or if we have a specific mapping (override DB)
+                  sector: sectorIndustry.sector || existing.sector || null,
+                  industry: sectorIndustry.industry || existing.industry || null,
                   updatedAt: new Date()
                 }
               });
@@ -213,7 +216,7 @@ async function bootstrapStaticData() {
         }
       }
     }
-    
+
     logger.info({
       added,
       updated,
@@ -221,11 +224,11 @@ async function bootstrapStaticData() {
       errors,
       total: allTickers.length
     }, '✅ Static data bootstrap completed');
-    
+
     // Verify count
     const dbCount = await prisma.ticker.count();
     logger.info({ dbCount }, '📊 Total tickers in database');
-    
+
   } catch (error) {
     logger.error({ err: error }, 'Error bootstrapping static data');
     throw error;

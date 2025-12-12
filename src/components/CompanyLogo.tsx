@@ -38,13 +38,14 @@ export default function CompanyLogo({
   const [hasError, setHasError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const imgRef = useRef<HTMLImageElement>(null);
-  
+
   // Generate lightweight placeholder immediately (no layout shift)
   const placeholderSrc = useMemo(() => generateLQPlaceholder(ticker, size), [ticker, size]);
 
   // Unified strategy: Always use API endpoint for consistent behavior
   // API will try: static file -> Redis cache -> external API -> placeholder
-  const logoSrc = `/api/logo/${ticker}?s=${size}`;
+  // Encode ticker to handle special characters like BRK.B
+  const logoSrc = `/api/logo/${encodeURIComponent(ticker)}?s=${size}`;
 
   // Reset error state and loading state when ticker changes
   useEffect(() => {
@@ -52,26 +53,38 @@ export default function CompanyLogo({
     setIsLoading(true);
   }, [ticker, size]);
 
+  // Check if image is already loaded (from cache) immediately on mount
+  useEffect(() => {
+    if (imgRef.current?.complete) {
+      setIsLoading(false);
+    }
+  }, []);
+
   // Intersection Observer for ALL logos (including priority) to handle sorting/reordering
   // This ensures logos load correctly even when table is sorted and rows change position
   // Optimized: Only set up observer for non-priority logos, priority logos load immediately
   useEffect(() => {
     // Priority logos load immediately, no observer needed
     if (priority) {
-      if (imgRef.current && !imgRef.current.complete) {
+      if (imgRef.current) {
+        // If already complete, ensure loading state is false
+        if (imgRef.current.complete) {
+          setIsLoading(false);
+        }
+        // Force eager for priority
         imgRef.current.loading = 'eager';
       }
       return;
     }
 
     if (!imgRef.current) return;
-    
+
     const img = imgRef.current;
     let observer: IntersectionObserver | null = null;
-    
+
     // For non-priority logos, use large rootMargin to preload before visible
     const rootMargin = '2000px';
-    
+
     // Use Intersection Observer to ensure images load when near viewport
     // This works even when table is sorted and rows change position
     if ('IntersectionObserver' in window) {
@@ -90,7 +103,7 @@ export default function CompanyLogo({
           threshold: 0.01
         }
       );
-      
+
       observer.observe(img);
     } else {
       // Fallback: check if near viewport and force load
@@ -98,19 +111,19 @@ export default function CompanyLogo({
         if (img && !img.complete) {
           const rect = img.getBoundingClientRect();
           const isNearViewport = rect.top < window.innerHeight + 2000;
-          
+
           if (isNearViewport) {
             img.loading = 'eager';
           }
         }
       };
-      
+
       checkAndLoad();
       const timeout = setTimeout(checkAndLoad, 200);
-      
+
       return () => clearTimeout(timeout);
     }
-    
+
     return () => {
       if (observer) {
         observer.disconnect();
@@ -147,14 +160,6 @@ export default function CompanyLogo({
   const handleLoad = () => {
     setIsLoading(false);
   };
-
-  // Generate srcset for responsive loading (different sizes)
-  // Must be called before early return to follow Rules of Hooks
-  const srcSet = useMemo(() => {
-    if (!logoSrc) return '';
-    const sizes = [size - 8, size, size + 8].filter(s => s > 0);
-    return sizes.map(s => `${logoSrc.replace(`?s=${size}`, `?s=${s}`)} ${s}w`).join(', ');
-  }, [logoSrc, size]);
 
   // If logo failed to load after all attempts, show placeholder
   if (hasError) {
@@ -195,9 +200,7 @@ export default function CompanyLogo({
       <img
         ref={imgRef}
         src={logoSrc}
-        srcSet={srcSet}
-        sizes={`${size}px`}
-        alt={`${ticker} company logo`}
+        alt={`${ticker} stock logo - ${ticker} company logo`}
         width={size}
         height={size}
         className="rounded-full"

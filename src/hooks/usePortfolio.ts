@@ -1,30 +1,46 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { StockData } from '@/lib/types';
+import { safeGetItem, safeSetItem, safeRemoveItem } from '@/lib/utils/safeStorage';
 
 const PORTFOLIO_STORAGE_KEY = 'pmp_portfolio_holdings';
 
-export function usePortfolio() {
+interface UsePortfolioProps {
+  stockData?: StockData[];
+}
+
+export function usePortfolio(props?: UsePortfolioProps) {
+  const stockData = props?.stockData || [];
   const [portfolioHoldings, setPortfolioHoldingsState] = useState<Record<string, number>>({});
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Load portfolio from localStorage on mount
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    
-    try {
-      const stored = localStorage.getItem(PORTFOLIO_STORAGE_KEY);
-      if (stored) {
+    const stored = safeGetItem(PORTFOLIO_STORAGE_KEY);
+    if (stored) {
+      try {
         const parsed = JSON.parse(stored);
-        if (parsed && typeof parsed === 'object') {
-          setPortfolioHoldingsState(parsed);
+        // Validate parsed data structure
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          // Ensure all values are numbers
+          const validated: Record<string, number> = {};
+          for (const [key, value] of Object.entries(parsed)) {
+            if (typeof value === 'number' && value > 0) {
+              validated[key] = value;
+            }
+          }
+          setPortfolioHoldingsState(validated);
+        } else {
+          console.warn('⚠️ Invalid portfolio format, clearing');
+          safeRemoveItem(PORTFOLIO_STORAGE_KEY);
         }
+      } catch (parseError) {
+        console.error('⚠️ Error parsing portfolio, clearing corrupted data:', parseError);
+        safeRemoveItem(PORTFOLIO_STORAGE_KEY);
       }
-    } catch (error) {
-      console.error('Error loading portfolio from localStorage:', error);
-    } finally {
-      setIsLoaded(true);
     }
+    setIsLoaded(true);
   }, []);
 
   // Save to localStorage whenever portfolio changes
@@ -33,13 +49,7 @@ export function usePortfolio() {
       const updated = typeof updater === 'function' ? updater(prev) : updater;
       
       // Save to localStorage
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.setItem(PORTFOLIO_STORAGE_KEY, JSON.stringify(updated));
-        } catch (error) {
-          console.error('Error saving portfolio to localStorage:', error);
-        }
-      }
+      safeSetItem(PORTFOLIO_STORAGE_KEY, JSON.stringify(updated));
       
       return updated;
     });
@@ -72,13 +82,69 @@ export function usePortfolio() {
     }));
   }, [setPortfolioHoldings]);
 
+  // Calculate individual stock value
+  const calculateStockValue = useCallback((stock: StockData): number => {
+    const quantity = portfolioHoldings[stock.ticker] || 0;
+    if (quantity === 0) return 0;
+    // Use pre-market price if available and non-zero, otherwise close price
+    const currentPrice = stock.currentPrice || stock.closePrice;
+    const currentValue = currentPrice * quantity;
+    const previousValue = stock.closePrice * quantity;
+    // Value change since previous close
+    return currentValue - previousValue;
+  }, [portfolioHoldings]);
+
+  // Calculate total portfolio value change
+  const totalPortfolioValue = useMemo(() => {
+    return stockData.reduce((total, stock) => {
+      if (portfolioHoldings[stock.ticker]) {
+        return total + calculateStockValue(stock);
+      }
+      return total;
+    }, 0);
+  }, [stockData, portfolioHoldings, calculateStockValue]);
+
+  // Get portfolio stocks logic (moved from HomePage)
+  const portfolioStocks = useMemo(() => {
+    const portfolioTickers = Object.keys(portfolioHoldings).filter(ticker => (portfolioHoldings[ticker] || 0) > 0);
+    
+    // Find stocks that we have data for
+    const existingStocks = stockData.filter(stock => portfolioTickers.includes(stock.ticker));
+    
+    // Find stocks that are in portfolio but missing from data
+    const missingTickers = portfolioTickers.filter(ticker => !stockData.some(s => s.ticker === ticker));
+    
+    // Create placeholders for missing stocks
+    const placeholderStocks: StockData[] = missingTickers.map(ticker => ({
+      ticker,
+      currentPrice: 0,
+      closePrice: 0,
+      percentChange: 0,
+      marketCap: 0,
+      marketCapDiff: 0,
+      lastUpdated: new Date().toISOString(),
+      logoUrl: `/logos/${ticker.toLowerCase()}-32.webp`,
+      companyName: '',
+      sector: '',
+      industry: ''
+    }));
+
+    // Combine and ensure logoUrl exists
+    return [...existingStocks, ...placeholderStocks].map(stock => ({
+      ...stock,
+      logoUrl: stock.logoUrl || `/logos/${stock.ticker.toLowerCase()}-32.webp`
+    }));
+  }, [portfolioHoldings, stockData]);
+
   return {
     portfolioHoldings,
     setPortfolioHoldings,
     updateQuantity,
     removeStock,
     addStock,
-    isLoaded
+    isLoaded,
+    calculateStockValue, // New
+    totalPortfolioValue, // New
+    portfolioStocks // New
   };
 }
-

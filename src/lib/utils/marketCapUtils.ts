@@ -70,7 +70,8 @@ export async function getSharesOutstanding(ticker: string): Promise<number> {
     const data = await response.json();
 
     if (!data.results?.weighted_shares_outstanding) {
-      throw new Error(`No weighted_shares_outstanding found for ${ticker}`);
+      console.warn(`⚠️ No weighted_shares_outstanding found for ${ticker}, using 0`);
+      return 0;
     }
 
     const shares = data.results.weighted_shares_outstanding;

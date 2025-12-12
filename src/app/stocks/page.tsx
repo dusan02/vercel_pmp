@@ -48,9 +48,9 @@ export default async function StocksPage() {
   const initial = await getInitialData();
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-slate-900">
       <div className="container mx-auto py-6">
-        <h1 className="text-2xl font-bold mb-4">All Stocks</h1>
+        <h1 className="text-2xl font-bold mb-4 dark:text-white">All Stocks</h1>
         
         <Suspense
           fallback={

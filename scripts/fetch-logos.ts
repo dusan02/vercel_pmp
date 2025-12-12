@@ -55,9 +55,9 @@ function getDomainForTicker(ticker: string): string {
 async function fetchWithTimeout(url: string, timeout = TIMEOUT): Promise<Response> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
-  
+
   try {
-    const response = await fetch(url, { 
+    const response = await fetch(url, {
       signal: controller.signal,
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; PMPLogoBot/1.0)' }
     });
@@ -70,10 +70,10 @@ async function fetchWithTimeout(url: string, timeout = TIMEOUT): Promise<Respons
 }
 
 async function saveBufferToWebP(buffer: Buffer, ticker: string): Promise<string> {
-  const size = 32; 
+  const size = 32;
   const filename = `${ticker.toLowerCase()}-${size}.webp`;
   const filepath = path.join(LOGOS_DIR, filename);
-  
+
   const sizeLarge = 64;
   const filenameLarge = `${ticker.toLowerCase()}-${sizeLarge}.webp`;
   const filepathLarge = path.join(LOGOS_DIR, filenameLarge);
@@ -98,46 +98,89 @@ async function saveBufferToWebP(buffer: Buffer, ticker: string): Promise<string>
   }
 }
 
-async function processTicker(ticker: string): Promise<string | null> {
-  const domain = getDomainForTicker(ticker);
-  
-  // Sources - prioritized
-  const sources = [
-    `https://logo.clearbit.com/${domain}?size=128`,
-    `https://unavatar.io/${domain}?fallback=false`
-  ];
+async function fetchDomainFromPolygon(ticker: string): Promise<string | null> {
+  const apiKey = process.env.POLYGON_API_KEY;
+  if (!apiKey) return null;
 
-  // Try Simple Icons first (fastest, local-ish)
   try {
-    const slug = domain.split('.')[0].toLowerCase();
-    // @ts-ignore - simple-icons types can be tricky
-    const icon = Object.values(si).find((i: any) => 
-      i.slug === slug || i.slug === ticker.toLowerCase()
-    ) as any;
-    
-    if (icon) {
-      // Fix: Inject brand color into SVG to avoid black default
-      const coloredSvg = icon.svg.replace('<svg', `<svg fill="#${icon.hex}"`);
-      const svgBuffer = Buffer.from(coloredSvg);
-      
-      const pngBuffer = await sharp(svgBuffer).resize(128, 128).png().toBuffer();
-      // console.log(`✅ ${ticker}: Found in Simple Icons`);
-      return await saveBufferToWebP(pngBuffer, ticker);
-    }
-  } catch (e) {}
+    const url = `https://api.polygon.io/v3/reference/tickers/${ticker}?apiKey=${apiKey}`;
+    const res = await fetchWithTimeout(url);
+    if (!res.ok) return null;
 
-  // Try External URLs
-  for (const url of sources) {
-    try {
-      const res = await fetchWithTimeout(url);
-      if (res.ok && res.headers.get('content-type')?.startsWith('image/')) {
-        const buffer = Buffer.from(await res.arrayBuffer());
-        if (buffer.length > 100) {
-          // console.log(`✅ ${ticker}: Found at ${url}`);
-          return await saveBufferToWebP(buffer, ticker);
-        }
+    const data = await res.json();
+    const homepageUrl = data.results?.homepage_url;
+
+    if (homepageUrl) {
+      try {
+        const hostname = new URL(homepageUrl).hostname;
+        return hostname.replace(/^www\./, '');
+      } catch (e) {
+        return null;
       }
-    } catch (e) {}
+    }
+  } catch (e) {
+    // console.warn(`Failed to fetch details for ${ticker}:`, e);
+  }
+  return null;
+}
+
+async function processTicker(ticker: string): Promise<string | null> {
+  let domain = getDomainForTicker(ticker);
+
+  // Helper to try fetching logo from a domain
+  const tryFetchLogo = async (dom: string) => {
+    // Sources - prioritized
+    const sources = [
+      `https://logo.clearbit.com/${dom}?size=128`,
+      `https://unavatar.io/${dom}?fallback=false`
+    ];
+
+    // Try Simple Icons first (fastest, local-ish)
+    try {
+      const slug = dom.split('.')[0]?.toLowerCase() ?? '';
+      // @ts-ignore - simple-icons types can be tricky
+      const icon = Object.values(si).find((i: any) =>
+        i.slug === slug || i.slug === ticker.toLowerCase()
+      ) as any;
+
+      if (icon) {
+        // Fix: Inject brand color into SVG to avoid black default
+        const coloredSvg = icon.svg.replace('<svg', `<svg fill="#${icon.hex}"`);
+        const svgBuffer = Buffer.from(coloredSvg);
+
+        const pngBuffer = await sharp(svgBuffer).resize(128, 128).png().toBuffer();
+        // console.log(`✅ ${ticker}: Found in Simple Icons`);
+        return await saveBufferToWebP(pngBuffer, ticker);
+      }
+    } catch (e) { }
+
+    // Try External URLs
+    for (const url of sources) {
+      try {
+        const res = await fetchWithTimeout(url);
+        if (res.ok && res.headers.get('content-type')?.startsWith('image/')) {
+          const buffer = Buffer.from(await res.arrayBuffer());
+          if (buffer.length > 100) {
+            // console.log(`✅ ${ticker}: Found at ${url}`);
+            return await saveBufferToWebP(buffer, ticker);
+          }
+        }
+      } catch (e) { }
+    }
+    return null;
+  };
+
+  // 1. Try with guessed/mapped domain
+  let logoPath = await tryFetchLogo(domain);
+  if (logoPath) return logoPath;
+
+  // 2. If failed, try to get real domain from Polygon
+  // console.log(`Build-in domain failed for ${ticker}, querying Polygon...`);
+  const polygonDomain = await fetchDomainFromPolygon(ticker);
+  if (polygonDomain && polygonDomain !== domain) {
+    // console.log(`Polygon found domain for ${ticker}: ${polygonDomain}`);
+    logoPath = await tryFetchLogo(polygonDomain);
+    if (logoPath) return logoPath;
   }
 
   return null;
@@ -155,10 +198,10 @@ async function main() {
   let dbTickers: Record<string, string | null> = {};
   try {
     const tickersFromDb = await prisma.ticker.findMany({
-        select: { symbol: true, logoUrl: true }
+      select: { symbol: true, logoUrl: true }
     });
     tickersFromDb.forEach(t => {
-        dbTickers[t.symbol] = t.logoUrl;
+      dbTickers[t.symbol] = t.logoUrl;
     });
     console.log(`📊 DB state: ${tickersFromDb.length} tickers known.`);
   } catch (e) {
@@ -175,7 +218,7 @@ async function main() {
       try {
         await fs.access(localPath);
         continue; // Skip if exists in DB AND on disk
-      } catch {}
+      } catch { }
     }
     toProcess.push(ticker);
   }
@@ -185,12 +228,12 @@ async function main() {
   // Process in batches
   for (let i = 0; i < toProcess.length; i += BATCH_SIZE) {
     const batch = toProcess.slice(i, i + BATCH_SIZE);
-    process.stdout.write(`\r📦 Batch ${Math.floor(i/BATCH_SIZE) + 1}/${Math.ceil(toProcess.length/BATCH_SIZE)}: `);
-    
+    process.stdout.write(`\r📦 Batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(toProcess.length / BATCH_SIZE)}: `);
+
     await Promise.all(batch.map(async (ticker) => {
       try {
         let logoPath = await processTicker(ticker);
-        
+
         if (logoPath) {
           await prisma.ticker.upsert({
             where: { symbol: ticker },
@@ -198,7 +241,7 @@ async function main() {
             create: { symbol: ticker, logoUrl: logoPath }
           });
         } else {
-           await prisma.ticker.upsert({
+          await prisma.ticker.upsert({
             where: { symbol: ticker },
             update: {}, // nothing to update
             create: { symbol: ticker }
@@ -208,7 +251,7 @@ async function main() {
         console.error(`\nError processing ${ticker}:`, e);
       }
     }));
-    
+
     // Small delay
     await new Promise(r => setTimeout(r, 200));
   }

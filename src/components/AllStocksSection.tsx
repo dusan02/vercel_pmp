@@ -23,6 +23,20 @@ interface AllStocksSectionProps {
   hasMore: boolean;
 }
 
+// Table header configuration to reduce boilerplate
+const TABLE_HEADERS: { key?: SortKey; label: string; sortable: boolean }[] = [
+  { label: 'Logo', sortable: false },
+  { key: 'ticker', label: 'Ticker', sortable: true },
+  { label: 'Company', sortable: false },
+  { key: 'sector', label: 'Sector', sortable: true },
+  { key: 'industry', label: 'Industry', sortable: true },
+  { key: 'marketCap', label: 'Market Cap', sortable: true },
+  { key: 'currentPrice', label: 'Price', sortable: true },
+  { key: 'percentChange', label: '% Change', sortable: true },
+  { key: 'marketCapDiff', label: 'Cap Diff', sortable: true },
+  { label: 'Favorites', sortable: false },
+];
+
 export const AllStocksSection = React.memo(function AllStocksSection({
   displayedStocks,
   loading,
@@ -35,15 +49,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
   onSearchChange,
   hasMore
 }: AllStocksSectionProps) {
-  // Memoize sort handlers to prevent unnecessary re-renders
-  const handleSortTicker = useCallback(() => onSort("ticker" as SortKey), [onSort]);
-  const handleSortSector = useCallback(() => onSort("sector" as SortKey), [onSort]);
-  const handleSortIndustry = useCallback(() => onSort("industry" as SortKey), [onSort]);
-  const handleSortMarketCap = useCallback(() => onSort("marketCap" as SortKey), [onSort]);
-  const handleSortCurrentPrice = useCallback(() => onSort("currentPrice" as SortKey), [onSort]);
-  const handleSortPercentChange = useCallback(() => onSort("percentChange" as SortKey), [onSort]);
-  const handleSortMarketCapDiff = useCallback(() => onSort("marketCapDiff" as SortKey), [onSort]);
-
+  
   // Memoize favorite handlers per stock
   const favoriteHandlers = useMemo(() => {
     const handlers = new Map<string, () => void>();
@@ -77,30 +83,15 @@ export const AllStocksSection = React.memo(function AllStocksSection({
           <table>
             <thead>
               <tr>
-                <th>Logo</th>
-                <th onClick={handleSortTicker} className={`sortable ${sortKey === "ticker" ? "active-sort" : ""}`}>
-                  Ticker
-                </th>
-                <th>Company</th>
-                <th onClick={handleSortSector} className={`sortable ${sortKey === "sector" ? "active-sort" : ""}`}>
-                  Sector
-                </th>
-                <th onClick={handleSortIndustry} className={`sortable ${sortKey === "industry" ? "active-sort" : ""}`}>
-                  Industry
-                </th>
-                <th onClick={handleSortMarketCap} className={`sortable ${sortKey === "marketCap" ? "active-sort" : ""}`}>
-                  Market Cap
-                </th>
-                <th onClick={handleSortCurrentPrice} className={`sortable ${sortKey === "currentPrice" ? "active-sort" : ""}`}>
-                  Price
-                </th>
-                <th onClick={handleSortPercentChange} className={`sortable ${sortKey === "percentChange" ? "active-sort" : ""}`}>
-                  % Change
-                </th>
-                <th onClick={handleSortMarketCapDiff} className={`sortable ${sortKey === "marketCapDiff" ? "active-sort" : ""}`}>
-                  Cap Diff
-                </th>
-                <th>Favorites</th>
+                {TABLE_HEADERS.map((header, index) => (
+                  <th
+                    key={index}
+                    onClick={header.sortable && header.key ? () => onSort(header.key!) : undefined}
+                    className={header.sortable ? `sortable ${sortKey === header.key ? "active-sort" : ""}` : undefined}
+                  >
+                    {header.label}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
@@ -117,7 +108,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
                     stock={stock}
                     isFavorite={isFavorite(stock.ticker)}
                     onToggleFavorite={favoriteHandlers.get(stock.ticker) || (() => onToggleFavorite(stock.ticker))}
-                    priority={index < 100} // Priority loading pre prvých 100 viditeľných riadkov (aj po sortovaní)
+                    priority={index < 100} // Priority loading for first 100 visible rows
                   />
                 ))
               )}

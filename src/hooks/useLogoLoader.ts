@@ -38,8 +38,9 @@ export function useLogoLoader({
       link.rel = 'preload';
       link.as = 'image';
       link.href = logoUrl;
-      link.crossOrigin = 'anonymous';
-      link.setAttribute('fetchpriority', 'high');
+      // Removing crossOrigin and fetchpriority to avoid mismatch warnings and match default <img> tag behavior
+      // link.crossOrigin = 'anonymous'; 
+      // link.setAttribute('fetchpriority', 'high');
       document.head.appendChild(link);
       
       preloadedRef.current.add(logoUrl);
@@ -114,4 +115,3 @@ export function useLogoLoader({
     preloadedCount: preloadedRef.current.size
   };
 }
-

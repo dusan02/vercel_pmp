@@ -71,7 +71,15 @@ export function isMarketHoliday(date: Date): boolean {
   const easter = calculateEaster(year);
   const goodFriday = new Date(easter);
   goodFriday.setDate(easter.getDate() - 2);
-  if (date.getTime() === goodFriday.getTime()) return true;
+  
+  // Compare date parts only (ignore time)
+  if (
+    date.getDate() === goodFriday.getDate() &&
+    date.getMonth() === goodFriday.getMonth() &&
+    date.getFullYear() === goodFriday.getFullYear()
+  ) {
+    return true;
+  }
 
   // Memorial Day - Last Monday in May
   if (month === 5 && dayOfWeek === 1 && day >= 25) return true;

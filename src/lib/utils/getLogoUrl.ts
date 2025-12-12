@@ -1,28 +1,32 @@
 import { tickerDomains, companyColors } from '@/data/companyInfo';
 
-export function getLogoUrl(ticker: string): string {
+export function getLogoCandidates(ticker: string): string[] {
   const domain = tickerDomains[ticker];
+  const color = companyColors[ticker] || '0066CC';
+  const avatarUrl = `https://ui-avatars.com/api/?name=${ticker}&background=${color}&size=32&color=fff&font-size=0.4&bold=true&format=png`;
 
-  // If no domain mapping exists, return ui-avatars directly
+  // If no domain mapping exists, return only ui-avatars
   if (!domain) {
-    const color = companyColors[ticker] || '0066CC';
-    return `https://ui-avatars.com/api/?name=${ticker}&background=${color}&size=32&color=fff&font-size=0.4&bold=true&format=png`;
+    return [avatarUrl];
   }
 
-  // Try multiple logo sources for real company logos
-  const logoSources = [
-    // Primary: Clearbit (most reliable for real logos)
+  // Return priority list of sources
+  return [
+    // Primary: Clearbit (high quality)
     `https://logo.clearbit.com/${domain}?size=32`,
-    // Fallback: Google Favicon (works for most companies)
+    // Secondary: Google Favicon (very reliable)
     `https://www.google.com/s2/favicons?domain=${domain}&sz=32`,
-    // Secondary: DuckDuckGo favicon
+    // Tertiary: DuckDuckGo (good coverage)
     `https://icons.duckduckgo.com/ip3/${domain}.ico`,
-    // Last resort: ui-avatars with company colors
-    `https://ui-avatars.com/api/?name=${ticker}&background=${companyColors[ticker] || '0066CC'}&size=32&color=fff&font-size=0.4&bold=true&format=png`
+    // Fallback: Default avatar
+    avatarUrl
   ];
+}
 
-  // Return the first source (Clearbit) - fallback logic is in the component
-  return logoSources[0] || `https://ui-avatars.com/api/?name=${ticker}&background=0066CC&size=32&color=fff&font-size=0.4&bold=true&format=png`;
+// Deprecated: Kept for backward compatibility if used elsewhere, but prefers candidates
+export function getLogoUrl(ticker: string): string {
+  const candidates = getLogoCandidates(ticker);
+  return candidates[0] || '';
 }
 
 // Helper function to get just the domain

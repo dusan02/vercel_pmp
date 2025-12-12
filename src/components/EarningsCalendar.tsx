@@ -138,9 +138,9 @@ export default function EarningsCalendar() {
 
   const getReportTimeColor = (time: string): string => {
     switch (time) {
-      case 'before': return 'text-blue-600 bg-blue-50';
-      case 'after': return 'text-red-600 bg-red-50';
-      default: return 'text-gray-600 bg-gray-50';
+      case 'before': return 'text-blue-600 bg-blue-50 dark:text-blue-300 dark:bg-blue-900/30';
+      case 'after': return 'text-red-600 bg-red-50 dark:text-red-300 dark:bg-red-900/30';
+      default: return 'text-gray-600 bg-gray-50 dark:text-gray-300 dark:bg-gray-700/30';
     }
   };
 
@@ -154,14 +154,14 @@ export default function EarningsCalendar() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4 mb-6">
         <div className="flex items-center mb-4">
-          <h2 className="section-title" data-icon="📅">Today&apos;s Earnings</h2>
+          <h2 className="section-title dark:text-gray-100" data-icon="📅">Today&apos;s Earnings</h2>
         </div>
         <div>
-          <div className="h-4 bg-gray-200 rounded mb-2"></div>
-          <div className="h-4 bg-gray-200 rounded mb-2"></div>
-          <div className="h-4 bg-gray-200 rounded"></div>
+          <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded mb-2"></div>
+          <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded mb-2"></div>
+          <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded"></div>
         </div>
       </div>
     );
@@ -169,9 +169,9 @@ export default function EarningsCalendar() {
 
   if (error) {
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4 mb-6">
         <div className="flex items-center mb-4">
-          <h2 className="section-title" data-icon="📅">Today&apos;s Earnings</h2>
+          <h2 className="section-title dark:text-gray-100" data-icon="📅">Today&apos;s Earnings</h2>
         </div>
       </div>
     );
@@ -179,56 +179,56 @@ export default function EarningsCalendar() {
 
   if (earnings.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4 mb-6">
         <div className="flex items-center mb-4">
-          <h2 className="section-title" data-icon="📅">Today&apos;s Earnings</h2>
+          <h2 className="section-title dark:text-gray-100" data-icon="📅">Today&apos;s Earnings</h2>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+    <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4 mb-6">
       <div className="flex items-center mb-4">
-        <h2 className="section-title" data-icon="📅">Today's Earnings</h2>
+        <h2 className="section-title dark:text-gray-100" data-icon="📅">Today's Earnings</h2>
       </div>
       
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-200">
-              <th className="text-left py-2 font-medium text-gray-700">Company</th>
-              <th className="text-left py-2 font-medium text-gray-700">Period</th>
-              <th className="text-left py-2 font-medium text-gray-700">Time</th>
-              <th className="text-right py-2 font-medium text-gray-700">Market Cap</th>
-              <th className="text-right py-2 font-medium text-gray-700">EPS Est.</th>
-              <th className="text-right py-2 font-medium text-gray-700">Revenue Est.</th>
+            <tr className="border-b border-gray-200 dark:border-slate-700">
+              <th className="text-left py-2 font-medium text-gray-700 dark:text-gray-300">Company</th>
+              <th className="text-left py-2 font-medium text-gray-700 dark:text-gray-300">Period</th>
+              <th className="text-left py-2 font-medium text-gray-700 dark:text-gray-300">Time</th>
+              <th className="text-right py-2 font-medium text-gray-700 dark:text-gray-300">Market Cap</th>
+              <th className="text-right py-2 font-medium text-gray-700 dark:text-gray-300">EPS Est.</th>
+              <th className="text-right py-2 font-medium text-gray-700 dark:text-gray-300">Revenue Est.</th>
             </tr>
           </thead>
           <tbody>
             {earnings.map((earning, index) => (
-              <tr key={earning.ticker} className="border-b border-gray-100 hover:bg-gray-50">
+              <tr key={earning.ticker} className="border-b border-gray-100 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700/50">
                 <td className="py-2">
                   <div>
-                    <div className="font-medium text-gray-900">{earning.ticker}</div>
-                    <div className="text-xs text-gray-500 truncate max-w-32">
+                    <div className="font-medium text-gray-900 dark:text-gray-100">{earning.ticker}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-32">
                       {earning.companyName}
                     </div>
                   </div>
                 </td>
-                <td className="py-2 text-gray-700">Q4 2024</td>
+                <td className="py-2 text-gray-700 dark:text-gray-300">Q4 2024</td>
                 <td className="py-2">
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${getReportTimeColor(earning.time)}`}>
                     {getReportTimeLabel(earning.time)}
                   </span>
                 </td>
-                <td className="py-2 text-right font-medium text-gray-900">
+                <td className="py-2 text-right font-medium text-gray-900 dark:text-gray-100">
                   {earning.marketCap ? formatMarketCap(earning.marketCap) : '-'}
                 </td>
-                <td className="py-2 text-right text-gray-700">
+                <td className="py-2 text-right text-gray-700 dark:text-gray-300">
                   {earning.epsEstimate ? `$${earning.epsEstimate.toFixed(2)}` : '-'}
                 </td>
-                <td className="py-2 text-right text-gray-700">
+                <td className="py-2 text-right text-gray-700 dark:text-gray-300">
                   {earning.revenueEstimate ? formatMarketCap(earning.revenueEstimate) : '-'}
                 </td>
               </tr>
@@ -237,7 +237,7 @@ export default function EarningsCalendar() {
         </table>
       </div>
       
-      <div className="mt-3 text-xs text-gray-500 text-center">
+      <div className="mt-3 text-xs text-gray-500 dark:text-gray-400 text-center">
         Top {earnings.length} earnings by market cap • Updates daily at market open
       </div>
     </div>

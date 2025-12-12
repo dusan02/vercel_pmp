@@ -3,12 +3,19 @@
  */
 
 import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import { X, Plus } from 'lucide-react';
 import { SectionIcon } from './SectionIcon';
 import { SectionLoader } from './SectionLoader';
 import CompanyLogo from './CompanyLogo';
 import { getCompanyName } from '@/lib/companyNames';
 import { StockData } from '@/lib/types';
+import { PortfolioQuantityInput } from './PortfolioQuantityInput';
+import {
+  BUTTON_PRIMARY_MD,
+  BUTTON_ICON,
+  BUTTON_ICON_DANGER,
+  BUTTON_SECONDARY
+} from '@/lib/utils/buttonStyles';
 
 interface PortfolioSectionProps {
   portfolioStocks: StockData[];
@@ -42,11 +49,11 @@ export function PortfolioSection({
       setPortfolioSearchResults([]);
       return;
     }
-    
+
     const term = searchTerm.toLowerCase().trim();
     const currentHoldings = Object.keys(portfolioHoldings).filter(t => (portfolioHoldings[t] || 0) > 0);
     const results = allStocks
-      .filter(stock => 
+      .filter(stock =>
         stock && stock.ticker && (
           stock.ticker.toLowerCase().includes(term) ||
           getCompanyName(stock.ticker).toLowerCase().includes(term)
@@ -54,7 +61,7 @@ export function PortfolioSection({
       )
       .filter(stock => stock && stock.ticker && !currentHoldings.includes(stock.ticker))
       .slice(0, 10);
-    
+
     setPortfolioSearchResults(results);
   };
 
@@ -84,10 +91,10 @@ export function PortfolioSection({
     <section className="portfolio">
       <div className="section-header">
         <div className="header-main">
-            <h2 className="portfolio-header">
-              <SectionIcon type="pie" size={20} className="section-icon" />
-              <span>Portfolio</span>
-            </h2>
+          <h2 className="portfolio-header">
+            <SectionIcon type="pie" size={20} className="section-icon" />
+            <span>Portfolio</span>
+          </h2>
         </div>
         <div className="portfolio-search-wrapper">
           <div className="portfolio-search-container">
@@ -113,14 +120,14 @@ export function PortfolioSection({
                     }}
                   >
                     <div className="portfolio-search-result-logo">
-                      <CompanyLogo ticker={stock.ticker} logoUrl={stock.logoUrl} size={24} priority={true} /> {/* Search results sú vždy priority */}
+                      <CompanyLogo ticker={stock.ticker} {...(stock.logoUrl ? { logoUrl: stock.logoUrl } : {})} size={24} priority={true} /> {/* Search results sú vždy priority */}
                     </div>
                     <div className="portfolio-search-result-info">
                       <div className="portfolio-search-result-ticker">{stock.ticker}</div>
                       <div className="portfolio-search-result-name">{getCompanyName(stock.ticker)}</div>
                     </div>
                     <button
-                      className="portfolio-add-button"
+                      className={BUTTON_ICON}
                       onClick={(e) => {
                         e.stopPropagation();
                         onAddStock(stock.ticker, 1);
@@ -130,7 +137,7 @@ export function PortfolioSection({
                       }}
                       aria-label={`Add ${stock.ticker} to portfolio`}
                     >
-                      +
+                      <Plus size={16} />
                     </button>
                   </div>
                 ))}
@@ -139,7 +146,7 @@ export function PortfolioSection({
           </div>
         </div>
       </div>
-    
+
       <table>
         <thead>
           <tr>
@@ -158,8 +165,22 @@ export function PortfolioSection({
         <tbody>
           {portfolioStocks.length === 0 ? (
             <tr>
-              <td colSpan={10} style={{ textAlign: 'center', padding: '2rem', color: 'var(--clr-subtext)' }}>
-                No portfolio holdings. Add stocks by entering quantity in the # column.
+              <td colSpan={10} className="p-0 border-none">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-2 py-12 text-sm text-slate-500 dark:text-slate-400">
+                  <span>Your portfolio is empty.</span>
+                  <button
+                    onClick={() => {
+                      const input = document.querySelector('.portfolio-search-input') as HTMLInputElement;
+                      if (input) {
+                        input.focus();
+                        input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }
+                    }}
+                    className={BUTTON_PRIMARY_MD}
+                  >
+                    Find stocks to add →
+                  </button>
+                </div>
               </td>
             </tr>
           ) : (
@@ -167,15 +188,24 @@ export function PortfolioSection({
               {portfolioStocks.map((stock) => {
                 const quantity = portfolioHoldings[stock.ticker] || 0;
                 const value = calculatePortfolioValue(stock);
-                
+
+                // Format price without decimals
+                const price = stock.currentPrice ?? 0;
+                const formattedPrice = isFinite(price) ? Math.round(price).toLocaleString('en-US') : '0';
+
+                // Format percent change without decimals
+                const percentChange = stock.percentChange ?? 0;
+                const roundedPercent = isFinite(percentChange) ? Math.round(percentChange) : 0;
+                const formattedPercent = `${roundedPercent >= 0 ? '+' : ''}${roundedPercent}%`;
+
                 return (
                   <tr key={stock.ticker}>
                     <td>
                       <div className="logo-container">
-                        <CompanyLogo 
-                          ticker={stock.ticker} 
-                          logoUrl={stock.logoUrl || `/logos/${stock.ticker.toLowerCase()}-32.webp`} 
-                          size={32} 
+                        <CompanyLogo
+                          ticker={stock.ticker}
+                          logoUrl={stock.logoUrl || `/logos/${stock.ticker.toLowerCase()}-32.webp`}
+                          size={32}
                           priority={true}
                         />
                       </div>
@@ -189,85 +219,25 @@ export function PortfolioSection({
                     <td>{stock.sector || 'N/A'}</td>
                     <td>{stock.industry || 'N/A'}</td>
                     <td>
-                      <input
-                        type="text"
-                        inputMode="decimal"
-                        value={quantity === 0 ? '' : quantity.toString()}
-                        onChange={(e) => {
-                          let inputValue = e.target.value.trim();
-                          inputValue = inputValue.replace(',', '.');
-                          
-                          if (inputValue === '' || inputValue === '.') {
-                            onUpdateQuantity(stock.ticker, 0);
-                            return;
-                          }
-                          
-                          let cleanedValue = inputValue;
-                          if (/^0+[1-9]/.test(cleanedValue)) {
-                            cleanedValue = cleanedValue.replace(/^0+/, '');
-                          }
-                          
-                          const newQuantity = parseFloat(cleanedValue);
-                          if (!isNaN(newQuantity) && newQuantity >= 0 && isFinite(newQuantity)) {
-                            onUpdateQuantity(stock.ticker, newQuantity);
-                          }
-                        }}
-                        onBlur={(e) => {
-                          const inputValue = e.target.value.trim();
-                          if (inputValue === '' || inputValue === '.' || inputValue === '0') {
-                            onUpdateQuantity(stock.ticker, 0);
-                            e.target.value = '';
-                          } else {
-                            const parsed = parseFloat(inputValue);
-                            if (!isNaN(parsed) && parsed >= 0 && isFinite(parsed)) {
-                              const formatted = parsed % 1 === 0 
-                                ? parsed.toString() 
-                                : parsed.toString().replace(/\.?0+$/, '');
-                              e.target.value = formatted;
-                              onUpdateQuantity(stock.ticker, parsed);
-                            } else {
-                              onUpdateQuantity(stock.ticker, 0);
-                              e.target.value = '';
-                            }
-                          }
-                        }}
-                        onKeyDown={(e) => {
-                          const allowedKeys = [
-                            'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 
-                            'ArrowUp', 'ArrowDown', 'Tab', 'Enter'
-                          ];
-                          const isNumber = /[0-9]/.test(e.key);
-                          const currentValue = e.currentTarget.value;
-                          const hasDecimal = currentValue.includes('.') || currentValue.includes(',');
-                          const isDecimal = (e.key === '.' || e.key === ',') && !hasDecimal;
-                          if (!isNumber && !isDecimal && !allowedKeys.includes(e.key) && !e.ctrlKey && !e.metaKey) {
-                            e.preventDefault();
-                          }
-                          if (e.key === ',') {
-                            e.preventDefault();
-                            const newValue = currentValue + '.';
-                            e.currentTarget.value = newValue;
-                            e.currentTarget.dispatchEvent(new Event('input', { bubbles: true }));
-                          }
-                        }}
-                        className="portfolio-quantity-input"
-                        placeholder="0"
+                      <PortfolioQuantityInput
+                        value={quantity}
+                        onChange={(newQuantity) => onUpdateQuantity(stock.ticker, newQuantity)}
                       />
                     </td>
                     <td>
-                      ${(stock.currentPrice || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      ${formattedPrice}
                     </td>
-                    <td className={stock.percentChange >= 0 ? 'positive' : 'negative'}>
-                      {stock.percentChange >= 0 ? '+' : ''}{stock.percentChange?.toFixed(2) || '0.00'}%
+                    <td className={roundedPercent >= 0 ? 'positive' : 'negative'}>
+                      {formattedPercent}
                     </td>
                     <td className={value >= 0 ? 'positive' : 'negative'}>
-                      {Math.abs(value) < 0.01 
-                        ? '$0.00' 
-                        : `${value >= 0 ? '+' : '-'}$` + Math.abs(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {Math.abs(value) < 1
+                        ? '$0'
+                        : `${value >= 0 ? '+' : '-'}$` + Math.round(Math.abs(value)).toLocaleString('en-US')}
                     </td>
                     <td>
                       <button
-                        className="portfolio-delete-button"
+                        className={BUTTON_ICON_DANGER}
                         onClick={() => onRemoveStock(stock.ticker)}
                         aria-label={`Remove ${stock.ticker} from portfolio`}
                         title="Remove from portfolio"
@@ -284,9 +254,9 @@ export function PortfolioSection({
                   Total:
                 </td>
                 <td className={totalPortfolioValue >= 0 ? 'positive' : 'negative'} style={{ fontWeight: 600, padding: '1rem 0.5rem' }}>
-                  {Math.abs(totalPortfolioValue) < 0.01 
-                    ? '$0.00' 
-                    : `${totalPortfolioValue >= 0 ? '+' : '-'}$` + Math.abs(totalPortfolioValue).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {Math.abs(totalPortfolioValue) < 1
+                    ? '$0'
+                    : `${totalPortfolioValue >= 0 ? '+' : '-'}$` + Math.round(Math.abs(totalPortfolioValue)).toLocaleString('en-US')}
                 </td>
                 <td></td>
               </tr>
@@ -297,4 +267,3 @@ export function PortfolioSection({
     </section>
   );
 }
-

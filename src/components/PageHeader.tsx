@@ -1,33 +1,12 @@
 /**
  * Page Header Component
- * Contains brand section, market indicators, and section toggles
+ * Contains brand section and market indicators
  */
 
 import React from 'react';
 import { BrandLogo } from './BrandLogo';
-import { SectionIcon } from './SectionIcon';
 
-interface PageHeaderProps {
-  showFavoritesSection: boolean;
-  showPortfolioSection: boolean;
-  showAllStocksSection: boolean;
-  showEarningsSection: boolean;
-  onToggleFavorites: (value: boolean) => void;
-  onTogglePortfolio: (value: boolean) => void;
-  onToggleAllStocks: (value: boolean) => void;
-  onToggleEarnings: (value: boolean) => void;
-}
-
-export function PageHeader({
-  showFavoritesSection,
-  showPortfolioSection,
-  showAllStocksSection,
-  showEarningsSection,
-  onToggleFavorites,
-  onTogglePortfolio,
-  onToggleAllStocks,
-  onToggleEarnings
-}: PageHeaderProps) {
+export function PageHeader() {
   return (
     <header className="header">
       <div className="header-top">
@@ -91,69 +70,9 @@ export function PageHeader({
                 </div>
               </div>
             </div>
-            
-            <div className="section-toggles-card">
-              {/* Portfolio - 1. sekcia */}
-              <label className="favorites-toggle-switch">
-                <span className="toggle-label-text">
-                  <SectionIcon type="pie" size={20} className="toggle-icon" />
-                </span>
-                <div className="toggle-controls">
-                  <input
-                    type="checkbox"
-                    checked={showPortfolioSection}
-                    onChange={(e) => onTogglePortfolio(e.target.checked)}
-                    className="toggle-input"
-                  />
-                </div>
-              </label>
-              {/* Favorites - 3. sekcia */}
-              <label className="favorites-toggle-switch">
-                <span className="toggle-label-text">
-                  <SectionIcon type="star" size={20} className="toggle-icon" />
-                </span>
-                <div className="toggle-controls">
-                  <input
-                    type="checkbox"
-                    checked={showFavoritesSection}
-                    onChange={(e) => onToggleFavorites(e.target.checked)}
-                    className="toggle-input"
-                  />
-                </div>
-              </label>
-              {/* Today's Earnings - 4. sekcia */}
-              <label className="favorites-toggle-switch">
-                <span className="toggle-label-text">
-                  <SectionIcon type="calendar" size={20} className="toggle-icon" />
-                </span>
-                <div className="toggle-controls">
-                  <input
-                    type="checkbox"
-                    checked={showEarningsSection}
-                    onChange={(e) => onToggleEarnings(e.target.checked)}
-                    className="toggle-input"
-                  />
-                </div>
-              </label>
-              {/* All Stocks - 5. sekcia */}
-              <label className="favorites-toggle-switch">
-                <span className="toggle-label-text">
-                  <SectionIcon type="globe" size={20} className="toggle-icon" />
-                </span>
-                <div className="toggle-controls">
-                  <input
-                    type="checkbox"
-                    checked={showAllStocksSection}
-                    onChange={(e) => onToggleAllStocks(e.target.checked)}
-                    className="toggle-input"
-                  />
-                </div>
-              </label>
-            </div>
           </div>
         </div>
       </div>
     </header>
   );
 }
-

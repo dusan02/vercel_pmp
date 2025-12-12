@@ -1,0 +1,467 @@
+/* ============================================================================
+   BUTTON SYSTEM - REFACTORED ACCORDING TO BEST PRACTICES
+   ============================================================================
+   
+   Best Practices Applied:
+   1. ✅ Sufficient color contrast (WCAG AA minimum 4.5:1)
+   2. ✅ Focus-visible instead of focus (better UX)
+   3. ✅ Consistent sizing and spacing
+   4. ✅ Clear visual hierarchy
+   5. ✅ Proper disabled states
+   6. ✅ Touch-friendly targets (min 44px)
+   7. ✅ Smooth transitions
+   8. ✅ Active states for feedback
+   9. ✅ Accessible outlines
+   10. ✅ Dark mode support
+============================================================================ */
+
+/* === BASE BUTTON STYLES ================================================== */
+/* 
+  Base button that all other buttons inherit from
+  Ensures consistent foundation across all button types
+*/
+button,
+.btn {
+  /* Layout */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  
+  /* Sizing - Touch-friendly minimum */
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.75rem 1.25rem;
+  
+  /* Typography */
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  
+  /* Visual */
+  background: var(--clr-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  
+  /* Interaction */
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  
+  /* Animation */
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Accessibility */
+  outline: none;
+}
+
+/* === BUTTON STATES ======================================================= */
+
+/* Hover State - Darker background, elevated shadow */
+button:hover:not(:disabled),
+.btn:hover:not(:disabled) {
+  background: var(--clr-primary-hover);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
+}
+
+/* Focus-Visible State - Only show outline when keyboard navigating */
+button:focus-visible,
+.btn:focus-visible {
+  outline: 2px solid var(--clr-primary);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Active State - Pressed effect */
+button:active:not(:disabled),
+.btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Disabled State - Reduced opacity, no interaction */
+button:disabled,
+.btn:disabled {
+  background: #9ca3af;
+  color: #e5e7eb;
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+  box-shadow: none;
+}
+
+/* === BUTTON VARIANTS ===================================================== */
+
+/* Primary Button (default) - Already defined in base */
+
+/* Secondary Button - Outlined style */
+.btn-secondary {
+  background: transparent;
+  color: var(--clr-primary);
+  border: 2px solid var(--clr-primary);
+  box-shadow: none;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--clr-primary);
+  color: white;
+  border-color: var(--clr-primary-hover);
+}
+
+.btn-secondary:disabled {
+  background: transparent;
+  color: #9ca3af;
+  border-color: #9ca3af;
+}
+
+/* Success/Positive Button - Green for positive actions */
+.btn-success,
+.export-btn {
+  background: var(--clr-positive);
+  color: white;
+}
+
+.btn-success:hover:not(:disabled),
+.export-btn:hover:not(:disabled) {
+  background: #15803d; /* Darker green */
+}
+
+.btn-success:focus-visible,
+.export-btn:focus-visible {
+  outline-color: var(--clr-positive);
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+}
+
+/* Danger/Error Button - Red for destructive actions */
+.btn-danger,
+.logout-btn {
+  background: var(--clr-error);
+  color: white;
+}
+
+.btn-danger:hover:not(:disabled),
+.logout-btn:hover:not(:disabled) {
+  background: #b91c1c; /* Darker red */
+}
+
+.btn-danger:focus-visible,
+.logout-btn:focus-visible {
+  outline-color: var(--clr-error);
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+/* Ghost Button - Minimal style for less important actions */
+.btn-ghost {
+  background: transparent;
+  color: var(--clr-text);
+  box-shadow: none;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--clr-bg);
+  color: var(--clr-primary);
+}
+
+/* === BUTTON SIZES ======================================================== */
+
+/* Small Button */
+.btn-sm {
+  min-height: 36px;
+  min-width: 36px;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.8125rem;
+}
+
+/* Large Button */
+.btn-lg {
+  min-height: 52px;
+  min-width: 52px;
+  padding: 1rem 1.75rem;
+  font-size: 1rem;
+}
+
+/* === SPECIFIC BUTTON CLASSES ============================================= */
+
+/* Header Buttons - Used in page header */
+.header-btn,
+.signin-btn {
+  /* Inherits from base button styles */
+  min-width: 120px;
+}
+
+/* Favorite Button - Icon button for favoriting items */
+.favorite-btn {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.75rem;
+  font-size: 1.25rem;
+  background: transparent;
+  color: var(--clr-subtext);
+  border: 1px solid var(--clr-border);
+  box-shadow: none;
+}
+
+.favorite-btn:hover:not(:disabled) {
+  background: var(--clr-bg);
+  color: var(--clr-primary);
+  border-color: var(--clr-primary);
+  transform: scale(1.05);
+}
+
+.favorite-btn.active {
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--clr-primary);
+  border-color: var(--clr-primary);
+}
+
+.favorite-btn:focus-visible {
+  outline-color: var(--clr-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Portfolio Buttons */
+.portfolio-add-button {
+  background: var(--clr-positive);
+  color: white;
+  min-width: auto;
+  padding: 0.5rem 1rem;
+}
+
+.portfolio-add-button:hover:not(:disabled) {
+  background: #15803d;
+}
+
+.portfolio-delete-button {
+  background: var(--clr-error);
+  color: white;
+  min-width: auto;
+  padding: 0.5rem 1rem;
+}
+
+.portfolio-delete-button:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+/* PWA Install Buttons */
+.pwa-install-button {
+  background: var(--clr-primary);
+  color: white;
+}
+
+.pwa-install-button:hover:not(:disabled) {
+  background: var(--clr-primary-hover);
+}
+
+.pwa-dismiss-button {
+  background: transparent;
+  color: var(--clr-subtext);
+  border: 1px solid var(--clr-border);
+}
+
+.pwa-dismiss-button:hover:not(:disabled) {
+  background: var(--clr-bg);
+  color: var(--clr-text);
+}
+
+.pwa-update-button {
+  background: var(--clr-positive);
+  color: white;
+}
+
+.pwa-update-button:hover:not(:disabled) {
+  background: #15803d;
+}
+
+/* === DARK MODE ADJUSTMENTS =============================================== */
+@media (prefers-color-scheme: dark) {
+  button,
+  .btn {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+  
+  button:hover:not(:disabled),
+  .btn:hover:not(:disabled) {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+  
+  .btn-secondary {
+    border-color: var(--clr-primary);
+    color: var(--clr-primary);
+  }
+  
+  .btn-ghost:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.05);
+  }
+  
+  .favorite-btn {
+    background: transparent;
+    border-color: var(--clr-border);
+  }
+  
+  .favorite-btn:hover:not(:disabled) {
+    background: rgba(59, 130, 246, 0.1);
+  }
+}
+
+/* === MOBILE OPTIMIZATIONS ================================================ */
+@media (max-width: 768px) {
+  /* Larger touch targets on mobile */
+  button,
+  .btn {
+    min-height: 48px;
+    min-width: 48px;
+    padding: 0.875rem 1.5rem;
+    font-size: 1rem;
+  }
+  
+  .favorite-btn {
+    min-height: 48px;
+    min-width: 48px;
+    padding: 0.75rem;
+    font-size: 1.5rem;
+  }
+  
+  .btn-sm {
+    min-height: 40px;
+    min-width: 40px;
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+  }
+  
+  .btn-lg {
+    min-height: 56px;
+    min-width: 56px;
+    padding: 1.125rem 2rem;
+    font-size: 1.125rem;
+  }
+  
+  /* Full width buttons in header on mobile */
+  .header-actions button,
+  .header-actions .btn {
+    width: 100%;
+  }
+}
+
+/* Extra small devices */
+@media (max-width: 480px) {
+  button,
+  .btn {
+    min-height: 52px;
+    min-width: 52px;
+    padding: 1rem 1.75rem;
+    font-size: 1.1rem;
+  }
+  
+  .favorite-btn {
+    min-height: 52px;
+    min-width: 52px;
+    padding: 0.875rem;
+    font-size: 1.75rem;
+  }
+}
+
+/* === TOUCH DEVICE OPTIMIZATIONS ========================================== */
+@media (hover: none) and (pointer: coarse) {
+  /* Remove hover effects on touch devices */
+  button:hover:not(:disabled),
+  .btn:hover:not(:disabled) {
+    transform: none;
+  }
+  
+  /* Enhanced active state for touch feedback */
+  button:active:not(:disabled),
+  .btn:active:not(:disabled) {
+    transform: scale(0.95);
+    transition: transform 0.1s ease;
+  }
+}
+
+/* === LOADING STATE ======================================================= */
+.btn-loading {
+  position: relative;
+  color: transparent;
+  pointer-events: none;
+}
+
+.btn-loading::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: 50%;
+  left: 50%;
+  margin-left: -8px;
+  margin-top: -8px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  border-top-color: transparent;
+  animation: btn-spin 0.6s linear infinite;
+  color: white;
+}
+
+@keyframes btn-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* === BUTTON GROUPS ======================================================= */
+.btn-group {
+  display: inline-flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.btn-group button,
+.btn-group .btn {
+  flex: 1 1 auto;
+}
+
+/* === ICON BUTTONS ======================================================== */
+.btn-icon {
+  min-width: 44px;
+  padding: 0.75rem;
+  aspect-ratio: 1;
+}
+
+@media (max-width: 768px) {
+  .btn-icon {
+    min-width: 48px;
+    padding: 0.875rem;
+  }
+}
+
+/* === ACCESSIBILITY IMPROVEMENTS ========================================== */
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  button,
+  .btn {
+    border: 2px solid currentColor;
+  }
+  
+  button:focus-visible,
+  .btn:focus-visible {
+    outline-width: 3px;
+    outline-offset: 3px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  button,
+  .btn {
+    transition: none;
+  }
+  
+  button:hover:not(:disabled),
+  .btn:hover:not(:disabled),
+  button:active:not(:disabled),
+  .btn:active:not(:disabled) {
+    transform: none;
+  }
+}

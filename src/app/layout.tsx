@@ -2,13 +2,38 @@ import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import ErrorBoundaryWrapper from '@/components/ErrorBoundaryWrapper'
+import { Providers } from './providers'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'PreMarketPrice.com - Real-time Stock Data & Earnings Calendar',
-  description: 'Track pre-market movements and earnings calendar of 300+ global companies. Real-time stock data, market analysis, and portfolio tracking.',
-  keywords: 'stocks, pre-market, earnings, stock market, trading, portfolio, real-time data',
+  title: {
+    default: 'PreMarketPrice.com - Real-time Stock Data & Earnings Calendar',
+    template: '%s | PreMarketPrice.com',
+  },
+  description: 'Track pre-market movements and earnings calendar of 300+ global companies. Real-time stock data, market analysis, portfolio tracking, and comprehensive earnings calendar. Get live stock prices, market cap changes, and earnings reports for S&P 500 companies.',
+  keywords: [
+    'stocks',
+    'pre-market',
+    'premarket',
+    'earnings',
+    'earnings calendar',
+    'stock market',
+    'trading',
+    'portfolio',
+    'real-time data',
+    'stock prices',
+    'market cap',
+    'S&P 500',
+    'stock analysis',
+    'financial data',
+    'stock tracker',
+    'market movers',
+    'stock screener',
+    'investment',
+    'trading tools',
+    'stock quotes',
+  ].join(', '),
   authors: [{ name: 'PreMarketPrice Team' }],
   creator: 'PreMarketPrice.com',
   publisher: 'PreMarketPrice.com',
@@ -22,16 +47,16 @@ export const metadata: Metadata = {
     canonical: '/',
   },
   openGraph: {
-    title: 'PreMarketPrice.com - Real-time Stock Data',
-    description: 'Track pre-market movements and earnings calendar of 300+ global companies',
+    title: 'PreMarketPrice.com - Real-time Stock Data & Earnings Calendar',
+    description: 'Track pre-market movements and earnings calendar of 300+ global companies. Real-time stock data, market analysis, and portfolio tracking.',
     url: 'https://premarketprice.com',
     siteName: 'PreMarketPrice.com',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
-        height: 630,
-        alt: 'PreMarketPrice.com - Stock Data Platform',
+        height: 1630,
+        alt: 'PreMarketPrice.com - Real-time Stock Data & Earnings Calendar Platform',
       },
     ],
     locale: 'en_US',
@@ -39,9 +64,10 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'PreMarketPrice.com - Real-time Stock Data',
-    description: 'Track pre-market movements and earnings calendar of 300+ global companies',
+    title: 'PreMarketPrice.com - Real-time Stock Data & Earnings Calendar',
+    description: 'Track pre-market movements and earnings calendar of 300+ global companies. Real-time stock data, market analysis, and portfolio tracking.',
     images: ['/og-image.png'],
+    creator: '@premarketprice',
   },
   robots: {
     index: true,
@@ -68,6 +94,10 @@ export const metadata: Metadata = {
   category: 'finance',
   classification: 'Business',
   referrer: 'origin-when-cross-origin',
+  other: {
+    'geo.region': 'US',
+    'geo.placename': 'United States',
+  },
 }
 
 export const viewport: Viewport = {
@@ -86,7 +116,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         {/* PWA Meta Tags */}
         <meta name="application-name" content="PreMarketPrice" />
@@ -115,9 +145,55 @@ export default function RootLayout({
         <link rel="preconnect" href="https://finnhub.io" crossOrigin="anonymous" />
       </head>
       <body className={inter.className}>
-        <ErrorBoundaryWrapper>
-          {children}
-        </ErrorBoundaryWrapper>
+        <Providers>
+          {/* Structured Data - Organization */}
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify({
+                '@context': 'https://schema.org',
+                '@type': 'Organization',
+                name: 'PreMarketPrice.com',
+                url: 'https://premarketprice.com',
+                logo: 'https://premarketprice.com/og-image.png',
+                description: 'Real-time stock data, pre-market movements, and earnings calendar for 300+ global companies.',
+                sameAs: [
+                  'https://twitter.com/premarketprice',
+                  'https://www.linkedin.com/company/premarketprice',
+                ],
+                contactPoint: {
+                  '@type': 'ContactPoint',
+                  contactType: 'Customer Service',
+                  email: 'support@premarketprice.com',
+                },
+              }),
+            }}
+          />
+          {/* Structured Data - WebSite */}
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify({
+                '@context': 'https://schema.org',
+                '@type': 'WebSite',
+                name: 'PreMarketPrice.com',
+                url: 'https://premarketprice.com',
+                description: 'Track pre-market movements and earnings calendar of 300+ global companies. Real-time stock data, market analysis, and portfolio tracking.',
+                potentialAction: {
+                  '@type': 'SearchAction',
+                  target: {
+                    '@type': 'EntryPoint',
+                    urlTemplate: 'https://premarketprice.com/?search={search_term_string}',
+                  },
+                  'query-input': 'required name=search_term_string',
+                },
+              }),
+            }}
+          />
+          <ErrorBoundaryWrapper>
+            {children}
+          </ErrorBoundaryWrapper>
+        </Providers>
       </body>
     </html>
   )

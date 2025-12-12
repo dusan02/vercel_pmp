@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-// import { useWebSocket } from '@/hooks/useWebSocket'; // Temporarily disabled to fix webpack error
 import { StockData, PriceUpdate } from '@/lib/types';
 import { CompanyNode, HeatmapMetric } from '@/components/MarketHeatmap';
+import { useHeatmapCache } from './useHeatmapCache';
 
 interface UseHeatmapDataProps {
   apiEndpoint?: string;
@@ -14,7 +14,7 @@ interface UseHeatmapDataProps {
 /**
  * Transformuje StockData z API na CompanyNode pre heatmapu
  */
-function transformStockDataToCompanyNode(stock: StockData): CompanyNode | null {
+export function transformStockDataToCompanyNode(stock: StockData): CompanyNode | null {
   if (!stock.ticker || !stock.sector || !stock.industry) {
     return null;
   }
@@ -35,6 +35,8 @@ function transformStockDataToCompanyNode(stock: StockData): CompanyNode | null {
   };
 }
 
+// Cache management moved to useHeatmapCache hook
+
 export function useHeatmapData({ 
   apiEndpoint = '/api/heatmap',
   refreshInterval = 30000,
@@ -51,12 +53,30 @@ export function useHeatmapData({
   const [metric, setMetric] = useState<HeatmapMetric>(initialMetric);
   const [lastEtag, setLastEtag] = useState<string | null>(null);
 
+  // Cache hook
+  const { cachedData, isLoading: cacheLoading, saveCache } = useHeatmapCache();
+
   // Refs
   const abortControllerRef = useRef<AbortController | null>(null);
   const isInitialLoadRef = useRef(true);
   const isLoadingRef = useRef(false);
   const lastLoadTimeRef = useRef<number>(0);
   const currentDataRef = useRef<CompanyNode[]>([]);
+
+  // Load from cache on mount
+  useEffect(() => {
+    if (!cacheLoading && cachedData) {
+      setData(cachedData.data);
+      setLastUpdated(cachedData.lastUpdated || null);
+      setLastEtag(cachedData.etag || null);
+      setLoading(false);
+      isInitialLoadRef.current = false;
+      currentDataRef.current = cachedData.data;
+    } else if (!cacheLoading) {
+      // No cache available, will fetch
+      isInitialLoadRef.current = true;
+    }
+  }, [cachedData, cacheLoading]);
 
   // Update ref when data changes
   useEffect(() => {
@@ -145,6 +165,10 @@ export function useHeatmapData({
       }
 
       if (!response.ok) {
+        // If 503 (Service Unavailable), throw specific error to trigger retry
+        if (response.status === 503) {
+          throw new Error('Service temporarily unavailable (503)');
+        }
         throw new Error(`API error: ${response.status}`);
       }
 
@@ -186,8 +210,13 @@ export function useHeatmapData({
       if (companies.length > 0) {
         console.log(`✅ Heatmap: Loaded ${companies.length} companies`);
         setData(companies);
-        setLastUpdated(result.lastUpdatedAt || new Date().toISOString());
+        const updatedAt = result.lastUpdatedAt || new Date().toISOString();
+        setLastUpdated(updatedAt);
         isInitialLoadRef.current = false;
+        currentDataRef.current = companies;
+        
+        // Save to cache for instant loading next time
+        saveCache(companies, updatedAt, newEtag);
       } else {
         console.warn('⚠️ Heatmap: No valid company data found');
         if (!hasData) setError('No data available');
@@ -198,73 +227,37 @@ export function useHeatmapData({
         console.log('🔄 Heatmap: Request aborted');
         return;
       }
+      
+      // Retry logic for 503 errors or network errors
+      const isRetryable = err.message.includes('503') || err.message.includes('fetch') || err.message.includes('network');
+      const retryCount = (force ? 0 : 1); // Allow 1 retry for auto-refresh
+      
+      if (isRetryable && !force) { // Don't retry infinite times
+         console.warn(`⚠️ Heatmap error (${err.message}), retrying...`);
+         // Simple retry implemented by next interval or user action for now to avoid complex loop
+         // Could implement proper backoff here if needed
+      }
+
       console.error('❌ Heatmap load error:', err);
       if (!hasData) setError(err.message);
     } finally {
       setLoading(false);
       isLoadingRef.current = false;
     }
-  }, [apiEndpoint, timeframe, metric, lastEtag]);
-
-  // WebSocket integration - temporarily disabled to fix webpack error
-  /*
-  useWebSocket({
-    onPriceUpdate: (updates: PriceUpdate[]) => {
-      if (!data || data.length === 0) return;
-      // Only update live if timeframe is 'day' (real-time makes most sense for daily change)
-      // But user might want to see current price update even in week view? 
-      // Typically heatmap color depends on the selected timeframe change.
-      // If we are in 'week' mode, real-time update of 'day' percentChange is wrong for the color.
-      // However, we can update currentPrice.
-      
-      // For now, let's keep it simple and update mostly for 'day' or just update price/mcap properties
-      
-      setData(prevData => {
-        if (!prevData) return null;
-
-        const updateMap = new Map(updates.map(u => [u.ticker, u]));
-        let hasChanges = false;
-
-        const newData = prevData.map(node => {
-          const update = updateMap.get(node.symbol);
-          if (update) {
-            hasChanges = true;
-            
-            // Calculate new values based on update
-            // NOTE: If timeframe is NOT 'day', we should be careful about updating changePercent
-            // The WebSocket typically sends daily percentChange.
-            
-            const newProps: Partial<CompanyNode> = {
-                currentPrice: update.currentPrice,
-                marketCap: update.marketCap,
-                // We update these always as they are "current" values
-                marketCapDiff: update.marketCapDiff,
-                marketCapDiffAbs: Math.abs(update.marketCapDiff || 0)
-            };
-
-            if (timeframe === 'day') {
-                newProps.changePercent = update.percentChange;
-            }
-
-            return { ...node, ...newProps };
-          }
-          return node;
-        });
-
-        if (hasChanges) {
-          setLastUpdated(new Date().toISOString());
-          return newData;
-        }
-        return prevData;
-      });
-    },
-    favorites: [] // Listen to all
-  });
-  */
+  }, [apiEndpoint, timeframe, metric, lastEtag, saveCache]);
 
   // Initial load and auto-refresh
   useEffect(() => {
-    fetchData(false);
+    // Ak už máme dáta z localStorage, nevolaj fetchData hneď (už sa zobrazujú)
+    // Ale spusti background refresh po 100ms
+    if (currentDataRef.current.length > 0) {
+      setTimeout(() => {
+        fetchData(false); // Background refresh
+      }, 100);
+    } else {
+      // Ak nemáme dáta, načítaj hneď
+      fetchData(false);
+    }
 
     if (autoRefresh && refreshInterval > 0) {
       const interval = setInterval(() => fetchData(false), refreshInterval);

@@ -110,7 +110,7 @@ export default function StocksClient({ initial }: StocksClientProps) {
       {/* Search and Controls */}
       <div className="mb-4 flex gap-2 items-center flex-wrap">
         <input
-          className="border border-gray-300 px-3 py-2 rounded w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-gray-300 dark:border-slate-600 px-3 py-2 rounded w-64 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
           placeholder="Search ticker…"
           value={qInput}
           onChange={(e) => setQInput(e.target.value)}
@@ -120,7 +120,7 @@ export default function StocksClient({ initial }: StocksClientProps) {
         <select
           value={sort}
           onChange={(e) => handleSortChange(e.target.value as 'mcap' | 'chgPct' | 'price')}
-          className="border border-gray-300 px-2 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-gray-300 dark:border-slate-600 px-2 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
         >
           <option value="mcap">Market Cap</option>
           <option value="chgPct">% Change</option>
@@ -128,7 +128,7 @@ export default function StocksClient({ initial }: StocksClientProps) {
         </select>
         
         <button
-          className="border border-gray-300 px-3 py-2 rounded hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-gray-300 dark:border-slate-600 px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
           onClick={handleDirToggle}
           type="button"
         >
@@ -136,13 +136,13 @@ export default function StocksClient({ initial }: StocksClientProps) {
         </button>
 
         {isValidating && (
-          <span className="text-sm text-gray-500">Updating...</span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">Updating...</span>
         )}
       </div>
 
       {/* Error State */}
       {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-700">
+        <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-red-700 dark:text-red-300">
           Error: {error instanceof Error ? error.message : 'Failed to load data'}
         </div>
       )}
@@ -153,7 +153,7 @@ export default function StocksClient({ initial }: StocksClientProps) {
           {Array.from({ length: 24 }).map((_, i) => (
             <div
               key={i}
-              className="h-20 animate-pulse bg-gray-200 rounded border"
+              className="h-20 animate-pulse bg-gray-200 dark:bg-slate-700 rounded border dark:border-slate-600"
             />
           ))}
         </div>
@@ -163,9 +163,9 @@ export default function StocksClient({ initial }: StocksClientProps) {
       {rows.length > 0 && (
         <>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
+            <table className="w-full text-sm border-collapse text-gray-900 dark:text-gray-100">
               <thead>
-                <tr className="text-left border-b border-gray-300 bg-gray-50">
+                <tr className="text-left border-b border-gray-300 dark:border-slate-600 bg-gray-50 dark:bg-slate-800">
                   <th className="py-2 px-3 font-semibold">Ticker</th>
                   <th className="py-2 px-3 font-semibold text-right">Price</th>
                   <th className="py-2 px-3 font-semibold text-right">%Chg</th>
@@ -179,7 +179,7 @@ export default function StocksClient({ initial }: StocksClientProps) {
                 {rows.map((r) => (
                   <tr
                     key={r.t}
-                    className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
+                    className="border-b border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors"
                   >
                     <td className="py-2 px-3 font-medium">{r.t}</td>
                     <td className="py-2 px-3 text-right">
@@ -188,10 +188,10 @@ export default function StocksClient({ initial }: StocksClientProps) {
                     <td
                       className={`py-2 px-3 text-right font-medium ${
                         r.c > 0
-                          ? 'text-green-600'
+                          ? 'text-green-600 dark:text-green-400'
                           : r.c < 0
-                          ? 'text-red-600'
-                          : 'text-gray-600'
+                          ? 'text-red-600 dark:text-red-400'
+                          : 'text-gray-600 dark:text-gray-400'
                       }`}
                     >
                       {r.c !== 0 ? `${r.c > 0 ? '+' : ''}${r.c.toFixed(2)}%` : '0.00%'}
@@ -227,7 +227,7 @@ export default function StocksClient({ initial }: StocksClientProps) {
           )}
 
           {/* Results Count */}
-          <div className="mt-2 text-sm text-gray-500 text-center">
+          <div className="mt-2 text-sm text-gray-500 dark:text-gray-400 text-center">
             Showing {rows.length} {rows.length === 1 ? 'result' : 'results'}
             {data?.nextCursor && ' (more available)'}
           </div>
@@ -236,7 +236,7 @@ export default function StocksClient({ initial }: StocksClientProps) {
 
       {/* Empty State */}
       {!isLoading && rows.length === 0 && !error && (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
           No results found. Try adjusting your search or filters.
         </div>
       )}

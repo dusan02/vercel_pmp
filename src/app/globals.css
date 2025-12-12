@@ -19,8 +19,12 @@
 
 /* Mobile-specific touch target improvements */
 @media (max-width: 768px) {
+
   /* Increase all button sizes on mobile */
-  button, .header-btn, .logout-btn, .signin-btn {
+  button,
+  .header-btn,
+  .logout-btn,
+  .signin-btn {
     min-height: 48px;
     min-width: 48px;
     padding: 0.875rem 1.5rem;
@@ -48,11 +52,11 @@
   }
 
   /* Filter controls optimization - only for custom dropdown */
-  .custom-dropdown.category-filter, 
+  .custom-dropdown.category-filter,
   .custom-dropdown.sector-filter {
     min-height: 48px;
   }
-  
+
   .custom-dropdown-trigger {
     padding: 0.875rem 1rem;
     font-size: 1rem;
@@ -65,13 +69,15 @@
   }
 
   /* Table cell touch targets */
-  table td, table th {
+  table td,
+  table th {
     padding: 0.75rem 0.5rem;
     min-height: 48px;
   }
 
   /* Interactive table cells */
-  table td[onclick], table td[data-clickable] {
+  table td[onclick],
+  table td[data-clickable] {
     cursor: pointer;
     touch-action: manipulation;
   }
@@ -105,7 +111,11 @@
 
 /* Enhanced mobile breakpoints for better responsive design */
 @media (max-width: 480px) {
-  button, .header-btn, .logout-btn, .signin-btn {
+
+  button,
+  .header-btn,
+  .logout-btn,
+  .signin-btn {
     min-height: 52px;
     min-width: 52px;
     padding: 1rem 1.75rem;
@@ -139,59 +149,89 @@
 
 /* Touch device optimizations */
 @media (hover: none) and (pointer: coarse) {
+
   /* Remove hover effects on touch devices */
-  button:active, .header-btn:active, .favorite-btn:active {
+  button:active,
+  .header-btn:active,
+  .favorite-btn:active {
     transform: scale(0.95);
     transition: transform 0.1s ease;
   }
 
   /* Disable hover effects on touch devices */
-  button:hover, .header-btn:hover, .favorite-btn:hover {
+  button:hover,
+  .header-btn:hover,
+  .favorite-btn:hover {
     transform: none;
   }
 }
 
 /* === RESET & BASE ======================================= */
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --clr-bg:#f7f8fa;
-  --clr-surface:#ffffff;
-  --clr-border:#e5e7eb;
-  --clr-text:#111827;
-  --clr-subtext:#4b5563;
-  --clr-primary:#2563eb;
-  --clr-primary-hover:#1d4ed8;
-  --clr-positive:#16a34a;
-  --clr-negative:#dc2626;
-  --clr-error:#dc2626;
-  --clr-error-bg:#fef2f2;
-  --radius:0.5rem;
-  --shadow:0 2px 8px rgba(0,0,0,0.05);
-  --font-sans:"Poppins","Inter","SF Pro Display",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0
 }
-@media (prefers-color-scheme: dark){
-  :root{
-    --clr-bg:#0f172a;
-    --clr-surface:#1e293b;
-    --clr-border:#334155;
-    --clr-text:#f1f5f9;
-    --clr-subtext:#94a3b8;
-    --clr-primary:#3b82f6;
-    --clr-primary-hover:#60a5fa;
-    --clr-error-bg:#450a0a;
-    --shadow:0 2px 8px rgba(0,0,0,0.4);
-  }
+
+:root {
+  --clr-bg: #f7f8fa;
+  --clr-surface: #ffffff;
+  --clr-border: #e5e7eb;
+  --clr-text: #111827;
+  --clr-subtext: #4b5563;
+  --clr-primary: #2563eb;
+  --clr-primary-hover: #1e40af;
+  /* Darker blue for better contrast */
+  --clr-positive: #16a34a;
+  --clr-negative: #dc2626;
+  --clr-error: #dc2626;
+  --clr-error-bg: #fef2f2;
+  --radius: 0.5rem;
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  --font-sans: "Poppins", "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
 }
-html{font-size:16px}
-body{font-family:var(--font-sans);background:var(--clr-bg);color:var(--clr-text);line-height:1.5;padding:0.5rem;font-weight:400}
+
+.dark {
+  --clr-bg: #0f172a;
+  --clr-surface: #1e293b;
+  --clr-border: #334155;
+  --clr-text: #f1f5f9;
+  --clr-subtext: #94a3b8;
+  --clr-primary: #3b82f6;
+  --clr-primary-hover: #2563eb;
+  /* Medium blue for dark mode */
+  --clr-error-bg: #450a0a;
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+html {
+  font-size: 16px
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--clr-bg);
+  color: var(--clr-text);
+  line-height: 1.5;
+  padding: 0.5rem;
+  font-weight: 400
+}
 
 /* === TYPOGRAPHY IMPROVEMENTS ========================== */
-strong, b {
+strong,
+b {
   font-weight: 700;
   letter-spacing: -0.025em;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-weight: 700;
   letter-spacing: -0.025em;
 }
@@ -201,19 +241,21 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Better number rendering */
-.stock-price, .percentage-change, .market-cap {
+.stock-price,
+.percentage-change,
+.market-cap {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
 }
 
 /* === GENERAL LAYOUT ===================================== */
-.container{
-  max-width:72rem;
-  margin-inline:auto;
-  padding:1rem;
-  background:var(--clr-surface);
-  border-radius:var(--radius);
-  box-shadow:var(--shadow);
+.container {
+  max-width: 72rem;
+  margin-inline: auto;
+  padding: 1rem;
+  background: var(--clr-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
 }
 
 /* ===== Market Indicators ================================================== */
@@ -298,8 +340,13 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 @keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 /* Utility class – visually hidden (sr-only) */
@@ -312,16 +359,16 @@ h1, h2, h3, h4, h5, h6 {
   white-space: nowrap;
 }
 
-@media (prefers-color-scheme: dark) {
+.dark {
   .market-indicators {
     background: var(--clr-surface);
   }
-  
+
   .indicator-symbol {
     background: var(--clr-bg);
     color: var(--clr-subtext);
   }
-  
+
   .indicator-skeleton {
     background: linear-gradient(90deg, var(--clr-bg) 25%, var(--clr-border) 37%, var(--clr-bg) 63%);
   }
@@ -332,11 +379,11 @@ h1, h2, h3, h4, h5, h6 {
     grid-template-columns: 1fr;
     gap: 0.75rem;
   }
-  
+
   .indicator-price {
     font-size: 1.25rem;
   }
-  
+
   .indicator-change {
     font-size: 0.875rem;
   }
@@ -386,7 +433,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Dark mode logo colors */
-@media (prefers-color-scheme: dark) {
+.dark {
   .brand-logo {
     --logo-candle-stroke: rgb(191 219 254);
     --logo-candle-fill: rgba(30, 58, 138, 0.1);
@@ -410,18 +457,21 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   gap: 0;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  font-size: 1.5rem; /* 24px */
+  font-size: 1.5rem;
+  /* 24px */
   line-height: 2rem;
   font-weight: 700;
   letter-spacing: -0.025em;
-  color: rgb(30 58 138); /* text-blue-900 */
+  color: rgb(30 58 138);
+  /* text-blue-900 */
   margin: 0;
   padding: 0;
 }
 
 @media (min-width: 640px) {
   .brand-minimal {
-    font-size: 1.875rem; /* 30px */
+    font-size: 1.875rem;
+    /* 30px */
     line-height: 2.25rem;
   }
 }
@@ -438,7 +488,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Dark mode logo adjustments */
-@media (prefers-color-scheme: dark) {
+.dark {
   .brand-logo {
     filter: brightness(1.05);
   }
@@ -454,14 +504,16 @@ h1, h2, h3, h4, h5, h6 {
 .brand-premarket {
   font-weight: 700;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  color: rgb(30 58 138); /* text-blue-900 */
+  color: rgb(30 58 138);
+  /* text-blue-900 */
   letter-spacing: -0.025em;
 }
 
 .brand-price {
   font-weight: 700;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  color: rgb(30 58 138); /* text-blue-900 */
+  color: rgb(30 58 138);
+  /* text-blue-900 */
   letter-spacing: -0.025em;
 }
 
@@ -475,21 +527,25 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Dark mode adjustments */
-@media (prefers-color-scheme: dark) {
+.dark {
   .brand-minimal {
-    color: rgb(191 219 254); /* Lighter blue for dark mode */
+    color: rgb(191 219 254);
+    /* Lighter blue for dark mode */
   }
-  
+
   .brand-premarket {
-    color: rgb(191 219 254); /* Lighter blue for dark mode */
+    color: rgb(191 219 254);
+    /* Lighter blue for dark mode */
   }
-  
+
   .brand-price {
-    color: rgb(191 219 254); /* Lighter blue for dark mode */
+    color: rgb(191 219 254);
+    /* Lighter blue for dark mode */
   }
-  
+
   .brand-domain {
-    color: #9ca3af; /* Keep same light gray */
+    color: #9ca3af;
+    /* Keep same light gray */
   }
 }
 
@@ -826,21 +882,21 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Dark Mode Adjustments */
-@media (prefers-color-scheme: dark) {
+.dark {
   .trading-hours-info {
     background: linear-gradient(135deg, #0c4a6e, #075985);
     border-color: #0ea5e9;
   }
-  
+
   .market-indicators-section .market-indicators {
     background: transparent;
   }
-  
+
   .market-indicators-section .indicator-symbol {
     background: var(--clr-bg);
     color: var(--clr-subtext);
   }
-  
+
   .description-section p {
     color: var(--clr-subtext);
   }
@@ -852,15 +908,15 @@ h1, h2, h3, h4, h5, h6 {
     flex-direction: column;
     gap: 1.5rem;
   }
-  
+
   .brand-section {
     max-width: 100%;
   }
-  
+
   .market-indicators-section {
     min-width: 100%;
   }
-  
+
   .market-indicators-section .market-indicators {
     flex-direction: row;
     gap: 1rem;
@@ -872,11 +928,11 @@ h1, h2, h3, h4, h5, h6 {
     flex-direction: column;
     gap: 1.5rem;
   }
-  
+
   .description-section {
     max-width: 100%;
   }
-  
+
   .actions-section {
     align-items: stretch;
     width: 100%;
@@ -899,65 +955,66 @@ h1, h2, h3, h4, h5, h6 {
     margin-left: 0;
     margin-top: 0.125rem;
   }
-  
+
   .header-actions {
     justify-content: center;
     flex-wrap: wrap;
   }
-  
+
   .market-indicators-section .market-indicators {
     flex-direction: column;
     gap: 0.75rem;
   }
-  
+
   .market-indicators-section .market-indicator {
     min-width: auto;
   }
-  
+
   .brand-container {
     flex-direction: row;
     gap: 0.625rem;
   }
-  
+
   .brand-logo {
     width: clamp(1.75rem, 3.5vw, 2rem);
     height: clamp(1.75rem, 3.5vw, 2rem);
     margin-top: 0;
   }
-  
+
   .brand-minimal {
-    font-size: clamp(1.25rem, 3.5vw, 1.875rem); /* Smaller on mobile */
+    font-size: clamp(1.25rem, 3.5vw, 1.875rem);
+    /* Smaller on mobile */
     gap: 0;
   }
-  
+
   .brand-tagline {
     font-size: clamp(0.7rem, 1.2vw, 0.8rem);
   }
-  
+
   .brand-name {
     flex-wrap: wrap;
   }
-  
+
   /* Old brand styles removed - using brand-minimal */
-  
+
   .trading-hours-info {
     flex-direction: row;
     padding: 0.75rem 1rem;
   }
-  
+
   .trading-hours-info p {
     font-size: 0.875rem;
   }
-  
+
   .header-top {
     flex-direction: column;
     gap: 1.5rem;
   }
-  
+
   .brand-section {
     max-width: 100%;
   }
-  
+
   .market-indicators-section {
     min-width: 100%;
     width: 100%;
@@ -968,87 +1025,94 @@ h1, h2, h3, h4, h5, h6 {
   .header-top {
     gap: 1rem;
   }
-  
+
   .header-bottom {
     gap: 1rem;
   }
-  
+
   .brand-container {
     gap: 0.5rem;
   }
-  
+
   .brand-logo {
     width: clamp(1.5rem, 2.5vw, 1.75rem);
     height: clamp(1.5rem, 2.5vw, 1.75rem);
   }
-  
+
   .brand-minimal {
     font-size: clamp(1.125rem, 3vw, 1.5rem);
     gap: 0;
   }
-  
+
   .brand-tagline {
     font-size: clamp(0.65rem, 1vw, 0.75rem);
   }
-  
+
   .trading-hours-info {
     padding: 0.625rem 0.875rem;
     gap: 0.625rem;
   }
-  
+
   .trading-hours-icon {
     width: 1.25rem;
     height: 1.25rem;
     font-size: 0.625rem;
   }
-  
+
   .trading-hours-info p {
     font-size: 0.8125rem;
   }
-  
+
   .header-actions {
     flex-direction: column;
     width: 100%;
   }
-  
+
   .header-btn {
     width: 100%;
     justify-content: center;
   }
-  
+
   .market-indicators-section .market-indicators {
     padding: 0;
     gap: 0.75rem;
   }
-  
+
   .market-indicators-section .market-indicator {
     padding: 0.75rem 0.5rem;
   }
 }
 
 /* === BASIC STYLES ===================================== */
-button{
-  background:var(--clr-primary);
-  color:#fff;
-  padding:0.5rem 1rem;
-  font-weight:600;
-  border:none;
-  border-radius:var(--radius);
-  cursor:pointer;
-  transition:background .2s;
-  font-size:0.875rem;
+button {
+  background: var(--clr-primary);
+  color: #fff;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background .2s;
+  font-size: 0.875rem;
 }
-button:hover{background:var(--clr-primary-hover)}
-button:disabled{background:#9ca3af;cursor:not-allowed}
+
+button:hover {
+  background: var(--clr-primary-hover)
+}
+
+button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed
+}
 
 /* === ERROR CONTAINER ==================================== */
-.error{
-  background:var(--clr-error-bg);
-  border:1px solid var(--clr-error);
-  color:var(--clr-error);
-  padding:1rem;
-  margin-bottom:1.5rem;
-  border-radius:var(--radius);
+.error {
+  background: var(--clr-error-bg);
+  border: 1px solid var(--clr-error);
+  color: var(--clr-error);
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  border-radius: var(--radius);
 }
 
 /* === TABLES ============================================= */
@@ -1063,12 +1127,12 @@ button:disabled{background:#9ca3af;cursor:not-allowed}
 
 
 /* === COMPANY LOGO ======================================= */
-.company-logo{
-  width:24px;
-  height:24px;
-  border-radius:4px;
-  object-fit:contain;
-  vertical-align:middle;
+.company-logo {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  object-fit: contain;
+  vertical-align: middle;
 }
 
 .company-logo-placeholder {
@@ -1109,60 +1173,13 @@ table td strong {
 .favorites,
 .all-stocks,
 .portfolio,
-.todays-earnings {
+.todays-earnings,
+.heatmap-preview {
   margin-bottom: 1.5rem;
-  border: 2px solid #9ca3af;
+  border: 1px solid var(--clr-border);
   border-radius: 8px;
-  padding: 1rem;
   background: var(--clr-surface);
-}
-
-/* Unified section headers */
-.favorites h2,
-.all-stocks h2,
-.portfolio h2,
-.section-title,
-.todays-earnings h2 {
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin: 1.5rem 0 0.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-family: var(--font-sans);
-  letter-spacing: -0.01em;
-  color: var(--clr-text);
-}
-
-/* Unified table headers */
-.favorites table th,
-.portfolio table th,
-.all-stocks table th,
-.todays-earnings table th {
-  font-size: 0.875rem;
-  font-weight: 600;
-  font-family: var(--font-sans);
-  letter-spacing: 0.01em;
-  color: var(--clr-text);
-  background-color: #f5f5f5; /* Light gray background for headers */
-  transition: background-color 0.2s ease;
-  text-transform: uppercase;
-  padding: 0.75rem 0.5rem;
-  border-bottom: 2px solid var(--clr-border);
-}
-
-/* Unified table cells */
-.favorites table td,
-.portfolio table td,
-.all-stocks table td,
-.todays-earnings table td {
-  font-size: 0.95rem;
-  font-weight: 400;
-  font-family: var(--font-sans);
-  letter-spacing: 0.01em;
-  color: var(--clr-text);
-  padding: 0.75rem 0.5rem;
-  border-bottom: 1px solid var(--clr-border);
+  box-shadow: var(--shadow);
 }
 
 /* Unified ticker styling */
@@ -1191,16 +1208,7 @@ table td strong {
   line-height: 1.5;
 }
 
-.portfolio-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 1.1rem !important;
-  font-weight: 600 !important;
-  font-family: var(--font-sans);
-  letter-spacing: -0.01em;
-  color: var(--clr-text);
-}
+
 
 .portfolio-header span {
   font-size: 1.1rem;
@@ -1437,7 +1445,9 @@ table td strong {
   gap: 1rem;
 }
 
-.header-main h2 {
+/* Unified Section Header Title */
+.header-main h2,
+.portfolio-header {
   margin: 0;
   flex-shrink: 0;
   height: 42px;
@@ -1445,9 +1455,11 @@ table td strong {
   align-items: center;
   gap: 0.5rem;
   line-height: 1;
-  font-size: 1.5rem;
+  font-size: 1.1rem;
   font-weight: 600;
+  letter-spacing: -0.01em;
   color: var(--clr-text);
+  font-family: var(--font-sans);
 }
 
 /* Unified section icon styling - minimalist */
@@ -1539,7 +1551,8 @@ h2:hover .section-icon {
   align-items: center;
   justify-content: flex-start;
   height: 100%;
-  margin-left: 0.5rem; /* Posun ikoniek doprava */
+  margin-left: 0.5rem;
+  /* Posun ikoniek doprava */
 }
 
 .toggle-icon {
@@ -1754,7 +1767,8 @@ h2:hover .section-icon {
 }
 
 .custom-dropdown.sector-filter {
-  min-width: 250px; /* Wider for "All Sectors (X available)" text */
+  min-width: 250px;
+  /* Wider for "All Sectors (X available)" text */
 }
 
 .custom-dropdown-trigger {
@@ -1915,46 +1929,59 @@ h2:hover .section-icon {
   border-color: var(--clr-primary);
 }
 
-.favorites h2::before,.all-stocks h2::before,.portfolio h2::before,.section-title::before,.todays-earnings h2::before{
-  content:attr(data-icon);
-  font-size:1em;
+.favorites h2::before,
+.all-stocks h2::before,
+.portfolio h2::before,
+.section-title::before,
+.todays-earnings h2::before {
+  content: attr(data-icon);
+  font-size: 1em;
 }
 
-.favorite-btn{
-  background:none;
-  border:none;
-  font-size:1.25rem;
-  cursor:pointer;
-  transition:all .15s;
-  padding:0.25rem;
+.favorite-btn {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: all .15s;
+  padding: 0.25rem;
   color: #d1d5db;
-  line-height:1;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  width:100%;
-  height:1.5rem;
-  margin:0 auto;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 1.5rem;
+  margin: 0 auto;
 }
-.favorite-btn:hover{
-  transform:scale(1.1);
+
+.favorite-btn:hover {
+  transform: scale(1.1);
   color: #fbbf24;
 }
-.favorite-btn.favorited{
+
+.favorite-btn.favorited {
   color: #fbbf24;
 }
 
 /* === FOOTER ============================================= */
-.footer{
-  text-align:center;
-  margin-top:2rem;
-  padding-top:1rem;
-  border-top:1px solid var(--clr-border);
-  color:var(--clr-subtext);
-  font-size:0.75rem;
+.footer {
+  text-align: center;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--clr-border);
+  color: var(--clr-subtext);
+  font-size: 0.75rem;
 }
-.footer a{color:var(--clr-primary);text-decoration:none}
-.footer a:hover{text-decoration:underline}
+
+.footer a {
+  color: var(--clr-primary);
+  text-decoration: none
+}
+
+.footer a:hover {
+  text-decoration: underline
+}
 
 /* Legacy controls styles - kept for compatibility */
 .controls-container {
@@ -2001,32 +2028,53 @@ h2:hover .section-icon {
 }
 
 /* === RESPONSIVE ========================================= */
-@media(max-width:640px){
-  body{padding:0.25rem}
-  .container{padding:0.75rem}
-  th,td{padding:0.75rem 0.5rem;font-size:0.8rem}
-  .header h1{font-size:1.75rem}
+@media(max-width:640px) {
+  body {
+    padding: 0.25rem
+  }
+
+  .container {
+    padding: 0.75rem
+  }
+
+  th,
+  td {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.8rem
+  }
+
+  .header h1 {
+    font-size: 1.75rem
+  }
+
   /* .brand uses inline spans, no gap needed */
-  .header p{font-size:0.875rem;max-width:100%}
-  .company-logo{width:20px;height:20px}
-  
+  .header p {
+    font-size: 0.875rem;
+    max-width: 100%
+  }
+
+  .company-logo {
+    width: 20px;
+    height: 20px
+  }
+
   /* Mobile responsive for section header */
   .section-header {
     padding: 0.75rem;
     gap: 0.75rem;
   }
-  
+
   .header-main {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
   }
-  
+
   .phase-indicators {
     width: 100%;
     justify-content: flex-start;
   }
-  
+
   .header-controls {
     grid-template-columns: 1fr;
     gap: 1rem;
@@ -2065,26 +2113,26 @@ h2:hover .section-icon {
     align-items: flex-start;
     width: 100%;
   }
-  
+
   .search-section {
     width: 100%;
   }
-  
+
   .search-input {
     width: 100%;
     max-width: none;
   }
-  
+
   .filter-section {
     width: 100%;
     justify-content: space-between;
     gap: 0.5rem;
   }
-  
+
   .favorites-toggle {
     flex-shrink: 0;
   }
-  
+
   .custom-dropdown.category-filter,
   .custom-dropdown.sector-filter {
     flex: 1;
@@ -2092,46 +2140,192 @@ h2:hover .section-icon {
     width: 100%;
     max-width: 100%;
   }
-  
+
   .custom-dropdown.sector-filter {
-    min-width: 180px; /* Wider for sector text */
+    min-width: 180px;
+    /* Wider for sector text */
   }
-  
+
   .stock-count {
     align-items: flex-start;
     text-align: left;
     min-width: auto;
   }
-  
-     /* Mobile column adjustments for main stock tables */
-   .all-stocks table th:nth-child(1), .all-stocks table td:nth-child(1) { width: 10%; text-align: center; } /* Logo */
-   .all-stocks table th:nth-child(2), .all-stocks table td:nth-child(2) { width: 12%; text-align: center; } /* Ticker */
-   .all-stocks table th:nth-child(3), .all-stocks table td:nth-child(3) { width: 18%; text-align: left; } /* Company Name */
-   .all-stocks table th:nth-child(4), .all-stocks table td:nth-child(4) { width: 15%; text-align: center; } /* Market Cap */
-   .all-stocks table th:nth-child(5), .all-stocks table td:nth-child(5) { width: 18%; text-align: center; } /* Pre-Market Price */
-   .all-stocks table th:nth-child(6), .all-stocks table td:nth-child(6) { width: 12%; text-align: center; } /* % Change */
-   .all-stocks table th:nth-child(7), .all-stocks table td:nth-child(7) { width: 12%; text-align: center; } /* Market Cap Diff */
-      .all-stocks table th:nth-child(8), .all-stocks table td:nth-child(8) { width: 12%; text-align: center; } /* Favorite */
 
-   /* Mobile column adjustments for favorites table */
-   .favorites table th:nth-child(1), .favorites table td:nth-child(1) { width: 9%; text-align: center; } /* Logo */
-   .favorites table th:nth-child(2), .favorites table td:nth-child(2) { width: 10%; text-align: center; } /* Ticker */
-   .favorites table th:nth-child(3), .favorites table td:nth-child(3) { width: 16%; text-align: left; } /* Company Name */
-   .favorites table th:nth-child(4), .favorites table td:nth-child(4) { width: 13%; text-align: center; } /* Market Cap */
-   .favorites table th:nth-child(5), .favorites table td:nth-child(5) { width: 15%; text-align: center; } /* Current Price */
-   .favorites table th:nth-child(6), .favorites table td:nth-child(6) { width: 11%; text-align: center; } /* % Change */
-     .favorites table th:nth-child(7), .favorites table td:nth-child(7) { width: 11%; text-align: center; } /* Market Cap Diff */
-  .favorites table th:nth-child(8), .favorites table td:nth-child(8) { width: 16%; text-align: center; } /* Favorite */
+  /* Mobile column adjustments for main stock tables */
+  .all-stocks table th:nth-child(1),
+  .all-stocks table td:nth-child(1) {
+    width: 10%;
+    text-align: center;
+  }
 
-        /* Mobile column adjustments for earnings tables */
-       .todays-earnings table th:nth-child(1), .todays-earnings table td:nth-child(1) { width: 6%; text-align: center; } /* Logo */
-   .todays-earnings table th:nth-child(2), .todays-earnings table td:nth-child(2) { width: 10%; text-align: center; } /* Ticker */
-   .todays-earnings table th:nth-child(3), .todays-earnings table td:nth-child(3) { width: 16%; text-align: left; } /* Company Name */
-   .todays-earnings table th:nth-child(4), .todays-earnings table td:nth-child(4) { width: 12%; text-align: center; white-space: nowrap; } /* Mkt Cap */
-   .todays-earnings table th:nth-child(5), .todays-earnings table td:nth-child(5) { width: 12%; text-align: center; } /* EPS (Est/Rep) */
-   .todays-earnings table th:nth-child(6), .todays-earnings table td:nth-child(6) { width: 12%; text-align: center; } /* Revenue (Est/Rep) */
-   .todays-earnings table th:nth-child(7), .todays-earnings table td:nth-child(7) { width: 10%; text-align: center; } /* % Change */
-   .todays-earnings table th:nth-child(8), .todays-earnings table td:nth-child(8) { width: 12%; text-align: center; } /* Cap Diff */
+  /* Logo */
+  .all-stocks table th:nth-child(2),
+  .all-stocks table td:nth-child(2) {
+    width: 12%;
+    text-align: center;
+  }
+
+  /* Ticker */
+  .all-stocks table th:nth-child(3),
+  .all-stocks table td:nth-child(3) {
+    width: 18%;
+    text-align: left;
+  }
+
+  /* Company Name */
+  .all-stocks table th:nth-child(4),
+  .all-stocks table td:nth-child(4) {
+    width: 15%;
+    text-align: center;
+  }
+
+  /* Market Cap */
+  .all-stocks table th:nth-child(5),
+  .all-stocks table td:nth-child(5) {
+    width: 18%;
+    text-align: center;
+  }
+
+  /* Pre-Market Price */
+  .all-stocks table th:nth-child(6),
+  .all-stocks table td:nth-child(6) {
+    width: 12%;
+    text-align: center;
+  }
+
+  /* % Change */
+  .all-stocks table th:nth-child(7),
+  .all-stocks table td:nth-child(7) {
+    width: 12%;
+    text-align: center;
+  }
+
+  /* Market Cap Diff */
+  .all-stocks table th:nth-child(8),
+  .all-stocks table td:nth-child(8) {
+    width: 12%;
+    text-align: center;
+  }
+
+  /* Favorite */
+
+  /* Mobile column adjustments for favorites table */
+  .favorites table th:nth-child(1),
+  .favorites table td:nth-child(1) {
+    width: 9%;
+    text-align: center;
+  }
+
+  /* Logo */
+  .favorites table th:nth-child(2),
+  .favorites table td:nth-child(2) {
+    width: 10%;
+    text-align: center;
+  }
+
+  /* Ticker */
+  .favorites table th:nth-child(3),
+  .favorites table td:nth-child(3) {
+    width: 16%;
+    text-align: left;
+  }
+
+  /* Company Name */
+  .favorites table th:nth-child(4),
+  .favorites table td:nth-child(4) {
+    width: 13%;
+    text-align: center;
+  }
+
+  /* Market Cap */
+  .favorites table th:nth-child(5),
+  .favorites table td:nth-child(5) {
+    width: 15%;
+    text-align: center;
+  }
+
+  /* Current Price */
+  .favorites table th:nth-child(6),
+  .favorites table td:nth-child(6) {
+    width: 11%;
+    text-align: center;
+  }
+
+  /* % Change */
+  .favorites table th:nth-child(7),
+  .favorites table td:nth-child(7) {
+    width: 11%;
+    text-align: center;
+  }
+
+  /* Market Cap Diff */
+  .favorites table th:nth-child(8),
+  .favorites table td:nth-child(8) {
+    width: 16%;
+    text-align: center;
+  }
+
+  /* Favorite */
+
+  /* Mobile column adjustments for earnings tables */
+  .todays-earnings table th:nth-child(1),
+  .todays-earnings table td:nth-child(1) {
+    width: 6%;
+    text-align: center;
+  }
+
+  /* Logo */
+  .todays-earnings table th:nth-child(2),
+  .todays-earnings table td:nth-child(2) {
+    width: 10%;
+    text-align: center;
+  }
+
+  /* Ticker */
+  .todays-earnings table th:nth-child(3),
+  .todays-earnings table td:nth-child(3) {
+    width: 16%;
+    text-align: left;
+  }
+
+  /* Company Name */
+  .todays-earnings table th:nth-child(4),
+  .todays-earnings table td:nth-child(4) {
+    width: 12%;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  /* Mkt Cap */
+  .todays-earnings table th:nth-child(5),
+  .todays-earnings table td:nth-child(5) {
+    width: 12%;
+    text-align: center;
+  }
+
+  /* EPS (Est/Rep) */
+  .todays-earnings table th:nth-child(6),
+  .todays-earnings table td:nth-child(6) {
+    width: 12%;
+    text-align: center;
+  }
+
+  /* Revenue (Est/Rep) */
+  .todays-earnings table th:nth-child(7),
+  .todays-earnings table td:nth-child(7) {
+    width: 10%;
+    text-align: center;
+  }
+
+  /* % Change */
+  .todays-earnings table th:nth-child(8),
+  .todays-earnings table td:nth-child(8) {
+    width: 12%;
+    text-align: center;
+  }
+
+  /* Cap Diff */
 }
 
 /* === TRADING HOURS INFO BOX ========================== */
@@ -2140,7 +2334,7 @@ h2:hover .section-icon {
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 12px;
   padding: 1.25rem;
-  box-shadow: 
+  box-shadow:
     0 4px 6px -1px rgba(0, 0, 0, 0.1),
     0 2px 4px -1px rgba(0, 0, 0, 0.06);
   min-width: 280px;
@@ -2163,8 +2357,15 @@ h2:hover .section-icon {
 }
 
 @keyframes gradient-flow {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 .trading-hours-title {
@@ -2247,33 +2448,54 @@ h2:hover .section-icon {
 }
 
 /* Color coding for different sessions */
-.pre-market .bullet { color: #f59e0b; }
-.market-hours .bullet { color: #16a34a; }
-.after-hours .bullet { color: #3b82f6; }
+.pre-market .bullet {
+  color: #f59e0b;
+}
+
+.market-hours .bullet {
+  color: #16a34a;
+}
+
+.after-hours .bullet {
+  color: #3b82f6;
+}
 
 /* Inactive state - all gray */
-.hours-item.inactive .bullet { 
-  color: #6b7280 !important; /* Gray color for inactive sessions */
+.hours-item.inactive .bullet {
+  color: #6b7280 !important;
+  /* Gray color for inactive sessions */
 }
-.hours-item.inactive .session-name { 
-  color: #6b7280 !important; /* Gray color for inactive sessions */
-  font-weight: 400 !important; /* Normal weight for inactive */
+
+.hours-item.inactive .session-name {
+  color: #6b7280 !important;
+  /* Gray color for inactive sessions */
+  font-weight: 400 !important;
+  /* Normal weight for inactive */
 }
-.hours-item.inactive .session-time { 
-  color: #9ca3af !important; /* Lighter gray for time */
+
+.hours-item.inactive .session-time {
+  color: #9ca3af !important;
+  /* Lighter gray for time */
 }
 
 /* Active state - dark green and bold */
-.hours-item.active .bullet { 
-  color: #15803d !important; /* Dark green for active session */
+.hours-item.active .bullet {
+  color: #15803d !important;
+  /* Dark green for active session */
 }
-.hours-item.active .session-name { 
-  color: #15803d !important; /* Dark green for active session */
-  font-weight: 700 !important; /* Bold for active session */
+
+.hours-item.active .session-name {
+  color: #15803d !important;
+  /* Dark green for active session */
+  font-weight: 700 !important;
+  /* Bold for active session */
 }
-.hours-item.active .session-time { 
-  color: #15803d !important; /* Dark green for active time */
-  font-weight: 600 !important; /* Semi-bold for active time */
+
+.hours-item.active .session-time {
+  color: #15803d !important;
+  /* Dark green for active time */
+  font-weight: 600 !important;
+  /* Semi-bold for active time */
 }
 
 /* === SEO CONTENT OPTIMIZATION ========================= */
@@ -2331,32 +2553,35 @@ h2:hover .section-icon {
 
 .stock-row-skeleton {
   min-height: 48px;
-  background: linear-gradient(90deg, 
-    var(--clr-bg) 25%, 
-    rgba(0, 0, 0, 0.02) 50%, 
-    var(--clr-bg) 75%
-  );
+  background: linear-gradient(90deg,
+      var(--clr-bg) 25%,
+      rgba(0, 0, 0, 0.02) 50%,
+      var(--clr-bg) 75%);
   background-size: 200% 100%;
   animation: skeleton-loading 1.5s infinite;
 }
 
 @keyframes skeleton-loading {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
 }
 
-@media (prefers-color-scheme: dark) {
+.dark {
   .company-logo-placeholder {
     background: linear-gradient(135deg, #374151, #4b5563);
     color: #9ca3af;
   }
-  
+
   .stock-row-skeleton {
-    background: linear-gradient(90deg, 
-      var(--clr-bg) 25%, 
-      rgba(255, 255, 255, 0.05) 50%, 
-      var(--clr-bg) 75%
-    );
+    background: linear-gradient(90deg,
+        var(--clr-bg) 25%,
+        rgba(255, 255, 255, 0.05) 50%,
+        var(--clr-bg) 75%);
   }
 }
 
@@ -2454,36 +2679,36 @@ h2:hover .section-icon {
   border: 1px solid #3b82f6;
 }
 
-@media (prefers-color-scheme: dark) {
+.dark {
   .report-time.pre-market {
     background: #451a03;
     color: #fbbf24;
     border-color: #f59e0b;
   }
-  
+
   .report-time.after-market {
     background: #1e3a8a;
     color: #93c5fd;
     border-color: #3b82f6;
   }
-  
+
   .no-earnings {
     background: var(--clr-surface);
     border-color: var(--clr-border);
   }
 }
 
-@media (prefers-color-scheme: dark) {
+.dark {
   .loading-indicator {
     background: var(--clr-surface);
     border-color: var(--clr-border);
   }
-  
+
   .end-of-list {
     background: var(--clr-surface);
     border-color: var(--clr-border);
   }
-} 
+}
 
 /* === TABLE STYLING STANDARDIZATION ===================== */
 table {
@@ -2512,10 +2737,12 @@ table {
 .favorites table,
 .all-stocks table,
 .portfolio table {
-  min-width: 1000px; /* Minimum width to prevent squishing */
+  min-width: 1000px;
+  /* Minimum width to prevent squishing */
 }
 
-th, td {
+th,
+td {
   padding: 0.75rem 0.5rem;
   text-align: left;
   border-bottom: 1px solid var(--clr-border);
@@ -2530,11 +2757,13 @@ th, td {
 
 /* Text alignment: text values left, numeric values center */
 table td {
-  text-align: left; /* Default for text */
+  text-align: left;
+  /* Default for text */
 }
 
 /* Numeric columns - center aligned */
-table td strong, /* Ticker */
+table td strong,
+/* Ticker */
 table td.positive,
 table td.negative {
   text-align: center;
@@ -2561,45 +2790,6 @@ table td.negative {
 .portfolio table td:nth-child(6),
 .portfolio table td:nth-child(7),
 .portfolio table td:nth-child(8),
-.portfolio table td:nth-child(9),
-.portfolio table td:nth-child(10) {
-  text-align: center;
-}
-
-th {
-  background-color: #f9fafb;
-  font-weight: 600;
-  color: #374151;
-  text-transform: none;
-  letter-spacing: 0.025em;
-  vertical-align: middle;
-  white-space: nowrap;
-  word-wrap: normal;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-th.sortable {
-  cursor: pointer;
-  transition: background-color 0.15s ease;
-  position: relative;
-}
-
-th.sortable svg {
-  margin-left: 4px;
-  vertical-align: baseline;
-  display: inline-block;
-}
-
-th.sortable:hover {
-  background-color: #f3f4f6;
-}
-
-@media (prefers-color-scheme: dark) {
-  th.sortable:hover {
-    background-color: #374151;
-  }
-}
 
 tr:not(:last-child) td {
   border-bottom: 1px solid var(--clr-border);
@@ -2651,90 +2841,120 @@ tr:hover {
 
 /* Standardized table column widths - all tables now have 10 columns (added Sector and Industry) */
 /* Column 1: Logo */
-.favorites table th:nth-child(1), .favorites table td:nth-child(1),
-.all-stocks table th:nth-child(1), .all-stocks table td:nth-child(1),
-.portfolio table th:nth-child(1), .portfolio table td:nth-child(1) {
+.favorites table th:nth-child(1),
+.favorites table td:nth-child(1),
+.all-stocks table th:nth-child(1),
+.all-stocks table td:nth-child(1),
+.portfolio table th:nth-child(1),
+.portfolio table td:nth-child(1) {
   width: 6%;
   text-align: center;
   min-width: 70px;
 }
 
 /* Column 2: Ticker */
-.favorites table th:nth-child(2), .favorites table td:nth-child(2),
-.all-stocks table th:nth-child(2), .all-stocks table td:nth-child(2),
-.portfolio table th:nth-child(2), .portfolio table td:nth-child(2) {
+.favorites table th:nth-child(2),
+.favorites table td:nth-child(2),
+.all-stocks table th:nth-child(2),
+.all-stocks table td:nth-child(2),
+.portfolio table th:nth-child(2),
+.portfolio table td:nth-child(2) {
   width: 7%;
   text-align: center;
   min-width: 70px;
 }
 
 /* Column 3: Company Name */
-.favorites table th:nth-child(3), .favorites table td:nth-child(3),
-.all-stocks table th:nth-child(3), .all-stocks table td:nth-child(3),
-.portfolio table th:nth-child(3), .portfolio table td:nth-child(3) {
+.favorites table th:nth-child(3),
+.favorites table td:nth-child(3),
+.all-stocks table th:nth-child(3),
+.all-stocks table td:nth-child(3),
+.portfolio table th:nth-child(3),
+.portfolio table td:nth-child(3) {
   width: 15%;
   text-align: left;
   min-width: 120px;
 }
 
 /* Column 4: Sector (NEW) */
-.favorites table th:nth-child(4), .favorites table td:nth-child(4),
-.all-stocks table th:nth-child(4), .all-stocks table td:nth-child(4),
-.portfolio table th:nth-child(4), .portfolio table td:nth-child(4) {
+.favorites table th:nth-child(4),
+.favorites table td:nth-child(4),
+.all-stocks table th:nth-child(4),
+.all-stocks table td:nth-child(4),
+.portfolio table th:nth-child(4),
+.portfolio table td:nth-child(4) {
   width: 12%;
   text-align: left;
   min-width: 100px;
 }
 
 /* Column 5: Industry (NEW) */
-.favorites table th:nth-child(5), .favorites table td:nth-child(5),
-.all-stocks table th:nth-child(5), .all-stocks table td:nth-child(5),
-.portfolio table th:nth-child(5), .portfolio table td:nth-child(5) {
+.favorites table th:nth-child(5),
+.favorites table td:nth-child(5),
+.all-stocks table th:nth-child(5),
+.all-stocks table td:nth-child(5),
+.portfolio table th:nth-child(5),
+.portfolio table td:nth-child(5) {
   width: 12%;
   text-align: left;
   min-width: 100px;
 }
 
 /* Column 6: Market Cap / # */
-.favorites table th:nth-child(6), .favorites table td:nth-child(6),
-.all-stocks table th:nth-child(6), .all-stocks table td:nth-child(6),
-.portfolio table th:nth-child(6), .portfolio table td:nth-child(6) {
+.favorites table th:nth-child(6),
+.favorites table td:nth-child(6),
+.all-stocks table th:nth-child(6),
+.all-stocks table td:nth-child(6),
+.portfolio table th:nth-child(6),
+.portfolio table td:nth-child(6) {
   width: 10%;
   text-align: center;
   min-width: 90px;
 }
 
 /* Column 7: Current Price */
-.favorites table th:nth-child(7), .favorites table td:nth-child(7),
-.all-stocks table th:nth-child(7), .all-stocks table td:nth-child(7),
-.portfolio table th:nth-child(7), .portfolio table td:nth-child(7) {
+.favorites table th:nth-child(7),
+.favorites table td:nth-child(7),
+.all-stocks table th:nth-child(7),
+.all-stocks table td:nth-child(7),
+.portfolio table th:nth-child(7),
+.portfolio table td:nth-child(7) {
   width: 10%;
   text-align: center;
   min-width: 90px;
 }
 
 /* Column 8: % Change */
-.favorites table th:nth-child(8), .favorites table td:nth-child(8),
-.all-stocks table th:nth-child(8), .all-stocks table td:nth-child(8),
-.portfolio table th:nth-child(8), .portfolio table td:nth-child(8) {
+.favorites table th:nth-child(8),
+.favorites table td:nth-child(8),
+.all-stocks table th:nth-child(8),
+.all-stocks table td:nth-child(8),
+.portfolio table th:nth-child(8),
+.portfolio table td:nth-child(8) {
   width: 9%;
   text-align: center;
   min-width: 80px;
 }
 
 /* Column 9: Market Cap Diff / Value */
-.favorites table th:nth-child(9), .favorites table td:nth-child(9),
-.all-stocks table th:nth-child(9), .all-stocks table td:nth-child(9),
-.portfolio table th:nth-child(9), .portfolio table td:nth-child(9) {
+.favorites table th:nth-child(9),
+.favorites table td:nth-child(9),
+.all-stocks table th:nth-child(9),
+.all-stocks table td:nth-child(9),
+.portfolio table th:nth-child(9),
+.portfolio table td:nth-child(9) {
   width: 10%;
   text-align: center;
   min-width: 90px;
 }
 
 /* Column 10: Favorite / Delete */
-.favorites table th:nth-child(10), .favorites table td:nth-child(10),
-.all-stocks table th:nth-child(10), .all-stocks table td:nth-child(10),
-.portfolio table th:nth-child(10), .portfolio table td:nth-child(10) {
+.favorites table th:nth-child(10),
+.favorites table td:nth-child(10),
+.all-stocks table th:nth-child(10),
+.all-stocks table td:nth-child(10),
+.portfolio table th:nth-child(10),
+.portfolio table td:nth-child(10) {
   width: 10%;
   text-align: center;
   min-width: 80px;
@@ -2767,14 +2987,63 @@ tr:hover {
 }
 
 /* Standardized table column widths for earnings table */
-.todays-earnings table th:nth-child(1), .todays-earnings table td:nth-child(1) { width: 5%; text-align: center; } /* Logo */
-.todays-earnings table th:nth-child(2), .todays-earnings table td:nth-child(2) { width: 8%; text-align: center; } /* Ticker */
-.todays-earnings table th:nth-child(3), .todays-earnings table td:nth-child(3) { width: 18%; text-align: left; } /* Company Name */
-.todays-earnings table th:nth-child(4), .todays-earnings table td:nth-child(4) { width: 12%; text-align: center; white-space: nowrap; } /* Mkt Cap */
-.todays-earnings table th:nth-child(5), .todays-earnings table td:nth-child(5) { width: 14%; text-align: center; } /* EPS (Est/Rep) */
-.todays-earnings table th:nth-child(6), .todays-earnings table td:nth-child(6) { width: 14%; text-align: center; } /* Revenue (Est/Rep) */
-.todays-earnings table th:nth-child(7), .todays-earnings table td:nth-child(7) { width: 10%; text-align: center; } /* % Change */
-.todays-earnings table th:nth-child(8), .todays-earnings table td:nth-child(8) { width: 13%; text-align: center; } /* Cap Diff */
+.todays-earnings table th:nth-child(1),
+.todays-earnings table td:nth-child(1) {
+  width: 5%;
+  text-align: center;
+}
+
+/* Logo */
+.todays-earnings table th:nth-child(2),
+.todays-earnings table td:nth-child(2) {
+  width: 8%;
+  text-align: center;
+}
+
+/* Ticker */
+.todays-earnings table th:nth-child(3),
+.todays-earnings table td:nth-child(3) {
+  width: 18%;
+  text-align: left;
+}
+
+/* Company Name */
+.todays-earnings table th:nth-child(4),
+.todays-earnings table td:nth-child(4) {
+  width: 12%;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Mkt Cap */
+.todays-earnings table th:nth-child(5),
+.todays-earnings table td:nth-child(5) {
+  width: 14%;
+  text-align: center;
+}
+
+/* EPS (Est/Rep) */
+.todays-earnings table th:nth-child(6),
+.todays-earnings table td:nth-child(6) {
+  width: 14%;
+  text-align: center;
+}
+
+/* Revenue (Est/Rep) */
+.todays-earnings table th:nth-child(7),
+.todays-earnings table td:nth-child(7) {
+  width: 10%;
+  text-align: center;
+}
+
+/* % Change */
+.todays-earnings table th:nth-child(8),
+.todays-earnings table td:nth-child(8) {
+  width: 13%;
+  text-align: center;
+}
+
+/* Cap Diff */
 
 /* Standardized color formatting for earnings table */
 /* Consolidated positive/negative styles are above */
@@ -2784,49 +3053,17 @@ tr:hover {
 .all-stocks table th.active-sort,
 .portfolio table th.active-sort,
 .todays-earnings table th.active-sort {
-  background-color: #e5e5e5; /* Darker gray for active sort */
-}
-
-/* Highlight entire column when sorted - using :has() selector for modern browsers */
-/* Updated for 10 columns: Ticker(2), Sector(4), Industry(5), Market Cap(6), Current Price(7), % Change(8), Cap Diff(9) */
-.favorites table thead tr:has(th.active-sort:nth-child(2)) ~ tbody tr td:nth-child(2),
-.favorites table thead tr:has(th.active-sort:nth-child(4)) ~ tbody tr td:nth-child(4),
-.favorites table thead tr:has(th.active-sort:nth-child(5)) ~ tbody tr td:nth-child(5),
-.favorites table thead tr:has(th.active-sort:nth-child(6)) ~ tbody tr td:nth-child(6),
-.favorites table thead tr:has(th.active-sort:nth-child(7)) ~ tbody tr td:nth-child(7),
-.favorites table thead tr:has(th.active-sort:nth-child(8)) ~ tbody tr td:nth-child(8),
-.favorites table thead tr:has(th.active-sort:nth-child(9)) ~ tbody tr td:nth-child(9) {
-  background-color: rgba(229, 229, 229, 0.2); /* Light gray tint for sorted column */
-}
-
-.all-stocks table thead tr:has(th.active-sort:nth-child(2)) ~ tbody tr td:nth-child(2),
-.all-stocks table thead tr:has(th.active-sort:nth-child(4)) ~ tbody tr td:nth-child(4),
-.all-stocks table thead tr:has(th.active-sort:nth-child(5)) ~ tbody tr td:nth-child(5),
-.all-stocks table thead tr:has(th.active-sort:nth-child(6)) ~ tbody tr td:nth-child(6),
-.all-stocks table thead tr:has(th.active-sort:nth-child(7)) ~ tbody tr td:nth-child(7),
-.all-stocks table thead tr:has(th.active-sort:nth-child(8)) ~ tbody tr td:nth-child(8),
-.all-stocks table thead tr:has(th.active-sort:nth-child(9)) ~ tbody tr td:nth-child(9) {
-  background-color: rgba(229, 229, 229, 0.2);
-}
-
-.todays-earnings table thead tr:has(th.active-sort:nth-child(2)) ~ tbody tr td:nth-child(2),
-.todays-earnings table thead tr:has(th.active-sort:nth-child(3)) ~ tbody tr td:nth-child(3),
-.todays-earnings table thead tr:has(th.active-sort:nth-child(4)) ~ tbody tr td:nth-child(4),
-.todays-earnings table thead tr:has(th.active-sort:nth-child(7)) ~ tbody tr td:nth-child(7),
-.todays-earnings table thead tr:has(th.active-sort:nth-child(8)) ~ tbody tr td:nth-child(8) {
-  background-color: rgba(229, 229, 229, 0.2);
-}
-
-/* Grouped header and cell styles for EPS and Revenue */
-.todays-earnings table th.grouped-header {
-  padding: 0.5rem 0.25rem;
-  vertical-align: bottom;
-}
-
-.todays-earnings table th.grouped-header > div:first-child {
-  font-weight: 600;
-  font-size: 0.875rem;
+  background-color: #e5e5e5;
   margin-bottom: 0.25rem;
+}
+
+/* Dark mode active sort column highlighting */
+.dark .favorites table th.active-sort,
+.dark .all-stocks table th.active-sort,
+.dark .portfolio table th.active-sort,
+.dark .todays-earnings table th.active-sort {
+  background-color: var(--clr-border);
+  color: var(--clr-text);
 }
 
 .todays-earnings table th.grouped-header .sub-header {
@@ -2876,7 +3113,10 @@ tr:hover {
 
 /* Standardized section headers */
 
-.favorites h2, .all-stocks h2, .section-title, .todays-earnings h2 {
+.favorites h2,
+.all-stocks h2,
+.section-title,
+.todays-earnings h2 {
   font-size: 1.1rem;
   font-weight: 600;
   margin: 1.5rem 0 0.5rem;
@@ -2885,7 +3125,10 @@ tr:hover {
   gap: 0.5rem;
 }
 
-.favorites h2::before, .all-stocks h2::before, .section-title::before, .todays-earnings h2::before {
+.favorites h2::before,
+.all-stocks h2::before,
+.section-title::before,
+.todays-earnings h2::before {
   content: attr(data-icon);
   font-size: 1em;
 }
@@ -2938,134 +3181,214 @@ table td strong {
   body {
     padding: 0.25rem;
   }
-  
+
   .container {
     padding: 0.75rem;
   }
-  
-  th, td {
+
+  th,
+  td {
     padding: 0.75rem 0.5rem;
     font-size: 0.8rem;
   }
-  
+
   .header h1 {
     font-size: 1.75rem;
   }
-  
+
   .header p {
     font-size: 0.875rem;
     max-width: 100%;
   }
-  
+
   .company-logo {
     width: 20px;
     height: 20px;
   }
-  
+
   .section-header {
     flex-direction: column;
     gap: 0.5rem;
     align-items: flex-start;
   }
-  
+
   .search-input {
     width: 100%;
     max-width: none;
   }
-  
+
   /* Mobile column widths for main tables - unified for all tables */
   /* Column 1: Logo */
-  .favorites table th:nth-child(1), .favorites table td:nth-child(1),
-  .all-stocks table th:nth-child(1), .all-stocks table td:nth-child(1),
-  .portfolio table th:nth-child(1), .portfolio table td:nth-child(1) {
+  .favorites table th:nth-child(1),
+  .favorites table td:nth-child(1),
+  .all-stocks table th:nth-child(1),
+  .all-stocks table td:nth-child(1),
+  .portfolio table th:nth-child(1),
+  .portfolio table td:nth-child(1) {
     width: 9%;
     text-align: center;
     min-width: 60px;
   }
 
   /* Column 2: Ticker */
-  .favorites table th:nth-child(2), .favorites table td:nth-child(2),
-  .all-stocks table th:nth-child(2), .all-stocks table td:nth-child(2),
-  .portfolio table th:nth-child(2), .portfolio table td:nth-child(2) {
+  .favorites table th:nth-child(2),
+  .favorites table td:nth-child(2),
+  .all-stocks table th:nth-child(2),
+  .all-stocks table td:nth-child(2),
+  .portfolio table th:nth-child(2),
+  .portfolio table td:nth-child(2) {
     width: 9%;
     text-align: center;
   }
 
   /* Column 3: Company Name */
-  .favorites table th:nth-child(3), .favorites table td:nth-child(3),
-  .all-stocks table th:nth-child(3), .all-stocks table td:nth-child(3),
-  .portfolio table th:nth-child(3), .portfolio table td:nth-child(3) {
+  .favorites table th:nth-child(3),
+  .favorites table td:nth-child(3),
+  .all-stocks table th:nth-child(3),
+  .all-stocks table td:nth-child(3),
+  .portfolio table th:nth-child(3),
+  .portfolio table td:nth-child(3) {
     width: 18%;
     text-align: left;
   }
 
   /* Column 4: Sector (NEW) */
-  .favorites table th:nth-child(4), .favorites table td:nth-child(4),
-  .all-stocks table th:nth-child(4), .all-stocks table td:nth-child(4),
-  .portfolio table th:nth-child(4), .portfolio table td:nth-child(4) {
+  .favorites table th:nth-child(4),
+  .favorites table td:nth-child(4),
+  .all-stocks table th:nth-child(4),
+  .all-stocks table td:nth-child(4),
+  .portfolio table th:nth-child(4),
+  .portfolio table td:nth-child(4) {
     width: 10%;
     text-align: left;
   }
 
   /* Column 5: Industry (NEW) */
-  .favorites table th:nth-child(5), .favorites table td:nth-child(5),
-  .all-stocks table th:nth-child(5), .all-stocks table td:nth-child(5),
-  .portfolio table th:nth-child(5), .portfolio table td:nth-child(5) {
+  .favorites table th:nth-child(5),
+  .favorites table td:nth-child(5),
+  .all-stocks table th:nth-child(5),
+  .all-stocks table td:nth-child(5),
+  .portfolio table th:nth-child(5),
+  .portfolio table td:nth-child(5) {
     width: 10%;
     text-align: left;
   }
 
   /* Column 6: Market Cap / # */
-  .favorites table th:nth-child(6), .favorites table td:nth-child(6),
-  .all-stocks table th:nth-child(6), .all-stocks table td:nth-child(6),
-  .portfolio table th:nth-child(6), .portfolio table td:nth-child(6) {
+  .favorites table th:nth-child(6),
+  .favorites table td:nth-child(6),
+  .all-stocks table th:nth-child(6),
+  .all-stocks table td:nth-child(6),
+  .portfolio table th:nth-child(6),
+  .portfolio table td:nth-child(6) {
     width: 10%;
     text-align: center;
   }
 
   /* Column 7: Current Price */
-  .favorites table th:nth-child(7), .favorites table td:nth-child(7),
-  .all-stocks table th:nth-child(7), .all-stocks table td:nth-child(7),
-  .portfolio table th:nth-child(7), .portfolio table td:nth-child(7) {
+  .favorites table th:nth-child(7),
+  .favorites table td:nth-child(7),
+  .all-stocks table th:nth-child(7),
+  .all-stocks table td:nth-child(7),
+  .portfolio table th:nth-child(7),
+  .portfolio table td:nth-child(7) {
     width: 10%;
     text-align: center;
   }
 
   /* Column 8: % Change */
-  .favorites table th:nth-child(8), .favorites table td:nth-child(8),
-  .all-stocks table th:nth-child(8), .all-stocks table td:nth-child(8),
-  .portfolio table th:nth-child(8), .portfolio table td:nth-child(8) {
+  .favorites table th:nth-child(8),
+  .favorites table td:nth-child(8),
+  .all-stocks table th:nth-child(8),
+  .all-stocks table td:nth-child(8),
+  .portfolio table th:nth-child(8),
+  .portfolio table td:nth-child(8) {
     width: 9%;
     text-align: center;
   }
 
   /* Column 9: Market Cap Diff / Value */
-  .favorites table th:nth-child(9), .favorites table td:nth-child(9),
-  .all-stocks table th:nth-child(9), .all-stocks table td:nth-child(9),
-  .portfolio table th:nth-child(9), .portfolio table td:nth-child(9) {
+  .favorites table th:nth-child(9),
+  .favorites table td:nth-child(9),
+  .all-stocks table th:nth-child(9),
+  .all-stocks table td:nth-child(9),
+  .portfolio table th:nth-child(9),
+  .portfolio table td:nth-child(9) {
     width: 10%;
     text-align: center;
   }
 
   /* Column 10: Favorite / Delete */
-  .favorites table th:nth-child(10), .favorites table td:nth-child(10),
-  .all-stocks table th:nth-child(10), .all-stocks table td:nth-child(10),
-  .portfolio table th:nth-child(10), .portfolio table td:nth-child(10) {
+  .favorites table th:nth-child(10),
+  .favorites table td:nth-child(10),
+  .all-stocks table th:nth-child(10),
+  .all-stocks table td:nth-child(10),
+  .portfolio table th:nth-child(10),
+  .portfolio table td:nth-child(10) {
     width: 10%;
     text-align: center;
   }
 
-  
+
   /* Mobile column widths for earnings table */
-  .todays-earnings table th:nth-child(1), .todays-earnings table td:nth-child(1) { width: 6%; text-align: center; } /* Logo */
-  .todays-earnings table th:nth-child(2), .todays-earnings table td:nth-child(2) { width: 10%; text-align: center; } /* Ticker */
-  .todays-earnings table th:nth-child(3), .todays-earnings table td:nth-child(3) { width: 16%; text-align: left; } /* Company Name */
-  .todays-earnings table th:nth-child(4), .todays-earnings table td:nth-child(4) { width: 12%; text-align: center; white-space: nowrap; } /* Mkt Cap */
-  .todays-earnings table th:nth-child(5), .todays-earnings table td:nth-child(5) { width: 12%; text-align: center; } /* EPS (Est/Rep) */
-  .todays-earnings table th:nth-child(6), .todays-earnings table td:nth-child(6) { width: 12%; text-align: center; } /* Revenue (Est/Rep) */
-  .todays-earnings table th:nth-child(7), .todays-earnings table td:nth-child(7) { width: 10%; text-align: center; } /* % Change */
-  .todays-earnings table th:nth-child(8), .todays-earnings table td:nth-child(8) { width: 12%; text-align: center; } /* Cap Diff */
-} 
+  .todays-earnings table th:nth-child(1),
+  .todays-earnings table td:nth-child(1) {
+    width: 6%;
+    text-align: center;
+  }
+
+  /* Logo */
+  .todays-earnings table th:nth-child(2),
+  .todays-earnings table td:nth-child(2) {
+    width: 10%;
+    text-align: center;
+  }
+
+  /* Ticker */
+  .todays-earnings table th:nth-child(3),
+  .todays-earnings table td:nth-child(3) {
+    width: 16%;
+    text-align: left;
+  }
+
+  /* Company Name */
+  .todays-earnings table th:nth-child(4),
+  .todays-earnings table td:nth-child(4) {
+    width: 12%;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  /* Mkt Cap */
+  .todays-earnings table th:nth-child(5),
+  .todays-earnings table td:nth-child(5) {
+    width: 12%;
+    text-align: center;
+  }
+
+  /* EPS (Est/Rep) */
+  .todays-earnings table th:nth-child(6),
+  .todays-earnings table td:nth-child(6) {
+    width: 12%;
+    text-align: center;
+  }
+
+  /* Revenue (Est/Rep) */
+  .todays-earnings table th:nth-child(7),
+  .todays-earnings table td:nth-child(7) {
+    width: 10%;
+    text-align: center;
+  }
+
+  /* % Change */
+  .todays-earnings table th:nth-child(8),
+  .todays-earnings table td:nth-child(8) {
+    width: 12%;
+    text-align: center;
+  }
+
+  /* Cap Diff */
+}
 
 /* Ultra-mobile optimization for very small screens */
 @media (max-width: 480px) {
@@ -3073,41 +3396,42 @@ table td strong {
     padding: 0.125rem;
     font-size: 0.85rem;
   }
-  
+
   .container {
     padding: 0.5rem;
   }
-  
+
   /* Even more compact table layout */
-  th, td {
+  th,
+  td {
     padding: 0.5rem 0.25rem;
     font-size: 0.75rem;
   }
-  
+
   .header h1 {
     font-size: 1.5rem;
   }
-  
+
   .header p {
     font-size: 0.8rem;
   }
-  
+
   .company-logo {
     width: 18px;
     height: 18px;
   }
-  
+
   /* Compact section headers */
   .section-header h2 {
     font-size: 1.1rem;
   }
-  
+
   /* Optimized search input */
   .search-input {
     font-size: 0.9rem;
     padding: 0.75rem 0.875rem;
   }
-  
+
   /* Compact filter controls - only for custom dropdown */
   .custom-dropdown.sector-filter .custom-dropdown-trigger {
     font-size: 0.9rem;
@@ -3121,23 +3445,24 @@ table td strong {
     flex-direction: row;
     gap: 1.5rem;
   }
-  
+
   .market-indicators-section .market-indicators {
     grid-template-columns: repeat(4, 1fr);
   }
-  
+
   .trading-hours-box {
     max-width: 300px;
   }
 }
 
 /* High-DPI display optimization */
-@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+@media (-webkit-min-device-pixel-ratio: 2),
+(min-resolution: 192dpi) {
   .company-logo {
     image-rendering: -webkit-optimize-contrast;
     image-rendering: crisp-edges;
   }
-  
+
   table {
     border-width: 0.5px;
   }
@@ -3147,39 +3472,43 @@ table td strong {
 
 /* Mobile table scrolling optimization */
 @media (max-width: 640px) {
+
   /* Enable horizontal scrolling for tables on mobile */
-  .favorites, .all-stocks, .todays-earnings {
+  .favorites,
+  .all-stocks,
+  .todays-earnings {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: thin;
     scrollbar-color: var(--clr-border) transparent;
   }
-  
+
   .favorites::-webkit-scrollbar,
   .all-stocks::-webkit-scrollbar,
   .todays-earnings::-webkit-scrollbar {
     height: 4px;
   }
-  
+
   .favorites::-webkit-scrollbar-track,
   .all-stocks::-webkit-scrollbar-track,
   .todays-earnings::-webkit-scrollbar-track {
     background: transparent;
   }
-  
+
   .favorites::-webkit-scrollbar-thumb,
   .all-stocks::-webkit-scrollbar-thumb,
   .todays-earnings::-webkit-scrollbar-thumb {
     background: var(--clr-border);
     border-radius: 2px;
   }
-  
+
   /* Ensure tables don't break layout */
   table {
-    min-width: 600px; /* Minimum width to prevent squishing */
+    min-width: 600px;
+    /* Minimum width to prevent squishing */
     white-space: nowrap;
   }
-  
+
   /* Allow text wrapping in specific columns */
   .all-stocks table td:nth-child(3),
   .favorites table td:nth-child(3),
@@ -3195,19 +3524,19 @@ table td strong {
   .loading-indicator {
     padding: 2rem 1rem;
   }
-  
+
   .loading-indicator svg {
     width: 2rem;
     height: 2rem;
   }
-  
+
   /* Improved skeleton loading for mobile */
   .stock-row-skeleton {
     height: 60px;
     margin: 0.5rem 0;
     border-radius: 0.5rem;
   }
-  
+
   .company-logo-placeholder {
     width: 24px;
     height: 24px;
@@ -3217,17 +3546,22 @@ table td strong {
 
 /* Mobile navigation improvements */
 @media (max-width: 640px) {
+
   /* Better section spacing */
-  .favorites, .all-stocks, .todays-earnings {
+  .favorites,
+  .all-stocks,
+  .todays-earnings {
     margin-bottom: 2rem;
     padding: 1rem;
     background: var(--clr-surface);
     border-radius: 0.75rem;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   }
-  
+
   /* Enhanced section headers */
-  .favorites h2, .all-stocks h2, .todays-earnings h2 {
+  .favorites h2,
+  .all-stocks h2,
+  .todays-earnings h2 {
     font-size: 1.25rem;
     margin-bottom: 1rem;
     padding-bottom: 0.75rem;
@@ -3236,7 +3570,7 @@ table td strong {
     align-items: center;
     gap: 0.5rem;
   }
-  
+
   /* Improved controls layout */
   .controls-container {
     background: var(--clr-bg);
@@ -3245,18 +3579,18 @@ table td strong {
     margin-bottom: 1.5rem;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   }
-  
+
   /* Better search input styling */
   .search-input {
     border: 2px solid var(--clr-border);
     transition: border-color 0.2s ease;
   }
-  
+
   .search-input:focus {
     border-color: var(--clr-primary);
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
   }
-  
+
   /* Enhanced filter controls */
   .filter-controls {
     background: var(--clr-surface);
@@ -3264,12 +3598,12 @@ table td strong {
     border-radius: 0.5rem;
     border: 1px solid var(--clr-border);
   }
-  
+
   .custom-dropdown.sector-filter .custom-dropdown-trigger {
     border: 2px solid var(--clr-border);
     transition: border-color 0.2s ease;
   }
-  
+
   .custom-dropdown.sector-filter .custom-dropdown-trigger:focus {
     border-color: var(--clr-primary);
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
@@ -3278,36 +3612,41 @@ table td strong {
 
 /* Mobile performance optimizations */
 @media (max-width: 768px) {
+
   /* Reduce animations on mobile for better performance */
   * {
     animation-duration: 0.2s !important;
     transition-duration: 0.2s !important;
   }
-  
+
   /* Optimize table rendering */
   table {
     contain: layout style paint;
   }
-  
+
   /* Reduce box-shadow complexity on mobile */
-  .container, .favorites, .all-stocks, .todays-earnings {
+  .container,
+  .favorites,
+  .all-stocks,
+  .todays-earnings {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   }
 }
 
 /* Mobile accessibility improvements */
 @media (max-width: 640px) {
+
   /* Ensure sufficient color contrast */
   .positive {
     color: #059669;
     font-weight: 700;
   }
-  
+
   .negative {
     color: #dc2626;
     font-weight: 700;
   }
-  
+
   /* Better focus indicators */
   button:focus,
   .search-input:focus,
@@ -3316,7 +3655,7 @@ table td strong {
     outline: 2px solid var(--clr-primary);
     outline-offset: 2px;
   }
-  
+
   /* Improved touch feedback */
   button:active,
   .favorite-btn:active {
@@ -3334,7 +3673,7 @@ table td strong {
     font-size: 0.9rem;
     line-height: 1.4;
   }
-  
+
   .end-of-list {
     padding: 1.5rem 1rem;
     margin: 1rem 0;
@@ -3354,15 +3693,15 @@ table td strong {
     font-size: 0.8rem;
     line-height: 1.5;
   }
-  
+
   .footer p {
     margin-bottom: 0.5rem;
   }
-  
+
   .support-email {
     word-break: break-all;
   }
-} 
+}
 
 /* === MILESTONE 2: BOTTOM NAVIGATION & FAB ================== */
 
@@ -3557,6 +3896,7 @@ table td strong {
     opacity: 0;
     transform: translateY(20px) scale(0.8);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -3568,26 +3908,26 @@ table td strong {
   .bottom-navigation {
     padding: 0.75rem 0;
   }
-  
+
   .nav-item {
     min-height: 70px;
     min-width: 70px;
   }
-  
+
   .nav-label {
     font-size: 0.8rem;
   }
-  
+
   .fab-container {
     bottom: 90px;
     right: 1.5rem;
   }
-  
+
   .fab-main {
     width: 60px;
     height: 60px;
   }
-  
+
   .fab-action {
     width: 52px;
     height: 52px;
@@ -3598,27 +3938,27 @@ table td strong {
   .bottom-navigation {
     padding: 0.5rem 0;
   }
-  
+
   .nav-item {
     min-height: 60px;
     min-width: 60px;
     padding: 0.375rem;
   }
-  
+
   .nav-label {
     font-size: 0.7rem;
   }
-  
+
   .fab-container {
     bottom: 80px;
     right: 1rem;
   }
-  
+
   .fab-main {
     width: 56px;
     height: 56px;
   }
-  
+
   .fab-action {
     width: 48px;
     height: 48px;
@@ -3626,27 +3966,27 @@ table td strong {
 }
 
 /* Dark mode support */
-@media (prefers-color-scheme: dark) {
+.dark {
   .bottom-navigation {
     background: rgba(30, 41, 59, 0.95);
     border-top-color: var(--clr-border);
   }
-  
+
   .fab-action {
     background: var(--clr-surface);
     border-color: var(--clr-border);
     color: var(--clr-text);
   }
-  
+
   .fab-action:hover {
     background: var(--clr-bg);
   }
-  
+
   .fab-tooltip {
     background: var(--clr-text);
     color: var(--clr-surface);
   }
-  
+
   .fab-tooltip::after {
     border-left-color: var(--clr-text);
   }
@@ -3657,7 +3997,7 @@ table td strong {
   .container {
     padding-bottom: 100px;
   }
-  
+
   .footer {
     margin-bottom: 80px;
   }
@@ -3668,28 +4008,28 @@ table td strong {
   .nav-item:hover {
     transform: none;
   }
-  
+
   .fab-main:hover {
     transform: none;
   }
-  
+
   .fab-action:hover {
     transform: none;
   }
-  
+
   .nav-item:active {
     background: var(--clr-bg);
     transform: scale(0.95);
   }
-  
+
   .fab-main:active {
     transform: scale(0.9);
   }
-  
+
   .fab-action:active {
     transform: scale(0.9);
   }
-} 
+}
 
 /* === MILESTONE 5: PERFORMANCE OPTIMIZATION ================== */
 
@@ -3733,6 +4073,7 @@ img[data-src].loaded {
 
 /* Reduce motion for performance */
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
@@ -3769,6 +4110,7 @@ img[data-src].loaded {
 
 /* Bundle size optimization */
 @media (max-width: 640px) {
+
   /* Hide non-essential elements on mobile for performance */
   .performance-monitor {
     display: none;
@@ -3952,6 +4294,7 @@ img[data-src].loaded {
     transform: translateY(100%);
     opacity: 0;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
@@ -3962,6 +4305,7 @@ img[data-src].loaded {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -3996,6 +4340,7 @@ img[data-src].loaded {
   from {
     transform: translateY(-100%);
   }
+
   to {
     transform: translateY(0);
   }
@@ -4005,6 +4350,7 @@ img[data-src].loaded {
   from {
     transform: translateY(0);
   }
+
   to {
     transform: translateY(-100%);
   }
@@ -4027,7 +4373,7 @@ img[data-src].loaded {
   .pwa-status-bar {
     display: block;
   }
-  
+
   .container {
     padding-top: 20px;
   }
@@ -4100,6 +4446,7 @@ img[data-src].loaded {
     opacity: 1;
     visibility: visible;
   }
+
   to {
     opacity: 0;
     visibility: hidden;
@@ -4198,16 +4545,16 @@ img[data-src].loaded {
     margin: 0 0.5rem;
     padding: 1.25rem;
   }
-  
+
   .pwa-install-features {
     grid-template-columns: 1fr;
     gap: 0.75rem;
   }
-  
+
   .pwa-install-actions {
     flex-direction: column;
   }
-  
+
   .pwa-update-notification {
     bottom: 100px;
     left: 0.5rem;
@@ -4216,13 +4563,13 @@ img[data-src].loaded {
 }
 
 /* Dark mode support for PWA */
-@media (prefers-color-scheme: dark) {
+.dark {
   .pwa-offline-notice {
     background: #451a03;
     border-color: #f59e0b;
     color: #fbbf24;
   }
-  
+
   .pwa-loading-screen {
     background: var(--clr-surface);
   }
@@ -4287,17 +4634,17 @@ img[data-src].loaded {
   .adaptive-table {
     font-size: 12px;
   }
-  
+
   .adaptive-table th,
   .adaptive-table td {
     padding: 6px 8px;
   }
-  
+
   .adaptive-table .logo-container {
     width: 24px;
     height: 24px;
   }
-  
+
   .adaptive-table .company-name {
     max-width: 80px;
     overflow: hidden;
@@ -4310,7 +4657,7 @@ img[data-src].loaded {
   .adaptive-table {
     font-size: 13px;
   }
-  
+
   .adaptive-table th,
   .adaptive-table td {
     padding: 7px 10px;
@@ -4358,11 +4705,25 @@ img[data-src].loaded {
 }
 
 /* Column priority indicators */
-.column-priority-1 { background-color: #fef3c7; }
-.column-priority-2 { background-color: #fef3c7; }
-.column-priority-3 { background-color: #fef3c7; }
-.column-priority-4 { background-color: #fef3c7; }
-.column-priority-5 { background-color: #fef3c7; }
+.column-priority-1 {
+  background-color: #fef3c7;
+}
+
+.column-priority-2 {
+  background-color: #fef3c7;
+}
+
+.column-priority-3 {
+  background-color: #fef3c7;
+}
+
+.column-priority-4 {
+  background-color: #fef3c7;
+}
+
+.column-priority-5 {
+  background-color: #fef3c7;
+}
 
 /* Smooth transitions for column changes */
 .adaptive-table th,
@@ -4391,8 +4752,13 @@ img[data-src].loaded {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Adaptive Table Demo Styles */
@@ -4530,10 +4896,12 @@ img[data-src].loaded {
     background-color: transparent;
     transform: scale(1);
   }
+
   50% {
     background-color: rgba(34, 197, 94, 0.2);
     transform: scale(1.02);
   }
+
   100% {
     background-color: transparent;
     transform: scale(1);
@@ -4545,10 +4913,12 @@ img[data-src].loaded {
     background-color: transparent;
     transform: scale(1);
   }
+
   50% {
     background-color: rgba(239, 68, 68, 0.2);
     transform: scale(1.02);
   }
+
   100% {
     background-color: transparent;
     transform: scale(1);
@@ -4562,7 +4932,8 @@ img[data-src].loaded {
 
 .websocket-status .price-up,
 .websocket-status .price-down {
-  animation: none; /* Disable animations in status component */
+  animation: none;
+  /* Disable animations in status component */
 }
 
 /* Real-time indicator */
@@ -4589,10 +4960,12 @@ img[data-src].loaded {
     opacity: 1;
     transform: scale(1);
   }
+
   50% {
     opacity: 0.5;
     transform: scale(1.2);
   }
+
   100% {
     opacity: 1;
     transform: scale(1);

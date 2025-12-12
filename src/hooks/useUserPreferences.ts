@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { safeGetItem, safeSetItem, safeRemoveItem } from '@/lib/utils/safeStorage';
 
 export interface UserPreferences {
   favorites: string[];
@@ -16,6 +17,7 @@ export interface UserPreferences {
   showFavoritesSection?: boolean;
   showEarningsSection?: boolean;
   showAllStocksSection?: boolean;
+  showHeatmapSection?: boolean;
 }
 
 const DEFAULT_PREFERENCES: UserPreferences = {
@@ -31,7 +33,8 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   showPortfolioSection: true,
   showFavoritesSection: true,
   showEarningsSection: true,
-  showAllStocksSection: true
+  showAllStocksSection: true,
+  showHeatmapSection: true
 };
 
 const STORAGE_KEY = 'pmp-user-preferences';
@@ -45,29 +48,47 @@ export function useUserPreferences() {
 
   // Load preferences from localStorage
   const loadPreferences = useCallback(() => {
-    try {
-      // Check cookie consent state
-      const consent = localStorage.getItem(CONSENT_KEY);
-      setHasConsent(consent === 'true');
+    // Check cookie consent state
+    const consent = safeGetItem(CONSENT_KEY);
+    setHasConsent(consent === 'true');
 
-      // Load user preferences regardless of consent (functional storage)
-      const storedPrefs = localStorage.getItem(STORAGE_KEY);
-      if (storedPrefs) {
+    // Load user preferences regardless of consent (functional storage)
+    const storedPrefs = safeGetItem(STORAGE_KEY);
+    if (storedPrefs) {
+      try {
         const parsedPrefs = JSON.parse(storedPrefs);
-        setPreferences({ ...DEFAULT_PREFERENCES, ...parsedPrefs });
+        // Validate parsed data structure
+        if (parsedPrefs && typeof parsedPrefs === 'object') {
+          setPreferences({ ...DEFAULT_PREFERENCES, ...parsedPrefs });
+        } else {
+          console.warn('⚠️ Invalid preferences format, using defaults');
+          safeRemoveItem(STORAGE_KEY);
+        }
+      } catch (parseError) {
+        console.error('⚠️ Error parsing preferences, clearing corrupted data:', parseError);
+        safeRemoveItem(STORAGE_KEY);
       }
-
-      // Load favorites separately for backward compatibility
-      const storedFavorites = localStorage.getItem(FAVORITES_KEY);
-      if (storedFavorites) {
-        const favorites = JSON.parse(storedFavorites);
-        setPreferences(prev => ({ ...prev, favorites }));
-      }
-    } catch (error) {
-      console.error('Error loading user preferences:', error);
-    } finally {
-      setIsLoaded(true);
     }
+
+    // Load favorites separately for backward compatibility
+    const storedFavorites = safeGetItem(FAVORITES_KEY);
+    if (storedFavorites) {
+      try {
+        const favorites = JSON.parse(storedFavorites);
+        // Validate favorites is an array
+        if (Array.isArray(favorites)) {
+          setPreferences(prev => ({ ...prev, favorites }));
+        } else {
+          console.warn('⚠️ Invalid favorites format, clearing');
+          safeRemoveItem(FAVORITES_KEY);
+        }
+      } catch (parseError) {
+        console.error('⚠️ Error parsing favorites, clearing corrupted data:', parseError);
+        safeRemoveItem(FAVORITES_KEY);
+      }
+    }
+    
+    setIsLoaded(true);
   }, []);
 
   // Save preferences to localStorage
@@ -77,11 +98,11 @@ export function useUserPreferences() {
       setPreferences(prevPrefs => {
         const updatedPrefs = { ...prevPrefs, ...newPreferences };
         
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedPrefs));
+        safeSetItem(STORAGE_KEY, JSON.stringify(updatedPrefs));
         
         // Also save favorites separately for backward compatibility
         if (newPreferences.favorites !== undefined) {
-          localStorage.setItem(FAVORITES_KEY, JSON.stringify(newPreferences.favorites));
+          safeSetItem(FAVORITES_KEY, JSON.stringify(newPreferences.favorites));
         }
         
         return updatedPrefs;
@@ -100,8 +121,8 @@ export function useUserPreferences() {
         
         // Save to localStorage
         const updatedPrefs = { ...prevPrefs, favorites: newFavorites };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedPrefs));
-        localStorage.setItem(FAVORITES_KEY, JSON.stringify(newFavorites));
+        safeSetItem(STORAGE_KEY, JSON.stringify(updatedPrefs));
+        safeSetItem(FAVORITES_KEY, JSON.stringify(newFavorites));
         
         return updatedPrefs;
       }
@@ -142,8 +163,8 @@ export function useUserPreferences() {
 
   // Clear all preferences
   const clearPreferences = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(FAVORITES_KEY);
+    safeRemoveItem(STORAGE_KEY);
+    safeRemoveItem(FAVORITES_KEY);
     setPreferences(DEFAULT_PREFERENCES);
   }, []);
 
@@ -151,10 +172,14 @@ export function useUserPreferences() {
   const setConsent = useCallback((consent: boolean) => {
     setHasConsent(consent);
     if (consent) {
-      localStorage.setItem(CONSENT_KEY, 'true');
-      document.cookie = 'pmp-consent=true; max-age=31536000; path=/';
+      safeSetItem(CONSENT_KEY, 'true');
+      try {
+        document.cookie = 'pmp-consent=true; max-age=31536000; path=/';
+      } catch (e) {
+        // Ignore cookie errors in incognito mode
+      }
     } else {
-      localStorage.setItem(CONSENT_KEY, 'declined');
+      safeSetItem(CONSENT_KEY, 'declined');
     }
   }, []);
 

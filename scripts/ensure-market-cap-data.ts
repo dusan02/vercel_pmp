@@ -3,8 +3,8 @@
  * This is required for accurate market cap calculation in the heatmap
  */
 
-import { prisma } from '../src/lib/prisma';
-import { getSharesOutstanding } from '../src/lib/marketCapUtils';
+import { prisma } from '../src/lib/db/prisma';
+import { getSharesOutstanding } from '../src/lib/utils/marketCapUtils';
 
 interface TickerStatus {
   symbol: string;
@@ -73,7 +73,7 @@ async function checkMarketCapData() {
 
   // Analyze which tickers can calculate market cap
   const tickerStatuses: TickerStatus[] = allTickers.map(ticker => {
-    const hasShares = ticker.sharesOutstanding && ticker.sharesOutstanding > 0;
+    const hasShares = (ticker.sharesOutstanding ?? 0) > 0;
     const hasPrice = symbolsWithPrice.has(ticker.symbol);
     const canCalculate = hasShares && hasPrice;
 

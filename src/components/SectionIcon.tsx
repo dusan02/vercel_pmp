@@ -5,7 +5,7 @@
 
 import React from 'react';
 
-export type SectionIconType = 'star' | 'pie' | 'globe' | 'calendar' | 'grid';
+export type SectionIconType = 'star' | 'pie' | 'globe' | 'calendar' | 'grid' | 'heatmap';
 
 interface SectionIconProps {
   type: SectionIconType;
@@ -18,7 +18,7 @@ export function SectionIcon({ type, size = 20, className = '' }: SectionIconProp
   const strokeWidth = 1.5;
   const fill = 'none';
   const stroke = 'currentColor';
-  
+
   const icons = {
     star: (
       <svg
@@ -107,6 +107,25 @@ export function SectionIcon({ type, size = 20, className = '' }: SectionIconProp
         <rect x="14" y="3" width="7" height="7" rx="1" />
         <rect x="3" y="14" width="7" height="7" rx="1" />
         <rect x="14" y="14" width="7" height="7" rx="1" />
+      </svg>
+    ),
+    heatmap: (
+      <svg
+        width={iconSize}
+        height={iconSize}
+        viewBox="0 0 24 24"
+        fill={fill}
+        stroke={stroke}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+        aria-hidden="true"
+      >
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+        <line x1="12" y1="3" x2="12" y2="21" />
+        <line x1="3" y1="12" x2="12" y2="12" />
+        <line x1="12" y1="14" x2="21" y2="14" />
       </svg>
     )
   };

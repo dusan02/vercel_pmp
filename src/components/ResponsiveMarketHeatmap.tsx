@@ -3,6 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import { MarketHeatmap, CompanyNode, useElementResize, HeatmapMetric } from './MarketHeatmap';
 import { useHeatmapData } from '@/hooks/useHeatmapData';
+import { useHeatmapMetric } from '@/hooks/useHeatmapMetric';
+import { HeatmapMetricButtons } from './HeatmapMetricButtons';
 
 export type ResponsiveMarketHeatmapProps = {
   /** API endpoint pre načítanie dát (default: /api/heatmap) */
@@ -15,6 +17,14 @@ export type ResponsiveMarketHeatmapProps = {
   refreshInterval?: number;
   /** Počiatočný timeframe */
   initialTimeframe?: 'day' | 'week' | 'month';
+  /** Počiatočný metric (ak je poskytnutý, prepíše default z hooku) */
+  initialMetric?: HeatmapMetric;
+  /** Kontrolovaný metric (ak je poskytnutý, prepíše vnútorný state) - DEPRECATED: use initialMetric */
+  controlledMetric?: HeatmapMetric;
+  /** Callback pri zmene metriky (ak je poskytnutý, volá sa pri každej zmene) */
+  onMetricChange?: (metric: HeatmapMetric) => void;
+  /** Skryť buttony pre prepínanie metriky (ak sú kontrolované zvonka) */
+  hideMetricButtons?: boolean;
 };
 
 /**
@@ -27,6 +37,10 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
   autoRefresh = true,
   refreshInterval = 30000,
   initialTimeframe = 'day',
+  initialMetric,
+  controlledMetric,
+  onMetricChange,
+  hideMetricButtons = false,
 }) => {
   // Resize hook
   const { ref, size } = useElementResize();
@@ -35,7 +49,13 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
   
   const [isMounted, setIsMounted] = useState(false);
 
-  // Data fetching hook - REFACTORED
+  // Centralized metric state management
+  // Use controlledMetric if provided (for external control), otherwise use hook
+  const { metric: centralizedMetric, setMetric: setMetricInternal } = useHeatmapMetric(
+    controlledMetric ?? initialMetric ?? 'percent'
+  );
+
+  // Data fetching hook
   const {
     data,
     loading,
@@ -43,15 +63,35 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
     lastUpdated,
     timeframe,
     setTimeframe,
-    metric,
-    setMetric,
+    metric: hookMetric,
+    setMetric: setHookMetric,
     refetch
   } = useHeatmapData({
     apiEndpoint,
     refreshInterval,
     initialTimeframe,
+    initialMetric: controlledMetric ?? centralizedMetric, // Sync with centralized or controlled metric
     autoRefresh
   });
+
+  // Use controlled metric if provided, otherwise use centralized metric, fallback to hook metric
+  const metric = controlledMetric ?? centralizedMetric ?? hookMetric;
+
+  // Handle metric change - sync with all systems
+  const setMetric = (newMetric: HeatmapMetric) => {
+    setMetricInternal(newMetric);
+    setHookMetric(newMetric);
+    if (onMetricChange) {
+      onMetricChange(newMetric);
+    }
+  };
+
+  // Sync hook's metric with centralized metric when not controlled
+  useEffect(() => {
+    if (controlledMetric === undefined && hookMetric !== centralizedMetric) {
+      setHookMetric(centralizedMetric);
+    }
+  }, [centralizedMetric, hookMetric, controlledMetric, setHookMetric]);
 
   // Zabezpeč, že komponent je mounted (hydration safety)
   useEffect(() => {
@@ -127,29 +167,17 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
     // Data loaded state
     return (
       <>
-        {/* Metric selector - top left overlay */}
-        <div className="absolute top-2 left-2 z-50 flex gap-2">
-          <div className="bg-black/70 backdrop-blur-sm rounded-lg p-1 flex gap-1">
-            <button
-              onClick={() => setMetric('percent')}
-              className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${metric === 'percent'
-                ? 'bg-blue-600 text-white'
-                : 'text-gray-300 hover:text-white hover:bg-gray-700'
-                }`}
-            >
-              % Change
-            </button>
-            <button
-              onClick={() => setMetric('mcap')}
-              className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${metric === 'mcap'
-                ? 'bg-blue-600 text-white'
-                : 'text-gray-300 hover:text-white hover:bg-gray-700'
-                }`}
-            >
-              Mcap Change
-            </button>
+        {/* Metric selector - top left overlay (only if not hidden) */}
+        {!hideMetricButtons && (
+          <div className="absolute top-2 left-2 z-50 flex gap-2">
+            <div className="bg-black/70 backdrop-blur-sm rounded-lg p-1">
+              <HeatmapMetricButtons
+                metric={metric}
+                onMetricChange={setMetric}
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Timeframe selector - top center overlay (optional, handled by page or here?) */}
         {/* Currently timeframe is passed via props usually, but hook manages it now. 

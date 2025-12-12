@@ -1,8 +1,11 @@
 'use client';
 
 import React, { useEffect } from 'react';
+import Link from 'next/link';
 import ResponsiveMarketHeatmap from '@/components/ResponsiveMarketHeatmap';
 import { CompanyNode, HeatmapLegend } from '@/components/MarketHeatmap';
+import { useHeatmapMetric } from '@/hooks/useHeatmapMetric';
+import { HeatmapMetricButtons } from '@/components/HeatmapMetricButtons';
 
 /**
  * Stránka pre heatmapu
@@ -10,6 +13,9 @@ import { CompanyNode, HeatmapLegend } from '@/components/MarketHeatmap';
 export default function HeatmapPage() {
   // Timeframe je fixne nastavený na 'day'
   const timeframe = 'day';
+  
+  // Metrika heat mapy (Percent vs Mcap) - state lifting
+  const { metric, setMetric } = useHeatmapMetric();
 
   // Odstránenie scrollbarov z body a html
   useEffect(() => {
@@ -47,20 +53,45 @@ export default function HeatmapPage() {
     >
       <div className="px-2 py-1 z-50 text-white flex-shrink-0 flex items-center justify-between bg-black border-b border-gray-800">
         <div className="flex items-center gap-4">
-        <div>
+          {/* Back button */}
+          <Link 
+            href="/"
+            className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors duration-200 text-sm font-medium"
+            title="Back to homepage"
+          >
+            <svg 
+              className="w-4 h-4" 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            <span className="hidden sm:inline">Back</span>
+          </Link>
+          
+          <div>
             <h1 className="text-xl font-bold mb-0 leading-none">
-            Heatmap<span className="text-green-500">.today</span>
-          </h1>
+              Heatmap<span className="text-green-500">.today</span>
+            </h1>
             <p className="text-[9px] text-gray-400 hidden sm:block">
               Interactive visualization
-          </p>
+            </p>
+          </div>
+
+          {/* Heatmap Metric Buttons - moved here by user request */}
+          <div className="ml-2">
+            <HeatmapMetricButtons 
+              metric={metric} 
+              onMetricChange={setMetric} 
+            />
           </div>
         </div>
         
         <div className="flex items-center gap-4">
           {/* Legenda (farebná škála) */}
           <div className="hidden sm:block">
-          <HeatmapLegend timeframe={timeframe} />
+            <HeatmapLegend timeframe={timeframe} />
           </div>
         </div>
       </div>
@@ -74,6 +105,9 @@ export default function HeatmapPage() {
           autoRefresh={true}
           refreshInterval={30000} // 30s - zladené s CACHE_TTL v /api/heatmap
           initialTimeframe={timeframe}
+          controlledMetric={metric}
+          onMetricChange={setMetric}
+          hideMetricButtons={true}
         />
       </div>
     </div>

@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     if (getAll) {
       const { getStocksList } = await import('@/lib/server/stockService');
       const { data, errors } = await getStocksList({
-        limit: limit || undefined,
+        ...(limit ? { limit } : {}),
         offset,
         sort,
         order

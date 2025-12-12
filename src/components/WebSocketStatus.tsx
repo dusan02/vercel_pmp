@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { Wifi, WifiOff, RefreshCw, AlertCircle, CheckCircle, Clock, Info } from 'lucide-react';
-// import { useWebSocket } from '@/hooks/useWebSocket'; // Temporarily disabled to fix webpack error
 
 interface WebSocketStatusProps {
   showDetails?: boolean;
@@ -20,20 +19,6 @@ export function WebSocketStatus({ showDetails = false, className = '' }: WebSock
   const ping = () => {};
   const socket = null;
   
-  /*
-  const { status, connect, disconnect, ping, socket } = useWebSocket({
-    onConnect: () => {
-      console.log('✅ WebSocket connected successfully');
-    },
-    onDisconnect: () => {
-      console.log('❌ WebSocket disconnected');
-    },
-    onError: (error) => {
-      console.error('❌ WebSocket error:', error);
-    }
-  });
-  */
-
   // Fetch server status
   const fetchServerStatus = async () => {
     try {
@@ -256,8 +241,8 @@ export function WebSocketStatus({ showDetails = false, className = '' }: WebSock
 
           {/* Connection Info */}
           <div className="text-xs text-gray-500 space-y-1">
-            <div>Client ID: {socket?.id || 'Not connected'}</div>
-            <div>Transport: {socket?.io?.engine?.transport?.name || 'Unknown'}</div>
+            <div>Client ID: {(socket as any)?.id || 'Not connected'}</div>
+            <div>Transport: {(socket as any)?.io?.engine?.transport?.name || 'Unknown'}</div>
           </div>
         </div>
       )}
