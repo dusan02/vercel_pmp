@@ -11,10 +11,10 @@
  * Usage: tsx scripts/check-data-completeness.ts
  */
 
-import { prisma } from '../src/lib/prisma';
-import { getAllTrackedTickers } from '../src/lib/universeHelpers';
-import { detectSession, nowET } from '../src/lib/timeUtils';
-import { getSharesOutstanding } from '../src/lib/dbHelpers';
+import { prisma } from '../src/lib/db/prisma';
+import { getAllTrackedTickers } from '../src/lib/utils/universeHelpers';
+import { detectSession, nowET } from '../src/lib/utils/timeUtils';
+import { getSharesOutstanding } from '../src/lib/utils/marketCapUtils';
 
 async function checkDataCompleteness() {
   console.log('\n📊 Data Completeness Check\n');

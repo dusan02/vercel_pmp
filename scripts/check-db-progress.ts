@@ -7,9 +7,9 @@
  * Usage: tsx scripts/check-db-progress.ts
  */
 
-import { prisma } from '../src/lib/prisma';
-import { getAllTrackedTickers } from '../src/lib/universeHelpers';
-import { detectSession, nowET } from '../src/lib/timeUtils';
+import { prisma } from '../src/lib/db/prisma';
+import { getAllTrackedTickers } from '../src/lib/utils/universeHelpers';
+import { detectSession, nowET } from '../src/lib/utils/timeUtils';
 
 async function checkDBProgress() {
   console.log('\n📊 Database Progress Check\n');

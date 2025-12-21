@@ -10,8 +10,8 @@
  */
 
 import { getRankCount, getDateET } from '../src/lib/rankIndexes';
-import { detectSession, nowET } from '../src/lib/timeUtils';
-import { getAllTrackedTickers } from '../src/lib/universeHelpers';
+import { detectSession, nowET } from '../src/lib/utils/timeUtils';
+import { getAllTrackedTickers } from '../src/lib/utils/universeHelpers';
 
 async function checkProgress() {
   const date = getDateET();

@@ -25,15 +25,16 @@ const nextConfig: NextConfig = {
 
   // Removed webpackDevMiddleware config - may interfere with webpack runtime
 
-  // Turbopack configuration (moved from experimental)
-  turbopack: {
-    rules: {
-      '*.svg': {
-        loaders: ['@svgr/webpack'],
-        as: '*.js',
-      },
-    },
-  },
+  // Turbopack configuration - disabled SVG loader to prevent webpack require issues
+  // SVG handling is done via webpack config instead
+  // turbopack: {
+  //   rules: {
+  //     '*.svg': {
+  //       loaders: ['@svgr/webpack'],
+  //       as: '*.js',
+  //     },
+  //   },
+  // },
 
   // Compression and optimization
   compress: true,
@@ -98,62 +99,10 @@ const nextConfig: NextConfig = {
     ];
   },
 
-  // Webpack configuration for optimization
-  webpack: (config, { isServer, dev }) => {
-    // Fix HMR issues in development
-    if (dev && !isServer) {
-      config.optimization = config.optimization || {};
-      // Ensure HMR works properly
-      config.watchOptions = {
-        ...config.watchOptions,
-        poll: false,
-        ignored: /node_modules/,
-      };
-    }
-    
-    // Only add fallbacks for Node.js modules - DO NOT modify optimization.runtimeChunk
-    // Modifying runtimeChunk can break Next.js webpack runtime initialization
-    if (!isServer) {
-      config.resolve = config.resolve || {};
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-        net: false,
-        tls: false,
-      };
-      
-      // Add alias for useWebSocket to prevent webpack resolution issues
-      /*
-      config.resolve.alias = {
-        ...config.resolve.alias,
-        '@/hooks/useWebSocket': path.resolve(__dirname, 'src/lib/stubs/useWebSocket.ts'),
-      };
-      */
-    }
-    
-    // Mark socket.io-client as external on server to prevent webpack from analyzing it
-    if (isServer) {
-      config.externals = config.externals || [];
-      if (Array.isArray(config.externals)) {
-        config.externals.push('socket.io-client');
-      } else if (typeof config.externals === 'object') {
-        config.externals['socket.io-client'] = 'socket.io-client';
-      }
-    }
-
-    // Note: Removed custom splitChunks configuration
-    // Next.js handles CSS/JS chunking automatically and custom config can cause
-    // MIME type errors (CSS files being loaded as scripts)
-    // Next.js default splitChunks is optimized and should be used instead
-
-    // SVG optimization
-    config.module.rules.push({
-      test: /\.svg$/,
-      use: ['@svgr/webpack'],
-    });
-
-    return config;
-  },
+  // Webpack configuration - REMOVED to avoid Turbopack/Webpack conflict
+  // If using --turbopack, webpack config is ignored anyway
+  // If not using --turbopack, Next.js handles webpack internally
+  // webpack: (config, { isServer }) => { ... },
 
   // Output configuration for static optimization
   // output: 'standalone', // Disabled for development

@@ -76,8 +76,8 @@ export const SEGMENTED_CONTROL_BUTTON_BASE = 'text-sm font-medium px-4 py-1.5 ro
 // Active: White background (transparent on white container, or explicit white), Blue Text, Font Bold
 export const SEGMENTED_CONTROL_ACTIVE = `${SEGMENTED_CONTROL_BUTTON_BASE} bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 font-bold shadow-sm ring-1 ring-slate-200 dark:ring-slate-600`;
 
-// Inactive: White background (transparent), Gray Text, Gray Hover Background
-export const SEGMENTED_CONTROL_INACTIVE = `${SEGMENTED_CONTROL_BUTTON_BASE} bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700`;
+// Inactive: White background (transparent), Gray Text with better contrast, Gray Hover Background
+export const SEGMENTED_CONTROL_INACTIVE = `${SEGMENTED_CONTROL_BUTTON_BASE} bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 font-medium`;
 
 export function getSegmentedButtonClasses(isActive: boolean): string {
   return isActive ? SEGMENTED_CONTROL_ACTIVE : SEGMENTED_CONTROL_INACTIVE;

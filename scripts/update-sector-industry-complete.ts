@@ -3,7 +3,8 @@
  * Uses multiple strategies with extended patterns and mappings
  */
 
-import { prisma } from '../src/lib/prisma';
+import { prisma } from '../src/lib/db/prisma';
+import { validateSectorIndustry, normalizeIndustry } from '../src/lib/utils/sectorIndustryValidator';
 
 // Extended hardcoded mapping for major stocks
 const coreSectors: { [key: string]: { sector: string; industry: string } } = {
@@ -674,6 +675,19 @@ async function updateSectorIndustryComplete() {
           }
           if (!industry) {
             industry = 'Uncategorized';
+          }
+
+          // Validate before saving
+          if (sector && industry) {
+            const isValid = validateSectorIndustry(sector, industry);
+            if (!isValid) {
+              console.warn(`  ⚠️  ${ticker.symbol}: Invalid combination - ${sector} / ${industry}, setting to NULL`);
+              sector = null;
+              industry = null;
+            } else {
+              // Normalize industry name
+              industry = normalizeIndustry(sector, industry) || industry;
+            }
           }
 
           // Update if we have new data

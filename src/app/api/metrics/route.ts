@@ -57,6 +57,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Edge function configuration for Vercel
-export const runtime = 'edge';
+// Node.js runtime required for process.uptime()
+export const runtime = 'nodejs';
 export const preferredRegion = 'iad1'; // US East (N. Virginia) 

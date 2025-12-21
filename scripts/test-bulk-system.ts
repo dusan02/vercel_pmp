@@ -9,9 +9,9 @@
  * Usage: tsx scripts/test-bulk-system.ts
  */
 
-import { getAllTrackedTickers, getUniverseCount, UNIVERSE_TYPES } from '../src/lib/universeHelpers';
+import { getAllTrackedTickers, getUniverseCount, UNIVERSE_TYPES } from '../src/lib/utils/universeHelpers';
 import { getRankCount, getDateET } from '../src/lib/rankIndexes';
-import { detectSession, nowET } from '../src/lib/timeUtils';
+import { detectSession, nowET } from '../src/lib/utils/timeUtils';
 import { logger } from '../src/lib/logger';
 
 async function testBulkSystem() {

@@ -64,7 +64,7 @@ export function HeatmapPreview() {
       </div>
 
       <div
-        className="relative w-full bg-black rounded-lg overflow-hidden shadow-lg group"
+        className="relative w-full bg-black overflow-hidden group"
         style={{ height: '400px', minHeight: '400px', cursor: 'pointer' }}
         onClick={handleBackgroundClick}
       >

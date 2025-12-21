@@ -41,6 +41,48 @@ const STORAGE_KEY = 'pmp-user-preferences';
 const FAVORITES_KEY = 'pmp-favorites';
 const CONSENT_KEY = 'pmp-cookie-consent';
 
+// Version management for preferences migration
+const PREFERENCES_VERSION = '2.0.0'; // Increment when preferences structure changes
+const LAYOUT_VERSION = '2.0.0'; // Increment when layout changes (e.g., sidebar position)
+const VERSION_KEY = 'pmp-preferences-version';
+const LAYOUT_VERSION_KEY = 'pmp-layout-version';
+
+// Migrate preferences if version changed
+function migratePreferences(prefs: any, storedVersion: string | null, storedLayoutVersion: string | null): UserPreferences {
+    let migratedPrefs = { ...prefs };
+
+    // Check if preferences version is outdated
+    if (!storedVersion || storedVersion !== PREFERENCES_VERSION) {
+      // Reset preferences structure if version mismatch
+      if (storedVersion && storedVersion < PREFERENCES_VERSION) {
+        console.log(`🔄 Migrating preferences from ${storedVersion} to ${PREFERENCES_VERSION}`);
+        // Keep only valid preferences, reset others to defaults
+        migratedPrefs = {
+          ...DEFAULT_PREFERENCES,
+          favorites: Array.isArray(prefs.favorites) ? prefs.favorites : DEFAULT_PREFERENCES.favorites,
+          theme: prefs.theme || DEFAULT_PREFERENCES.theme,
+        };
+      }
+      // Update version
+      safeSetItem(VERSION_KEY, PREFERENCES_VERSION);
+    }
+
+    // Check if layout version changed (critical for layout consistency)
+    if (!storedLayoutVersion || storedLayoutVersion !== LAYOUT_VERSION) {
+      console.log(`🔄 Layout version changed from ${storedLayoutVersion || 'unknown'} to ${LAYOUT_VERSION} - resetting layout preferences`);
+      // Reset layout-related preferences to ensure consistent layout
+      // Keep functional preferences (favorites, theme) but reset layout
+      migratedPrefs = {
+        ...migratedPrefs,
+        // Section visibility stays, but layout position is reset
+      };
+      // Update layout version
+      safeSetItem(LAYOUT_VERSION_KEY, LAYOUT_VERSION);
+    }
+
+    return migratedPrefs;
+}
+
 export function useUserPreferences() {
   const [preferences, setPreferences] = useState<UserPreferences>(DEFAULT_PREFERENCES);
   const [hasConsent, setHasConsent] = useState<boolean | null>(null);
@@ -52,6 +94,18 @@ export function useUserPreferences() {
     const consent = safeGetItem(CONSENT_KEY);
     setHasConsent(consent === 'true');
 
+    // Check versions
+    const storedVersion = safeGetItem(VERSION_KEY);
+    const storedLayoutVersion = safeGetItem(LAYOUT_VERSION_KEY);
+
+    // Initialize versions if not present
+    if (!storedVersion) {
+      safeSetItem(VERSION_KEY, PREFERENCES_VERSION);
+    }
+    if (!storedLayoutVersion) {
+      safeSetItem(LAYOUT_VERSION_KEY, LAYOUT_VERSION);
+    }
+
     // Load user preferences regardless of consent (functional storage)
     const storedPrefs = safeGetItem(STORAGE_KEY);
     if (storedPrefs) {
@@ -59,7 +113,14 @@ export function useUserPreferences() {
         const parsedPrefs = JSON.parse(storedPrefs);
         // Validate parsed data structure
         if (parsedPrefs && typeof parsedPrefs === 'object') {
-          setPreferences({ ...DEFAULT_PREFERENCES, ...parsedPrefs });
+          // Migrate preferences if needed
+          const migratedPrefs = migratePreferences(parsedPrefs, storedVersion, storedLayoutVersion);
+          setPreferences({ ...DEFAULT_PREFERENCES, ...migratedPrefs });
+          
+          // Save migrated preferences if they changed
+          if (JSON.stringify(migratedPrefs) !== JSON.stringify(parsedPrefs)) {
+            safeSetItem(STORAGE_KEY, JSON.stringify({ ...DEFAULT_PREFERENCES, ...migratedPrefs }));
+          }
         } else {
           console.warn('⚠️ Invalid preferences format, using defaults');
           safeRemoveItem(STORAGE_KEY);
@@ -68,6 +129,10 @@ export function useUserPreferences() {
         console.error('⚠️ Error parsing preferences, clearing corrupted data:', parseError);
         safeRemoveItem(STORAGE_KEY);
       }
+    } else {
+      // No preferences stored, initialize versions
+      safeSetItem(VERSION_KEY, PREFERENCES_VERSION);
+      safeSetItem(LAYOUT_VERSION_KEY, LAYOUT_VERSION);
     }
 
     // Load favorites separately for backward compatibility

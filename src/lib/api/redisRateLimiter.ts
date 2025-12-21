@@ -79,7 +79,7 @@ export async function checkRateLimit(
     }
   } catch (error) {
     // If Redis is unavailable, allow the request but log the error
-    logger.error({ err: error }, 'Rate limiter error, allowing request');
+    logger.error('Rate limiter error, allowing request', error);
     return {
       allowed: true,
       limit: config.limit,

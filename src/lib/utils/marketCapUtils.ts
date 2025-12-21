@@ -226,9 +226,37 @@ export function computeMarketCapDiff(currentPrice: number, prevClose: number, sh
 
 /**
  * Compute percent change using Decimal.js for precision
+ * 
+ * If session and regularClose are provided, uses session-aware logic:
+ * - Pre-market/Live: vs previousClose (D-1)
+ * - After-hours/Closed: vs regularClose (D) if available, else previousClose (D-1)
+ * 
+ * Otherwise, uses simple calculation vs previousClose (backward compatibility)
  */
-export function computePercentChange(currentPrice: number, prevClose: number): number {
+export function computePercentChange(
+  currentPrice: number, 
+  prevClose: number,
+  session?: 'pre' | 'live' | 'after' | 'closed',
+  regularClose?: number | null
+): number {
+  // If session-aware parameters are provided, use calculatePercentChange logic
+  if (session !== undefined) {
+    try {
+      const { calculatePercentChange } = require('./priceResolver');
+      const result = calculatePercentChange(currentPrice, session, prevClose, regularClose || null);
+      return Math.round(result.changePct * 100) / 100; // Round to 2 decimal places
+    } catch (error) {
+      console.error('Error in session-aware percent change calculation:', error);
+      // Fallback to simple calculation
+    }
+  }
+  
+  // Simple calculation (backward compatibility)
   try {
+    if (!prevClose || prevClose <= 0) {
+      return 0;
+    }
+    
     const result = new Decimal(currentPrice)
       .minus(prevClose)
       .div(prevClose)

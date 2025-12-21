@@ -51,7 +51,6 @@ async function updatePreviousClose(ticker: string): Promise<boolean> {
     if (prevClose > 0) {
       // Get the last trading day (the day when this close actually happened)
       const lastTradingDay = getLastTradingDay();
-      lastTradingDay.setHours(0, 0, 0, 0);
 
       // Use findFirst + create/update instead of upsert for compound unique constraint
       const existing = await prisma.dailyRef.findFirst({

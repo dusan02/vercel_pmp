@@ -1,21 +1,28 @@
 'use client';
 
-import React, { useEffect } from 'react';
-import Link from 'next/link';
+import React, { useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import ResponsiveMarketHeatmap from '@/components/ResponsiveMarketHeatmap';
 import { CompanyNode, HeatmapLegend } from '@/components/MarketHeatmap';
 import { useHeatmapMetric } from '@/hooks/useHeatmapMetric';
 import { HeatmapMetricButtons } from '@/components/HeatmapMetricButtons';
+import { logger } from '@/lib/utils/logger';
 
 /**
  * Stránka pre heatmapu
  */
 export default function HeatmapPage() {
+  const router = useRouter();
   // Timeframe je fixne nastavený na 'day'
   const timeframe = 'day';
   
   // Metrika heat mapy (Percent vs Mcap) - state lifting
   const { metric, setMetric } = useHeatmapMetric();
+
+  // Handler pre exit fullscreen (návrat na homepage)
+  const handleExitFullscreen = useCallback(() => {
+    router.push('/');
+  }, [router]);
 
   // Odstránenie scrollbarov z body a html
   useEffect(() => {
@@ -42,7 +49,7 @@ export default function HeatmapPage() {
 
   const handleTileClick = (company: CompanyNode) => {
     // Jednoklik - nič nerobíme (iba tooltip)
-    console.log('Clicked on:', company.symbol);
+    logger.debug('Heatmap tile clicked', { symbol: company.symbol });
   };
 
   return (
@@ -53,23 +60,6 @@ export default function HeatmapPage() {
     >
       <div className="px-2 py-1 z-50 text-white flex-shrink-0 flex items-center justify-between bg-black border-b border-gray-800">
         <div className="flex items-center gap-4">
-          {/* Back button */}
-          <Link 
-            href="/"
-            className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors duration-200 text-sm font-medium"
-            title="Back to homepage"
-          >
-            <svg 
-              className="w-4 h-4" 
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            <span className="hidden sm:inline">Back</span>
-          </Link>
-          
           <div>
             <h1 className="text-xl font-bold mb-0 leading-none">
               Heatmap<span className="text-green-500">.today</span>
@@ -83,7 +73,8 @@ export default function HeatmapPage() {
           <div className="ml-2">
             <HeatmapMetricButtons 
               metric={metric} 
-              onMetricChange={setMetric} 
+              onMetricChange={setMetric}
+              variant="dark"
             />
           </div>
         </div>
@@ -93,6 +84,29 @@ export default function HeatmapPage() {
           <div className="hidden sm:block">
             <HeatmapLegend timeframe={timeframe} />
           </div>
+          
+          {/* Exit fullscreen button - moved to top right */}
+          <button
+            onClick={handleExitFullscreen}
+            className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors duration-200 text-sm font-semibold shadow-md"
+            title="Exit fullscreen (back to homepage)"
+            aria-label="Exit fullscreen"
+          >
+            <svg 
+              className="w-4 h-4" 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                strokeWidth={2} 
+                d="M6 18L18 6M6 6l12 12" 
+              />
+            </svg>
+            <span className="hidden sm:inline">Exit</span>
+          </button>
         </div>
       </div>
       <div 

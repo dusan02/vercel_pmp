@@ -52,6 +52,23 @@ export const HeatmapTile = React.memo<HeatmapTileProps>(({
   const scaledWidth = tileWidth * scale;
   const scaledHeight = tileHeight * scale;
 
+  // Fit ticker text to the available tile box (DOM mode only).
+  // Canvas mode does a more precise fit with ctx.measureText.
+  const fittedSymbolFontPx = React.useMemo(() => {
+    if (!labelConfig.showSymbol || !labelConfig.symbolFontPx) return 0;
+    const padding = 4;
+    const maxW = Math.max(0, scaledWidth - padding * 2);
+    const maxH = Math.max(0, scaledHeight - padding * 2);
+    if (maxW <= 0 || maxH <= 0) return 0;
+
+    // Approximate character width in px (~0.6em for typical UI fonts).
+    const approxCharW = 0.62;
+    const byWidth = Math.floor(maxW / Math.max(1, company.symbol.length * approxCharW));
+    const byHeight = Math.floor(maxH); // rough upper bound
+    const fitted = Math.min(labelConfig.symbolFontPx, byWidth, byHeight);
+    return fitted >= 6 ? fitted : 0;
+  }, [labelConfig.showSymbol, labelConfig.symbolFontPx, scaledWidth, scaledHeight, company.symbol]);
+
   return (
     <div
       key={`${company.symbol}-${x0}-${y0}`}
@@ -70,10 +87,10 @@ export const HeatmapTile = React.memo<HeatmapTileProps>(({
     >
       {(labelConfig.showSymbol || labelConfig.showPercent) && (
         <div className={styles.heatmapTileContent}>
-          {labelConfig.showSymbol && (
+          {labelConfig.showSymbol && fittedSymbolFontPx > 0 && (
             <div
               className={styles.heatmapTileSymbol}
-              style={{ fontSize: `${labelConfig.symbolFontPx}px` }}
+              style={{ fontSize: `${fittedSymbolFontPx}px` }}
             >
               {company.symbol}
             </div>

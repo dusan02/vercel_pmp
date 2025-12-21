@@ -47,17 +47,17 @@ export async function getAllTrackedTickers(): Promise<string[]> {
 
     const tickersArray = Array.from(allTickers);
 
-    logger.debug({
+    logger.debug('Loaded tracked tickers', {
       sp500Count: sp500Tickers.length,
       defaultCount: defaultTickers.length,
       internationalCount: internationalTickers.length,
       totalCount: tickersArray.length
-    }, 'Loaded tracked tickers');
+    });
 
     // Limit to 600 tickers (SP500: 500 + International: 100)
     return tickersArray.slice(0, 600);
   } catch (error) {
-    logger.error({ err: error }, 'Error getting tracked tickers');
+    logger.error('Error getting tracked tickers', error);
 
     // Fallback to default tickers only
     return getAllProjectTickers('pmp');
@@ -114,12 +114,12 @@ export async function addTickersToUniverse(
     }
   }
 
-  logger.info({
+  logger.info('Added tickers to universe', {
     type,
     success,
     failed,
     total: tickers.length
-  }, 'Added tickers to universe');
+  });
 
   return { success, failed };
 }

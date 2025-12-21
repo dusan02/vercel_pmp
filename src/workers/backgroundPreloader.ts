@@ -29,11 +29,11 @@ async function preloadBulkStocks(apiKey: string): Promise<{ success: number; fai
     const batchNum = Math.floor(i / BATCH_SIZE) + 1;
     const totalBatches = Math.ceil(tickers.length / BATCH_SIZE);
 
-    logger.info({
+    logger.info(`Processing batch ${batchNum}/${totalBatches}`, {
       batch: batchNum,
       totalBatches,
       batchSize: batch.length
-    }, `Processing batch ${batchNum}/${totalBatches}`);
+    });
 
     try {
       const results = await ingestBatch(batch, apiKey);
@@ -44,29 +44,29 @@ async function preloadBulkStocks(apiKey: string): Promise<{ success: number; fai
       success += batchSuccess;
       failed += batchFailed;
 
-      logger.info({
+      logger.info(`Batch ${batchNum} completed`, {
         batch: batchNum,
         success: batchSuccess,
         failed: batchFailed
-      }, `Batch ${batchNum} completed`);
+      });
 
       // Rate limiting: 60s between batches (Polygon free tier: 5 calls/min)
       if (i + BATCH_SIZE < tickers.length) {
         await new Promise(resolve => setTimeout(resolve, 60000));
       }
     } catch (error) {
-      logger.error({ err: error, batch: batchNum }, 'Batch ingest failed');
+      logger.error('Batch ingest failed', error, { batch: batchNum });
       failed += batch.length;
     }
   }
 
   const duration = Date.now() - startTime;
-  logger.info({
+  logger.info('Bulk preload completed', {
     success,
     failed,
     total: tickers.length,
     duration: `${Math.round(duration / 1000)}s`
-  }, 'Bulk preload completed');
+  });
 
   return { success, failed };
 }
@@ -85,7 +85,7 @@ async function main() {
   const etNow = nowET();
   const session = detectSession(etNow);
 
-  logger.info({ session, etTime: etNow.toISOString() }, 'Background preloader started');
+  logger.info('Background preloader started', { session, etTime: etNow.toISOString() });
 
   // Run preload
   await preloadBulkStocks(apiKey);
@@ -97,7 +97,7 @@ async function main() {
 // Run if called directly
 if (require.main === module) {
   main().catch(error => {
-    logger.error({ err: error }, 'Preloader fatal error');
+    logger.error('Preloader fatal error', error);
     process.exit(1);
   });
 }

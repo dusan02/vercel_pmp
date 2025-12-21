@@ -7,6 +7,27 @@ let schedulerInterval: NodeJS.Timeout | null = null;
 let isSchedulerActive = false;
 let lastRunDate: string | null = null;
 
+// Store scheduler state in global object for access from API routes
+interface SchedulerState {
+  isActive: boolean;
+  lastRunDate: string | null;
+}
+
+function getSchedulerState(): SchedulerState {
+  if (!(global as any).sectorIndustryScheduler) {
+    (global as any).sectorIndustryScheduler = {
+      isActive: false,
+      lastRunDate: null
+    };
+  }
+  return (global as any).sectorIndustryScheduler;
+}
+
+function setSchedulerState(state: Partial<SchedulerState>): void {
+  const current = getSchedulerState();
+  (global as any).sectorIndustryScheduler = { ...current, ...state };
+}
+
 /**
  * Spustí dennú kontrolu sector/industry údajov
  */
@@ -143,6 +164,7 @@ async function runSectorIndustryVerification(): Promise<void> {
     }
 
     lastRunDate = today;
+    setSchedulerState({ lastRunDate: today });
 
     console.log(`✅ Sector/industry verification completed: ${verified} verified, ${fixed} fixed`);
 
@@ -171,13 +193,15 @@ function getTimeUntilNextRun(): number {
  * Spustí scheduler pre dennú kontrolu
  */
 export function startSectorIndustryScheduler(): void {
-  if (isSchedulerActive) {
+  const globalState = getSchedulerState();
+  if (isSchedulerActive || globalState.isActive) {
     console.log('⚠️ Sector/industry scheduler is already active');
     return;
   }
 
   console.log('🚀 Starting sector/industry scheduler...');
   isSchedulerActive = true;
+  setSchedulerState({ isActive: true });
 
   const scheduleNext = () => {
     const msUntilNext = getTimeUntilNextRun();
@@ -192,8 +216,10 @@ export function startSectorIndustryScheduler(): void {
   };
 
   // Spustí prvý beh okamžite, ak ešte dnes nebežal
+  const effectiveLastRunDate = lastRunDate || globalState.lastRunDate;
   const today = new Date().toISOString().split('T')[0];
-  if (lastRunDate !== today) {
+  
+  if (effectiveLastRunDate !== today) {
     runSectorIndustryVerification().then(() => {
       scheduleNext();
     });
@@ -212,15 +238,37 @@ export function stopSectorIndustryScheduler(): void {
     clearTimeout(schedulerInterval);
     schedulerInterval = null;
     isSchedulerActive = false;
+    setSchedulerState({ isActive: false });
     console.log('🛑 Sector/industry scheduler stopped');
+  } else {
+    // Check global state and clear if needed
+    const globalState = getSchedulerState();
+    if (globalState.isActive) {
+      isSchedulerActive = false;
+      setSchedulerState({ isActive: false });
+      console.log('🛑 Sector/industry scheduler stopped (from global state)');
+    }
   }
 }
 
 /**
  * Kontrola, či je scheduler aktívny
+ * Kontroluje aj global state pre prístup z API routes
  */
 export function isSectorIndustrySchedulerActive(): boolean {
-  return isSchedulerActive;
+  try {
+    // Check if scheduler was initialized in server.ts
+    const isInitialized = (global as any).sectorIndustrySchedulerInitialized === true;
+    if (!isInitialized) {
+      return false;
+    }
+    
+    const globalState = getSchedulerState();
+    return isSchedulerActive || (globalState?.isActive ?? false);
+  } catch (error) {
+    // Fallback to local state if global access fails
+    return isSchedulerActive;
+  }
 }
 
 /**
@@ -237,7 +285,14 @@ export async function manualSectorIndustryCheck(): Promise<void> {
 export function initializeSectorIndustryScheduler(): void {
   console.log('🔧 Initializing sector/industry scheduler...');
 
+  // Initialize global state
+  const state = getSchedulerState();
+  setSchedulerState({ isActive: false, lastRunDate: null });
+  
   startSectorIndustryScheduler();
+  
+  // Mark as initialized in global
+  (global as any).sectorIndustrySchedulerInitialized = true;
 
   // Cleanup pri ukončení aplikácie
   process.on('SIGINT', () => {

@@ -1,18 +1,24 @@
 /**
  * Page Header Component
- * Contains brand section and market indicators
+ * Single horizontal row: Brand | Market Indices | Navigation
+ * All elements in one compact horizontal line
  */
 
 import { BrandLogo } from './BrandLogo';
 import { MarketIndices } from './MarketIndices';
 
-export function PageHeader() {
+interface PageHeaderProps {
+  navigation?: React.ReactNode;
+}
+
+export function PageHeader({ navigation }: PageHeaderProps) {
   return (
     <header className="header">
-      <div className="header-top">
-        <div className="brand-section">
+      <div className="header-container">
+        {/* LEFT ZONE: Branding */}
+        <div className="header-left">
           <div className="brand-container">
-            <BrandLogo size={40} className="brand-logo" />
+            <BrandLogo size={32} className="brand-logo" />
             <div className="brand-content">
               <h1 className="brand-minimal">
                 <span className="brand-name">
@@ -22,13 +28,23 @@ export function PageHeader() {
                 </span>
               </h1>
               <p className="brand-tagline">
-                Market data throughout the day
+                Trade ahead of the market
               </p>
             </div>
           </div>
         </div>
 
-        <MarketIndices />
+        {/* CENTER ZONE: Market Indices */}
+        <div className="header-center">
+          <MarketIndices />
+        </div>
+
+        {/* RIGHT ZONE: Navigation */}
+        {navigation && (
+          <div className="header-right">
+            {navigation}
+          </div>
+        )}
       </div>
     </header>
   );

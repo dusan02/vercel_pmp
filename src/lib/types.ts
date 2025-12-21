@@ -27,6 +27,16 @@ export interface StockData {
   quality?: DataQuality;
   source?: DataSource;
   as_of?: string;
+
+  /**
+   * Optional pricing metadata for UX (labels/badges).
+   * - referenceUsed/referencePrice explain what the % change is computed against.
+   * - isFrozen/isStale allow simple UI indicators without duplicating session logic client-side.
+   */
+  referenceUsed?: 'previousClose' | 'regularClose' | null;
+  referencePrice?: number | null;
+  isFrozen?: boolean;
+  isStale?: boolean;
 }
 
 // Price data structure for Redis/cache

@@ -52,6 +52,8 @@ app.prepare().then(() => {
 
   // Initialize sector/industry scheduler (runs daily at 02:00 UTC)
   initializeSectorIndustryScheduler();
+  // Store scheduler instance in global for API route access
+  (global as any).sectorIndustrySchedulerInitialized = true;
 
   // Start the server
   server.listen(port, () => {

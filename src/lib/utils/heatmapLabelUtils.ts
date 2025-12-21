@@ -80,8 +80,9 @@ export function getTileLabelConfig(widthPx: number, heightPx: number): TileLabel
         const minArea = TILE_SIZE_THRESHOLDS.MIN_AREA;
         const maxArea = TILE_SIZE_THRESHOLDS.SMALL_AREA;
         const ratio = Math.min((area - minArea) / (maxArea - minArea), 1);
-        const minFont = 8;
-        const maxFont = 11;
+        // Allow a smaller minimum; final renderers may still hide if the text can't fit.
+        const minFont = 7;
+        const maxFont = 10;
         const symbolFontPx = minFont + (maxFont - minFont) * ratio;
         return {
             showSymbol: true,

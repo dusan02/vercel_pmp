@@ -3,9 +3,11 @@
  * Konštanty pre veľkosti a thresholdy dlaždíc heatmapy
  */
 export const TILE_SIZE_THRESHOLDS = {
-    MIN_WIDTH: 30,
-    MIN_HEIGHT: 20,
-    MIN_AREA: 900, // Najmenšia plocha - bez textu
+    // These thresholds control when we attempt to render text labels inside tiles.
+    // Keep them permissive; final readability is enforced by per-tile font fitting in renderers.
+    MIN_WIDTH: 16,
+    MIN_HEIGHT: 10,
+    MIN_AREA: 160, // allow ticker on smaller tiles (final fit logic may still hide)
     SMALL_AREA: 2500, // Menšia plocha - len ticker (menší font)
     MEDIUM_AREA: 5000, // Malá plocha - len ticker (väčší font)
     LARGE_AREA: 10000, // Stredná plocha - ticker + % change
@@ -18,8 +20,8 @@ export const TILE_SIZE_THRESHOLDS = {
  */
 export const FONT_SIZE_CONFIG = {
     // Minimálna veľkosť písma pre čitateľnosť
-    MIN_READABLE_SIZE: 8,
-    MIN_SYMBOL_SIZE: 8,
+    MIN_READABLE_SIZE: 7,
+    MIN_SYMBOL_SIZE: 7,
     MIN_PERCENT_SIZE: 7,
 
     // Maximálna veľkosť písma

@@ -18,17 +18,24 @@ import {
   atomicUpdatePrice
 } from '@/lib/redis/operations';
 import { PriceData } from '@/lib/types';
-import { nowET, detectSession, isMarketOpen, mapToRedisSession } from '@/lib/utils/timeUtils';
+import { detectSession, isMarketOpen, isMarketHoliday, mapToRedisSession } from '@/lib/utils/timeUtils';
+import { nowET, getDateET, createETDate, isWeekendET, toET } from '@/lib/utils/dateET';
+import { resolveEffectivePrice, calculatePercentChange } from '@/lib/utils/priceResolver';
+import { getPricingState, canOverwritePrice, getPreviousCloseTTL } from '@/lib/utils/pricingStateMachine';
 import { withRetry, circuitBreaker } from '@/lib/api/rateLimiter';
 // DLQ import - commented out to avoid startup issues
 // import { addToDLQ } from '@/lib/dlq';
-import { updateRankIndexes, getDateET, updateStatsCache, getRankMinMax } from '@/lib/redis/ranking';
+import { updateRankIndexes, updateStatsCache, getRankMinMax } from '@/lib/redis/ranking';
 import { computeMarketCap, computeMarketCapDiff, getSharesOutstanding } from '@/lib/utils/marketCapUtils';
 import { prisma } from '@/lib/db/prisma';
 import type { MarketSession } from '@/lib/types';
 
 // Circuit breaker for Polygon API
 const polygonCircuitBreaker = circuitBreaker('polygon', 5, 2, 60000);
+
+// In tests we must not wait for rate-limit sleeps (keeps integration tests fast & deterministic)
+const __IS_TEST__ = process.env.NODE_ENV === 'test';
+const sleep = (ms: number) => (__IS_TEST__ ? Promise.resolve() : new Promise(resolve => setTimeout(resolve, ms)));
 
 interface PolygonSnapshot {
   ticker: string;
@@ -45,6 +52,11 @@ interface PolygonSnapshot {
   min?: {
     av: number; // average price
     t: number; // timestamp
+    c?: number; // close price (for pre-market/after-hours)
+    o?: number; // open price
+    h?: number; // high price
+    l?: number; // low price
+    v?: number; // volume
   };
   lastQuote?: {
     p: number; // price
@@ -115,7 +127,7 @@ async function fetchPolygonSnapshot(
 
       // Rate limiting: Polygon free tier allows 5 calls/minute
       if (i + batchSize < tickers.length) {
-        await new Promise(resolve => setTimeout(resolve, 15000)); // 15s delay
+        await sleep(15000); // 15s delay
       }
     } catch (error) {
       polygonCircuitBreaker.recordFailure();
@@ -128,48 +140,68 @@ async function fetchPolygonSnapshot(
 
 /**
  * Normalize Polygon snapshot to our data structure
+ * 
+ * CRITICAL: Now uses session-aware price resolver to prevent stale data overwrites
+ * 
+ * INVARIANTS:
+ * - Never returns price <= 0 (returns null instead)
+ * - Always uses adjusted=true aggregates for previousClose
+ * - Returns reference info for UI display
  */
 function normalizeSnapshot(
   snapshot: PolygonSnapshot,
-  previousClose: number | null
+  previousClose: number | null,
+  regularClose: number | null,
+  session: 'pre' | 'live' | 'after' | 'closed',
+  frozenAfterHoursPrice?: { price: number; timestamp: Date },
+  force: boolean = false
 ): {
   price: number;
   changePct: number;
   timestamp: Date;
   quality: 'delayed_15m' | 'rest' | 'snapshot';
+  source: string;
+  isStale: boolean;
+  reference: { used: 'previousClose' | 'regularClose' | null; price: number | null };
 } | null {
-  // Determine price source (prefer lastTrade, then lastQuote, then day close)
-  let price: number | null = null;
-  let timestamp: number | null = null;
+  // Use session-aware price resolver (SINGLE SOURCE OF TRUTH)
+  const effectivePrice = resolveEffectivePrice(
+    snapshot,
+    session,
+    nowET(),
+    frozenAfterHoursPrice,
+    force
+  );
 
-  if (snapshot.lastTrade?.p) {
-    price = snapshot.lastTrade.p;
-    timestamp = snapshot.lastTrade.t;
-  } else if (snapshot.lastQuote?.p) {
-    price = snapshot.lastQuote.p;
-    timestamp = snapshot.lastQuote.t;
-  } else if (snapshot.day?.c) {
-    price = snapshot.day.c;
-    timestamp = snapshot.min?.t || Date.now();
-  }
-
-  if (!price || !timestamp) {
+  // INVARIANT: Never return price <= 0
+  if (!effectivePrice || effectivePrice.price <= 0) {
     return null;
   }
 
-  // Calculate change percentage
-  const prevClose = previousClose || snapshot.prevDay?.c || snapshot.day?.c;
-  const changePct = prevClose ? ((price / prevClose) - 1) * 100 : 0;
+  // Calculate change percentage based on session rules (returns reference info)
+  const percentResult = calculatePercentChange(
+    effectivePrice.price,
+    session,
+    previousClose,
+    regularClose
+  );
 
-  // Determine quality (Polygon Starter = delayed_15m)
-  const quality: 'delayed_15m' | 'rest' | 'snapshot' =
-    process.env.POLYGON_PLAN === 'starter' ? 'delayed_15m' : 'rest';
+  // Determine quality based on source and staleness
+  let quality: 'delayed_15m' | 'rest' | 'snapshot' = 'rest';
+  if (effectivePrice.isStale) {
+    quality = 'delayed_15m';
+  } else if (process.env.POLYGON_PLAN === 'starter') {
+    quality = 'delayed_15m';
+  }
 
   return {
-    price,
-    changePct,
-    timestamp: new Date(timestamp),
-    quality
+    price: effectivePrice.price,
+    changePct: percentResult.changePct,
+    timestamp: effectivePrice.timestamp,
+    quality,
+    source: effectivePrice.source,
+    isStale: effectivePrice.isStale,
+    reference: percentResult.reference
   };
 }
 
@@ -187,8 +219,10 @@ async function upsertToDB(
   if (!normalized) return false;
 
   try {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // CRITICAL: Use getDateET() for date, not UTC midnight!
+    // This prevents date boundary issues (e.g., 23:00 ET = 04:00 UTC next day)
+    const dateET = getDateET(); // YYYY-MM-DD string in ET
+    const today = createETDate(dateET); // ET midnight (DST-safe)
 
     // Upsert ticker if not exists
     // Update price/market cap columns for sorting
@@ -223,6 +257,8 @@ async function upsertToDB(
     });
 
     // Upsert session price (only if newer - idempotent)
+    // CRITICAL: Check pricing state to prevent overwriting frozen prices
+    const pricingState = getPricingState(nowET());
     const existing = await prisma.sessionPrice.findUnique({
       where: {
         symbol_date_session: {
@@ -233,8 +269,17 @@ async function upsertToDB(
       }
     });
 
-    // Only update if incoming timestamp is newer or equal
-    if (!existing || normalized.timestamp >= existing.lastTs) {
+    // Check if we can overwrite based on pricing state
+    const canOverwrite = existing && existing.lastPrice && existing.lastPrice > 0
+      ? canOverwritePrice(
+          pricingState,
+          { price: existing.lastPrice, timestamp: existing.lastTs, session: existing.session },
+          { price: normalized.price, timestamp: normalized.timestamp }
+        )
+      : true; // No existing price or invalid existing, can always write
+
+    // Only update if can overwrite and incoming timestamp is newer or equal
+    if (canOverwrite && (!existing || normalized.timestamp >= existing.lastTs)) {
       await prisma.sessionPrice.upsert({
         where: {
           symbol_date_session: {
@@ -263,7 +308,11 @@ async function upsertToDB(
         }
       });
     } else {
-      console.log(`⏭️ Skipping ${symbol} - existing data is newer (${existing.lastTs} > ${normalized.timestamp})`);
+      if (existing) {
+        console.log(`⏭️ Skipping ${symbol} - existing data is newer (${existing.lastTs} > ${normalized.timestamp})`);
+      } else {
+        console.log(`⏭️ Skipping ${symbol} - cannot overwrite (frozen state or invalid price)`);
+      }
     }
 
     // Upsert daily ref if previous close is available
@@ -296,6 +345,9 @@ async function upsertToDB(
 
 /**
  * Save regular close prices (16:00 ET)
+ * 
+ * CRITICAL: regularClose must be adjusted (same as previousClose)
+ * Polygon snapshot day.c is already adjusted, so we use it directly
  */
 async function saveRegularClose(apiKey: string, date: string): Promise<void> {
   try {
@@ -311,16 +363,19 @@ async function saveRegularClose(apiKey: string, date: string): Promise<void> {
     const snapshots = await fetchPolygonSnapshot(tickers, apiKey);
     console.log(`✅ Received ${snapshots.length} snapshots`);
 
-    const dateObj = new Date(date);
-    dateObj.setHours(0, 0, 0, 0);
+    // DST-safe date creation
+    const dateET = getDateET();
+    const dateObj = new Date(dateET + 'T00:00:00'); // Will be interpreted correctly
 
     let saved = 0;
     for (const snapshot of snapshots) {
       try {
         const symbol = snapshot.ticker;
         // Get regular close from snapshot (day.c is the regular session close)
+        // Polygon snapshot day.c is already adjusted (split-adjusted)
         const regularClose = snapshot.day?.c;
 
+        // INVARIANT: Only save valid prices
         if (regularClose && regularClose > 0) {
           // Update DailyRef with regular close
           await prisma.dailyRef.upsert({
@@ -356,13 +411,33 @@ async function saveRegularClose(apiKey: string, date: string): Promise<void> {
 /**
  * Main ingest function
  * Exported for manual execution
+ * @param force - If true, bypass pricing state machine (for manual/force ingest)
  */
 export async function ingestBatch(
   tickers: string[],
-  apiKey: string
+  apiKey: string,
+  force: boolean = false
 ): Promise<IngestResult[]> {
-  const session = detectSession(nowET());
-  const today = (new Date().toISOString().split('T')[0] || '') as string; // YYYY-MM-DD
+  const now = nowET();
+  const pricingStateAtStart = getPricingState(now);
+
+  // Respect state machine: e.g. overnight/weekend frozen should not ingest (no API calls)
+  // UNLESS force=true (for manual ingest)
+  if (!pricingStateAtStart.canIngest && !force) {
+    return tickers.map(symbol => ({
+      symbol,
+      price: 0,
+      changePct: 0,
+      timestamp: now,
+      quality: 'rest',
+      success: false,
+      error: `Ingest disabled by pricing state: ${pricingStateAtStart.state}`
+    }));
+  }
+
+  const session = detectSession(now);
+  const today = getDateET(now); // YYYY-MM-DD in ET (DST-safe)
+  const todayDate = createETDate(today);
   const results: IngestResult[] = [];
 
   // Fetch previous closes from Redis
@@ -375,7 +450,7 @@ export async function ingestBatch(
       const dailyRefs = await prisma.dailyRef.findMany({
         where: {
           symbol: { in: tickers },
-          date: new Date(today)
+          date: todayDate
         },
         select: { symbol: true, previousClose: true }
       });
@@ -446,23 +521,93 @@ export async function ingestBatch(
     console.log(`✅ Batch fetched ${sharesMap.size} sharesOutstanding values`);
   }
 
+  // Get pricing state (for freeze mechanism)
+  const pricingState = pricingStateAtStart;
+  
+  // Get regular close for after-hours/overnight percent change calculation
+  const regularCloseMap = new Map<string, number>();
+  if (session === 'after' || session === 'closed') {
+    try {
+      const dailyRefs = await prisma.dailyRef.findMany({
+        where: {
+          symbol: { in: tickers },
+          date: todayDate
+        },
+        select: { symbol: true, regularClose: true }
+      });
+      dailyRefs.forEach(ref => {
+        if (ref.regularClose && ref.regularClose > 0) {
+          regularCloseMap.set(ref.symbol, ref.regularClose);
+        }
+      });
+    } catch (error) {
+      console.warn('Failed to load regular closes:', error);
+    }
+  }
+
+  // Get frozen after-hours prices (if in overnight/weekend state)
+  // FROZEN PRICE SOURCE OF TRUTH: Last valid after-hours price per symbol (deterministic)
+  const frozenPricesMap = new Map<string, { price: number; timestamp: Date }>();
+  if (pricingState.useFrozenPrice) {
+    try {
+      const dateET = getDateET();
+      // DST-safe: Use createETDate helper, not new Date(dateET + 'T00:00:00')
+      const { createETDate } = await import('@/lib/utils/dateET');
+      const todayDate = createETDate(dateET);
+      const frozenSessionPrices = await prisma.sessionPrice.findMany({
+        where: {
+          symbol: { in: tickers },
+          date: todayDate,
+          session: 'after',
+          lastPrice: { gt: 0 } // INVARIANT: Only valid prices
+        },
+        select: { symbol: true, lastPrice: true, lastTs: true },
+        orderBy: { lastTs: 'desc' } // Get most recent first
+      });
+      // CRITICAL: Take FIRST (most recent) per symbol, not global top 1
+      const seenSymbols = new Set<string>();
+      frozenSessionPrices.forEach(sp => {
+        if (!seenSymbols.has(sp.symbol) && sp.lastPrice && sp.lastPrice > 0) {
+          frozenPricesMap.set(sp.symbol, {
+            price: sp.lastPrice,
+            timestamp: sp.lastTs
+          });
+          seenSymbols.add(sp.symbol); // Ensure deterministic: one price per symbol
+        }
+      });
+    } catch (error) {
+      console.warn('Failed to load frozen prices:', error);
+    }
+  }
+
   // Process each snapshot
   for (const snapshot of snapshots) {
     const symbol = snapshot.ticker;
     const previousClose = prevCloseMap.get(symbol) || null;
-    
-    // Determine effective previous close (used for calculation)
-    const snapshotPrevClose = snapshot.prevDay?.c || snapshot.day?.c || null;
-    const effectivePrevClose = previousClose || snapshotPrevClose;
+    const regularClose = regularCloseMap.get(symbol) || null;
+    const frozenPrice = frozenPricesMap.get(symbol);
 
-    if (symbol === 'AAPL' || symbol === 'GOOGL') {
-      console.log(`🔍 Debug ${symbol}: MapPrevClose=${previousClose}, SnapPrevClose=${snapshotPrevClose}, Effective=${effectivePrevClose}`);
+    if (symbol === 'GOOG' || symbol === 'GOOGL') {
+      console.log(`🔍 Debug ${symbol}:`);
+      console.log(`   PrevClose=${previousClose}, RegularClose=${regularClose}, FrozenPrice=${frozenPrice?.price || 'none'}`);
+      console.log(`   Snapshot: day.c=${snapshot.day?.c || 'N/A'}, min.c=${snapshot.min?.c || 'N/A'}, lastTrade.p=${snapshot.lastTrade?.p || 'N/A'}`);
+      console.log(`   Session=${session}, Force=${force}`);
     }
 
     try {
-      // Normalize
-      const normalized = normalizeSnapshot(snapshot, previousClose);
+      // Normalize using session-aware resolver
+      const normalized = normalizeSnapshot(
+        snapshot,
+        previousClose,
+        regularClose,
+        session,
+        frozenPrice,
+        force
+      );
       if (!normalized) {
+        if (symbol === 'GOOG' || symbol === 'GOOGL') {
+          console.log(`   ❌ normalizeSnapshot returned null for ${symbol}`);
+        }
         results.push({
           symbol,
           price: 0,
@@ -482,13 +627,14 @@ export async function ingestBatch(
       }
 
       const marketCap = computeMarketCap(normalized.price, shares);
-      const marketCapDiff = effectivePrevClose
-        ? computeMarketCapDiff(normalized.price, effectivePrevClose, shares)
+      // Use previousClose (adjusted aggregates) for marketCapDiff, not effectivePrevClose
+      const marketCapDiff = previousClose
+        ? computeMarketCapDiff(normalized.price, previousClose, shares)
         : 0;
 
       // Upsert to DB (includes updating Ticker table for sorting)
-      // Pass effectivePrevClose to update Ticker.latestPrevClose
-      const dbSuccess = await upsertToDB(symbol, session, normalized, effectivePrevClose, marketCap, marketCapDiff);
+      // Pass previousClose - always use adjusted aggregates API value
+      const dbSuccess = await upsertToDB(symbol, session, normalized, previousClose, marketCap, marketCapDiff);
 
       // Write to Redis (atomic operation)
       const priceData: PriceData = {
@@ -613,10 +759,11 @@ export async function bootstrapPreviousCloses(
               
               // Save to DB immediately for persistence
               try {
+                const dateObj = createETDate(date);
                 await prisma.dailyRef.upsert({
-                  where: { symbol_date: { symbol, date: new Date(date) } },
+                  where: { symbol_date: { symbol, date: dateObj } },
                   update: { previousClose: prevClose, updatedAt: new Date() },
-                  create: { symbol, date: new Date(date), previousClose: prevClose }
+                  create: { symbol, date: dateObj, previousClose: prevClose }
                 });
               } catch (dbErr) {
                 console.warn(`⚠️ Failed to save bootstrapped prevClose to DB for ${symbol}:`, dbErr);
@@ -628,11 +775,11 @@ export async function bootstrapPreviousCloses(
           }
         }
         // Small delay between attempts
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await sleep(100);
       }
 
       // Rate limiting
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await sleep(200);
     } catch (error) {
       console.error(`Error bootstrapping ${symbol}:`, error);
     }
@@ -657,10 +804,10 @@ async function main() {
 
     // Schedule tasks based on ET time
     const scheduleTask = async () => {
-      const now = new Date();
-      const easternTime = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
-      const hours = easternTime.getHours();
-      const minutes = easternTime.getMinutes();
+      const now = new Date(); // real instant
+      const et = toET(now);
+      const hours = et.hour;
+      const minutes = et.minute;
 
       // 03:30 ET - Refresh universe
       if (hours === 3 && minutes === 30) {
@@ -681,7 +828,7 @@ async function main() {
       }
 
       // Bootstrap previous closes (04:00 ET or if missing)
-      const today = easternTime.toISOString().split('T')[0] || '';
+      const today = getDateET(now);
       const tickers = await getUniverse('sp500');
 
       if (tickers.length > 0 && today) {
@@ -737,34 +884,49 @@ async function main() {
         return;
       }
 
-      // If market is closed, still try to bootstrap previous closes if missing
-      if (session === 'closed' || !isMarketOpen(etNow)) {
-        const today = new Date().toISOString().split('T')[0] || '';
-        if (!today) return;
+      // CRITICAL: For premarketprice.com, we MUST ingest pre-market and after-hours data!
+      // Only skip on weekends/holidays (true closed days)
+      const isWeekendOrHoliday = isWeekendET(etNow) || isMarketHoliday(etNow);
+      
+      if (session === 'closed' && isWeekendOrHoliday) {
+        // True closed day (weekend/holiday) - only bootstrap previous closes if missing
+        const today = getDateET(etNow);
         const { getPrevClose } = await import('@/lib/redis/operations');
         const samplePrevCloses = await getPrevClose(today, tickers.slice(0, 10));
 
         if (samplePrevCloses.size === 0) {
-          console.log(`⏸️ Market closed (session: ${session}), but previous closes missing - bootstrapping...`);
+          console.log(`⏸️ Weekend/Holiday (session: ${session}), bootstrapping previous closes...`);
           await bootstrapPreviousCloses(tickers, apiKey, today);
         } else {
-          console.log(`⏸️ Market closed (session: ${session}), waiting...`);
+          console.log(`⏸️ Weekend/Holiday (session: ${session}), skipping ingest`);
         }
         return;
       }
 
-      // Market is open - normal ingest with prioritization
-      console.log(`📊 Market open (session: ${session}), ingesting with prioritization...`);
+      // For pre-market, after-hours, live, or closed (but not weekend/holiday) - INGEST DATA!
+      // This is critical for premarketprice.com - we need pre-market prices!
+      if (session === 'pre' || session === 'after') {
+        console.log(`🌅 Pre-market/After-hours mode (session: ${session}) - ingesting pre-market prices...`);
+      } else if (session === 'closed' && !isWeekendOrHoliday) {
+        // Closed but not weekend/holiday (e.g., before 4:00 AM or after 8:00 PM) - still ingest
+        console.log(`🌙 Off-hours (session: ${session}) - ingesting available prices...`);
+      } else {
+        console.log(`📊 Market open (session: ${session}), ingesting with prioritization...`);
+      }
 
       // Prioritize tickers: top 200 get frequent updates (60s), rest less frequent (5min)
+      // For pre-market/after-hours, use longer intervals (5min for all)
       const { getAllProjectTickers } = await import('@/data/defaultTickers');
       const premiumTickers = getAllProjectTickers('pmp').slice(0, 200); // Top 200
 
       // Load last update times from Redis (persistent across restarts)
       const { redisClient } = await import('@/lib/redis');
       const lastUpdateMap = new Map<string, number>();
-      const PREMIUM_INTERVAL = 60 * 1000; // 60s for top 200
-      const REST_INTERVAL = 5 * 60 * 1000; // 5 min for rest
+      
+      // Adjust intervals based on session
+      const isPreMarketOrAfterHours = session === 'pre' || session === 'after' || (session === 'closed' && !isWeekendOrHoliday);
+      const PREMIUM_INTERVAL = isPreMarketOrAfterHours ? 5 * 60 * 1000 : 60 * 1000; // 5min for pre-market, 60s for live
+      const REST_INTERVAL = 5 * 60 * 1000; // 5 min for rest (same for all)
 
       // Load last update times from Redis
       if (redisClient && redisClient.isOpen) {
@@ -800,7 +962,8 @@ async function main() {
       const restNeedingUpdate = tickersNeedingUpdate.filter(t => !premiumTickers.includes(t));
       const prioritizedTickers = [...premiumNeedingUpdate, ...restNeedingUpdate];
 
-      console.log(`📊 Processing ${prioritizedTickers.length} tickers: ${premiumNeedingUpdate.length} premium (60s), ${restNeedingUpdate.length} rest (5min)`);
+      const intervalDesc = isPreMarketOrAfterHours ? '5min' : '60s';
+      console.log(`📊 Processing ${prioritizedTickers.length} tickers: ${premiumNeedingUpdate.length} premium (${intervalDesc}), ${restNeedingUpdate.length} rest (5min)`);
 
       // Dynamic batch size and delay based on rate limit
       // Polygon API: 5 req/s = 300 req/min
@@ -846,9 +1009,11 @@ async function main() {
       }
     };
 
-    // Run every 30 seconds for faster premium ticker updates
-    // Premium tickers will be updated every 60s, rest every 5min
-    setInterval(ingestLoop, 30000); // 30s check interval
+    // Run every 60 seconds to check for updates (optimized from 30s)
+    // During live trading: Premium tickers updated every 60s, rest every 5min
+    // During pre-market/after-hours: All tickers updated every 5min (critical for premarketprice.com!)
+    // Note: 60s check interval matches premium ticker update interval, reducing unnecessary checks
+    setInterval(ingestLoop, 60000); // 60s check interval (optimized - matches premium update interval)
     ingestLoop(); // Run immediately
   }
 }

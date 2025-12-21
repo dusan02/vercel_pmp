@@ -4,7 +4,7 @@
  * Usage: tsx scripts/check-heatmap-data.ts
  */
 
-import { prisma } from '../src/lib/prisma';
+import { prisma } from '../src/lib/db/prisma';
 
 async function checkHeatmapData() {
   console.log('\n📊 Heatmap Data Diagnostic\n');
@@ -62,7 +62,11 @@ async function checkHeatmapData() {
 
     // 4. Kontrola konkrétnych tickerov
     if (tickers.length > 0) {
-      const testTicker = tickers[0].symbol;
+      const testTicker = tickers[0]?.symbol;
+      if (!testTicker) {
+        console.log('No tickers available');
+        return;
+      }
       console.log(`\n🔍 Testing ticker: ${testTicker}`);
 
       const sessionPrices = await prisma.sessionPrice.findMany({
@@ -88,12 +92,12 @@ async function checkHeatmapData() {
       });
 
       console.log(`  SessionPrice: ${sessionPrices.length > 0 ? '✅ Found' : '❌ Not found'}`);
-      if (sessionPrices.length > 0) {
+      if (sessionPrices.length > 0 && sessionPrices[0]) {
         console.log(`    - Price: ${sessionPrices[0].lastPrice}, Change: ${sessionPrices[0].changePct}%`);
       }
 
       console.log(`  DailyRef: ${dailyRefs.length > 0 ? '✅ Found' : '❌ Not found'}`);
-      if (dailyRefs.length > 0) {
+      if (dailyRefs.length > 0 && dailyRefs[0]) {
         console.log(`    - Previous Close: ${dailyRefs[0].previousClose}`);
       }
     }

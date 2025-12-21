@@ -4,6 +4,7 @@ import { createHash } from 'crypto';
 import { join } from 'path';
 import { redisClient } from '@/lib/redis/client';
 import { getLogoCandidates } from '@/lib/utils/getLogoUrl';
+import { prisma } from '@/lib/db/prisma';
 
 /**
  * Logo Proxy API - Caches and optimizes logo loading
@@ -182,30 +183,114 @@ export async function GET(
           }
         }
 
-        // 3. Try Redis cache for URL
-        let logoUrl: string | null = null;
+        // 3. Try Redis cache for preferred URL
+        let cachedPreferredUrl: string | null = null;
         if (redisClient && redisClient.isOpen) {
           try {
             const urlKey = `logo:url:${symbol}`;
             const cachedUrl = await redisClient.get(urlKey);
             if (cachedUrl) {
-              logoUrl = cachedUrl.toString();
+              cachedPreferredUrl = cachedUrl.toString();
             }
           } catch (redisError) {
             // Continue to resolve URL
           }
         }
 
-        // 4. Resolve logo URLs (candidates)
-        const logoCandidates = getLogoCandidates(symbol);
+        // 4. DB-backed logoUrl (best source if we have it)
+        let dbLogoUrl: string | null = null;
+        try {
+          const row = await prisma.ticker.findUnique({
+            where: { symbol },
+            select: { logoUrl: true }
+          });
+          dbLogoUrl = (row?.logoUrl ?? '').trim() || null;
+        } catch {
+          // DB not available or not configured; ignore
+        }
 
-        // 5. Try each candidate URL until one works
+        // 5. Polygon branding fallback (for SP500 tickers without domain mapping)
+        let polygonLogoUrl: string | null = null;
+        let derivedDomain: string | null = null;
+        const polygonKey = process.env.POLYGON_API_KEY;
+        if (!dbLogoUrl && polygonKey) {
+          try {
+            const refUrl = `https://api.polygon.io/v3/reference/tickers/${encodeURIComponent(symbol)}?apiKey=${polygonKey}`;
+            const r = await fetch(refUrl, { signal: AbortSignal.timeout(5000) });
+            if (r.ok) {
+              const j: any = await r.json();
+              const res = j?.results;
+              const branding = res?.branding;
+              const homepageUrl = (res?.homepage_url ?? res?.homepageUrl ?? '') as string;
+              const rawLogo = (branding?.logo_url ?? branding?.icon_url ?? '') as string;
+
+              if (homepageUrl) {
+                try {
+                  const u = new URL(homepageUrl);
+                  derivedDomain = u.hostname.replace(/^www\./i, '') || null;
+                } catch {
+                  // ignore
+                }
+              }
+
+              if (rawLogo) {
+                let normalized = rawLogo.trim();
+                if (normalized.startsWith('//')) normalized = `https:${normalized}`;
+                // If polygon-hosted URL requires key, append it (server-side only)
+                if (normalized.includes('api.polygon.io') && !normalized.includes('apiKey=') && polygonKey) {
+                  normalized += (normalized.includes('?') ? '&' : '?') + `apiKey=${polygonKey}`;
+                }
+                polygonLogoUrl = normalized;
+
+                // Persist into DB for future (best-effort)
+                try {
+                  await prisma.ticker.upsert({
+                    where: { symbol },
+                    update: { logoUrl: polygonLogoUrl },
+                    create: { symbol, logoUrl: polygonLogoUrl }
+                  });
+                } catch {
+                  // ignore DB write errors
+                }
+              }
+            }
+          } catch {
+            // ignore polygon errors
+          }
+        }
+
+        // 6. Resolve logo URLs (candidates)
+        const domainCandidates = derivedDomain
+          ? [
+              `https://logo.clearbit.com/${derivedDomain}?size=${size}`,
+              `https://www.google.com/s2/favicons?domain=${derivedDomain}&sz=${size}`,
+              `https://icons.duckduckgo.com/ip3/${derivedDomain}.ico`,
+            ]
+          : [];
+
+        const logoCandidates = Array.from(
+          new Set(
+            [
+              ...(cachedPreferredUrl ? [cachedPreferredUrl] : []),
+              ...(dbLogoUrl ? [dbLogoUrl] : []),
+              ...(polygonLogoUrl ? [polygonLogoUrl] : []),
+              ...domainCandidates,
+              ...getLogoCandidates(symbol, size),
+            ].filter(Boolean)
+          )
+        );
+
+        // 7. Try each candidate URL until one works
         try {
           let response;
           let lastError;
           let successUrl = null;
 
-          for (const candidateUrl of logoCandidates) {
+          for (let candidateUrl of logoCandidates) {
+            // If candidate is polygon-hosted and missing apiKey, append (server-side only)
+            if (candidateUrl.includes('api.polygon.io') && !candidateUrl.includes('apiKey=') && polygonKey) {
+              candidateUrl += (candidateUrl.includes('?') ? '&' : '?') + `apiKey=${polygonKey}`;
+            }
             // Try up to 2 times per candidate
             for (let i = 0; i < 2; i++) {
               try {

@@ -95,8 +95,21 @@ jest.mock('@/lib/db/prisma', () => ({
 
 import { NextRequest } from 'next/server';
 import { getSharesOutstanding, getPreviousClose, getCurrentPrice } from '@/lib/utils/marketCapUtils';
-import { __resetCache } from '@/lib/redis';
 import { prisma } from '@/lib/db/prisma';
+
+// Mock redis module for testing
+jest.mock('@/lib/redis', () => {
+  const actual = jest.requireActual('@/lib/redis');
+  return {
+    ...actual,
+    __resetCache: jest.fn(() => {
+      // Reset cache implementation for tests
+    })
+  };
+});
+
+// Import after mock
+const { __resetCache } = require('@/lib/redis');
 
 describe('/api/stocks', () => {
 

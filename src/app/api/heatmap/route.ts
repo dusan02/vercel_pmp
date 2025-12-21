@@ -6,6 +6,8 @@ import { prisma } from '@/lib/db/prisma';
 import { formatMarketCapDiff } from '@/lib/utils/format';
 import { computeMarketCap, computeMarketCapDiff, computePercentChange, getPreviousClose } from '@/lib/utils/marketCapUtils';
 import { getCacheKey } from '@/lib/redis/keys';
+import { getDateET, createETDate, toET } from '@/lib/utils/dateET';
+import { detectSession, nowET } from '@/lib/utils/timeUtils';
 
 const CACHE_KEY = 'heatmap-data';
 const CACHE_TTL = 30; // 30 sekúnd
@@ -129,15 +131,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Získaj všetky tickery s sector/industry - INKLÚZNE lastPrice a latestPrevClose
-    // Toto je primárny zdroj dát (rovnaký ako /api/stocks používa)
+    // Získaj tickery z DB (Ticker table).
+    // IMPORTANT: Heatmap needs sector/industry for grouping, but local/dev DB may not have it populated yet.
+    // We intentionally DO NOT filter out null/empty sector/industry here and instead fall back to "Unknown".
     let tickers;
     try {
       tickers = await prisma.ticker.findMany({
-        where: {
-          sector: { not: null },
-          industry: { not: null },
-        },
+        where: {},
         select: {
           symbol: true,
           name: true,
@@ -153,7 +153,7 @@ export async function GET(request: NextRequest) {
         },
         take: DATE_RANGE.MAX_TICKERS,
       });
-      console.log(`📊 Found ${tickers.length} tickers with sector/industry`);
+      console.log(`📊 Found ${tickers.length} tickers (sector/industry may be missing in dev)`);
     } catch (dbError) {
       console.error('❌ Database query error:', dbError);
       return NextResponse.json(
@@ -169,7 +169,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (tickers.length === 0) {
-      console.warn('⚠️ No tickers with sector/industry found');
+      console.warn('⚠️ No tickers found');
       return NextResponse.json({
         success: true,
         data: [],
@@ -183,25 +183,38 @@ export async function GET(request: NextRequest) {
     const tickerMap = new Map(
       tickers.map(t => [t.symbol, {
         name: t.name,
-        sector: t.sector!,
-        industry: t.industry!,
+        sector: (t.sector ?? '').trim() || 'Unknown',
+        industry: (t.industry ?? '').trim() || 'Unknown',
         sharesOutstanding: t.sharesOutstanding,
         lastPrice: t.lastPrice, // Denormalized current price
         latestPrevClose: t.latestPrevClose, // Denormalized previous close
         latestPrevCloseDate: t.latestPrevCloseDate,
+        lastChangePct: t.lastChangePct,
+        lastMarketCap: t.lastMarketCap,
+        lastMarketCapDiff: t.lastMarketCapDiff,
       }])
     );
 
     // Načítaj SessionPrice (posledné ceny) - berieme najnovšie pre každý ticker
     // Použijeme 24h okno pre heatmap.today (posledných 24 hodín)
-    const now = new Date();
-    const today = new Date(now);
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    // 24h okno: od teraz späť 24 hodín
-    const dayAgo = new Date(now);
-    dayAgo.setHours(dayAgo.getHours() - 24);
+    // IMPORTANT: derive day boundaries in ET (not server timezone; Vercel often runs in UTC)
+    const now = new Date(); // real instant
+
+    const pad2 = (n: number) => String(n).padStart(2, '0');
+    const addETCalendarDays = (base: Date, days: number) => {
+      const p = toET(base);
+      const utcNoon = new Date(Date.UTC(p.year, p.month - 1, p.day, 12, 0, 0));
+      utcNoon.setUTCDate(utcNoon.getUTCDate() + days);
+      return `${utcNoon.getUTCFullYear()}-${pad2(utcNoon.getUTCMonth() + 1)}-${pad2(utcNoon.getUTCDate())}`;
+    };
+
+    const todayYMD = getDateET(now);
+    const tomorrowYMD = addETCalendarDays(now, 1);
+    const today = createETDate(todayYMD);       // ET midnight (UTC instant)
+    const tomorrow = createETDate(tomorrowYMD); // next ET midnight
+
+    // 24h okno: od teraz späť 24 hodín (instant-based)
+    const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
     console.log(`📅 Date range: ${dayAgo.toISOString()} to ${tomorrow.toISOString()} (last 24 hours for heatmap.today)`);
 
@@ -329,6 +342,7 @@ export async function GET(request: NextRequest) {
 
     // Use denormalized latestPrevClose from Ticker (fastest)
     const previousCloseMap = new Map<string, number>();
+    const regularCloseMap = new Map<string, number>();
 
     // First, use denormalized latestPrevClose from Ticker
     tickerMap.forEach((info, symbol) => {
@@ -342,7 +356,15 @@ export async function GET(request: NextRequest) {
       if (!previousCloseMap.has(dr.symbol)) {
         previousCloseMap.set(dr.symbol, dr.previousClose);
       }
+      // Also collect regularClose for after-hours sessions
+      if (dr.regularClose && dr.regularClose > 0) {
+        regularCloseMap.set(dr.symbol, dr.regularClose);
+      }
     }
+
+    // Get current session for session-aware percent change calculation
+    const etNow = nowET();
+    const session = detectSession(etNow);
 
     // 3. Batch fetch cache pre všetky tickery naraz (optimalizácia N+1 problému)
     const project = 'pmp';
@@ -444,7 +466,8 @@ export async function GET(request: NextRequest) {
         // Použij cache dáta z stocks endpointu (najaktuálnejšie)
         currentPrice = cachedStockData.currentPrice;
         previousClose = cachedStockData.closePrice;
-        changePercent = cachedStockData.percentChange || computePercentChange(currentPrice, previousClose);
+        const regularClose = regularCloseMap.get(ticker) || null;
+        changePercent = cachedStockData.percentChange || computePercentChange(currentPrice, previousClose, session, regularClose);
         marketCap = cachedStockData.marketCap || 0;
         marketCapDiff = cachedStockData.marketCapDiff || 0;
         cacheHits++;
@@ -488,11 +511,16 @@ export async function GET(request: NextRequest) {
 
         // VŽDY počítať percentChange z aktuálnych hodnôt (nie z changePct v SessionPrice)
         // Toto zabezpečuje konzistentnosť s /api/stocks endpointom
-        changePercent = computePercentChange(currentPrice, previousClose);
+        // Use session-aware calculation for correct after-hours % changes
+        const regularClose = regularCloseMap.get(ticker) || null;
+        changePercent = computePercentChange(currentPrice, previousClose, session, regularClose);
 
-        // Vypočítaj market cap
+        // Vypočítaj market cap.
+        // Prefer compute(price * shares), but if shares are missing (common in dev), fall back to denormalized columns.
         const sharesOutstanding = tickerInfo.sharesOutstanding || 0;
-        marketCap = computeMarketCap(currentPrice, sharesOutstanding);
+        marketCap = sharesOutstanding > 0
+          ? computeMarketCap(currentPrice, sharesOutstanding)
+          : (tickerInfo.lastMarketCap || 0);
 
         // Preskoč tickery bez market cap
         if (marketCap <= 0) {
@@ -500,8 +528,10 @@ export async function GET(request: NextRequest) {
           continue;
         }
 
-        // Vypočítaj market cap diff - vždy z aktuálnych hodnôt
-        marketCapDiff = computeMarketCapDiff(currentPrice, previousClose, sharesOutstanding);
+        // Vypočítaj market cap diff - vždy z aktuálnych hodnôt, fallback na denormalized diff
+        marketCapDiff = (sharesOutstanding > 0 && previousClose > 0)
+          ? computeMarketCapDiff(currentPrice, previousClose, sharesOutstanding)
+          : (tickerInfo.lastMarketCapDiff || 0);
       }
 
       // Preskoč tickery bez ceny (ak sme použili cache a nemá dáta)

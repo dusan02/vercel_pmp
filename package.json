@@ -3,8 +3,9 @@
     "version": "0.1.0",
     "private": true,
     "scripts": {
-        "dev": "cross-env ENABLE_WEBSOCKET=true tsx server.ts",
-        "dev:next": "cross-env ENABLE_WEBSOCKET=true next dev --turbopack -H 127.0.0.1 -p 3000",
+        "dev": "cross-env ENABLE_WEBSOCKET=true next dev -H 127.0.0.1 -p 3000",
+        "dev:server": "cross-env ENABLE_WEBSOCKET=true tsx server.ts",
+        "dev:turbopack": "cross-env ENABLE_WEBSOCKET=true next dev --turbopack -H 127.0.0.1 -p 3000",
         "dev:next:no-turbopack": "cross-env ENABLE_WEBSOCKET=true next dev -H 127.0.0.1 -p 3000",
         "dev:no-websocket": "next dev --turbopack -H 127.0.0.1 -p 3000",
         "build": "prisma generate && next build",
@@ -45,7 +46,8 @@
         "pm2:stop": "pm2 stop ecosystem.config.js",
         "pm2:restart": "pm2 restart ecosystem.config.js",
         "pm2:logs": "pm2 logs",
-        "pm2:status": "pm2 status"
+        "pm2:status": "pm2 status",
+        "cron:measure": "tsx scripts/run-crons-and-measure.ts"
     },
     "dependencies": {
         "@prisma/client": "^5.22.0",

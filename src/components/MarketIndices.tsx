@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { StockData } from '@/lib/types';
 import { formatPrice, formatPercent } from '@/lib/utils/format';
+import { logger } from '@/lib/utils/logger';
 
 const INDICES = [
     { ticker: 'SPY', name: 'S&P 500' },
@@ -15,12 +16,26 @@ export function MarketIndices() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        let abortController: AbortController | null = null;
+        
         const fetchIndices = async () => {
+            // Abort previous request if still pending
+            if (abortController) {
+                abortController.abort();
+            }
+            abortController = new AbortController();
+            
+            const tickers = INDICES.map(i => i.ticker).join(',');
+            
             try {
-                const tickers = INDICES.map(i => i.ticker).join(',');
-                // Using project=pmp to match default behavior, though strictly not needed if just fetching raw tickers
-                const res = await fetch(`/api/stocks?tickers=${tickers}`);
-                if (!res.ok) throw new Error('Failed to fetch');
+                const res = await fetch(`/api/stocks?tickers=${tickers}`, {
+                    signal: abortController.signal,
+                    cache: 'no-store',
+                });
+                
+                if (!res.ok) {
+                    throw new Error(`API returned ${res.status}: ${res.statusText}`);
+                }
 
                 const json = await res.json();
                 if (json.data && Array.isArray(json.data)) {
@@ -30,8 +45,23 @@ export function MarketIndices() {
                     });
                     setData(map);
                 }
-            } catch (err) {
-                console.error('Failed to fetch market indices', err);
+            } catch (err: any) {
+                // Silently handle abort errors
+                if (err.name === 'AbortError' || err.message?.includes('aborted')) {
+                    return;
+                }
+                
+                // Handle network errors gracefully
+                const isNetworkError = err.message?.includes('Failed to fetch') || 
+                                      err.message?.includes('NetworkError') ||
+                                      !err.message;
+                
+                if (isNetworkError) {
+                    logger.warn('MarketIndices: Network error - server may be unavailable');
+                } else {
+                    logger.error('MarketIndices: Failed to fetch indices', err, { tickers });
+                }
+                // Keep existing data if available, don't clear on error
             } finally {
                 setLoading(false);
             }
@@ -40,7 +70,12 @@ export function MarketIndices() {
         fetchIndices();
         // Auto-refresh every minute
         const interval = setInterval(fetchIndices, 60000);
-        return () => clearInterval(interval);
+        return () => {
+            clearInterval(interval);
+            if (abortController) {
+                abortController.abort();
+            }
+        };
     }, []);
 
     return (
@@ -55,11 +90,8 @@ export function MarketIndices() {
                         const isPositive = (change || 0) >= 0;
 
                         return (
-                            <div key={ticker} className="market-indicator animate-in fade-in duration-500">
-                                <div className="indicator-header">
-                                    <h3 className="indicator-name">{name}</h3>
-                                    <span className="indicator-symbol">{ticker}</span>
-                                </div>
+                            <div key={ticker} className="market-indicator animate-in fade-in duration-500" title={`${name} (${ticker})`}>
+                                <span className="indicator-name">{ticker}</span>
                                 <div className="indicator-values">
                                     <div className="indicator-price">
                                         {loading && !stock ? (
@@ -69,6 +101,15 @@ export function MarketIndices() {
                                         )}
                                     </div>
                                     <div className={`indicator-change ${isPositive ? 'positive' : 'negative'}`}>
+                                        {isPositive ? (
+                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <polyline points="18 15 12 9 6 15"/>
+                                            </svg>
+                                        ) : (
+                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <polyline points="6 9 12 15 18 9"/>
+                                            </svg>
+                                        )}
                                         {loading && !stock ? (
                                             <span className="animate-pulse bg-gray-200 dark:bg-gray-700 h-4 w-16 block rounded mt-1"></span>
                                         ) : (

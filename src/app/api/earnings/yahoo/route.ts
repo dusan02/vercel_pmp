@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { checkEarningsForOurTickers } from '@/lib/clients/yahooFinanceScraper';
 import { computePercentChange, computeMarketCapDiff, getSharesOutstanding, getCurrentPrice, getPreviousClose, computeMarketCap } from '@/lib/utils/marketCapUtils';
 import { DEFAULT_TICKERS } from '@/data/defaultTickers';
+import { detectSession, nowET } from '@/lib/utils/timeUtils';
+import { prisma } from '@/lib/db/prisma';
+import { getDateET, createETDate } from '@/lib/utils/dateET';
 
 interface EarningsData {
   ticker: string;
@@ -142,6 +145,33 @@ async function convertToEarningsData(tickers: string[], date: string, time: stri
   const earningsData: EarningsData[] = [];
   const apiKey = process.env.POLYGON_API_KEY;
 
+  // Get current session for session-aware percent change calculation
+  const etNow = nowET();
+  const session = detectSession(etNow);
+  
+  // Get regularClose for after-hours sessions (batch fetch for all tickers)
+  const regularCloseMap = new Map<string, number>();
+  if (session === 'after' || session === 'closed') {
+    try {
+      const dateET = getDateET(etNow);
+      const dateObj = createETDate(dateET);
+      const dailyRefs = await prisma.dailyRef.findMany({
+        where: {
+          symbol: { in: tickers },
+          date: dateObj
+        },
+        select: { symbol: true, regularClose: true }
+      });
+      dailyRefs.forEach(ref => {
+        if (ref.regularClose && ref.regularClose > 0) {
+          regularCloseMap.set(ref.symbol, ref.regularClose);
+        }
+      });
+    } catch (error) {
+      console.warn('Failed to load regular closes:', error);
+    }
+  }
+
   for (const ticker of tickers) {
     try {
       console.log(`🔍 Processing ${ticker} for earnings data...`);
@@ -177,8 +207,10 @@ async function convertToEarningsData(tickers: string[], date: string, time: stri
       const marketCap = (sharesOutstanding && currentPrice)
         ? computeMarketCap(currentPrice, sharesOutstanding)
         : null;
+      // Use session-aware calculation for correct after-hours % changes
+      const regularClose = regularCloseMap.get(ticker) || null;
       const percentChange = (currentPrice && prevClose)
-        ? computePercentChange(currentPrice, prevClose)
+        ? computePercentChange(currentPrice, prevClose, session, regularClose)
         : null;
       const marketCapDiff = (currentPrice && prevClose && sharesOutstanding)
         ? computeMarketCapDiff(currentPrice, prevClose, sharesOutstanding)

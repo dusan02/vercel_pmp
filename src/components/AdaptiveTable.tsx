@@ -125,6 +125,11 @@ export const AdaptiveTable: React.FC<AdaptiveTableProps> = ({
           cells.push(
             <td key="percentChange" className={stock.percentChange >= 0 ? 'positive' : 'negative'}>
               {stock.percentChange >= 0 ? '+' : ''}{stock.percentChange?.toFixed(2) || '0.00'}%
+              {stock.isStale && (
+                <span className="text-xs text-yellow-600 dark:text-yellow-400 ml-1" title="Data may be outdated">
+                  (STALE)
+                </span>
+              )}
             </td>
           );
           break;

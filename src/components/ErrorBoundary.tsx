@@ -1,6 +1,7 @@
 'use client';
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { logger } from '@/lib/utils/logger';
 
 interface Props {
   children: ReactNode;
@@ -23,7 +24,11 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    logger.error('ErrorBoundary caught an error', error, {
+      componentStack: errorInfo.componentStack,
+      errorMessage: error.message,
+      errorStack: error.stack,
+    });
     
     // If it's a webpack require error, try to reload after a delay
     if (error.message.includes('__webpack_require__') || error.message.includes('webpack')) {
@@ -42,19 +47,9 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: '100vh',
-          backgroundColor: '#000',
-          color: '#fff',
-          padding: '20px',
-          textAlign: 'center'
-        }}>
-          <h1 style={{ fontSize: '24px', marginBottom: '16px' }}>Loading Error</h1>
-          <p style={{ marginBottom: '16px' }}>
+        <div className="error-boundary-root">
+          <h1 className="error-boundary-title">Loading Error</h1>
+          <p className="error-boundary-message">
             {this.state.error?.message || 'An error occurred while loading the page'}
           </p>
           <button
@@ -63,15 +58,8 @@ export class ErrorBoundary extends Component<Props, State> {
                 window.location.reload();
               }
             }}
-            style={{
-              padding: '10px 20px',
-              backgroundColor: '#2563eb',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '16px'
-            }}
+            className="error-boundary-reload-button"
+            aria-label="Reload page"
           >
             Reload Page
           </button>

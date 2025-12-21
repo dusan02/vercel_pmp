@@ -15,6 +15,7 @@ export function useStockFilter({ stockData, favorites, isFavorite }: UseStockFil
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [filterCategory, setFilterCategory] = useState<'all' | 'gainers' | 'losers' | 'movers' | 'bigMovers'>('all');
   const [selectedSector, setSelectedSector] = useState<string>('all');
+  const [selectedIndustry, setSelectedIndustry] = useState<string>('all');
 
   // Debounce search term to reduce filtering computations
   const debouncedSearchTerm = useDebounce(searchTerm, 200);
@@ -34,6 +35,9 @@ export function useStockFilter({ stockData, favorites, isFavorite }: UseStockFil
       // Sector filter
       if (selectedSector !== 'all' && stock.sector !== selectedSector) return false;
       
+      // Industry filter
+      if (selectedIndustry !== 'all' && stock.industry !== selectedIndustry) return false;
+      
       // Category filter
       switch (filterCategory) {
         case 'gainers':
@@ -48,7 +52,7 @@ export function useStockFilter({ stockData, favorites, isFavorite }: UseStockFil
           return true;
       }
     });
-  }, [stockData, debouncedSearchTerm, favoritesOnly, selectedSector, filterCategory, isFavorite]);
+  }, [stockData, debouncedSearchTerm, favoritesOnly, selectedSector, selectedIndustry, filterCategory, isFavorite]);
 
   // Favorite stocks subset (always filtered by favorites logic, independent of UI toggle)
   const favoriteStocks = useMemo(() => {
@@ -80,6 +84,37 @@ export function useStockFilter({ stockData, favorites, isFavorite }: UseStockFil
     return counts;
   }, [stockData]);
 
+  // Get unique sectors and industries from stockData
+  const uniqueSectors = useMemo(() => {
+    const sectors = new Set<string>();
+    stockData.forEach(stock => {
+      if (stock.sector) sectors.add(stock.sector);
+    });
+    return Array.from(sectors).sort();
+  }, [stockData]);
+
+  const uniqueIndustries = useMemo(() => {
+    const industries = new Set<string>();
+    stockData.forEach(stock => {
+      if (stock.industry) industries.add(stock.industry);
+    });
+    return Array.from(industries).sort();
+  }, [stockData]);
+
+  // Filter industries based on selected sector
+  const availableIndustries = useMemo(() => {
+    if (selectedSector === 'all') {
+      return uniqueIndustries;
+    }
+    const industries = new Set<string>();
+    stockData.forEach(stock => {
+      if (stock.sector === selectedSector && stock.industry) {
+        industries.add(stock.industry);
+      }
+    });
+    return Array.from(industries).sort();
+  }, [stockData, selectedSector, uniqueIndustries]);
+
   return {
     searchTerm,
     setSearchTerm,
@@ -89,6 +124,8 @@ export function useStockFilter({ stockData, favorites, isFavorite }: UseStockFil
     setFilterCategory,
     selectedSector,
     setSelectedSector,
+    selectedIndustry,
+    setSelectedIndustry,
     filteredStocks,
     favoriteStocksSorted,
     allStocksSorted,
@@ -98,7 +135,10 @@ export function useStockFilter({ stockData, favorites, isFavorite }: UseStockFil
     allSortKey,
     allAscending,
     requestAllSort,
-    sectorCounts
+    sectorCounts,
+    uniqueSectors,
+    uniqueIndustries,
+    availableIndustries
   };
 }
 

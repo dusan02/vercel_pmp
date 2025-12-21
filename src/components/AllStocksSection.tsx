@@ -2,12 +2,13 @@
  * All Stocks Section Component
  */
 
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useEffect } from 'react';
 import { SortKey } from '@/hooks/useSortableData';
 import { SectionIcon } from './SectionIcon';
 import { StockSearchBar } from './StockSearchBar';
 import { StockTableRow } from './StockTableRow';
 import { SectionLoader } from './SectionLoader';
+import { CustomDropdown } from './CustomDropdown';
 import { StockData } from '@/lib/types';
 
 interface AllStocksSectionProps {
@@ -21,6 +22,12 @@ interface AllStocksSectionProps {
   searchTerm: string;
   onSearchChange: (value: string) => void;
   hasMore: boolean;
+  selectedSector: string;
+  selectedIndustry: string;
+  onSectorChange: (value: string) => void;
+  onIndustryChange: (value: string) => void;
+  uniqueSectors: string[];
+  availableIndustries: string[];
 }
 
 // Table header configuration to reduce boilerplate
@@ -47,8 +54,43 @@ export const AllStocksSection = React.memo(function AllStocksSection({
   isFavorite,
   searchTerm,
   onSearchChange,
-  hasMore
+  hasMore,
+  selectedSector,
+  selectedIndustry,
+  onSectorChange,
+  onIndustryChange,
+  uniqueSectors,
+  availableIndustries
 }: AllStocksSectionProps) {
+  
+  // Reset industry when sector changes
+  const handleSectorChange = useCallback((value: string) => {
+    onSectorChange(value);
+    if (value === 'all') {
+      onIndustryChange('all');
+    }
+  }, [onSectorChange, onIndustryChange]);
+
+  // Reset industry when sector changes and current industry is not available in new sector
+  useEffect(() => {
+    if (selectedSector !== 'all' && selectedIndustry !== 'all') {
+      const isIndustryAvailable = availableIndustries.includes(selectedIndustry);
+      if (!isIndustryAvailable) {
+        onIndustryChange('all');
+      }
+    }
+  }, [selectedSector, availableIndustries, selectedIndustry, onIndustryChange]);
+
+  // Prepare dropdown options
+  const sectorOptions = useMemo(() => [
+    { value: 'all', label: 'All Sectors' },
+    ...uniqueSectors.map(sector => ({ value: sector, label: sector }))
+  ], [uniqueSectors]);
+
+  const industryOptions = useMemo(() => [
+    { value: 'all', label: 'All Industries' },
+    ...availableIndustries.map(industry => ({ value: industry, label: industry }))
+  ], [availableIndustries]);
   
   // Memoize favorite handlers per stock
   const favoriteHandlers = useMemo(() => {
@@ -68,11 +110,31 @@ export const AllStocksSection = React.memo(function AllStocksSection({
             <span>All Stocks</span>
           </h2>
         </div>
-        <div className="header-search-inline">
-          <StockSearchBar
-            searchTerm={searchTerm}
-            onSearchChange={onSearchChange}
-          />
+        <div className="header-controls-inline">
+          <div className="header-search-inline">
+            <StockSearchBar
+              searchTerm={searchTerm}
+              onSearchChange={onSearchChange}
+            />
+          </div>
+          <div className="header-filters-inline">
+            <CustomDropdown
+              value={selectedSector}
+              onChange={handleSectorChange}
+              options={sectorOptions}
+              className="sector-filter"
+              ariaLabel="Filter by sector"
+              placeholder="All Sectors"
+            />
+            <CustomDropdown
+              value={selectedIndustry}
+              onChange={onIndustryChange}
+              options={industryOptions}
+              className="industry-filter"
+              ariaLabel="Filter by industry"
+              placeholder="All Industries"
+            />
+          </div>
         </div>
       </div>
 

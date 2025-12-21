@@ -64,7 +64,7 @@ export function createErrorResponse(
 ): NextResponse<ApiResponse> {
   const errorMessage = message || (error instanceof Error ? error.message : 'Internal server error');
 
-  logger.error({ err: error }, errorMessage);
+  logger.error(errorMessage, error);
 
   const response: ApiResponse = {
     success: false,

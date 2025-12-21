@@ -2,7 +2,7 @@
  * Script to generate a detailed HTML report of data coverage statistics
  */
 
-import { prisma } from '../src/lib/prisma';
+import { prisma } from '../src/lib/db/prisma';
 import * as fs from 'fs';
 import * as path from 'path';
 

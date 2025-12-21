@@ -15,14 +15,15 @@ const isStorageAvailable = (): boolean => {
     localStorage.removeItem(testKey);
     return true;
   } catch (e) {
+    const error = e as Error | DOMException;
     return (
-      e instanceof DOMException &&
-      (e.code === 22 || // QuotaExceededError
-       e.code === 1014 || // NS_ERROR_DOM_QUOTA_REACHED
-       e.name === 'QuotaExceededError' ||
-       e.name === 'NS_ERROR_DOM_QUOTA_REACHED') ||
+      error instanceof DOMException &&
+      (error.code === 22 || // QuotaExceededError
+       error.code === 1014 || // NS_ERROR_DOM_QUOTA_REACHED
+       error.name === 'QuotaExceededError' ||
+       error.name === 'NS_ERROR_DOM_QUOTA_REACHED') ||
       // Safari in private mode throws SecurityError
-      e instanceof SecurityError
+      (error instanceof Error && error.name === 'SecurityError')
     );
   }
 };

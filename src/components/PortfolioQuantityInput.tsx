@@ -106,3 +106,14 @@ export function PortfolioQuantityInput({ value, onChange }: PortfolioQuantityInp
 
 
 
+
+
+
+
+
+
+
+
+
+
+

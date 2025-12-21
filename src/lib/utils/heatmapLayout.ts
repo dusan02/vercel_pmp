@@ -14,7 +14,6 @@ export function buildHeatmapHierarchy(
 ): HierarchyData {
   const root: HierarchyData = { name: 'Market', children: [], meta: { type: 'root' } };
   const sectorMap = new Map<string, HierarchyData>();
-  const industryMap = new Map<string, HierarchyData>();
 
   let skippedCount = 0;
 
@@ -41,20 +40,9 @@ export function buildHeatmapHierarchy(
       root.children!.push(sectorNode);
     }
 
-    // 2. Nájdi alebo vytvor Industry
-    const industryKey = `${company.sector}-${company.industry}`;
-    let industryNode = industryMap.get(industryKey);
-    if (!industryNode) {
-      industryNode = {
-        name: company.industry,
-        children: [],
-        meta: { type: 'industry' },
-      };
-      industryMap.set(industryKey, industryNode);
-      sectorNode.children!.push(industryNode);
-    }
-
-    // 3. Pridaj list (Firmu)
+    // 2. Pridaj list (Firmu) priamo pod sektor.
+    // Požiadavka: Heatmap musí byť zoskupená najprv podľa sektorov,
+    // a v rámci sektorov podľa veľkosti spoločnosti (tileValue).
     const companyLeaf: HierarchyData = {
       name: company.symbol,
       value: tileValue,
@@ -63,7 +51,25 @@ export function buildHeatmapHierarchy(
         companyData: company,
       },
     };
-    industryNode.children!.push(companyLeaf);
+    sectorNode.children!.push(companyLeaf);
+  }
+
+  // Deterministické zoradenie:
+  // - firmy v sektore podľa veľkosti (value) desc
+  // - sektory podľa sumy value desc
+  const sumValues = (node: HierarchyData): number => {
+    if (typeof node.value === 'number') return node.value;
+    if (!node.children) return 0;
+    return node.children.reduce((acc, c) => acc + sumValues(c), 0);
+  };
+
+  if (root.children) {
+    for (const sector of root.children) {
+      if (sector.children) {
+        sector.children.sort((a, b) => (sumValues(b) - sumValues(a)));
+      }
+    }
+    root.children.sort((a, b) => (sumValues(b) - sumValues(a)));
   }
 
   if (skippedCount > 0 && process.env.NODE_ENV !== 'production') {

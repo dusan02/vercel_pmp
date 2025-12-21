@@ -10,19 +10,27 @@ if (!process.env.DATABASE_URL) {
   process.env.DATABASE_URL = 'file:./prisma/dev.db';
 }
 
-import { getUniverse } from '@/lib/redisHelpers';
+import { getUniverse } from '@/lib/redis/operations';
+
+function isString(value: unknown): value is string {
+  return typeof value === 'string' && value.length > 0;
+}
+
+function requireEnv(key: string): string {
+  const value = process.env[key];
+  if (!isString(value)) {
+    console.error(`❌ ${key} not configured`);
+    throw new Error(`${key} is required`);
+  }
+  // Type guard narrows to string - TypeScript should recognize this
+  // but process.env types are tricky, so we assert
+  return value;
+}
 
 async function main() {
   console.log('🔄 Bootstrapping previous closes...');
   
-  const apiKey = process.env.POLYGON_API_KEY;
-  if (!apiKey) {
-    console.error('❌ POLYGON_API_KEY not configured');
-    process.exit(1);
-  }
-  
-  // TypeScript type assertion - apiKey is checked above
-  const apiKeyString = apiKey as string;
+  const apiKey = requireEnv('POLYGON_API_KEY');
   
   const tickers = await getUniverse('sp500');
   if (tickers.length === 0) {
@@ -38,7 +46,9 @@ async function main() {
   
   console.log(`📊 Bootstrapping previous closes for ${tickers.length} tickers...`);
   // Bootstrap all tickers (not just first 10)
-  await bootstrapFn(tickers, apiKeyString, today);
+  // requireEnv throws if undefined, so apiKey is guaranteed to be string
+  // @ts-expect-error - TypeScript doesn't trust requireEnv's return type due to process.env typing
+  await bootstrapFn(tickers, apiKey, today);
   
   console.log('✅ Bootstrap complete');
   process.exit(0);

@@ -223,23 +223,31 @@ export function useHeatmapData({
       }
 
     } catch (err: any) {
-      if (err.name === 'AbortError') {
+      // Handle abort errors silently
+      if (err.name === 'AbortError' || err.message?.includes('aborted')) {
         console.log('🔄 Heatmap: Request aborted');
         return;
       }
       
-      // Retry logic for 503 errors or network errors
-      const isRetryable = err.message.includes('503') || err.message.includes('fetch') || err.message.includes('network');
-      const retryCount = (force ? 0 : 1); // Allow 1 retry for auto-refresh
+      // Handle network errors gracefully
+      const isNetworkError = err.message?.includes('Failed to fetch') || 
+                            err.message?.includes('NetworkError') ||
+                            err.message?.includes('network') ||
+                            !err.message;
       
-      if (isRetryable && !force) { // Don't retry infinite times
-         console.warn(`⚠️ Heatmap error (${err.message}), retrying...`);
-         // Simple retry implemented by next interval or user action for now to avoid complex loop
-         // Could implement proper backoff here if needed
+      if (isNetworkError) {
+        console.warn('⚠️ Heatmap: Network error - server may be unavailable');
+        // Don't set error if we have cached data
+        if (!hasData) {
+          setError('Unable to connect to server. Please check your connection.');
+        }
+      } else {
+        // Other errors (API errors, etc.)
+        console.error('❌ Heatmap load error:', err);
+        if (!hasData) {
+          setError(err.message || 'Failed to load heatmap data');
+        }
       }
-
-      console.error('❌ Heatmap load error:', err);
-      if (!hasData) setError(err.message);
     } finally {
       setLoading(false);
       isLoadingRef.current = false;

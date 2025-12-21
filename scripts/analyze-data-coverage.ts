@@ -3,7 +3,7 @@
  * Shows coverage percentages for price, shares outstanding, market cap, sector, and industry
  */
 
-import { prisma } from '../src/lib/prisma';
+import { prisma } from '../src/lib/db/prisma';
 
 interface CoverageStats {
   totalTickers: number;

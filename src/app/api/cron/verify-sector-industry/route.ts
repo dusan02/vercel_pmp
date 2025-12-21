@@ -1,21 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
+import { validateSectorIndustry, normalizeIndustry } from '@/lib/utils/sectorIndustryValidator';
 
 // Known correct mappings for major pharmaceutical and healthcare companies
 const knownCorrectMappings: { [key: string]: { sector: string; industry: string } } = {
   // Healthcare - Drug Manufacturers
-  'NVS': { sector: 'Healthcare', industry: 'Drug Manufacturers' }, // Novartis
-  'AZN': { sector: 'Healthcare', industry: 'Drug Manufacturers' }, // AstraZeneca
-  'GSK': { sector: 'Healthcare', industry: 'Drug Manufacturers' }, // GlaxoSmithKline
-  'SNY': { sector: 'Healthcare', industry: 'Drug Manufacturers' }, // Sanofi
-  'LLY': { sector: 'Healthcare', industry: 'Drug Manufacturers' }, // Eli Lilly
-  'JNJ': { sector: 'Healthcare', industry: 'Drug Manufacturers' }, // Johnson & Johnson
-  'PFE': { sector: 'Healthcare', industry: 'Drug Manufacturers' }, // Pfizer
-  'ABBV': { sector: 'Healthcare', industry: 'Drug Manufacturers' }, // AbbVie
-  'MRK': { sector: 'Healthcare', industry: 'Drug Manufacturers' }, // Merck
-  'BMY': { sector: 'Healthcare', industry: 'Drug Manufacturers' }, // Bristol-Myers Squibb
-  'NVO': { sector: 'Healthcare', industry: 'Drug Manufacturers' }, // Novo Nordisk
-  'TAK': { sector: 'Healthcare', industry: 'Drug Manufacturers' }, // Takeda
+  'NVS': { sector: 'Healthcare', industry: 'Drug Manufacturers - General' }, // Novartis
+  'AZN': { sector: 'Healthcare', industry: 'Drug Manufacturers - General' }, // AstraZeneca
+  'GSK': { sector: 'Healthcare', industry: 'Drug Manufacturers - General' }, // GlaxoSmithKline
+  'SNY': { sector: 'Healthcare', industry: 'Drug Manufacturers - General' }, // Sanofi
+  'LLY': { sector: 'Healthcare', industry: 'Drug Manufacturers - General' }, // Eli Lilly
+  'JNJ': { sector: 'Healthcare', industry: 'Drug Manufacturers - General' }, // Johnson & Johnson
+  'PFE': { sector: 'Healthcare', industry: 'Drug Manufacturers - General' }, // Pfizer
+  'ABBV': { sector: 'Healthcare', industry: 'Drug Manufacturers - General' }, // AbbVie
+  'MRK': { sector: 'Healthcare', industry: 'Drug Manufacturers - General' }, // Merck
+  'BMY': { sector: 'Healthcare', industry: 'Drug Manufacturers - General' }, // Bristol-Myers Squibb
+  'NVO': { sector: 'Healthcare', industry: 'Drug Manufacturers - General' }, // Novo Nordisk
+  'TAK': { sector: 'Healthcare', industry: 'Drug Manufacturers - General' }, // Takeda
 
   // Healthcare - Biotechnology
   'AMGN': { sector: 'Healthcare', industry: 'Biotechnology' },
@@ -51,7 +52,7 @@ const incorrectPatterns = [
       const pharmaTickers = ['NVS', 'AZN', 'GSK', 'SNY', 'LLY', 'JNJ', 'PFE', 'ABBV', 'MRK', 'BMY', 'NVO', 'TAK'];
       return pharmaTickers.includes(ticker) && sector === 'Financial Services';
     },
-    fix: (ticker: string) => knownCorrectMappings[ticker] || { sector: 'Healthcare', industry: 'Drug Manufacturers' }
+    fix: (ticker: string) => knownCorrectMappings[ticker] || { sector: 'Healthcare', industry: 'Drug Manufacturers - General' }
   },
   {
     description: 'Medical device companies incorrectly in Financial Services',
@@ -97,21 +98,27 @@ async function verifyAndFixSectorIndustry() {
       const currentSector = ticker.sector;
       const currentIndustry = ticker.industry;
 
+      // Validate current values first
+      const isValid = validateSectorIndustry(currentSector, currentIndustry);
+      
       // Check if we have a known correct mapping
       if (knownCorrectMappings[symbol]) {
         const correct = knownCorrectMappings[symbol];
 
-        if (currentSector !== correct.sector || currentIndustry !== correct.industry) {
+        if (currentSector !== correct.sector || currentIndustry !== correct.industry || !isValid) {
           console.log(`❌ ${symbol} (${ticker.name || 'N/A'}):`);
-          console.log(`   Current: ${currentSector || 'NULL'} / ${currentIndustry || 'NULL'}`);
+          console.log(`   Current: ${currentSector || 'NULL'} / ${currentIndustry || 'NULL'} ${!isValid ? '(INVALID)' : ''}`);
           console.log(`   Should be: ${correct.sector} / ${correct.industry}`);
+
+          // Normalize industry
+          const normalizedIndustry = normalizeIndustry(correct.sector, correct.industry);
 
           // Fix it
           await prisma.ticker.update({
             where: { symbol },
             data: {
               sector: correct.sector,
-              industry: correct.industry,
+              industry: normalizedIndustry || correct.industry,
               updatedAt: new Date()
             }
           });
@@ -119,7 +126,7 @@ async function verifyAndFixSectorIndustry() {
           errors.push({
             ticker: symbol,
             current: `${currentSector || 'NULL'} / ${currentIndustry || 'NULL'}`,
-            fixed: `${correct.sector} / ${correct.industry}`
+            fixed: `${correct.sector} / ${normalizedIndustry || correct.industry}`
           });
 
           fixed++;
@@ -127,6 +134,15 @@ async function verifyAndFixSectorIndustry() {
         } else {
           verified++;
         }
+      } else if (!isValid) {
+        // Invalid combination but no known mapping - log warning
+        console.log(`⚠️  ${symbol} (${ticker.name || 'N/A'}): Invalid combination - ${currentSector || 'NULL'} / ${currentIndustry || 'NULL'}`);
+        // Don't fix automatically without known mapping, but log it
+        errors.push({
+          ticker: symbol,
+          current: `${currentSector || 'NULL'} / ${currentIndustry || 'NULL'}`,
+          fixed: 'NEEDS MANUAL REVIEW'
+        });
       } else {
         // Check against incorrect patterns
         let needsFix = false;

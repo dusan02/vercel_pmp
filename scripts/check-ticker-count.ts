@@ -6,8 +6,8 @@
  * Usage: tsx scripts/check-ticker-count.ts
  */
 
-import { prisma } from '../src/lib/prisma';
-import { getAllTrackedTickers } from '../src/lib/universeHelpers';
+import { prisma } from '../src/lib/db/prisma';
+import { getAllTrackedTickers } from '../src/lib/utils/universeHelpers';
 
 async function checkTickerCount() {
   console.log('\n📊 Ticker Count Check\n');

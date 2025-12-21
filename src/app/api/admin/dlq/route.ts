@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
       }
     });
   } catch (error) {
-    logger.error({ err: error }, 'Failed to get DLQ jobs');
+    logger.error('Failed to get DLQ jobs', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
             failed++;
           }
         } catch (error) {
-          logger.error({ err: error }, `Failed to requeue job ${job.id}`);
+          logger.error(`Failed to requeue job ${job.id}`, error);
           failed++;
         }
       }
@@ -188,7 +188,7 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     );
   } catch (error) {
-    logger.error({ err: error }, 'Failed to requeue job');
+    logger.error('Failed to requeue job', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
@@ -215,7 +215,7 @@ export async function DELETE(request: NextRequest) {
       data: { message: `Cleared ${count} jobs from DLQ`, count }
     });
   } catch (error) {
-    logger.error({ err: error }, 'Failed to clear DLQ');
+    logger.error('Failed to clear DLQ', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

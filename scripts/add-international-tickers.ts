@@ -40,7 +40,7 @@ async function main() {
         await addTickersToUniverse(UNIVERSE_TYPES.INTERNATIONAL, [ticker]);
         addedCount++;
       } catch (error) {
-        logger.error({ err: error, ticker }, `Failed to add ticker ${ticker}`);
+        logger.error(`Failed to add ticker ${ticker}`, error, { ticker });
         errorCount++;
       }
     }
@@ -68,7 +68,7 @@ async function main() {
 }
 
 main().catch(e => {
-  logger.error({ err: e }, 'Error adding international NYSE tickers');
+  logger.error('Error adding international NYSE tickers', e);
   process.exit(1);
 });
 

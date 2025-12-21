@@ -1,9 +1,9 @@
 import { tickerDomains, companyColors } from '@/data/companyInfo';
 
-export function getLogoCandidates(ticker: string): string[] {
+export function getLogoCandidates(ticker: string, size: number = 32): string[] {
   const domain = tickerDomains[ticker];
   const color = companyColors[ticker] || '0066CC';
-  const avatarUrl = `https://ui-avatars.com/api/?name=${ticker}&background=${color}&size=32&color=fff&font-size=0.4&bold=true&format=png`;
+  const avatarUrl = `https://ui-avatars.com/api/?name=${ticker}&background=${color}&size=${size}&color=fff&font-size=0.4&bold=true&format=png`;
 
   // If no domain mapping exists, return only ui-avatars
   if (!domain) {
@@ -13,9 +13,9 @@ export function getLogoCandidates(ticker: string): string[] {
   // Return priority list of sources
   return [
     // Primary: Clearbit (high quality)
-    `https://logo.clearbit.com/${domain}?size=32`,
+    `https://logo.clearbit.com/${domain}?size=${size}`,
     // Secondary: Google Favicon (very reliable)
-    `https://www.google.com/s2/favicons?domain=${domain}&sz=32`,
+    `https://www.google.com/s2/favicons?domain=${domain}&sz=${size}`,
     // Tertiary: DuckDuckGo (good coverage)
     `https://icons.duckduckgo.com/ip3/${domain}.ico`,
     // Fallback: Default avatar
@@ -25,7 +25,7 @@ export function getLogoCandidates(ticker: string): string[] {
 
 // Deprecated: Kept for backward compatibility if used elsewhere, but prefers candidates
 export function getLogoUrl(ticker: string): string {
-  const candidates = getLogoCandidates(ticker);
+  const candidates = getLogoCandidates(ticker, 32);
   return candidates[0] || '';
 }
 

@@ -6,10 +6,10 @@
  * Usage: tsx scripts/check-data-details.ts
  */
 
-import { prisma } from '../src/lib/prisma';
-import { getAllTrackedTickers } from '../src/lib/universeHelpers';
-import { detectSession, nowET } from '../src/lib/timeUtils';
-import { getSharesOutstanding, computeMarketCap, computeMarketCapDiff } from '../src/lib/marketCapUtils';
+import { prisma } from '../src/lib/db/prisma';
+import { getAllTrackedTickers } from '../src/lib/utils/universeHelpers';
+import { detectSession, nowET } from '../src/lib/utils/timeUtils';
+import { getSharesOutstanding, computeMarketCap, computeMarketCapDiff } from '../src/lib/utils/marketCapUtils';
 
 async function checkDataDetails() {
   console.log('\n📊 Data Details Check\n');
@@ -57,7 +57,7 @@ async function checkDataDetails() {
         });
         
         const currentPrice = price.lastPrice;
-        const prevClose = prevCloses.length > 1 ? prevCloses[1].lastPrice : prevCloses[0]?.lastPrice || currentPrice;
+        const prevClose = prevCloses.length > 1 ? (prevCloses[1]?.lastPrice ?? currentPrice) : (prevCloses[0]?.lastPrice ?? currentPrice);
         
         // Get shares
         let shares = 0;
@@ -70,7 +70,7 @@ async function checkDataDetails() {
         
         // Calculate market cap
         const marketCap = computeMarketCap(currentPrice, shares);
-        const marketCapDiff = computeMarketCapDiff(currentPrice, prevClose, shares);
+        const marketCapDiff = computeMarketCapDiff(currentPrice, prevClose ?? currentPrice, shares);
         
         console.log(`\n${price.symbol}:`);
         console.log(`  Price: $${currentPrice?.toFixed(2) || 'N/A'}`);

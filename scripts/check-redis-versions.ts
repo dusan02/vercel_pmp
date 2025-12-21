@@ -3,9 +3,9 @@
  * Run: tsx scripts/check-redis-versions.ts
  */
 
-import { redisClient } from '@/lib/redis';
-import { getDateET } from '@/lib/rankIndexes';
-import { detectSession, nowET } from '@/lib/timeUtils';
+import { redisClient } from '../src/lib/redis/client';
+import { getDateET } from '../src/lib/redis/ranking';
+import { detectSession, nowET } from '../src/lib/utils/timeUtils';
 
 async function checkRedisVersions() {
   console.log('=== Checking Redis Rank Keys and Versions ===\n');

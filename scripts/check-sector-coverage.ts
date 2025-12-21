@@ -3,7 +3,7 @@
  * Shows how many tickers have sector/industry data
  */
 
-import { prisma } from '../src/lib/prisma';
+import { prisma } from '../src/lib/db/prisma';
 
 async function checkSectorCoverage() {
   try {

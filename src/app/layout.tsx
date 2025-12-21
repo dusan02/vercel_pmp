@@ -1,10 +1,22 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Space_Grotesk } from 'next/font/google'
 import './globals.css'
 import ErrorBoundaryWrapper from '@/components/ErrorBoundaryWrapper'
+import ScrollToTopButton from '@/components/ScrollToTopButton'
 import { Providers } from './providers'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ 
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+})
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-space-grotesk',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: {
@@ -80,9 +92,10 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  verification: {
-    google: 'your-google-verification-code',
-  },
+  // Google verification - replace with actual verification code from Google Search Console
+  // verification: {
+  //   google: 'your-google-verification-code',
+  // },
   // PWA specific metadata
   manifest: '/manifest.json',
   appleWebApp: {
@@ -143,8 +156,69 @@ export default function RootLayout({
         {/* Resource Hints - Preconnect to external APIs */}
         <link rel="preconnect" href="https://api.polygon.io" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://finnhub.io" crossOrigin="anonymous" />
+        
+        {/* Cache Clear Utility - Development Only */}
+        {process.env.NODE_ENV === 'development' && (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                // Make cache clear utility available in console
+                window.clearAllCaches = async function() {
+                  // NOTE: We cannot dynamic-import TS source files in the browser under Next/Turbopack.
+                  // Do the clear directly here (Cache Storage + SW + storage), then reload.
+                  const keep = [];
+                  try {
+                    // Clear Cache Storage
+                    if (typeof caches !== 'undefined' && caches.keys) {
+                      const keys = await caches.keys();
+                      await Promise.all(keys.map((k) => caches.delete(k)));
+                    }
+                  } catch (e) {
+                    console.warn('clearAllCaches: caches API failed', e);
+                  }
+
+                  try {
+                    // Unregister Service Workers
+                    if ('serviceWorker' in navigator) {
+                      const regs = await navigator.serviceWorker.getRegistrations();
+                      await Promise.all(regs.map((r) => r.unregister()));
+                    }
+                  } catch (e) {
+                    console.warn('clearAllCaches: serviceWorker unregister failed', e);
+                  }
+
+                  try {
+                    // Clear storage (keep allowlist)
+                    if (keep.length === 0) {
+                      localStorage.clear();
+                    } else {
+                      const preserved = {};
+                      keep.forEach((k) => {
+                        const v = localStorage.getItem(k);
+                        if (v !== null) preserved[k] = v;
+                      });
+                      localStorage.clear();
+                      Object.keys(preserved).forEach((k) => localStorage.setItem(k, preserved[k]));
+                    }
+                    sessionStorage.clear();
+                  } catch (e) {
+                    console.warn('clearAllCaches: storage clear failed', e);
+                  }
+
+                  // Reload
+                  try {
+                    location.reload();
+                  } catch {
+                    location.href = location.href;
+                  }
+                };
+                console.log('%c🧹 Cache Clear', 'color: #3b82f6; font-weight: bold;', 'Available: window.clearAllCaches()');
+              `,
+            }}
+          />
+        )}
       </head>
-      <body className={inter.className}>
+      <body className={`${inter.variable} ${spaceGrotesk.variable} ${inter.className}`}>
         <Providers>
           {/* Structured Data - Organization */}
           <script
@@ -193,6 +267,7 @@ export default function RootLayout({
           <ErrorBoundaryWrapper>
             {children}
           </ErrorBoundaryWrapper>
+          <ScrollToTopButton />
         </Providers>
       </body>
     </html>

@@ -5,7 +5,7 @@ import { getCompanyName } from '@/lib/companyNames';
 
 interface StructuredDataProps {
   stocks?: StockData[];
-  pageType?: 'home' | 'company' | 'earnings';
+  pageType?: 'home' | 'company' | 'earnings' | 'heatmap';
   companyData?: {
     ticker: string;
     name: string;
@@ -14,9 +14,29 @@ interface StructuredDataProps {
     sector?: string;
     industry?: string;
   };
+  breadcrumbs?: Array<{ name: string; url: string }>;
 }
 
-export function StructuredData({ stocks, pageType = 'home', companyData }: StructuredDataProps) {
+export function StructuredData({ 
+  stocks, 
+  pageType = 'home', 
+  companyData,
+  breadcrumbs 
+}: StructuredDataProps) {
+  const baseUrl = 'https://premarketprice.com';
+
+  // Generate breadcrumb schema if provided
+  const breadcrumbSchema = breadcrumbs && breadcrumbs.length > 0 ? {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: breadcrumbs.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      item: item.url,
+    })),
+  } : null;
+
   if (pageType === 'company' && companyData) {
     // Company-specific structured data
     const companySchema = {
@@ -25,18 +45,30 @@ export function StructuredData({ stocks, pageType = 'home', companyData }: Struc
       name: companyData.name,
       tickerSymbol: companyData.ticker,
       price: companyData.price,
+      priceCurrency: 'USD',
       marketCap: companyData.marketCap,
       ...(companyData.sector && { sector: companyData.sector }),
       ...(companyData.industry && { industry: companyData.industry }),
+      url: `${baseUrl}/company/${companyData.ticker}`,
     };
 
     return (
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(companySchema),
-        }}
-      />
+      <>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(companySchema),
+          }}
+        />
+        {breadcrumbSchema && (
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify(breadcrumbSchema),
+            }}
+          />
+        )}
+      </>
     );
   }
 
@@ -66,8 +98,8 @@ export function StructuredData({ stocks, pageType = 'home', companyData }: Struc
       itemListElement: stockItems,
     };
 
-    // Breadcrumbs for homepage
-    const breadcrumbSchema = {
+    // Use provided breadcrumbs or default homepage breadcrumb
+    const defaultBreadcrumb = breadcrumbSchema || {
       '@context': 'https://schema.org',
       '@type': 'BreadcrumbList',
       itemListElement: [
@@ -75,7 +107,7 @@ export function StructuredData({ stocks, pageType = 'home', companyData }: Struc
           '@type': 'ListItem',
           position: 1,
           name: 'Home',
-          item: 'https://premarketprice.com',
+          item: baseUrl,
         },
       ],
     };
@@ -91,10 +123,22 @@ export function StructuredData({ stocks, pageType = 'home', companyData }: Struc
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(breadcrumbSchema),
+            __html: JSON.stringify(defaultBreadcrumb),
           }}
         />
       </>
+    );
+  }
+
+  // For other page types (earnings, heatmap), just return breadcrumbs if provided
+  if (breadcrumbSchema) {
+    return (
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbSchema),
+        }}
+      />
     );
   }
 

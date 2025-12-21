@@ -5,6 +5,7 @@
 
 import { redisClient } from './client';
 import { REDIS_KEYS, REDIS_TTL } from './keys';
+import { getDateET as getDateETFromUtils } from '@/lib/utils/dateET';
 
 export type RankField = 'price' | 'cap' | 'capdiff' | 'chg';
 
@@ -24,11 +25,8 @@ export interface RankIndexData {
  * Get date string in YYYY-MM-DD format (ET timezone)
  */
 export function getDateET(): string {
-  const etNow = new Date(new Date().toLocaleString("en-US", { timeZone: "America/New_York" }));
-  const year = etNow.getFullYear();
-  const month = String(etNow.getMonth() + 1).padStart(2, '0');
-  const day = String(etNow.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  // IMPORTANT: Use ET calendar date derived via Intl (no localized string parsing).
+  return getDateETFromUtils(new Date());
 }
 
 /**

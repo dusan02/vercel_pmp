@@ -60,9 +60,9 @@ export async function addToDLQ(
       await redisClient.zRemRangeByRank(DLQ_KEY, 0, size - DLQ_MAX_SIZE);
     }
 
-    logger.warn({ jobId, type, attempts }, 'Job added to DLQ');
+    logger.warn('Job added to DLQ', { jobId, type, attempts });
   } catch (err) {
-    logger.error({ err }, 'Failed to add job to DLQ');
+    logger.error('Failed to add job to DLQ', err);
   }
 }
 
@@ -101,7 +101,7 @@ export async function getDLQJobs(
 
     return failedJobs;
   } catch (err) {
-    logger.error({ err }, 'Failed to get DLQ jobs');
+    logger.error('Failed to get DLQ jobs', err);
     return [];
   }
 }
@@ -123,7 +123,7 @@ export async function removeFromDLQ(jobId: string): Promise<void> {
         const failedJob = JSON.parse(job) as FailedJob;
         if (failedJob.id === jobId) {
           await redisClient.zRem(DLQ_KEY, job);
-          logger.info({ jobId }, 'Job removed from DLQ');
+          logger.info('Job removed from DLQ', { jobId });
           return;
         }
       } catch {
@@ -131,7 +131,7 @@ export async function removeFromDLQ(jobId: string): Promise<void> {
       }
     }
   } catch (err) {
-    logger.error({ err }, 'Failed to remove job from DLQ');
+    logger.error('Failed to remove job from DLQ', err);
   }
 }
 
@@ -147,10 +147,10 @@ export async function clearDLQ(): Promise<number> {
 
     const count = await redisClient.zCard(DLQ_KEY);
     await redisClient.del(DLQ_KEY);
-    logger.info({ count }, 'DLQ cleared');
+    logger.info('DLQ cleared', { count });
     return count;
   } catch (err) {
-    logger.error({ err }, 'Failed to clear DLQ');
+    logger.error('Failed to clear DLQ', err);
     return 0;
   }
 }
@@ -184,7 +184,7 @@ export async function getDLQStats(): Promise<{
       byType
     };
   } catch (err) {
-    logger.error({ err }, 'Failed to get DLQ stats');
+    logger.error('Failed to get DLQ stats', err);
     return { total: 0, byType: {} };
   }
 }

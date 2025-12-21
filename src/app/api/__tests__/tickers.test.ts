@@ -1,5 +1,7 @@
 import { NextRequest } from 'next/server';
 import { GET } from '../tickers/default/route';
+// Import the mocked module to spy on it if needed, though we defined the mock above
+import * as defaultTickers from '@/data/defaultTickers';
 
 // Mock defaultTickers to return stable data for tests
 jest.mock('@/data/defaultTickers', () => ({
@@ -18,11 +20,6 @@ jest.mock('@/data/defaultTickers', () => ({
     cm: ['AAPL', 'MSFT', 'GOOGL', 'NVDA', 'TSLA', 'META', 'AMZN', 'NFLX']
   }
 }));
-
-import { NextRequest } from 'next/server';
-import { GET } from '../tickers/default/route';
-// Import the mocked module to spy on it if needed, though we defined the mock above
-import * as defaultTickers from '@/data/defaultTickers';
 
 describe('/api/tickers/default', () => {
   beforeEach(() => {

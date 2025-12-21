@@ -38,6 +38,37 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [hoveredLeaf, setHoveredLeaf] = useState<TreemapLeaf | null>(null);
 
+    const fontFamily = `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+    const MIN_TICKER_FONT_PX = 6; // below this, ticker isn't realistically readable
+    const MIN_VALUE_FONT_PX = 6;
+
+    const fitFontPxToBox = (
+        ctx: CanvasRenderingContext2D,
+        text: string,
+        desiredFontPx: number,
+        boxW: number,
+        boxH: number,
+        weight: string,
+        minFontPx: number
+    ): number | null => {
+        const padding = 3; // keep small inset from borders
+        const maxW = Math.max(0, boxW - padding * 2);
+        const maxH = Math.max(0, boxH - padding * 2);
+        if (maxW <= 0 || maxH <= 0) return null;
+
+        // Font size can't exceed available height (roughly).
+        let fontPx = Math.min(desiredFontPx, Math.floor(maxH));
+        if (fontPx < minFontPx) return null;
+
+        while (fontPx >= minFontPx) {
+            ctx.font = `${weight} ${fontPx}px ${fontFamily}`;
+            const w = ctx.measureText(text).width;
+            if (w <= maxW) return fontPx;
+            fontPx -= 1;
+        }
+        return null;
+    };
+
     // Draw function
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -90,14 +121,27 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
 
                 // Settings for outline
                 ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
-                ctx.lineWidth = 2.5; // Creates effectively ~1.25px outline
+                // Smaller outline for tiny fonts; larger for big fonts.
+                const outline = clampNumber(labelConfig.symbolFontPx / 6, 1, 2.5);
+                ctx.lineWidth = outline;
                 ctx.lineJoin = 'round';
 
                 const centerX = tileX + tileW / 2;
                 const centerY = tileY + tileH / 2;
 
                 if (labelConfig.showSymbol && !labelConfig.showPercent) {
-                    ctx.font = `bold ${labelConfig.symbolFontPx}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+                    const fitted = fitFontPxToBox(
+                        ctx,
+                        company.symbol,
+                        labelConfig.symbolFontPx,
+                        tileW,
+                        tileH,
+                        'bold',
+                        MIN_TICKER_FONT_PX
+                    );
+                    if (!fitted) return;
+
+                    ctx.font = `bold ${fitted}px ${fontFamily}`;
                     // Outline first
                     ctx.strokeText(company.symbol, centerX, centerY);
                     // Then fill
@@ -105,8 +149,46 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
                     ctx.fillText(company.symbol, centerX, centerY);
                 } else if (labelConfig.showSymbol && labelConfig.showPercent) {
                     // Draw Symbol
-                    const symbolY = centerY - (labelConfig.percentFontPx! / 2) - 2;
-                    ctx.font = `bold ${labelConfig.symbolFontPx}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+                    // Try to fit both lines; if value doesn't fit, degrade to ticker-only.
+                    const desiredSymbol = labelConfig.symbolFontPx;
+                    const desiredValue = labelConfig.percentFontPx ?? FONT_SIZE_CONFIG.MIN_PERCENT_SIZE;
+
+                    const fittedSymbol = fitFontPxToBox(
+                        ctx,
+                        company.symbol,
+                        desiredSymbol,
+                        tileW,
+                        tileH * 0.55,
+                        'bold',
+                        MIN_TICKER_FONT_PX
+                    );
+                    if (!fittedSymbol) return;
+
+                    const text = metric === 'mcap'
+                        ? formatMarketCapDiff(company.marketCapDiff)
+                        : formatPercent(company.changePercent);
+
+                    const fittedValue = fitFontPxToBox(
+                        ctx,
+                        text,
+                        desiredValue,
+                        tileW,
+                        tileH * 0.45,
+                        '500',
+                        MIN_VALUE_FONT_PX
+                    );
+
+                    if (!fittedValue) {
+                        // Not enough space for two lines -> show just ticker in center.
+                        ctx.font = `bold ${fittedSymbol}px ${fontFamily}`;
+                        ctx.strokeText(company.symbol, centerX, centerY);
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillText(company.symbol, centerX, centerY);
+                        return;
+                    }
+
+                    const symbolY = centerY - (fittedValue / 2) - 2;
+                    ctx.font = `bold ${fittedSymbol}px ${fontFamily}`;
 
                     // Outline
                     ctx.strokeText(company.symbol, centerX, symbolY);
@@ -115,12 +197,9 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
                     ctx.fillText(company.symbol, centerX, symbolY);
 
                     // Draw Percent/Value
-                    const text = metric === 'mcap'
-                        ? formatMarketCapDiff(company.marketCapDiff)
-                        : formatPercent(company.changePercent);
-                    const percentY = centerY + (labelConfig.symbolFontPx / 2) + 2;
+                    const percentY = centerY + (fittedSymbol / 2) + 2;
 
-                    ctx.font = `500 ${labelConfig.percentFontPx}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+                    ctx.font = `500 ${fittedValue}px ${fontFamily}`;
 
                     // Outline
                     ctx.strokeText(text, centerX, percentY);

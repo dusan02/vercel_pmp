@@ -10,9 +10,9 @@
  * Usage: tsx scripts/verify-data-availability.ts
  */
 
-import { getAllTrackedTickers } from '../src/lib/universeHelpers';
+import { getAllTrackedTickers } from '../src/lib/utils/universeHelpers';
 import { getRankCount, getDateET } from '../src/lib/rankIndexes';
-import { detectSession, nowET } from '../src/lib/timeUtils';
+import { detectSession, nowET } from '../src/lib/utils/timeUtils';
 
 interface VerificationResult {
   name: string;

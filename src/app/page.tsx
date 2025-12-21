@@ -1,6 +1,7 @@
 import HomePage from './HomePage';
 import { getStocksData } from '@/lib/server/stockService';
 import { getProjectTickers } from '@/data/defaultTickers';
+import { logger } from '@/lib/utils/logger';
 
 // Force dynamic to ensure fresh data on every request (SSR)
 export const dynamic = 'force-dynamic';
@@ -15,12 +16,12 @@ export default async function Page() {
   let initialData: any[] = [];
   
   try {
-    console.log('🚀 SSR: Fetching initial data for Top 50 tickers...');
+    logger.ssr('Fetching initial data for Top 50 tickers...');
     const { data } = await getStocksData(top50Tickers, project);
     initialData = data;
-    console.log(`✅ SSR: Loaded ${initialData.length} stocks`);
+    logger.ssr(`Loaded ${initialData.length} stocks`);
   } catch (error) {
-    console.error('❌ SSR Error:', error);
+    logger.error('SSR Error fetching initial data', error, { project, tickerCount: top50Tickers.length });
     // Continue with empty initialData - client side will handle fallback
   }
 

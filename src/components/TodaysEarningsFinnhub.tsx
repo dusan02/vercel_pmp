@@ -229,51 +229,41 @@ function useEarningsData(date: string) {
   return { data, isLoading, error, refetch: () => fetchData(true) };
 }
 
-const EarningsInfoBanner = () => (
-  <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg mx-4 mb-4">
-    <p className="text-sm text-blue-800 dark:text-blue-200 text-center">
-      For a complete earnings table with all companies, visit{' '}
+const EarningsHeader = () => (
+  <div className="section-header">
+    <div className="header-main">
+      <h2>
+        <SectionIcon type="calendar" size={20} className="section-icon" />
+        <span>Today&apos;s Earnings</span>
+      </h2>
+    </div>
+    <div className="text-xs text-gray-600 dark:text-gray-400">
       <a
         href="https://www.earningstable.com"
         target="_blank"
         rel="noopener noreferrer"
-        className="font-semibold underline hover:text-blue-600 dark:hover:text-blue-300 transition-colors"
+        className="underline hover:text-gray-800 dark:hover:text-gray-300 transition-colors"
       >
         www.earningstable.com
       </a>
-    </p>
+    </div>
   </div>
 );
 
 // Loading component for earnings
 const EarningsLoader = () => (
   <section className="todays-earnings">
-    <div className="section-header">
-      <div className="header-main">
-        <h2>
-          <SectionIcon type="calendar" size={20} className="section-icon" />
-          <span>Today&apos;s Earnings</span>
-        </h2>
-      </div>
-    </div>
+    <EarningsHeader />
     <div className="flex items-center justify-center p-8">
       <span className="text-gray-600">Loading today&apos;s earnings...</span>
     </div>
-    <EarningsInfoBanner />
   </section>
 );
 
 // Error component for earnings
 const EarningsError = ({ error, onRetry }: { error: string; onRetry: () => void }) => (
   <section className="todays-earnings">
-    <div className="section-header">
-      <div className="header-main">
-        <h2>
-          <SectionIcon type="calendar" size={20} className="section-icon" />
-          <span>Today&apos;s Earnings</span>
-        </h2>
-      </div>
-    </div>
+    <EarningsHeader />
     <div className="text-center p-8">
       <p className="text-red-600 mb-4">Error loading earnings data: {error}</p>
       <button
@@ -283,25 +273,16 @@ const EarningsError = ({ error, onRetry }: { error: string; onRetry: () => void 
         Try Again
       </button>
     </div>
-    <EarningsInfoBanner />
   </section>
 );
 
 // Empty state component for earnings
 const EarningsEmpty = () => (
   <section className="todays-earnings">
-    <div className="section-header">
-      <div className="header-main">
-        <h2>
-          <SectionIcon type="calendar" size={20} className="section-icon" />
-          <span>Today&apos;s Earnings</span>
-        </h2>
-      </div>
-    </div>
+    <EarningsHeader />
     <div className="text-center p-8 text-gray-500">
       <p>No major company earnings scheduled for today</p>
     </div>
-    <EarningsInfoBanner />
   </section>
 );
 
@@ -313,29 +294,40 @@ export default function TodaysEarningsFinnhub() {
   // Set current date in Eastern Time
   useEffect(() => {
     const updateDate = () => {
-      const now = new Date();
-      // Get current date in Eastern Time
-      const easternTime = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
-      const dateString = easternTime.toISOString().split('T')[0];
-      setCurrentDate(dateString || '');
+      // Use ET calendar date derived via Intl (no localized string parsing).
+      import('@/lib/utils/dateET').then(({ getDateET }) => {
+        setCurrentDate(getDateET(new Date()));
+      });
     };
 
     updateDate();
 
     // Set up midnight refresh (Eastern Time)
-    const now = new Date();
-    const easternTime = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
-    const tomorrowEastern = new Date(easternTime);
-    tomorrowEastern.setDate(tomorrowEastern.getDate() + 1);
-    tomorrowEastern.setHours(0, 0, 0, 0);
+    let midnightTimeout: ReturnType<typeof setTimeout> | null = null;
+    (async () => {
+      const { createETDate, getDateET, toET } = await import('@/lib/utils/dateET');
+      const now = new Date();
 
-    const timeUntilMidnight = tomorrowEastern.getTime() - easternTime.getTime();
+      const pad2 = (n: number) => String(n).padStart(2, '0');
+      const addETCalendarDays = (base: Date, days: number) => {
+        const p = toET(base);
+        const utcNoon = new Date(Date.UTC(p.year, p.month - 1, p.day, 12, 0, 0));
+        utcNoon.setUTCDate(utcNoon.getUTCDate() + days);
+        return `${utcNoon.getUTCFullYear()}-${pad2(utcNoon.getUTCMonth() + 1)}-${pad2(utcNoon.getUTCDate())}`;
+      };
 
-    const midnightTimeout = setTimeout(() => {
-      updateDate();
-    }, timeUntilMidnight);
+      const tomorrowYMD = addETCalendarDays(now, 1);
+      const tomorrowETMidnight = createETDate(tomorrowYMD);
+      const timeUntilMidnight = tomorrowETMidnight.getTime() - now.getTime();
 
-    return () => clearTimeout(midnightTimeout);
+      midnightTimeout = setTimeout(() => updateDate(), Math.max(1000, timeUntilMidnight));
+    })();
+
+    return () => {
+      if (midnightTimeout) {
+        clearTimeout(midnightTimeout);
+      }
+    };
   }, []);
 
   const { data, isLoading, error, refetch } = useEarningsData(currentDate);
@@ -392,14 +384,7 @@ export default function TodaysEarningsFinnhub() {
 
   return (
     <section className="todays-earnings">
-      <div className="section-header">
-        <div className="header-main">
-          <h2>
-            <SectionIcon type="calendar" size={20} className="section-icon" />
-            <span>Today&apos;s Earnings</span>
-          </h2>
-        </div>
-      </div>
+      <EarningsHeader />
 
       {allEarnings.length > 0 ? (
         <div className="overflow-x-auto">
@@ -506,7 +491,6 @@ export default function TodaysEarningsFinnhub() {
         </div>
       )}
 
-      <EarningsInfoBanner />
     </section>
   );
 } 

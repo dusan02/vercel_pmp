@@ -208,9 +208,11 @@ export async function getHeatmap(
 
 /**
  * Set previous close for a date
+ * 
+ * CRITICAL: TTL is now trading-day based, not fixed 24h
  */
 export async function setPrevClose(
-    date: string, // YYYY-MM-DD
+    date: string, // YYYY-MM-DD (trading date)
     symbol: string,
     price: number
 ): Promise<boolean> {
@@ -221,7 +223,11 @@ export async function setPrevClose(
 
         const key = REDIS_KEYS.prevclose(date);
         await redisClient.hSet(key, symbol, price.toString());
-        await redisClient.expire(key, REDIS_TTL.PREVCLOSE);
+        
+        // Use trading-day based TTL (minimum 7 days, up to next trading day + buffer)
+        const { getPreviousCloseTTL } = await import('../utils/pricingStateMachine');
+        const ttl = getPreviousCloseTTL();
+        await redisClient.expire(key, ttl);
 
         return true;
     } catch (error) {

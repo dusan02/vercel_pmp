@@ -40,29 +40,30 @@ export default function CookieConsent({ onAccept }: CookieConsentProps) {
   if (!isVisible) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-gray-700 shadow-lg z-50 p-4">
+    <div className="fixed bottom-0 left-0 right-0 z-50 p-4" style={{ backgroundColor: 'var(--clr-bg)', borderTop: '1px solid var(--clr-border)', boxShadow: '0 -2px 8px rgba(0, 0, 0, 0.05)' }}>
       <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex-1">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">
             🍪 Cookies & Privacy
           </h3>
           <p className="text-xs text-gray-600 dark:text-gray-300">
-            Používame cookies na uloženie vašich preferencií a obľúbených akcií. 
-            Vaše dáta zostávajú na vašom zariadení a nie sú odosielané na servery.
+            We use cookies to store your preferences and favorite stocks. 
+            Your data remains on your device and is not sent to servers.
           </p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={handleDecline}
-            className="px-4 py-2 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+            className="px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 rounded-md transition-colors shadow-sm"
+            style={{ backgroundColor: 'var(--clr-surface)', border: '1px solid var(--clr-border)' }}
           >
-            Odmietnuť
+            Decline
           </button>
           <button
             onClick={handleAccept}
-            className="px-4 py-2 text-xs font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            className="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-md hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 transition-colors shadow-md"
           >
-            Prijať
+            Accept
           </button>
         </div>
       </div>

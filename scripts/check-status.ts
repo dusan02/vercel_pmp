@@ -6,9 +6,9 @@
  * Usage: tsx scripts/check-status.ts
  */
 
-import { prisma } from '../src/lib/prisma';
-import { getAllTrackedTickers } from '../src/lib/universeHelpers';
-import { detectSession, nowET } from '../src/lib/timeUtils';
+import { prisma } from '../src/lib/db/prisma';
+import { getAllTrackedTickers } from '../src/lib/utils/universeHelpers';
+import { detectSession, nowET } from '../src/lib/utils/timeUtils';
 
 interface StatusCheck {
   name: string;

@@ -12,7 +12,7 @@ try {
   // dotenv not available, continue without it
 }
 
-import { addToUniverse } from '@/lib/redisHelpers';
+import { addToUniverse } from '@/lib/redis/operations';
 import { getAllProjectTickers } from '@/data/defaultTickers';
 
 async function main() {

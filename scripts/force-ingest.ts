@@ -10,7 +10,7 @@ if (!process.env.DATABASE_URL) {
   process.env.DATABASE_URL = 'file:./prisma/dev.db';
 }
 
-import { getUniverse } from '@/lib/redisHelpers';
+import { getUniverse } from '@/lib/redis/operations';
 import { ingestBatch } from '@/workers/polygonWorker';
 
 async function main() {
@@ -37,7 +37,8 @@ async function main() {
   console.log(`📊 Ingesting ${testBatch.length} tickers (first ${batchSize} from universe)...`);
   
   try {
-    const results = await ingestBatch(testBatch, apiKey);
+    // Use force=true to bypass pricing state machine (for weekend/holiday ingest)
+    const results = await ingestBatch(testBatch, apiKey, true);
     const successCount = results.filter(r => r.success).length;
     
     console.log(`\n✅ Ingest complete: ${successCount}/${testBatch.length} successful`);

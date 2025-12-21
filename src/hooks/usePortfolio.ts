@@ -26,7 +26,7 @@ export function usePortfolio(props?: UsePortfolioProps) {
           // Ensure all values are numbers
           const validated: Record<string, number> = {};
           for (const [key, value] of Object.entries(parsed)) {
-            if (typeof value === 'number' && value > 0) {
+            if (typeof value === 'number' && isFinite(value) && value >= 0) {
               validated[key] = value;
             }
           }
@@ -58,11 +58,10 @@ export function usePortfolio(props?: UsePortfolioProps) {
   const updateQuantity = useCallback((ticker: string, quantity: number) => {
     setPortfolioHoldings(prev => {
       const updated = { ...prev };
-      if (quantity > 0) {
-        updated[ticker] = quantity;
-      } else {
-        delete updated[ticker];
-      }
+      // IMPORTANT UX: allow temporary 0 during editing without removing the row.
+      // Removal is handled explicitly via the "X" button.
+      const q = (typeof quantity === 'number' && isFinite(quantity) && quantity >= 0) ? quantity : 0;
+      updated[ticker] = q;
       return updated;
     });
   }, [setPortfolioHoldings]);
@@ -106,7 +105,8 @@ export function usePortfolio(props?: UsePortfolioProps) {
 
   // Get portfolio stocks logic (moved from HomePage)
   const portfolioStocks = useMemo(() => {
-    const portfolioTickers = Object.keys(portfolioHoldings).filter(ticker => (portfolioHoldings[ticker] || 0) > 0);
+    // Show rows even for 0 quantity (so user can backspace/edit without the row disappearing).
+    const portfolioTickers = Object.keys(portfolioHoldings);
     
     // Find stocks that we have data for
     const existingStocks = stockData.filter(stock => portfolioTickers.includes(stock.ticker));

@@ -13,7 +13,7 @@ try {
 }
 
 import { getAllProjectTickers } from '@/data/defaultTickers';
-import { addToUniverse, getUniverse } from '@/lib/redisHelpers';
+import { addToUniverse, getUniverse } from '@/lib/redis/operations';
 import { bootstrapPreviousCloses } from '@/workers/polygonWorker';
 
 async function main() {
@@ -51,9 +51,13 @@ async function main() {
       console.warn('⚠️ Universe is empty, using default tickers');
       const defaultTickers = getAllProjectTickers('pmp').slice(0, 100); // Limit to 100 for bootstrap
       const today = new Date().toISOString().split('T')[0];
+      // apiKey is checked above, guaranteed to be string
+      // @ts-expect-error - TypeScript doesn't trust process.env type narrowing
       await bootstrapPreviousCloses(defaultTickers, apiKey, today);
     } else {
       const today = new Date().toISOString().split('T')[0];
+      // apiKey is checked above, guaranteed to be string
+      // @ts-expect-error - TypeScript doesn't trust process.env type narrowing
       await bootstrapPreviousCloses(tickers, apiKey, today);
     }
     console.log('✅ Previous closes bootstrapped');

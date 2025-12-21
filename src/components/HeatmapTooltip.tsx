@@ -18,27 +18,56 @@ interface HeatmapTooltipProps {
 }
 
 export function HeatmapTooltip({ company, position, timeframe, metric }: HeatmapTooltipProps) {
-  // Determine position based on viewport width
-  // Default to right, flip to left if close to right edge
-  const OFFSET = 20;
+  // Determine position based on viewport width and height
+  // Tooltip should be close to cursor but not cover the block
+  const HORIZONTAL_OFFSET = 15; // Distance from cursor horizontally
+  const VERTICAL_OFFSET = 10; // Small offset below cursor to keep block visible
   const TOOLTIP_ESTIMATED_WIDTH = 280;
+  const TOOLTIP_ESTIMATED_HEIGHT = 200; // Estimated tooltip height
   
-  let x = position.x + OFFSET;
+  let x = position.x + HORIZONTAL_OFFSET;
+  let y = position.y + VERTICAL_OFFSET;
   let placement = 'right';
+  let verticalPlacement = 'below';
   
   if (typeof window !== 'undefined') {
-    if (position.x + OFFSET + TOOLTIP_ESTIMATED_WIDTH > window.innerWidth) {
-      x = position.x - OFFSET;
+    // Check if tooltip would overflow right edge
+    if (position.x + HORIZONTAL_OFFSET + TOOLTIP_ESTIMATED_WIDTH > window.innerWidth) {
+      x = position.x - HORIZONTAL_OFFSET;
       placement = 'left';
     }
+    
+    // Check if tooltip would overflow bottom edge - place above cursor instead
+    if (position.y + VERTICAL_OFFSET + TOOLTIP_ESTIMATED_HEIGHT > window.innerHeight) {
+      y = position.y - VERTICAL_OFFSET;
+      verticalPlacement = 'above';
+    }
+    
+    // Ensure tooltip doesn't go off screen
+    x = Math.max(10, Math.min(x, window.innerWidth - TOOLTIP_ESTIMATED_WIDTH - 10));
+    y = Math.max(10, Math.min(y, window.innerHeight - TOOLTIP_ESTIMATED_HEIGHT - 10));
+  }
+
+  // Transform based on placement
+  let transformX = '0';
+  let transformY = '0';
+  
+  if (placement === 'left') {
+    transformX = '-100%';
+  }
+  
+  // For vertical placement, we want tooltip to start at cursor position
+  // (no centering, so it doesn't jump around)
+  if (verticalPlacement === 'above') {
+    transformY = '-100%';
   }
 
   const tooltipStyle: React.CSSProperties = {
     left: `${x}px`,
-    top: `${position.y}px`,
-    transform: placement === 'right' ? 'translate(0, -50%)' : 'translate(-100%, -50%)',
+    top: `${y}px`,
+    transform: `translate(${transformX}, ${transformY})`,
     position: 'fixed',
-    zIndex: 100,
+    zIndex: 1000,
     pointerEvents: 'none',
   };
 

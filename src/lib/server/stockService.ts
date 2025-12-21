@@ -1,5 +1,9 @@
 import { prisma } from '@/lib/db/prisma';
 import { computeMarketCap, computeMarketCapDiff, computePercentChange } from '@/lib/utils/marketCapUtils';
+import { detectSession } from '@/lib/utils/timeUtils';
+import { nowET, getDateET, createETDate } from '@/lib/utils/dateET';
+import { getPricingState } from '@/lib/utils/pricingStateMachine';
+import { calculatePercentChange } from '@/lib/utils/priceResolver';
 
 import { StockData } from '@/lib/types';
 
@@ -42,6 +46,10 @@ export async function getStocksList(options: {
   const dbSortColumn = sortMapping[sort] || 'lastMarketCapDiff';
 
   try {
+    const etNow = nowET();
+    const session = detectSession(etNow);
+    const pricingState = getPricingState(etNow);
+
     const where = tickers && tickers.length > 0 ? { symbol: { in: tickers } } : {};
 
     // Only apply limit if no specific tickers are requested
@@ -69,18 +77,54 @@ export async function getStocksList(options: {
         lastMarketCapDiff: true,
         latestPrevClose: true,
         updatedAt: true,
+        lastPriceUpdated: true,
         sharesOutstanding: true // Required for dynamic marketCapDiff calculation
       }
     });
+
+    // Regular close is only needed after-hours / closed sessions (for correct reference + % change)
+    const regularCloseBySymbol = new Map<string, number>();
+    if (session === 'after' || session === 'closed') {
+      const dateET = getDateET(etNow);
+      const dateObj = createETDate(dateET);
+      const dailyRefs = await prisma.dailyRef.findMany({
+        where: {
+          symbol: { in: stocks.map(s => s.symbol) },
+          date: dateObj
+        },
+        select: { symbol: true, regularClose: true }
+      });
+      dailyRefs.forEach(r => {
+        if (r.regularClose && r.regularClose > 0) {
+          regularCloseBySymbol.set(r.symbol, r.regularClose);
+        }
+      });
+    }
 
     const results: StockData[] = stocks.map(s => {
       const currentPrice = s.lastPrice || 0;
       const previousClose = s.latestPrevClose || 0;
       const sharesOutstanding = s.sharesOutstanding || 0;
+      const regularClose = regularCloseBySymbol.get(s.symbol) || 0;
+
+      const lastTs = s.lastPriceUpdated || s.updatedAt;
+      const lastUpdated = lastTs.toISOString();
+
+      const isFrozen = !!pricingState.useFrozenPrice;
+      const thresholdMin = session === 'live' ? 1 : 5;
+      const ageMs = etNow.getTime() - lastTs.getTime();
+      const isStale = !isFrozen && currentPrice > 0 && ageMs > thresholdMin * 60_000;
 
       // VŽDY počítať percentChange z aktuálnych hodnôt pre konzistentnosť s heatmapou
-      const percentChange = (currentPrice > 0 && previousClose > 0)
-        ? computePercentChange(currentPrice, previousClose)
+      const pct = calculatePercentChange(
+        currentPrice,
+        session,
+        previousClose > 0 ? previousClose : null,
+        regularClose > 0 ? regularClose : null
+      );
+
+      const percentChange = (currentPrice > 0 && (pct.reference.price ?? 0) > 0)
+        ? pct.changePct
         : (s.lastChangePct || 0);
 
       // VŽDY počítať marketCapDiff z aktuálnych hodnôt pre konzistentnosť
@@ -106,7 +150,11 @@ export async function getStocksList(options: {
         percentChange,
         marketCap,
         marketCapDiff,
-        lastUpdated: s.updatedAt.toISOString()
+        lastUpdated,
+        referenceUsed: pct.reference.used,
+        referencePrice: pct.reference.price,
+        isFrozen,
+        isStale
       };
     });
 

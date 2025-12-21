@@ -9,7 +9,8 @@ import { createHash } from 'crypto';
 import { redisClient } from '@/lib/redis';
 import { getDateET } from '@/lib/redis/ranking';
 import { logger } from '@/lib/utils/logger';
-import { detectSession, nowET } from '@/lib/utils/timeUtils';
+import { detectSession } from '@/lib/utils/timeUtils';
+import { nowET } from '@/lib/utils/dateET';
 
 
 export const dynamic = 'force-dynamic'; // Allow dynamic rendering
@@ -97,7 +98,7 @@ export async function GET(req: NextRequest) {
         if (verStr) ver = verStr;
       }
     } catch (e) {
-      logger.warn({ err: e }, 'Could not get version for ETag');
+      logger.warn('Could not get version for ETag', e);
     }
 
     // Get ranked symbols from ZSET
@@ -155,7 +156,7 @@ export async function GET(req: NextRequest) {
         }
       }
     } catch (error) {
-      logger.error({ err: error, zKey }, 'Error getting ranked symbols from ZSET');
+      logger.error('Error getting ranked symbols from ZSET', error, { zKey });
       // Fallback: return empty with error
       return NextResponse.json(
         { rows: [], nextCursor: null, error: 'Redis unavailable' },
@@ -247,7 +248,7 @@ export async function GET(req: NextRequest) {
                 });
               }
             } catch (fallbackError) {
-              logger.warn({ sym, err: fallbackError }, 'Could not get stock data');
+              logger.warn('Could not get stock data', fallbackError, { sym });
               rows.push({
                 t: sym,
                 p: 0,
@@ -258,7 +259,7 @@ export async function GET(req: NextRequest) {
           }
         }
       } catch (error) {
-        logger.error({ err: error }, 'Error fetching stock data from Redis');
+        logger.error('Error fetching stock data from Redis', error);
         // Return minimal rows with just tickers
         rows.push(...pagePairs.map(p => ({
           t: p.sym,
@@ -309,7 +310,7 @@ export async function GET(req: NextRequest) {
     );
 
   } catch (error) {
-    logger.error({ err: error }, 'Optimized stocks API error');
+    logger.error('Optimized stocks API error', error);
 
     return NextResponse.json(
       { rows: [], nextCursor: null, error: 'Internal server error' },

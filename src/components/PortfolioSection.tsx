@@ -51,7 +51,8 @@ export function PortfolioSection({
     }
 
     const term = searchTerm.toLowerCase().trim();
-    const currentHoldings = Object.keys(portfolioHoldings).filter(t => (portfolioHoldings[t] || 0) > 0);
+    // Exclude anything already present in holdings (even if quantity is currently 0 while editing)
+    const currentHoldings = Object.keys(portfolioHoldings);
     const results = allStocks
       .filter(stock =>
         stock && stock.ticker && (
@@ -127,7 +128,7 @@ export function PortfolioSection({
                       <div className="portfolio-search-result-name">{getCompanyName(stock.ticker)}</div>
                     </div>
                     <button
-                      className={BUTTON_ICON}
+                      className="portfolio-add-button"
                       onClick={(e) => {
                         e.stopPropagation();
                         onAddStock(stock.ticker, 1);
@@ -193,10 +194,11 @@ export function PortfolioSection({
                 const price = stock.currentPrice ?? 0;
                 const formattedPrice = isFinite(price) ? Math.round(price).toLocaleString('en-US') : '0';
 
-                // Format percent change without decimals
+                // Format percent change with 2 decimal places
                 const percentChange = stock.percentChange ?? 0;
-                const roundedPercent = isFinite(percentChange) ? Math.round(percentChange) : 0;
-                const formattedPercent = `${roundedPercent >= 0 ? '+' : ''}${roundedPercent}%`;
+                const formattedPercent = isFinite(percentChange) 
+                  ? `${percentChange >= 0 ? '+' : ''}${percentChange.toFixed(2)}%`
+                  : '0.00%';
 
                 return (
                   <tr key={stock.ticker}>
@@ -227,7 +229,7 @@ export function PortfolioSection({
                     <td>
                       ${formattedPrice}
                     </td>
-                    <td className={roundedPercent >= 0 ? 'positive' : 'negative'}>
+                    <td className={percentChange >= 0 ? 'positive' : 'negative'}>
                       {formattedPercent}
                     </td>
                     <td className={value >= 0 ? 'positive' : 'negative'}>
@@ -237,7 +239,7 @@ export function PortfolioSection({
                     </td>
                     <td>
                       <button
-                        className={BUTTON_ICON_DANGER}
+                        className="portfolio-delete-button"
                         onClick={() => onRemoveStock(stock.ticker)}
                         aria-label={`Remove ${stock.ticker} from portfolio`}
                         title="Remove from portfolio"

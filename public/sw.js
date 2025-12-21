@@ -1,7 +1,9 @@
-const CACHE_NAME = "premarketprice-v1.0.0";
-const STATIC_CACHE = "premarketprice-static-v1.0.0";
-const DYNAMIC_CACHE = "premarketprice-dynamic-v1.0.0";
-const API_CACHE = "premarketprice-api-v1.0.0";
+// Version management - increment on layout/structure changes
+const CACHE_VERSION = "2.0.0";
+const CACHE_NAME = `premarketprice-v${CACHE_VERSION}`;
+const STATIC_CACHE = `premarketprice-static-v${CACHE_VERSION}`;
+const DYNAMIC_CACHE = `premarketprice-dynamic-v${CACHE_VERSION}`;
+const API_CACHE = `premarketprice-api-v${CACHE_VERSION}`;
 
 // Files to cache immediately
 const STATIC_FILES = [
@@ -51,10 +53,11 @@ self.addEventListener("activate", (event) => {
       .then((cacheNames) => {
         return Promise.all(
           cacheNames.map((cacheName) => {
+            // Delete ALL old caches that don't match current version
+            // This ensures clean cache on layout changes
             if (
-              cacheName !== STATIC_CACHE &&
-              cacheName !== DYNAMIC_CACHE &&
-              cacheName !== API_CACHE
+              cacheName.startsWith("premarketprice-") &&
+              !cacheName.includes(CACHE_VERSION)
             ) {
               console.log("Service Worker: Deleting old cache:", cacheName);
               return caches.delete(cacheName);
@@ -64,6 +67,7 @@ self.addEventListener("activate", (event) => {
       })
       .then(() => {
         console.log("Service Worker: Activated");
+        // Force claim all clients to use new service worker immediately
         return self.clients.claim();
       })
   );

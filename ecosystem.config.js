@@ -27,12 +27,14 @@ module.exports = {
     {
       name: 'pmp-polygon-worker',
       script: 'src/workers/polygonWorker.ts',
-      interpreter: 'tsx',
+      interpreter: 'npx',
+      interpreter_args: 'tsx',
       instances: 1,
       exec_mode: 'fork',
       env: {
         NODE_ENV: 'production',
-        MODE: 'snapshot'
+        MODE: 'snapshot',
+        ENABLE_WEBSOCKET: 'true'
       },
       error_file: './logs/polygon-worker-error.log',
       out_file: './logs/polygon-worker-out.log',
@@ -47,11 +49,13 @@ module.exports = {
     {
       name: 'pmp-bulk-preloader',
       script: 'src/workers/backgroundPreloader.ts',
-      interpreter: 'tsx',
+      interpreter: 'npx',
+      interpreter_args: 'tsx',
       instances: 1,
       exec_mode: 'fork',
       env: {
-        NODE_ENV: 'production'
+        NODE_ENV: 'production',
+        ENABLE_WEBSOCKET: 'true'
       },
       error_file: './logs/bulk-preloader-error.log',
       out_file: './logs/bulk-preloader-out.log',
@@ -70,12 +74,14 @@ module.exports = {
     {
       name: 'pmp-refs-worker',
       script: 'src/workers/polygonWorker.ts',
-      interpreter: 'tsx',
+      interpreter: 'npx',
+      interpreter_args: 'tsx',
       instances: 1,
       exec_mode: 'fork',
       env: {
         NODE_ENV: 'production',
-        MODE: 'refs'
+        MODE: 'refs',
+        ENABLE_WEBSOCKET: 'true'
       },
       error_file: './logs/refs-worker-error.log',
       out_file: './logs/refs-worker-out.log',

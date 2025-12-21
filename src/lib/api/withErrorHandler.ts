@@ -20,23 +20,22 @@ export function withErrorHandler(handler: ApiHandler): ApiHandler {
       const response = await handler(req, ...args);
 
       const duration = Date.now() - startTime;
-      logger.info({
+      logger.info('API request completed', {
         method: req.method,
         path,
         status: response.status,
         duration
-      }, 'API request completed');
+      });
 
       return response;
     } catch (error: unknown) {
       const duration = Date.now() - startTime;
 
-      logger.error({
-        err: error,
+      logger.error('API request failed', error, {
         method: req.method,
         path,
         duration
-      }, 'API request failed');
+      });
 
       // Don't expose internal error details in production
       const isDevelopment = process.env.NODE_ENV === 'development';
@@ -65,7 +64,7 @@ export function createErrorResponse(
   const isDevelopment = process.env.NODE_ENV === 'development';
   const errorDetails = error instanceof Error ? error.message : String(error);
 
-  logger.error({ err: error }, message);
+  logger.error(message, error);
 
   return NextResponse.json(
     {

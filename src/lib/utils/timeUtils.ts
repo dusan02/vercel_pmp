@@ -1,12 +1,18 @@
 /**
  * Eastern Time utilities and NYSE calendar
+ * 
+ * NOTE: For DST-safe date operations, use dateET.ts helpers
  */
+
+import { createETDate, getDateET, minutesSinceMidnightET, nowET as nowInstant, toET } from './dateET';
 
 /**
  * Get current time in Eastern Timezone
+ * @deprecated Prefer using a real Date instant + `toET()` for components.
  */
 export function nowET(): Date {
-  return new Date(new Date().toLocaleString("en-US", { timeZone: "America/New_York" }));
+  // Return a real instant. ET interpretation must be derived via Intl (`toET`).
+  return nowInstant();
 }
 
 /**
@@ -14,10 +20,8 @@ export function nowET(): Date {
  */
 export function detectSession(etNow?: Date): 'pre' | 'live' | 'after' | 'closed' {
   const now = etNow || nowET();
-  const hours = now.getHours();
-  const minutes = now.getMinutes();
-  const currentTimeInMinutes = hours * 60 + minutes;
-  const dayOfWeek = now.getDay(); // 0 = Sunday, 6 = Saturday
+  const currentTimeInMinutes = minutesSinceMidnightET(now);
+  const dayOfWeek = toET(now).weekday; // 0 = Sunday, 6 = Saturday (ET)
 
   // Check if weekend
   if (dayOfWeek === 0 || dayOfWeek === 6) {
@@ -50,15 +54,34 @@ export function detectSession(etNow?: Date): 'pre' | 'live' | 'after' | 'closed'
  * Check if date is a NYSE market holiday
  */
 export function isMarketHoliday(date: Date): boolean {
-  const month = date.getMonth() + 1; // getMonth() is 0-indexed
-  const day = date.getDate();
-  const dayOfWeek = date.getDay();
-  const year = date.getFullYear();
+  const et = toET(date);
+  const month = et.month; // 1-12 (ET calendar)
+  const day = et.day;
+  const dayOfWeek = et.weekday;
+  const year = et.year;
 
   // Fixed date holidays
-  if (month === 1 && day === 1) return true; // New Year's Day
-  if (month === 7 && day === 4) return true; // Independence Day
-  if (month === 12 && day === 25) return true; // Christmas Day
+  // Include observed days when holiday falls on weekend.
+  const isObservedFixedHoliday = (m: number, d: number) => {
+    // Actual holiday
+    if (month === m && day === d) return true;
+    // Observed Friday if holiday on Saturday
+    if (dayOfWeek === 5) {
+      // Friday observed -> actual holiday is next day (Saturday)
+      if (m === month && d === day + 1) return true;
+    }
+    // Observed Monday if holiday on Sunday
+    if (dayOfWeek === 1) {
+      // Monday observed -> actual holiday is previous day (Sunday)
+      if (m === month && d === day - 1) return true;
+    }
+    return false;
+  };
+
+  if (isObservedFixedHoliday(1, 1)) return true;   // New Year's Day
+  if (year >= 2021 && isObservedFixedHoliday(6, 19)) return true; // Juneteenth (since 2021)
+  if (isObservedFixedHoliday(7, 4)) return true;   // Independence Day
+  if (isObservedFixedHoliday(12, 25)) return true; // Christmas Day
 
   // MLK Day - 3rd Monday in January
   if (month === 1 && dayOfWeek === 1 && day >= 15 && day <= 21) return true;
@@ -66,26 +89,16 @@ export function isMarketHoliday(date: Date): boolean {
   // Presidents' Day - 3rd Monday in February
   if (month === 2 && dayOfWeek === 1 && day >= 15 && day <= 21) return true;
 
-  // Good Friday - Friday before Easter (simplified: check if Friday in late March/early April)
-  // For exact calculation, use Easter algorithm
-  const easter = calculateEaster(year);
-  const goodFriday = new Date(easter);
-  goodFriday.setDate(easter.getDate() - 2);
-  
-  // Compare date parts only (ignore time)
-  if (
-    date.getDate() === goodFriday.getDate() &&
-    date.getMonth() === goodFriday.getMonth() &&
-    date.getFullYear() === goodFriday.getFullYear()
-  ) {
-    return true;
-  }
+  // Good Friday - 2 days before Easter (calendar date, independent of timezone)
+  const easter = calculateEasterMonthDay(year);
+  const easterUTCNoon = new Date(Date.UTC(year, easter.month - 1, easter.day, 12, 0, 0));
+  const goodFridayUTCNoon = new Date(easterUTCNoon.getTime() - 2 * 24 * 60 * 60 * 1000);
+  const gfMonth = goodFridayUTCNoon.getUTCMonth() + 1;
+  const gfDay = goodFridayUTCNoon.getUTCDate();
+  if (month === gfMonth && day === gfDay) return true;
 
   // Memorial Day - Last Monday in May
   if (month === 5 && dayOfWeek === 1 && day >= 25) return true;
-
-  // Juneteenth - June 19 (since 2021)
-  if (month === 6 && day === 19 && year >= 2021) return true;
 
   // Labor Day - 1st Monday in September
   if (month === 9 && dayOfWeek === 1 && day <= 7) return true;
@@ -99,7 +112,7 @@ export function isMarketHoliday(date: Date): boolean {
 /**
  * Calculate Easter date (simplified algorithm)
  */
-function calculateEaster(year: number): Date {
+function calculateEasterMonthDay(year: number): { month: number; day: number } {
   const a = year % 19;
   const b = Math.floor(year / 100);
   const c = year % 100;
@@ -114,8 +127,7 @@ function calculateEaster(year: number): Date {
   const m = Math.floor((a + 11 * h + 22 * l) / 451);
   const month = Math.floor((h + l - 7 * m + 114) / 31);
   const day = ((h + l - 7 * m + 114) % 31) + 1;
-  
-  return new Date(year, month - 1, day);
+  return { month, day };
 }
 
 /**
@@ -133,37 +145,54 @@ export function mapToRedisSession(session: 'pre' | 'live' | 'after' | 'closed'):
   return session === 'closed' ? 'after' : session;
 }
 
+function pad2(n: number): string {
+  return String(n).padStart(2, '0');
+}
+
+function addETCalendarDays(base: Date, days: number): string {
+  const p = toET(base);
+  // Use UTC noon to avoid DST edges; we only need the calendar date.
+  const utcNoon = new Date(Date.UTC(p.year, p.month - 1, p.day, 12, 0, 0));
+  utcNoon.setUTCDate(utcNoon.getUTCDate() + days);
+  const y = utcNoon.getUTCFullYear();
+  const m = utcNoon.getUTCMonth() + 1;
+  const d = utcNoon.getUTCDate();
+  return `${y}-${pad2(m)}-${pad2(d)}`;
+}
+
+function atETTime(date: Date, hour: number, minute: number): Date {
+  const ymd = getDateET(date);
+  const etMidnight = createETDate(ymd);
+  return new Date(etMidnight.getTime() + (hour * 60 + minute) * 60_000);
+}
+
 /**
  * Get next market open time
  */
 export function getNextMarketOpen(etNow?: Date): Date {
   const now = etNow || nowET();
-  const next = new Date(now);
-  
-  // If it's weekend or holiday, find next weekday
-  while (next.getDay() === 0 || next.getDay() === 6 || isMarketHoliday(next)) {
-    next.setDate(next.getDate() + 1);
-    next.setHours(9, 30, 0, 0); // Market opens at 9:30 AM ET
+  const nowParts = toET(now);
+  const isWeekend = nowParts.weekday === 0 || nowParts.weekday === 6;
+
+  // If today is a trading day and we're before 09:30 ET, return today 09:30 ET
+  const beforeOpen = nowParts.hour < 9 || (nowParts.hour === 9 && nowParts.minute < 30);
+  if (!isWeekend && !isMarketHoliday(now) && beforeOpen) {
+    return atETTime(now, 9, 30);
   }
-  
-  // If it's before 9:30 AM today and market is open today
-  if (now.getHours() < 9 || (now.getHours() === 9 && now.getMinutes() < 30)) {
-    if (!isMarketHoliday(now) && now.getDay() !== 0 && now.getDay() !== 6) {
-      next.setHours(9, 30, 0, 0);
-      return next;
+
+  // Otherwise find next trading day (calendar days in ET)
+  let cursor = now;
+  while (true) {
+    const nextYMD = addETCalendarDays(cursor, 1);
+    const nextDay = createETDate(nextYMD);
+    if (!isMarketHoliday(nextDay)) {
+      const w = toET(nextDay).weekday;
+      if (w !== 0 && w !== 6) {
+        return new Date(nextDay.getTime() + (9 * 60 + 30) * 60_000);
+      }
     }
+    cursor = nextDay;
   }
-  
-  // Otherwise, next day at 9:30 AM
-  next.setDate(next.getDate() + 1);
-  next.setHours(9, 30, 0, 0);
-  
-  // Skip weekends and holidays
-  while (next.getDay() === 0 || next.getDay() === 6 || isMarketHoliday(next)) {
-    next.setDate(next.getDate() + 1);
-  }
-  
-  return next;
 }
 
 /**
@@ -171,19 +200,18 @@ export function getNextMarketOpen(etNow?: Date): Date {
  * Excludes weekends and market holidays
  */
 export function getLastTradingDay(beforeDate?: Date): Date {
-  const date = beforeDate || nowET();
-  const lastTradingDay = new Date(date);
-  lastTradingDay.setHours(0, 0, 0, 0);
-  
-  // Go back one day
-  lastTradingDay.setDate(lastTradingDay.getDate() - 1);
-  
-  // Skip weekends and holidays until we find a trading day
-  while (lastTradingDay.getDay() === 0 || lastTradingDay.getDay() === 6 || isMarketHoliday(lastTradingDay)) {
-    lastTradingDay.setDate(lastTradingDay.getDate() - 1);
+  const base = beforeDate || nowET();
+  // Start from ET date of base (calendar), then step back until trading day.
+  let cursorYMD = addETCalendarDays(base, 0);
+
+  while (true) {
+    cursorYMD = addETCalendarDays(createETDate(cursorYMD), -1);
+    const candidate = createETDate(cursorYMD);
+    const w = toET(candidate).weekday;
+    if (w !== 0 && w !== 6 && !isMarketHoliday(candidate)) {
+      return candidate; // ET midnight
+    }
   }
-  
-  return lastTradingDay;
 }
 
 /**
@@ -191,9 +219,6 @@ export function getLastTradingDay(beforeDate?: Date): Date {
  */
 export function getLastTradingDayString(beforeDate?: Date): string {
   const date = getLastTradingDay(beforeDate);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  return getDateET(date);
 }
 

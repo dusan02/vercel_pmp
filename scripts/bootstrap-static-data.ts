@@ -134,7 +134,7 @@ async function bootstrapStaticData() {
   try {
     // Get all tracked tickers (500-600)
     const allTickers = await getAllTrackedTickers();
-    logger.info({ totalTickers: allTickers.length }, 'Loaded tracked tickers');
+    logger.info(`Loaded tracked tickers: ${allTickers.length}`);
 
     if (allTickers.length === 0) {
       logger.warn('No tickers to bootstrap');
@@ -153,11 +153,7 @@ async function bootstrapStaticData() {
       const batchNum = Math.floor(i / batchSize) + 1;
       const totalBatches = Math.ceil(allTickers.length / batchSize);
 
-      logger.info({
-        batch: batchNum,
-        totalBatches,
-        batchSize: batch.length
-      }, `Processing batch ${batchNum}/${totalBatches}`);
+      logger.info(`Processing batch ${batchNum}/${totalBatches} (size: ${batch.length})`);
 
       for (const ticker of batch) {
         try {
@@ -211,26 +207,20 @@ async function bootstrapStaticData() {
             added++;
           }
         } catch (error) {
-          logger.error({ err: error, ticker }, `Failed to bootstrap ticker ${ticker}`);
+          logger.error(`Failed to bootstrap ticker ${ticker}`, error, { ticker });
           errors++;
         }
       }
     }
 
-    logger.info({
-      added,
-      updated,
-      skipped,
-      errors,
-      total: allTickers.length
-    }, '✅ Static data bootstrap completed');
+    logger.info(`✅ Static data bootstrap completed: ${added} added, ${updated} updated, ${skipped} skipped, ${errors} errors, ${allTickers.length} total`);
 
     // Verify count
     const dbCount = await prisma.ticker.count();
-    logger.info({ dbCount }, '📊 Total tickers in database');
+    logger.info(`📊 Total tickers in database: ${dbCount}`);
 
   } catch (error) {
-    logger.error({ err: error }, 'Error bootstrapping static data');
+    logger.error('Error bootstrapping static data', error);
     throw error;
   }
 }
@@ -243,7 +233,7 @@ if (require.main === module) {
       process.exit(0);
     })
     .catch((error) => {
-      logger.error({ err: error }, '❌ Bootstrap failed');
+      logger.error('❌ Bootstrap failed', error);
       process.exit(1);
     })
     .finally(async () => {

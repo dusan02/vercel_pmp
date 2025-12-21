@@ -6,16 +6,17 @@
  * 3. Pattern-based generation
  */
 
-import { prisma } from '../src/lib/prisma';
+import { prisma } from '../src/lib/db/prisma';
+import { validateSectorIndustry, normalizeIndustry } from '../src/lib/utils/sectorIndustryValidator';
 
 // Hardcoded mapping for major stocks (from stocks/route.ts)
 const coreSectors: { [key: string]: { sector: string; industry: string } } = {
   // Technology
   'AAPL': { sector: 'Technology', industry: 'Consumer Electronics' },
   'MSFT': { sector: 'Technology', industry: 'Software' },
-  'GOOGL': { sector: 'Technology', industry: 'Internet Services' },
-  'GOOG': { sector: 'Technology', industry: 'Internet Services' },
-  'META': { sector: 'Technology', industry: 'Internet Services' },
+  'GOOGL': { sector: 'Technology', industry: 'Internet Content & Information' },
+  'GOOG': { sector: 'Technology', industry: 'Internet Content & Information' },
+  'META': { sector: 'Technology', industry: 'Internet Content & Information' },
   'NVDA': { sector: 'Technology', industry: 'Semiconductors' },
   'AVGO': { sector: 'Technology', industry: 'Semiconductors' },
   'AMD': { sector: 'Technology', industry: 'Semiconductors' },
@@ -42,8 +43,8 @@ const coreSectors: { [key: string]: { sector: string; industry: string } } = {
   'MCD': { sector: 'Consumer Cyclical', industry: 'Restaurants' },
   'SBUX': { sector: 'Consumer Cyclical', industry: 'Restaurants' },
   'NKE': { sector: 'Consumer Cyclical', industry: 'Footwear & Accessories' },
-  'DIS': { sector: 'Consumer Cyclical', industry: 'Entertainment' },
-  'NFLX': { sector: 'Consumer Cyclical', industry: 'Entertainment' },
+  'DIS': { sector: 'Communication Services', industry: 'Entertainment' },
+  'NFLX': { sector: 'Communication Services', industry: 'Entertainment' },
   'BKNG': { sector: 'Consumer Cyclical', industry: 'Travel Services' },
   'MAR': { sector: 'Consumer Cyclical', industry: 'Lodging' },
   'LOW': { sector: 'Consumer Cyclical', industry: 'Home Improvement Retail' },
@@ -313,6 +314,19 @@ async function updateSectorIndustry() {
             
             // Small delay to avoid rate limits
             await new Promise(resolve => setTimeout(resolve, 200));
+          }
+
+          // Validate before saving
+          if (sector && industry) {
+            const isValid = validateSectorIndustry(sector, industry);
+            if (!isValid) {
+              console.warn(`  ⚠️  ${ticker.symbol}: Invalid combination - ${sector} / ${industry}, setting to NULL`);
+              sector = null;
+              industry = null;
+            } else {
+              // Normalize industry name
+              industry = normalizeIndustry(sector, industry) || industry;
+            }
           }
 
           // Update if we have new data

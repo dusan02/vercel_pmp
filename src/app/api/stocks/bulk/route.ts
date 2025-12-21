@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCachedData, setCachedData } from '@/lib/redis/operations';
 import { getCacheKey } from '@/lib/redis/keys';
 import { getSharesOutstanding, getPreviousClose, getCurrentPrice, computePercentChange, computeMarketCap, computeMarketCapDiff } from '@/lib/utils/marketCapUtils';
+import { detectSession, nowET } from '@/lib/utils/timeUtils';
+import { prisma } from '@/lib/db/prisma';
+import { getDateET, createETDate } from '@/lib/utils/dateET';
 
 interface StockData {
   ticker: string;
@@ -38,6 +41,33 @@ export async function GET(req: NextRequest) {
 
     const results: StockData[] = [];
     const errors: string[] = [];
+
+    // Get current session for session-aware percent change calculation
+    const etNow = nowET();
+    const session = detectSession(etNow);
+    
+    // Get regularClose for after-hours sessions
+    const regularCloseMap = new Map<string, number>();
+    if (session === 'after' || session === 'closed') {
+      try {
+        const dateET = getDateET(etNow);
+        const dateObj = createETDate(dateET);
+        const dailyRefs = await prisma.dailyRef.findMany({
+          where: {
+            symbol: { in: tickerList },
+            date: dateObj
+          },
+          select: { symbol: true, regularClose: true }
+        });
+        dailyRefs.forEach(ref => {
+          if (ref.regularClose && ref.regularClose > 0) {
+            regularCloseMap.set(ref.symbol, ref.regularClose);
+          }
+        });
+      } catch (error) {
+        console.warn('Failed to load regular closes:', error);
+      }
+    }
 
     // Process tickers in parallel with rate limiting
     const promises = tickerList.map(async (ticker, index) => {
@@ -82,7 +112,9 @@ export async function GET(req: NextRequest) {
           return;
         }
 
-        const percentChange = computePercentChange(currentPrice, prevClose);
+        // Use session-aware calculation for correct after-hours % changes
+        const regularClose = regularCloseMap.get(ticker) || null;
+        const percentChange = computePercentChange(currentPrice, prevClose, session, regularClose);
         const marketCap = computeMarketCap(currentPrice, shares);
         const marketCapDiff = computeMarketCapDiff(currentPrice, prevClose, shares);
 

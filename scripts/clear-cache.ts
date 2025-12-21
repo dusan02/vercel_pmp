@@ -12,7 +12,7 @@ try {
   // dotenv not available, continue without it
 }
 
-import { redisClient } from '@/lib/redis';
+import { redisClient } from '../src/lib/redis/client';
 import { UnifiedCache } from '@/lib/unifiedCache';
 import { clearAllCaches } from '@/lib/marketCapUtils';
 
