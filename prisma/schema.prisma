@@ -7,6 +7,86 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?
+  access_token       String?
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  favorites     UserFavorite[]
+  portfolio     PortfolioItem[]
+  preferences   UserPreferences?
+}
+
+model PortfolioItem {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ticker    String
+  quantity  Float
+  avgPrice  Float?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tickerRef Ticker   @relation(fields: [ticker], references: [symbol], onDelete: Cascade)
+
+  @@unique([userId, ticker])
+  @@index([userId])
+  @@index([ticker])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model UserPreferences {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  favorites       String
+  theme           String   @default("auto")
+  defaultTab      String   @default("all")
+  autoRefresh     Boolean  @default(true)
+  refreshInterval Int      @default(30)
+  showEarnings    Boolean  @default(true)
+  showNews        Boolean  @default(true)
+  tableColumns    String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
 model EarningsCalendar {
   id                     String   @id @default(cuid())
   ticker                 String
@@ -28,21 +108,6 @@ model EarningsCalendar {
   @@unique([ticker, date])
   @@index([date])
   @@index([ticker])
-}
-
-model UserPreferences {
-  id              String   @id @default(cuid())
-  userId          String   @unique
-  favorites       String
-  theme           String   @default("auto")
-  defaultTab      String   @default("all")
-  autoRefresh     Boolean  @default(true)
-  refreshInterval Int      @default(30)
-  showEarnings    Boolean  @default(true)
-  showNews        Boolean  @default(true)
-  tableColumns    String
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
 }
 
 model Ticker {
@@ -68,6 +133,7 @@ model Ticker {
   dailyRefs     DailyRef[]
   sessionPrices SessionPrice[]
   userFavorites UserFavorite[]
+  portfolio     PortfolioItem[]
 
   @@index([sector])
   @@index([sharesOutstanding])
@@ -118,6 +184,7 @@ model SessionPrice {
 model UserFavorite {
   id        String   @id @default(cuid())
   userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   ticker    String
   createdAt DateTime @default(now())
   tickerRef Ticker   @relation(fields: [ticker], references: [symbol], onDelete: Cascade)

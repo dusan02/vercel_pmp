@@ -4,8 +4,9 @@ import './globals.css'
 import ErrorBoundaryWrapper from '@/components/ErrorBoundaryWrapper'
 import ScrollToTopButton from '@/components/ScrollToTopButton'
 import { Providers } from './providers'
+import { AuthProvider } from '@/components/AuthProvider'
 
-const inter = Inter({ 
+const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
   display: 'swap',
@@ -156,7 +157,7 @@ export default function RootLayout({
         {/* Resource Hints - Preconnect to external APIs */}
         <link rel="preconnect" href="https://api.polygon.io" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://finnhub.io" crossOrigin="anonymous" />
-        
+
         {/* Cache Clear Utility - Development Only */}
         {process.env.NODE_ENV === 'development' && (
           <script
@@ -220,54 +221,56 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} ${spaceGrotesk.variable} ${inter.className}`}>
         <Providers>
-          {/* Structured Data - Organization */}
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{
-              __html: JSON.stringify({
-                '@context': 'https://schema.org',
-                '@type': 'Organization',
-                name: 'PreMarketPrice.com',
-                url: 'https://premarketprice.com',
-                logo: 'https://premarketprice.com/og-image.png',
-                description: 'Real-time stock data, pre-market movements, and earnings calendar for 300+ global companies.',
-                sameAs: [
-                  'https://twitter.com/premarketprice',
-                  'https://www.linkedin.com/company/premarketprice',
-                ],
-                contactPoint: {
-                  '@type': 'ContactPoint',
-                  contactType: 'Customer Service',
-                  email: 'support@premarketprice.com',
-                },
-              }),
-            }}
-          />
-          {/* Structured Data - WebSite */}
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{
-              __html: JSON.stringify({
-                '@context': 'https://schema.org',
-                '@type': 'WebSite',
-                name: 'PreMarketPrice.com',
-                url: 'https://premarketprice.com',
-                description: 'Track pre-market movements and earnings calendar of 300+ global companies. Real-time stock data, market analysis, and portfolio tracking.',
-                potentialAction: {
-                  '@type': 'SearchAction',
-                  target: {
-                    '@type': 'EntryPoint',
-                    urlTemplate: 'https://premarketprice.com/?search={search_term_string}',
+          <AuthProvider>
+            {/* Structured Data - Organization */}
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{
+                __html: JSON.stringify({
+                  '@context': 'https://schema.org',
+                  '@type': 'Organization',
+                  name: 'PreMarketPrice.com',
+                  url: 'https://premarketprice.com',
+                  logo: 'https://premarketprice.com/og-image.png',
+                  description: 'Real-time stock data, pre-market movements, and earnings calendar for 300+ global companies.',
+                  sameAs: [
+                    'https://twitter.com/premarketprice',
+                    'https://www.linkedin.com/company/premarketprice',
+                  ],
+                  contactPoint: {
+                    '@type': 'ContactPoint',
+                    contactType: 'Customer Service',
+                    email: 'support@premarketprice.com',
                   },
-                  'query-input': 'required name=search_term_string',
-                },
-              }),
-            }}
-          />
-          <ErrorBoundaryWrapper>
-            {children}
-          </ErrorBoundaryWrapper>
-          <ScrollToTopButton />
+                }),
+              }}
+            />
+            {/* Structured Data - WebSite */}
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{
+                __html: JSON.stringify({
+                  '@context': 'https://schema.org',
+                  '@type': 'WebSite',
+                  name: 'PreMarketPrice.com',
+                  url: 'https://premarketprice.com',
+                  description: 'Track pre-market movements and earnings calendar of 300+ global companies. Real-time stock data, market analysis, and portfolio tracking.',
+                  potentialAction: {
+                    '@type': 'SearchAction',
+                    target: {
+                      '@type': 'EntryPoint',
+                      urlTemplate: 'https://premarketprice.com/?search={search_term_string}',
+                    },
+                    'query-input': 'required name=search_term_string',
+                  },
+                }),
+              }}
+            />
+            <ErrorBoundaryWrapper>
+              {children}
+            </ErrorBoundaryWrapper>
+            <ScrollToTopButton />
+          </AuthProvider>
         </Providers>
       </body>
     </html>

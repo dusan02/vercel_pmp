@@ -1,0 +1,45 @@
+{
+  "timestamp": "2025-12-23T12:59:02.026Z",
+  "baseUrl": "http://localhost:3000",
+  "totalDuration": "7.41s",
+  "summary": {
+    "total": 4,
+    "successful": 3,
+    "failed": 1
+  },
+  "statistics": {
+    "average": "1.10s",
+    "min": "290ms",
+    "max": "2.91s"
+  },
+  "results": [
+    {
+      "name": "Verify Sector/Industry",
+      "endpoint": "/api/cron/verify-sector-industry",
+      "success": true,
+      "duration": "350ms",
+      "statusCode": 200
+    },
+    {
+      "name": "Update Static Data",
+      "endpoint": "/api/cron/update-static-data",
+      "success": true,
+      "duration": "2.91s",
+      "statusCode": 200
+    },
+    {
+      "name": "Earnings Calendar",
+      "endpoint": "/api/cron/earnings-calendar",
+      "success": true,
+      "duration": "855ms",
+      "statusCode": 200
+    },
+    {
+      "name": "Blog Scheduler",
+      "endpoint": "/api/cron/blog",
+      "success": false,
+      "duration": "290ms",
+      "error": "Body is unusable: Body has already been read"
+    }
+  ]
+}

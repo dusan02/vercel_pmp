@@ -16,8 +16,12 @@ REDIS_URL=redis://localhost:6379
 DATABASE_URL=file:./data/premarket.db
 
 # Next.js Configuration
-NEXTAUTH_SECRET=your-secret-key-here
+AUTH_SECRET=your-auth-secret-here
 NEXTAUTH_URL=http://localhost:3000
+
+# Google OAuth
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
 "@
 
 $envContent | Out-File -FilePath ".env.local" -Encoding UTF8

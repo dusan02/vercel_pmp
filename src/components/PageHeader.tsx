@@ -6,6 +6,7 @@
 
 import { BrandLogo } from './BrandLogo';
 import { MarketIndices } from './MarketIndices';
+import { LoginButton } from './LoginButton';
 
 interface PageHeaderProps {
   navigation?: React.ReactNode;
@@ -40,11 +41,12 @@ export function PageHeader({ navigation }: PageHeaderProps) {
         </div>
 
         {/* RIGHT ZONE: Navigation */}
-        {navigation && (
-          <div className="header-right">
-            {navigation}
+        <div className="header-right flex items-center gap-4">
+          {navigation}
+          <div className="border-l pl-4 border-gray-700 h-6 flex items-center">
+            <LoginButton />
           </div>
-        )}
+        </div>
       </div>
     </header>
   );

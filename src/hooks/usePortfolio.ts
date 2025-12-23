@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { StockData } from '@/lib/types';
 import { safeGetItem, safeSetItem, safeRemoveItem } from '@/lib/utils/safeStorage';
+import { useSession } from 'next-auth/react';
 
 const PORTFOLIO_STORAGE_KEY = 'pmp_portfolio_holdings';
 
@@ -14,6 +15,7 @@ export function usePortfolio(props?: UsePortfolioProps) {
   const stockData = props?.stockData || [];
   const [portfolioHoldings, setPortfolioHoldingsState] = useState<Record<string, number>>({});
   const [isLoaded, setIsLoaded] = useState(false);
+  const { data: session } = useSession();
 
   // Load portfolio from localStorage on mount
   useEffect(() => {
@@ -21,9 +23,7 @@ export function usePortfolio(props?: UsePortfolioProps) {
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        // Validate parsed data structure
         if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-          // Ensure all values are numbers
           const validated: Record<string, number> = {};
           for (const [key, value] of Object.entries(parsed)) {
             if (typeof value === 'number' && isFinite(value) && value >= 0) {
@@ -32,54 +32,126 @@ export function usePortfolio(props?: UsePortfolioProps) {
           }
           setPortfolioHoldingsState(validated);
         } else {
-          console.warn('⚠️ Invalid portfolio format, clearing');
           safeRemoveItem(PORTFOLIO_STORAGE_KEY);
         }
       } catch (parseError) {
-        console.error('⚠️ Error parsing portfolio, clearing corrupted data:', parseError);
         safeRemoveItem(PORTFOLIO_STORAGE_KEY);
       }
     }
     setIsLoaded(true);
   }, []);
 
+  // Sync with Cloud
+  useEffect(() => {
+    async function syncPortfolio() {
+      if (session?.user?.id && isLoaded) {
+        try {
+          const localKeys = Object.keys(portfolioHoldings);
+          if (localKeys.length > 0) {
+            // Sync local to cloud (merge/upload)
+            await fetch('/api/user/portfolio', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'sync', holdings: portfolioHoldings })
+            });
+          }
+
+          // Fetch latest from cloud
+          const res = await fetch('/api/user/portfolio');
+          if (res.ok) {
+            const data = await res.json();
+            if (data.holdings) {
+              // If cloud has data, update local. 
+              // Only if cloud has MORE keys or different values?
+              // For simplicity, take cloud as truth if it exists, but we just uploaded local, so it should be Superset.
+              if (Object.keys(data.holdings).length > 0) {
+                setPortfolioHoldingsState(data.holdings);
+                safeSetItem(PORTFOLIO_STORAGE_KEY, JSON.stringify(data.holdings));
+              }
+            }
+          }
+        } catch (e) {
+          console.error('Error syncing portfolio:', e);
+        }
+      }
+    }
+
+    // Trigger sync when session or isLoaded changes (and ensure we don't loop infinitely)
+    // We only want to run this ONCE per session mount ideally.
+    if (session?.user?.id && isLoaded) {
+      // Simple debounce or flag could be used, but Effect dependency is okay for now 
+      // as long as portfolioHoldings doesn't change causing loop. 
+      // Wait, portfolioHoldings IS a dependency if we include it.
+      // We omit portfolioHoldings from dependency to run only on mount/session change.
+      syncPortfolio();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.user?.id, isLoaded]);
+
   // Save to localStorage whenever portfolio changes
   const setPortfolioHoldings = useCallback((updater: Record<string, number> | ((prev: Record<string, number>) => Record<string, number>)) => {
     setPortfolioHoldingsState(prev => {
       const updated = typeof updater === 'function' ? updater(prev) : updater;
-      
-      // Save to localStorage
       safeSetItem(PORTFOLIO_STORAGE_KEY, JSON.stringify(updated));
-      
       return updated;
     });
   }, []);
 
-  const updateQuantity = useCallback((ticker: string, quantity: number) => {
+  const updateQuantity = useCallback(async (ticker: string, quantity: number) => {
+    // Optimistic update
     setPortfolioHoldings(prev => {
       const updated = { ...prev };
-      // IMPORTANT UX: allow temporary 0 during editing without removing the row.
-      // Removal is handled explicitly via the "X" button.
       const q = (typeof quantity === 'number' && isFinite(quantity) && quantity >= 0) ? quantity : 0;
       updated[ticker] = q;
       return updated;
     });
-  }, [setPortfolioHoldings]);
 
-  const removeStock = useCallback((ticker: string) => {
+    if (session?.user?.id) {
+      try {
+        await fetch('/api/user/portfolio', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'update', ticker, quantity })
+        });
+      } catch (e) { console.error('Cloud update failed', e); }
+    }
+  }, [setPortfolioHoldings, session?.user?.id]);
+
+  const removeStock = useCallback(async (ticker: string) => {
     setPortfolioHoldings(prev => {
       const updated = { ...prev };
       delete updated[ticker];
       return updated;
     });
-  }, [setPortfolioHoldings]);
 
-  const addStock = useCallback((ticker: string, quantity?: number) => {
+    if (session?.user?.id) {
+      try {
+        await fetch('/api/user/portfolio', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'remove', ticker })
+        });
+      } catch (e) { console.error('Cloud remove failed', e); }
+    }
+  }, [setPortfolioHoldings, session?.user?.id]);
+
+  const addStock = useCallback(async (ticker: string, quantity?: number) => {
+    const qty = quantity || 1;
     setPortfolioHoldings(prev => ({
       ...prev,
-      [ticker]: quantity || 1
+      [ticker]: qty
     }));
-  }, [setPortfolioHoldings]);
+
+    if (session?.user?.id) {
+      try {
+        await fetch('/api/user/portfolio', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'add', ticker, quantity: qty })
+        });
+      } catch (e) { console.error('Cloud add failed', e); }
+    }
+  }, [setPortfolioHoldings, session?.user?.id]);
 
   // Calculate individual stock value
   const calculateStockValue = useCallback((stock: StockData): number => {
@@ -107,13 +179,13 @@ export function usePortfolio(props?: UsePortfolioProps) {
   const portfolioStocks = useMemo(() => {
     // Show rows even for 0 quantity (so user can backspace/edit without the row disappearing).
     const portfolioTickers = Object.keys(portfolioHoldings);
-    
+
     // Find stocks that we have data for
     const existingStocks = stockData.filter(stock => portfolioTickers.includes(stock.ticker));
-    
+
     // Find stocks that are in portfolio but missing from data
     const missingTickers = portfolioTickers.filter(ticker => !stockData.some(s => s.ticker === ticker));
-    
+
     // Create placeholders for missing stocks
     const placeholderStocks: StockData[] = missingTickers.map(ticker => ({
       ticker,
