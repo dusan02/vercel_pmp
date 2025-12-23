@@ -34,7 +34,7 @@ export function getPricingState(etNow?: Date): PricingStateContext {
   const et = toET(now);
   const dayOfWeek = et.weekday;
   const isWeekendOrHoliday = dayOfWeek === 0 || dayOfWeek === 6 || isMarketHoliday(now);
-  
+
   const hours = et.hour;
   const minutes = et.minute;
   const timeInMinutes = hours * 60 + minutes;
@@ -165,11 +165,11 @@ export function getPreviousCloseTTL(etNow?: Date): number {
   const ttlMs = nextTradingDay.getTime() - now.getTime();
   const bufferMs = 24 * 60 * 60 * 1000; // 24 hour buffer
   const ttlSeconds = Math.ceil((ttlMs + bufferMs) / 1000);
-  
+
   // Minimum 7 days, maximum 30 days
   const minTTL = 7 * 24 * 60 * 60; // 7 days
   const maxTTL = 30 * 24 * 60 * 60; // 30 days
-  
+
   return Math.max(minTTL, Math.min(maxTTL, ttlSeconds));
 }
 
