@@ -6,19 +6,23 @@
 
 import { getPricingState, canOverwritePrice, PriceState, getPreviousCloseTTL } from '../pricingStateMachine';
 import { nowET } from '../dateET';
+import * as timeUtils from '../timeUtils';
 
 // Mock timeUtils
-jest.mock('../timeUtils', () => ({
-  detectSession: jest.fn(),
-  isMarketHoliday: jest.fn(() => false)
-}));
+jest.mock('../timeUtils');
+
+const mockedTimeUtils = timeUtils as jest.Mocked<typeof timeUtils>;
 
 describe('pricingStateMachine', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockedTimeUtils.isMarketHoliday.mockReturnValue(false);
+    mockedTimeUtils.getNextMarketOpen.mockReturnValue(new Date('2025-01-16T09:30:00.000Z'));
+  });
   describe('getPricingState', () => {
     it('should return PRE_MARKET_LIVE for 05:00 ET', () => {
       const etNow = new Date('2025-01-15T05:00:00-05:00');
-      const { detectSession } = require('../timeUtils');
-      detectSession.mockReturnValue('pre');
+      mockedTimeUtils.detectSession.mockReturnValue('pre');
 
       const state = getPricingState(etNow);
 
@@ -31,8 +35,7 @@ describe('pricingStateMachine', () => {
 
     it('should return LIVE for 15:00 ET', () => {
       const etNow = new Date('2025-01-15T15:00:00-05:00');
-      const { detectSession } = require('../timeUtils');
-      detectSession.mockReturnValue('live');
+      mockedTimeUtils.detectSession.mockReturnValue('live');
 
       const state = getPricingState(etNow);
 
@@ -44,8 +47,7 @@ describe('pricingStateMachine', () => {
 
     it('should return AFTER_HOURS_LIVE for 17:00 ET', () => {
       const etNow = new Date('2025-01-15T17:00:00-05:00');
-      const { detectSession } = require('../timeUtils');
-      detectSession.mockReturnValue('after');
+      mockedTimeUtils.detectSession.mockReturnValue('after');
 
       const state = getPricingState(etNow);
 
@@ -57,8 +59,7 @@ describe('pricingStateMachine', () => {
 
     it('should return OVERNIGHT_FROZEN for 21:00 ET', () => {
       const etNow = new Date('2025-01-15T21:00:00-05:00');
-      const { detectSession } = require('../timeUtils');
-      detectSession.mockReturnValue('closed');
+      mockedTimeUtils.detectSession.mockReturnValue('closed');
 
       const state = getPricingState(etNow);
 
@@ -71,10 +72,8 @@ describe('pricingStateMachine', () => {
 
     it('should return WEEKEND_FROZEN for Saturday', () => {
       const etNow = new Date('2025-01-18T10:00:00-05:00'); // Saturday
-      const { detectSession } = require('../timeUtils');
-      detectSession.mockReturnValue('closed');
-      const { isMarketHoliday } = require('../timeUtils');
-      isMarketHoliday.mockReturnValue(false);
+      mockedTimeUtils.detectSession.mockReturnValue('closed');
+      mockedTimeUtils.isMarketHoliday.mockReturnValue(false);
 
       // Mock day of week
       jest.spyOn(etNow, 'getDay').mockReturnValue(6); // Saturday
@@ -89,10 +88,8 @@ describe('pricingStateMachine', () => {
 
     it('should return WEEKEND_FROZEN for holiday', () => {
       const etNow = new Date('2025-01-20T10:00:00-05:00'); // Holiday
-      const { detectSession } = require('../timeUtils');
-      detectSession.mockReturnValue('closed');
-      const { isMarketHoliday } = require('../timeUtils');
-      isMarketHoliday.mockReturnValue(true);
+      mockedTimeUtils.detectSession.mockReturnValue('closed');
+      mockedTimeUtils.isMarketHoliday.mockReturnValue(true);
 
       const state = getPricingState(etNow);
 
