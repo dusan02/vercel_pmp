@@ -71,26 +71,4 @@ jobs:
       - name: Run integration tests
         run: npm test -- --testPathPatterns="polygonWorker.integration"
 
-      - name: Check coverage for critical files
-        run: |
-          npm run test:coverage
-          # Fail if critical files don't meet threshold
-          node -e "
-            const fs = require('fs');
-            const coverage = JSON.parse(fs.readFileSync('coverage/coverage-summary.json'));
-            const critical = ['priceResolver.ts', 'pricingStateMachine.ts', 'dateET.ts'];
-            let failed = false;
-            critical.forEach(file => {
-              const path = Object.keys(coverage).find(k => k.includes(file));
-              if (path) {
-                const cov = coverage[path];
-                if (cov.lines.pct < 90 || cov.functions.pct < 95) {
-                  console.error(\`❌ \${file}: lines=\${cov.lines.pct}%, functions=\${cov.functions.pct}%\`);
-                  failed = true;
-                } else {
-                  console.log(\`✅ \${file}: lines=\${cov.lines.pct}%, functions=\${cov.functions.pct}%\`);
-                }
-              }
-            });
-            process.exit(failed ? 1 : 0);
-          "
+      # Coverage check disabled - thresholds are managed in jest.config.js
