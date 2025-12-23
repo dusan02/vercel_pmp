@@ -63,13 +63,13 @@ jobs:
         run: npm ci
 
       - name: Run critical unit tests (first pass)
-        run: npm test -- --testPathPattern="priceResolver|pricingStateMachine"
+        run: npm test -- --testPathPatterns="priceResolver|pricingStateMachine"
 
       - name: Run critical unit tests (second pass - non-flaky check)
-        run: npm test -- --testPathPattern="priceResolver|pricingStateMachine"
+        run: npm test -- --testPathPatterns="priceResolver|pricingStateMachine"
 
       - name: Run integration tests
-        run: npm test -- --testPathPattern="polygonWorker.integration"
+        run: npm test -- --testPathPatterns="polygonWorker.integration"
 
       - name: Check coverage for critical files
         run: |
