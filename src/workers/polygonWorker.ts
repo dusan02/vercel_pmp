@@ -868,10 +868,47 @@ async function main() {
         }
       }
 
-      // 16:00 ET - Save regular close, switch to after-hours
-      if (hours === 16 && minutes === 0) {
-        console.log('🔄 Saving regular close...');
-        await saveRegularClose(apiKey, today);
+      // 16:00-17:00 ET - Save regular close (with retry logic for early closes)
+      // Retry every 5 minutes until 17:00 ET or until all tickers have regular close
+      if (hours >= 16 && hours < 17) {
+        // Check if we need to save regular close
+        const { redisClient } = await import('@/lib/redis');
+        if (redisClient && redisClient.isOpen) {
+          const lastRegularCloseSave = await redisClient.get(`regular_close:last_save:${today}`);
+          const now = Date.now();
+          const fiveMinAgo = now - (5 * 60 * 1000);
+          
+          // Save/retry if: (1) first time (16:00), or (2) last save was > 5 min ago
+          const shouldSave = !lastRegularCloseSave || parseInt(lastRegularCloseSave, 10) < fiveMinAgo;
+          
+          if (shouldSave) {
+            // Check if regular close is missing for any tickers
+            const tickers = await getUniverse('sp500');
+            const sampleTickers = tickers.slice(0, 10);
+            const { prisma } = await import('@/lib/db/prisma');
+            const dateObj = createETDate(today);
+            
+            const missingCount = await prisma.dailyRef.count({
+              where: {
+                symbol: { in: sampleTickers },
+                date: dateObj,
+                regularClose: null
+              }
+            });
+            
+            if (missingCount > 0 || !lastRegularCloseSave) {
+              console.log(`🔄 Saving regular close (retry: ${!!lastRegularCloseSave})...`);
+              await saveRegularClose(apiKey, today);
+              await redisClient.setEx(`regular_close:last_save:${today}`, 3600, now.toString());
+            }
+          }
+        } else {
+          // Fallback: save at 16:00 ET if Redis unavailable
+          if (hours === 16 && minutes === 0) {
+            console.log('🔄 Saving regular close (Redis unavailable, fallback)...');
+            await saveRegularClose(apiKey, today);
+          }
+        }
       }
     };
 
@@ -895,9 +932,85 @@ async function main() {
       }
     };
 
+    // DST-safe bulk preloader scheduler
+    const scheduleBulkPreload = async () => {
+      const etNow = nowET();
+      const et = toET(etNow);
+      const hours = et.hour;
+      const minutes = et.minute;
+      const dayOfWeek = et.weekday;
+      
+      // Pre-market + live trading: 07:30-16:00 ET (DST-safe via toET())
+      const isPreMarketOrLive = (hours >= 7 && hours < 16) || 
+                               (hours === 7 && minutes >= 30);
+      
+      // Only on weekdays (1-5 = Monday-Friday)
+      const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
+      
+      if (!isPreMarketOrLive || !isWeekday) {
+        return; // Outside bulk preload window
+      }
+
+      // Check if last bulk preload was > 5 min ago
+      const { redisClient } = await import('@/lib/redis');
+      if (!redisClient || !redisClient.isOpen) {
+        return;
+      }
+
+      const lastPreloadKey = 'bulk:last_preload_ts';
+      const lastPreloadStr = await redisClient.get(lastPreloadKey);
+      const now = Date.now();
+      const fiveMinAgo = now - (5 * 60 * 1000);
+      
+      // Check timestamp (not TTL-based gating)
+      if (lastPreloadStr && parseInt(lastPreloadStr, 10) >= fiveMinAgo) {
+        return; // Too soon since last preload
+      }
+
+      // Acquire lock to prevent parallel execution
+      const { withLock } = await import('@/lib/utils/redisLocks');
+      const { preloadBulkStocks } = await import('./backgroundPreloader');
+      
+      const result = await withLock(
+        'bulk_preload',
+        4 * 60, // 4 min TTL (longer than typical run)
+        async () => {
+          console.log('🔄 Running DST-safe bulk preload...');
+          const apiKey = process.env.POLYGON_API_KEY;
+          if (!apiKey) {
+            console.warn('⚠️ POLYGON_API_KEY not set, skipping bulk preload');
+            return;
+          }
+
+          // Import and run bulk preload logic
+          const { preloadBulkStocks } = await import('./backgroundPreloader');
+          const tickers = await getUniverse('sp500');
+          if (tickers.length === 0) {
+            return;
+          }
+
+          // Run bulk preload
+          await preloadBulkStocks(apiKey);
+          
+          // Update last preload timestamp (no TTL - persistent, not TTL-based gating)
+          await redisClient.set(lastPreloadKey, now.toString());
+          
+          console.log('✅ Bulk preload completed');
+        }
+      );
+
+      if (result === null) {
+        // Lock acquisition failed (another process is running it)
+        console.log('⏸️ Bulk preload already running, skipping...');
+      }
+    };
+
     const ingestLoop = async () => {
       const etNow = nowET();
       const session = detectSession(etNow);
+
+      // Schedule bulk preload (DST-safe, with lock)
+      await scheduleBulkPreload();
 
       // Always try to ingest (even when market closed, we can get previous close)
       const tickers = await getUniverse('sp500'); // Get from Redis
@@ -951,19 +1064,24 @@ async function main() {
       const PREMIUM_INTERVAL = isPreMarketOrAfterHours ? 5 * 60 * 1000 : 60 * 1000; // 5min for pre-market, 60s for live
       const REST_INTERVAL = 5 * 60 * 1000; // 5 min for rest (same for all)
 
-      // Load last update times from Redis
+      // Load last update times from Redis (using freshness metrics hash - O(1))
       if (redisClient && redisClient.isOpen) {
-        const updateKeys = tickers.map(t => `worker:last_update:${t}`);
         try {
-          const updateTimes = await redisClient.mGet(updateKeys);
-          tickers.forEach((ticker, idx) => {
-            const timeStr = updateTimes[idx];
-            if (timeStr) {
-              lastUpdateMap.set(ticker, parseInt(timeStr, 10));
+          const { getFreshnessMetrics } = await import('@/lib/utils/freshnessMetrics');
+          const hashKey = 'freshness:last_update';
+          const timestamps = await redisClient.hGetAll(hashKey);
+          
+          tickers.forEach((ticker) => {
+            const timestampStr = timestamps[ticker];
+            if (timestampStr) {
+              const timestamp = parseInt(timestampStr, 10);
+              if (!isNaN(timestamp)) {
+                lastUpdateMap.set(ticker, timestamp);
+              }
             }
           });
         } catch (error) {
-          console.warn('Failed to load last update times from Redis:', error);
+          console.warn('Failed to load freshness timestamps from Redis:', error);
         }
       }
 
@@ -1006,14 +1124,15 @@ async function main() {
           await ingestBatch(batch, apiKey);
           hasSuccess = true;
 
-          // Update last update time in Redis for successfully processed tickers
+          // Update freshness metrics (O(1) hash operation)
           if (redisClient && redisClient.isOpen) {
-            const updatePromises = batch.map(ticker => {
-              const key = `worker:last_update:${ticker}`;
-              return redisClient.setEx(key, 86400, now.toString()); // 24h TTL
+            const { updateFreshnessTimestampsBatch } = await import('@/lib/utils/freshnessMetrics');
+            const freshnessUpdates = new Map<string, number>();
+            batch.forEach(ticker => {
+              freshnessUpdates.set(ticker, now);
             });
-            await Promise.all(updatePromises).catch(err => {
-              console.warn('Failed to save last update times to Redis:', err);
+            await updateFreshnessTimestampsBatch(freshnessUpdates).catch(err => {
+              console.warn('Failed to update freshness metrics:', err);
             });
           }
         } catch (error) {
