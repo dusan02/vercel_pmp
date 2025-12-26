@@ -510,8 +510,8 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
 
       {/* Legenda je teraz v page.tsx headeri */}
 
-      {/* 4. Tooltip (renderuje sa mimo) */}
-      {hoveredNode && (
+      {/* 4. Tooltip (renderuje sa mimo) - skrytý na mobile */}
+      {hoveredNode && !isMobile && (
         <HeatmapTooltip
           company={hoveredNode}
           position={mousePosition}

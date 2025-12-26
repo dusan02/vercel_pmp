@@ -135,8 +135,86 @@
   }
 }
 
+/* Mobile (≤640px) - Ultra Compact Design */
+@media (max-width: 640px) {
+  .header {
+    padding: 0.5rem 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--clr-bg);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--clr-border);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .header-container {
+    padding: 0 0.5rem;
+    gap: 0.5rem;
+    flex-wrap: nowrap;
+    align-items: center;
+  }
+
+  .header-left {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+  }
+
+  .brand-container {
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .brand-logo {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+  }
+
+  .brand-name {
+    font-size: 0.9375rem;
+    line-height: 1.2;
+    font-weight: 700;
+  }
+
+  .brand-tagline {
+    display: none;
+  }
+
+  /* Compact market indices on mobile */
+  .header-center-mobile {
+    margin-top: 0.25rem;
+  }
+
+  .header-center-mobile .market-indicator {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.75rem;
+    gap: 0.375rem;
+  }
+
+  .header-center-mobile .market-indicator .indicator-name {
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .header-center-mobile .market-indicator .indicator-price {
+    font-size: 0.75rem;
+  }
+
+  .header-center-mobile .market-indicator .indicator-change {
+    font-size: 0.6875rem;
+  }
+
+  .header-right {
+    gap: 0.5rem;
+  }
+}
+
 /* Mobile (≤768px) - Modern Mobile-First Design */
-@media (max-width: 768px) {
+@media (max-width: 768px) and (min-width: 641px) {
   .header {
     padding: 0.75rem 0;
     position: sticky;
@@ -418,13 +496,13 @@
     overflow: visible !important;
     position: relative;
   }
-  
-  /* Heatmap preview section on mobile - allow vertical expansion */
-  .heatmap-preview > div[style*="height: 400px"] {
-    height: auto !important;
-    min-height: 400px;
-    max-height: none;
-    overflow-y: visible;
+
+  /* Heatmap preview - reduced height on mobile */
+  @media (max-width: 640px) {
+    .heatmap-preview-container {
+      height: 300px !important;
+      min-height: 300px !important;
+    }
   }
 }
 
@@ -460,13 +538,19 @@
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
-    max-height: 600px; /* Limit max height on mobile for better UX */
+    max-height: 500px; /* Reduced from 600px for better mobile UX */
   }
-  
-  /* Heatmap preview on mobile - allow expansion */
-  .heatmap-preview > div[style*="height: 400px"] {
-    max-height: 600px;
-    overflow-y: auto;
+
+  /* Section navigation - more compact on mobile */
+  .mobile-nav-container {
+    padding: 0.5rem;
+    gap: 0.375rem;
+  }
+
+  .mobile-nav-container .nav-item {
+    padding: 0.625rem 0.75rem;
+    font-size: 0.875rem;
+    min-height: 44px;
   }
 }
 
@@ -594,6 +678,46 @@
     width: 100%;
   }
 
+  /* Portfolio: Mobile optimization (5 columns) */
+  @media (max-width: 640px) {
+    /* Hide non-essential columns */
+    .portfolio-table thead th:nth-child(3), /* Company */
+    .portfolio-table tbody td:nth-child(3),
+    .portfolio-table thead th:nth-child(4), /* Sector */
+    .portfolio-table tbody td:nth-child(4),
+    .portfolio-table thead th:nth-child(5), /* Industry */
+    .portfolio-table tbody td:nth-child(5) {
+      display: none !important;
+    }
+
+    .portfolio-table {
+      min-width: 450px; /* Reduced for 5 columns */
+    }
+
+    /* Adjust Total row colspan for mobile */
+    .portfolio-total-row .desktop-total-colspan {
+      display: none !important;
+    }
+
+    .portfolio-total-row .mobile-total-colspan {
+      display: table-cell !important;
+    }
+  }
+
+  /* Portfolio: Tablet optimization (7 columns) */
+  @media (min-width: 641px) and (max-width: 1024px) {
+    /* Hide less important columns */
+    .portfolio-table thead th:nth-child(4), /* Sector */
+    .portfolio-table tbody td:nth-child(4),
+    .portfolio-table thead th:nth-child(5) { /* Industry */
+      display: none !important;
+    }
+
+    .portfolio-table {
+      min-width: 600px;
+    }
+  }
+
   /* Compact table cells - better spacing */
   .portfolio-table th,
   .portfolio-table td {
@@ -625,11 +749,7 @@
     opacity: 0.9;
   }
 
-  /* Hide less important columns on mobile */
-  .portfolio-col-sector,
-  .portfolio-col-industry {
-    display: none;
-  }
+  /* All columns visible on mobile with horizontal scroll */
 
   /* Portfolio quantity input - larger touch target */
   .portfolio-quantity-input {
@@ -679,9 +799,7 @@
 }
 
 @media (max-width: 480px) {
-  .portfolio-col-company {
-    display: none;
-  }
+  /* All columns visible with horizontal scroll */
 
   .portfolio-table th,
   .portfolio-table td {
@@ -727,21 +845,42 @@
 
   .favorites table,
   .all-stocks table {
-    min-width: 700px;
+    min-width: 900px;
     border-radius: 0.5rem;
     overflow: hidden;
   }
+  
+  /* Table wrapper - horizontal scroll */
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border-radius: 0.5rem;
+  }
 
-  /* Hide less important columns */
-  .favorites table th:nth-child(4), /* Sector */
-  .favorites table td:nth-child(4),
-  .favorites table th:nth-child(5), /* Industry */
-  .favorites table td:nth-child(5),
-  .all-stocks table th:nth-child(4),
-  .all-stocks table td:nth-child(4),
-  .all-stocks table th:nth-child(5),
-  .all-stocks table td:nth-child(5) {
-    display: none;
+  .table-wrapper::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .table-wrapper::-webkit-scrollbar-thumb {
+    background: var(--clr-border);
+    border-radius: 3px;
+  }
+
+  /* Mobile: No horizontal scroll needed for 5 columns */
+  @media (max-width: 640px) {
+    .table-wrapper {
+      overflow-x: visible; /* No scroll needed - 5 columns fit */
+    }
+
+    .favorites table,
+    .all-stocks table {
+      min-width: 100%; /* Full width on mobile */
+      width: 100%;
+    }
   }
 
   /* Compact table styling - modern design */
@@ -917,7 +1056,36 @@
    SECTION HEADERS & CONTROLS - Modern Mobile Design
    ============================================ */
 
-@media (max-width: 768px) {
+@media (max-width: 640px) {
+  /* Section container - ultra compact on small mobile */
+  section {
+    margin-bottom: 1rem;
+    padding: 0.75rem 0.5rem;
+    border-radius: 0.5rem;
+    background: var(--clr-surface);
+    border: 1px solid var(--clr-border);
+  }
+
+  .section-header {
+    padding: 0.5rem 0;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    border-bottom: 1px solid var(--clr-border);
+    padding-bottom: 0.5rem;
+  }
+
+  .section-header h2 {
+    font-size: 1.125rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin: 0;
+  }
+}
+
+@media (max-width: 768px) and (min-width: 641px) {
   /* Section container - better spacing */
   section {
     margin-bottom: 1.5rem;
@@ -1128,258 +1296,117 @@
    MOBILE TABLE COMPACT VIEW
    ============================================ */
 
-/* Desktop-only elements - hidden on mobile */
-@media (max-width: 1024px) {
-  .desktop-only {
-    display: none !important;
-  }
-  
-  .mobile-compact-cell {
-    display: flex !important;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-}
+/* ============================================
+   MOBILE TABLE OPTIMIZATION (5 columns)
+   ============================================ */
 
-/* Mobile compact cell - hidden on desktop */
-@media (min-width: 1025px) {
-  .mobile-compact-cell {
-    display: none !important;
-  }
-  
-  .desktop-only {
-    display: block;
-  }
-  
-  .mobile-total-label {
-    display: none !important;
-  }
-}
-
-/* Mobile total label - hidden on desktop */
-@media (max-width: 1024px) {
-  .mobile-total-label {
-    display: table-cell !important;
-  }
-}
-
-/* Mobile table headers - grouped columns */
-@media (max-width: 1024px) {
-  /* Favorites & All Stocks tables - hide separate columns */
-  .favorites table thead th:nth-child(2), /* Ticker (separate) */
-  .favorites table tbody td:nth-child(2),
-  .all-stocks table thead th:nth-child(2),
-  .all-stocks table tbody td:nth-child(2),
-  .favorites table thead th:nth-child(3), /* Company (separate) */
+/* Mobile: Show only essential columns (Logo, Ticker, Price, % Change, Actions) */
+@media (max-width: 640px) {
+  /* Hide non-essential columns on mobile */
+  .favorites table thead th:nth-child(3), /* Company */
   .favorites table tbody td:nth-child(3),
   .all-stocks table thead th:nth-child(3),
   .all-stocks table tbody td:nth-child(3),
-  .favorites table thead th:nth-child(5), /* Industry (separate) */
+  .favorites table thead th:nth-child(4), /* Sector */
+  .favorites table tbody td:nth-child(4),
+  .all-stocks table thead th:nth-child(4),
+  .all-stocks table tbody td:nth-child(4),
+  .favorites table thead th:nth-child(5), /* Industry */
   .favorites table tbody td:nth-child(5),
   .all-stocks table thead th:nth-child(5),
   .all-stocks table tbody td:nth-child(5),
-  .favorites table thead th:nth-child(8), /* % Change (separate) */
-  .favorites table tbody td:nth-child(8),
-  .all-stocks table thead th:nth-child(8),
-  .all-stocks table tbody td:nth-child(8),
-  .favorites table thead th:nth-child(9), /* Cap Diff (separate) */
-  .favorites table tbody td:nth-child(9),
-  .all-stocks table thead th:nth-child(9),
-  .all-stocks table tbody td:nth-child(9) {
+  .favorites table thead th:nth-child(6), /* Market Cap */
+  .favorites table tbody td:nth-child(6),
+  .all-stocks table thead th:nth-child(6),
+  .all-stocks table tbody td:nth-child(6),
+  .favorites table thead th:nth-child(7), /* Cap Diff */
+  .favorites table tbody td:nth-child(7),
+  .all-stocks table thead th:nth-child(7),
+  .all-stocks table tbody td:nth-child(7) {
     display: none !important;
   }
-  
-  /* Update header labels for grouped columns */
-  .favorites table thead th:nth-child(1),
-  .all-stocks table thead th:nth-child(1) {
-    position: relative;
+
+  /* Adjust table width for 5 columns */
+  .favorites table,
+  .all-stocks table {
+    min-width: 400px; /* Reduced from 900px */
+    width: 100%;
   }
-  
-  .favorites table thead th:nth-child(1)::after,
-  .all-stocks table thead th:nth-child(1)::after {
-    content: " / Ticker / Company";
-    font-weight: normal;
-    font-size: 0.7rem;
-    display: block;
-    margin-top: 0.125rem;
-    opacity: 0.7;
+
+  /* Optimize column widths for mobile */
+  .favorites table th:nth-child(1),
+  .favorites table td:nth-child(1),
+  .all-stocks table th:nth-child(1),
+  .all-stocks table td:nth-child(1) {
+    width: 15%;
+    min-width: 60px;
   }
-  
-  .favorites table thead th:nth-child(4),
-  .all-stocks table thead th:nth-child(4) {
-    position: relative;
+
+  .favorites table th:nth-child(2),
+  .favorites table td:nth-child(2),
+  .all-stocks table th:nth-child(2),
+  .all-stocks table td:nth-child(2) {
+    width: 20%;
+    min-width: 70px;
   }
-  
-  .favorites table thead th:nth-child(4)::after,
-  .all-stocks table thead th:nth-child(4)::after {
-    content: " / Industry";
-    font-weight: normal;
-    font-size: 0.7rem;
-    display: block;
-    margin-top: 0.125rem;
-    opacity: 0.7;
+
+  .favorites table th:nth-child(8),
+  .favorites table td:nth-child(8),
+  .all-stocks table th:nth-child(8),
+  .all-stocks table td:nth-child(8) {
+    width: 25%;
+    min-width: 80px;
   }
-  
-  .favorites table thead th:nth-child(6),
-  .all-stocks table thead th:nth-child(6) {
-    position: relative;
+
+  .favorites table th:nth-child(9),
+  .favorites table td:nth-child(9),
+  .all-stocks table th:nth-child(9),
+  .all-stocks table td:nth-child(9) {
+    width: 20%;
+    min-width: 80px;
   }
-  
-  .favorites table thead th:nth-child(6)::after,
-  .all-stocks table thead th:nth-child(6)::after {
-    content: " / Cap Diff";
-    font-weight: normal;
-    font-size: 0.7rem;
-    display: block;
-    margin-top: 0.125rem;
-    opacity: 0.7;
+
+  .favorites table th:nth-child(10),
+  .favorites table td:nth-child(10),
+  .all-stocks table th:nth-child(10),
+  .all-stocks table td:nth-child(10) {
+    width: 20%;
+    min-width: 60px;
   }
-  
-  .favorites table thead th:nth-child(7),
-  .all-stocks table thead th:nth-child(7) {
-    position: relative;
-  }
-  
-  .favorites table thead th:nth-child(7)::after,
-  .all-stocks table thead th:nth-child(7)::after {
-    content: " / % Change";
-    font-weight: normal;
-    font-size: 0.7rem;
-    display: block;
-    margin-top: 0.125rem;
-    opacity: 0.7;
-  }
-  
-  /* Mobile compact cell styling */
-  .mobile-compact-cell {
-    line-height: 1.5;
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-  
-  /* Hide desktop logo-only display on mobile */
-  .mobile-group-1 .desktop-only,
-  .portfolio-mobile-group-1 .desktop-only {
-    display: none !important;
-  }
-  
-  /* Portfolio table - hide separate columns */
-  .portfolio-table thead th:nth-child(2), /* Ticker (separate) */
-  .portfolio-table tbody td:nth-child(2),
-  .portfolio-table thead th:nth-child(3), /* Company (separate) */
-  .portfolio-table tbody td:nth-child(3),
-  .portfolio-table thead th:nth-child(5), /* Industry (separate) */
-  .portfolio-table tbody td:nth-child(5),
-  .portfolio-table thead th:nth-child(8), /* % Change (separate) */
-  .portfolio-table tbody td:nth-child(8) {
-    display: none !important;
-  }
-  
-  /* Portfolio header labels */
-  .portfolio-table thead th:nth-child(1) {
-    position: relative;
-  }
-  
-  .portfolio-table thead th:nth-child(1)::after {
-    content: " / Ticker / Company";
-    font-weight: normal;
-    font-size: 0.7rem;
-    display: block;
-    margin-top: 0.125rem;
-    opacity: 0.7;
-  }
-  
-  .portfolio-table thead th:nth-child(4) {
-    position: relative;
-  }
-  
-  .portfolio-table thead th:nth-child(4)::after {
-    content: " / Industry";
-    font-weight: normal;
-    font-size: 0.7rem;
-    display: block;
-    margin-top: 0.125rem;
-    opacity: 0.7;
-  }
-  
-  .portfolio-table thead th:nth-child(7) {
-    position: relative;
-  }
-  
-  .portfolio-table thead th:nth-child(7)::after {
-    content: " / % Change";
-    font-weight: normal;
-    font-size: 0.7rem;
-    display: block;
-    margin-top: 0.125rem;
-    opacity: 0.7;
-  }
-  
-  /* Taller rows on mobile for grouped content */
+
+  /* Table rows - keep standard height */
   .favorites table tbody tr,
-  .all-stocks table tbody tr,
-  .portfolio-table tbody tr {
-    min-height: 70px;
-  }
-  
-  .mobile-group-1,
-  .mobile-group-2,
-  .mobile-group-3,
-  .mobile-group-4,
-  .portfolio-mobile-group-1,
-  .portfolio-mobile-group-2,
-  .portfolio-mobile-group-4 {
-    vertical-align: top;
-    padding: 0.875rem 0.5rem;
-    min-width: 0;
-  }
-  
-  /* Ensure grouped cells have proper width */
-  .mobile-group-1 {
-    min-width: 140px;
-    max-width: 180px;
-  }
-  
-  .mobile-group-2 {
-    min-width: 100px;
-    max-width: 140px;
-  }
-  
-  .mobile-group-3,
-  .mobile-group-4 {
-    min-width: 90px;
-    max-width: 120px;
-  }
-  
-  .portfolio-mobile-group-1 {
-    min-width: 140px;
-    max-width: 180px;
-  }
-  
-  .portfolio-mobile-group-2 {
-    min-width: 100px;
-    max-width: 140px;
-  }
-  
-  .portfolio-mobile-group-4 {
-    min-width: 90px;
-    max-width: 120px;
+  .all-stocks table tbody tr {
+    min-height: 48px;
   }
 }
 
-/* Small mobile - even more compact */
-@media (max-width: 480px) {
-  .mobile-compact-cell {
-    font-size: 0.8125rem;
+/* Tablet: Show 6-7 columns (add Company, Market Cap) */
+@media (min-width: 641px) and (max-width: 1024px) {
+  /* Hide less important columns on tablet */
+  .favorites table thead th:nth-child(4), /* Sector */
+  .favorites table tbody td:nth-child(4),
+  .all-stocks table thead th:nth-child(4),
+  .all-stocks table tbody td:nth-child(4),
+  .favorites table thead th:nth-child(5), /* Industry */
+  .favorites table tbody td:nth-child(5),
+  .all-stocks table thead th:nth-child(5),
+  .all-stocks table tbody td:nth-child(5),
+  .favorites table thead th:nth-child(7), /* Cap Diff */
+  .favorites table tbody td:nth-child(7),
+  .all-stocks table thead th:nth-child(7),
+  .all-stocks table tbody td:nth-child(7) {
+    display: none !important;
   }
-  
-  .mobile-compact-cell .text-sm {
-    font-size: 0.75rem;
+
+  .favorites table,
+  .all-stocks table {
+    min-width: 600px;
   }
-  
-  .mobile-compact-cell .text-xs {
-    font-size: 0.6875rem;
+
+  .favorites table tbody tr,
+  .all-stocks table tbody tr {
+    min-height: 48px;
   }
 }
 

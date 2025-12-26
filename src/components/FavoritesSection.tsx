@@ -58,47 +58,49 @@ export function FavoritesSection({
         </div>
       </div>
 
-      <table>
-        <thead>
-          <tr>
-            <th>Logo</th>
-            <th onClick={() => onSort("ticker" as SortKey)} className={`sortable ${sortKey === "ticker" ? "active-sort" : ""}`}>
-              Ticker
-            </th>
-            <th>Company</th>
-            <th onClick={() => onSort("sector" as SortKey)} className={`sortable ${sortKey === "sector" ? "active-sort" : ""}`}>
-              Sector
-            </th>
-            <th onClick={() => onSort("industry" as SortKey)} className={`sortable ${sortKey === "industry" ? "active-sort" : ""}`}>
-              Industry
-            </th>
-            <th onClick={() => onSort("marketCap" as SortKey)} className={`sortable ${sortKey === "marketCap" ? "active-sort" : ""}`}>
-              Market Cap
-            </th>
-            <th onClick={() => onSort("currentPrice" as SortKey)} className={`sortable ${sortKey === "currentPrice" ? "active-sort" : ""}`}>
-              Price
-            </th>
-            <th onClick={() => onSort("percentChange" as SortKey)} className={`sortable ${sortKey === "percentChange" ? "active-sort" : ""}`}>
-              % Change
-            </th>
-            <th onClick={() => onSort("marketCapDiff" as SortKey)} className={`sortable ${sortKey === "marketCapDiff" ? "active-sort" : ""}`}>
-              Cap Diff
-            </th>
-            <th>Favorites</th>
-          </tr>
-        </thead>
-        <tbody>
-          {favoriteStocks.map((stock, index) => (
-            <StockTableRow
-              key={stock.ticker}
-              stock={stock}
-              isFavorite={isFavorite(stock.ticker)}
-              onToggleFavorite={() => onToggleFavorite(stock.ticker)}
-              priority={true} // All favorites are priority (usually small list)
-            />
-          ))}
-        </tbody>
-      </table>
+      <div className="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Logo</th>
+              <th onClick={() => onSort("ticker" as SortKey)} className={`sortable ${sortKey === "ticker" ? "active-sort" : ""}`}>
+                Ticker
+              </th>
+              <th>Company</th>
+              <th onClick={() => onSort("sector" as SortKey)} className={`sortable ${sortKey === "sector" ? "active-sort" : ""}`}>
+                Sector
+              </th>
+              <th onClick={() => onSort("industry" as SortKey)} className={`sortable ${sortKey === "industry" ? "active-sort" : ""}`}>
+                Industry
+              </th>
+              <th onClick={() => onSort("marketCap" as SortKey)} className={`sortable ${sortKey === "marketCap" ? "active-sort" : ""}`}>
+                Market Cap
+              </th>
+              <th onClick={() => onSort("marketCapDiff" as SortKey)} className={`sortable ${sortKey === "marketCapDiff" ? "active-sort" : ""}`}>
+                Cap Diff
+              </th>
+              <th onClick={() => onSort("currentPrice" as SortKey)} className={`sortable ${sortKey === "currentPrice" ? "active-sort" : ""}`}>
+                Price
+              </th>
+              <th onClick={() => onSort("percentChange" as SortKey)} className={`sortable ${sortKey === "percentChange" ? "active-sort" : ""}`}>
+                % Change
+              </th>
+              <th>Favorites</th>
+            </tr>
+          </thead>
+          <tbody>
+            {favoriteStocks.map((stock, index) => (
+              <StockTableRow
+                key={stock.ticker}
+                stock={stock}
+                isFavorite={isFavorite(stock.ticker)}
+                onToggleFavorite={() => onToggleFavorite(stock.ticker)}
+                priority={true} // All favorites are priority (usually small list)
+              />
+            ))}
+          </tbody>
+        </table>
+      </div>
     </section>
   );
 }

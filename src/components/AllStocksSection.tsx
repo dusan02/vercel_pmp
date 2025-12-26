@@ -142,40 +142,42 @@ export const AllStocksSection = React.memo(function AllStocksSection({
         <SectionLoader message="Loading stocks..." />
       ) : (
         <>
-          <table>
-            <thead>
-              <tr>
-                {TABLE_HEADERS.map((header, index) => (
-                  <th
-                    key={index}
-                    onClick={header.sortable && header.key ? () => onSort(header.key!) : undefined}
-                    className={header.sortable ? `sortable ${sortKey === header.key ? "active-sort" : ""}` : undefined}
-                  >
-                    {header.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {displayedStocks.length === 0 ? (
+          <div className="table-wrapper">
+            <table>
+              <thead>
                 <tr>
-                  <td colSpan={10} style={{ textAlign: 'center', padding: '2rem', color: 'var(--clr-subtext)' }}>
-                    No stocks to display.
-                  </td>
+                  {TABLE_HEADERS.map((header, index) => (
+                    <th
+                      key={index}
+                      onClick={header.sortable && header.key ? () => onSort(header.key!) : undefined}
+                      className={header.sortable ? `sortable ${sortKey === header.key ? "active-sort" : ""}` : undefined}
+                    >
+                      {header.label}
+                    </th>
+                  ))}
                 </tr>
-              ) : (
-                displayedStocks.map((stock, index) => (
-                  <StockTableRow
-                    key={stock.ticker}
-                    stock={stock}
-                    isFavorite={isFavorite(stock.ticker)}
-                    onToggleFavorite={favoriteHandlers.get(stock.ticker) || (() => onToggleFavorite(stock.ticker))}
-                    priority={index < 100} // Priority loading for first 100 visible rows
-                  />
-                ))
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {displayedStocks.length === 0 ? (
+                  <tr>
+                    <td colSpan={10} style={{ textAlign: 'center', padding: '2rem', color: 'var(--clr-subtext)' }}>
+                      No stocks to display.
+                    </td>
+                  </tr>
+                ) : (
+                  displayedStocks.map((stock, index) => (
+                    <StockTableRow
+                      key={stock.ticker}
+                      stock={stock}
+                      isFavorite={isFavorite(stock.ticker)}
+                      onToggleFavorite={favoriteHandlers.get(stock.ticker) || (() => onToggleFavorite(stock.ticker))}
+                      priority={index < 100} // Priority loading for first 100 visible rows
+                    />
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
 
           {/* End of list indicator */}
           {!hasMore && displayedStocks.length > 0 && (
