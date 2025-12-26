@@ -20,6 +20,9 @@ build/
 data/*.db
 data/*.db-shm
 data/*.db-wal
+prisma/data/*.db
+prisma/data/*.db-shm
+prisma/data/*.db-wal
 
 # IDE
 .vscode/
