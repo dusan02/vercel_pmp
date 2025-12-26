@@ -12,6 +12,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
         }),
     ],
+    secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "fallback-secret-key-change-in-production",
+    trustHost: true, // Required for Vercel/production
+    pages: {
+        signIn: '/',
+        error: '/',
+    },
     callbacks: {
         async session({ session, user }) {
             if (session.user) {
@@ -19,5 +25,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             }
             return session;
         },
+        async signIn({ user, account, profile }) {
+            // Allow sign in if Google OAuth is configured
+            if (account?.provider === 'google') {
+                return true;
+            }
+            return false;
+        },
     },
+    debug: process.env.NODE_ENV === 'development',
 })

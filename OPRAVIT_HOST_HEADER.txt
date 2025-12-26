@@ -1,0 +1,21 @@
+# 🔧 OPRAVIŤ HOST HEADER - Možno server neakceptuje earningstable.com
+
+# === KROK 1: Skontrolovať error logy ===
+tail -30 /var/log/nginx/error.log
+
+# === KROK 2: Testovať, či server akceptuje earningstable.com ===
+curl -H "Host: earningstable.com" http://localhost:3000/api/health
+curl -H "Host: premarketprice.com" http://localhost:3000/api/health
+
+# === KROK 3: Ak server neakceptuje earningstable.com, zmeniť Host header ===
+# V earningstable.com konfigurácii zmeniť:
+# proxy_set_header Host $host;
+# Na:
+# proxy_set_header Host premarketprice.com;
+
+# Alebo skúsiť:
+sed -i 's|proxy_set_header Host $host;|proxy_set_header Host premarketprice.com;|g' /etc/nginx/sites-enabled/earningstable.com
+
+# === KROK 4: Reload a test ===
+nginx -t && systemctl reload nginx && curl -k -s https://earningstable.com/api/health | head -5
+

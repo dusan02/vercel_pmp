@@ -1,0 +1,75 @@
+# 🔍 OVERENIE AAAA (IPv6) ZÁZNAMOV A TEST IPv4
+
+# ============================================
+# KROK 1: Overenie AAAA záznamov (IPv6)
+# ============================================
+# Správny stav: <prázdne> (žiadne IPv6 záznamy)
+
+dig +short premarketprice.com AAAA
+dig +short www.premarketprice.com AAAA
+
+# ============================================
+# KROK 2: Porovnanie s A záznamami (IPv4)
+# ============================================
+# Tieto by mali vrátiť IPv4 adresu:
+dig +short premarketprice.com A
+dig +short www.premarketprice.com A
+
+# Mali by ste vidieť: 89.185.250.213
+
+# ============================================
+# KROK 3: Test HTTPS s vynúteným IPv4
+# ============================================
+# Flag -4 vynúti IPv4 (obíde IPv6)
+
+curl -4Iv https://premarketprice.com
+
+# Výstup by mal obsahovať:
+# - Server: nginx/1.22.1
+# - subject: CN=premarketprice.com
+# - HTTP/2 200
+
+# ============================================
+# KROK 4: Test aj www subdomény
+# ============================================
+curl -4Iv https://www.premarketprice.com
+
+# ============================================
+# KROK 5: Porovnanie IPv4 vs IPv6 (ak by bolo)
+# ============================================
+# Test s IPv4 (vynútené):
+curl -4Iv https://premarketprice.com 2>&1 | head -20
+
+# Test bez vynútenia (môže použiť IPv6 ak existuje):
+curl -Iv https://premarketprice.com 2>&1 | head -20
+
+# ============================================
+# KROK 6: Detailný DNS lookup
+# ============================================
+# Zobraziť všetky DNS záznamy:
+dig premarketprice.com ANY
+
+# Alebo len A a AAAA:
+dig premarketprice.com A +short
+dig premarketprice.com AAAA +short
+
+# ============================================
+# KROK 7: Test priameho pripojenia cez IPv4
+# ============================================
+# Ak chcete testovať priamo na IP:
+curl -4Iv https://89.185.250.213 -H "Host: premarketprice.com"
+
+# ============================================
+# VÝSLEDOK:
+# ============================================
+# ✅ SPRÁVNE:
+# - AAAA záznamy: prázdne
+# - A záznamy: 89.185.250.213
+# - curl -4Iv: funguje, HTTP/2 200
+#
+# ❌ PROBLÉM:
+# - AAAA záznamy: obsahujú IPv6 adresu
+#   → Musíte odstrániť AAAA záznamy v DNS (Active24)
+# - curl -4Iv: nefunguje
+#   → Skontrolovať Nginx konfiguráciu
+

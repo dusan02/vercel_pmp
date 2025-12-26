@@ -18,7 +18,7 @@ import {
   atomicUpdatePrice
 } from '@/lib/redis/operations';
 import { PriceData } from '@/lib/types';
-import { detectSession, isMarketOpen, isMarketHoliday, mapToRedisSession } from '@/lib/utils/timeUtils';
+import { detectSession, isMarketOpen, isMarketHoliday, mapToRedisSession, getLastTradingDay } from '@/lib/utils/timeUtils';
 import { nowET, getDateET, createETDate, isWeekendET, toET } from '@/lib/utils/dateET';
 import { resolveEffectivePrice, calculatePercentChange } from '@/lib/utils/priceResolver';
 import { getPricingState, canOverwritePrice, getPreviousCloseTTL } from '@/lib/utils/pricingStateMachine';
@@ -224,10 +224,14 @@ async function upsertToDB(
     const dateET = getDateET(); // YYYY-MM-DD string in ET
     const today = createETDate(dateET); // ET midnight (DST-safe)
 
+    // Get last trading day for previousClose date (the day when previousClose actually happened)
+    // This ensures latestPrevCloseDate matches the actual trading day of the previous close
+    const lastTradingDay = getLastTradingDay();
+
     // Upsert ticker if not exists
     // Update price/market cap columns for sorting
     if (symbol === 'GOOG' || symbol === 'GOOGL') {
-      console.log(`🔍 Debug DB Upsert ${symbol}: Attempting to set latestPrevClose=${previousClose || 0}`);
+      console.log(`🔍 Debug DB Upsert ${symbol}: Attempting to set latestPrevClose=${previousClose || 0}, latestPrevCloseDate=${lastTradingDay.toISOString()}`);
     }
 
     await prisma.ticker.upsert({
@@ -240,8 +244,12 @@ async function upsertToDB(
         lastMarketCap: marketCap,
         lastMarketCapDiff: marketCapDiff,
         lastPriceUpdated: normalized.timestamp,
-        // Always update latestPrevClose if we have it
-        ...(previousClose ? { latestPrevClose: previousClose } : {})
+        // Always update latestPrevClose AND latestPrevCloseDate together if we have previousClose
+        // This ensures consistency - the date must match when the previous close actually happened
+        ...(previousClose ? { 
+          latestPrevClose: previousClose,
+          latestPrevCloseDate: lastTradingDay
+        } : {})
       },
       create: {
         symbol,
@@ -252,7 +260,8 @@ async function upsertToDB(
         lastMarketCap: marketCap,
         lastMarketCapDiff: marketCapDiff,
         lastPriceUpdated: normalized.timestamp,
-        latestPrevClose: previousClose || 0
+        latestPrevClose: previousClose || 0,
+        latestPrevCloseDate: previousClose ? lastTradingDay : null
       }
     });
 
@@ -754,22 +763,34 @@ export async function bootstrapPreviousCloses(
           const data = await response.json();
           if (data.results && data.results.length > 0) {
             prevClose = data.results[0].c; // close price
-            if (prevClose > 0) {
+            if (prevClose > 0 && prevDateStr) {
+              // Use the actual trading day when this close happened (prevDateStr, not "today")
+              // This ensures DailyRef.date matches when the previous close actually occurred
+              const prevTradingDay = createETDate(prevDateStr);
               await setPrevClose(date, symbol, prevClose);
               
               // Save to DB immediately for persistence
+              // CRITICAL: Use prevTradingDay (when close happened), not "today"
               try {
-                const dateObj = createETDate(date);
                 await prisma.dailyRef.upsert({
-                  where: { symbol_date: { symbol, date: dateObj } },
+                  where: { symbol_date: { symbol, date: prevTradingDay } },
                   update: { previousClose: prevClose, updatedAt: new Date() },
-                  create: { symbol, date: dateObj, previousClose: prevClose }
+                  create: { symbol, date: prevTradingDay, previousClose: prevClose }
+                });
+                
+                // Also update Ticker.latestPrevClose and latestPrevCloseDate for consistency
+                await prisma.ticker.update({
+                  where: { symbol },
+                  data: {
+                    latestPrevClose: prevClose,
+                    latestPrevCloseDate: prevTradingDay
+                  }
                 });
               } catch (dbErr) {
                 console.warn(`⚠️ Failed to save bootstrapped prevClose to DB for ${symbol}:`, dbErr);
               }
 
-              console.log(`✅ Set previous close for ${symbol} (from ${prevDateStr}): $${prevClose}`);
+              console.log(`✅ Set previous close for ${symbol} (from ${prevDateStr}): $${prevClose}, saved with date ${prevDateStr}`);
               break; // Found it, stop looking back
             }
           }

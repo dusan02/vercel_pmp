@@ -1,0 +1,55 @@
+# 🔐 FINÁLNE RIEŠENIE SSL PRE PREMARKETPRICE.COM
+
+# === SITUÁCIA ===
+# ✅ earningstable.com - certifikát existuje a je obnovený
+# ❌ premarketprice.com - certifikát zlyhá kvôli firewall problému
+
+# === KROK 1: Skontrolovať firewall ===
+ufw status
+# Alebo
+iptables -L -n | grep -E "80|443"
+
+# === KROK 2: Otvoriť porty 80 a 443 (ak sú zatvorené) ===
+ufw allow 80/tcp
+ufw allow 443/tcp
+ufw reload
+
+# === KROK 3: Skontrolovať, či Nginx počúva na porte 80 ===
+ss -tlnp | grep 80
+
+# Mali by ste vidieť: LISTEN 0 511 *:80
+
+# === KROK 4: Testovať, či port 80 je dostupný zvonka ===
+# Z iného počítača alebo cez online nástroj:
+# curl http://premarketprice.com/.well-known/acme-challenge/test
+
+# === KROK 5: Skontrolovať DNS propagáciu ===
+dig premarketprice.com +short
+# Mali by ste vidieť: 89.185.250.213
+
+# === KROK 6: Skúsiť použiť DNS-01 challenge namiesto HTTP-01 ===
+# Toto nevyžaduje otvorený port 80
+certbot certonly --manual --preferred-challenges dns -d premarketprice.com -d www.premarketprice.com
+
+# Certbot vám dá TXT záznam, ktorý musíte pridať do DNS
+# Po pridaní, stlačte Enter a certbot dokončí verifikáciu
+
+# === KROK 7: Alebo skúsiť znovu HTTP-01 po oprave firewallu ===
+certbot certonly --nginx -d premarketprice.com -d www.premarketprice.com
+
+# === KROK 8: Po úspešnom vygenerovaní, skontrolovať ===
+ls -la /etc/letsencrypt/live/premarketprice.com/
+
+# Mali by ste vidieť:
+# fullchain.pem
+# privkey.pem
+
+# === KROK 9: Skontrolovať, či Nginx používa správne cesty ===
+nginx -T | grep -A 2 "ssl_certificate.*premarketprice"
+
+# === KROK 10: Reload Nginx ===
+systemctl reload nginx
+
+# === KROK 11: Testovať HTTPS ===
+curl -k https://premarketprice.com/api/health
+

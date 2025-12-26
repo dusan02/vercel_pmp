@@ -1,0 +1,67 @@
+# 🔍 DETAILNÝ TEST REQUESTOV NA SERVER
+
+# ============================================
+# MOŽNOSŤ 1: Sledovanie access logu (hlavný test)
+# ============================================
+tail -f /var/log/nginx/access.log
+
+# Potom otvorte v prehliadači: https://premarketprice.com
+# Mali by ste vidieť riadky typu:
+# 89.185.250.213 - - [24/Dec/2025:23:40:00 +0000] "GET / HTTP/2.0" 200 12345 "https://premarketprice.com" "Mozilla/5.0..."
+
+# ============================================
+# MOŽNOSŤ 2: Sledovanie error logu súčasne
+# ============================================
+# V inom termináli alebo použiť multitail:
+tail -f /var/log/nginx/error.log
+
+# ============================================
+# MOŽNOSŤ 3: Sledovanie oboch logov naraz
+# ============================================
+tail -f /var/log/nginx/access.log /var/log/nginx/error.log
+
+# ============================================
+# MOŽNOSŤ 4: Sledovanie s filtrom (len premarketprice.com)
+# ============================================
+tail -f /var/log/nginx/access.log | grep premarketprice
+
+# ============================================
+# MOŽNOSŤ 5: Posledných 50 riadkov + sledovanie
+# ============================================
+tail -n 50 -f /var/log/nginx/access.log
+
+# ============================================
+# MOŽNOSŤ 6: Sledovanie s časovou značkou
+# ============================================
+tail -f /var/log/nginx/access.log | while read line; do echo "[$(date '+%H:%M:%S')] $line"; done
+
+# ============================================
+# DIAGNOSTIKA: Ak nič nevidíte
+# ============================================
+# 1. Skontrolovať, či Nginx loguje správne:
+ls -la /var/log/nginx/access.log
+
+# 2. Skontrolovať Nginx konfiguráciu:
+grep -r "access_log" /etc/nginx/
+
+# 3. Test priameho requestu z servera:
+curl -I https://premarketprice.com
+
+# 4. Skontrolovať, či port 443 je otvorený:
+ss -tlnp | grep 443
+
+# 5. Skontrolovať firewall:
+iptables -L -n | grep -E '(80|443)'
+
+# ============================================
+# POMOCNÉ PRÍKAZY
+# ============================================
+# Zobraziť posledných 20 requestov:
+tail -n 20 /var/log/nginx/access.log
+
+# Počítať requesty za poslednú minútu:
+tail -n 1000 /var/log/nginx/access.log | grep "$(date '+%d/%b/%Y:%H:%M')" | wc -l
+
+# Zobraziť len chybové requesty:
+tail -f /var/log/nginx/access.log | grep -E "(4[0-9]{2}|5[0-9]{2})"
+

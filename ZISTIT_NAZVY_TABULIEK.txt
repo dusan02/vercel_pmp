@@ -1,0 +1,11 @@
+# 🔍 ZISTIŤ SPRÁVNE NÁZVY TABULIEK
+
+# === KROK 1: Zobraziť všetky tabuľky v databáze ===
+sqlite3 /var/www/earnings-table/modules/database/prisma/prod.db ".tables"
+
+# === KROK 2: Zobraziť štruktúru databázy ===
+sqlite3 /var/www/earnings-table/modules/database/prisma/prod.db ".schema"
+
+# === KROK 3: Zobraziť počet záznamov v každej tabuľke ===
+sqlite3 /var/www/earnings-table/modules/database/prisma/prod.db "SELECT name FROM sqlite_master WHERE type='table';"
+

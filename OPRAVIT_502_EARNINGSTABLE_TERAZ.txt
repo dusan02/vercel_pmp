@@ -1,0 +1,80 @@
+# 🔧 OPRAVIŤ 502 BAD GATEWAY - earningstable.com (POSTUPNE)
+
+# ============================================
+# KROK 1: Skontrolovať PM2 procesy
+# ============================================
+pm2 list
+
+# MUSÍTE VIDIEŤ:
+# earnings-table    online
+# earnings-cron     online
+
+# Ak nie sú online, spustiť:
+# pm2 start /var/www/earnings-table/ecosystem.config.js --only earnings-table --env production
+
+# ============================================
+# KROK 2: Skontrolovať, či beží na porte 5555
+# ============================================
+ss -tlnp | grep 5555
+
+# MUSÍTE VIDIEŤ:
+# LISTEN 0.0.0.0:5555
+
+# Ak nie, skontrolovať logy:
+# pm2 logs earnings-table --lines 20
+
+# ============================================
+# KROK 3: Test lokálneho servera
+# ============================================
+curl -v http://127.0.0.1:5555
+
+# MUSÍTE VIDIEŤ:
+# HTTP/1.1 200 OK
+
+# ============================================
+# KROK 4: Skontrolovať Nginx konfiguráciu
+# ============================================
+cat /etc/nginx/sites-enabled/earningstable.com 2>/dev/null || cat /etc/nginx/sites-enabled/default | grep -A 20 "earningstable"
+
+# Hľadať:
+# proxy_pass http://127.0.0.1:5555;
+
+# Ak tam nie je, alebo je tam iný port, opraviť:
+# ============================================
+# KROK 5: Opraviť Nginx konfiguráciu
+# ============================================
+# Nájsť súbor s earningstable konfiguráciou:
+ls -la /etc/nginx/sites-enabled/ | grep earningstable
+
+# Ak existuje /etc/nginx/sites-enabled/earningstable.com:
+sed -i 's|proxy_pass http://app_servers;|proxy_pass http://127.0.0.1:5555;|g' /etc/nginx/sites-enabled/earningstable.com
+sed -i 's|proxy_pass http://127.0.0.1:3000;|proxy_pass http://127.0.0.1:5555;|g' /etc/nginx/sites-enabled/earningstable.com
+
+# Alebo ak je v hlavnom nginx.conf:
+# nano /etc/nginx/nginx.conf
+# alebo
+# nano /var/www/premarketprice/nginx.conf
+
+# ============================================
+# KROK 6: Testovať Nginx konfiguráciu
+# ============================================
+nginx -t
+
+# ============================================
+# KROK 7: Reload Nginx
+# ============================================
+systemctl reload nginx
+
+# ============================================
+# KROK 8: Skontrolovať Nginx error logy
+# ============================================
+tail -20 /var/log/nginx/error.log
+
+# ============================================
+# KROK 9: Test HTTPS
+# ============================================
+curl -k -I https://earningstable.com
+
+# MUSÍTE VIDIEŤ:
+# HTTP/2 200
+

@@ -1,0 +1,62 @@
+# 🔧 OPRAVIŤ NGINX 502 BAD GATEWAY - Kopírovať a spustiť na serveri
+
+# === KROK 1: Skontrolovať, či server beží na porte 3000 ===
+ss -tlnp | grep 3000
+
+# Mali by ste vidieť: LISTEN 0 511 *:3000
+
+# === KROK 2: Testovať priame pripojenie na port 3000 ===
+curl http://localhost:3000/api/health
+# Alebo
+curl http://127.0.0.1:3000/api/health
+
+# Mali by ste dostať odpoveď (nie 502)
+
+# === KROK 3: Skontrolovať Nginx konfiguráciu ===
+nginx -t
+
+# Mali by ste vidieť: "syntax is ok" a "test is successful"
+
+# === KROK 4: Skontrolovať, či Nginx beží ===
+systemctl status nginx
+
+# Mali by ste vidieť: "active (running)"
+
+# === KROK 5: Skontrolovať Nginx error logy ===
+tail -f /var/log/nginx/error.log
+# Alebo
+tail -20 /var/log/nginx/error.log
+
+# Hľadať chyby týkajúce sa "upstream" alebo "connection refused"
+
+# === KROK 6: Skontrolovať Nginx konfiguráciu - upstream ===
+grep -A 5 "upstream app_servers" /etc/nginx/nginx.conf
+# Alebo ak je v /var/www/premarketprice/nginx.conf:
+grep -A 5 "upstream app_servers" /var/www/premarketprice/nginx.conf
+
+# Mali by ste vidieť: server 127.0.0.1:3000
+
+# === KROK 7: Skontrolovať, či je Nginx konfigurácia načítaná ===
+# Nginx môže používať inú konfiguráciu ako tú, ktorú sme upravili
+# Skontrolovať, ktorú konfiguráciu používa:
+nginx -T | grep -A 5 "upstream app_servers"
+
+# === KROK 8: Ak je upstream správny, reload Nginx ===
+systemctl reload nginx
+# Alebo
+systemctl restart nginx
+
+# === KROK 9: Skontrolovať Nginx access logy ===
+tail -20 /var/log/nginx/access.log
+
+# === KROK 10: Testovať cez Nginx ===
+curl http://localhost/api/health
+# Alebo ak je HTTPS:
+curl -k https://localhost/api/health
+
+# === KROK 11: Ak stále 502, skontrolovať firewall ===
+# Možno firewall blokuje pripojenie z Nginx na port 3000
+iptables -L -n | grep 3000
+# Alebo
+ufw status | grep 3000
+

@@ -7,7 +7,12 @@ import { initializeSectorIndustryScheduler } from './src/lib/jobs/sectorIndustry
 
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = 'localhost';
-const port = parseInt(process.env.PORT || '3000', 10);
+// Force port to 3000 if not explicitly set, or use environment variable
+const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+
+// Debug: Log the actual port being used
+console.log(`🔍 DEBUG: process.env.PORT = ${process.env.PORT || 'undefined'}`);
+console.log(`🔍 DEBUG: Using port = ${port}`);
 
 // Prepare the Next.js app
 const app = next({ dev, hostname, port });

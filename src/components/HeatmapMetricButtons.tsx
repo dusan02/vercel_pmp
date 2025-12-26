@@ -66,7 +66,7 @@ export function HeatmapMetricButtons({
         % Change
       </span>
       
-      {/* Toggle switch - Professional implementation */}
+      {/* Toggle switch - Standard iOS/Android style (less circular, more rectangular) */}
       <button
         onClick={handleToggle}
         onKeyDown={(e) => {
@@ -78,8 +78,8 @@ export function HeatmapMetricButtons({
         }}
         className={`
           relative inline-flex items-center
-          h-7 w-12 
-          rounded-full 
+          h-7 w-12
+          rounded-lg
           transition-colors duration-200 ease-in-out
           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
           ${isDark ? 'focus:ring-offset-black' : 'focus:ring-offset-white'}
@@ -89,24 +89,23 @@ export function HeatmapMetricButtons({
           }
           cursor-pointer
           active:scale-95
-          p-0.5
+          touch-action: manipulation
         `}
         aria-label={`Switch to ${isPercent ? 'market cap change' : 'percentage change'}`}
         role="switch"
         aria-checked={!isPercent}
         tabIndex={0}
       >
-        {/* Sliding ball - larger and more visible */}
+        {/* Sliding ball - more rectangular/rounded square style */}
         <span
           className={`
             absolute
             top-0.5
             left-0.5
-            w-6 h-6 
-            bg-white 
-            rounded-full 
-            shadow-lg
-            border border-gray-200
+            w-6 h-6
+            bg-white
+            rounded-md
+            shadow-sm
             transition-all duration-200 ease-in-out
             ${isPercent ? 'translate-x-0' : 'translate-x-5'}
             z-10

@@ -1,0 +1,44 @@
+cd /var/www/premarketprice && source .env 2>/dev/null && echo "=== 1. UPDATE VŠETKY TICKERY Z MAPPINGU ===" && echo "" && psql "$DATABASE_URL" <<EOF 2>/dev/null
+UPDATE "Ticker" SET sector = 'Technology', industry = 'Consumer Electronics' WHERE symbol = 'AAPL';
+UPDATE "Ticker" SET sector = 'Technology', industry = 'Software' WHERE symbol IN ('MSFT', 'ADBE', 'CRM', 'ORCL', 'NOW', 'INTU');
+UPDATE "Ticker" SET sector = 'Technology', industry = 'Internet Content & Information' WHERE symbol IN ('GOOGL', 'GOOG', 'META');
+UPDATE "Ticker" SET sector = 'Technology', industry = 'Semiconductors' WHERE symbol IN ('NVDA', 'AMD', 'INTC', 'AVGO', 'QCOM', 'TXN', 'TSM');
+UPDATE "Ticker" SET sector = 'Technology', industry = 'Semiconductor Equipment' WHERE symbol IN ('AMAT', 'LRCX', 'KLAC');
+UPDATE "Ticker" SET sector = 'Technology', industry = 'Communication Equipment' WHERE symbol IN ('ANET', 'CSCO');
+UPDATE "Ticker" SET sector = 'Technology', industry = 'Software—Application' WHERE symbol IN ('UBER', 'PLTR');
+UPDATE "Ticker" SET sector = 'Financial Services', industry = 'Banks' WHERE symbol IN ('JPM', 'BAC', 'WFC', 'C');
+UPDATE "Ticker" SET sector = 'Financial Services', industry = 'Capital Markets' WHERE symbol IN ('GS', 'MS', 'SCHW');
+UPDATE "Ticker" SET sector = 'Financial Services', industry = 'Credit Services' WHERE symbol IN ('V', 'MA', 'AXP');
+UPDATE "Ticker" SET sector = 'Financial Services', industry = 'Asset Management' WHERE symbol IN ('BLK', 'GBTC');
+UPDATE "Ticker" SET sector = 'Financial Services', industry = 'Insurance—Diversified' WHERE symbol = 'BRK.B';
+UPDATE "Ticker" SET sector = 'Healthcare', industry = 'Drug Manufacturers—General' WHERE symbol IN ('JNJ', 'LLY', 'ABBV', 'PFE', 'MRK');
+UPDATE "Ticker" SET sector = 'Healthcare', industry = 'Medical Devices' WHERE symbol IN ('ABT', 'ISRG', 'BSX', 'SYK', 'MDT');
+UPDATE "Ticker" SET sector = 'Healthcare', industry = 'Diagnostics & Research' WHERE symbol IN ('TMO', 'DHR');
+UPDATE "Ticker" SET sector = 'Healthcare', industry = 'Healthcare Plans' WHERE symbol = 'UNH';
+UPDATE "Ticker" SET sector = 'Consumer Defensive', industry = 'Discount Stores' WHERE symbol IN ('WMT', 'COST');
+UPDATE "Ticker" SET sector = 'Consumer Defensive', industry = 'Household & Personal Products' WHERE symbol = 'PG';
+UPDATE "Ticker" SET sector = 'Consumer Defensive', industry = 'Beverages—Non-Alcoholic' WHERE symbol IN ('KO', 'PEP');
+UPDATE "Ticker" SET sector = 'Consumer Defensive', industry = 'Tobacco' WHERE symbol = 'PM';
+UPDATE "Ticker" SET sector = 'Consumer Cyclical', industry = 'Internet Retail' WHERE symbol = 'AMZN';
+UPDATE "Ticker" SET sector = 'Consumer Cyclical', industry = 'Auto Manufacturers' WHERE symbol = 'TSLA';
+UPDATE "Ticker" SET sector = 'Consumer Cyclical', industry = 'Home Improvement Retail' WHERE symbol = 'HD';
+UPDATE "Ticker" SET sector = 'Consumer Cyclical', industry = 'Footwear & Accessories' WHERE symbol = 'NKE';
+UPDATE "Ticker" SET sector = 'Consumer Cyclical', industry = 'Restaurants' WHERE symbol IN ('SBUX', 'MCD');
+UPDATE "Ticker" SET sector = 'Communication Services', industry = 'Entertainment' WHERE symbol IN ('DIS', 'NFLX');
+UPDATE "Ticker" SET sector = 'Communication Services', industry = 'Telecom Services' WHERE symbol IN ('T', 'VZ', 'TMUS');
+UPDATE "Ticker" SET sector = 'Energy', industry = 'Oil & Gas Integrated' WHERE symbol IN ('XOM', 'CVX');
+UPDATE "Ticker" SET sector = 'Energy', industry = 'Oil & Gas E&P' WHERE symbol IN ('COP', 'EOG');
+UPDATE "Ticker" SET sector = 'Energy', industry = 'Oil & Gas Equipment & Services' WHERE symbol = 'SLB';
+UPDATE "Ticker" SET sector = 'Industrials', industry = 'Aerospace & Defense' WHERE symbol IN ('BA', 'RTX', 'LMT');
+UPDATE "Ticker" SET sector = 'Industrials', industry = 'Farm & Heavy Construction Machinery' WHERE symbol = 'CAT';
+UPDATE "Ticker" SET sector = 'Industrials', industry = 'Specialty Industrial Machinery' WHERE symbol IN ('GE', 'HON', 'EMR');
+UPDATE "Ticker" SET sector = 'Industrials', industry = 'Electrical Equipment & Parts' WHERE symbol = 'ETN';
+UPDATE "Ticker" SET sector = 'Basic Materials', industry = 'Specialty Chemicals' WHERE symbol IN ('LIN', 'APD', 'ECL');
+UPDATE "Ticker" SET sector = 'Basic Materials', industry = 'Copper' WHERE symbol = 'FCX';
+UPDATE "Ticker" SET sector = 'Utilities', industry = 'Utilities—Renewable' WHERE symbol = 'NEE';
+UPDATE "Ticker" SET sector = 'Utilities', industry = 'Utilities—Regulated Electric' WHERE symbol IN ('SO', 'DUK');
+UPDATE "Ticker" SET sector = 'Real Estate', industry = 'REIT—Industrial' WHERE symbol = 'PLD';
+UPDATE "Ticker" SET sector = 'Real Estate', industry = 'REIT—Specialty' WHERE symbol IN ('AMT', 'EQIX');
+EOF
+echo "" && echo "=== 2. KONTROLA PO UPDATE ===" && echo "SELECT COUNT(*) as total, COUNT(sector) as with_sector, COUNT(industry) as with_industry FROM \"Ticker\";" | psql "$DATABASE_URL" 2>/dev/null && echo "" && echo "=== 3. REŠTART APLIKÁCIE ===" && pm2 restart premarketprice && sleep 3 && echo "" && echo "✅ UPDATE HOTOVÝ"
+

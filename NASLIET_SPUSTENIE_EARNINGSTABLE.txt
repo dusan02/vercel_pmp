@@ -1,0 +1,20 @@
+# 🔍 NÁJSŤ, AKO SA SPÚŠŤA EARNINGSTABLE.COM
+
+# === KROK 1: Pozrieť sa do projektu ===
+ls -la /var/www/earnings-table/
+
+# === KROK 2: Hľadať package.json alebo server súbory ===
+cat /var/www/earnings-table/package.json 2>/dev/null | grep -E "start|server|port|PORT" | head -10
+
+# === KROK 3: Hľadať server.ts alebo server.js ===
+find /var/www/earnings-table -name "server.*" -o -name "index.*" | head -5
+
+# === KROK 4: Hľadať ecosystem.config.js alebo PM2 config ===
+find /var/www/earnings-table -name "ecosystem*" -o -name "pm2*" | head -5
+
+# === KROK 5: Hľadať .env súbor ===
+ls -la /var/www/earnings-table/.env* 2>/dev/null
+
+# === KROK 6: Skontrolovať, či existuje PM2 config pre earnings ===
+pm2 describe earnings-table 2>/dev/null || echo "Žiadny PM2 proces pre earnings-table"
+

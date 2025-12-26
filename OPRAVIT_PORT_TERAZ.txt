@@ -1,0 +1,27 @@
+# 🔧 OPRAVIŤ PORT TERAZ - Kopírovať a spustiť na serveri
+
+# === KROK 1: Prejsť do adresára ===
+cd /var/www/premarketprice
+
+# === KROK 2: Skontrolovať .env ===
+cat .env | grep PORT
+
+# === KROK 3: Opraviť PORT (ak je 3001, zmeniť na 3000) ===
+# Možnosť A: Odstrániť PORT=3001 (ecosystem.config.js má PORT: 3000)
+sed -i '/^PORT=3001/d' .env
+
+# Možnosť B: Alebo zmeniť na PORT=3000
+# sed -i 's/PORT=3001/PORT=3000/g' .env
+
+# === KROK 4: Reštartovať PM2 s novými premennými ===
+pm2 restart premarketprice --update-env
+
+# === KROK 5: Skontrolovať logy ===
+pm2 logs premarketprice --lines 10
+
+# Mali by ste vidieť: "🚀 Next.js server ready on http://localhost:3000"
+
+# === KROK 6: Skontrolovať port ===
+netstat -tlnp | grep 3000
+# Mali by ste vidieť: 127.0.0.1:3000
+

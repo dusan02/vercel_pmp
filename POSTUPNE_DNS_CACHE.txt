@@ -1,0 +1,58 @@
+# 🔧 POSTUPNÉ PRÍKAZY - VYČISTENIE DNS CACHE
+
+# ============================================
+# KROK 1: Vyčistiť DNS cache
+# ============================================
+resolvectl flush-caches
+
+# Ak by to nešlo:
+# systemd-resolve --flush-caches
+
+# ============================================
+# KROK 2: Reštart DNS resolver služby
+# ============================================
+systemctl restart systemd-resolved
+
+# ============================================
+# KROK 3: Overiť, že server už nepozná starú IP
+# ============================================
+getent hosts premarketprice.com
+
+# SPRÁVNY výstup:
+# 89.185.250.213   premarketprice.com
+
+# ❌ Ak by tam bolo ešte 37.9.175.211, cache ešte drží.
+
+# ============================================
+# KROK 4: ZNOVU curl (FINÁLNY TEST)
+# ============================================
+curl -4Iv https://premarketprice.com
+
+# MUSÍTE VIDIEŤ:
+# Trying 89.185.250.213:443
+# subject: CN=premarketprice.com
+
+# ============================================
+# KROK 5: Ak by to stále nešlo
+# ============================================
+# Skontrolovať /etc/hosts:
+cat /etc/hosts
+
+# ❌ NESMIE tam byť:
+# 37.9.175.211 premarketprice.com
+
+# Ak by tam bolo, odstrániť:
+# nano /etc/hosts
+# (odstráň riadok s 37.9.175.211)
+
+# ============================================
+# KROK 6: Porovnanie DNS nástrojov
+# ============================================
+# dig (môže klamať):
+dig +short premarketprice.com A
+
+# getent (ukazuje realitu):
+getent hosts premarketprice.com
+
+# Obe by mali vrátiť: 89.185.250.213
+

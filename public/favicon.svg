@@ -1,28 +1,67 @@
 <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Candlestick chart favicon - matching BrandLogo component design -->
-  <!-- Four candlesticks with varying heights: short, tall, medium, tall -->
-  <!-- Alternating style: outlined (white with blue border) and filled (fully blue) -->
+  <!-- Premium Fintech Logo Symbol - Matching BrandLogo component -->
+  <!-- Abstract geometric mark combining market arrows + heatmap blocks -->
   
-  <!-- Dimensions based on BrandLogo calculations for size=32 -->
-  <!-- wickWidth = 1.92, bodyWidth = 5.76, spacing = 2.56, startX = 1.6, baseY = 27.2 -->
+  <defs>
+    <style>
+      .logo-primary { fill: rgb(30, 58, 138); stroke: rgb(30, 58, 138); }
+      .logo-secondary { fill: rgb(51, 65, 85); stroke: rgb(51, 65, 85); }
+      .logo-accent-up { fill: rgb(16, 185, 129); stroke: rgb(16, 185, 129); }
+      .logo-accent-down { fill: rgb(239, 68, 68); stroke: rgb(239, 68, 68); }
+      .logo-neutral { fill: rgb(148, 163, 184); stroke: rgb(148, 163, 184); }
+    </style>
+  </defs>
   
-  <!-- Candlestick 1: Short, outlined (white with blue border) -->
-  <rect x="1.6" y="16" width="5.76" height="6.4" fill="#ffffff" stroke="rgb(30, 58, 138)" stroke-width="0.64" rx="0.864"/>
-  <rect x="3.52" y="12.8" width="1.92" height="3.2" fill="rgb(30, 58, 138)"/>
-  <rect x="3.52" y="22.4" width="1.92" height="4.8" fill="rgb(30, 58, 138)"/>
+  <!-- Swiss-style grid system -->
+  <!-- unit = 32 / 8 = 4 -->
+  <!-- strokeWidth = 32 * 0.08 = 2.56 -->
   
-  <!-- Candlestick 2: Tall, filled (fully blue) -->
-  <rect x="9.92" y="4.8" width="5.76" height="17.6" fill="rgb(30, 58, 138)"/>
-  <rect x="11.84" y="1.6" width="1.92" height="3.2" fill="rgb(30, 58, 138)"/>
-  <rect x="11.84" y="22.4" width="1.92" height="4.8" fill="rgb(30, 58, 138)"/>
+  <!-- Heatmap blocks - varying sizes -->
+  <!-- Large block - bottom left (negative) -->
+  <rect x="2" y="22" width="9.6" height="9.6" class="logo-accent-down" rx="0.64"/>
   
-  <!-- Candlestick 3: Medium, outlined (white with blue border) -->
-  <rect x="18.24" y="12.8" width="5.76" height="9.6" fill="#ffffff" stroke="rgb(30, 58, 138)" stroke-width="0.64" rx="0.864"/>
-  <rect x="20.16" y="9.6" width="1.92" height="3.2" fill="rgb(30, 58, 138)"/>
-  <rect x="20.16" y="22.4" width="1.92" height="4.8" fill="rgb(30, 58, 138)"/>
+  <!-- Medium block - center left (neutral) -->
+  <rect x="2" y="14" width="7.2" height="7.2" class="logo-neutral" rx="0.64"/>
   
-  <!-- Candlestick 4: Tall, filled (fully blue) -->
-  <rect x="26.56" y="8" width="5.76" height="14.4" fill="rgb(30, 58, 138)"/>
-  <rect x="28.48" y="4.8" width="1.92" height="3.2" fill="rgb(30, 58, 138)"/>
-  <rect x="28.48" y="22.4" width="1.92" height="4.8" fill="rgb(30, 58, 138)"/>
+  <!-- Small block - top left (positive) -->
+  <rect x="2" y="4" width="4.8" height="4.8" class="logo-accent-up" rx="0.64"/>
+  
+  <!-- Medium block - center (primary) -->
+  <rect x="12.4" y="12.4" width="7.2" height="7.2" class="logo-primary" rx="0.64"/>
+  
+  <!-- Small block - top right (positive) -->
+  <rect x="25.2" y="4" width="4.8" height="4.8" class="logo-accent-up" rx="0.64"/>
+  
+  <!-- Medium block - bottom right (negative) -->
+  <rect x="24.8" y="24.8" width="7.2" height="7.2" class="logo-accent-down" rx="0.64"/>
+  
+  <!-- Market arrows - diagonal composition -->
+  <!-- Upward arrow - top left to center -->
+  <path
+    d="M 6 8 L 12 12 M 10.4 10.4 L 12 12 M 11.2 10.4 L 12 12"
+    class="logo-accent-up"
+    stroke-width="2.56"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+  />
+  
+  <!-- Downward arrow - center to bottom right -->
+  <path
+    d="M 16 16 L 26 24 M 24.8 23.2 L 26 24 M 25.2 23.2 L 26 24"
+    class="logo-accent-down"
+    stroke-width="2.56"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+  />
+  
+  <!-- Secondary motion lines -->
+  <line x1="8" y1="2" x2="24" y2="10" class="logo-secondary" stroke-width="1.28" stroke-linecap="round" opacity="0.4"/>
+  <line x1="2" y1="22" x2="30" y2="18" class="logo-secondary" stroke-width="1.28" stroke-linecap="round" opacity="0.4"/>
+  
+  <!-- Precision dots -->
+  <circle cx="16" cy="16" r="0.48" class="logo-primary"/>
+  <circle cx="6" cy="8" r="0.32" class="logo-accent-up"/>
+  <circle cx="26" cy="24" r="0.32" class="logo-accent-down"/>
 </svg>

@@ -1,0 +1,45 @@
+# 🔧 VYTVORIŤ .env SÚBOR - Kopírovať a spustiť na serveri
+
+# === KROK 1: Prejsť do adresára ===
+cd /var/www/premarketprice
+
+# === KROK 2: Vytvoriť .env súbor s PORT=3000 ===
+cat > .env << 'EOF'
+PORT=3000
+NODE_ENV=production
+ENABLE_WEBSOCKET=true
+EOF
+
+# === KROK 3: Skontrolovať .env súbor ===
+cat .env
+
+# Mali by ste vidieť:
+# PORT=3000
+# NODE_ENV=production
+# ENABLE_WEBSOCKET=true
+
+# === KROK 4: Zastaviť aktuálny proces ===
+pm2 stop premarketprice
+pm2 delete premarketprice
+
+# === KROK 5: Spustiť s .env súborom ===
+# PM2 automaticky načíta .env súbor ak je v cwd
+pm2 start ecosystem.config.js --only premarketprice --env production
+
+# === KROK 6: Počkať a skontrolovať logy ===
+sleep 10
+pm2 logs premarketprice --lines 15
+
+# ✅ Mali by ste vidieť: "🚀 Next.js server ready on http://localhost:3000"
+# ❌ NIE: "🚀 Next.js server ready on http://localhost:3001"
+
+# === KROK 7: Skontrolovať porty ===
+ss -tlnp | grep -E "3000|3001"
+
+# Mali by ste vidieť: LISTEN 0 511 127.0.0.1:3000
+# NIE: *:3001
+
+# === KROK 8: Ak stále beží na 3001, skúsiť zmeniť exec_mode na fork ===
+# Upraviť ecosystem.config.js - zmeniť exec_mode: "cluster" na exec_mode: "fork"
+# A instances: "max" na instances: 1
+

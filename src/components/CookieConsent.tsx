@@ -11,10 +11,15 @@ export default function CookieConsent({ onAccept }: CookieConsentProps) {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    // Check if user has already given consent
-    const hasConsent = safeGetItem('pmp-cookie-consent');
-    if (!hasConsent) {
+    // Check if user has already given consent or declined
+    // Banner should only show if no decision has been made
+    const consentValue = safeGetItem('pmp-cookie-consent');
+    // If no value exists (null), show the banner
+    // If value exists (either 'true' or 'declined'), hide the banner
+    if (consentValue === null || consentValue === undefined || consentValue === '') {
       setIsVisible(true);
+    } else {
+      setIsVisible(false);
     }
   }, []);
 
@@ -32,8 +37,13 @@ export default function CookieConsent({ onAccept }: CookieConsentProps) {
   };
 
   const handleDecline = () => {
-    // Store decline in localStorage
+    // Store decline in localStorage and cookies
     safeSetItem('pmp-cookie-consent', 'declined');
+    try {
+      document.cookie = 'pmp-consent=declined; max-age=31536000; path=/'; // 1 year
+    } catch (e) {
+      // Ignore cookie errors in incognito mode
+    }
     setIsVisible(false);
   };
 

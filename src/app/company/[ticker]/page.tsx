@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
     if (!stock) {
       return {
-        title: `${tickerUpper} | ${getCompanyName(tickerUpper)} | PreMarketPrice.com`,
+        title: `${tickerUpper} | ${getCompanyName(tickerUpper)} | PreMarketPrice`,
         description: `Stock information for ${tickerUpper}`,
       };
     }
@@ -43,7 +43,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   } catch (error) {
     console.error(`Error generating metadata for ${tickerUpper}:`, error);
     return {
-      title: `${tickerUpper} | PreMarketPrice.com`,
+      title: `${tickerUpper} | PreMarketPrice`,
       description: `Stock information for ${tickerUpper}`,
     };
   }

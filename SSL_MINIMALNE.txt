@@ -1,0 +1,21 @@
+# 🔐 MINIMÁLNE PRÍKAZY PRE SSL
+# Postupne spustite tieto príkazy:
+
+# 1. Inštalácia Certbot
+apt update
+apt install -y certbot python3-certbot-nginx
+
+# 2. Otvorenie firewall portov
+ufw allow 80/tcp
+ufw allow 443/tcp
+ufw reload
+
+# 3. Vytvorenie SSL certifikátu (HLAVNÝ PRÍKAZ)
+certbot --nginx -d premarketprice.com -d www.premarketprice.com
+
+# 4. Reštart Nginx
+systemctl restart nginx
+
+# 5. Overenie
+curl -I https://premarketprice.com
+

@@ -257,11 +257,14 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
                 <div className="container mx-auto px-4">
                   <PageHeader 
                     navigation={
-                      <SectionNavigation
-                        preferences={preferences}
-                        onToggleSection={(key) => savePreferences({ [key]: !(preferences[key] ?? true) })}
-                        onScrollToSection={scrollToSection}
-                      />
+                      /* Hide navigation in header on mobile - show only in main content area */
+                      <div className="hidden lg:block">
+                        <SectionNavigation
+                          preferences={preferences}
+                          onToggleSection={(key) => savePreferences({ [key]: !(preferences[key] ?? true) })}
+                          onScrollToSection={scrollToSection}
+                        />
+                      </div>
                     }
                   />
                 </div>
@@ -269,7 +272,7 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
 
               <main className="container" role="main">
                 {/* Section Navigation - Mobile (Above content) */}
-                <div className="lg:hidden mb-4">
+                <div className="mb-4">
                   <SectionNavigation
                     preferences={preferences}
                     onToggleSection={(key) => savePreferences({ [key]: !(preferences[key] ?? true) })}

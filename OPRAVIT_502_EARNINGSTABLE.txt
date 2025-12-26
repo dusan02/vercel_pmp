@@ -1,0 +1,62 @@
+# 🔧 OPRAVIŤ 502 BAD GATEWAY PRE EARNINGSTABLE.COM
+
+# === KROK 1: Skontrolovať, či server beží na porte 3000 ===
+ss -tlnp | grep 3000
+
+# Mali by ste vidieť: LISTEN 0 511 *:3000
+
+# === KROK 2: Testovať priame pripojenie ===
+curl http://localhost:3000/api/health
+
+# Mali by ste dostať JSON odpoveď (nie 502)
+
+# === KROK 3: Skontrolovať, ktorú Nginx konfiguráciu používa ===
+nginx -T 2>&1 | grep "configuration file"
+
+# === KROK 4: Skontrolovať upstream pre earningstable.com ===
+nginx -T | grep -A 10 "server_name.*earningstable" | head -20
+
+# === KROK 5: Skontrolovať, či Nginx používa našu konfiguráciu ===
+# Náš nginx.conf je v: /var/www/premarketprice/nginx.conf
+# Nginx môže používať: /etc/nginx/nginx.conf alebo /etc/nginx/sites-enabled/
+
+ls -la /etc/nginx/sites-enabled/
+cat /etc/nginx/sites-enabled/* | grep -A 5 earningstable
+
+# === KROK 6: Skontrolovať Nginx error logy ===
+tail -30 /var/log/nginx/error.log
+
+# Hľadať chyby týkajúce sa:
+# - "connection refused"
+# - "upstream"
+# - "earningstable"
+
+# === KROK 7: Skontrolovať, či earningstable.com HTTPS blok používa správny upstream ===
+nginx -T | grep -B 5 -A 15 "server_name.*earningstable.com"
+
+# Mali by ste vidieť:
+# proxy_pass http://app_servers;
+# A upstream app_servers by malo byť: server 127.0.0.1:3000;
+
+# === KROK 8: Ak Nginx nepoužíva našu konfiguráciu, skopírovať ju ===
+# Možnosť A: Skopírovať do sites-enabled
+# cp /var/www/premarketprice/nginx.conf /etc/nginx/sites-available/premarketprice
+# ln -s /etc/nginx/sites-available/premarketprice /etc/nginx/sites-enabled/
+
+# Možnosť B: Upraviť existujúcu konfiguráciu
+# nano /etc/nginx/sites-enabled/default
+# Alebo
+# nano /etc/nginx/nginx.conf
+
+# === KROK 9: Testovať konfiguráciu ===
+nginx -t
+
+# === KROK 10: Reload Nginx ===
+systemctl reload nginx
+
+# === KROK 11: Testovať HTTPS ===
+curl -k https://earningstable.com/api/health
+curl -k https://www.earningstable.com/api/health
+
+# Mali by ste dostať JSON odpoveď (nie 502)
+

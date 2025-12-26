@@ -1,0 +1,46 @@
+# 🔧 SKÚSIŤ HARDCODE PORT 3000 - Kopírovať a spustiť na serveri
+
+# === KROK 1: Skontrolovať, či port 3000 nie je obsadený ===
+ss -tlnp | grep 3000
+
+# Ak je obsadený, zistiť ktorým procesom a zastaviť ho
+
+# === KROK 2: Upraviť server.ts na serveri (dočasne hardcode port 3000) ===
+cd /var/www/premarketprice
+
+# Zálohovať pôvodný súbor
+cp server.ts server.ts.backup
+
+# Upraviť server.ts - zmeniť riadok s portom
+# Nájsť: const port = parseInt(process.env.PORT || '3000', 10);
+# Zmeniť na: const port = 3000; // Force port 3000
+
+# Alebo použiť sed:
+sed -i "s/const port = parseInt(process.env.PORT || '3000', 10);/const port = 3000; \/\/ Force port 3000/g" server.ts
+
+# === KROK 3: Skontrolovať zmenu ===
+grep "const port" server.ts
+
+# Mali by ste vidieť: const port = 3000; // Force port 3000
+
+# === KROK 4: Reštartovať ===
+pm2 stop premarketprice
+pm2 delete premarketprice
+pm2 start ecosystem.config.js --only premarketprice --env production
+
+# === KROK 5: Skontrolovať logy ===
+sleep 10
+pm2 logs premarketprice --lines 15
+
+# ✅ Mali by ste vidieť: "🚀 Next.js server ready on http://localhost:3000"
+
+# === KROK 6: Skontrolovať porty ===
+ss -tlnp | grep -E "3000|3001"
+
+# Mali by ste vidieť: LISTEN 0 511 127.0.0.1:3000
+# NIE: *:3001
+
+# === KROK 7: Ak to funguje, môžete vrátiť pôvodný server.ts ===
+# cp server.ts.backup server.ts
+# A potom riešiť, prečo process.env.PORT nefunguje
+

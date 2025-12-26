@@ -135,7 +135,8 @@ export function SectionNavigation({ preferences, onToggleSection, onScrollToSect
       aria-label="Section navigation"
     >
       <div className="bg-transparent p-0">
-        <div className="flex flex-col gap-0.5 header-nav-container lg:flex-row lg:gap-0.5 mobile-nav-container">
+        {/* Desktop: Horizontal layout */}
+        <div className="hidden lg:flex flex-row gap-0.5 header-nav-container">
           {sections.map((section) => {
             const isVisible = preferences[section.key] ?? true;
             const isActive = activeSection === section.sectionId;
@@ -215,6 +216,53 @@ export function SectionNavigation({ preferences, onToggleSection, onScrollToSect
                     </svg>
                   )}
                 </button>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Mobile: Grid layout (2 columns) */}
+        <div className="lg:hidden flex flex-wrap gap-0.5 mobile-nav-container">
+          {sections.map((section) => {
+            const isVisible = preferences[section.key] ?? true;
+            const isActive = activeSection === section.sectionId;
+
+            return (
+              <div
+                key={section.key}
+                className={`
+                  nav-item relative flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg transition-all cursor-pointer
+                  flex-1 min-w-[calc(50%-0.25rem)]
+                  ${isActive 
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100'
+                  }
+                `}
+                onClick={() => handleSectionClick(section)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleSectionClick(section);
+                  }
+                }}
+                aria-label={`Navigate to ${section.label} section`}
+              >
+                {/* Icon */}
+                <div className="flex-shrink-0">
+                  <SectionIcon type={section.icon} size={20} />
+                </div>
+
+                {/* Label */}
+                <span className="text-sm font-medium">
+                  {section.label}
+                </span>
+
+                {/* Visibility indicator (mobile) */}
+                {!isVisible && (
+                  <span className="ml-auto text-xs opacity-60">●</span>
+                )}
               </div>
             );
           })}

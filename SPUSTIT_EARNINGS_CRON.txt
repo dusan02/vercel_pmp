@@ -1,0 +1,20 @@
+# 🚀 SPUSTIŤ EARNINGS-CRON
+
+# === KROK 1: Prejsť do projektu ===
+cd /var/www/earnings-table
+
+# === KROK 2: Spustiť earnings-cron cez PM2 ===
+pm2 start ecosystem.config.js --only earnings-cron --env production
+
+# === KROK 3: Uložiť PM2 konfiguráciu ===
+pm2 save
+
+# === KROK 4: Skontrolovať status ===
+pm2 status
+
+# === KROK 5: Skontrolovať logy ===
+pm2 logs earnings-cron --lines 20 --nostream
+
+# === KROK 6: Skontrolovať, či sa dáta aktualizujú ===
+# (počkajte chvíľu a skontrolujte logy znova)
+

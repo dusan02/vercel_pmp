@@ -382,11 +382,22 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
     }
   }, []);
 
+  // Detect mobile for conditional overflow
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 1024);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   return (
     <div
       ref={containerRef}
       className={styles.heatmapContainer}
-      style={{ overflow: 'hidden' }}
+      style={{ overflow: isMobile ? 'visible' : 'hidden' }}
       onMouseMove={renderMode === 'dom' ? handleMouseMove : undefined}
     >
       {(width === 0 || height === 0) && (

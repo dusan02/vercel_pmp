@@ -1,0 +1,37 @@
+# 📋 SKONTROLOVAŤ NGINX KONFIGURÁCIU - Kopírovať a spustiť na serveri
+
+# === KROK 1: Nájsť Nginx konfiguračný súbor ===
+# Nginx môže používať rôzne konfigurácie
+nginx -T 2>&1 | grep "configuration file"
+
+# Alebo skontrolovať bežné umiestnenia:
+ls -la /etc/nginx/nginx.conf
+ls -la /etc/nginx/sites-enabled/
+ls -la /etc/nginx/conf.d/
+
+# === KROK 2: Skontrolovať, či existuje konfigurácia pre domény ===
+grep -r "premarketprice.com" /etc/nginx/
+grep -r "earningstable.com" /etc/nginx/
+
+# === KROK 3: Skontrolovať upstream v aktuálnej konfigurácii ===
+nginx -T | grep -A 10 "upstream app_servers"
+
+# Mali by ste vidieť: server 127.0.0.1:3000
+
+# === KROK 4: Skontrolovať server bloky pre domény ===
+nginx -T | grep -A 20 "server_name.*premarketprice"
+nginx -T | grep -A 20 "server_name.*earningstable"
+
+# === KROK 5: Ak Nginx používa inú konfiguráciu, skopírovať našu ===
+# Naša konfigurácia je v: /var/www/premarketprice/nginx.conf
+# Skopírovať do /etc/nginx/sites-available/ alebo upraviť existujúcu
+
+# === KROK 6: Ak treba, vytvoriť symlink ===
+# ln -s /etc/nginx/sites-available/premarketprice /etc/nginx/sites-enabled/
+
+# === KROK 7: Testovať konfiguráciu ===
+nginx -t
+
+# === KROK 8: Reload Nginx ===
+systemctl reload nginx
+

@@ -1,0 +1,125 @@
+# 🔐 POSTUPNÉ PRÍKAZY - NASTAVENIE SSL PRE PREMARKETPRICE.COM
+# Ste prihlásený v SSH (root@89.185.250.213)
+
+# ============================================
+# KROK 1: Prejsť do premarketprice repozitára
+# ============================================
+cd /var/www/premarketprice
+
+# Overenie, že ste na správnom mieste:
+pwd
+ls -la
+
+# ============================================
+# KROK 2: Aktualizácia systému
+# ============================================
+apt update
+
+# ============================================
+# KROK 3: Inštalácia Certbot (ak nie je nainštalovaný)
+# ============================================
+apt install -y certbot python3-certbot-nginx
+
+# Overenie inštalácie:
+certbot --version
+
+# ============================================
+# KROK 4: Otvorenie firewall portov (80, 443)
+# ============================================
+ufw allow 80/tcp
+ufw allow 443/tcp
+ufw reload
+
+# Overenie:
+ufw status | grep -E '(80|443)'
+
+# ============================================
+# KROK 5: Kontrola DNS (overenie, že doména smeruje na server)
+# ============================================
+dig premarketprice.com +short
+dig www.premarketprice.com +short
+
+# Mali by ste vidieť: 89.185.250.213
+
+# ============================================
+# KROK 6: Kontrola Nginx (syntax a status)
+# ============================================
+nginx -t
+
+# Ak je chyba, opravte ju pred pokračovaním
+
+# Kontrola, či Nginx beží:
+systemctl status nginx
+
+# Ak nebeží, spustiť:
+# systemctl start nginx
+# systemctl enable nginx
+
+# ============================================
+# KROK 7: VYTVORENIE SSL CERTIFIKÁTU (HLAVNÝ KROK)
+# ============================================
+# Certbot automaticky:
+# - Nájde Nginx config
+# - Pridá HTTPS
+# - Nastaví auto-renew
+
+certbot --nginx -d premarketprice.com -d www.premarketprice.com
+
+# Počas procesu:
+# - Certbot sa môže opýtať na e-mail (pre upozornenia)
+# - Certbot sa môže opýtať, či chcete presmerovať HTTP na HTTPS → odpovedzte ÁNO (Y)
+
+# ============================================
+# KROK 8: Overenie, či sa certifikáty vygenerovali
+# ============================================
+ls -la /etc/letsencrypt/live/premarketprice.com/
+
+# Mali by ste vidieť:
+# - fullchain.pem
+# - privkey.pem
+# - cert.pem
+# - chain.pem
+
+# ============================================
+# KROK 9: Reštart Nginx (aby sa použili nové certifikáty)
+# ============================================
+systemctl restart nginx
+
+# Overenie, či Nginx beží správne:
+systemctl status nginx
+
+# ============================================
+# KROK 10: Test SSL (overenie, že HTTPS funguje)
+# ============================================
+curl -I https://premarketprice.com
+curl -I https://www.premarketprice.com
+
+# Mali by ste vidieť: HTTP/2 200 alebo podobné
+
+# ============================================
+# KROK 11: Test HTTP → HTTPS presmerovanie
+# ============================================
+curl -I http://premarketprice.com
+
+# Mali by ste vidieť: HTTP/1.1 301 Moved Permanently
+# Location: https://premarketprice.com
+
+# ============================================
+# KROK 12: Overenie automatického obnovovania
+# ============================================
+certbot renew --dry-run
+
+# Toto by malo prebehnúť bez chýb
+
+# ============================================
+# ✅ HOTOVO!
+# ============================================
+# SSL je nastavený a funguje!
+# 
+# Overte v prehliadači:
+# - https://premarketprice.com
+# - https://www.premarketprice.com
+#
+# Online SSL test:
+# - https://www.ssllabs.com/ssltest/analyze.html?d=premarketprice.com
+

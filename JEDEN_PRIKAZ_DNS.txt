@@ -1,0 +1,4 @@
+# 🔍 JEDEN PRÍKAZ - Overiť DNS pre premarketprice.com (ste v /var/www/premarketprice)
+
+echo "=== 1. DNS A record (premarketprice.com) ===" && dig +short premarketprice.com A && echo "" && echo "=== 2. DNS A record (www.premarketprice.com) ===" && dig +short www.premarketprice.com A && echo "" && echo "=== 3. Detailný DNS lookup ===" && dig premarketprice.com A +noall +answer && echo "" && echo "=== 4. DNS z Google DNS (8.8.8.8) ===" && dig @8.8.8.8 +short premarketprice.com A && echo "" && echo "=== 5. DNS z Cloudflare (1.1.1.1) ===" && dig @1.1.1.1 +short premarketprice.com A && echo "" && echo "=== 6. Očakávaná IP ===" && echo "89.185.250.213"
+

@@ -92,8 +92,8 @@ export function StructuredData({
     const itemListSchema = {
       '@context': 'https://schema.org',
       '@type': 'ItemList',
-      name: 'Top Stock Market Data',
-      description: 'Real-time stock prices and market data for top companies',
+      name: 'Top US Stock Market Data',
+      description: 'Real-time pre-market live stock prices and market data for top US companies traded on NYSE, NASDAQ, and other US exchanges',
       numberOfItems: Math.min(stocks.length, 50),
       itemListElement: stockItems,
     };

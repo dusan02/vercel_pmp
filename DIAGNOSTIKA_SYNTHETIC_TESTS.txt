@@ -1,0 +1,17 @@
+# 🔍 DIAGNOSTIKA SYNTHETIC TESTS FAILED
+
+# === KROK 1: Zobraziť viac logov (100 riadkov) ===
+pm2 logs earnings-cron --lines 100 --nostream | grep -A 5 -B 5 "SYNTHETIC\|FAILED\|ERROR\|error" | tail -50
+
+# === KROK 2: Zobraziť všetky logy bez filtrovania ===
+pm2 logs earnings-cron --lines 50 --nostream | tail -50
+
+# === KROK 3: Skontrolovať error logy ===
+pm2 logs earnings-cron --err --lines 50 --nostream | tail -50
+
+# === KROK 4: Skontrolovať, či je problém s databázou ===
+# (možno chýbajú dáta alebo je problém s pripojením)
+
+# === KROK 5: Skontrolovať, či cron skutočne beží ===
+pm2 describe earnings-cron | grep -E "status|restarts|uptime|error"
+

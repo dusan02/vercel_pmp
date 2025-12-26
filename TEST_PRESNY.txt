@@ -1,0 +1,33 @@
+# 🧪 PRESNÝ TEST - POSTUPNE
+
+# ============================================
+# KROK 1: Overenie DNS A záznamov
+# ============================================
+# MUSÍ BYŤ: 89.185.250.213
+
+dig +short premarketprice.com A
+dig +short www.premarketprice.com A
+
+# ============================================
+# KROK 2: Test HTTPS
+# ============================================
+# SPRÁVNY VÝSLEDOK:
+# Trying 89.185.250.213:443
+# subject: CN=premarketprice.com
+
+curl -4Iv https://premarketprice.com
+
+# ============================================
+# ČO HĽADAŤ V VÝSTUPE:
+# ============================================
+# ✅ "Trying 89.185.250.213:443"
+# ✅ "subject: CN=premarketprice.com"
+# ✅ "HTTP/2 200"
+
+# ============================================
+# AK JE PROBLÉM:
+# ============================================
+# ❌ "Trying [iná IP]:443" → DNS ešte nepropagoval
+# ❌ SSL chyba → certifikát nie je pre tú IP
+# ❌ Timeout → firewall blokuje
+

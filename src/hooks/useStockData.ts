@@ -134,8 +134,11 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
     }
   }, []);
 
+  // Track if favorites have been initially loaded
+  const favoritesInitialLoadRef = useRef(false);
+  
   // Phase 1: Favorites
-  const fetchFavoritesData = useCallback(async () => {
+  const fetchFavoritesData = useCallback(async (showLoading: boolean = true) => {
     const project = getProjectName();
     const favoriteTickers = favorites.map(fav => fav.ticker);
     
@@ -144,12 +147,37 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
       return;
     }
     
-    await fetchAndMergeStocks(
-      `/api/stocks?tickers=${favoriteTickers.join(',')}&project=${project}&limit=50&t=${Date.now()}`,
-      'favorites',
-      'Loading favorites data'
-    );
-  }, [favorites, fetchAndMergeStocks]);
+    // Only show loading state on initial load, not when favorites change
+    if (showLoading) {
+      setLoadingStates(prev => ({ ...prev, favorites: true }));
+    }
+    
+    try {
+      console.log(`🚀 Loading favorites data (showLoading: ${showLoading})`);
+      
+      const response = await fetchWithRetry(
+        `/api/stocks?tickers=${favoriteTickers.join(',')}&project=${project}&limit=50&t=${Date.now()}`
+      );
+      
+      if (response && response.ok) {
+        const result = await response.json();
+        if (result.data && result.data.length > 0) {
+          console.log(`✅ Loaded ${result.data.length} favorite stocks`);
+          setStockData(prev => {
+            const existingTickers = new Set(prev.map(s => s.ticker));
+            const newStocks = result.data.filter((s: StockData) => !existingTickers.has(s.ticker));
+            return [...prev, ...newStocks];
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error loading favorites data:', error);
+    } finally {
+      if (showLoading) {
+        setLoadingStates(prev => ({ ...prev, favorites: false }));
+      }
+    }
+  }, [favorites]);
 
   // Phase 3: Top 50
   const fetchTop50StocksData = useCallback(async () => {
@@ -232,7 +260,8 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
       setError(null);
       
       console.log('🔄 Phase 1: Loading favorites...');
-      await fetchFavoritesData();
+      await fetchFavoritesData(true); // Show loading on initial load
+      favoritesInitialLoadRef.current = true;
       
       console.log('🔄 Phase 2: Loading background status...');
       fetchBackgroundStatus();
@@ -287,16 +316,37 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
     return () => clearInterval(interval);
   }, [throttledFetchBackgroundStatus]);
 
-  // Favorites polling
+  // Favorites polling - only fetch on initial load or when favorites are added
+  // Don't refetch when favorites are removed to avoid flickering
+  const favoritesTickersString = favorites.map(f => f.ticker).join(',');
+  const previousFavoritesRef = useRef<string>('');
+  
   useEffect(() => {
-    if (favorites.length > 0) {
+    const currentFavorites = favoritesTickersString;
+    const previousFavorites = previousFavoritesRef.current;
+    
+    // Only fetch if:
+    // 1. This is the initial load (previousFavorites is empty)
+    // 2. New favorites were added (current length > previous length)
+    // Don't fetch if favorites were removed (to avoid flickering)
+    const favoritesAdded = currentFavorites.length > previousFavorites.length;
+    const isInitialLoad = previousFavorites === '';
+    
+    if (favorites.length > 0 && (isInitialLoad || favoritesAdded)) {
       const timeoutId = setTimeout(() => {
-        fetchFavoritesData();
+        // Only show loading on initial load, not when favorites are added later
+        fetchFavoritesData(isInitialLoad);
+        favoritesInitialLoadRef.current = true;
       }, 500);
+      
+      previousFavoritesRef.current = currentFavorites;
       return () => clearTimeout(timeoutId);
+    } else {
+      // Update ref even if we don't fetch (for removed favorites)
+      previousFavoritesRef.current = currentFavorites;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [favorites.map(f => f.ticker).join(',')]);
+  }, [favoritesTickersString]);
 
   return {
     stockData,

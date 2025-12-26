@@ -1,0 +1,47 @@
+# 🔐 ALTERNATÍVNE RIEŠENIE: DNS-01 Challenge
+# Použite, ak HTTP-01 challenge nefunguje (firewall, port 80 blokovaný)
+
+# 1. Manuálna DNS challenge
+certbot certonly --manual --preferred-challenges dns -d premarketprice.com -d www.premarketprice.com
+
+# Certbot vám zobrazí:
+# Please deploy a DNS TXT record under the name
+# _acme-challenge.premarketprice.com with the following value:
+# 
+# xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+#
+# Press Enter to Continue
+
+# 2. PRED stlačením Enter:
+# - Prihláste sa do DNS správcu (active24.cz)
+# - Pridajte TXT záznam:
+#   Názov: _acme-challenge.premarketprice.com
+#   Typ: TXT
+#   Hodnota: [hodnota z Certbot]
+#   TTL: 300 (alebo minimálne)
+
+# 3. Počkajte na propagáciu DNS (2-5 minút)
+# Overte:
+dig _acme-challenge.premarketprice.com TXT
+
+# 4. Stlačte Enter v Certbot
+
+# 5. Po úspešnom vytvorení certifikátu, upravte Nginx manuálne:
+# Pridajte do /etc/nginx/sites-available/premarketprice.com:
+#
+# server {
+#     listen 443 ssl http2;
+#     server_name premarketprice.com www.premarketprice.com;
+#     
+#     ssl_certificate /etc/letsencrypt/live/premarketprice.com/fullchain.pem;
+#     ssl_certificate_key /etc/letsencrypt/live/premarketprice.com/privkey.pem;
+#     ...
+# }
+
+# 6. Reštart Nginx
+nginx -t
+systemctl restart nginx
+
+# 7. Overenie
+curl -I https://premarketprice.com
+

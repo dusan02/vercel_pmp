@@ -1,0 +1,58 @@
+# 🚀 SPUSTIŤ EARNINGSTABLE.COM (POSTUPNE)
+
+# ============================================
+# KROK 1: Skontrolovať ecosystem.config.js
+# ============================================
+cd /var/www/earnings-table
+cat ecosystem.config.js | grep -A 20 "earnings-table"
+
+# ============================================
+# KROK 2: Skontrolovať, či existuje simple-server.js
+# ============================================
+ls -la simple-server.js
+
+# ============================================
+# KROK 3: Spustiť earnings-table cez PM2
+# ============================================
+pm2 start ecosystem.config.js --only earnings-table --env production
+
+# Alebo ak to nefunguje:
+# pm2 start simple-server.js --name earnings-table --env PORT=5555
+
+# ============================================
+# KROK 4: Skontrolovať PM2 status
+# ============================================
+pm2 list
+
+# MUSÍTE VIDIEŤ:
+# earnings-table    online
+
+# ============================================
+# KROK 5: Skontrolovať port 5555
+# ============================================
+ss -tlnp | grep 5555
+
+# MUSÍTE VIDIEŤ:
+# LISTEN 0.0.0.0:5555
+
+# ============================================
+# KROK 6: Test lokálneho servera
+# ============================================
+curl -v http://127.0.0.1:5555
+
+# MUSÍTE VIDIEŤ:
+# HTTP/1.1 200 OK
+
+# ============================================
+# KROK 7: Uložiť PM2 konfiguráciu
+# ============================================
+pm2 save
+
+# ============================================
+# KROK 8: Test HTTPS
+# ============================================
+curl -k -I https://earningstable.com
+
+# MUSÍTE VIDIEŤ:
+# HTTP/2 200
+

@@ -16,16 +16,15 @@ export function PageHeader({ navigation }: PageHeaderProps) {
   return (
     <header className="header">
       <div className="header-container">
-        {/* LEFT ZONE: Branding */}
+        {/* LEFT ZONE: Branding + Market Indices (on mobile) */}
         <div className="header-left">
           <div className="brand-container">
-            <BrandLogo size={32} className="brand-logo" />
+            <BrandLogo size={48} className="brand-logo" />
             <div className="brand-content">
               <h1 className="brand-minimal">
                 <span className="brand-name">
                   <span className="brand-premarket">PreMarket</span>
                   <span className="brand-price"> Price</span>
-                  <span className="brand-domain">.com</span>
                 </span>
               </h1>
               <p className="brand-tagline">
@@ -33,9 +32,13 @@ export function PageHeader({ navigation }: PageHeaderProps) {
               </p>
             </div>
           </div>
+          {/* Market Indices - shown under brand name on mobile */}
+          <div className="header-center-mobile">
+            <MarketIndices />
+          </div>
         </div>
 
-        {/* CENTER ZONE: Market Indices */}
+        {/* CENTER ZONE: Market Indices (desktop only) */}
         <div className="header-center">
           <MarketIndices />
         </div>

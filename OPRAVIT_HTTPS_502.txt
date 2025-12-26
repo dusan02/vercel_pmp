@@ -1,0 +1,37 @@
+# 🔧 OPRAVIŤ HTTPS 502 - Kopírovať a spustiť na serveri
+
+# === KROK 1: Skontrolovať, či existujú SSL certifikáty ===
+ls -la /etc/letsencrypt/live/premarketprice.com/
+ls -la /etc/letsencrypt/live/earningstable.com/
+
+# Ak neexistujú, treba ich vygenerovať
+
+# === KROK 2: Skontrolovať HTTPS konfiguráciu v Nginx ===
+nginx -T | grep -A 10 "server_name.*premarketprice.com" | grep -A 5 "listen 443"
+
+# === KROK 3: Testovať HTTPS priamo ===
+curl -k https://localhost/api/health
+# -k ignoruje SSL chyby
+
+# === KROK 4: Skontrolovať Nginx error logy pre HTTPS ===
+tail -30 /var/log/nginx/error.log | grep -i ssl
+
+# === KROK 5: Dočasne vypnúť HTTPS redirect (pre testovanie) ===
+# Upraviť Nginx konfiguráciu - komentovať HTTPS redirect
+# Alebo vytvoriť dočasnú HTTP verziu
+
+# === KROK 6: Vygenerovať SSL certifikáty (ak chýbajú) ===
+certbot certonly --nginx -d premarketprice.com -d www.premarketprice.com
+certbot certonly --nginx -d earningstable.com -d www.earningstable.com
+
+# === KROK 7: Ak certbot nie je nainštalovaný ===
+apt update
+apt install certbot python3-certbot-nginx -y
+
+# === KROK 8: Po vygenerovaní certifikátov, reload Nginx ===
+systemctl reload nginx
+
+# === KROK 9: Testovať HTTPS ===
+curl -k https://premarketprice.com/api/health
+curl -k https://earningstable.com/api/health
+

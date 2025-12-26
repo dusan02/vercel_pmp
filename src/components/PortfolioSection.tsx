@@ -10,6 +10,7 @@ import CompanyLogo from './CompanyLogo';
 import { getCompanyName } from '@/lib/companyNames';
 import { StockData } from '@/lib/types';
 import { PortfolioQuantityInput } from './PortfolioQuantityInput';
+import { formatCurrencyCompact } from '@/lib/utils/format';
 import {
   BUTTON_PRIMARY_MD,
   BUTTON_ICON,
@@ -148,21 +149,22 @@ export function PortfolioSection({
         </div>
       </div>
 
-      <table>
-        <thead>
-          <tr>
-            <th>Logo</th>
-            <th>Ticker</th>
-            <th>Company</th>
-            <th>Sector</th>
-            <th>Industry</th>
-            <th>#</th>
-            <th>Price</th>
-            <th>% Change</th>
-            <th>Value</th>
-            <th></th>
-          </tr>
-        </thead>
+      <div className="portfolio-table-wrapper">
+        <table className="portfolio-table">
+          <thead>
+            <tr>
+              <th className="portfolio-col-logo">Logo</th>
+              <th className="portfolio-col-ticker">Ticker</th>
+              <th className="portfolio-col-company">Company</th>
+              <th className="portfolio-col-sector">Sector</th>
+              <th className="portfolio-col-industry">Industry</th>
+              <th className="portfolio-col-quantity">#</th>
+              <th className="portfolio-col-price">Price</th>
+              <th className="portfolio-col-change">% Change</th>
+              <th className="portfolio-col-value">Value</th>
+              <th className="portfolio-col-actions"></th>
+            </tr>
+          </thead>
         <tbody>
           {portfolioStocks.length === 0 ? (
             <tr>
@@ -202,41 +204,88 @@ export function PortfolioSection({
 
                 return (
                   <tr key={stock.ticker}>
-                    <td>
-                      <div className="logo-container">
-                        <CompanyLogo
-                          ticker={stock.ticker}
-                          logoUrl={stock.logoUrl || `/logos/${stock.ticker.toLowerCase()}-32.webp`}
-                          size={32}
-                          priority={true}
-                        />
+                    {/* Column 1: Logo + Ticker + Company (grouped on mobile) */}
+                    <td className="portfolio-mobile-group-1">
+                      <div className="flex items-center gap-2 desktop-only">
+                        <div className="logo-container">
+                          <CompanyLogo
+                            ticker={stock.ticker}
+                            logoUrl={stock.logoUrl || `/logos/${stock.ticker.toLowerCase()}-32.webp`}
+                            size={32}
+                            priority={true}
+                          />
+                        </div>
+                      </div>
+                      <div className="mobile-compact-cell">
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="logo-container">
+                            <CompanyLogo
+                              ticker={stock.ticker}
+                              logoUrl={stock.logoUrl || `/logos/${stock.ticker.toLowerCase()}-32.webp`}
+                              size={24}
+                              priority={true}
+                            />
+                          </div>
+                          <strong className="text-base">{stock.ticker}</strong>
+                        </div>
+                        <div className="company-name text-sm text-gray-600 dark:text-gray-400">
+                          {getCompanyName(stock.ticker)}
+                        </div>
                       </div>
                     </td>
-                    <td>
+                    
+                    {/* Desktop: Ticker (separate) */}
+                    <td className="desktop-only">
                       <strong>{stock.ticker}</strong>
                     </td>
-                    <td className="company-name">
+                    
+                    {/* Desktop: Company (separate) */}
+                    <td className="desktop-only company-name">
                       {getCompanyName(stock.ticker)}
                     </td>
-                    <td>{stock.sector || 'N/A'}</td>
-                    <td>{stock.industry || 'N/A'}</td>
+                    
+                    {/* Column 2: Sector + Industry (grouped on mobile) */}
+                    <td className="portfolio-mobile-group-2">
+                      <div className="desktop-only">{stock.sector || 'N/A'}</div>
+                      <div className="mobile-compact-cell">
+                        <div className="text-sm font-medium">{stock.sector || 'N/A'}</div>
+                        <div className="text-xs text-gray-600 dark:text-gray-400">{stock.industry || 'N/A'}</div>
+                      </div>
+                    </td>
+                    
+                    {/* Desktop: Industry (separate) */}
+                    <td className="desktop-only">{stock.industry || 'N/A'}</td>
+                    
+                    {/* Column 3: Quantity */}
                     <td>
                       <PortfolioQuantityInput
                         value={quantity}
                         onChange={(newQuantity) => onUpdateQuantity(stock.ticker, newQuantity)}
                       />
                     </td>
-                    <td>
-                      ${formattedPrice}
+                    
+                    {/* Column 4: Price + % Change (grouped on mobile) */}
+                    <td className="portfolio-mobile-group-4">
+                      <div className="desktop-only">${formattedPrice}</div>
+                      <div className="mobile-compact-cell">
+                        <div className="text-sm font-semibold">${formattedPrice}</div>
+                        <div className={`text-xs font-medium ${percentChange >= 0 ? 'positive' : 'negative'}`}>
+                          {formattedPercent}
+                        </div>
+                      </div>
                     </td>
-                    <td className={percentChange >= 0 ? 'positive' : 'negative'}>
+                    
+                    {/* Desktop: % Change (separate) */}
+                    <td className={`desktop-only ${percentChange >= 0 ? 'positive' : 'negative'}`}>
                       {formattedPercent}
                     </td>
+                    
+                    {/* Column 5: Value */}
                     <td className={value >= 0 ? 'positive' : 'negative'}>
-                      {Math.abs(value) < 1
-                        ? '$0'
-                        : `${value >= 0 ? '+' : '-'}$` + Math.round(Math.abs(value)).toLocaleString('en-US')}
+                      {formatCurrencyCompact(value, true)}
                     </td>
+                    
+                    {/* Column 6: Actions */}
                     <td>
                       <button
                         className="portfolio-delete-button"
@@ -252,20 +301,22 @@ export function PortfolioSection({
               })}
               {/* Total row */}
               <tr className="portfolio-total-row">
-                <td colSpan={8} style={{ textAlign: 'right', fontWeight: 600, padding: '1rem 0.5rem' }}>
+                <td colSpan={10} className="desktop-only" style={{ textAlign: 'right', fontWeight: 600, padding: '1rem 0.5rem', verticalAlign: 'middle' }}>
                   Total:
                 </td>
-                <td className={totalPortfolioValue >= 0 ? 'positive' : 'negative'} style={{ fontWeight: 600, padding: '1rem 0.5rem' }}>
-                  {Math.abs(totalPortfolioValue) < 1
-                    ? '$0'
-                    : `${totalPortfolioValue >= 0 ? '+' : '-'}$` + Math.round(Math.abs(totalPortfolioValue)).toLocaleString('en-US')}
+                <td colSpan={7} className="mobile-total-label" style={{ textAlign: 'right', fontWeight: 600, padding: '1rem 0.5rem', verticalAlign: 'middle' }}>
+                  Total:
                 </td>
-                <td></td>
+                <td className={totalPortfolioValue >= 0 ? 'positive' : 'negative'} style={{ fontWeight: 600, padding: '1rem 0.5rem', whiteSpace: 'nowrap', verticalAlign: 'middle', minWidth: '120px' }}>
+                  {formatCurrencyCompact(totalPortfolioValue, true)}
+                </td>
+                <td style={{ verticalAlign: 'middle' }}></td>
               </tr>
             </>
           )}
         </tbody>
       </table>
+      </div>
     </section>
   );
 }

@@ -1,0 +1,39 @@
+# 🔧 DOČASNE VYPNÚŤ HTTPS REDIRECT (pre testovanie) - Kopírovať a spustiť na serveri
+
+# === KROK 1: Nájsť Nginx konfiguračný súbor ===
+# Nginx môže používať rôzne konfigurácie
+nginx -T 2>&1 | grep "configuration file"
+
+# Alebo skontrolovať:
+ls -la /etc/nginx/sites-enabled/
+ls -la /etc/nginx/conf.d/
+
+# === KROK 2: Zálohovať konfiguráciu ===
+cp /etc/nginx/nginx.conf /etc/nginx/nginx.conf.backup
+# Alebo ak používa sites-enabled:
+# cp /etc/nginx/sites-enabled/default /etc/nginx/sites-enabled/default.backup
+
+# === KROK 3: Dočasne vypnúť HTTPS redirect ===
+# Nájsť riadok: return 301 https://$host$request_uri;
+# A komentovať ho: # return 301 https://$host$request_uri;
+
+# Alebo použiť sed:
+sed -i 's/return 301 https:\/\/$host$request_uri;/# return 301 https:\/\/$host$request_uri; # Temporarily disabled/g' /etc/nginx/nginx.conf
+
+# === KROK 4: Pridať HTTP server block, ktorý proxuje na port 3000 ===
+# Alebo upraviť existujúci HTTP block, aby proxoval namiesto redirectu
+
+# === KROK 5: Testovať konfiguráciu ===
+nginx -t
+
+# === KROK 6: Reload Nginx ===
+systemctl reload nginx
+
+# === KROK 7: Testovať HTTP ===
+curl http://localhost/api/health
+curl http://premarketprice.com/api/health
+
+# === KROK 8: Ak funguje, môžete vrátiť HTTPS redirect ===
+# cp /etc/nginx/nginx.conf.backup /etc/nginx/nginx.conf
+# A potom vygenerovať SSL certifikáty
+

@@ -1,0 +1,4 @@
+# 🔍 JEDEN PRÍKAZ - Nájsť earningstable.com projekt (ste v /var/www/premarketprice)
+
+echo "=== 1. Hľadanie projektov ===" && find /var/www -maxdepth 2 -type d -iname "*earning*" 2>/dev/null && echo "" && echo "=== 2. Porty ===" && ss -tlnp | grep -E "5555|3000|3001|3002" && echo "" && echo "=== 3. PM2 procesy ===" && pm2 list && echo "" && echo "=== 4. Test port 5555 ===" && curl -s http://localhost:5555/api/health 2>&1 | head -3 && echo "" && echo "=== 5. Nginx configs ===" && ls -la /etc/nginx/sites-enabled/ | grep -i earning
+

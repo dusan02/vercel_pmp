@@ -1,0 +1,81 @@
+# 🔧 ALTERNATÍVNE RIEŠENIE - VYČISTENIE DNS CACHE
+# (Ak resolvectl a systemd-resolve nie sú dostupné)
+
+# ============================================
+# KROK 1: Skontrolovať, aký DNS resolver používate
+# ============================================
+# Skontrolovať systemd-resolved:
+systemctl status systemd-resolved
+
+# Skontrolovať dnsmasq:
+systemctl status dnsmasq
+
+# Skontrolovať NetworkManager:
+systemctl status NetworkManager
+
+# ============================================
+# KROK 2: Alternatívne metódy na vyčistenie DNS cache
+# ============================================
+
+# Možnosť A: Reštart systemd-resolved (ak beží)
+systemctl restart systemd-resolved
+
+# Možnosť B: Reštart dnsmasq (ak beží)
+systemctl restart dnsmasq
+
+# Možnosť C: Reštart NetworkManager (ak beží)
+systemctl restart NetworkManager
+
+# Možnosť D: Reštart sieťovej služby
+systemctl restart networking
+
+# ============================================
+# KROK 3: Skontrolovať /etc/hosts (DÔLEŽITÉ!)
+# ============================================
+cat /etc/hosts
+
+# ❌ NESMIE tam byť:
+# 37.9.175.211 premarketprice.com
+
+# Ak by tam bolo, odstrániť:
+# nano /etc/hosts
+# (odstráň riadok s 37.9.175.211)
+
+# ============================================
+# KROK 4: Skontrolovať /etc/resolv.conf
+# ============================================
+cat /etc/resolv.conf
+
+# ============================================
+# KROK 5: Overiť IP adresu
+# ============================================
+getent hosts premarketprice.com
+
+# SPRÁVNY výstup:
+# 89.185.250.213   premarketprice.com
+
+# ============================================
+# KROK 6: Test HTTPS
+# ============================================
+curl -4Iv https://premarketprice.com
+
+# MUSÍTE VIDIEŤ:
+# Trying 89.185.250.213:443
+# subject: CN=premarketprice.com
+
+# ============================================
+# KROK 7: Vynútené vyčistenie (ak nič nepomohlo)
+# ============================================
+# Reštart všetkých sieťových služieb:
+systemctl restart systemd-resolved 2>/dev/null
+systemctl restart dnsmasq 2>/dev/null
+systemctl restart NetworkManager 2>/dev/null
+systemctl restart networking 2>/dev/null
+
+# ============================================
+# KROK 8: Manuálne nastavenie DNS (posledná možnosť)
+# ============================================
+# Ak nič nepomôže, môžete manuálne nastaviť DNS v /etc/resolv.conf:
+# nameserver 8.8.8.8
+# nameserver 8.8.4.4
+

@@ -1,0 +1,30 @@
+# 🔍 DEBUG PORTU - Kopírovať a spustiť na serveri
+
+# === KROK 1: Skontrolovať, či port 3000 nie je obsadený ===
+ss -tlnp | grep 3000
+
+# === KROK 2: Skontrolovať .env súbor ===
+cd /var/www/premarketprice
+cat .env
+
+# === KROK 3: Skontrolovať PM2 environment premenné ===
+pm2 describe premarketprice | grep -A 30 "env:"
+
+# === KROK 4: Reštartovať s debug výpisom ===
+# Najprv musíme aktualizovať server.ts na serveri (pridaný debug výpis)
+# Potom:
+pm2 stop premarketprice
+pm2 delete premarketprice
+pm2 start ecosystem.config.js --only premarketprice --env production
+
+# === KROK 5: Skontrolovať logy (hľadať DEBUG riadky) ===
+sleep 10
+pm2 logs premarketprice --lines 20 | grep -E "DEBUG|port|PORT"
+
+# Mali by ste vidieť:
+# 🔍 DEBUG: process.env.PORT = 3000 (alebo undefined)
+# 🔍 DEBUG: Using port = 3000 (alebo 3001)
+
+# === KROK 6: Ak process.env.PORT je undefined, problém je v PM2 ===
+# Skúsiť explicitne nastaviť v ecosystem.config.js alebo použiť .env súbor
+

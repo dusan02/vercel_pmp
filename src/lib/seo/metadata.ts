@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { getCompanyName } from '@/lib/companyNames';
 
 const baseUrl = 'https://premarketprice.com';
-const siteName = 'PreMarketPrice.com';
+const siteName = 'PreMarketPrice';
 
 interface CompanyMetadataParams {
   ticker: string;
@@ -125,10 +125,13 @@ export function generatePageMetadata({
   const ogImage = image || `${baseUrl}/og-image.png`;
 
   const defaultKeywords = [
-    'stocks',
+    'US stocks',
+    'NYSE stocks',
+    'NASDAQ stocks',
     'pre-market',
+    'pre-market live prices',
     'earnings',
-    'stock market',
+    'US stock market',
     'trading',
     'real-time data',
     ...keywords,

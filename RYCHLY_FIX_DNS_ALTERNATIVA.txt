@@ -1,0 +1,40 @@
+# 🚀 RÝCHLY FIX DNS CACHE (ALTERNATÍVA)
+
+# ============================================
+# POSTUP (POSTUPNE):
+# ============================================
+
+# 1. Reštart DNS služieb (skúsiť všetky)
+systemctl restart systemd-resolved 2>/dev/null
+systemctl restart dnsmasq 2>/dev/null
+systemctl restart NetworkManager 2>/dev/null
+systemctl restart networking 2>/dev/null
+
+# 2. Skontrolovať /etc/hosts (DÔLEŽITÉ!)
+cat /etc/hosts
+
+# ❌ NESMIE tam byť:
+# 37.9.175.211 premarketprice.com
+
+# Ak by tam bolo, odstrániť:
+nano /etc/hosts
+# (odstráň riadok s 37.9.175.211)
+
+# 3. Overiť IP adresu
+getent hosts premarketprice.com
+# MUSÍ BYŤ: 89.185.250.213
+
+# 4. Test HTTPS
+curl -4Iv https://premarketprice.com
+# MUSÍ BYŤ: Trying 89.185.250.213:443
+
+# ============================================
+# TL;DR:
+# ============================================
+# systemctl restart systemd-resolved
+# systemctl restart dnsmasq
+# systemctl restart networking
+# cat /etc/hosts
+# getent hosts premarketprice.com
+# curl -4Iv https://premarketprice.com
+

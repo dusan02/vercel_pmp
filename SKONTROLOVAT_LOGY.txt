@@ -1,0 +1,32 @@
+# 📋 SKONTROLOVAŤ LOGY - Kopírovať a spustiť na serveri
+
+# === KROK 1: Prejsť do adresára ===
+cd /var/www/premarketprice
+
+# === KROK 2: Počkať chvíľu (5-10 sekúnd), kým sa server spustí ===
+sleep 5
+
+# === KROK 3: Skontrolovať logy premarketprice ===
+pm2 logs premarketprice --lines 50
+
+# Hľadať:
+# - "🚀 Next.js server ready on http://localhost:3000" (správne)
+# - "🚀 Next.js server ready on http://localhost:3001" (zlé - potrebuje opravu)
+
+# === KROK 4: Skontrolovať chybové logy ===
+pm2 logs premarketprice --err --lines 50
+
+# === KROK 5: Skontrolovať porty ===
+netstat -tlnp | grep -E "3000|3001"
+# Alebo
+ss -tlnp | grep -E "3000|3001"
+
+# === KROK 6: Skontrolovať PM2 environment premenné ===
+pm2 describe premarketprice | grep -A 20 "env:"
+
+# === KROK 7: Ak beží na porte 3001, reštartovať s explicitným PORT=3000 ===
+# pm2 stop premarketprice
+# pm2 delete premarketprice
+# PORT=3000 pm2 start ecosystem.config.js --only premarketprice --env production
+# pm2 save
+

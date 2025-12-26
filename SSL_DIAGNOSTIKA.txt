@@ -1,0 +1,54 @@
+# 🔍 DIAGNOSTIKA SSL PROBLÉMOV
+
+# 1. Overenie, či je Certbot nainštalovaný
+certbot --version
+
+# 2. Overenie, či je Nginx nainštalovaný
+nginx -v
+
+# 3. Kontrola firewall portov
+ufw status
+ss -tlnp | grep -E ':(80|443)'
+
+# 4. Kontrola DNS
+dig premarketprice.com +short
+dig www.premarketprice.com +short
+nslookup premarketprice.com
+
+# 5. Kontrola Nginx konfigurácie
+nginx -t
+systemctl status nginx
+
+# 6. Kontrola, či certifikáty existujú
+ls -la /etc/letsencrypt/live/premarketprice.com/ 2>/dev/null || echo "Certifikáty neexistujú"
+
+# 7. Kontrola Nginx SSL konfigurácie
+grep -r "ssl_certificate" /etc/nginx/sites-enabled/
+grep -r "premarketprice.com" /etc/nginx/
+
+# 8. Test HTTP pripojenia
+curl -I http://premarketprice.com
+
+# 9. Test HTTPS pripojenia
+curl -I https://premarketprice.com
+
+# 10. Kontrola Let's Encrypt logov
+tail -50 /var/log/letsencrypt/letsencrypt.log
+
+# 11. Kontrola Nginx error logov
+tail -50 /var/log/nginx/error.log
+
+# 12. Kontrola, či port 80 je dostupný zvonka
+# (spustite z iného počítača alebo použite online nástroj)
+# napr: https://www.yougetsignal.com/tools/open-ports/
+
+# 13. Test SSL handshake
+openssl s_client -connect premarketprice.com:443 -servername premarketprice.com < /dev/null
+
+# 14. Kontrola certifikátu (ak existuje)
+openssl x509 -in /etc/letsencrypt/live/premarketprice.com/cert.pem -text -noout 2>/dev/null || echo "Certifikát neexistuje"
+
+# 15. Kontrola auto-renew
+cat /etc/cron.d/certbot
+certbot renew --dry-run
+

@@ -1,0 +1,22 @@
+# 📊 KONTROLA MIESTA NA DISKU
+
+## ZÁKLADNÝ PRÍKAZ (celkový prehľad):
+```bash
+df -h
+```
+
+## DETAILNÝ PRÍKAZ (s percentami a najväčšími adresármi):
+```bash
+echo "=== 1. CELKOVÉ VYUŽITIE DISKU ===" && df -h / && echo "" && echo "=== 2. NAJVÄČŠIE ADRESÁRE (top 10) ===" && du -h --max-depth=1 / 2>/dev/null | sort -rh | head -10 && echo "" && echo "=== 3. VEĽKOSŤ PROJEKTOV ===" && du -sh /var/www/* 2>/dev/null && echo "" && echo "=== 4. VEĽKOSŤ LOGOV ===" && du -sh /var/log/* 2>/dev/null | sort -rh | head -5
+```
+
+## JEDEN PRÍKAZ (všetko naraz):
+```bash
+echo "=== DISK SPACE ===" && df -h / | tail -1 | awk '{print "Celkom: " $2 " | Použité: " $3 " (" $5 ") | Voľné: " $4}' && echo "" && echo "=== TOP 10 NAJVÄČŠÍCH ADRESÁROV ===" && du -h --max-depth=1 / 2>/dev/null | sort -rh | head -10 && echo "" && echo "=== PROJEKTY ===" && du -sh /var/www/* 2>/dev/null && echo "" && echo "=== LOGY ===" && du -sh /var/log/* 2>/dev/null | sort -rh | head -5
+```
+
+## JEDNODUCHÝ PRÍKAZ (len základné info):
+```bash
+df -h / && echo "" && echo "=== PROJEKTY ===" && du -sh /var/www/* 2>/dev/null
+```
+

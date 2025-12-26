@@ -1,0 +1,103 @@
+# 🔧 RÝCHLA OCHRANA PROTI IPv6 + OVERENIE KONFIGURÁCIE
+
+# ============================================
+# KROK 1: Nájsť Nginx konfiguračné súbory
+# ============================================
+ls -la /etc/nginx/sites-enabled/
+
+# ============================================
+# KROK 2: Skontrolovať aktuálnu konfiguráciu
+# ============================================
+# Nájsť všetky IPv6 listen direktívy:
+grep -r "listen \[::\]" /etc/nginx/sites-enabled/
+
+# Zobraziť konfiguráciu pre premarketprice.com:
+cat /etc/nginx/sites-enabled/premarketprice.com
+
+# Alebo ak je v nginx.conf:
+grep -A 20 "premarketprice.com" /etc/nginx/nginx.conf
+
+# ============================================
+# KROK 3: Upraviť konfiguráciu (odstrániť IPv6)
+# ============================================
+# Otvoriť konfiguračný súbor:
+nano /etc/nginx/sites-enabled/premarketprice.com
+
+# ALEBO ak je v nginx.conf:
+nano /etc/nginx/nginx.conf
+
+# V SSL server blocku MUSÍ BYŤ:
+# ✅ SPRÁVNE:
+# listen 80;
+# listen 443 ssl;
+#
+# ❌ NESPRÁVNE (IPv6):
+# listen [::]:443 ssl;
+# listen [::]:80;
+
+# ============================================
+# KROK 4: Automatické odstránenie IPv6 (ak existuje)
+# ============================================
+# Nájsť a zakomentovať IPv6 listen:
+sed -i 's/listen \[::\]:443 ssl;/# listen [::]:443 ssl;/g' /etc/nginx/sites-enabled/premarketprice.com
+sed -i 's/listen \[::\]:80;/# listen [::]:80;/g' /etc/nginx/sites-enabled/premarketprice.com
+
+# Alebo ak je v nginx.conf:
+sed -i 's/listen \[::\]:443 ssl;/# listen [::]:443 ssl;/g' /etc/nginx/nginx.conf
+sed -i 's/listen \[::\]:80;/# listen [::]:80;/g' /etc/nginx/nginx.conf
+
+# ============================================
+# KROK 5: Overiť server_name v SSL bloku
+# ============================================
+# MUSÍ BYŤ:
+# server_name premarketprice.com www.premarketprice.com;
+#
+# Skontrolovať:
+grep -A 5 "listen 443 ssl" /etc/nginx/sites-enabled/premarketprice.com | grep server_name
+
+# Alebo:
+grep -A 5 "listen 443 ssl" /etc/nginx/nginx.conf | grep server_name
+
+# ============================================
+# KROK 6: Overiť syntax Nginx
+# ============================================
+nginx -t
+
+# ============================================
+# KROK 7: Reštart Nginx
+# ============================================
+systemctl reload nginx
+
+# Overenie, či beží:
+systemctl status nginx
+
+# ============================================
+# KROK 8: Overiť SSL certifikát
+# ============================================
+certbot certificates
+
+# Správny výstup má obsahovať:
+# Domains: premarketprice.com www.premarketprice.com
+
+# ============================================
+# KROK 9: Test bez prehliadača (obíde cache)
+# ============================================
+curl -Iv https://premarketprice.com
+
+# Mali by ste vidieť:
+# - Server: nginx/1.22.1
+# - subject: CN=premarketprice.com (alebo podobné)
+
+# ============================================
+# KROK 10: Detailný test SSL certifikátu
+# ============================================
+openssl s_client -connect premarketprice.com:443 -servername premarketprice.com < /dev/null 2>/dev/null | openssl x509 -noout -subject -issuer -dates
+
+# ============================================
+# KROK 11: Overenie, že IPv6 nie je aktívne
+# ============================================
+# Skontrolovať, či Nginx nepočúva na IPv6:
+ss -tlnp | grep nginx
+
+# Mali by ste vidieť len IPv4 adresy (0.0.0.0 alebo 127.0.0.1), nie [::]
+

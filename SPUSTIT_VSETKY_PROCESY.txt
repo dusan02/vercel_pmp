@@ -1,0 +1,42 @@
+# 🔧 SPUSTIŤ VŠETKY PROCESY - Kopírovať a spustiť na serveri
+
+# === KROK 1: Prejsť do adresára ===
+cd /var/www/premarketprice
+
+# === KROK 2: Skontrolovať aktuálny stav ===
+pm2 status
+
+# === KROK 3: Skontrolovať logy premarketprice (počkať chvíľu, kým sa spustí) ===
+pm2 logs premarketprice --lines 30
+# Mali by ste vidieť: "🚀 Next.js server ready on http://localhost:3000"
+
+# === KROK 4: Skontrolovať, prečo sa nespúšťajú workers ===
+# PM2 môže spustiť len prvý proces. Skontrolovať ecosystem.config.js
+cat ecosystem.config.js | grep -A 5 "name:"
+
+# === KROK 5: Spustiť workers manuálne ===
+# Polygon worker
+pm2 start ecosystem.config.js --only pmp-polygon-worker --env production
+
+# Bulk preloader
+pm2 start ecosystem.config.js --only pmp-bulk-preloader --env production
+
+# === KROK 6: Skontrolovať status ===
+pm2 status
+
+# Mali by ste vidieť:
+# - premarketprice (online)
+# - pmp-polygon-worker (online)
+# - pmp-bulk-preloader (online alebo waiting)
+
+# === KROK 7: Uložiť ===
+pm2 save
+
+# === KROK 8: Skontrolovať porty ===
+netstat -tlnp | grep -E "3000|3001"
+# Mali by ste vidieť: 127.0.0.1:3000 (nie 3001)
+
+# === KROK 9: Skontrolovať logy workers ===
+pm2 logs pmp-polygon-worker --lines 10
+pm2 logs pmp-bulk-preloader --lines 10
+

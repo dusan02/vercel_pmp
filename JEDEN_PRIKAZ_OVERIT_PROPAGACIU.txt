@@ -1,0 +1,4 @@
+# 🔍 JEDEN PRÍKAZ - Overiť DNS propagáciu (ste v /var/www/premarketprice)
+
+echo "=== 1. Google DNS (8.8.8.8) ===" && dig @8.8.8.8 +short premarketprice.com A && echo "" && echo "=== 2. Cloudflare DNS (1.1.1.1) ===" && dig @1.1.1.1 +short premarketprice.com A && echo "" && echo "=== 3. OpenDNS (208.67.222.222) ===" && dig @208.67.222.222 +short premarketprice.com A && echo "" && echo "=== 4. Očakávaná IP ===" && echo "89.185.250.213" && echo "" && echo "=== 5. Test priameho pripojenia ===" && curl -I http://89.185.250.213 -H "Host: premarketprice.com" 2>&1 | head -3
+

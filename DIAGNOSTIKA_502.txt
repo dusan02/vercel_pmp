@@ -1,0 +1,49 @@
+# 🔍 DIAGNOSTIKA 502 BAD GATEWAY - Kopírovať a spustiť na serveri
+
+# === KROK 1: Základné kontroly ===
+# 1.1 Server beží?
+ss -tlnp | grep 3000
+# Mali by ste vidieť: LISTEN 0 511 *:3000
+
+# 1.2 Priame pripojenie funguje?
+curl http://localhost:3000/api/health
+# Mali by ste dostať JSON (nie 502)
+
+# === KROK 2: Skontrolovať Nginx konfiguráciu ===
+# 2.1 Ktorú konfiguráciu používa?
+nginx -T 2>&1 | grep "configuration file"
+
+# 2.2 Upstream v aktuálnej konfigurácii?
+nginx -T | grep -A 5 "upstream app_servers"
+# Mali by ste vidieť: server 127.0.0.1:3000
+
+# 2.3 Earningstable.com server block?
+nginx -T | grep -B 5 -A 25 "server_name.*earningstable.com"
+# Mali by ste vidieť:
+# - listen 443 ssl http2
+# - ssl_certificate /etc/letsencrypt/live/earningstable.com/fullchain.pem
+# - proxy_pass http://app_servers
+
+# === KROK 3: Skontrolovať error logy ===
+tail -50 /var/log/nginx/error.log | grep -i -E "earningstable|502|upstream|connection"
+
+# Hľadať:
+# - "connection refused"
+# - "upstream"
+# - "502"
+
+# === KROK 4: Skontrolovať sites-enabled ===
+ls -la /etc/nginx/sites-enabled/
+cat /etc/nginx/sites-enabled/* 2>/dev/null | grep -A 10 earningstable
+
+# === KROK 5: Skontrolovať, či Nginx používa našu konfiguráciu ===
+# Náš nginx.conf: /var/www/premarketprice/nginx.conf
+# Skontrolovať, či je v /etc/nginx/ alebo sites-enabled
+
+grep -r "upstream app_servers" /etc/nginx/ 2>/dev/null
+grep -r "earningstable.com" /etc/nginx/ 2>/dev/null
+
+# === KROK 6: Ak Nginx nepoužíva našu konfiguráciu ===
+# Skopírovať našu konfiguráciu do správneho miesta
+# Alebo upraviť existujúcu konfiguráciu
+

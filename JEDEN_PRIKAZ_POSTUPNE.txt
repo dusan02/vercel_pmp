@@ -1,0 +1,5 @@
+# 🔐 JEDEN PRÍKAZ - POSTUPNÉ NASTAVENIE SSL
+# Skopírujte a vložte tento príkaz (ste v SSH)
+
+cd /var/www/premarketprice && echo "✅ Ste v premarketprice repozitári" && pwd && echo "" && echo "=== 1. Aktualizácia systému ===" && apt update && echo "" && echo "=== 2. Inštalácia Certbot ===" && apt install -y certbot python3-certbot-nginx && echo "" && echo "=== 3. Otvorenie firewall portov ===" && ufw allow 80/tcp && ufw allow 443/tcp && ufw reload && echo "" && echo "=== 4. Kontrola DNS ===" && dig premarketprice.com +short && dig www.premarketprice.com +short && echo "" && echo "=== 5. Kontrola Nginx ===" && nginx -t && systemctl status nginx | head -5 && echo "" && echo "=== 6. VYTVORENIE SSL CERTIFIKÁTU ===" && certbot --nginx -d premarketprice.com -d www.premarketprice.com && echo "" && echo "=== 7. Overenie certifikátu ===" && ls -la /etc/letsencrypt/live/premarketprice.com/ && echo "" && echo "=== 8. Reštart Nginx ===" && systemctl restart nginx && echo "" && echo "=== 9. Test SSL ===" && curl -I https://premarketprice.com 2>&1 | head -5 && echo "" && echo "✅ HOTOVO! SSL je nastavený."
+

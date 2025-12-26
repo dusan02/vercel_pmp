@@ -21,14 +21,18 @@ const spaceGrotesk = Space_Grotesk({
 
 export const metadata: Metadata = {
   title: {
-    default: 'PreMarketPrice.com - Real-time Stock Data & Earnings Calendar',
-    template: '%s | PreMarketPrice.com',
+    default: 'PreMarketPrice - Real-time Stock Data & Earnings Calendar',
+    template: '%s | PreMarketPrice',
   },
-  description: 'Track pre-market movements and earnings calendar of 300+ global companies. Real-time stock data, market analysis, portfolio tracking, and comprehensive earnings calendar. Get live stock prices, market cap changes, and earnings reports for S&P 500 companies.',
+  description: 'Real-time pre-market live stock prices for US stocks traded on NYSE, NASDAQ, and other US exchanges. Track pre-market movements, earnings calendar, and market analysis for 300+ US companies. Get live stock prices, market cap changes, and earnings reports for S&P 500 companies.',
   keywords: [
-    'stocks',
+    'US stocks',
+    'NYSE stocks',
+    'NASDAQ stocks',
     'pre-market',
     'premarket',
+    'pre-market live prices',
+    'US stock market',
     'earnings',
     'earnings calendar',
     'stock market',
@@ -36,6 +40,7 @@ export const metadata: Metadata = {
     'portfolio',
     'real-time data',
     'stock prices',
+    'live stock prices',
     'market cap',
     'S&P 500',
     'stock analysis',
@@ -46,10 +51,11 @@ export const metadata: Metadata = {
     'investment',
     'trading tools',
     'stock quotes',
+    'US exchanges',
   ].join(', '),
   authors: [{ name: 'PreMarketPrice Team' }],
-  creator: 'PreMarketPrice.com',
-  publisher: 'PreMarketPrice.com',
+  creator: 'PreMarketPrice',
+  publisher: 'PreMarketPrice',
   formatDetection: {
     email: false,
     address: false,
@@ -60,16 +66,16 @@ export const metadata: Metadata = {
     canonical: '/',
   },
   openGraph: {
-    title: 'PreMarketPrice.com - Real-time Stock Data & Earnings Calendar',
-    description: 'Track pre-market movements and earnings calendar of 300+ global companies. Real-time stock data, market analysis, and portfolio tracking.',
+    title: 'PreMarketPrice - Real-time Stock Data & Earnings Calendar',
+    description: 'Real-time pre-market live stock prices for US stocks traded on NYSE, NASDAQ, and other US exchanges. Track pre-market movements, earnings calendar, and market analysis for 300+ US companies.',
     url: 'https://premarketprice.com',
-    siteName: 'PreMarketPrice.com',
+    siteName: 'PreMarketPrice',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 1630,
-        alt: 'PreMarketPrice.com - Real-time Stock Data & Earnings Calendar Platform',
+        alt: 'PreMarketPrice - Real-time Stock Data & Earnings Calendar Platform',
       },
     ],
     locale: 'en_US',
@@ -77,8 +83,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'PreMarketPrice.com - Real-time Stock Data & Earnings Calendar',
-    description: 'Track pre-market movements and earnings calendar of 300+ global companies. Real-time stock data, market analysis, and portfolio tracking.',
+    title: 'PreMarketPrice - Real-time Stock Data & Earnings Calendar',
+    description: 'Real-time pre-market live stock prices for US stocks traded on NYSE, NASDAQ, and other US exchanges. Track pre-market movements, earnings calendar, and market analysis for 300+ US companies.',
     images: ['/og-image.png'],
     creator: '@premarketprice',
   },
@@ -105,6 +111,15 @@ export const metadata: Metadata = {
     title: 'PreMarketPrice',
   },
   applicationName: 'PreMarketPrice',
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: 'any' },
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
   category: 'finance',
   classification: 'Business',
   referrer: 'origin-when-cross-origin',
@@ -117,8 +132,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5, // Allow zoom for accessibility
+  userScalable: true, // Allow zoom for accessibility
   viewportFit: 'cover',
   themeColor: '#2563eb',
   colorScheme: 'light dark',
@@ -137,7 +152,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="PreMarketPrice" />
-        <meta name="description" content="Track pre-market movements and earnings calendar of 300+ global companies" />
+        <meta name="description" content="Real-time pre-market live stock prices for US stocks traded on NYSE, NASDAQ, and other US exchanges. Track pre-market movements and earnings calendar of 300+ US companies." />
         <meta name="format-detection" content="telephone=no" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="msapplication-config" content="/browserconfig.xml" />
@@ -151,8 +166,10 @@ export default function RootLayout({
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon.png" />
 
-        {/* Favicons */}
-        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        {/* Favicons - SVG first for modern browsers, ICO as fallback */}
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2" />
+        <link rel="alternate icon" href="/favicon.ico?v=2" />
+        <link rel="shortcut icon" href="/favicon.ico?v=2" />
 
         {/* Resource Hints - Preconnect to external APIs */}
         <link rel="preconnect" href="https://api.polygon.io" crossOrigin="anonymous" />
@@ -229,10 +246,10 @@ export default function RootLayout({
                 __html: JSON.stringify({
                   '@context': 'https://schema.org',
                   '@type': 'Organization',
-                  name: 'PreMarketPrice.com',
+                  name: 'PreMarketPrice',
                   url: 'https://premarketprice.com',
                   logo: 'https://premarketprice.com/og-image.png',
-                  description: 'Real-time stock data, pre-market movements, and earnings calendar for 300+ global companies.',
+                  description: 'Real-time pre-market live stock prices for US stocks traded on NYSE, NASDAQ, and other US exchanges. Track pre-market movements, earnings calendar, and market analysis for 300+ US companies.',
                   sameAs: [
                     'https://twitter.com/premarketprice',
                     'https://www.linkedin.com/company/premarketprice',
@@ -252,9 +269,9 @@ export default function RootLayout({
                 __html: JSON.stringify({
                   '@context': 'https://schema.org',
                   '@type': 'WebSite',
-                  name: 'PreMarketPrice.com',
+                  name: 'PreMarketPrice',
                   url: 'https://premarketprice.com',
-                  description: 'Track pre-market movements and earnings calendar of 300+ global companies. Real-time stock data, market analysis, and portfolio tracking.',
+                  description: 'Real-time pre-market live stock prices for US stocks traded on NYSE, NASDAQ, and other US exchanges. Track pre-market movements, earnings calendar, and market analysis for 300+ US companies.',
                   potentialAction: {
                     '@type': 'SearchAction',
                     target: {

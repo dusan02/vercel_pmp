@@ -62,4 +62,39 @@ export const formatMarketCapDiff = (diff: number | null | undefined): string => 
     return `${sign}${(value / 1000).toFixed(2)}T`;
   }
   return `${sign}${value.toFixed(2)}B`;
+};
+
+/**
+ * Formátuje veľké peňažné sumy (doláre) na kompaktný formát
+ * Príklady:
+ * - 1,234 → "$1,234" alebo "+$1,234" (ak showPlusSign=true)
+ * - 1,234,567 → "$1.23M" alebo "+$1.23M"
+ * - 1,234,567,890 → "$1.23B" alebo "+$1.23B"
+ * - 1,234,567,890,123 → "$1.23T" alebo "+$1.23T"
+ */
+export const formatCurrencyCompact = (value: number | null | undefined, showPlusSign: boolean = false): string => {
+  if (value === null || value === undefined || !isFinite(value) || value === 0) {
+    return '$0';
+  }
+  
+  const absValue = Math.abs(value);
+  const sign = value >= 0 ? (showPlusSign ? '+' : '') : '-';
+  
+  // Trillions
+  if (absValue >= 1_000_000_000_000) {
+    return `${sign}$${(value / 1_000_000_000_000).toFixed(2)}T`;
+  }
+  
+  // Billions
+  if (absValue >= 1_000_000_000) {
+    return `${sign}$${(value / 1_000_000_000).toFixed(2)}B`;
+  }
+  
+  // Millions
+  if (absValue >= 1_000_000) {
+    return `${sign}$${(value / 1_000_000).toFixed(2)}M`;
+  }
+  
+  // Thousands and below - use standard formatting with commas
+  return `${sign}$${Math.round(value).toLocaleString('en-US')}`;
 }; 

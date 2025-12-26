@@ -188,6 +188,7 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
             The hook respects initialTimeframe.
         */}
 
+        {/* Same treemap layout for both desktop and mobile - vertical scroll on mobile */}
         <MarketHeatmap
           data={data}
           width={width}
@@ -217,9 +218,8 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
   return (
     <div
       ref={ref}
-      className="h-full w-full relative"
+      className="h-full w-full relative mobile-heatmap-wrapper"
       style={{
-        overflow: 'hidden',
         margin: 0,
         padding: 0,
         boxSizing: 'border-box',

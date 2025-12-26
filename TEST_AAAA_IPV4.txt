@@ -1,0 +1,32 @@
+# 🔍 TEST AAAA ZÁZNAVOV A IPv4
+
+# ============================================
+# HLAVNÉ PRÍKAZY
+# ============================================
+
+# 1. Overenie AAAA záznamov (IPv6)
+dig +short premarketprice.com AAAA
+dig +short www.premarketprice.com AAAA
+
+# Správny stav: <prázdne>
+
+# 2. Test HTTPS s vynúteným IPv4
+curl -4Iv https://premarketprice.com
+
+# ============================================
+# POMOCNÉ PRÍKAZY
+# ============================================
+
+# Porovnanie A záznamov (IPv4)
+dig +short premarketprice.com A
+dig +short www.premarketprice.com A
+
+# Test www subdomény
+curl -4Iv https://www.premarketprice.com
+
+# Detailný DNS lookup
+dig premarketprice.com ANY
+
+# Test bez vynútenia IPv4 (pre porovnanie)
+curl -Iv https://premarketprice.com
+

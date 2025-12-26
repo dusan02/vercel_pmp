@@ -1,0 +1,40 @@
+# 📋 INŠTRUKCIE PRE SPUSTENIE SSH_138_RIADKOV.txt
+
+## ✅ SPRÁVNY SPÔSOB (na SSH serveri):
+
+### Možnosť 1: Priamo skopírovať obsah a spustiť
+1. Pripoj sa na SSH server:
+   ```bash
+   ssh root@89.185.250.213
+   ```
+
+2. Skopíruj celý obsah súboru `SSH_138_RIADKOV.txt` a vlož ho do SSH terminálu
+
+### Možnosť 2: Upload súboru a spustiť
+1. Upload súboru na server (napr. cez SCP):
+   ```powershell
+   scp pmp_prod/SSH_138_RIADKOV.txt root@89.185.250.213:/tmp/
+   ```
+
+2. Pripoj sa na SSH a spusti:
+   ```bash
+   ssh root@89.185.250.213
+   cd /var/www/premarketprice
+   bash /tmp/SSH_138_RIADKOV.txt
+   ```
+
+### Možnosť 3: Priamo cez SSH (jeden príkaz)
+```bash
+ssh root@89.185.250.213 "cd /var/www/premarketprice && bash -s" < SSH_138_RIADKOV.txt
+```
+
+## ❌ ČO NEROBIT:
+- Nespúšťať v PowerShell na Windows (súbor obsahuje bash príkazy)
+- Nespúšťať lokálne (potrebuje prístup k databáze na serveri)
+
+## 📝 POZNÁMKA:
+Súbor `SSH_138_RIADKOV.txt` obsahuje bash príkazy, ktoré:
+- Vyžadujú prístup k PostgreSQL databáze na serveri
+- Potrebujú premenné prostredia z `.env` súboru
+- Musia byť spustené v `/var/www/premarketprice` adresári
+

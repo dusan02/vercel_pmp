@@ -1,0 +1,30 @@
+# 📊 SÚHRN PROBLÉMU A RIEŠENIA
+
+## KDE BOLA CHYBA:
+1. ✅ **earnings-cron NEBOL spustený** - teraz je spustený
+2. ✅ **Tabuľky obsahovali staré dáta** - vymazané
+3. ⚠️ **earnings-cron sa reštartuje** (SIGINT) - potrebuje diagnostiku
+4. ⚠️ **Synthetic tests zlyhávajú** - možno kvôli prázdnym tabuľkám
+
+## JE CHYBA OPRAVENÁ?
+- ✅ earnings-cron je spustený
+- ✅ Staré dáta vymazané
+- ⚠️ Nové dáta sa ešte nenačítali (0 záznamov)
+- ⚠️ earnings-cron sa reštartuje (potrebuje opravu)
+
+## BUDE TO ZAJTRA OK?
+- ✅ Cron je naplánovaný na **03:00 NY (09:00 CET)** každý **pracovný deň (Po-Pi)**
+- ✅ Zajtra je **piatok (Dec 26)** - **PÁTYK = pracovný deň** ✅
+- ✅ Cron sa spustí o **09:00 CET** a vymaže staré dáta
+- ✅ Potom pipeline načíta nové dáta každých 5 minút
+
+## DIAGNOSTIKA earnings-cron (prečo sa reštartuje):
+```bash
+cd /var/www/earnings-table && echo "=== 1. PM2 LOGY - DETAILNÉ (posledných 100 riadkov) ===" && pm2 logs earnings-cron --lines 100 --nostream 2>&1 | grep -v "SIGINT\|exit: 0" | tail -30 && echo "" && echo "=== 2. PM2 INFO earnings-cron ===" && pm2 info earnings-cron | grep -E "(status|restarts|uptime|error)" && echo "" && echo "=== 3. SKONTROLOVAŤ, ČI SA NAČÍTAVAJÚ DÁTA ===" && echo "Počkaj 2 minúty a skontroluj:" && echo "sqlite3 modules/database/prisma/prod.db \"SELECT COUNT(*) FROM final_report;\""
+```
+
+## RIEŠENIE - AK SA NENAČÍTAVAJÚ DÁTA:
+```bash
+cd /var/www/earnings-table && echo "=== 1. RESTART earnings-cron ===" && pm2 restart earnings-cron && sleep 5 && echo "" && echo "=== 2. PM2 STATUS ===" && pm2 list | grep earnings-cron && echo "" && echo "=== 3. PM2 LOGY (nové) ===" && pm2 logs earnings-cron --lines 20 --nostream 2>&1 | tail -10 && echo "" && echo "=== 4. ULOŽIŤ PM2 ===" && pm2 save
+```
+

@@ -1,0 +1,79 @@
+# 🔐 NASTAVENIE SSL PRE PREMARKETPRICE.COM
+# Server: 89.185.250.213
+# Používateľ: root (nie sudo)
+
+# ============================================
+# KROK 1: Overiť, či je Nginx nainštalovaný
+# ============================================
+nginx -v
+
+# ============================================
+# KROK 2: Overiť, či je Certbot nainštalovaný
+# ============================================
+certbot --version
+
+# Ak nie je nainštalovaný:
+apt update
+apt install -y nginx certbot python3-certbot-nginx
+
+# ============================================
+# KROK 3: Skontrolovať firewall (porty 80 a 443)
+# ============================================
+ufw status
+# Ak porty nie sú otvorené:
+ufw allow 80/tcp
+ufw allow 443/tcp
+ufw reload
+
+# ============================================
+# KROK 4: Overiť DNS (premarketprice.com → 89.185.250.213)
+# ============================================
+dig premarketprice.com +short
+dig www.premarketprice.com +short
+
+# ============================================
+# KROK 5: Skontrolovať, či Nginx beží
+# ============================================
+systemctl status nginx
+
+# Ak nebeží:
+systemctl start nginx
+systemctl enable nginx
+
+# ============================================
+# KROK 6: Skontrolovať Nginx konfiguráciu
+# ============================================
+nginx -t
+
+# ============================================
+# KROK 7: VYTVORIŤ SSL CERTIFIKÁT
+# ============================================
+# Certbot automaticky:
+# - Nájde Nginx config
+# - Pridá HTTPS
+# - Nastaví auto-renew
+
+certbot --nginx -d premarketprice.com -d www.premarketprice.com
+
+# ============================================
+# KROK 8: Overiť, či sa certifikáty vygenerovali
+# ============================================
+ls -la /etc/letsencrypt/live/premarketprice.com/
+
+# ============================================
+# KROK 9: Reštartovať Nginx
+# ============================================
+systemctl restart nginx
+systemctl status nginx
+
+# ============================================
+# KROK 10: Overiť SSL certifikát
+# ============================================
+curl -I https://premarketprice.com
+curl -I https://www.premarketprice.com
+
+# ============================================
+# KROK 11: Overiť auto-renew
+# ============================================
+certbot renew --dry-run
+

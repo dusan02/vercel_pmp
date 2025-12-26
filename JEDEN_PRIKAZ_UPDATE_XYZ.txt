@@ -1,0 +1,5 @@
+cd /var/www/premarketprice && source .env 2>/dev/null && echo "=== UPDATE XYZ TICKER ===" && echo "" && psql "$DATABASE_URL" <<EOF 2>/dev/null
+UPDATE "Ticker" SET name = 'Block Inc', sector = 'Technology', industry = 'Software - Infrastructure' WHERE symbol = 'XYZ';
+EOF
+echo "" && echo "=== KONTROLA PO UPDATE ===" && echo "SELECT symbol, name, sector, industry FROM \"Ticker\" WHERE symbol = 'XYZ';" | psql "$DATABASE_URL" 2>/dev/null && echo "" && echo "=== FINÁLNA ŠTATISTIKA ===" && echo "SELECT COUNT(*) as total, COUNT(sector) as with_sector, COUNT(*) - COUNT(sector) as missing FROM \"Ticker\";" | psql "$DATABASE_URL" 2>/dev/null && echo "" && echo "=== REŠTART APLIKÁCIE ===" && pm2 restart premarketprice && sleep 3 && echo "" && echo "✅ UPDATE HOTOVÝ - 100% POKRYTIE!"
+

@@ -1,0 +1,19 @@
+# 🔄 PREPNUTIE DO PROJEKTU earningstable.com
+
+# ============================================
+# JEDNODUCHÝ PRÍKAZ:
+# ============================================
+cd /var/www/earnings-table
+
+# ============================================
+# S OVERENÍM (kde som):
+# ============================================
+cd /var/www/earnings-table && pwd && ls -la
+
+# ============================================
+# ALTERNATÍVA (ak by bol projekt inde):
+# ============================================
+# Nájsť projekt:
+find /var/www -name "earnings-table" -type d 2>/dev/null
+find /var/www -name "*earning*" -type d 2>/dev/null
+

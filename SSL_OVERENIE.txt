@@ -1,0 +1,44 @@
+# ✅ OVERENIE SSL PO NASTAVENÍ
+
+# 1. Overenie certifikátu v termináli
+openssl s_client -connect premarketprice.com:443 -servername premarketprice.com < /dev/null 2>/dev/null | openssl x509 -noout -dates -subject
+
+# 2. Test HTTPS pripojenia
+curl -I https://premarketprice.com
+curl -I https://www.premarketprice.com
+
+# 3. Test HTTP → HTTPS presmerovanie
+curl -I http://premarketprice.com
+# Mala by vrátiť: HTTP/1.1 301 Moved Permanently
+# Location: https://premarketprice.com
+
+# 4. Kontrola certifikátu v prehliadači
+# Otvorte: https://premarketprice.com
+# Kliknite na ikonu zámku v prehliadači
+# Skontrolujte: "Certifikát je platný"
+
+# 5. Online SSL test
+# https://www.ssllabs.com/ssltest/analyze.html?d=premarketprice.com
+# Očakávané hodnotenie: A alebo A+
+
+# 6. Kontrola automatického obnovovania
+certbot renew --dry-run
+
+# 7. Kontrola cron jobu pre auto-renew
+cat /etc/cron.d/certbot
+
+# 8. Zobrazenie informácií o certifikáte
+certbot certificates
+
+# 9. Test SSL handshake s detailami
+openssl s_client -connect premarketprice.com:443 -servername premarketprice.com
+
+# 10. Kontrola SSL protokolov
+nmap --script ssl-enum-ciphers -p 443 premarketprice.com
+
+# 11. Overenie HSTS (ak je nastavené)
+curl -I https://premarketprice.com | grep -i "strict-transport-security"
+
+# 12. Test z rôznych lokácií (online nástroje)
+# https://www.sslshopper.com/ssl-checker.html#hostname=premarketprice.com
+

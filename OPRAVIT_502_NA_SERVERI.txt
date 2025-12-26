@@ -1,0 +1,97 @@
+# 🔧 OPRAVIŤ 502 BAD GATEWAY - earningstable.com (NA SERVERI)
+
+# ============================================
+# KROK 1: Skontrolovať PM2 procesy
+# ============================================
+pm2 list
+
+# MUSÍTE VIDIEŤ:
+# earnings-table    online
+# earnings-cron     online
+
+# Ak nie sú online, spustiť:
+# cd /var/www/earnings-table
+# pm2 start ecosystem.config.js --only earnings-table --env production
+
+# ============================================
+# KROK 2: Skontrolovať, či beží na porte 5555
+# ============================================
+ss -tlnp | grep 5555
+
+# MUSÍTE VIDIEŤ:
+# LISTEN 0.0.0.0:5555
+
+# ============================================
+# KROK 3: Test lokálneho servera
+# ============================================
+curl -v http://127.0.0.1:5555
+
+# MUSÍTE VIDIEŤ:
+# HTTP/1.1 200 OK
+
+# ============================================
+# KROK 4: Nájsť Nginx konfiguračný súbor
+# ============================================
+# Skontrolovať, ktorý súbor používa Nginx:
+nginx -T 2>&1 | grep "configuration file"
+
+# Skontrolovať sites-enabled:
+ls -la /etc/nginx/sites-enabled/
+
+# Skontrolovať, či existuje earningstable.com config:
+cat /etc/nginx/sites-enabled/earningstable.com 2>/dev/null || echo "Config not found in sites-enabled"
+
+# ============================================
+# KROK 5: Opraviť Nginx konfiguráciu
+# ============================================
+# Možnosť A: Ak existuje /etc/nginx/sites-enabled/earningstable.com
+if [ -f /etc/nginx/sites-enabled/earningstable.com ]; then
+    sed -i 's|proxy_pass http://app_servers;|proxy_pass http://127.0.0.1:5555;|g' /etc/nginx/sites-enabled/earningstable.com
+    sed -i 's|proxy_pass http://127.0.0.1:3000;|proxy_pass http://127.0.0.1:5555;|g' /etc/nginx/sites-enabled/earningstable.com
+    echo "✅ Opravené: /etc/nginx/sites-enabled/earningstable.com"
+fi
+
+# Možnosť B: Ak je v hlavnom nginx.conf
+if grep -q "earningstable.com" /etc/nginx/nginx.conf; then
+    sed -i 's|proxy_pass http://app_servers;|proxy_pass http://127.0.0.1:5555;|g' /etc/nginx/nginx.conf
+    sed -i 's|proxy_pass http://127.0.0.1:3000;|proxy_pass http://127.0.0.1:5555;|g' /etc/nginx/nginx.conf
+    echo "✅ Opravené: /etc/nginx/nginx.conf"
+fi
+
+# Možnosť C: Skopírovať opravený nginx.conf z projektu
+# cd /var/www/premarketprice
+# cp nginx.conf /etc/nginx/sites-available/earningstable
+# ln -sf /etc/nginx/sites-available/earningstable /etc/nginx/sites-enabled/
+
+# ============================================
+# KROK 6: Overiť zmeny
+# ============================================
+grep -A 2 "proxy_pass" /etc/nginx/sites-enabled/earningstable.com 2>/dev/null | grep "5555" || \
+grep -A 2 "proxy_pass" /etc/nginx/nginx.conf | grep -A 2 "earningstable" | grep "5555"
+
+# MUSÍTE VIDIEŤ:
+# proxy_pass http://127.0.0.1:5555;
+
+# ============================================
+# KROK 7: Testovať Nginx konfiguráciu
+# ============================================
+nginx -t
+
+# ============================================
+# KROK 8: Reload Nginx
+# ============================================
+systemctl reload nginx
+
+# ============================================
+# KROK 9: Skontrolovať Nginx error logy
+# ============================================
+tail -20 /var/log/nginx/error.log
+
+# ============================================
+# KROK 10: Test HTTPS
+# ============================================
+curl -k -I https://earningstable.com
+
+# MUSÍTE VIDIEŤ:
+# HTTP/2 200
+

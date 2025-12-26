@@ -1,0 +1,29 @@
+# 🚀 RÝCHLA OPRAVA 502 - Kopírovať a spustiť na serveri
+
+# === KROK 1: Skontrolovať upstream ===
+nginx -T | grep -A 5 "upstream app_servers"
+
+# Ak NIE je "server 127.0.0.1:3000", toto je problém!
+
+# === KROK 2: Skontrolovať error logy ===
+tail -20 /var/log/nginx/error.log
+
+# === KROK 3: Skontrolovať, ktorú konfiguráciu používa ===
+nginx -T 2>&1 | head -5
+
+# === KROK 4: Ak upstream nie je správny, opraviť ===
+# Nájsť Nginx konfiguračný súbor
+NGINX_CONF=$(nginx -T 2>&1 | grep "configuration file" | awk '{print $5}' | tr -d ';')
+
+# Skontrolovať upstream
+grep -A 5 "upstream app_servers" $NGINX_CONF
+
+# Ak nie je správny, upraviť:
+# Zmeniť na: server 127.0.0.1:3000;
+
+# === KROK 5: Reload Nginx ===
+nginx -t && systemctl reload nginx
+
+# === KROK 6: Testovať ===
+curl -k https://earningstable.com/api/health
+

@@ -1,0 +1,4 @@
+# 🔧 JEDEN PRÍKAZ - ALTERNATÍVNE VYČISTENIE DNS CACHE
+
+echo "=== 1. Kontrola DNS resolverov ===" && systemctl status systemd-resolved 2>/dev/null | head -3 && systemctl status dnsmasq 2>/dev/null | head -3 && echo "" && echo "=== 2. Reštart DNS služieb ===" && systemctl restart systemd-resolved 2>/dev/null && systemctl restart dnsmasq 2>/dev/null && systemctl restart NetworkManager 2>/dev/null && systemctl restart networking 2>/dev/null && echo "✅ DNS služby reštartované" && echo "" && echo "=== 3. Kontrola /etc/hosts ===" && cat /etc/hosts | grep -v "^#" | grep -v "^$" && echo "" && echo "=== 4. Overenie IP adresy ===" && getent hosts premarketprice.com && echo "" && echo "=== 5. Test HTTPS ===" && curl -4Iv https://premarketprice.com 2>&1 | grep -E "(Trying|subject:|HTTP/)" && echo "" && echo "✅ HOTOVO!"
+

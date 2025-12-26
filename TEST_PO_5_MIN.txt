@@ -1,0 +1,51 @@
+# 🧪 PRESNÝ POSTUP TESTOVANIA (PO 5 MIN)
+
+# ============================================
+# KROK 1: Overenie A záznamov (IPv4)
+# ============================================
+# MUSÍ BYŤ: 89.185.250.213
+
+dig +short premarketprice.com A
+dig +short www.premarketprice.com A
+
+# ============================================
+# KROK 2: Test HTTPS s vynúteným IPv4
+# ============================================
+# SPRÁVNY VÝSLEDOK:
+# Trying 89.185.250.213:443
+# subject: CN=premarketprice.com
+
+curl -4Iv https://premarketprice.com
+
+# ============================================
+# KROK 3: Test aj www subdomény
+# ============================================
+curl -4Iv https://www.premarketprice.com
+
+# ============================================
+# KROK 4: Overenie, že používa správnu IP
+# ============================================
+# V curl výstupe hľadajte:
+# - "Trying 89.185.250.213:443"
+# - "subject: CN=premarketprice.com"
+
+# ============================================
+# KROK 5: Porovnanie s priamym pripojením
+# ============================================
+# Test priamo na IP adrese:
+curl -4Iv https://89.185.250.213 -H "Host: premarketprice.com"
+
+# ============================================
+# VÝSLEDOK:
+# ============================================
+# ✅ SPRÁVNE:
+# - dig vracia: 89.185.250.213
+# - curl -4Iv: "Trying 89.185.250.213:443"
+# - curl -4Iv: "subject: CN=premarketprice.com"
+# - HTTP/2 200
+#
+# ❌ PROBLÉM:
+# - dig vracia inú IP → DNS ešte nepropagoval
+# - curl -4Iv: "Trying [iná IP]:443" → DNS problém
+# - curl -4Iv: chyba SSL → certifikát nie je pre tú IP
+

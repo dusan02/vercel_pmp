@@ -1,0 +1,24 @@
+# 🔧 OPRAVIŤ PORT 5555 → 3000 PRE EARNINGSTABLE.COM
+
+# === KROK 1: Odstrániť backup súbor (kvôli duplicate default_server) ===
+rm /etc/nginx/sites-enabled/earningstable.com.backup
+
+# === KROK 2: Zmeniť port z 5555 na 3000 ===
+sed -i 's|proxy_pass http://127.0.0.1:5555|proxy_pass http://127.0.0.1:3000|g' /etc/nginx/sites-enabled/earningstable.com
+
+# === KROK 3: Skontrolovať zmenu ===
+grep "proxy_pass" /etc/nginx/sites-enabled/earningstable.com
+
+# Mali by ste vidieť: proxy_pass http://127.0.0.1:3000;
+
+# === KROK 4: Testovať konfiguráciu ===
+nginx -t
+
+# === KROK 5: Reload Nginx ===
+systemctl reload nginx
+
+# === KROK 6: Testovať ===
+curl -k -s https://earningstable.com/api/health | head -5
+
+# Mali by ste dostať JSON (nie 502)
+

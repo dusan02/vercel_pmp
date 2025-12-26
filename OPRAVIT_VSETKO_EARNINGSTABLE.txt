@@ -1,0 +1,32 @@
+# 🔧 KOMPLETNÁ OPRAVA EARNINGSTABLE.COM
+
+# === KROK 1: Opraviť DATABASE_URL v ecosystem.config.js ===
+cd /var/www/earnings-table
+sed -i 's|file:/srv/EarningsTable|file:/var/www/earnings-table|g' ecosystem.config.js
+echo "✅ DATABASE_URL opravená"
+
+# === KROK 2: Skontrolovať, či existuje simple-server.js ===
+ls -la simple-server.js || echo "⚠️ simple-server.js neexistuje!"
+
+# === KROK 3: Spustiť earnings-table cez PM2 ===
+pm2 start ecosystem.config.js --only earnings-table --env production
+pm2 save
+
+# === KROK 4: Skontrolovať, či beží na porte 5555 ===
+sleep 3
+ss -tlnp | grep 5555
+curl -s http://localhost:5555/api/health 2>&1 | head -3
+
+# === KROK 5: Opraviť Nginx - zmeniť port z 3000 na 5555 ===
+sed -i 's|proxy_pass http://127.0.0.1:3000|proxy_pass http://127.0.0.1:5555|g' /etc/nginx/sites-enabled/earningstable.com
+echo "✅ Nginx opravený na port 5555"
+
+# === KROK 6: Skontrolovať Nginx konfiguráciu ===
+grep "proxy_pass" /etc/nginx/sites-enabled/earningstable.com
+
+# === KROK 7: Testovať a reload Nginx ===
+nginx -t && systemctl reload nginx && echo "✅ Nginx reloadnutý"
+
+# === KROK 8: Testovať HTTPS ===
+curl -k -s https://earningstable.com/api/health | head -5
+

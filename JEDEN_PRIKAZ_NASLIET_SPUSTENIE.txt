@@ -1,0 +1,4 @@
+# 🔍 JEDEN PRÍKAZ - Nájsť, ako sa spúšťa earnings-table (ste v /var/www/premarketprice)
+
+echo "=== 1. Obsah projektu ===" && ls -la /var/www/earnings-table/ | head -15 && echo "" && echo "=== 2. package.json (start script) ===" && cat /var/www/earnings-table/package.json 2>/dev/null | grep -A 5 -B 5 "start\|PORT\|port" | head -15 && echo "" && echo "=== 3. Server súbory ===" && find /var/www/earnings-table -maxdepth 2 -name "server.*" -o -name "index.*" | head -5 && echo "" && echo "=== 4. PM2 config ===" && find /var/www/earnings-table -name "ecosystem*" -o -name "pm2*" | head -3 && echo "" && echo "=== 5. .env súbory ===" && ls -la /var/www/earnings-table/.env* 2>/dev/null || echo "Žiadne .env súbory"
+

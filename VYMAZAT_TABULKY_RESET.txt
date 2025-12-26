@@ -1,0 +1,31 @@
+# 🗑️ VYMAZAŤ TABUĽKY A RESETOVAŤ DATABÁZU
+
+# === KROK 1: Zastaviť earnings-cron ===
+pm2 stop earnings-cron
+
+# === KROK 2: Zastaviť earnings-table ===
+pm2 stop earnings-table
+
+# === KROK 3: Vymazať databázu (SQLite) ===
+# Databáza je v: /var/www/earnings-table/modules/database/prisma/prod.db
+rm /var/www/earnings-table/modules/database/prisma/prod.db
+# Alebo vytvoriť novú databázu cez Prisma
+
+# === KROK 4: Spustiť Prisma migrate ===
+cd /var/www/earnings-table/modules/database
+npx prisma migrate deploy
+# Alebo: npx prisma db push
+
+# === KROK 5: Spustiť earnings-table ===
+cd /var/www/earnings-table
+pm2 start earnings-table
+
+# === KROK 6: Spustiť earnings-cron ===
+pm2 start earnings-cron
+
+# === KROK 7: Uložiť PM2 konfiguráciu ===
+pm2 save
+
+# === KROK 8: Skontrolovať status ===
+pm2 status
+

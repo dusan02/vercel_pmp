@@ -1,0 +1,41 @@
+# 🔥 OPRAVIŤ FIREWALL PRE LET'S ENCRYPT - Kopírovať a spustiť na serveri
+
+# === KROK 1: Skontrolovať, aký firewall používate ===
+which ufw && echo "Používate UFW" || echo "Používate iptables"
+
+# === KROK 2: Skontrolovať UFW status ===
+ufw status
+
+# === KROK 3: Otvoriť porty 80 a 443 (ak sú zatvorené) ===
+ufw allow 80/tcp
+ufw allow 443/tcp
+
+# === KROK 4: Skontrolovať iptables (ak nepoužívate UFW) ===
+iptables -L -n | grep -E "80|443"
+
+# === KROK 5: Ak port 80 je blokovaný v iptables, otvoriť ho ===
+iptables -I INPUT -p tcp --dport 80 -j ACCEPT
+iptables -I INPUT -p tcp --dport 443 -j ACCEPT
+
+# === KROK 6: Skontrolovať, či porty sú otvorené ===
+ss -tlnp | grep -E "80|443"
+
+# Mali by ste vidieť:
+# LISTEN 0 511 *:80
+# LISTEN 0 511 *:443
+
+# === KROK 7: Skúsiť znovu vygenerovať certifikát ===
+certbot certonly --nginx -d premarketprice.com -d www.premarketprice.com
+
+# === KROK 8: Ak stále zlyhá, použiť DNS-01 challenge ===
+# certbot certonly --manual --preferred-challenges dns -d premarketprice.com -d www.premarketprice.com
+
+# === KROK 9: Po úspešnom vygenerovaní, skontrolovať certifikáty ===
+ls -la /etc/letsencrypt/live/premarketprice.com/
+
+# === KROK 10: Reload Nginx ===
+systemctl reload nginx
+
+# === KROK 11: Testovať HTTPS ===
+curl -k https://premarketprice.com/api/health
+

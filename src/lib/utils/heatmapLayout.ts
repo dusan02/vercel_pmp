@@ -56,7 +56,7 @@ export function buildHeatmapHierarchy(
 
   // Deterministické zoradenie:
   // - firmy v sektore podľa veľkosti (value) desc
-  // - sektory podľa sumy value desc
+  // - sektory podľa sumy value desc, ale "Unknown" sektor je vždy posledný
   const sumValues = (node: HierarchyData): number => {
     if (typeof node.value === 'number') return node.value;
     if (!node.children) return 0;
@@ -64,12 +64,36 @@ export function buildHeatmapHierarchy(
   };
 
   if (root.children) {
+    // Zoraď firmy v každom sektore podľa veľkosti (value) desc
     for (const sector of root.children) {
       if (sector.children) {
         sector.children.sort((a, b) => (sumValues(b) - sumValues(a)));
       }
     }
-    root.children.sort((a, b) => (sumValues(b) - sumValues(a)));
+    
+    // Zoraď sektory podľa sumy value desc, ale "Unknown" je vždy posledný
+    root.children.sort((a, b) => {
+      const aIsUnknown = a.name === 'Unknown';
+      const bIsUnknown = b.name === 'Unknown';
+      
+      // "Unknown" sektor je vždy posledný
+      if (aIsUnknown && !bIsUnknown) return 1;
+      if (!aIsUnknown && bIsUnknown) return -1;
+      if (aIsUnknown && bIsUnknown) return 0; // Oba sú Unknown - zachovať poradie
+      
+      // Ostatné sektory podľa sumy value desc
+      return sumValues(b) - sumValues(a);
+    });
+    
+    // Logovanie zoradenia sektorov (len v development)
+    if (process.env.NODE_ENV !== 'production' && root.children.length > 0) {
+      const sectorOrder = root.children.map(s => ({
+        name: s.name,
+        totalValue: sumValues(s),
+        companyCount: s.children?.length || 0
+      }));
+      console.log('📊 Heatmap sector order (by total market cap):', sectorOrder);
+    }
   }
 
   if (skippedCount > 0 && process.env.NODE_ENV !== 'production') {

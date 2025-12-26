@@ -1,0 +1,39 @@
+# 🚀 RÝCHLY FIX DNS CACHE (2 MINÚTY)
+
+# ============================================
+# POSTUP (POSTUPNE):
+# ============================================
+
+# 1. Vyčistiť DNS cache
+resolvectl flush-caches
+
+# 2. Reštart DNS resolver
+systemctl restart systemd-resolved
+
+# 3. Overiť IP adresu
+getent hosts premarketprice.com
+# MUSÍ BYŤ: 89.185.250.213
+
+# 4. Test HTTPS
+curl -4Iv https://premarketprice.com
+# MUSÍ BYŤ: Trying 89.185.250.213:443
+
+# ============================================
+# AK BY TO STÁLE NEŠLO:
+# ============================================
+
+# Skontrolovať /etc/hosts
+cat /etc/hosts
+
+# Ak tam je 37.9.175.211, odstrániť:
+nano /etc/hosts
+# (odstráň riadok s 37.9.175.211)
+
+# ============================================
+# TL;DR:
+# ============================================
+# resolvectl flush-caches
+# systemctl restart systemd-resolved
+# getent hosts premarketprice.com
+# curl -4Iv https://premarketprice.com
+

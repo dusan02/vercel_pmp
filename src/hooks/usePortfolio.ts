@@ -24,13 +24,24 @@ export function usePortfolio(props?: UsePortfolioProps) {
       try {
         const parsed = JSON.parse(stored);
         if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          const MAX_QUANTITY = 1_000_000;
           const validated: Record<string, number> = {};
           for (const [key, value] of Object.entries(parsed)) {
-            if (typeof value === 'number' && isFinite(value) && value >= 0) {
-              validated[key] = value;
+            if (typeof value === 'number' && isFinite(value) && value >= 0 && !isNaN(value)) {
+              // Enforce maximum limit when loading from storage
+              // Also handle very large numbers that might be in scientific notation
+              const safeValue = value > MAX_QUANTITY ? MAX_QUANTITY : value;
+              validated[key] = Math.max(0, Math.min(safeValue, MAX_QUANTITY));
             }
           }
           setPortfolioHoldingsState(validated);
+          // Save back if any values were capped
+          const needsUpdate = Object.entries(parsed).some(([key, value]) => 
+            typeof value === 'number' && value > MAX_QUANTITY
+          );
+          if (needsUpdate) {
+            safeSetItem(PORTFOLIO_STORAGE_KEY, JSON.stringify(validated));
+          }
         } else {
           safeRemoveItem(PORTFOLIO_STORAGE_KEY);
         }
@@ -98,10 +109,15 @@ export function usePortfolio(props?: UsePortfolioProps) {
   }, []);
 
   const updateQuantity = useCallback(async (ticker: string, quantity: number) => {
+    // Enforce maximum limit of 1,000,000
+    const MAX_QUANTITY = 1_000_000;
+    const q = (typeof quantity === 'number' && isFinite(quantity) && quantity >= 0) 
+      ? Math.min(quantity, MAX_QUANTITY) 
+      : 0;
+    
     // Optimistic update
     setPortfolioHoldings(prev => {
       const updated = { ...prev };
-      const q = (typeof quantity === 'number' && isFinite(quantity) && quantity >= 0) ? quantity : 0;
       updated[ticker] = q;
       return updated;
     });

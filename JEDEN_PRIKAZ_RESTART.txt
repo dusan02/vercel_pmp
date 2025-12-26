@@ -1,0 +1,4 @@
+# 🔄 JEDEN PRÍKAZ - Reštartovať earnings-table a earnings-cron (ste v /var/www/premarketprice)
+
+echo "=== 1. Reštart earnings-table ===" && pm2 restart earnings-table && echo "" && echo "=== 2. Reštart earnings-cron ===" && pm2 restart earnings-cron && echo "" && echo "=== 3. Čakanie 5 sekúnd ===" && sleep 5 && echo "" && echo "=== 4. PM2 status ===" && pm2 status && echo "" && echo "=== 5. Logy earnings-cron (posledných 15 riadkov) ===" && pm2 logs earnings-cron --lines 15 --nostream 2>&1 | tail -15
+

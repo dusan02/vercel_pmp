@@ -1,0 +1,19 @@
+# 🔍 NÁJSŤ EARNINGSTABLE.COM PROJEKT A PORT
+
+# === KROK 1: Nájsť earningstable.com projekt ===
+find /var/www -name "*earning*" -type d 2>/dev/null
+find /var/www -name "*earnings*" -type d 2>/dev/null
+
+# === KROK 2: Skontrolovať, na akom porte beží ===
+ss -tlnp | grep -E "5555|3000|3001|3002"
+
+# === KROK 3: Skontrolovať PM2 procesy ===
+pm2 list
+pm2 describe earnings-table 2>/dev/null || echo "Proces earnings-table neexistuje"
+
+# === KROK 4: Skontrolovať, či beží na porte 5555 ===
+curl -s http://localhost:5555/api/health 2>&1 | head -5
+
+# === KROK 5: Skontrolovať Nginx konfiguráciu pre earningstable ===
+grep -r "earningstable\|earnings-table" /etc/nginx/sites-enabled/ 2>/dev/null
+

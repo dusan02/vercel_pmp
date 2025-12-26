@@ -1,0 +1,18 @@
+# 📋 RÝCHLY SÚHRN PRE GPT
+
+## ✅ FUNGUJE
+- Server beží na porte 3000
+- Nginx konfigurácia OK
+- earningstable.com má SSL certifikát
+
+## ❌ NEFUNGUJE
+- premarketprice.com SSL certifikát - firewall blokuje Let's Encrypt
+
+## 🔧 RIEŠENIE
+1. Skontrolovať cloud firewall (Hetzner/DigitalOcean panel)
+2. Otvoriť porty 80/443 v cloud firewall
+3. Alebo použiť DNS-01 challenge
+
+## 📊 PROGRESS: ~85%
+Blokátor: Cloud firewall blokuje port 80 pre Let's Encrypt
+

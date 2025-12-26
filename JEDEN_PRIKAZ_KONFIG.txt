@@ -1,0 +1,4 @@
+# 🔍 JEDEN PRÍKAZ - Skontrolovať konfiguráciu earnings-table (ste v /var/www/premarketprice)
+
+echo "=== 1. ecosystem.config.js ===" && cat /var/www/earnings-table/ecosystem.config.js && echo "" && echo "=== 2. server.ts (port) ===" && head -50 /var/www/earnings-table/server.ts | grep -E "port|PORT|listen|5555|3000" && echo "" && echo "=== 3. .env ===" && cat /var/www/earnings-table/.env && echo "" && echo "=== 4. PM2 status ===" && pm2 describe earnings-table 2>/dev/null || echo "Žiadny PM2 proces pre earnings-table"
+

@@ -1,0 +1,4 @@
+# 🔧 JEDEN PRÍKAZ - Opraviť port 5555 → 3000 (ste v /var/www/premarketprice)
+
+rm /etc/nginx/sites-enabled/earningstable.com.backup && echo "✅ Backup odstránený" && echo "" && echo "=== Oprava portu 5555 → 3000 ===" && sed -i 's|proxy_pass http://127.0.0.1:5555|proxy_pass http://127.0.0.1:3000|g' /etc/nginx/sites-enabled/earningstable.com && echo "✅ Port zmenený na 3000" && echo "" && echo "=== Skontrolovať zmenu ===" && grep "proxy_pass" /etc/nginx/sites-enabled/earningstable.com && echo "" && echo "=== Test konfigurácie ===" && nginx -t && echo "" && echo "=== Reload Nginx ===" && systemctl reload nginx && echo "✅ Nginx reloadnutý" && echo "" && echo "=== Test HTTPS ===" && curl -k -s https://earningstable.com/api/health | head -5
+

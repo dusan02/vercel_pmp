@@ -1,0 +1,4 @@
+# 🔧 OPRAVA DATABASE_URL A NAPLNENIE SECTOR/INDUSTRY
+
+cd /var/www/premarketprice && echo "=== 1. KONTROLA DATABASE_URL ===" && echo "" && echo "Aktuálny DATABASE_URL:" && grep DATABASE_URL .env 2>/dev/null | head -1 && echo "" && echo "=== 2. KONTROLA, ČI JE DATABASE_URL SPRÁVNY ===" && echo "" && echo "Ak DATABASE_URL nezačína s 'postgresql://' alebo 'postgres://', treba ho opraviť" && echo "" && echo "=== 3. PRÍKLAD SPRÁVNEHO DATABASE_URL ===" && echo "DATABASE_URL=postgresql://user:password@host:port/database" && echo "" && echo "=== 4. AK JE DATABASE_URL PRÁZDNY ALEBO NESPRÁVNY ===" && echo "Musíš nastaviť správny DATABASE_URL v .env súbore" && echo "" && echo "=== 5. PO OPRAVE DATABASE_URL - SPUSTI BOOTSTRAP ===" && echo "npm run db:bootstrap-static"
+

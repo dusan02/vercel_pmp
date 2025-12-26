@@ -35,18 +35,74 @@ export const StockTableRow = memo(({
       onToggleFavorite={onToggleFavorite}
       isFavorite={isFavorite}
     >
-      <td>
-        <div className="logo-container">
-          <CompanyLogo ticker={stock.ticker} {...(stock.logoUrl ? { logoUrl: stock.logoUrl } : {})} size={32} priority={priority} />
+      {/* Desktop: Separate columns */}
+      {/* Mobile: Grouped columns */}
+      
+      {/* Column 1: Logo + Ticker + Company (grouped on mobile) */}
+      <td className="mobile-group-1">
+        <div className="flex items-center gap-2 desktop-only">
+          <div className="logo-container">
+            <CompanyLogo ticker={stock.ticker} {...(stock.logoUrl ? { logoUrl: stock.logoUrl } : {})} size={32} priority={priority} />
+          </div>
+        </div>
+        <div className="mobile-compact-cell">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="logo-container">
+              <CompanyLogo ticker={stock.ticker} {...(stock.logoUrl ? { logoUrl: stock.logoUrl } : {})} size={24} priority={priority} />
+            </div>
+            <strong className="text-base">{stock.ticker}</strong>
+          </div>
+          <div className="company-name text-sm text-gray-600 dark:text-gray-400">{companyName}</div>
         </div>
       </td>
-      <td><strong>{stock.ticker}</strong></td>
-      <td className="company-name">{companyName}</td>
-      <td>{stock.sector || 'N/A'}</td>
-      <td>{stock.industry || 'N/A'}</td>
-      <td>{formattedMarketCap}</td>
-      <td>${formattedPrice}</td>
-      <td className={stock.percentChange >= 0 ? 'positive' : 'negative'}>
+      
+      {/* Desktop: Ticker (separate) */}
+      <td className="desktop-only"><strong>{stock.ticker}</strong></td>
+      
+      {/* Desktop: Company (separate) */}
+      <td className="desktop-only company-name">{companyName}</td>
+      
+      {/* Column 2: Sector + Industry (grouped on mobile) */}
+      <td className="mobile-group-2">
+        <div className="desktop-only">{stock.sector || 'N/A'}</div>
+        <div className="mobile-compact-cell">
+          <div className="text-sm font-medium">{stock.sector || 'N/A'}</div>
+          <div className="text-xs text-gray-600 dark:text-gray-400">{stock.industry || 'N/A'}</div>
+        </div>
+      </td>
+      
+      {/* Desktop: Industry (separate) */}
+      <td className="desktop-only">{stock.industry || 'N/A'}</td>
+      
+      {/* Column 3: Market Cap + Cap Diff (grouped on mobile) */}
+      <td className="mobile-group-3">
+        <div className="desktop-only">{formattedMarketCap}</div>
+        <div className="mobile-compact-cell">
+          <div className="text-sm font-medium">{formattedMarketCap}</div>
+          <div className={`text-xs ${stock.marketCapDiff >= 0 ? 'positive' : 'negative'}`}>
+            {formattedMarketCapDiff}
+          </div>
+        </div>
+      </td>
+      
+      {/* Column 4: Price + % Change (grouped on mobile) */}
+      <td className="mobile-group-4">
+        <div className="desktop-only">${formattedPrice}</div>
+        <div className="mobile-compact-cell">
+          <div className="text-sm font-semibold">${formattedPrice}</div>
+          <div className={`text-xs font-medium ${stock.percentChange >= 0 ? 'positive' : 'negative'}`}>
+            {formattedPercentChange}
+            {stock.isStale && (
+              <span className="text-xs text-yellow-600 dark:text-yellow-400 ml-1" title="Data may be outdated">
+                (STALE)
+              </span>
+            )}
+          </div>
+        </div>
+      </td>
+      
+      {/* Desktop: % Change (separate) */}
+      <td className={`desktop-only ${stock.percentChange >= 0 ? 'positive' : 'negative'}`}>
         {formattedPercentChange}
         {stock.isStale && (
           <span className="text-xs text-yellow-600 dark:text-yellow-400 ml-1" title="Data may be outdated">
@@ -54,9 +110,13 @@ export const StockTableRow = memo(({
           </span>
         )}
       </td>
-      <td className={stock.marketCapDiff >= 0 ? 'positive' : 'negative'}>
+      
+      {/* Desktop: Cap Diff (separate) */}
+      <td className={`desktop-only ${stock.marketCapDiff >= 0 ? 'positive' : 'negative'}`}>
         {formattedMarketCapDiff}
       </td>
+      
+      {/* Column 5: Favorites */}
       <td>
         <button
           className={`favorite-btn ${isFavorite ? 'favorited' : ''}`}

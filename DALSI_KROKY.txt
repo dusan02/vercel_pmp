@@ -1,0 +1,46 @@
+# 🚀 ĎALŠIE KROKY - Kopírovať a spustiť na serveri
+
+# === KROK 1: Počkať chvíľu a skontrolovať logy ===
+# Server sa môže ešte spúšťať. Počkajte 10-15 sekúnd
+sleep 10
+
+# === KROK 2: Skontrolovať logy ===
+pm2 logs premarketprice --lines 30
+
+# Hľadať:
+# ✅ "🚀 Next.js server ready on http://localhost:3000" (správne)
+# ❌ "🚀 Next.js server ready on http://localhost:3001" (zlé)
+
+# === KROK 3: Skontrolovať porty ===
+netstat -tlnp | grep -E "3000|3001"
+# Mali by ste vidieť: 127.0.0.1:3000 (nie 3001)
+
+# === KROK 4: Spustiť workers (ak ešte nebežia) ===
+pm2 status
+
+# Ak chýbajú workers, spustiť ich:
+pm2 start ecosystem.config.js --only pmp-polygon-worker --env production
+pm2 start ecosystem.config.js --only pmp-bulk-preloader --env production
+
+# === KROK 5: Skontrolovať všetky procesy ===
+pm2 status
+
+# Mali by ste vidieť:
+# - premarketprice (online)
+# - pmp-polygon-worker (online)
+# - pmp-bulk-preloader (online alebo waiting)
+
+# === KROK 6: Uložiť ===
+pm2 save
+
+# === KROK 7: Ak server beží na porte 3001, opraviť ===
+# Reštartovať s explicitným PORT=3000
+pm2 stop premarketprice
+pm2 delete premarketprice
+PORT=3000 pm2 start ecosystem.config.js --only premarketprice --env production
+pm2 save
+
+# === KROK 8: Skontrolovať logy workers ===
+pm2 logs pmp-polygon-worker --lines 10
+pm2 logs pmp-bulk-preloader --lines 10
+

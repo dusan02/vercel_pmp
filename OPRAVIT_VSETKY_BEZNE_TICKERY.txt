@@ -1,0 +1,150 @@
+cd /var/www/premarketprice && source .env 2>/dev/null && echo "=== 1. UPDATE BEŽNÉ TICKERY S N/A ===" && echo "" && psql "$DATABASE_URL" <<EOF 2>/dev/null
+-- Technology - Semiconductors (chýbajúce)
+UPDATE "Ticker" SET sector = 'Technology', industry = 'Semiconductors' WHERE symbol IN ('MU', 'ADI', 'NXPI', 'MRVL', 'ASML');
+
+-- Technology - Software (chýbajúce)
+UPDATE "Ticker" SET sector = 'Technology', industry = 'Software' WHERE symbol IN ('SNPS', 'CDNS', 'WDAY', 'TEAM', 'VEEV', 'DDOG', 'SNOW', 'ADSK', 'PANW', 'CRWD', 'NET', 'FTNT', 'ZS', 'IBM', 'SAP');
+
+-- Technology - Communication Equipment (chýbajúce)
+UPDATE "Ticker" SET sector = 'Technology', industry = 'Communication Equipment' WHERE symbol = 'MSI';
+
+-- Consumer Defensive - Tobacco (chýbajúce)
+UPDATE "Ticker" SET sector = 'Consumer Defensive', industry = 'Tobacco' WHERE symbol = 'MO';
+
+-- Consumer Defensive - Discount Stores (chýbajúce)
+UPDATE "Ticker" SET sector = 'Consumer Defensive', industry = 'Discount Stores' WHERE symbol IN ('TGT', 'TJX', 'ROST');
+
+-- Consumer Defensive - Grocery Stores
+UPDATE "Ticker" SET sector = 'Consumer Defensive', industry = 'Grocery Stores' WHERE symbol = 'KR';
+
+-- Consumer Defensive - Packaged Foods
+UPDATE "Ticker" SET sector = 'Consumer Defensive', industry = 'Packaged Foods' WHERE symbol = 'MDLZ';
+
+-- Consumer Defensive - Household & Personal Products (chýbajúce)
+UPDATE "Ticker" SET sector = 'Consumer Defensive', industry = 'Household & Personal Products' WHERE symbol IN ('CL', 'KMB', 'KVUE');
+
+-- Consumer Defensive - Beverages—Non-Alcoholic (chýbajúce)
+UPDATE "Ticker" SET sector = 'Consumer Defensive', industry = 'Beverages—Non-Alcoholic' WHERE symbol IN ('KDP', 'CCEP', 'MNST');
+
+-- Consumer Defensive - Beverages—Alcoholic
+UPDATE "Ticker" SET sector = 'Consumer Defensive', industry = 'Beverages—Alcoholic' WHERE symbol IN ('BUD', 'DEO');
+
+-- Consumer Defensive - Confectioners
+UPDATE "Ticker" SET sector = 'Consumer Defensive', industry = 'Confectioners' WHERE symbol = 'HSY';
+
+-- Consumer Cyclical - Home Improvement Retail (chýbajúce)
+UPDATE "Ticker" SET sector = 'Consumer Cyclical', industry = 'Home Improvement Retail' WHERE symbol = 'LOW';
+
+-- Consumer Cyclical - Travel Services
+UPDATE "Ticker" SET sector = 'Consumer Cyclical', industry = 'Travel Services' WHERE symbol IN ('BKNG', 'ABNB', 'MAR', 'HLT', 'RCL', 'CCL');
+
+-- Consumer Cyclical - Specialty Retail
+UPDATE "Ticker" SET sector = 'Consumer Cyclical', industry = 'Specialty Retail' WHERE symbol IN ('ORLY', 'AZO');
+
+-- Consumer Cyclical - Restaurants (chýbajúce)
+UPDATE "Ticker" SET sector = 'Consumer Cyclical', industry = 'Restaurants' WHERE symbol IN ('CMG', 'DASH');
+
+-- Consumer Cyclical - Auto Manufacturers (chýbajúce)
+UPDATE "Ticker" SET sector = 'Consumer Cyclical', industry = 'Auto Manufacturers' WHERE symbol IN ('GM', 'F', 'HMC', 'TM', 'RACE');
+
+-- Consumer Cyclical - Auto Dealerships
+UPDATE "Ticker" SET sector = 'Consumer Cyclical', industry = 'Auto Dealerships' WHERE symbol = 'CVNA';
+
+-- Healthcare - Drug Manufacturers (chýbajúce)
+UPDATE "Ticker" SET sector = 'Healthcare', industry = 'Drug Manufacturers—General' WHERE symbol IN ('GSK', 'AMGN', 'BMY', 'VRTX', 'REGN', 'ZTS', 'GILD', 'NVS', 'AZN', 'SNY', 'TAK', 'NVO');
+
+-- Healthcare - Medical Devices (chýbajúce)
+UPDATE "Ticker" SET sector = 'Healthcare', industry = 'Medical Devices' WHERE symbol IN ('BDX', 'EW', 'ALC', 'RMD');
+
+-- Healthcare - Diagnostics & Research (chýbajúce)
+UPDATE "Ticker" SET sector = 'Healthcare', industry = 'Diagnostics & Research' WHERE symbol = 'IDXX';
+
+-- Healthcare - Healthcare Plans (chýbajúce)
+UPDATE "Ticker" SET sector = 'Healthcare', industry = 'Healthcare Plans' WHERE symbol IN ('CI', 'ELV', 'HCA', 'CVS');
+
+-- Financial Services - Banks (chýbajúce)
+UPDATE "Ticker" SET sector = 'Financial Services', industry = 'Banks' WHERE symbol IN ('USB', 'PNC', 'TFC', 'COF');
+
+-- Financial Services - Credit Services (chýbajúce)
+UPDATE "Ticker" SET sector = 'Financial Services', industry = 'Credit Services' WHERE symbol = 'PYPL';
+
+-- Financial Services - Asset Management (chýbajúce)
+UPDATE "Ticker" SET sector = 'Financial Services', industry = 'Asset Management' WHERE symbol IN ('BX', 'KKR', 'APO', 'ARES', 'BAM', 'MSTR', 'COIN', 'HOOD', 'IBKR');
+
+-- Financial Services - Capital Markets (chýbajúce)
+UPDATE "Ticker" SET sector = 'Financial Services', industry = 'Capital Markets' WHERE symbol IN ('CME', 'NDAQ', 'ICE', 'SPGI', 'MSCI', 'MCO', 'VRSK', 'CSGP');
+
+-- Financial Services - Insurance—Property & Casualty
+UPDATE "Ticker" SET sector = 'Financial Services', industry = 'Insurance—Property & Casualty' WHERE symbol IN ('TRV', 'PGR', 'ALL', 'AIG', 'CB');
+
+-- Financial Services - Insurance—Life
+UPDATE "Ticker" SET sector = 'Financial Services', industry = 'Insurance—Life' WHERE symbol IN ('MET', 'AFL');
+
+-- Financial Services - Insurance Brokers
+UPDATE "Ticker" SET sector = 'Financial Services', industry = 'Insurance Brokers' WHERE symbol IN ('AON', 'MMC', 'AJG');
+
+-- Energy - Oil & Gas Integrated (chýbajúce)
+UPDATE "Ticker" SET sector = 'Energy', industry = 'Oil & Gas Integrated' WHERE symbol IN ('SHEL', 'TTE', 'SU', 'E');
+
+-- Energy - Oil & Gas E&P (chýbajúce)
+UPDATE "Ticker" SET sector = 'Energy', industry = 'Oil & Gas E&P' WHERE symbol IN ('OXY', 'FANG', 'IMO');
+
+-- Energy - Oil & Gas Equipment & Services (chýbajúce)
+UPDATE "Ticker" SET sector = 'Energy', industry = 'Oil & Gas Equipment & Services' WHERE symbol IN ('HAL', 'BKR');
+
+-- Energy - Oil & Gas Midstream
+UPDATE "Ticker" SET sector = 'Energy', industry = 'Oil & Gas Midstream' WHERE symbol IN ('WMB', 'KMI', 'EPD', 'TRP', 'OKE', 'LNG', 'ET', 'MPLX');
+
+-- Energy - Oil & Gas Refining & Marketing
+UPDATE "Ticker" SET sector = 'Energy', industry = 'Oil & Gas Refining & Marketing' WHERE symbol IN ('PSX', 'VLO', 'MPC');
+
+-- Energy - Utilities—Renewable
+UPDATE "Ticker" SET sector = 'Energy', industry = 'Utilities—Renewable' WHERE symbol IN ('VST', 'CEG');
+
+-- Industrials - Aerospace & Defense (chýbajúce)
+UPDATE "Ticker" SET sector = 'Industrials', industry = 'Aerospace & Defense' WHERE symbol IN ('NOC', 'GD', 'LHX', 'HWM');
+
+-- Industrials - Farm & Heavy Construction Machinery (chýbajúce)
+UPDATE "Ticker" SET sector = 'Industrials', industry = 'Farm & Heavy Construction Machinery' WHERE symbol IN ('DE', 'PCAR');
+
+-- Industrials - Rental & Leasing Services
+UPDATE "Ticker" SET sector = 'Industrials', industry = 'Rental & Leasing Services' WHERE symbol = 'URI';
+
+-- Industrials - Specialty Industrial Machinery (chýbajúce)
+UPDATE "Ticker" SET sector = 'Industrials', industry = 'Specialty Industrial Machinery' WHERE symbol IN ('ITW', 'PH', 'ROK', 'AME');
+
+-- Industrials - Building Products & Equipment
+UPDATE "Ticker" SET sector = 'Industrials', industry = 'Building Products & Equipment' WHERE symbol IN ('CARR', 'TT');
+
+-- Industrials - Electronic Components
+UPDATE "Ticker" SET sector = 'Industrials', industry = 'Electronic Components' WHERE symbol IN ('TEL', 'APH', 'GLW');
+
+-- Basic Materials - Other Industrial Metals & Mining
+UPDATE "Ticker" SET sector = 'Basic Materials', industry = 'Other Industrial Metals & Mining' WHERE symbol IN ('BHP', 'RIO', 'VALE');
+
+-- Basic Materials - Gold
+UPDATE "Ticker" SET sector = 'Basic Materials', industry = 'Gold' WHERE symbol IN ('NEM', 'AEM', 'WPM');
+
+-- Basic Materials - Specialty Chemicals (chýbajúce)
+UPDATE "Ticker" SET sector = 'Basic Materials', industry = 'Specialty Chemicals' WHERE symbol IN ('SHW', 'CTVA');
+
+-- Utilities - Utilities—Regulated Electric (chýbajúce)
+UPDATE "Ticker" SET sector = 'Utilities', industry = 'Utilities—Regulated Electric' WHERE symbol IN ('AEP', 'XEL', 'ETR', 'PEG', 'SRE', 'ED', 'EXC', 'D');
+
+-- Real Estate - REIT—Healthcare
+UPDATE "Ticker" SET sector = 'Real Estate', industry = 'REIT—Healthcare' WHERE symbol = 'WELL';
+
+-- Real Estate - REIT—Specialty (chýbajúce)
+UPDATE "Ticker" SET sector = 'Real Estate', industry = 'REIT—Specialty' WHERE symbol IN ('DLR', 'CCI', 'PSA');
+
+-- Real Estate - REIT—Retail
+UPDATE "Ticker" SET sector = 'Real Estate', industry = 'REIT—Retail' WHERE symbol IN ('SPG', 'O');
+
+-- Communication Services - Media—Diversified
+UPDATE "Ticker" SET sector = 'Communication Services', industry = 'Media—Diversified' WHERE symbol = 'CMCSA';
+
+-- Communication Services - Entertainment (chýbajúce)
+UPDATE "Ticker" SET sector = 'Communication Services', industry = 'Entertainment' WHERE symbol IN ('SPOT', 'EA', 'TTWO', 'RBLX');
+EOF
+echo "" && echo "=== 2. KONTROLA PO UPDATE ===" && echo "SELECT COUNT(*) as total, COUNT(sector) as with_sector, COUNT(industry) as with_industry FROM \"Ticker\";" | psql "$DATABASE_URL" 2>/dev/null && echo "" && echo "=== 3. REŠTART APLIKÁCIE ===" && pm2 restart premarketprice && sleep 3 && echo "" && echo "✅ UPDATE HOTOVÝ"
+

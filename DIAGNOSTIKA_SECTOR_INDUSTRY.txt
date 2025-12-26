@@ -1,0 +1,32 @@
+# 🔍 DIAGNOSTIKA PROBLÉMU S SECTOR A INDUSTRY (N/A hodnoty)
+
+# ============================================
+# KROK 1: Skontrolovať databázu - či existujú dáta
+# ============================================
+cd /var/www/premarketprice && echo "=== 1. KONTROLA DATABÁZY - SECTOR A INDUSTRY ===" && echo "" && echo "Počet tickerov s NULL sector:" && npx prisma db execute --stdin <<< "SELECT COUNT(*) as count FROM Ticker WHERE sector IS NULL;" && echo "" && echo "Počet tickerov s NULL industry:" && npx prisma db execute --stdin <<< "SELECT COUNT(*) as count FROM Ticker WHERE industry IS NULL;" && echo "" && echo "Počet tickerov s NULL sector A industry:" && npx prisma db execute --stdin <<< "SELECT COUNT(*) as count FROM Ticker WHERE sector IS NULL AND industry IS NULL;" && echo "" && echo "Príklady tickerov s NULL sector/industry (prvých 10):" && npx prisma db execute --stdin <<< "SELECT symbol, name, sector, industry FROM Ticker WHERE sector IS NULL OR industry IS NULL LIMIT 10;" && echo "" && echo "Príklady tickerov S sector/industry (prvých 10):" && npx prisma db execute --stdin <<< "SELECT symbol, name, sector, industry FROM Ticker WHERE sector IS NOT NULL AND industry IS NOT NULL LIMIT 10;"
+
+# ============================================
+# KROK 2: Skontrolovať API endpoint - či vracia sector/industry
+# ============================================
+echo "" && echo "=== 2. KONTROLA API ENDPOINT ===" && echo "" && echo "Test API /api/stocks?tickers=AAPL,MSFT,GOOGL,NVDA (prvých 4 tickerov):" && curl -s "http://localhost:3000/api/stocks?tickers=AAPL,MSFT,GOOGL,NVDA" | jq '.data[] | {ticker, sector, industry}' | head -20 && echo "" && echo "Test API /api/stocks?getAll=true&limit=5 (prvých 5 tickerov):" && curl -s "http://localhost:3000/api/stocks?getAll=true&limit=5" | jq '.data[] | {ticker, sector, industry}' | head -20
+
+# ============================================
+# KROK 3: Skontrolovať, či sa dáta správne načítavajú z databázy
+# ============================================
+echo "" && echo "=== 3. KONTROLA NAČÍTANIA Z DATABÁZY ===" && echo "" && echo "Príklady konkrétnych tickerov z databázy:" && npx prisma db execute --stdin <<< "SELECT symbol, sector, industry, name FROM Ticker WHERE symbol IN ('AAPL', 'MSFT', 'GOOGL', 'NVDA', 'META', 'AMZN', 'TSLA', 'AVGO', 'TSM', 'BRK.B') ORDER BY symbol;" && echo "" && echo "Kontrola, či sa dáta správne mapujú v stockService:" && echo "(Toto je len informácia - skontroluj kód v src/lib/server/stockService.ts riadky 145-146)"
+
+# ============================================
+# KROK 4: Skontrolovať, či existuje script na naplnenie sector/industry
+# ============================================
+echo "" && echo "=== 4. KONTROLA SCRIPTU NA NAPLNENIE SECTOR/INDUSTRY ===" && echo "" && echo "Existujúce scripty:" && ls -la scripts/*sector* scripts/*industry* 2>/dev/null | head -10 && echo "" && echo "Ak existuje bootstrap-static-data.ts, skontroluj, či sa spúšťa:" && echo "npm run db:bootstrap-static"
+
+# ============================================
+# KROK 5: Skontrolovať Prisma schému
+# ============================================
+echo "" && echo "=== 5. KONTROLA PRISMA SCHÉMY ===" && echo "" && echo "Schéma Ticker modelu:" && grep -A 10 "model Ticker" prisma/schema.prisma | head -15
+
+# ============================================
+# KROK 6: Test frontend komponentu (ak je možné)
+# ============================================
+echo "" && echo "=== 6. INFORMÁCIA O FRONTEND KOMPONENTE ===" && echo "" && echo "StockTableRow.tsx zobrazuje:" && echo "  <td>{stock.sector || 'N/A'}</td>" && echo "  <td>{stock.industry || 'N/A'}</td>" && echo "" && echo "Ak stock.sector a stock.industry sú prázdne stringy (''), zobrazí sa 'N/A'"
+

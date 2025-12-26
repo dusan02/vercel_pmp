@@ -1,0 +1,32 @@
+# 🗑️ VYMAZAŤ DÁTA V TABUĽKÁCH (nie tabuľky samotné)
+
+# === KROK 1: Zastaviť earnings-cron ===
+pm2 stop earnings-cron
+
+# === KROK 2: Zastaviť earnings-table ===
+pm2 stop earnings-table
+
+# === KROK 3: Vymazať dáta v tabuľkách cez Prisma ===
+cd /var/www/earnings-table/modules/database
+npx prisma db execute --stdin <<EOF
+DELETE FROM FinhubData;
+DELETE FROM PolygonData;
+DELETE FROM FinalReport;
+EOF
+
+# Alebo jednoduchšie - použiť Prisma Studio alebo priamy SQL príkaz
+# sqlite3 /var/www/earnings-table/modules/database/prisma/prod.db "DELETE FROM FinhubData; DELETE FROM PolygonData; DELETE FROM FinalReport;"
+
+# === KROK 4: Spustiť earnings-table ===
+cd /var/www/earnings-table
+pm2 start earnings-table
+
+# === KROK 5: Spustiť earnings-cron ===
+pm2 start earnings-cron
+
+# === KROK 6: Uložiť PM2 konfiguráciu ===
+pm2 save
+
+# === KROK 7: Skontrolovať status ===
+pm2 status
+
