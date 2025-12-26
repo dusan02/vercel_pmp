@@ -63,11 +63,6 @@ export const StockTableRow = memo(({
       {/* % Change */}
       <td className={stock.percentChange >= 0 ? 'positive' : 'negative'}>
         {formattedPercentChange}
-        {stock.isStale && (
-          <span className="text-xs text-yellow-600 dark:text-yellow-400 ml-1" title="Data may be outdated">
-            (STALE)
-          </span>
-        )}
       </td>
       
       {/* Cap Diff */}
