@@ -40,6 +40,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     adapter: PrismaAdapter(prisma),
     providers: providers.length > 0 ? providers : [],
     secret: authSecret || "fallback-secret-key-change-in-production",
+    basePath: "/api/auth",
+    baseUrl: nextAuthUrl || undefined,
     trustHost: true, // Required for Vercel/production
     pages: {
         signIn: '/',
