@@ -41,8 +41,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     providers: providers.length > 0 ? providers : [],
     secret: authSecret || "fallback-secret-key-change-in-production",
     basePath: "/api/auth",
-    baseUrl: nextAuthUrl || undefined,
-    trustHost: true, // Required for Vercel/production
+    trustHost: true, // Required for Vercel/production - uses NEXTAUTH_URL from env
     pages: {
         signIn: '/',
         error: '/',
