@@ -1,3 +1,28 @@
+// Load environment variables from .env file manually
+const fs = require('fs');
+const path = require('path');
+const envPath = path.join(__dirname, '.env');
+const envVars = {};
+
+if (fs.existsSync(envPath)) {
+  const envContent = fs.readFileSync(envPath, 'utf8');
+  envContent.split('\n').forEach(line => {
+    const trimmedLine = line.trim();
+    if (trimmedLine && !trimmedLine.startsWith('#')) {
+      const [key, ...valueParts] = trimmedLine.split('=');
+      if (key && valueParts.length > 0) {
+        let value = valueParts.join('=');
+        // Remove quotes if present
+        if ((value.startsWith('"') && value.endsWith('"')) || 
+            (value.startsWith("'") && value.endsWith("'"))) {
+          value = value.slice(1, -1);
+        }
+        envVars[key.trim()] = value.trim();
+      }
+    }
+  });
+}
+
 module.exports = {
   apps: [
     {
@@ -12,6 +37,7 @@ module.exports = {
         NODE_ENV: "production",
         PORT: 3000,
         ENABLE_WEBSOCKET: "true",
+        DATABASE_URL: envVars.DATABASE_URL || process.env.DATABASE_URL,
       },
       error_file: "/var/log/pm2/premarketprice-error.log",
       out_file: "/var/log/pm2/premarketprice-out.log",
@@ -29,6 +55,7 @@ module.exports = {
         NODE_ENV: "production",
         MODE: "snapshot",
         ENABLE_WEBSOCKET: "true",
+        DATABASE_URL: envVars.DATABASE_URL || process.env.DATABASE_URL,
       },
       error_file: "/var/log/pm2/polygon-worker-error.log",
       out_file: "/var/log/pm2/polygon-worker-out.log",
@@ -47,6 +74,7 @@ module.exports = {
       exec_mode: "fork",
       env_production: {
         NODE_ENV: "production",
+        DATABASE_URL: envVars.DATABASE_URL || process.env.DATABASE_URL,
       },
       error_file: "/var/log/pm2/bulk-preloader-error.log",
       out_file: "/var/log/pm2/bulk-preloader-out.log",
