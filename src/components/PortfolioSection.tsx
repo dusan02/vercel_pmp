@@ -269,10 +269,7 @@ export function PortfolioSection({
               })}
               {/* Total row */}
               <tr className="portfolio-total-row">
-                <td colSpan={9} className="desktop-total-colspan" style={{ textAlign: 'right', fontWeight: 600, padding: '1rem 0.5rem', verticalAlign: 'middle' }}>
-                  Total:
-                </td>
-                <td colSpan={6} className="mobile-total-colspan" style={{ textAlign: 'right', fontWeight: 600, padding: '1rem 0.5rem', verticalAlign: 'middle', display: 'none' }}>
+                <td colSpan={9} style={{ textAlign: 'right', fontWeight: 600, padding: '1rem 0.5rem', verticalAlign: 'middle' }}>
                   Total:
                 </td>
                 <td className={totalPortfolioValue >= 0 ? 'positive' : 'negative'} style={{ fontWeight: 600, padding: '1rem 0.5rem', whiteSpace: 'nowrap', verticalAlign: 'middle', minWidth: '120px' }}>

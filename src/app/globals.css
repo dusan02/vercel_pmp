@@ -694,14 +694,7 @@
       min-width: 450px; /* Reduced for 5 columns */
     }
 
-    /* Adjust Total row colspan for mobile */
-    .portfolio-total-row .desktop-total-colspan {
-      display: none !important;
-    }
-
-    .portfolio-total-row .mobile-total-colspan {
-      display: table-cell !important;
-    }
+    /* Total row colspan is handled in component */
   }
 
   /* Portfolio: Tablet optimization (7 columns) */
