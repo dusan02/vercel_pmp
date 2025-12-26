@@ -272,7 +272,7 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
 
               <main className="container" role="main">
                 {/* Section Navigation - Mobile (Above content) */}
-                <div className="mb-4">
+                <div className="mb-4 lg:hidden">
                   <SectionNavigation
                     preferences={preferences}
                     onToggleSection={(key) => savePreferences({ [key]: !(preferences[key] ?? true) })}
