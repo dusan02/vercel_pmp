@@ -749,8 +749,10 @@ export async function bootstrapPreviousCloses(
   for (const symbol of tickers) {
     try {
       let prevClose = 0;
-      // Look back up to 3 days (to handle weekends/holidays)
-      for (let i = 1; i <= 3; i++) {
+      // Look back up to 10 days (to handle long weekends/holidays like Thanksgiving week)
+      // Use getLastTradingDay() for more reliable trading day detection
+      const maxLookback = 10;
+      for (let i = 1; i <= maxLookback; i++) {
         const prevDate = new Date(date);
         prevDate.setDate(prevDate.getDate() - i);
         const prevDateStr = prevDate.toISOString().split('T')[0];
