@@ -12,6 +12,7 @@ export function formatPercent(value: number): string {
 
 /**
  * Formátuje market cap diff na kompaktný tvar (napr. +$34.2B alebo -$1.5B)
+ * Vstupná hodnota je už v miliardách (z computeMarketCapDiff)
  */
 export function formatMarketCapDiff(value: number | undefined): string {
   if (value === undefined || value === null || !isFinite(value) || value === 0) {
@@ -20,14 +21,12 @@ export function formatMarketCapDiff(value: number | undefined): string {
   const absValue = Math.abs(value);
   const sign = value >= 0 ? '+' : '-';
 
-  if (absValue >= 1_000_000_000_000) {
-    return `${sign}$${(absValue / 1_000_000_000_000).toFixed(1)}T`;
-  } else if (absValue >= 1_000_000_000) {
-    return `${sign}$${(absValue / 1_000_000_000).toFixed(1)}B`;
-  } else if (absValue >= 1_000_000) {
-    return `${sign}$${(absValue / 1_000_000).toFixed(1)}M`;
+  // Hodnota je už v miliardách, takže ak je >= 1000, zobrazíme v triliónoch
+  if (absValue >= 1000) {
+    return `${sign}$${(absValue / 1000).toFixed(1)}T`;
   } else {
-    return `${sign}$${absValue.toFixed(0)}`;
+    // Zobrazíme v miliardách s "B" na konci
+    return `${sign}$${absValue.toFixed(1)}B`;
   }
 }
 
