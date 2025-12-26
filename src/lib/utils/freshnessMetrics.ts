@@ -18,6 +18,11 @@ export interface FreshnessMetrics {
     stale: number;
     veryStale: number;
   };
+  agePercentiles?: {
+    p50: number;  // Median age in minutes
+    p90: number;  // 90th percentile age in minutes
+    p99: number;  // 99th percentile age in minutes
+  };
 }
 
 /**
@@ -133,6 +138,7 @@ export async function getFreshnessMetrics(
     }
 
     const total = Object.keys(timestamps).length;
+    const ages: number[] = []; // For percentile calculation
 
     for (const [ticker, timestampStr] of Object.entries(timestamps)) {
       const timestamp = parseInt(timestampStr, 10);
@@ -143,6 +149,7 @@ export async function getFreshnessMetrics(
 
       const ageMs = now - timestamp;
       const ageMin = ageMs / (60 * 1000);
+      ages.push(ageMin); // Collect for percentiles
 
       if (ageMin < 2) {
         fresh++;
@@ -167,7 +174,22 @@ export async function getFreshnessMetrics(
       veryStale: 0
     };
 
-    return {
+    // Calculate age percentiles (P50, P90, P99)
+    let agePercentiles: { p50: number; p90: number; p99: number } | undefined;
+    if (ages.length > 0) {
+      const sortedAges = ages.sort((a, b) => a - b);
+      const p50Index = Math.min(Math.floor(sortedAges.length * 0.5), sortedAges.length - 1);
+      const p90Index = Math.min(Math.floor(sortedAges.length * 0.9), sortedAges.length - 1);
+      const p99Index = Math.min(Math.floor(sortedAges.length * 0.99), sortedAges.length - 1);
+      
+      agePercentiles = {
+        p50: Math.round((sortedAges[p50Index] ?? 0) * 100) / 100,
+        p90: Math.round((sortedAges[p90Index] ?? 0) * 100) / 100,
+        p99: Math.round((sortedAges[p99Index] ?? 0) * 100) / 100
+      };
+    }
+
+    const result: FreshnessMetrics = {
       fresh,
       recent,
       stale,
@@ -175,6 +197,12 @@ export async function getFreshnessMetrics(
       total,
       percentage
     };
+    
+    if (agePercentiles) {
+      result.agePercentiles = agePercentiles;
+    }
+    
+    return result;
   } catch (error) {
     logger.error('Error getting freshness metrics:', error);
     return {

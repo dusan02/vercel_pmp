@@ -30,13 +30,14 @@ export async function GET(request: NextRequest) {
         veryStale: metrics.veryStale,
         total: metrics.total,
         missing: missingData,
-        percentage: metrics.percentage
+        percentage: metrics.percentage,
+        agePercentiles: metrics.agePercentiles
       },
       thresholds: {
-        fresh: 2,      // < 2 minutes
-        recent: 5,    // 2-5 minutes
-        stale: 15,    // 5-15 minutes
-        veryStale: 15 // > 15 minutes
+        freshMax: 2,      // < 2 minutes
+        recentMax: 5,    // 2-5 minutes
+        staleMax: 15,    // 5-15 minutes
+        // veryStale is implicitly > staleMax (15 minutes)
       },
       universe: {
         name: 'sp500',

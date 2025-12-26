@@ -45,17 +45,19 @@
 
 ---
 
-## 🔄 TODO: API Integration
+## ✅ Completed: API Integration
 
 ### 8. On-demand PrevClose in API Endpoints
-- [ ] Integrate into `/api/heatmap/route.ts`
-- [ ] Integrate into `/api/stocks/route.ts` (if needed)
-- [ ] Test rate limiting and deduplication
+- [x] Integrate into `/api/heatmap/route.ts` (max 50 tickers, 600ms budget)
+- [x] Integrate into `/api/stocks/route.ts` (max 50 tickers, 800ms budget)
+- [x] DB persistence after successful fetch
+- [x] Timeout budget protection
+- [x] Rate limiting and deduplication (via redisLocks)
 
 ### 9. Freshness Metrics API Endpoint
-- [ ] Create `/api/metrics/freshness/route.ts`
-- [ ] Return JSON with metrics
-- [ ] Optional: Dashboard UI
+- [x] Create `/api/metrics/freshness/route.ts`
+- [x] Return JSON with metrics, thresholds, universe info
+- [x] Cache headers (30s max-age)
 
 ### 10. Trading Calendar Aware Regular Close
 - [ ] Research Polygon market status API

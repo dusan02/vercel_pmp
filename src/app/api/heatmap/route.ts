@@ -415,15 +415,16 @@ export async function GET(request: NextRequest) {
 
     // On-demand batch fetch previousClose with timeout budget and cap (API-safe)
     const prevCloseBatchMap = new Map<string, number>();
+    const missingPrevCloseBefore = tickersNeedingPrevClose.length;
     if (tickersNeedingPrevClose.length > 0) {
       const onDemandStartTime = Date.now();
-      console.log(`🔄 On-demand fetching previousClose for ${tickersNeedingPrevClose.length} tickers (max 50, timeout 600ms)...`);
+      console.log(`🔄 On-demand fetching previousClose for ${missingPrevCloseBefore} tickers (max 50, timeout 600ms)...`);
       
       try {
         const { fetchPreviousClosesBatchAndPersist } = await import('@/lib/utils/onDemandPrevClose');
         const onDemandResults = await fetchPreviousClosesBatchAndPersist(
           tickersNeedingPrevClose,
-          today,
+          todayYMD,  // Use string format (YYYY-MM-DD), not Date object
           {
             maxTickers: 50,        // Cap at 50 tickers per request
             timeoutBudget: 600,     // Max 600ms budget
@@ -436,7 +437,8 @@ export async function GET(request: NextRequest) {
         });
         
         const onDemandDuration = Date.now() - onDemandStartTime;
-        console.log(`✅ On-demand fetched ${prevCloseBatchMap.size} previousClose values in ${onDemandDuration}ms (persisted to DB)`);
+        const missingPrevCloseAfter = missingPrevCloseBefore - prevCloseBatchMap.size;
+        console.log(`✅ On-demand prevClose: ${missingPrevCloseBefore} missing → ${prevCloseBatchMap.size} fetched → ${missingPrevCloseAfter} still missing (${onDemandDuration}ms, persisted to DB)`);
       } catch (error) {
         console.warn(`⚠️ On-demand prevClose fetch failed:`, error);
         // Continue without on-demand results (fallback to existing logic)

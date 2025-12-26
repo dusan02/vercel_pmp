@@ -50,9 +50,12 @@ export async function fetchPreviousCloseOnDemand(
   }
 
   // 2. Check global rate limit (20 requests per minute)
+  // NOTE: This counts per-ticker calls, not outbound API requests
+  // Range endpoint = 1 request, fallback day-by-day = up to 10 requests
+  // We use conservative limit to account for fallback worst case
   const rateLimitCheck = await checkTokenBucket(
     'ondemand_prevclose',
-    20, // max tokens
+    20, // max tokens (conservative: assumes range endpoint, worst case = 20 tickers/min)
     20 / 60, // refill rate: 20 tokens per 60 seconds
     60 // window: 60 seconds
   );
@@ -151,6 +154,7 @@ async function fetchPrevCloseFromPolygon(
 ): Promise<number | null> {
   try {
     // Try range endpoint first (more efficient - 1 request instead of 10)
+    // This counts as 1 outbound API request
     const endDate = new Date(startDate);
     endDate.setDate(endDate.getDate() - maxLookback);
     const endDateStr = endDate.toISOString().split('T')[0];
@@ -174,6 +178,8 @@ async function fetchPrevCloseFromPolygon(
     }
 
     // Fallback: fetch day by day (if range endpoint didn't work)
+    // WARNING: This can make up to maxLookback (10) outbound requests per ticker
+    // Rate limiter at ticker level (20/min) is conservative to account for this
     const startDateObj = new Date(startDate);
     
     for (let i = 0; i < maxLookback; i++) {

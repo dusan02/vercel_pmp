@@ -883,8 +883,16 @@ async function main() {
           
           if (shouldSave) {
             // Check if regular close is missing for any tickers
+            // Use stratified sample: top 50 (premium) + random 50 (to catch batch failures)
             const tickers = await getUniverse('sp500');
-            const sampleTickers = tickers.slice(0, 10);
+            const { getAllProjectTickers } = await import('@/data/defaultTickers');
+            const premiumTickers = getAllProjectTickers('pmp').slice(0, 50);
+            const randomTickers = tickers
+              .filter(t => !premiumTickers.includes(t))
+              .sort(() => Math.random() - 0.5)
+              .slice(0, 50);
+            const sampleTickers = [...premiumTickers, ...randomTickers];
+            
             const { prisma } = await import('@/lib/db/prisma');
             const dateObj = createETDate(today);
             
@@ -973,7 +981,7 @@ async function main() {
       
       const result = await withLock(
         'bulk_preload',
-        4 * 60, // 4 min TTL (longer than typical run)
+        8 * 60, // 8 min TTL (2x typical runtime ~3-4 min, prevents expiration during run)
         async () => {
           console.log('🔄 Running DST-safe bulk preload...');
           const apiKey = process.env.POLYGON_API_KEY;
@@ -989,13 +997,33 @@ async function main() {
             return;
           }
 
-          // Run bulk preload
-          await preloadBulkStocks(apiKey);
+          // Run bulk preload with duration tracking
+          const preloadStartTime = Date.now();
+          let preloadSuccess = true;
+          let preloadError: string | null = null;
           
-          // Update last preload timestamp (no TTL - persistent, not TTL-based gating)
-          await redisClient.set(lastPreloadKey, now.toString());
-          
-          console.log('✅ Bulk preload completed');
+          try {
+            await preloadBulkStocks(apiKey);
+            const preloadDuration = Date.now() - preloadStartTime;
+            
+            // Update last preload timestamp and metrics (no TTL - persistent, not TTL-based gating)
+            await redisClient.set(lastPreloadKey, now.toString());
+            await redisClient.set('bulk:last_duration_ms', preloadDuration.toString());
+            await redisClient.set('bulk:last_success_ts', now.toString());
+            await redisClient.del('bulk:last_error'); // Clear error on success
+            
+            console.log(`✅ Bulk preload completed in ${preloadDuration}ms`);
+          } catch (error) {
+            preloadSuccess = false;
+            preloadError = error instanceof Error ? error.message : String(error);
+            const preloadDuration = Date.now() - preloadStartTime;
+            
+            await redisClient.set('bulk:last_duration_ms', preloadDuration.toString());
+            await redisClient.set('bulk:last_error', preloadError);
+            
+            console.error(`❌ Bulk preload failed after ${preloadDuration}ms:`, error);
+            throw error; // Re-throw to let withLock handle it
+          }
         }
       );
 

@@ -21,8 +21,9 @@ export async function acquireLock(
   retryMs: number = 0,
   maxRetries: number = 0
 ): Promise<string | null> {
+  // FAIL-CLOSED: If Redis unavailable, don't acquire lock (prevent parallel execution)
   if (!redisClient || !redisClient.isOpen) {
-    logger.warn(`Redis unavailable, cannot acquire lock: ${key}`);
+    logger.warn(`Redis unavailable, cannot acquire lock: ${key} - FAIL-CLOSED (skipping operation)`);
     return null;
   }
 
@@ -138,12 +139,12 @@ export async function checkTokenBucket(
   refillRate: number,
   windowSeconds: number = 60
 ): Promise<{ allowed: boolean; remaining: number; resetAt: number }> {
+  // FAIL-CLOSED: If Redis unavailable, deny request (prevent DDoS on Polygon API)
   if (!redisClient || !redisClient.isOpen) {
-    // Fallback: allow if Redis unavailable (fail open)
-    logger.warn(`Redis unavailable for rate limiting, allowing: ${key}`);
+    logger.warn(`Redis unavailable for rate limiting, denying: ${key} - FAIL-CLOSED (preventing API spam)`);
     return {
-      allowed: true,
-      remaining: maxTokens,
+      allowed: false,
+      remaining: 0,
       resetAt: Date.now() + (windowSeconds * 1000)
     };
   }
