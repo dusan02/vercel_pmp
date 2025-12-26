@@ -13,6 +13,30 @@ import { setPrevClose } from '../redis/operations';
 const POLYGON_API_KEY = process.env.POLYGON_API_KEY || '';
 
 /**
+ * Track outbound Polygon API request for metrics
+ * Increments counter per minute window
+ */
+async function trackPolygonRequest(): Promise<void> {
+  if (!redisClient || !redisClient.isOpen) {
+    return; // Fail silently - metrics are optional
+  }
+  
+  try {
+    const now = Date.now();
+    const windowStart = Math.floor(now / 60000) * 60000; // 1 minute window
+    const metricsKey = `metrics:polygon:reqs:${Math.floor(windowStart / 1000)}`;
+    
+    // Increment counter atomically
+    await redisClient.incr(metricsKey);
+    // Set expiration (2 minutes to cover window boundary)
+    await redisClient.expire(metricsKey, 120);
+  } catch (error) {
+    // Fail silently - metrics are optional
+    logger.debug('Failed to track Polygon request:', error);
+  }
+}
+
+/**
  * Fetch previous close for a single ticker with rate limiting and deduplication
  * 
  * @param ticker - Stock symbol
@@ -161,6 +185,9 @@ async function fetchPrevCloseFromPolygon(
 
     const rangeUrl = `https://api.polygon.io/v2/aggs/ticker/${ticker}/range/1/day/${endDateStr}/${startDate}?adjusted=true&apiKey=${POLYGON_API_KEY}`;
     
+    // Track outbound request (for metrics)
+    await trackPolygonRequest();
+    
     const rangeResponse = await fetch(rangeUrl);
     
     if (rangeResponse.ok) {
@@ -188,6 +215,10 @@ async function fetchPrevCloseFromPolygon(
       const checkDateStr = checkDate.toISOString().split('T')[0];
 
       const url = `https://api.polygon.io/v2/aggs/ticker/${ticker}/range/1/day/${checkDateStr}/${checkDateStr}?adjusted=true&apiKey=${POLYGON_API_KEY}`;
+      
+      // Track outbound request (for metrics)
+      await trackPolygonRequest();
+      
       const response = await fetch(url);
 
       if (response.ok) {
@@ -294,7 +325,12 @@ export async function fetchPreviousClosesBatchAndPersist(
   const today = targetDate || getDateET();
 
   // Persist successful results to DB
+  // Edge case: partial persist (fetch OK, but DB fails) - at least keep in Redis cache
   if (results.size > 0) {
+    let persistSuccessCount = 0;
+    let persistFailedCount = 0;
+    const persistErrors: string[] = [];
+    
     try {
       const { prisma } = await import('@/lib/db/prisma');
       const dateObj = createETDate(today);
@@ -330,16 +366,31 @@ export async function fetchPreviousClosesBatchAndPersist(
               updatedAt: new Date()
             }
           });
+          
+          persistSuccessCount++;
         } catch (error) {
-          logger.warn(`Failed to persist prevClose for ${ticker}:`, error);
+          persistFailedCount++;
+          const errorMsg = error instanceof Error ? error.message : String(error);
+          persistErrors.push(`${ticker}: ${errorMsg}`);
+          logger.warn(`Failed to persist prevClose for ${ticker} (will remain in Redis cache):`, error);
         }
       });
 
       await Promise.all(persistPromises);
-      logger.info(`Persisted ${results.size} previous closes to DB`);
+      
+      if (persistFailedCount > 0) {
+        logger.warn(`Partial persist: ${persistSuccessCount} succeeded, ${persistFailedCount} failed. Errors: ${persistErrors.slice(0, 5).join('; ')}${persistErrors.length > 5 ? '...' : ''}`);
+      } else {
+        logger.info(`Persisted ${persistSuccessCount} previous closes to DB`);
+      }
     } catch (error) {
-      logger.error('Error persisting previous closes to DB:', error);
+      // Critical error - log but don't throw (cache is still OK)
+      logger.error(`Error persisting previous closes to DB (cache remains valid):`, error);
+      persistFailedCount = results.size;
     }
+    
+    // Note: Even if persist fails, results are already in Redis cache (via fetchPreviousCloseOnDemand)
+    // This is acceptable - cache will be used until next successful persist
   }
 
   return results;

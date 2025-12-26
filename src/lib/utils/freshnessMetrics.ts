@@ -124,7 +124,7 @@ export async function getFreshnessMetrics(
     let timestamps: Record<string, string>;
     
     if (tickers && tickers.length > 0) {
-      // Fetch only specific tickers (HMGET)
+      // Fetch only specific tickers (HMGET) - ensures we only count current universe
       const values = await redisClient.hmGet(hashKey, tickers);
       timestamps = {};
       tickers.forEach((ticker, index) => {
@@ -132,11 +132,15 @@ export async function getFreshnessMetrics(
           timestamps[ticker] = values[index];
         }
       });
+      // Total = number of tickers with timestamps (missing = tickers.length - total)
     } else {
-      // Fetch all (HGETALL)
+      // Fetch all (HGETALL) - may include old tickers not in current universe
+      // For accurate metrics, prefer passing tickers array
       timestamps = await redisClient.hGetAll(hashKey);
     }
 
+    // Total = number of tickers with valid timestamps
+    // Missing = tickers.length - total (if tickers provided)
     const total = Object.keys(timestamps).length;
     const ages: number[] = []; // For percentile calculation
 

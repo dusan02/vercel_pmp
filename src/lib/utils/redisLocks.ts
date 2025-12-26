@@ -91,7 +91,8 @@ export async function releaseLock(key: string, lockToken: string): Promise<boole
     const result = await redisClient.eval(luaScript, 1, lockKey, lockToken);
     return result === 1;
   } catch (error) {
-    logger.error(`Error releasing lock ${lockKey}:`, error);
+    // Log as warn/debug, not error (Redis may be down, lock will expire via TTL anyway)
+    logger.warn(`Failed to release lock ${lockKey} (will expire via TTL):`, error);
     return false;
   }
 }

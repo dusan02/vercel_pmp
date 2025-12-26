@@ -887,10 +887,22 @@ async function main() {
             const tickers = await getUniverse('sp500');
             const { getAllProjectTickers } = await import('@/data/defaultTickers');
             const premiumTickers = getAllProjectTickers('pmp').slice(0, 50);
-            const randomTickers = tickers
-              .filter(t => !premiumTickers.includes(t))
-              .sort(() => Math.random() - 0.5)
-              .slice(0, 50);
+            // Reservoir sampling for random 50 (O(n) instead of O(n log n), more uniform distribution)
+            const remainingTickers = tickers.filter(t => !premiumTickers.includes(t));
+            const randomTickers: string[] = [];
+            const randomCount = Math.min(50, remainingTickers.length);
+            
+            // Fisher-Yates shuffle for first N elements (more efficient than full sort)
+            for (let i = 0; i < randomCount; i++) {
+              const j = Math.floor(Math.random() * (remainingTickers.length - i)) + i;
+              const temp = remainingTickers[i];
+              if (temp && remainingTickers[j]) {
+                remainingTickers[i] = remainingTickers[j];
+                remainingTickers[j] = temp;
+                randomTickers.push(temp);
+              }
+            }
+            
             const sampleTickers = [...premiumTickers, ...randomTickers];
             
             const { prisma } = await import('@/lib/db/prisma');
@@ -948,9 +960,11 @@ async function main() {
       const minutes = et.minute;
       const dayOfWeek = et.weekday;
       
-      // Pre-market + live trading: 07:30-16:00 ET (DST-safe via toET())
-      const isPreMarketOrLive = (hours >= 7 && hours < 16) || 
-                               (hours === 7 && minutes >= 30);
+      // Pre-market + live trading: 07:30-15:55 ET (DST-safe via toET())
+      // Stop at 15:55 to avoid overlap with regular close save at 16:00
+      const isPreMarketOrLive = (hours >= 7 && hours < 15) || 
+                               (hours === 7 && minutes >= 30) ||
+                               (hours === 15 && minutes < 55);
       
       // Only on weekdays (1-5 = Monday-Friday)
       const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
@@ -1005,14 +1019,26 @@ async function main() {
           try {
             await preloadBulkStocks(apiKey);
             const preloadDuration = Date.now() - preloadStartTime;
+            const preloadDurationMin = preloadDuration / (60 * 1000);
+            
+            // Max runtime alarms (warn at 6 min, error at 10 min)
+            if (preloadDurationMin > 10) {
+              const errorMsg = `Bulk preload took ${preloadDurationMin.toFixed(1)}min (exceeds 10min threshold) - possible Polygon/Redis/DB slowdown`;
+              console.error(`❌ ${errorMsg}`);
+              await redisClient.set('bulk:last_error', errorMsg);
+            } else if (preloadDurationMin > 6) {
+              console.warn(`⚠️ Bulk preload took ${preloadDurationMin.toFixed(1)}min (exceeds 6min threshold) - monitoring for slowdown`);
+            }
             
             // Update last preload timestamp and metrics (no TTL - persistent, not TTL-based gating)
             await redisClient.set(lastPreloadKey, now.toString());
             await redisClient.set('bulk:last_duration_ms', preloadDuration.toString());
             await redisClient.set('bulk:last_success_ts', now.toString());
-            await redisClient.del('bulk:last_error'); // Clear error on success
+            if (preloadDurationMin <= 10) {
+              await redisClient.del('bulk:last_error'); // Clear error on success (unless exceeded 10min)
+            }
             
-            console.log(`✅ Bulk preload completed in ${preloadDuration}ms`);
+            console.log(`✅ Bulk preload completed in ${preloadDuration}ms (${preloadDurationMin.toFixed(1)}min)`);
           } catch (error) {
             preloadSuccess = false;
             preloadError = error instanceof Error ? error.message : String(error);
