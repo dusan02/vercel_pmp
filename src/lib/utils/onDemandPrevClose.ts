@@ -206,25 +206,46 @@ async function fetchPrevCloseFromPolygon(
 }
 
 /**
- * Batch fetch previous closes for multiple tickers
- * Uses rate limiting and deduplication
+ * Batch fetch previous closes for multiple tickers with timeout budget
+ * API-safe version: respects timeout budget and max tickers cap
  * 
  * @param tickers - Array of stock symbols
  * @param targetDate - Target date (YYYY-MM-DD)
- * @param maxConcurrent - Maximum concurrent fetches (default: 5)
+ * @param options - Options for batch fetch
  * @returns Map of ticker -> previous close price
  */
 export async function fetchPreviousClosesBatch(
   tickers: string[],
   targetDate?: string,
-  maxConcurrent: number = 5
+  options: {
+    maxTickers?: number;        // Cap on number of tickers to fetch (default: 50)
+    timeoutBudget?: number;      // Max time in ms to spend on fetching (default: 600ms)
+    maxConcurrent?: number;      // Max concurrent fetches (default: 5)
+  } = {}
 ): Promise<Map<string, number>> {
+  const {
+    maxTickers = 50,
+    timeoutBudget = 600,
+    maxConcurrent = 5
+  } = options;
+
   const results = new Map<string, number>();
   const today = targetDate || getDateET();
+  const startTime = Date.now();
+
+  // Cap tickers to maxTickers (prioritize first N)
+  const tickersToFetch = tickers.slice(0, maxTickers);
 
   // Process in batches to respect rate limits
-  for (let i = 0; i < tickers.length; i += maxConcurrent) {
-    const batch = tickers.slice(i, i + maxConcurrent);
+  for (let i = 0; i < tickersToFetch.length; i += maxConcurrent) {
+    // Check timeout budget
+    const elapsed = Date.now() - startTime;
+    if (elapsed >= timeoutBudget) {
+      logger.warn(`On-demand prevClose batch timeout budget exceeded (${elapsed}ms), stopping early`);
+      break;
+    }
+
+    const batch = tickersToFetch.slice(i, i + maxConcurrent);
     
     const batchPromises = batch.map(async (ticker) => {
       const prevClose = await fetchPreviousCloseOnDemand(ticker, today);
@@ -235,9 +256,83 @@ export async function fetchPreviousClosesBatch(
 
     await Promise.all(batchPromises);
 
-    // Small delay between batches
-    if (i + maxConcurrent < tickers.length) {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+    // Small delay between batches (only if we have time left)
+    const elapsedAfterBatch = Date.now() - startTime;
+    if (i + maxConcurrent < tickersToFetch.length && elapsedAfterBatch < timeoutBudget - 100) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Batch fetch previous closes and persist to DB
+ * API-safe version with timeout budget and DB persistence
+ * 
+ * @param tickers - Array of stock symbols
+ * @param targetDate - Target date (YYYY-MM-DD)
+ * @param options - Options for batch fetch
+ * @returns Map of ticker -> previous close price
+ */
+export async function fetchPreviousClosesBatchAndPersist(
+  tickers: string[],
+  targetDate?: string,
+  options: {
+    maxTickers?: number;
+    timeoutBudget?: number;
+    maxConcurrent?: number;
+  } = {}
+): Promise<Map<string, number>> {
+  const results = await fetchPreviousClosesBatch(tickers, targetDate, options);
+  const today = targetDate || getDateET();
+
+  // Persist successful results to DB
+  if (results.size > 0) {
+    try {
+      const { prisma } = await import('@/lib/db/prisma');
+      const dateObj = createETDate(today);
+      const lastTradingDay = getLastTradingDay(dateObj);
+
+      const persistPromises = Array.from(results.entries()).map(async ([ticker, prevClose]) => {
+        try {
+          // Save to DailyRef
+          await prisma.dailyRef.upsert({
+            where: {
+              symbol_date: {
+                symbol: ticker,
+                date: lastTradingDay
+              }
+            },
+            update: {
+              previousClose: prevClose,
+              updatedAt: new Date()
+            },
+            create: {
+              symbol: ticker,
+              date: lastTradingDay,
+              previousClose: prevClose
+            }
+          });
+
+          // Update Ticker.latestPrevClose
+          await prisma.ticker.update({
+            where: { symbol: ticker },
+            data: {
+              latestPrevClose: prevClose,
+              latestPrevCloseDate: lastTradingDay,
+              updatedAt: new Date()
+            }
+          });
+        } catch (error) {
+          logger.warn(`Failed to persist prevClose for ${ticker}:`, error);
+        }
+      });
+
+      await Promise.all(persistPromises);
+      logger.info(`Persisted ${results.size} previous closes to DB`);
+    } catch (error) {
+      logger.error('Error persisting previous closes to DB:', error);
     }
   }
 

@@ -413,27 +413,34 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Batch fetch previousClose pre všetky tickery naraz (paralelne)
+    // On-demand batch fetch previousClose with timeout budget and cap (API-safe)
     const prevCloseBatchMap = new Map<string, number>();
     if (tickersNeedingPrevClose.length > 0) {
-      console.log(`🔄 Batch fetching previousClose for ${tickersNeedingPrevClose.length} tickers...`);
-      const prevClosePromises = tickersNeedingPrevClose.map(async (ticker) => {
-        try {
-          const prevClose = await getPreviousClose(ticker);
-          return { ticker, prevClose };
-        } catch (error) {
-          console.warn(`Failed to fetch previousClose for ${ticker}:`, error);
-          return { ticker, prevClose: 0 };
-        }
-      });
-
-      const prevCloseResults = await Promise.all(prevClosePromises);
-      for (const { ticker, prevClose } of prevCloseResults) {
-        if (prevClose > 0) {
+      const onDemandStartTime = Date.now();
+      console.log(`🔄 On-demand fetching previousClose for ${tickersNeedingPrevClose.length} tickers (max 50, timeout 600ms)...`);
+      
+      try {
+        const { fetchPreviousClosesBatchAndPersist } = await import('@/lib/utils/onDemandPrevClose');
+        const onDemandResults = await fetchPreviousClosesBatchAndPersist(
+          tickersNeedingPrevClose,
+          today,
+          {
+            maxTickers: 50,        // Cap at 50 tickers per request
+            timeoutBudget: 600,     // Max 600ms budget
+            maxConcurrent: 5        // 5 concurrent fetches
+          }
+        );
+        
+        onDemandResults.forEach((prevClose, ticker) => {
           prevCloseBatchMap.set(ticker, prevClose);
-        }
+        });
+        
+        const onDemandDuration = Date.now() - onDemandStartTime;
+        console.log(`✅ On-demand fetched ${prevCloseBatchMap.size} previousClose values in ${onDemandDuration}ms (persisted to DB)`);
+      } catch (error) {
+        console.warn(`⚠️ On-demand prevClose fetch failed:`, error);
+        // Continue without on-demand results (fallback to existing logic)
       }
-      console.log(`✅ Batch fetched ${prevCloseBatchMap.size} previousClose values`);
     }
 
     // 4. Vypočítaj dáta pre každý ticker

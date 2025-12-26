@@ -101,9 +101,39 @@ export async function getStocksList(options: {
       });
     }
 
+    // On-demand prevClose fetch for tickers missing previousClose (API-safe for /api/stocks)
+    const tickersNeedingPrevClose = stocks
+      .filter(s => (s.lastPrice || 0) > 0 && (s.latestPrevClose || 0) === 0)
+      .map(s => s.symbol);
+    
+    const onDemandPrevCloseMap = new Map<string, number>();
+    if (tickersNeedingPrevClose.length > 0) {
+      try {
+        const { fetchPreviousClosesBatchAndPersist } = await import('@/lib/utils/onDemandPrevClose');
+        const today = getDateET();
+        // For /api/stocks, we can be more generous (smaller datasets, 10-50 tickers typical)
+        const onDemandResults = await fetchPreviousClosesBatchAndPersist(
+          tickersNeedingPrevClose,
+          today,
+          {
+            maxTickers: 50,        // Cap at 50 (usually less)
+            timeoutBudget: 800,     // 800ms budget (more generous than heatmap)
+            maxConcurrent: 5
+          }
+        );
+        onDemandResults.forEach((prevClose, ticker) => {
+          onDemandPrevCloseMap.set(ticker, prevClose);
+        });
+        console.log(`✅ On-demand fetched ${onDemandPrevCloseMap.size} prevClose for /api/stocks`);
+      } catch (error) {
+        console.warn(`⚠️ On-demand prevClose fetch failed in stockService:`, error);
+      }
+    }
+
     const results: StockData[] = stocks.map(s => {
       const currentPrice = s.lastPrice || 0;
-      const previousClose = s.latestPrevClose || 0;
+      // Use on-demand prevClose if available, otherwise fallback to DB value
+      const previousClose = onDemandPrevCloseMap.get(s.symbol) || (s.latestPrevClose || 0);
       const sharesOutstanding = s.sharesOutstanding || 0;
       const regularClose = regularCloseBySymbol.get(s.symbol) || 0;
 
