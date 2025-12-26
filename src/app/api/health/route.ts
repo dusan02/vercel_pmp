@@ -1,13 +1,18 @@
 /**
- * Health check endpoint
+ * Health check endpoint (Canary Sanity Check)
  * 
- * Checks:
+ * Aggregates:
  * - Database connection (Prisma)
  * - Redis connection
  * - Worker status (last success timestamp)
  * - Cron status (last success timestamp)
+ * - Worker health (/api/health/worker)
+ * - Redis health (/api/health/redis)
+ * - Freshness metrics (/api/metrics/freshness)
  * 
  * Usage: GET /api/health
+ * 
+ * This is a canary endpoint - one curl = 3 checks
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -187,12 +192,69 @@ export async function GET(request: NextRequest) {
     };
   }
 
+  // 5. Aggregate external health checks (canary sanity check)
+  let workerHealth: any = null;
+  let redisHealth: any = null;
+  let freshnessMetrics: any = null;
+  
+  try {
+    // Fetch worker health (internal call)
+    const workerResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/health/worker`, {
+      headers: { 'Cache-Control': 'no-cache' }
+    });
+    if (workerResponse.ok) {
+      workerHealth = await workerResponse.json();
+    }
+  } catch (error) {
+    console.warn('Failed to fetch worker health:', error);
+  }
+  
+  try {
+    // Fetch Redis health (internal call)
+    const redisResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/health/redis`, {
+      headers: { 'Cache-Control': 'no-cache' }
+    });
+    if (redisResponse.ok) {
+      redisHealth = await redisResponse.json();
+    }
+  } catch (error) {
+    console.warn('Failed to fetch Redis health:', error);
+  }
+  
+  try {
+    // Fetch freshness metrics (internal call)
+    const freshnessResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/metrics/freshness`, {
+      headers: { 'Cache-Control': 'no-cache' }
+    });
+    if (freshnessResponse.ok) {
+      freshnessMetrics = await freshnessResponse.json();
+    }
+  } catch (error) {
+    console.warn('Failed to fetch freshness metrics:', error);
+  }
+  
+  // Determine overall canary status
+  const canaryStatus = (
+    healthStatus.status === 'healthy' &&
+    workerHealth?.status === 'healthy' &&
+    redisHealth?.status === 'healthy' &&
+    freshnessMetrics?.success === true
+  ) ? 'healthy' : 'degraded';
+
   const totalResponseTime = Date.now() - startTime;
-  const statusCode = healthStatus.status === 'healthy' ? 200 : healthStatus.status === 'degraded' ? 200 : 503;
+  const statusCode = canaryStatus === 'healthy' ? 200 : 503;
 
   return NextResponse.json(
     {
       ...healthStatus,
+      canary: {
+        status: canaryStatus,
+        checks: {
+          worker: workerHealth,
+          redis: redisHealth,
+          freshness: freshnessMetrics
+        }
+      },
       responseTime: totalResponseTime,
     },
     {

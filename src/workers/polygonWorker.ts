@@ -358,9 +358,10 @@ async function upsertToDB(
  * CRITICAL: regularClose must be adjusted (same as previousClose)
  * Polygon snapshot day.c is already adjusted, so we use it directly
  */
-async function saveRegularClose(apiKey: string, date: string): Promise<void> {
+async function saveRegularClose(apiKey: string, date: string, runId?: string): Promise<void> {
+  const correlationId = runId || Date.now().toString(36);
   try {
-    console.log('💾 Starting regular close save...');
+    console.log(`💾 [runId:${correlationId}] Starting regular close save...`);
     const tickers = await getUniverse('sp500');
 
     if (tickers.length === 0) {
@@ -368,9 +369,9 @@ async function saveRegularClose(apiKey: string, date: string): Promise<void> {
       return;
     }
 
-    console.log(`📊 Fetching regular close for ${tickers.length} tickers...`);
+    console.log(`📊 [runId:${correlationId}] Fetching regular close for ${tickers.length} tickers...`);
     const snapshots = await fetchPolygonSnapshot(tickers, apiKey);
-    console.log(`✅ Received ${snapshots.length} snapshots`);
+    console.log(`✅ [runId:${correlationId}] Received ${snapshots.length} snapshots`);
 
     // DST-safe date creation
     const dateET = getDateET();
@@ -411,9 +412,9 @@ async function saveRegularClose(apiKey: string, date: string): Promise<void> {
       }
     }
 
-    console.log(`✅ Saved regular close for ${saved}/${snapshots.length} tickers`);
+    console.log(`✅ [runId:${correlationId}] Saved regular close for ${saved}/${snapshots.length} tickers`);
   } catch (error) {
-    console.error('Error in saveRegularClose:', error);
+    console.error(`❌ [runId:${correlationId}] Error in saveRegularClose:`, error);
   }
 }
 
@@ -917,16 +918,18 @@ async function main() {
             });
             
             if (missingCount > 0 || !lastRegularCloseSave) {
-              console.log(`🔄 Saving regular close (retry: ${!!lastRegularCloseSave})...`);
-              await saveRegularClose(apiKey, today);
+              const runId = Date.now().toString(36);
+              console.log(`🔄 [runId:${runId}] Saving regular close (retry: ${!!lastRegularCloseSave})...`);
+              await saveRegularClose(apiKey, today, runId);
               await redisClient.setEx(`regular_close:last_save:${today}`, 3600, now.toString());
             }
           }
         } else {
           // Fallback: save at 16:00 ET if Redis unavailable
           if (hours === 16 && minutes === 0) {
-            console.log('🔄 Saving regular close (Redis unavailable, fallback)...');
-            await saveRegularClose(apiKey, today);
+            const runId = Date.now().toString(36);
+            console.log(`🔄 [runId:${runId}] Saving regular close (Redis unavailable, fallback)...`);
+            await saveRegularClose(apiKey, today, runId);
           }
         }
       }
@@ -1011,10 +1014,15 @@ async function main() {
             return;
           }
 
+          // Generate correlation ID for this run
+          const runId = Date.now().toString(36);
+          
           // Run bulk preload with duration tracking
           const preloadStartTime = Date.now();
           let preloadSuccess = true;
           let preloadError: string | null = null;
+          
+          console.log(`🔄 [runId:${runId}] Starting bulk preload...`);
           
           try {
             await preloadBulkStocks(apiKey);
@@ -1024,10 +1032,10 @@ async function main() {
             // Max runtime alarms (warn at 6 min, error at 10 min)
             if (preloadDurationMin > 10) {
               const errorMsg = `Bulk preload took ${preloadDurationMin.toFixed(1)}min (exceeds 10min threshold) - possible Polygon/Redis/DB slowdown`;
-              console.error(`❌ ${errorMsg}`);
+              console.error(`❌ [runId:${runId}] ${errorMsg}`);
               await redisClient.set('bulk:last_error', errorMsg);
             } else if (preloadDurationMin > 6) {
-              console.warn(`⚠️ Bulk preload took ${preloadDurationMin.toFixed(1)}min (exceeds 6min threshold) - monitoring for slowdown`);
+              console.warn(`⚠️ [runId:${runId}] Bulk preload took ${preloadDurationMin.toFixed(1)}min (exceeds 6min threshold) - monitoring for slowdown`);
             }
             
             // Update last preload timestamp and metrics (no TTL - persistent, not TTL-based gating)
@@ -1038,7 +1046,23 @@ async function main() {
               await redisClient.del('bulk:last_error'); // Clear error on success (unless exceeded 10min)
             }
             
-            console.log(`✅ Bulk preload completed in ${preloadDuration}ms (${preloadDurationMin.toFixed(1)}min)`);
+            // Check for stale bulk preload (alert if age > 10 min during window 07:30-15:55)
+            const etNow = nowET();
+            const et = toET(etNow);
+            const hours = et.hour;
+            const minutes = et.minute;
+            const isPreMarketOrLive = (hours >= 7 && hours < 15) || 
+                                     (hours === 7 && minutes >= 30) ||
+                                     (hours === 15 && minutes < 55);
+            
+            if (isPreMarketOrLive) {
+              const bulkAgeMinutes = Math.floor((now - parseInt(await redisClient.get('bulk:last_success_ts') || '0', 10)) / 60000);
+              if (bulkAgeMinutes > 10) {
+                console.error(`ALERT: [runId:${runId}] Bulk preload stale - last success ${bulkAgeMinutes}min ago (threshold: 10min) during market hours`);
+              }
+            }
+            
+            console.log(`✅ [runId:${runId}] Bulk preload completed in ${preloadDuration}ms (${preloadDurationMin.toFixed(1)}min)`);
           } catch (error) {
             preloadSuccess = false;
             preloadError = error instanceof Error ? error.message : String(error);

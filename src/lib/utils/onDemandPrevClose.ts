@@ -321,6 +321,9 @@ export async function fetchPreviousClosesBatchAndPersist(
     maxConcurrent?: number;
   } = {}
 ): Promise<Map<string, number>> {
+  const runId = Date.now().toString(36);
+  logger.info(`[runId:${runId}] Starting on-demand prevClose batch fetch for ${tickers.length} tickers...`);
+  
   const results = await fetchPreviousClosesBatch(tickers, targetDate, options);
   const today = targetDate || getDateET();
 
@@ -379,9 +382,9 @@ export async function fetchPreviousClosesBatchAndPersist(
       await Promise.all(persistPromises);
       
       if (persistFailedCount > 0) {
-        logger.warn(`Partial persist: ${persistSuccessCount} succeeded, ${persistFailedCount} failed. Errors: ${persistErrors.slice(0, 5).join('; ')}${persistErrors.length > 5 ? '...' : ''}`);
+        logger.warn(`[runId:${runId}] Partial persist: ${persistSuccessCount} succeeded, ${persistFailedCount} failed. Errors: ${persistErrors.slice(0, 5).join('; ')}${persistErrors.length > 5 ? '...' : ''}`);
       } else {
-        logger.info(`Persisted ${persistSuccessCount} previous closes to DB`);
+        logger.info(`[runId:${runId}] Persisted ${persistSuccessCount} previous closes to DB`);
       }
     } catch (error) {
       // Critical error - log but don't throw (cache is still OK)

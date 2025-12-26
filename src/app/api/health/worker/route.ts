@@ -54,7 +54,20 @@ export async function GET(request: NextRequest) {
     const universe = await getUniverse('sp500');
     const metrics = await getFreshnessMetrics(universe);
     
-    // 4. Determine overall status
+    // 4. Check for freshness incident (log-based alert)
+    // Alert if p99 > 10 min during market hours (07:30-16:00 ET)
+    const { nowET, toET } = await import('@/lib/utils/dateET');
+    const etNow = nowET();
+    const et = toET(etNow);
+    const hours = et.hour;
+    const minutes = et.minute;
+    const isMarketHours = (hours >= 7 && hours < 16) || (hours === 7 && minutes >= 30);
+    
+    if (isMarketHours && metrics.agePercentiles && metrics.agePercentiles.p99 > 10) {
+      console.error(`ALERT: Worker freshness incident - p99 age ${metrics.agePercentiles.p99.toFixed(1)}min exceeds 10min threshold during market hours`);
+    }
+    
+    // 5. Determine overall status
     const isWorkerHealthy = workerLastSuccess && workerAgeMinutes !== null && workerAgeMinutes < 10;
     const isBulkHealthy = !bulkLastError && (bulkLastSuccess === null || (bulkAgeMinutes !== null && bulkAgeMinutes < 10));
     const isFreshnessHealthy = metrics.percentage.fresh > 80;
