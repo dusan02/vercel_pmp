@@ -28,9 +28,11 @@ const sectorIndustryMap: Record<string, { sector?: string; industry?: string }> 
   'AVGO': { sector: 'Technology', industry: 'Semiconductors' },
   'QCOM': { sector: 'Technology', industry: 'Semiconductors' },
   'TXN': { sector: 'Technology', industry: 'Semiconductors' },
+  'TSM': { sector: 'Technology', industry: 'Semiconductors' }, // Taiwan Semiconductor Manufacturing Company
   'AMAT': { sector: 'Technology', industry: 'Semiconductor Equipment' },
   'LRCX': { sector: 'Technology', industry: 'Semiconductor Equipment' },
   'KLAC': { sector: 'Technology', industry: 'Semiconductor Equipment' },
+  'ASML': { sector: 'Technology', industry: 'Semiconductor Equipment' }, // ASML Holding
   'ADBE': { sector: 'Technology', industry: 'Software' },
   'CRM': { sector: 'Technology', industry: 'Software' },
   'ORCL': { sector: 'Technology', industry: 'Software' },

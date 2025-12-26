@@ -28,9 +28,11 @@ const coreSectors: { [key: string]: { sector: string; industry: string } } = {
   'QCOM': { sector: 'Technology', industry: 'Semiconductors' },
   'TXN': { sector: 'Technology', industry: 'Semiconductors' },
   'MU': { sector: 'Technology', industry: 'Semiconductors' },
-  'LRCX': { sector: 'Technology', industry: 'Semiconductors' },
+  'TSM': { sector: 'Technology', industry: 'Semiconductors' }, // Taiwan Semiconductor Manufacturing Company
+  'LRCX': { sector: 'Technology', industry: 'Semiconductor Equipment' },
   'ANET': { sector: 'Technology', industry: 'Communication Equipment' },
-  'AMAT': { sector: 'Technology', industry: 'Semiconductors' },
+  'AMAT': { sector: 'Technology', industry: 'Semiconductor Equipment' },
+  'ASML': { sector: 'Technology', industry: 'Semiconductor Equipment' }, // ASML Holding
   'SNPS': { sector: 'Technology', industry: 'Software' },
   'FTNT': { sector: 'Technology', industry: 'Software' },
   'PANW': { sector: 'Technology', industry: 'Software' },

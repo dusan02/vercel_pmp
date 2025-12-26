@@ -48,6 +48,11 @@ async function runSectorIndustryVerification(): Promise<void> {
 
     // Known correct mappings
     const knownCorrectMappings: { [key: string]: { sector: string; industry: string } } = {
+      // Technology - Semiconductors
+      'TSM': { sector: 'Technology', industry: 'Semiconductors' }, // Taiwan Semiconductor Manufacturing Company
+      'ASML': { sector: 'Technology', industry: 'Semiconductor Equipment' }, // ASML Holding
+
+      // Healthcare - Drug Manufacturers
       'NVS': { sector: 'Healthcare', industry: 'Drug Manufacturers' },
       'AZN': { sector: 'Healthcare', industry: 'Drug Manufacturers' },
       'GSK': { sector: 'Healthcare', industry: 'Drug Manufacturers' },

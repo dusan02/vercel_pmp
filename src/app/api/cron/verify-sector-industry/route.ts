@@ -4,6 +4,10 @@ import { validateSectorIndustry, normalizeIndustry } from '@/lib/utils/sectorInd
 
 // Known correct mappings for major pharmaceutical and healthcare companies
 const knownCorrectMappings: { [key: string]: { sector: string; industry: string } } = {
+  // Technology - Semiconductors
+  'TSM': { sector: 'Technology', industry: 'Semiconductors' }, // Taiwan Semiconductor Manufacturing Company
+  'ASML': { sector: 'Technology', industry: 'Semiconductor Equipment' }, // ASML Holding
+
   // Healthcare - Drug Manufacturers
   'NVS': { sector: 'Healthcare', industry: 'Drug Manufacturers - General' }, // Novartis
   'AZN': { sector: 'Healthcare', industry: 'Drug Manufacturers - General' }, // AstraZeneca
