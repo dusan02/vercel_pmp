@@ -4,15 +4,42 @@ import Google from "next-auth/providers/google"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from "@/lib/db/prisma"
 
+// Validate Google OAuth credentials
+const googleClientId = process.env.GOOGLE_CLIENT_ID?.trim();
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
+const authSecret = process.env.AUTH_SECRET?.trim() || process.env.NEXTAUTH_SECRET?.trim();
+const nextAuthUrl = process.env.NEXTAUTH_URL?.trim();
+
+// Validate required environment variables
+const isConfigValid = googleClientId && 
+                     googleClientSecret && 
+                     authSecret && 
+                     nextAuthUrl;
+
+if (!isConfigValid) {
+    console.error('⚠️ NextAuth configuration is incomplete!');
+    console.error('GOOGLE_CLIENT_ID:', googleClientId ? '✅ Set' : '❌ Missing');
+    console.error('GOOGLE_CLIENT_SECRET:', googleClientSecret ? '✅ Set' : '❌ Missing');
+    console.error('AUTH_SECRET:', authSecret ? '✅ Set' : '❌ Missing');
+    console.error('NEXTAUTH_URL:', nextAuthUrl ? `✅ Set (${nextAuthUrl})` : '❌ Missing');
+    console.error('Please set all required environment variables.');
+}
+
+// Only initialize Google provider if credentials are valid
+const providers = [];
+if (googleClientId && googleClientSecret) {
+    providers.push(
+        Google({
+            clientId: googleClientId,
+            clientSecret: googleClientSecret,
+        })
+    );
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
     adapter: PrismaAdapter(prisma),
-    providers: [
-        Google({
-            clientId: process.env.GOOGLE_CLIENT_ID || "",
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-        }),
-    ],
-    secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "fallback-secret-key-change-in-production",
+    providers: providers.length > 0 ? providers : [],
+    secret: authSecret || "fallback-secret-key-change-in-production",
     trustHost: true, // Required for Vercel/production
     pages: {
         signIn: '/',
