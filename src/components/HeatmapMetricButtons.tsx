@@ -56,17 +56,17 @@ export function HeatmapMetricButtons({
   const toggleActiveBg = 'bg-blue-600';
 
   return (
-    <div className={`inline-flex items-center gap-3 ${className}`}>
+    <div className={`inline-flex items-center gap-2 ${className}`}>
       {/* Left label */}
       <span
-        className={`text-sm font-semibold transition-colors duration-200 whitespace-nowrap ${
-          isPercent ? `${activeTextColor} font-bold` : `${inactiveTextColor} font-medium`
+        className={`text-xs font-medium transition-colors duration-200 whitespace-nowrap ${
+          isPercent ? `${activeTextColor} font-semibold` : `${inactiveTextColor}`
         }`}
       >
         % Change
       </span>
       
-      {/* Toggle switch - Standard iOS/Android style (less circular, more rectangular) */}
+      {/* Toggle switch - Smaller, more compact design */}
       <button
         onClick={handleToggle}
         onKeyDown={(e) => {
@@ -78,10 +78,10 @@ export function HeatmapMetricButtons({
         }}
         className={`
           relative inline-flex items-center
-          h-7 w-12
-          rounded-lg
+          h-5 w-9
+          rounded-md
           transition-colors duration-200 ease-in-out
-          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+          focus:outline-none focus:ring-1 focus:ring-blue-500 focus:ring-offset-1
           ${isDark ? 'focus:ring-offset-black' : 'focus:ring-offset-white'}
           ${isPercent 
             ? toggleInactiveBg
@@ -96,31 +96,31 @@ export function HeatmapMetricButtons({
         aria-checked={!isPercent}
         tabIndex={0}
       >
-        {/* Sliding ball - more rectangular/rounded square style */}
+        {/* Sliding ball - smaller, more compact */}
         <span
           className={`
             absolute
             top-0.5
             left-0.5
-            w-6 h-6
+            w-4 h-4
             bg-white
-            rounded-md
+            rounded-sm
             shadow-sm
             transition-all duration-200 ease-in-out
-            ${isPercent ? 'translate-x-0' : 'translate-x-5'}
+            ${isPercent ? 'translate-x-0' : 'translate-x-4'}
             z-10
           `}
           style={{ 
             backgroundColor: '#ffffff',
-            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
+            boxShadow: '0 1px 2px rgba(0, 0, 0, 0.15)'
           }}
         />
       </button>
       
       {/* Right label */}
       <span
-        className={`text-sm font-semibold transition-colors duration-200 whitespace-nowrap ${
-          !isPercent ? `${activeTextColor} font-bold` : `${inactiveTextColor} font-medium`
+        className={`text-xs font-medium transition-colors duration-200 whitespace-nowrap ${
+          !isPercent ? `${activeTextColor} font-semibold` : `${inactiveTextColor}`
         }`}
       >
         Mcap Change
