@@ -62,6 +62,7 @@ module.exports = {
         MODE: "snapshot",
         ENABLE_WEBSOCKET: "true",
         DATABASE_URL: envVars.DATABASE_URL || process.env.DATABASE_URL,
+        POLYGON_API_KEY: envVars.POLYGON_API_KEY || process.env.POLYGON_API_KEY,
       },
       error_file: "/var/log/pm2/polygon-worker-error.log",
       out_file: "/var/log/pm2/polygon-worker-out.log",
@@ -81,6 +82,7 @@ module.exports = {
       env_production: {
         NODE_ENV: "production",
         DATABASE_URL: envVars.DATABASE_URL || process.env.DATABASE_URL,
+        POLYGON_API_KEY: envVars.POLYGON_API_KEY || process.env.POLYGON_API_KEY,
       },
       error_file: "/var/log/pm2/bulk-preloader-error.log",
       out_file: "/var/log/pm2/bulk-preloader-out.log",
