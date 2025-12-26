@@ -62,7 +62,7 @@ export default function HeatmapPage() {
         <div className="flex items-center gap-4">
           <div>
             <h1 className="text-xl font-bold mb-0 leading-none">
-              Heatmap<span className="text-green-500">.today</span>
+              Heatmap<span className="text-green-500">.{metric === 'percent' ? '% Change' : 'Mcap Change'}</span>
             </h1>
             <p className="text-[9px] text-gray-400 hidden sm:block">
               Interactive visualization
