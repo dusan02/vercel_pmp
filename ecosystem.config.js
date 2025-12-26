@@ -38,6 +38,12 @@ module.exports = {
         PORT: 3000,
         ENABLE_WEBSOCKET: "true",
         DATABASE_URL: envVars.DATABASE_URL || process.env.DATABASE_URL,
+        // Google OAuth
+        GOOGLE_CLIENT_ID: envVars.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID,
+        GOOGLE_CLIENT_SECRET: envVars.GOOGLE_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET,
+        // NextAuth
+        AUTH_SECRET: envVars.AUTH_SECRET || envVars.NEXTAUTH_SECRET || process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
+        NEXTAUTH_URL: envVars.NEXTAUTH_URL || process.env.NEXTAUTH_URL || "https://premarketprice.com",
       },
       error_file: "/var/log/pm2/premarketprice-error.log",
       out_file: "/var/log/pm2/premarketprice-out.log",
