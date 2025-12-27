@@ -6,6 +6,8 @@ import ErrorBoundaryWrapper from '@/components/ErrorBoundaryWrapper'
 import ScrollToTopButton from '@/components/ScrollToTopButton'
 import { Providers } from './providers'
 import { AuthProvider } from '@/components/AuthProvider'
+import { GAListener } from '@/components/GAListener'
+import { GA_ID } from '@/lib/ga'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -240,7 +242,7 @@ export default function RootLayout({
       <body className={`${inter.variable} ${spaceGrotesk.variable} ${inter.className}`}>
         {/* Google Analytics 4 */}
         <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-VQ1P6MDRRW"
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
           strategy="afterInteractive"
         />
         <Script id="google-analytics" strategy="afterInteractive">
@@ -248,11 +250,15 @@ export default function RootLayout({
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', 'G-VQ1P6MDRRW', {
-              anonymize_ip: true
+            const debugMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('debug');
+            gtag('config', '${GA_ID}', {
+              send_page_view: false,
+              anonymize_ip: true,
+              debug_mode: debugMode
             });
           `}
         </Script>
+        <GAListener />
         <Providers>
           <AuthProvider>
             {/* Structured Data - Organization */}

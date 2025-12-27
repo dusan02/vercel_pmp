@@ -111,6 +111,14 @@ export default function EarningsCalendar() {
       
     } catch (err) {
       console.error('❌ Earnings fetch error:', err);
+      
+      // Track API error
+      if (typeof window !== 'undefined') {
+        import('@/lib/ga-api-errors').then(({ trackApiError }) => {
+          const status = err instanceof Error && 'status' in err ? (err as any).status : 500;
+          trackApiError('/api/earnings-calendar', status, err instanceof Error ? err.message : String(err));
+        });
+      }
       // Handle specific error types
       if (err instanceof Error) {
         if (err.name === 'AbortError') {

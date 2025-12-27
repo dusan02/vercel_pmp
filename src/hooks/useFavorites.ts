@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useEffect } from 'react';
 import { useUserPreferences } from './useUserPreferences';
 import { useSession } from 'next-auth/react';
+import { event } from '@/lib/ga';
 
 export function useFavorites() {
   const { data: session } = useSession();
@@ -118,6 +119,15 @@ export function useFavorites() {
     }
 
     const isFav = preferences.favorites.includes(ticker);
+    const enabled = !isFav;
+    
+    // Track favorite toggle event
+    event('favorite_toggle', {
+      ticker,
+      enabled,
+      source: 'favorites_section'
+    });
+
     if (isFav) {
       return removeFavorite(ticker);
     } else {

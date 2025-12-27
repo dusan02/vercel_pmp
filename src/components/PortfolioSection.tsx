@@ -11,6 +11,7 @@ import { getCompanyName } from '@/lib/companyNames';
 import { StockData } from '@/lib/types';
 import { PortfolioQuantityInput } from './PortfolioQuantityInput';
 import { formatCurrencyCompact } from '@/lib/utils/format';
+import { event } from '@/lib/ga';
 import {
   BUTTON_PRIMARY_MD,
   BUTTON_ICON,
@@ -80,6 +81,12 @@ export function PortfolioSection({
   };
 
   const handleAddStock = (stock: StockData) => {
+    // Track ticker click event
+    event('ticker_click', {
+      ticker: stock.ticker,
+      source: 'portfolio_search'
+    });
+    
     onAddStock(stock.ticker, 1);
     setPortfolioSearchTerm('');
     setPortfolioSearchResults([]);

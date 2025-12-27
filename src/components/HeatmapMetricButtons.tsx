@@ -7,6 +7,7 @@
 
 import React, { useState, useEffect } from 'react';
 import type { HeatmapMetric } from './MarketHeatmap';
+import { event } from '@/lib/ga';
 
 interface HeatmapMetricButtonsProps {
   metric: HeatmapMetric;
@@ -44,7 +45,14 @@ export function HeatmapMetricButtons({
       e.stopPropagation();
       e.preventDefault();
     }
-    onMetricChange(isPercent ? 'mcap' : 'percent');
+    const newMetric = isPercent ? 'mcap' : 'percent';
+    onMetricChange(newMetric);
+    
+    // Track heatmap metric change event
+    event('heatmap_change', {
+      metric: newMetric,
+      timeframe: 'day' // Heatmap page uses fixed 'day' timeframe
+    });
   };
 
   // Text colors based on variant - improved contrast

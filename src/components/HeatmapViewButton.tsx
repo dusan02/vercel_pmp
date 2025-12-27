@@ -7,6 +7,7 @@
 
 import React, { useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { event } from '@/lib/ga';
 
 interface HeatmapViewButtonProps {
   className?: string;
@@ -16,6 +17,8 @@ export function HeatmapViewButton({ className = '' }: HeatmapViewButtonProps) {
   const router = useRouter();
 
   const handleFullscreen = useCallback(() => {
+    // Track fullscreen toggle event
+    event('heatmap_fullscreen_toggle', { enabled: true });
     // Navigate to full heatmap page
     router.push('/heatmap');
   }, [router]);

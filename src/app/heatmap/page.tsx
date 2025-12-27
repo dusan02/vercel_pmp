@@ -7,6 +7,7 @@ import { CompanyNode, HeatmapLegend } from '@/components/MarketHeatmap';
 import { useHeatmapMetric } from '@/hooks/useHeatmapMetric';
 import { HeatmapMetricButtons } from '@/components/HeatmapMetricButtons';
 import { logger } from '@/lib/utils/logger';
+import { event } from '@/lib/ga';
 
 /**
  * Stránka pre heatmapu
@@ -21,6 +22,7 @@ export default function HeatmapPage() {
 
   // Handler pre exit fullscreen (návrat na homepage)
   const handleExitFullscreen = useCallback(() => {
+    event('heatmap_fullscreen_toggle', { enabled: false });
     router.push('/');
   }, [router]);
 
@@ -50,6 +52,12 @@ export default function HeatmapPage() {
   const handleTileClick = (company: CompanyNode) => {
     // Jednoklik - nič nerobíme (iba tooltip)
     logger.debug('Heatmap tile clicked', { symbol: company.symbol });
+    
+    // Track ticker click event
+    event('ticker_click', {
+      ticker: company.symbol,
+      source: 'heatmap'
+    });
   };
 
   return (

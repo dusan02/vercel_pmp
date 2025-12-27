@@ -244,6 +244,14 @@ export function useHeatmapData({
       } else {
         // Other errors (API errors, etc.)
         console.error('❌ Heatmap load error:', err);
+        
+        // Track API error
+        if (typeof window !== 'undefined') {
+          import('@/lib/ga-api-errors').then(({ trackApiError }) => {
+            trackApiError(apiEndpoint, (err as any).status || 500, (err as any).message);
+          });
+        }
+        
         if (!hasData) {
           setError(err.message || 'Failed to load heatmap data');
         }
