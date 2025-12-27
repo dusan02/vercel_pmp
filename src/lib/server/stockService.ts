@@ -233,6 +233,10 @@ export async function getStocksList(options: {
       else if (marketCap > 0 && percentChange !== 0) {
         marketCapDiff = computeCapDiffFromMcapPct(marketCap, percentChange);
         capDiffMethod = "mcap_pct";
+        // Debug log pre veľké spoločnosti
+        if (marketCap > 1000) {
+          console.log(`📊 ${s.symbol}: marketCapDiff=${marketCapDiff}B (marketCap=${marketCap}B, percentChange=${percentChange}%, method=${capDiffMethod})`);
+        }
       }
       // C) Fallback z DB
       else if (s.lastMarketCapDiff && s.lastMarketCapDiff !== 0) {
@@ -262,9 +266,17 @@ export async function getStocksList(options: {
             lastMarketCapDiff: marketCapDiff,
             lastMarketCap: marketCap
           }
+        }).then(() => {
+          // Debug log pre veľké spoločnosti
+          if (marketCap > 1000 && capDiffMethod === "mcap_pct") {
+            console.log(`✅ ${s.symbol}: Persisted marketCapDiff=${marketCapDiff}B to DB`);
+          }
         }).catch(err => {
           console.warn(`⚠️ Failed to persist marketCapDiff for ${s.symbol}:`, err);
         });
+      } else if (marketCap > 1000 && sharesOutstanding === 0) {
+        // Debug: prečo sa nepočíta pre veľké spoločnosti
+        console.log(`⚠️ ${s.symbol}: marketCapDiff=0 (marketCap=${marketCap}B, percentChange=${percentChange}%, sharesOutstanding=${sharesOutstanding}, method=${capDiffMethod})`);
       }
 
       return {
