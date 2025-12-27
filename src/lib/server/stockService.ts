@@ -246,11 +246,16 @@ export async function getStocksList(options: {
         if (calculatedPct !== 0) {
           marketCapDiff = computeCapDiffFromMcapPct(marketCap, calculatedPct);
           capDiffMethod = "mcap_pct";
-          // Debug log
+          // Debug log pre veľké spoločnosti
           if (marketCap > 1000) {
-            console.log(`📊 ${s.symbol}: marketCapDiff=${marketCapDiff}B (marketCap=${marketCap}B, calculatedPct=${calculatedPct}%, method=${capDiffMethod})`);
+            console.log(`📊 ${s.symbol}: marketCapDiff=${marketCapDiff}B (marketCap=${marketCap}B, calculatedPct=${calculatedPct}%, method=${capDiffMethod}, price=${currentPrice}, prevClose=${previousClose})`);
           }
+        } else if (marketCap > 1000) {
+          console.log(`⚠️ ${s.symbol}: calculatedPct=0 (price=${currentPrice}, prevClose=${previousClose})`);
         }
+      } else if (marketCap > 1000 && sharesOutstanding === 0) {
+        // Debug: prečo sa nepočíta pre veľké spoločnosti
+        console.log(`⚠️ ${s.symbol}: marketCapDiff=0 (marketCap=${marketCap}B, price=${currentPrice}, prevClose=${previousClose}, shares=${sharesOutstanding}, pct.changePct=${pct.changePct}, pct.ref.price=${pct.reference.price})`);
       }
       // C) Fallback z DB
       else if (s.lastMarketCapDiff && s.lastMarketCapDiff !== 0) {
