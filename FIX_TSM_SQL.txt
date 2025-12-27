@@ -1,0 +1,24 @@
+cd /var/www/premarketprice && \
+sqlite3 prisma/data/premarket.db <<'EOF'
+-- Fix TSM sector/industry (INSERT OR REPLACE - creates if doesn't exist, updates if exists)
+INSERT OR REPLACE INTO "Ticker" (
+  "symbol",
+  "name",
+  "sector",
+  "industry",
+  "updatedAt"
+) VALUES (
+  'TSM',
+  'Taiwan Semiconductor Manufacturing Company',
+  'Technology',
+  'Semiconductors',
+  datetime('now')
+);
+
+-- Verify the update
+SELECT symbol, name, sector, industry, updatedAt 
+FROM "Ticker" 
+WHERE symbol = 'TSM';
+EOF
+echo "✅ TSM sector/industry fixed!"
+
