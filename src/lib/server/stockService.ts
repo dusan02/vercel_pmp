@@ -213,6 +213,11 @@ export async function getStocksList(options: {
         ? computeMarketCap(currentPrice, sharesOutstanding)
         : (s.lastMarketCap || 0);
 
+      // DEBUG: Log pre veľké spoločnosti PRED výpočtom marketCapDiff
+      if (s.lastMarketCap && s.lastMarketCap > 1000) {
+        console.log(`🔍 ${s.symbol}: PRE-CALC - marketCap=${marketCap}B (from DB: ${s.lastMarketCap}B), price=${currentPrice}, prevClose=${previousClose}, shares=${sharesOutstanding} (type: ${typeof sharesOutstanding}), pct.changePct=${pct.changePct}, pct.ref.price=${pct.reference.price}, pct.ref.used=${pct.reference.used}`);
+      }
+
       // VŽDY počítať marketCapDiff z aktuálnych hodnôt pre konzistentnosť
       // Metóda A (highest confidence): price + prevClose + shares
       // Metóda B (medium): marketCap + percentChange (použijeme dynamicky vypočítaný pct.changePct)
