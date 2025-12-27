@@ -1,0 +1,16 @@
+cd /var/www/premarketprice && \
+echo "=== 1. TEST API - Explicit tickers + offset (should ignore offset) ===" && \
+curl -s "http://localhost:3000/api/stocks?tickers=NVDA,GOOG,MSFT&offset=500&limit=10" | jq -r '.count, .data[].ticker' 2>/dev/null || curl -s "http://localhost:3000/api/stocks?tickers=NVDA,GOOG,MSFT&offset=500&limit=10" | head -10 && \
+echo "" && \
+echo "=== 2. TEST API - MarketCapDiff values ===" && \
+curl -s "http://localhost:3000/api/stocks?tickers=NVDA,GOOG,MSFT" | jq -r '.data[] | "\(.ticker): marketCapDiff=\(.marketCapDiff), marketCap=\(.marketCap)"' 2>/dev/null || echo "jq not available" && \
+echo "" && \
+echo "=== 3. CHECK LOGS - Explicit tickers mode ===" && \
+pm2 logs premarketprice --lines 30 --nostream 2>&1 | grep -E "(Explicit tickers mode|ignoring offset)" | tail -2 || echo "⚠️ No explicit tickers mode log" && \
+echo "" && \
+echo "=== 4. CHECK LOGS - Recent activity ===" && \
+pm2 logs premarketprice --lines 20 --nostream 2>&1 | tail -10 && \
+echo "" && \
+echo "=== 5. PM2 STATUS ===" && \
+pm2 list | grep premarketprice
+
