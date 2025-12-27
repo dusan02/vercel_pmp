@@ -177,6 +177,9 @@ export async function getStocksList(options: {
       }
     }
 
+    // Collect DB update promises to ensure they complete before response
+    const dbUpdates: Promise<any>[] = [];
+    
     const results: StockData[] = stocks.map(s => {
       const currentPrice = s.lastPrice || 0;
       // Use on-demand prevClose if available, otherwise fallback to DB value
@@ -285,9 +288,9 @@ export async function getStocksList(options: {
       }
 
       // Persist calculated marketCapDiff to DB (vždy, ak máme hodnotu)
-      // Toto zabezpečuje, že hodnota je dostupná pre budúce požiadavky
+      // Collect promises to await later (ensures DB writes complete before response)
       if (marketCapDiff !== 0) {
-        prisma.ticker.update({
+        const updatePromise = prisma.ticker.update({
           where: { symbol: s.symbol },
           data: { 
             lastMarketCapDiff: marketCapDiff,
@@ -301,6 +304,8 @@ export async function getStocksList(options: {
         }).catch(err => {
           console.warn(`⚠️ Failed to persist marketCapDiff for ${s.symbol}:`, err);
         });
+        
+        dbUpdates.push(updatePromise);
       } else if (marketCap > 1000 && sharesOutstanding === 0) {
         // Debug: prečo sa nepočíta pre veľké spoločnosti
         console.log(`⚠️ ${s.symbol}: marketCapDiff=0 (marketCap=${marketCap}B, percentChange=${percentChange}%, sharesOutstanding=${sharesOutstanding}, method=${capDiffMethod})`);
@@ -324,6 +329,15 @@ export async function getStocksList(options: {
         isStale
       };
     });
+
+    // Wait for all DB updates to complete (only for small ticker lists to avoid blocking)
+    // For getAll=true with 500+ tickers, we skip this to avoid long response times
+    if (dbUpdates.length > 0 && (!tickers || tickers.length <= 50)) {
+      await Promise.allSettled(dbUpdates);
+      if (tickers && tickers.length > 0) {
+        console.log(`✅ Completed ${dbUpdates.length} DB updates for marketCapDiff`);
+      }
+    }
 
     // Fallback for missing tickers (e.g. indices SPY, QQQ which might not be in DB during dev)
     if (tickers && tickers.length > 0) {
