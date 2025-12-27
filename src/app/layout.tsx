@@ -114,7 +114,7 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: '/favicon.svg?v=4', type: 'image/svg+xml' },
-      { url: '/favicon.ico?v=4', sizes: 'any' },
+      // favicon.ico removed - using SVG only to avoid 404 errors
     ],
     apple: [
       { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
@@ -166,10 +166,8 @@ export default function RootLayout({
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon.png" />
 
-        {/* Favicons - SVG first for modern browsers, ICO as fallback */}
+        {/* Favicons - SVG only (modern browsers support SVG favicons) */}
         <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4" />
-        <link rel="alternate icon" href="/favicon.ico?v=4" />
-        <link rel="shortcut icon" href="/favicon.ico?v=4" />
 
         {/* Resource Hints - Preconnect to external APIs */}
         <link rel="preconnect" href="https://api.polygon.io" crossOrigin="anonymous" />
