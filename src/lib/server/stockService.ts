@@ -62,10 +62,13 @@ export async function getStocksList(options: {
       ? undefined  // No limit when specific tickers are requested
       : (limit && limit > 0 ? limit : undefined);  // Apply limit only when fetching all tickers
 
+    // Only apply offset when fetching all tickers (not when specific tickers are requested)
+    const effectiveOffset = (tickers && tickers.length > 0) ? undefined : offset;
+
     const stocks = await prisma.ticker.findMany({
       where,
       ...(effectiveLimit ? { take: effectiveLimit } : {}),
-      skip: offset,
+      ...(effectiveOffset !== undefined ? { skip: effectiveOffset } : {}),
       orderBy: {
         [dbSortColumn]: order
       },
@@ -159,7 +162,6 @@ export async function getStocksList(options: {
       try {
         // Fetch shares in parallel (with limit to avoid rate limits)
         const maxConcurrent = 5;
-        const sharesPromises: Promise<void>[] = [];
         
         for (let i = 0; i < tickersNeedingShares.length; i += maxConcurrent) {
           const batch = tickersNeedingShares.slice(i, i + maxConcurrent);
@@ -180,7 +182,6 @@ export async function getStocksList(options: {
               console.warn(`⚠️ Failed to fetch sharesOutstanding for ${ticker}:`, error);
             }
           });
-          sharesPromises.push(...batchPromises);
           // Wait for batch to complete before starting next batch
           await Promise.all(batchPromises);
         }
