@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db/prisma';
-import { computeMarketCap, computeMarketCapDiff, computePercentChange } from '@/lib/utils/marketCapUtils';
+import { computeMarketCap, computeMarketCapDiff, computePercentChange, getSharesOutstanding } from '@/lib/utils/marketCapUtils';
 import { detectSession } from '@/lib/utils/timeUtils';
 import { nowET, getDateET, createETDate } from '@/lib/utils/dateET';
 import { getPricingState } from '@/lib/utils/pricingStateMachine';
@@ -130,11 +130,59 @@ export async function getStocksList(options: {
       }
     }
 
+    // On-demand sharesOutstanding fetch for tickers missing shares (needed for marketCapDiff calculation)
+    const tickersNeedingShares = stocks
+      .filter(s => {
+        const hasPrice = (s.lastPrice || 0) > 0;
+        const hasPrevClose = (onDemandPrevCloseMap.get(s.symbol) || s.latestPrevClose || 0) > 0;
+        const missingShares = !s.sharesOutstanding || s.sharesOutstanding === 0;
+        return hasPrice && hasPrevClose && missingShares;
+      })
+      .map(s => s.symbol);
+    
+    const onDemandSharesMap = new Map<string, number>();
+    if (tickersNeedingShares.length > 0) {
+      try {
+        // Fetch shares in parallel (with limit to avoid rate limits)
+        const maxConcurrent = 5;
+        const sharesPromises: Promise<void>[] = [];
+        
+        for (let i = 0; i < tickersNeedingShares.length; i += maxConcurrent) {
+          const batch = tickersNeedingShares.slice(i, i + maxConcurrent);
+          const batchPromises = batch.map(async (ticker) => {
+            try {
+              const shares = await getSharesOutstanding(ticker);
+              if (shares > 0) {
+                onDemandSharesMap.set(ticker, shares);
+                // Persist to DB for future use (async, don't wait)
+                prisma.ticker.update({
+                  where: { symbol: ticker },
+                  data: { sharesOutstanding: shares }
+                }).catch(err => {
+                  console.warn(`⚠️ Failed to persist sharesOutstanding for ${ticker}:`, err);
+                });
+              }
+            } catch (error) {
+              console.warn(`⚠️ Failed to fetch sharesOutstanding for ${ticker}:`, error);
+            }
+          });
+          sharesPromises.push(...batchPromises);
+          // Wait for batch to complete before starting next batch
+          await Promise.all(batchPromises);
+        }
+        
+        console.log(`✅ On-demand fetched ${onDemandSharesMap.size} sharesOutstanding for /api/stocks`);
+      } catch (error) {
+        console.warn(`⚠️ On-demand sharesOutstanding fetch failed in stockService:`, error);
+      }
+    }
+
     const results: StockData[] = stocks.map(s => {
       const currentPrice = s.lastPrice || 0;
       // Use on-demand prevClose if available, otherwise fallback to DB value
       const previousClose = onDemandPrevCloseMap.get(s.symbol) || (s.latestPrevClose || 0);
-      const sharesOutstanding = s.sharesOutstanding || 0;
+      // Use on-demand sharesOutstanding if available, otherwise fallback to DB value
+      const sharesOutstanding = onDemandSharesMap.get(s.symbol) || (s.sharesOutstanding || 0);
       const regularClose = regularCloseBySymbol.get(s.symbol) || 0;
 
       const lastTs = s.lastPriceUpdated || s.updatedAt;
