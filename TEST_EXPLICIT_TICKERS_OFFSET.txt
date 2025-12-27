@@ -1,0 +1,25 @@
+cd /var/www/premarketprice && \
+echo "=== TEST: Explicit tickers mode ignores offset/limit ===" && \
+echo "" && \
+echo "=== 1. Request with explicit tickers + offset=500 + limit=10 ===" && \
+curl -s "http://localhost:3000/api/stocks?tickers=NVDA,GOOG,MSFT&offset=500&limit=10" | jq -r '.count, .data[].ticker' 2>/dev/null || curl -s "http://localhost:3000/api/stocks?tickers=NVDA,GOOG,MSFT&offset=500&limit=10" | head -50 && \
+echo "" && \
+echo "=== 2. Check PM2 logs for 'Explicit tickers mode' message ===" && \
+pm2 logs premarketprice --lines 50 --nostream 2>&1 | grep -E "(Explicit tickers mode|ignoring offset|ignoring limit)" | tail -5 && \
+echo "" && \
+echo "=== 3. Verify: Should return exactly 3 tickers (NVDA, GOOG, MSFT) ===" && \
+RESULT=$(curl -s "http://localhost:3000/api/stocks?tickers=NVDA,GOOG,MSFT&offset=500&limit=10" | jq -r '.data | length' 2>/dev/null || echo "0") && \
+if [ "$RESULT" = "3" ]; then \
+  echo "✅ PASS: Returned exactly 3 tickers (offset/limit ignored)"; \
+else \
+  echo "❌ FAIL: Expected 3 tickers, got $RESULT"; \
+fi && \
+echo "" && \
+echo "=== 4. Verify: All requested tickers are present ===" && \
+TICKERS=$(curl -s "http://localhost:3000/api/stocks?tickers=NVDA,GOOG,MSFT&offset=500&limit=10" | jq -r '.data[].ticker' 2>/dev/null | sort | tr '\n' ',') && \
+if echo "$TICKERS" | grep -q "GOOG" && echo "$TICKERS" | grep -q "MSFT" && echo "$TICKERS" | grep -q "NVDA"; then \
+  echo "✅ PASS: All requested tickers present: $TICKERS"; \
+else \
+  echo "❌ FAIL: Missing tickers. Got: $TICKERS"; \
+fi
+

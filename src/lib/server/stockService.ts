@@ -64,6 +64,11 @@ export async function getStocksList(options: {
 
     // Only apply offset when fetching all tickers (not when specific tickers are requested)
     const effectiveOffset = (tickers && tickers.length > 0) ? undefined : offset;
+    
+    // Guard log: explicit tickers mode ignores offset/limit
+    if (tickers && tickers.length > 0 && (offset !== 0 || (limit && limit > 0))) {
+      console.log(`🔍 Explicit tickers mode: ignoring offset=${offset} and limit=${limit}, returning all ${tickers.length} requested tickers`);
+    }
 
     const stocks = await prisma.ticker.findMany({
       where,
@@ -148,11 +153,18 @@ export async function getStocksList(options: {
     }
 
     // On-demand sharesOutstanding fetch for tickers missing shares (needed for marketCapDiff calculation)
+    // Request-scoped memoization: track in-flight promises to avoid duplicate API calls
+    const sharesFetchPromises = new Map<string, Promise<number>>();
+    const sharesSourceMap = new Map<string, 'db' | 'polygon' | 'fallback' | 'missing'>(); // Guard log tracking
+    
     const tickersNeedingShares = stocks
       .filter(s => {
         const hasPrice = (s.lastPrice || 0) > 0;
         const hasPrevClose = (onDemandPrevCloseMap.get(s.symbol) || s.latestPrevClose || 0) > 0;
         const missingShares = !s.sharesOutstanding || s.sharesOutstanding === 0;
+        if (!missingShares) {
+          sharesSourceMap.set(s.symbol, 'db'); // Track source for guard logs
+        }
         return hasPrice && hasPrevClose && missingShares;
       })
       .map(s => s.symbol);
@@ -166,27 +178,42 @@ export async function getStocksList(options: {
         for (let i = 0; i < tickersNeedingShares.length; i += maxConcurrent) {
           const batch = tickersNeedingShares.slice(i, i + maxConcurrent);
           const batchPromises = batch.map(async (ticker) => {
-            try {
-              const shares = await getSharesOutstanding(ticker);
-              if (shares > 0) {
-                onDemandSharesMap.set(ticker, shares);
-                // Persist to DB for future use (async, don't wait)
-                prisma.ticker.update({
-                  where: { symbol: ticker },
-                  data: { sharesOutstanding: shares }
-                }).catch(err => {
-                  console.warn(`⚠️ Failed to persist sharesOutstanding for ${ticker}:`, err);
-                });
-              }
-            } catch (error) {
-              console.warn(`⚠️ Failed to fetch sharesOutstanding for ${ticker}:`, error);
+            // Request-scoped memoization: reuse in-flight promise if already fetching
+            if (!sharesFetchPromises.has(ticker)) {
+              sharesFetchPromises.set(ticker, (async () => {
+                try {
+                  const shares = await getSharesOutstanding(ticker);
+                  if (shares > 0) {
+                    sharesSourceMap.set(ticker, 'polygon');
+                    onDemandSharesMap.set(ticker, shares);
+                    // Persist to DB for future use (async, don't wait)
+                    prisma.ticker.update({
+                      where: { symbol: ticker },
+                      data: { sharesOutstanding: shares }
+                    }).catch(err => {
+                      console.warn(`⚠️ Failed to persist sharesOutstanding for ${ticker}:`, err);
+                    });
+                    return shares;
+                  } else {
+                    sharesSourceMap.set(ticker, 'missing');
+                    return 0;
+                  }
+                } catch (error) {
+                  console.warn(`⚠️ Failed to fetch sharesOutstanding for ${ticker}:`, error);
+                  sharesSourceMap.set(ticker, 'fallback');
+                  return 0;
+                }
+              })());
             }
+            // Wait for existing promise (prevents duplicate API calls)
+            const shares = await sharesFetchPromises.get(ticker)!;
+            return shares;
           });
           // Wait for batch to complete before starting next batch
           await Promise.all(batchPromises);
         }
         
-        console.log(`✅ On-demand fetched ${onDemandSharesMap.size} sharesOutstanding for /api/stocks`);
+        console.log(`✅ On-demand fetched ${onDemandSharesMap.size} sharesOutstanding for /api/stocks (sources: ${Array.from(sharesSourceMap.values()).filter(s => s !== 'db').join(', ') || 'none'})`);
       } catch (error) {
         console.warn(`⚠️ On-demand sharesOutstanding fetch failed in stockService:`, error);
       }
@@ -257,12 +284,15 @@ export async function getStocksList(options: {
         console.log(`🔍 ${s.symbol}: START - marketCap=${marketCap}B, price=${currentPrice}, prevClose=${previousClose}, shares=${sharesOutstanding} (type: ${typeof sharesOutstanding}), pct.changePct=${pct.changePct}, pct.ref.price=${pct.reference.price}`);
       }
 
+      // Guard log: track sharesOutstanding source
+      const sharesSource = sharesSourceMap.get(s.symbol) || (sharesOutstanding > 0 ? 'db' : 'missing');
+      
       // A) Najpresnejšie: shares
       if (currentPrice > 0 && previousClose > 0 && sharesOutstanding > 0) {
         marketCapDiff = computeMarketCapDiff(currentPrice, previousClose, sharesOutstanding);
         capDiffMethod = "shares";
         if (marketCap > 1000) {
-          console.log(`✅ ${s.symbol}: Method A (shares) - marketCapDiff=${marketCapDiff}B`);
+          console.log(`✅ ${s.symbol}: Method A (shares) - marketCapDiff=${marketCapDiff}B [sharesSource=${sharesSource}]`);
         }
       }
       // B) Bez shares: marketCap + percentChange (použijeme dynamicky vypočítaný pct.changePct, nie percentChange z DB)
@@ -270,9 +300,10 @@ export async function getStocksList(options: {
         // Použijeme dynamicky vypočítaný percentChange (pct.changePct), nie percentChange z DB
         marketCapDiff = computeCapDiffFromMcapPct(marketCap, pct.changePct);
         capDiffMethod = "mcap_pct";
-        // Debug log pre veľké spoločnosti
+        // Guard log: track why Method B was used
+        const reason = sharesSource === 'missing' ? 'polygon missing field' : sharesSource === 'fallback' ? 'polygon error' : 'db stale';
         if (marketCap > 1000) {
-          console.log(`📊 ${s.symbol}: Method B (pct.changePct) - marketCapDiff=${marketCapDiff}B (marketCap=${marketCap}B, percentChange=${pct.changePct}%, method=${capDiffMethod})`);
+          console.log(`📊 ${s.symbol}: Method B (pct.changePct) - marketCapDiff=${marketCapDiff}B (marketCap=${marketCap}B, percentChange=${pct.changePct}%, method=${capDiffMethod}, reason=${reason})`);
         }
       }
       // B2) Alternatíva: ak máme marketCap a previousClose, môžeme dopočítať percentChange
@@ -282,16 +313,17 @@ export async function getStocksList(options: {
         if (calculatedPct !== 0) {
           marketCapDiff = computeCapDiffFromMcapPct(marketCap, calculatedPct);
           capDiffMethod = "mcap_pct";
-          // Debug log pre veľké spoločnosti
+          // Guard log: track why Method B2 was used
+          const reason = sharesSource === 'missing' ? 'polygon missing field' : sharesSource === 'fallback' ? 'polygon error' : 'db stale';
           if (marketCap > 1000) {
-            console.log(`📊 ${s.symbol}: Method B2 (calculatedPct) - marketCapDiff=${marketCapDiff}B (marketCap=${marketCap}B, calculatedPct=${calculatedPct}%, method=${capDiffMethod}, price=${currentPrice}, prevClose=${previousClose})`);
+            console.log(`📊 ${s.symbol}: Method B2 (calculatedPct) - marketCapDiff=${marketCapDiff}B (marketCap=${marketCap}B, calculatedPct=${calculatedPct}%, method=${capDiffMethod}, reason=${reason}, price=${currentPrice}, prevClose=${previousClose})`);
           }
         } else if (marketCap > 1000) {
           console.log(`⚠️ ${s.symbol}: calculatedPct=0 (price=${currentPrice}, prevClose=${previousClose})`);
         }
       } else if (marketCap > 1000 && (!sharesOutstanding || sharesOutstanding === 0)) {
         // Debug: prečo sa nepočíta pre veľké spoločnosti
-        console.log(`⚠️ ${s.symbol}: NO METHOD - marketCap=${marketCap}B, price=${currentPrice}, prevClose=${previousClose}, shares=${sharesOutstanding} (type: ${typeof sharesOutstanding}), pct.changePct=${pct.changePct}, pct.ref.price=${pct.reference.price}, condition A=${currentPrice > 0 && previousClose > 0 && sharesOutstanding > 0}, condition B=${marketCap > 0 && pct.changePct !== 0 && pct.reference.price && pct.reference.price > 0}, condition B2=${marketCap > 0 && currentPrice > 0 && previousClose > 0 && previousClose !== currentPrice}`);
+        console.log(`⚠️ ${s.symbol}: NO METHOD - marketCap=${marketCap}B, price=${currentPrice}, prevClose=${previousClose}, shares=${sharesOutstanding} (type: ${typeof sharesOutstanding}, source=${sharesSource}), pct.changePct=${pct.changePct}, pct.ref.price=${pct.reference.price}, condition A=${currentPrice > 0 && previousClose > 0 && sharesOutstanding > 0}, condition B=${marketCap > 0 && pct.changePct !== 0 && pct.reference.price && pct.reference.price > 0}, condition B2=${marketCap > 0 && currentPrice > 0 && previousClose > 0 && previousClose !== currentPrice}`);
       }
       // C) Fallback z DB
       else if (s.lastMarketCapDiff && s.lastMarketCapDiff !== 0) {

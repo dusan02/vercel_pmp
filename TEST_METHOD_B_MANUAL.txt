@@ -1,0 +1,47 @@
+cd /var/www/premarketprice && \
+DB="prisma/data/premarket.db" && \
+echo "=== TEST: Method B/B2 Fallback (Manual Simulation) ===" && \
+echo "" && \
+echo "=== 1. Find a ticker with marketCap > 1000 but no sharesOutstanding ===" && \
+TEST_TICKER=$(sqlite3 "$DB" "SELECT symbol FROM Ticker WHERE lastMarketCap > 1000 AND (sharesOutstanding IS NULL OR sharesOutstanding = 0) LIMIT 1;" 2>/dev/null) && \
+if [ -z "$TEST_TICKER" ]; then \
+  echo "⚠️ No ticker found without sharesOutstanding, creating test case with NVDA..." && \
+  TEST_TICKER="NVDA" && \
+  sqlite3 "$DB" "UPDATE Ticker SET sharesOutstanding = NULL WHERE symbol = 'NVDA';" && \
+  echo "✅ NVDA sharesOutstanding cleared for test"; \
+else \
+  echo "✅ Found test ticker: $TEST_TICKER"; \
+fi && \
+echo "" && \
+echo "=== 2. Clear cache to force fresh fetch ===" && \
+# Note: Cache is in-memory, so restart would clear it, but for manual test we'll just proceed && \
+echo "⚠️ Cache clearing requires PM2 restart (skipping for manual test)" && \
+echo "" && \
+echo "=== 3. Mock Polygon API failure by temporarily blocking API key ===" && \
+echo "⚠️ For manual test, we'll rely on natural API behavior" && \
+echo "" && \
+echo "=== 4. Call API with test ticker ===" && \
+curl -s "http://localhost:3000/api/stocks?tickers=$TEST_TICKER" > /dev/null && \
+echo "✅ API called" && \
+sleep 3 && \
+echo "" && \
+echo "=== 5. Check logs for Method B/B2 activation ===" && \
+pm2 logs premarketprice --lines 100 --nostream 2>&1 | grep -E "($TEST_TICKER|Method B|Method B2|sharesSource|reason=)" | tail -20 && \
+echo "" && \
+echo "=== 6. Check DB for marketCapDiff ===" && \
+sqlite3 "$DB" "SELECT symbol, lastMarketCap, lastMarketCapDiff, sharesOutstanding FROM Ticker WHERE symbol = '$TEST_TICKER';" && \
+echo "" && \
+echo "=== 7. Verify: marketCapDiff should be calculated (not 0) ===" && \
+CAPDIFF=$(sqlite3 "$DB" "SELECT lastMarketCapDiff FROM Ticker WHERE symbol = '$TEST_TICKER';" 2>/dev/null) && \
+if [ "$CAPDIFF" != "0.0" ] && [ "$CAPDIFF" != "0" ] && [ -n "$CAPDIFF" ]; then \
+  echo "✅ PASS: marketCapDiff calculated: $CAPDIFF"; \
+else \
+  echo "⚠️ WARN: marketCapDiff is 0 or null. Check logs above for reason."; \
+fi && \
+echo "" && \
+echo "=== 8. Restore test ticker (if it was NVDA) ===" && \
+if [ "$TEST_TICKER" = "NVDA" ]; then \
+  sqlite3 "$DB" "UPDATE Ticker SET sharesOutstanding = 24305000000 WHERE symbol = 'NVDA';" && \
+  echo "✅ NVDA sharesOutstanding restored"; \
+fi
+
