@@ -372,7 +372,6 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
                   </div>
 
                 <footer className="footer" aria-label="Site footer">
-                  <p>Data provided by Polygon.io • Powered by Next.js</p>
                   <p className="disclaimer">
                     Data is for informational purposes only. We are not responsible for its accuracy.
                   </p>

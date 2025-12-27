@@ -3999,8 +3999,7 @@ h2:hover .section-icon {
   align-items: center;
   justify-content: space-between;
   text-align: left;
-  white-space: nowrap;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .custom-dropdown-trigger:hover {
@@ -4015,10 +4014,11 @@ h2:hover .section-icon {
 
 .custom-dropdown-value {
   flex: 1;
-  overflow: visible;
-  text-overflow: clip;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
   min-width: 0;
+  padding-right: 0.5rem;
 }
 
 .custom-dropdown-arrow {
