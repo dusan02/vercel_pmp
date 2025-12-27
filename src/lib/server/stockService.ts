@@ -217,6 +217,20 @@ export async function getStocksList(options: {
         ? computeMarketCap(currentPrice, sharesOutstanding)
         : (s.lastMarketCap || 0);
 
+      // Persist calculated marketCapDiff to DB if we have all required values
+      // This ensures the value is available for future requests
+      if (currentPrice > 0 && previousClose > 0 && sharesOutstanding > 0 && marketCapDiff !== 0) {
+        prisma.ticker.update({
+          where: { symbol: s.symbol },
+          data: { 
+            lastMarketCapDiff: marketCapDiff,
+            lastMarketCap: marketCap
+          }
+        }).catch(err => {
+          console.warn(`⚠️ Failed to persist marketCapDiff for ${s.symbol}:`, err);
+        });
+      }
+
       return {
         ticker: s.symbol,
         companyName: s.name || '',
