@@ -629,6 +629,12 @@
     opacity: 0.9;
   }
 
+  .portfolio-search-result-item.selected {
+    background-color: var(--clr-surface);
+    outline: 2px solid var(--clr-primary, #3b82f6);
+    outline-offset: -2px;
+  }
+
   .portfolio-search-result-logo {
     flex-shrink: 0;
   }
@@ -3405,6 +3411,12 @@ table td strong {
 
 .portfolio-search-result-item:hover {
   background-color: var(--clr-surface);
+}
+
+.portfolio-search-result-item.selected {
+  background-color: var(--clr-surface);
+  outline: 2px solid var(--clr-primary, #3b82f6);
+  outline-offset: -2px;
 }
 
 .portfolio-search-result-logo {

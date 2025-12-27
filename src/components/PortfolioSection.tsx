@@ -2,7 +2,7 @@
  * Portfolio Section Component
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { X, Plus } from 'lucide-react';
 import { SectionIcon } from './SectionIcon';
 import { SectionLoader } from './SectionLoader';
@@ -44,6 +44,10 @@ export function PortfolioSection({
   const [portfolioSearchTerm, setPortfolioSearchTerm] = useState('');
   const [portfolioSearchResults, setPortfolioSearchResults] = useState<StockData[]>([]);
   const [showPortfolioSearch, setShowPortfolioSearch] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const searchStocksForPortfolio = (searchTerm: string) => {
     if (!searchTerm || searchTerm.trim().length < 1) {
@@ -72,7 +76,71 @@ export function PortfolioSection({
     setPortfolioSearchTerm(value);
     searchStocksForPortfolio(value);
     setShowPortfolioSearch(value.length > 0);
+    setSelectedIndex(-1); // Reset selection when search changes
   };
+
+  const handleAddStock = (stock: StockData) => {
+    onAddStock(stock.ticker, 1);
+    setPortfolioSearchTerm('');
+    setPortfolioSearchResults([]);
+    setShowPortfolioSearch(false);
+    setSelectedIndex(-1);
+    searchInputRef.current?.focus();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showPortfolioSearch || portfolioSearchResults.length === 0) {
+      return;
+    }
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedIndex((prev) => {
+          const next = prev < portfolioSearchResults.length - 1 ? prev + 1 : prev;
+          // Scroll into view
+          setTimeout(() => {
+            itemRefs.current[next]?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+          }, 0);
+          return next;
+        });
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedIndex((prev) => {
+          const next = prev > 0 ? prev - 1 : -1;
+          // Scroll into view
+          if (next >= 0) {
+            setTimeout(() => {
+              itemRefs.current[next]?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }, 0);
+          }
+          return next;
+        });
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (selectedIndex >= 0 && selectedIndex < portfolioSearchResults.length) {
+          handleAddStock(portfolioSearchResults[selectedIndex]);
+        } else if (portfolioSearchResults.length > 0) {
+          // If nothing selected, select first item
+          handleAddStock(portfolioSearchResults[0]);
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        setShowPortfolioSearch(false);
+        setSelectedIndex(-1);
+        searchInputRef.current?.blur();
+        break;
+    }
+  };
+
+  // Reset selected index when results change
+  useEffect(() => {
+    setSelectedIndex(-1);
+    itemRefs.current = [];
+  }, [portfolioSearchResults]);
   if (loading) {
     return (
       <section className="portfolio">
@@ -101,25 +169,36 @@ export function PortfolioSection({
         <div className="portfolio-search-wrapper">
           <div className="portfolio-search-container">
             <input
+              ref={searchInputRef}
               type="text"
               placeholder="Search by ticker or company name..."
               value={portfolioSearchTerm}
               onChange={handlePortfolioSearchChange}
+              onKeyDown={handleKeyDown}
               className="portfolio-search-input"
               aria-label="Search stocks to add to portfolio"
+              aria-expanded={showPortfolioSearch}
+              aria-haspopup="listbox"
+              role="combobox"
             />
             {showPortfolioSearch && portfolioSearchResults.length > 0 && (
-              <div className="portfolio-search-results">
-                {portfolioSearchResults.map((stock) => (
+              <div 
+                ref={resultsRef}
+                className="portfolio-search-results"
+                role="listbox"
+                aria-label="Search results"
+              >
+                {portfolioSearchResults.map((stock, index) => (
                   <div
                     key={stock.ticker}
-                    className="portfolio-search-result-item"
-                    onClick={() => {
-                      onAddStock(stock.ticker, 1);
-                      setPortfolioSearchTerm('');
-                      setPortfolioSearchResults([]);
-                      setShowPortfolioSearch(false);
+                    ref={(el) => {
+                      itemRefs.current[index] = el;
                     }}
+                    className={`portfolio-search-result-item ${selectedIndex === index ? 'selected' : ''}`}
+                    onClick={() => handleAddStock(stock)}
+                    onMouseEnter={() => setSelectedIndex(index)}
+                    role="option"
+                    aria-selected={selectedIndex === index}
                   >
                     <div className="portfolio-search-result-logo">
                       <CompanyLogo ticker={stock.ticker} {...(stock.logoUrl ? { logoUrl: stock.logoUrl } : {})} size={24} priority={true} /> {/* Search results sú vždy priority */}
