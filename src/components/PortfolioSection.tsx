@@ -121,10 +121,16 @@ export function PortfolioSection({
       case 'Enter':
         e.preventDefault();
         if (selectedIndex >= 0 && selectedIndex < portfolioSearchResults.length) {
-          handleAddStock(portfolioSearchResults[selectedIndex]);
+          const selectedStock = portfolioSearchResults[selectedIndex];
+          if (selectedStock) {
+            handleAddStock(selectedStock);
+          }
         } else if (portfolioSearchResults.length > 0) {
           // If nothing selected, select first item
-          handleAddStock(portfolioSearchResults[0]);
+          const firstStock = portfolioSearchResults[0];
+          if (firstStock) {
+            handleAddStock(firstStock);
+          }
         }
         break;
       case 'Escape':
