@@ -82,6 +82,16 @@ export async function getStocksList(options: {
       }
     });
 
+    // DEBUG: Log na začiatok getStocksList
+    if (tickers && tickers.some(t => ['NVDA', 'GOOG', 'MSFT'].includes(t))) {
+      console.log(`🔍 getStocksList: Found ${stocks.length} stocks, tickers=${tickers.join(',')}`);
+      stocks.forEach(s => {
+        if (['NVDA', 'GOOG', 'MSFT'].includes(s.symbol)) {
+          console.log(`🔍 DB VALUES for ${s.symbol}: lastMarketCap=${s.lastMarketCap}, lastPrice=${s.lastPrice}, latestPrevClose=${s.latestPrevClose}, sharesOutstanding=${s.sharesOutstanding} (type: ${typeof s.sharesOutstanding})`);
+        }
+      });
+    }
+
     // Regular close is only needed after-hours / closed sessions (for correct reference + % change)
     const regularCloseBySymbol = new Map<string, number>();
     if (session === 'after' || session === 'closed') {
@@ -179,6 +189,11 @@ export async function getStocksList(options: {
 
     // Collect DB update promises to ensure they complete before response
     const dbUpdates: Promise<any>[] = [];
+    
+    // DEBUG: Log pred map
+    if (tickers && tickers.some(t => ['NVDA', 'GOOG', 'MSFT'].includes(t))) {
+      console.log(`🔍 About to map ${stocks.length} stocks`);
+    }
     
     const results: StockData[] = stocks.map(s => {
       const currentPrice = s.lastPrice || 0;
