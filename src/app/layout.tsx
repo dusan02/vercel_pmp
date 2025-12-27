@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next'
+import Script from 'next/script'
 import { Inter, Space_Grotesk } from 'next/font/google'
 import './globals.css'
 import ErrorBoundaryWrapper from '@/components/ErrorBoundaryWrapper'
@@ -172,6 +173,8 @@ export default function RootLayout({
         {/* Resource Hints - Preconnect to external APIs */}
         <link rel="preconnect" href="https://api.polygon.io" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://finnhub.io" crossOrigin="anonymous" />
+        {/* Preconnect to Google Analytics for faster loading */}
+        <link rel="preconnect" href="https://www.googletagmanager.com" crossOrigin="anonymous" />
 
         {/* Cache Clear Utility - Development Only */}
         {process.env.NODE_ENV === 'development' && (
@@ -235,6 +238,21 @@ export default function RootLayout({
         )}
       </head>
       <body className={`${inter.variable} ${spaceGrotesk.variable} ${inter.className}`}>
+        {/* Google Analytics 4 */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-VQ1P6MDRRW"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-VQ1P6MDRRW', {
+              anonymize_ip: true
+            });
+          `}
+        </Script>
         <Providers>
           <AuthProvider>
             {/* Structured Data - Organization */}
