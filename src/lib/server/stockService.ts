@@ -212,12 +212,12 @@ export async function getStocksList(options: {
 
       // VŽDY počítať marketCapDiff z aktuálnych hodnôt pre konzistentnosť
       // Metóda A (highest confidence): price + prevClose + shares
-      // Metóda B (medium): marketCap + percentChange
+      // Metóda B (medium): marketCap + percentChange (použijeme dynamicky vypočítaný pct.changePct)
       // Fallback: lastMarketCapDiff z DB
       type CapDiffMethod = "shares" | "mcap_pct" | "db_fallback" | "none";
       
       const computeCapDiffFromMcapPct = (mcap: number, pct: number): number => {
-        // marketCap je v USD (nie "T"), percentChange v %
+        // marketCap je v biliónoch (billions), percentChange v %
         return mcap * (pct / 100);
       };
 
@@ -229,13 +229,27 @@ export async function getStocksList(options: {
         marketCapDiff = computeMarketCapDiff(currentPrice, previousClose, sharesOutstanding);
         capDiffMethod = "shares";
       }
-      // B) Bez shares: marketCap + percentChange
-      else if (marketCap > 0 && percentChange !== 0) {
-        marketCapDiff = computeCapDiffFromMcapPct(marketCap, percentChange);
+      // B) Bez shares: marketCap + percentChange (použijeme dynamicky vypočítaný pct.changePct, nie percentChange z DB)
+      else if (marketCap > 0 && pct.changePct !== 0 && pct.reference.price && pct.reference.price > 0) {
+        // Použijeme dynamicky vypočítaný percentChange (pct.changePct), nie percentChange z DB
+        marketCapDiff = computeCapDiffFromMcapPct(marketCap, pct.changePct);
         capDiffMethod = "mcap_pct";
         // Debug log pre veľké spoločnosti
         if (marketCap > 1000) {
-          console.log(`📊 ${s.symbol}: marketCapDiff=${marketCapDiff}B (marketCap=${marketCap}B, percentChange=${percentChange}%, method=${capDiffMethod})`);
+          console.log(`📊 ${s.symbol}: marketCapDiff=${marketCapDiff}B (marketCap=${marketCap}B, percentChange=${pct.changePct}%, method=${capDiffMethod})`);
+        }
+      }
+      // B2) Alternatíva: ak máme marketCap a previousClose, môžeme dopočítať percentChange
+      else if (marketCap > 0 && currentPrice > 0 && previousClose > 0 && previousClose !== currentPrice) {
+        // Vypočítaj percentChange z currentPrice a previousClose
+        const calculatedPct = ((currentPrice - previousClose) / previousClose) * 100;
+        if (calculatedPct !== 0) {
+          marketCapDiff = computeCapDiffFromMcapPct(marketCap, calculatedPct);
+          capDiffMethod = "mcap_pct";
+          // Debug log
+          if (marketCap > 1000) {
+            console.log(`📊 ${s.symbol}: marketCapDiff=${marketCapDiff}B (marketCap=${marketCap}B, calculatedPct=${calculatedPct}%, method=${capDiffMethod})`);
+          }
         }
       }
       // C) Fallback z DB
