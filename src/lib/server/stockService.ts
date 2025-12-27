@@ -205,21 +205,57 @@ export async function getStocksList(options: {
         ? pct.changePct
         : (s.lastChangePct || 0);
 
-      // VŽDY počítať marketCapDiff z aktuálnych hodnôt pre konzistentnosť
-      const marketCapDiff = (currentPrice > 0 && previousClose > 0 && sharesOutstanding > 0)
-        ? computeMarketCapDiff(currentPrice, previousClose, sharesOutstanding)
-        : ((s.lastMarketCapDiff && s.lastMarketCapDiff !== 0)
-          ? s.lastMarketCapDiff
-          : 0);
-
       // Vypočítaj market cap z aktuálnych hodnôt
       const marketCap = (currentPrice > 0 && sharesOutstanding > 0)
         ? computeMarketCap(currentPrice, sharesOutstanding)
         : (s.lastMarketCap || 0);
 
-      // Persist calculated marketCapDiff to DB if we have all required values
-      // This ensures the value is available for future requests
-      if (currentPrice > 0 && previousClose > 0 && sharesOutstanding > 0 && marketCapDiff !== 0) {
+      // VŽDY počítať marketCapDiff z aktuálnych hodnôt pre konzistentnosť
+      // Metóda A (highest confidence): price + prevClose + shares
+      // Metóda B (medium): marketCap + percentChange
+      // Fallback: lastMarketCapDiff z DB
+      type CapDiffMethod = "shares" | "mcap_pct" | "db_fallback" | "none";
+      
+      const computeCapDiffFromMcapPct = (mcap: number, pct: number): number => {
+        // marketCap je v USD (nie "T"), percentChange v %
+        return mcap * (pct / 100);
+      };
+
+      let marketCapDiff = 0;
+      let capDiffMethod: CapDiffMethod = "none";
+
+      // A) Najpresnejšie: shares
+      if (currentPrice > 0 && previousClose > 0 && sharesOutstanding > 0) {
+        marketCapDiff = computeMarketCapDiff(currentPrice, previousClose, sharesOutstanding);
+        capDiffMethod = "shares";
+      }
+      // B) Bez shares: marketCap + percentChange
+      else if (marketCap > 0 && percentChange !== 0) {
+        marketCapDiff = computeCapDiffFromMcapPct(marketCap, percentChange);
+        capDiffMethod = "mcap_pct";
+      }
+      // C) Fallback z DB
+      else if (s.lastMarketCapDiff && s.lastMarketCapDiff !== 0) {
+        marketCapDiff = s.lastMarketCapDiff;
+        capDiffMethod = "db_fallback";
+      }
+
+      // Sanity check: ochrana pred extrémnymi hodnotami
+      if (!Number.isFinite(marketCapDiff)) {
+        marketCapDiff = 0;
+        capDiffMethod = "none";
+      } else if (marketCap > 0) {
+        const maxAbs = marketCap * 0.15; // 15% cap guard
+        if (Math.abs(marketCapDiff) > maxAbs) {
+          // Ak sem padneš, zvyčajne je percentChange alebo marketCap chyba z API
+          marketCapDiff = 0;
+          capDiffMethod = "none";
+        }
+      }
+
+      // Persist calculated marketCapDiff to DB (vždy, ak máme hodnotu)
+      // Toto zabezpečuje, že hodnota je dostupná pre budúce požiadavky
+      if (marketCapDiff !== 0) {
         prisma.ticker.update({
           where: { symbol: s.symbol },
           data: { 
