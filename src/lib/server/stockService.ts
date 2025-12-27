@@ -224,10 +224,18 @@ export async function getStocksList(options: {
       let marketCapDiff = 0;
       let capDiffMethod: CapDiffMethod = "none";
 
+      // Debug log pre veľké spoločnosti na začiatku
+      if (marketCap > 1000 && sharesOutstanding === 0) {
+        console.log(`🔍 ${s.symbol}: START - marketCap=${marketCap}B, price=${currentPrice}, prevClose=${previousClose}, shares=${sharesOutstanding}, pct.changePct=${pct.changePct}, pct.ref.price=${pct.reference.price}`);
+      }
+
       // A) Najpresnejšie: shares
       if (currentPrice > 0 && previousClose > 0 && sharesOutstanding > 0) {
         marketCapDiff = computeMarketCapDiff(currentPrice, previousClose, sharesOutstanding);
         capDiffMethod = "shares";
+        if (marketCap > 1000) {
+          console.log(`✅ ${s.symbol}: Method A (shares) - marketCapDiff=${marketCapDiff}B`);
+        }
       }
       // B) Bez shares: marketCap + percentChange (použijeme dynamicky vypočítaný pct.changePct, nie percentChange z DB)
       else if (marketCap > 0 && pct.changePct !== 0 && pct.reference.price && pct.reference.price > 0) {
@@ -236,7 +244,7 @@ export async function getStocksList(options: {
         capDiffMethod = "mcap_pct";
         // Debug log pre veľké spoločnosti
         if (marketCap > 1000) {
-          console.log(`📊 ${s.symbol}: marketCapDiff=${marketCapDiff}B (marketCap=${marketCap}B, percentChange=${pct.changePct}%, method=${capDiffMethod})`);
+          console.log(`📊 ${s.symbol}: Method B (pct.changePct) - marketCapDiff=${marketCapDiff}B (marketCap=${marketCap}B, percentChange=${pct.changePct}%, method=${capDiffMethod})`);
         }
       }
       // B2) Alternatíva: ak máme marketCap a previousClose, môžeme dopočítať percentChange
@@ -248,14 +256,14 @@ export async function getStocksList(options: {
           capDiffMethod = "mcap_pct";
           // Debug log pre veľké spoločnosti
           if (marketCap > 1000) {
-            console.log(`📊 ${s.symbol}: marketCapDiff=${marketCapDiff}B (marketCap=${marketCap}B, calculatedPct=${calculatedPct}%, method=${capDiffMethod}, price=${currentPrice}, prevClose=${previousClose})`);
+            console.log(`📊 ${s.symbol}: Method B2 (calculatedPct) - marketCapDiff=${marketCapDiff}B (marketCap=${marketCap}B, calculatedPct=${calculatedPct}%, method=${capDiffMethod}, price=${currentPrice}, prevClose=${previousClose})`);
           }
         } else if (marketCap > 1000) {
           console.log(`⚠️ ${s.symbol}: calculatedPct=0 (price=${currentPrice}, prevClose=${previousClose})`);
         }
       } else if (marketCap > 1000 && sharesOutstanding === 0) {
         // Debug: prečo sa nepočíta pre veľké spoločnosti
-        console.log(`⚠️ ${s.symbol}: marketCapDiff=0 (marketCap=${marketCap}B, price=${currentPrice}, prevClose=${previousClose}, shares=${sharesOutstanding}, pct.changePct=${pct.changePct}, pct.ref.price=${pct.reference.price})`);
+        console.log(`⚠️ ${s.symbol}: NO METHOD - marketCap=${marketCap}B, price=${currentPrice}, prevClose=${previousClose}, shares=${sharesOutstanding}, pct.changePct=${pct.changePct}, pct.ref.price=${pct.reference.price}, condition A=${currentPrice > 0 && previousClose > 0 && sharesOutstanding > 0}, condition B=${marketCap > 0 && pct.changePct !== 0 && pct.reference.price && pct.reference.price > 0}, condition B2=${marketCap > 0 && currentPrice > 0 && previousClose > 0 && previousClose !== currentPrice}`);
       }
       // C) Fallback z DB
       else if (s.lastMarketCapDiff && s.lastMarketCapDiff !== 0) {
