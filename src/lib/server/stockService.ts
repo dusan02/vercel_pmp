@@ -227,9 +227,9 @@ export async function getStocksList(options: {
       let marketCapDiff = 0;
       let capDiffMethod: CapDiffMethod = "none";
 
-      // Debug log pre veľké spoločnosti na začiatku
-      if (marketCap > 1000 && sharesOutstanding === 0) {
-        console.log(`🔍 ${s.symbol}: START - marketCap=${marketCap}B, price=${currentPrice}, prevClose=${previousClose}, shares=${sharesOutstanding}, pct.changePct=${pct.changePct}, pct.ref.price=${pct.reference.price}`);
+      // Debug log pre veľké spoločnosti na začiatku (handle NULL sharesOutstanding)
+      if (marketCap > 1000 && (!sharesOutstanding || sharesOutstanding === 0)) {
+        console.log(`🔍 ${s.symbol}: START - marketCap=${marketCap}B, price=${currentPrice}, prevClose=${previousClose}, shares=${sharesOutstanding} (type: ${typeof sharesOutstanding}), pct.changePct=${pct.changePct}, pct.ref.price=${pct.reference.price}`);
       }
 
       // A) Najpresnejšie: shares
@@ -264,9 +264,9 @@ export async function getStocksList(options: {
         } else if (marketCap > 1000) {
           console.log(`⚠️ ${s.symbol}: calculatedPct=0 (price=${currentPrice}, prevClose=${previousClose})`);
         }
-      } else if (marketCap > 1000 && sharesOutstanding === 0) {
+      } else if (marketCap > 1000 && (!sharesOutstanding || sharesOutstanding === 0)) {
         // Debug: prečo sa nepočíta pre veľké spoločnosti
-        console.log(`⚠️ ${s.symbol}: NO METHOD - marketCap=${marketCap}B, price=${currentPrice}, prevClose=${previousClose}, shares=${sharesOutstanding}, pct.changePct=${pct.changePct}, pct.ref.price=${pct.reference.price}, condition A=${currentPrice > 0 && previousClose > 0 && sharesOutstanding > 0}, condition B=${marketCap > 0 && pct.changePct !== 0 && pct.reference.price && pct.reference.price > 0}, condition B2=${marketCap > 0 && currentPrice > 0 && previousClose > 0 && previousClose !== currentPrice}`);
+        console.log(`⚠️ ${s.symbol}: NO METHOD - marketCap=${marketCap}B, price=${currentPrice}, prevClose=${previousClose}, shares=${sharesOutstanding} (type: ${typeof sharesOutstanding}), pct.changePct=${pct.changePct}, pct.ref.price=${pct.reference.price}, condition A=${currentPrice > 0 && previousClose > 0 && sharesOutstanding > 0}, condition B=${marketCap > 0 && pct.changePct !== 0 && pct.reference.price && pct.reference.price > 0}, condition B2=${marketCap > 0 && currentPrice > 0 && previousClose > 0 && previousClose !== currentPrice}`);
       }
       // C) Fallback z DB
       else if (s.lastMarketCapDiff && s.lastMarketCapDiff !== 0) {
@@ -306,9 +306,9 @@ export async function getStocksList(options: {
         });
         
         dbUpdates.push(updatePromise);
-      } else if (marketCap > 1000 && sharesOutstanding === 0) {
+      } else if (marketCap > 1000 && (!sharesOutstanding || sharesOutstanding === 0)) {
         // Debug: prečo sa nepočíta pre veľké spoločnosti
-        console.log(`⚠️ ${s.symbol}: marketCapDiff=0 (marketCap=${marketCap}B, percentChange=${percentChange}%, sharesOutstanding=${sharesOutstanding}, method=${capDiffMethod})`);
+        console.log(`⚠️ ${s.symbol}: marketCapDiff=0 (marketCap=${marketCap}B, percentChange=${percentChange}%, sharesOutstanding=${sharesOutstanding} (type: ${typeof sharesOutstanding}), method=${capDiffMethod})`);
       }
 
       return {
