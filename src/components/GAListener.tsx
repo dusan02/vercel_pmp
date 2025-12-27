@@ -1,16 +1,13 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { pageview } from '@/lib/ga';
 
 /**
- * Google Analytics listener component
- * 
- * Tracks page views on route changes in Next.js App Router SPA.
- * This component should be mounted globally in the root layout.
+ * Internal component that uses useSearchParams (must be in Suspense)
  */
-export function GAListener() {
+function GAListenerInner() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -23,5 +20,20 @@ export function GAListener() {
   }, [pathname, searchParams]);
 
   return null; // This component doesn't render anything
+}
+
+/**
+ * Google Analytics listener component
+ * 
+ * Tracks page views on route changes in Next.js App Router SPA.
+ * This component should be mounted globally in the root layout.
+ * Wrapped in Suspense to satisfy Next.js 16 requirements for useSearchParams.
+ */
+export function GAListener() {
+  return (
+    <Suspense fallback={null}>
+      <GAListenerInner />
+    </Suspense>
+  );
 }
 
