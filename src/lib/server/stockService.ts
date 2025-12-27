@@ -314,6 +314,9 @@ export async function getStocksList(options: {
       // Persist calculated marketCapDiff to DB (vždy, ak máme hodnotu)
       // Collect promises to await later (ensures DB writes complete before response)
       if (marketCapDiff !== 0) {
+        // Brutálne jasný log pred update
+        console.log(`✅ PERSIST TRY ${s.symbol}: capDiff=${marketCapDiff}B method=${capDiffMethod} marketCap=${marketCap}B`);
+        
         const updatePromise = prisma.ticker.update({
           where: { symbol: s.symbol },
           data: { 

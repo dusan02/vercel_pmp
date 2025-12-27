@@ -1,0 +1,46 @@
+cd /var/www/premarketprice && \
+echo "=== 1. GIT PULL ===" && \
+git pull origin main && \
+echo "" && \
+echo "=== 2. KONTROLA: SRC má debug strings? ===" && \
+grep -nE "(PRE-CALC|getStocksList CALLED|calculatedPct|Method B2|PERSIST TRY)" src/lib/server/stockService.ts | head -5 || echo "❌ Not in src" && \
+echo "" && \
+echo "=== 3. KONTROLA: .next build má debug strings? ===" && \
+grep -R -nE "(PRE-CALC|getStocksList CALLED|calculatedPct|Method B2|PERSIST TRY)" .next 2>/dev/null | head -5 || echo "❌ Not in .next build (STARÝ BUILD!)" && \
+echo "" && \
+echo "=== 4. INSTALL DEPS ===" && \
+( test -f pnpm-lock.yaml && pnpm install --frozen-lockfile ) || \
+( test -f yarn.lock && yarn install --frozen-lockfile ) || \
+( test -f package-lock.json && npm ci ) || \
+npm install && \
+echo "" && \
+echo "=== 5. BUILD ===" && \
+( test -f pnpm-lock.yaml && pnpm build ) || \
+( test -f yarn.lock && yarn build ) || \
+npm run build && \
+echo "" && \
+echo "=== 6. KONTROLA: .next build TERAZ má debug strings? ===" && \
+grep -R -nE "(PRE-CALC|getStocksList CALLED|calculatedPct|Method B2|PERSIST TRY)" .next 2>/dev/null | head -5 || echo "❌ Stále nie v .next build" && \
+echo "" && \
+echo "=== 7. RESTART PM2 ===" && \
+pm2 restart premarketprice --update-env && \
+sleep 5 && \
+echo "" && \
+echo "=== 8. TEST API ===" && \
+curl -s "http://localhost:3000/api/stocks?tickers=NVDA,GOOG,MSFT" > /dev/null && \
+echo "✅ API hit" && \
+echo "" && \
+echo "=== 9. POČKANIE 3 SEKUNDY ===" && \
+sleep 3 && \
+echo "" && \
+echo "=== 10. LOGS (debug) ===" && \
+pm2 logs premarketprice --lines 250 --nostream 2>&1 | grep -E "(getStocksList|getStocksData|ROUTE|PRE-CALC|calculatedPct|Method|Persisted|PERSIST TRY|NO METHOD|NVDA|GOOG|MSFT|DB VALUES|About to map)" | tail -120 && \
+echo "" && \
+echo "=== 11. DB CHECK ===" && \
+DB="prisma/data/premarket.db" && \
+sqlite3 "$DB" "SELECT symbol, lastMarketCap, lastMarketCapDiff, lastPrice, latestPrevClose, sharesOutstanding FROM Ticker WHERE symbol IN ('NVDA','GOOG','MSFT') ORDER BY lastMarketCap DESC;" && \
+echo "" && \
+echo "=== 12. KONTROLA DB PATH ===" && \
+ls -lah prisma/data/premarket.db && \
+sqlite3 prisma/data/premarket.db "PRAGMA database_list;" 2>&1 | head -5
+
