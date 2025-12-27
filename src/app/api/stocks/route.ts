@@ -66,9 +66,11 @@ export async function GET(request: NextRequest) {
     }
 
     console.log(`🔍 Fetching stocks for project: ${project}, tickers: ${tickerList.length}`);
+    console.log(`🔍 ROUTE: About to call getStocksData with tickers=${tickerList.join(',')}`);
 
     const { data, errors } = await getStocksData(tickerList, project);
 
+    console.log(`🔍 ROUTE: getStocksData returned ${data.length} stocks, ${errors.length} errors`);
     console.log(`✅ Returning ${data.length} stocks for project ${project}`);
 
     const response: any = {

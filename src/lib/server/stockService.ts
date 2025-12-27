@@ -19,7 +19,10 @@ export async function getStocksData(
   tickers: string[],
   project: string = 'pmp'
 ): Promise<StockServiceResult> {
-  return getStocksList({ tickers });
+  console.log(`🔍 getStocksData CALLED with tickers=${tickers.join(',')}, project=${project}`);
+  const result = await getStocksList({ tickers });
+  console.log(`🔍 getStocksData RETURNING ${result.data.length} stocks, ${result.errors.length} errors`);
+  return result;
 }
 
 /**
@@ -33,6 +36,7 @@ export async function getStocksList(options: {
   tickers?: string[];
 }): Promise<StockServiceResult> {
   const { limit = 50, offset = 0, sort = 'marketCapDiff', order = 'desc', tickers } = options;
+  console.log(`🔍 getStocksList CALLED with tickers=${tickers?.join(',') || 'ALL'}, limit=${limit}, offset=${offset}, sort=${sort}`);
 
   // Map sort keys to DB columns
   const sortMapping: Record<string, string> = {
