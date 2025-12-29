@@ -249,19 +249,14 @@ export function SectionNavigation({ preferences, onToggleSection, onScrollToSect
                 }}
                 aria-label={`Navigate to ${section.label} section`}
               >
-                {/* Icon */}
+                {/* Icon only - no text on mobile */}
                 <div className="flex-shrink-0">
-                  <SectionIcon type={section.icon} size={20} />
+                  <SectionIcon type={section.icon} size={24} />
                 </div>
-
-                {/* Label */}
-                <span className="text-sm font-medium">
-                  {section.label}
-                </span>
 
                 {/* Visibility indicator (mobile) */}
                 {!isVisible && (
-                  <span className="ml-auto text-xs opacity-60">●</span>
+                  <span className="absolute top-1 right-1 text-xs opacity-60">●</span>
                 )}
               </div>
             );

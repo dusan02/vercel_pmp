@@ -194,7 +194,11 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('📱 Mobile detection:', { width: window.innerWidth, isMobile: mobile });
+      }
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
@@ -225,20 +229,88 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
     const SECTOR_GAP = isMobile ? 0 : LAYOUT_CONFIG.SECTOR_GAP; // No gap on mobile
     
     if (isMobile && d3Root.children && d3Root.children.length > 0) {
-      // Mobile: Use tall container to allow vertical stacking
-      // D3 will naturally stack sectors vertically when container is tall
-      const mobileHeight = height * d3Root.children.length * 4; // Tall container for vertical stacking
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('📱 Mobile vertical layout:', { 
+          sectors: d3Root.children.length, 
+          width, 
+          height,
+          totalValue: d3Root.value 
+        });
+      }
       
-      const mobileTreemap = treemap<HierarchyData>()
-        .size([width, mobileHeight])
-        .padding(0) // No gaps on mobile
-        .paddingTop(0)
-        .paddingLeft(0)
-        .paddingRight(0)
-        .paddingBottom(0)
-        .tile(treemapSquarify);
+      // Mobile: Vertical layout - process each sector separately and stack vertically
+      let currentY = 0;
+      const totalValue = d3Root.value || 1;
+      const estimatedTotalHeight = height * d3Root.children.length * 5;
       
-      mobileTreemap(d3Root);
+      d3Root.children.forEach((sectorNode: any) => {
+        if (!sectorNode.data.children || sectorNode.data.children.length === 0) return;
+        
+        const sectorValue = sumValues(sectorNode.data);
+        if (sectorValue <= 0) return;
+        
+        // Calculate proportional height for this sector
+        const sectorHeight = (sectorValue / totalValue) * estimatedTotalHeight;
+        const minSectorHeight = height * 1.5; // Minimum height per sector
+        const finalSectorHeight = Math.max(sectorHeight, minSectorHeight);
+        
+        // Create separate treemap for this sector
+        const sectorData: HierarchyData = {
+          name: sectorNode.data.name,
+          children: sectorNode.data.children,
+          meta: sectorNode.data.meta
+        };
+        
+        const sectorHierarchy = hierarchy(sectorData)
+          .sum((d) => d.value || 0)
+          .sort((a, b) => (b.value || 0) - (a.value || 0));
+        
+        const sectorTreemap = treemap<HierarchyData>()
+          .size([width, finalSectorHeight])
+          .padding(0)
+          .paddingTop(0)
+          .paddingLeft(0)
+          .paddingRight(0)
+          .paddingBottom(0)
+          .tile(treemapSquarify);
+        
+        sectorTreemap(sectorHierarchy);
+        
+        // Update sector node bounds
+        sectorNode.x0 = 0;
+        sectorNode.x1 = width;
+        sectorNode.y0 = currentY;
+        sectorNode.y1 = currentY + finalSectorHeight;
+        
+        // Map sectorHierarchy leaves to sectorNode.children
+        const sectorLeaves = sectorHierarchy.leaves() as any[];
+        const sectorChildren = sectorNode.children || [];
+        
+        sectorLeaves.forEach((hLeaf: any, idx: number) => {
+          if (idx < sectorChildren.length) {
+            const companyNode = sectorChildren[idx] as any;
+            if (companyNode && hLeaf.x0 !== undefined) {
+              companyNode.x0 = hLeaf.x0;
+              companyNode.x1 = hLeaf.x1;
+              companyNode.y0 = hLeaf.y0 + currentY;
+              companyNode.y1 = hLeaf.y1 + currentY;
+            }
+          }
+        });
+        
+        currentY += finalSectorHeight;
+      });
+      
+      // Update root bounds
+      (d3Root as any).x0 = 0;
+      (d3Root as any).x1 = width;
+      (d3Root as any).y0 = 0;
+      (d3Root as any).y1 = currentY;
+      
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('📱 Mobile layout complete:', { totalHeight: currentY, sectors: d3Root.children.length });
+      }
+      
       return d3Root;
     }
     
@@ -439,8 +511,9 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
   // Calculate actual content height for mobile (for proper vertical scrolling)
   const contentHeight = useMemo(() => {
     if (!isMobile || !treemapBounds) return height;
-    // Mobile: Use actual treemap height scaled to width
-    return Math.max(treemapBounds.treemapHeight * scale, height);
+    // Mobile: Use actual treemap height (sectors stacked vertically)
+    // Add some padding to ensure all sectors are visible
+    return Math.max(treemapBounds.treemapHeight * scale, height * 2);
   }, [isMobile, treemapBounds, scale, height]);
 
   return (
