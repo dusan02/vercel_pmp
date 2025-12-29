@@ -73,7 +73,7 @@ export default function StocksClient({ initial }: StocksClientProps) {
     return `/api/stocks/optimized?${params.toString()}`;
   }, [sort, dir, q, cursor]);
 
-  // SWR with fallbackData
+  // SWR with fallbackData and auto-refresh
   const { data, error, isLoading, isValidating } = useSWR<ApiResp>(
     apiKey as any,
     fetcher as any,
@@ -82,7 +82,8 @@ export default function StocksClient({ initial }: StocksClientProps) {
       keepPreviousData: true,
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
-      dedupingInterval: 2000
+      dedupingInterval: 2000,
+      refreshInterval: 30000 // Auto-refresh every 30 seconds (same as heatmap)
     } as any
   );
 

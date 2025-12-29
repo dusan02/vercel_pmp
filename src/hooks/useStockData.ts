@@ -316,6 +316,29 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
     return () => clearInterval(interval);
   }, [throttledFetchBackgroundStatus]);
 
+  // Auto-refresh stock data (similar to heatmap - every 30 seconds)
+  useEffect(() => {
+    let refreshInterval: NodeJS.Timeout | null = null;
+    
+    // Wait a bit after initial load before starting auto-refresh
+    const initialDelay = setTimeout(() => {
+      // Start auto-refresh after 30 seconds from initial load
+      refreshInterval = setInterval(() => {
+        console.log('🔄 Auto-refreshing stock data...');
+        // Refresh favorites and top 50 stocks (silent refresh - no loading state)
+        fetchFavoritesData(false);
+        fetchTop50StocksData();
+      }, 30000); // 30 seconds - same as heatmap
+    }, 30000);
+
+    return () => {
+      clearTimeout(initialDelay);
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+      }
+    };
+  }, [fetchFavoritesData, fetchTop50StocksData]);
+
   // Favorites polling - only fetch on initial load or when favorites are added
   // Don't refetch when favorites are removed to avoid flickering
   const favoritesTickersString = favorites.map(f => f.ticker).join(',');
