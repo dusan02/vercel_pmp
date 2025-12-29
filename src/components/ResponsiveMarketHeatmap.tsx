@@ -5,6 +5,7 @@ import { MarketHeatmap, CompanyNode, useElementResize, HeatmapMetric } from './M
 import { useHeatmapData } from '@/hooks/useHeatmapData';
 import { useHeatmapMetric } from '@/hooks/useHeatmapMetric';
 import { HeatmapMetricButtons } from './HeatmapMetricButtons';
+import { SectorListMobile } from './SectorListMobile';
 
 export type ResponsiveMarketHeatmapProps = {
   /** API endpoint pre načítanie dát (default: /api/heatmap) */
@@ -48,6 +49,21 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
   const height = size.height;
   
   const [isMounted, setIsMounted] = useState(false);
+  
+  // Mobile detection and sector navigation state
+  const [isMobile, setIsMobile] = useState(false);
+  const [selectedSector, setSelectedSector] = useState<string | null>(null);
+  
+  // Detect mobile on mount and resize
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Centralized metric state management
   // Use controlledMetric if provided (for external control), otherwise use hook
@@ -165,6 +181,107 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
     }
 
     // Data loaded state
+    // Mobile: Show sector list or sector heatmap
+    if (isMobile) {
+      // Filter data by selected sector if sector is selected
+      const filteredData = selectedSector
+        ? data.filter((company) => (company.sector || 'Unknown') === selectedSector)
+        : data;
+
+      return (
+        <>
+          {/* Sector list view (no sector selected) */}
+          {!selectedSector ? (
+            <>
+              {/* Metric selector - top left overlay (only if not hidden) */}
+              {!hideMetricButtons && (
+                <div className="absolute top-2 left-2 z-50 flex gap-2">
+                  <div className="bg-black/70 backdrop-blur-sm rounded-lg p-1">
+                    <HeatmapMetricButtons
+                      metric={metric}
+                      onMetricChange={setMetric}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <SectorListMobile
+                data={data}
+                onSectorClick={(sector) => setSelectedSector(sector)}
+              />
+
+              {/* Last updated indicator */}
+              {dataAgeDisplay && (
+                <div
+                  className={`absolute bottom-2 right-2 px-2 py-1 rounded text-xs z-50 ${isDataStale
+                    ? 'bg-yellow-500/80 text-yellow-900'
+                    : 'bg-black/60 text-gray-300'
+                    }`}
+                  title={`Last updated: ${lastUpdated}`}
+                >
+                  Updated {dataAgeDisplay}
+                  {isDataStale && ' ⚠️'}
+                </div>
+              )}
+            </>
+          ) : (
+            /* Sector heatmap view (sector selected) */
+            <>
+              {/* Back button */}
+              <button
+                onClick={() => setSelectedSector(null)}
+                className="absolute top-2 left-2 z-50 px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 transition-colors"
+              >
+                ← Back to Sectors
+              </button>
+
+              {/* Sector name */}
+              <div className="absolute top-2 left-1/2 transform -translate-x-1/2 z-50 px-3 py-1.5 bg-black/70 backdrop-blur-sm text-white text-sm font-medium rounded">
+                {selectedSector}
+              </div>
+
+              {/* Metric selector - top right overlay (only if not hidden) */}
+              {!hideMetricButtons && (
+                <div className="absolute top-2 right-2 z-50 flex gap-2">
+                  <div className="bg-black/70 backdrop-blur-sm rounded-lg p-1">
+                    <HeatmapMetricButtons
+                      metric={metric}
+                      onMetricChange={setMetric}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Heatmap for selected sector */}
+              <MarketHeatmap
+                data={filteredData}
+                width={width}
+                height={height}
+                {...(onTileClick ? { onTileClick } : {})}
+                timeframe={timeframe}
+                metric={metric}
+              />
+
+              {/* Last updated indicator */}
+              {dataAgeDisplay && (
+                <div
+                  className={`absolute bottom-2 right-2 px-2 py-1 rounded text-xs z-50 ${isDataStale
+                    ? 'bg-yellow-500/80 text-yellow-900'
+                    : 'bg-black/60 text-gray-300'
+                    }`}
+                  title={`Last updated: ${lastUpdated}`}
+                >
+                  Updated {dataAgeDisplay}
+                  {isDataStale && ' ⚠️'}
+                </div>
+              )}
+            </>
+          )}
+        </>
+      );
+    }
+
+    // Desktop: Original behavior (no changes)
     return (
       <>
         {/* Metric selector - top left overlay (only if not hidden) */}
