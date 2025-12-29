@@ -38,9 +38,9 @@ const TABLE_HEADERS: { key?: SortKey; label: string; sortable: boolean }[] = [
   { key: 'sector', label: 'Sector', sortable: true },
   { key: 'industry', label: 'Industry', sortable: true },
   { key: 'marketCap', label: 'Market Cap', sortable: true },
+  { key: 'marketCapDiff', label: 'Cap Diff', sortable: true },
   { key: 'currentPrice', label: 'Price', sortable: true },
   { key: 'percentChange', label: '% Change', sortable: true },
-  { key: 'marketCapDiff', label: 'Cap Diff', sortable: true },
   { label: 'Favorites', sortable: false },
 ];
 

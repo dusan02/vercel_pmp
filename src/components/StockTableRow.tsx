@@ -57,17 +57,17 @@ export const StockTableRow = memo(({
       {/* Market Cap */}
       <td>{formattedMarketCap}</td>
       
+      {/* Cap Diff */}
+      <td className={stock.marketCapDiff >= 0 ? 'positive' : 'negative'}>
+        {formattedMarketCapDiff}
+      </td>
+      
       {/* Price */}
       <td>${formattedPrice}</td>
       
       {/* % Change */}
       <td className={stock.percentChange >= 0 ? 'positive' : 'negative'}>
         {formattedPercentChange}
-      </td>
-      
-      {/* Cap Diff */}
-      <td className={stock.marketCapDiff >= 0 ? 'positive' : 'negative'}>
-        {formattedMarketCapDiff}
       </td>
       
       {/* Column 5: Favorites */}
