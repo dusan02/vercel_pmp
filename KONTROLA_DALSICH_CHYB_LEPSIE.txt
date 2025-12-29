@@ -1,0 +1,16 @@
+# 🔍 KONTROLA ĎALŠÍCH CHÝB - LEPŠIA VERZIA S VÝSLEDKMI
+# Táto verzia používa TypeScript skript, ktorý zobrazí výsledky
+
+# Možnosť 1: Ak existuje skript check-incorrect-sector-industry.ts na serveri
+cd /var/www/premarketprice
+npx tsx scripts/check-incorrect-sector-industry.ts
+
+# Možnosť 2: Ak nie je skript, vytvoriť jednoduchý SQL príkaz s výstupom
+# (Poznámka: Prisma db execute neukazuje výsledky SELECT, takže použijeme iný prístup)
+
+# Možnosť 3: Použiť priamy SQLite príkaz (ak je dostupný)
+# Najprv zistiť cestu k databáze:
+# grep DATABASE_URL .env
+# Potom:
+# sqlite3 /cesta/k/databaze.db "SELECT symbol, name, sector, industry FROM Ticker WHERE sector = 'Technology' AND industry = 'Communication Equipment' ORDER BY symbol LIMIT 30;"
+

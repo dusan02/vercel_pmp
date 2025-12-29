@@ -1,0 +1,18 @@
+# 🔍 SKONTROLOVAŤ ECOSYSTEM.CONFIG.JS PRE EARNINGS-CRON
+
+cd /var/www/earnings-table && \
+echo "=== 1. CELÝ ECOSYSTEM.CONFIG.JS ===" && \
+cat ecosystem.config.js && \
+echo "" && \
+echo "=== 2. PM2 STATUS - VŠETKY PROCESY ===" && \
+pm2 list && \
+echo "" && \
+echo "=== 3. DATABÁZA - SKUTOČNÉ DÁTUMY (reportDate, snapshotDate) ===" && \
+sqlite3 modules/database/prisma/prod.db "SELECT symbol, date(reportDate) as report_date, date(snapshotDate) as snapshot_date, datetime(createdAt, 'localtime') as created FROM final_report LIMIT 10;" 2>/dev/null || echo "⚠️ Chyba" && \
+echo "" && \
+echo "=== 4. DATABÁZA - ŠTRUKTÚRA TABUĽKY ===" && \
+sqlite3 modules/database/prisma/prod.db ".schema final_report" 2>/dev/null || echo "⚠️ Chyba" && \
+echo "" && \
+echo "=== 5. SKONTROLOVAŤ, ČI EXISTUJE CRON SCHEDULE V ECOSYSTEM ===" && \
+grep -i "cron" ecosystem.config.js | head -10
+

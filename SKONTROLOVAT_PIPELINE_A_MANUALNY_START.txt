@@ -1,0 +1,25 @@
+# 🔍 SKONTROLOVAŤ PIPELINE A MANUÁLNE SPUSTIŤ
+
+cd /var/www/earnings-table && \
+echo "=== 1. AKTUÁLNY POČET ZÁZNAMOV ===" && \
+sqlite3 modules/database/prisma/prod.db "SELECT COUNT(*) as pocet FROM final_report;" 2>/dev/null && \
+echo "" && \
+echo "=== 2. PM2 LOGY - earnings-cron (posledných 100 riadkov, hľadanie pipeline) ===" && \
+pm2 logs earnings-cron --lines 100 --nostream 2>&1 | grep -i -E "(pipeline|finnhub|polygon|fetch|load|data)" | tail -30 || echo "⚠️ Žiadne výsledky" && \
+echo "" && \
+echo "=== 3. SKONTROLOVAŤ, ČI EXISTUJE API ENDPOINT PRE MANUÁLNY START ===" && \
+curl -s http://localhost:5555/api/health 2>/dev/null | head -5 || echo "⚠️ Health endpoint nefunguje" && \
+echo "" && \
+echo "=== 4. POČKAŤ 1 MINÚTU A SKONTROLOVAŤ ZNOVA ===" && \
+echo "Čakám 60 sekúnd na ďalšie spustenie pipeline (každých 5 minút)..." && \
+sleep 60 && \
+sqlite3 modules/database/prisma/prod.db "SELECT COUNT(*) as pocet FROM final_report;" 2>/dev/null && \
+echo "" && \
+echo "=== 5. PM2 LOGY - earnings-cron (nové, posledných 30 riadkov) ===" && \
+pm2 logs earnings-cron --lines 30 --nostream 2>&1 | tail -20 && \
+echo "" && \
+echo "=== 6. AKTUÁLNY ČAS V NY ===" && \
+TZ=America/New_York date && \
+echo "" && \
+echo "✅ Hotovo!"
+

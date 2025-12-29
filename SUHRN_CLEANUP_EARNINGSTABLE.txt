@@ -1,0 +1,58 @@
+# ✅ SÚHRN - CLEANUP V EARNINGSTABLE.COM
+
+## ✅ ČO JE NASTAVENÉ:
+
+1. **earnings-cron je spustený** ✅
+   - PM2 id: 8
+   - Status: online
+   - Timezone: America/New_York
+
+2. **Daily Clear Job je naplánovaný** ✅
+   - Schedule: `0 3 * * 1-5` (03:00 NY, Mon-Fri)
+   - Valid: true
+   - Čo robí: Vymaže staré dáta v tabuľke `final_report` každý pracovný deň o 03:00 NY
+
+3. **Pipeline je naplánovaný** ✅
+   - Schedule: `*/5 * * * *` (každých 5 minút, 24/7 okrem 03:00)
+   - Valid: true
+   - Čo robí: Načíta nové earnings dáta každých 5 minút
+
+## 📅 KEDY SA PREMAZÁVA TABUĽKA:
+
+- **Čas**: 03:00 NY (New York time)
+- **Dni**: Pondelok až Piatok (pracovné dni)
+- **CET čas (zima)**: 09:00 CET
+- **CET čas (leto)**: 08:00 CET (kvôli DST)
+
+## ⚠️ AKTUÁLNY STAV DÁT:
+
+- **Počet záznamov**: 12
+- **Problém**: Všetky záznamy majú:
+  - `createdAt` = `2000-01-01 01:00:00` (placeholder)
+  - `reportDate` = NULL
+  - `snapshotDate` = NULL
+
+**To znamená**: Dáta sú staré alebo neúplné. Po najbližšom cleanup (v pondelok o 03:00 NY) sa tabuľka vymaže a načítajú sa nové dáta.
+
+## 🔍 AKO SKONTROLOVAŤ, ČI SA PREMAZÁVA:
+
+```bash
+# Skontrolovať logy po cleanup (v pondelok po 03:00 NY):
+cd /var/www/earnings-table && \
+pm2 logs earnings-cron --lines 200 --nostream | grep -i -E "(clear|delete|03:00|daily)" | tail -20
+
+# Skontrolovať, či sa zmenil počet záznamov:
+sqlite3 modules/database/prisma/prod.db "SELECT COUNT(*) FROM final_report;"
+
+# Skontrolovať, či majú nové záznamy skutočné dátumy:
+sqlite3 modules/database/prisma/prod.db "SELECT symbol, date(reportDate) as report_date, datetime(createdAt, 'localtime') as created FROM final_report LIMIT 5;"
+```
+
+## ✅ ZÁVER:
+
+**ÁNO, tabuľka sa premazáva pravidelne v noci!**
+- Každý pracovný deň (Po-Pi) o 03:00 NY
+- Cron job je spustený a naplánovaný správne
+- Dnes je sobota, takže cron nebežal (len Po-Pi)
+- V pondelok o 03:00 NY (09:00 CET) sa tabuľka automaticky vymaže a načítajú sa nové dáta
+

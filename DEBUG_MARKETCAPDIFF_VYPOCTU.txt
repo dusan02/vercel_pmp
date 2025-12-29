@@ -1,0 +1,51 @@
+cd /var/www/premarketprice && \
+DB="prisma/data/premarket.db" && \
+echo "=== DEBUG: Kontrola výpočtu marketCapDiff ===" && \
+echo "" && \
+echo "=== 1. NVDA - Skutočné hodnoty v DB ===" && \
+sqlite3 "$DB" "SELECT 
+  symbol,
+  lastPrice,
+  latestPrevClose,
+  lastChangePct,
+  lastMarketCap,
+  lastMarketCapDiff,
+  sharesOutstanding
+FROM Ticker 
+WHERE symbol = 'NVDA';" 2>&1 && \
+echo "" && \
+echo "=== 2. Výpočet marketCapDiff pre NVDA ===" && \
+sqlite3 "$DB" "SELECT 
+  symbol,
+  lastMarketCap as marketCap,
+  lastChangePct as percentChange,
+  lastMarketCap * lastChangePct / 100 as vypocitany_capDiff,
+  lastMarketCapDiff as capDiff_v_DB,
+  CASE 
+    WHEN lastPrice > 0 AND latestPrevClose > 0 AND sharesOutstanding > 0 THEN 'Môže z shares'
+    WHEN lastMarketCap > 0 AND lastChangePct IS NOT NULL AND lastChangePct != 0 THEN 'Môže z marketCap/pctChange'
+    ELSE 'Chýbajú dáta'
+  END as metoda
+FROM Ticker 
+WHERE symbol = 'NVDA';" 2>&1 && \
+echo "" && \
+echo "=== 3. PM2 LOGY - hľadanie chýb alebo výpočtov ===" && \
+pm2 logs premarketprice --lines 100 --nostream 2>&1 | grep -i -E "(marketCapDiff|Failed to persist|Error computing|NVDA|GOOG|MSFT)" | tail -30 || echo "⚠️ Žiadne relevantné logy" && \
+echo "" && \
+echo "=== 4. Test API - NVDA, GOOG, MSFT ===" && \
+curl -s "http://localhost:3000/api/stocks?tickers=NVDA,GOOG,MSFT" 2>&1 | \
+  python3 -c "
+import json, sys
+try:
+    data = json.load(sys.stdin)
+    if 'data' in data:
+        for stock in data['data']:
+            print(f\"{stock.get('ticker', 'N/A'):6} | marketCap: {stock.get('marketCap', 0):8.2f}B | percentChange: {stock.get('percentChange', 0):6.2f}% | marketCapDiff: {stock.get('marketCapDiff', 0):8.2f}B\")
+    else:
+        print('⚠️ Neplatná štruktúra odpovede')
+except Exception as e:
+    print(f'⚠️ Chyba: {e}')
+" 2>&1 || echo "⚠️ Python nie je dostupný" && \
+echo "" && \
+echo "✅ Hotovo!"
+

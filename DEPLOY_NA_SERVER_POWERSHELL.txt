@@ -1,0 +1,5 @@
+# PowerShell príkaz na nasadenie na SSH server
+# Nahraďte 'root@bardusa' vašou SSH adresou ak je iná
+
+ssh root@bardusa "cd /var/www/premarketprice && git pull origin main && pm2 restart premarketprice && pm2 save"
+

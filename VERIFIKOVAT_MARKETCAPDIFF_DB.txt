@@ -1,0 +1,18 @@
+cd /var/www/premarketprice && \
+DB="prisma/data/premarket.db" && \
+echo "=== 1. KONTROLA, ČI SA marketCapDiff UKLADÁ DO DB ===" && \
+echo "" && \
+echo "=== 2. TICKERY S marketCapDiff != 0 (prvých 20) ===" && \
+sqlite3 "$DB" "SELECT symbol, name, lastMarketCapDiff, sharesOutstanding, lastPrice, latestPrevClose FROM Ticker WHERE lastMarketCapDiff IS NOT NULL AND lastMarketCapDiff != 0 ORDER BY ABS(lastMarketCapDiff) DESC LIMIT 20;" 2>&1 && \
+echo "" && \
+echo "=== 3. POČET TICKEROV S marketCapDiff != 0 ===" && \
+sqlite3 "$DB" "SELECT COUNT(*) as pocet FROM Ticker WHERE lastMarketCapDiff IS NOT NULL AND lastMarketCapDiff != 0;" 2>&1 && \
+echo "" && \
+echo "=== 4. VEĽKÉ SPOLOČNOSTI - marketCapDiff (top 10) ===" && \
+sqlite3 "$DB" "SELECT symbol, name, lastMarketCapDiff, sharesOutstanding, lastPrice, latestPrevClose FROM Ticker WHERE lastMarketCap > 0 ORDER BY lastMarketCap DESC LIMIT 10;" 2>&1 && \
+echo "" && \
+echo "=== 5. PM2 LOGY - hľadanie 'marketCapDiff' alebo 'sharesOutstanding' (posledných 50 riadkov) ===" && \
+pm2 logs premarketprice --lines 50 --nostream 2>&1 | grep -i -E "(marketCapDiff|sharesOutstanding|On-demand)" | tail -20 || echo "⚠️ Žiadne logy" && \
+echo "" && \
+echo "✅ Hotovo!"
+

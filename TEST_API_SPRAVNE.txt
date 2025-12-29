@@ -1,0 +1,20 @@
+cd /var/www/premarketprice && \
+echo "=== 1. TEST: Nesprávne volanie (očakáva sa 400) ===" && \
+curl -i "http://localhost:3000/api/stocks?limit=10" 2>&1 | head -n 5 && \
+echo "" && \
+echo "=== 2. TEST: Správne volanie A - konkrétne tickery ===" && \
+curl -s "http://localhost:3000/api/stocks?tickers=NVDA,GOOG,MSFT" > /dev/null && \
+echo "✅ API volanie dokončené" && \
+echo "" && \
+echo "=== 3. POČKANIE 2 SEKUNDY ===" && \
+sleep 2 && \
+echo "" && \
+echo "=== 4. PM2 LOGY - debug logy ===" && \
+pm2 logs premarketprice --lines 300 --nostream 2>&1 | grep -E "(🔍|📊|⚠️|✅|NVDA|GOOG|MSFT|marketCapDiff|calculatedPct|Method|Persisted)" | tail -120 || echo "⚠️ Žiadne relevantné logy" && \
+echo "" && \
+echo "=== 5. KONTROLA DB - marketCapDiff po API volaní ===" && \
+DB="prisma/data/premarket.db" && \
+sqlite3 "$DB" "SELECT symbol, lastMarketCap, lastMarketCapDiff, lastPrice, latestPrevClose, sharesOutstanding FROM Ticker WHERE symbol IN ('NVDA', 'GOOG', 'MSFT') ORDER BY lastMarketCap DESC;" 2>&1 && \
+echo "" && \
+echo "✅ Hotovo!"
+

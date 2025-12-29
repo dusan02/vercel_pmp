@@ -1,0 +1,5 @@
+# ✅ OVERENIE OPRAV TPL, STZ, NOW
+# Spustiť na serveri na overenie, či sa hodnoty skutočne zmenili
+
+cd /var/www/premarketprice && echo "=== OVERENIE OPRAVENÝCH HODNOT ===" && echo "" && npx prisma db execute --stdin <<< "SELECT \"symbol\", \"name\", \"sector\", \"industry\", \"updatedAt\" FROM \"Ticker\" WHERE \"symbol\" IN ('TPL', 'STZ', 'NOW') ORDER BY \"symbol\";" && echo "" && echo "=== OČAKÁVANÉ HODNOTY ===" && echo "TPL: Real Estate / REIT - Specialty" && echo "STZ: Consumer Defensive / Beverages - Alcoholic" && echo "NOW: Technology / Software"
+

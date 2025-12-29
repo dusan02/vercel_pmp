@@ -1,93 +1,62 @@
-# 📥 SSH Príkazy na stiahnutie zmien z Git
+# Git Pull Commands for SSH Server
 
-## 🚀 Rýchly postup (kopírovať a spustiť)
-
-```bash
-# 1. Pripojiť sa na server
-ssh root@89.185.250.213
-
-# 2. Prejsť do adresára projektu
-cd /var/www/premarketprice
-
-# 3. Skontrolovať aktuálny stav
-git status
-
-# 4. Stiahnuť najnovšie zmeny z GitHub
-git pull origin main
-
-# 5. (Voliteľné) Ak sú lokálne zmeny, ktoré chcete zachovať
-# git stash
-# git pull origin main
-# git stash pop
-
-# 6. Skontrolovať, či sa zmeny stiahli
-git log --oneline -5
-```
-
-## 📋 Kompletný postup s buildom a reštartom
+## Príkazy na stiahnutie zmien na produkčný server
 
 ```bash
-# 1. Pripojiť sa na server
-ssh root@89.185.250.213
-
-# 2. Prejsť do adresára projektu
+# 1. Prejsť do priečinka aplikácie
 cd /var/www/premarketprice
 
-# 3. Stiahnuť zmeny
+# 2. Stiahnuť najnovšie zmeny z GitHubu
 git pull origin main
 
-# 4. Inštalovať nové závislosti (ak boli pridané)
-npm install
+# 3. (Voliteľné) Ak by boli konflikty, reset na remote verziu
+# git fetch origin
+# git reset --hard origin/main
 
-# 5. Generovať Prisma klienta
-npx prisma generate
-
-# 6. Build aplikácie
-npm run build
-
-# 7. Reštartovať PM2 procesy
+# 4. Reštartovať aplikáciu (ak používaš PM2)
 pm2 restart premarketprice
-pm2 restart pmp-polygon-worker
-pm2 restart pmp-bulk-preloader
 
-# 8. Skontrolovať status
+# 5. (Voliteľné) Skontrolovať status
 pm2 status
-pm2 logs premarketprice --lines 20
+pm2 logs premarketprice --lines 20 --nostream
 ```
 
-## 🔍 Kontrola zmien
+## Kompletný príkaz (všetko naraz)
 
 ```bash
-# Zobraziť posledné commity
-git log --oneline -10
-
-# Zobraziť zmeny v súboroch
-git diff HEAD~1
-
-# Zobraziť, ktoré súbory sa zmenili
-git diff --name-only HEAD~1
+cd /var/www/premarketprice && git pull origin main && pm2 restart premarketprice && pm2 status
 ```
 
-## ⚠️ Ak nastane konflikt
+## Ak by boli problémy s pull-om
 
 ```bash
-# Zobraziť konflikty
-git status
-
-# Ak chcete zachovať lokálne zmeny
+# 1. Zálohovať aktuálny stav
+cd /var/www/premarketprice
 git stash
-git pull origin main
-git stash pop
 
-# Ak chcete prepísať lokálne zmeny (POZOR!)
+# 2. Stiahnuť zmeny
+git pull origin main
+
+# 3. Ak by boli konflikty, reset na remote
 git fetch origin
 git reset --hard origin/main
+
+# 4. Reštartovať
+pm2 restart premarketprice
 ```
 
-## 📝 Poznámky
+## Verifikácia po deployi
 
-- **NEPOUŽÍVAJTE `sudo`** - ste prihlásení ako `root`
-- Projekt je v `/var/www/premarketprice` (nie v `pmp_prod` podadresári)
-- Po `git pull` je odporúčané urobiť `npm run build` a reštartovať PM2 procesy
-- Vždy skontrolujte `pm2 status` po reštarte
+```bash
+# Skontrolovať, či beží aplikácia
+pm2 status
 
+# Skontrolovať logy
+pm2 logs premarketprice --lines 50
+
+# Skontrolovať health endpoint
+curl http://localhost:3000/api/health
+
+# Skontrolovať favicon (mal by mať v=4)
+curl -I http://localhost:3000/favicon.svg
+```

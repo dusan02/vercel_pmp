@@ -1,0 +1,30 @@
+# Rýchly SQL fix pre TPL, STZ, NOW - spustiť priamo na serveri
+# Použiť npx prisma db execute alebo priamo psql
+
+# Oprava TPL
+UPDATE "Ticker" 
+SET "sector" = 'Real Estate', 
+    "industry" = 'REIT - Specialty',
+    "updatedAt" = NOW()
+WHERE "symbol" = 'TPL';
+
+# Oprava STZ
+UPDATE "Ticker" 
+SET "sector" = 'Consumer Defensive', 
+    "industry" = 'Beverages - Alcoholic',
+    "updatedAt" = NOW()
+WHERE "symbol" = 'STZ';
+
+# Oprava NOW
+UPDATE "Ticker" 
+SET "sector" = 'Technology', 
+    "industry" = 'Software',
+    "updatedAt" = NOW()
+WHERE "symbol" = 'NOW';
+
+# Overenie
+SELECT "symbol", "name", "sector", "industry" 
+FROM "Ticker" 
+WHERE "symbol" IN ('TPL', 'STZ', 'NOW')
+ORDER BY "symbol";
+

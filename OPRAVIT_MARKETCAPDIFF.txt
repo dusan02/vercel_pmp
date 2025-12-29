@@ -1,0 +1,14 @@
+# 🔧 OPRAVIŤ marketCapDiff - Použiť getSharesOutstanding ak chýba v DB
+
+cd /var/www/premarketprice && \
+echo "=== 1. SKONTROLOVAŤ, KTORÉ TICKERY MAJÚ sharesOutstanding = 0 alebo NULL ===" && \
+npx prisma db execute --stdin <<EOF
+SELECT symbol, name, sharesOutstanding, lastPrice, latestPrevClose, lastMarketCapDiff 
+FROM "Ticker" 
+WHERE (sharesOutstanding IS NULL OR sharesOutstanding = 0) 
+  AND lastPrice > 0 
+  AND latestPrevClose > 0
+ORDER BY lastMarketCap DESC NULLS LAST
+LIMIT 20;
+EOF
+

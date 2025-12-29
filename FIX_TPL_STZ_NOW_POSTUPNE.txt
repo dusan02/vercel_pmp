@@ -1,0 +1,33 @@
+# 🔧 OPRAVA TPL, STZ, NOW - POSTUPNÉ PRÍKAZY
+# Spustiť jeden po druhom na serveri
+
+# 1. Prejsť do adresára
+cd /var/www/premarketprice
+
+# 2. Skontrolovať aktuálne hodnoty
+echo "=== Aktuálne hodnoty ==="
+npx prisma db execute --stdin <<< "SELECT \"symbol\", \"name\", \"sector\", \"industry\" FROM \"Ticker\" WHERE \"symbol\" IN ('TPL', 'STZ', 'NOW') ORDER BY \"symbol\";"
+
+# 3. Opraviť TPL
+echo ""
+echo "=== Opravujem TPL ==="
+npx prisma db execute --stdin <<< "UPDATE \"Ticker\" SET \"sector\" = 'Real Estate', \"industry\" = 'REIT - Specialty', \"updatedAt\" = NOW() WHERE \"symbol\" = 'TPL';"
+
+# 4. Opraviť STZ
+echo ""
+echo "=== Opravujem STZ ==="
+npx prisma db execute --stdin <<< "UPDATE \"Ticker\" SET \"sector\" = 'Consumer Defensive', \"industry\" = 'Beverages - Alcoholic', \"updatedAt\" = NOW() WHERE \"symbol\" = 'STZ';"
+
+# 5. Opraviť NOW
+echo ""
+echo "=== Opravujem NOW ==="
+npx prisma db execute --stdin <<< "UPDATE \"Ticker\" SET \"sector\" = 'Technology', \"industry\" = 'Software', \"updatedAt\" = NOW() WHERE \"symbol\" = 'NOW';"
+
+# 6. Overiť opravy
+echo ""
+echo "=== Overenie oprav ==="
+npx prisma db execute --stdin <<< "SELECT \"symbol\", \"name\", \"sector\", \"industry\" FROM \"Ticker\" WHERE \"symbol\" IN ('TPL', 'STZ', 'NOW') ORDER BY \"symbol\";"
+
+echo ""
+echo "✅ Hotovo!"
+

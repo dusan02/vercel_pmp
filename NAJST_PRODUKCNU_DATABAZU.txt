@@ -1,0 +1,40 @@
+cd /var/www/premarketprice && \
+echo "=== 1. KONTROLA .env SÚBORU (DATABASE_URL) ===" && \
+grep DATABASE_URL .env 2>/dev/null || echo "⚠️ .env súbor neexistuje alebo nemá DATABASE_URL" && \
+echo "" && \
+echo "=== 2. HĽADANIE VŠETKÝCH .db SÚBOROV ===" && \
+find . -name "*.db" -type f 2>/dev/null | head -10 && \
+echo "" && \
+echo "=== 3. KONTROLA PRISMA/DATA/PREMARKET.DB ===" && \
+if [ -f "prisma/data/premarket.db" ]; then \
+  echo "✅ Súbor existuje:" && \
+  ls -lh prisma/data/premarket.db && \
+  echo "" && \
+  echo "Tabuľky v prisma/data/premarket.db:" && \
+  sqlite3 prisma/data/premarket.db ".tables" 2>&1 && \
+  echo "" && \
+  echo "Počet tickerov:" && \
+  sqlite3 prisma/data/premarket.db "SELECT COUNT(*) FROM Ticker;" 2>&1 || echo "⚠️ Tabuľka Ticker neexistuje"; \
+else \
+  echo "⚠️ prisma/data/premarket.db neexistuje"; \
+fi && \
+echo "" && \
+echo "=== 4. KONTROLA PRISMA/PROD.DB ===" && \
+if [ -f "prisma/prod.db" ]; then \
+  echo "✅ Súbor existuje:" && \
+  ls -lh prisma/prod.db && \
+  echo "" && \
+  echo "Tabuľky v prisma/prod.db:" && \
+  sqlite3 prisma/prod.db ".tables" 2>&1 && \
+  echo "" && \
+  echo "Počet tickerov:" && \
+  sqlite3 prisma/prod.db "SELECT COUNT(*) FROM Ticker;" 2>&1 || echo "⚠️ Tabuľka Ticker neexistuje"; \
+else \
+  echo "⚠️ prisma/prod.db neexistuje"; \
+fi && \
+echo "" && \
+echo "=== 5. KONTROLA PM2 ENV (DATABASE_URL) ===" && \
+pm2 describe premarketprice 2>/dev/null | grep -E "(DATABASE_URL|env)" | head -5 || echo "⚠️ PM2 proces neexistuje" && \
+echo "" && \
+echo "✅ Hotovo!"
+

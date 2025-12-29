@@ -1,0 +1,23 @@
+# 🔍 SPUSTIŤ earnings-cron A SKONTROLOVAŤ CRON SCHEDULE
+
+cd /var/www/earnings-table && \
+echo "=== 1. SKONTROLOVAŤ, ČI EXISTUJE modules/cron/src/main.ts ===" && \
+ls -la modules/cron/src/main.ts 2>/dev/null || echo "⚠️ Súbor neexistuje" && \
+echo "" && \
+echo "=== 2. SKONTROLOVAŤ CRON SCHEDULE V main.ts ===" && \
+grep -i -E "(schedule|cron|clear|delete|cleanup|03:00|daily)" modules/cron/src/main.ts 2>/dev/null | head -20 || echo "⚠️ Súbor neexistuje alebo žiadne výsledky" && \
+echo "" && \
+echo "=== 3. SPUSTIŤ earnings-cron ===" && \
+pm2 start ecosystem.config.js --only earnings-cron --env production && \
+sleep 3 && \
+echo "" && \
+echo "=== 4. PM2 STATUS - earnings-cron ===" && \
+pm2 list | grep earnings-cron && \
+echo "" && \
+echo "=== 5. PM2 LOGY - earnings-cron (posledných 50 riadkov) ===" && \
+pm2 logs earnings-cron --lines 50 --nostream 2>&1 | tail -30 && \
+echo "" && \
+echo "=== 6. ULOŽIŤ PM2 ===" && \
+pm2 save && \
+echo "✅ Hotovo!"
+

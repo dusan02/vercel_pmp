@@ -71,10 +71,16 @@ export function buildHeatmapHierarchy(
       }
     }
     
-    // Zoraď sektory podľa sumy value desc, ale "Unknown" je vždy posledný
+    // Zoraď sektory podľa sumy value desc, ale "Technology" je vždy prvá a "Unknown" je vždy posledný
     root.children.sort((a, b) => {
+      const aIsTechnology = a.name === 'Technology';
+      const bIsTechnology = b.name === 'Technology';
       const aIsUnknown = a.name === 'Unknown';
       const bIsUnknown = b.name === 'Unknown';
+      
+      // Technology is always first
+      if (aIsTechnology && !bIsTechnology) return -1;
+      if (!aIsTechnology && bIsTechnology) return 1;
       
       // "Unknown" sektor je vždy posledný
       if (aIsUnknown && !bIsUnknown) return 1;

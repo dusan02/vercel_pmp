@@ -1,0 +1,21 @@
+cd /var/www/premarketprice && \
+echo "=== 1. GIT PULL ===" && \
+git pull origin main && \
+echo "" && \
+echo "=== 2. REŠTARTOVANIE ===" && \
+pm2 restart premarketprice && \
+sleep 5 && \
+echo "" && \
+echo "=== 3. PM2 STATUS ===" && \
+pm2 list | grep premarketprice && \
+echo "" && \
+echo "=== 4. POČKANIE 10 SEKÚND A KONTROLA LOGOV ===" && \
+sleep 10 && \
+echo "" && \
+echo "=== 5. PM2 LOGY - hľadanie marketCapDiff alebo NVDA/GOOG/MSFT ===" && \
+pm2 logs premarketprice --lines 100 --nostream 2>&1 | grep -i -E "(marketCapDiff|NVDA|GOOG|MSFT|mcap_pct|calculatedPct)" | tail -30 || echo "⚠️ Žiadne relevantné logy" && \
+echo "" && \
+pm2 save && \
+echo "" && \
+echo "✅ Hotovo! Obnovte stránku a skontrolujte, či sa marketCapDiff zobrazuje."
+

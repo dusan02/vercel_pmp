@@ -1,0 +1,17 @@
+# 🔍 KONTROLA CHYBNÝCH TICKEROV - S NÁZVAMI SPOLOČNOSTÍ
+# Tento príkaz zobrazí tickery s názvami, aby sme videli, ktoré sú skutočne nesprávne
+
+cd /var/www/premarketprice
+
+echo "=== Technology/Communication Equipment (s názvami) ==="
+sqlite3 prisma/data/premarket.db "SELECT symbol, name, sector, industry FROM Ticker WHERE sector = 'Technology' AND industry = 'Communication Equipment' ORDER BY symbol LIMIT 50;"
+
+echo ""
+echo "=== Real Estate/REIT - Specialty (s názvami) ==="
+sqlite3 prisma/data/premarket.db "SELECT symbol, name, sector, industry FROM Ticker WHERE sector = 'Real Estate' AND industry = 'REIT - Specialty' ORDER BY symbol LIMIT 50;"
+
+echo ""
+echo "✅ Kontrola dokončená!"
+echo ""
+echo "💡 Tip: Manuálne skontrolujte názvy spoločností a identifikujte nesprávne zaradené tickery."
+

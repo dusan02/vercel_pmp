@@ -1,0 +1,28 @@
+# 🔍 KONTROLA ĎALŠÍCH CHÝB - PRIAMY SQLITE PRÍKAZ
+# Najprv zistiť cestu k databáze, potom použiť sqlite3
+
+cd /var/www/premarketprice
+
+# 1. Zistiť cestu k databáze
+echo "=== 1. CESTA K DATABÁZE ==="
+grep DATABASE_URL .env | head -1
+
+# 2. Ak je to SQLite, extrahovať cestu a použiť sqlite3
+# (Príklad: DATABASE_URL="file:/var/www/premarketprice/prisma/data/premarket.db")
+# Potom spustiť:
+
+echo ""
+echo "=== 2. Technology/Communication Equipment ==="
+sqlite3 prisma/data/premarket.db "SELECT symbol, name, sector, industry FROM Ticker WHERE sector = 'Technology' AND industry = 'Communication Equipment' ORDER BY symbol LIMIT 30;" 2>/dev/null || echo "⚠️ Použiť správnu cestu k databáze"
+
+echo ""
+echo "=== 3. Real Estate/REIT - Specialty ==="
+sqlite3 prisma/data/premarket.db "SELECT symbol, name, sector, industry FROM Ticker WHERE sector = 'Real Estate' AND industry = 'REIT - Specialty' ORDER BY symbol LIMIT 30;" 2>/dev/null || echo "⚠️ Použiť správnu cestu k databáze"
+
+echo ""
+echo "=== 4. NULL sector/industry ==="
+sqlite3 prisma/data/premarket.db "SELECT symbol, name, sector, industry FROM Ticker WHERE sector IS NULL OR industry IS NULL ORDER BY symbol LIMIT 30;" 2>/dev/null || echo "⚠️ Použiť správnu cestu k databáze"
+
+echo ""
+echo "✅ Kontrola dokončená!"
+

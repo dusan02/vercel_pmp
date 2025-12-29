@@ -1,0 +1,123 @@
+#!/bin/bash
+# 🔍 KOMPLETNÁ DIAGNOSTIKA marketCapDiff - Analýza pre GPT
+# Tento skript kontroluje celý flow: výpočet → uloženie do DB → prenos na FE
+
+cd /var/www/premarketprice && \
+DB="prisma/data/premarket.db" && \
+
+echo "═══════════════════════════════════════════════════════════════════════════════" && \
+echo "🔍 KOMPLETNÁ DIAGNOSTIKA marketCapDiff - Analýza pre GPT" && \
+echo "═══════════════════════════════════════════════════════════════════════════════" && \
+echo "" && \
+
+echo "=== 1. ANALÝZA: Veľké spoločnosti bez marketCapDiff ===" && \
+echo "Kontrola, či majú všetky potrebné dáta na výpočet:" && \
+sqlite3 "$DB" "SELECT 
+  symbol, 
+  name,
+  lastPrice as currentPrice,
+  latestPrevClose as prevClose,
+  lastChangePct as percentChange,
+  lastMarketCap as marketCap,
+  lastMarketCapDiff as capDiff,
+  sharesOutstanding as shares,
+  CASE 
+    WHEN lastPrice > 0 AND latestPrevClose > 0 AND sharesOutstanding > 0 THEN '✅ Môže počítať z price/prevClose/shares'
+    WHEN lastMarketCap > 0 AND lastChangePct IS NOT NULL AND lastChangePct != 0 THEN '✅ Môže počítať z marketCap/percentChange'
+    ELSE '❌ Chýbajú dáta'
+  END as moze_pocitat
+FROM Ticker 
+WHERE lastMarketCap > 1000 
+  AND (lastMarketCapDiff IS NULL OR lastMarketCapDiff = 0)
+ORDER BY lastMarketCap DESC 
+LIMIT 15;" 2>&1 && \
+echo "" && \
+
+echo "=== 2. VÝPOČET: Dopočítanie marketCapDiff z marketCap a percentChange ===" && \
+echo "Pre veľké spoločnosti, ktoré majú marketCap a percentChange, ale nemajú capDiff:" && \
+sqlite3 "$DB" "SELECT 
+  symbol,
+  name,
+  lastMarketCap as marketCap,
+  lastChangePct as percentChange,
+  lastMarketCapDiff as capDiff_v_DB,
+  ROUND(lastMarketCap * lastChangePct / 100, 2) as capDiff_vypocitany,
+  lastPrice,
+  latestPrevClose,
+  sharesOutstanding
+FROM Ticker 
+WHERE lastMarketCap > 1000 
+  AND lastChangePct IS NOT NULL 
+  AND lastChangePct != 0
+  AND (lastMarketCapDiff IS NULL OR lastMarketCapDiff = 0)
+ORDER BY lastMarketCap DESC 
+LIMIT 15;" 2>&1 && \
+echo "" && \
+
+echo "=== 3. KONTROLA: Či sa marketCapDiff ukladá do DB ===" && \
+echo "Tickeri, ktoré majú všetky dáta, ale capDiff = 0:" && \
+sqlite3 "$DB" "SELECT 
+  symbol,
+  lastPrice > 0 as has_price,
+  latestPrevClose > 0 as has_prevClose,
+  sharesOutstanding > 0 as has_shares,
+  lastMarketCap > 0 as has_marketCap,
+  lastChangePct IS NOT NULL AND lastChangePct != 0 as has_percentChange,
+  lastMarketCapDiff as capDiff,
+  CASE 
+    WHEN lastPrice > 0 AND latestPrevClose > 0 AND sharesOutstanding > 0 THEN 'Môže počítať z price/prevClose/shares'
+    WHEN lastMarketCap > 0 AND lastChangePct IS NOT NULL AND lastChangePct != 0 THEN 'Môže počítať z marketCap/percentChange'
+    ELSE 'Chýbajú dáta'
+  END as moze_pocitat
+FROM Ticker 
+WHERE lastMarketCap > 1000 
+  AND (lastMarketCapDiff IS NULL OR lastMarketCapDiff = 0)
+ORDER BY lastMarketCap DESC 
+LIMIT 10;" 2>&1 && \
+echo "" && \
+
+echo "=== 4. ŠTATISTIKA: Počty tickerov podľa stavu ===" && \
+echo "Celkový prehľad:" && \
+sqlite3 "$DB" "
+SELECT 
+  'Celkom tickerov' as kategoria, COUNT(*) as pocet FROM Ticker
+UNION ALL
+SELECT 
+  'S marketCap > 0' as kategoria, COUNT(*) as pocet FROM Ticker WHERE lastMarketCap > 0
+UNION ALL
+SELECT 
+  'S percentChange != 0' as kategoria, COUNT(*) as pocet FROM Ticker WHERE lastChangePct IS NOT NULL AND lastChangePct != 0
+UNION ALL
+SELECT 
+  'S capDiff != 0' as kategoria, COUNT(*) as pocet FROM Ticker WHERE lastMarketCapDiff IS NOT NULL AND lastMarketCapDiff != 0
+UNION ALL
+SELECT 
+  'S marketCap A percentChange ALE BEZ capDiff' as kategoria, COUNT(*) as pocet 
+  FROM Ticker 
+  WHERE lastMarketCap > 0 
+    AND lastChangePct IS NOT NULL 
+    AND lastChangePct != 0
+    AND (lastMarketCapDiff IS NULL OR lastMarketCapDiff = 0)
+UNION ALL
+SELECT 
+  'S price A prevClose A shares ALE BEZ capDiff' as kategoria, COUNT(*) as pocet 
+  FROM Ticker 
+  WHERE lastPrice > 0 
+    AND latestPrevClose > 0 
+    AND sharesOutstanding > 0
+    AND (lastMarketCapDiff IS NULL OR lastMarketCapDiff = 0);" 2>&1 && \
+echo "" && \
+
+echo "=== 5. PM2 LOGY: Hľadanie chýb pri výpočte alebo ukladaní ===" && \
+pm2 logs premarketprice --lines 100 --nostream 2>&1 | grep -i -E "(marketCapDiff|sharesOutstanding|Failed to persist|Error computing)" | tail -30 || echo "⚠️ Žiadne relevantné logy" && \
+echo "" && \
+
+echo "=== 6. KONTROLA API: Či sa marketCapDiff prenáša na FE ===" && \
+echo "Test API endpointu /api/stocks (prvých 5 tickerov):" && \
+curl -s "http://localhost:3000/api/stocks?limit=5" 2>&1 | head -100 | grep -E "(marketCapDiff|ticker|symbol)" | head -20 || echo "⚠️ API neodpovedá" && \
+echo "" && \
+
+echo "═══════════════════════════════════════════════════════════════════════════════" && \
+echo "✅ DIAGNOSTIKA HOTOVÁ" && \
+echo "═══════════════════════════════════════════════════════════════════════════════"
+

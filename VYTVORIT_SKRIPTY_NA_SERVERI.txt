@@ -1,0 +1,163 @@
+# 📝 Príkazy na vytvorenie diagnostických skriptov na serveri
+
+# 1. DIAGNOSTIKA_CAPDIFF_KOMPLETNA.sh
+cat > /var/www/premarketprice/DIAGNOSTIKA_CAPDIFF_KOMPLETNA.sh <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd /var/www/premarketprice
+DB="prisma/data/premarket.db"
+
+echo "═══════════════════════════════════════════════════════════════════════════════"
+echo "🔍 KOMPLETNÁ DIAGNOSTIKA marketCapDiff"
+echo "═══════════════════════════════════════════════════════════════════════════════"
+echo ""
+
+echo "=== 1. Veľké spoločnosti bez marketCapDiff ==="
+sqlite3 "$DB" "SELECT 
+  symbol, 
+  lastPrice as price,
+  latestPrevClose as prevClose,
+  lastChangePct as pctChange,
+  lastMarketCap as marketCap,
+  lastMarketCapDiff as capDiff,
+  sharesOutstanding as shares,
+  CASE 
+    WHEN lastPrice > 0 AND latestPrevClose > 0 AND sharesOutstanding > 0 THEN '✅ Môže z price/prevClose/shares'
+    WHEN lastMarketCap > 0 AND lastChangePct IS NOT NULL AND lastChangePct != 0 THEN '✅ Môže z marketCap/pctChange'
+    ELSE '❌ Chýbajú dáta'
+  END as moze_pocitat
+FROM Ticker 
+WHERE lastMarketCap > 1000 
+  AND (lastMarketCapDiff IS NULL OR lastMarketCapDiff = 0)
+ORDER BY lastMarketCap DESC 
+LIMIT 15;" 2>&1
+echo ""
+
+echo "=== 2. Výpočet marketCapDiff z marketCap a percentChange ==="
+sqlite3 "$DB" "SELECT 
+  symbol,
+  lastMarketCap as marketCap,
+  lastChangePct as percentChange,
+  lastMarketCapDiff as capDiff_v_DB,
+  ROUND(lastMarketCap * lastChangePct / 100, 2) as capDiff_vypocitany
+FROM Ticker 
+WHERE lastMarketCap > 1000 
+  AND lastChangePct IS NOT NULL 
+  AND lastChangePct != 0
+  AND (lastMarketCapDiff IS NULL OR lastMarketCapDiff = 0)
+ORDER BY lastMarketCap DESC 
+LIMIT 15;" 2>&1
+echo ""
+
+echo "=== 3. Štatistiky ==="
+sqlite3 "$DB" "
+SELECT 
+  'Celkom tickerov' as kategoria, COUNT(*) as pocet FROM Ticker
+UNION ALL
+SELECT 
+  'S marketCap > 0' as kategoria, COUNT(*) as pocet FROM Ticker WHERE lastMarketCap > 0
+UNION ALL
+SELECT 
+  'S percentChange != 0' as kategoria, COUNT(*) as pocet FROM Ticker WHERE lastChangePct IS NOT NULL AND lastChangePct != 0
+UNION ALL
+SELECT 
+  'S capDiff != 0' as kategoria, COUNT(*) as pocet FROM Ticker WHERE lastMarketCapDiff IS NOT NULL AND lastMarketCapDiff != 0
+UNION ALL
+SELECT 
+  'S marketCap A percentChange ALE BEZ capDiff' as kategoria, COUNT(*) as pocet 
+  FROM Ticker 
+  WHERE lastMarketCap > 0 
+    AND lastChangePct IS NOT NULL 
+    AND lastChangePct != 0
+    AND (lastMarketCapDiff IS NULL OR lastMarketCapDiff = 0);" 2>&1
+echo ""
+
+echo "✅ Hotovo!"
+EOF
+
+chmod +x /var/www/premarketprice/DIAGNOSTIKA_CAPDIFF_KOMPLETNA.sh
+
+# 2. TEST_VELKE_SPOLOCNOSTI.sh
+cat > /var/www/premarketprice/TEST_VELKE_SPOLOCNOSTI.sh <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd /var/www/premarketprice
+DB="prisma/data/premarket.db"
+
+echo "═══════════════════════════════════════════════════════════════════════════════"
+echo "🧪 TEST: Veľké spoločnosti - Výpočet marketCapDiff"
+echo "═══════════════════════════════════════════════════════════════════════════════"
+echo ""
+
+echo "=== Top 10 spoločností ==="
+sqlite3 "$DB" "SELECT 
+  symbol,
+  lastPrice as price,
+  latestPrevClose as prevClose,
+  lastChangePct as pctChange,
+  lastMarketCap as marketCap,
+  lastMarketCapDiff as capDiff_DB,
+  sharesOutstanding as shares,
+  CASE 
+    WHEN sharesOutstanding > 0 THEN ROUND((lastPrice - latestPrevClose) * sharesOutstanding / 1000000000, 2)
+    WHEN lastMarketCap > 0 AND lastChangePct IS NOT NULL THEN ROUND(lastMarketCap * lastChangePct / 100, 2)
+    ELSE NULL
+  END as capDiff_vypocitany
+FROM Ticker 
+WHERE lastMarketCap > 1000
+ORDER BY lastMarketCap DESC 
+LIMIT 10;" 2>&1
+echo ""
+
+echo "✅ Hotovo!"
+EOF
+
+chmod +x /var/www/premarketprice/TEST_VELKE_SPOLOCNOSTI.sh
+
+# 3. TEST_API_ENDPOINT.sh
+cat > /var/www/premarketprice/TEST_API_ENDPOINT.sh <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+BASE="${1:-http://localhost:3000}"
+ENDPOINT="${2:-/api/stocks}"
+
+echo "═══════════════════════════════════════════════════════════════════════════════"
+echo "🧪 TEST: API Endpoint - Prenos marketCapDiff na FE"
+echo "═══════════════════════════════════════════════════════════════════════════════"
+echo ""
+
+echo "=== Test: ${BASE}${ENDPOINT}?limit=5 ==="
+HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${BASE}${ENDPOINT}?limit=5")
+echo "HTTP Status Code: $HTTP_CODE"
+echo ""
+
+if [ "$HTTP_CODE" = "200" ]; then
+  echo "=== Extrahovanie marketCapDiff z API odpovede (prvých 10 tickerov) ==="
+  curl -s "${BASE}${ENDPOINT}?limit=10" 2>&1 | \
+    python3 -c "
+import json, sys
+try:
+    data = json.load(sys.stdin)
+    if 'data' in data:
+        for stock in data['data'][:10]:
+            print(f\"{stock.get('ticker', 'N/A'):6} | marketCapDiff: {stock.get('marketCapDiff', 0):8.2f} | percentChange: {stock.get('percentChange', 0):6.2f}% | marketCap: {stock.get('marketCap', 0):8.2f}B\")
+    else:
+        print('⚠️ Neplatná štruktúra odpovede')
+except Exception as e:
+    print(f'⚠️ Chyba pri parsovaní JSON: {e}')
+" 2>&1 || echo "⚠️ Python nie je dostupný alebo JSON nie je validný"
+else
+  echo "❌ API neodpovedá správne (status: $HTTP_CODE)"
+fi
+echo ""
+
+echo "✅ Hotovo!"
+EOF
+
+chmod +x /var/www/premarketprice/TEST_API_ENDPOINT.sh
+
+echo "✅ Všetky skripty vytvorené a spustiteľné!"
+

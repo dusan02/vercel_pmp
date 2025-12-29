@@ -1,0 +1,45 @@
+# 🔧 JEDEN PRÍKAZ - Opraviť 502 Bad Gateway pre earningstable.com
+# Spustiť v adresári: /var/www/earnings-table
+
+cd /var/www/earnings-table && \
+echo "=== 1. DIAGNOSTIKA PM2 ===" && \
+pm2 list | grep -E "(earnings|name|status|online|offline)" && \
+echo "" && \
+echo "=== 2. DIAGNOSTIKA PORTU 5555 ===" && \
+ss -tlnp | grep 5555 || echo "⚠️ Port 5555 nie je otvorený!" && \
+echo "" && \
+echo "=== 3. DIAGNOSTIKA NGINX ===" && \
+grep -E "proxy_pass|127.0.0.1" /etc/nginx/sites-enabled/earningstable.com 2>/dev/null | head -3 || echo "⚠️ Nginx config nenájdený!" && \
+echo "" && \
+echo "=== 4. OPRAVA - Reštart earnings-table ===" && \
+pm2 restart earnings-table 2>&1 || (echo "⚠️ Proces neexistuje, spúšťam..." && pm2 start ecosystem.config.js --only earnings-table --env production 2>&1) && \
+sleep 3 && \
+echo "" && \
+echo "=== 5. KONTROLA PORTU PO REŠTARTE ===" && \
+ss -tlnp | grep 5555 && \
+echo "" && \
+echo "=== 6. TEST LOKÁLNEHO SERVERA ===" && \
+curl -s -o /dev/null -w "HTTP Status: %{http_code}\n" http://127.0.0.1:5555 && \
+echo "" && \
+echo "=== 7. OPRAVA NGINX - Nastavenie portu 5555 ===" && \
+cp /etc/nginx/sites-enabled/earningstable.com /etc/nginx/sites-enabled/earningstable.com.backup.$(date +%Y%m%d_%H%M%S) 2>/dev/null && \
+sed -i 's|proxy_pass http://app_servers;|proxy_pass http://127.0.0.1:5555;|g' /etc/nginx/sites-enabled/earningstable.com && \
+sed -i 's|proxy_pass http://127.0.0.1:3000;|proxy_pass http://127.0.0.1:5555;|g' /etc/nginx/sites-enabled/earningstable.com && \
+sed -i 's|proxy_pass http://127.0.0.1:3001;|proxy_pass http://127.0.0.1:5555;|g' /etc/nginx/sites-enabled/earningstable.com && \
+echo "✅ Nginx config opravený" && \
+echo "" && \
+echo "=== 8. KONTROLA NGINX CONFIG ===" && \
+grep "proxy_pass" /etc/nginx/sites-enabled/earningstable.com | head -2 && \
+echo "" && \
+echo "=== 9. TEST NGINX A RELOAD ===" && \
+nginx -t && systemctl reload nginx && echo "✅ Nginx reloadnutý" && \
+echo "" && \
+echo "=== 10. FINÁLNY TEST HTTPS ===" && \
+sleep 2 && \
+curl -k -s -o /dev/null -w "HTTPS Status: %{http_code}\n" https://earningstable.com && \
+echo "" && \
+echo "=== 11. PM2 SAVE ===" && \
+pm2 save && echo "✅ PM2 konfigurácia uložená" && \
+echo "" && \
+echo "✅ HOTOVO! Skontrolujte https://earningstable.com"
+

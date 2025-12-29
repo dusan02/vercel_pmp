@@ -1,0 +1,5 @@
+# 🚀 RÝCHLA OPRAVA 502 - earningstable.com
+# Skopírovať a spustiť v SSH termináli
+
+cd /var/www/earnings-table && pm2 restart earnings-table || pm2 start ecosystem.config.js --only earnings-table --env production && sleep 3 && sed -i 's|proxy_pass http://127.0.0.1:3000;|proxy_pass http://127.0.0.1:5555;|g' /etc/nginx/sites-enabled/earningstable.com && sed -i 's|proxy_pass http://app_servers;|proxy_pass http://127.0.0.1:5555;|g' /etc/nginx/sites-enabled/earningstable.com && nginx -t && systemctl reload nginx && pm2 save && echo "✅ Hotovo! Test: curl -k -I https://earningstable.com"
+

@@ -190,8 +190,28 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
   // 1. Transformácia dát
   const hierarchyRoot = useMemo(() => buildHeatmapHierarchy(data, metric), [data, metric]);
 
+  // Detect mobile for vertical layout
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Helper function to sum values in a node (for mobile vertical layout)
+  const sumValues = useCallback((node: HierarchyData): number => {
+    if (typeof node.value === 'number') return node.value;
+    if (!node.children) return 0;
+    return node.children.reduce((acc, c) => acc + sumValues(c), 0);
+  }, []);
+
   // 2. Výpočet D3 Treemap layoutu
   // Optimized: Round width/height to nearest 10px to prevent recalculation on tiny resizes
+  // Mobile: Vertical layout (sectors stacked vertically, no gaps)
+  // Desktop: Horizontal layout (original behavior)
   const treemapLayout = useMemo(() => {
     if (width === 0 || height === 0) return null;
 
@@ -200,13 +220,29 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
       .sum((d) => d.value || 0) // Sčítame 'value' (marketCap)
       .sort((a, b) => (b.value || 0) - (a.value || 0)); // Zoradíme
 
-    // Vytvoríme generátor treemapy
-    // Použijeme funkciu .padding() pre presnú kontrolu medzier podľa depth hierarchie
-    // depth 0 = ROOT → bez medzier
-    // depth 1 = SEKTOR → medzera (SECTOR_GAP)
-    // depth 2 = INDUSTRY → 0px
-    // depth 3+ = FIRMY → 0px
-    const SECTOR_GAP = LAYOUT_CONFIG.SECTOR_GAP;
+    // Mobile: Vertical layout - sectors stacked vertically, no gaps
+    // Desktop: Horizontal layout - original behavior
+    const SECTOR_GAP = isMobile ? 0 : LAYOUT_CONFIG.SECTOR_GAP; // No gap on mobile
+    
+    if (isMobile && d3Root.children && d3Root.children.length > 0) {
+      // Mobile: Use tall container to allow vertical stacking
+      // D3 will naturally stack sectors vertically when container is tall
+      const mobileHeight = height * d3Root.children.length * 4; // Tall container for vertical stacking
+      
+      const mobileTreemap = treemap<HierarchyData>()
+        .size([width, mobileHeight])
+        .padding(0) // No gaps on mobile
+        .paddingTop(0)
+        .paddingLeft(0)
+        .paddingRight(0)
+        .paddingBottom(0)
+        .tile(treemapSquarify);
+      
+      mobileTreemap(d3Root);
+      return d3Root;
+    }
+    
+    // Desktop: Original behavior
     const treemapGenerator = treemap<HierarchyData>()
       .size([width, height])
       .padding(function (node) {
@@ -229,7 +265,9 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
   }, [
     hierarchyRoot,
     Math.floor(width / 10) * 10,  // Round to nearest 10px to prevent recalc on tiny resizes
-    Math.floor(height / 10) * 10  // This improves performance during window resize
+    Math.floor(height / 10) * 10, // This improves performance during window resize
+    isMobile,
+    sumValues
   ]);
 
 
@@ -332,16 +370,32 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
   const scale = useMemo(() => {
     if (!treemapBounds) return 1;
 
-    // Vypočítame skálu, aby sa mapa roztiahla na celú plochu (bez okrajov)
+    if (isMobile) {
+      // Mobile: Scale only by width to allow vertical scrolling
+      // Sectors will stack vertically, width fills screen
+      return width / treemapBounds.treemapWidth;
+    }
+
+    // Desktop: Original behavior - fit to both dimensions
     const scaleX = width / treemapBounds.treemapWidth;
     const scaleY = height / treemapBounds.treemapHeight;
     return Math.min(scaleX, scaleY); // Použijeme menšiu škálu, aby sa mapa zmestila
-  }, [treemapBounds, width, height]);
+  }, [treemapBounds, width, height, isMobile]);
 
   // Offset pre roztiahnutie na celú plochu (bez centrovania)
   const offset = useMemo(() => {
     if (!treemapBounds || scale === 0) return { x: 0, y: 0 };
 
+    if (isMobile) {
+      // Mobile: Align to left, start from top (y: 0)
+      // Allow vertical scrolling - no vertical scaling/centering
+      return {
+        x: -treemapBounds.minX * scale,
+        y: -treemapBounds.minY * scale, // Start from top
+      };
+    }
+
+    // Desktop: Original behavior
     const treemapWidth = treemapBounds.treemapWidth * scale;
     const treemapHeight = treemapBounds.treemapHeight * scale;
 
@@ -350,7 +404,7 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
       x: -treemapBounds.minX * scale,
       y: -treemapBounds.minY * scale,
     };
-  }, [treemapBounds, scale]);
+  }, [treemapBounds, scale, isMobile]);
 
   // Progressive loading state
   const [visibleCount, setVisibleCount] = useState(50); // Start with 50 items
@@ -382,22 +436,22 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
     }
   }, []);
 
-  // Detect mobile for conditional overflow
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 1024);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  // Calculate actual content height for mobile (for proper vertical scrolling)
+  const contentHeight = useMemo(() => {
+    if (!isMobile || !treemapBounds) return height;
+    // Mobile: Use actual treemap height scaled to width
+    return Math.max(treemapBounds.treemapHeight * scale, height);
+  }, [isMobile, treemapBounds, scale, height]);
 
   return (
     <div
       ref={containerRef}
       className={styles.heatmapContainer}
-      style={{ overflow: isMobile ? 'visible' : 'hidden' }}
+      style={{ 
+        overflow: isMobile ? 'visible' : 'hidden',
+        height: isMobile ? contentHeight : '100%',
+        minHeight: isMobile ? contentHeight : undefined
+      }}
       onMouseMove={renderMode === 'dom' ? handleMouseMove : undefined}
     >
       {(width === 0 || height === 0) && (

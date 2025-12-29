@@ -1,0 +1,22 @@
+cd /var/www/premarketprice && \
+DB="prisma/data/premarket.db" && \
+echo "=== 1. POČET TICKEROV CELKOM ===" && \
+sqlite3 "$DB" "SELECT COUNT(*) as pocet FROM Ticker;" 2>&1 && \
+echo "" && \
+echo "=== 2. TICKERY BEZ sharesOutstanding (NULL alebo 0) - MAJÚ CENU A PREVCLOSE ===" && \
+sqlite3 "$DB" "SELECT symbol, name, sharesOutstanding, lastPrice, latestPrevClose, lastMarketCap, lastMarketCapDiff FROM Ticker WHERE (sharesOutstanding IS NULL OR sharesOutstanding = 0) AND lastPrice > 0 AND latestPrevClose > 0 ORDER BY lastMarketCap DESC LIMIT 20;" 2>&1 && \
+echo "" && \
+echo "=== 3. POČET TICKEROV BEZ sharesOutstanding (NULL alebo 0) ===" && \
+sqlite3 "$DB" "SELECT COUNT(*) as pocet FROM Ticker WHERE (sharesOutstanding IS NULL OR sharesOutstanding = 0) AND lastPrice > 0;" 2>&1 && \
+echo "" && \
+echo "=== 4. TOP 20 SPOLOČNOSTÍ PODĽA MARKET CAP ===" && \
+sqlite3 "$DB" "SELECT symbol, name, sharesOutstanding, lastPrice, latestPrevClose, lastMarketCap, lastMarketCapDiff FROM Ticker WHERE lastMarketCap > 0 ORDER BY lastMarketCap DESC LIMIT 20;" 2>&1 && \
+echo "" && \
+echo "=== 5. TICKERY S percentChange ALE BEZ marketCapDiff (HLAVNÝ PROBLÉM!) ===" && \
+sqlite3 "$DB" "SELECT symbol, name, lastChangePct, lastMarketCapDiff, sharesOutstanding, lastPrice, latestPrevClose FROM Ticker WHERE lastChangePct IS NOT NULL AND lastChangePct != 0 AND (lastMarketCapDiff IS NULL OR lastMarketCapDiff = 0) AND lastPrice > 0 AND latestPrevClose > 0 ORDER BY ABS(lastChangePct) DESC LIMIT 20;" 2>&1 && \
+echo "" && \
+echo "=== 6. POČET TICKEROV S percentChange ALE BEZ marketCapDiff ===" && \
+sqlite3 "$DB" "SELECT COUNT(*) as pocet FROM Ticker WHERE lastChangePct IS NOT NULL AND lastChangePct != 0 AND (lastMarketCapDiff IS NULL OR lastMarketCapDiff = 0) AND lastPrice > 0 AND latestPrevClose > 0;" 2>&1 && \
+echo "" && \
+echo "✅ Hotovo!"
+

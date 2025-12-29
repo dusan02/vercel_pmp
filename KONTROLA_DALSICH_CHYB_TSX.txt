@@ -1,0 +1,11 @@
+# 🔍 KONTROLA ĎALŠÍCH CHÝB - POUŽITIE TYPESCRIPT SKRIPTU
+# Táto verzia používa TypeScript skript, ktorý zobrazí výsledky v čitateľnom formáte
+
+cd /var/www/premarketprice
+
+# Spustiť TypeScript skript (ak existuje na serveri)
+npx tsx scripts/check-sector-industry-simple.ts
+
+# Alebo ak skript neexistuje, vytvoriť ho:
+# (Skript je v scripts/check-sector-industry-simple.ts)
+

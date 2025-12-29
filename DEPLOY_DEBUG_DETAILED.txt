@@ -1,0 +1,29 @@
+cd /var/www/premarketprice && \
+echo "=== 1. GIT PULL ===" && \
+git pull origin main && \
+echo "" && \
+echo "=== 2. REŠTARTOVANIE ===" && \
+pm2 restart premarketprice && \
+sleep 5 && \
+echo "" && \
+echo "=== 3. PM2 STATUS ===" && \
+pm2 list | grep premarketprice && \
+echo "" && \
+echo "=== 4. TEST API - Volanie /api/stocks?limit=10 ===" && \
+curl -s "http://localhost:3000/api/stocks?limit=10" > /dev/null && \
+echo "✅ API volanie dokončené" && \
+echo "" && \
+echo "=== 5. POČKANIE 5 SEKÚND ===" && \
+sleep 5 && \
+echo "" && \
+echo "=== 6. PM2 LOGY - hľadanie debug logov (🔍, 📊, ⚠️, ✅) ===" && \
+pm2 logs premarketprice --lines 300 --nostream 2>&1 | grep -i -E "(🔍|📊|⚠️|✅|NVDA|GOOG|MSFT|marketCapDiff|calculatedPct|prevClose|Method)" | tail -80 || echo "⚠️ Žiadne relevantné logy" && \
+echo "" && \
+echo "=== 7. KONTROLA DB - marketCapDiff po API volaní ===" && \
+DB="prisma/data/premarket.db" && \
+sqlite3 "$DB" "SELECT symbol, lastMarketCap, lastMarketCapDiff, lastPrice, latestPrevClose, sharesOutstanding FROM Ticker WHERE symbol IN ('NVDA', 'GOOG', 'MSFT') ORDER BY lastMarketCap DESC;" 2>&1 && \
+echo "" && \
+pm2 save && \
+echo "" && \
+echo "✅ Hotovo! Skontroluj logy vyššie - mali by ste vidieť 🔍, 📊, ⚠️ alebo ✅ pre NVDA/GOOG/MSFT."
+

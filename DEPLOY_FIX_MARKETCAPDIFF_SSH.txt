@@ -1,0 +1,19 @@
+cd /var/www/premarketprice && \
+echo "=== 1. GIT PULL (stiahnutie zmien) ===" && \
+git pull origin main && \
+echo "✅ Git pull hotový" && \
+echo "" && \
+echo "=== 2. REŠTARTOVANIE premarketprice ===" && \
+pm2 restart premarketprice && \
+echo "✅ premarketprice reštartovaný" && \
+echo "" && \
+echo "=== 3. POČKANIE 5 SEKÚND NA SPUSTENIE ===" && \
+sleep 5 && \
+echo "" && \
+echo "=== 4. PM2 STATUS ===" && \
+pm2 list | grep premarketprice && \
+echo "" && \
+pm2 save && \
+echo "" && \
+echo "✅ Hotovo! marketCapDiff sa teraz ukladá do DB."
+

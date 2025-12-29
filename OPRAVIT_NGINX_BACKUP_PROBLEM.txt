@@ -1,0 +1,15 @@
+# 🔧 OPRAVIŤ NGINX BACKUP PROBLÉM
+# Backup súbory v sites-enabled spôsobujú konflikt
+
+# Odstrániť všetky backup súbory z sites-enabled
+rm -f /etc/nginx/sites-enabled/*.backup.* && echo "✅ Backup súbory odstránené"
+
+# Skontrolovať, čo zostalo
+ls -la /etc/nginx/sites-enabled/
+
+# Test nginx
+nginx -t
+
+# Ak je OK, reload
+systemctl reload nginx
+
