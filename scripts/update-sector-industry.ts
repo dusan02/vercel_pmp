@@ -37,6 +37,7 @@ const coreSectors: { [key: string]: { sector: string; industry: string } } = {
   'FTNT': { sector: 'Technology', industry: 'Software' },
   'PANW': { sector: 'Technology', industry: 'Software' },
   'PLTR': { sector: 'Technology', industry: 'Software' },
+  'NOW': { sector: 'Technology', industry: 'Software' }, // ServiceNow - cloud software platform
   
   // Consumer Cyclical
   'AMZN': { sector: 'Consumer Cyclical', industry: 'Internet Retail' },
@@ -136,6 +137,7 @@ const coreSectors: { [key: string]: { sector: string; industry: string } } = {
   'PLD': { sector: 'Real Estate', industry: 'REIT - Industrial' },
   'AMT': { sector: 'Real Estate', industry: 'REIT - Specialty' },
   'EQIX': { sector: 'Real Estate', industry: 'REIT - Specialty' },
+  'TPL': { sector: 'Real Estate', industry: 'REIT - Specialty' }, // Texas Pacific Land Corporation - land management and royalties
   
   // Utilities
   'NEE': { sector: 'Utilities', industry: 'Utilities - Regulated Electric' },
@@ -148,7 +150,7 @@ const coreSectors: { [key: string]: { sector: string; industry: string } } = {
   'KO': { sector: 'Consumer Defensive', industry: 'Beverages - Non-Alcoholic' },
   'PEP': { sector: 'Consumer Defensive', industry: 'Beverages - Non-Alcoholic' },
   'PM': { sector: 'Consumer Defensive', industry: 'Tobacco' },
-};
+  'STZ': { sector: 'Consumer Defensive', industry: 'Beverages - Alcoholic' }, // Constellation Brands - beer, wine, spirits
 
 // Pattern-based generation (from stocks/route.ts)
 function generateSectorFromTicker(ticker: string): { sector: string; industry: string } | null {

@@ -3345,7 +3345,7 @@ table td strong {
   display: flex;
   align-items: center;
   flex: 1;
-  max-width: 400px;
+  max-width: 300px;
   margin-left: auto;
   position: relative;
 }
@@ -3580,8 +3580,8 @@ table td strong {
   display: flex;
   align-items: center;
   flex: 0 1 auto;
-  max-width: 280px;
-  min-width: 180px;
+  max-width: 300px;
+  min-width: 300px;
 }
 
 .header-search-inline .search-wrapper {
@@ -3874,8 +3874,8 @@ h2:hover .section-icon {
 
 .search-wrapper {
   flex: 1;
-  min-width: 250px;
-  max-width: 400px;
+  min-width: 300px;
+  max-width: 300px;
 }
 
 .search-input {
