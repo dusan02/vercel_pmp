@@ -766,10 +766,9 @@ export async function bootstrapPreviousCloses(
             // Extract timestamp from result to get the actual trading day
             const timestamp = prevData.results[0].t;
             if (timestamp) {
-              // Convert Unix timestamp (ms) to Date, then to ET date
+              // Convert Unix timestamp (ms) to Date, then to ET date string
               const prevDate = new Date(timestamp);
-              const prevDateET = toET(prevDate);
-              const prevDateStr = getDateET(prevDateET);
+              const prevDateStr = getDateET(prevDate);
               prevTradingDay = createETDate(prevDateStr);
             } else {
               // Fallback: use getLastTradingDay if timestamp not available
