@@ -105,7 +105,7 @@ export function HeatmapPreview() {
         style={{ cursor: 'pointer' }}
         onClick={handleBackgroundClick}
       >
-        <div className="w-full h-full">
+        <div className="w-full h-full min-h-0">
           <ResponsiveMarketHeatmap
             apiEndpoint="/api/heatmap"
             autoRefresh={true}

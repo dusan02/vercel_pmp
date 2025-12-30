@@ -57,7 +57,8 @@ export const MobileShell: React.FC<MobileShellProps> = ({
       </div>
 
       {/* Main Content - Single View */}
-      <main className="mobile-main-content">
+      {/* Add 'has-fab' class for views that show FAB (allStocks, portfolio, favorites) */}
+      <main className={`mobile-main-content ${activeView === 'allStocks' || activeView === 'portfolio' || activeView === 'favorites' ? 'has-fab' : ''}`}>
         {children}
       </main>
 

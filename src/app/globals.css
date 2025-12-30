@@ -6237,8 +6237,13 @@ table td strong {
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   min-height: 0; /* Critical: allows grid child to shrink below content size */
-  /* Padding for FAB (56px height + 16px margin) to prevent content overlap */
-  padding-bottom: calc(56px + 16px);
+  /* Default: no padding (for views without FAB like heatmap) */
+  padding-bottom: 0;
+}
+
+/* FAB padding - only when FAB is visible (allStocks, portfolio, favorites) */
+.mobile-main-content.has-fab {
+  padding-bottom: calc(56px + 16px); /* FAB height (56px) + margin (16px) */
 }
 
 /* Mobile Views */
@@ -6316,7 +6321,8 @@ table td strong {
   transition: all 0.2s ease;
   position: relative;
   min-height: 60px;
-  min-width: 60px;
+  min-width: 0; /* Critical: allows flex item to shrink below content size for label truncation */
+  flex: 1; /* Equal distribution */
   border-radius: 0.5rem;
 }
 
@@ -6342,6 +6348,8 @@ table td strong {
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
+  width: 100%;
+  text-align: center;
 }
 
 .active-indicator {
