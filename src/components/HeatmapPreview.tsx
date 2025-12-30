@@ -101,8 +101,8 @@ export function HeatmapPreview() {
 
       {/* Mobile: Full height in view */}
       <div
-        className="relative w-full bg-black overflow-hidden group heatmap-preview-container lg:hidden"
-        style={{ height: '100%', minHeight: 0, cursor: 'pointer' }}
+        className="relative w-full bg-black overflow-hidden group heatmap-preview-container lg:hidden h-full"
+        style={{ cursor: 'pointer' }}
         onClick={handleBackgroundClick}
       >
         <div className="w-full h-full">

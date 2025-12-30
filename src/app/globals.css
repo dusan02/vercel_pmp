@@ -6169,15 +6169,23 @@ table td strong {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   
   display: flex;
-  justify-content: space-around;
   align-items: center;
+  justify-content: space-around;
   
-  /* Fixed height for nav bar (without safe-area) */
+  /* Fixed height for nav bar content (without safe-area) */
   height: 64px;
   padding: 0.5rem 0;
   
-  /* Safe-area handled via padding, not height */
-  padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
+  /* Safe-area handled via ::after spacer (more predictable than padding) */
+}
+
+/* Safe-area spacer - separate from content box for predictable height */
+.bottom-navigation::after {
+  content: "";
+  display: block;
+  height: env(safe-area-inset-bottom);
+  width: 100%;
+  flex-shrink: 0;
 }
 
 /* Hidden on desktop */
@@ -6240,6 +6248,12 @@ table td strong {
   padding: 0;
   height: 100%;
   min-height: 0; /* Critical for grid overflow context */
+}
+
+/* Heatmap container - use CSS instead of inline styles for stability */
+.mobile-view-heatmap .heatmap-preview-container {
+  height: 100%;
+  min-height: 0;
 }
 
 .mobile-view-portfolio,
@@ -6333,7 +6347,8 @@ table td strong {
 /* Floating Action Button */
 .fab-container {
   position: fixed;
-  bottom: calc(16px + env(safe-area-inset-bottom)); /* Reduced offset since nav is no longer fixed overlay */
+  /* Position above bottom nav: nav height (64px) + margin (16px) + safe-area */
+  bottom: calc(64px + 16px + env(safe-area-inset-bottom));
   right: 1rem;
   z-index: 999;
   display: flex;
@@ -6481,7 +6496,8 @@ table td strong {
   }
 
   .fab-container {
-    bottom: calc(16px + env(safe-area-inset-bottom)); /* Reduced offset since nav is no longer fixed overlay */
+    /* Position above bottom nav: nav height (64px) + margin (16px) + safe-area */
+    bottom: calc(64px + 16px + env(safe-area-inset-bottom));
     right: 1.5rem;
   }
 
@@ -6512,7 +6528,8 @@ table td strong {
   }
 
   .fab-container {
-    bottom: calc(16px + env(safe-area-inset-bottom)); /* Reduced offset since nav is no longer fixed overlay */
+    /* Position above bottom nav: nav height (64px) + margin (16px) + safe-area */
+    bottom: calc(64px + 16px + env(safe-area-inset-bottom));
     right: 1rem;
   }
 
