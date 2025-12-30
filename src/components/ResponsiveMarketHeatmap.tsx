@@ -5,6 +5,7 @@ import { MarketHeatmap, CompanyNode, useElementResize, HeatmapMetric } from './M
 import { useHeatmapData } from '@/hooks/useHeatmapData';
 import { useHeatmapMetric } from '@/hooks/useHeatmapMetric';
 import { HeatmapMetricButtons } from './HeatmapMetricButtons';
+import { SectorListMobile } from './SectorListMobile';
 
 export type ResponsiveMarketHeatmapProps = {
   /** API endpoint pre načítanie dát (default: /api/heatmap) */
@@ -49,22 +50,31 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
   const { ref, size } = useElementResize();
   const width = size.width;
   const height = size.height;
-  
+
   const [isMounted, setIsMounted] = useState(false);
-  
+
   // Mobile detection (for wrapper styling only, MarketHeatmap handles its own mobile detection)
   const [isMobile, setIsMobile] = useState(false);
-  
+
   // Detect mobile on mount and resize
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768);
     };
-    
+
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  const [mobileSelectedSector, setMobileSelectedSector] = useState<string | null>(null);
+
+  // If switching away from mobile, reset selection
+  useEffect(() => {
+    if (!isMobile) {
+      setMobileSelectedSector(null);
+    }
+  }, [isMobile]);
 
   // Centralized metric state management
   // Use controlledMetric if provided (for external control), otherwise use hook
@@ -124,7 +134,7 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
   // Vypočítaj vek dát pre zobrazenie
   const getDataAgeDisplay = (): string | null => {
     if (!lastUpdated) return null;
-    
+
     // Check if lastUpdated is a valid date string
     const date = new Date(lastUpdated);
     if (isNaN(date.getTime())) return null;
@@ -181,9 +191,32 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
       );
     }
 
-    // Data loaded state
-    // Mobile: Show vertical heatmap (sectors stacked, no gaps, scrollable)
-    // Desktop: Original behavior (no changes)
+    // Logic for Mobile View:
+    // 1. Show Sector List by default
+    // 2. If sector selected, show Heatmap (zoomed)
+    // Desktop View: Always show Heatmap
+
+    if (isMobile && !mobileSelectedSector) {
+      return (
+        <div style={{ height: '100%', overflow: 'hidden' }}>
+          {/* Header controls for mobile list view if needed */}
+          {!hideMetricButtons && (
+            <div className="flex justify-end p-2 bg-black border-b border-gray-800">
+              <HeatmapMetricButtons
+                metric={metric}
+                onMetricChange={setMetric}
+              />
+            </div>
+          )}
+          <SectorListMobile
+            data={data}
+            onSectorClick={(sector) => setMobileSelectedSector(sector)}
+          />
+        </div>
+      );
+    }
+
+    // Default Heatmap Rendering (Desktop or Mobile Zoomed)
     return (
       <>
         {/* Metric selector - top left overlay (only if not hidden, and not on mobile - mobile has it in header) */}
@@ -198,16 +231,7 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
           </div>
         )}
 
-        {/* Timeframe selector - top center overlay (optional, handled by page or here?) */}
-        {/* Currently timeframe is passed via props usually, but hook manages it now. 
-            We can expose controls here if needed, or let parent handle it.
-            The page.tsx has a selector passed to Legend, but here we have internal state.
-            Ideally, we should sync props with internal state or lift state up.
-            For now, let's assume parent controls it via props or we add controls here.
-            The hook respects initialTimeframe.
-        */}
-
-        {/* Heatmap - vertical layout on mobile, horizontal on desktop */}
+        {/* Heatmap */}
         <MarketHeatmap
           data={data}
           width={width}
@@ -216,6 +240,9 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
           timeframe={timeframe}
           metric={metric}
           sectorLabelVariant={sectorLabelVariant}
+          // Controlled zoom for mobile flow
+          zoomedSector={isMobile ? mobileSelectedSector : null}
+          {...(isMobile ? { onZoomChange: setMobileSelectedSector } : {})}
         />
 
         {/* Last updated indicator - only on desktop (mobile has it in header or can be added) */}

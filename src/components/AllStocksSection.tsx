@@ -10,6 +10,7 @@ import { StockTableRow } from './StockTableRow';
 import { SectionLoader } from './SectionLoader';
 import { CustomDropdown } from './CustomDropdown';
 import { StockData } from '@/lib/types';
+import { StockCardMobile } from './StockCardMobile';
 
 interface AllStocksSectionProps {
   displayedStocks: StockData[];
@@ -62,7 +63,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
   uniqueSectors,
   availableIndustries
 }: AllStocksSectionProps) {
-  
+
   // Reset industry when sector changes
   const handleSectorChange = useCallback((value: string) => {
     onSectorChange(value);
@@ -91,7 +92,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
     { value: 'all', label: 'All Industries' },
     ...availableIndustries.map(industry => ({ value: industry, label: industry }))
   ], [availableIndustries]);
-  
+
   // Memoize favorite handlers per stock
   const favoriteHandlers = useMemo(() => {
     const handlers = new Map<string, () => void>();
@@ -138,55 +139,77 @@ export const AllStocksSection = React.memo(function AllStocksSection({
         </div>
       </div>
 
-      {loading ? (
-        <SectionLoader message="Loading stocks..." />
-      ) : (
-        <>
-          <div className="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  {TABLE_HEADERS.map((header, index) => (
-                    <th
-                      key={index}
-                      onClick={header.sortable && header.key ? () => onSort(header.key!) : undefined}
-                      className={header.sortable ? `sortable ${sortKey === header.key ? "active-sort" : ""}` : undefined}
-                    >
-                      {header.label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {displayedStocks.length === 0 ? (
-                  <tr>
-                    <td colSpan={10} style={{ textAlign: 'center', padding: '2rem', color: 'var(--clr-subtext)' }}>
-                      No stocks to display.
-                    </td>
-                  </tr>
-                ) : (
-                  displayedStocks.map((stock, index) => (
-                    <StockTableRow
-                      key={stock.ticker}
-                      stock={stock}
-                      isFavorite={isFavorite(stock.ticker)}
-                      onToggleFavorite={favoriteHandlers.get(stock.ticker) || (() => onToggleFavorite(stock.ticker))}
-                      priority={index < 100} // Priority loading for first 100 visible rows
-                    />
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* End of list indicator */}
-          {!hasMore && displayedStocks.length > 0 && (
-            <div className="end-of-list">
-              <span>All stocks are displayed</span>
+      {
+        loading ? (
+      <SectionLoader message="Loading stocks..." />
+    ) : (
+      <>
+        {/* Mobile View: Cards */}
+        <div className="md:hidden">
+          {displayedStocks.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--clr-subtext)' }}>
+              No stocks to display.
             </div>
+          ) : (
+            displayedStocks.map((stock, index) => (
+              <StockCardMobile
+                key={stock.ticker}
+                stock={stock}
+                isFavorite={isFavorite(stock.ticker)}
+                onToggleFavorite={favoriteHandlers.get(stock.ticker) || (() => onToggleFavorite(stock.ticker))}
+                priority={index < 20}
+              />
+            ))
           )}
-        </>
-      )}
+        </div>
+
+        {/* Desktop View: Table */}
+        <div className="table-wrapper hidden md:block">
+          <table>
+            <thead>
+              <tr>
+                {TABLE_HEADERS.map((header, index) => (
+                  <th
+                    key={index}
+                    onClick={header.sortable && header.key ? () => onSort(header.key!) : undefined}
+                    className={header.sortable ? `sortable ${sortKey === header.key ? "active-sort" : ""}` : undefined}
+                  >
+                    {header.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {displayedStocks.length === 0 ? (
+                <tr>
+                  <td colSpan={10} style={{ textAlign: 'center', padding: '2rem', color: 'var(--clr-subtext)' }}>
+                    No stocks to display.
+                  </td>
+                </tr>
+              ) : (
+                displayedStocks.map((stock, index) => (
+                  <StockTableRow
+                    key={stock.ticker}
+                    stock={stock}
+                    isFavorite={isFavorite(stock.ticker)}
+                    onToggleFavorite={favoriteHandlers.get(stock.ticker) || (() => onToggleFavorite(stock.ticker))}
+                    priority={index < 100} // Priority loading for first 100 visible rows
+                  />
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* End of list indicator */}
+        {!hasMore && displayedStocks.length > 0 && (
+          <div className="end-of-list">
+            <span>All stocks are displayed</span>
+          </div>
+        )}
+      </>
+    )
+      }
     </section>
   );
 });
