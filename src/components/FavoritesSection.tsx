@@ -68,7 +68,7 @@ export function FavoritesSection({
               stock={stock}
               isFavorite={isFavorite(stock.ticker)}
               onToggleFavorite={() => onToggleFavorite(stock.ticker)}
-              priority={true}
+              priority={index < 10} {/* Only first 10 items have priority loading */}
             />
           ))}
         </div>

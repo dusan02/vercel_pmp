@@ -262,7 +262,7 @@ export function PortfolioSection({
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3">
-            {portfolioStocks.map((stock) => {
+            {portfolioStocks.map((stock, index) => {
               const quantity = portfolioHoldings[stock.ticker] || 0;
               const value = calculatePortfolioValue(stock);
 
@@ -274,7 +274,7 @@ export function PortfolioSection({
                   value={value}
                   onUpdateQuantity={onUpdateQuantity}
                   onRemoveStock={onRemoveStock}
-                  priority={true}
+                  priority={index < 10} {/* Only first 10 items have priority loading */}
                 />
               );
             })}
