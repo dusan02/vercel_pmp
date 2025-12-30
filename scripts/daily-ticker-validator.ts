@@ -109,6 +109,28 @@ const KNOWN_CORRECT_MAPPINGS: { [key: string]: { sector: string; industry: strin
   'WMT': { sector: 'Consumer Defensive', industry: 'Discount Stores', name: 'Walmart' },
   'COST': { sector: 'Consumer Defensive', industry: 'Discount Stores', name: 'Costco Wholesale' },
   'TGT': { sector: 'Consumer Defensive', industry: 'Discount Stores', name: 'Target' },
+  
+  // Additional tickers from recent fixes
+  'IBM': { sector: 'Technology', industry: 'Information Technology Services', name: 'International Business Machines Corp' },
+  'WM': { sector: 'Industrials', industry: 'Waste Management', name: 'Waste Management, Inc' },
+  'PYPL': { sector: 'Financial Services', industry: 'Credit Services', name: 'PayPal Holdings Inc' },
+  'EL': { sector: 'Consumer Defensive', industry: 'Household & Personal Products', name: 'Estee Lauder Cos., Inc' },
+  'SYY': { sector: 'Consumer Defensive', industry: 'Food Distribution', name: 'Sysco Corp' },
+  'HPE': { sector: 'Technology', industry: 'Communication Equipment', name: 'Hewlett Packard Enterprise Co' },
+  'LEN': { sector: 'Consumer Cyclical', industry: 'Residential Construction', name: 'Lennar Corp' },
+  'HUBB': { sector: 'Industrials', industry: 'Electrical Equipment & Parts', name: 'Hubbell Inc' },
+  'WSM': { sector: 'Consumer Cyclical', industry: 'Specialty Retail', name: 'Williams-Sonoma, Inc' },
+  'L': { sector: 'Financial Services', industry: 'Insurance', name: 'Loews Corp' },
+  'LH': { sector: 'Healthcare', industry: 'Diagnostics & Research', name: 'Labcorp Holdings Inc' },
+  'SW': { sector: 'Consumer Cyclical', industry: 'Packaging & Containers', name: 'Smurfit WestRock plc' },
+  'GPN': { sector: 'Financial Services', industry: 'Credit Services', name: 'Global Payments, Inc' },
+  'BG': { sector: 'Consumer Defensive', industry: 'Farm Products', name: 'Bunge Global SA' },
+  'NWS': { sector: 'Communication Services', industry: 'Entertainment', name: 'News Corp' },
+  'EG': { sector: 'Financial Services', industry: 'Insurance', name: 'Everest Group Ltd' },
+  'UHS': { sector: 'Healthcare', industry: 'Medical Care Facilities', name: 'Universal Health Services, Inc' },
+  'BBY': { sector: 'Consumer Cyclical', industry: 'Specialty Retail', name: 'Best Buy Co. Inc' },
+  'LYB': { sector: 'Basic Materials', industry: 'Specialty Chemicals', name: 'LyondellBasell Industries NV' },
+  'LW': { sector: 'Consumer Defensive', industry: 'Packaged Foods', name: 'Lamb Weston Holdings Inc' },
 };
 
 interface ValidationResult {
