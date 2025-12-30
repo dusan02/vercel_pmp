@@ -701,7 +701,7 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
               const responsiveFontSize = `clamp(${minFont}px, ${0.65 * scale * 12}px, ${maxFont}px)`;
 
               // Calculate sector summary for full variant
-              const sectorSummary = sectorLabelVariant === 'full' && labelConfig.SHOW_SUMMARY
+              const sectorSummary = sectorLabelVariant === 'full' && LAYOUT_CONFIG.SECTOR_LABEL_FULL.SHOW_SUMMARY
                 ? calculateSectorSummary(data.name, allLeaves, metric)
                 : null;
 
@@ -844,7 +844,7 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
               const responsiveFontSize = `clamp(${minFont}px, ${0.65 * scale * 12}px, ${maxFont}px)`;
 
               // Calculate sector summary for full variant
-              const sectorSummary = sectorLabelVariant === 'full' && labelConfig.SHOW_SUMMARY
+              const sectorSummary = sectorLabelVariant === 'full' && LAYOUT_CONFIG.SECTOR_LABEL_FULL.SHOW_SUMMARY
                 ? calculateSectorSummary(data.name, allLeaves, metric)
                 : null;
 
