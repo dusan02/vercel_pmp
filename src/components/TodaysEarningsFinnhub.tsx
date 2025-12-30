@@ -270,14 +270,14 @@ const EarningsError = ({ error, onRetry }: { error: string; onRetry: () => void 
 const EarningsEmpty = () => (
   <section className="todays-earnings">
     <EarningsHeader />
-    <div className="text-center p-8 text-gray-500">
+    <div className="text-center p-8 text-gray-900 dark:text-gray-100">
       <p>
         No major company earnings scheduled for today. For the full list, visit{' '}
         <a
           href="https://www.earningstable.com"
           target="_blank"
           rel="noopener noreferrer"
-          className="underline hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+          className="underline text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors font-medium"
         >
           www.earningstable.com
         </a>
