@@ -274,7 +274,7 @@ export function PortfolioSection({
                   value={value}
                   onUpdateQuantity={onUpdateQuantity}
                   onRemoveStock={onRemoveStock}
-                  priority={index < 10} {/* Only first 10 items have priority loading */}
+                  priority={index < 10} // Only first 10 items have priority loading
                 />
               );
             })}
