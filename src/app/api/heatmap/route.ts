@@ -340,6 +340,10 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Get current session for session-aware percent change calculation
+    const etNow = nowET();
+    const session = detectSession(etNow);
+
     // Use denormalized latestPrevClose from Ticker (fastest)
     const previousCloseMap = new Map<string, number>();
     const regularCloseMap = new Map<string, number>();
@@ -352,19 +356,26 @@ export async function GET(request: NextRequest) {
     });
 
     // Fallback: Use DailyRef for tickers without latestPrevClose
+    // CRITICAL: Only use regularClose from TODAY (not previous day)
+    // This prevents using stale regularClose from yesterday which causes incorrect % changes
+    const todayDateStr = getDateET(etNow);
+    const todayDateObj = createETDate(todayDateStr);
+    
     for (const dr of dailyRefs) {
       if (!previousCloseMap.has(dr.symbol)) {
         previousCloseMap.set(dr.symbol, dr.previousClose);
       }
       // Also collect regularClose for after-hours sessions
+      // ONLY use regularClose from TODAY - prevent using yesterday's regularClose
       if (dr.regularClose && dr.regularClose > 0) {
-        regularCloseMap.set(dr.symbol, dr.regularClose);
+        // Check if this DailyRef is from today
+        const drDate = new Date(dr.date);
+        const isToday = drDate.getTime() === todayDateObj.getTime();
+        if (isToday) {
+          regularCloseMap.set(dr.symbol, dr.regularClose);
+        }
       }
     }
-
-    // Get current session for session-aware percent change calculation
-    const etNow = nowET();
-    const session = detectSession(etNow);
 
     // 3. Batch fetch cache pre všetky tickery naraz (optimalizácia N+1 problému)
     const project = 'pmp';
