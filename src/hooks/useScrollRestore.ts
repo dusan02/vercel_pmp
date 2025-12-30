@@ -6,6 +6,7 @@
  * - Race condition protection (isRestoringRef)
  * - Double requestAnimationFrame for stable restore timing
  * - Throttled scroll listener for performance
+ * - Proper handling of scroll position 0
  */
 
 import { useEffect, useRef } from 'react';
@@ -22,78 +23,46 @@ export function useScrollRestore(
   const isRestoringRef = useRef(false);
   const tickingRef = useRef(false);
 
+  // Restore on view change
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
 
-    // Save scroll position of previous view before switching
-    if (previousViewRef.current && previousViewRef.current !== activeView) {
-      const prevScrollTop = container.scrollTop;
-      // Only save if scroll position > 0 (don't overwrite with 0 during race)
-      if (prevScrollTop > 0) {
-        scrollPositions.set(previousViewRef.current, prevScrollTop);
-      }
-    }
+    previousViewRef.current = activeView;
 
-    // Restore scroll position for current view
-    const savedPosition = scrollPositions.get(activeView);
-    
-    // Set restoring flag to prevent scroll listener from overwriting
+    const savedPosition = scrollPositions.get(activeView) ?? 0;
+
     isRestoringRef.current = true;
 
-    if (savedPosition !== undefined) {
-      // Double requestAnimationFrame for stable restore timing
-      // First rAF: wait for current frame
+    // Double rAF to wait for layout + dynamic content
+    requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        // Second rAF: wait for DOM to be fully ready (especially for dynamic imports)
-        requestAnimationFrame(() => {
-          if (container) {
-            container.scrollTop = savedPosition;
-            // Release restoring flag after restore completes
-            requestAnimationFrame(() => {
-              isRestoringRef.current = false;
-            });
-          }
-        });
-      });
-    } else {
-      // First time viewing this view - scroll to top
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          if (container) {
-            container.scrollTop = 0;
-            requestAnimationFrame(() => {
-              isRestoringRef.current = false;
-            });
-          }
-        });
-      });
-    }
+        const c = scrollContainerRef.current;
+        if (!c) {
+          isRestoringRef.current = false;
+          return;
+        }
 
-    // Update previous view reference
-    previousViewRef.current = activeView;
-  }, [activeView, scrollContainerRef]);
+        c.scrollTop = savedPosition;
+        isRestoringRef.current = false;
+      });
+    });
+  }, [activeView]); // ref object doesn't need to be in deps
 
-  // Save scroll position on scroll (throttled)
+  // Track scroll (throttled)
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
 
     const handleScroll = () => {
-      // Ignore scroll events during restore to prevent race condition
       if (isRestoringRef.current) return;
-      
-      // Throttle scroll events using requestAnimationFrame
       if (tickingRef.current) return;
 
       tickingRef.current = true;
       requestAnimationFrame(() => {
-        if (container && !isRestoringRef.current) {
-          const scrollTop = container.scrollTop;
-          // Only save if scroll position > 0 (don't overwrite with 0)
-          if (scrollTop > 0) {
-            scrollPositions.set(activeView, scrollTop);
-          }
+        const c = scrollContainerRef.current;
+        if (c && !isRestoringRef.current) {
+          scrollPositions.set(activeView, c.scrollTop); // store 0 too
         }
         tickingRef.current = false;
       });
@@ -103,10 +72,10 @@ export function useScrollRestore(
 
     return () => {
       container.removeEventListener('scroll', handleScroll);
-      // Save final position on cleanup (if not restoring)
-      if (!isRestoringRef.current && container.scrollTop > 0) {
-        scrollPositions.set(activeView, container.scrollTop);
+      const c = scrollContainerRef.current;
+      if (c && !isRestoringRef.current) {
+        scrollPositions.set(activeView, c.scrollTop);
       }
     };
-  }, [activeView, scrollContainerRef]);
+  }, [activeView]);
 }
