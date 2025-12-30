@@ -6156,6 +6156,13 @@ table td strong {
 
 /* Bottom Navigation */
 /* Bottom Navigation - Variant A (GRID ROW, NOT FIXED) */
+/* Bottom Navigation Wrapper - contains nav + safe-area spacer */
+.bottom-navigation-wrapper {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
 .bottom-navigation {
   position: relative; /* Changed from fixed - now it's a normal grid row */
   left: auto;
@@ -6175,16 +6182,13 @@ table td strong {
   /* Fixed height for nav bar content (without safe-area) */
   height: 64px;
   padding: 0.5rem 0;
-  
-  /* Safe-area handled via ::after spacer (more predictable than padding) */
 }
 
-/* Safe-area spacer - separate from content box for predictable height */
-.bottom-navigation::after {
-  content: "";
-  display: block;
+/* Safe-area spacer - separate element outside flex flow for predictable layout */
+.bottom-navigation-safearea {
   height: env(safe-area-inset-bottom);
   width: 100%;
+  background: rgba(17, 17, 17, 0.95); /* Match nav background */
   flex-shrink: 0;
 }
 
@@ -6198,7 +6202,7 @@ table td strong {
 /* Mobile Shell - App-like container (CSS Grid for stability) */
 .mobile-shell {
   display: grid;
-  grid-template-rows: auto auto 1fr auto; /* header, indices, content, bottomnav */
+  grid-template-rows: auto auto 1fr auto; /* header, indices, content, bottomnav-wrapper */
   height: 100vh;
   height: 100dvh; /* Dynamic viewport height for mobile */
   overflow: hidden;
@@ -6233,7 +6237,8 @@ table td strong {
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   min-height: 0; /* Critical: allows grid child to shrink below content size */
-  /* No padding-bottom needed - nav is now a grid row, not fixed overlay */
+  /* Padding for FAB (56px height + 16px margin) to prevent content overlap */
+  padding-bottom: calc(56px + 16px);
 }
 
 /* Mobile Views */
@@ -6248,11 +6253,13 @@ table td strong {
   padding: 0;
   height: 100%;
   min-height: 0; /* Critical for grid overflow context */
+  display: flex;
+  flex-direction: column;
 }
 
-/* Heatmap container - use CSS instead of inline styles for stability */
+/* Heatmap container - use flex for maximum stability */
 .mobile-view-heatmap .heatmap-preview-container {
-  height: 100%;
+  flex: 1;
   min-height: 0;
 }
 
@@ -6331,6 +6338,10 @@ table td strong {
   font-size: 0.75rem;
   font-weight: 500;
   transition: all 0.2s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .active-indicator {

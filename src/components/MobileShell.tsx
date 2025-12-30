@@ -61,11 +61,15 @@ export const MobileShell: React.FC<MobileShellProps> = ({
         {children}
       </main>
 
-      {/* Fixed Bottom Navigation */}
-      <BottomNavigation
-        activeSection={activeView}
-        onSectionChange={onViewChange}
-      />
+      {/* Bottom Navigation + Safe Area Spacer */}
+      <div className="bottom-navigation-wrapper">
+        <BottomNavigation
+          activeSection={activeView}
+          onSectionChange={onViewChange}
+        />
+        {/* Safe-area spacer - separate element outside flex flow for predictable layout */}
+        <div className="bottom-navigation-safearea" />
+      </div>
     </div>
   );
 };
