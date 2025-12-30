@@ -90,5 +90,23 @@ module.exports = {
       cron_restart: "*/5 13-20 * * 1-5", // Každých 5 minút počas trading hours (13-20 UTC = 8-15 ET)
       autorestart: false, // Cron job sa spúšťa automaticky, nepotrebuje autorestart
     },
+    {
+      name: "daily-ticker-validator",
+      script: "scripts/daily-ticker-validator.ts",
+      interpreter: "npx",
+      interpreter_args: "tsx",
+      cwd: "/var/www/premarketprice",
+      instances: 1,
+      exec_mode: "fork",
+      env_production: {
+        NODE_ENV: "production",
+        DATABASE_URL: envVars.DATABASE_URL || process.env.DATABASE_URL,
+      },
+      error_file: "/var/log/pm2/daily-ticker-validator-error.log",
+      out_file: "/var/log/pm2/daily-ticker-validator-out.log",
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      cron_restart: "0 2 * * *", // Raz denne o 02:00 UTC
+      autorestart: false, // Cron job sa spúšťa automaticky, nepotrebuje autorestart
+    },
   ],
 };
