@@ -164,16 +164,23 @@ export function normalizeIndustry(sector: string | null, industry: string | null
     return industry;
   }
 
-  // Find best match
+  // Find best match (prefer longer/more specific matches)
   const lowerIndustry = industry.toLowerCase();
+  let bestMatch: string | null = null;
+  let bestMatchLength = 0;
+
   for (const validIndustry of validIndustries) {
-    if (lowerIndustry.includes(validIndustry.toLowerCase()) ||
-        validIndustry.toLowerCase().includes(lowerIndustry)) {
-      return validIndustry;
+    const lowerValid = validIndustry.toLowerCase();
+    if (lowerIndustry.includes(lowerValid) || lowerValid.includes(lowerIndustry)) {
+      // Prefer longer/more specific matches
+      if (validIndustry.length > bestMatchLength) {
+        bestMatch = validIndustry;
+        bestMatchLength = validIndustry.length;
+      }
     }
   }
 
-  return industry; // Return original if no match found
+  return bestMatch || industry; // Return best match or original if no match found
 }
 
 /**
