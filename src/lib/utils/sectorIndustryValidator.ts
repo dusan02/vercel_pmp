@@ -53,7 +53,9 @@ export const VALID_INDUSTRIES: Record<ValidSector, string[]> = {
     'Restaurants',
     'Travel Services',
     'Residential Construction',
-    'Auto & Truck Dealerships'
+    'Auto & Truck Dealerships',
+    'Specialty Retail',
+    'Packaging & Containers'
   ],
   'Healthcare': [
     'Biotechnology',
@@ -85,7 +87,9 @@ export const VALID_INDUSTRIES: Record<ValidSector, string[]> = {
     'Specialty Industrial Machinery',
     'Integrated Freight & Logistics',
     'Railroads',
-    'Trucking'
+    'Trucking',
+    'Waste Management',
+    'Electrical Equipment & Parts'
   ],
   'Real Estate': [
     'REIT - Retail',
@@ -106,7 +110,9 @@ export const VALID_INDUSTRIES: Record<ValidSector, string[]> = {
     'Beverages - Alcoholic',
     'Household & Personal Products',
     'Tobacco',
-    'Discount Stores'
+    'Discount Stores',
+    'Food Distribution',
+    'Farm Products'
   ],
   'Other': [
     'Uncategorized'
