@@ -271,13 +271,13 @@ const EarningsEmpty = () => (
   <section className="todays-earnings">
     <EarningsHeader />
     <div className="text-center p-8 text-gray-900 dark:text-gray-100">
-      <p>
+      <p className="text-base md:text-lg font-normal">
         No major company earnings scheduled for today. For the full list, visit{' '}
         <a
           href="https://www.earningstable.com"
           target="_blank"
           rel="noopener noreferrer"
-          className="underline text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors font-medium"
+          className="underline text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors font-semibold"
         >
           www.earningstable.com
         </a>
