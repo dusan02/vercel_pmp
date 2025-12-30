@@ -58,7 +58,7 @@ export default function ScrollToTopButton({ showAfterPx = 400 }: ScrollToTopButt
       aria-label="Scroll to top"
       title="Up"
       className={[
-        'fixed bottom-5 right-5 z-[60]',
+        'fixed bottom-[calc(5rem+1.25rem)] lg:bottom-5 right-5 z-[60]', // Mobile: 80px bottom nav + 1.25rem margin, Desktop: bottom-5
         'rounded-full shadow-lg',
         'bg-blue-600 text-white',
         'hover:bg-blue-700 active:scale-95',

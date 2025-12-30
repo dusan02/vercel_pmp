@@ -5,7 +5,6 @@ import { MarketHeatmap, CompanyNode, useElementResize, HeatmapMetric } from './M
 import { useHeatmapData } from '@/hooks/useHeatmapData';
 import { useHeatmapMetric } from '@/hooks/useHeatmapMetric';
 import { HeatmapMetricButtons } from './HeatmapMetricButtons';
-import { SectorListMobile } from './SectorListMobile';
 
 export type ResponsiveMarketHeatmapProps = {
   /** API endpoint pre načítanie dát (default: /api/heatmap) */
@@ -66,15 +65,6 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
-
-  const [mobileSelectedSector, setMobileSelectedSector] = useState<string | null>(null);
-
-  // If switching away from mobile, reset selection
-  useEffect(() => {
-    if (!isMobile) {
-      setMobileSelectedSector(null);
-    }
-  }, [isMobile]);
 
   // Centralized metric state management
   // Use controlledMetric if provided (for external control), otherwise use hook
@@ -191,32 +181,7 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
       );
     }
 
-    // Logic for Mobile View:
-    // 1. Show Sector List by default
-    // 2. If sector selected, show Heatmap (zoomed)
-    // Desktop View: Always show Heatmap
-
-    if (isMobile && !mobileSelectedSector) {
-      return (
-        <div style={{ height: '100%', overflow: 'hidden' }}>
-          {/* Header controls for mobile list view if needed */}
-          {!hideMetricButtons && (
-            <div className="flex justify-end p-2 bg-black border-b border-gray-800">
-              <HeatmapMetricButtons
-                metric={metric}
-                onMetricChange={setMetric}
-              />
-            </div>
-          )}
-          <SectorListMobile
-            data={data}
-            onSectorClick={(sector) => setMobileSelectedSector(sector)}
-          />
-        </div>
-      );
-    }
-
-    // Default Heatmap Rendering (Desktop or Mobile Zoomed)
+    // Always show Heatmap (removed sector list for mobile per user request)
     return (
       <>
         {/* Metric selector - top left overlay (only if not hidden, and not on mobile - mobile has it in header) */}
@@ -240,9 +205,7 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
           timeframe={timeframe}
           metric={metric}
           sectorLabelVariant={sectorLabelVariant}
-          // Controlled zoom for mobile flow
-          zoomedSector={isMobile ? mobileSelectedSector : null}
-          {...(isMobile ? { onZoomChange: setMobileSelectedSector } : {})}
+          zoomedSector={null}
         />
 
         {/* Last updated indicator - only on desktop (mobile has it in header or can be added) */}

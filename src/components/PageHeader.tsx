@@ -32,23 +32,24 @@ export function PageHeader({ navigation }: PageHeaderProps) {
               </p>
             </div>
           </div>
-          {/* Market Indices - shown under brand name on mobile */}
-          <div className="header-center-mobile">
-            <MarketIndices />
-          </div>
         </div>
 
         {/* CENTER ZONE: Market Indices (desktop only) */}
-        <div className="header-center">
+        <div className="header-center hidden lg:block desktop-indices">
           <MarketIndices />
         </div>
 
-        {/* RIGHT ZONE: Navigation */}
+        {/* RIGHT ZONE: Navigation & Login */}
         <div className="header-right flex items-center gap-4">
           {navigation}
           <div className="border-l pl-4 border-gray-700 h-6 flex items-center">
             <LoginButton />
           </div>
+        </div>
+
+        {/* MOBILE BOTTOM ROW: Market Indices */}
+        <div className="header-center-mobile w-full mt-2">
+          <MarketIndices />
         </div>
       </div>
     </header>
