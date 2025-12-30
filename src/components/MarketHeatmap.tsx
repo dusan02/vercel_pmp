@@ -49,23 +49,23 @@ function calculateSectorSummary(
       .map(c => c.changePercent)
       .filter(p => p !== null && p !== undefined && !isNaN(p))
       .sort((a, b) => a - b);
-    
+
     if (changes.length === 0) return null;
-    
+
     const midIndex = Math.floor(changes.length / 2);
     const median = changes.length % 2 === 0
       ? (changes[midIndex - 1]! + changes[midIndex]!) / 2
       : changes[midIndex]!;
-    
+
     return formatPercent(median);
   } else {
     // Calculate total market cap delta for sector
     const totalDelta = sectorCompanies.reduce((sum, c) => {
       return sum + (c.marketCapDiff || 0);
     }, 0);
-    
+
     if (Math.abs(totalDelta) < 0.01) return null; // Too small to display
-    
+
     return formatMarketCapDiff(totalDelta);
   }
 }
@@ -82,6 +82,21 @@ function truncateSectorName(name: string, maxLength: number = 20): string {
     return truncated.substring(0, lastSpace) + '...';
   }
   return truncated + '...';
+}
+
+/**
+ * Calculate maximum characters that fit in available width
+ */
+function calculateMaxCharsForWidth(
+  sectorWidth: number,
+  fontSize: number,
+  padding: number = 12
+): number {
+  // Estimate: uppercase letters are ~0.6em wide, add some margin
+  const availableWidth = sectorWidth - padding;
+  const charWidth = fontSize * 0.6;
+  const maxChars = Math.floor(availableWidth / charWidth);
+  return Math.max(4, maxChars); // Minimum 4 chars
 }
 
 // --- TYPY ---
@@ -126,6 +141,10 @@ export type MarketHeatmapProps = {
   metric?: HeatmapMetric;
   /** Variant sector labels: 'compact' for homepage, 'full' for heatmap page */
   sectorLabelVariant?: SectorLabelVariant;
+  /** Controlled zoomed sector (optional) */
+  zoomedSector?: string | null;
+  /** Callback for zoom change */
+  onZoomChange?: (sector: string | null) => void;
 };
 
 /**
@@ -238,11 +257,27 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
   onTimeframeChange,
   metric = 'percent',
   sectorLabelVariant = 'compact',
-}) => {
+  zoomedSector: controlledZoomedSector,
+  onZoomChange,
+}: MarketHeatmapProps) => {
+  const [internalZoomedSector, setInternalZoomedSector] = useState<string | null>(null);
+
+  // Use controlled state if provided, otherwise internal
+  const isControlled = controlledZoomedSector !== undefined;
+  const zoomedSector = isControlled ? controlledZoomedSector : internalZoomedSector;
+
+  const handleZoomChange = useCallback((sector: string | null) => {
+    if (!isControlled) {
+      setInternalZoomedSector(sector);
+    }
+    if (onZoomChange) {
+      onZoomChange(sector);
+    }
+  }, [isControlled, onZoomChange]);
+
   const [hoveredNode, setHoveredNode] = useState<CompanyNode | null>(null);
   const [hoveredSector, setHoveredSector] = useState<string | null>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [zoomedSector, setZoomedSector] = useState<string | null>(null);
   const [colorTransition, setColorTransition] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -294,44 +329,44 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
     // Mobile: Vertical layout - sectors stacked vertically, no gaps
     // Desktop: Horizontal layout - original behavior
     const SECTOR_GAP = isMobile ? 0 : LAYOUT_CONFIG.SECTOR_GAP; // No gap on mobile
-    
+
     if (isMobile && d3Root.children && d3Root.children.length > 0) {
       if (process.env.NODE_ENV !== 'production') {
-        console.log('📱 Mobile vertical layout:', { 
-          sectors: d3Root.children.length, 
-          width, 
+        console.log('📱 Mobile vertical layout:', {
+          sectors: d3Root.children.length,
+          width,
           height,
-          totalValue: d3Root.value 
+          totalValue: d3Root.value
         });
       }
-      
+
       // Mobile: Vertical layout - process each sector separately and stack vertically
       let currentY = 0;
       const totalValue = d3Root.value || 1;
       const estimatedTotalHeight = height * d3Root.children.length * 5;
-      
+
       d3Root.children.forEach((sectorNode: any) => {
         if (!sectorNode.data.children || sectorNode.data.children.length === 0) return;
-        
+
         const sectorValue = sumValues(sectorNode.data);
         if (sectorValue <= 0) return;
-        
+
         // Calculate proportional height for this sector
         const sectorHeight = (sectorValue / totalValue) * estimatedTotalHeight;
         const minSectorHeight = height * 1.5; // Minimum height per sector
         const finalSectorHeight = Math.max(sectorHeight, minSectorHeight);
-        
+
         // Create separate treemap for this sector
         const sectorData: HierarchyData = {
           name: sectorNode.data.name,
           children: sectorNode.data.children,
           meta: sectorNode.data.meta
         };
-        
+
         const sectorHierarchy = hierarchy(sectorData)
           .sum((d) => d.value || 0)
           .sort((a, b) => (b.value || 0) - (a.value || 0));
-        
+
         const sectorTreemap = treemap<HierarchyData>()
           .size([width, finalSectorHeight])
           .padding(0)
@@ -340,19 +375,19 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
           .paddingRight(0)
           .paddingBottom(0)
           .tile(treemapSquarify);
-        
+
         sectorTreemap(sectorHierarchy);
-        
+
         // Update sector node bounds
         sectorNode.x0 = 0;
         sectorNode.x1 = width;
         sectorNode.y0 = currentY;
         sectorNode.y1 = currentY + finalSectorHeight;
-        
+
         // Map sectorHierarchy leaves to sectorNode.children
         const sectorLeaves = sectorHierarchy.leaves() as any[];
         const sectorChildren = sectorNode.children || [];
-        
+
         sectorLeaves.forEach((hLeaf: any, idx: number) => {
           if (idx < sectorChildren.length) {
             const companyNode = sectorChildren[idx] as any;
@@ -364,23 +399,23 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
             }
           }
         });
-        
+
         currentY += finalSectorHeight;
       });
-      
+
       // Update root bounds
       (d3Root as any).x0 = 0;
       (d3Root as any).x1 = width;
       (d3Root as any).y0 = 0;
       (d3Root as any).y1 = currentY;
-      
+
       if (process.env.NODE_ENV !== 'production') {
         console.log('📱 Mobile layout complete:', { totalHeight: currentY, sectors: d3Root.children.length });
       }
-      
+
       return d3Root;
     }
-    
+
     // Desktop: Original behavior
     // Add padding-top for sectors to make space for labels
     const treemapGenerator = treemap<HierarchyData>()
@@ -396,8 +431,8 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
       .paddingTop(function (node) {
         if (node.depth === 1) {
           // Sektor → pridaj priestor pre label (podľa variantu)
-          const labelConfig = sectorLabelVariant === 'full' 
-            ? LAYOUT_CONFIG.SECTOR_LABEL_FULL 
+          const labelConfig = sectorLabelVariant === 'full'
+            ? LAYOUT_CONFIG.SECTOR_LABEL_FULL
             : LAYOUT_CONFIG.SECTOR_LABEL_COMPACT;
           return labelConfig.HEIGHT;
         }
@@ -433,8 +468,9 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
 
   // Handler pre kliknutie na sektor (zoom)
   const handleSectorClick = useCallback((sectorName: string) => {
-    setZoomedSector((prev) => (prev === sectorName ? null : sectorName));
-  }, []);
+    const newSector = zoomedSector === sectorName ? null : sectorName;
+    handleZoomChange(newSector);
+  }, [zoomedSector, handleZoomChange]);
 
   // Helper funkcia pre kontrolu, či uzol patrí do zoomovaného sektora
   const belongsToSector = useCallback((node: any, sectorName: string): boolean => {
@@ -597,7 +633,7 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
     <div
       ref={containerRef}
       className={styles.heatmapContainer}
-      style={{ 
+      style={{
         overflow: isMobile ? 'visible' : 'hidden',
         height: isMobile ? contentHeight : '100%',
         minHeight: isMobile ? contentHeight : undefined
@@ -623,7 +659,7 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
       {/* Zoom back button */}
       {zoomedSector && (
         <button
-          onClick={() => setZoomedSector(null)}
+          onClick={() => handleZoomChange(null)}
           className={styles.heatmapZoomButton}
         >
           ← Back to All Sectors
@@ -678,50 +714,59 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
               const nodeHeight = y1 - y0;
               const scaledWidth = nodeWidth * scale;
               const scaledHeight = nodeHeight * scale;
-              
-              const labelConfig = sectorLabelVariant === 'full' 
-                ? LAYOUT_CONFIG.SECTOR_LABEL_FULL 
+
+              const labelConfig = sectorLabelVariant === 'full'
+                ? LAYOUT_CONFIG.SECTOR_LABEL_FULL
                 : LAYOUT_CONFIG.SECTOR_LABEL_COMPACT;
-              
+
               const labelHeight = labelConfig.HEIGHT;
-              
+
               // Check if sector is large enough (both width and height)
-              const minSizeForLabel = 50;
+              // Increased minimum size to prevent overlapping on small sectors
+              const minSizeForLabel = 80; // Increased from 50 to prevent overlap
               const minHeightForLabel = labelHeight + 8;
-              const showLabel = scaledWidth > minSizeForLabel 
-                && scaledHeight > minHeightForLabel 
-                && scale > 0 
+              const showLabel = scaledWidth > minSizeForLabel
+                && scaledHeight > minHeightForLabel
+                && scale > 0
                 && treemapBounds !== null;
 
               if (!showLabel) return null;
 
-              // Calculate responsive font size using clamp
+              // Calculate responsive font size using clamp, adjusted for sector width
               const minFont = labelConfig.FONT_SIZE_MIN;
               const maxFont = labelConfig.FONT_SIZE_MAX;
-              const responsiveFontSize = `clamp(${minFont}px, ${0.65 * scale * 12}px, ${maxFont}px)`;
+              // Scale font size based on available width (max 90% of sector width)
+              const maxLabelWidth = scaledWidth * 0.9;
+              const widthBasedFont = Math.min(maxFont, Math.max(minFont, maxLabelWidth / 8));
+              const responsiveFontSize = `clamp(${minFont}px, ${widthBasedFont}px, ${maxFont}px)`;
+              const fontSizeValue = parseFloat(responsiveFontSize.match(/\d+\.?\d*/)?.[0] || String(minFont));
 
               // Calculate sector summary for full variant
               const sectorSummary = sectorLabelVariant === 'full' && LAYOUT_CONFIG.SECTOR_LABEL_FULL.SHOW_SUMMARY
                 ? calculateSectorSummary(data.name, allLeaves, metric)
                 : null;
 
-              // Truncate long sector names
-              const displayName = truncateSectorName(data.name, sectorLabelVariant === 'full' ? 25 : 20);
+              // Dynamically truncate sector name based on available width
+              const maxChars = calculateMaxCharsForWidth(scaledWidth, fontSizeValue, labelConfig.LEFT + 20);
+              const defaultMaxLength = sectorLabelVariant === 'full' ? 25 : 20;
+              const maxLength = Math.max(4, Math.min(maxChars, defaultMaxLength));
+              const displayName = truncateSectorName(data.name, maxLength);
 
               return (
                 <div
                   key={`sector-label-${data.name}-${x0}-${y0}`}
-                  className={`${styles.sectorLabelWrap} ${
-                    sectorLabelVariant === 'full' 
-                      ? styles.sectorLabelWrapFull 
+                  className={`${styles.sectorLabelWrap} ${sectorLabelVariant === 'full'
+                      ? styles.sectorLabelWrapFull
                       : styles.sectorLabelWrapCompact
-                  }`}
+                    }`}
                   style={{
                     left: x0 * scale + offset.x,
                     top: y0 * scale + offset.y,
                     width: nodeWidth * scale,
+                    maxWidth: nodeWidth * scale, // Prevent overflow
                     height: labelHeight,
                     paddingLeft: labelConfig.LEFT,
+                    overflow: 'hidden', // Ensure text doesn't overflow
                   }}
                 >
                   {sectorLabelVariant === 'full' ? (
@@ -821,50 +866,59 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
               const nodeHeight = y1 - y0;
               const scaledWidth = nodeWidth * scale;
               const scaledHeight = nodeHeight * scale;
-              
-              const labelConfig = sectorLabelVariant === 'full' 
-                ? LAYOUT_CONFIG.SECTOR_LABEL_FULL 
+
+              const labelConfig = sectorLabelVariant === 'full'
+                ? LAYOUT_CONFIG.SECTOR_LABEL_FULL
                 : LAYOUT_CONFIG.SECTOR_LABEL_COMPACT;
-              
+
               const labelHeight = labelConfig.HEIGHT;
-              
+
               // Check if sector is large enough (both width and height)
-              const minSizeForLabel = 50;
+              // Increased minimum size to prevent overlapping on small sectors
+              const minSizeForLabel = 80; // Increased from 50 to prevent overlap
               const minHeightForLabel = labelHeight + 8;
-              const showLabel = scaledWidth > minSizeForLabel 
-                && scaledHeight > minHeightForLabel 
-                && scale > 0 
+              const showLabel = scaledWidth > minSizeForLabel
+                && scaledHeight > minHeightForLabel
+                && scale > 0
                 && treemapBounds !== null;
 
               if (!showLabel) return null;
 
-              // Calculate responsive font size using clamp
+              // Calculate responsive font size using clamp, adjusted for sector width
               const minFont = labelConfig.FONT_SIZE_MIN;
               const maxFont = labelConfig.FONT_SIZE_MAX;
-              const responsiveFontSize = `clamp(${minFont}px, ${0.65 * scale * 12}px, ${maxFont}px)`;
+              // Scale font size based on available width (max 90% of sector width)
+              const maxLabelWidth = scaledWidth * 0.9;
+              const widthBasedFont = Math.min(maxFont, Math.max(minFont, maxLabelWidth / 8));
+              const responsiveFontSize = `clamp(${minFont}px, ${widthBasedFont}px, ${maxFont}px)`;
+              const fontSizeValue = parseFloat(responsiveFontSize.match(/\d+\.?\d*/)?.[0] || String(minFont));
 
               // Calculate sector summary for full variant
               const sectorSummary = sectorLabelVariant === 'full' && LAYOUT_CONFIG.SECTOR_LABEL_FULL.SHOW_SUMMARY
                 ? calculateSectorSummary(data.name, allLeaves, metric)
                 : null;
 
-              // Truncate long sector names
-              const displayName = truncateSectorName(data.name, sectorLabelVariant === 'full' ? 25 : 20);
+              // Dynamically truncate sector name based on available width
+              const maxChars = calculateMaxCharsForWidth(scaledWidth, fontSizeValue, labelConfig.LEFT + 20);
+              const defaultMaxLength = sectorLabelVariant === 'full' ? 25 : 20;
+              const maxLength = Math.max(4, Math.min(maxChars, defaultMaxLength));
+              const displayName = truncateSectorName(data.name, maxLength);
 
               return (
                 <div
                   key={`sector-label-${data.name}-${x0}-${y0}`}
-                  className={`${styles.sectorLabelWrap} ${
-                    sectorLabelVariant === 'full' 
-                      ? styles.sectorLabelWrapFull 
+                  className={`${styles.sectorLabelWrap} ${sectorLabelVariant === 'full'
+                      ? styles.sectorLabelWrapFull
                       : styles.sectorLabelWrapCompact
-                  }`}
+                    }`}
                   style={{
                     left: x0 * scale + offset.x,
                     top: y0 * scale + offset.y,
                     width: nodeWidth * scale,
+                    maxWidth: nodeWidth * scale, // Prevent overflow
                     height: labelHeight,
                     paddingLeft: labelConfig.LEFT,
+                    overflow: 'hidden', // Ensure text doesn't overflow
                   }}
                 >
                   {sectorLabelVariant === 'full' ? (

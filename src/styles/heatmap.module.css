@@ -77,6 +77,9 @@
   text-transform: uppercase;
   text-shadow: -1px -1px 0 rgba(0, 0, 0, 0.5), 1px -1px 0 rgba(0, 0, 0, 0.5), -1px 1px 0 rgba(0, 0, 0, 0.5), 1px 1px 0 rgba(0, 0, 0, 0.5);
   transition: background-color 0.2s ease;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .sectorLabelPillCompact:hover {
@@ -107,6 +110,10 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  min-width: 0; /* Allow flex item to shrink */
 }
 
 .sectorLabelStripFull:hover {
