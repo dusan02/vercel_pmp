@@ -46,7 +46,8 @@ export function HeatmapPreview() {
 
   return (
     <section className="heatmap-preview">
-      <div className="section-header">
+      {/* Desktop Header */}
+      <div className="hidden lg:block section-header">
         <div className="header-main">
           <h2>
             <SectionIcon type="heatmap" size={20} className="section-icon" />
@@ -54,7 +55,6 @@ export function HeatmapPreview() {
           </h2>
         </div>
         <div className="flex items-center gap-3">
-          {/* Metric selector buttons - moved outside heatmap */}
           <HeatmapMetricButtons
             metric={metric}
             onMetricChange={setMetric}
@@ -63,17 +63,33 @@ export function HeatmapPreview() {
         </div>
       </div>
 
+      {/* Mobile Header (simplified) */}
+      <div className="lg:hidden section-header">
+        <div className="header-main">
+          <h2>
+            <SectionIcon type="heatmap" size={20} className="section-icon" />
+            <span>Market Heatmap</span>
+          </h2>
+        </div>
+        <div className="flex items-center gap-3">
+          <HeatmapMetricButtons
+            metric={metric}
+            onMetricChange={setMetric}
+          />
+        </div>
+      </div>
+
+      {/* Desktop: Fixed height preview */}
       <div
-        className="relative w-full bg-black overflow-hidden group heatmap-preview-container"
+        className="relative w-full bg-black overflow-hidden group heatmap-preview-container hidden lg:block"
         style={{ height: '400px', minHeight: '400px', cursor: 'pointer' }}
         onClick={handleBackgroundClick}
       >
-        {/* Mini heatmap */}
         <div className="w-full h-full">
           <ResponsiveMarketHeatmap
             apiEndpoint="/api/heatmap"
             autoRefresh={true}
-            refreshInterval={60000} // 60s - menej časté obnovovanie pre preview
+            refreshInterval={60000}
             initialTimeframe="day"
             controlledMetric={metric}
             onMetricChange={setMetric}
@@ -81,7 +97,26 @@ export function HeatmapPreview() {
             sectorLabelVariant="compact"
           />
         </div>
+      </div>
 
+      {/* Mobile: Full height in view */}
+      <div
+        className="relative w-full bg-black overflow-hidden group heatmap-preview-container lg:hidden"
+        style={{ height: '100%', minHeight: 0, cursor: 'pointer' }}
+        onClick={handleBackgroundClick}
+      >
+        <div className="w-full h-full">
+          <ResponsiveMarketHeatmap
+            apiEndpoint="/api/heatmap"
+            autoRefresh={true}
+            refreshInterval={60000}
+            initialTimeframe="day"
+            controlledMetric={metric}
+            onMetricChange={setMetric}
+            hideMetricButtons={true}
+            sectorLabelVariant="compact"
+          />
+        </div>
       </div>
     </section>
   );

@@ -7,6 +7,7 @@ import { SortKey } from '@/hooks/useSortableData';
 import { SectionIcon } from './SectionIcon';
 import { formatBillions } from '@/lib/utils/format';
 import { StockTableRow } from './StockTableRow';
+import { StockCardMobile } from './StockCardMobile';
 import { SectionLoader } from './SectionLoader';
 import { StockData } from '@/lib/types';
 import { LoadingStates } from '@/lib/types';
@@ -58,7 +59,23 @@ export function FavoritesSection({
         </div>
       </div>
 
-      <div className="table-wrapper">
+      {/* Mobile: Cards layout */}
+      <div className="lg:hidden">
+        <div className="grid grid-cols-1 gap-3">
+          {favoriteStocks.map((stock, index) => (
+            <StockCardMobile
+              key={stock.ticker}
+              stock={stock}
+              isFavorite={isFavorite(stock.ticker)}
+              onToggleFavorite={() => onToggleFavorite(stock.ticker)}
+              priority={true}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Desktop: Table layout */}
+      <div className="hidden lg:block table-wrapper">
         <table>
           <thead>
             <tr>
@@ -95,7 +112,7 @@ export function FavoritesSection({
                 stock={stock}
                 isFavorite={isFavorite(stock.ticker)}
                 onToggleFavorite={() => onToggleFavorite(stock.ticker)}
-                priority={true} // All favorites are priority (usually small list)
+                priority={true}
               />
             ))}
           </tbody>

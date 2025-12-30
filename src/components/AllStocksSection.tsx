@@ -7,6 +7,7 @@ import { SortKey } from '@/hooks/useSortableData';
 import { SectionIcon } from './SectionIcon';
 import { StockSearchBar } from './StockSearchBar';
 import { StockTableRow } from './StockTableRow';
+import { StockCardMobile } from './StockCardMobile';
 import { SectionLoader } from './SectionLoader';
 import { CustomDropdown } from './CustomDropdown';
 import { StockData } from '@/lib/types';
@@ -112,7 +113,8 @@ export const AllStocksSection = React.memo(function AllStocksSection({
 
   return (
     <section className="all-stocks">
-      <div className="section-header">
+      {/* Desktop Header */}
+      <div className="hidden lg:block section-header">
         <div className="header-main">
           <h2>
             <SectionIcon type="globe" size={20} className="section-icon" />
@@ -147,28 +149,64 @@ export const AllStocksSection = React.memo(function AllStocksSection({
         </div>
       </div>
 
+      {/* Mobile: Sticky Filter Bar */}
+      <div className="lg:hidden mobile-filters">
+        <div className="mobile-filters-container">
+          <StockSearchBar
+            searchTerm={searchTerm}
+            onSearchChange={onSearchChange}
+          />
+          <div className="mobile-filters-row">
+            <CustomDropdown
+              value={selectedSector}
+              onChange={handleSectorChange}
+              options={sectorOptions}
+              className="sector-filter"
+              ariaLabel="Filter by sector"
+              placeholder="All Sectors"
+            />
+            <CustomDropdown
+              value={selectedIndustry}
+              onChange={onIndustryChange}
+              options={industryOptions}
+              className="industry-filter"
+              ariaLabel="Filter by industry"
+              placeholder="All Industries"
+            />
+          </div>
+        </div>
+      </div>
+
       {loading ? (
         <SectionLoader message="Loading stocks..." />
       ) : (
         <>
-          {/* Responsive Table - Mobile: 5 columns, Desktop: Full */}
-          <div className="table-wrapper-mobile-safe">
+          {/* Mobile: Cards layout */}
+          <div className="lg:hidden">
+            {displayedStocks.length === 0 ? (
+              <div className="text-center p-8 text-gray-500 dark:text-gray-400">
+                No stocks to display.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-3">
+                {displayedStocks.map((stock, index) => (
+                  <StockCardMobile
+                    key={stock.ticker}
+                    stock={stock}
+                    isFavorite={isFavorite(stock.ticker)}
+                    onToggleFavorite={favoriteHandlers.get(stock.ticker) || (() => onToggleFavorite(stock.ticker))}
+                    priority={index < 100}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Desktop: Table layout */}
+          <div className="hidden lg:block table-wrapper-mobile-safe">
             <table>
               <thead>
-                {/* Mobile headers */}
-                <tr className="lg:hidden">
-                  {TABLE_HEADERS_MOBILE.map((header, index) => (
-                    <th
-                      key={index}
-                      onClick={header.sortable && header.key ? () => onSort(header.key!) : undefined}
-                      className={header.sortable ? `sortable ${sortKey === header.key ? "active-sort" : ""}` : undefined}
-                    >
-                      {header.label}
-                    </th>
-                  ))}
-                </tr>
-                {/* Desktop headers */}
-                <tr className="hidden lg:table-row">
+                <tr>
                   {TABLE_HEADERS_DESKTOP.map((header, index) => (
                     <th
                       key={index}
@@ -194,7 +232,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
                       stock={stock}
                       isFavorite={isFavorite(stock.ticker)}
                       onToggleFavorite={favoriteHandlers.get(stock.ticker) || (() => onToggleFavorite(stock.ticker))}
-                      priority={index < 100} // Priority loading for first 100 visible rows
+                      priority={index < 100}
                     />
                   ))
                 )}

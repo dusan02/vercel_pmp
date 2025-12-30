@@ -1,7 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { PageHeader } from './PageHeader';
+import React from 'react';
 import { BottomNavigation } from './BottomNavigation';
 import { MarketIndices } from './MarketIndices';
 import { LoginButton } from './LoginButton';
@@ -13,42 +12,25 @@ interface MobileShellProps {
   children?: React.ReactNode;
   activeView: MobileView;
   onViewChange: (view: MobileView) => void;
-  navigation?: React.ReactNode;
 }
 
 /**
  * MobileShell - App-like container for mobile views
  * Replaces scroll-to-sections with view switching
  * 
- * Structure:
- * - Sticky header (brand + sign-in)
- * - Optional sticky indices bar
- * - Main content (single view)
- * - Fixed bottom navigation
+ * Structure (CSS Grid):
+ * - Header row (brand + sign-in)
+ * - Indices row
+ * - Main content row (flexible, scrollable)
+ * - Bottom navigation row
+ * 
+ * NOTE: Gating is done via CSS (lg:hidden) in parent, not JS detection
  */
 export const MobileShell: React.FC<MobileShellProps> = ({
   children,
   activeView,
-  onViewChange,
-  navigation
+  onViewChange
 }) => {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024); // Consistent with Tailwind lg breakpoint
-    };
-
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  // Only render mobile shell on mobile devices
-  if (!isMobile) {
-    return <>{children}</>;
-  }
-
   return (
     <div className="mobile-shell">
       {/* Sticky Header - Brand + Sign In */}

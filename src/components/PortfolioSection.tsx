@@ -10,6 +10,7 @@ import CompanyLogo from './CompanyLogo';
 import { getCompanyName } from '@/lib/companyNames';
 import { StockData } from '@/lib/types';
 import { PortfolioQuantityInput } from './PortfolioQuantityInput';
+import { PortfolioCardMobile } from './PortfolioCardMobile';
 import { formatCurrencyCompact } from '@/lib/utils/format';
 import { event } from '@/lib/ga';
 import {
@@ -241,7 +242,57 @@ export function PortfolioSection({
         </div>
       </div>
 
-      <div className="portfolio-table-wrapper">
+      {/* Mobile: Cards layout */}
+      <div className="lg:hidden">
+        {portfolioStocks.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-2 py-12 text-sm text-slate-500 dark:text-slate-400">
+            <span>Your portfolio is empty.</span>
+            <button
+              onClick={() => {
+                const input = document.querySelector('.portfolio-search-input') as HTMLInputElement;
+                if (input) {
+                  input.focus();
+                  input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+              }}
+              className={BUTTON_PRIMARY_MD}
+            >
+              Find stocks to add →
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-3">
+            {portfolioStocks.map((stock) => {
+              const quantity = portfolioHoldings[stock.ticker] || 0;
+              const value = calculatePortfolioValue(stock);
+
+              return (
+                <PortfolioCardMobile
+                  key={stock.ticker}
+                  stock={stock}
+                  quantity={quantity}
+                  value={value}
+                  onUpdateQuantity={onUpdateQuantity}
+                  onRemoveStock={onRemoveStock}
+                  priority={true}
+                />
+              );
+            })}
+            {/* Total row for mobile */}
+            <div className="bg-[#111] border border-gray-800 rounded-lg p-4 mt-2">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-400 font-semibold">Total Portfolio Value:</span>
+                <span className={`font-bold text-lg ${totalPortfolioValue >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  {formatCurrencyCompact(totalPortfolioValue, true)}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Desktop: Table layout */}
+      <div className="hidden lg:block portfolio-table-wrapper">
         <table className="portfolio-table">
           <thead>
             <tr>

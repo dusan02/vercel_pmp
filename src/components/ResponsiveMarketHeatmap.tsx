@@ -141,6 +141,18 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
 
   // Render content logic
   const renderContent = () => {
+    // CRITICAL: Don't render heatmap until we have valid dimensions
+    // This prevents "empty background" bug on mobile
+    if (!width || !height || width === 0 || height === 0) {
+      return (
+        <div className="absolute inset-0 flex items-center justify-center text-gray-500 bg-black z-40">
+          <div className="text-center">
+            <div className="animate-pulse text-sm">Measuring container...</div>
+          </div>
+        </div>
+      );
+    }
+
     // Loading state (only initial or when no data)
     if (!isMounted || (loading && (!data || data.length === 0))) {
       return (

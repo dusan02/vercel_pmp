@@ -6179,18 +6179,16 @@ table td strong {
   }
 }
 
-/* Mobile Shell - App-like container */
+/* Mobile Shell - App-like container (CSS Grid for stability) */
 .mobile-shell {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto; /* header, indices, content, bottomnav */
   height: 100vh;
   height: 100dvh; /* Dynamic viewport height for mobile */
   overflow: hidden;
 }
 
 .mobile-header {
-  position: sticky;
-  top: 0;
   z-index: 100;
   background: var(--clr-surface);
   border-bottom: 1px solid var(--clr-border);
@@ -6207,8 +6205,6 @@ table td strong {
 }
 
 .mobile-indices-bar {
-  position: sticky;
-  top: 60px; /* Height of mobile header */
   z-index: 99;
   background: rgba(17, 17, 17, 0.95);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -6217,42 +6213,69 @@ table td strong {
 }
 
 .mobile-main-content {
-  flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
-  padding-bottom: 80px; /* Safe area for fixed bottom nav */
+  min-height: 0; /* Critical: allows grid child to shrink below content size */
   /* iOS safe area support */
-  padding-bottom: calc(80px + env(safe-area-inset-bottom));
-}
-
-/* Desktop: hide mobile shell */
-@media (min-width: 1024px) {
-  .mobile-shell {
-    display: none;
-  }
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 /* Mobile Views */
 .mobile-view {
   width: 100%;
-  min-height: 100%;
+  height: 100%;
+  min-height: 0; /* Critical: allows grid child to shrink */
   padding: 1rem;
 }
 
 .mobile-view-heatmap {
   padding: 0;
-  min-height: calc(100vh - 140px); /* Full height minus header + indices + nav */
+  height: 100%;
+  min-height: 0; /* Critical for grid overflow context */
 }
 
 .mobile-view-portfolio,
 .mobile-view-favorites,
 .mobile-view-all-stocks {
   padding-bottom: 2rem;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .mobile-view-earnings {
   padding: 1rem;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Mobile Sticky Filter Bar */
+.mobile-filters {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--clr-surface);
+  border-bottom: 1px solid var(--clr-border);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 0.75rem 1rem;
+}
+
+.mobile-filters-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.mobile-filters-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.mobile-filters-row .sector-filter,
+.mobile-filters-row .industry-filter {
+  flex: 1;
+  min-width: 0;
 }
 
 .nav-item {

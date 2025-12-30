@@ -313,24 +313,17 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
 
   return (
     <>
-      {/* Mobile: App-like view switching */}
-      <MobileShell
-        activeView={activeBottomSection}
-        onViewChange={handleBottomNavChange}
-        navigation={
-          <div className="hidden lg:block">
-            <SectionNavigation
-              preferences={preferences}
-              onToggleSection={(key) => savePreferences({ [key]: !(preferences[key] ?? true) })}
-              onScrollToSection={scrollToSection}
-            />
-          </div>
-        }
-      >
-        <MobileViews {...mobileViewsProps} />
-      </MobileShell>
+      {/* Mobile: App-like view switching (CSS gating - lg:hidden) */}
+      <div className="lg:hidden">
+        <MobileShell
+          activeView={activeBottomSection}
+          onViewChange={handleBottomNavChange}
+        >
+          <MobileViews {...mobileViewsProps} />
+        </MobileShell>
+      </div>
 
-      {/* Desktop: Traditional scroll-based layout */}
+      {/* Desktop: Traditional scroll-based layout (CSS gating - hidden lg:block) */}
       <div className="homepage-container hidden lg:block">
         {/* PWA Status Bar */}
         <div className="pwa-status-bar"></div>
