@@ -7,6 +7,8 @@
  * - Double requestAnimationFrame for stable restore timing
  * - Throttled scroll listener for performance
  * - Proper handling of scroll position 0
+ * - Failsafe timeout for restore completion
+ * - Scroll position clamping for content size changes
  */
 
 import { useEffect, useRef } from 'react';
@@ -19,7 +21,6 @@ export function useScrollRestore(
   activeView: ViewKey,
   scrollContainerRef: React.RefObject<HTMLElement | null>
 ) {
-  const previousViewRef = useRef<ViewKey | null>(null);
   const isRestoringRef = useRef(false);
   const tickingRef = useRef(false);
 
@@ -28,22 +29,33 @@ export function useScrollRestore(
     const container = scrollContainerRef.current;
     if (!container) return;
 
-    previousViewRef.current = activeView;
-
     const savedPosition = scrollPositions.get(activeView) ?? 0;
 
     isRestoringRef.current = true;
+
+    // Failsafe timeout: release restoring flag if rAF never completes
+    // (can happen in background tabs or low-power mode)
+    const failSafe = window.setTimeout(() => {
+      isRestoringRef.current = false;
+    }, 500);
 
     // Double rAF to wait for layout + dynamic content
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         const c = scrollContainerRef.current;
         if (!c) {
+          clearTimeout(failSafe);
           isRestoringRef.current = false;
           return;
         }
 
-        c.scrollTop = savedPosition;
+        // Clamp scrollTop to valid range (handles content size changes)
+        const maxScroll = Math.max(0, c.scrollHeight - c.clientHeight);
+        const clampedPosition = Math.min(savedPosition, Math.max(0, maxScroll));
+
+        c.scrollTop = clampedPosition;
+        
+        clearTimeout(failSafe);
         isRestoringRef.current = false;
       });
     });
