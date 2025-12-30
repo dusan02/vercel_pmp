@@ -52,9 +52,10 @@ function calculateSectorSummary(
     
     if (changes.length === 0) return null;
     
+    const midIndex = Math.floor(changes.length / 2);
     const median = changes.length % 2 === 0
-      ? (changes[changes.length / 2 - 1] + changes[changes.length / 2]) / 2
-      : changes[Math.floor(changes.length / 2)];
+      ? (changes[midIndex - 1]! + changes[midIndex]!) / 2
+      : changes[midIndex]!;
     
     return formatPercent(median);
   } else {
