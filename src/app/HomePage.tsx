@@ -70,6 +70,10 @@ const BottomNavigation = dynamic(
   () => import('@/components/BottomNavigation').then((mod) => mod.BottomNavigation),
   { ssr: false, loading: () => null }
 );
+const MarketIndices = dynamic(
+  () => import('@/components/MarketIndices').then((mod) => mod.MarketIndices),
+  { ssr: false, loading: () => null }
+);
 
 // Hooks and utilities
 import { useFavorites } from '@/hooks/useFavorites';
@@ -173,13 +177,16 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
   });
 
   // Bottom Navigation State
-  const [activeBottomSection, setActiveBottomSection] = useState<'home' | 'favorites' | 'earnings' | 'allStocks'>('home');
+  const [activeBottomSection, setActiveBottomSection] = useState<'heatmap' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks'>('heatmap');
 
-  const handleBottomNavChange = (section: 'home' | 'favorites' | 'earnings' | 'allStocks') => {
+  const handleBottomNavChange = (section: 'heatmap' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks') => {
     setActiveBottomSection(section);
     switch (section) {
-      case 'home':
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+      case 'heatmap':
+        scrollToSection('section-heatmap');
+        break;
+      case 'portfolio':
+        scrollToSection('section-portfolio');
         break;
       case 'favorites':
         scrollToSection('section-favorites');
@@ -295,6 +302,11 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
                     }
                   />
                 </div>
+              </div>
+
+              {/* Market Indices - Mobile only, shown below header */}
+              <div className="lg:hidden container mx-auto px-4 py-2">
+                <MarketIndices />
               </div>
 
               <main className="container" role="main">
@@ -420,8 +432,8 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
         setConsent(true);
       }} />
 
-      {/* Mobile Bottom Navigation - Only visible on mobile/tablet */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50">
+      {/* Mobile Bottom Navigation - Always visible on mobile/tablet */}
+      <div className="lg:hidden">
         <BottomNavigation
           activeSection={activeBottomSection}
           onSectionChange={handleBottomNavChange}

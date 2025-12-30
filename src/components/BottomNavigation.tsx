@@ -1,11 +1,11 @@
 'use client';
 
 import React from 'react';
-import { Home, Star, Calendar, BarChart3 } from 'lucide-react';
+import { Home, Star, Calendar, BarChart3, PieChart } from 'lucide-react';
 
 interface BottomNavigationProps {
-  activeSection: 'home' | 'favorites' | 'earnings' | 'allStocks';
-  onSectionChange: (section: 'home' | 'favorites' | 'earnings' | 'allStocks') => void;
+  activeSection: 'heatmap' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks';
+  onSectionChange: (section: 'heatmap' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks') => void;
 }
 
 export const BottomNavigation: React.FC<BottomNavigationProps> = ({
@@ -14,10 +14,16 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
 }) => {
   const navItems = [
     {
-      id: 'home' as const,
-      label: 'Home',
-      icon: Home,
+      id: 'heatmap' as const,
+      label: 'Heatmap',
+      icon: BarChart3,
       color: 'text-blue-600'
+    },
+    {
+      id: 'portfolio' as const,
+      label: 'Portfolio',
+      icon: PieChart,
+      color: 'text-purple-600'
     },
     {
       id: 'favorites' as const,
@@ -35,7 +41,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
       id: 'allStocks' as const,
       label: 'All Stocks',
       icon: BarChart3,
-      color: 'text-purple-600'
+      color: 'text-indigo-600'
     }
   ];
 

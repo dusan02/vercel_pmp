@@ -6179,6 +6179,13 @@ table td strong {
   -webkit-backdrop-filter: blur(10px);
 }
 
+/* Hidden on desktop */
+@media (min-width: 1025px) {
+  .bottom-navigation {
+    display: none;
+  }
+}
+
 .nav-item {
   display: flex;
   flex-direction: column;
@@ -6366,8 +6373,10 @@ table td strong {
   }
 
   .nav-item {
-    min-height: 70px;
-    min-width: 70px;
+    min-height: 60px;
+    min-width: 50px;
+    flex: 1;
+    max-width: 80px;
   }
 
   .nav-label {

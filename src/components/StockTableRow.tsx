@@ -30,60 +30,112 @@ export const StockTableRow = memo(({
   const companyName = useMemo(() => getCompanyName(stock.ticker), [stock.ticker]);
   const formattedMarketCap = useMemo(() => formatBillions(stock.marketCap), [stock.marketCap]);
 
+  // Detect mobile
+  const [isMobile, setIsMobile] = React.useState(false);
+  React.useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth <= 1024);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   return (
     <SwipeableTableRow
       onToggleFavorite={onToggleFavorite}
       isFavorite={isFavorite}
     >
-      {/* Logo */}
-      <td>
-        <div className="logo-container">
-          <CompanyLogo ticker={stock.ticker} {...(stock.logoUrl ? { logoUrl: stock.logoUrl } : {})} size={32} priority={priority} />
-        </div>
-      </td>
-      
-      {/* Ticker */}
-      <td><strong>{stock.ticker}</strong></td>
-      
-      {/* Company */}
-      <td className="company-name">{companyName}</td>
-      
-      {/* Sector */}
-      <td>{stock.sector || 'N/A'}</td>
-      
-      {/* Industry */}
-      <td>{stock.industry || 'N/A'}</td>
-      
-      {/* Market Cap */}
-      <td>{formattedMarketCap}</td>
-      
-      {/* Cap Diff */}
-      <td className={stock.marketCapDiff >= 0 ? 'positive' : 'negative'}>
-        {formattedMarketCapDiff}
-      </td>
-      
-      {/* Price */}
-      <td>${formattedPrice}</td>
-      
-      {/* % Change */}
-      <td className={stock.percentChange >= 0 ? 'positive' : 'negative'}>
-        {formattedPercentChange}
-      </td>
-      
-      {/* Column 5: Favorites */}
-      <td>
-        <button
-          className={`favorite-btn ${isFavorite ? 'favorited' : ''}`}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onToggleFavorite();
-          }}
-          title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-        >
-          {isFavorite ? '★' : '☆'}
-        </button>
-      </td>
+      {/* Mobile: 5 columns only */}
+      {isMobile ? (
+        <>
+          {/* Logo - smaller on mobile */}
+          <td>
+            <div className="logo-container">
+              <CompanyLogo ticker={stock.ticker} {...(stock.logoUrl ? { logoUrl: stock.logoUrl } : {})} size={24} priority={priority} />
+            </div>
+          </td>
+          
+          {/* Ticker */}
+          <td><strong>{stock.ticker}</strong></td>
+          
+          {/* % Change */}
+          <td className={stock.percentChange >= 0 ? 'positive' : 'negative'}>
+            {formattedPercentChange}
+          </td>
+          
+          {/* Cap Diff */}
+          <td className={stock.marketCapDiff >= 0 ? 'positive' : 'negative'}>
+            {formattedMarketCapDiff}
+          </td>
+          
+          {/* Action - Favorite button */}
+          <td>
+            <button
+              className={`favorite-btn ${isFavorite ? 'favorited' : ''}`}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onToggleFavorite();
+              }}
+              title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+            >
+              {isFavorite ? '★' : '☆'}
+            </button>
+          </td>
+        </>
+      ) : (
+        <>
+          {/* Desktop: Full columns */}
+          {/* Logo */}
+          <td>
+            <div className="logo-container">
+              <CompanyLogo ticker={stock.ticker} {...(stock.logoUrl ? { logoUrl: stock.logoUrl } : {})} size={32} priority={priority} />
+            </div>
+          </td>
+          
+          {/* Ticker */}
+          <td><strong>{stock.ticker}</strong></td>
+          
+          {/* Company */}
+          <td className="company-name">{companyName}</td>
+          
+          {/* Sector */}
+          <td>{stock.sector || 'N/A'}</td>
+          
+          {/* Industry */}
+          <td>{stock.industry || 'N/A'}</td>
+          
+          {/* Market Cap */}
+          <td>{formattedMarketCap}</td>
+          
+          {/* Cap Diff */}
+          <td className={stock.marketCapDiff >= 0 ? 'positive' : 'negative'}>
+            {formattedMarketCapDiff}
+          </td>
+          
+          {/* Price */}
+          <td>${formattedPrice}</td>
+          
+          {/* % Change */}
+          <td className={stock.percentChange >= 0 ? 'positive' : 'negative'}>
+            {formattedPercentChange}
+          </td>
+          
+          {/* Favorites */}
+          <td>
+            <button
+              className={`favorite-btn ${isFavorite ? 'favorited' : ''}`}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onToggleFavorite();
+              }}
+              title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+            >
+              {isFavorite ? '★' : '☆'}
+            </button>
+          </td>
+        </>
+      )}
     </SwipeableTableRow>
   );
 }, (prevProps, nextProps) => {

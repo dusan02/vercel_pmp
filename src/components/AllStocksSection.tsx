@@ -30,8 +30,8 @@ interface AllStocksSectionProps {
   availableIndustries: string[];
 }
 
-// Table header configuration to reduce boilerplate
-const TABLE_HEADERS: { key?: SortKey; label: string; sortable: boolean }[] = [
+// Table header configuration - Desktop (full)
+const TABLE_HEADERS_DESKTOP: { key?: SortKey; label: string; sortable: boolean }[] = [
   { label: 'Logo', sortable: false },
   { key: 'ticker', label: 'Ticker', sortable: true },
   { label: 'Company', sortable: false },
@@ -42,6 +42,15 @@ const TABLE_HEADERS: { key?: SortKey; label: string; sortable: boolean }[] = [
   { key: 'currentPrice', label: 'Price', sortable: true },
   { key: 'percentChange', label: '% Change', sortable: true },
   { label: 'Favorites', sortable: false },
+];
+
+// Table header configuration - Mobile (5 columns only)
+const TABLE_HEADERS_MOBILE: { key?: SortKey; label: string; sortable: boolean }[] = [
+  { label: 'Logo', sortable: false },
+  { key: 'ticker', label: 'Ticker', sortable: true },
+  { key: 'percentChange', label: '% Change', sortable: true },
+  { key: 'marketCapDiff', label: 'Cap Diff', sortable: true },
+  { label: 'Action', sortable: false },
 ];
 
 export const AllStocksSection = React.memo(function AllStocksSection({
@@ -142,12 +151,25 @@ export const AllStocksSection = React.memo(function AllStocksSection({
         <SectionLoader message="Loading stocks..." />
       ) : (
         <>
-          {/* Responsive Table - Horizontal scroll on mobile */}
+          {/* Responsive Table - Mobile: 5 columns, Desktop: Full */}
           <div className="table-wrapper-mobile-safe">
             <table>
               <thead>
-                <tr>
-                  {TABLE_HEADERS.map((header, index) => (
+                {/* Mobile headers */}
+                <tr className="lg:hidden">
+                  {TABLE_HEADERS_MOBILE.map((header, index) => (
+                    <th
+                      key={index}
+                      onClick={header.sortable && header.key ? () => onSort(header.key!) : undefined}
+                      className={header.sortable ? `sortable ${sortKey === header.key ? "active-sort" : ""}` : undefined}
+                    >
+                      {header.label}
+                    </th>
+                  ))}
+                </tr>
+                {/* Desktop headers */}
+                <tr className="hidden lg:table-row">
+                  {TABLE_HEADERS_DESKTOP.map((header, index) => (
                     <th
                       key={index}
                       onClick={header.sortable && header.key ? () => onSort(header.key!) : undefined}
