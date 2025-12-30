@@ -174,15 +174,12 @@ async function validateAndFixTicker(ticker: any): Promise<ValidationResult> {
   if (knownMapping) {
     const sectorMismatch = hasSector && ticker.sector !== knownMapping.sector;
     const industryMismatch = hasIndustry && ticker.industry !== knownMapping.industry;
-    const nameMismatch = ticker.name && knownMapping.name && 
-                         ticker.name.toLowerCase() !== knownMapping.name.toLowerCase();
 
     if (sectorMismatch || industryMismatch) {
       result.issues.push(`Sector/industry mismatch with known mapping`);
     }
-    if (nameMismatch) {
-      result.issues.push(`Company name mismatch with known mapping`);
-    }
+    // Company name mismatch nie je kritický problém - name môže byť rôzny (napr. "Apple Inc." vs "Apple")
+    // Opravíme ho len ak je prázdny alebo ak chceme použiť presný názov z mappingu
   }
 
   // 6. Oprava ak sú nejaké problémy
@@ -199,6 +196,7 @@ async function validateAndFixTicker(ticker: any): Promise<ValidationResult> {
     if (!hasIndustry || ticker.industry !== normalizedIndustry) {
       updateData.industry = normalizedIndustry;
     }
+    // Opravíme name len ak je prázdny - ak má name, necháme ho tak (môže byť rôzny formát)
     if (knownMapping.name && (!ticker.name || ticker.name.trim() === '')) {
       updateData.name = knownMapping.name;
     }

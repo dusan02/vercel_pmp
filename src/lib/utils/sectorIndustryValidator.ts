@@ -105,7 +105,8 @@ export const VALID_INDUSTRIES: Record<ValidSector, string[]> = {
     'Beverages - Non-Alcoholic',
     'Beverages - Alcoholic',
     'Household & Personal Products',
-    'Tobacco'
+    'Tobacco',
+    'Discount Stores'
   ],
   'Other': [
     'Uncategorized'
