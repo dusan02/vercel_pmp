@@ -1,10 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useRef } from 'react';
 import { BottomNavigation } from './BottomNavigation';
 import { MarketIndices } from './MarketIndices';
 import { LoginButton } from './LoginButton';
 import { BrandLogo } from './BrandLogo';
+import { useScrollRestore } from '@/hooks/useScrollRestore';
 
 export type MobileView = 'heatmap' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks';
 
@@ -31,6 +32,11 @@ export const MobileShell: React.FC<MobileShellProps> = ({
   activeView,
   onViewChange
 }) => {
+  const scrollContainerRef = useRef<HTMLElement>(null);
+
+  // Restore scroll position per view
+  useScrollRestore(activeView, scrollContainerRef);
+
   return (
     <div className="mobile-shell">
       {/* Sticky Header - Brand + Sign In */}
@@ -58,7 +64,10 @@ export const MobileShell: React.FC<MobileShellProps> = ({
 
       {/* Main Content - Single View */}
       {/* Add 'has-fab' class for views that show FAB (allStocks, portfolio, favorites) */}
-      <main className={`mobile-main-content ${activeView === 'allStocks' || activeView === 'portfolio' || activeView === 'favorites' ? 'has-fab' : ''}`}>
+      <main 
+        ref={scrollContainerRef}
+        className={`mobile-main-content ${activeView === 'allStocks' || activeView === 'portfolio' || activeView === 'favorites' ? 'has-fab' : ''}`}
+      >
         {children}
       </main>
 

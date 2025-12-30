@@ -6177,7 +6177,7 @@ table td strong {
   
   display: flex;
   align-items: center;
-  justify-content: space-around;
+  justify-content: space-evenly; /* Better visual distribution than space-around */
   
   /* Fixed height for nav bar content (without safe-area) */
   height: 64px;
