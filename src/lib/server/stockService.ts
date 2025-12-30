@@ -104,24 +104,29 @@ export async function getStocksList(options: {
       });
     }
 
-    // Regular close is only needed after-hours / closed sessions (for correct reference + % change)
+    // CRITICAL: Always fetch regularClose for all sessions (needed for correct % change calculation)
+    // Only use regularClose from TODAY (not previous day) - same logic as heatmap API
     const regularCloseBySymbol = new Map<string, number>();
-    if (session === 'after' || session === 'closed') {
-      const dateET = getDateET(etNow);
-      const dateObj = createETDate(dateET);
-      const dailyRefs = await prisma.dailyRef.findMany({
-        where: {
-          symbol: { in: stocks.map(s => s.symbol) },
-          date: dateObj
-        },
-        select: { symbol: true, regularClose: true }
-      });
-      dailyRefs.forEach(r => {
-        if (r.regularClose && r.regularClose > 0) {
+    const dateET = getDateET(etNow);
+    const todayDateObj = createETDate(dateET);
+    const dailyRefs = await prisma.dailyRef.findMany({
+      where: {
+        symbol: { in: stocks.map(s => s.symbol) },
+        date: todayDateObj // Only today's regularClose
+      },
+      select: { symbol: true, regularClose: true, date: true }
+    });
+    dailyRefs.forEach(r => {
+      // CRITICAL: Only use regularClose from TODAY (not previous day)
+      // This prevents using stale regularClose from yesterday which causes incorrect % changes
+      if (r.regularClose && r.regularClose > 0) {
+        const drDate = new Date(r.date);
+        const isToday = drDate.getTime() === todayDateObj.getTime();
+        if (isToday) {
           regularCloseBySymbol.set(r.symbol, r.regularClose);
         }
-      });
-    }
+      }
+    });
 
     // On-demand prevClose fetch for tickers missing previousClose (API-safe for /api/stocks)
     const tickersNeedingPrevClose = stocks
@@ -233,6 +238,7 @@ export async function getStocksList(options: {
       const previousClose = onDemandPrevCloseMap.get(s.symbol) || (s.latestPrevClose || 0);
       // Use on-demand sharesOutstanding if available, otherwise fallback to DB value
       const sharesOutstanding = onDemandSharesMap.get(s.symbol) || (s.sharesOutstanding || 0);
+      // Get regularClose from today's DailyRef (same logic as heatmap API)
       const regularClose = regularCloseBySymbol.get(s.symbol) || 0;
 
       const lastTs = s.lastPriceUpdated || s.updatedAt;
@@ -244,6 +250,7 @@ export async function getStocksList(options: {
       const isStale = !isFrozen && currentPrice > 0 && ageMs > thresholdMin * 60_000;
 
       // VŽDY počítať percentChange z aktuálnych hodnôt pre konzistentnosť s heatmapou
+      // Use same logic as heatmap API: computePercentChange (which internally uses calculatePercentChange)
       const pct = calculatePercentChange(
         currentPrice,
         session,
@@ -251,9 +258,12 @@ export async function getStocksList(options: {
         regularClose > 0 ? regularClose : null
       );
 
+      // CRITICAL: Always use calculated percentChange if we have valid reference price
+      // Don't fallback to s.lastChangePct (it may be stale) - same as heatmap API
+      // This ensures consistency between heatmap and tables
       const percentChange = (currentPrice > 0 && (pct.reference.price ?? 0) > 0)
         ? pct.changePct
-        : (s.lastChangePct || 0);
+        : 0; // Return 0 instead of stale lastChangePct
 
       // Vypočítaj market cap z aktuálnych hodnôt
       const marketCap = (currentPrice > 0 && sharesOutstanding > 0)
