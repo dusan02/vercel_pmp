@@ -22,6 +22,67 @@ import styles from '@/styles/heatmap.module.css';
 // --- CONSTANTS ---
 // Constants moved to @/lib/utils/heatmapConfig.ts
 
+// --- HELPER FUNCTIONS ---
+
+/**
+ * Calculate sector summary (avg % change or total mcap delta)
+ */
+function calculateSectorSummary(
+  sectorName: string,
+  allLeaves: TreemapLeaf[],
+  metric: HeatmapMetric
+): string | null {
+  // Get all companies in this sector
+  const sectorCompanies = allLeaves
+    .filter(leaf => {
+      const company = leaf.data.meta?.companyData;
+      return company && company.sector === sectorName;
+    })
+    .map(leaf => leaf.data.meta?.companyData)
+    .filter((c): c is CompanyNode => c !== undefined);
+
+  if (sectorCompanies.length === 0) return null;
+
+  if (metric === 'percent') {
+    // Calculate median (better than average for outliers)
+    const changes = sectorCompanies
+      .map(c => c.changePercent)
+      .filter(p => p !== null && p !== undefined && !isNaN(p))
+      .sort((a, b) => a - b);
+    
+    if (changes.length === 0) return null;
+    
+    const median = changes.length % 2 === 0
+      ? (changes[changes.length / 2 - 1] + changes[changes.length / 2]) / 2
+      : changes[Math.floor(changes.length / 2)];
+    
+    return formatPercent(median);
+  } else {
+    // Calculate total market cap delta for sector
+    const totalDelta = sectorCompanies.reduce((sum, c) => {
+      return sum + (c.marketCapDiff || 0);
+    }, 0);
+    
+    if (Math.abs(totalDelta) < 0.01) return null; // Too small to display
+    
+    return formatMarketCapDiff(totalDelta);
+  }
+}
+
+/**
+ * Truncate long sector names for display
+ */
+function truncateSectorName(name: string, maxLength: number = 20): string {
+  if (name.length <= maxLength) return name;
+  // Try to truncate at word boundary
+  const truncated = name.substring(0, maxLength - 3);
+  const lastSpace = truncated.lastIndexOf(' ');
+  if (lastSpace > maxLength * 0.6) {
+    return truncated.substring(0, lastSpace) + '...';
+  }
+  return truncated + '...';
+}
+
 // --- TYPY ---
 
 /**
@@ -47,6 +108,8 @@ export type HeatmapMetric = 'percent' | 'mcap';
 /**
  * Props pre hlavný komponent heatmapy.
  */
+export type SectorLabelVariant = 'compact' | 'full';
+
 export type MarketHeatmapProps = {
   data: CompanyNode[];
   onTileClick?: (company: CompanyNode) => void;
@@ -60,6 +123,8 @@ export type MarketHeatmapProps = {
   onTimeframeChange?: (timeframe: 'day' | 'week' | 'month') => void;
   /** Metrika pre výpočet veľkosti dlaždice */
   metric?: HeatmapMetric;
+  /** Variant sector labels: 'compact' for homepage, 'full' for heatmap page */
+  sectorLabelVariant?: SectorLabelVariant;
 };
 
 /**
@@ -171,6 +236,7 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
   timeframe = 'day',
   onTimeframeChange,
   metric = 'percent',
+  sectorLabelVariant = 'compact',
 }) => {
   const [hoveredNode, setHoveredNode] = useState<CompanyNode | null>(null);
   const [hoveredSector, setHoveredSector] = useState<string | null>(null);
@@ -315,17 +381,27 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
     }
     
     // Desktop: Original behavior
+    // Add padding-top for sectors to make space for labels
     const treemapGenerator = treemap<HierarchyData>()
       .size([width, height])
       .padding(function (node) {
         if (node.depth === 1) {
-          // Sektor → áno medzera
+          // Sektor → medzera + priestor pre label
           return SECTOR_GAP;
         }
         // Industry + Firmy → 0px (žiadne medzery)
         return 0;
       })
-      .paddingTop(0) // Žiadna rezerva hore - roztiahnuť hore
+      .paddingTop(function (node) {
+        if (node.depth === 1) {
+          // Sektor → pridaj priestor pre label (podľa variantu)
+          const labelConfig = sectorLabelVariant === 'full' 
+            ? LAYOUT_CONFIG.SECTOR_LABEL_FULL 
+            : LAYOUT_CONFIG.SECTOR_LABEL_COMPACT;
+          return labelConfig.HEIGHT;
+        }
+        return 0;
+      })
       .paddingLeft(0) // Žiadna rezerva vľavo - roztiahnuť doľava
       .paddingRight(0) // Žiadna rezerva vpravo - roztiahnuť doprava
       .paddingBottom(0) // Žiadna rezerva dole - roztiahnuť dole
@@ -554,53 +630,117 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
       )}
 
       {renderMode === 'canvas' ? (
-        <CanvasHeatmap
-          leaves={filteredLeaves}
-          width={width}
-          height={height}
-          scale={scale}
-          offset={offset}
-          onTileClick={(company: CompanyNode) => onTileClick && onTileClick(company)}
-          onHover={handleCanvasHover}
-          metric={metric}
-          timeframe={timeframe}
-        />
-      ) : (
         <>
-          {/* Sektory a Industry labely sú odstránené - pôsobili rušivo */}
-          {/* Zachovávame iba hover overlay pre sektory (ak je potrebný) */}
+          {/* Sector borders for canvas mode - rendered as overlay divs */}
           {filteredNodes
-            .filter((node) => node.depth === 1) // Iba Sektory pre hover overlay
+            .filter((node) => node.depth === 1) // Only Sectors
             .map((node) => {
               const { x0, y0, x1, y1 } = node as TreemapNode;
-              const data = node.data as HierarchyData;
               const nodeWidth = x1 - x0;
               const nodeHeight = y1 - y0;
-              const isHovered = hoveredSector === data.name;
 
               return (
                 <div
-                  key={`sector-hover-${data.name}-${x0}-${y0}`}
-                  className="absolute overflow-hidden cursor-pointer"
+                  key={`sector-border-${node.data.name}-${x0}-${y0}`}
+                  className="absolute pointer-events-none"
                   style={{
                     left: x0 * scale + offset.x,
                     top: y0 * scale + offset.y,
                     width: nodeWidth * scale,
                     height: nodeHeight * scale,
-                    pointerEvents: 'auto',
+                    // Thicker black border to separate sectors visually (1.5px solid black - half of original 3px)
+                    // Using box-shadow inset to create border effect that renders above canvas
+                    boxShadow: 'inset 0 0 0 1.5px #000000',
+                    zIndex: 10, // Above canvas to ensure border is visible
                   }}
-                  onMouseEnter={() => setHoveredSector(data.name)}
-                  onMouseLeave={() => setHoveredSector(null)}
-                  onClick={() => handleSectorClick(data.name)}
+                />
+              );
+            })}
+          <CanvasHeatmap
+            leaves={filteredLeaves}
+            width={width}
+            height={height}
+            scale={scale}
+            offset={offset}
+            onTileClick={(company: CompanyNode) => onTileClick && onTileClick(company)}
+            onHover={handleCanvasHover}
+            metric={metric}
+            timeframe={timeframe}
+          />
+          {/* Sector labels for canvas mode - rendered AFTER canvas to ensure they're on top */}
+          {filteredNodes
+            .filter((node) => node.depth === 1) // Only Sectors
+            .map((node) => {
+              const { x0, y0, x1, y1 } = node as TreemapNode;
+              const data = node.data as HierarchyData;
+              const nodeWidth = x1 - x0;
+              const nodeHeight = y1 - y0;
+              const scaledWidth = nodeWidth * scale;
+              const scaledHeight = nodeHeight * scale;
+              
+              const labelConfig = sectorLabelVariant === 'full' 
+                ? LAYOUT_CONFIG.SECTOR_LABEL_FULL 
+                : LAYOUT_CONFIG.SECTOR_LABEL_COMPACT;
+              
+              const labelHeight = labelConfig.HEIGHT;
+              
+              // Check if sector is large enough (both width and height)
+              const minSizeForLabel = 50;
+              const minHeightForLabel = labelHeight + 8;
+              const showLabel = scaledWidth > minSizeForLabel 
+                && scaledHeight > minHeightForLabel 
+                && scale > 0 
+                && treemapBounds !== null;
+
+              if (!showLabel) return null;
+
+              // Calculate responsive font size using clamp
+              const minFont = labelConfig.FONT_SIZE_MIN;
+              const maxFont = labelConfig.FONT_SIZE_MAX;
+              const responsiveFontSize = `clamp(${minFont}px, ${0.65 * scale * 12}px, ${maxFont}px)`;
+
+              // Calculate sector summary for full variant
+              const sectorSummary = sectorLabelVariant === 'full' && labelConfig.SHOW_SUMMARY
+                ? calculateSectorSummary(data.name, allLeaves, metric)
+                : null;
+
+              // Truncate long sector names
+              const displayName = truncateSectorName(data.name, sectorLabelVariant === 'full' ? 25 : 20);
+
+              return (
+                <div
+                  key={`sector-label-${data.name}-${x0}-${y0}`}
+                  className={`${styles.sectorLabelWrap} ${
+                    sectorLabelVariant === 'full' 
+                      ? styles.sectorLabelWrapFull 
+                      : styles.sectorLabelWrapCompact
+                  }`}
+                  style={{
+                    left: x0 * scale + offset.x,
+                    top: y0 * scale + offset.y,
+                    width: nodeWidth * scale,
+                    height: labelHeight,
+                    paddingLeft: labelConfig.LEFT,
+                  }}
                 >
-                  {/* Hover overlay pre sektor */}
-                  {isHovered && (
-                    <div className="absolute inset-0 bg-blue-500 opacity-10 pointer-events-none" />
+                  {sectorLabelVariant === 'full' ? (
+                    <div className={styles.sectorLabelStripFull} style={{ fontSize: responsiveFontSize }}>
+                      <span>{displayName}</span>
+                      {sectorSummary && (
+                        <span className={styles.sectorLabelSummary}>{sectorSummary}</span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className={styles.sectorLabelPillCompact} style={{ fontSize: responsiveFontSize }}>
+                      {displayName}
+                    </div>
                   )}
                 </div>
               );
             })}
-
+        </>
+      ) : (
+        <>
           {/* 2. Renderujeme Listy (Firmy) - Using memoized HeatmapTile component */}
           {visibleLeaves.map((leaf) => {
             const { x0, y0, x1, y1 } = leaf;
@@ -632,6 +772,115 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
               />
             );
           })}
+
+          {/* Sektorové border divy - renderované PO dlaždiciach, aby boli viditeľné */}
+          {filteredNodes
+            .filter((node) => node.depth === 1) // Iba Sektory
+            .map((node) => {
+              const { x0, y0, x1, y1 } = node as TreemapNode;
+              const data = node.data as HierarchyData;
+              const nodeWidth = x1 - x0;
+              const nodeHeight = y1 - y0;
+              const isHovered = hoveredSector === data.name;
+
+              return (
+                <div
+                  key={`sector-border-${data.name}-${x0}-${y0}`}
+                  className="absolute cursor-pointer"
+                  style={{
+                    left: x0 * scale + offset.x,
+                    top: y0 * scale + offset.y,
+                    width: nodeWidth * scale,
+                    height: nodeHeight * scale,
+                    pointerEvents: 'auto',
+                    // Thicker black border to separate sectors visually (1.5px solid black - half of original 3px)
+                    border: '1.5px solid #000000',
+                    boxSizing: 'border-box',
+                    zIndex: 10, // Above tiles to ensure border is visible
+                  }}
+                  onMouseEnter={() => setHoveredSector(data.name)}
+                  onMouseLeave={() => setHoveredSector(null)}
+                  onClick={() => handleSectorClick(data.name)}
+                >
+                  {/* Hover overlay pre sektor */}
+                  {isHovered && (
+                    <div className="absolute inset-0 bg-blue-500 opacity-10 pointer-events-none" />
+                  )}
+                </div>
+              );
+            })}
+
+          {/* Sector labels for DOM mode - rendered AFTER sectors to ensure they're on top */}
+          {filteredNodes
+            .filter((node) => node.depth === 1) // Iba Sektory
+            .map((node) => {
+              const { x0, y0, x1, y1 } = node as TreemapNode;
+              const data = node.data as HierarchyData;
+              const nodeWidth = x1 - x0;
+              const nodeHeight = y1 - y0;
+              const scaledWidth = nodeWidth * scale;
+              const scaledHeight = nodeHeight * scale;
+              
+              const labelConfig = sectorLabelVariant === 'full' 
+                ? LAYOUT_CONFIG.SECTOR_LABEL_FULL 
+                : LAYOUT_CONFIG.SECTOR_LABEL_COMPACT;
+              
+              const labelHeight = labelConfig.HEIGHT;
+              
+              // Check if sector is large enough (both width and height)
+              const minSizeForLabel = 50;
+              const minHeightForLabel = labelHeight + 8;
+              const showLabel = scaledWidth > minSizeForLabel 
+                && scaledHeight > minHeightForLabel 
+                && scale > 0 
+                && treemapBounds !== null;
+
+              if (!showLabel) return null;
+
+              // Calculate responsive font size using clamp
+              const minFont = labelConfig.FONT_SIZE_MIN;
+              const maxFont = labelConfig.FONT_SIZE_MAX;
+              const responsiveFontSize = `clamp(${minFont}px, ${0.65 * scale * 12}px, ${maxFont}px)`;
+
+              // Calculate sector summary for full variant
+              const sectorSummary = sectorLabelVariant === 'full' && labelConfig.SHOW_SUMMARY
+                ? calculateSectorSummary(data.name, allLeaves, metric)
+                : null;
+
+              // Truncate long sector names
+              const displayName = truncateSectorName(data.name, sectorLabelVariant === 'full' ? 25 : 20);
+
+              return (
+                <div
+                  key={`sector-label-${data.name}-${x0}-${y0}`}
+                  className={`${styles.sectorLabelWrap} ${
+                    sectorLabelVariant === 'full' 
+                      ? styles.sectorLabelWrapFull 
+                      : styles.sectorLabelWrapCompact
+                  }`}
+                  style={{
+                    left: x0 * scale + offset.x,
+                    top: y0 * scale + offset.y,
+                    width: nodeWidth * scale,
+                    height: labelHeight,
+                    paddingLeft: labelConfig.LEFT,
+                  }}
+                >
+                  {sectorLabelVariant === 'full' ? (
+                    <div className={styles.sectorLabelStripFull} style={{ fontSize: responsiveFontSize }}>
+                      <span>{displayName}</span>
+                      {sectorSummary && (
+                        <span className={styles.sectorLabelSummary}>{sectorSummary}</span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className={styles.sectorLabelPillCompact} style={{ fontSize: responsiveFontSize }}>
+                      {displayName}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
         </>
       )}
 

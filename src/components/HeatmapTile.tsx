@@ -80,6 +80,7 @@ export const HeatmapTile = React.memo<HeatmapTileProps>(({
         height: tileHeight * scale,
         backgroundColor: color,
         transitionProperty: colorTransition ? 'background-color' : 'all',
+        zIndex: 1, // Below sector borders (sectors have z-10)
       }}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}

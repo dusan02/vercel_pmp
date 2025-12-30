@@ -108,8 +108,8 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
             ctx.fillStyle = colorScale(company.changePercent);
             ctx.fillRect(tileX, tileY, tileW, tileH);
 
-            // Border
-            ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+            // Border - thinner border between companies within sectors
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.25)';
             ctx.lineWidth = 1;
             ctx.strokeRect(tileX, tileY, tileW, tileH);
 

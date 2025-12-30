@@ -41,13 +41,46 @@ export const LAYOUT_CONFIG = {
     SCALE_MARGIN: 0.85, // 15% okraj pri scale výpočte
     TOOLTIP_OFFSET: 15, // Offset tooltipu od kurzora
     SECTOR_GAP: 1, // Jednotná medzera medzi sektormi (v pixeloch) - čierna farba
+    // Legacy - kept for backward compatibility, use SECTOR_LABEL_COMPACT or SECTOR_LABEL_FULL
     SECTOR_LABEL: {
-        FONT_SIZE: 14,
+        FONT_SIZE: 8.4,
         PADDING: '2px 6px',
         TOP: 2,
         LEFT: 6,
         LETTER_SPACING: '0.08em',
         BG_OPACITY: 0.85,
+        HEIGHT: 18,
+    },
+    // Compact variant for homepage - subtle, glass effect
+    SECTOR_LABEL_COMPACT: {
+        FONT_SIZE_MIN: 9,
+        FONT_SIZE_MAX: 10,
+        PADDING: '1px 6px',
+        LEFT: 6,
+        LETTER_SPACING: '0.04em',
+        BG_OPACITY: 0.45,
+        BG_OPACITY_HOVER: 0.55,
+        HEIGHT: 16,
+        BORDER_RADIUS: 999, // Pill shape
+        BORDER: '1px solid rgba(255, 255, 255, 0.10)',
+        BACKDROP_BLUR: '6px',
+        FONT_WEIGHT: 600, // Semibold
+    },
+    // Full variant for heatmap page - prominent, section header style
+    SECTOR_LABEL_FULL: {
+        FONT_SIZE_MIN: 12,
+        FONT_SIZE_MAX: 14,
+        PADDING: '3px 10px',
+        LEFT: 8,
+        LETTER_SPACING: '0.06em',
+        BG_OPACITY: 0.60,
+        BG_OPACITY_HOVER: 0.70,
+        HEIGHT: 24,
+        BORDER_RADIUS: 8,
+        BORDER: '1px solid rgba(255, 255, 255, 0.15)',
+        BACKDROP_BLUR: '8px',
+        FONT_WEIGHT: 700, // Bold
+        SHOW_SUMMARY: true, // Show sector avg % or mcap delta
     },
     INDUSTRY_LABEL: {
         FONT_SIZE: 11,

@@ -1654,6 +1654,17 @@ body {
   font-weight: 400;
 }
 
+/* Reduce font size on homepage to ~30% of original */
+/* This applies to homepage only, heatmap page is excluded */
+.homepage-wrapper {
+  font-size: 0.3rem; /* 30% of 16px = 4.8px base, but using rem for relative scaling */
+}
+
+/* Ensure heatmap page keeps normal font size */
+.heatmap-page-wrapper {
+  font-size: 1rem; /* Normal size for heatmap */
+}
+
 /* === TYPOGRAPHY IMPROVEMENTS ========================== */
 strong,
 b {

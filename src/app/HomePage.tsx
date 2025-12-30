@@ -226,7 +226,7 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
   });
 
   return (
-    <>
+    <div className="homepage-wrapper">
       {/* PWA Status Bar */}
       <div className="pwa-status-bar"></div>
       
@@ -393,6 +393,6 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
         // Set consent to enable favorites functionality
         setConsent(true);
       }} />
-    </>
+    </div>
   );
 }

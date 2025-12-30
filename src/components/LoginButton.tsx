@@ -38,7 +38,7 @@ export function LoginButton() {
                         setIsDropdownOpen(false);
                         signOut({ callbackUrl: '/' });
                     }}
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 shadow-sm"
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gray-600 hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 shadow-sm"
                     aria-label="Sign out"
                 >
                     <svg
@@ -79,7 +79,7 @@ export function LoginButton() {
                                     setIsDropdownOpen(false);
                                     signOut({ callbackUrl: '/' });
                                 }}
-                                className="w-full px-3 py-2.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 rounded-md transition-colors flex items-center justify-center gap-2.5 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 shadow-sm"
+                                className="w-full px-3 py-2.5 text-sm font-medium text-white bg-gray-600 hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-md transition-colors flex items-center justify-center gap-2.5 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1 shadow-sm"
                                 aria-label="Sign out"
                             >
                                 <svg

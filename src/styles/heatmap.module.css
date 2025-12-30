@@ -28,7 +28,8 @@
 /* Tiles */
 .heatmapTile {
   @apply absolute flex flex-col items-center justify-center box-border transition-all duration-300 ease-out cursor-pointer;
-  border: 1px solid rgba(0, 0, 0, 0.3);
+  /* Thinner border between companies within sectors */
+  border: 1px solid rgba(0, 0, 0, 0.25);
 }
 
 .heatmapTile:hover {
@@ -47,6 +48,76 @@
 .heatmapTilePercent {
   @apply font-medium text-white;
   text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 0 2px rgba(0, 0, 0, 0.8);
+}
+
+/* Sector Labels - Compact variant (homepage) */
+.sectorLabelWrap {
+  @apply absolute pointer-events-none;
+  display: flex;
+  align-items: center;
+}
+
+.sectorLabelWrapCompact {
+  padding-left: 6px;
+  height: 16px;
+  z-index: 100;
+}
+
+.sectorLabelPillCompact {
+  font-weight: 600; /* Semibold */
+  color: #FFFFFF;
+  padding: 1px 6px;
+  border-radius: 999px; /* Pill shape */
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  text-transform: uppercase;
+  text-shadow: -1px -1px 0 rgba(0, 0, 0, 0.5), 1px -1px 0 rgba(0, 0, 0, 0.5), -1px 1px 0 rgba(0, 0, 0, 0.5), 1px 1px 0 rgba(0, 0, 0, 0.5);
+  transition: background-color 0.2s ease;
+}
+
+.sectorLabelPillCompact:hover {
+  background: rgba(0, 0, 0, 0.55);
+}
+
+/* Sector Labels - Full variant (heatmap page) */
+.sectorLabelWrapFull {
+  padding-left: 8px;
+  height: 24px;
+  z-index: 100;
+}
+
+.sectorLabelStripFull {
+  font-weight: 700; /* Bold */
+  color: #FFFFFF;
+  padding: 3px 10px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.60);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  text-transform: uppercase;
+  text-shadow: -1px -1px 0 rgba(0, 0, 0, 0.6), 1px -1px 0 rgba(0, 0, 0, 0.6), -1px 1px 0 rgba(0, 0, 0, 0.6), 1px 1px 0 rgba(0, 0, 0, 0.6);
+  transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sectorLabelStripFull:hover {
+  background: rgba(0, 0, 0, 0.70);
+}
+
+.sectorLabelSummary {
+  font-weight: 500;
+  font-size: 0.85em;
+  opacity: 0.9;
+  letter-spacing: 0.02em;
 }
 
 /* Sector Overlay */

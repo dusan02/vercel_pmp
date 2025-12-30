@@ -19,6 +19,14 @@ export default function HeatmapPage() {
   
   // Metrika heat mapy (Percent vs Mcap) - state lifting
   const { metric, setMetric } = useHeatmapMetric();
+  
+  // Ensure heatmap page has normal font size
+  useEffect(() => {
+    document.body.classList.add('heatmap-page-wrapper');
+    return () => {
+      document.body.classList.remove('heatmap-page-wrapper');
+    };
+  }, []);
 
   // Handler pre exit fullscreen (návrat na homepage)
   const handleExitFullscreen = useCallback(() => {
@@ -122,6 +130,7 @@ export default function HeatmapPage() {
         style={{ overflow: 'hidden', width: '100%' }}
       >
         <ResponsiveMarketHeatmap
+          sectorLabelVariant="full"
           apiEndpoint="/api/heatmap"
           onTileClick={handleTileClick}
           autoRefresh={true}

@@ -51,15 +51,21 @@ export function MarketIndices() {
                     return;
                 }
                 
-                // Handle network errors gracefully
+                // Handle network errors gracefully - don't log to console in production
                 const isNetworkError = err.message?.includes('Failed to fetch') || 
                                       err.message?.includes('NetworkError') ||
                                       !err.message;
                 
                 if (isNetworkError) {
-                    logger.warn('MarketIndices: Network error - server may be unavailable');
+                    // Only log in development mode
+                    if (process.env.NODE_ENV === 'development') {
+                        logger.warn('MarketIndices: Network error - server may be unavailable');
+                    }
                 } else {
-                    logger.error('MarketIndices: Failed to fetch indices', err, { tickers });
+                    // Only log unexpected errors in development
+                    if (process.env.NODE_ENV === 'development') {
+                        logger.error('MarketIndices: Failed to fetch indices', err, { tickers });
+                    }
                 }
                 // Keep existing data if available, don't clear on error
             } finally {

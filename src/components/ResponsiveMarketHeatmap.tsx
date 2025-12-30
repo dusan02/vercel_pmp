@@ -25,6 +25,8 @@ export type ResponsiveMarketHeatmapProps = {
   onMetricChange?: (metric: HeatmapMetric) => void;
   /** Skryť buttony pre prepínanie metriky (ak sú kontrolované zvonka) */
   hideMetricButtons?: boolean;
+  /** Variant sector labels: 'compact' for homepage, 'full' for heatmap page */
+  sectorLabelVariant?: 'compact' | 'full';
 };
 
 /**
@@ -41,6 +43,7 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
   controlledMetric,
   onMetricChange,
   hideMetricButtons = false,
+  sectorLabelVariant = 'compact',
 }) => {
   // Resize hook
   const { ref, size } = useElementResize();
@@ -212,6 +215,7 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
           {...(onTileClick ? { onTileClick } : {})}
           timeframe={timeframe}
           metric={metric}
+          sectorLabelVariant={sectorLabelVariant}
         />
 
         {/* Last updated indicator - only on desktop (mobile has it in header or can be added) */}

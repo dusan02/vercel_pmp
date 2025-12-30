@@ -14,6 +14,17 @@ export async function registerServiceWorker() {
   if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
     return;
   }
+  
+  // Check if already registered to avoid duplicate registrations
+  try {
+    const existingRegistration = await navigator.serviceWorker.getRegistration();
+    if (existingRegistration) {
+      return existingRegistration;
+    }
+  } catch (e) {
+    // Ignore errors when checking for existing registration
+  }
+  
   try {
     const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
     console.log('Service Worker registered successfully:', registration);
@@ -37,7 +48,13 @@ export async function registerServiceWorker() {
       }
     });
     return registration;
-  } catch (error) {
+  } catch (error: any) {
+    // Silently handle AbortError and other expected errors
+    if (error?.name === 'AbortError' || error?.message?.includes('aborted')) {
+      // Registration was aborted, likely due to navigation or component unmount
+      return;
+    }
+    // Only log unexpected errors
     console.error('Service Worker registration failed:', error);
   }
 }

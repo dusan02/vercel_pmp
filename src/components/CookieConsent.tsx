@@ -12,15 +12,54 @@ export default function CookieConsent({ onAccept }: CookieConsentProps) {
 
   useEffect(() => {
     // Check if user has already given consent or declined
-    // Banner should only show if no decision has been made
-    const consentValue = safeGetItem('pmp-cookie-consent');
-    // If no value exists (null), show the banner
-    // If value exists (either 'true' or 'declined'), hide the banner
-    if (consentValue === null || consentValue === undefined || consentValue === '') {
-      setIsVisible(true);
-    } else {
-      setIsVisible(false);
-    }
+    // Check both localStorage and cookies for better reliability
+    const checkConsent = () => {
+      // Check localStorage first
+      const consentValue = safeGetItem('pmp-cookie-consent');
+      
+      // Also check cookies as fallback (for better mobile support)
+      let cookieConsent: string | null = null;
+      try {
+        const cookies = document.cookie.split(';');
+        const consentCookie = cookies.find(c => c.trim().startsWith('pmp-consent='));
+        if (consentCookie) {
+          cookieConsent = consentCookie.split('=')[1]?.trim() || null;
+        }
+      } catch (e) {
+        // Ignore cookie errors
+      }
+      
+      // If consent exists in either localStorage or cookies, hide banner
+      const hasConsent = consentValue === 'true' || consentValue === 'declined' || 
+                        cookieConsent === 'true' || cookieConsent === 'declined';
+      
+      if (hasConsent) {
+        setIsVisible(false);
+        // Sync: if cookie exists but localStorage doesn't, restore it
+        if (cookieConsent && !consentValue) {
+          safeSetItem('pmp-cookie-consent', cookieConsent);
+        }
+        // Sync: if localStorage exists but cookie doesn't, restore it
+        if (consentValue && !cookieConsent) {
+          try {
+            document.cookie = `pmp-consent=${consentValue}; max-age=31536000; path=/`;
+          } catch (e) {
+            // Ignore cookie errors
+          }
+        }
+      } else {
+        // Only show if no consent found anywhere
+        setIsVisible(true);
+      }
+    };
+    
+    // Check immediately
+    checkConsent();
+    
+    // Also check after a short delay (handles race conditions on mobile)
+    const timeoutId = setTimeout(checkConsent, 100);
+    
+    return () => clearTimeout(timeoutId);
   }, []);
 
   const handleAccept = () => {

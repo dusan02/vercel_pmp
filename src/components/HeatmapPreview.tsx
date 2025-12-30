@@ -78,6 +78,7 @@ export function HeatmapPreview() {
             controlledMetric={metric}
             onMetricChange={setMetric}
             hideMetricButtons={true}
+            sectorLabelVariant="compact"
           />
         </div>
 

@@ -237,16 +237,6 @@ const EarningsHeader = () => (
         <span>Today&apos;s Earnings</span>
       </h2>
     </div>
-    <div className="text-xs text-gray-600 dark:text-gray-400">
-      <a
-        href="https://www.earningstable.com"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="underline hover:text-gray-800 dark:hover:text-gray-300 transition-colors"
-      >
-        www.earningstable.com
-      </a>
-    </div>
   </div>
 );
 
@@ -281,7 +271,18 @@ const EarningsEmpty = () => (
   <section className="todays-earnings">
     <EarningsHeader />
     <div className="text-center p-8 text-gray-500">
-      <p>No major company earnings scheduled for today</p>
+      <p>
+        No major company earnings scheduled for today. For the full list, visit{' '}
+        <a
+          href="https://www.earningstable.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+        >
+          www.earningstable.com
+        </a>
+        .
+      </p>
     </div>
   </section>
 );
@@ -487,7 +488,7 @@ export default function TodaysEarningsFinnhub() {
         </div>
       ) : (
         <div className="text-center p-8 text-gray-500">
-          <p>No earnings reports scheduled for today from tracked companies</p>
+          <p className="whitespace-nowrap">No earnings reports today from tracked companies</p>
         </div>
       )}
 
