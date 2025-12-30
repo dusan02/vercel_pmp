@@ -74,6 +74,14 @@ const MarketIndices = dynamic(
   () => import('@/components/MarketIndices').then((mod) => mod.MarketIndices),
   { ssr: false, loading: () => null }
 );
+const MobileShell = dynamic(
+  () => import('@/components/MobileShell').then((mod) => mod.MobileShell),
+  { ssr: false, loading: () => null }
+);
+const MobileViews = dynamic(
+  () => import('@/components/MobileViews').then((mod) => mod.MobileViews),
+  { ssr: false, loading: () => null }
+);
 
 // Hooks and utilities
 import { useFavorites } from '@/hooks/useFavorites';
@@ -179,25 +187,31 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
   // Bottom Navigation State
   const [activeBottomSection, setActiveBottomSection] = useState<'heatmap' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks'>('heatmap');
 
+  // Mobile: View-based navigation (no scrolling)
+  // Desktop: Scroll-based navigation (keep existing behavior)
   const handleBottomNavChange = (section: 'heatmap' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks') => {
     setActiveBottomSection(section);
-    switch (section) {
-      case 'heatmap':
-        scrollToSection('section-heatmap');
-        break;
-      case 'portfolio':
-        scrollToSection('section-portfolio');
-        break;
-      case 'favorites':
-        scrollToSection('section-favorites');
-        break;
-      case 'earnings':
-        scrollToSection('section-earnings');
-        break;
-      case 'allStocks':
-        scrollToSection('section-all-stocks');
-        break;
+    // On desktop, still use scroll-to-section
+    if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
+      switch (section) {
+        case 'heatmap':
+          scrollToSection('section-heatmap');
+          break;
+        case 'portfolio':
+          scrollToSection('section-portfolio');
+          break;
+        case 'favorites':
+          scrollToSection('section-favorites');
+          break;
+        case 'earnings':
+          scrollToSection('section-earnings');
+          break;
+        case 'allStocks':
+          scrollToSection('section-all-stocks');
+          break;
+      }
     }
+    // On mobile, view switching is handled by MobileShell/MobileViews
   };
 
   // Optimized table performance hook for All Stocks section
@@ -259,20 +273,77 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
     size: 32
   });
 
+  // Prepare props for MobileViews
+  const mobileViewsProps = {
+    activeView: activeBottomSection,
+    // Portfolio
+    portfolioStocks,
+    portfolioHoldings,
+    allStocks: stockData,
+    portfolioLoading: loadingStates.top50Stocks,
+    onUpdateQuantity: updateQuantity,
+    onRemoveStock: removeStock,
+    onAddStock: addStock,
+    calculatePortfolioValue: calculateStockValue,
+    totalPortfolioValue,
+    // Favorites
+    favoriteStocks: favoriteStocksSorted,
+    favoritesLoading: loadingStates.favorites,
+    favSortKey,
+    favAscending,
+    onFavSort: requestFavSort,
+    onToggleFavorite: toggleFavorite,
+    isFavorite,
+    // All Stocks
+    displayedStocks,
+    allStocksLoading: loadingStates.top50Stocks,
+    allSortKey,
+    allAscending,
+    onAllSort: requestAllSort,
+    searchTerm,
+    onSearchChange: setSearchTerm,
+    hasMore,
+    selectedSector,
+    selectedIndustry,
+    onSectorChange: setSelectedSector,
+    onIndustryChange: setSelectedIndustry,
+    uniqueSectors,
+    availableIndustries,
+  };
+
   return (
-    <div className="homepage-wrapper">
-      {/* PWA Status Bar */}
-      <div className="pwa-status-bar"></div>
+    <>
+      {/* Mobile: App-like view switching */}
+      <MobileShell
+        activeView={activeBottomSection}
+        onViewChange={handleBottomNavChange}
+        navigation={
+          <div className="hidden lg:block">
+            <SectionNavigation
+              preferences={preferences}
+              onToggleSection={(key) => savePreferences({ [key]: !(preferences[key] ?? true) })}
+              onScrollToSection={scrollToSection}
+            />
+          </div>
+        }
+      >
+        <MobileViews {...mobileViewsProps} />
+      </MobileShell>
 
-      {/* Offline Indicator - only render on client */}
-      {!isOnline && (
-        <div className="offline-indicator">
-          <span>📡</span>
-          <span>You're offline - using cached data</span>
-        </div>
-      )}
+      {/* Desktop: Traditional scroll-based layout */}
+      <div className="homepage-container hidden lg:block">
+        {/* PWA Status Bar */}
+        <div className="pwa-status-bar"></div>
 
-      <Suspense fallback={<div className="flex justify-center items-center h-screen bg-black text-white">Loading...</div>}>
+        {/* Offline Indicator - only render on client */}
+        {!isOnline && (
+          <div className="offline-indicator">
+            <span>📡</span>
+            <span>You're offline - using cached data</span>
+          </div>
+        )}
+
+        <Suspense fallback={<div className="flex justify-center items-center h-screen bg-black text-white">Loading...</div>}>
         <PerformanceOptimizer
           enableMonitoring={process.env.NODE_ENV === 'development'}
           enableLazyLoading={true}
@@ -432,13 +503,14 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
         setConsent(true);
       }} />
 
-      {/* Mobile Bottom Navigation - Always visible on mobile/tablet */}
-      <div className="lg:hidden">
-        <BottomNavigation
-          activeSection={activeBottomSection}
-          onSectionChange={handleBottomNavChange}
-        />
+        {/* Desktop: Bottom navigation is handled by MobileShell on mobile */}
+        <div className="lg:hidden">
+          <BottomNavigation
+            activeSection={activeBottomSection}
+            onSectionChange={handleBottomNavChange}
+          />
+        </div>
       </div>
-    </div>
+    </>
   );
 }

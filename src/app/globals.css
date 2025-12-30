@@ -1902,16 +1902,9 @@ body {
 
 /* Reduce font size on homepage to ~30% of original */
 /* This applies to homepage only, heatmap page is excluded */
-.homepage-wrapper {
-  font-size: 0.3rem;
-  /* 30% of 16px = 4.8px base, but using rem for relative scaling */
-}
-
-/* Ensure heatmap page keeps normal font size */
-.heatmap-page-wrapper {
-  font-size: 1rem;
-  /* Normal size for heatmap */
-}
+/* REMOVED: Global font-size hack was breaking mobile layout
+ * Compactness should be handled in individual components, not via global scaling
+ */
 
 /* === TYPOGRAPHY IMPROVEMENTS ========================== */
 strong,
@@ -6180,10 +6173,86 @@ table td strong {
 }
 
 /* Hidden on desktop */
-@media (min-width: 1025px) {
+@media (min-width: 1024px) {
   .bottom-navigation {
     display: none;
   }
+}
+
+/* Mobile Shell - App-like container */
+.mobile-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh; /* Dynamic viewport height for mobile */
+  overflow: hidden;
+}
+
+.mobile-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--clr-surface);
+  border-bottom: 1px solid var(--clr-border);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.mobile-header-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  max-width: 100%;
+}
+
+.mobile-indices-bar {
+  position: sticky;
+  top: 60px; /* Height of mobile header */
+  z-index: 99;
+  background: rgba(17, 17, 17, 0.95);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.mobile-main-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 80px; /* Safe area for fixed bottom nav */
+  /* iOS safe area support */
+  padding-bottom: calc(80px + env(safe-area-inset-bottom));
+}
+
+/* Desktop: hide mobile shell */
+@media (min-width: 1024px) {
+  .mobile-shell {
+    display: none;
+  }
+}
+
+/* Mobile Views */
+.mobile-view {
+  width: 100%;
+  min-height: 100%;
+  padding: 1rem;
+}
+
+.mobile-view-heatmap {
+  padding: 0;
+  min-height: calc(100vh - 140px); /* Full height minus header + indices + nav */
+}
+
+.mobile-view-portfolio,
+.mobile-view-favorites,
+.mobile-view-all-stocks {
+  padding-bottom: 2rem;
+}
+
+.mobile-view-earnings {
+  padding: 1rem;
 }
 
 .nav-item {
@@ -6236,13 +6305,15 @@ table td strong {
 /* Floating Action Button */
 .fab-container {
   position: fixed;
-  bottom: 80px;
+  bottom: 88px; /* Above bottom nav (64px) + safe margin */
   right: 1rem;
   z-index: 999;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 1rem;
+  /* iOS safe area support */
+  bottom: calc(88px + env(safe-area-inset-bottom));
 }
 
 .fab-main {
