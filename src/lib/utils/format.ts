@@ -103,8 +103,8 @@ export const formatCurrencyCompact = (value: number | null | undefined, showPlus
  * Formátuje názov sektora na skrátenú verziu pre zobrazenie v tabuľkách a heatmape
  * Príklady:
  * - "Communication Services" → "Comm Serv"
- * - "Consumer Cyclical" → "Cons cycl"
- * - "Consumer Defensive" → "Cons def"
+ * - "Consumer Cyclical" → "Cons Cyclical"
+ * - "Consumer Defensive" → "Cons Defensive"
  * - Ostatné sektory zostávajú nezmenené
  */
 export const formatSectorName = (sector: string | null | undefined): string => {
@@ -112,8 +112,8 @@ export const formatSectorName = (sector: string | null | undefined): string => {
   
   const sectorMap: Record<string, string> = {
     'Communication Services': 'Comm Serv',
-    'Consumer Cyclical': 'Cons cycl',
-    'Consumer Defensive': 'Cons def',
+    'Consumer Cyclical': 'Cons Cyclical',
+    'Consumer Defensive': 'Cons Defensive',
   };
   
   return sectorMap[sector] || sector;
