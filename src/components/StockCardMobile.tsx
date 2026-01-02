@@ -2,7 +2,7 @@
 
 import React, { memo, useMemo } from 'react';
 import { StockData } from '@/lib/types';
-import { formatBillions, formatPrice, formatPercent, formatMarketCapDiff } from '@/lib/utils/format';
+import { formatBillions, formatPrice, formatPercent, formatMarketCapDiff, formatSectorName } from '@/lib/utils/format';
 import { getCompanyName } from '@/lib/companyNames';
 import CompanyLogo from './CompanyLogo';
 import { ChevronRight, TrendingUp, TrendingDown } from 'lucide-react';
@@ -58,7 +58,7 @@ export const StockCardMobile = memo(({
             <div className="flex items-center gap-2">
               <h3 className="font-bold text-base text-white">{stock.ticker}</h3>
               <span className="text-xs text-gray-500 px-1.5 py-0.5 bg-gray-900 rounded border border-gray-800">
-                {stock.sector}
+                {formatSectorName(stock.sector)}
               </span>
             </div>
             <p className="text-sm text-gray-400 truncate mt-0.5">{fullCompanyName}</p>

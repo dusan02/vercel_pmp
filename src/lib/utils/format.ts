@@ -97,4 +97,24 @@ export const formatCurrencyCompact = (value: number | null | undefined, showPlus
   
   // Thousands and below - use standard formatting with commas
   return `${sign}$${Math.round(value).toLocaleString('en-US')}`;
+};
+
+/**
+ * Formátuje názov sektora na skrátenú verziu pre zobrazenie v tabuľkách a heatmape
+ * Príklady:
+ * - "Communication Services" → "Comm Serv"
+ * - "Consumer Cyclical" → "Cons cycl"
+ * - "Consumer Defensive" → "Cons def"
+ * - Ostatné sektory zostávajú nezmenené
+ */
+export const formatSectorName = (sector: string | null | undefined): string => {
+  if (!sector) return 'N/A';
+  
+  const sectorMap: Record<string, string> = {
+    'Communication Services': 'Comm Serv',
+    'Consumer Cyclical': 'Cons cycl',
+    'Consumer Defensive': 'Cons def',
+  };
+  
+  return sectorMap[sector] || sector;
 }; 

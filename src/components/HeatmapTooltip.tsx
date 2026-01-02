@@ -8,6 +8,7 @@
 import React from 'react';
 import type { CompanyNode } from './MarketHeatmap';
 import { formatPrice, formatMarketCap, formatPercent, formatMarketCapDiff } from '@/lib/utils/heatmapFormat';
+import { formatSectorName } from '@/lib/utils/format';
 import styles from '@/styles/heatmap.module.css';
 
 interface HeatmapTooltipProps {
@@ -78,7 +79,7 @@ export function HeatmapTooltip({ company, position, timeframe, metric }: Heatmap
       </div>
       <div className={styles.heatmapTooltipRow}>
         <span className={styles.heatmapTooltipLabel}>Sector:</span>
-        <span className={styles.heatmapTooltipValue}>{company.sector}</span>
+        <span className={styles.heatmapTooltipValue}>{formatSectorName(company.sector)}</span>
       </div>
       <div className={styles.heatmapTooltipRow}>
         <span className={styles.heatmapTooltipLabel}>Industry:</span>

@@ -11,7 +11,7 @@ import { getCompanyName } from '@/lib/companyNames';
 import { StockData } from '@/lib/types';
 import { PortfolioQuantityInput } from './PortfolioQuantityInput';
 import { PortfolioCardMobile } from './PortfolioCardMobile';
-import { formatCurrencyCompact } from '@/lib/utils/format';
+import { formatCurrencyCompact, formatSectorName } from '@/lib/utils/format';
 import { event } from '@/lib/ga';
 import {
   BUTTON_PRIMARY_MD,
@@ -370,7 +370,7 @@ export function PortfolioSection({
                     </td>
                     
                     {/* Sector */}
-                    <td>{stock.sector || 'N/A'}</td>
+                    <td>{formatSectorName(stock.sector)}</td>
                     
                     {/* Industry */}
                     <td>{stock.industry || 'N/A'}</td>

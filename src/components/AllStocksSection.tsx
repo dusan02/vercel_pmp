@@ -11,6 +11,7 @@ import { StockCardMobile } from './StockCardMobile';
 import { SectionLoader } from './SectionLoader';
 import { CustomDropdown } from './CustomDropdown';
 import { StockData } from '@/lib/types';
+import { formatSectorName } from '@/lib/utils/format';
 
 interface AllStocksSectionProps {
   displayedStocks: StockData[];
@@ -94,7 +95,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
   // Prepare dropdown options
   const sectorOptions = useMemo(() => [
     { value: 'all', label: 'All Sectors' },
-    ...uniqueSectors.map(sector => ({ value: sector, label: sector }))
+    ...uniqueSectors.map(sector => ({ value: sector, label: formatSectorName(sector) }))
   ], [uniqueSectors]);
 
   const industryOptions = useMemo(() => [

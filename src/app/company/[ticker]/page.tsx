@@ -4,6 +4,7 @@ import { getStocksData } from '@/lib/server/stockService';
 import { getCompanyName } from '@/lib/companyNames';
 import { generateCompanyMetadata } from '@/lib/seo/metadata';
 import { StructuredData } from '@/components/StructuredData';
+import { formatSectorName } from '@/lib/utils/format';
 import Link from 'next/link';
 
 const baseUrl = 'https://premarketprice.com';
@@ -142,7 +143,7 @@ export default async function CompanyPage({ params }: PageProps) {
                   <div>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Sector</p>
                     <p className="text-lg font-medium text-gray-900 dark:text-white">
-                      {stock.sector}
+                      {formatSectorName(stock.sector)}
                     </p>
                   </div>
                 )}

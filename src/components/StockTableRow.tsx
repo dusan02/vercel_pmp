@@ -5,7 +5,7 @@
 
 import React, { useMemo, memo } from 'react';
 import { StockData } from '@/lib/types';
-import { formatBillions, formatPrice, formatPercent, formatMarketCapDiff } from '@/lib/utils/format';
+import { formatBillions, formatPrice, formatPercent, formatMarketCapDiff, formatSectorName } from '@/lib/utils/format';
 import { getCompanyName } from '@/lib/companyNames';
 import CompanyLogo from './CompanyLogo';
 import { SwipeableTableRow } from './SwipeableTableRow';
@@ -94,7 +94,7 @@ export const StockTableRow = memo(({
         <td className="company-name">{companyName}</td>
         
         {/* Sector */}
-        <td>{stock.sector || 'N/A'}</td>
+        <td>{formatSectorName(stock.sector)}</td>
         
         {/* Industry */}
         <td>{stock.industry || 'N/A'}</td>

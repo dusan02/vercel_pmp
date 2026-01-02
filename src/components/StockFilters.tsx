@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { CustomDropdown } from './CustomDropdown';
+import { formatSectorName } from '@/lib/utils/format';
 
 interface StockFiltersProps {
   filterCategory: 'all' | 'gainers' | 'losers' | 'movers' | 'bigMovers';
@@ -35,7 +36,7 @@ export function StockFilters({
 
   const sectorOptions = [
     { value: 'all', label: 'All Sectors' },
-    ...uniqueSectors.map(sector => ({ value: sector, label: sector }))
+    ...uniqueSectors.map(sector => ({ value: sector, label: formatSectorName(sector) }))
   ];
 
   return (

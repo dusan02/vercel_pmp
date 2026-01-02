@@ -7,7 +7,7 @@
 
 import React, { useMemo } from 'react';
 import { CompanyNode } from './MarketHeatmap';
-import { formatBillions } from '@/lib/utils/format';
+import { formatBillions, formatSectorName } from '@/lib/utils/format';
 
 interface SectorListMobileProps {
   data: CompanyNode[];
@@ -103,7 +103,7 @@ export const SectorListMobile: React.FC<SectorListMobileProps> = ({
           >
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-white font-semibold text-lg">
-                {sector.name}
+                {formatSectorName(sector.name)}
               </h3>
               <span className="text-2xl">
                 {getChangeIcon(sector.avgChangePercent)}

@@ -15,6 +15,7 @@ import { HeatmapTooltip } from './HeatmapTooltip';
 import { buildHeatmapHierarchy } from '@/lib/utils/heatmapLayout';
 import { createHeatmapColorScale } from '@/lib/utils/heatmapColors';
 import { formatPercent, formatMarketCapDiff, formatPrice, formatMarketCap } from '@/lib/utils/heatmapFormat';
+import { formatSectorName } from '@/lib/utils/format';
 import { LAYOUT_CONFIG } from '@/lib/utils/heatmapConfig';
 import { getTileLabelConfig } from '@/lib/utils/heatmapLabelUtils';
 import styles from '@/styles/heatmap.module.css';
@@ -72,11 +73,14 @@ function calculateSectorSummary(
 
 /**
  * Truncate long sector names for display
+ * First formats the sector name to short version, then truncates if still too long
  */
 function truncateSectorName(name: string, maxLength: number = 20): string {
-  if (name.length <= maxLength) return name;
+  // First format to short version
+  const formatted = formatSectorName(name);
+  if (formatted.length <= maxLength) return formatted;
   // Try to truncate at word boundary
-  const truncated = name.substring(0, maxLength - 3);
+  const truncated = formatted.substring(0, maxLength - 3);
   const lastSpace = truncated.lastIndexOf(' ');
   if (lastSpace > maxLength * 0.6) {
     return truncated.substring(0, lastSpace) + '...';
