@@ -102,10 +102,10 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  // Google verification - replace with actual verification code from Google Search Console
-  // verification: {
-  //   google: 'your-google-verification-code',
-  // },
+  // Google verification - Google Search Console
+  verification: {
+    google: 'dmxIfnpvrtoVo9gNUq_eNM64TH7W7yUM4FnBpOL6vIs',
+  },
   // PWA specific metadata
   manifest: '/manifest.json',
   appleWebApp: {
