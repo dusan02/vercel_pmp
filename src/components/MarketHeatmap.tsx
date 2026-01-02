@@ -18,6 +18,7 @@ import { formatPercent, formatMarketCapDiff, formatPrice, formatMarketCap } from
 import { formatSectorName } from '@/lib/utils/format';
 import { LAYOUT_CONFIG } from '@/lib/utils/heatmapConfig';
 import { getTileLabelConfig } from '@/lib/utils/heatmapLabelUtils';
+import { usePanZoom } from '@/hooks/usePanZoom';
 import styles from '@/styles/heatmap.module.css';
 
 // --- CONSTANTS ---
@@ -633,6 +634,52 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
     return Math.max(treemapBounds.treemapHeight * scale, height * 2);
   }, [isMobile, treemapBounds, scale, height]);
 
+  // Pan & Zoom hook - enable only on mobile or when zoomed
+  const panZoom = usePanZoom({
+    minZoom: 1,
+    maxZoom: 5,
+    initialZoom: 1,
+    mobileOnly: !zoomedSector, // Enable on mobile always, or when zoomed to sector
+    enableDoubleTapReset: true,
+  });
+
+  // Content wrapper ref for pan & zoom
+  const contentWrapperRef = useRef<HTMLDivElement>(null);
+
+  // Reset pan & zoom when zoomed sector changes
+  useEffect(() => {
+    if (zoomedSector) {
+      panZoom.reset();
+    }
+  }, [zoomedSector, panZoom]);
+
+  // Get gesture bind props
+  const gestureBind = useMemo(() => {
+    if (contentWrapperRef.current) {
+      return panZoom.bind(contentWrapperRef.current) || {};
+    }
+    return {};
+  }, [panZoom]);
+
+  // Double-tap handler
+  const handleDoubleTap = useCallback((e: React.TouchEvent | React.MouseEvent) => {
+    if (e.type === 'touchend') {
+      const touchEvent = e as React.TouchEvent;
+      const now = Date.now();
+      const lastTap = (handleDoubleTap as any).lastTap || 0;
+      if (now - lastTap < 300) {
+        panZoom.reset();
+        e.preventDefault();
+      }
+      (handleDoubleTap as any).lastTap = now;
+    } else if (e.type === 'dblclick') {
+      panZoom.reset();
+    }
+  }, [panZoom]);
+
+  // Show pan & zoom controls only when zoomed or on mobile
+  const showPanZoomControls = isMobile || panZoom.zoom > 1 || panZoom.panX !== 0 || panZoom.panY !== 0;
+
   return (
     <div
       ref={containerRef}
@@ -640,7 +687,8 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
       style={{
         overflow: isMobile ? 'visible' : 'hidden',
         height: isMobile ? contentHeight : '100%',
-        minHeight: isMobile ? contentHeight : undefined
+        minHeight: isMobile ? contentHeight : undefined,
+        position: 'relative',
       }}
       onMouseMove={renderMode === 'dom' ? handleMouseMove : undefined}
     >
@@ -670,7 +718,41 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
         </button>
       )}
 
-      {renderMode === 'canvas' ? (
+      {/* Pan & Zoom Controls */}
+      {showPanZoomControls && (
+        <div
+          className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-50 flex items-center gap-2 bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2"
+          style={{ pointerEvents: 'auto' }}
+        >
+          <span className="text-white text-xs font-medium">
+            {panZoom.zoom.toFixed(1)}x
+          </span>
+          {(panZoom.zoom > 1 || panZoom.panX !== 0 || panZoom.panY !== 0) && (
+            <button
+              onClick={panZoom.reset}
+              className="text-white hover:text-gray-300 transition-colors text-xs px-2 py-1 rounded bg-white/10 hover:bg-white/20"
+              title="Reset zoom (double-tap)"
+            >
+              ↻ Reset
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Pan & Zoom Content Wrapper */}
+      <div
+        ref={contentWrapperRef}
+        {...gestureBind}
+        style={{
+          transform: panZoom.transform,
+          transformOrigin: panZoom.transformOrigin,
+          willChange: 'transform',
+          touchAction: 'none',
+        }}
+        onDoubleClick={handleDoubleTap}
+        onTouchEnd={handleDoubleTap}
+      >
+        {renderMode === 'canvas' ? (
         <>
           {/* Sector borders for canvas mode - rendered as overlay divs */}
           {filteredNodes
@@ -942,6 +1024,8 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
             })}
         </>
       )}
+      </div>
+      {/* End of Pan & Zoom Content Wrapper */}
 
       {/* Legenda je teraz v page.tsx headeri */}
 
