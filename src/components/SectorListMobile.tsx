@@ -31,7 +31,7 @@ export const SectorListMobile: React.FC<SectorListMobileProps> = ({
     const sectorMap = new Map<string, SectorInfo>();
 
     data.forEach((company) => {
-      const sectorName = company.sector || 'Unknown';
+      const sectorName = company.sector || 'Other';
       
       if (!sectorMap.has(sectorName)) {
         sectorMap.set(sectorName, {
@@ -69,9 +69,9 @@ export const SectorListMobile: React.FC<SectorListMobileProps> = ({
       if (a.name === 'Technology' && b.name !== 'Technology') return -1;
       if (a.name !== 'Technology' && b.name === 'Technology') return 1;
       
-      // Unknown is always last
-      if (a.name === 'Unknown' && b.name !== 'Unknown') return 1;
-      if (a.name !== 'Unknown' && b.name === 'Unknown') return -1;
+      // Other is always last
+      if (a.name === 'Other' && b.name !== 'Other') return 1;
+      if (a.name !== 'Other' && b.name === 'Other') return -1;
       
       // Others sorted by total market cap (descending)
       return b.totalMarketCap - a.totalMarketCap;

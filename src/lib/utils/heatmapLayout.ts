@@ -56,7 +56,7 @@ export function buildHeatmapHierarchy(
 
   // Deterministické zoradenie:
   // - firmy v sektore podľa veľkosti (value) desc
-  // - sektory podľa sumy value desc, ale "Unknown" sektor je vždy posledný
+  // - sektory podľa sumy value desc, ale "Other" sektor je vždy posledný
   const sumValues = (node: HierarchyData): number => {
     if (typeof node.value === 'number') return node.value;
     if (!node.children) return 0;
@@ -71,21 +71,21 @@ export function buildHeatmapHierarchy(
       }
     }
     
-    // Zoraď sektory podľa sumy value desc, ale "Technology" je vždy prvá a "Unknown" je vždy posledný
+    // Zoraď sektory podľa sumy value desc, ale "Technology" je vždy prvá a "Other" je vždy posledný
     root.children.sort((a, b) => {
       const aIsTechnology = a.name === 'Technology';
       const bIsTechnology = b.name === 'Technology';
-      const aIsUnknown = a.name === 'Unknown';
-      const bIsUnknown = b.name === 'Unknown';
+      const aIsOther = a.name === 'Other';
+      const bIsOther = b.name === 'Other';
       
       // Technology is always first
       if (aIsTechnology && !bIsTechnology) return -1;
       if (!aIsTechnology && bIsTechnology) return 1;
       
-      // "Unknown" sektor je vždy posledný
-      if (aIsUnknown && !bIsUnknown) return 1;
-      if (!aIsUnknown && bIsUnknown) return -1;
-      if (aIsUnknown && bIsUnknown) return 0; // Oba sú Unknown - zachovať poradie
+      // "Other" sektor je vždy posledný
+      if (aIsOther && !bIsOther) return 1;
+      if (!aIsOther && bIsOther) return -1;
+      if (aIsOther && bIsOther) return 0; // Oba sú Other - zachovať poradie
       
       // Ostatné sektory podľa sumy value desc
       return sumValues(b) - sumValues(a);

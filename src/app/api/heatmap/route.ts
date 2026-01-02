@@ -133,7 +133,7 @@ export async function GET(request: NextRequest) {
 
     // Získaj tickery z DB (Ticker table).
     // IMPORTANT: Heatmap needs sector/industry for grouping, but local/dev DB may not have it populated yet.
-    // We intentionally DO NOT filter out null/empty sector/industry here and instead fall back to "Unknown".
+    // We intentionally DO NOT filter out null/empty sector/industry here and instead fall back to "Other" / "Uncategorized".
     let tickers;
     try {
       tickers = await prisma.ticker.findMany({
@@ -183,8 +183,8 @@ export async function GET(request: NextRequest) {
     const tickerMap = new Map(
       tickers.map(t => [t.symbol, {
         name: t.name,
-        sector: (t.sector ?? '').trim() || 'Unknown',
-        industry: (t.industry ?? '').trim() || 'Unknown',
+        sector: (t.sector ?? '').trim() || 'Other',
+        industry: (t.industry ?? '').trim() || 'Uncategorized',
         sharesOutstanding: t.sharesOutstanding,
         lastPrice: t.lastPrice, // Denormalized current price
         latestPrevClose: t.latestPrevClose, // Denormalized previous close

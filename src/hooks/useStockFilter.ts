@@ -78,7 +78,7 @@ export function useStockFilter({ stockData, favorites, isFavorite }: UseStockFil
   const sectorCounts = useMemo(() => {
     const counts: { [key: string]: number } = {};
     stockData.forEach(stock => {
-      const sector = stock.sector || 'Unknown';
+      const sector = stock.sector || 'Other';
       counts[sector] = (counts[sector] || 0) + 1;
     });
     return counts;

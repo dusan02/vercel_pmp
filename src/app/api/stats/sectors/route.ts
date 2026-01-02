@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     const sectorDetails: { [key: string]: string[] } = {};
     
     stocksData.data.forEach((stock: any) => {
-      const sector = stock.sector || 'Unknown';
+      const sector = stock.sector || 'Other';
       sectorCounts[sector] = (sectorCounts[sector] || 0) + 1;
       
       if (!sectorDetails[sector]) {

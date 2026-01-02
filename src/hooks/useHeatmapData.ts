@@ -197,8 +197,8 @@ export function useHeatmapData({
           marketCap: row.m,
           marketCapDiff: row.d,
           companyName: row.n,
-          sector: row.s || 'Unknown',
-          industry: row.i || 'Unknown',
+          sector: row.s || 'Other',
+          industry: row.i || 'Uncategorized',
         }));
       }
 
