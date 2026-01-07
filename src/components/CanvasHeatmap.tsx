@@ -38,6 +38,35 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [hoveredLeaf, setHoveredLeaf] = useState<TreemapLeaf | null>(null);
 
+    // Hover/tooltip throttling to avoid excessive state updates on continuous mouse events
+    const leavesRef = useRef<TreemapLeaf[]>(leaves);
+    const transformRef = useRef({ scale, offset });
+    const onHoverRef = useRef<typeof onHover>(onHover);
+    const lastHoverKeyRef = useRef<string | null>(null);
+    const rafRef = useRef<number | null>(null);
+    const pendingPointRef = useRef<{ x: number; y: number; clientX: number; clientY: number } | null>(null);
+
+    useEffect(() => {
+        leavesRef.current = leaves;
+    }, [leaves]);
+
+    useEffect(() => {
+        transformRef.current = { scale, offset };
+    }, [scale, offset]);
+
+    useEffect(() => {
+        onHoverRef.current = onHover;
+    }, [onHover]);
+
+    useEffect(() => {
+        return () => {
+            if (rafRef.current !== null) {
+                cancelAnimationFrame(rafRef.current);
+                rafRef.current = null;
+            }
+        };
+    }, []);
+
     const fontFamily = `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
     const MIN_TICKER_FONT_PX = 6; // below this, ticker isn't realistically readable
     const MIN_VALUE_FONT_PX = 6;
@@ -212,44 +241,59 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
 
     }, [leaves, width, height, scale, offset, metric, timeframe]);
 
-    // Interaction Handler
+    // Interaction Handler (throttled via rAF; updates hover state only when tile changes)
     const handleMouseMove = useCallback((e: React.MouseEvent) => {
         const canvas = canvasRef.current;
         if (!canvas) return;
 
         const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+        pendingPointRef.current = {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top,
+            clientX: e.clientX,
+            clientY: e.clientY,
+        };
 
-        let found: TreemapLeaf | null = null;
-        for (let i = leaves.length - 1; i >= 0; i--) {
-            const leaf = leaves[i];
-            if (!leaf) continue;
+        if (rafRef.current !== null) return;
 
-            const tileX = leaf.x0 * scale + offset.x;
-            const tileY = leaf.y0 * scale + offset.y;
-            const tileW = (leaf.x1 - leaf.x0) * scale;
-            const tileH = (leaf.y1 - leaf.y0) * scale;
+        rafRef.current = requestAnimationFrame(() => {
+            rafRef.current = null;
 
-            if (x >= tileX && x <= tileX + tileW && y >= tileY && y <= tileY + tileH) {
-                found = leaf;
-                break;
+            const p = pendingPointRef.current;
+            if (!p) return;
+
+            const currentLeaves = leavesRef.current;
+            const { scale: currentScale, offset: currentOffset } = transformRef.current;
+
+            let found: TreemapLeaf | null = null;
+            for (let i = currentLeaves.length - 1; i >= 0; i--) {
+                const leaf = currentLeaves[i];
+                if (!leaf) continue;
+
+                const tileX = leaf.x0 * currentScale + currentOffset.x;
+                const tileY = leaf.y0 * currentScale + currentOffset.y;
+                const tileW = (leaf.x1 - leaf.x0) * currentScale;
+                const tileH = (leaf.y1 - leaf.y0) * currentScale;
+
+                if (p.x >= tileX && p.x <= tileX + tileW && p.y >= tileY && p.y <= tileY + tileH) {
+                    found = leaf;
+                    break;
+                }
             }
-        }
 
-        if (found !== hoveredLeaf) {
-            setHoveredLeaf(found);
-            if (onHover) {
-                // Pass global coordinates for fixed tooltip positioning
-                onHover(found ? found.data.meta.companyData! : null, e.clientX, e.clientY);
+            const company = found?.data?.meta?.companyData ?? null;
+            const key = company?.symbol ?? null;
+
+            // Only trigger React state update when hovered tile changes (prevents update-depth loops)
+            if (key !== lastHoverKeyRef.current) {
+                lastHoverKeyRef.current = key;
+                setHoveredLeaf(found);
             }
-        } else if (found && onHover) {
-            onHover(found.data.meta.companyData!, e.clientX, e.clientY);
-        } else if (!found && onHover) {
-            onHover(null, e.clientX, e.clientY);
-        }
 
-    }, [leaves, scale, offset, hoveredLeaf, onHover]);
+            const cb = onHoverRef.current;
+            if (cb) cb(company, p.clientX, p.clientY);
+        });
+    }, []);
 
     const handleClick = useCallback(() => {
         if (hoveredLeaf && onTileClick) {
@@ -258,9 +302,16 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
     }, [hoveredLeaf, onTileClick]);
 
     const handleMouseLeave = useCallback(() => {
+        pendingPointRef.current = null;
+        lastHoverKeyRef.current = null;
+        if (rafRef.current !== null) {
+            cancelAnimationFrame(rafRef.current);
+            rafRef.current = null;
+        }
         setHoveredLeaf(null);
-        if (onHover) onHover(null, 0, 0);
-    }, [onHover]);
+        const cb = onHoverRef.current;
+        if (cb) cb(null, 0, 0);
+    }, []);
 
     return (
         <canvas

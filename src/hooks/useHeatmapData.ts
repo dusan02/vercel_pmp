@@ -85,7 +85,7 @@ export function useHeatmapData({
     }
   }, [data]);
 
-  // Main fetch function
+  // OPTIMIZATION: Debounce rapid requests (especially on mobile)
   const fetchData = useCallback(async (force: boolean = false) => {
     // Throttling logic
     const now = Date.now();
@@ -131,10 +131,18 @@ export function useHeatmapData({
       // Add query params
       url.searchParams.set('timeframe', timeframe);
       url.searchParams.set('metric', metric);
-      if (force || isFirstLoad) {
+
+      // OPTIMIZATION: Never bypass server cache on the first load.
+      // The API already has short TTL + ETag support; forcing on first load defeats it.
+      if (force) {
         url.searchParams.set('force', 'true');
-      } else {
-        url.searchParams.set('t', Date.now().toString()); // Prevent browser caching
+      }
+
+      // OPTIMIZATION (mobile): Request fewer items for MobileTreemap (we only render a small subset anyway)
+      const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
+      if (isMobile) {
+        // Big enough to cover top market cap + a bit of tail, but much smaller than 3000
+        url.searchParams.set('limit', '250');
       }
 
       const headers: HeadersInit = {
@@ -149,10 +157,16 @@ export function useHeatmapData({
 
       console.log(`🔄 Heatmap: Fetching data...`, { timeframe, metric, hasEtag: !!etagToUse });
 
+      // CRITICAL: Prioritize heatmap API on mobile (first screen)
+      const priority: RequestPriority = isMobile && isInitialLoadRef.current ? 'high' : 'auto';
+
       const response = await fetch(url.toString(), {
-        cache: 'no-store',
+        // Let the browser/HTTP cache + ETag do its job; the API already uses short-lived caching.
+        cache: 'default',
         headers,
         signal: abortControllerRef.current.signal,
+        // @ts-ignore - priority is experimental but supported in Chrome/Edge
+        priority,
       });
 
       // Handle 304 Not Modified

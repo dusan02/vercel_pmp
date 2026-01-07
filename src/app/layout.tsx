@@ -177,6 +177,8 @@ export default function RootLayout({
         <link rel="preconnect" href="https://finnhub.io" crossOrigin="anonymous" />
         {/* Preconnect to Google Analytics for faster loading */}
         <link rel="preconnect" href="https://www.googletagmanager.com" crossOrigin="anonymous" />
+        {/* DNS prefetch pre API endpoints (rýchlejšie načítanie) */}
+        <link rel="dns-prefetch" href="/api" />
 
         {/* Cache Clear Utility - Development Only */}
         {process.env.NODE_ENV === 'development' && (

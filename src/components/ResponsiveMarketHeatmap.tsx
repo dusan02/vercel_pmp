@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { MarketHeatmap, CompanyNode, useElementResize, HeatmapMetric } from './MarketHeatmap';
+import { MobileTreemap } from './MobileTreemap';
 import { useHeatmapData } from '@/hooks/useHeatmapData';
 import { useHeatmapMetric } from '@/hooks/useHeatmapMetric';
 import { HeatmapMetricButtons } from './HeatmapMetricButtons';
@@ -73,6 +74,9 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
   );
 
   // Data fetching hook
+  // OPTIMIZATION: On mobile, reduce refresh interval to save battery/data
+  const mobileRefreshInterval = isMobile ? Math.max(refreshInterval, 60000) : refreshInterval; // Min 60s on mobile
+  
   const {
     data,
     loading,
@@ -85,10 +89,10 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
     refetch
   } = useHeatmapData({
     apiEndpoint,
-    refreshInterval,
+    refreshInterval: mobileRefreshInterval,
     initialTimeframe,
     initialMetric: controlledMetric ?? centralizedMetric, // Sync with centralized or controlled metric
-    autoRefresh
+    autoRefresh: autoRefresh && isMounted // Only auto-refresh after mount
   });
 
   // Use controlled metric if provided, otherwise use centralized metric, fallback to hook metric
@@ -143,7 +147,8 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
   const renderContent = () => {
     // CRITICAL: Don't render heatmap until we have valid dimensions
     // This prevents "empty background" bug on mobile
-    if (!width || !height || width === 0 || height === 0) {
+    // OPTIMIZATION: Require minimum dimensions to prevent flickering
+    if (!width || !height || width < 100 || height < 100) {
       return (
         <div className="absolute inset-0 flex items-center justify-center text-gray-500 bg-black z-40">
           <div className="text-center">
@@ -153,8 +158,13 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
       );
     }
 
-    // Loading state (only initial or when no data)
-    if (!isMounted || (loading && (!data || data.length === 0))) {
+    // OPTIMIZATION: Only show loading state if we truly have no data
+    // Don't show loading if we have cached data or partial data
+    // This prevents flickering between loading and content states
+    const hasNoData = !data || data.length === 0;
+    const shouldShowLoading = !isMounted || (loading && hasNoData);
+    
+    if (shouldShowLoading) {
       return (
         <div className="absolute inset-0 flex items-center justify-center text-gray-500 bg-black z-40">
           <div className="text-center">
@@ -193,7 +203,43 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
       );
     }
 
-    // Always show Heatmap (removed sector list for mobile per user request)
+    // Mobile: Use TRUE mobile treemap (2D grid, not vertical list)
+    // Desktop: Use full MarketHeatmap with treemap layout
+    if (isMobile) {
+      // CRITICAL: Show skeleton immediately (faster perceived load)
+      // Don't wait for data - show skeleton while loading
+      if (loading && (!data || data.length === 0)) {
+        return (
+          <div className="h-full w-full bg-black p-2">
+            <div className="grid grid-cols-2 gap-2" style={{ gridAutoRows: 'minmax(72px, auto)' }}>
+              {[...Array(12)].map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-gray-800 animate-pulse"
+                  style={{
+                    height: i < 3 ? '144px' : i < 9 ? '72px' : '72px',
+                    gridColumn: i < 3 ? 'span 2' : i < 9 ? 'span 2' : 'span 1',
+                    gridRow: i < 3 ? 'span 2' : 'span 1',
+                    animationDelay: `${i * 50}ms`,
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        );
+      }
+      
+      return (
+        <MobileTreemap
+          data={data || []}
+          timeframe={timeframe}
+          metric={metric}
+          {...(onTileClick ? { onTileClick } : {})}
+        />
+      );
+    }
+
+    // Desktop: Always show Heatmap (removed sector list for mobile per user request)
     return (
       <>
         {/* Metric selector - top left overlay (only if not hidden, and not on mobile - mobile has it in header) */}
@@ -248,9 +294,10 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
         position: 'relative',
         width: '100%',
         height: '100%',
-        overflowY: isMobile ? 'auto' : 'hidden',
-        overflowX: 'hidden',
-        WebkitOverflowScrolling: isMobile ? 'touch' : undefined,
+        // CRITICAL: Remove overflow from outer container - let MarketHeatmap handle scrolling
+        // This prevents double scrollbars (one here, one in MarketHeatmap)
+        overflow: 'hidden', // Always hidden - MarketHeatmap handles its own scrolling
+        WebkitOverflowScrolling: 'touch',
       }}
     >
       {renderContent()}

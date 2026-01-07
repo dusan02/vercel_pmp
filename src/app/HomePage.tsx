@@ -27,31 +27,29 @@ const SectionNavigation = dynamic(
   () => import('@/components/SectionNavigation').then((mod) => mod.SectionNavigation),
   { ssr: false, loading: () => null }
 );
-const PortfolioSection = dynamic(
-  () => import('@/components/PortfolioSection').then((mod) => mod.PortfolioSection),
+
+// --- NEW HOME COMPONENTS (Dynamically Imported) ---
+const HomePortfolio = dynamic(
+  () => import('@/components/home/HomePortfolio').then((mod) => mod.HomePortfolio),
   { ssr: false, loading: () => null }
 );
-const FavoritesSection = dynamic(
-  () => import('@/components/FavoritesSection').then((mod) => mod.FavoritesSection),
+const HomeFavorites = dynamic(
+  () => import('@/components/home/HomeFavorites').then((mod) => mod.HomeFavorites),
   { ssr: false, loading: () => null }
 );
-const AllStocksSection = dynamic(
-  () => import('@/components/AllStocksSection').then((mod) => mod.AllStocksSection),
+const HomeAllStocks = dynamic(
+  () => import('@/components/home/HomeAllStocks').then((mod) => mod.HomeAllStocks),
   { ssr: false, loading: () => null }
 );
-const TodaysEarningsFinnhub = dynamic(
-  () => import('@/components/TodaysEarningsFinnhub'),
+const HomeEarnings = dynamic(
+  () => import('@/components/home/HomeEarnings').then((mod) => mod.HomeEarnings),
   { ssr: false, loading: () => null }
 );
-const HeatmapSkeleton = dynamic(
-  () => import('@/components/SectionSkeleton').then((mod) => ({ default: mod.HeatmapSkeleton })),
-  { ssr: false }
+const HomeHeatmap = dynamic(
+  () => import('@/components/home/HomeHeatmap').then((mod) => mod.HomeHeatmap),
+  { ssr: false, loading: () => null } // Custom loading handled inside if needed, or skeleton
 );
 
-const HeatmapPreview = dynamic(
-  () => import('@/components/HeatmapPreview').then((mod) => mod.HeatmapPreview),
-  { ssr: false, loading: () => <HeatmapSkeleton /> }
-);
 const CookieConsent = dynamic(
   () => import('@/components/CookieConsent'),
   { ssr: false, loading: () => null }
@@ -60,27 +58,23 @@ const StructuredData = dynamic(
   () => import('@/components/StructuredData').then((mod) => mod.StructuredData),
   { ssr: true }
 );
-const SectionErrorBoundary = dynamic(
-  () => import('@/components/SectionErrorBoundary').then((mod) => mod.SectionErrorBoundary),
+
+// Modern Mobile Components
+const MobileApp = dynamic(
+  () => import('@/components/mobile/MobileApp').then((mod) => mod.MobileApp),
   { ssr: false }
 );
-
-// New Mobile Navigation
-const BottomNavigation = dynamic(
-  () => import('@/components/BottomNavigation').then((mod) => mod.BottomNavigation),
-  { ssr: false, loading: () => null }
+const MobileHeader = dynamic(
+  () => import('@/components/mobile/MobileHeader').then((mod) => mod.MobileHeader),
+  { ssr: false }
 );
-const MarketIndices = dynamic(
-  () => import('@/components/MarketIndices').then((mod) => mod.MarketIndices),
-  { ssr: false, loading: () => null }
+const MobileScreen = dynamic(
+  () => import('@/components/mobile/MobileScreen').then((mod) => mod.MobileScreen),
+  { ssr: false }
 );
-const MobileShell = dynamic(
-  () => import('@/components/MobileShell').then((mod) => mod.MobileShell),
-  { ssr: false, loading: () => null }
-);
-const MobileViews = dynamic(
-  () => import('@/components/MobileViews').then((mod) => mod.MobileViews),
-  { ssr: false, loading: () => null }
+const MobileTabBar = dynamic(
+  () => import('@/components/mobile/MobileTabBar').then((mod) => mod.MobileTabBar),
+  { ssr: false }
 );
 
 // Hooks and utilities
@@ -89,6 +83,7 @@ import { usePortfolio } from '@/hooks/usePortfolio';
 import { usePWA } from '@/hooks/usePWA';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useLazyLoading } from '@/hooks/useLazyLoading';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { StockData } from '@/lib/types';
 import { useStockData } from '@/hooks/useStockData';
 import { useStockFilter } from '@/hooks/useStockFilter';
@@ -96,6 +91,8 @@ import { useLogoLoader } from '@/hooks/useLogoLoader';
 import { useTablePerformance } from '@/hooks/useTablePerformance';
 import { autoRepairLocalStorage } from '@/lib/utils/clearCache';
 import { logger } from '@/lib/utils/logger';
+import { useMobilePrefetch } from '@/hooks/useMobilePrefetch';
+import { useMobileOptimization } from '@/hooks/useMobileOptimization';
 
 interface HomePageProps {
   initialData?: StockData[];
@@ -106,6 +103,13 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
   useEffect(() => {
     autoRepairLocalStorage();
   }, []);
+
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
 
   // Use user preferences hook for persistence
   const { preferences, savePreferences, setConsent } = useUserPreferences();
@@ -124,6 +128,20 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
       });
     }
   }, []);
+
+  // Mobile bottom navigation state
+  const [activeMobileSection, setActiveMobileSection] = useState<'heatmap' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks'>('heatmap');
+
+  // Handle mobile bottom navigation change - VIEW-BASED (tabs, not scroll)
+  const handleMobileNavChange = useCallback((tab: 'heatmap' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks') => {
+    setActiveMobileSection(tab);
+  }, []);
+
+  // Prefetch neaktívne screens a API endpoints pre rýchlejšie prepínanie
+  useMobilePrefetch(activeMobileSection);
+  
+  // CRITICAL: Mobile optimization - prioritizuje heatmap (prvá obrazovka)
+  useMobileOptimization(activeMobileSection);
 
   const { favorites, toggleFavorite, isFavorite } = useFavorites();
   const { isOnline } = usePWA();
@@ -154,15 +172,13 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
 
   // Load portfolio tickers that are not in stockData - optimized with debounce
   useEffect(() => {
-    // Include 0-quantity tickers too (they stay visible while user edits).
     const portfolioTickers = Object.keys(portfolioHoldings);
     const missingTickers = portfolioTickers.filter(ticker => !stockData.some(s => s.ticker === ticker));
 
     if (missingTickers.length > 0) {
-      // Debounce to avoid too many requests when portfolio changes rapidly
       const timeoutId = setTimeout(() => {
         fetchSpecificTickers(missingTickers);
-      }, 300); // Reduced from 500ms for faster response
+      }, 300);
       return () => clearTimeout(timeoutId);
     }
   }, [portfolioHoldings, stockData, fetchSpecificTickers]);
@@ -184,39 +200,8 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
     isFavorite
   });
 
-  // Bottom Navigation State
-  const [activeBottomSection, setActiveBottomSection] = useState<'heatmap' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks'>('heatmap');
-
-  // Mobile: View-based navigation (no scrolling)
-  // Desktop: Scroll-based navigation (keep existing behavior)
-  const handleBottomNavChange = (section: 'heatmap' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks') => {
-    setActiveBottomSection(section);
-    // On desktop, still use scroll-to-section
-    if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
-      switch (section) {
-        case 'heatmap':
-          scrollToSection('section-heatmap');
-          break;
-        case 'portfolio':
-          scrollToSection('section-portfolio');
-          break;
-        case 'favorites':
-          scrollToSection('section-favorites');
-          break;
-        case 'earnings':
-          scrollToSection('section-earnings');
-          break;
-        case 'allStocks':
-          scrollToSection('section-all-stocks');
-          break;
-      }
-    }
-    // On mobile, view switching is handled by MobileShell/MobileViews
-  };
 
   // Optimized table performance hook for All Stocks section
-  // allStocksSorted is already filtered by sector, industry, and search term from useStockFilter
-  // This hook just provides memoization for better performance
   const { filteredStocks: optimizedAllStocks } = useTablePerformance({
     stocks: allStocksSorted,
     sortKey: allSortKey,
@@ -226,13 +211,12 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
 
   // Trigger fetchRemainingStocksData early to ensure all data is loaded
   useEffect(() => {
-    // Load all remaining stocks after initial load completes
     const timer = setTimeout(() => {
-      if (allStocksSorted.length < 200) { // If we have less than 200 stocks, trigger load
+      if (allStocksSorted.length < 200) {
         logger.data('Auto-triggering remaining stocks load (low count detected)');
         fetchRemainingStocksData();
       }
-    }, 3000); // Wait 3 seconds after initial load
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, [allStocksSorted.length, fetchRemainingStocksData]);
@@ -244,18 +228,14 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
     reset: resetLazyLoading,
     loadMore,
   } = useLazyLoading({
-    initialLimit: 50, // Increased initial limit for smoother initial load
-    incrementSize: 50, // Increased increment for fewer re-renders
-    totalItems: optimizedAllStocks.length, // Use optimized stocks count
-    threshold: 500, // Increased threshold - load earlier to prevent stuttering
+    initialLimit: 50,
+    incrementSize: 50,
+    totalItems: optimizedAllStocks.length,
+    threshold: 500,
     onLoadRemaining: fetchRemainingStocksData,
     enableProgressiveLoading: true
   });
 
-  // Auto-increase displayLimit when new stocks are loaded (handled by useLazyLoading hook)
-
-  // Display only the limited number of stocks (use optimized filtered stocks)
-  // Ensure we show all stocks if displayLimit exceeds the array length
   const displayedStocks = optimizedAllStocks.slice(0, Math.min(displayLimit, optimizedAllStocks.length));
 
   // Debug: Log when stocks are loaded (only in development)
@@ -269,66 +249,132 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
   const displayedTickers = useMemo(() => displayedStocks.map(s => s.ticker), [displayedStocks]);
   useLogoLoader({
     tickers: displayedTickers,
-    priorityCount: 100, // Preload first 100 logos
+    priorityCount: 100,
     size: 32
   });
 
-  // Prepare props for MobileViews
-  const mobileViewsProps = {
-    activeView: activeBottomSection,
-    // Portfolio
-    portfolioStocks,
-    portfolioHoldings,
-    allStocks: stockData,
-    portfolioLoading: loadingStates.top50Stocks,
-    onUpdateQuantity: updateQuantity,
-    onRemoveStock: removeStock,
-    onAddStock: addStock,
-    calculatePortfolioValue: calculateStockValue,
-    totalPortfolioValue,
-    // Favorites
-    favoriteStocks: favoriteStocksSorted,
-    favoritesLoading: loadingStates.favorites,
-    favSortKey,
-    favAscending,
-    onFavSort: requestFavSort,
-    onToggleFavorite: toggleFavorite,
-    isFavorite,
-    // All Stocks
-    displayedStocks,
-    allStocksLoading: loadingStates.top50Stocks,
-    allSortKey,
-    allAscending,
-    onAllSort: requestAllSort,
-    searchTerm,
-    onSearchChange: setSearchTerm,
-    hasMore,
-    selectedSector,
-    selectedIndustry,
-    onSectorChange: setSelectedSector,
-    onIndustryChange: setSelectedIndustry,
-    uniqueSectors,
-    availableIndustries,
-  };
 
   return (
     <>
-      {/* Mobile: App-like view switching (CSS gating - lg:hidden) */}
-      <div className="lg:hidden">
-        <MobileShell
-          activeView={activeBottomSection}
-          onViewChange={handleBottomNavChange}
-        >
-          <MobileViews {...mobileViewsProps} />
-        </MobileShell>
-      </div>
+      {/* Modern Mobile Layout */}
+      {(isMounted && !isDesktop) && (
+        <MobileApp>
+          <MobileHeader />
+          <div className="mobile-app-content">
+            <MobileScreen 
+              active={activeMobileSection === 'heatmap'} 
+              className="screen-heatmap"
+              prefetch={activeMobileSection === 'heatmap'}
+              skeleton={
+                <div className="h-full w-full bg-black p-2">
+                  <div className="grid grid-cols-2 gap-2" style={{ gridAutoRows: 'minmax(72px, auto)' }}>
+                    {Array.from({ length: 8 }).map((_, i) => (
+                      <div
+                        key={i}
+                        className="bg-gray-800 rounded animate-pulse"
+                        style={{
+                          gridColumn: i < 2 ? 'span 2' : 'span 1',
+                          gridRow: i < 2 ? 'span 2' : 'span 1',
+                          animationDelay: `${i * 50}ms`,
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              }
+            >
+              {(preferences.showHeatmapSection ?? true) && (
+                <HomeHeatmap wrapperClass="mobile-heatmap-wrapper" />
+              )}
+            </MobileScreen>
+            <MobileScreen 
+              active={activeMobileSection === 'portfolio'} 
+              className="screen-portfolio"
+              prefetch={activeMobileSection === 'heatmap'} // Prefetch keď je heatmap aktívny (najpravdepodobnejší ďalší tab)
+              skeleton={<div className="p-4 space-y-3"><div className="h-20 bg-gray-200 rounded animate-pulse" /><div className="h-20 bg-gray-200 rounded animate-pulse" /></div>}
+            >
+              {(preferences.showPortfolioSection ?? true) && (
+                <HomePortfolio
+                  portfolioStocks={portfolioStocks}
+                  portfolioHoldings={portfolioHoldings}
+                  allStocks={stockData}
+                  loading={loadingStates.top50Stocks}
+                  onUpdateQuantity={updateQuantity}
+                  onRemoveStock={removeStock}
+                  onAddStock={addStock}
+                  calculatePortfolioValue={calculateStockValue}
+                  totalPortfolioValue={totalPortfolioValue}
+                />
+              )}
+            </MobileScreen>
+            <MobileScreen 
+              active={activeMobileSection === 'favorites'} 
+              className="screen-favorites"
+              prefetch={activeMobileSection === 'heatmap'} // Prefetch keď je heatmap aktívny
+              skeleton={<div className="p-4 space-y-3"><div className="h-20 bg-gray-200 rounded animate-pulse" /><div className="h-20 bg-gray-200 rounded animate-pulse" /></div>}
+            >
+              {(preferences.showFavoritesSection ?? true) && (
+                <HomeFavorites
+                  favoriteStocks={favoriteStocksSorted}
+                  loading={loadingStates.favorites}
+                  sortKey={favSortKey}
+                  ascending={favAscending}
+                  onSort={requestFavSort}
+                  onToggleFavorite={toggleFavorite}
+                  isFavorite={isFavorite}
+                />
+              )}
+            </MobileScreen>
+            <MobileScreen 
+              active={activeMobileSection === 'earnings'} 
+              className="screen-earnings"
+              prefetch={false}
+              skeleton={<div className="p-4 space-y-3"><div className="h-20 bg-gray-200 rounded animate-pulse" /></div>}
+            >
+              {(preferences.showEarningsSection ?? true) && (
+                <HomeEarnings />
+              )}
+            </MobileScreen>
+            <MobileScreen 
+              active={activeMobileSection === 'allStocks'} 
+              className="screen-all-stocks"
+              prefetch={false}
+              skeleton={<div className="p-4 space-y-3"><div className="h-20 bg-gray-200 rounded animate-pulse" /><div className="h-20 bg-gray-200 rounded animate-pulse" /></div>}
+            >
+              {(preferences.showAllStocksSection ?? true) && (
+                <HomeAllStocks
+                  displayedStocks={displayedStocks}
+                  loading={loadingStates.top50Stocks}
+                  sortKey={allSortKey}
+                  ascending={allAscending}
+                  onSort={requestAllSort}
+                  onToggleFavorite={toggleFavorite}
+                  isFavorite={isFavorite}
+                  searchTerm={searchTerm}
+                  onSearchChange={setSearchTerm}
+                  hasMore={hasMore}
+                  selectedSector={selectedSector}
+                  selectedIndustry={selectedIndustry}
+                  onSectorChange={setSelectedSector}
+                  onIndustryChange={setSelectedIndustry}
+                  uniqueSectors={uniqueSectors}
+                  availableIndustries={availableIndustries}
+                />
+              )}
+            </MobileScreen>
+          </div>
+          <MobileTabBar
+            activeTab={activeMobileSection}
+            onTabChange={handleMobileNavChange}
+          />
+        </MobileApp>
+      )}
 
-      {/* Desktop: Traditional scroll-based layout (CSS gating - hidden lg:block) */}
-      <div className="homepage-container hidden lg:block">
-        {/* PWA Status Bar */}
+      {/* Desktop Layout - Traditional scroll-based */}
+      {(isMounted && isDesktop) && (
+      <div className="homepage-container">
         <div className="pwa-status-bar"></div>
 
-        {/* Offline Indicator - only render on client */}
         {!isOnline && (
           <div className="offline-indicator">
             <span>📡</span>
@@ -337,173 +383,131 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
         )}
 
         <Suspense fallback={<div className="flex justify-center items-center h-screen bg-black text-white">Loading...</div>}>
-        <PerformanceOptimizer
-          enableMonitoring={process.env.NODE_ENV === 'development'}
-          enableLazyLoading={true}
-          enableImageOptimization={true}
-        >
-          <MobileTester
-            enableTesting={process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_ENABLE_MOBILE_TESTING === 'true'}
-            showDeviceFrame={true}
+          <PerformanceOptimizer
+            enableMonitoring={process.env.NODE_ENV === 'development'}
+            enableLazyLoading={true}
+            enableImageOptimization={true}
           >
-            <PullToRefresh onRefresh={loadData}>
-              {/* Structured Data for SEO */}
-              <StructuredData stocks={stockData} pageType="home" />
+            <MobileTester
+              enableTesting={process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_ENABLE_MOBILE_TESTING === 'true'}
+              showDeviceFrame={true}
+            >
+              <PullToRefresh onRefresh={loadData}>
+                <StructuredData stocks={stockData} pageType="home" />
 
-              {/* Header Section - Full Width */}
-              <div className="header-wrapper">
-                <div className="container mx-auto px-4">
-                  <PageHeader
-                    navigation={
-                      /* Hide navigation in header on mobile - show only in main content area */
-                      <div className="hidden lg:block">
-                        <SectionNavigation
-                          preferences={preferences}
-                          onToggleSection={(key) => savePreferences({ [key]: !(preferences[key] ?? true) })}
-                          onScrollToSection={scrollToSection}
-                        />
+                <div className="header-wrapper">
+                  <div className="container mx-auto px-4">
+                    <PageHeader
+                      navigation={
+                        <div className="hidden lg:block">
+                          <SectionNavigation
+                            preferences={preferences}
+                            onToggleSection={(key) => savePreferences({ [key]: !(preferences[key] ?? true) })}
+                            onScrollToSection={scrollToSection}
+                          />
+                        </div>
+                      }
+                    />
+                  </div>
+                </div>
+
+                <main className="container" role="main">
+                  <div className="flex-1 min-w-0">
+                    {error && (
+                      <div className="error" role="alert">
+                        <strong>Error:</strong> {error}
                       </div>
-                    }
-                  />
-                </div>
-              </div>
+                    )}
 
-              {/* Market Indices - Mobile only, shown below header */}
-              <div className="lg:hidden container mx-auto px-4 py-2">
-                <MarketIndices />
-              </div>
+                    {/* --- DESKTOP LAYOUT (Scroll Based) --- */}
+                      <div className="desktop-layout-wrapper">
+                        {(preferences.showHeatmapSection ?? true) && (
+                          <div id="section-heatmap" className="scroll-mt-20">
+                            <HomeHeatmap wrapperClass="desktop-heatmap-wrapper" />
+                          </div>
+                        )}
 
-              <main className="container" role="main">
-                {/* Section Navigation - Mobile (Hidden now as we use BottomNavigation) */}
-                <div className="hidden">
-                  <SectionNavigation
-                    preferences={preferences}
-                    onToggleSection={(key) => savePreferences({ [key]: !(preferences[key] ?? true) })}
-                    onScrollToSection={scrollToSection}
-                  />
-                </div>
+                        {(preferences.showPortfolioSection ?? true) && (
+                          <div id="section-portfolio" className="scroll-mt-20">
+                            <HomePortfolio
+                              portfolioStocks={portfolioStocks}
+                              portfolioHoldings={portfolioHoldings}
+                              allStocks={stockData}
+                              loading={loadingStates.top50Stocks}
+                              onUpdateQuantity={updateQuantity}
+                              onRemoveStock={removeStock}
+                              onAddStock={addStock}
+                              calculatePortfolioValue={calculateStockValue}
+                              totalPortfolioValue={totalPortfolioValue}
+                            />
+                          </div>
+                        )}
 
-                {/* Main Content */}
-                <div className="flex-1 min-w-0">
+                        {(preferences.showFavoritesSection ?? true) && (
+                          <div id="section-favorites" className="scroll-mt-20">
+                            <HomeFavorites
+                              favoriteStocks={favoriteStocksSorted}
+                              loading={loadingStates.favorites}
+                              sortKey={favSortKey}
+                              ascending={favAscending}
+                              onSort={requestFavSort}
+                              onToggleFavorite={toggleFavorite}
+                              isFavorite={isFavorite}
+                            />
+                          </div>
+                        )}
 
-                  {/* Error Display */}
-                  {error && (
-                    <div className="error" role="alert">
-                      <strong>Error:</strong> {error}
-                    </div>
-                  )}
+                        {(preferences.showEarningsSection ?? true) && (
+                          <div id="section-earnings" className="scroll-mt-20">
+                            <HomeEarnings />
+                          </div>
+                        )}
 
-                  {/* Heatmap Preview Section - First */}
-                  {(preferences.showHeatmapSection ?? true) && (
-                    <div id="section-heatmap" className="scroll-mt-20">
-                      <SectionErrorBoundary sectionName="Heatmap">
-                        <HeatmapPreview />
-                      </SectionErrorBoundary>
-                    </div>
-                  )}
+                        {(preferences.showAllStocksSection ?? true) && (
+                          <div id="section-all-stocks" className="scroll-mt-20">
+                            <HomeAllStocks
+                              displayedStocks={displayedStocks}
+                              loading={loadingStates.top50Stocks}
+                              sortKey={allSortKey}
+                              ascending={allAscending}
+                              onSort={requestAllSort}
+                              onToggleFavorite={toggleFavorite}
+                              isFavorite={isFavorite}
+                              searchTerm={searchTerm}
+                              onSearchChange={setSearchTerm}
+                              hasMore={hasMore}
+                              selectedSector={selectedSector}
+                              selectedIndustry={selectedIndustry}
+                              onSectorChange={setSelectedSector}
+                              onIndustryChange={setSelectedIndustry}
+                              uniqueSectors={uniqueSectors}
+                              availableIndustries={availableIndustries}
+                            />
+                          </div>
+                        )}
+                      </div>
+                  </div>
 
-                  {/* Portfolio Section */}
-                  {(preferences.showPortfolioSection ?? true) && (
-                    <div id="section-portfolio" className="scroll-mt-20">
-                      <SectionErrorBoundary sectionName="Portfolio">
-                        <PortfolioSection
-                          portfolioStocks={portfolioStocks}
-                          portfolioHoldings={portfolioHoldings}
-                          allStocks={stockData}
-                          loading={loadingStates.top50Stocks}
-                          onUpdateQuantity={updateQuantity}
-                          onRemoveStock={removeStock}
-                          onAddStock={addStock}
-                          calculatePortfolioValue={calculateStockValue}
-                          totalPortfolioValue={totalPortfolioValue}
-                        />
-                      </SectionErrorBoundary>
-                    </div>
-                  )}
+                  <footer className="footer hidden lg:block" aria-label="Site footer">
+                    <p className="disclaimer">
+                      Data is for informational purposes only. We are not responsible for its accuracy.
+                    </p>
+                    <p>
+                      Need help? Contact us:
+                      <a href="mailto:support@premarketprice.com" className="support-email">
+                        support@premarketprice.com
+                      </a>
+                    </p>
+                  </footer>
+                </main>
+              </PullToRefresh>
+            </MobileTester>
+          </PerformanceOptimizer>
+        </Suspense>
 
-                  {/* Favorites Section */}
-                  {(preferences.showFavoritesSection ?? true) && (
-                    <div id="section-favorites" className="scroll-mt-20">
-                      <SectionErrorBoundary sectionName="Favorites">
-                        <FavoritesSection
-                          favoriteStocks={favoriteStocksSorted}
-                          loading={loadingStates.favorites}
-                          sortKey={favSortKey}
-                          ascending={favAscending}
-                          onSort={requestFavSort}
-                          onToggleFavorite={toggleFavorite}
-                          isFavorite={isFavorite}
-                        />
-                      </SectionErrorBoundary>
-                    </div>
-                  )}
-
-                  {/* Today's Earnings Section */}
-                  {(preferences.showEarningsSection ?? true) && (
-                    <div id="section-earnings" className="scroll-mt-20">
-                      <SectionErrorBoundary sectionName="Earnings">
-                        <TodaysEarningsFinnhub />
-                      </SectionErrorBoundary>
-                    </div>
-                  )}
-
-                  {/* All Stocks Section */}
-                  {(preferences.showAllStocksSection ?? true) && (
-                    <div id="section-all-stocks" className="scroll-mt-20">
-                      <SectionErrorBoundary sectionName="All Stocks">
-                        <AllStocksSection
-                          displayedStocks={displayedStocks}
-                          loading={loadingStates.top50Stocks}
-                          sortKey={allSortKey}
-                          ascending={allAscending}
-                          onSort={requestAllSort}
-                          onToggleFavorite={toggleFavorite}
-                          isFavorite={isFavorite}
-                          searchTerm={searchTerm}
-                          onSearchChange={setSearchTerm}
-                          hasMore={hasMore}
-                          selectedSector={selectedSector}
-                          selectedIndustry={selectedIndustry}
-                          onSectorChange={setSelectedSector}
-                          onIndustryChange={setSelectedIndustry}
-                          uniqueSectors={uniqueSectors}
-                          availableIndustries={availableIndustries}
-                        />
-                      </SectionErrorBoundary>
-                    </div>
-                  )}
-                </div>
-
-                <footer className="footer" aria-label="Site footer">
-                  <p className="disclaimer">
-                    Data is for informational purposes only. We are not responsible for its accuracy.
-                  </p>
-                  <p>
-                    Need help? Contact us:
-                    <a href="mailto:support@premarketprice.com" className="support-email">
-                      support@premarketprice.com
-                    </a>
-                  </p>
-                </footer>
-              </main>
-            </PullToRefresh>
-          </MobileTester>
-        </PerformanceOptimizer>
-      </Suspense>
-
-      <CookieConsent onAccept={() => {
-        // Set consent to enable favorites functionality
-        setConsent(true);
-      }} />
-
-        {/* Desktop: Bottom navigation is handled by MobileShell on mobile */}
-        <div className="lg:hidden">
-          <BottomNavigation
-            activeSection={activeBottomSection}
-            onSectionChange={handleBottomNavChange}
-          />
-        </div>
+        <CookieConsent onAccept={() => setConsent(true)} />
       </div>
+      )}
     </>
   );
 }

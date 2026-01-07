@@ -138,26 +138,28 @@ export function usePanZoom(options: UsePanZoomOptions = {}): UsePanZoomReturn {
     panYRef.current = panY;
   }, [zoom, panX, panY]);
 
-  // Gesture handling
-  const bind = useGesture(
-    {
-      // Pinch-to-zoom (touch)
-      onPinch: shouldEnable ? ({ offset: [scale], first, memo = zoomRef.current }) => {
-        if (first) return zoomRef.current;
-        const newZoom = Math.max(minZoom, Math.min(maxZoom, memo * scale));
-        updateState(newZoom, panXRef.current, panYRef.current);
-        return newZoom;
-      } : undefined,
+  // Build gesture handlers object dynamically - only include handlers that should be enabled
+  const gestureHandlers: any = {};
 
-      // Drag/Pan
-      onDrag: shouldEnable ? ({ offset: [x, y], first, memo = { panX: panXRef.current, panY: panYRef.current } }) => {
-        if (first) return { panX: panXRef.current, panY: panYRef.current };
-        updateState(zoomRef.current, memo.panX + x, memo.panY + y);
-        return { panX: memo.panX + x, panY: memo.panY + y };
-      } : undefined,
+  if (shouldEnable) {
+    // Pinch-to-zoom (touch)
+    gestureHandlers.onPinch = ({ offset: [scale], first, memo = zoomRef.current }: any) => {
+      if (first) return zoomRef.current;
+      const newZoom = Math.max(minZoom, Math.min(maxZoom, memo * scale));
+      updateState(newZoom, panXRef.current, panYRef.current);
+      return newZoom;
+    };
 
-      // Wheel zoom (desktop) - only if not mobile only
-      onWheel: shouldEnable && !mobileOnly ? ({ offset: [, deltaY], event }) => {
+    // Drag/Pan
+    gestureHandlers.onDrag = ({ offset: [x, y], first, memo = { panX: panXRef.current, panY: panYRef.current } }: any) => {
+      if (first) return { panX: panXRef.current, panY: panYRef.current };
+      updateState(zoomRef.current, memo.panX + x, memo.panY + y);
+      return { panX: memo.panX + x, panY: memo.panY + y };
+    };
+
+    // Wheel zoom (desktop) - only if not mobile only
+    if (!mobileOnly) {
+      gestureHandlers.onWheel = ({ offset: [, deltaY], event }: any) => {
         event.preventDefault();
         const currentZoom = zoomRef.current;
         const currentPanX = panXRef.current;
@@ -180,22 +182,37 @@ export function usePanZoom(options: UsePanZoomOptions = {}): UsePanZoomReturn {
         } else {
           updateState(newZoom, currentPanX, currentPanY);
         }
-      } : undefined,
-    },
-    {
-      // Gesture configuration
-      pinch: {
-        scaleBounds: { min: minZoom, max: maxZoom },
-        rubberband: true,
-      },
-      drag: {
-        filterTaps: true,
-        threshold: 5,
-      },
-      wheel: {
-        preventDefault: true,
-      },
+      };
     }
+  }
+
+  // Build gesture config - only include configs for enabled handlers
+  const gestureConfig: any = {};
+  
+  if (gestureHandlers.onPinch) {
+    gestureConfig.pinch = {
+      scaleBounds: { min: minZoom, max: maxZoom },
+      rubberband: true,
+    };
+  }
+  
+  if (gestureHandlers.onDrag) {
+    gestureConfig.drag = {
+      filterTaps: true,
+      threshold: 5,
+    };
+  }
+  
+  if (gestureHandlers.onWheel) {
+    gestureConfig.wheel = {
+      preventDefault: true,
+    };
+  }
+
+  // Gesture handling
+  const bind = useGesture(
+    gestureHandlers,
+    gestureConfig
   );
 
   // Transform string pre CSS
@@ -205,8 +222,9 @@ export function usePanZoom(options: UsePanZoomOptions = {}): UsePanZoomReturn {
   // Bind function that sets ref and returns gesture bind
   const bindWithRef = useCallback((element: HTMLElement | null) => {
     containerRef.current = element;
-    if (element) {
-      return bind(element);
+    if (element && typeof bind === 'function') {
+      const result = bind(element);
+      return result || {};
     }
     return {};
   }, [bind]);

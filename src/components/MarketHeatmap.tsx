@@ -266,12 +266,30 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
   onZoomChange,
 }: MarketHeatmapProps) => {
   const [internalZoomedSector, setInternalZoomedSector] = useState<string | null>(null);
+  const zoomedSectorRef = useRef<string | null>(null); // Track zoomed sector to prevent accidental changes
 
   // Use controlled state if provided, otherwise internal
   const isControlled = controlledZoomedSector !== undefined;
   const zoomedSector = isControlled ? controlledZoomedSector : internalZoomedSector;
+  
+  // Update ref when zoomedSector changes
+  useEffect(() => {
+    zoomedSectorRef.current = zoomedSector;
+  }, [zoomedSector]);
 
   const handleZoomChange = useCallback((sector: string | null) => {
+    // Prevent accidental zoom changes - only allow explicit user actions
+    // Check if this is actually a change (not a redundant update)
+    if (zoomedSectorRef.current === sector) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('🔍 Zoom change ignored (no change):', { sector, current: zoomedSectorRef.current });
+      }
+      return; // No change needed
+    }
+    
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('🔍 Zoom change requested:', { sector, current: zoomedSectorRef.current });
+    }
     if (!isControlled) {
       setInternalZoomedSector(sector);
     }
@@ -298,19 +316,61 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
   const hierarchyRoot = useMemo(() => buildHeatmapHierarchy(data, metric), [data, metric]);
 
   // Detect mobile for vertical layout
-  const [isMobile, setIsMobile] = useState(false);
+  // CRITICAL: Initialize with proper value and STABILIZE during initial load
+  // Don't allow changes during initial render phase to prevent multiple layout recalculations
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth <= 768;
+    }
+    return false;
+  });
+  
+  // Track if initial load is complete - prevent isMobile changes during initial render
+  const isInitialLoadCompleteRef = useRef(false);
+  
   useEffect(() => {
-    const checkMobile = () => {
-      const mobile = window.innerWidth <= 768;
-      setIsMobile(mobile);
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('📱 Mobile detection:', { width: window.innerWidth, isMobile: mobile });
-      }
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    // Mark initial load as complete after first render
+    // This prevents isMobile from changing during initial layout calculation
+    const timer = setTimeout(() => {
+      isInitialLoadCompleteRef.current = true;
+    }, 100); // Small delay to ensure initial render is complete
+    
+    return () => clearTimeout(timer);
   }, []);
+  
+  useEffect(() => {
+    let resizeTimer: NodeJS.Timeout;
+    const checkMobile = () => {
+      // Debounce resize events to prevent excessive re-renders
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        const mobile = window.innerWidth <= 768;
+        // Only update if actually changed AND initial load is complete
+        // This prevents layout recalculation during initial render
+        if (!isInitialLoadCompleteRef.current) {
+          // During initial load, only update if there's a significant mismatch
+          // (e.g., SSR hydration issue)
+          return;
+        }
+        
+        setIsMobile(prev => {
+          if (prev !== mobile) {
+            if (process.env.NODE_ENV !== 'production') {
+              console.log('📱 Mobile detection changed:', { width: window.innerWidth, isMobile: mobile });
+            }
+            return mobile;
+          }
+          return prev;
+        });
+      }, 150); // Debounce resize events
+    };
+    
+    window.addEventListener('resize', checkMobile);
+    return () => {
+      clearTimeout(resizeTimer);
+      window.removeEventListener('resize', checkMobile);
+    };
+  }, []); // Remove isMobile from dependencies to prevent re-initialization
 
   // Helper function to sum values in a node (for mobile vertical layout)
   const sumValues = useCallback((node: HierarchyData): number => {
@@ -320,11 +380,18 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
   }, []);
 
   // 2. Výpočet D3 Treemap layoutu
-  // Optimized: Round width/height to nearest 10px to prevent recalculation on tiny resizes
+  // OPTIMIZATION: Stabilize layout calculation during initial load
+  // Round width/height to nearest 10px to prevent recalculation on tiny resizes
   // Mobile: Vertical layout (sectors stacked vertically, no gaps)
   // Desktop: Horizontal layout (original behavior)
   const treemapLayout = useMemo(() => {
     if (width === 0 || height === 0) return null;
+    
+    // During initial load, if we don't have valid dimensions yet, return null
+    // This prevents layout calculation with invalid dimensions
+    if (!isInitialLoadCompleteRef.current && (width < 100 || height < 100)) {
+      return null;
+    }
 
     // Vytvoríme D3 hierarchiu
     const d3Root = hierarchy(hierarchyRoot)
@@ -348,7 +415,10 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
       // Mobile: Vertical layout - process each sector separately and stack vertically
       let currentY = 0;
       const totalValue = d3Root.value || 1;
-      const estimatedTotalHeight = height * d3Root.children.length * 5;
+      // Use more precise height calculation - base on actual sector values, not arbitrary multipliers
+      // Calculate total height based on proportional sector sizes, with reasonable minimums
+      const baseSectorHeight = height * 0.8; // Base height per sector (80% of viewport)
+      const estimatedTotalHeight = baseSectorHeight * d3Root.children.length; // No extra padding multiplier
 
       d3Root.children.forEach((sectorNode: any) => {
         if (!sectorNode.data.children || sectorNode.data.children.length === 0) return;
@@ -358,7 +428,8 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
 
         // Calculate proportional height for this sector
         const sectorHeight = (sectorValue / totalValue) * estimatedTotalHeight;
-        const minSectorHeight = height * 1.5; // Minimum height per sector
+        // Minimum height should be reasonable - 60% of viewport to prevent too much empty space
+        const minSectorHeight = height * 0.6; // Minimum height = 60% of viewport
         const finalSectorHeight = Math.max(sectorHeight, minSectorHeight);
 
         // Create separate treemap for this sector
@@ -415,7 +486,14 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
       (d3Root as any).y1 = currentY;
 
       if (process.env.NODE_ENV !== 'production') {
-        console.log('📱 Mobile layout complete:', { totalHeight: currentY, sectors: d3Root.children.length });
+        const rootBounds = d3Root as any;
+        console.log('📱 Mobile layout complete:', { 
+          totalHeight: currentY, 
+          sectors: d3Root.children.length,
+          viewportHeight: height,
+          rootWidth: rootBounds.x1 - rootBounds.x0,
+          rootHeight: rootBounds.y1 - rootBounds.y0,
+        });
       }
 
       return d3Root;
@@ -597,23 +675,30 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
   }, [treemapBounds, scale, isMobile]);
 
   // Progressive loading state
-  const [visibleCount, setVisibleCount] = useState(50); // Start with 50 items
-  const [renderMode, setRenderMode] = useState<'dom' | 'canvas'>('canvas'); // Default to Canvas
-
-  // Reset visible count when data changes or zoom changes
-  useEffect(() => {
-    setVisibleCount(50);
-  }, [filteredLeaves]);
-
-  // Progressive loading effect (only for DOM mode)
-  useEffect(() => {
-    if (renderMode === 'dom' && visibleCount < filteredLeaves.length) {
-      const frame = requestAnimationFrame(() => {
-        setVisibleCount(prev => Math.min(prev + 100, filteredLeaves.length));
-      });
-      return () => cancelAnimationFrame(frame);
+  // On mobile, use DOM mode for better progressive loading and performance
+  // On desktop, use Canvas for better performance with many tiles
+  const [renderMode] = useState<'dom' | 'canvas'>(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth <= 768 ? 'dom' : 'canvas';
     }
-  }, [visibleCount, filteredLeaves.length, renderMode]);
+    return 'canvas';
+  });
+  
+  // OPTIMIZATION: Render all items immediately to prevent progressive loading phases
+  // This eliminates the "flickering" effect of items appearing gradually
+  // On mobile (DOM mode), we can handle rendering all items at once
+  // On desktop (Canvas), we render all at once anyway
+  // Note: filteredLeaves is defined later, so we'll initialize with a large number
+  // and update it immediately when filteredLeaves is available
+  const [visibleCount, setVisibleCount] = useState(10000); // Large initial value to render all
+
+  // Reset visible count when data changes or zoom changes - but render ALL immediately
+  useEffect(() => {
+    // Always render all items immediately to prevent progressive loading phases
+    if (filteredLeaves.length > 0) {
+      setVisibleCount(filteredLeaves.length);
+    }
+  }, [filteredLeaves.length]); // Only depend on length to prevent unnecessary updates
 
   // 2. Renderujeme Listy (Firmy) - Progressive Loading
   const visibleLeaves = filteredLeaves.slice(0, visibleCount);
@@ -630,36 +715,106 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
   const contentHeight = useMemo(() => {
     if (!isMobile || !treemapBounds) return height;
     // Mobile: Use actual treemap height (sectors stacked vertically)
-    // Add some padding to ensure all sectors are visible
-    return Math.max(treemapBounds.treemapHeight * scale, height * 2);
+    // Use precise height calculation - no arbitrary multipliers
+    const calculatedHeight = treemapBounds.treemapHeight * scale;
+    // Add small padding (50px) to ensure last sector is fully visible, but don't multiply by 2
+    const finalHeight = calculatedHeight + 50;
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('📱 Content height calculation:', {
+        treemapHeight: treemapBounds.treemapHeight,
+        scale,
+        viewportHeight: height,
+        calculatedHeight,
+        finalHeight,
+      });
+    }
+    return finalHeight;
   }, [isMobile, treemapBounds, scale, height]);
 
-  // Pan & Zoom hook - enable only on mobile or when zoomed
+  // Pan & Zoom hook - only enable when zoomed to sector
+  // Mobile uses natural scrolling initially, pan & zoom only when user zooms to sector
   const panZoom = usePanZoom({
     minZoom: 1,
     maxZoom: 5,
     initialZoom: 1,
-    mobileOnly: !zoomedSector, // Enable on mobile always, or when zoomed to sector
+    mobileOnly: !zoomedSector, // Disable on desktop when not zoomed, enable when zoomed
     enableDoubleTapReset: true,
   });
 
   // Content wrapper ref for pan & zoom
   const contentWrapperRef = useRef<HTMLDivElement>(null);
+  const gestureBindPropsRef = useRef<Record<string, any>>({});
+  const [gestureBindProps, setGestureBindProps] = useState<Record<string, any>>({});
 
   // Reset pan & zoom when zoomed sector changes
+  // Only reset if zoomedSector actually changed (not on every render)
+  const prevZoomedSectorRef = useRef<string | null>(null);
   useEffect(() => {
-    if (zoomedSector) {
-      panZoom.reset();
+    if (prevZoomedSectorRef.current !== zoomedSector) {
+      if (zoomedSector) {
+        // User zoomed to a sector - reset pan & zoom
+        panZoom.reset();
+      }
+      prevZoomedSectorRef.current = zoomedSector;
     }
   }, [zoomedSector, panZoom]);
 
-  // Get gesture bind props
-  const gestureBind = useMemo(() => {
-    if (contentWrapperRef.current) {
-      return panZoom.bind(contentWrapperRef.current) || {};
+  // Apply gesture bind when element is mounted or dependencies change
+  // IMPORTANT: Only enable pan & zoom when zoomed to sector, NOT on mobile initially
+  // Mobile should use natural scrolling, pan & zoom only when user explicitly zooms
+  useEffect(() => {
+    const element = contentWrapperRef.current;
+    if (element && zoomedSector) {
+      try {
+        const bindProps = panZoom.bind(element);
+        // Filter out any non-function values to prevent errors
+        if (bindProps && typeof bindProps === 'object') {
+          const filteredProps: Record<string, any> = {};
+          Object.keys(bindProps).forEach((key) => {
+            const value = (bindProps as any)[key];
+            if (typeof value === 'function') {
+              filteredProps[key] = value;
+            }
+          });
+          // Only update if props actually changed
+          const prevKeys = Object.keys(gestureBindPropsRef.current).sort().join(',');
+          const newKeys = Object.keys(filteredProps).sort().join(',');
+          if (prevKeys !== newKeys) {
+            gestureBindPropsRef.current = filteredProps;
+            setGestureBindProps(filteredProps);
+          }
+        } else {
+          if (Object.keys(gestureBindPropsRef.current).length > 0) {
+            gestureBindPropsRef.current = {};
+            setGestureBindProps({});
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to bind pan & zoom gestures:', error);
+        if (Object.keys(gestureBindPropsRef.current).length > 0) {
+          gestureBindPropsRef.current = {};
+          setGestureBindProps({});
+        }
+      }
+    } else {
+      if (Object.keys(gestureBindPropsRef.current).length > 0) {
+        gestureBindPropsRef.current = {};
+        setGestureBindProps({});
+      }
     }
-    return {};
-  }, [panZoom]);
+  }, [panZoom, zoomedSector]);
+
+  // Simple callback ref - just set the ref, don't trigger state updates
+  const contentWrapperCallbackRef = useCallback((element: HTMLDivElement | null) => {
+    contentWrapperRef.current = element;
+  }, []);
+
+  // Check if pan & zoom should be applied
+  // Only apply transform if pan & zoom is active (zoom !== 1 or pan !== 0) AND (mobile or zoomed sector)
+  // IMPORTANT: On mobile, don't apply transform initially - let natural scrolling work
+  // Only apply transform when user actively zooms/pans
+  const isPanZoomActive = panZoom.zoom !== 1 || panZoom.panX !== 0 || panZoom.panY !== 0;
+  const shouldApplyTransform = zoomedSector ? isPanZoomActive : false; // Disable pan & zoom on mobile initially
 
   // Double-tap handler
   const handleDoubleTap = useCallback((e: React.TouchEvent | React.MouseEvent) => {
@@ -678,17 +833,24 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
   }, [panZoom]);
 
   // Show pan & zoom controls only when zoomed or on mobile
-  const showPanZoomControls = isMobile || panZoom.zoom > 1 || panZoom.panX !== 0 || panZoom.panY !== 0;
+  // Only show pan & zoom controls when zoomed to sector
+  const showPanZoomControls = zoomedSector && (panZoom.zoom > 1 || panZoom.panX !== 0 || panZoom.panY !== 0);
 
   return (
     <div
       ref={containerRef}
       className={styles.heatmapContainer}
       style={{
-        overflow: isMobile ? 'visible' : 'hidden',
+        // CRITICAL: On mobile, this container handles ALL scrolling
+        // Set overflow to auto to enable scrolling, but only on mobile
+        // On desktop, use hidden as before
+        overflow: isMobile ? 'auto' : 'hidden',
+        overflowX: 'hidden', // Never allow horizontal scrolling
         height: isMobile ? contentHeight : '100%',
         minHeight: isMobile ? contentHeight : undefined,
         position: 'relative',
+        // Enable smooth scrolling on mobile
+        WebkitOverflowScrolling: isMobile ? 'touch' : undefined,
       }}
       onMouseMove={renderMode === 'dom' ? handleMouseMove : undefined}
     >
@@ -739,18 +901,21 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
         </div>
       )}
 
-      {/* Pan & Zoom Content Wrapper */}
+      {/* Pan & Zoom Content Wrapper - only when zoomed to sector */}
+      {/* Mobile uses natural scrolling, pan & zoom only when zoomed to sector */}
       <div
-        ref={contentWrapperRef}
-        {...gestureBind}
+        ref={contentWrapperCallbackRef}
+        {...(zoomedSector ? Object.fromEntries(
+          Object.entries(gestureBindProps).filter(([_, value]) => typeof value === 'function')
+        ) : {})}
         style={{
-          transform: panZoom.transform,
-          transformOrigin: panZoom.transformOrigin,
-          willChange: 'transform',
-          touchAction: 'none',
+          transform: shouldApplyTransform ? panZoom.transform : 'none',
+          transformOrigin: shouldApplyTransform ? panZoom.transformOrigin : '0 0',
+          willChange: shouldApplyTransform ? 'transform' : 'auto',
+          touchAction: zoomedSector ? 'none' : 'auto', // Allow natural scrolling on mobile when not zoomed
         }}
-        onDoubleClick={handleDoubleTap}
-        onTouchEnd={handleDoubleTap}
+        onDoubleClick={zoomedSector ? handleDoubleTap : undefined}
+        onTouchEnd={zoomedSector ? handleDoubleTap : undefined}
       >
         {renderMode === 'canvas' ? (
         <>

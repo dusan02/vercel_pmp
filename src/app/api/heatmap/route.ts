@@ -41,6 +41,11 @@ export async function GET(request: NextRequest) {
   process.env.SILENT_PREVCLOSE_LOGS = 'true';
 
   try {
+    // OPTIMIZATION: Support limiting payload (mobile treemap only needs a subset)
+    // We still compute the full set if needed, but we can cut down response size significantly.
+    const limitParam = request.nextUrl.searchParams.get('limit');
+    const requestedLimit = limitParam ? Math.max(1, Math.min(3000, Number(limitParam))) : null;
+
     // Skontroluj, či chceme force refresh (bypass cache)
     const forceRefresh = request.nextUrl.searchParams.get('force') === 'true';
 
@@ -90,11 +95,12 @@ export async function GET(request: NextRequest) {
               'ETag': etag
             };
 
+            const limited = requestedLimit ? cachedData.slice(0, requestedLimit) : cachedData;
             return NextResponse.json({
               success: true,
-              data: cachedData,
+              data: limited,
               cached: true,
-              count: cachedData.length,
+              count: limited.length,
               timestamp: new Date().toISOString(),
               lastUpdatedAt: cacheTimestamp || new Date().toISOString(),
             }, { headers });
@@ -626,8 +632,11 @@ export async function GET(request: NextRequest) {
     // Použij maxUpdatedAt pre _timestamp (nie aktuálny čas!)
     const dataTimestamp = maxUpdatedAt ? maxUpdatedAt.toISOString() : new Date().toISOString();
 
+    // OPTIMIZATION: Apply limit AFTER sorting so mobile still gets top market caps.
+    const limitedResults = requestedLimit ? results.slice(0, requestedLimit) : results;
+
     // Zmenšíme payload - posielame len potrebné polia pre heatmapu
-    const payload = results.map((s) => ({
+    const payload = limitedResults.map((s) => ({
       ticker: s.ticker,
       companyName: s.companyName,
       sector: s.sector,

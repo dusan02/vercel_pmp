@@ -36,6 +36,12 @@ const nextConfig: NextConfig = {
   //   },
   // },
 
+  // Fix Turbopack workspace root inference when repo contains multiple lockfiles.
+  // Without this, Turbopack may scan the monorepo root and slow down dev/build.
+  turbopack: {
+    root: path.resolve(__dirname),
+  },
+
   // Compression and optimization
   compress: true,
   poweredByHeader: false,
@@ -71,6 +77,17 @@ const nextConfig: NextConfig = {
           {
             key: 'Cache-Control',
             value: 'public, max-age=0, must-revalidate',
+          },
+        ],
+      },
+      // IMPORTANT: Override global /api caching specifically for heatmap.
+      // This MUST come after '/api/(.*)' so it wins when both rules match.
+      {
+        source: '/api/heatmap',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=10, stale-while-revalidate=30',
           },
         ],
       },

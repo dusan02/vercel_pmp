@@ -8,7 +8,13 @@ import type { CompanyNode } from '@/components/MarketHeatmap';
 import { safeGetItem, safeSetItem, safeRemoveItem } from '@/lib/utils/safeStorage';
 
 const LOCALSTORAGE_KEY = 'heatmap-cache';
-const LOCALSTORAGE_MAX_AGE = 5 * 60 * 1000; // 5 minút - max vek dát v localStorage
+// OPTIMIZATION: Zvýšený cache time pre mobile (rýchlejšie načítanie)
+// Mobile používa cache aj keď je starší (do 10 min), desktop preferuje fresh data
+const getMaxAge = () => {
+  if (typeof window === 'undefined') return 5 * 60 * 1000;
+  return window.innerWidth <= 768 ? 10 * 60 * 1000 : 5 * 60 * 1000;
+};
+const LOCALSTORAGE_MAX_AGE = 5 * 60 * 1000; // Default, will be checked dynamically
 
 interface CachedHeatmapData {
   data: CompanyNode[];
@@ -40,9 +46,11 @@ export function useHeatmapCache() {
         }
         
         const age = Date.now() - (parsed.timestamp || 0);
+        const maxAge = getMaxAge(); // Dynamic max age based on device
         
-        // Použi cache len ak je fresh (< 5 min) a má validné dáta
-        if (age < LOCALSTORAGE_MAX_AGE && age >= 0 && parsed.data && parsed.data.length > 0) {
+        // Použi cache len ak je fresh a má validné dáta
+        // Mobile: 10 min, Desktop: 5 min (rýchlejšie načítanie na mobile)
+        if (age < maxAge && age >= 0 && parsed.data && parsed.data.length > 0) {
           console.log(`📦 Heatmap: Loading from localStorage (${Math.floor(age / 1000)}s old, ${parsed.data.length} companies)`);
           setCachedData(parsed);
         } else {

@@ -2,6 +2,322 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================
+   MODERN MOBILE UX - Nový dizajn od základov
+   ============================================ */
+
+/* Mobile App - Hlavný wrapper */
+.mobile-app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh; /* Dynamic viewport height */
+  background: #ffffff;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Mobile Header - Minimalistický */
+.mobile-app-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.mobile-app-header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  max-width: 100%;
+}
+
+.mobile-app-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mobile-app-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #111827;
+  letter-spacing: -0.02em;
+}
+
+/* Mobile Content Area */
+.mobile-app-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  padding-bottom: 72px; /* Space for tab bar */
+}
+
+/* Mobile Screen - Individual views */
+.mobile-app-screen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 1rem;
+  opacity: 0;
+  transform: translateX(100%);
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.mobile-app-screen.active {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+  z-index: 1;
+}
+
+/* Heatmap screen - full screen */
+.mobile-app-screen.screen-heatmap {
+  padding: 0 !important;
+  background: #000;
+  z-index: 1;
+}
+
+.mobile-app-screen.screen-heatmap.active {
+  z-index: 2;
+}
+
+/* Fullscreen heatmap container */
+.mobile-app-screen.screen-heatmap .mobile-heatmap-wrapper {
+  height: 100vh;
+  height: 100dvh;
+  width: 100vw;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.mobile-app-screen.screen-heatmap .heatmap-preview-container {
+  height: 100vh !important;
+  height: 100dvh !important;
+  width: 100vw !important;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: 0;
+  padding: 0;
+}
+
+/* Hide all controls on mobile fullscreen heatmap */
+.mobile-app-screen.screen-heatmap .section-header,
+.mobile-app-screen.screen-heatmap .heatmap-preview .section-header,
+.mobile-app-screen.screen-heatmap .HeatmapMetricButtons,
+.mobile-app-screen.screen-heatmap [class*="metric"],
+.mobile-app-screen.screen-heatmap button[class*="metric"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+/* Other screens */
+.mobile-app-screen.screen-portfolio,
+.mobile-app-screen.screen-favorites,
+.mobile-app-screen.screen-earnings,
+.mobile-app-screen.screen-all-stocks {
+  background: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  .mobile-app-screen.screen-portfolio,
+  .mobile-app-screen.screen-favorites,
+  .mobile-app-screen.screen-earnings,
+  .mobile-app-screen.screen-all-stocks {
+    background: #111827;
+  }
+}
+
+/* Mobile Tab Bar - Modern bottom navigation */
+.mobile-app-tabbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 0.5rem 0;
+  padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
+  height: 72px;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.mobile-app-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  flex: 1;
+  min-width: 0;
+  padding: 0.5rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 48px;
+  min-width: 48px;
+}
+
+.mobile-app-tab:active {
+  transform: scale(0.95);
+}
+
+.mobile-app-tab-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mobile-app-tab.active .mobile-app-tab-icon {
+  color: #2563eb;
+  transform: scale(1.1);
+}
+
+.mobile-app-tab-label {
+  font-size: 0.625rem;
+  font-weight: 500;
+  color: #6b7280;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.mobile-app-tab.active .mobile-app-tab-label {
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.mobile-app-tab-indicator {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 32px;
+  height: 3px;
+  background: #2563eb;
+  border-radius: 0 0 3px 3px;
+  animation: slideIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideIn {
+  from {
+    width: 0;
+    opacity: 0;
+  }
+  to {
+    width: 32px;
+    opacity: 1;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .mobile-app {
+    background: #111827;
+  }
+
+  .mobile-app-header {
+    background: rgba(17, 24, 39, 0.95);
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .mobile-app-title {
+    color: #f9fafb;
+  }
+
+  .mobile-app-tabbar {
+    background: rgba(17, 24, 39, 0.98);
+    border-top-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .mobile-app-tab-icon {
+    color: #9ca3af;
+  }
+
+  .mobile-app-tab.active .mobile-app-tab-icon {
+    color: #3b82f6;
+  }
+
+  .mobile-app-tab-label {
+    color: #9ca3af;
+  }
+
+  .mobile-app-tab.active .mobile-app-tab-label {
+    color: #3b82f6;
+  }
+
+  .mobile-app-tab-indicator {
+    background: #3b82f6;
+  }
+}
+
+/* Desktop hide */
+@media (min-width: 1024px) {
+  .mobile-app,
+  .mobile-app-header,
+  .mobile-app-tabbar {
+    display: none !important;
+  }
+}
+
+/* Small Mobile (< 480px) */
+@media (max-width: 480px) {
+  .mobile-app-header-content {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .mobile-app-title {
+    font-size: 1rem;
+  }
+
+  .mobile-app-screen {
+    padding: 0.75rem;
+  }
+
+  .mobile-app-tab-label {
+    font-size: 0.5625rem;
+  }
+}
+
 /* === MOBILE & TABLET OPTIMIZATIONS ===================================== */
 /* Comprehensive responsive design improvements - Mobile-First Best Practices */
 
