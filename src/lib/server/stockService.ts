@@ -54,7 +54,11 @@ export async function getStocksList(options: {
     const session = detectSession(etNow);
     const pricingState = getPricingState(etNow);
 
-    const where = tickers && tickers.length > 0 ? { symbol: { in: tickers } } : {};
+    // IMPORTANT: For "All stocks" list (no explicit tickers), exclude rows with no price.
+    // These are usually tickers that Polygon doesn't support / haven't been ingested yet and show up as $0.00 in UI.
+    const where = tickers && tickers.length > 0
+      ? { symbol: { in: tickers } }
+      : { lastPrice: { gt: 0 } };
 
     // Only apply limit if no specific tickers are requested
     // When tickers are specified, return all requested tickers (respecting the ticker list, not the limit)
@@ -92,6 +96,12 @@ export async function getStocksList(options: {
         lastPriceUpdated: true,
         sharesOutstanding: true // Required for dynamic marketCapDiff calculation
       }
+    });
+
+    // Quick lookup for current price (used for best-effort shares estimation from Polygon market_cap)
+    const priceBySymbol = new Map<string, number>();
+    stocks.forEach(s => {
+      priceBySymbol.set(s.symbol, s.lastPrice || 0);
     });
 
     // DEBUG: Log na začiatok getStocksList
@@ -187,7 +197,9 @@ export async function getStocksList(options: {
             if (!sharesFetchPromises.has(ticker)) {
               sharesFetchPromises.set(ticker, (async () => {
                 try {
-                  const shares = await getSharesOutstanding(ticker);
+                  // Provide current price so we can estimate shares from Polygon market_cap when shares are missing.
+                  const currentPrice = priceBySymbol.get(ticker) || 0;
+                  const shares = await getSharesOutstanding(ticker, currentPrice);
                   if (shares > 0) {
                     sharesSourceMap.set(ticker, 'polygon');
                     onDemandSharesMap.set(ticker, shares);

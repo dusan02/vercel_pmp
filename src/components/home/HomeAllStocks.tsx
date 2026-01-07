@@ -15,6 +15,9 @@ interface HomeAllStocksProps {
     searchTerm: string;
     onSearchChange: (value: string) => void;
     hasMore: boolean;
+    onLoadMore?: () => void;
+    isLoadingMore?: boolean;
+    totalCount?: number;
     selectedSector: string;
     selectedIndustry: string;
     onSectorChange: (value: string) => void;
@@ -34,6 +37,9 @@ export function HomeAllStocks({
     searchTerm,
     onSearchChange,
     hasMore,
+    onLoadMore,
+    isLoadingMore,
+    totalCount,
     selectedSector,
     selectedIndustry,
     onSectorChange,
@@ -54,6 +60,9 @@ export function HomeAllStocks({
                 searchTerm={searchTerm}
                 onSearchChange={onSearchChange}
                 hasMore={hasMore}
+                {...(onLoadMore ? { onLoadMore } : {})}
+                {...(typeof isLoadingMore === 'boolean' ? { isLoadingMore } : {})}
+                {...(typeof totalCount === 'number' ? { totalCount } : {})}
                 selectedSector={selectedSector}
                 selectedIndustry={selectedIndustry}
                 onSectorChange={onSectorChange}

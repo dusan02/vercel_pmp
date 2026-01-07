@@ -6614,6 +6614,93 @@ table td strong {
   gap: 0.75rem;
 }
 
+/* Mobile All Stocks: search + sort + results */
+.mobile-search-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.mobile-search-grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.mobile-filters-toggle {
+  flex-shrink: 0;
+  height: 40px;
+  padding: 0 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--clr-border);
+  background: var(--clr-bg);
+  color: var(--clr-text);
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.mobile-sort-row {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 0.25rem;
+}
+
+.mobile-sort-row::-webkit-scrollbar {
+  display: none;
+}
+
+.sort-chip {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  height: 32px;
+  padding: 0 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--clr-border);
+  background: var(--clr-surface);
+  color: var(--clr-text);
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.sort-chip.active {
+  border-color: rgba(37, 99, 235, 0.6);
+  background: rgba(37, 99, 235, 0.08);
+}
+
+.sort-chip-icon {
+  font-size: 0.7rem;
+  opacity: 0.85;
+}
+
+.mobile-results-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.mobile-results-text {
+  font-size: 0.75rem;
+  color: var(--clr-subtext);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mobile-clear-btn {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--clr-border);
+  background: var(--clr-surface);
+  color: var(--clr-text);
+}
+
 .mobile-filters-row {
   display: flex;
   gap: 0.5rem;
@@ -6623,6 +6710,23 @@ table td strong {
 .mobile-filters-row .industry-filter {
   flex: 1;
   min-width: 0;
+}
+
+.mobile-load-more {
+  padding: 0.75rem 0;
+  display: flex;
+  justify-content: center;
+}
+
+.mobile-load-more-btn {
+  width: 100%;
+  max-width: 420px;
+  height: 44px;
+  border-radius: 0.75rem;
+  border: 1px solid var(--clr-border);
+  background: var(--clr-bg);
+  color: var(--clr-text);
+  font-weight: 700;
 }
 
 .nav-item {

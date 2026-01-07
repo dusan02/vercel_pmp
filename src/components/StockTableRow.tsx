@@ -30,6 +30,9 @@ export const StockTableRow = memo(({
   const companyName = useMemo(() => getCompanyName(stock.ticker), [stock.ticker]);
   const formattedMarketCap = useMemo(() => formatBillions(stock.marketCap), [stock.marketCap]);
 
+  const hasValidPrice = stock.currentPrice > 0;
+  const hasValidMarketCap = stock.marketCap > 0;
+
   return (
     <>
       {/* Mobile: 5 columns only (CSS gating - lg:hidden) */}
@@ -100,7 +103,7 @@ export const StockTableRow = memo(({
         <td>{stock.industry || 'N/A'}</td>
         
         {/* Market Cap */}
-        <td>{formattedMarketCap}</td>
+        <td>{hasValidMarketCap ? formattedMarketCap : '—'}</td>
         
         {/* Cap Diff */}
         <td className={stock.marketCapDiff >= 0 ? 'positive' : 'negative'}>
@@ -108,7 +111,7 @@ export const StockTableRow = memo(({
         </td>
         
         {/* Price */}
-        <td>${formattedPrice}</td>
+        <td>{hasValidPrice ? `$${formattedPrice}` : '—'}</td>
         
         {/* % Change */}
         <td className={stock.percentChange >= 0 ? 'positive' : 'negative'}>

@@ -633,7 +633,7 @@ export async function ingestBatch(
       // Get batch-fetched shares (ak existuje), inak fetch jednotlivo
       let shares = sharesMap.get(symbol) || 0;
       if (shares === 0) {
-        shares = await getSharesOutstanding(symbol);
+        shares = await getSharesOutstanding(symbol, normalized.price);
       }
 
       const marketCap = computeMarketCap(normalized.price, shares);

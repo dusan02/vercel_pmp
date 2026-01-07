@@ -227,6 +227,7 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
     hasMore,
     reset: resetLazyLoading,
     loadMore,
+    isLoading: isLoadingMore,
   } = useLazyLoading({
     initialLimit: 50,
     incrementSize: 50,
@@ -353,6 +354,9 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
                   searchTerm={searchTerm}
                   onSearchChange={setSearchTerm}
                   hasMore={hasMore}
+                  onLoadMore={loadMore}
+                  isLoadingMore={isLoadingMore}
+                  totalCount={optimizedAllStocks.length}
                   selectedSector={selectedSector}
                   selectedIndustry={selectedIndustry}
                   onSectorChange={setSelectedSector}
@@ -476,6 +480,9 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
                               searchTerm={searchTerm}
                               onSearchChange={setSearchTerm}
                               hasMore={hasMore}
+                              onLoadMore={loadMore}
+                              isLoadingMore={isLoadingMore}
+                              totalCount={optimizedAllStocks.length}
                               selectedSector={selectedSector}
                               selectedIndustry={selectedIndustry}
                               onSectorChange={setSelectedSector}

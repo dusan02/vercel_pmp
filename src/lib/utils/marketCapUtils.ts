@@ -42,7 +42,7 @@ export async function getMarketStatus(): Promise<{ market: string; serverTime: s
 /**
  * Fetch share count from Polygon API with caching
  */
-export async function getSharesOutstanding(ticker: string): Promise<number> {
+export async function getSharesOutstanding(ticker: string, currentPrice?: number): Promise<number> {
   const now = Date.now();
   const cached = shareCountCache.get(ticker);
 
@@ -69,12 +69,28 @@ export async function getSharesOutstanding(ticker: string): Promise<number> {
 
     const data = await response.json();
 
-    if (!data.results?.weighted_shares_outstanding) {
-      console.warn(`⚠️ No weighted_shares_outstanding found for ${ticker}, using 0`);
-      return 0;
+    const results = data.results;
+
+    // Prefer weighted shares, but fall back to share_class_shares_outstanding when missing (common for ADRs/OTC/etc).
+    let shares: number =
+      results?.weighted_shares_outstanding ||
+      results?.share_class_shares_outstanding ||
+      0;
+
+    // Best-effort fallback: if shares are missing but Polygon provides market_cap,
+    // estimate shares = market_cap / currentPrice (only when currentPrice is provided and valid).
+    if ((!shares || shares <= 0) && results?.market_cap && currentPrice && currentPrice > 0) {
+      const estimated = results.market_cap / currentPrice;
+      if (Number.isFinite(estimated) && estimated > 0) {
+        shares = estimated;
+        console.log(`🧮 Estimated shares for ${ticker} from market_cap: ${Math.round(shares).toLocaleString()}`);
+      }
     }
 
-    const shares = data.results.weighted_shares_outstanding;
+    if (!shares || shares <= 0) {
+      console.warn(`⚠️ No shares outstanding found for ${ticker} (shares+market_cap fallback failed), using 0`);
+      return 0;
+    }
 
     // Cache the result for 24 hours
     shareCountCache.set(ticker, { shares, timestamp: now });

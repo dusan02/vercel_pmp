@@ -2,7 +2,7 @@
  * All Stocks Section Component
  */
 
-import React, { useMemo, useCallback, useEffect } from 'react';
+import React, { useMemo, useCallback, useEffect, useRef, useState } from 'react';
 import { SortKey } from '@/hooks/useSortableData';
 import { SectionIcon } from './SectionIcon';
 import { StockSearchBar } from './StockSearchBar';
@@ -24,6 +24,10 @@ interface AllStocksSectionProps {
   searchTerm: string;
   onSearchChange: (value: string) => void;
   hasMore: boolean;
+  // Mobile UX: scroll container is not window, so we need an explicit load trigger
+  onLoadMore?: () => void;
+  isLoadingMore?: boolean;
+  totalCount?: number;
   selectedSector: string;
   selectedIndustry: string;
   onSectorChange: (value: string) => void;
@@ -66,6 +70,9 @@ export const AllStocksSection = React.memo(function AllStocksSection({
   searchTerm,
   onSearchChange,
   hasMore,
+  onLoadMore,
+  isLoadingMore = false,
+  totalCount,
   selectedSector,
   selectedIndustry,
   onSectorChange,
@@ -73,6 +80,8 @@ export const AllStocksSection = React.memo(function AllStocksSection({
   uniqueSectors,
   availableIndustries
 }: AllStocksSectionProps) {
+  const [showFilters, setShowFilters] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   // Reset industry when sector changes
   const handleSectorChange = useCallback((value: string) => {
@@ -111,6 +120,41 @@ export const AllStocksSection = React.memo(function AllStocksSection({
     });
     return handlers;
   }, [displayedStocks, onToggleFavorite]);
+
+  // Mobile sort chips
+  const mobileSortOptions: { key: SortKey; label: string }[] = useMemo(() => ([
+    { key: 'percentChange', label: '% Change' },
+    { key: 'marketCapDiff', label: 'Cap Diff' },
+    { key: 'currentPrice', label: 'Price' },
+    { key: 'marketCap', label: 'Mkt Cap' },
+    { key: 'ticker', label: 'Ticker' },
+  ]), []);
+
+  // Mobile: Infinite load within the mobile scroll container (not window)
+  useEffect(() => {
+    if (!onLoadMore || !hasMore) return;
+    const el = sentinelRef.current;
+    if (!el) return;
+
+    const root = el.closest('.mobile-app-screen') as HTMLElement | null;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (!entry?.isIntersecting) return;
+        if (isLoadingMore) return;
+        if (!hasMore) return;
+        onLoadMore();
+      },
+      {
+        root: root ?? null,
+        rootMargin: '600px 0px 600px 0px',
+        threshold: 0.01,
+      }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [onLoadMore, hasMore, isLoadingMore]);
 
   return (
     <section className="all-stocks">
@@ -153,28 +197,82 @@ export const AllStocksSection = React.memo(function AllStocksSection({
       {/* Mobile: Sticky Filter Bar */}
       <div className="lg:hidden mobile-filters">
         <div className="mobile-filters-container">
-          <StockSearchBar
-            searchTerm={searchTerm}
-            onSearchChange={onSearchChange}
-          />
-          <div className="mobile-filters-row">
-            <CustomDropdown
-              value={selectedSector}
-              onChange={handleSectorChange}
-              options={sectorOptions}
-              className="sector-filter"
-              ariaLabel="Filter by sector"
-              placeholder="All Sectors"
-            />
-            <CustomDropdown
-              value={selectedIndustry}
-              onChange={onIndustryChange}
-              options={industryOptions}
-              className="industry-filter"
-              ariaLabel="Filter by industry"
-              placeholder="All Industries"
-            />
+          <div className="mobile-search-row">
+            <div className="mobile-search-grow">
+              <StockSearchBar
+                searchTerm={searchTerm}
+                onSearchChange={onSearchChange}
+              />
+            </div>
+            <button
+              type="button"
+              className="mobile-filters-toggle"
+              onClick={() => setShowFilters(v => !v)}
+              aria-expanded={showFilters}
+            >
+              Filters
+            </button>
           </div>
+
+          <div className="mobile-sort-row" role="tablist" aria-label="Sort stocks">
+            {mobileSortOptions.map(opt => {
+              const active = sortKey === opt.key;
+              const icon = active ? (ascending ? '▲' : '▼') : '';
+              return (
+                <button
+                  key={opt.key}
+                  type="button"
+                  className={`sort-chip ${active ? 'active' : ''}`}
+                  onClick={() => onSort(opt.key)}
+                  role="tab"
+                  aria-selected={active}
+                >
+                  <span className="sort-chip-label">{opt.label}</span>
+                  {icon && <span className="sort-chip-icon">{icon}</span>}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mobile-results-row">
+            <span className="mobile-results-text">
+              Showing {displayedStocks.length}{typeof totalCount === 'number' ? ` / ${totalCount}` : ''}
+            </span>
+            {(selectedSector !== 'all' || selectedIndustry !== 'all' || searchTerm.trim().length > 0) && (
+              <button
+                type="button"
+                className="mobile-clear-btn"
+                onClick={() => {
+                  onSearchChange('');
+                  handleSectorChange('all');
+                  onIndustryChange('all');
+                }}
+              >
+                Clear
+              </button>
+            )}
+          </div>
+
+          {showFilters && (
+            <div className="mobile-filters-row">
+              <CustomDropdown
+                value={selectedSector}
+                onChange={handleSectorChange}
+                options={sectorOptions}
+                className="sector-filter"
+                ariaLabel="Filter by sector"
+                placeholder="All Sectors"
+              />
+              <CustomDropdown
+                value={selectedIndustry}
+                onChange={onIndustryChange}
+                options={industryOptions}
+                className="industry-filter"
+                ariaLabel="Filter by industry"
+                placeholder="All Industries"
+              />
+            </div>
+          )}
         </div>
       </div>
 
@@ -247,6 +345,23 @@ export const AllStocksSection = React.memo(function AllStocksSection({
               <span>All stocks are displayed</span>
             </div>
           )}
+
+          {/* Mobile: infinite loading sentinel + fallback button */}
+          <div className="lg:hidden">
+            <div ref={sentinelRef} style={{ height: 1 }} />
+            {hasMore && onLoadMore && (
+              <div className="mobile-load-more">
+                <button
+                  type="button"
+                  className="mobile-load-more-btn"
+                  onClick={onLoadMore}
+                  disabled={isLoadingMore}
+                >
+                  {isLoadingMore ? 'Loading…' : 'Load more'}
+                </button>
+              </div>
+            )}
+          </div>
         </>
       )}
     </section>

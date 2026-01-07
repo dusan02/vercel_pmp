@@ -21,9 +21,10 @@ export const StockCardMobile = memo(({
   const formattedPrice = useMemo(() => formatPrice(stock.currentPrice), [stock.currentPrice]);
   const formattedPercentChange = useMemo(() => formatPercent(stock.percentChange), [stock.percentChange]);
   const isPositive = stock.percentChange >= 0;
+  const hasValidPrice = stock.currentPrice > 0;
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-3 mb-2 active:bg-gray-50 transition-colors">
+    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-3 active:bg-gray-50 dark:active:bg-gray-800 transition-colors">
       <div className="flex items-center gap-3">
         {/* Logo */}
         <div className="flex-shrink-0">
@@ -37,12 +38,14 @@ export const StockCardMobile = memo(({
         
         {/* Ticker */}
         <div className="flex-1 min-w-0">
-          <h3 className="font-bold text-base text-gray-900">{stock.ticker}</h3>
+          <h3 className="font-bold text-base text-gray-900 dark:text-gray-100">{stock.ticker}</h3>
         </div>
 
         {/* Price - fixed width for alignment */}
         <div className="text-right flex-shrink-0 w-20">
-          <div className="font-mono font-bold text-gray-900 text-base">${formattedPrice}</div>
+          <div className="font-mono font-bold text-gray-900 dark:text-gray-100 text-base">
+            {hasValidPrice ? `$${formattedPrice}` : '—'}
+          </div>
         </div>
 
         {/* % Change - fixed width for alignment, remove duplicate % */}
