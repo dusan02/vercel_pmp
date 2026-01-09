@@ -103,8 +103,15 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
 
     updatePosition();
 
-    // Close on scroll (any scroll container) to avoid a detached menu.
-    const handleAnyScroll = () => close();
+    // Close on scroll OUTSIDE the menu (so users can scroll the menu itself).
+    // Note: scroll events don't bubble, but they DO get captured. With `capture: true`,
+    // this handler runs for scrolls in any scroll container (including the menu),
+    // so we must ignore scrolls that originate inside the dropdown menu.
+    const handleAnyScroll = (event: Event) => {
+      const target = event.target as Node | null;
+      if (target && menuRef.current && menuRef.current.contains(target)) return;
+      close();
+    };
     window.addEventListener('resize', updatePosition);
     window.addEventListener('scroll', handleAnyScroll, true);
 
@@ -126,7 +133,11 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
       ref={menuRef}
       className={`custom-dropdown-menu custom-dropdown-menu--portal`}
       role="listbox"
-      style={portalStyle}
+      style={{
+        ...portalStyle,
+        WebkitOverflowScrolling: 'touch',
+        overscrollBehavior: 'contain',
+      }}
     >
       {options.map((option) => (
         <button
