@@ -49,7 +49,9 @@ export interface DailyIntegritySummary {
   runAt: string;
   etDate: string;
   session: 'pre' | 'live' | 'after' | 'closed';
+  expectedPrevCloseSource: 'calendar' | 'db_mode';
   expectedPrevCloseDateET: string; // YYYY-MM-DD
+  expectedPrevCloseDateETCalendar: string; // YYYY-MM-DD (debug)
   totals: {
     tickers: number;
     tickersWithPrice: number;
@@ -133,12 +135,6 @@ export async function runDailyIntegrityCheck(
   const etDate = getDateET(etNow);
   const session = detectSession(etNow);
 
-  // Expected previous close trading day (ET calendar, weekend/holiday-aware).
-  // IMPORTANT: Anchor to ET midnight of the current ET day to avoid environment/time-of-day quirks.
-  // This ensures "today" is derived from ET calendar date, not from server locale/offset at runtime.
-  const expectedPrevCloseDate = getLastTradingDay(createETDate(etDate));
-  const expectedPrevCloseDateET = getDateET(expectedPrevCloseDate);
-
   // Regular close map for TODAY ET (usually empty at ~05:00 ET, but harmless and keeps parity with app logic).
   const todayDateObj = createETDate(etDate);
   const dailyRefs = await prisma.dailyRef.findMany({
@@ -173,6 +169,55 @@ export async function runDailyIntegrityCheck(
   const byCode = ensureByCode();
   const symbolsWithIssues = new Set<string>();
   const tickersWithPrice = tickers.filter(t => (t.lastPrice ?? 0) > 0);
+
+  // Expected previous close trading day
+  //
+  // Primary: calendar (ET) via getLastTradingDay
+  // Fallback: DB mode (most common latestPrevCloseDate across priced tickers)
+  //
+  // Why: we observed rare env-dependent drift on server (expected date jumping back multiple days).
+  // This makes the check robust and also surfaces which source was used.
+  const expectedPrevCloseDateCalendar = getLastTradingDay(createETDate(etDate));
+  const expectedPrevCloseDateETCalendar = getDateET(expectedPrevCloseDateCalendar);
+
+  const prevCloseDateCounts = new Map<string, number>();
+  for (const t of tickers) {
+    const price = t.lastPrice ?? 0;
+    const prevClose = t.latestPrevClose ?? 0;
+    const d = t.latestPrevCloseDate;
+    if (price > 0 && prevClose > 0 && d) {
+      const ymd = getDateET(d);
+      prevCloseDateCounts.set(ymd, (prevCloseDateCounts.get(ymd) ?? 0) + 1);
+    }
+  }
+
+  let expectedPrevCloseSource: DailyIntegritySummary['expectedPrevCloseSource'] = 'calendar';
+  let expectedPrevCloseDateET = expectedPrevCloseDateETCalendar;
+  let expectedPrevCloseDate = expectedPrevCloseDateCalendar;
+
+  if (prevCloseDateCounts.size > 0) {
+    let bestYMD = '';
+    let bestCount = 0;
+    for (const [ymd, count] of prevCloseDateCounts.entries()) {
+      if (count > bestCount) {
+        bestYMD = ymd;
+        bestCount = count;
+      }
+    }
+
+    // If DB-mode disagrees with calendar by >=2 days, trust DB-mode (more realistic than a calendar jump).
+    if (bestYMD && bestYMD !== expectedPrevCloseDateETCalendar) {
+      const calMs = createETDate(expectedPrevCloseDateETCalendar).getTime();
+      const dbMs = createETDate(bestYMD).getTime();
+      const dayDiff = Math.abs(calMs - dbMs) / (24 * 60 * 60 * 1000);
+
+      if (dayDiff >= 2) {
+        expectedPrevCloseSource = 'db_mode';
+        expectedPrevCloseDateET = bestYMD;
+        expectedPrevCloseDate = createETDate(bestYMD);
+      }
+    }
+  }
 
   // Track candidates for safe auto-fix
   const missingPrevCloseSymbols: string[] = [];
@@ -366,7 +411,9 @@ export async function runDailyIntegrityCheck(
     runAt: new Date().toISOString(),
     etDate,
     session,
+    expectedPrevCloseSource,
     expectedPrevCloseDateET,
+    expectedPrevCloseDateETCalendar,
     totals: {
       tickers: tickers.length,
       tickersWithPrice: tickersWithPrice.length,
