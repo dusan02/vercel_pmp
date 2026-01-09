@@ -58,6 +58,10 @@ const StructuredData = dynamic(
   () => import('@/components/StructuredData').then((mod) => mod.StructuredData),
   { ssr: true }
 );
+const ChunkLoadRecovery = dynamic(
+  () => import('@/components/ChunkLoadRecovery').then((mod) => mod.ChunkLoadRecovery),
+  { ssr: false, loading: () => null }
+);
 
 // Modern Mobile Components
 const MobileApp = dynamic(
@@ -257,6 +261,7 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
 
   return (
     <>
+      <ChunkLoadRecovery />
       {/* Modern Mobile Layout */}
       {(isMounted && !isDesktop) && (
         <MobileApp>

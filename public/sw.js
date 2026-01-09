@@ -1,5 +1,6 @@
 // Version management - increment on layout/structure changes
-const CACHE_VERSION = "2.0.0";
+// Bump this whenever we ship caching changes to ensure clients drop stale caches
+const CACHE_VERSION = "2.0.1";
 const CACHE_NAME = `premarketprice-v${CACHE_VERSION}`;
 const STATIC_CACHE = `premarketprice-static-v${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `premarketprice-dynamic-v${CACHE_VERSION}`;
@@ -83,6 +84,22 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // CRITICAL: Never cache Next.js build assets.
+  // Safari is especially prone to serving stale HTML + missing chunks after deploy.
+  if (url.origin === location.origin && url.pathname.startsWith("/_next/")) {
+    event.respondWith(fetch(request));
+    return;
+  }
+
+  // CRITICAL: For navigations (HTML documents), always go network-first and don't cache.
+  // This avoids returning old HTML that references removed chunks after deploy.
+  if (request.mode === "navigate" || request.destination === "document") {
+    event.respondWith(
+      fetch(request, { cache: "no-store" }).catch(() => caches.match("/offline.html"))
+    );
+    return;
+  }
+
   // Handle API requests
   if (url.pathname.startsWith("/api/")) {
     event.respondWith(handleApiRequest(request));
@@ -149,6 +166,12 @@ async function handleApiRequest(request) {
 // Handle static file requests with cache-first strategy
 async function handleStaticRequest(request) {
   try {
+    const url = new URL(request.url);
+    // Extra safety: don't cache Next assets even if we get here.
+    if (url.pathname.startsWith("/_next/")) {
+      return fetch(request);
+    }
+
     // Try cache first
     const cachedResponse = await caches.match(request);
     if (cachedResponse) {
