@@ -272,7 +272,9 @@ const EarningsEmpty = () => (
     <EarningsHeader />
     <div className="text-center p-8 text-gray-900 dark:text-gray-100">
       <p className="text-base md:text-lg font-normal">
-        No major company earnings scheduled for today. For the full list, visit{' '}
+        No major company earnings scheduled for today.
+        <br />
+        For the full list, visit{' '}
         <a
           href="https://www.earningstable.com"
           target="_blank"

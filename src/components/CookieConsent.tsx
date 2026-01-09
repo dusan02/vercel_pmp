@@ -89,7 +89,16 @@ export default function CookieConsent({ onAccept }: CookieConsentProps) {
   if (!isVisible) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 p-4" style={{ backgroundColor: 'var(--clr-bg)', borderTop: '1px solid var(--clr-border)', boxShadow: '0 -2px 8px rgba(0, 0, 0, 0.05)' }}>
+    <div
+      className="fixed left-0 right-0 z-[2000] p-4"
+      style={{
+        // Keep the banner ABOVE the mobile bottom tab bar and safe-area.
+        bottom: 'calc(72px + env(safe-area-inset-bottom))',
+        backgroundColor: 'var(--clr-bg)',
+        borderTop: '1px solid var(--clr-border)',
+        boxShadow: '0 -2px 8px rgba(0, 0, 0, 0.05)',
+      }}
+    >
       <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex-1">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">

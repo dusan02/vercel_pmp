@@ -47,6 +47,13 @@ export const PortfolioCardMobile = memo(({
           </h3>
         </div>
 
+        {/* # (Quantity) */}
+        <div className="flex-shrink-0 w-10 text-right">
+          <div className="text-xs font-semibold text-gray-700 dark:text-gray-300 tabular-nums">
+            {quantity}
+          </div>
+        </div>
+
         {/* Price - fixed width for alignment */}
         <div className="text-right flex-shrink-0 w-24">
           <div className="font-mono font-semibold text-gray-900 dark:text-gray-100 text-sm tabular-nums">

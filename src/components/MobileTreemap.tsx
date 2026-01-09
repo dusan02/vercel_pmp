@@ -19,7 +19,7 @@ interface MobileTreemapProps {
 }
 
 // Maximum tiles for mobile (UX + performance)
-const MAX_MOBILE_TILES = 36;
+const MAX_MOBILE_TILES = 84;
 
 /**
  * TRUE MOBILE HEATMAP - Treemap Grid Layout
@@ -66,12 +66,23 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     return colorScale(value);
   }, [metric, colorScale]);
 
-  // Determine size bucket based on rank (NOT market cap value)
-  const getSizeBucket = useCallback((index: number): 'mega' | 'large' | 'small' => {
-    if (index < 3) return 'mega';      // Top 3: 2x2
-    if (index < 15) return 'large';     // Top 6-15: 2x1
-    return 'small';                     // Rest: 1x1
-  }, []);
+  // Determine size bucket based on market cap (tile area more closely reflects company size)
+  const getSizeBucket = useCallback((company: CompanyNode, index: number): 'mega' | 'large' | 'small' => {
+    const mc = company.marketCap || 0;
+    const top = sortedData[0]?.marketCap || 0;
+
+    if (top <= 0) {
+      // Fallback: rank-based (keeps layout stable if market caps are missing)
+      if (index < 3) return 'mega';
+      if (index < 15) return 'large';
+      return 'small';
+    }
+
+    // Tiering by relative market cap (stable + readable on small screens)
+    if (mc >= top * 0.2) return 'mega';
+    if (mc >= top * 0.05) return 'large';
+    return 'small';
+  }, [sortedData]);
 
   // Long press handler for favorites
   const longPressTimerRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
@@ -119,7 +130,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
 
   // Render company tile
   const renderTile = useCallback((company: CompanyNode, index: number) => {
-    const size = getSizeBucket(index);
+    const size = getSizeBucket(company, index);
     const color = getColor(company);
     const value = metric === 'percent' ? (company.changePercent ?? 0) : (company.marketCapDiff ?? 0);
     const displayValue = metric === 'percent'
@@ -130,9 +141,10 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
 
     // Grid classes based on size
     const gridClasses = {
-      mega: 'col-span-2 row-span-2',   // 2x2
+      // 3-column grid gives better density while still letting big names dominate
+      mega: 'col-span-3 row-span-2',   // 3x2
       large: 'col-span-2 row-span-1',  // 2x1
-      small: 'col-span-1 row-span-1', // 1x1
+      small: 'col-span-1 row-span-1',  // 1x1
     }[size];
 
     // Text size based on tile size - professional financial typography
@@ -281,8 +293,8 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
         className="mobile-treemap-grid" 
         style={{ 
           display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gridAutoRows: 'minmax(72px, auto)',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gridAutoRows: 'minmax(56px, auto)',
           gap: '2px',
           background: '#000',
           padding: '2px',

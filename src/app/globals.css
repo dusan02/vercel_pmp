@@ -4611,7 +4611,7 @@ h2:hover .section-icon {
   top: calc(100% + 4px);
   left: 0;
   right: 0;
-  z-index: 1000;
+  z-index: 3000;
   background: var(--clr-bg);
   border: 2px solid var(--clr-border);
   border-radius: 8px;
@@ -6618,12 +6618,15 @@ table td strong {
 .mobile-view-portfolio,
 .mobile-view-favorites,
 .mobile-view-all-stocks {
+  /* Use more of the available width on mobile */
+  padding: 0.5rem;
   padding-bottom: 2rem;
   /* REMOVED: overflow-y: auto - scroll only in .mobile-main-content to avoid nested scrolling */
 }
 
 .mobile-view-earnings {
-  padding: 1rem;
+  /* Use more of the available width on mobile */
+  padding: 0.5rem;
   /* REMOVED: overflow-y: auto - scroll only in .mobile-main-content to avoid nested scrolling */
 }
 
@@ -6631,18 +6634,20 @@ table td strong {
 .mobile-filters {
   position: sticky;
   top: 0;
-  z-index: 20;
+  z-index: 2000;
   background: var(--clr-surface);
   border-bottom: 1px solid var(--clr-border);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   padding: 0.75rem 1rem;
+  overflow: visible;
 }
 
 .mobile-filters-container {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  overflow: visible;
 }
 
 /* Mobile All Stocks: search + sort + results */
