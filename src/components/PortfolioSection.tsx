@@ -282,6 +282,18 @@ export function PortfolioSection({
           </div>
         ) : (
           <div className="w-full bg-white dark:bg-gray-900 border-0 rounded-none overflow-hidden divide-y divide-gray-200 dark:divide-gray-800">
+            {/* Header row (mobile): align with PortfolioCardMobile grid */}
+            <div className="px-3 py-1.5 bg-slate-50/80 dark:bg-white/5 text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+              <div className="grid items-center gap-x-2 min-w-0 [grid-template-columns:40px_minmax(56px,1fr)_56px_80px_56px_44px]">
+                <div>Logo</div>
+                <div>Ticker</div>
+                <div className="text-center">#</div>
+                <div className="text-right">Price</div>
+                <div className="text-right">%</div>
+                <div className="text-right">X</div>
+              </div>
+            </div>
+
             {portfolioStocks.map((stock, index) => {
               const quantity = portfolioHoldings[stock.ticker] || 0;
 
@@ -382,6 +394,15 @@ export function PortfolioSection({
                     minValue={1}
                     className="w-24 px-2 py-2 text-[16px] rounded-md bg-transparent border border-gray-300/70 dark:border-slate-600/80 font-mono tabular-nums"
                   />
+                  <button
+                    type="button"
+                    onClick={closeDetails}
+                    className="px-3 py-2 rounded-md bg-green-600 text-white text-sm font-semibold"
+                    aria-label="Confirm quantity"
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
+                  >
+                    OK
+                  </button>
                   <button
                     type="button"
                     onClick={() => {
