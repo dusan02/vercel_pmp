@@ -6,12 +6,10 @@ import React from 'react';
 import Link from 'next/link';
 import { SortKey } from '@/hooks/useSortableData';
 import { SectionIcon } from './SectionIcon';
-import { formatBillions } from '@/lib/utils/format';
 import { StockTableRow } from './StockTableRow';
 import { StockCardMobile } from './StockCardMobile';
 import { SectionLoader } from './SectionLoader';
 import { StockData } from '@/lib/types';
-import { LoadingStates } from '@/lib/types';
 
 interface FavoritesSectionProps {
   favoriteStocks: StockData[];
@@ -85,6 +83,35 @@ export function FavoritesSection({
             <SectionIcon type="star" size={20} className="section-icon" />
             <span>Favorites</span>
           </h2>
+        </div>
+      </div>
+
+      {/* Mobile: Sort chips */}
+      <div className="lg:hidden px-3 pb-2">
+        <div className="mobile-sort-row" role="tablist" aria-label="Sort favorites">
+          {[
+            { key: 'ticker' as SortKey, label: 'Ticker' },
+            { key: 'currentPrice' as SortKey, label: 'Price' },
+            { key: 'percentChange' as SortKey, label: '% Change' },
+            { key: 'marketCap' as SortKey, label: 'Mkt Cap' },
+          ].map((opt) => {
+            const active = sortKey === opt.key;
+            const icon = active ? (ascending ? '▲' : '▼') : '';
+            return (
+              <button
+                key={opt.key}
+                type="button"
+                className={`sort-chip ${active ? 'active' : ''}`}
+                onClick={() => onSort(opt.key)}
+                role="tab"
+                aria-selected={active}
+                style={{ WebkitTapHighlightColor: 'transparent' }}
+              >
+                <span className="sort-chip-label">{opt.label}</span>
+                {icon && <span className="sort-chip-icon">{icon}</span>}
+              </button>
+            );
+          })}
         </div>
       </div>
 

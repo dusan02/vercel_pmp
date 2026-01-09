@@ -231,8 +231,8 @@ function useEarningsData(date: string) {
 
 const EarningsHeader = () => (
   <div className="section-header">
-    <div className="header-main">
-      <h2>
+    <div className="header-main w-full flex justify-center">
+      <h2 className="w-full flex items-center justify-center text-center gap-2">
         <SectionIcon type="calendar" size={20} className="section-icon" />
         <span>Today&apos;s Earnings</span>
       </h2>

@@ -220,14 +220,19 @@ export type TreemapNode = HierarchyNode<HierarchyData> & {
  * Komponent pre Legendu.
  * Exportovaný, aby sa mohol použiť aj v page komponente.
  */
-export const HeatmapLegend: React.FC<{ timeframe: 'day' | 'week' | 'month' }> = ({ timeframe }) => {
-  const colorScale = createHeatmapColorScale(timeframe);
+export const HeatmapLegend: React.FC<{ timeframe: 'day' | 'week' | 'month'; metric?: HeatmapMetric }> = ({ timeframe, metric = 'percent' }) => {
+  const colorScale = createHeatmapColorScale(timeframe, metric === 'mcap' ? 'mcap' : 'percent');
   const scales = {
     day: [-5, -3, -1, 0, 1, 3, 5],
     week: [-10, -6, -3, 0, 3, 6, 10],
     month: [-20, -12, -6, 0, 6, 12, 20],
   };
-  const points = scales[timeframe];
+  const scalesB = {
+    day: [-50, -20, -10, 0, 10, 20, 50],
+    week: [-150, -60, -30, 0, 30, 60, 150],
+    month: [-300, -120, -60, 0, 60, 120, 300],
+  };
+  const points = metric === 'mcap' ? scalesB[timeframe] : scales[timeframe];
 
   return (
     <div className="flex items-center bg-gray-900 bg-opacity-70 px-3 py-1.5 rounded-lg">
@@ -243,7 +248,9 @@ export const HeatmapLegend: React.FC<{ timeframe: 'day' | 'week' | 'month' }> = 
                 borderRight: p === points[points.length - 1] ? '1px solid #4b5563' : 'none',
               }}
             />
-            <span className="text-white text-[10px] mt-0.5 leading-tight">{p}%</span>
+            <span className="text-white text-[10px] mt-0.5 leading-tight">
+              {metric === 'mcap' ? `${p}B$` : `${p}%`}
+            </span>
           </div>
         ))}
       </div>
@@ -543,7 +550,7 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
 
 
   // Farebná škála pre aktuálny timeframe
-  const colorScale = useMemo(() => createHeatmapColorScale(timeframe), [timeframe]);
+  const colorScale = useMemo(() => createHeatmapColorScale(timeframe, metric === 'mcap' ? 'mcap' : 'percent'), [timeframe, metric]);
 
   // Handler pre pohyb myši (pre pozíciu tooltipu - globálne súradnice pre fixed tooltip)
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -1048,7 +1055,8 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
             const tileWidth = x1 - x0;
             const tileHeight = y1 - y0;
             const company = leaf.data.meta.companyData;
-            const tileColor = colorScale(company.changePercent);
+            const v = metric === 'mcap' ? ((company.marketCapDiff ?? 0) / 1e9) : company.changePercent;
+            const tileColor = colorScale(v);
 
             // Skutočné rozmery dlaždice v pixeloch
             const scaledWidth = tileWidth * scale;

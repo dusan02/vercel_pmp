@@ -4,6 +4,7 @@ import React, { useMemo, useCallback, useEffect, useRef, useState } from 'react'
 import { CompanyNode } from './MarketHeatmap';
 import { formatPrice, formatPercent, formatMarketCap, formatMarketCapDiff } from '@/lib/utils/format';
 import { createHeatmapColorScale } from '@/lib/utils/heatmapColors';
+import CompanyLogo from './CompanyLogo';
 import { HeatmapMetricButtons } from './HeatmapMetricButtons';
 import { HeatmapLegend } from './MarketHeatmap';
 import { hierarchy, treemap, treemapSquarify } from 'd3-hierarchy';
@@ -91,11 +92,13 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
   }, [data, metric]);
 
   // Color scale
-  const colorScale = useMemo(() => createHeatmapColorScale(timeframe), [timeframe]);
+  const colorScale = useMemo(() => createHeatmapColorScale(timeframe, metric === 'mcap' ? 'mcap' : 'percent'), [timeframe, metric]);
 
   // Get color for company
   const getColor = useCallback((company: CompanyNode): string => {
-    const value = metric === 'percent' ? company.changePercent : (company.marketCapDiff ?? 0);
+    const value = metric === 'percent'
+      ? company.changePercent
+      : ((company.marketCapDiff ?? 0) / 1e9);
     if (value === null || value === undefined) return '#1a1a1a';
     return colorScale(value);
   }, [metric, colorScale]);
@@ -446,7 +449,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
 
         <div style={{ flex: 1, minWidth: 0, overflowX: 'auto', WebkitOverflowScrolling: 'touch' as any }}>
           <div style={{ transform: 'scale(0.82)', transformOrigin: 'left center', width: 'max-content' }}>
-            <HeatmapLegend timeframe={timeframe} />
+            <HeatmapLegend timeframe={timeframe} metric={metric} />
           </div>
         </div>
       </div>
@@ -524,12 +527,17 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
             }}
           >
             <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <div className="text-sm font-semibold truncate">
-                  {selectedCompany.symbol}
+              <div className="min-w-0 flex items-center gap-2">
+                <div className="flex-shrink-0">
+                  <CompanyLogo ticker={selectedCompany.symbol} size={32} />
                 </div>
-                <div className="text-[11px] opacity-75 truncate">
-                  {selectedCompany.sector} · {selectedCompany.industry}
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold truncate">
+                    {selectedCompany.symbol}
+                  </div>
+                  <div className="text-[11px] opacity-75 truncate">
+                    {selectedCompany.sector} · {selectedCompany.industry}
+                  </div>
                 </div>
               </div>
 
@@ -572,14 +580,22 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
               </div>
 
               <div className="opacity-70">Change (day):</div>
-              <div className="text-right font-semibold font-mono tabular-nums">
+              <div
+                className={`text-right font-semibold font-mono tabular-nums ${
+                  (selectedCompany.changePercent ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                }`}
+              >
                 {formatPercent(selectedCompany.changePercent ?? 0)}
               </div>
 
               {metric === 'mcap' && (
                 <>
                   <div className="opacity-70">Mcap Δ (day):</div>
-                  <div className="text-right font-semibold font-mono tabular-nums">
+                  <div
+                    className={`text-right font-semibold font-mono tabular-nums ${
+                      (selectedCompany.marketCapDiff ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}
+                  >
                     {formatMarketCapDiff(selectedCompany.marketCapDiff ?? 0)}
                   </div>
                 </>

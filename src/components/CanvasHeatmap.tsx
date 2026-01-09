@@ -118,7 +118,7 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
         ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, width, height);
 
-        const colorScale = createHeatmapColorScale(timeframe);
+        const colorScale = createHeatmapColorScale(timeframe, metric === 'mcap' ? 'mcap' : 'percent');
 
         // Draw leaves
         leaves.forEach(leaf => {
@@ -134,7 +134,8 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
             if (tileX + tileW < 0 || tileX > width || tileY + tileH < 0 || tileY > height) return;
 
             // Fill
-            ctx.fillStyle = colorScale(company.changePercent);
+            const v = metric === 'mcap' ? ((company.marketCapDiff ?? 0) / 1e9) : company.changePercent;
+            ctx.fillStyle = colorScale(v);
             ctx.fillRect(tileX, tileY, tileW, tileH);
 
             // Border - thinner border between companies within sectors
