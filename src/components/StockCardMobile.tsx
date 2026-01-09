@@ -2,7 +2,7 @@
 
 import React, { memo, useMemo } from 'react';
 import { StockData } from '@/lib/types';
-import { formatPrice, formatPercent } from '@/lib/utils/format';
+import { formatPrice, formatPercent, formatMarketCap, formatMarketCapDiff } from '@/lib/utils/format';
 import CompanyLogo from './CompanyLogo';
 
 interface StockCardMobileProps {
@@ -10,18 +10,23 @@ interface StockCardMobileProps {
   isFavorite: boolean;
   onToggleFavorite: () => void;
   priority?: boolean;
+  displayMode?: 'default' | 'capDiff';
 }
 
 export const StockCardMobile = memo(({
   stock,
   isFavorite,
   onToggleFavorite,
-  priority = false
+  priority = false,
+  displayMode = 'default'
 }: StockCardMobileProps) => {
   const formattedPrice = useMemo(() => formatPrice(stock.currentPrice), [stock.currentPrice]);
   const formattedPercentChange = useMemo(() => formatPercent(stock.percentChange), [stock.percentChange]);
   const isPositive = stock.percentChange >= 0;
   const hasValidPrice = stock.currentPrice > 0;
+  const capDiffIsPositive = (stock.marketCapDiff ?? 0) >= 0;
+  const formattedCap = useMemo(() => formatMarketCap(stock.marketCap), [stock.marketCap]);
+  const formattedCapDiff = useMemo(() => formatMarketCapDiff(stock.marketCapDiff), [stock.marketCapDiff]);
 
   return (
     <div className="px-3 py-2 active:bg-gray-50 dark:active:bg-gray-800 transition-colors">
@@ -43,17 +48,34 @@ export const StockCardMobile = memo(({
           </h3>
         </div>
 
-        {/* Price - fixed width for alignment */}
-        <div className="text-right flex-shrink-0 w-24">
-          <div className="font-mono font-semibold text-gray-900 dark:text-gray-100 text-sm tabular-nums">
-            {hasValidPrice ? `$${formattedPrice}` : '—'}
-          </div>
-        </div>
+        {displayMode === 'capDiff' ? (
+          <>
+            {/* Market Cap */}
+            <div className="text-right flex-shrink-0 w-[72px]">
+              <div className="font-mono font-semibold text-gray-900 dark:text-gray-100 text-sm tabular-nums">
+                {stock.marketCap ? `${formattedCap}` : '—'}
+              </div>
+            </div>
+            {/* Cap Diff */}
+            <div className={`text-xs font-semibold flex-shrink-0 w-[72px] text-right tabular-nums ${capDiffIsPositive ? 'text-green-600' : 'text-red-600'}`}>
+              {stock.marketCapDiff ? formattedCapDiff : '—'}
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Price - fixed width for alignment */}
+            <div className="text-right flex-shrink-0 w-24">
+              <div className="font-mono font-semibold text-gray-900 dark:text-gray-100 text-sm tabular-nums">
+                {hasValidPrice ? `$${formattedPrice}` : '—'}
+              </div>
+            </div>
 
-        {/* % Change - fixed width for alignment, remove duplicate % */}
-        <div className={`text-xs font-semibold flex-shrink-0 w-14 text-right tabular-nums ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-          {formattedPercentChange}
-        </div>
+            {/* % Change - fixed width for alignment */}
+            <div className={`text-xs font-semibold flex-shrink-0 w-14 text-right tabular-nums ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+              {formattedPercentChange}
+            </div>
+          </>
+        )}
 
         {/* Action - Favorite button */}
         <button

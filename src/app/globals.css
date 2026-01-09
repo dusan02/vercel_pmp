@@ -4149,6 +4149,13 @@ table td strong {
   flex-wrap: nowrap;
 }
 
+/* IMPORTANT: Ensure Tailwind's `hidden` utility always wins.
+   Without this, custom component styles (e.g. `.section-header { display:flex }`)
+   can override `hidden` and cause duplicate UI blocks on mobile. */
+.hidden {
+  display: none !important;
+}
+
 .header-search-inline {
   display: flex;
   align-items: center;
@@ -6711,7 +6718,8 @@ table td strong {
   gap: 0.25rem;
   height: 32px;
   padding: 0 0.6rem;
-  border-radius: 999px;
+  /* More "square" chip with rounded corners (not pill) */
+  border-radius: 0.625rem;
   border: 1px solid var(--clr-border);
   background: var(--clr-surface);
   color: var(--clr-text);

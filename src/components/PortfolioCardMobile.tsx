@@ -49,7 +49,8 @@ export const PortfolioCardMobile = memo(({
         </div>
 
         {/* # (Quantity) */}
-        <div className="flex-shrink-0 w-12">
+        {/* Enough width for up to 4 digits (9999) without clipping */}
+        <div className="flex-shrink-0 w-16">
           <PortfolioQuantityInput
             value={quantity || 1}
             onChange={(v) => onUpdateQuantity(stock.ticker, v || 1)}

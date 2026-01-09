@@ -189,10 +189,12 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     const isFav = isFavorite ? isFavorite(company.symbol) : false;
 
     // Show less text on tiny rectangles to avoid visual noise.
+    // Thresholds are AREA-based, so when the user zooms in / rotates to landscape
+    // (tiles become larger), labels naturally appear; zooming out hides them again.
     const area = w * h;
-    const showTicker = area >= 520; // tiny tiles show nothing; landscape will naturally increase area
-    const showValue = area >= 1800 && w >= 54 && h >= 26;
-    const showPrice = metric === 'percent' && !!company.currentPrice && area >= 2600 && w >= 70 && h >= 34;
+    const showTicker = area >= 360;
+    const showValue = area >= 900 && w >= 44 && h >= 22; // % change OR B$ diff (based on metric)
+    const showPrice = metric === 'percent' && !!company.currentPrice && area >= 1400 && w >= 60 && h >= 30;
 
     const tickerClass =
       w >= 110 && h >= 70 ? 'text-xl font-extrabold tracking-tight' :
