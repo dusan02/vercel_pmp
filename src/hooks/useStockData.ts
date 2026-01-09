@@ -108,9 +108,13 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
   const fetchAndMergeStocks = useCallback(async (
     url: string, 
     loadingKey: keyof LoadingStates, 
-    logMessage: string
+    logMessage: string,
+    options: { showLoading?: boolean } = {}
   ) => {
-    setLoadingStates(prev => ({ ...prev, [loadingKey]: true }));
+    const showLoading = options.showLoading !== false;
+    if (showLoading) {
+      setLoadingStates(prev => ({ ...prev, [loadingKey]: true }));
+    }
     try {
       console.log(`🚀 ${logMessage}`);
       
@@ -120,17 +124,22 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
         const result = await response.json();
         if (result.data && result.data.length > 0) {
           console.log(`✅ Loaded ${result.data.length} stocks (${logMessage})`);
+          // UPSERT merge: update existing tickers in-place (prevents stale values) + add missing
           setStockData(prev => {
-            const existingTickers = new Set(prev.map(s => s.ticker));
-            const newStocks = result.data.filter((s: StockData) => !existingTickers.has(s.ticker));
-            return [...prev, ...newStocks];
+            const map = new Map(prev.map(s => [s.ticker, s]));
+            for (const s of result.data as StockData[]) {
+              map.set(s.ticker, s);
+            }
+            return Array.from(map.values());
           });
         }
       }
     } catch (error) {
       console.error(`Error loading stocks (${logMessage}):`, error);
     } finally {
-      setLoadingStates(prev => ({ ...prev, [loadingKey]: false }));
+      if (showLoading) {
+        setLoadingStates(prev => ({ ...prev, [loadingKey]: false }));
+      }
     }
   }, []);
 
@@ -163,10 +172,13 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
         const result = await response.json();
         if (result.data && result.data.length > 0) {
           console.log(`✅ Loaded ${result.data.length} favorite stocks`);
+          // UPSERT merge for favorites: keeps prices fresh without reordering the whole list
           setStockData(prev => {
-            const existingTickers = new Set(prev.map(s => s.ticker));
-            const newStocks = result.data.filter((s: StockData) => !existingTickers.has(s.ticker));
-            return [...prev, ...newStocks];
+            const map = new Map(prev.map(s => [s.ticker, s]));
+            for (const s of result.data as StockData[]) {
+              map.set(s.ticker, s);
+            }
+            return Array.from(map.values());
           });
         }
       }
@@ -325,9 +337,14 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
       // Start auto-refresh after 30 seconds from initial load
       refreshInterval = setInterval(() => {
         console.log('🔄 Auto-refreshing stock data...');
-        // Refresh favorites and top 50 stocks (silent refresh - no loading state)
+        // Refresh favorites and top 50 stocks (SILENT refresh - no loading state)
         fetchFavoritesData(false);
-        fetchTop50StocksData();
+        fetchAndMergeStocks(
+          `/api/stocks?tickers=${getProjectTickers(getProjectName(), 50).join(',')}&project=${getProjectName()}&limit=50&t=${Date.now()}`,
+          'top50Stocks',
+          'Refreshing top 50 stocks data',
+          { showLoading: false }
+        );
       }, 30000); // 30 seconds - same as heatmap
     }, 30000);
 
