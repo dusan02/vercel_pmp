@@ -2161,6 +2161,10 @@
 :root {
   --clr-bg: #ffffff;
   --clr-surface: #ffffff;
+  /* Hover/active surfaces (needed because --clr-bg and --clr-surface are both white in light mode) */
+  --clr-bg-hover: #f3f4f6;
+  --clr-surface-hover: #f3f4f6;
+  --clr-surface-active: #e5e7eb;
   --clr-border: #e5e7eb;
   /* Light border for internal elements (tables, inputs) */
   --clr-border-section: #d1d5db;
@@ -2187,6 +2191,9 @@
 .dark {
   --clr-bg: #0f172a;
   --clr-surface: #1e293b;
+  --clr-bg-hover: #111e33;
+  --clr-surface-hover: #334155;
+  --clr-surface-active: #475569;
   --clr-border: #334155;
   /* Light border for internal elements */
   --clr-border-section: #475569;
@@ -4624,7 +4631,17 @@ h2:hover .section-icon {
 }
 
 .custom-dropdown-option:hover {
-  background: var(--clr-surface);
+  background: var(--clr-surface-hover);
+}
+
+.custom-dropdown-option:active {
+  background: var(--clr-surface-active);
+}
+
+.custom-dropdown-option:focus-visible {
+  outline: 2px solid var(--clr-primary);
+  outline-offset: -2px;
+  background: var(--clr-surface-hover);
 }
 
 .custom-dropdown-option.selected {
