@@ -294,7 +294,13 @@ export const AllStocksSection = React.memo(function AllStocksSection({
                     stock={stock}
                     isFavorite={isFavorite(stock.ticker)}
                     onToggleFavorite={favoriteHandlers.get(stock.ticker) || (() => onToggleFavorite(stock.ticker))}
-                    displayMode={sortKey === 'marketCapDiff' ? 'capDiff' : 'default'}
+                    displayMode={
+                      sortKey === 'marketCapDiff'
+                        ? 'capDiff'
+                        : sortKey === 'marketCap'
+                          ? 'cap'
+                          : 'default'
+                    }
                     priority={index < 100}
                   />
                 ))}

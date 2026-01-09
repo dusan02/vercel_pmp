@@ -30,7 +30,7 @@ export const PortfolioCardMobile = memo(({
 
   return (
     <div className="px-3 py-2 active:bg-gray-50 dark:active:bg-gray-800 transition-colors">
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5 min-w-0">
         {/* Logo */}
         <div className="flex-shrink-0">
           <CompanyLogo 
@@ -41,9 +41,9 @@ export const PortfolioCardMobile = memo(({
           />
         </div>
         
-        {/* Ticker */}
-        <div className="flex-shrink-0 min-w-[48px]">
-          <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100 tracking-tight">
+        {/* Ticker (flexible so we never push the delete X off-screen) */}
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100 tracking-tight truncate">
             {stock.ticker}
           </h3>
         </div>
@@ -52,8 +52,9 @@ export const PortfolioCardMobile = memo(({
         {/* Enough width for up to 4 digits (9999) without clipping */}
         <div className="flex-shrink-0 w-16">
           <PortfolioQuantityInput
-            value={quantity || 1}
-            onChange={(v) => onUpdateQuantity(stock.ticker, v || 1)}
+            value={quantity}
+            onChange={(v) => onUpdateQuantity(stock.ticker, v)}
+            minValue={1}
             // iOS best practice: font-size >= 16px prevents Safari zoom on focus
             className="min-w-0 w-full px-1 py-1 text-[16px] rounded-md bg-transparent border border-gray-300/60 dark:border-slate-600/70"
           />

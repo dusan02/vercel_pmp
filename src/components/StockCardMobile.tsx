@@ -10,7 +10,7 @@ interface StockCardMobileProps {
   isFavorite: boolean;
   onToggleFavorite: () => void;
   priority?: boolean;
-  displayMode?: 'default' | 'capDiff';
+  displayMode?: 'default' | 'capDiff' | 'cap';
 }
 
 export const StockCardMobile = memo(({
@@ -59,6 +59,20 @@ export const StockCardMobile = memo(({
             {/* Cap Diff */}
             <div className={`text-xs font-semibold flex-shrink-0 w-[72px] text-right tabular-nums ${capDiffIsPositive ? 'text-green-600' : 'text-red-600'}`}>
               {stock.marketCapDiff ? formattedCapDiff : '—'}
+            </div>
+          </>
+        ) : displayMode === 'cap' ? (
+          <>
+            {/* Market Cap (instead of Price when sorting by MarketCap) */}
+            <div className="text-right flex-shrink-0 w-24">
+              <div className="font-mono font-semibold text-gray-900 dark:text-gray-100 text-sm tabular-nums">
+                {stock.marketCap ? `${formattedCap}` : '—'}
+              </div>
+            </div>
+
+            {/* % Change */}
+            <div className={`text-xs font-semibold flex-shrink-0 w-14 text-right tabular-nums ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+              {formattedPercentChange}
             </div>
           </>
         ) : (

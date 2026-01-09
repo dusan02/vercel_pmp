@@ -6,11 +6,14 @@ interface PortfolioQuantityInputProps {
   value: number;
   onChange: (value: number) => void;
   className?: string;
+  /** If set (>0), we enforce minimum on blur (allows empty while typing). */
+  minValue?: number;
 }
 
 const MAX_QUANTITY = 1000000; // 1,000,000 limit
 
-export function PortfolioQuantityInput({ value, onChange, className = '' }: PortfolioQuantityInputProps) {
+export function PortfolioQuantityInput({ value, onChange, className = '', minValue = 0 }: PortfolioQuantityInputProps) {
+  const min = Math.max(0, minValue);
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let inputValue = e.target.value.trim();
     
@@ -73,24 +76,36 @@ export function PortfolioQuantityInput({ value, onChange, className = '' }: Port
     }
     
     if (cleanedForParsing === '' || cleanedForParsing === '.' || cleanedForParsing === '0') {
-      onChange(0);
-      e.target.value = '';
+      if (min > 0) {
+        e.target.value = min.toLocaleString('en-US', { notation: 'standard' });
+        onChange(min);
+      } else {
+        onChange(0);
+        e.target.value = '';
+      }
     } else {
       const parsed = parseFloat(cleanedForParsing);
       if (!isNaN(parsed) && parsed >= 0 && isFinite(parsed) && parsed <= MAX_QUANTITY) {
+        // Enforce minimum on commit (blur)
+        const committed = min > 0 && parsed < min ? min : parsed;
         // Format with commas for display - prevent scientific notation
-        const formatted = parsed % 1 === 0 
-          ? parsed.toLocaleString('en-US', { notation: 'standard' })
-          : parsed.toLocaleString('en-US', { maximumFractionDigits: 2, notation: 'standard' });
+        const formatted = committed % 1 === 0 
+          ? committed.toLocaleString('en-US', { notation: 'standard' })
+          : committed.toLocaleString('en-US', { maximumFractionDigits: 2, notation: 'standard' });
         e.target.value = formatted;
-        onChange(parsed);
+        onChange(committed);
       } else if (parsed > MAX_QUANTITY || !isFinite(parsed)) {
         // Cap at max if exceeded or invalid
         e.target.value = MAX_QUANTITY.toLocaleString('en-US', { notation: 'standard' });
         onChange(MAX_QUANTITY);
       } else {
-        onChange(0);
-        e.target.value = '';
+        if (min > 0) {
+          e.target.value = min.toLocaleString('en-US', { notation: 'standard' });
+          onChange(min);
+        } else {
+          onChange(0);
+          e.target.value = '';
+        }
       }
     }
   };

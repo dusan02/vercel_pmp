@@ -54,6 +54,23 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
   onToggleFavorite,
   isFavorite,
 }) => {
+  // Internal zoom for mobile heatmap:
+  // zoom-in => more tiles become readable; zoom-out => labels disappear naturally.
+  const [zoom, setZoom] = useState(1);
+  const ZOOM_MIN = 1;
+  const ZOOM_MAX = 3;
+  const pinchRef = useRef<{
+    active: boolean;
+    startDist: number;
+    startZoom: number;
+    // Unscaled content point under the pinch center at start (in "base" px)
+    uX: number;
+    uY: number;
+    // Pinch center offset in container viewport
+    offsetX: number;
+    offsetY: number;
+  }>({ active: false, startDist: 0, startZoom: 1, uX: 0, uY: 0, offsetX: 0, offsetY: 0 });
+
   // Sort by ACTIVE size metric (descending), limit to MAX_MOBILE_TILES.
   // - percent mode: size by market cap
   // - mcap mode: size by absolute market cap diff
@@ -101,6 +118,85 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+
+  // Pinch-to-zoom (two-finger zoom) on the heatmap canvas area.
+  // This is the mobile-native interaction (no +/- buttons).
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const clamp = (v: number) => Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, v));
+    const dist = (t1: Touch, t2: Touch) => {
+      const dx = t1.clientX - t2.clientX;
+      const dy = t1.clientY - t2.clientY;
+      return Math.hypot(dx, dy);
+    };
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 2) return;
+      // Only handle pinch on the heatmap grid (prevent browser/page zoom)
+      e.preventDefault();
+      const t1 = e.touches[0]!;
+      const t2 = e.touches[1]!;
+      const rect = el.getBoundingClientRect();
+      const centerClientX = (t1.clientX + t2.clientX) / 2;
+      const centerClientY = (t1.clientY + t2.clientY) / 2;
+      const offsetX = centerClientX - rect.left;
+      const offsetY = centerClientY - rect.top;
+
+      const startZoom = zoom;
+      // Convert current scroll+offset to unscaled "base" coordinates
+      const uX = (el.scrollLeft + offsetX) / startZoom;
+      const uY = (el.scrollTop + offsetY) / startZoom;
+
+      pinchRef.current = {
+        active: true,
+        startDist: dist(t1, t2) || 1,
+        startZoom,
+        uX,
+        uY,
+        offsetX,
+        offsetY,
+      };
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (!pinchRef.current.active) return;
+      if (e.touches.length !== 2) return;
+      e.preventDefault();
+      const t1 = e.touches[0]!;
+      const t2 = e.touches[1]!;
+      const d = dist(t1, t2) || 1;
+      const scale = d / pinchRef.current.startDist;
+      const nextZoom = clamp(pinchRef.current.startZoom * scale);
+      setZoom(nextZoom);
+
+      // Keep the pinch center "locked" to the same content point while zooming
+      requestAnimationFrame(() => {
+        const { uX, uY, offsetX, offsetY } = pinchRef.current;
+        el.scrollLeft = uX * nextZoom - offsetX;
+        el.scrollTop = uY * nextZoom - offsetY;
+      });
+    };
+
+    const endPinch = () => {
+      pinchRef.current.active = false;
+    };
+
+    // IMPORTANT: non-passive so we can preventDefault during pinch
+    el.addEventListener('touchstart', onTouchStart, { passive: false });
+    el.addEventListener('touchmove', onTouchMove, { passive: false });
+    el.addEventListener('touchend', endPinch);
+    el.addEventListener('touchcancel', endPinch);
+
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart as any);
+      el.removeEventListener('touchmove', onTouchMove as any);
+      el.removeEventListener('touchend', endPinch as any);
+      el.removeEventListener('touchcancel', endPinch as any);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ZOOM_MAX, ZOOM_MIN, zoom]);
 
   // Long press handler for favorites
   const longPressTimerRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
@@ -179,8 +275,10 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
   const renderLeaf = useCallback((leaf: { x0: number; y0: number; x1: number; y1: number; data: any }) => {
     const company = leaf.data?.meta?.companyData as CompanyNode | undefined;
     if (!company) return null;
-    const w = Math.max(0, leaf.x1 - leaf.x0);
-    const h = Math.max(0, leaf.y1 - leaf.y0);
+    const w0 = Math.max(0, leaf.x1 - leaf.x0);
+    const h0 = Math.max(0, leaf.y1 - leaf.y0);
+    const w = w0 * zoom;
+    const h = h0 * zoom;
     if (w < 2 || h < 2) return null;
 
     const color = getColor(company);
@@ -203,6 +301,8 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
       'text-[11px] font-semibold tracking-tight';
 
     const handleShortTap = (e: React.SyntheticEvent) => {
+      // If a pinch gesture is/was active, ignore tap
+      if (pinchRef.current.active) return;
       if (suppressClickRef.current.has(company.symbol)) {
         e.preventDefault();
         e.stopPropagation();
@@ -226,8 +326,8 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
         onMouseLeave={() => handleTouchEnd(company.symbol)}
         className="block absolute overflow-hidden active:opacity-80 transition-opacity"
         style={{
-          left: leaf.x0,
-          top: leaf.y0,
+          left: leaf.x0 * zoom,
+          top: leaf.y0 * zoom,
           width: w,
           height: h,
           backgroundColor: color,
@@ -238,7 +338,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
           lineHeight: '1.15',
           letterSpacing: '-0.01em',
           textAlign: 'left',
-          padding: 8,
+          padding: Math.max(6, Math.min(10, Math.round(8 * zoom))),
         }}
       >
         {isFav && (
@@ -265,7 +365,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
         </div>
       </button>
     );
-  }, [getColor, metric, isFavorite, onTileClick, handleTouchStart, handleTouchEnd]);
+  }, [getColor, metric, isFavorite, onTileClick, handleTouchStart, handleTouchEnd, zoom]);
 
   if (sortedData.length === 0) {
     return (
@@ -326,10 +426,18 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
           background: '#000',
           flex: 1,
           minHeight: 0,
-          overflow: 'hidden',
+          overflow: zoom > 1 ? 'auto' : 'hidden',
         }}
       >
-        {leaves.map((leaf) => renderLeaf(leaf))}
+        <div
+          style={{
+            position: 'relative',
+            width: containerSize.width * zoom,
+            height: containerSize.height * zoom,
+          }}
+        >
+          {leaves.map((leaf) => renderLeaf(leaf))}
+        </div>
       </div>
       
       {/* Removed: "View all stocks" button (caused crashes on some mobile flows) */}
