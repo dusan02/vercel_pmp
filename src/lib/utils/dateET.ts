@@ -42,6 +42,9 @@ export function toET(date: Date): {
 } {
   const formatter = new Intl.DateTimeFormat('en-US', {
     timeZone: 'America/New_York',
+    // Force 00-23 hour cycle. Some Node/ICU builds can emit "24" at midnight for h24,
+    // which breaks offset calculations and day boundaries.
+    hourCycle: 'h23',
     weekday: 'short',
     year: 'numeric',
     month: '2-digit',
@@ -154,6 +157,8 @@ export function createETDate(dateString: string): Date {
   const timeZone = 'America/New_York';
   const dtf = new Intl.DateTimeFormat('en-US', {
     timeZone,
+    // Force 00-23; avoid 24:00 at midnight which can shift day math.
+    hourCycle: 'h23',
     hour12: false,
     year: 'numeric',
     month: '2-digit',
