@@ -233,28 +233,36 @@ export const HeatmapLegend: React.FC<{ timeframe: 'day' | 'week' | 'month'; metr
     month: [-60, -20, -6, 0, 6, 20, 60],
   };
   const points = metric === 'mcap' ? scalesB[timeframe] : scales[timeframe];
+  const unit = metric === 'mcap' ? 'B$' : '%';
+  const formatTick = (v: number) => `${v}${unit}`;
+  // Reduce label density for readability (keep swatches full-res).
+  const labelIndices = points.length >= 7 ? [0, 2, 3, 4, 6] : points.map((_, i) => i);
 
   return (
-    <div className="flex items-center bg-gray-900 bg-opacity-70 px-3 py-1.5 rounded-lg">
-      <span className="text-white text-xs mr-2 font-medium">Decline</span>
-      <div className="flex">
-        {points.map((p) => (
-          <div key={p} className="flex flex-col items-center">
-            <div
-              className="w-4 h-4 border-t border-b border-gray-700"
-              style={{
-                backgroundColor: colorScale(p),
-                borderLeft: p === points[0] ? '1px solid #4b5563' : 'none',
-                borderRight: p === points[points.length - 1] ? '1px solid #4b5563' : 'none',
-              }}
-            />
-            <span className="text-white text-[10px] mt-0.5 leading-tight">
-              {metric === 'mcap' ? `${p}B$` : `${p}%`}
-            </span>
-          </div>
+    <div className="bg-gray-900 bg-opacity-70 px-2.5 py-1.5 rounded-lg">
+      {/* Swatches (always full resolution) */}
+      <div className="flex items-stretch">
+        {points.map((p, idx) => (
+          <div
+            key={p}
+            className="h-3 w-5 border-y border-gray-700"
+            style={{
+              backgroundColor: colorScale(p),
+              borderLeft: idx === 0 ? '1px solid #4b5563' : 'none',
+              borderRight: idx === points.length - 1 ? '1px solid #4b5563' : 'none',
+            }}
+          />
         ))}
       </div>
-      <span className="text-white text-xs ml-2 font-medium">Growth</span>
+
+      {/* Labels (sparser + readable) */}
+      <div className="mt-1 flex items-center justify-between text-white text-[10px] leading-none font-mono tabular-nums">
+        {labelIndices.map((i) => (
+          <span key={`${points[i]}-${i}`} className="opacity-90">
+            {formatTick(points[i] ?? 0)}
+          </span>
+        ))}
+      </div>
     </div>
   );
 };
