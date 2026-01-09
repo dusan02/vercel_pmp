@@ -290,28 +290,72 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     if (!sortedData.length) return [];
     const layoutHeight = Math.max(1, Math.floor(height * (expanded ? EXPAND_FACTOR : 1)));
 
-    // Group by sector like desktop heatmap, but we won't render sector labels on mobile.
-    // IMPORTANT: Tile AREA depends on active metric:
-    // - percent: marketCap
-    // - mcap: marketCapDiffAbs
+    // Build sector hierarchy (companies are direct children of sectors).
+    // Then lay out sectors as VERTICAL STRIPS (stacked top-to-bottom):
+    // - each sector gets a rectangle with height proportional to cumulative value
+    // - inside each sector-rectangle we compute a treemap for companies
+    // This yields a consistent vertical shape and prevents any overlap artifacts.
     const sectorHierarchy = buildHeatmapHierarchy(sortedData, metric);
+    const sectors = sectorHierarchy.children ?? [];
 
-    const root = hierarchy<any>(sectorHierarchy)
-      .sum((d: any) => (typeof d.value === 'number' ? d.value : 0))
-      .sort((a: any, b: any) => (b.value || 0) - (a.value || 0));
+    const sumSector = (sector: any) => {
+      const children = sector?.children ?? [];
+      let s = 0;
+      for (const c of children) {
+        if (typeof c?.value === 'number') s += c.value;
+      }
+      return s;
+    };
 
-    treemap<{ name: string; children: TreemapDatum[] }>()
-      .tile(treemapSquarify)
-      .size([width, layoutHeight])
-      .paddingInner(0)
-      .paddingOuter(0)
-      .round(true)(root as any);
+    const sectorSums = sectors.map((s: any) => sumSector(s));
+    const totalSum = sectorSums.reduce((a, b) => a + b, 0) || 1;
 
-    // Leaves are the companies
-    return root.leaves().filter((l: any) => l.data?.meta?.type === 'company') as any as Array<{
-      x0: number; y0: number; x1: number; y1: number;
-      data: any;
-    }>;
+    const result: Array<{ x0: number; y0: number; x1: number; y1: number; data: any }> = [];
+    let yCursor = 0;
+
+    for (let i = 0; i < sectors.length; i++) {
+      const sector = sectors[i] as any;
+      const sectorSum = sectorSums[i] || 0;
+
+      // Allocate height proportional to sector total; last sector gets remainder to avoid rounding gaps.
+      let sectorHeight = i === sectors.length - 1
+        ? (layoutHeight - yCursor)
+        : Math.max(8, Math.round(layoutHeight * (sectorSum / totalSum)));
+
+      if (sectorHeight <= 0) continue;
+      const sectorChildren = sector?.children ?? [];
+      if (!sectorChildren.length) {
+        yCursor += sectorHeight;
+        continue;
+      }
+
+      const sectorRoot = hierarchy<any>({ name: sector.name, children: sectorChildren })
+        .sum((d: any) => (typeof d.value === 'number' ? d.value : 0))
+        .sort((a: any, b: any) => (b.value || 0) - (a.value || 0));
+
+      treemap<any>()
+        .tile(treemapSquarify)
+        .size([width, sectorHeight])
+        .paddingInner(0)
+        .paddingOuter(0)
+        .round(true)(sectorRoot as any);
+
+      const leaves = sectorRoot.leaves().filter((l: any) => l.data?.meta?.type === 'company');
+      for (const leaf of leaves) {
+        const l = leaf as any;
+        result.push({
+          x0: l.x0,
+          x1: l.x1,
+          y0: l.y0 + yCursor,
+          y1: l.y1 + yCursor,
+          data: l.data,
+        });
+      }
+
+      yCursor += sectorHeight;
+    }
+
+    return result;
   }, [containerSize, sortedData, metric, expanded]);
 
   const renderLeaf = useCallback((leaf: { x0: number; y0: number; x1: number; y1: number; data: any }) => {
