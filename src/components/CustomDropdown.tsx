@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState, useRef, useEffect } from 'react';
+import React, { useMemo, useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
@@ -76,7 +76,7 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
   }, [isOpen, close]);
 
   // When open, render menu in a portal (fixed positioning) so it can't be clipped by sticky containers.
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!isOpen) {
       setPortalStyle(null);
       return;
@@ -86,9 +86,10 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
     const updatePosition = () => {
       const rect = triggerRef.current?.getBoundingClientRect();
       if (!rect) return;
-      const top = Math.round(rect.bottom + 6);
-      const left = Math.round(rect.left);
-      const width = Math.round(rect.width);
+      const top = Math.round(rect.bottom + 6); // always open "down" from the trigger
+      const rawWidth = Math.round(rect.width);
+      const width = Math.min(rawWidth, window.innerWidth - 16);
+      const left = Math.round(Math.min(Math.max(rect.left, 8), window.innerWidth - width - 8));
       const maxHeight = Math.max(140, Math.min(320, window.innerHeight - top - 12));
       setPortalStyle({
         position: 'fixed',
@@ -118,12 +119,14 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
     close();
   };
 
-  const menuEl = isOpen ? (
+  // IMPORTANT: only render when portalStyle is known. Otherwise CSS "top: 100%" (relative to body)
+  // makes the menu appear to come from the bottom of the screen.
+  const menuEl = isOpen && portalStyle ? (
     <div
       ref={menuRef}
       className={`custom-dropdown-menu custom-dropdown-menu--portal`}
       role="listbox"
-      style={portalStyle ?? undefined}
+      style={portalStyle}
     >
       {options.map((option) => (
         <button
