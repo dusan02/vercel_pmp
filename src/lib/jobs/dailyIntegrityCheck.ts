@@ -360,7 +360,7 @@ export async function runDailyIntegrityCheck(
 
   const totalIssues = (Object.values(byCode) as Array<{ count: number }>).reduce((sum, v) => sum + v.count, 0);
 
-  return {
+  const summary: DailyIntegritySummary = {
     runAt: new Date().toISOString(),
     etDate,
     session,
@@ -371,8 +371,14 @@ export async function runDailyIntegrityCheck(
       issues: totalIssues,
       uniqueSymbolsWithIssues: symbolsWithIssues.size
     },
-    byCode,
-    fixes
+    byCode
   };
+
+  // exactOptionalPropertyTypes: only include when defined
+  if (fixes) {
+    summary.fixes = fixes;
+  }
+
+  return summary;
 }
 
