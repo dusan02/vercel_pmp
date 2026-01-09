@@ -342,8 +342,8 @@ export function PortfolioSection({
                   { key: 'ticker' as const, label: 'Ticker' },
                   { key: 'quantity' as const, label: '#' },
                   { key: 'price' as const, label: 'Price' },
+                  { key: 'delta' as const, label: '$' },
                   { key: 'percent' as const, label: '%' },
-                  { key: 'delta' as const, label: 'Δ$' },
                 ].map((opt) => {
                   const active = mobileSortKey === opt.key;
                   const icon = active ? (mobileAscending ? '▲' : '▼') : '';
@@ -351,7 +351,7 @@ export function PortfolioSection({
                     <button
                       key={opt.key}
                       type="button"
-                      className={`sort-chip ${active ? 'active' : ''}`}
+                      className={`sort-chip ${active ? 'active' : ''} justify-center text-center`}
                       onClick={() => {
                         if (active) setMobileAscending((v) => !v);
                         else {
