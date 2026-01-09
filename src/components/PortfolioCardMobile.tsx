@@ -5,6 +5,7 @@ import { StockData } from '@/lib/types';
 import { formatPrice, formatPercent } from '@/lib/utils/format';
 import CompanyLogo from './CompanyLogo';
 import { X } from 'lucide-react';
+import { PortfolioQuantityInput } from './PortfolioQuantityInput';
 
 interface PortfolioCardMobileProps {
   stock: StockData;
@@ -48,10 +49,12 @@ export const PortfolioCardMobile = memo(({
         </div>
 
         {/* # (Quantity) */}
-        <div className="flex-shrink-0 w-10 text-right">
-          <div className="text-xs font-semibold text-gray-700 dark:text-gray-300 tabular-nums">
-            {quantity}
-          </div>
+        <div className="flex-shrink-0 w-[52px]">
+          <PortfolioQuantityInput
+            value={quantity || 1}
+            onChange={(v) => onUpdateQuantity(stock.ticker, v || 1)}
+            className="min-w-0 w-full px-1 py-1 text-xs rounded-md bg-transparent border border-gray-300/60 dark:border-slate-600/70"
+          />
         </div>
 
         {/* Price - fixed width for alignment */}

@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { HeatmapMetricButtons } from './HeatmapMetricButtons';
 import { HeatmapLegend } from './MarketHeatmap';
 import { hierarchy, treemap, treemapSquarify } from 'd3-hierarchy';
+import { buildHeatmapHierarchy } from '@/lib/utils/heatmapLayout';
 
 interface MobileTreemapProps {
   data: CompanyNode[];
@@ -144,18 +145,13 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     if (width <= 0 || height <= 0) return [];
     if (!sortedData.length) return [];
 
-    const children: TreemapDatum[] = sortedData.map((c) => ({
-      name: c.symbol,
-      value: Math.max(0, c.marketCap || 0),
-      company: c,
-    }));
+    // Group by sector like desktop heatmap, but we won't render sector labels on mobile.
+    // IMPORTANT: Tile AREA is always marketCap (per mobile UX requirement).
+    const sectorHierarchy = buildHeatmapHierarchy(sortedData, 'percent');
 
-    const root = hierarchy<{ name: string; children: TreemapDatum[] }>({
-      name: 'root',
-      children,
-    })
+    const root = hierarchy<any>(sectorHierarchy)
       .sum((d: any) => (typeof d.value === 'number' ? d.value : 0))
-      .sort((a, b) => (b.value || 0) - (a.value || 0));
+      .sort((a: any, b: any) => (b.value || 0) - (a.value || 0));
 
     treemap<{ name: string; children: TreemapDatum[] }>()
       .tile(treemapSquarify)
@@ -165,14 +161,15 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
       .round(true)(root as any);
 
     // Leaves are the companies
-    return root.leaves() as any as Array<{
+    return root.leaves().filter((l: any) => l.data?.meta?.type === 'company') as any as Array<{
       x0: number; y0: number; x1: number; y1: number;
-      data: TreemapDatum;
+      data: any;
     }>;
   }, [containerSize, sortedData]);
 
-  const renderLeaf = useCallback((leaf: { x0: number; y0: number; x1: number; y1: number; data: TreemapDatum }) => {
-    const company = leaf.data.company;
+  const renderLeaf = useCallback((leaf: { x0: number; y0: number; x1: number; y1: number; data: any }) => {
+    const company = leaf.data?.meta?.companyData as CompanyNode | undefined;
+    if (!company) return null;
     const w = Math.max(0, leaf.x1 - leaf.x0);
     const h = Math.max(0, leaf.y1 - leaf.y0);
     if (w < 2 || h < 2) return null;
@@ -183,8 +180,10 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     const isFav = isFavorite ? isFavorite(company.symbol) : false;
 
     // Show less text on tiny rectangles to avoid visual noise.
-    const showValue = w >= 70 && h >= 34;
-    const showPrice = metric === 'percent' && !!company.currentPrice && w >= 84 && h >= 44;
+    const area = w * h;
+    const showTicker = area >= 520; // tiny tiles show nothing; landscape will naturally increase area
+    const showValue = area >= 1800 && w >= 54 && h >= 26;
+    const showPrice = metric === 'percent' && !!company.currentPrice && area >= 2600 && w >= 70 && h >= 34;
 
     const tickerClass =
       w >= 110 && h >= 70 ? 'text-xl font-extrabold tracking-tight' :
@@ -238,7 +237,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
         )}
 
         <div className="h-full w-full flex flex-col justify-between">
-          <div className={tickerClass}>{company.symbol}</div>
+          {showTicker ? <div className={tickerClass}>{company.symbol}</div> : <div />}
 
           {showValue && (
             <div className="flex flex-col gap-0.5">

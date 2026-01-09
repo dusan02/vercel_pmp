@@ -5,11 +5,12 @@ import React from 'react';
 interface PortfolioQuantityInputProps {
   value: number;
   onChange: (value: number) => void;
+  className?: string;
 }
 
 const MAX_QUANTITY = 1000000; // 1,000,000 limit
 
-export function PortfolioQuantityInput({ value, onChange }: PortfolioQuantityInputProps) {
+export function PortfolioQuantityInput({ value, onChange, className = '' }: PortfolioQuantityInputProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let inputValue = e.target.value.trim();
     
@@ -137,7 +138,7 @@ export function PortfolioQuantityInput({ value, onChange }: PortfolioQuantityInp
       onChange={handleChange}
       onBlur={handleBlur}
       onKeyDown={handleKeyDown}
-      className="min-w-[100px] w-24 px-2 py-1 text-center bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium"
+      className={`min-w-[100px] w-24 px-2 py-1 text-center bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium ${className}`}
       placeholder="0"
       maxLength={9} // "1,000,000" = 9 characters
       title={`Maximum: ${MAX_QUANTITY.toLocaleString('en-US')}`}

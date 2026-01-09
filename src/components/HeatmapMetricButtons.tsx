@@ -1,6 +1,6 @@
 /**
  * Heatmap Metric Toggle Switch Component
- * Toggle switch with sliding ball for metric selection
+ * Minimal segmented control for metric selection (mobile-friendly, no knob)
  */
 
 'use client';
@@ -55,84 +55,46 @@ export function HeatmapMetricButtons({
     });
   };
 
-  // Text colors based on variant - improved contrast
-  const activeTextColor = isDark ? 'text-white' : 'text-gray-900';
-  const inactiveTextColor = isDark ? 'text-gray-300' : 'text-gray-600';
-  
-  // Toggle switch colors based on variant
-  const toggleInactiveBg = isDark ? 'bg-gray-600' : 'bg-gray-300';
-  const toggleActiveBg = 'bg-blue-600';
+  // Colors (segmented control)
+  const surface = isDark ? 'bg-white/10' : 'bg-slate-100';
+  const border = isDark ? 'border-white/15' : 'border-slate-200';
+  const active = isDark ? 'bg-white/20 text-white' : 'bg-white text-slate-900';
+  const inactive = isDark ? 'text-white/70' : 'text-slate-600';
 
   return (
-    <div className={`inline-flex items-center gap-2 ${className}`}>
-      {/* Left label */}
-      <span
-        className={`text-xs font-medium transition-colors duration-200 whitespace-nowrap ${
-          isPercent ? `${activeTextColor} font-semibold` : `${inactiveTextColor}`
-        }`}
-      >
-        % Change
-      </span>
-      
-      {/* Toggle switch - Smaller, more compact design */}
-      <button
-        onClick={handleToggle}
-        onKeyDown={(e) => {
-          // Keyboard support: Space or Enter toggles
-          if (e.key === ' ' || e.key === 'Enter') {
+    <div
+      className={`inline-flex items-center ${className}`}
+      role="tablist"
+      aria-label="Heatmap metric"
+    >
+      <div className={`inline-flex items-center rounded-full border ${surface} ${border} p-0.5`}>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={isPercent}
+          onClick={(e) => {
             e.preventDefault();
-            handleToggle(e);
-          }
-        }}
-        className={`
-          relative inline-flex items-center
-          h-6 w-12
-          rounded-full
-          transition-colors duration-200 ease-in-out
-          focus:outline-none focus:ring-1 focus:ring-blue-500 focus:ring-offset-1
-          ${isDark ? 'focus:ring-offset-black' : 'focus:ring-offset-white'}
-          ${isPercent 
-            ? toggleInactiveBg
-            : toggleActiveBg
-          }
-          cursor-pointer
-          active:scale-95
-          touch-action: manipulation
-        `}
-        aria-label={`Switch to ${isPercent ? 'market cap change' : 'percentage change'}`}
-        role="switch"
-        aria-checked={!isPercent}
-        tabIndex={0}
-      >
-        {/* Sliding ball - smaller, more compact */}
-        <span
-          className={`
-            absolute
-            top-0.5
-            left-0.5
-            w-5 h-5
-            bg-white
-            rounded-full
-            shadow-sm
-            transition-all duration-200 ease-in-out
-            ${isPercent ? 'translate-x-0' : 'translate-x-6'}
-            z-10
-          `}
-          style={{ 
-            backgroundColor: '#ffffff',
-            boxShadow: '0 1px 2px rgba(0, 0, 0, 0.15)'
+            e.stopPropagation();
+            if (!isPercent) onMetricChange('percent');
           }}
-        />
-      </button>
-      
-      {/* Right label */}
-      <span
-        className={`text-xs font-medium transition-colors duration-200 whitespace-nowrap ${
-          !isPercent ? `${activeTextColor} font-semibold` : `${inactiveTextColor}`
-        }`}
-      >
-        Mcap Change
-      </span>
+          className={`px-2.5 py-1 text-xs font-semibold rounded-full transition-colors ${isPercent ? active : inactive}`}
+        >
+          % Change
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={!isPercent}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (isPercent) onMetricChange('mcap');
+          }}
+          className={`px-2.5 py-1 text-xs font-semibold rounded-full transition-colors ${!isPercent ? active : inactive}`}
+        >
+          Mcap Change
+        </button>
+      </div>
     </div>
   );
 }
