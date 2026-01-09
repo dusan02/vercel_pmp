@@ -99,7 +99,7 @@ export default function CookieConsent({ onAccept }: CookieConsentProps) {
         boxShadow: '0 -2px 8px rgba(0, 0, 0, 0.05)',
       }}
     >
-      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex-1">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">
             🍪 Cookies & Privacy

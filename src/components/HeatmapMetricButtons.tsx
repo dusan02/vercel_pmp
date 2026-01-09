@@ -86,8 +86,8 @@ export function HeatmapMetricButtons({
         }}
         className={`
           relative inline-flex items-center
-          h-5 w-9
-          rounded-md
+          h-6 w-12
+          rounded-full
           transition-colors duration-200 ease-in-out
           focus:outline-none focus:ring-1 focus:ring-blue-500 focus:ring-offset-1
           ${isDark ? 'focus:ring-offset-black' : 'focus:ring-offset-white'}
@@ -110,12 +110,12 @@ export function HeatmapMetricButtons({
             absolute
             top-0.5
             left-0.5
-            w-4 h-4
+            w-5 h-5
             bg-white
-            rounded-sm
+            rounded-full
             shadow-sm
             transition-all duration-200 ease-in-out
-            ${isPercent ? 'translate-x-0' : 'translate-x-4'}
+            ${isPercent ? 'translate-x-0' : 'translate-x-6'}
             z-10
           `}
           style={{ 

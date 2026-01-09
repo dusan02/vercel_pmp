@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
+import { createPortal } from 'react-dom';
 
 interface DropdownOption {
   value: string;
@@ -28,30 +29,40 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const selectedOption = options.find(opt => opt.value === value);
+  const [portalStyle, setPortalStyle] = useState<React.CSSProperties | null>(null);
+
+  const canUseDOM = typeof window !== 'undefined' && typeof document !== 'undefined';
+
+  const close = useMemo(() => () => setIsOpen(false), []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
+    const handlePointerDownOutside = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node | null;
+      if (!target) return;
+      const insideTrigger = dropdownRef.current?.contains(target);
+      const insideMenu = menuRef.current?.contains(target);
+      if (!insideTrigger && !insideMenu) close();
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('mousedown', handlePointerDownOutside);
+      document.addEventListener('touchstart', handlePointerDownOutside, { passive: true });
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('mousedown', handlePointerDownOutside);
+      document.removeEventListener('touchstart', handlePointerDownOutside as any);
     };
-  }, [isOpen]);
+  }, [isOpen, close]);
 
   // Close dropdown on escape key
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setIsOpen(false);
+        close();
       }
     };
 
@@ -62,12 +73,72 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
     return () => {
       document.removeEventListener('keydown', handleEscape);
     };
-  }, [isOpen]);
+  }, [isOpen, close]);
+
+  // When open, render menu in a portal (fixed positioning) so it can't be clipped by sticky containers.
+  useEffect(() => {
+    if (!isOpen) {
+      setPortalStyle(null);
+      return;
+    }
+    if (!canUseDOM) return;
+
+    const updatePosition = () => {
+      const rect = triggerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const top = Math.round(rect.bottom + 6);
+      const left = Math.round(rect.left);
+      const width = Math.round(rect.width);
+      const maxHeight = Math.max(140, Math.min(320, window.innerHeight - top - 12));
+      setPortalStyle({
+        position: 'fixed',
+        top,
+        left,
+        width,
+        maxHeight,
+        zIndex: 10000,
+      });
+    };
+
+    updatePosition();
+
+    // Close on scroll (any scroll container) to avoid a detached menu.
+    const handleAnyScroll = () => close();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', handleAnyScroll, true);
+
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', handleAnyScroll, true);
+    };
+  }, [isOpen, canUseDOM, close]);
 
   const handleSelect = (optionValue: string) => {
     onChange(optionValue);
-    setIsOpen(false);
+    close();
   };
+
+  const menuEl = isOpen ? (
+    <div
+      ref={menuRef}
+      className={`custom-dropdown-menu custom-dropdown-menu--portal`}
+      role="listbox"
+      style={portalStyle ?? undefined}
+    >
+      {options.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          className={`custom-dropdown-option ${value === option.value ? 'selected' : ''}`}
+          onClick={() => handleSelect(option.value)}
+          role="option"
+          aria-selected={value === option.value}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  ) : null;
 
   return (
     <div 
@@ -80,7 +151,8 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
       <button
         type="button"
         className="custom-dropdown-trigger"
-        onClick={() => setIsOpen(!isOpen)}
+        ref={triggerRef}
+        onClick={() => setIsOpen((v) => !v)}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
       >
@@ -92,27 +164,8 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
           size={16}
         />
       </button>
-      
-      {isOpen && (
-        <div 
-          ref={menuRef}
-          className="custom-dropdown-menu" 
-          role="listbox"
-        >
-          {options.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              className={`custom-dropdown-option ${value === option.value ? 'selected' : ''}`}
-              onClick={() => handleSelect(option.value)}
-              role="option"
-              aria-selected={value === option.value}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-      )}
+
+      {canUseDOM && menuEl ? createPortal(menuEl, document.body) : null}
     </div>
   );
 };

@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useMemo, useCallback, useRef, useState } from 'react';
+import React, { useMemo, useCallback, useEffect, useRef, useState } from 'react';
 import { CompanyNode } from './MarketHeatmap';
 import { formatPrice, formatPercent, formatMarketCap, formatMarketCapDiff } from '@/lib/utils/format';
 import { createHeatmapColorScale } from '@/lib/utils/heatmapColors';
 import Link from 'next/link';
 import { HeatmapMetricButtons } from './HeatmapMetricButtons';
 import { HeatmapLegend } from './MarketHeatmap';
+import { hierarchy, treemap, treemapSquarify } from 'd3-hierarchy';
 
 interface MobileTreemapProps {
   data: CompanyNode[];
@@ -19,7 +20,14 @@ interface MobileTreemapProps {
 }
 
 // Maximum tiles for mobile (UX + performance)
-const MAX_MOBILE_TILES = 84;
+// NOTE: With true treemap layout we can render more while still filling the area.
+const MAX_MOBILE_TILES = 250;
+
+type TreemapDatum = {
+  name: string;
+  value: number;
+  company: CompanyNode;
+};
 
 /**
  * TRUE MOBILE HEATMAP - Treemap Grid Layout
@@ -66,23 +74,25 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     return colorScale(value);
   }, [metric, colorScale]);
 
-  // Determine size bucket based on market cap (tile area more closely reflects company size)
-  const getSizeBucket = useCallback((company: CompanyNode, index: number): 'mega' | 'large' | 'small' => {
-    const mc = company.marketCap || 0;
-    const top = sortedData[0]?.marketCap || 0;
+  // Track container size for true treemap layout
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [containerSize, setContainerSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
 
-    if (top <= 0) {
-      // Fallback: rank-based (keeps layout stable if market caps are missing)
-      if (index < 3) return 'mega';
-      if (index < 15) return 'large';
-      return 'small';
-    }
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
 
-    // Tiering by relative market cap (stable + readable on small screens)
-    if (mc >= top * 0.2) return 'mega';
-    if (mc >= top * 0.05) return 'large';
-    return 'small';
-  }, [sortedData]);
+    const ro = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+      const cr = entry.contentRect;
+      const w = Math.max(0, Math.floor(cr.width));
+      const h = Math.max(0, Math.floor(cr.height));
+      setContainerSize((prev) => (prev.width === w && prev.height === h ? prev : { width: w, height: h }));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   // Long press handler for favorites
   const longPressTimerRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
@@ -128,46 +138,61 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     setLongPressActive(null);
   }, []);
 
-  // Render company tile
-  const renderTile = useCallback((company: CompanyNode, index: number) => {
-    const size = getSizeBucket(company, index);
+  // Build true treemap rectangles (no gaps, proportional to market cap)
+  const leaves = useMemo(() => {
+    const { width, height } = containerSize;
+    if (width <= 0 || height <= 0) return [];
+    if (!sortedData.length) return [];
+
+    const children: TreemapDatum[] = sortedData.map((c) => ({
+      name: c.symbol,
+      value: Math.max(0, c.marketCap || 0),
+      company: c,
+    }));
+
+    const root = hierarchy<{ name: string; children: TreemapDatum[] }>({
+      name: 'root',
+      children,
+    })
+      .sum((d: any) => (typeof d.value === 'number' ? d.value : 0))
+      .sort((a, b) => (b.value || 0) - (a.value || 0));
+
+    treemap<{ name: string; children: TreemapDatum[] }>()
+      .tile(treemapSquarify)
+      .size([width, height])
+      .paddingInner(0)
+      .paddingOuter(0)
+      .round(true)(root as any);
+
+    // Leaves are the companies
+    return root.leaves() as any as Array<{
+      x0: number; y0: number; x1: number; y1: number;
+      data: TreemapDatum;
+    }>;
+  }, [containerSize, sortedData]);
+
+  const renderLeaf = useCallback((leaf: { x0: number; y0: number; x1: number; y1: number; data: TreemapDatum }) => {
+    const company = leaf.data.company;
+    const w = Math.max(0, leaf.x1 - leaf.x0);
+    const h = Math.max(0, leaf.y1 - leaf.y0);
+    if (w < 2 || h < 2) return null;
+
     const color = getColor(company);
     const value = metric === 'percent' ? (company.changePercent ?? 0) : (company.marketCapDiff ?? 0);
-    const displayValue = metric === 'percent'
-      ? formatPercent(value)
-      : formatMarketCapDiff(value);
-    
+    const displayValue = metric === 'percent' ? formatPercent(value) : formatMarketCapDiff(value);
     const isFav = isFavorite ? isFavorite(company.symbol) : false;
 
-    // Grid classes based on size
-    const gridClasses = {
-      // 3-column grid gives better density while still letting big names dominate
-      mega: 'col-span-3 row-span-2',   // 3x2
-      large: 'col-span-2 row-span-1',  // 2x1
-      small: 'col-span-1 row-span-1',  // 1x1
-    }[size];
+    // Show less text on tiny rectangles to avoid visual noise.
+    const showValue = w >= 70 && h >= 34;
+    const showPrice = metric === 'percent' && !!company.currentPrice && w >= 84 && h >= 44;
 
-    // Text size based on tile size - professional financial typography
-    const textClasses = {
-      mega: {
-        ticker: 'text-2xl font-extrabold tracking-tight',
-        value: 'text-base font-semibold',
-        price: 'text-sm',
-      },
-      large: {
-        ticker: 'text-lg font-bold tracking-tight',
-        value: 'text-sm font-semibold',
-        price: 'text-xs',
-      },
-      small: {
-        ticker: 'text-sm font-semibold tracking-tight',
-        value: 'text-xs opacity-90',
-        price: 'text-xs',
-      },
-    }[size];
+    const tickerClass =
+      w >= 110 && h >= 70 ? 'text-xl font-extrabold tracking-tight' :
+      w >= 84 && h >= 48 ? 'text-lg font-bold tracking-tight' :
+      w >= 60 && h >= 34 ? 'text-sm font-semibold tracking-tight' :
+      'text-[11px] font-semibold tracking-tight';
 
     const handleShortTap = (e: React.SyntheticEvent) => {
-      // Don't trigger short-tap action if a long-press just happened
       if (suppressClickRef.current.has(company.symbol)) {
         e.preventDefault();
         e.stopPropagation();
@@ -189,64 +214,48 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
         onMouseDown={() => handleTouchStart(company.symbol)}
         onMouseUp={() => handleTouchEnd(company.symbol)}
         onMouseLeave={() => handleTouchEnd(company.symbol)}
-        className={`${gridClasses} block relative overflow-hidden active:opacity-80 transition-opacity`}
+        className="block absolute overflow-hidden active:opacity-80 transition-opacity"
         style={{
+          left: leaf.x0,
+          top: leaf.y0,
+          width: w,
+          height: h,
           backgroundColor: color,
           color: '#ffffff',
-          // NO rounded corners, NO shadows - aggressive heatmap look
-          borderRadius: '0',
-          boxShadow: 'none',
+          borderRadius: 0,
+          // No gaps: draw separators via inset border instead of spacing.
+          boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.28)',
           lineHeight: '1.15',
           letterSpacing: '-0.01em',
           textAlign: 'left',
+          padding: 8,
         }}
       >
-        {/* Favorite indicator (top right corner) */}
         {isFav && (
           <div className="absolute top-1 right-1 text-yellow-400 text-xs" style={{ opacity: 0.9 }}>
             ★
           </div>
         )}
 
-        {/* Content - minimal padding (8px), aggressive layout */}
-        <div className="h-full w-full p-2 flex flex-col justify-between">
-          {/* Top: Ticker (dominant) */}
-          <div className={textClasses.ticker} style={{ lineHeight: '1.15' }}>
-            {company.symbol}
-          </div>
+        <div className="h-full w-full flex flex-col justify-between">
+          <div className={tickerClass}>{company.symbol}</div>
 
-          {/* Mega tiles: Show company name */}
-          {size === 'mega' && company.name && company.name !== company.symbol && (
-            <div className="text-xs opacity-80 mb-1 line-clamp-1">
-              {company.name}
-            </div>
-          )}
-
-          {/* Bottom: Value and price (only for mega/large) */}
-          {(size === 'mega' || size === 'large') && (
+          {showValue && (
             <div className="flex flex-col gap-0.5">
-              <div className={textClasses.value} style={{ fontWeight: 600 }}>
+              <div className="text-xs font-semibold" style={{ opacity: 0.95 }}>
                 {displayValue}
               </div>
-              {/* Price only makes sense in % mode; in Mcap mode show only cap diff */}
-              {metric === 'percent' && company.currentPrice && (
-                <div className={textClasses.price} style={{ opacity: 0.85 }}>
-                  ${formatPrice(company.currentPrice)}
+              {showPrice && (
+                <div className="text-xs" style={{ opacity: 0.85 }}>
+                  ${formatPrice(company.currentPrice!)}
                 </div>
               )}
-            </div>
-          )}
-
-          {/* Small tiles: only value */}
-          {size === 'small' && (
-            <div className={textClasses.value} style={{ opacity: 0.9, fontWeight: 500 }}>
-              {displayValue}
             </div>
           )}
         </div>
       </button>
     );
-  }, [getSizeBucket, getColor, metric, onTileClick, isFavorite, handleTouchStart, handleTouchEnd, closeSheet]);
+  }, [getColor, metric, isFavorite, onTileClick, handleTouchStart, handleTouchEnd]);
 
   if (sortedData.length === 0) {
     return (
@@ -289,20 +298,18 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
         </div>
       </div>
 
-      <div 
-        className="mobile-treemap-grid" 
-        style={{ 
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gridAutoRows: 'minmax(56px, auto)',
-          gap: '2px',
+      <div
+        ref={containerRef}
+        className="mobile-treemap-grid"
+        style={{
+          position: 'relative',
           background: '#000',
-          padding: '2px',
-          flex: '1',
-          overflow: 'auto',
+          flex: 1,
+          minHeight: 0,
+          overflow: 'hidden',
         }}
       >
-        {sortedData.map((company, index) => renderTile(company, index))}
+        {leaves.map((leaf) => renderLeaf(leaf))}
       </div>
       
       {/* Removed: "View all stocks" button (caused crashes on some mobile flows) */}

@@ -4621,6 +4621,11 @@ h2:hover .section-icon {
   margin-top: 4px;
 }
 
+.custom-dropdown-menu.custom-dropdown-menu--portal {
+  /* When rendered via portal (document.body), positioning is fixed via inline styles */
+  margin-top: 0;
+}
+
 .custom-dropdown-option {
   width: 100%;
   padding: 0.75rem 1rem;
@@ -6618,16 +6623,28 @@ table td strong {
 .mobile-view-portfolio,
 .mobile-view-favorites,
 .mobile-view-all-stocks {
-  /* Use more of the available width on mobile */
-  padding: 0.5rem;
+  /* Mobile app screens: let list rows stretch edge-to-edge (inner cards already have padding) */
+  padding: 0;
   padding-bottom: 2rem;
   /* REMOVED: overflow-y: auto - scroll only in .mobile-main-content to avoid nested scrolling */
 }
 
 .mobile-view-earnings {
-  /* Use more of the available width on mobile */
-  padding: 0.5rem;
+  /* Mobile app screens: use full width */
+  padding: 0;
   /* REMOVED: overflow-y: auto - scroll only in .mobile-main-content to avoid nested scrolling */
+}
+
+/* Mobile app views: remove legacy section padding that was meant for the old stacked layout */
+@media (max-width: 768px) {
+  .mobile-view-all-stocks .all-stocks,
+  .mobile-view-favorites .favorites,
+  .mobile-view-portfolio .portfolio,
+  .mobile-view-earnings .todays-earnings {
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow-x: visible;
+  }
 }
 
 /* Mobile Sticky Filter Bar */

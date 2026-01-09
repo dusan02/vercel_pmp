@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { BarChart3, PieChart, Star, Calendar, Globe } from 'lucide-react';
+import { PieChart, Star, Calendar, Globe } from 'lucide-react';
+import { SectionIcon } from '@/components/SectionIcon';
 
 export type MobileTab = 'heatmap' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks';
 
@@ -16,8 +17,12 @@ interface TabItem {
   icon: React.ComponentType<{ size?: number; className?: string }>;
 }
 
+const HeatmapTabIcon: React.FC<{ size?: number; className?: string }> = ({ size = 22, className }) => (
+  <SectionIcon type="heatmap" size={size} className={className || ''} />
+);
+
 const tabs: TabItem[] = [
-  { id: 'heatmap', label: 'Heatmap', icon: BarChart3 },
+  { id: 'heatmap', label: 'Heatmap', icon: HeatmapTabIcon },
   { id: 'portfolio', label: 'Portfolio', icon: PieChart },
   { id: 'favorites', label: 'Favorites', icon: Star },
   { id: 'earnings', label: 'Earnings', icon: Calendar },
