@@ -58,12 +58,18 @@ async function main() {
   }
   console.log('='.repeat(70) + '\n');
 
-  // Exit non-zero if critical invariants are violated (useful for cron alerting)
+  // Exit non-zero if critical invariants are violated.
+  // NOTE: Under PM2, a non-zero exit can be treated as a crash and may cause restart loops.
+  // Enable strict exit only when explicitly requested.
+  const strictExit =
+    process.env.INTEGRITY_STRICT_EXIT === '1' ||
+    process.env.INTEGRITY_STRICT_EXIT === 'true';
+
   const critical =
     summary.byCode.missing_prev_close.count > 0 ||
     summary.byCode.invalid_change_pct.count > 0;
 
-  process.exit(critical ? 2 : 0);
+  process.exit(strictExit && critical ? 2 : 0);
 }
 
 main().catch((error) => {

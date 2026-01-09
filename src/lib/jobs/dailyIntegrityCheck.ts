@@ -134,7 +134,9 @@ export async function runDailyIntegrityCheck(
   const session = detectSession(etNow);
 
   // Expected previous close trading day (ET calendar, weekend/holiday-aware).
-  const expectedPrevCloseDate = getLastTradingDay(etNow);
+  // IMPORTANT: Anchor to ET midnight of the current ET day to avoid environment/time-of-day quirks.
+  // This ensures "today" is derived from ET calendar date, not from server locale/offset at runtime.
+  const expectedPrevCloseDate = getLastTradingDay(createETDate(etDate));
   const expectedPrevCloseDateET = getDateET(expectedPrevCloseDate);
 
   // Regular close map for TODAY ET (usually empty at ~05:00 ET, but harmless and keeps parity with app logic).
