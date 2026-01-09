@@ -222,7 +222,8 @@ export async function GET(
               const res = j?.results;
               const branding = res?.branding;
               const homepageUrl = (res?.homepage_url ?? res?.homepageUrl ?? '') as string;
-              const rawLogo = (branding?.logo_url ?? branding?.icon_url ?? '') as string;
+              // Prefer icon_url for table/list usage (wordmark logo_url often becomes unreadable at small sizes)
+              const rawLogo = (branding?.icon_url ?? branding?.logo_url ?? '') as string;
 
               if (homepageUrl) {
                 try {

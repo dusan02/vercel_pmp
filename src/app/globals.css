@@ -4798,6 +4798,12 @@ h2:hover .section-icon {
   display: inline-block;
 }
 
+/* Desktop tables: give the logo column enough room for wide/wordmark badges */
+.table-wrapper-mobile-safe table th:first-child,
+.table-wrapper-mobile-safe table td:first-child {
+  width: 72px;
+}
+
 .data-source {
   position: absolute;
   top: -2px;

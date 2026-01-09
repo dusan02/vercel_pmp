@@ -6,23 +6,27 @@ interface CompanyLogoProps {
   ticker: string;
   logoUrl?: string;
   size?: number;
+  /** Optional explicit dimensions (useful for wordmark logos in tables). Defaults to size x size. */
+  width?: number;
+  height?: number;
   className?: string;
   priority?: boolean;
 }
 
 // Generate lightweight SVG placeholder (mini blurhash-like)
-function generateLQPlaceholder(ticker: string, size: number): string {
+function generateLQPlaceholder(ticker: string, width: number, height: number): string {
   const initial = ticker.slice(0, 2).toUpperCase();
   const colors = [
     '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
     '#EC4899', '#06B6D4', '#84CC16', '#F97316', '#6366F1'
   ];
   const color = colors[ticker.charCodeAt(0) % colors.length];
+  const fontSize = Math.max(8, Math.min(width, height) * 0.3);
 
   return `data:image/svg+xml,${encodeURIComponent(
-    `<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
-      <rect width="${size}" height="${size}" fill="${color}" rx="4"/>
-      <text x="50%" y="50%" font-family="Arial, sans-serif" font-size="${Math.max(8, size * 0.3)}" font-weight="bold" 
+    `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+      <rect width="${width}" height="${height}" fill="${color}" rx="6"/>
+      <text x="50%" y="50%" font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="bold" 
             fill="white" text-anchor="middle" dominant-baseline="central">${initial}</text>
     </svg>`
   )}`;
@@ -32,6 +36,8 @@ export default function CompanyLogo({
   ticker,
   logoUrl,
   size = 32,
+  width,
+  height,
   className = '',
   priority = false
 }: CompanyLogoProps) {
@@ -39,8 +45,11 @@ export default function CompanyLogo({
   const [isLoading, setIsLoading] = useState(true);
   const imgRef = useRef<HTMLImageElement>(null);
 
+  const w = width ?? size;
+  const h = height ?? size;
+
   // Generate lightweight placeholder immediately (no layout shift)
-  const placeholderSrc = useMemo(() => generateLQPlaceholder(ticker, size), [ticker, size]);
+  const placeholderSrc = useMemo(() => generateLQPlaceholder(ticker, w, h), [ticker, w, h]);
 
   // Unified strategy: Always use API endpoint for consistent behavior
   // API will try: static file -> Redis cache -> external API -> placeholder
@@ -51,7 +60,7 @@ export default function CompanyLogo({
   useEffect(() => {
     setHasError(false);
     setIsLoading(true);
-  }, [ticker, size]);
+  }, [ticker, w, h]);
 
   // Check if image is already loaded (from cache) immediately on mount
   useEffect(() => {
@@ -136,11 +145,11 @@ export default function CompanyLogo({
     <div
       className={`flex items-center justify-center text-white font-bold ${className}`}
       style={{
-        width: size,
-        height: size,
-        fontSize: Math.max(8, size * 0.3),
-        minWidth: size,
-        minHeight: size,
+        width: w,
+        height: h,
+        fontSize: Math.max(8, Math.min(w, h) * 0.3),
+        minWidth: w,
+        minHeight: h,
         borderRadius: 8,
         background: 'linear-gradient(135deg, #2563eb, #1e40af)',
         boxSizing: 'border-box',
@@ -176,8 +185,8 @@ export default function CompanyLogo({
     <div
       data-logo-ticker={ticker}
       style={{
-        width: size,
-        height: size,
+        width: w,
+        height: h,
         position: 'relative',
         flexShrink: 0, // Prevent layout shift
         borderRadius: 8,
@@ -193,8 +202,8 @@ export default function CompanyLogo({
         <img
           src={placeholderSrc}
           alt=""
-          width={size}
-          height={size}
+          width={w}
+          height={h}
           className="absolute inset-0"
           style={{
             objectFit: 'contain',
@@ -212,8 +221,8 @@ export default function CompanyLogo({
         ref={imgRef}
         src={logoSrc}
         alt={`${ticker} stock logo - ${ticker} company logo`}
-        width={size}
-        height={size}
+        width={w}
+        height={h}
         className=""
         style={{
           objectFit: 'contain',
