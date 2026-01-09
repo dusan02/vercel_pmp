@@ -23,6 +23,12 @@ const CRON_SECRET_KEY = process.env.CRON_SECRET_KEY || '';
 
 const CRON_JOBS = [
   {
+    name: 'Daily Integrity Check',
+    endpoint: '/api/cron/daily-integrity',
+    method: 'GET' as const, // Use GET for manual testing
+    requiresAuth: false
+  },
+  {
     name: 'Verify Sector/Industry',
     endpoint: '/api/cron/verify-sector-industry',
     method: 'GET' as const, // Use GET for manual testing (no auth required)

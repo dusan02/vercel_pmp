@@ -38,6 +38,9 @@ Thumbs.db
 # Logs
 *.log
 
+# TypeScript incremental build info
+*.tsbuildinfo
+
 # Runtime data
 pids
 *.pid

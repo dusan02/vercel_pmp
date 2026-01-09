@@ -108,5 +108,25 @@ module.exports = {
       cron_restart: "0 2 * * *", // Raz denne o 02:00 UTC
       autorestart: false, // Cron job sa spúšťa automaticky, nepotrebuje autorestart
     },
+    {
+      name: "daily-integrity-check",
+      script: "scripts/daily-integrity-check.ts",
+      interpreter: "npx",
+      interpreter_args: "tsx",
+      cwd: "/var/www/premarketprice",
+      instances: 1,
+      exec_mode: "fork",
+      env_production: {
+        NODE_ENV: "production",
+        DATABASE_URL: envVars.DATABASE_URL || process.env.DATABASE_URL,
+        POLYGON_API_KEY: envVars.POLYGON_API_KEY || process.env.POLYGON_API_KEY,
+      },
+      error_file: "/var/log/pm2/daily-integrity-check-error.log",
+      out_file: "/var/log/pm2/daily-integrity-check-out.log",
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      // 10:00 UTC ~= 05:00 ET (winter) / 06:00 ET (summer) -> safely AFTER prevClose bootstrap (04:00 ET)
+      cron_restart: "0 10 * * *",
+      autorestart: false,
+    },
   ],
 };
