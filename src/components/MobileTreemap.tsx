@@ -2,7 +2,7 @@
 
 import React, { useMemo, useCallback, useRef, useState } from 'react';
 import { CompanyNode } from './MarketHeatmap';
-import { formatPrice, formatPercent, formatMarketCap } from '@/lib/utils/format';
+import { formatPrice, formatPercent, formatMarketCap, formatMarketCapDiff } from '@/lib/utils/format';
 import { createHeatmapColorScale } from '@/lib/utils/heatmapColors';
 import Link from 'next/link';
 import { HeatmapMetricButtons } from './HeatmapMetricButtons';
@@ -61,7 +61,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
 
   // Get color for company
   const getColor = useCallback((company: CompanyNode): string => {
-    const value = metric === 'percent' ? company.changePercent : company.marketCap;
+    const value = metric === 'percent' ? company.changePercent : (company.marketCapDiff ?? 0);
     if (value === null || value === undefined) return '#1a1a1a';
     return colorScale(value);
   }, [metric, colorScale]);
@@ -121,10 +121,10 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
   const renderTile = useCallback((company: CompanyNode, index: number) => {
     const size = getSizeBucket(index);
     const color = getColor(company);
-    const value = metric === 'percent' ? company.changePercent : company.marketCap;
+    const value = metric === 'percent' ? (company.changePercent ?? 0) : (company.marketCapDiff ?? 0);
     const displayValue = metric === 'percent'
-      ? formatPercent(value || 0)
-      : formatMarketCap(value || 0);
+      ? formatPercent(value)
+      : formatMarketCapDiff(value);
     
     const isFav = isFavorite ? isFavorite(company.symbol) : false;
 
@@ -216,9 +216,10 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
               <div className={textClasses.value} style={{ fontWeight: 600 }}>
                 {displayValue}
               </div>
-              {company.currentPrice && (
+              {/* Price only makes sense in % mode; in Mcap mode show only cap diff */}
+              {metric === 'percent' && company.currentPrice && (
                 <div className={textClasses.price} style={{ opacity: 0.85 }}>
-                  {formatPrice(company.currentPrice)}
+                  ${formatPrice(company.currentPrice)}
                 </div>
               )}
             </div>
@@ -252,13 +253,12 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
           borderBottom: '1px solid rgba(255,255,255,0.08)',
           padding: '8px 10px',
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 10,
+          flexDirection: 'column',
+          gap: 8,
           flexShrink: 0,
         }}
       >
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex items-center justify-between gap-2 min-w-0">
           {onMetricChange && (
             <HeatmapMetricButtons
               metric={metric}
@@ -270,11 +270,10 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
           )}
         </div>
 
-        <div className="hidden sm:block">
-          <HeatmapLegend timeframe={timeframe} />
-        </div>
-        <div className="sm:hidden">
-          <HeatmapLegend timeframe={timeframe} />
+        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' as any }}>
+          <div style={{ transform: 'scale(0.92)', transformOrigin: 'left center', width: 'max-content' }}>
+            <HeatmapLegend timeframe={timeframe} />
+          </div>
         </div>
       </div>
 

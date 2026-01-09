@@ -287,7 +287,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
                 No stocks to display.
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-3">
+              <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden divide-y divide-gray-200 dark:divide-gray-800">
                 {displayedStocks.map((stock, index) => (
                   <StockCardMobile
                     key={stock.ticker}

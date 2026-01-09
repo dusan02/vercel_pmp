@@ -3950,7 +3950,7 @@ table td strong {
   left: 0;
   right: 0;
   z-index: 1000;
-  background: var(--clr-bg);
+  background: var(--clr-surface);
   border: 2px solid var(--clr-border);
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -3974,11 +3974,11 @@ table td strong {
 }
 
 .portfolio-search-result-item:hover {
-  background-color: var(--clr-surface);
+  background-color: var(--clr-surface-hover, var(--clr-surface));
 }
 
 .portfolio-search-result-item.selected {
-  background-color: var(--clr-surface);
+  background-color: var(--clr-surface-hover, var(--clr-surface));
   outline: 2px solid var(--clr-primary, #3b82f6);
   outline-offset: -2px;
 }

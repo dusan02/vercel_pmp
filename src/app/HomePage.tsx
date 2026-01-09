@@ -512,9 +512,10 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
           </PerformanceOptimizer>
         </Suspense>
 
-        <CookieConsent onAccept={() => setConsent(true)} />
       </div>
       )}
+      {/* Cookie consent must exist on mobile too; favorites depend on consent for local persistence */}
+      <CookieConsent onAccept={() => setConsent(true)} />
     </>
   );
 }
