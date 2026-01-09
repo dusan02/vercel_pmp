@@ -237,7 +237,11 @@ export async function getStocksList(options: {
     }
 
     // Collect DB update promises to ensure they complete before response
-    const dbUpdates: Promise<any>[] = [];
+    // IMPORTANT:
+    // Do NOT write to the DB in request path.
+    // SQLite (used on this server) will frequently time out / lock under concurrent writes (P1008),
+    // which degrades UX and can cascade into 502s behind nginx.
+    // Persistence is handled by background workers (pmp-polygon-worker).
     
     // DEBUG: Log pred map
     if (tickers && tickers.some(t => ['NVDA', 'GOOG', 'MSFT'].includes(t))) {
@@ -366,29 +370,9 @@ export async function getStocksList(options: {
         }
       }
 
-      // Persist calculated marketCapDiff to DB (vždy, ak máme hodnotu)
-      // Collect promises to await later (ensures DB writes complete before response)
-      if (marketCapDiff !== 0) {
-        // Brutálne jasný log pred update
-        console.log(`✅ PERSIST TRY ${s.symbol}: capDiff=${marketCapDiff}B method=${capDiffMethod} marketCap=${marketCap}B`);
-        
-        const updatePromise = prisma.ticker.update({
-          where: { symbol: s.symbol },
-          data: { 
-            lastMarketCapDiff: marketCapDiff,
-            lastMarketCap: marketCap
-          }
-        }).then(() => {
-          // Debug log pre veľké spoločnosti
-          if (marketCap > 1000 && capDiffMethod === "mcap_pct") {
-            console.log(`✅ ${s.symbol}: Persisted marketCapDiff=${marketCapDiff}B to DB`);
-          }
-        }).catch(err => {
-          console.warn(`⚠️ Failed to persist marketCapDiff for ${s.symbol}:`, err);
-        });
-        
-        dbUpdates.push(updatePromise);
-      } else if (marketCap > 1000 && (!sharesOutstanding || sharesOutstanding === 0)) {
+      // NOTE: We intentionally do not persist marketCapDiff here.
+      // If you need persistence, add it to a background worker instead.
+      if (marketCap > 1000 && marketCapDiff === 0 && (!sharesOutstanding || sharesOutstanding === 0)) {
         // Debug: prečo sa nepočíta pre veľké spoločnosti
         console.log(`⚠️ ${s.symbol}: marketCapDiff=0 (marketCap=${marketCap}B, percentChange=${percentChange}%, sharesOutstanding=${sharesOutstanding} (type: ${typeof sharesOutstanding}), method=${capDiffMethod})`);
       }
@@ -412,14 +396,7 @@ export async function getStocksList(options: {
       };
     });
 
-    // Wait for all DB updates to complete (only for small ticker lists to avoid blocking)
-    // For getAll=true with 500+ tickers, we skip this to avoid long response times
-    if (dbUpdates.length > 0 && (!tickers || tickers.length <= 50)) {
-      await Promise.allSettled(dbUpdates);
-      if (tickers && tickers.length > 0) {
-        console.log(`✅ Completed ${dbUpdates.length} DB updates for marketCapDiff`);
-      }
-    }
+    // No DB writes here (see note above).
 
     // Fallback for missing tickers (e.g. indices SPY, QQQ which might not be in DB during dev)
     if (tickers && tickers.length > 0) {
