@@ -1,8 +1,13 @@
 /**
- * DST-safe Eastern Time date utilities
- * 
- * CRITICAL: Never use fixed -05:00 offset (DST breaks it)
- * Always use timezone-aware date construction via Intl.DateTimeFormat
+ * Eastern Time date utilities (deterministic, server-safe)
+ *
+ * Why not Intl(timeZone=America/New_York)?
+ * - Some server Node/ICU builds mis-handle timezone data or midnight formatting,
+ *   which can corrupt trading-day calculations (we saw production drift to 2026-01-05).
+ *
+ * Approach:
+ * - Implement America/New_York offset using US DST rules (since 2007).
+ * - Keep computations purely in UTC math + offset conversion.
  */
 
 /**
@@ -11,8 +16,57 @@
 export function nowET(): Date {
   // IMPORTANT:
   // Return a real instant (UTC timestamp) and never "fake" a Date by parsing a localized string.
-  // All ET-specific logic must be computed via `toET()` (Intl) from this instant.
+  // All ET-specific logic must be computed via `toET()` (offset conversion) from this instant.
   return new Date();
+}
+
+function nthWeekdayOfMonthUTCNoon(year: number, month1: number, weekday: number, nth: number): number {
+  // month1: 1-12, weekday: 0=Sun..6=Sat
+  const first = new Date(Date.UTC(year, month1 - 1, 1, 12, 0, 0));
+  const firstDow = first.getUTCDay();
+  const delta = (weekday - firstDow + 7) % 7;
+  return 1 + delta + 7 * (nth - 1);
+}
+
+function getNyDstTransitionUtcMs(year: number): { dstStartUtcMs: number; dstEndUtcMs: number } {
+  // US DST (since 2007):
+  // - Starts: 2nd Sunday in March at 02:00 local (EST) => 07:00 UTC
+  // - Ends:   1st Sunday in November at 02:00 local (EDT) => 06:00 UTC
+  const dstStartDay = nthWeekdayOfMonthUTCNoon(year, 3, 0, 2); // 2nd Sunday March
+  const dstEndDay = nthWeekdayOfMonthUTCNoon(year, 11, 0, 1);  // 1st Sunday Nov
+  const dstStartUtcMs = Date.UTC(year, 2, dstStartDay, 7, 0, 0);
+  const dstEndUtcMs = Date.UTC(year, 10, dstEndDay, 6, 0, 0);
+  return { dstStartUtcMs, dstEndUtcMs };
+}
+
+function isNyDstAtUtcMs(utcMs: number): boolean {
+  const y = new Date(utcMs).getUTCFullYear();
+  const { dstStartUtcMs, dstEndUtcMs } = getNyDstTransitionUtcMs(y);
+  return utcMs >= dstStartUtcMs && utcMs < dstEndUtcMs;
+}
+
+function getNyOffsetMinutesAtUtcMs(utcMs: number): number {
+  return isNyDstAtUtcMs(utcMs) ? -4 * 60 : -5 * 60; // EDT : EST
+}
+
+function getNyOffsetMinutesForLocalMidnight(year: number, month1: number, day: number): number {
+  // Determine offset at 00:00 local time for the given local calendar date.
+  const dstStartDay = nthWeekdayOfMonthUTCNoon(year, 3, 0, 2);
+  const dstEndDay = nthWeekdayOfMonthUTCNoon(year, 11, 0, 1);
+
+  if (month1 < 3 || month1 > 11) return -5 * 60;
+  if (month1 > 3 && month1 < 11) return -4 * 60;
+
+  if (month1 === 3) {
+    if (day < dstStartDay) return -5 * 60;
+    if (day > dstStartDay) return -4 * 60;
+    return -5 * 60; // DST starts at 02:00, so midnight is still standard time
+  }
+
+  // month1 === 11
+  if (day < dstEndDay) return -4 * 60;
+  if (day > dstEndDay) return -5 * 60;
+  return -4 * 60; // DST ends at 02:00, so midnight is still daylight time
 }
 
 /**
@@ -40,44 +94,19 @@ export function toET(date: Date): {
   second: number;
   weekday: number; // 0=Sun..6=Sat (ET)
 } {
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/New_York',
-    // Force 00-23 hour cycle. Some Node/ICU builds can emit "24" at midnight for h24,
-    // which breaks offset calculations and day boundaries.
-    hourCycle: 'h23',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false
-  });
-
-  const parts = formatter.formatToParts(date);
-  const getPart = (type: string) => {
-    const part = parts.find(p => p.type === type);
-    return part ? parseInt(part.value, 10) : 0;
-  };
-
-  // IMPORTANT:
-  // Do NOT depend on localized weekday strings from Intl.
-  // Some Node/ICU builds can return unexpected values (or omit the part),
-  // which would break weekend/holiday logic and trading-day calculations.
-  // Compute weekday from the parsed ET calendar date instead.
-  const year = getPart('year');
-  const month = getPart('month');
-  const day = getPart('day');
-  const weekday = new Date(Date.UTC(year, month - 1, day, 12, 0, 0)).getUTCDay(); // 0=Sun..6=Sat
+  const utcMs = date.getTime();
+  const offsetMin = getNyOffsetMinutesAtUtcMs(utcMs);
+  const localMs = utcMs + offsetMin * 60_000;
+  const d = new Date(localMs);
 
   return {
-    year,
-    month,
-    day,
-    hour: getPart('hour'),
-    minute: getPart('minute'),
-    second: getPart('second'),
-    weekday
+    year: d.getUTCFullYear(),
+    month: d.getUTCMonth() + 1,
+    day: d.getUTCDate(),
+    hour: d.getUTCHours(),
+    minute: d.getUTCMinutes(),
+    second: d.getUTCSeconds(),
+    weekday: d.getUTCDay()
   };
 }
 
@@ -143,7 +172,7 @@ export function isInSessionET(
 
 /**
  * Create Date object for ET midnight (00:00:00 ET) from YYYY-MM-DD string
- * DST-safe - uses timezone conversion, not fixed offset
+ * DST-safe and deterministic
  */
 export function createETDate(dateString: string): Date {
   // Parse YYYY-MM-DD
@@ -158,50 +187,8 @@ export function createETDate(dateString: string): Date {
     throw new Error(`Invalid date string (non-numeric parts): ${dateString}`);
   }
 
-  const timeZone = 'America/New_York';
-  const dtf = new Intl.DateTimeFormat('en-US', {
-    timeZone,
-    // Force 00-23; avoid 24:00 at midnight which can shift day math.
-    hourCycle: 'h23',
-    hour12: false,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  });
-
-  const getOffsetMs = (date: Date) => {
-    const tzParts = dtf.formatToParts(date);
-    const getPart = (type: string) => {
-      const p = tzParts.find(x => x.type === type)?.value;
-      return p ? Number(p) : 0;
-    };
-
-    const asUTC = Date.UTC(
-      getPart('year'),
-      getPart('month') - 1,
-      getPart('day'),
-      getPart('hour'),
-      getPart('minute'),
-      getPart('second')
-    );
-
-    // Offset between the timezone and UTC at this instant
-    return asUTC - date.getTime();
-  };
-
-  // Convert "YYYY-MM-DD 00:00:00 ET" -> UTC, DST-safe.
-  // Start with UTC midnight guess, then correct using timezone offset (iterate once for DST boundaries).
-  const utcGuess = Date.UTC(year, month - 1, day, 0, 0, 0);
-  const offset1 = getOffsetMs(new Date(utcGuess));
-  let utcMs = utcGuess - offset1;
-  const offset2 = getOffsetMs(new Date(utcMs));
-  if (offset2 !== offset1) {
-    utcMs = utcGuess - offset2;
-  }
-
+  const offsetMin = getNyOffsetMinutesForLocalMidnight(year, month, day);
+  const utcMs = Date.UTC(year, month - 1, day, 0, 0, 0) - offsetMin * 60_000;
   return new Date(utcMs);
 }
 

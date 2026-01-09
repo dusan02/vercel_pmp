@@ -951,9 +951,44 @@ async function main() {
         const { getPrevClose } = await import('@/lib/redis/operations');
         const samplePrevCloses = await getPrevClose(today, tickers.slice(0, 10));
 
-        // Bootstrap if: (1) it's 04:00 ET, or (2) previous closes are missing (any time before market close)
-        const shouldBootstrap = (hours === 4 && minutes === 0) ||
-          (samplePrevCloses.size === 0 && hours >= 0 && hours < 16);
+        // Bootstrap if:
+        // 1) It's 04:00 ET (normal daily bootstrap)
+        // 2) Previous closes are missing (any time before market close)
+        // 3) Previous closes are present but STALE vs expected trading day (self-heal)
+        //
+        // NOTE: Our Redis prevClose cache doesn't store the trading-day date, only the number.
+        // To detect staleness we sample the DB `latestPrevCloseDate` for a small set of tickers.
+        let isStale = false;
+        try {
+          const { prisma } = await import('@/lib/db/prisma');
+          const expectedPrevYMD = getDateET(getLastTradingDay(createETDate(today)));
+          const sampleSymbols = tickers.slice(0, 25);
+          const rows = await prisma.ticker.findMany({
+            where: { symbol: { in: sampleSymbols } },
+            select: { latestPrevCloseDate: true }
+          });
+
+          const counts = new Map<string, number>();
+          for (const r of rows) {
+            if (!r.latestPrevCloseDate) continue;
+            const ymd = r.latestPrevCloseDate.toISOString().slice(0, 10);
+            counts.set(ymd, (counts.get(ymd) || 0) + 1);
+          }
+          const mode = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+          if (mode && expectedPrevYMD && mode < expectedPrevYMD) {
+            isStale = true;
+          }
+        } catch {
+          // Non-fatal: if DB is unavailable we fall back to missing-cache logic.
+        }
+
+        // Rate-limit stale-trigger bootstraps to every 30 minutes to avoid Polygon spam
+        const staleWindowOk = minutes % 30 === 0;
+
+        const shouldBootstrap =
+          (hours === 4 && minutes === 0) ||
+          (samplePrevCloses.size === 0 && hours >= 0 && hours < 16) ||
+          (isStale && hours >= 0 && hours < 16 && staleWindowOk);
 
         if (shouldBootstrap) {
           console.log('🔄 Bootstrapping previous closes...');
