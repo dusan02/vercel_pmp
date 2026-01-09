@@ -412,11 +412,16 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     const showValue = area >= 900 && w >= 44 && h >= 22; // % change OR B$ diff (based on metric)
     const showPrice = metric === 'percent' && !!company.currentPrice && area >= 1400 && w >= 60 && h >= 30;
 
+    // Typography tuned for mobile: base it on area (not just width/height) so medium tiles remain readable.
+    const minDim = Math.min(w, h);
     const tickerClass =
-      w >= 110 && h >= 70 ? 'text-xl font-extrabold tracking-tight' :
-      w >= 84 && h >= 48 ? 'text-lg font-bold tracking-tight' :
-      w >= 60 && h >= 34 ? 'text-sm font-semibold tracking-tight' :
+      area >= 9000 && minDim >= 64 ? 'text-xl font-extrabold tracking-tight' :
+      area >= 5200 && minDim >= 48 ? 'text-lg font-bold tracking-tight' :
+      area >= 2600 && minDim >= 34 ? 'text-sm font-semibold tracking-tight' :
       'text-[11px] font-semibold tracking-tight';
+
+    // Padding: reduce on mid/small tiles so text has room; still comfortable on large tiles.
+    const pad = Math.max(2, Math.min(10, Math.floor(minDim / 12)));
 
     const handleShortTap = (e: React.SyntheticEvent) => {
       // If a pinch gesture is/was active, ignore tap
@@ -456,7 +461,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
           lineHeight: '1.15',
           letterSpacing: '-0.01em',
           textAlign: 'left',
-          padding: Math.max(6, Math.min(10, Math.round(8 * zoom))),
+          padding: pad,
         }}
       >
         {isFav && (

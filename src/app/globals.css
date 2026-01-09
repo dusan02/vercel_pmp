@@ -6691,6 +6691,8 @@ table td strong {
   flex-shrink: 0;
   height: 40px;
   padding: 0 0.75rem;
+  /* Some iOS/Safari layouts behave oddly with flex gap; force a minimum separation from the input */
+  margin-left: 0.25rem;
   border-radius: 0.75rem;
   border: 1px solid var(--clr-border);
   background: var(--clr-bg);
