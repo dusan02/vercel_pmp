@@ -285,12 +285,12 @@ export function PortfolioSection({
             {/* Header row (mobile): align with PortfolioCardMobile grid */}
             <div className="px-3 py-1.5 bg-slate-50/80 dark:bg-white/5 text-[11px] font-semibold text-slate-600 dark:text-slate-300">
               <div className="grid items-center gap-x-2 min-w-0 [grid-template-columns:40px_minmax(56px,1fr)_56px_80px_56px_44px]">
-                <div>Logo</div>
-                <div>Ticker</div>
+                <div className="text-center">Logo</div>
+                <div className="text-center">Ticker</div>
                 <div className="text-center">#</div>
-                <div className="text-right">Price</div>
-                <div className="text-right">%</div>
-                <div className="text-right">X</div>
+                <div className="text-center">Price</div>
+                <div className="text-center">%</div>
+                <div className="text-center">X</div>
               </div>
             </div>
 

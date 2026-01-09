@@ -228,9 +228,9 @@ export const HeatmapLegend: React.FC<{ timeframe: 'day' | 'week' | 'month'; metr
     month: [-20, -12, -6, 0, 6, 12, 20],
   };
   const scalesB = {
-    day: [-50, -20, -10, 0, 10, 20, 50],
-    week: [-150, -60, -30, 0, 30, 60, 150],
-    month: [-300, -120, -60, 0, 60, 120, 300],
+    day: [-10, -3, -1, 0, 1, 3, 10],
+    week: [-30, -10, -3, 0, 3, 10, 30],
+    month: [-60, -20, -6, 0, 6, 20, 60],
   };
   const points = metric === 'mcap' ? scalesB[timeframe] : scales[timeframe];
 
