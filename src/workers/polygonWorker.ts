@@ -747,65 +747,114 @@ export async function bootstrapPreviousCloses(
   console.log(`🔄 Bootstrapping previous closes for ${tickers.length} tickers...`);
 
   // Fetch previous day's close prices from Polygon aggregates
-  // Use /prev endpoint as primary method (most reliable, automatically finds last trading day)
-  // Fallback to /range endpoint if /prev fails
+  //
+  // IMPORTANT (timezone correctness):
+  // Do NOT use `new Date('YYYY-MM-DD')` + `setDate()` to derive prior dates.
+  // That approach is sensitive to the server timezone (e.g. CET) and can shift the ISO day,
+  // causing us to fetch/save the wrong trading day (often 1–2 days off).
+  //
+  // Strategy:
+  // 1) Compute the expected previous trading day using ET-safe helpers.
+  // 2) Prefer an explicit /range query for that expected day.
+  // 3) Fall back to /prev only if /range isn't available yet.
+
+  const isLikelySqlite = (process.env.DATABASE_URL || '').startsWith('file:');
+  const dbWriteRetry = async <T>(fn: () => Promise<T>, label: string): Promise<T | null> => {
+    const maxAttempts = isLikelySqlite ? 6 : 3;
+    let delayMs = 75;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        return await fn();
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        const code = (err as any)?.code as string | undefined;
+        const isDbBusy =
+          code === 'P1008' ||
+          msg.includes('SQLITE_BUSY') ||
+          msg.includes('database is locked') ||
+          msg.includes('failed to respond to a query within the configured timeout');
+
+        if (!isDbBusy || attempt === maxAttempts) {
+          console.warn(`⚠️ DB write failed (${label}) after ${attempt}/${maxAttempts}:`, err);
+          return null;
+        }
+
+        await sleep(delayMs);
+        delayMs = Math.min(1500, Math.floor(delayMs * 1.8));
+      }
+    }
+    return null;
+  };
+
+  const expectedPrevTradingDay = getLastTradingDay(createETDate(date));
+  const expectedPrevYMD = getDateET(expectedPrevTradingDay);
+
   for (const symbol of tickers) {
     try {
       let prevClose = 0;
       let prevTradingDay: Date | null = null;
       
-      // PRIORITY 1: Try /prev endpoint (most reliable, automatically finds last trading day)
+      // PRIORITY 1: Explicit /range for expected previous trading day (ET-safe)
       try {
-        const prevUrl = `https://api.polygon.io/v2/aggs/ticker/${symbol}/prev?adjusted=true&apiKey=${apiKey}`;
-        const prevResponse = await withRetry(async () => fetch(prevUrl));
-
-        if (prevResponse.ok) {
-          const prevData = await prevResponse.json();
-          if (prevData?.results?.[0]?.c && prevData.results[0].c > 0) {
-            prevClose = prevData.results[0].c;
-            // Extract timestamp from result to get the actual trading day
-            const timestamp = prevData.results[0].t;
-            if (timestamp) {
-              // Convert Unix timestamp (ms) to Date, then to ET date string
-              const prevDate = new Date(timestamp);
-              const prevDateStr = getDateET(prevDate);
-              prevTradingDay = createETDate(prevDateStr);
-            } else {
-              // Fallback: use getLastTradingDay if timestamp not available
-              const today = createETDate(date);
-              prevTradingDay = getLastTradingDay(today);
-            }
+        const rangeUrl = `https://api.polygon.io/v2/aggs/ticker/${symbol}/range/1/day/${expectedPrevYMD}/${expectedPrevYMD}?adjusted=true&apiKey=${apiKey}`;
+        const rangeResp = await withRetry(async () => fetch(rangeUrl));
+        if (rangeResp.ok) {
+          const rangeData = await rangeResp.json();
+          const c = rangeData?.results?.[0]?.c;
+          if (typeof c === 'number' && c > 0) {
+            prevClose = c;
+            prevTradingDay = expectedPrevTradingDay;
           }
         }
-      } catch (prevError) {
-        console.warn(`⚠️ /prev endpoint failed for ${symbol}, trying /range fallback:`, prevError);
+      } catch (rangeError) {
+        console.warn(`⚠️ /range expected-day failed for ${symbol}, falling back to /prev:`, rangeError);
       }
 
-      // PRIORITY 2: Fallback to /range endpoint if /prev didn't work
+      // PRIORITY 2: /prev endpoint (can lag early morning; accept its date if that's all we have)
+      if (!prevClose || !prevTradingDay) {
+        try {
+          const prevUrl = `https://api.polygon.io/v2/aggs/ticker/${symbol}/prev?adjusted=true&apiKey=${apiKey}`;
+          const prevResponse = await withRetry(async () => fetch(prevUrl));
+
+          if (prevResponse.ok) {
+            const prevData = await prevResponse.json();
+            const c = prevData?.results?.[0]?.c;
+            if (typeof c === 'number' && c > 0) {
+              prevClose = c;
+              const timestamp = prevData?.results?.[0]?.t;
+              if (timestamp) {
+                const prevDate = new Date(timestamp);
+                prevTradingDay = createETDate(getDateET(prevDate));
+              } else {
+                prevTradingDay = expectedPrevTradingDay;
+              }
+            }
+          }
+        } catch (prevError) {
+          console.warn(`⚠️ /prev endpoint failed for ${symbol}, trying lookback /range:`, prevError);
+        }
+      }
+
+      // PRIORITY 3: Lookback /range (ET-safe day stepping)
       if (!prevClose || !prevTradingDay) {
         const maxLookback = 10;
+        const etMidnight = createETDate(date);
         for (let i = 1; i <= maxLookback; i++) {
-          const prevDate = new Date(date);
-          prevDate.setDate(prevDate.getDate() - i);
-          const prevDateStr = prevDate.toISOString().split('T')[0];
+          const candidate = new Date(etMidnight.getTime() - i * 24 * 60 * 60 * 1000);
+          const prevDateStr = getDateET(candidate);
 
-          // Use adjusted=true for split-adjusted prices
           const url = `https://api.polygon.io/v2/aggs/ticker/${symbol}/range/1/day/${prevDateStr}/${prevDateStr}?adjusted=true&apiKey=${apiKey}`;
           const response = await withRetry(async () => fetch(url));
 
           if (response.ok) {
             const data = await response.json();
-            if (data.results && data.results.length > 0) {
-              prevClose = data.results[0].c; // close price
-              if (prevClose > 0 && prevDateStr) {
-                // Use the actual trading day when this close happened (prevDateStr, not "today")
-                // This ensures DailyRef.date matches when the previous close actually occurred
-                prevTradingDay = createETDate(prevDateStr);
-                break; // Found it, stop looking back
-              }
+            const c = data?.results?.[0]?.c;
+            if (typeof c === 'number' && c > 0) {
+              prevClose = c;
+              prevTradingDay = createETDate(prevDateStr);
+              break;
             }
           }
-          // Small delay between attempts
           await sleep(100);
         }
       }
@@ -816,24 +865,28 @@ export async function bootstrapPreviousCloses(
         
         // Save to DB immediately for persistence
         // CRITICAL: Use prevTradingDay (when close happened), not "today"
-        try {
-          await prisma.dailyRef.upsert({
-            where: { symbol_date: { symbol, date: prevTradingDay } },
-            update: { previousClose: prevClose, updatedAt: new Date() },
-            create: { symbol, date: prevTradingDay, previousClose: prevClose }
-          });
-          
-          // Also update Ticker.latestPrevClose and latestPrevCloseDate for consistency
-          await prisma.ticker.update({
-            where: { symbol },
-            data: {
-              latestPrevClose: prevClose,
-              latestPrevCloseDate: prevTradingDay
-            }
-          });
-        } catch (dbErr) {
-          console.warn(`⚠️ Failed to save bootstrapped prevClose to DB for ${symbol}:`, dbErr);
-        }
+        await dbWriteRetry(
+          () =>
+            prisma.dailyRef.upsert({
+              where: { symbol_date: { symbol, date: prevTradingDay } },
+              update: { previousClose: prevClose, updatedAt: new Date() },
+              create: { symbol, date: prevTradingDay, previousClose: prevClose }
+            }),
+          `dailyRef.upsert:${symbol}`
+        );
+
+        // Also update Ticker.latestPrevClose and latestPrevCloseDate for consistency
+        await dbWriteRetry(
+          () =>
+            prisma.ticker.update({
+              where: { symbol },
+              data: {
+                latestPrevClose: prevClose,
+                latestPrevCloseDate: prevTradingDay
+              }
+            }),
+          `ticker.update(prevClose):${symbol}`
+        );
 
         const prevDateStr = getDateET(prevTradingDay);
         console.log(`✅ Set previous close for ${symbol} (from ${prevDateStr}): $${prevClose}, saved with date ${prevDateStr}`);

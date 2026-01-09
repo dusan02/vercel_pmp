@@ -333,53 +333,74 @@ export async function fetchPreviousClosesBatchAndPersist(
     let persistSuccessCount = 0;
     let persistFailedCount = 0;
     const persistErrors: string[] = [];
+    const isLikelySqlite = (process.env.DATABASE_URL || '').startsWith('file:');
     
     try {
       const { prisma } = await import('@/lib/db/prisma');
       const dateObj = createETDate(today);
       const lastTradingDay = getLastTradingDay(dateObj);
 
-      const persistPromises = Array.from(results.entries()).map(async ([ticker, prevClose]) => {
-        try {
-          // Save to DailyRef
-          await prisma.dailyRef.upsert({
-            where: {
-              symbol_date: {
-                symbol: ticker,
-                date: lastTradingDay
-              }
-            },
-            update: {
-              previousClose: prevClose,
-              updatedAt: new Date()
-            },
-            create: {
+      // SQLite is extremely sensitive to concurrent writes. Persist sequentially when SQLite is used.
+      // For other DBs we can keep parallelism (bounded by options.maxConcurrent elsewhere in fetch).
+      const entries = Array.from(results.entries());
+      const persistOne = async (ticker: string, prevClose: number) => {
+        // Save to DailyRef
+        await prisma.dailyRef.upsert({
+          where: {
+            symbol_date: {
               symbol: ticker,
-              date: lastTradingDay,
-              previousClose: prevClose
+              date: lastTradingDay
             }
-          });
+          },
+          update: {
+            previousClose: prevClose,
+            updatedAt: new Date()
+          },
+          create: {
+            symbol: ticker,
+            date: lastTradingDay,
+            previousClose: prevClose
+          }
+        });
 
-          // Update Ticker.latestPrevClose
-          await prisma.ticker.update({
-            where: { symbol: ticker },
-            data: {
-              latestPrevClose: prevClose,
-              latestPrevCloseDate: lastTradingDay,
-              updatedAt: new Date()
-            }
-          });
-          
-          persistSuccessCount++;
-        } catch (error) {
-          persistFailedCount++;
-          const errorMsg = error instanceof Error ? error.message : String(error);
-          persistErrors.push(`${ticker}: ${errorMsg}`);
-          logger.warn(`Failed to persist prevClose for ${ticker} (will remain in Redis cache):`, error);
+        // Update Ticker.latestPrevClose
+        await prisma.ticker.update({
+          where: { symbol: ticker },
+          data: {
+            latestPrevClose: prevClose,
+            latestPrevCloseDate: lastTradingDay,
+            updatedAt: new Date()
+          }
+        });
+      };
+
+      if (isLikelySqlite) {
+        for (const [ticker, prevClose] of entries) {
+          try {
+            await persistOne(ticker, prevClose);
+            persistSuccessCount++;
+          } catch (error) {
+            persistFailedCount++;
+            const errorMsg = error instanceof Error ? error.message : String(error);
+            persistErrors.push(`${ticker}: ${errorMsg}`);
+            logger.warn(`Failed to persist prevClose for ${ticker} (will remain in Redis cache):`, error);
+          }
         }
-      });
+      } else {
+        const persistPromises = entries.map(async ([ticker, prevClose]) => {
+          try {
+            await persistOne(ticker, prevClose);
+            persistSuccessCount++;
+          } catch (error) {
+            persistFailedCount++;
+            const errorMsg = error instanceof Error ? error.message : String(error);
+            persistErrors.push(`${ticker}: ${errorMsg}`);
+            logger.warn(`Failed to persist prevClose for ${ticker} (will remain in Redis cache):`, error);
+          }
+        });
 
-      await Promise.all(persistPromises);
+        await Promise.all(persistPromises);
+      }
       
       if (persistFailedCount > 0) {
         logger.warn(`[runId:${runId}] Partial persist: ${persistSuccessCount} succeeded, ${persistFailedCount} failed. Errors: ${persistErrors.slice(0, 5).join('; ')}${persistErrors.length > 5 ? '...' : ''}`);
