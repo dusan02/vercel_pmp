@@ -180,6 +180,8 @@ export default function RootLayout({
         <link rel="preconnect" href="https://www.googletagmanager.com" crossOrigin="anonymous" />
         {/* DNS prefetch pre API endpoints (rýchlejšie načítanie) */}
         <link rel="dns-prefetch" href="/api" />
+        {/* Prefetch heatmap API for faster desktop loading */}
+        <link rel="prefetch" href="/api/heatmap?timeframe=day&metric=percent" as="fetch" crossOrigin="anonymous" />
 
         {/* Cache Clear Utility - Development Only */}
         {process.env.NODE_ENV === 'development' && (

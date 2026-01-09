@@ -32,7 +32,7 @@ export function HeatmapMetricButtons({
   if (!mounted) {
     return (
       <div className={`inline-flex items-center ${className}`} aria-hidden="true">
-        <div className="w-32 h-8 bg-slate-100 dark:bg-slate-700 rounded-full animate-pulse" />
+        <div className="w-32 h-8 bg-slate-100 dark:bg-slate-700 rounded-lg animate-pulse" />
       </div>
     );
   }
@@ -68,7 +68,7 @@ export function HeatmapMetricButtons({
       role="tablist"
       aria-label="Heatmap metric"
     >
-      <div className={`inline-flex items-center rounded-full border ${surface} ${border} p-0.5`}>
+      <div className={`inline-flex items-center rounded-lg border ${surface} ${border} p-0.5`}>
         <button
           type="button"
           role="tab"
@@ -78,7 +78,7 @@ export function HeatmapMetricButtons({
             e.stopPropagation();
             if (!isPercent) onMetricChange('percent');
           }}
-          className={`px-2 py-1 text-[11px] font-semibold rounded-full transition-colors ${isPercent ? active : inactive}`}
+          className={`px-2 py-1 text-[11px] font-semibold rounded-lg transition-colors ${isPercent ? active : inactive}`}
         >
           % Change
         </button>
@@ -91,7 +91,7 @@ export function HeatmapMetricButtons({
             e.stopPropagation();
             if (isPercent) onMetricChange('mcap');
           }}
-          className={`px-2 py-1 text-[11px] font-semibold rounded-full transition-colors ${!isPercent ? active : inactive}`}
+          className={`px-2 py-1 text-[11px] font-semibold rounded-lg transition-colors ${!isPercent ? active : inactive}`}
         >
           Mcap Change
         </button>

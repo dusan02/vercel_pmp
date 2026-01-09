@@ -45,9 +45,14 @@ const HomeEarnings = dynamic(
   () => import('@/components/home/HomeEarnings').then((mod) => mod.HomeEarnings),
   { ssr: false, loading: () => null }
 );
+// OPTIMIZATION: Enable SSR for desktop (faster initial load), keep ssr: false for mobile
+// Desktop heatmap can be server-rendered, mobile uses different components
 const HomeHeatmap = dynamic(
   () => import('@/components/home/HomeHeatmap').then((mod) => mod.HomeHeatmap),
-  { ssr: false, loading: () => null } // Custom loading handled inside if needed, or skeleton
+  { 
+    ssr: true, // Enable SSR for faster desktop loading
+    loading: () => null // Custom loading handled inside if needed, or skeleton
+  }
 );
 
 const CookieConsent = dynamic(

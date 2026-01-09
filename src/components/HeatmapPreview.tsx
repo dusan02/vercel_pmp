@@ -8,11 +8,12 @@ import { useHeatmapMetric } from '@/hooks/useHeatmapMetric';
 import { HeatmapMetricButtons } from './HeatmapMetricButtons';
 import { HeatmapViewButton } from './HeatmapViewButton';
 
-// Dynamicky importujeme ResponsiveMarketHeatmap, aby sa nenačítal hneď (lazy loading)
+// OPTIMIZATION: Enable SSR for desktop (faster initial load)
+// Mobile uses different components, so SSR is safe for desktop
 const ResponsiveMarketHeatmap = dynamic(
   () => import('@/components/ResponsiveMarketHeatmap').then(mod => ({ default: mod.default })),
   {
-    ssr: false,
+    ssr: true, // Enable SSR for faster desktop loading
     loading: () => (
       <div className="w-full h-full flex items-center justify-center bg-black text-white text-sm">
         Loading heatmap preview...
