@@ -254,6 +254,28 @@ export function resolveEffectivePrice(
       }
     }
 
+    // Fallback: if Polygon has no pre-market prints/quotes yet, use prevDay.c (previous close)
+    // This prevents extremely stale DB prices (e.g. from days ago) from showing up as "current" in our UI.
+    //
+    // NOTE: This is intentionally marked stale and uses an old timestamp (best-effort from snapshot),
+    // so it won't be treated as a fresh tick.
+    if (snapshot.prevDay?.c && snapshot.prevDay.c > 0) {
+      const candidateTs =
+        snapshot.lastTrade?.t ||
+        snapshot.lastQuote?.t ||
+        snapshot.min?.t ||
+        null;
+
+      const candidateTsMs = candidateTs ? nsToMs(candidateTs) : nowMs;
+      return {
+        price: snapshot.prevDay.c,
+        source: 'regularClose',
+        timestamp: new Date(candidateTsMs),
+        isStale: true,
+        staleReason: 'No valid pre-market price; falling back to previous close'
+      };
+    }
+
     // No valid pre-market price found
     return null;
   }
