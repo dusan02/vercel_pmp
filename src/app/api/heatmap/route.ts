@@ -587,8 +587,14 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
-      // Staleness: same semantics as /api/stocks (1min live, 5min pre/after)
-      const thresholdMin = session === 'live' ? 1 : 5;
+      // "isStale" is used for UX/diagnostics ("is this price reasonably fresh for this session?").
+      // The previous thresholds (live=1min, pre/after=5min) were too strict and caused most tickers
+      // to appear stale even though they were updated recently.
+      const thresholdMin =
+        session === 'live' ? 5 :
+        session === 'pre' ? 30 :
+        session === 'after' ? 30 :
+        60;
       const nowMs = etNow.getTime();
       const isStale = currentPrice > 0 && priceTsMs > 0 && (nowMs - priceTsMs) > thresholdMin * 60_000;
       const lastUpdatedIso = priceTsMs ? new Date(priceTsMs).toISOString() : undefined;

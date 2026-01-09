@@ -305,7 +305,14 @@ export async function getStocksList(options: {
       const lastUpdated = lastTs.toISOString();
 
       const isFrozen = !!pricingState.useFrozenPrice;
-      const thresholdMin = session === 'live' ? 1 : 5;
+      // "isStale" is used for UX/diagnostics ("is this price reasonably fresh for this session?").
+      // The previous thresholds (live=1min, pre/after=5min) were too strict and caused most tickers
+      // to appear stale even though they were updated recently.
+      const thresholdMin =
+        session === 'live' ? 5 :
+        session === 'pre' ? 30 :
+        session === 'after' ? 30 :
+        60;
       const ageMs = etNow.getTime() - lastTs.getTime();
       const isStale = !isFrozen && currentPrice > 0 && ageMs > thresholdMin * 60_000;
 
