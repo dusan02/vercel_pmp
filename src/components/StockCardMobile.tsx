@@ -30,19 +30,26 @@ export const StockCardMobile = memo(({
 
   return (
     <div className="px-3 py-2 active:bg-gray-50 dark:active:bg-gray-800 transition-colors">
-      <div className="flex items-center gap-1.5 min-w-0">
+      {/* Fixed-column grid so values are centered under headers (like a table) */}
+      <div
+        className={
+          displayMode === 'capDiff'
+            ? 'grid items-center gap-x-2 min-w-0 [grid-template-columns:40px_minmax(56px,1fr)_72px_72px_44px]'
+            : 'grid items-center gap-x-2 min-w-0 [grid-template-columns:40px_minmax(56px,1fr)_96px_56px_44px]'
+        }
+      >
         {/* Logo */}
-        <div className="flex-shrink-0">
-          <CompanyLogo 
-            ticker={stock.ticker} 
-            {...(stock.logoUrl ? { logoUrl: stock.logoUrl } : {})} 
-            size={40} 
-            priority={priority} 
+        <div className="flex-shrink-0 justify-self-center">
+          <CompanyLogo
+            ticker={stock.ticker}
+            {...(stock.logoUrl ? { logoUrl: stock.logoUrl } : {})}
+            size={40}
+            priority={priority}
           />
         </div>
-        
-        {/* Ticker (flexible so we never overflow on small screens) */}
-        <div className="flex-1 min-w-0">
+
+        {/* Ticker */}
+        <div className="min-w-0 text-center">
           <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100 tracking-tight truncate">
             {stock.ticker}
           </h3>
@@ -51,41 +58,41 @@ export const StockCardMobile = memo(({
         {displayMode === 'capDiff' ? (
           <>
             {/* Market Cap */}
-            <div className="text-right flex-shrink-0 w-[72px]">
+            <div className="text-center">
               <div className="font-mono font-semibold text-gray-900 dark:text-gray-100 text-sm tabular-nums">
                 {stock.marketCap ? `${formattedCap}` : '—'}
               </div>
             </div>
             {/* Cap Diff */}
-            <div className={`text-xs font-semibold flex-shrink-0 w-[72px] text-right tabular-nums ${capDiffIsPositive ? 'text-green-600' : 'text-red-600'}`}>
+            <div className={`text-xs font-semibold text-center tabular-nums ${capDiffIsPositive ? 'text-green-600' : 'text-red-600'}`}>
               {stock.marketCapDiff ? formattedCapDiff : '—'}
             </div>
           </>
         ) : displayMode === 'cap' ? (
           <>
-            {/* Market Cap (instead of Price when sorting by MarketCap) */}
-            <div className="text-right flex-shrink-0 w-24">
+            {/* Market Cap */}
+            <div className="text-center">
               <div className="font-mono font-semibold text-gray-900 dark:text-gray-100 text-sm tabular-nums">
                 {stock.marketCap ? `${formattedCap}` : '—'}
               </div>
             </div>
 
             {/* % Change */}
-            <div className={`text-xs font-semibold flex-shrink-0 w-14 text-right tabular-nums ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+            <div className={`text-xs font-semibold text-center tabular-nums ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
               {formattedPercentChange}
             </div>
           </>
         ) : (
           <>
-            {/* Price - fixed width for alignment */}
-            <div className="text-right flex-shrink-0 w-24">
+            {/* Price */}
+            <div className="text-center">
               <div className="font-mono font-semibold text-gray-900 dark:text-gray-100 text-sm tabular-nums">
                 {hasValidPrice ? `$${formattedPrice}` : '—'}
               </div>
             </div>
 
-            {/* % Change - fixed width for alignment */}
-            <div className={`text-xs font-semibold flex-shrink-0 w-14 text-right tabular-nums ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+            {/* % Change */}
+            <div className={`text-xs font-semibold text-center tabular-nums ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
               {formattedPercentChange}
             </div>
           </>
@@ -105,7 +112,7 @@ export const StockCardMobile = memo(({
             onToggleFavorite();
           }}
           // Best practice: 44x44px tap target on mobile
-          className="flex-shrink-0 w-11 h-11 flex items-center justify-center bg-transparent active:bg-transparent rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900"
+          className="w-11 h-11 flex items-center justify-center bg-transparent active:bg-transparent rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 justify-self-center"
           aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
           style={{ WebkitTapHighlightColor: 'transparent' }}
         >

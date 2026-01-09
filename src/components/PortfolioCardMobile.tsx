@@ -43,7 +43,7 @@ export const PortfolioCardMobile = memo(({
       {/* Fixed-column grid so rows align perfectly (like a table) */}
       <div className="grid items-center gap-x-2 min-w-0 [grid-template-columns:40px_minmax(56px,1fr)_56px_80px_56px_44px]">
         {/* Logo */}
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 justify-self-center">
           <CompanyLogo
             ticker={stock.ticker}
             {...(stock.logoUrl ? { logoUrl: stock.logoUrl } : {})}
@@ -53,7 +53,7 @@ export const PortfolioCardMobile = memo(({
         </div>
 
         {/* Ticker */}
-        <div className="min-w-0">
+        <div className="min-w-0 text-center">
           <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100 tracking-tight truncate">
             {stock.ticker}
           </h3>
@@ -67,14 +67,14 @@ export const PortfolioCardMobile = memo(({
         </div>
 
         {/* Price */}
-        <div className="text-right">
+        <div className="text-center">
           <div className="font-mono font-semibold text-gray-900 dark:text-gray-100 text-sm tabular-nums">
             ${formattedPrice}
           </div>
         </div>
 
         {/* % Change */}
-        <div className={`text-xs font-semibold text-right tabular-nums ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+        <div className={`text-xs font-semibold text-center tabular-nums ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
           {formattedPercentChange}
         </div>
 
@@ -90,7 +90,7 @@ export const PortfolioCardMobile = memo(({
             e.stopPropagation();
             onRemoveStock(stock.ticker);
           }}
-          className="w-11 h-11 flex items-center justify-center text-red-600 bg-transparent active:bg-transparent rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 justify-self-end"
+          className="w-11 h-11 flex items-center justify-center text-red-600 bg-transparent active:bg-transparent rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 justify-self-center"
           aria-label={`Remove ${stock.ticker} from portfolio`}
           style={{ WebkitTapHighlightColor: 'transparent' }}
         >
