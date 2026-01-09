@@ -150,6 +150,23 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
     }
   }, [isMounted]);
 
+  // Listen for custom navigation events (e.g., from FavoritesSection)
+  useEffect(() => {
+    if (!isMounted) return;
+    const handleNavChange = (e: CustomEvent<string>) => {
+      const tab = e.detail;
+      if (tab === 'heatmap' || tab === 'portfolio' || tab === 'favorites' || tab === 'earnings' || tab === 'allStocks') {
+        setActiveMobileSection(tab);
+        // Update URL without page reload
+        const url = new URL(window.location.href);
+        url.searchParams.set('tab', tab);
+        window.history.pushState({}, '', url.toString());
+      }
+    };
+    window.addEventListener('mobile-nav-change', handleNavChange as EventListener);
+    return () => window.removeEventListener('mobile-nav-change', handleNavChange as EventListener);
+  }, [isMounted]);
+
   // Handle mobile bottom navigation change - VIEW-BASED (tabs, not scroll)
   const handleMobileNavChange = useCallback((tab: 'heatmap' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks') => {
     setActiveMobileSection(tab);

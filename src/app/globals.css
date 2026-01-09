@@ -6680,25 +6680,32 @@ table td strong {
   display: flex;
   gap: 0.5rem;
   align-items: center;
+  width: 100%;
+  /* Ensure no overflow */
+  min-width: 0;
 }
 
 .mobile-search-grow {
   flex: 1;
   min-width: 0;
+  /* Ensure search bar doesn't grow beyond available space */
+  max-width: calc(100% - 100px);
 }
 
 .mobile-filters-toggle {
   flex-shrink: 0;
   height: 40px;
   padding: 0 0.75rem;
-  /* Some iOS/Safari layouts behave oddly with flex gap; force a minimum separation from the input */
-  margin-left: 0.25rem;
+  /* Remove margin-left, use gap instead for consistent spacing */
+  margin-left: 0;
   border-radius: 0.75rem;
   border: 1px solid var(--clr-border);
   background: var(--clr-bg);
   color: var(--clr-text);
   font-weight: 600;
   font-size: 0.875rem;
+  /* Ensure button doesn't shrink below its content */
+  white-space: nowrap;
 }
 
 .mobile-sort-row {

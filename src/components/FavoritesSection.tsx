@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { SortKey } from '@/hooks/useSortableData';
 import { SectionIcon } from './SectionIcon';
 import { StockTableRow } from './StockTableRow';
@@ -30,6 +30,16 @@ export function FavoritesSection({
   onToggleFavorite,
   isFavorite
 }: FavoritesSectionProps) {
+  const router = useRouter();
+
+  const handleBrowseStocks = () => {
+    // Update URL and trigger navigation in HomePage
+    router.push('/?tab=allStocks');
+    // Also try to trigger navigation via custom event (if HomePage listens)
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('mobile-nav-change', { detail: 'allStocks' }));
+    }
+  };
 
   if (loading) {
     return (
@@ -63,13 +73,13 @@ export function FavoritesSection({
           <span className="text-xs text-slate-400 dark:text-slate-500">
             Tap ☆ next to a stock to add it here.
           </span>
-          <Link
-            href="/?tab=allStocks"
-            className="mt-2 px-3 py-2 rounded-md bg-blue-600 text-white text-sm font-semibold"
+          <button
+            onClick={handleBrowseStocks}
+            className="mt-2 px-3 py-2 rounded-md bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors"
             style={{ WebkitTapHighlightColor: 'transparent' }}
           >
             Browse stocks →
-          </Link>
+          </button>
         </div>
       </section>
     );

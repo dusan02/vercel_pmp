@@ -437,6 +437,12 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
       if (onTileClick) onTileClick(company);
     };
 
+    // Ensure pixel-perfect alignment to prevent overlapping
+    const left = Math.floor(leaf.x0 * zoom);
+    const top = Math.floor(leaf.y0 * zoom);
+    const width = Math.ceil(w);
+    const height = Math.ceil(h);
+
     return (
       <button
         key={company.symbol}
@@ -449,10 +455,10 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
         onMouseLeave={() => handleTouchEnd(company.symbol)}
         className="block absolute overflow-hidden active:opacity-80 transition-opacity"
         style={{
-          left: leaf.x0 * zoom,
-          top: leaf.y0 * zoom,
-          width: w,
-          height: h,
+          left: `${left}px`,
+          top: `${top}px`,
+          width: `${width}px`,
+          height: `${height}px`,
           backgroundColor: color,
           color: '#ffffff',
           borderRadius: 0,
