@@ -75,7 +75,10 @@ export function HeatmapTooltip({ company, position, timeframe, metric }: Heatmap
   return (
     <div className={styles.heatmapTooltip} style={tooltipStyle}>
       <div className={styles.heatmapTooltipTitle}>
-        {company.symbol} - {company.name}
+        {company.symbol}
+        {company.name && company.name.trim() && company.name.trim().toUpperCase() !== company.symbol.toUpperCase()
+          ? ` - ${company.name}`
+          : ''}
       </div>
       <div className={styles.heatmapTooltipRow}>
         <span className={styles.heatmapTooltipLabel}>Sector:</span>
