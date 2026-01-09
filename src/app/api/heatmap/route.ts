@@ -273,6 +273,8 @@ export async function GET(request: NextRequest) {
       const priceMap = new Map<string, typeof allSessionPrices[0]>();
       for (const sp of records) {
         const existing = priceMap.get(sp.symbol);
+        // Keep the newest record per symbol. On ties (same lastTs), keep the first one
+        // (records are ordered by lastTs desc, then session asc).
         if (!existing || (sp.lastTs && existing.lastTs && sp.lastTs > existing.lastTs)) {
           priceMap.set(sp.symbol, sp);
         }
@@ -345,7 +347,9 @@ export async function GET(request: NextRequest) {
     for (const sp of sessionPrices) {
       const spTs = sp.lastTs ? new Date(sp.lastTs).getTime() : (sp.updatedAt ? new Date(sp.updatedAt).getTime() : 0);
       const existing = priceMap.get(sp.symbol);
-      if (!existing || (spTs && spTs > existing.tsMs)) {
+      // Prefer SessionPrice when it is newer OR exactly equal (tie-break in favor of SessionPrice).
+      // This avoids confusing cases where both sources have the same timestamp but we still label it as "ticker".
+      if (!existing || (spTs && spTs >= existing.tsMs)) {
         priceMap.set(sp.symbol, {
           price: sp.lastPrice,
           changePct: sp.changePct,
