@@ -57,9 +57,12 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
   // Internal zoom for mobile heatmap:
   // zoom-in => more tiles become readable; zoom-out => labels disappear naturally.
   const [zoom, setZoom] = useState(1);
+  // Expanded mode: taller treemap canvas with vertical scrolling for larger tiles
+  const [expanded, setExpanded] = useState(true);
   const [showPinchHint, setShowPinchHint] = useState(false);
   const ZOOM_MIN = 1;
   const ZOOM_MAX = 3;
+  const EXPAND_FACTOR = 1.8;
   const lastTapRef = useRef(0);
   const pinchRef = useRef<{
     active: boolean;
@@ -285,6 +288,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     const { width, height } = containerSize;
     if (width <= 0 || height <= 0) return [];
     if (!sortedData.length) return [];
+    const layoutHeight = Math.max(1, Math.floor(height * (expanded ? EXPAND_FACTOR : 1)));
 
     // Group by sector like desktop heatmap, but we won't render sector labels on mobile.
     // IMPORTANT: Tile AREA depends on active metric:
@@ -298,7 +302,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
 
     treemap<{ name: string; children: TreemapDatum[] }>()
       .tile(treemapSquarify)
-      .size([width, height])
+      .size([width, layoutHeight])
       .paddingInner(0)
       .paddingOuter(0)
       .round(true)(root as any);
@@ -308,7 +312,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
       x0: number; y0: number; x1: number; y1: number;
       data: any;
     }>;
-  }, [containerSize, sortedData]);
+  }, [containerSize, sortedData, metric, expanded]);
 
   const renderLeaf = useCallback((leaf: { x0: number; y0: number; x1: number; y1: number; data: any }) => {
     const company = leaf.data?.meta?.companyData as CompanyNode | undefined;
@@ -454,6 +458,21 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
             <HeatmapLegend timeframe={timeframe} metric={metric} />
           </div>
         </div>
+
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="px-2.5 py-1.5 rounded-md text-xs font-semibold"
+          style={{
+            background: 'rgba(255,255,255,0.10)',
+            color: 'rgba(255,255,255,0.92)',
+            border: '1px solid rgba(255,255,255,0.12)',
+            WebkitTapHighlightColor: 'transparent',
+          }}
+          aria-label={expanded ? 'Switch to compact heatmap' : 'Expand heatmap'}
+        >
+          {expanded ? 'Compact' : 'Expand'}
+        </button>
       </div>
 
       <div
@@ -464,7 +483,9 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
           background: '#000',
           flex: 1,
           minHeight: 0,
-          overflow: zoom > 1 ? 'auto' : 'hidden',
+          overflowX: zoom > 1 ? 'auto' : 'hidden',
+          overflowY: (expanded || zoom > 1) ? 'auto' : 'hidden',
+          WebkitOverflowScrolling: 'touch' as any,
         }}
         onTouchEnd={handleDoubleTapReset}
       >
@@ -487,7 +508,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
           style={{
             position: 'relative',
             width: containerSize.width * zoom,
-            height: containerSize.height * zoom,
+            height: (containerSize.height * (expanded ? EXPAND_FACTOR : 1)) * zoom,
           }}
         >
           {leaves.map((leaf) => renderLeaf(leaf))}
