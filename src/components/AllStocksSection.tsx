@@ -234,6 +234,50 @@ export const AllStocksSection = React.memo(function AllStocksSection({
             })}
           </div>
 
+          {(selectedSector !== 'all' || selectedIndustry !== 'all' || searchTerm.trim().length > 0) && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {searchTerm.trim().length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => onSearchChange('')}
+                  className="px-2 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-white/80 flex items-center gap-1"
+                  aria-label="Clear search"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                >
+                  <span className="opacity-80">Search</span>
+                  <span className="max-w-[140px] truncate font-mono tabular-nums">{searchTerm}</span>
+                  <span className="opacity-80">×</span>
+                </button>
+              )}
+              {selectedSector !== 'all' && (
+                <button
+                  type="button"
+                  onClick={() => handleSectorChange('all')}
+                  className="px-2 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-white/80 flex items-center gap-1"
+                  aria-label="Clear sector filter"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                >
+                  <span className="opacity-80">Sector</span>
+                  <span className="max-w-[160px] truncate">{formatSectorName(selectedSector)}</span>
+                  <span className="opacity-80">×</span>
+                </button>
+              )}
+              {selectedIndustry !== 'all' && (
+                <button
+                  type="button"
+                  onClick={() => onIndustryChange('all')}
+                  className="px-2 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-white/80 flex items-center gap-1"
+                  aria-label="Clear industry filter"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                >
+                  <span className="opacity-80">Industry</span>
+                  <span className="max-w-[160px] truncate">{selectedIndustry}</span>
+                  <span className="opacity-80">×</span>
+                </button>
+              )}
+            </div>
+          )}
+
           <div className="mobile-results-row">
             <span className="mobile-results-text">
               Showing {displayedStocks.length}{typeof totalCount === 'number' ? ` / ${totalCount}` : ''}
@@ -248,7 +292,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
                   onIndustryChange('all');
                 }}
               >
-                Clear
+                Clear all
               </button>
             )}
           </div>
@@ -284,10 +328,12 @@ export const AllStocksSection = React.memo(function AllStocksSection({
           <div className="lg:hidden">
             {displayedStocks.length === 0 ? (
               <div className="text-center p-8 text-gray-500 dark:text-gray-400">
-                No stocks to display.
+                {(selectedSector !== 'all' || selectedIndustry !== 'all' || searchTerm.trim().length > 0)
+                  ? 'No results for the selected filters.'
+                  : 'No stocks to display.'}
               </div>
             ) : (
-              <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden divide-y divide-gray-200 dark:divide-gray-800">
+              <div className="w-full bg-white dark:bg-gray-900 border-0 rounded-none overflow-hidden divide-y divide-gray-200 dark:divide-gray-800">
                 {displayedStocks.map((stock, index) => (
                   <StockCardMobile
                     key={stock.ticker}
@@ -328,7 +374,9 @@ export const AllStocksSection = React.memo(function AllStocksSection({
                 {displayedStocks.length === 0 ? (
                   <tr>
                     <td colSpan={10} style={{ textAlign: 'center', padding: '2rem', color: 'var(--clr-subtext)' }}>
-                      No stocks to display.
+                      {(selectedSector !== 'all' || selectedIndustry !== 'all' || searchTerm.trim().length > 0)
+                        ? 'No results for the selected filters.'
+                        : 'No stocks to display.'}
                     </td>
                   </tr>
                 ) : (

@@ -11,7 +11,7 @@ import { getCompanyName } from '@/lib/companyNames';
 import { StockData } from '@/lib/types';
 import { PortfolioQuantityInput } from './PortfolioQuantityInput';
 import { PortfolioCardMobile } from './PortfolioCardMobile';
-import { formatCurrencyCompact, formatSectorName } from '@/lib/utils/format';
+import { formatCurrencyCompact, formatPercent, formatPrice, formatSectorName } from '@/lib/utils/format';
 import { event } from '@/lib/ga';
 import {
   BUTTON_PRIMARY_MD,
@@ -47,9 +47,29 @@ export function PortfolioSection({
   const [portfolioSearchResults, setPortfolioSearchResults] = useState<StockData[]>([]);
   const [showPortfolioSearch, setShowPortfolioSearch] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+
+  // Mobile details bottom-sheet
+  const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  const selectedStock = selectedTicker
+    ? portfolioStocks.find((s) => s.ticker === selectedTicker) ?? null
+    : null;
+
+  const selectedQuantity = selectedTicker ? (portfolioHoldings[selectedTicker] ?? 0) : 0;
+
+  const closeDetails = () => {
+    setIsDetailsOpen(false);
+    setTimeout(() => setSelectedTicker(null), 150);
+  };
+
+  const openDetails = (ticker: string) => {
+    setSelectedTicker(ticker);
+    setIsDetailsOpen(true);
+  };
 
   const searchStocksForPortfolio = (searchTerm: string) => {
     if (!searchTerm || searchTerm.trim().length < 1) {
@@ -264,16 +284,14 @@ export function PortfolioSection({
           <div className="w-full bg-white dark:bg-gray-900 border-0 rounded-none overflow-hidden divide-y divide-gray-200 dark:divide-gray-800">
             {portfolioStocks.map((stock, index) => {
               const quantity = portfolioHoldings[stock.ticker] || 0;
-              const value = calculatePortfolioValue(stock);
 
               return (
                 <PortfolioCardMobile
                   key={stock.ticker}
                   stock={stock}
                   quantity={quantity}
-                  value={value}
-                  onUpdateQuantity={onUpdateQuantity}
                   onRemoveStock={onRemoveStock}
+                  onOpenDetails={openDetails}
                   priority={index < 10} // Only first 10 items have priority loading
                 />
               );
@@ -288,6 +306,96 @@ export function PortfolioSection({
                 </span>
               </div>
             </div>
+            </div>
+          </div>
+        )}
+
+        {/* Mobile details bottom-sheet */}
+        {isDetailsOpen && selectedStock && (
+          <div
+            className="fixed inset-0"
+            style={{ zIndex: 1200 }}
+            onClick={closeDetails}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Portfolio details for ${selectedStock.ticker}`}
+          >
+            <div className="absolute inset-0 bg-black/35" />
+
+            <div
+              className="fixed inset-x-0 bottom-0 rounded-t-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900"
+              style={{
+                paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)',
+                zIndex: 1201,
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="px-4 pt-3 pb-2">
+                <div className="mx-auto h-1.5 w-10 rounded-full bg-gray-200 dark:bg-gray-800" />
+              </div>
+
+              <div className="px-4 pb-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                      {selectedStock.ticker}
+                      {getCompanyName(selectedStock.ticker) ? (
+                        <span className="text-gray-500 dark:text-gray-400 font-normal">
+                          {' '}
+                          · {getCompanyName(selectedStock.ticker)}
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className="mt-1 text-xs text-gray-600 dark:text-gray-300">
+                      Price:{' '}
+                      <span className="font-mono tabular-nums">${formatPrice(selectedStock.currentPrice)}</span>
+                      <span className="mx-2">•</span>
+                      Change:{' '}
+                      <span className="font-mono tabular-nums">{formatPercent(selectedStock.percentChange)}</span>
+                    </div>
+                    <div className="mt-1 text-xs text-gray-600 dark:text-gray-300">
+                      Value:{' '}
+                      <span className="font-mono tabular-nums">
+                        {formatCurrencyCompact(calculatePortfolioValue(selectedStock), true)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={closeDetails}
+                    className="w-11 h-11 flex items-center justify-center text-gray-700 dark:text-gray-200"
+                    aria-label="Close details"
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+
+                <div className="mt-4 flex items-center gap-3">
+                  <div className="text-sm font-semibold text-gray-700 dark:text-gray-200 w-10">
+                    #
+                  </div>
+                  <PortfolioQuantityInput
+                    value={selectedQuantity}
+                    onChange={(v) => onUpdateQuantity(selectedStock.ticker, v)}
+                    minValue={1}
+                    className="w-24 px-2 py-2 text-[16px] rounded-md bg-transparent border border-gray-300/70 dark:border-slate-600/80 font-mono tabular-nums"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onRemoveStock(selectedStock.ticker);
+                      closeDetails();
+                    }}
+                    className="ml-auto px-3 py-2 rounded-md bg-red-600 text-white text-sm font-semibold"
+                    aria-label={`Remove ${selectedStock.ticker} from portfolio`}
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}

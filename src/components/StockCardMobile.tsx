@@ -30,7 +30,7 @@ export const StockCardMobile = memo(({
 
   return (
     <div className="px-3 py-2 active:bg-gray-50 dark:active:bg-gray-800 transition-colors">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5 min-w-0">
         {/* Logo */}
         <div className="flex-shrink-0">
           <CompanyLogo 
@@ -41,9 +41,9 @@ export const StockCardMobile = memo(({
           />
         </div>
         
-        {/* Ticker */}
-        <div className="flex-shrink-0 min-w-[56px]">
-          <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100 tracking-tight">
+        {/* Ticker (flexible so we never overflow on small screens) */}
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100 tracking-tight truncate">
             {stock.ticker}
           </h3>
         </div>
@@ -105,7 +105,7 @@ export const StockCardMobile = memo(({
             onToggleFavorite();
           }}
           // Best practice: 44x44px tap target on mobile
-          className="flex-shrink-0 w-11 h-11 flex items-center justify-center bg-transparent active:bg-transparent focus:outline-none"
+          className="flex-shrink-0 w-11 h-11 flex items-center justify-center bg-transparent active:bg-transparent rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900"
           aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
           style={{ WebkitTapHighlightColor: 'transparent' }}
         >

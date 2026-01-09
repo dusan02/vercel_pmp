@@ -3,6 +3,7 @@
  */
 
 import React from 'react';
+import Link from 'next/link';
 import { SortKey } from '@/hooks/useSortableData';
 import { SectionIcon } from './SectionIcon';
 import { formatBillions } from '@/lib/utils/format';
@@ -44,6 +45,34 @@ export function FavoritesSection({
           </div>
         </div>
         <SectionLoader message="Loading favorites..." />
+      </section>
+    );
+  }
+
+  if (favoriteStocks.length === 0) {
+    return (
+      <section className="favorites">
+        <div className="section-header">
+          <div className="header-main">
+            <h2>
+              <SectionIcon type="star" size={20} className="section-icon" />
+              <span>Favorites</span>
+            </h2>
+          </div>
+        </div>
+        <div className="flex flex-col items-center justify-center gap-2 py-12 text-sm text-slate-500 dark:text-slate-400">
+          <span>No favorites yet.</span>
+          <span className="text-xs text-slate-400 dark:text-slate-500">
+            Tap ☆ next to a stock to add it here.
+          </span>
+          <Link
+            href="/stocks"
+            className="mt-2 px-3 py-2 rounded-md bg-blue-600 text-white text-sm font-semibold"
+            style={{ WebkitTapHighlightColor: 'transparent' }}
+          >
+            Browse stocks →
+          </Link>
+        </div>
       </section>
     );
   }

@@ -5,23 +5,20 @@ import { StockData } from '@/lib/types';
 import { formatPrice, formatPercent } from '@/lib/utils/format';
 import CompanyLogo from './CompanyLogo';
 import { X } from 'lucide-react';
-import { PortfolioQuantityInput } from './PortfolioQuantityInput';
 
 interface PortfolioCardMobileProps {
   stock: StockData;
   quantity: number;
-  value: number;
-  onUpdateQuantity: (ticker: string, quantity: number) => void;
   onRemoveStock: (ticker: string) => void;
+  onOpenDetails: (ticker: string) => void;
   priority?: boolean;
 }
 
 export const PortfolioCardMobile = memo(({
   stock,
   quantity,
-  value,
-  onUpdateQuantity,
   onRemoveStock,
+  onOpenDetails,
   priority = false
 }: PortfolioCardMobileProps) => {
   const formattedPrice = formatPrice(stock.currentPrice);
@@ -29,7 +26,20 @@ export const PortfolioCardMobile = memo(({
   const isPositive = stock.percentChange >= 0;
 
   return (
-    <div className="px-3 py-2 active:bg-gray-50 dark:active:bg-gray-800 transition-colors">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => onOpenDetails(stock.ticker)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onOpenDetails(stock.ticker);
+        }
+      }}
+      className="px-3 py-2 active:bg-gray-50 dark:active:bg-gray-800 transition-colors cursor-pointer select-none outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60"
+      aria-label={`Open details for ${stock.ticker}`}
+      style={{ WebkitTapHighlightColor: 'transparent' }}
+    >
       <div className="flex items-center gap-1.5 min-w-0">
         {/* Logo */}
         <div className="flex-shrink-0">
@@ -49,15 +59,10 @@ export const PortfolioCardMobile = memo(({
         </div>
 
         {/* # (Quantity) */}
-        {/* Enough width for up to 4 digits (9999) without clipping */}
-        <div className="flex-shrink-0 w-16">
-          <PortfolioQuantityInput
-            value={quantity}
-            onChange={(v) => onUpdateQuantity(stock.ticker, v)}
-            minValue={1}
-            // iOS best practice: font-size >= 16px prevents Safari zoom on focus
-            className="min-w-0 w-full px-1 py-1 text-[16px] rounded-md bg-transparent border border-gray-300/60 dark:border-slate-600/70"
-          />
+        <div className="flex-shrink-0">
+          <div className="px-2 py-1 rounded-md text-xs font-semibold tabular-nums bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-white/80">
+            #{quantity}
+          </div>
         </div>
 
         {/* Price - fixed width for alignment */}
@@ -85,7 +90,7 @@ export const PortfolioCardMobile = memo(({
             onRemoveStock(stock.ticker);
           }}
           // Best practice: 44x44px tap target on mobile
-          className="flex-shrink-0 w-11 h-11 flex items-center justify-center text-red-600 bg-transparent active:bg-transparent focus:outline-none"
+          className="flex-shrink-0 w-11 h-11 flex items-center justify-center text-red-600 bg-transparent active:bg-transparent rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900"
           aria-label={`Remove ${stock.ticker} from portfolio`}
           style={{ WebkitTapHighlightColor: 'transparent' }}
         >

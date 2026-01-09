@@ -57,8 +57,10 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
   // Internal zoom for mobile heatmap:
   // zoom-in => more tiles become readable; zoom-out => labels disappear naturally.
   const [zoom, setZoom] = useState(1);
+  const [showPinchHint, setShowPinchHint] = useState(false);
   const ZOOM_MIN = 1;
   const ZOOM_MAX = 3;
+  const lastTapRef = useRef(0);
   const pinchRef = useRef<{
     active: boolean;
     startDist: number;
@@ -197,6 +199,38 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ZOOM_MAX, ZOOM_MIN, zoom]);
+
+  // One-time discoverability hint: "Pinch to zoom" (and double-tap reset)
+  useEffect(() => {
+    try {
+      const key = 'pmp_mobile_heatmap_hint_v1';
+      if (window.localStorage.getItem(key)) return;
+      window.localStorage.setItem(key, '1');
+      setShowPinchHint(true);
+      const t = window.setTimeout(() => setShowPinchHint(false), 2600);
+      return () => window.clearTimeout(t);
+    } catch {
+      setShowPinchHint(true);
+      const t = window.setTimeout(() => setShowPinchHint(false), 2600);
+      return () => window.clearTimeout(t);
+    }
+  }, []);
+
+  const handleDoubleTapReset = useCallback((e: React.TouchEvent) => {
+    // Only consider single-finger taps (avoid interfering with pinch)
+    if (e.changedTouches.length !== 1) return;
+    const now = Date.now();
+    const dt = now - lastTapRef.current;
+    if (dt > 0 && dt < 280) {
+      lastTapRef.current = 0;
+      setZoom(1);
+      requestAnimationFrame(() => {
+        containerRef.current?.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
+      });
+    } else {
+      lastTapRef.current = now;
+    }
+  }, []);
 
   // Long press handler for favorites
   const longPressTimerRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
@@ -428,7 +462,23 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
           minHeight: 0,
           overflow: zoom > 1 ? 'auto' : 'hidden',
         }}
+        onTouchEnd={handleDoubleTapReset}
       >
+        {showPinchHint && zoom === 1 && (
+          <div className="pointer-events-none absolute left-3 top-3" style={{ zIndex: 5 }}>
+            <div
+              className="px-2.5 py-1.5 rounded-md text-xs font-semibold"
+              style={{
+                background: 'rgba(255,255,255,0.10)',
+                color: 'rgba(255,255,255,0.92)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                backdropFilter: 'blur(8px)',
+              }}
+            >
+              Pinch to zoom · Double‑tap to reset
+            </div>
+          </div>
+        )}
         <div
           style={{
             position: 'relative',
