@@ -602,7 +602,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
                 {formatMarketCap(selectedCompany.marketCap ?? 0)}
               </div>
 
-              <div className="opacity-70">Change (day):</div>
+              <div className="opacity-70">% Change (day):</div>
               <div
                 className={`text-right font-semibold font-mono tabular-nums ${
                   (selectedCompany.changePercent ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'
@@ -611,18 +611,14 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
                 {formatPercent(selectedCompany.changePercent ?? 0)}
               </div>
 
-              {metric === 'mcap' && (
-                <>
-                  <div className="opacity-70">Mcap Δ (day):</div>
-                  <div
-                    className={`text-right font-semibold font-mono tabular-nums ${
-                      (selectedCompany.marketCapDiff ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'
-                    }`}
-                  >
-                    {formatMarketCapDiff(selectedCompany.marketCapDiff ?? 0)}
-                  </div>
-                </>
-              )}
+              <div className="opacity-70">Mcap Δ (day):</div>
+              <div
+                className={`text-right font-semibold font-mono tabular-nums ${
+                  (selectedCompany.marketCapDiff ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                }`}
+              >
+                {selectedCompany.marketCapDiff == null ? '—' : formatMarketCapDiff(selectedCompany.marketCapDiff)}
+              </div>
             </div>
           </div>
         </>
