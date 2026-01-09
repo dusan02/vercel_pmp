@@ -118,12 +118,47 @@ export function FavoritesSection({
       {/* Mobile: Cards layout */}
       <div className="lg:hidden">
         <div className="w-full bg-white dark:bg-gray-900 border-0 rounded-none overflow-hidden divide-y divide-gray-200 dark:divide-gray-800">
+          {/* Header row (mobile) */}
+          <div className="px-3 py-1.5 bg-slate-50/80 dark:bg-white/5 text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+            {sortKey === 'marketCapDiff' ? (
+              <div className="grid items-center gap-x-2 min-w-0 [grid-template-columns:40px_minmax(56px,1fr)_72px_72px_44px]">
+                <div className="text-center">Logo</div>
+                <div className="text-center">Ticker</div>
+                <div className="text-center">Mkt Cap</div>
+                <div className="text-center">Δ</div>
+                <div className="text-center">★</div>
+              </div>
+            ) : sortKey === 'marketCap' ? (
+              <div className="grid items-center gap-x-2 min-w-0 [grid-template-columns:40px_minmax(56px,1fr)_96px_56px_44px]">
+                <div className="text-center">Logo</div>
+                <div className="text-center">Ticker</div>
+                <div className="text-center">Mkt Cap</div>
+                <div className="text-center">%</div>
+                <div className="text-center">★</div>
+              </div>
+            ) : (
+              <div className="grid items-center gap-x-2 min-w-0 [grid-template-columns:40px_minmax(56px,1fr)_96px_56px_44px]">
+                <div className="text-center">Logo</div>
+                <div className="text-center">Ticker</div>
+                <div className="text-center">Price</div>
+                <div className="text-center">%</div>
+                <div className="text-center">★</div>
+              </div>
+            )}
+          </div>
           {favoriteStocks.map((stock, index) => (
             <StockCardMobile
               key={stock.ticker}
               stock={stock}
               isFavorite={isFavorite(stock.ticker)}
               onToggleFavorite={() => onToggleFavorite(stock.ticker)}
+              displayMode={
+                sortKey === 'marketCapDiff'
+                  ? 'capDiff'
+                  : sortKey === 'marketCap'
+                    ? 'cap'
+                    : 'default'
+              }
               priority={index < 10} // Only first 10 items have priority loading
             />
           ))}
