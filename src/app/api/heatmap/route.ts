@@ -497,6 +497,7 @@ export async function GET(request: NextRequest) {
       let marketCap = 0;
       let marketCapDiff = 0;
       let priceTsMs = 0;
+      let priceSource: 'cache' | 'ticker' | 'session' | 'unknown' = 'unknown';
 
       if (cachedStockData && cachedStockData.currentPrice && cachedStockData.closePrice) {
         // Použij cache dáta z stocks endpointu (najaktuálnejšie)
@@ -506,23 +507,22 @@ export async function GET(request: NextRequest) {
         changePercent = cachedStockData.percentChange || computePercentChange(currentPrice, previousClose, session, regularClose);
         marketCap = cachedStockData.marketCap || 0;
         marketCapDiff = cachedStockData.marketCapDiff || 0;
+        // NOTE: cache payload may not include per-ticker timestamps in a reliable way
+        // (and Redis can be disabled). We'll still label source for debugging.
+        priceSource = 'cache';
         cacheHits++;
       } else {
-        // Použi dáta z Ticker tabuľky (denormalized) - PRIORITA 1
-        // Toto zabezpečuje konzistentnosť s /api/stocks endpointom
+        // Prefer timestamp-aware "best available" price (SessionPrice if newer than Ticker.lastPriceUpdated)
+        const priceInfo = priceMap.get(ticker);
+        currentPrice = priceInfo?.price || 0;
+        priceTsMs = priceInfo?.tsMs || 0;
+        priceSource = priceInfo?.source || 'unknown';
+
+        // Prefer denormalized prev close (fast), fallback to DailyRef-derived map
         const tickerInfoFromMap = tickerMap.get(ticker);
-        if (tickerInfoFromMap && tickerInfoFromMap.lastPrice && tickerInfoFromMap.lastPrice > 0) {
-          currentPrice = tickerInfoFromMap.lastPrice;
-          previousClose = tickerInfoFromMap.latestPrevClose || 0;
-          dbHits++;
-        } else {
-          // Fallback na SessionPrice/DailyRef ak Ticker nemá dáta
-          const priceInfo = priceMap.get(ticker);
-          previousClose = previousCloseMap.get(ticker) || 0;
-          currentPrice = priceInfo?.price || 0;
-          priceTsMs = priceInfo?.tsMs || 0;
-          dbHits++;
-        }
+        previousClose = (tickerInfoFromMap?.latestPrevClose || 0) || (previousCloseMap.get(ticker) || 0);
+
+        dbHits++;
 
         // Ak nemáme currentPrice, použijeme previousClose (fallback)
         if (currentPrice === 0 && previousClose > 0) {
@@ -601,6 +601,8 @@ export async function GET(request: NextRequest) {
         marketCapDiff,
         ...(lastUpdatedIso ? { lastUpdated: lastUpdatedIso } : {}),
         ...(isStale ? { isStale } : {}),
+        // Extra debug field (kept optional by not always emitting it)
+        ...(priceSource !== 'unknown' ? { priceSource } : {}),
       });
 
       processed++;
@@ -664,6 +666,9 @@ export async function GET(request: NextRequest) {
       percentChange: s.percentChange,
       marketCapDiff: s.marketCapDiff,
       currentPrice: s.currentPrice, // Potrebné pre tooltip
+      ...(s.lastUpdated ? { lastUpdated: s.lastUpdated } : {}),
+      ...(s.isStale ? { isStale: s.isStale } : {}),
+      ...((s as any).priceSource ? { priceSource: (s as any).priceSource } : {}),
       _timestamp: dataTimestamp, // Timestamp z dát (nie aktuálny čas!)
     }));
 
