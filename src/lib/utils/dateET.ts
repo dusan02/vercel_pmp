@@ -45,7 +45,6 @@ export function toET(date: Date): {
     // Force 00-23 hour cycle. Some Node/ICU builds can emit "24" at midnight for h24,
     // which breaks offset calculations and day boundaries.
     hourCycle: 'h23',
-    weekday: 'short',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -61,19 +60,24 @@ export function toET(date: Date): {
     return part ? parseInt(part.value, 10) : 0;
   };
 
-  const weekdayText = parts.find(p => p.type === 'weekday')?.value ?? '';
-  const weekdayMap: Record<string, number> = {
-    Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6
-  };
+  // IMPORTANT:
+  // Do NOT depend on localized weekday strings from Intl.
+  // Some Node/ICU builds can return unexpected values (or omit the part),
+  // which would break weekend/holiday logic and trading-day calculations.
+  // Compute weekday from the parsed ET calendar date instead.
+  const year = getPart('year');
+  const month = getPart('month');
+  const day = getPart('day');
+  const weekday = new Date(Date.UTC(year, month - 1, day, 12, 0, 0)).getUTCDay(); // 0=Sun..6=Sat
 
   return {
-    year: getPart('year'),
-    month: getPart('month'),
-    day: getPart('day'),
+    year,
+    month,
+    day,
     hour: getPart('hour'),
     minute: getPart('minute'),
     second: getPart('second'),
-    weekday: weekdayMap[weekdayText] ?? 0
+    weekday
   };
 }
 
