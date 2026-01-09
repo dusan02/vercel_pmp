@@ -64,7 +64,7 @@ export function FavoritesSection({
             Tap ☆ next to a stock to add it here.
           </span>
           <Link
-            href="/stocks"
+            href="/?tab=allStocks"
             className="mt-2 px-3 py-2 rounded-md bg-blue-600 text-white text-sm font-semibold"
             style={{ WebkitTapHighlightColor: 'transparent' }}
           >

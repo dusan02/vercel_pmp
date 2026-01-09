@@ -132,6 +132,19 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
   // Mobile bottom navigation state
   const [activeMobileSection, setActiveMobileSection] = useState<'heatmap' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks'>('heatmap');
 
+  // Allow deep-linking to a specific mobile tab (e.g. "/?tab=allStocks")
+  useEffect(() => {
+    if (!isMounted) return;
+    try {
+      const tab = new URLSearchParams(window.location.search).get('tab');
+      if (tab === 'heatmap' || tab === 'portfolio' || tab === 'favorites' || tab === 'earnings' || tab === 'allStocks') {
+        setActiveMobileSection(tab);
+      }
+    } catch {
+      // ignore
+    }
+  }, [isMounted]);
+
   // Handle mobile bottom navigation change - VIEW-BASED (tabs, not scroll)
   const handleMobileNavChange = useCallback((tab: 'heatmap' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks') => {
     setActiveMobileSection(tab);
