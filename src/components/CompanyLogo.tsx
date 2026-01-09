@@ -143,7 +143,6 @@ export default function CompanyLogo({
         minHeight: size,
         borderRadius: 8,
         background: 'linear-gradient(135deg, #2563eb, #1e40af)',
-        border: '1px solid var(--clr-border)',
         boxSizing: 'border-box',
       }}
       title={`${ticker} - Logo not available`}
@@ -184,7 +183,6 @@ export default function CompanyLogo({
         borderRadius: 8,
         overflow: 'hidden',
         background: 'var(--clr-surface)',
-        border: '1px solid var(--clr-border)',
         boxSizing: 'border-box',
         padding: 2,
       }}

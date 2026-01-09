@@ -86,7 +86,7 @@ export const StockTableRow = memo(({
         {/* Logo */}
         <td>
           <div className="logo-container">
-            <CompanyLogo ticker={stock.ticker} {...(stock.logoUrl ? { logoUrl: stock.logoUrl } : {})} size={32} priority={priority} />
+            <CompanyLogo ticker={stock.ticker} {...(stock.logoUrl ? { logoUrl: stock.logoUrl } : {})} size={40} priority={priority} />
           </div>
         </td>
         
