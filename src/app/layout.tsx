@@ -7,6 +7,7 @@ import ScrollToTopButton from '@/components/ScrollToTopButton'
 import { Providers } from './providers'
 import { AuthProvider } from '@/components/AuthProvider'
 import { GAListener } from '@/components/GAListener'
+import { ChunkLoadRecovery } from '@/components/ChunkLoadRecovery'
 import { GA_ID } from '@/lib/ga'
 
 const inter = Inter({
@@ -242,6 +243,8 @@ export default function RootLayout({
         )}
       </head>
       <body className={`${inter.variable} ${spaceGrotesk.variable} ${inter.className}`}>
+        {/* Global recovery for deploy-time chunk 404s (stale cached HTML/SW) */}
+        <ChunkLoadRecovery />
         {/* Google Analytics 4 */}
         <Script
           src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
