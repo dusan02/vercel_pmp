@@ -151,6 +151,7 @@ export async function GET(request: NextRequest) {
           industry: true,
           sharesOutstanding: true,
           lastPrice: true, // Denormalized current price - PRIORITA 1
+          lastPriceUpdated: true,
           latestPrevClose: true, // Denormalized previous close - PRIORITA 1
           latestPrevCloseDate: true,
           lastChangePct: true, // Pre referenciu
@@ -193,6 +194,7 @@ export async function GET(request: NextRequest) {
         industry: (t.industry ?? '').trim() || 'Uncategorized',
         sharesOutstanding: t.sharesOutstanding,
         lastPrice: t.lastPrice, // Denormalized current price
+        lastPriceUpdated: t.lastPriceUpdated,
         latestPrevClose: t.latestPrevClose, // Denormalized previous close
         latestPrevCloseDate: t.latestPrevCloseDate,
         lastChangePct: t.lastChangePct,
@@ -323,25 +325,32 @@ export async function GET(request: NextRequest) {
     console.log(`📊 Unique DailyRef records: ${dailyRefs.length}`);
 
     // Vytvor mapy pre rýchle lookup
-    // PRIORITA 1: Použi Ticker.lastPrice (denormalized, aktuálnejšie) - rovnaký zdroj ako /api/stocks
-    // Toto zabezpečuje konzistentnosť dát medzi tabuľkami a heatmapou
-    const priceMap = new Map<string, { price: number; changePct: number }>();
+    // IMPORTANT:
+    // Ticker.lastPrice is "priority 1", but it can be stale (e.g. older than SessionPrice).
+    // For correct UX (and to avoid cases like SHOP showing huge mismatch), prefer the NEWER
+    // price source based on timestamps.
+    const priceMap = new Map<string, { price: number; changePct: number; tsMs: number; source: 'ticker' | 'session' }>();
     for (const [symbol, info] of tickerMap.entries()) {
       if (info.lastPrice && info.lastPrice > 0) {
         priceMap.set(symbol, {
           price: info.lastPrice,
           changePct: 0, // Bude prepočítané neskôr z currentPrice a previousClose
+          tsMs: info.lastPriceUpdated ? new Date(info.lastPriceUpdated).getTime() : 0,
+          source: 'ticker',
         });
       }
     }
 
-    // PRIORITA 2: Fallback na SessionPrice ak Ticker.lastPrice nie je dostupné
-    // (len pre tickery, ktoré nemajú lastPrice v Ticker tabuľke)
+    // PRIORITA 2 (timestamp-aware): Use SessionPrice if it is newer than Ticker.lastPriceUpdated.
     for (const sp of sessionPrices) {
-      if (!priceMap.has(sp.symbol)) {
+      const spTs = sp.lastTs ? new Date(sp.lastTs).getTime() : (sp.updatedAt ? new Date(sp.updatedAt).getTime() : 0);
+      const existing = priceMap.get(sp.symbol);
+      if (!existing || (spTs && spTs > existing.tsMs)) {
         priceMap.set(sp.symbol, {
           price: sp.lastPrice,
           changePct: sp.changePct,
+          tsMs: spTs,
+          source: 'session',
         });
       }
     }
@@ -487,6 +496,7 @@ export async function GET(request: NextRequest) {
       let changePercent = 0;
       let marketCap = 0;
       let marketCapDiff = 0;
+      let priceTsMs = 0;
 
       if (cachedStockData && cachedStockData.currentPrice && cachedStockData.closePrice) {
         // Použij cache dáta z stocks endpointu (najaktuálnejšie)
@@ -510,6 +520,7 @@ export async function GET(request: NextRequest) {
           const priceInfo = priceMap.get(ticker);
           previousClose = previousCloseMap.get(ticker) || 0;
           currentPrice = priceInfo?.price || 0;
+          priceTsMs = priceInfo?.tsMs || 0;
           dbHits++;
         }
 
@@ -572,6 +583,12 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
+      // Staleness: same semantics as /api/stocks (1min live, 5min pre/after)
+      const thresholdMin = session === 'live' ? 1 : 5;
+      const nowMs = etNow.getTime();
+      const isStale = currentPrice > 0 && priceTsMs > 0 && (nowMs - priceTsMs) > thresholdMin * 60_000;
+      const lastUpdatedIso = priceTsMs ? new Date(priceTsMs).toISOString() : undefined;
+
       results.push({
         ticker,
         companyName: tickerInfo.name || ticker,
@@ -582,6 +599,8 @@ export async function GET(request: NextRequest) {
         percentChange: changePercent,
         marketCap,
         marketCapDiff,
+        ...(lastUpdatedIso ? { lastUpdated: lastUpdatedIso } : {}),
+        ...(isStale ? { isStale } : {}),
       });
 
       processed++;

@@ -119,6 +119,10 @@ export type CompanyNode = {
   marketCapDiff?: number; // Denný rozdiel v market cap (nominálna hodnota v $)
   marketCapDiffAbs?: number; // Absolútna hodnota marketCapDiff pre veľkosť dlaždice
   currentPrice?: number; // Aktuálna cena akcie
+  /** Whether the price used to compute change is stale (session-aware). */
+  isStale?: boolean;
+  /** ISO timestamp for the price used to compute change (best-effort). */
+  lastUpdated?: string;
 };
 
 /**

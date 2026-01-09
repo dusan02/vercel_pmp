@@ -91,6 +91,21 @@ export function HeatmapTooltip({ company, position, timeframe, metric }: Heatmap
           <span className={styles.heatmapTooltipValue}>{formatPrice(company.currentPrice)}</span>
         </div>
       )}
+      {(company.lastUpdated || company.isStale) && (
+        <div className={styles.heatmapTooltipRow}>
+          <span className={styles.heatmapTooltipLabel}>As of:</span>
+          <span
+            className={styles.heatmapTooltipValue}
+            style={{
+              color: company.isStale ? '#f59e0b' : undefined,
+              fontWeight: company.isStale ? 600 : undefined,
+            }}
+          >
+            {company.lastUpdated ? new Date(company.lastUpdated).toLocaleString() : '—'}
+            {company.isStale ? ' (stale)' : ''}
+          </span>
+        </div>
+      )}
       <div className={styles.heatmapTooltipRow}>
         <span className={styles.heatmapTooltipLabel}>Market Cap:</span>
         <span className={styles.heatmapTooltipValue}>{formatMarketCap(company.marketCap)}</span>
