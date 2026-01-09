@@ -261,7 +261,7 @@ export function PortfolioSection({
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-3">
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden divide-y divide-gray-200 dark:divide-gray-800">
             {portfolioStocks.map((stock, index) => {
               const quantity = portfolioHoldings[stock.ticker] || 0;
               const value = calculatePortfolioValue(stock);
@@ -279,13 +279,15 @@ export function PortfolioSection({
               );
             })}
             {/* Total row for mobile */}
-            <div className="bg-[#111] border border-gray-800 rounded-lg p-4 mt-2">
+            <div className="p-4">
+              <div className="rounded-lg p-3" style={{ background: 'rgba(0,0,0,0.04)' }}>
               <div className="flex items-center justify-between">
-                <span className="text-gray-400 font-semibold">Total Portfolio Value:</span>
-                <span className={`font-bold text-lg ${totalPortfolioValue >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                <span className="text-gray-600 dark:text-gray-300 font-semibold">Total Portfolio Value:</span>
+                <span className={`font-bold text-lg ${totalPortfolioValue >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                   {formatCurrencyCompact(totalPortfolioValue, true)}
                 </span>
               </div>
+            </div>
             </div>
           </div>
         )}

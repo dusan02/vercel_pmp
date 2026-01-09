@@ -68,8 +68,6 @@ export function useFavorites() {
 
   // Add favorite
   const addFavorite = useCallback(async (ticker: string) => {
-    if (!hasConsent) return false;
-
     // Update local state immediately (optimistic)
     addPrefFavorite(ticker);
 
@@ -91,8 +89,6 @@ export function useFavorites() {
 
   // Remove favorite
   const removeFavorite = useCallback(async (ticker: string) => {
-    if (!hasConsent) return false;
-
     // Update local state immediately
     removePrefFavorite(ticker);
 
@@ -113,11 +109,6 @@ export function useFavorites() {
 
   // Toggle favorite status
   const toggleFavorite = useCallback(async (ticker: string) => {
-    if (!hasConsent) {
-      console.warn('Cannot toggle favorite: Cookie consent not given');
-      return false;
-    }
-
     const isFav = preferences.favorites.includes(ticker);
     const enabled = !isFav;
     

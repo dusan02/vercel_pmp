@@ -28,8 +28,8 @@ export const PortfolioCardMobile = memo(({
   const isPositive = stock.percentChange >= 0;
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-3 mb-2 active:bg-gray-50 transition-colors">
-      <div className="flex items-center gap-3">
+    <div className="px-3 py-2 active:bg-gray-50 dark:active:bg-gray-800 transition-colors">
+      <div className="flex items-center gap-2">
         {/* Logo */}
         <div className="flex-shrink-0">
           <CompanyLogo 
@@ -41,25 +41,39 @@ export const PortfolioCardMobile = memo(({
         </div>
         
         {/* Ticker */}
-        <div className="flex-1 min-w-0">
-          <h3 className="font-bold text-base text-gray-900">{stock.ticker}</h3>
+        <div className="flex-shrink-0 min-w-[56px]">
+          <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100 tracking-tight">
+            {stock.ticker}
+          </h3>
         </div>
 
         {/* Price - fixed width for alignment */}
-        <div className="text-right flex-shrink-0 w-20">
-          <div className="font-mono font-bold text-gray-900 text-base">${formattedPrice}</div>
+        <div className="text-right flex-shrink-0 w-24">
+          <div className="font-mono font-semibold text-gray-900 dark:text-gray-100 text-sm tabular-nums">
+            ${formattedPrice}
+          </div>
         </div>
 
         {/* % Change - fixed width for alignment, remove duplicate % */}
-        <div className={`text-sm font-medium flex-shrink-0 w-16 text-right ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+        <div className={`text-xs font-semibold flex-shrink-0 w-14 text-right tabular-nums ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
           {formattedPercentChange}
         </div>
 
         {/* Action - Remove button */}
         <button
-          onClick={() => onRemoveStock(stock.ticker)}
-          className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-red-600"
+          type="button"
+          onPointerDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onRemoveStock(stock.ticker);
+          }}
+          className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-red-600 bg-transparent active:bg-transparent focus:outline-none"
           aria-label={`Remove ${stock.ticker} from portfolio`}
+          style={{ WebkitTapHighlightColor: 'transparent' }}
         >
           <X size={18} />
         </button>

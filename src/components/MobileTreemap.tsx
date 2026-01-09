@@ -293,17 +293,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
         {sortedData.map((company, index) => renderTile(company, index))}
       </div>
       
-      {/* "View all stocks" button below heatmap */}
-      {data.length > MAX_MOBILE_TILES && (
-        <div className="w-full p-3 bg-black border-t border-gray-800 flex-shrink-0">
-          <Link
-            href="/stocks"
-            className="block w-full text-center py-2.5 px-4 bg-gray-800 text-white rounded-lg font-semibold active:bg-gray-700 transition-colors text-sm"
-          >
-            View all stocks →
-          </Link>
-        </div>
-      )}
+      {/* Removed: "View all stocks" button (caused crashes on some mobile flows) */}
 
       {/* Bottom sheet: details (tap on tile) */}
       {selectedCompany && (
@@ -366,24 +356,37 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
             </div>
 
             <div className="mt-3 grid grid-cols-2 gap-2">
-              <div className="p-3 rounded-lg" style={{ background: 'rgba(0,0,0,0.04)' }}>
-                <div className="text-[11px] opacity-70">Price</div>
-                <div className="text-base font-semibold">
-                  {selectedCompany.currentPrice ? formatPrice(selectedCompany.currentPrice) : '—'}
-                </div>
-              </div>
-              <div className="p-3 rounded-lg" style={{ background: 'rgba(0,0,0,0.04)' }}>
-                <div className="text-[11px] opacity-70">{metric === 'percent' ? '% Change' : 'Mcap'}</div>
-                <div className="text-base font-semibold">
-                  {metric === 'percent'
-                    ? formatPercent(selectedCompany.changePercent ?? 0)
-                    : formatMarketCap(selectedCompany.marketCap ?? 0)}
-                </div>
-              </div>
-              <div className="p-3 rounded-lg" style={{ background: 'rgba(0,0,0,0.04)' }}>
-                <div className="text-[11px] opacity-70">Market Cap</div>
-                <div className="text-base font-semibold">{formatMarketCap(selectedCompany.marketCap ?? 0)}</div>
-              </div>
+              {metric === 'percent' ? (
+                <>
+                  <div className="p-3 rounded-lg" style={{ background: 'rgba(0,0,0,0.04)' }}>
+                    <div className="text-[11px] opacity-70">Price</div>
+                    <div className="text-base font-semibold">
+                      {selectedCompany.currentPrice ? `$${formatPrice(selectedCompany.currentPrice)}` : '—'}
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-lg" style={{ background: 'rgba(0,0,0,0.04)' }}>
+                    <div className="text-[11px] opacity-70">% Change</div>
+                    <div className="text-base font-semibold">
+                      {formatPercent(selectedCompany.changePercent ?? 0)}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="p-3 rounded-lg" style={{ background: 'rgba(0,0,0,0.04)' }}>
+                    <div className="text-[11px] opacity-70">Mcap Diff</div>
+                    <div className="text-base font-semibold">
+                      {formatMarketCapDiff(selectedCompany.marketCapDiff ?? 0)}
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-lg" style={{ background: 'rgba(0,0,0,0.04)' }}>
+                    <div className="text-[11px] opacity-70">Market Cap</div>
+                    <div className="text-base font-semibold">
+                      {formatMarketCap(selectedCompany.marketCap ?? 0)}
+                    </div>
+                  </div>
+                </>
+              )}
               <div className="p-3 rounded-lg" style={{ background: 'rgba(0,0,0,0.04)' }}>
                 <div className="text-[11px] opacity-70">Open</div>
                 <Link

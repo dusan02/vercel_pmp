@@ -102,17 +102,10 @@ export default function CookieConsent({ onAccept }: CookieConsentProps) {
         </div>
         <div className="flex gap-2">
           <button
-            onClick={handleDecline}
-            className="px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 rounded-md transition-colors shadow-sm"
-            style={{ backgroundColor: 'var(--clr-surface)', border: '1px solid var(--clr-border)' }}
-          >
-            Decline
-          </button>
-          <button
             onClick={handleAccept}
             className="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-md hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 transition-colors shadow-md"
           >
-            Accept
+            OK
           </button>
         </div>
       </div>
