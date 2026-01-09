@@ -261,7 +261,7 @@ export function PortfolioSection({
             </button>
           </div>
         ) : (
-          <div className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden divide-y divide-gray-200 dark:divide-gray-800">
+          <div className="w-full bg-white dark:bg-gray-900 border-0 rounded-none overflow-hidden divide-y divide-gray-200 dark:divide-gray-800">
             {portfolioStocks.map((stock, index) => {
               const quantity = portfolioHoldings[stock.ticker] || 0;
               const value = calculatePortfolioValue(stock);
@@ -382,6 +382,7 @@ export function PortfolioSection({
                       <PortfolioQuantityInput
                         value={quantity}
                         onChange={(newQuantity) => onUpdateQuantity(stock.ticker, newQuantity)}
+                        className="min-w-[100px] w-24"
                       />
                     </td>
                     

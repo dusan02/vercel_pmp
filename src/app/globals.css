@@ -148,8 +148,9 @@
 .mobile-app-screen.screen-portfolio,
 .mobile-app-screen.screen-favorites,
 .mobile-app-screen.screen-all-stocks {
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
+  /* True edge-to-edge; inner rows/components provide their own padding */
+  padding-left: 0;
+  padding-right: 0;
 }
 
 @media (prefers-color-scheme: dark) {

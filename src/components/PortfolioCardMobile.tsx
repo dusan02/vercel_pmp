@@ -30,7 +30,7 @@ export const PortfolioCardMobile = memo(({
 
   return (
     <div className="px-3 py-2 active:bg-gray-50 dark:active:bg-gray-800 transition-colors">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5">
         {/* Logo */}
         <div className="flex-shrink-0">
           <CompanyLogo 
@@ -42,30 +42,30 @@ export const PortfolioCardMobile = memo(({
         </div>
         
         {/* Ticker */}
-        <div className="flex-shrink-0 min-w-[56px]">
+        <div className="flex-shrink-0 min-w-[48px]">
           <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100 tracking-tight">
             {stock.ticker}
           </h3>
         </div>
 
         {/* # (Quantity) */}
-        <div className="flex-shrink-0 w-[52px]">
+        <div className="flex-shrink-0 w-12">
           <PortfolioQuantityInput
             value={quantity || 1}
             onChange={(v) => onUpdateQuantity(stock.ticker, v || 1)}
-            className="min-w-0 w-full px-1 py-1 text-xs rounded-md bg-transparent border border-gray-300/60 dark:border-slate-600/70"
+            className="min-w-0 w-full px-1 py-1 text-[12px] rounded-md bg-transparent border border-gray-300/60 dark:border-slate-600/70"
           />
         </div>
 
         {/* Price - fixed width for alignment */}
-        <div className="text-right flex-shrink-0 w-24">
+        <div className="text-right flex-shrink-0 w-20">
           <div className="font-mono font-semibold text-gray-900 dark:text-gray-100 text-sm tabular-nums">
             ${formattedPrice}
           </div>
         </div>
 
         {/* % Change - fixed width for alignment, remove duplicate % */}
-        <div className={`text-xs font-semibold flex-shrink-0 w-14 text-right tabular-nums ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+        <div className={`text-xs font-semibold flex-shrink-0 w-12 text-right tabular-nums ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
           {formattedPercentChange}
         </div>
 

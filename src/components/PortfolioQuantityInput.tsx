@@ -138,7 +138,7 @@ export function PortfolioQuantityInput({ value, onChange, className = '' }: Port
       onChange={handleChange}
       onBlur={handleBlur}
       onKeyDown={handleKeyDown}
-      className={`min-w-[100px] w-24 px-2 py-1 text-center bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium ${className}`}
+      className={`min-w-[44px] w-14 px-2 py-1 text-center bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium tabular-nums ${className}`}
       placeholder="0"
       maxLength={9} // "1,000,000" = 9 characters
       title={`Maximum: ${MAX_QUANTITY.toLocaleString('en-US')}`}
