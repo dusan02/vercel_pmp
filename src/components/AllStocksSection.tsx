@@ -204,10 +204,6 @@ export const AllStocksSection = React.memo(function AllStocksSection({
                 onSearchChange={onSearchChange}
               />
             </div>
-          </div>
-
-          {/* Keep Filters visually separated from the search bar */}
-          <div className="mt-2 flex justify-end">
             <button
               type="button"
               className="mobile-filters-toggle"
