@@ -134,13 +134,17 @@ export default function CompanyLogo({
   // Fallback placeholder component (used when image fails to load)
   const LogoPlaceholder = () => (
     <div
-      className={`rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold ${className}`}
+      className={`flex items-center justify-center text-white font-bold ${className}`}
       style={{
         width: size,
         height: size,
         fontSize: Math.max(8, size * 0.3),
         minWidth: size,
-        minHeight: size
+        minHeight: size,
+        borderRadius: 8,
+        background: 'linear-gradient(135deg, #2563eb, #1e40af)',
+        border: '1px solid var(--clr-border)',
+        boxSizing: 'border-box',
       }}
       title={`${ticker} - Logo not available`}
     >
@@ -176,7 +180,13 @@ export default function CompanyLogo({
         width: size,
         height: size,
         position: 'relative',
-        flexShrink: 0 // Prevent layout shift
+        flexShrink: 0, // Prevent layout shift
+        borderRadius: 8,
+        overflow: 'hidden',
+        background: 'var(--clr-surface)',
+        border: '1px solid var(--clr-border)',
+        boxSizing: 'border-box',
+        padding: 2,
       }}
       className={className}
     >
@@ -187,11 +197,14 @@ export default function CompanyLogo({
           alt=""
           width={size}
           height={size}
-          className="absolute inset-0 rounded-full"
+          className="absolute inset-0"
           style={{
             objectFit: 'contain',
             display: 'block',
-            zIndex: 1
+            zIndex: 1,
+            // Respect badge padding/border
+            width: '100%',
+            height: '100%',
           }}
           aria-hidden="true"
         />
@@ -203,14 +216,16 @@ export default function CompanyLogo({
         alt={`${ticker} stock logo - ${ticker} company logo`}
         width={size}
         height={size}
-        className="rounded-full"
+        className=""
         style={{
           objectFit: 'contain',
           display: 'block',
           position: 'relative',
           zIndex: 2,
           opacity: isLoading ? 0 : 1,
-          transition: 'opacity 0.2s ease-in-out'
+          transition: 'opacity 0.2s ease-in-out',
+          width: '100%',
+          height: '100%',
         }}
         // Native lazy loading: eager for priority (first 50), lazy for others
         // useLayoutEffect will force eager loading for non-priority images near viewport
