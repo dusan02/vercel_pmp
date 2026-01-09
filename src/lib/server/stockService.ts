@@ -98,10 +98,53 @@ export async function getStocksList(options: {
       }
     });
 
+    const symbols = stocks.map(s => s.symbol);
+
+    // Prefer freshest price source (SessionPrice vs Ticker) using timestamps.
+    // This fixes cases where Portfolio shows very wrong intraday prices (URI/PRU etc).
+    const bestPriceBySymbol = new Map<string, { price: number; ts: Date; source: 'ticker' | 'session' }>();
+    for (const s of stocks) {
+      const baseTs = s.lastPriceUpdated || s.updatedAt;
+      bestPriceBySymbol.set(s.symbol, { price: s.lastPrice || 0, ts: baseTs, source: 'ticker' });
+    }
+
+    try {
+      const dateET = getDateET(etNow);
+      const today = createETDate(dateET);
+      const lookback = new Date(today.getTime() - 2 * 24 * 60 * 60 * 1000); // last ~48h (DST-safe enough for our use)
+
+      const sessionPrices = await prisma.sessionPrice.findMany({
+        where: {
+          symbol: { in: symbols },
+          date: { gte: lookback, lte: today }
+        },
+        orderBy: { lastTs: 'desc' },
+        select: { symbol: true, lastPrice: true, lastTs: true }
+      });
+
+      // Keep newest SessionPrice per symbol
+      const latestSpBySymbol = new Map<string, { price: number; ts: Date }>();
+      for (const sp of sessionPrices) {
+        if (!latestSpBySymbol.has(sp.symbol)) {
+          latestSpBySymbol.set(sp.symbol, { price: sp.lastPrice, ts: sp.lastTs });
+        }
+      }
+
+      // Apply tie-break: SessionPrice wins when ts is newer OR equal (same as heatmap).
+      for (const [symbol, sp] of latestSpBySymbol.entries()) {
+        const existing = bestPriceBySymbol.get(symbol);
+        if (!existing || sp.ts.getTime() >= existing.ts.getTime()) {
+          bestPriceBySymbol.set(symbol, { price: sp.price, ts: sp.ts, source: 'session' });
+        }
+      }
+    } catch (e) {
+      // Non-fatal: fall back to Ticker.lastPrice
+    }
+
     // Quick lookup for current price (used for best-effort shares estimation from Polygon market_cap)
     const priceBySymbol = new Map<string, number>();
-    stocks.forEach(s => {
-      priceBySymbol.set(s.symbol, s.lastPrice || 0);
+    bestPriceBySymbol.forEach((v, k) => {
+      priceBySymbol.set(k, v.price || 0);
     });
 
     // DEBUG: Log na začiatok getStocksList
@@ -140,7 +183,7 @@ export async function getStocksList(options: {
 
     // On-demand prevClose fetch for tickers missing previousClose (API-safe for /api/stocks)
     const tickersNeedingPrevClose = stocks
-      .filter(s => (s.lastPrice || 0) > 0 && (s.latestPrevClose || 0) === 0)
+      .filter(s => (priceBySymbol.get(s.symbol) || 0) > 0 && (s.latestPrevClose || 0) === 0)
       .map(s => s.symbol);
     
     const onDemandPrevCloseMap = new Map<string, number>();
@@ -174,7 +217,7 @@ export async function getStocksList(options: {
     
     const tickersNeedingShares = stocks
       .filter(s => {
-        const hasPrice = (s.lastPrice || 0) > 0;
+        const hasPrice = (priceBySymbol.get(s.symbol) || 0) > 0;
         const hasPrevClose = (onDemandPrevCloseMap.get(s.symbol) || s.latestPrevClose || 0) > 0;
         const missingShares = !s.sharesOutstanding || s.sharesOutstanding === 0;
         if (!missingShares) {
@@ -249,7 +292,8 @@ export async function getStocksList(options: {
     }
     
     const results: StockData[] = stocks.map(s => {
-      const currentPrice = s.lastPrice || 0;
+      const best = bestPriceBySymbol.get(s.symbol);
+      const currentPrice = best?.price || 0;
       // Use on-demand prevClose if available, otherwise fallback to DB value
       const previousClose = onDemandPrevCloseMap.get(s.symbol) || (s.latestPrevClose || 0);
       // Use on-demand sharesOutstanding if available, otherwise fallback to DB value
@@ -257,7 +301,7 @@ export async function getStocksList(options: {
       // Get regularClose from today's DailyRef (same logic as heatmap API)
       const regularClose = regularCloseBySymbol.get(s.symbol) || 0;
 
-      const lastTs = s.lastPriceUpdated || s.updatedAt;
+      const lastTs = best?.ts || (s.lastPriceUpdated || s.updatedAt);
       const lastUpdated = lastTs.toISOString();
 
       const isFrozen = !!pricingState.useFrozenPrice;
