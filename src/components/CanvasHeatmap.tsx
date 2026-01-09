@@ -134,7 +134,8 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
             if (tileX + tileW < 0 || tileX > width || tileY + tileH < 0 || tileY > height) return;
 
             // Fill
-            const v = metric === 'mcap' ? ((company.marketCapDiff ?? 0) / 1e9) : company.changePercent;
+            // marketCapDiff is represented in B$ in our data model
+            const v = metric === 'mcap' ? (company.marketCapDiff ?? 0) : company.changePercent;
             ctx.fillStyle = colorScale(v);
             ctx.fillRect(tileX, tileY, tileW, tileH);
 

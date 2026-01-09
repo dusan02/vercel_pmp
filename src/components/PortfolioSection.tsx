@@ -48,6 +48,10 @@ export function PortfolioSection({
   const [showPortfolioSearch, setShowPortfolioSearch] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
 
+  // Mobile sort (unified with Stocks/Favorites sort chips)
+  const [mobileSortKey, setMobileSortKey] = useState<'ticker' | 'quantity' | 'price' | 'percent' | 'delta'>('ticker');
+  const [mobileAscending, setMobileAscending] = useState(true);
+
   // Mobile details bottom-sheet
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -70,6 +74,55 @@ export function PortfolioSection({
     setSelectedTicker(ticker);
     setIsDetailsOpen(true);
   };
+
+  const getHoldingDelta = (stock: StockData, quantity: number) => {
+    const price = stock.currentPrice ?? 0;
+    const pct = stock.percentChange ?? 0;
+    if (!isFinite(price) || price <= 0) return 0;
+    if (!isFinite(pct)) return 0;
+    if (pct <= -99.999) return 0;
+    const prev = price / (1 + pct / 100);
+    const perShareDelta = price - prev;
+    const v = perShareDelta * (quantity || 0);
+    return isFinite(v) ? v : 0;
+  };
+
+  const sortedPortfolioStocksMobile = (() => {
+    const arr = [...portfolioStocks];
+    arr.sort((a, b) => {
+      const qa = portfolioHoldings[a.ticker] || 0;
+      const qb = portfolioHoldings[b.ticker] || 0;
+      const pa = a.currentPrice ?? 0;
+      const pb = b.currentPrice ?? 0;
+      const ca = a.percentChange ?? 0;
+      const cb = b.percentChange ?? 0;
+      const da = getHoldingDelta(a, qa);
+      const db = getHoldingDelta(b, qb);
+
+      let cmp = 0;
+      switch (mobileSortKey) {
+        case 'ticker':
+          cmp = a.ticker.localeCompare(b.ticker);
+          break;
+        case 'quantity':
+          cmp = qa - qb;
+          break;
+        case 'price':
+          cmp = pa - pb;
+          break;
+        case 'percent':
+          cmp = ca - cb;
+          break;
+        case 'delta':
+          cmp = da - db;
+          break;
+      }
+      if (!mobileAscending) cmp = -cmp;
+      if (cmp !== 0) return cmp;
+      return a.ticker.localeCompare(b.ticker);
+    });
+    return arr;
+  })();
 
   const searchStocksForPortfolio = (searchTerm: string) => {
     if (!searchTerm || searchTerm.trim().length < 1) {
@@ -281,20 +334,58 @@ export function PortfolioSection({
             </button>
           </div>
         ) : (
-          <div className="w-full bg-white dark:bg-gray-900 border-0 rounded-none overflow-hidden divide-y divide-gray-200 dark:divide-gray-800">
+          <div className="w-full">
+            {/* Mobile: sort chips */}
+            <div className="px-3 pb-2">
+              <div className="mobile-sort-row" role="tablist" aria-label="Sort portfolio">
+                {[
+                  { key: 'ticker' as const, label: 'Ticker' },
+                  { key: 'quantity' as const, label: '#' },
+                  { key: 'price' as const, label: 'Price' },
+                  { key: 'percent' as const, label: '%' },
+                  { key: 'delta' as const, label: 'Δ$' },
+                ].map((opt) => {
+                  const active = mobileSortKey === opt.key;
+                  const icon = active ? (mobileAscending ? '▲' : '▼') : '';
+                  return (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      className={`sort-chip ${active ? 'active' : ''}`}
+                      onClick={() => {
+                        if (active) setMobileAscending((v) => !v);
+                        else {
+                          setMobileSortKey(opt.key);
+                          setMobileAscending(opt.key === 'ticker'); // text asc, numbers default desc
+                          if (opt.key !== 'ticker') setMobileAscending(false);
+                        }
+                      }}
+                      role="tab"
+                      aria-selected={active}
+                      style={{ WebkitTapHighlightColor: 'transparent' }}
+                    >
+                      <span className="sort-chip-label">{opt.label}</span>
+                      {icon && <span className="sort-chip-icon">{icon}</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="w-full bg-white dark:bg-gray-900 border-0 rounded-none overflow-hidden divide-y divide-gray-200 dark:divide-gray-800">
             {/* Header row (mobile): align with PortfolioCardMobile grid */}
             <div className="px-3 py-1.5 bg-slate-50/80 dark:bg-white/5 text-[11px] font-semibold text-slate-600 dark:text-slate-300">
               <div className="grid items-center gap-x-2 min-w-0 [grid-template-columns:40px_minmax(56px,1fr)_56px_80px_56px_44px]">
                 <div className="text-center">Logo</div>
                 <div className="text-center">Ticker</div>
                 <div className="text-center">#</div>
-                <div className="text-center">Price</div>
+                <div className="text-center">Price/Δ$</div>
                 <div className="text-center">%</div>
                 <div className="text-center">X</div>
               </div>
             </div>
 
-            {portfolioStocks.map((stock, index) => {
+            {sortedPortfolioStocksMobile.map((stock, index) => {
               const quantity = portfolioHoldings[stock.ticker] || 0;
 
               return (
@@ -319,6 +410,7 @@ export function PortfolioSection({
               </div>
             </div>
             </div>
+          </div>
           </div>
         )}
 

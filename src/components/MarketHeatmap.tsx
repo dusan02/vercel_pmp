@@ -1055,7 +1055,8 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
             const tileWidth = x1 - x0;
             const tileHeight = y1 - y0;
             const company = leaf.data.meta.companyData;
-            const v = metric === 'mcap' ? ((company.marketCapDiff ?? 0) / 1e9) : company.changePercent;
+            // marketCapDiff is represented in B$ in our data model
+            const v = metric === 'mcap' ? (company.marketCapDiff ?? 0) : company.changePercent;
             const tileColor = colorScale(v);
 
             // Skutočné rozmery dlaždice v pixeloch

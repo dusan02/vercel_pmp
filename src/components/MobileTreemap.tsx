@@ -96,9 +96,11 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
 
   // Get color for company
   const getColor = useCallback((company: CompanyNode): string => {
+    // NOTE: marketCapDiff is treated throughout the app as "billions" (see formatMarketCapDiff docs).
+    // So for mcap mode, feed raw marketCapDiff into the scale (which is also configured in B$ units).
     const value = metric === 'percent'
       ? company.changePercent
-      : ((company.marketCapDiff ?? 0) / 1e9);
+      : (company.marketCapDiff ?? 0);
     if (value === null || value === undefined) return '#1a1a1a';
     return colorScale(value);
   }, [metric, colorScale]);

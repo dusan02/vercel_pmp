@@ -1,8 +1,8 @@
 'use client';
 
-import React, { memo } from 'react';
+import React, { memo, useMemo } from 'react';
 import { StockData } from '@/lib/types';
-import { formatPrice, formatPercent } from '@/lib/utils/format';
+import { formatCurrencyCompact, formatPrice, formatPercent } from '@/lib/utils/format';
 import CompanyLogo from './CompanyLogo';
 import { X } from 'lucide-react';
 
@@ -24,6 +24,23 @@ export const PortfolioCardMobile = memo(({
   const formattedPrice = formatPrice(stock.currentPrice);
   const formattedPercentChange = formatPercent(stock.percentChange);
   const isPositive = stock.percentChange >= 0;
+
+  // "Value" requested: daily $ change of the holding, derived from % change and price.
+  // Approximate prevClose from percent change: prev = current / (1 + pct/100)
+  const holdingDelta = useMemo(() => {
+    const price = stock.currentPrice ?? 0;
+    const pct = stock.percentChange ?? 0;
+    if (!isFinite(price) || price <= 0) return 0;
+    if (!isFinite(pct)) return 0;
+    // Avoid division blowups around -100%
+    if (pct <= -99.999) return 0;
+    const prev = price / (1 + pct / 100);
+    const perShareDelta = price - prev;
+    const v = perShareDelta * (quantity || 0);
+    return isFinite(v) ? v : 0;
+  }, [quantity, stock.currentPrice, stock.percentChange]);
+  const holdingDeltaIsPositive = holdingDelta >= 0;
+  const formattedHoldingDelta = useMemo(() => formatCurrencyCompact(holdingDelta, true), [holdingDelta]);
 
   return (
     <div
@@ -70,6 +87,9 @@ export const PortfolioCardMobile = memo(({
         <div className="text-center">
           <div className="font-mono font-semibold text-gray-900 dark:text-gray-100 text-sm tabular-nums">
             ${formattedPrice}
+          </div>
+          <div className={`text-[11px] font-mono tabular-nums ${holdingDeltaIsPositive ? 'text-green-600' : 'text-red-600'}`}>
+            {formattedHoldingDelta}
           </div>
         </div>
 
