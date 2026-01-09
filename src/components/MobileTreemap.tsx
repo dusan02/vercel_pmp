@@ -4,7 +4,6 @@ import React, { useMemo, useCallback, useEffect, useRef, useState } from 'react'
 import { CompanyNode } from './MarketHeatmap';
 import { formatPrice, formatPercent, formatMarketCap, formatMarketCapDiff } from '@/lib/utils/format';
 import { createHeatmapColorScale } from '@/lib/utils/heatmapColors';
-import Link from 'next/link';
 import { HeatmapMetricButtons } from './HeatmapMetricButtons';
 import { HeatmapLegend } from './MarketHeatmap';
 import { hierarchy, treemap, treemapSquarify } from 'd3-hierarchy';
@@ -500,7 +499,12 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
             aria-label="Close details"
             onClick={closeSheet}
             className="fixed inset-0"
-            style={{ background: 'rgba(0,0,0,0.45)', zIndex: 1000 }}
+            style={{
+              background: 'rgba(0,0,0,0.45)',
+              zIndex: 1000,
+              // Don't block the mobile tab bar
+              bottom: 'calc(72px + env(safe-area-inset-bottom))',
+            }}
           />
           <div
             className="fixed inset-x-0 bottom-0"
@@ -511,18 +515,20 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
               borderTopLeftRadius: 16,
               borderTopRightRadius: 16,
               boxShadow: '0 -12px 30px rgba(0,0,0,0.35)',
-              padding: 14,
-              maxHeight: '72vh',
-              overflow: 'auto',
+              padding: 10,
+              // Keep it compact like desktop tooltip
+              maxHeight: 220,
+              overflow: 'hidden',
+              // Sit above mobile tab bar
+              bottom: 'calc(72px + env(safe-area-inset-bottom))',
             }}
           >
-            <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <div className="text-sm font-semibold">
+                <div className="text-sm font-semibold truncate">
                   {selectedCompany.symbol}
-                  {selectedCompany.name && selectedCompany.name !== selectedCompany.symbol ? ` — ${selectedCompany.name}` : ''}
                 </div>
-                <div className="text-xs opacity-75 mt-0.5">
+                <div className="text-[11px] opacity-75 truncate">
                   {selectedCompany.sector} · {selectedCompany.industry}
                 </div>
               </div>
@@ -532,69 +538,52 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
                   <button
                     type="button"
                     onClick={() => onToggleFavorite(selectedCompany.symbol)}
-                    className="px-3 py-1.5 rounded-md text-sm font-semibold"
+                    className="w-11 h-9 rounded-md text-sm font-semibold"
                     style={{
-                      background: (isFavorite && isFavorite(selectedCompany.symbol)) ? 'rgba(251,191,36,0.15)' : 'rgba(59,130,246,0.12)',
-                      color: (isFavorite && isFavorite(selectedCompany.symbol)) ? '#fbbf24' : 'var(--clr-primary)',
+                      background: (isFavorite && isFavorite(selectedCompany.symbol)) ? 'rgba(251,191,36,0.15)' : 'rgba(0,0,0,0.06)',
+                      color: (isFavorite && isFavorite(selectedCompany.symbol)) ? '#fbbf24' : 'var(--clr-text)',
+                      WebkitTapHighlightColor: 'transparent',
                     }}
+                    aria-label={(isFavorite && isFavorite(selectedCompany.symbol)) ? 'Remove from favorites' : 'Add to favorites'}
                   >
-                    {(isFavorite && isFavorite(selectedCompany.symbol)) ? '★ Favorited' : '☆ Favorite'}
+                    {(isFavorite && isFavorite(selectedCompany.symbol)) ? '★' : '☆'}
                   </button>
                 )}
                 <button
                   type="button"
                   onClick={closeSheet}
-                  className="px-3 py-1.5 rounded-md text-sm font-semibold"
-                  style={{ background: 'rgba(0,0,0,0.06)' }}
+                  className="px-3 h-9 rounded-md text-sm font-semibold"
+                  style={{ background: 'rgba(0,0,0,0.06)', WebkitTapHighlightColor: 'transparent' }}
                 >
                   Close
                 </button>
               </div>
             </div>
 
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              {metric === 'percent' ? (
+            <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+              <div className="opacity-70">Price:</div>
+              <div className="text-right font-semibold font-mono tabular-nums">
+                {selectedCompany.currentPrice ? `$${formatPrice(selectedCompany.currentPrice)}` : '—'}
+              </div>
+
+              <div className="opacity-70">Market Cap:</div>
+              <div className="text-right font-semibold font-mono tabular-nums">
+                {formatMarketCap(selectedCompany.marketCap ?? 0)}
+              </div>
+
+              <div className="opacity-70">Change (day):</div>
+              <div className="text-right font-semibold font-mono tabular-nums">
+                {formatPercent(selectedCompany.changePercent ?? 0)}
+              </div>
+
+              {metric === 'mcap' && (
                 <>
-                  <div className="p-3 rounded-lg" style={{ background: 'rgba(0,0,0,0.04)' }}>
-                    <div className="text-[11px] opacity-70">Price</div>
-                    <div className="text-base font-semibold">
-                      {selectedCompany.currentPrice ? `$${formatPrice(selectedCompany.currentPrice)}` : '—'}
-                    </div>
-                  </div>
-                  <div className="p-3 rounded-lg" style={{ background: 'rgba(0,0,0,0.04)' }}>
-                    <div className="text-[11px] opacity-70">% Change</div>
-                    <div className="text-base font-semibold">
-                      {formatPercent(selectedCompany.changePercent ?? 0)}
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="p-3 rounded-lg" style={{ background: 'rgba(0,0,0,0.04)' }}>
-                    <div className="text-[11px] opacity-70">Mcap Diff</div>
-                    <div className="text-base font-semibold">
-                      {formatMarketCapDiff(selectedCompany.marketCapDiff ?? 0)}
-                    </div>
-                  </div>
-                  <div className="p-3 rounded-lg" style={{ background: 'rgba(0,0,0,0.04)' }}>
-                    <div className="text-[11px] opacity-70">Market Cap</div>
-                    <div className="text-base font-semibold">
-                      {formatMarketCap(selectedCompany.marketCap ?? 0)}
-                    </div>
+                  <div className="opacity-70">Mcap Δ (day):</div>
+                  <div className="text-right font-semibold font-mono tabular-nums">
+                    {formatMarketCapDiff(selectedCompany.marketCapDiff ?? 0)}
                   </div>
                 </>
               )}
-              <div className="p-3 rounded-lg" style={{ background: 'rgba(0,0,0,0.04)' }}>
-                <div className="text-[11px] opacity-70">Open</div>
-                <Link
-                  href={`/company/${selectedCompany.symbol}`}
-                  className="inline-block mt-0.5 text-sm font-semibold"
-                  style={{ color: 'var(--clr-primary)' }}
-                  onClick={closeSheet}
-                >
-                  View details →
-                </Link>
-              </div>
             </div>
           </div>
         </>
