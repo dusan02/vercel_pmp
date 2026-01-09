@@ -61,7 +61,7 @@ export function FavoritesSection({
 
       {/* Mobile: Cards layout */}
       <div className="lg:hidden">
-        <div className="grid grid-cols-1 gap-3">
+        <div className="w-full bg-white dark:bg-gray-900 border-0 rounded-none overflow-hidden divide-y divide-gray-200 dark:divide-gray-800">
           {favoriteStocks.map((stock, index) => (
             <StockCardMobile
               key={stock.ticker}

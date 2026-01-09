@@ -54,16 +54,23 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
   onToggleFavorite,
   isFavorite,
 }) => {
-  // Sort by market cap (descending) - largest first, limit to MAX_MOBILE_TILES
+  // Sort by ACTIVE size metric (descending), limit to MAX_MOBILE_TILES.
+  // - percent mode: size by market cap
+  // - mcap mode: size by absolute market cap diff
   // OPTIMIZATION: Use useMemo with stable sorting for better performance
   const sortedData = useMemo(() => {
     if (!data || data.length === 0) return [];
-    
+
+    const sizeValue = (c: CompanyNode) => {
+      if (metric === 'mcap') return c.marketCapDiffAbs ?? Math.abs(c.marketCapDiff ?? 0);
+      return c.marketCap || 0;
+    };
+
     return [...data]
-      .filter(c => (c.marketCap || 0) > 0)
-      .sort((a, b) => (b.marketCap || 0) - (a.marketCap || 0))
+      .filter(c => sizeValue(c) > 0)
+      .sort((a, b) => sizeValue(b) - sizeValue(a))
       .slice(0, MAX_MOBILE_TILES); // CRITICAL: Limit for mobile UX + performance
-  }, [data]);
+  }, [data, metric]);
 
   // Color scale
   const colorScale = useMemo(() => createHeatmapColorScale(timeframe), [timeframe]);
@@ -146,8 +153,10 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     if (!sortedData.length) return [];
 
     // Group by sector like desktop heatmap, but we won't render sector labels on mobile.
-    // IMPORTANT: Tile AREA is always marketCap (per mobile UX requirement).
-    const sectorHierarchy = buildHeatmapHierarchy(sortedData, 'percent');
+    // IMPORTANT: Tile AREA depends on active metric:
+    // - percent: marketCap
+    // - mcap: marketCapDiffAbs
+    const sectorHierarchy = buildHeatmapHierarchy(sortedData, metric);
 
     const root = hierarchy<any>(sectorHierarchy)
       .sum((d: any) => (typeof d.value === 'number' ? d.value : 0))
@@ -265,33 +274,43 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
   }
 
   return (
-    <div className="mobile-treemap-wrapper" style={{ height: '70vh', maxHeight: '70vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-      {/* Sticky top bar: metric toggle + legend (mobile-friendly) */}
+    <div
+      className="mobile-treemap-wrapper"
+      style={{
+        // Fill the available mobile view height (no artificial empty band below)
+        height: '100%',
+        maxHeight: 'none',
+        minHeight: 0,
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      {/* Sticky top bar: compact toggle + legend on one row */}
       <div
         style={{
           background: 'rgba(0,0,0,0.88)',
           borderBottom: '1px solid rgba(255,255,255,0.08)',
           padding: '8px 10px',
           display: 'flex',
-          flexDirection: 'column',
-          gap: 8,
+          alignItems: 'center',
+          gap: 10,
           flexShrink: 0,
+          minWidth: 0,
         }}
       >
-        <div className="flex items-center justify-between gap-2 min-w-0">
-          {onMetricChange && (
-            <HeatmapMetricButtons
-              metric={metric}
-              // HeatmapMetricButtons expects HeatmapMetric union; this matches at runtime.
-              onMetricChange={onMetricChange as any}
-              variant="dark"
-              className="scale-[0.92] origin-left"
-            />
-          )}
-        </div>
+        {onMetricChange && (
+          <HeatmapMetricButtons
+            metric={metric}
+            // HeatmapMetricButtons expects HeatmapMetric union; this matches at runtime.
+            onMetricChange={onMetricChange as any}
+            variant="dark"
+            className="scale-[0.85] origin-left"
+          />
+        )}
 
-        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' as any }}>
-          <div style={{ transform: 'scale(0.92)', transformOrigin: 'left center', width: 'max-content' }}>
+        <div style={{ flex: 1, minWidth: 0, overflowX: 'auto', WebkitOverflowScrolling: 'touch' as any }}>
+          <div style={{ transform: 'scale(0.82)', transformOrigin: 'left center', width: 'max-content' }}>
             <HeatmapLegend timeframe={timeframe} />
           </div>
         </div>

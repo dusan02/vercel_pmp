@@ -53,7 +53,8 @@ export const PortfolioCardMobile = memo(({
           <PortfolioQuantityInput
             value={quantity || 1}
             onChange={(v) => onUpdateQuantity(stock.ticker, v || 1)}
-            className="min-w-0 w-full px-1 py-1 text-[12px] rounded-md bg-transparent border border-gray-300/60 dark:border-slate-600/70"
+            // iOS best practice: font-size >= 16px prevents Safari zoom on focus
+            className="min-w-0 w-full px-1 py-1 text-[16px] rounded-md bg-transparent border border-gray-300/60 dark:border-slate-600/70"
           />
         </div>
 
@@ -81,7 +82,8 @@ export const PortfolioCardMobile = memo(({
             e.stopPropagation();
             onRemoveStock(stock.ticker);
           }}
-          className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-red-600 bg-transparent active:bg-transparent focus:outline-none"
+          // Best practice: 44x44px tap target on mobile
+          className="flex-shrink-0 w-11 h-11 flex items-center justify-center text-red-600 bg-transparent active:bg-transparent focus:outline-none"
           aria-label={`Remove ${stock.ticker} from portfolio`}
           style={{ WebkitTapHighlightColor: 'transparent' }}
         >

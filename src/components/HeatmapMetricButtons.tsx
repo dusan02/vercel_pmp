@@ -56,10 +56,11 @@ export function HeatmapMetricButtons({
   };
 
   // Colors (segmented control)
+  // Requirement: inactive must be clearly gray; only active is blue.
   const surface = isDark ? 'bg-white/10' : 'bg-slate-100';
   const border = isDark ? 'border-white/15' : 'border-slate-200';
-  const active = isDark ? 'bg-white/20 text-white' : 'bg-white text-slate-900';
-  const inactive = isDark ? 'text-white/70' : 'text-slate-600';
+  const active = 'bg-blue-600 text-white';
+  const inactive = isDark ? 'bg-white/10 text-white/75' : 'bg-slate-200 text-slate-700';
 
   return (
     <div
@@ -77,7 +78,7 @@ export function HeatmapMetricButtons({
             e.stopPropagation();
             if (!isPercent) onMetricChange('percent');
           }}
-          className={`px-2.5 py-1 text-xs font-semibold rounded-full transition-colors ${isPercent ? active : inactive}`}
+          className={`px-2 py-1 text-[11px] font-semibold rounded-full transition-colors ${isPercent ? active : inactive}`}
         >
           % Change
         </button>
@@ -90,7 +91,7 @@ export function HeatmapMetricButtons({
             e.stopPropagation();
             if (isPercent) onMetricChange('mcap');
           }}
-          className={`px-2.5 py-1 text-xs font-semibold rounded-full transition-colors ${!isPercent ? active : inactive}`}
+          className={`px-2 py-1 text-[11px] font-semibold rounded-full transition-colors ${!isPercent ? active : inactive}`}
         >
           Mcap Change
         </button>

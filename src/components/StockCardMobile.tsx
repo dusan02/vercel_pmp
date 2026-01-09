@@ -68,11 +68,12 @@ export const StockCardMobile = memo(({
             e.stopPropagation();
             onToggleFavorite();
           }}
-          className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-transparent active:bg-transparent focus:outline-none"
+          // Best practice: 44x44px tap target on mobile
+          className="flex-shrink-0 w-11 h-11 flex items-center justify-center bg-transparent active:bg-transparent focus:outline-none"
           aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
           style={{ WebkitTapHighlightColor: 'transparent' }}
         >
-          <span className={`text-lg ${isFavorite ? 'text-yellow-500' : 'text-gray-400'}`}>
+          <span className={`text-xl ${isFavorite ? 'text-yellow-500' : 'text-gray-400'}`}>
             {isFavorite ? '★' : '☆'}
           </span>
         </button>
