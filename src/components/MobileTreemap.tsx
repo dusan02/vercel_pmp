@@ -22,7 +22,8 @@ interface MobileTreemapProps {
 
 // Maximum tiles for mobile (UX + performance)
 // NOTE: With true treemap layout we can render more while still filling the area.
-const MAX_MOBILE_TILES = 250;
+const MAX_MOBILE_TILES_COMPACT = 250;
+const MAX_MOBILE_TILES_EXPANDED = 650;
 
 type TreemapDatum = {
   name: string;
@@ -88,11 +89,12 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
       return c.marketCap || 0;
     };
 
+    const limit = expanded ? MAX_MOBILE_TILES_EXPANDED : MAX_MOBILE_TILES_COMPACT;
     return [...data]
       .filter(c => sizeValue(c) > 0)
       .sort((a, b) => sizeValue(b) - sizeValue(a))
-      .slice(0, MAX_MOBILE_TILES); // CRITICAL: Limit for mobile UX + performance
-  }, [data, metric]);
+      .slice(0, limit); // CRITICAL: Limit for mobile UX + performance
+  }, [data, metric, expanded]);
 
   // Color scale
   const colorScale = useMemo(() => createHeatmapColorScale(timeframe, metric === 'mcap' ? 'mcap' : 'percent'), [timeframe, metric]);
@@ -283,18 +285,42 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     setLongPressActive(null);
   }, []);
 
-  // Build true treemap rectangles (no gaps, proportional to market cap)
-  const leaves = useMemo(() => {
+  // Build treemap rectangles (no gaps).
+  // Compact: single treemap.
+  // Expanded: sector strips stacked vertically, each with its own internal treemap.
+  const { leaves, layoutHeight } = useMemo((): {
+    leaves: Array<{ x0: number; y0: number; x1: number; y1: number; data: any }>;
+    layoutHeight: number;
+  } => {
     const { width, height } = containerSize;
-    if (width <= 0 || height <= 0) return [];
-    if (!sortedData.length) return [];
-    const layoutHeight = Math.max(1, Math.floor(height * (expanded ? EXPAND_FACTOR : 1)));
+    if (width <= 0 || height <= 0) return { leaves: [], layoutHeight: 0 };
+    if (!sortedData.length) return { leaves: [], layoutHeight: 0 };
 
-    // Build sector hierarchy (companies are direct children of sectors).
-    // Then lay out sectors as VERTICAL STRIPS (stacked top-to-bottom):
-    // - each sector gets a rectangle with height proportional to cumulative value
-    // - inside each sector-rectangle we compute a treemap for companies
-    // This yields a consistent vertical shape and prevents any overlap artifacts.
+    const baseHeight = Math.max(1, Math.floor(height * (expanded ? EXPAND_FACTOR : 1)));
+
+    // Compact mode: single treemap fill
+    if (!expanded) {
+      const sectorHierarchy = buildHeatmapHierarchy(sortedData, metric);
+      const root = hierarchy<any>(sectorHierarchy)
+        .sum((d: any) => (typeof d.value === 'number' ? d.value : 0))
+        .sort((a: any, b: any) => (b.value || 0) - (a.value || 0));
+
+      treemap<{ name: string; children: TreemapDatum[] }>()
+        .tile(treemapSquarify)
+        .size([width, baseHeight])
+        .paddingInner(0)
+        .paddingOuter(0)
+        .round(true)(root as any);
+
+      const out = root.leaves().filter((l: any) => l.data?.meta?.type === 'company') as any[];
+      return { leaves: out, layoutHeight: baseHeight };
+    }
+
+    // Expanded mode:
+    // - sectors are stacked as horizontal strips (full width, variable height)
+    // - each sector gets height proportional to total sector value
+    // - enforce a reasonable minimum height so small sectors don't collapse into thin bands
+    //   (thin bands force companies into stretched horizontal bars).
     const sectorHierarchy = buildHeatmapHierarchy(sortedData, metric);
     const sectors = sectorHierarchy.children ?? [];
 
@@ -310,17 +336,23 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     const sectorSums = sectors.map((s: any) => sumSector(s));
     const totalSum = sectorSums.reduce((a, b) => a + b, 0) || 1;
 
+    const MIN_SECTOR_HEIGHT = 56;
+    const sectorHeights: number[] = [];
+    for (let i = 0; i < sectors.length; i++) {
+      const raw = Math.round(baseHeight * ((sectorSums[i] || 0) / totalSum));
+      sectorHeights.push(Math.max(MIN_SECTOR_HEIGHT, raw));
+    }
+    const computedLayoutHeight = Math.max(baseHeight, sectorHeights.reduce((a, b) => a + b, 0));
+
     const result: Array<{ x0: number; y0: number; x1: number; y1: number; data: any }> = [];
     let yCursor = 0;
 
     for (let i = 0; i < sectors.length; i++) {
       const sector = sectors[i] as any;
-      const sectorSum = sectorSums[i] || 0;
-
-      // Allocate height proportional to sector total; last sector gets remainder to avoid rounding gaps.
+      // Use computed strip height; last sector gets remainder to avoid rounding gaps.
       let sectorHeight = i === sectors.length - 1
-        ? (layoutHeight - yCursor)
-        : Math.max(8, Math.round(layoutHeight * (sectorSum / totalSum)));
+        ? Math.max(0, computedLayoutHeight - yCursor)
+        : Math.max(0, sectorHeights[i] || 0);
 
       if (sectorHeight <= 0) continue;
       const sectorChildren = sector?.children ?? [];
@@ -355,7 +387,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
       yCursor += sectorHeight;
     }
 
-    return result;
+    return { leaves: result, layoutHeight: computedLayoutHeight };
   }, [containerSize, sortedData, metric, expanded]);
 
   const renderLeaf = useCallback((leaf: { x0: number; y0: number; x1: number; y1: number; data: any }) => {
@@ -552,7 +584,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
           style={{
             position: 'relative',
             width: containerSize.width * zoom,
-            height: (containerSize.height * (expanded ? EXPAND_FACTOR : 1)) * zoom,
+            height: layoutHeight * zoom,
           }}
         >
           {leaves.map((leaf) => renderLeaf(leaf))}
