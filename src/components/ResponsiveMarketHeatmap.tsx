@@ -234,6 +234,7 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
           data={data || []}
           timeframe={timeframe}
           metric={metric}
+          {...(onMetricChange ? { onMetricChange: onMetricChange as any } : {})}
           {...(onTileClick ? { onTileClick } : {})}
         />
       );

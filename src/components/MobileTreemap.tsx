@@ -5,11 +5,14 @@ import { CompanyNode } from './MarketHeatmap';
 import { formatPrice, formatPercent, formatMarketCap } from '@/lib/utils/format';
 import { createHeatmapColorScale } from '@/lib/utils/heatmapColors';
 import Link from 'next/link';
+import { HeatmapMetricButtons } from './HeatmapMetricButtons';
+import { HeatmapLegend } from './MarketHeatmap';
 
 interface MobileTreemapProps {
   data: CompanyNode[];
   timeframe?: 'day' | 'week' | 'month';
   metric?: 'percent' | 'mcap';
+  onMetricChange?: (metric: 'percent' | 'mcap') => void;
   onTileClick?: (company: CompanyNode) => void;
   onToggleFavorite?: (ticker: string) => void;
   isFavorite?: (ticker: string) => boolean;
@@ -37,6 +40,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
   data,
   timeframe = 'day',
   metric = 'percent',
+  onMetricChange,
   onTileClick,
   onToggleFavorite,
   isFavorite,
@@ -72,6 +76,13 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
   // Long press handler for favorites
   const longPressTimerRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const [longPressActive, setLongPressActive] = useState<string | null>(null);
+  // Prevent "long press" from also triggering a short-tap click afterwards
+  const suppressClickRef = useRef<Set<string>>(new Set());
+  const suppressTimerRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+
+  // Bottom sheet state (mobile "hover" replacement)
+  const [selectedCompany, setSelectedCompany] = useState<CompanyNode | null>(null);
+  const closeSheet = useCallback(() => setSelectedCompany(null), []);
 
   const handleTouchStart = useCallback((ticker: string) => {
     if (!onToggleFavorite) return;
@@ -79,6 +90,15 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     const timer = setTimeout(() => {
       setLongPressActive(ticker);
       onToggleFavorite(ticker);
+      // Mark to suppress the following click/tap
+      suppressClickRef.current.add(ticker);
+      const existing = suppressTimerRef.current.get(ticker);
+      if (existing) clearTimeout(existing);
+      const clearTimer = setTimeout(() => {
+        suppressClickRef.current.delete(ticker);
+        suppressTimerRef.current.delete(ticker);
+      }, 900);
+      suppressTimerRef.current.set(ticker, clearTimer);
       // Haptic feedback (if available)
       if (navigator.vibrate) {
         navigator.vibrate(50);
@@ -134,21 +154,24 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
       },
     }[size];
 
+    const handleShortTap = (e: React.SyntheticEvent) => {
+      // Don't trigger short-tap action if a long-press just happened
+      if (suppressClickRef.current.has(company.symbol)) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+      e.preventDefault();
+      e.stopPropagation();
+      setSelectedCompany(company);
+      if (onTileClick) onTileClick(company);
+    };
+
     return (
-      <Link
+      <button
         key={company.symbol}
-        href={`/company/${company.symbol}`}
-        onClick={(e) => {
-          // Don't navigate if long press was active
-          if (longPressActive === company.symbol) {
-            e.preventDefault();
-            return;
-          }
-          if (onTileClick) {
-            e.preventDefault();
-            onTileClick(company);
-          }
-        }}
+        type="button"
+        onClick={handleShortTap}
         onTouchStart={() => handleTouchStart(company.symbol)}
         onTouchEnd={() => handleTouchEnd(company.symbol)}
         onMouseDown={() => handleTouchStart(company.symbol)}
@@ -163,6 +186,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
           boxShadow: 'none',
           lineHeight: '1.15',
           letterSpacing: '-0.01em',
+          textAlign: 'left',
         }}
       >
         {/* Favorite indicator (top right corner) */}
@@ -207,9 +231,9 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
             </div>
           )}
         </div>
-      </Link>
+      </button>
     );
-  }, [getSizeBucket, getColor, metric, onTileClick, isFavorite, longPressActive, handleTouchStart, handleTouchEnd]);
+  }, [getSizeBucket, getColor, metric, onTileClick, isFavorite, handleTouchStart, handleTouchEnd, closeSheet]);
 
   if (sortedData.length === 0) {
     return (
@@ -221,6 +245,39 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
 
   return (
     <div className="mobile-treemap-wrapper" style={{ height: '70vh', maxHeight: '70vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      {/* Sticky top bar: metric toggle + legend (mobile-friendly) */}
+      <div
+        style={{
+          background: 'rgba(0,0,0,0.88)',
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
+          padding: '8px 10px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 10,
+          flexShrink: 0,
+        }}
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          {onMetricChange && (
+            <HeatmapMetricButtons
+              metric={metric}
+              // HeatmapMetricButtons expects HeatmapMetric union; this matches at runtime.
+              onMetricChange={onMetricChange as any}
+              variant="dark"
+              className="scale-[0.92] origin-left"
+            />
+          )}
+        </div>
+
+        <div className="hidden sm:block">
+          <HeatmapLegend timeframe={timeframe} />
+        </div>
+        <div className="sm:hidden">
+          <HeatmapLegend timeframe={timeframe} />
+        </div>
+      </div>
+
       <div 
         className="mobile-treemap-grid" 
         style={{ 
@@ -247,6 +304,101 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
             View all stocks →
           </Link>
         </div>
+      )}
+
+      {/* Bottom sheet: details (tap on tile) */}
+      {selectedCompany && (
+        <>
+          <button
+            type="button"
+            aria-label="Close details"
+            onClick={closeSheet}
+            className="fixed inset-0"
+            style={{ background: 'rgba(0,0,0,0.45)', zIndex: 1000 }}
+          />
+          <div
+            className="fixed inset-x-0 bottom-0"
+            style={{
+              zIndex: 1001,
+              background: 'var(--clr-bg)',
+              color: 'var(--clr-text)',
+              borderTopLeftRadius: 16,
+              borderTopRightRadius: 16,
+              boxShadow: '0 -12px 30px rgba(0,0,0,0.35)',
+              padding: 14,
+              maxHeight: '72vh',
+              overflow: 'auto',
+            }}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-sm font-semibold">
+                  {selectedCompany.symbol}
+                  {selectedCompany.name && selectedCompany.name !== selectedCompany.symbol ? ` — ${selectedCompany.name}` : ''}
+                </div>
+                <div className="text-xs opacity-75 mt-0.5">
+                  {selectedCompany.sector} · {selectedCompany.industry}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {onToggleFavorite && (
+                  <button
+                    type="button"
+                    onClick={() => onToggleFavorite(selectedCompany.symbol)}
+                    className="px-3 py-1.5 rounded-md text-sm font-semibold"
+                    style={{
+                      background: (isFavorite && isFavorite(selectedCompany.symbol)) ? 'rgba(251,191,36,0.15)' : 'rgba(59,130,246,0.12)',
+                      color: (isFavorite && isFavorite(selectedCompany.symbol)) ? '#fbbf24' : 'var(--clr-primary)',
+                    }}
+                  >
+                    {(isFavorite && isFavorite(selectedCompany.symbol)) ? '★ Favorited' : '☆ Favorite'}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={closeSheet}
+                  className="px-3 py-1.5 rounded-md text-sm font-semibold"
+                  style={{ background: 'rgba(0,0,0,0.06)' }}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <div className="p-3 rounded-lg" style={{ background: 'rgba(0,0,0,0.04)' }}>
+                <div className="text-[11px] opacity-70">Price</div>
+                <div className="text-base font-semibold">
+                  {selectedCompany.currentPrice ? formatPrice(selectedCompany.currentPrice) : '—'}
+                </div>
+              </div>
+              <div className="p-3 rounded-lg" style={{ background: 'rgba(0,0,0,0.04)' }}>
+                <div className="text-[11px] opacity-70">{metric === 'percent' ? '% Change' : 'Mcap'}</div>
+                <div className="text-base font-semibold">
+                  {metric === 'percent'
+                    ? formatPercent(selectedCompany.changePercent ?? 0)
+                    : formatMarketCap(selectedCompany.marketCap ?? 0)}
+                </div>
+              </div>
+              <div className="p-3 rounded-lg" style={{ background: 'rgba(0,0,0,0.04)' }}>
+                <div className="text-[11px] opacity-70">Market Cap</div>
+                <div className="text-base font-semibold">{formatMarketCap(selectedCompany.marketCap ?? 0)}</div>
+              </div>
+              <div className="p-3 rounded-lg" style={{ background: 'rgba(0,0,0,0.04)' }}>
+                <div className="text-[11px] opacity-70">Open</div>
+                <Link
+                  href={`/company/${selectedCompany.symbol}`}
+                  className="inline-block mt-0.5 text-sm font-semibold"
+                  style={{ color: 'var(--clr-primary)' }}
+                  onClick={closeSheet}
+                >
+                  View details →
+                </Link>
+              </div>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
