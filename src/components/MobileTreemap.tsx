@@ -342,17 +342,19 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
       const raw = Math.round(baseHeight * ((sectorSums[i] || 0) / totalSum));
       sectorHeights.push(Math.max(MIN_SECTOR_HEIGHT, raw));
     }
-    const computedLayoutHeight = Math.max(baseHeight, sectorHeights.reduce((a, b) => a + b, 0));
+    // Calculate total height first
+    const totalSectorHeights = sectorHeights.reduce((a, b) => a + b, 0);
+    const computedLayoutHeight = Math.max(baseHeight, totalSectorHeights);
 
     const result: Array<{ x0: number; y0: number; x1: number; y1: number; data: any }> = [];
     let yCursor = 0;
 
     for (let i = 0; i < sectors.length; i++) {
       const sector = sectors[i] as any;
-      // Use computed strip height; last sector gets remainder to avoid rounding gaps.
+      // Use computed strip height; last sector gets remainder to ensure exact fit.
       let sectorHeight = i === sectors.length - 1
-        ? Math.max(0, computedLayoutHeight - yCursor)
-        : Math.max(0, sectorHeights[i] || 0);
+        ? Math.max(MIN_SECTOR_HEIGHT, computedLayoutHeight - yCursor)
+        : Math.max(MIN_SECTOR_HEIGHT, sectorHeights[i] || 0);
 
       if (sectorHeight <= 0) continue;
       const sectorChildren = sector?.children ?? [];
@@ -387,7 +389,10 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
       yCursor += sectorHeight;
     }
 
-    return { leaves: result, layoutHeight: computedLayoutHeight };
+    // Use actual content height (yCursor) to ensure perfect bottom alignment
+    // This prevents gaps or overflow at the bottom edge
+    const finalLayoutHeight = yCursor > 0 ? yCursor : computedLayoutHeight;
+    return { leaves: result, layoutHeight: finalLayoutHeight };
   }, [containerSize, sortedData, metric, expanded]);
 
   const renderLeaf = useCallback((leaf: { x0: number; y0: number; x1: number; y1: number; data: any }) => {

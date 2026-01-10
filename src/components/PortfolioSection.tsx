@@ -337,52 +337,87 @@ export function PortfolioSection({
           </div>
         ) : (
           <div className="w-full">
-            {/* Mobile: sort chips */}
-            <div className="px-3 pb-2">
-              <div className="mobile-sort-row" role="tablist" aria-label="Sort portfolio">
-                {[
-                  { key: 'ticker' as const, label: 'Ticker' },
-                  { key: 'quantity' as const, label: '#' },
-                  { key: 'price' as const, label: 'Price' },
-                  { key: 'delta' as const, label: '$' },
-                  { key: 'percent' as const, label: '%' },
-                ].map((opt) => {
-                  const active = mobileSortKey === opt.key;
-                  const icon = active ? (mobileAscending ? '▲' : '▼') : '';
-                  return (
-                    <button
-                      key={opt.key}
-                      type="button"
-                      className={`sort-chip ${active ? 'active' : ''} justify-center text-center`}
-                      onClick={() => {
-                        if (active) setMobileAscending((v) => !v);
-                        else {
-                          setMobileSortKey(opt.key);
-                          setMobileAscending(opt.key === 'ticker'); // text asc, numbers default desc
-                          if (opt.key !== 'ticker') setMobileAscending(false);
-                        }
-                      }}
-                      role="tab"
-                      aria-selected={active}
-                      style={{ WebkitTapHighlightColor: 'transparent' }}
-                    >
-                      <span className="sort-chip-label">{opt.label}</span>
-                      {icon && <span className="sort-chip-icon">{icon}</span>}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
             <div className="w-full bg-white dark:bg-gray-900 border-0 rounded-none overflow-hidden divide-y divide-gray-200 dark:divide-gray-800">
-            {/* Header row (mobile): align with PortfolioCardMobile grid */}
+            {/* Header row (mobile): align with PortfolioCardMobile grid - clickable for sorting */}
             <div className="px-3 py-1.5 bg-slate-50/80 dark:bg-white/5 text-[11px] font-semibold text-slate-600 dark:text-slate-300">
               <div className="grid items-center gap-x-2 min-w-0 [grid-template-columns:40px_minmax(56px,1fr)_56px_80px_56px_44px]">
                 <div className="text-center">Logo</div>
-                <div className="text-center">Ticker</div>
-                <div className="text-center">#</div>
-                <div className="text-center">Price/Δ$</div>
-                <div className="text-center">%</div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (mobileSortKey === 'ticker') {
+                      setMobileAscending((v) => !v);
+                    } else {
+                      setMobileSortKey('ticker');
+                      setMobileAscending(true);
+                    }
+                  }}
+                  className="text-center cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center gap-1"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                  aria-label="Sort by ticker"
+                >
+                  Ticker
+                  {mobileSortKey === 'ticker' && (
+                    <span className="text-[10px]">{mobileAscending ? '▲' : '▼'}</span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (mobileSortKey === 'quantity') {
+                      setMobileAscending((v) => !v);
+                    } else {
+                      setMobileSortKey('quantity');
+                      setMobileAscending(false);
+                    }
+                  }}
+                  className="text-center cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center gap-1"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                  aria-label="Sort by quantity"
+                >
+                  #
+                  {mobileSortKey === 'quantity' && (
+                    <span className="text-[10px]">{mobileAscending ? '▲' : '▼'}</span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (mobileSortKey === 'price') {
+                      setMobileAscending((v) => !v);
+                    } else {
+                      setMobileSortKey('price');
+                      setMobileAscending(false);
+                    }
+                  }}
+                  className="text-center cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center gap-1"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                  aria-label="Sort by price"
+                >
+                  Price/Δ$
+                  {mobileSortKey === 'price' && (
+                    <span className="text-[10px]">{mobileAscending ? '▲' : '▼'}</span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (mobileSortKey === 'percent') {
+                      setMobileAscending((v) => !v);
+                    } else {
+                      setMobileSortKey('percent');
+                      setMobileAscending(false);
+                    }
+                  }}
+                  className="text-center cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center gap-1"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                  aria-label="Sort by percent"
+                >
+                  %
+                  {mobileSortKey === 'percent' && (
+                    <span className="text-[10px]">{mobileAscending ? '▲' : '▼'}</span>
+                  )}
+                </button>
                 <div className="text-center">X</div>
               </div>
             </div>

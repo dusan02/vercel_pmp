@@ -96,62 +96,116 @@ export function FavoritesSection({
         </div>
       </div>
 
-      {/* Mobile: Sort chips */}
-      <div className="lg:hidden px-3 pb-2">
-        <div className="mobile-sort-row" role="tablist" aria-label="Sort favorites">
-          {[
-            { key: 'ticker' as SortKey, label: 'Ticker' },
-            { key: 'currentPrice' as SortKey, label: 'Price' },
-            { key: 'percentChange' as SortKey, label: '% Change' },
-            { key: 'marketCap' as SortKey, label: 'Mkt Cap' },
-          ].map((opt) => {
-            const active = sortKey === opt.key;
-            const icon = active ? (ascending ? '▲' : '▼') : '';
-            return (
-              <button
-                key={opt.key}
-                type="button"
-                className={`sort-chip ${active ? 'active' : ''}`}
-                onClick={() => onSort(opt.key)}
-                role="tab"
-                aria-selected={active}
-                style={{ WebkitTapHighlightColor: 'transparent' }}
-              >
-                <span className="sort-chip-label">{opt.label}</span>
-                {icon && <span className="sort-chip-icon">{icon}</span>}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
       {/* Mobile: Cards layout */}
       <div className="lg:hidden">
         <div className="w-full bg-white dark:bg-gray-900 border-0 rounded-none overflow-hidden divide-y divide-gray-200 dark:divide-gray-800">
-          {/* Header row (mobile) */}
+          {/* Header row (mobile) - clickable for sorting */}
           <div className="px-3 py-1.5 bg-slate-50/80 dark:bg-white/5 text-[11px] font-semibold text-slate-600 dark:text-slate-300">
             {sortKey === 'marketCapDiff' ? (
               <div className="grid items-center gap-x-2 min-w-0 [grid-template-columns:40px_minmax(56px,1fr)_72px_72px_44px]">
                 <div className="text-center">Logo</div>
-                <div className="text-center">Ticker</div>
-                <div className="text-center">Mkt Cap</div>
-                <div className="text-center">Δ</div>
+                <button
+                  type="button"
+                  onClick={() => onSort('ticker')}
+                  className="text-center cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center gap-1"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                  aria-label="Sort by ticker"
+                >
+                  Ticker
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onSort('marketCap')}
+                  className="text-center cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center gap-1"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                  aria-label="Sort by market cap"
+                >
+                  Mkt Cap
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onSort('marketCapDiff')}
+                  className="text-center cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center gap-1"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                  aria-label="Sort by market cap diff"
+                >
+                  Δ
+                  <span className="text-[10px]">{ascending ? '▲' : '▼'}</span>
+                </button>
                 <div className="text-center">★</div>
               </div>
             ) : sortKey === 'marketCap' ? (
               <div className="grid items-center gap-x-2 min-w-0 [grid-template-columns:40px_minmax(56px,1fr)_96px_56px_44px]">
                 <div className="text-center">Logo</div>
-                <div className="text-center">Ticker</div>
-                <div className="text-center">Mkt Cap</div>
-                <div className="text-center">%</div>
+                <button
+                  type="button"
+                  onClick={() => onSort('ticker')}
+                  className="text-center cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center gap-1"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                  aria-label="Sort by ticker"
+                >
+                  Ticker
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onSort('marketCap')}
+                  className="text-center cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center gap-1"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                  aria-label="Sort by market cap"
+                >
+                  Mkt Cap
+                  <span className="text-[10px]">{ascending ? '▲' : '▼'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onSort('percentChange')}
+                  className="text-center cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center gap-1"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                  aria-label="Sort by percent change"
+                >
+                  %
+                </button>
                 <div className="text-center">★</div>
               </div>
             ) : (
               <div className="grid items-center gap-x-2 min-w-0 [grid-template-columns:40px_minmax(56px,1fr)_96px_56px_44px]">
                 <div className="text-center">Logo</div>
-                <div className="text-center">Ticker</div>
-                <div className="text-center">Price</div>
-                <div className="text-center">%</div>
+                <button
+                  type="button"
+                  onClick={() => onSort('ticker')}
+                  className="text-center cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center gap-1"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                  aria-label="Sort by ticker"
+                >
+                  Ticker
+                  {sortKey === 'ticker' && (
+                    <span className="text-[10px]">{ascending ? '▲' : '▼'}</span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onSort('currentPrice')}
+                  className="text-center cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center gap-1"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                  aria-label="Sort by price"
+                >
+                  Price
+                  {sortKey === 'currentPrice' && (
+                    <span className="text-[10px]">{ascending ? '▲' : '▼'}</span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onSort('percentChange')}
+                  className="text-center cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center gap-1"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                  aria-label="Sort by percent change"
+                >
+                  %
+                  {sortKey === 'percentChange' && (
+                    <span className="text-[10px]">{ascending ? '▲' : '▼'}</span>
+                  )}
+                </button>
                 <div className="text-center">★</div>
               </div>
             )}
