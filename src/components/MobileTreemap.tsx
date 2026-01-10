@@ -648,89 +648,89 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
               borderTopLeftRadius: 16,
               borderTopRightRadius: 16,
               boxShadow: '0 -12px 30px rgba(0,0,0,0.35)',
-              padding: 10,
+              padding: '12px 14px',
               // Keep it compact like desktop tooltip
-              maxHeight: 220,
+              maxHeight: 200,
               overflow: 'hidden',
               // Sit above mobile tab bar
               bottom: 'calc(72px + env(safe-area-inset-bottom))',
             }}
           >
-            {/* Header with Close button */}
-            <div className="flex items-center justify-end mb-3">
-              {onToggleFavorite && (
+            {/* Compact Header: Logo + Ticker + Actions */}
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                <div className="flex-shrink-0">
+                  <CompanyLogo ticker={selectedCompany.symbol} size={36} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-base font-bold leading-tight">
+                    {selectedCompany.symbol}
+                  </div>
+                  <div className="text-[10px] opacity-65 leading-tight mt-0.5 truncate">
+                    {selectedCompany.sector} · {selectedCompany.industry}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                {onToggleFavorite && (
+                  <button
+                    type="button"
+                    onClick={() => onToggleFavorite(selectedCompany.symbol)}
+                    className="w-8 h-8 rounded-md flex items-center justify-center text-sm"
+                    style={{
+                      background: (isFavorite && isFavorite(selectedCompany.symbol)) ? 'rgba(251,191,36,0.15)' : 'rgba(0,0,0,0.06)',
+                      color: (isFavorite && isFavorite(selectedCompany.symbol)) ? '#fbbf24' : 'var(--clr-text)',
+                      WebkitTapHighlightColor: 'transparent',
+                    }}
+                    aria-label={(isFavorite && isFavorite(selectedCompany.symbol)) ? 'Remove from favorites' : 'Add to favorites'}
+                  >
+                    {(isFavorite && isFavorite(selectedCompany.symbol)) ? '★' : '☆'}
+                  </button>
+                )}
                 <button
                   type="button"
-                  onClick={() => onToggleFavorite(selectedCompany.symbol)}
-                  className="w-11 h-9 rounded-md text-sm font-semibold mr-2"
-                  style={{
-                    background: (isFavorite && isFavorite(selectedCompany.symbol)) ? 'rgba(251,191,36,0.15)' : 'rgba(0,0,0,0.06)',
-                    color: (isFavorite && isFavorite(selectedCompany.symbol)) ? '#fbbf24' : 'var(--clr-text)',
-                    WebkitTapHighlightColor: 'transparent',
-                  }}
-                  aria-label={(isFavorite && isFavorite(selectedCompany.symbol)) ? 'Remove from favorites' : 'Add to favorites'}
+                  onClick={closeSheet}
+                  className="w-8 h-8 rounded-md flex items-center justify-center text-sm font-semibold"
+                  style={{ background: 'rgba(0,0,0,0.06)', WebkitTapHighlightColor: 'transparent' }}
+                  aria-label="Close"
                 >
-                  {(isFavorite && isFavorite(selectedCompany.symbol)) ? '★' : '☆'}
+                  ✕
                 </button>
-              )}
-              <button
-                type="button"
-                onClick={closeSheet}
-                className="px-3 h-9 rounded-md text-sm font-semibold"
-                style={{ background: 'rgba(0,0,0,0.06)', WebkitTapHighlightColor: 'transparent' }}
-              >
-                Close
-              </button>
+              </div>
             </div>
 
-            {/* Three-column layout: Left (logo/info) | Center (labels) | Right (values) */}
-            <div className="grid grid-cols-[auto_1fr_auto] gap-x-4 gap-y-2 text-xs items-start">
-              {/* Left column: Logo, Ticker, Sector, Industry */}
-              <div className="flex flex-col items-start gap-1.5">
-                <div className="flex-shrink-0">
-                  <CompanyLogo ticker={selectedCompany.symbol} size={40} />
-                </div>
-                <div className="text-sm font-semibold">
-                  {selectedCompany.symbol}
-                </div>
-                <div className="text-[11px] opacity-75">
-                  {selectedCompany.sector}
-                </div>
-                <div className="text-[11px] opacity-75">
-                  {selectedCompany.industry}
-                </div>
+            {/* Compact Data Grid: 2 columns (Label | Value) */}
+            <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+              {/* Row 1: Price */}
+              <div className="opacity-70">Price</div>
+              <div className="text-right font-semibold font-mono tabular-nums">
+                {selectedCompany.currentPrice ? `$${formatPrice(selectedCompany.currentPrice)}` : '—'}
               </div>
 
-              {/* Center column: Labels */}
-              <div className="flex flex-col gap-2 opacity-70">
-                <div>Price:</div>
-                <div>Market Cap:</div>
-                <div>% Change (day):</div>
-                <div>Mcap Δ (day):</div>
+              {/* Row 2: Market Cap */}
+              <div className="opacity-70">Market Cap</div>
+              <div className="text-right font-semibold font-mono tabular-nums">
+                {formatMarketCap(selectedCompany.marketCap ?? 0)}
               </div>
 
-              {/* Right column: Values */}
-              <div className="flex flex-col gap-2 text-right">
-                <div className="font-semibold font-mono tabular-nums">
-                  {selectedCompany.currentPrice ? `$${formatPrice(selectedCompany.currentPrice)}` : '—'}
-                </div>
-                <div className="font-semibold font-mono tabular-nums">
-                  {formatMarketCap(selectedCompany.marketCap ?? 0)}
-                </div>
-                <div
-                  className={`font-semibold font-mono tabular-nums ${
-                    (selectedCompany.changePercent ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'
-                  }`}
-                >
-                  {formatPercent(selectedCompany.changePercent ?? 0)}
-                </div>
-                <div
-                  className={`font-semibold font-mono tabular-nums ${
-                    (selectedCompany.marketCapDiff ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'
-                  }`}
-                >
-                  {selectedCompany.marketCapDiff == null ? '—' : formatMarketCapDiff(selectedCompany.marketCapDiff)}
-                </div>
+              {/* Row 3: % Change */}
+              <div className="opacity-70">% Change</div>
+              <div
+                className={`text-right font-semibold font-mono tabular-nums ${
+                  (selectedCompany.changePercent ?? 0) >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
+                }`}
+              >
+                {formatPercent(selectedCompany.changePercent ?? 0)}
+              </div>
+
+              {/* Row 4: Mcap Δ */}
+              <div className="opacity-70">Mcap Δ</div>
+              <div
+                className={`text-right font-semibold font-mono tabular-nums ${
+                  (selectedCompany.marketCapDiff ?? 0) >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
+                }`}
+              >
+                {selectedCompany.marketCapDiff == null ? '—' : formatMarketCapDiff(selectedCompany.marketCapDiff)}
               </div>
             </div>
           </div>
