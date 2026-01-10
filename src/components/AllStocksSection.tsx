@@ -4,6 +4,7 @@
 
 import React, { useMemo, useCallback, useEffect, useRef, useState } from 'react';
 import { SortKey } from '@/hooks/useSortableData';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { SectionIcon } from './SectionIcon';
 import { StockSearchBar } from './StockSearchBar';
 import { StockTableRow } from './StockTableRow';
@@ -80,6 +81,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
   uniqueSectors,
   availableIndustries
 }: AllStocksSectionProps) {
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   // Reset industry when sector changes
@@ -157,41 +159,43 @@ export const AllStocksSection = React.memo(function AllStocksSection({
 
   return (
     <section className="all-stocks">
-      {/* Desktop Header - hidden on mobile */}
-      <div className="hidden lg:flex section-header">
-        <div className="header-main">
-          <h2>
-            <SectionIcon type="globe" size={20} className="section-icon" />
-            <span>All Stocks</span>
-          </h2>
-        </div>
-        <div className="header-controls-inline">
-          <div className="header-search-inline">
-            <StockSearchBar
-              searchTerm={searchTerm}
-              onSearchChange={onSearchChange}
-            />
+      {/* Desktop Header - only rendered on desktop */}
+      {isDesktop && (
+        <div className="section-header">
+          <div className="header-main">
+            <h2>
+              <SectionIcon type="globe" size={20} className="section-icon" />
+              <span>All Stocks</span>
+            </h2>
           </div>
-          <div className="header-filters-inline">
-            <CustomDropdown
-              value={selectedSector}
-              onChange={handleSectorChange}
-              options={sectorOptions}
-              className="sector-filter"
-              ariaLabel="Filter by sector"
-              placeholder="All Sectors"
-            />
-            <CustomDropdown
-              value={selectedIndustry}
-              onChange={onIndustryChange}
-              options={industryOptions}
-              className="industry-filter"
-              ariaLabel="Filter by industry"
-              placeholder="All Industries"
-            />
+          <div className="header-controls-inline">
+            <div className="header-search-inline">
+              <StockSearchBar
+                searchTerm={searchTerm}
+                onSearchChange={onSearchChange}
+              />
+            </div>
+            <div className="header-filters-inline">
+              <CustomDropdown
+                value={selectedSector}
+                onChange={handleSectorChange}
+                options={sectorOptions}
+                className="sector-filter"
+                ariaLabel="Filter by sector"
+                placeholder="All Sectors"
+              />
+              <CustomDropdown
+                value={selectedIndustry}
+                onChange={onIndustryChange}
+                options={industryOptions}
+                className="industry-filter"
+                ariaLabel="Filter by industry"
+                placeholder="All Industries"
+              />
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Mobile: Section Title */}
       <div className="lg:hidden px-3 py-2">

@@ -6683,13 +6683,6 @@ table td strong {
   }
 }
 
-/* Ensure desktop header is hidden on mobile for All Stocks */
-@media (max-width: 1023px) {
-  .all-stocks .section-header {
-    display: none !important;
-  }
-}
-
 /* Mobile Sticky Filter Bar */
 .mobile-filters {
   position: sticky;
