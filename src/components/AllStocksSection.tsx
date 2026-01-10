@@ -193,6 +193,14 @@ export const AllStocksSection = React.memo(function AllStocksSection({
         </div>
       </div>
 
+      {/* Mobile: Section Title */}
+      <div className="lg:hidden px-3 py-2">
+        <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <SectionIcon type="globe" size={20} className="section-icon" />
+          <span>All Stocks</span>
+        </h2>
+      </div>
+
       {/* Mobile: Sticky Filter Bar */}
       <div className="lg:hidden mobile-filters">
         <div className="mobile-filters-container">
