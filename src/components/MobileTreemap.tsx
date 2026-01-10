@@ -129,6 +129,19 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     const el = containerRef.current;
     if (!el) return;
 
+    // Initial measurement to get dimensions immediately
+    const measure = () => {
+      const rect = el.getBoundingClientRect();
+      const w = Math.max(0, Math.floor(rect.width));
+      const h = Math.max(0, Math.floor(rect.height));
+      if (w > 0 || h > 0) {
+        setContainerSize((prev) => (prev.width === w && prev.height === h ? prev : { width: w, height: h }));
+      }
+    };
+
+    // Measure immediately
+    measure();
+
     const ro = new ResizeObserver((entries) => {
       const entry = entries[0];
       if (!entry) return;
@@ -138,7 +151,14 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
       setContainerSize((prev) => (prev.width === w && prev.height === h ? prev : { width: w, height: h }));
     });
     ro.observe(el);
-    return () => ro.disconnect();
+
+    // Fallback: measure again after a short delay (in case parent container isn't ready)
+    const timeoutId = setTimeout(measure, 100);
+
+    return () => {
+      ro.disconnect();
+      clearTimeout(timeoutId);
+    };
   }, []);
 
   // Pinch-to-zoom (two-finger zoom) on the heatmap canvas area.
@@ -307,9 +327,13 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     if (width <= 0 || height <= 0) return { leaves: [], layoutHeight: 0 };
     if (!sortedData.length) return { leaves: [], layoutHeight: 0 };
 
-    const baseHeight = Math.max(1, Math.floor(height * (expanded ? EXPAND_FACTOR : 1)));
+    // In compact mode, use full available height (no empty space)
+    // In expanded mode, use EXPAND_FACTOR to allow vertical scrolling
+    const baseHeight = expanded 
+      ? Math.max(1, Math.floor(height * EXPAND_FACTOR))
+      : Math.max(1, height); // Compact: use full height, no multiplier
 
-    // Compact mode: single treemap fill
+    // Compact mode: single treemap fill - use full available height
     if (!expanded) {
       const sectorHierarchy = buildHeatmapHierarchy(sortedData, metric);
       const root = hierarchy<any>(sectorHierarchy)

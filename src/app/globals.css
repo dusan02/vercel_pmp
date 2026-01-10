@@ -14,7 +14,7 @@
   min-height: 100dvh;
   /* Dynamic viewport height */
   background: #0f0f0f;
-  /* Slabo čierna farba namiesto bielej */
+  /* Slabo čierna farba - vždy, nie len v dark mode */
   position: relative;
   overflow: hidden;
 }
@@ -267,9 +267,9 @@
 
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
+  /* Background color is already set to #0f0f0f globally, no need to override */
   .mobile-app {
-    background: #0f0f0f;
-    /* Slabo čierna farba pre dark mode */
+    /* Background stays #0f0f0f in all modes */
   }
 
   .mobile-app-header {
