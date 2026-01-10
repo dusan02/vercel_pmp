@@ -223,7 +223,7 @@ export default function CompanyLogo({
         alt={`${ticker} stock logo - ${ticker} company logo`}
         width={w}
         height={h}
-        className=""
+        className="company-logo-img"
         style={{
           objectFit: 'contain',
           display: 'block',
