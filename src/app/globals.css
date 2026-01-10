@@ -133,12 +133,15 @@
 }
 
 /* Fullscreen heatmap container */
-.mobile-app-screen.screen-heatmap .mobile-heatmap-wrapper {
+.mobile-app-screen.screen-heatmap .mobile-treemap-wrapper {
   height: 100%;
   width: 100%;
   position: relative;
   margin: 0;
   padding: 0;
+  /* CRITICAL: Constraint content to visible area above tab bar */
+  padding-bottom: calc(72px + env(safe-area-inset-bottom)) !important;
+  box-sizing: border-box;
 }
 
 .mobile-app-screen.screen-heatmap .heatmap-preview-container {
