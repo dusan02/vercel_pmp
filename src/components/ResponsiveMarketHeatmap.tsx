@@ -76,7 +76,7 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
   // Data fetching hook
   // OPTIMIZATION: On mobile, reduce refresh interval to save battery/data
   const mobileRefreshInterval = isMobile ? Math.max(refreshInterval, 60000) : refreshInterval; // Min 60s on mobile
-  
+
   const {
     data,
     loading,
@@ -166,7 +166,7 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
     // This prevents flickering between loading and content states
     const hasNoData = !data || data.length === 0;
     const shouldShowLoading = !isMounted || (loading && hasNoData);
-    
+
     if (shouldShowLoading) {
       return (
         <div className="absolute inset-0 flex items-center justify-center text-gray-500 bg-black z-40">
@@ -231,7 +231,7 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
           </div>
         );
       }
-      
+
       return (
         <MobileTreemap
           data={data || []}
@@ -295,9 +295,9 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
       if (parent) {
         const parentRect = parent.getBoundingClientRect();
         if (parentRect.width > 0 && parentRect.height > 0) {
-          console.log('📐 Heatmap: Using parent dimensions as fallback', { 
-            parentWidth: parentRect.width, 
-            parentHeight: parentRect.height 
+          console.log('📐 Heatmap: Using parent dimensions as fallback', {
+            parentWidth: parentRect.width,
+            parentHeight: parentRect.height
           });
           // Force a re-measure by triggering a resize
           window.dispatchEvent(new Event('resize'));
@@ -317,7 +317,7 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
         position: 'relative',
         width: '100%',
         height: '100%',
-        minHeight: '400px', // Ensure minimum height for desktop
+        minHeight: isMobile ? '0px' : '400px', // Ensure minimum height for desktop, fill available on mobile
         // CRITICAL: Remove overflow from outer container - let MarketHeatmap handle scrolling
         // This prevents double scrollbars (one here, one in MarketHeatmap)
         overflow: 'hidden', // Always hidden - MarketHeatmap handles its own scrolling

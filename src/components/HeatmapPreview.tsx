@@ -55,30 +55,31 @@ export function HeatmapPreview() {
   }, [router]);
 
   // Prevent hydration mismatch by only rendering after mount OR using CSS gating for SSR
-  // But for performance, we want SSR for desktop
-  const showDesktop = isMounted ? isDesktop : true; // Default to desktop for SSR
+  if (!isMounted) return null;
 
   return (
-    <section className="heatmap-preview">
-      {/* Header */}
-      <div className="section-header">
-        <div className="header-main">
-          <h2>
-            <SectionIcon type="heatmap" size={20} className="section-icon" />
-            <span>Market Heatmap</span>
-          </h2>
+    <section className={`heatmap-preview ${!isDesktop ? 'h-full flex flex-col' : ''}`}>
+      {/* Header - hide on mobile (MobileTreemap has its own) */}
+      {isDesktop && (
+        <div className="section-header">
+          <div className="header-main">
+            <h2>
+              <SectionIcon type="heatmap" size={20} className="section-icon" />
+              <span>Market Heatmap</span>
+            </h2>
+          </div>
+          <div className="flex items-center gap-3">
+            <HeatmapMetricButtons
+              metric={metric}
+              onMetricChange={setMetric}
+            />
+            <HeatmapViewButton />
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <HeatmapMetricButtons
-            metric={metric}
-            onMetricChange={setMetric}
-          />
-          {showDesktop && <HeatmapViewButton />}
-        </div>
-      </div>
+      )}
 
       {/* Conditional Content Wrapper */}
-      {showDesktop ? (
+      {isDesktop ? (
         /* Desktop: Fixed height preview */
         <div
           className="relative w-full bg-black overflow-hidden group heatmap-preview-container"
@@ -102,7 +103,7 @@ export function HeatmapPreview() {
         /* Mobile: Full height in view */
         <div
           className="relative w-full bg-black overflow-hidden group heatmap-preview-container flex-1"
-          style={{ cursor: 'pointer', minHeight: '600px' }}
+          style={{ cursor: 'pointer' }}
           onClick={handleBackgroundClick}
         >
           <div className="w-full h-full min-h-0">

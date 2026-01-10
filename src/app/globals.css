@@ -120,12 +120,12 @@
   padding: 0 !important;
   background: #000;
   z-index: 1;
-  /* Ensure no padding/margin that could create empty space */
-  margin: 0 !important;
   /* Ensure heatmap extends to bottom edge - no gap before navigation */
+  margin: 0 !important;
   bottom: 0 !important;
-  /* Force full height - extend to bottom of viewport */
   height: 100% !important;
+  /* CRITICAL: Disable scrolling on wrapper, let inner treemap handle it */
+  overflow: hidden !important;
 }
 
 .mobile-app-screen.screen-heatmap.active {
@@ -134,39 +134,19 @@
 
 /* Fullscreen heatmap container */
 .mobile-app-screen.screen-heatmap .mobile-heatmap-wrapper {
-  /* Calculate height: viewport - header - navigation (72px) */
-  height: calc(100vh - 72px);
-  height: calc(100dvh - 72px);
-  width: 100vw;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 72px;
+  height: 100%;
+  width: 100%;
+  position: relative;
   margin: 0;
   padding: 0;
-  /* Ensure content extends to bottom - no empty space */
-  paddingBottom: 0;
-  marginBottom: 0;
-  /* Force bottom edge alignment - no gap */
-  bottom: 72px !important;
 }
 
 .mobile-app-screen.screen-heatmap .heatmap-preview-container {
-  /* Calculate height: viewport - navigation (72px) */
-  height: calc(100vh - 72px) !important;
-  height: calc(100dvh - 72px) !important;
-  width: 100vw !important;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 72px;
+  height: 100% !important;
+  width: 100% !important;
+  position: relative;
   margin: 0;
   padding: 0;
-  /* Ensure content extends to bottom - no empty space */
-  paddingBottom: 0 !important;
-  marginBottom: 0 !important;
 }
 
 /* Hide all controls on mobile fullscreen heatmap */
@@ -212,12 +192,12 @@
     background-color: #0f0f0f !important;
     color: #ffffff !important;
   }
-  
+
   /* Override any white backgrounds in detail panel */
   .mobile-app-screen.screen-heatmap .fixed[style*="bottom: 72px"][style*="z-index: 1001"] * {
     color: #ffffff !important;
   }
-  
+
   /* Ensure buttons in detail panel have dark background */
   .mobile-app-screen.screen-heatmap .fixed[style*="bottom: 72px"][style*="z-index: 1001"] button {
     background: rgba(255, 255, 255, 0.1) !important;
@@ -241,6 +221,7 @@
 */
 
 @media (max-width: 1023px) {
+
   /* Base screen backgrounds */
   .mobile-app-screen.screen-portfolio,
   .mobile-app-screen.screen-favorites,
@@ -277,10 +258,10 @@
   }
 
   /* Force dark background for direct children containers */
-  .mobile-app-screen.screen-portfolio > *,
-  .mobile-app-screen.screen-favorites > *,
-  .mobile-app-screen.screen-earnings > *,
-  .mobile-app-screen.screen-all-stocks > * {
+  .mobile-app-screen.screen-portfolio>*,
+  .mobile-app-screen.screen-favorites>*,
+  .mobile-app-screen.screen-earnings>*,
+  .mobile-app-screen.screen-all-stocks>* {
     background-color: #0f0f0f !important;
   }
 
@@ -335,6 +316,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
+
   /* Mobile background is already set to #0f0f0f via media query above */
   /* Desktop stays white (#ffffff) */
   .mobile-app-screen.screen-portfolio,
@@ -464,6 +446,7 @@
 
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
+
   /* Mobile background is already set to #0f0f0f via media query above */
   /* Desktop stays white (#ffffff) */
   .mobile-app {
@@ -8420,6 +8403,7 @@ img[data-src].loaded {
     /* Slightly brighter on mobile for better readability */
   }
 }
+
 .dark .company-logo-img {
   filter: brightness(1.3) contrast(1.1);
   /* Brighten by 30% and increase contrast by 10% for better visibility on dark backgrounds */

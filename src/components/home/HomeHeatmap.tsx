@@ -7,9 +7,9 @@ import { HeatmapSkeleton } from '../SectionSkeleton';
 // Note: Dynamic import sa načíta okamžite keď je komponent renderovaný
 const HeatmapPreview = dynamic(
     () => import('../HeatmapPreview').then((mod) => mod.HeatmapPreview),
-    { 
-      ssr: false, 
-      loading: () => <HeatmapSkeleton />,
+    {
+        ssr: false,
+        loading: () => <HeatmapSkeleton />,
     }
 );
 
@@ -21,10 +21,10 @@ export function HomeHeatmap({ wrapperClass }: HomeHeatmapProps) {
     React.useEffect(() => {
         console.log('🏠 HomeHeatmap rendered', { wrapperClass });
     }, [wrapperClass]);
-    
+
     return (
         <SectionErrorBoundary sectionName="Heatmap">
-            <div className={`${wrapperClass} w-full min-h-[600px]`} data-debug="home-heatmap-wrapper">
+            <div className={`${wrapperClass} w-full h-full`} data-debug="home-heatmap-wrapper">
                 <HeatmapPreview />
             </div>
         </SectionErrorBoundary>
