@@ -709,8 +709,9 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
             className="fixed inset-x-0 bottom-0"
             style={{
               zIndex: 1001,
-              background: 'var(--clr-bg)',
-              color: 'var(--clr-text)',
+              // Dark background for mobile (consistent with mobile app theme)
+              background: '#0f0f0f',
+              color: '#ffffff',
               borderTopLeftRadius: 16,
               borderTopRightRadius: 16,
               boxShadow: '0 -12px 30px rgba(0,0,0,0.35)',
@@ -744,8 +745,8 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
                     onClick={() => onToggleFavorite(selectedCompany.symbol)}
                     className="w-8 h-8 rounded-md flex items-center justify-center text-sm"
                     style={{
-                      background: (isFavorite && isFavorite(selectedCompany.symbol)) ? 'rgba(251,191,36,0.15)' : 'rgba(0,0,0,0.06)',
-                      color: (isFavorite && isFavorite(selectedCompany.symbol)) ? '#fbbf24' : 'var(--clr-text)',
+                      background: (isFavorite && isFavorite(selectedCompany.symbol)) ? 'rgba(251,191,36,0.15)' : 'rgba(255,255,255,0.1)',
+                      color: (isFavorite && isFavorite(selectedCompany.symbol)) ? '#fbbf24' : '#ffffff',
                       WebkitTapHighlightColor: 'transparent',
                     }}
                     aria-label={(isFavorite && isFavorite(selectedCompany.symbol)) ? 'Remove from favorites' : 'Add to favorites'}
@@ -757,7 +758,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
                   type="button"
                   onClick={closeSheet}
                   className="w-8 h-8 rounded-md flex items-center justify-center text-sm font-semibold"
-                  style={{ background: 'rgba(0,0,0,0.06)', WebkitTapHighlightColor: 'transparent' }}
+                  style={{ background: 'rgba(255,255,255,0.1)', color: '#ffffff', WebkitTapHighlightColor: 'transparent' }}
                   aria-label="Close"
                 >
                   ✕

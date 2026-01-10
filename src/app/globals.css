@@ -134,32 +134,34 @@
 
 /* Fullscreen heatmap container */
 .mobile-app-screen.screen-heatmap .mobile-heatmap-wrapper {
-  height: 100vh;
-  height: 100dvh;
+  /* Calculate height: viewport - header - navigation (72px) */
+  height: calc(100vh - 72px);
+  height: calc(100dvh - 72px);
   width: 100vw;
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: 72px;
   margin: 0;
   padding: 0;
   /* Ensure content extends to bottom - no empty space */
   paddingBottom: 0;
   marginBottom: 0;
   /* Force bottom edge alignment - no gap */
-  bottom: 0 !important;
+  bottom: 72px !important;
 }
 
 .mobile-app-screen.screen-heatmap .heatmap-preview-container {
-  height: 100vh !important;
-  height: 100dvh !important;
+  /* Calculate height: viewport - navigation (72px) */
+  height: calc(100vh - 72px) !important;
+  height: calc(100dvh - 72px) !important;
   width: 100vw !important;
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: 72px;
   margin: 0;
   padding: 0;
   /* Ensure content extends to bottom - no empty space */
@@ -201,6 +203,26 @@
   margin-bottom: 0 !important;
   padding-bottom: 0 !important;
   /* Ensure grid extends to bottom - no gap */
+}
+
+/* Mobile heatmap detail panel (bottom sheet) - dark background on mobile */
+@media (max-width: 1023px) {
+  .mobile-app-screen.screen-heatmap .fixed[style*="bottom: 72px"][style*="z-index: 1001"] {
+    background: #0f0f0f !important;
+    background-color: #0f0f0f !important;
+    color: #ffffff !important;
+  }
+  
+  /* Override any white backgrounds in detail panel */
+  .mobile-app-screen.screen-heatmap .fixed[style*="bottom: 72px"][style*="z-index: 1001"] * {
+    color: #ffffff !important;
+  }
+  
+  /* Ensure buttons in detail panel have dark background */
+  .mobile-app-screen.screen-heatmap .fixed[style*="bottom: 72px"][style*="z-index: 1001"] button {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+  }
 }
 
 /* Other screens */
