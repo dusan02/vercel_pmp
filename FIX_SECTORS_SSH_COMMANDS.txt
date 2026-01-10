@@ -1,0 +1,25 @@
+# SSH príkazy na opravu sektorov na produkcii
+
+# Možnosť 1: TypeScript script (ak je projekt v /var/www/premarketprice/)
+cd /var/www/premarketprice && npx tsx scripts/fix-other-sector-tickers.ts
+
+# Možnosť 2: SQL script (ak viete DATABASE_URL)
+cd /var/www/premarketprice && psql $DATABASE_URL -f FIX_ALL_OTHER_SECTOR_TICKERS.sql
+
+# Možnosť 3: SQL priamo (najrýchlejšie - skopírovať obsah FIX_SECTORS_SQL_DIRECT.sql)
+# Najprv zistiť DATABASE_URL:
+cd /var/www/premarketprice && cat .env | grep DATABASE_URL
+
+# Potom spustiť SQL (nahradiť DATABASE_URL hodnotou z .env):
+psql "file:/cesta/k/databaze.db" -c "UPDATE \"Ticker\" SET \"sector\" = 'Energy', \"industry\" = 'Oil & Gas Midstream', \"updatedAt\" = CURRENT_TIMESTAMP WHERE \"symbol\" = 'LNG';"
+psql "file:/cesta/k/databaze.db" -c "UPDATE \"Ticker\" SET \"sector\" = 'Technology', \"industry\" = 'Internet Content & Information', \"updatedAt\" = CURRENT_TIMESTAMP WHERE \"symbol\" = 'SE';"
+psql "file:/cesta/k/databaze.db" -c "UPDATE \"Ticker\" SET \"sector\" = 'Industrials', \"industry\" = 'Specialty Industrial Machinery', \"updatedAt\" = CURRENT_TIMESTAMP WHERE \"symbol\" = 'B';"
+psql "file:/cesta/k/databaze.db" -c "UPDATE \"Ticker\" SET \"sector\" = 'Financial Services', \"industry\" = 'Banks', \"updatedAt\" = CURRENT_TIMESTAMP WHERE \"symbol\" = 'ING';"
+psql "file:/cesta/k/databaze.db" -c "UPDATE \"Ticker\" SET \"sector\" = 'Industrials', \"industry\" = 'Aerospace & Defense', \"updatedAt\" = CURRENT_TIMESTAMP WHERE \"symbol\" = 'HEI';"
+psql "file:/cesta/k/databaze.db" -c "UPDATE \"Ticker\" SET \"sector\" = 'Energy', \"industry\" = 'Oil & Gas Integrated', \"updatedAt\" = CURRENT_TIMESTAMP WHERE \"symbol\" = 'E';"
+psql "file:/cesta/k/databaze.db" -c "UPDATE \"Ticker\" SET \"sector\" = 'Financial Services', \"industry\" = 'Credit Services', \"updatedAt\" = CURRENT_TIMESTAMP WHERE \"symbol\" = 'NU';"
+psql "file:/cesta/k/databaze.db" -c "UPDATE \"Ticker\" SET \"sector\" = 'Healthcare', \"industry\" = 'Drug Manufacturers - General', \"updatedAt\" = CURRENT_TIMESTAMP WHERE \"symbol\" = 'HLN';"
+psql "file:/cesta/k/databaze.db" -c "UPDATE \"Ticker\" SET \"sector\" = 'Utilities', \"industry\" = 'Utilities - Regulated Electric', \"updatedAt\" = CURRENT_TIMESTAMP WHERE \"symbol\" = 'NGG';"
+
+# Možnosť 4: Nájsť projekt a spustiť script
+find / -name "fix-other-sector-tickers.ts" 2>/dev/null | head -1 | xargs dirname | xargs -I {} sh -c 'cd {} && npx tsx scripts/fix-other-sector-tickers.ts'

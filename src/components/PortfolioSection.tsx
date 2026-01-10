@@ -166,7 +166,7 @@ export function PortfolioSection({
     setPortfolioSearchResults([]);
     setShowPortfolioSearch(false);
     setSelectedIndex(-1);
-    searchInputRef.current?.focus();
+    searchInputRef.current?.blur();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -294,19 +294,21 @@ export function PortfolioSection({
                       <div className="portfolio-search-result-ticker">{stock.ticker}</div>
                       <div className="portfolio-search-result-name">{getCompanyName(stock.ticker)}</div>
                     </div>
-                    <button
-                      className="portfolio-add-button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onAddStock(stock.ticker, 1);
-                        setPortfolioSearchTerm('');
-                        setPortfolioSearchResults([]);
-                        setShowPortfolioSearch(false);
-                      }}
-                      aria-label={`Add ${stock.ticker} to portfolio`}
-                    >
-                      <Plus size={16} />
-                    </button>
+                  <button
+                    className="portfolio-add-button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      onAddStock(stock.ticker, 1);
+                      setPortfolioSearchTerm('');
+                      setPortfolioSearchResults([]);
+                      setShowPortfolioSearch(false);
+                      searchInputRef.current?.blur();
+                    }}
+                    aria-label={`Add ${stock.ticker} to portfolio`}
+                  >
+                    <Plus size={16} />
+                  </button>
                   </div>
                 ))}
               </div>
@@ -488,7 +490,13 @@ export function PortfolioSection({
                   />
                   <button
                     type="button"
-                    onClick={closeDetails}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      // Quantity is already updated via onChange in PortfolioQuantityInput
+                      // Just close the details sheet immediately
+                      closeDetails();
+                    }}
                     className="px-3 py-2 rounded-md bg-green-600 text-white text-sm font-semibold"
                     aria-label="Confirm quantity"
                     style={{ WebkitTapHighlightColor: 'transparent' }}

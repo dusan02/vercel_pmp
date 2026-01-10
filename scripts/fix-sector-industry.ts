@@ -33,6 +33,26 @@ const CORRECTIONS: Record<string, { sector: string; industry: string }> = {
     'NVO': {
         sector: 'Healthcare',
         industry: 'Drug Manufacturers - General'
+    },
+    'NU': {
+        sector: 'Financial Services',
+        industry: 'Credit Services'
+    },
+    'ING': {
+        sector: 'Financial Services',
+        industry: 'Banks'
+    },
+    'B': {
+        sector: 'Industrials',
+        industry: 'Specialty Industrial Machinery'
+    },
+    'SE': {
+        sector: 'Technology',
+        industry: 'Internet Content & Information'
+    },
+    'NGG': {
+        sector: 'Utilities',
+        industry: 'Utilities - Regulated Electric'
     }
 };
 
