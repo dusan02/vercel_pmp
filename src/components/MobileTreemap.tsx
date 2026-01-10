@@ -257,6 +257,17 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     }
   }, []);
 
+  // Reset scroll position when switching from Expanded to Compact mode
+  const prevExpandedRef = useRef(expanded);
+  useEffect(() => {
+    // If we switched from expanded (true) to compact (false), reset scroll
+    if (prevExpandedRef.current === true && expanded === false && containerRef.current) {
+      containerRef.current.scrollTop = 0;
+      containerRef.current.scrollLeft = 0;
+    }
+    prevExpandedRef.current = expanded;
+  }, [expanded]);
+
   const handleDoubleTapReset = useCallback((e: React.TouchEvent) => {
     // Only consider single-finger taps (avoid interfering with pinch)
     if (e.changedTouches.length !== 1) return;
@@ -604,7 +615,20 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
 
         <button
           type="button"
-          onClick={() => setExpanded((v) => !v)}
+          onClick={() => {
+            const wasExpanded = expanded;
+            setExpanded((v) => !v);
+            // Reset scroll position when switching from Expanded to Compact
+            if (wasExpanded && containerRef.current) {
+              // Use setTimeout to ensure state update happens first
+              setTimeout(() => {
+                if (containerRef.current) {
+                  containerRef.current.scrollTop = 0;
+                  containerRef.current.scrollLeft = 0;
+                }
+              }, 0);
+            }
+          }}
           className="px-2.5 py-1.5 rounded-md text-xs font-semibold"
           style={{
             background: 'rgba(255,255,255,0.10)',

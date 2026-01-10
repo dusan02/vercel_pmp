@@ -84,6 +84,7 @@
   overflow: hidden;
   position: relative;
   padding-bottom: 0;
+  margin-bottom: 0;
   /* No padding - heatmap fills to bottom, tab bar is fixed overlay */
 }
 
@@ -120,7 +121,11 @@
   background: #000;
   z-index: 1;
   /* Ensure no padding/margin that could create empty space */
-  margin: 0;
+  margin: 0 !important;
+  /* Ensure heatmap extends to bottom edge - no gap before navigation */
+  bottom: 0 !important;
+  /* Force full height - extend to bottom of viewport */
+  height: 100% !important;
 }
 
 .mobile-app-screen.screen-heatmap.active {
@@ -142,6 +147,8 @@
   /* Ensure content extends to bottom - no empty space */
   paddingBottom: 0;
   marginBottom: 0;
+  /* Force bottom edge alignment - no gap */
+  bottom: 0 !important;
 }
 
 .mobile-app-screen.screen-heatmap .heatmap-preview-container {
@@ -169,6 +176,31 @@
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
+}
+
+/* Mobile treemap wrapper - ensure it extends to bottom edge */
+.mobile-app-screen.screen-heatmap .mobile-treemap-wrapper {
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0;
+  margin: 0 !important;
+  padding: 0 !important;
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+  /* Ensure wrapper extends to bottom - no gap */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Mobile treemap grid - ensure it extends to bottom edge */
+.mobile-app-screen.screen-heatmap .mobile-treemap-grid {
+  flex: 1;
+  min-height: 0;
+  margin: 0 !important;
+  padding: 0 !important;
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+  /* Ensure grid extends to bottom - no gap */
 }
 
 /* Other screens */
@@ -330,7 +362,7 @@
   min-width: 0;
   padding: 0.5rem;
   border: none;
-  background: none;
+  background: none !important;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
@@ -342,6 +374,13 @@
 
 .mobile-app-tab:active {
   transform: scale(0.95);
+  background: none !important;
+}
+
+/* Ensure active tab has NO background - only indicator shows active state */
+.mobile-app-tab.active {
+  background: none !important;
+  background-color: transparent !important;
 }
 
 .mobile-app-tab-icon {
@@ -380,11 +419,13 @@
   top: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 32px;
-  height: 3px;
+  width: 40px;
+  height: 2px;
   background: #2563eb;
-  border-radius: 0 0 3px 3px;
+  border-radius: 0 0 2px 2px;
   animation: slideIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Ensure indicator is visible above everything */
+  z-index: 1;
 }
 
 @keyframes slideIn {
@@ -394,7 +435,7 @@
   }
 
   to {
-    width: 32px;
+    width: 40px;
     opacity: 1;
   }
 }
@@ -7051,7 +7092,9 @@ table td strong {
 }
 
 .nav-item.active {
-  background: rgba(37, 99, 235, 0.1);
+  /* Remove background - only use indicator for active state */
+  background: none !important;
+  background-color: transparent !important;
 }
 
 .nav-icon {
