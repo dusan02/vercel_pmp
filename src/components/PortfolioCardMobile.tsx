@@ -58,7 +58,7 @@ export const PortfolioCardMobile = memo(({
       style={{ WebkitTapHighlightColor: 'transparent' }}
     >
       {/* Fixed-column grid so rows align perfectly (like a table) */}
-      <div className="grid items-center gap-x-2 min-w-0 [grid-template-columns:40px_minmax(56px,1fr)_56px_56px_56px_44px]">
+      <div className="grid items-center gap-x-1.5 min-w-0 [grid-template-columns:40px_minmax(56px,1fr)_56px_72px_56px_52px]">
         {/* Logo */}
         <div className="flex-shrink-0 justify-self-center">
           <CompanyLogo
@@ -84,11 +84,11 @@ export const PortfolioCardMobile = memo(({
         </div>
 
         {/* Price */}
-        <div className="text-center">
-          <div className="font-mono font-semibold text-gray-900 dark:text-gray-100 text-sm tabular-nums">
+        <div className="text-center min-w-0 overflow-hidden">
+          <div className="font-mono font-semibold text-gray-900 dark:text-gray-100 text-sm tabular-nums truncate">
             ${formattedPrice}
           </div>
-          <div className={`text-[11px] font-mono tabular-nums ${holdingDeltaIsPositive ? 'text-green-600' : 'text-red-600'}`}>
+          <div className={`text-[11px] font-mono tabular-nums truncate ${holdingDeltaIsPositive ? 'text-green-600' : 'text-red-600'}`}>
             {formattedHoldingDelta}
           </div>
         </div>
@@ -110,11 +110,11 @@ export const PortfolioCardMobile = memo(({
             e.stopPropagation();
             onRemoveStock(stock.ticker);
           }}
-          className="w-11 h-11 flex items-center justify-center text-red-600 bg-transparent active:bg-transparent rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 justify-self-center"
+          className="w-12 h-12 flex items-center justify-center text-red-600 bg-transparent active:bg-transparent rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 justify-self-center flex-shrink-0"
           aria-label={`Remove ${stock.ticker} from portfolio`}
           style={{ WebkitTapHighlightColor: 'transparent' }}
         >
-          <X size={18} />
+          <X size={20} />
         </button>
       </div>
     </div>
