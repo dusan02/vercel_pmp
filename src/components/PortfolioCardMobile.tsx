@@ -58,7 +58,7 @@ export const PortfolioCardMobile = memo(({
       style={{ WebkitTapHighlightColor: 'transparent' }}
     >
       {/* Fixed-column grid so rows align perfectly (like a table) */}
-      <div className="grid items-center gap-x-2 min-w-0 [grid-template-columns:40px_minmax(56px,1fr)_56px_80px_56px_44px]">
+      <div className="grid items-center gap-x-2 min-w-0 [grid-template-columns:40px_minmax(56px,1fr)_56px_56px_56px_44px]">
         {/* Logo */}
         <div className="flex-shrink-0 justify-self-center">
           <CompanyLogo

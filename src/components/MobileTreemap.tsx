@@ -342,7 +342,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
       const raw = Math.round(baseHeight * ((sectorSums[i] || 0) / totalSum));
       sectorHeights.push(Math.max(MIN_SECTOR_HEIGHT, raw));
     }
-    // Calculate total height first
+    // Calculate total height - ensure it matches exactly
     const totalSectorHeights = sectorHeights.reduce((a, b) => a + b, 0);
     const computedLayoutHeight = Math.max(baseHeight, totalSectorHeights);
 
@@ -351,10 +351,15 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
 
     for (let i = 0; i < sectors.length; i++) {
       const sector = sectors[i] as any;
-      // Use computed strip height; last sector gets remainder to ensure exact fit.
-      let sectorHeight = i === sectors.length - 1
-        ? Math.max(MIN_SECTOR_HEIGHT, computedLayoutHeight - yCursor)
-        : Math.max(MIN_SECTOR_HEIGHT, sectorHeights[i] || 0);
+      // Use exact sector height; last sector gets remainder to ensure perfect fit
+      let sectorHeight: number;
+      if (i === sectors.length - 1) {
+        // Last sector: use exact remainder to fill the total height
+        sectorHeight = Math.max(MIN_SECTOR_HEIGHT, computedLayoutHeight - yCursor);
+      } else {
+        // Other sectors: use pre-calculated height
+        sectorHeight = Math.max(MIN_SECTOR_HEIGHT, sectorHeights[i] || 0);
+      }
 
       if (sectorHeight <= 0) continue;
       const sectorChildren = sector?.children ?? [];
@@ -375,23 +380,33 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
         .round(true)(sectorRoot as any);
 
       const leaves = sectorRoot.leaves().filter((l: any) => l.data?.meta?.type === 'company');
+      const sectorEndY = yCursor + sectorHeight;
+      
       for (const leaf of leaves) {
         const l = leaf as any;
+        const absY0 = l.y0 + yCursor;
+        const absY1 = l.y1 + yCursor;
+        
+        // Ensure pixel-perfect positioning: floor for start, ceil for end
+        // Clamp y1 to not exceed sectorEndY to prevent overlapping with next sector
+        const clampedY1 = Math.min(Math.ceil(absY1), sectorEndY);
+        
         result.push({
-          x0: l.x0,
-          x1: l.x1,
-          y0: l.y0 + yCursor,
-          y1: l.y1 + yCursor,
+          x0: Math.floor(l.x0),
+          x1: Math.ceil(l.x1),
+          y0: Math.floor(absY0),
+          y1: clampedY1,
           data: l.data,
         });
       }
 
+      // Update yCursor with exact sector height to prevent gaps/overlaps
       yCursor += sectorHeight;
     }
 
-    // Use actual content height (yCursor) to ensure perfect bottom alignment
-    // This prevents gaps or overflow at the bottom edge
-    const finalLayoutHeight = yCursor > 0 ? yCursor : computedLayoutHeight;
+    // Final height must match exactly the sum of all sector heights
+    // This ensures the bottom edge is perfectly aligned
+    const finalLayoutHeight = yCursor;
     return { leaves: result, layoutHeight: finalLayoutHeight };
   }, [containerSize, sortedData, metric, expanded]);
 

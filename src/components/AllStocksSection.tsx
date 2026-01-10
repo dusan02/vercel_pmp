@@ -80,7 +80,6 @@ export const AllStocksSection = React.memo(function AllStocksSection({
   uniqueSectors,
   availableIndustries
 }: AllStocksSectionProps) {
-  const [showFilters, setShowFilters] = useState(false);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   // Reset industry when sector changes
@@ -197,27 +196,37 @@ export const AllStocksSection = React.memo(function AllStocksSection({
       {/* Mobile: Sticky Filter Bar */}
       <div className="lg:hidden mobile-filters">
         <div className="mobile-filters-container">
-          <div className="mobile-search-row">
-            <div className="mobile-search-grow">
-              <StockSearchBar
-                searchTerm={searchTerm}
-                onSearchChange={onSearchChange}
-              />
-            </div>
-            <button
-              type="button"
-              className="mobile-filters-toggle"
-              onClick={() => setShowFilters(v => !v)}
-              aria-expanded={showFilters}
-              style={{ WebkitTapHighlightColor: 'transparent' }}
-            >
-              Filters
-            </button>
+          {/* Search bar - always visible */}
+          <div className="mobile-search-row mb-3">
+            <StockSearchBar
+              searchTerm={searchTerm}
+              onSearchChange={onSearchChange}
+            />
           </div>
 
+          {/* Dropdowns - always visible */}
+          <div className="mobile-filters-row mb-2">
+            <CustomDropdown
+              value={selectedSector}
+              onChange={handleSectorChange}
+              options={sectorOptions}
+              className="sector-filter"
+              ariaLabel="Filter by sector"
+              placeholder="All Sectors"
+            />
+            <CustomDropdown
+              value={selectedIndustry}
+              onChange={onIndustryChange}
+              options={industryOptions}
+              className="industry-filter"
+              ariaLabel="Filter by industry"
+              placeholder="All Industries"
+            />
+          </div>
 
+          {/* Active filters chips */}
           {(selectedSector !== 'all' || selectedIndustry !== 'all' || searchTerm.trim().length > 0) && (
-            <div className="mt-2 flex flex-wrap gap-2">
+            <div className="mt-2 flex flex-wrap gap-2 mb-2">
               {searchTerm.trim().length > 0 && (
                 <button
                   type="button"
@@ -260,6 +269,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
             </div>
           )}
 
+          {/* Results count */}
           <div className="mobile-results-row">
             <span className="mobile-results-text">
               Showing {displayedStocks.length}{typeof totalCount === 'number' ? ` / ${totalCount}` : ''}
@@ -278,27 +288,6 @@ export const AllStocksSection = React.memo(function AllStocksSection({
               </button>
             )}
           </div>
-
-          {showFilters && (
-            <div className="mobile-filters-row">
-              <CustomDropdown
-                value={selectedSector}
-                onChange={handleSectorChange}
-                options={sectorOptions}
-                className="sector-filter"
-                ariaLabel="Filter by sector"
-                placeholder="All Sectors"
-              />
-              <CustomDropdown
-                value={selectedIndustry}
-                onChange={onIndustryChange}
-                options={industryOptions}
-                className="industry-filter"
-                ariaLabel="Filter by industry"
-                placeholder="All Industries"
-              />
-            </div>
-          )}
         </div>
       </div>
 
@@ -324,7 +313,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
                       <button
                         type="button"
                         onClick={() => onSort('ticker')}
-                        className="text-center cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center gap-1"
+                        className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border border-gray-300/50 dark:border-gray-600/50 bg-transparent"
                         style={{ WebkitTapHighlightColor: 'transparent' }}
                         aria-label="Sort by ticker"
                       >
@@ -333,22 +322,21 @@ export const AllStocksSection = React.memo(function AllStocksSection({
                       <button
                         type="button"
                         onClick={() => onSort('marketCap')}
-                        className="text-center cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center gap-1"
+                        className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border border-gray-300/50 dark:border-gray-600/50 bg-transparent"
                         style={{ WebkitTapHighlightColor: 'transparent' }}
                         aria-label="Sort by market cap"
                       >
                         Mkt Cap
-                        <span className="text-[10px]">{ascending ? '▲' : '▼'}</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => onSort('marketCapDiff')}
-                        className="text-center cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center gap-1"
+                        className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border border-gray-300/50 dark:border-gray-600/50 bg-transparent"
                         style={{ WebkitTapHighlightColor: 'transparent' }}
                         aria-label="Sort by market cap diff"
                       >
                         Δ
-                        <span className="text-[10px]">{ascending ? '▲' : '▼'}</span>
+                        <span className="text-[9px] text-gray-500 dark:text-gray-400">{ascending ? '▲' : '▼'}</span>
                       </button>
                       <div className="text-center">★</div>
                     </div>
@@ -358,7 +346,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
                       <button
                         type="button"
                         onClick={() => onSort('ticker')}
-                        className="text-center cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center gap-1"
+                        className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border border-gray-300/50 dark:border-gray-600/50 bg-transparent"
                         style={{ WebkitTapHighlightColor: 'transparent' }}
                         aria-label="Sort by ticker"
                       >
@@ -367,17 +355,17 @@ export const AllStocksSection = React.memo(function AllStocksSection({
                       <button
                         type="button"
                         onClick={() => onSort('marketCap')}
-                        className="text-center cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center gap-1"
+                        className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border border-gray-300/50 dark:border-gray-600/50 bg-transparent"
                         style={{ WebkitTapHighlightColor: 'transparent' }}
                         aria-label="Sort by market cap"
                       >
                         Mkt Cap
-                        <span className="text-[10px]">{ascending ? '▲' : '▼'}</span>
+                        <span className="text-[9px] text-gray-500 dark:text-gray-400">{ascending ? '▲' : '▼'}</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => onSort('percentChange')}
-                        className="text-center cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center gap-1"
+                        className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border border-gray-300/50 dark:border-gray-600/50 bg-transparent"
                         style={{ WebkitTapHighlightColor: 'transparent' }}
                         aria-label="Sort by percent change"
                       >
@@ -391,37 +379,37 @@ export const AllStocksSection = React.memo(function AllStocksSection({
                       <button
                         type="button"
                         onClick={() => onSort('ticker')}
-                        className="text-center cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center gap-1"
+                        className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border border-gray-300/50 dark:border-gray-600/50 bg-transparent"
                         style={{ WebkitTapHighlightColor: 'transparent' }}
                         aria-label="Sort by ticker"
                       >
                         Ticker
                         {sortKey === 'ticker' && (
-                          <span className="text-[10px]">{ascending ? '▲' : '▼'}</span>
+                          <span className="text-[9px] text-gray-500 dark:text-gray-400">{ascending ? '▲' : '▼'}</span>
                         )}
                       </button>
                       <button
                         type="button"
                         onClick={() => onSort('currentPrice')}
-                        className="text-center cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center gap-1"
+                        className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border border-gray-300/50 dark:border-gray-600/50 bg-transparent"
                         style={{ WebkitTapHighlightColor: 'transparent' }}
                         aria-label="Sort by price"
                       >
                         Price
                         {sortKey === 'currentPrice' && (
-                          <span className="text-[10px]">{ascending ? '▲' : '▼'}</span>
+                          <span className="text-[9px] text-gray-500 dark:text-gray-400">{ascending ? '▲' : '▼'}</span>
                         )}
                       </button>
                       <button
                         type="button"
                         onClick={() => onSort('percentChange')}
-                        className="text-center cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center gap-1"
+                        className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border border-gray-300/50 dark:border-gray-600/50 bg-transparent"
                         style={{ WebkitTapHighlightColor: 'transparent' }}
                         aria-label="Sort by percent change"
                       >
                         %
                         {sortKey === 'percentChange' && (
-                          <span className="text-[10px]">{ascending ? '▲' : '▼'}</span>
+                          <span className="text-[9px] text-gray-500 dark:text-gray-400">{ascending ? '▲' : '▼'}</span>
                         )}
                       </button>
                       <div className="text-center">★</div>

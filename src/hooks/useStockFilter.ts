@@ -59,20 +59,20 @@ export function useStockFilter({ stockData, favorites, isFavorite }: UseStockFil
     return stockData.filter(stock => favorites.some(fav => fav.ticker === stock.ticker));
   }, [stockData, favorites]);
 
-  // Sorting hooks
+  // Sorting hooks - persisted in localStorage
   const { 
     sorted: favoriteStocksSorted, 
     sortKey: favSortKey, 
     ascending: favAscending, 
     requestSort: requestFavSort 
-  } = useSortableData(favoriteStocks, "marketCap", false);
+  } = useSortableData(favoriteStocks, "marketCap", false, "pmp_favorites");
 
   const { 
     sorted: allStocksSorted, 
     sortKey: allSortKey, 
     ascending: allAscending, 
     requestSort: requestAllSort 
-  } = useSortableData(filteredStocks, "marketCap", false);
+  } = useSortableData(filteredStocks, "marketCap", false, "pmp_allStocks");
 
   // Sector stats logic
   const sectorCounts = useMemo(() => {

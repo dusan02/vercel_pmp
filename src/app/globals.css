@@ -4621,6 +4621,11 @@ h2:hover .section-icon {
   margin-left: 0.5rem;
   transition: transform 0.2s ease;
   color: var(--clr-subtext);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
 }
 
 .custom-dropdown-arrow.open {
@@ -6804,6 +6809,30 @@ table td strong {
 .mobile-filters-row .industry-filter {
   flex: 1;
   min-width: 0;
+}
+
+/* Ensure dropdown arrows are aligned in mobile filters row */
+.mobile-filters-row .custom-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+}
+
+.mobile-filters-row .custom-dropdown-arrow {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+}
+
+.mobile-filters-row .custom-dropdown-value {
+  flex: 1;
+  min-width: 0;
+  padding-right: 0.5rem;
 }
 
 .mobile-load-more {

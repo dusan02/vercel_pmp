@@ -48,9 +48,25 @@ export function PortfolioSection({
   const [showPortfolioSearch, setShowPortfolioSearch] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
 
-  // Mobile sort (unified with Stocks/Favorites sort chips)
-  const [mobileSortKey, setMobileSortKey] = useState<'ticker' | 'quantity' | 'price' | 'percent' | 'delta'>('ticker');
-  const [mobileAscending, setMobileAscending] = useState(true);
+  // Mobile sort (unified with Stocks/Favorites sort chips) - persisted in localStorage
+  const [mobileSortKey, setMobileSortKey] = useState<'ticker' | 'quantity' | 'price' | 'percent' | 'delta'>(() => {
+    if (typeof window === 'undefined') return 'ticker';
+    const stored = localStorage.getItem('pmp_portfolio_sortKey');
+    return (stored as any) || 'ticker';
+  });
+  const [mobileAscending, setMobileAscending] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+    const stored = localStorage.getItem('pmp_portfolio_sortAscending');
+    return stored ? stored === 'true' : true;
+  });
+
+  // Persist sort state to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('pmp_portfolio_sortKey', mobileSortKey);
+      localStorage.setItem('pmp_portfolio_sortAscending', String(mobileAscending));
+    }
+  }, [mobileSortKey, mobileAscending]);
 
   // Mobile details bottom-sheet
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
@@ -340,7 +356,7 @@ export function PortfolioSection({
             <div className="w-full bg-white dark:bg-gray-900 border-0 rounded-none overflow-hidden divide-y divide-gray-200 dark:divide-gray-800">
             {/* Header row (mobile): align with PortfolioCardMobile grid - clickable for sorting */}
             <div className="px-3 py-1.5 bg-slate-50/80 dark:bg-white/5 text-[11px] font-semibold text-slate-600 dark:text-slate-300">
-              <div className="grid items-center gap-x-2 min-w-0 [grid-template-columns:40px_minmax(56px,1fr)_56px_80px_56px_44px]">
+              <div className="grid items-center gap-x-2 min-w-0 [grid-template-columns:40px_minmax(56px,1fr)_56px_56px_56px_44px]">
                 <div className="text-center">Logo</div>
                 <button
                   type="button"
@@ -352,13 +368,13 @@ export function PortfolioSection({
                       setMobileAscending(true);
                     }
                   }}
-                  className="text-center cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center gap-1"
+                  className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border border-gray-300/50 dark:border-gray-600/50 bg-transparent"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                   aria-label="Sort by ticker"
                 >
                   Ticker
                   {mobileSortKey === 'ticker' && (
-                    <span className="text-[10px]">{mobileAscending ? '▲' : '▼'}</span>
+                    <span className="text-[9px] text-gray-500 dark:text-gray-400">{mobileAscending ? '▲' : '▼'}</span>
                   )}
                 </button>
                 <button
@@ -371,32 +387,32 @@ export function PortfolioSection({
                       setMobileAscending(false);
                     }
                   }}
-                  className="text-center cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center gap-1"
+                  className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border border-gray-300/50 dark:border-gray-600/50 bg-transparent"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                   aria-label="Sort by quantity"
                 >
                   #
                   {mobileSortKey === 'quantity' && (
-                    <span className="text-[10px]">{mobileAscending ? '▲' : '▼'}</span>
+                    <span className="text-[9px] text-gray-500 dark:text-gray-400">{mobileAscending ? '▲' : '▼'}</span>
                   )}
                 </button>
                 <button
                   type="button"
                   onClick={() => {
-                    if (mobileSortKey === 'price') {
+                    if (mobileSortKey === 'delta') {
                       setMobileAscending((v) => !v);
                     } else {
-                      setMobileSortKey('price');
+                      setMobileSortKey('delta');
                       setMobileAscending(false);
                     }
                   }}
-                  className="text-center cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center gap-1"
+                  className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border border-gray-300/50 dark:border-gray-600/50 bg-transparent"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
-                  aria-label="Sort by price"
+                  aria-label="Sort by dollar change"
                 >
-                  Price/Δ$
-                  {mobileSortKey === 'price' && (
-                    <span className="text-[10px]">{mobileAscending ? '▲' : '▼'}</span>
+                  $
+                  {mobileSortKey === 'delta' && (
+                    <span className="text-[9px] text-gray-500 dark:text-gray-400">{mobileAscending ? '▲' : '▼'}</span>
                   )}
                 </button>
                 <button
@@ -409,13 +425,13 @@ export function PortfolioSection({
                       setMobileAscending(false);
                     }
                   }}
-                  className="text-center cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center gap-1"
+                  className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border border-gray-300/50 dark:border-gray-600/50 bg-transparent"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                   aria-label="Sort by percent"
                 >
                   %
                   {mobileSortKey === 'percent' && (
-                    <span className="text-[10px]">{mobileAscending ? '▲' : '▼'}</span>
+                    <span className="text-[9px] text-gray-500 dark:text-gray-400">{mobileAscending ? '▲' : '▼'}</span>
                   )}
                 </button>
                 <div className="text-center">X</div>

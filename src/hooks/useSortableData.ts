@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 
 export type SortKey = "ticker" | "marketCap" | "currentPrice" | "percentChange" | "marketCapDiff" | "sector" | "industry" | "estimate_eps" | "actual_eps" | "estimate_revenue" | "actual_revenue" | "percent_change" | "market_cap_diff";
 
@@ -11,7 +11,8 @@ export interface UseSortableDataOptions<T> {
 export function useSortableData<T extends Record<string, any>>(
   items: T[], 
   initKey?: SortKey, 
-  initAsc: boolean = false
+  initAsc: boolean = false,
+  storageKey?: string // Optional localStorage key for persistence
 ): {
   sorted: T[];
   sortKey: SortKey | null;
@@ -19,8 +20,21 @@ export function useSortableData<T extends Record<string, any>>(
   requestSort: (key: SortKey) => void;
   getSortIcon: (key: SortKey) => 'asc' | 'desc' | null;
 } {
-  const [sortKey, setSortKey] = useState<SortKey | null>(initKey || null);
-  const [ascending, setAscending] = useState(initAsc);
+  // Load from localStorage if storageKey provided
+  const [sortKey, setSortKey] = useState<SortKey | null>(() => {
+    if (storageKey && typeof window !== 'undefined') {
+      const stored = localStorage.getItem(`${storageKey}_sortKey`);
+      if (stored) return stored as SortKey;
+    }
+    return initKey || null;
+  });
+  const [ascending, setAscending] = useState<boolean>(() => {
+    if (storageKey && typeof window !== 'undefined') {
+      const stored = localStorage.getItem(`${storageKey}_sortAscending`);
+      if (stored) return stored === 'true';
+    }
+    return initAsc;
+  });
 
   const sorted = useMemo(() => {
     if (!sortKey) return items;
@@ -53,6 +67,16 @@ export function useSortableData<T extends Record<string, any>>(
     });
     return data;
   }, [items, sortKey, ascending]);
+
+  // Persist to localStorage if storageKey provided
+  useEffect(() => {
+    if (storageKey && typeof window !== 'undefined') {
+      if (sortKey) {
+        localStorage.setItem(`${storageKey}_sortKey`, sortKey);
+        localStorage.setItem(`${storageKey}_sortAscending`, String(ascending));
+      }
+    }
+  }, [sortKey, ascending, storageKey]);
 
   const requestSort = useCallback((key: SortKey) => {
     if (key === sortKey) {
