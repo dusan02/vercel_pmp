@@ -8,11 +8,11 @@ const fetchWithRetry = async (url: string, maxRetries = 3, initialDelay = 1000):
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       const response = await fetch(url, { cache: 'no-store' });
-      
+
       // If 503 (Service Unavailable), wait and retry (server/database might be starting up)
       if (response.status === 503) {
         const delay = initialDelay * Math.pow(2, attempt);
-        
+
         if (attempt < maxRetries - 1) {
           // Silently retry 503 errors (common during server startup)
           await new Promise(resolve => setTimeout(resolve, delay));
@@ -21,19 +21,19 @@ const fetchWithRetry = async (url: string, maxRetries = 3, initialDelay = 1000):
         // After max retries, return null instead of throwing
         return null;
       }
-      
+
       // If 429 (Too Many Requests), wait and retry
       if (response.status === 429) {
         const retryAfter = response.headers.get('Retry-After');
         const delay = retryAfter ? parseInt(retryAfter) * 1000 : initialDelay * Math.pow(2, attempt);
-        
+
         if (attempt < maxRetries - 1) {
           console.log(`⏳ Rate limited (429), retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
           await new Promise(resolve => setTimeout(resolve, delay));
           continue;
         }
       }
-      
+
       return response;
     } catch (error) {
       if (attempt === maxRetries - 1) {
@@ -64,7 +64,7 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
   });
   const [error, setError] = useState<string | null>(null);
   const [backgroundStatus, setBackgroundStatus] = useState<string | null>(null);
-  
+
   // Mock stocks for fallback
   const mockStocks: StockData[] = [];
 
@@ -78,14 +78,14 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
       const response = await fetch('/api/background/status', {
         signal: AbortSignal.timeout(5000)
       });
-      
+
       if (!response.ok) {
         if (response.status !== 404 && response.status !== 500 && response.status !== 429) {
           console.log('Background status API not ready yet, will retry...');
         }
         return;
       }
-      
+
       const data = await response.json();
       if (data.success && data.data?.status) {
         setBackgroundStatus(data.data.status);
@@ -106,8 +106,8 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
 
   // Helper for fetching and updating stock data - REDUCES DUPLICATION
   const fetchAndMergeStocks = useCallback(async (
-    url: string, 
-    loadingKey: keyof LoadingStates, 
+    url: string,
+    loadingKey: keyof LoadingStates,
     logMessage: string,
     options: { showLoading?: boolean } = {}
   ) => {
@@ -117,9 +117,9 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
     }
     try {
       console.log(`🚀 ${logMessage}`);
-      
+
       const response = await fetchWithRetry(url);
-      
+
       if (response && response.ok) {
         const result = await response.json();
         if (result.data && result.data.length > 0) {
@@ -145,29 +145,29 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
 
   // Track if favorites have been initially loaded
   const favoritesInitialLoadRef = useRef(false);
-  
+
   // Phase 1: Favorites
   const fetchFavoritesData = useCallback(async (showLoading: boolean = true) => {
     const project = getProjectName();
     const favoriteTickers = favorites.map(fav => fav.ticker);
-    
+
     if (favoriteTickers.length === 0) {
       console.log('ℹ️ No favorites to load, skipping API call');
       return;
     }
-    
+
     // Only show loading state on initial load, not when favorites change
     if (showLoading) {
       setLoadingStates(prev => ({ ...prev, favorites: true }));
     }
-    
+
     try {
       console.log(`🚀 Loading favorites data (showLoading: ${showLoading})`);
-      
+
       const response = await fetchWithRetry(
         `/api/stocks?tickers=${favoriteTickers.join(',')}&project=${project}&limit=50&t=${Date.now()}`
       );
-      
+
       if (response && response.ok) {
         const result = await response.json();
         if (result.data && result.data.length > 0) {
@@ -195,7 +195,7 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
   const fetchTop50StocksData = useCallback(async () => {
     const project = getProjectName();
     const top50Tickers = getProjectTickers(project, 50);
-    
+
     await fetchAndMergeStocks(
       `/api/stocks?tickers=${top50Tickers.join(',')}&project=${project}&limit=50&t=${Date.now()}`,
       'top50Stocks',
@@ -206,9 +206,9 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
   // Function to fetch specific tickers (e.g., for portfolio)
   const fetchSpecificTickers = useCallback(async (tickers: string[]) => {
     if (tickers.length === 0) return;
-    
+
     const project = getProjectName();
-    
+
     await fetchAndMergeStocks(
       `/api/stocks?tickers=${tickers.join(',')}&project=${project}&limit=${tickers.length}&t=${Date.now()}`,
       'remainingStocks',
@@ -224,18 +224,18 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
       try {
         console.log('🚀 Loading ALL remaining stocks from database (phase 4)');
         const project = getProjectName();
-        
+
         const response = await fetchWithRetry(
-          `/api/stocks?getAll=true&project=${project}&sort=marketCapDiff&order=desc&limit=10000&t=${Date.now()}`, 
-          3, 
+          `/api/stocks?getAll=true&project=${project}&sort=marketCapDiff&order=desc&limit=10000&t=${Date.now()}`,
+          3,
           2000
         );
-        
+
         if (response && response.ok) {
           const result = await response.json();
           if (result.data && result.data.length > 0) {
             console.log('✅ All stocks loaded from database:', result.data.length, 'stocks');
-            
+
             requestAnimationFrame(() => {
               setStockData(prev => {
                 const existingTickers = new Set(prev.map(s => s.ticker));
@@ -245,7 +245,7 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
                 combined.sort((a, b) => (b.marketCapDiff || 0) - (a.marketCapDiff || 0));
                 return combined;
               });
-              
+
               requestAnimationFrame(() => {
                 setLoadingStates(prev => ({ ...prev, remainingStocks: false }));
               });
@@ -270,26 +270,25 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
   const loadDataProgressive = useCallback(async () => {
     try {
       setError(null);
-      
+
       console.log('🔄 Phase 1: Loading favorites...');
       await fetchFavoritesData(true); // Show loading on initial load
       favoritesInitialLoadRef.current = true;
-      
+
       console.log('🔄 Phase 2: Loading background status...');
       fetchBackgroundStatus();
-      
-      if (initialDataLoaded.current) {
-         console.log('✅ SSR Data: Top 50 stocks already loaded, skipping fetch');
-         initialDataLoaded.current = false;
+
+      if (stockData.length >= 50) {
+        console.log('✅ SSR Data: Sufficient stocks already loaded, skipping Phase 3 fetch');
       } else {
-         console.log('🔄 Phase 3: Loading top 50 stocks...');
-         setTimeout(() => {
-            fetchTop50StocksData();
-         }, 2000);
+        console.log('🔄 Phase 3: Loading top 50 stocks...');
+        setTimeout(() => {
+          fetchTop50StocksData();
+        }, 2000);
       }
-      
+
       console.log('🔄 Phase 4: Remaining stocks ready for lazy load');
-      
+
     } catch (error) {
       console.error('Error in progressive loading:', error);
       setError('Failed to refresh data. Please try again.');
@@ -331,7 +330,7 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
   // Auto-refresh stock data (similar to heatmap - every 30 seconds)
   useEffect(() => {
     let refreshInterval: NodeJS.Timeout | null = null;
-    
+
     // Wait a bit after initial load before starting auto-refresh
     const initialDelay = setTimeout(() => {
       // Start auto-refresh after 30 seconds from initial load
@@ -360,25 +359,25 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
   // Don't refetch when favorites are removed to avoid flickering
   const favoritesTickersString = favorites.map(f => f.ticker).join(',');
   const previousFavoritesRef = useRef<string>('');
-  
+
   useEffect(() => {
     const currentFavorites = favoritesTickersString;
     const previousFavorites = previousFavoritesRef.current;
-    
+
     // Only fetch if:
     // 1. This is the initial load (previousFavorites is empty)
     // 2. New favorites were added (current length > previous length)
     // Don't fetch if favorites were removed (to avoid flickering)
     const favoritesAdded = currentFavorites.length > previousFavorites.length;
     const isInitialLoad = previousFavorites === '';
-    
+
     if (favorites.length > 0 && (isInitialLoad || favoritesAdded)) {
       const timeoutId = setTimeout(() => {
         // Only show loading on initial load, not when favorites are added later
         fetchFavoritesData(isInitialLoad);
         favoritesInitialLoadRef.current = true;
       }, 500);
-      
+
       previousFavoritesRef.current = currentFavorites;
       return () => clearTimeout(timeoutId);
     } else {

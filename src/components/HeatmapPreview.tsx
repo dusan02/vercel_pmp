@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { SectionIcon } from './SectionIcon';
 import { useHeatmapMetric } from '@/hooks/useHeatmapMetric';
 import { HeatmapMetricButtons } from './HeatmapMetricButtons';
 import { HeatmapViewButton } from './HeatmapViewButton';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 // OPTIMIZATION: Enable SSR for desktop (faster initial load)
 // Mobile uses different components, so SSR is safe for desktop
@@ -32,6 +33,14 @@ export function HeatmapPreview() {
   // Centralized metric state with localStorage persistence
   const { metric, setMetric } = useHeatmapMetric('percent');
 
+  // Use hook for reliable desktop/mobile detection
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   // Handler pre klik na pozadí (nie na buttonoch)
   const handleBackgroundClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     // Skontroluj, či klik nebol na button alebo interaktívnom elemente
@@ -45,10 +54,14 @@ export function HeatmapPreview() {
     }
   }, [router]);
 
+  // Prevent hydration mismatch by only rendering after mount OR using CSS gating for SSR
+  // But for performance, we want SSR for desktop
+  const showDesktop = isMounted ? isDesktop : true; // Default to desktop for SSR
+
   return (
     <section className="heatmap-preview">
-      {/* Desktop Header */}
-      <div className="hidden lg:block section-header">
+      {/* Header */}
+      <div className="section-header">
         <div className="header-main">
           <h2>
             <SectionIcon type="heatmap" size={20} className="section-icon" />
@@ -60,65 +73,52 @@ export function HeatmapPreview() {
             metric={metric}
             onMetricChange={setMetric}
           />
-          <HeatmapViewButton />
+          {showDesktop && <HeatmapViewButton />}
         </div>
       </div>
 
-      {/* Mobile Header (simplified) */}
-      <div className="lg:hidden section-header">
-        <div className="header-main">
-          <h2>
-            <SectionIcon type="heatmap" size={20} className="section-icon" />
-            <span>Market Heatmap</span>
-          </h2>
+      {/* Conditional Content Wrapper */}
+      {showDesktop ? (
+        /* Desktop: Fixed height preview */
+        <div
+          className="relative w-full bg-black overflow-hidden group heatmap-preview-container"
+          style={{ height: '400px', minHeight: '400px', cursor: 'pointer' }}
+          onClick={handleBackgroundClick}
+        >
+          <div className="w-full h-full">
+            <ResponsiveMarketHeatmap
+              apiEndpoint="/api/heatmap"
+              autoRefresh={true}
+              refreshInterval={60000}
+              initialTimeframe="day"
+              controlledMetric={metric}
+              onMetricChange={setMetric}
+              hideMetricButtons={true}
+              sectorLabelVariant="compact"
+            />
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <HeatmapMetricButtons
-            metric={metric}
-            onMetricChange={setMetric}
-          />
+      ) : (
+        /* Mobile: Full height in view */
+        <div
+          className="relative w-full bg-black overflow-hidden group heatmap-preview-container flex-1"
+          style={{ cursor: 'pointer', minHeight: '600px' }}
+          onClick={handleBackgroundClick}
+        >
+          <div className="w-full h-full min-h-0">
+            <ResponsiveMarketHeatmap
+              apiEndpoint="/api/heatmap"
+              autoRefresh={true}
+              refreshInterval={60000}
+              initialTimeframe="day"
+              controlledMetric={metric}
+              onMetricChange={setMetric}
+              hideMetricButtons={true}
+              sectorLabelVariant="compact"
+            />
+          </div>
         </div>
-      </div>
-
-      {/* Desktop: Fixed height preview */}
-      <div
-        className="relative w-full bg-black overflow-hidden group heatmap-preview-container hidden lg:block"
-        style={{ height: '400px', minHeight: '400px', cursor: 'pointer' }}
-        onClick={handleBackgroundClick}
-      >
-        <div className="w-full h-full">
-          <ResponsiveMarketHeatmap
-            apiEndpoint="/api/heatmap"
-            autoRefresh={true}
-            refreshInterval={60000}
-            initialTimeframe="day"
-            controlledMetric={metric}
-            onMetricChange={setMetric}
-            hideMetricButtons={true}
-            sectorLabelVariant="compact"
-          />
-        </div>
-      </div>
-
-      {/* Mobile: Full height in view */}
-      <div
-        className="relative w-full bg-black overflow-hidden group heatmap-preview-container lg:hidden h-full"
-        style={{ cursor: 'pointer' }}
-        onClick={handleBackgroundClick}
-      >
-        <div className="w-full h-full min-h-0">
-          <ResponsiveMarketHeatmap
-            apiEndpoint="/api/heatmap"
-            autoRefresh={true}
-            refreshInterval={60000}
-            initialTimeframe="day"
-            controlledMetric={metric}
-            onMetricChange={setMetric}
-            hideMetricButtons={true}
-            sectorLabelVariant="compact"
-          />
-        </div>
-      </div>
+      )}
     </section>
   );
 }

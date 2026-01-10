@@ -18,9 +18,13 @@ interface HomeHeatmapProps {
 }
 
 export function HomeHeatmap({ wrapperClass }: HomeHeatmapProps) {
+    React.useEffect(() => {
+        console.log('🏠 HomeHeatmap rendered', { wrapperClass });
+    }, [wrapperClass]);
+    
     return (
         <SectionErrorBoundary sectionName="Heatmap">
-            <div className={`${wrapperClass} w-full min-h-[600px]`}>
+            <div className={`${wrapperClass} w-full min-h-[600px]`} data-debug="home-heatmap-wrapper">
                 <HeatmapPreview />
             </div>
         </SectionErrorBoundary>

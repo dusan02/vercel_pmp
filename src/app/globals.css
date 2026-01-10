@@ -11,7 +11,8 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  min-height: 100dvh; /* Dynamic viewport height */
+  min-height: 100dvh;
+  /* Dynamic viewport height */
   background: #ffffff;
   position: relative;
   overflow: hidden;
@@ -57,7 +58,8 @@
   flex-direction: column;
   overflow: hidden;
   position: relative;
-  padding-bottom: 72px; /* Space for tab bar */
+  padding-bottom: 72px;
+  /* Space for tab bar */
 }
 
 /* Mobile Screen - Individual views */
@@ -154,6 +156,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
+
   .mobile-app-screen.screen-portfolio,
   .mobile-app-screen.screen-favorites,
   .mobile-app-screen.screen-earnings,
@@ -252,6 +255,7 @@
     width: 0;
     opacity: 0;
   }
+
   to {
     width: 32px;
     opacity: 1;
@@ -301,6 +305,7 @@
 
 /* Desktop hide */
 @media (min-width: 1024px) {
+
   .mobile-app,
   .mobile-app-header,
   .mobile-app-tabbar {
@@ -2277,6 +2282,21 @@ h6 {
   box-shadow: none;
 }
 
+/* Desktop homepage container */
+.homepage-container {
+  width: 100%;
+  min-height: 100vh;
+  background: var(--clr-bg);
+  color: var(--clr-text);
+}
+
+.desktop-layout-wrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
 /* ===== Market Indicators ================================================== */
 .market-indicators {
   display: grid;
@@ -4147,13 +4167,6 @@ table td strong {
   border-radius: 0;
   box-shadow: none;
   flex-wrap: nowrap;
-}
-
-/* IMPORTANT: Ensure Tailwind's `hidden` utility always wins.
-   Without this, custom component styles (e.g. `.section-header { display:flex }`)
-   can override `hidden` and cause duplicate UI blocks on mobile. */
-.hidden {
-  display: none !important;
 }
 
 .header-search-inline {
@@ -6524,21 +6537,23 @@ table td strong {
 }
 
 .bottom-navigation {
-  position: relative; /* Changed from fixed - now it's a normal grid row */
+  position: relative;
+  /* Changed from fixed - now it's a normal grid row */
   left: auto;
   right: auto;
   bottom: auto;
-  
+
   z-index: 10;
   background: rgba(17, 17, 17, 0.95);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-  
+
   display: flex;
   align-items: center;
-  justify-content: space-evenly; /* Better visual distribution than space-around */
-  
+  justify-content: space-evenly;
+  /* Better visual distribution than space-around */
+
   /* Fixed height for nav bar content (without safe-area) */
   height: 64px;
   padding: 0.5rem 0;
@@ -6548,7 +6563,8 @@ table td strong {
 .bottom-navigation-safearea {
   height: env(safe-area-inset-bottom);
   width: 100%;
-  background: rgba(17, 17, 17, 0.95); /* Match nav background */
+  background: rgba(17, 17, 17, 0.95);
+  /* Match nav background */
   flex-shrink: 0;
 }
 
@@ -6562,9 +6578,11 @@ table td strong {
 /* Mobile Shell - App-like container (CSS Grid for stability) */
 .mobile-shell {
   display: grid;
-  grid-template-rows: auto auto 1fr auto; /* header, indices, content, bottomnav-wrapper */
+  grid-template-rows: auto auto 1fr auto;
+  /* header, indices, content, bottomnav-wrapper */
   height: 100vh;
-  height: 100dvh; /* Dynamic viewport height for mobile */
+  height: 100dvh;
+  /* Dynamic viewport height for mobile */
   overflow: hidden;
 }
 
@@ -6596,28 +6614,32 @@ table td strong {
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
-  min-height: 0; /* Critical: allows grid child to shrink below content size */
+  min-height: 0;
+  /* Critical: allows grid child to shrink below content size */
   /* Default: no padding (for views without FAB like heatmap) */
   padding-bottom: 0;
 }
 
 /* FAB padding - only when FAB is visible (allStocks, portfolio, favorites) */
 .mobile-main-content.has-fab {
-  padding-bottom: calc(56px + 16px); /* FAB height (56px) + margin (16px) */
+  padding-bottom: calc(56px + 16px);
+  /* FAB height (56px) + margin (16px) */
 }
 
 /* Mobile Views */
 .mobile-view {
   width: 100%;
   height: 100%;
-  min-height: 0; /* Critical: allows grid child to shrink */
+  min-height: 0;
+  /* Critical: allows grid child to shrink */
   padding: 1rem;
 }
 
 .mobile-view-heatmap {
   padding: 0;
   height: 100%;
-  min-height: 0; /* Critical for grid overflow context */
+  min-height: 0;
+  /* Critical for grid overflow context */
   display: flex;
   flex-direction: column;
 }
@@ -6645,6 +6667,7 @@ table td strong {
 
 /* Mobile app views: remove legacy section padding that was meant for the old stacked layout */
 @media (max-width: 768px) {
+
   .mobile-view-all-stocks .all-stocks,
   .mobile-view-favorites .favorites,
   .mobile-view-portfolio .portfolio,
@@ -6812,8 +6835,10 @@ table td strong {
   transition: all 0.2s ease;
   position: relative;
   min-height: 60px;
-  min-width: 0; /* Critical: allows flex item to shrink below content size for label truncation */
-  flex: 1; /* Equal distribution */
+  min-width: 0;
+  /* Critical: allows flex item to shrink below content size for label truncation */
+  flex: 1;
+  /* Equal distribution */
   border-radius: 0.5rem;
 }
 

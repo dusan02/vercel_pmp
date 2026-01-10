@@ -116,6 +116,13 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
 
   const isDesktop = useMediaQuery('(min-width: 1024px)');
 
+  // Debug: Log desktop detection
+  useEffect(() => {
+    if (isMounted) {
+      console.log('[HomePage] isMounted:', isMounted, 'isDesktop:', isDesktop, 'window width:', typeof window !== 'undefined' ? window.innerWidth : 'N/A');
+    }
+  }, [isMounted, isDesktop]);
+
   // Use user preferences hook for persistence
   const { preferences, savePreferences, setConsent } = useUserPreferences();
 
@@ -411,7 +418,7 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
 
       {/* Desktop Layout - Traditional scroll-based */}
       {(isMounted && isDesktop) && (
-      <div className="homepage-container">
+      <div className="homepage-container" data-debug="desktop-layout">
         <div className="pwa-status-bar"></div>
 
         {!isOnline && (
@@ -548,6 +555,21 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
         </Suspense>
 
       </div>
+      )}
+      {/* Fallback: Show debug info if neither mobile nor desktop is rendering */}
+      {isMounted && !isDesktop && (
+        <div style={{ padding: '2rem', background: '#f0f0f0', color: '#000' }}>
+          <p>Debug: Mobile layout should be visible</p>
+          <p>isMounted: {String(isMounted)}</p>
+          <p>isDesktop: {String(isDesktop)}</p>
+          <p>Window width: {typeof window !== 'undefined' ? window.innerWidth : 'N/A'}</p>
+        </div>
+      )}
+      {isMounted && isDesktop && (
+        <div style={{ padding: '2rem', background: '#e0f0e0', color: '#000', position: 'fixed', top: 0, right: 0, zIndex: 9999, fontSize: '12px' }}>
+          <p>Debug: Desktop layout active</p>
+          <p>Width: {typeof window !== 'undefined' ? window.innerWidth : 'N/A'}</p>
+        </div>
       )}
       {/* Cookie consent must exist on mobile too; favorites depend on consent for local persistence */}
       <CookieConsent onAccept={() => setConsent(true)} />

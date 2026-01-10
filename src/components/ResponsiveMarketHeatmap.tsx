@@ -120,10 +120,8 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
   }, []);
 
   useEffect(() => {
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('📏 Heatmap Dimensions:', { width, height });
-    }
-  }, [width, height]);
+    console.log('📏 Heatmap Dimensions:', { width, height, isMounted, loading, hasData: !!data });
+  }, [width, height, isMounted, loading, data]);
 
   // Vypočítaj vek dát pre zobrazenie
   const getDataAgeDisplay = (): string | null => {
@@ -148,11 +146,16 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
     // CRITICAL: Don't render heatmap until we have valid dimensions
     // This prevents "empty background" bug on mobile
     // OPTIMIZATION: Require minimum dimensions to prevent flickering
-    if (!width || !height || width < 100 || height < 100) {
+    // DEBUG: Log dimensions for troubleshooting
+    // NOTE: On desktop, allow smaller minimum (50px) since container might be measured before fully rendered
+    const minDimension = isMobile ? 100 : 50;
+    if (!width || !height || width < minDimension || height < minDimension) {
+      console.log('⚠️ Heatmap: Dimensions too small or not ready', { width, height, isMounted, isMobile, minDimension });
       return (
         <div className="absolute inset-0 flex items-center justify-center text-gray-500 bg-black z-40">
           <div className="text-center">
-            <div className="animate-pulse text-sm">Measuring container...</div>
+            <div className="animate-pulse text-sm">Measuring container... ({width}x{height})</div>
+            <div className="text-xs mt-2">Min required: {minDimension}px</div>
           </div>
         </div>
       );
@@ -284,6 +287,25 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
     );
   };
 
+  // Fallback: If dimensions are still 0 after mount, try to get from parent
+  useEffect(() => {
+    if (ref.current && (width === 0 || height === 0)) {
+      const element = ref.current;
+      const parent = element.parentElement;
+      if (parent) {
+        const parentRect = parent.getBoundingClientRect();
+        if (parentRect.width > 0 && parentRect.height > 0) {
+          console.log('📐 Heatmap: Using parent dimensions as fallback', { 
+            parentWidth: parentRect.width, 
+            parentHeight: parentRect.height 
+          });
+          // Force a re-measure by triggering a resize
+          window.dispatchEvent(new Event('resize'));
+        }
+      }
+    }
+  }, [width, height]);
+
   return (
     <div
       ref={ref}
@@ -295,6 +317,7 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
         position: 'relative',
         width: '100%',
         height: '100%',
+        minHeight: '400px', // Ensure minimum height for desktop
         // CRITICAL: Remove overflow from outer container - let MarketHeatmap handle scrolling
         // This prevents double scrollbars (one here, one in MarketHeatmap)
         overflow: 'hidden', // Always hidden - MarketHeatmap handles its own scrolling
