@@ -13,7 +13,8 @@
   min-height: 100vh;
   min-height: 100dvh;
   /* Dynamic viewport height */
-  background: #ffffff;
+  background: #0f0f0f;
+  /* Slabo čierna farba namiesto bielej */
   position: relative;
   overflow: hidden;
 }
@@ -265,7 +266,8 @@
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
   .mobile-app {
-    background: #111827;
+    background: #0f0f0f;
+    /* Slabo čierna farba pre dark mode */
   }
 
   .mobile-app-header {

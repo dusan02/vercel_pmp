@@ -647,7 +647,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
               background: 'rgba(0,0,0,0.45)',
               zIndex: 1000,
               // Don't block the mobile tab bar
-              bottom: 'calc(72px + env(safe-area-inset-bottom))',
+              bottom: '72px',
             }}
           />
           <div
@@ -664,7 +664,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
               maxHeight: 200,
               overflow: 'hidden',
               // Sit above mobile tab bar
-              bottom: 'calc(72px + env(safe-area-inset-bottom))',
+              bottom: '72px',
             }}
           >
             {/* Compact Header: Logo + Ticker + Actions */}
