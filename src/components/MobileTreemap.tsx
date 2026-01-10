@@ -81,6 +81,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
   // - percent mode: size by market cap
   // - mcap mode: size by absolute market cap diff
   // OPTIMIZATION: Use useMemo with stable sorting for better performance
+  // FIX: Remove duplicate tickers (keep first occurrence with highest value)
   const sortedData = useMemo(() => {
     if (!data || data.length === 0) return [];
 
@@ -89,8 +90,18 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
       return c.marketCap || 0;
     };
 
+    // Remove duplicates: keep only the first occurrence of each ticker
+    // (in case data prop contains duplicate tickers)
+    const seen = new Set<string>();
+    const uniqueData = data.filter(c => {
+      const symbol = c.symbol?.toUpperCase();
+      if (!symbol || seen.has(symbol)) return false;
+      seen.add(symbol);
+      return true;
+    });
+
     const limit = expanded ? MAX_MOBILE_TILES_EXPANDED : MAX_MOBILE_TILES_COMPACT;
-    return [...data]
+    return uniqueData
       .filter(c => sizeValue(c) > 0)
       .sort((a, b) => sizeValue(b) - sizeValue(a))
       .slice(0, limit); // CRITICAL: Limit for mobile UX + performance

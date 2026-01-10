@@ -14,10 +14,21 @@ export function buildHeatmapHierarchy(
 ): HierarchyData {
   const root: HierarchyData = { name: 'Market', children: [], meta: { type: 'root' } };
   const sectorMap = new Map<string, HierarchyData>();
+  // Track seen tickers to prevent duplicates (keep first occurrence)
+  const seenTickers = new Set<string>();
 
   let skippedCount = 0;
+  let duplicateCount = 0;
 
   for (const company of data) {
+    // Skip duplicate tickers (keep first occurrence)
+    const symbol = company.symbol?.toUpperCase();
+    if (!symbol || seenTickers.has(symbol)) {
+      duplicateCount++;
+      continue;
+    }
+    seenTickers.add(symbol);
+
     // Podľa metriky vyberieme hodnotu pre veľkosť dlaždice
     let tileValue: number;
     if (metric === 'mcap') {
@@ -105,6 +116,10 @@ export function buildHeatmapHierarchy(
   if (skippedCount > 0 && process.env.NODE_ENV !== 'production') {
     const metricName = metric === 'mcap' ? 'marketCapDiffAbs' : 'marketCap';
     console.warn(`⚠️ buildHierarchy: Preskočených ${skippedCount} firiem bez ${metricName} z ${data.length} celkom`);
+  }
+
+  if (duplicateCount > 0 && process.env.NODE_ENV !== 'production') {
+    console.warn(`⚠️ buildHierarchy: Nájdených ${duplicateCount} duplicitných tickerov (odstránených)`);
   }
 
   return root;
