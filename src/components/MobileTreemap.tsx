@@ -59,7 +59,8 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
   // zoom-in => more tiles become readable; zoom-out => labels disappear naturally.
   const [zoom, setZoom] = useState(1);
   // Expanded mode: taller treemap canvas with vertical scrolling for larger tiles
-  const [expanded, setExpanded] = useState(true);
+  // Default to compact mode on initial load
+  const [expanded, setExpanded] = useState(false);
   const [showPinchHint, setShowPinchHint] = useState(false);
   const ZOOM_MIN = 1;
   const ZOOM_MAX = 3;
@@ -628,6 +629,9 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
           overflowX: zoom > 1 ? 'auto' : 'hidden',
           overflowY: (expanded || zoom > 1) ? 'auto' : 'hidden',
           WebkitOverflowScrolling: 'touch' as any,
+          // Ensure no empty space at bottom - content fills to bottom edge
+          paddingBottom: 0,
+          marginBottom: 0,
         }}
         onTouchEnd={handleDoubleTapReset}
       >
@@ -651,6 +655,9 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
             position: 'relative',
             width: containerSize.width * zoom,
             height: layoutHeight * zoom,
+            // Ensure content extends to bottom edge - no empty space
+            marginBottom: 0,
+            paddingBottom: 0,
           }}
         >
           {leaves.map((leaf) => renderLeaf(leaf))}

@@ -13,10 +13,18 @@
   min-height: 100vh;
   min-height: 100dvh;
   /* Dynamic viewport height */
-  background: #0f0f0f;
-  /* Slabo čierna farba - vždy, nie len v dark mode */
+  background: #ffffff;
+  /* Biela farba pre desktop */
   position: relative;
   overflow: hidden;
+}
+
+/* Mobile only: dark background */
+@media (max-width: 1023px) {
+  .mobile-app {
+    background: #0f0f0f;
+    /* Slabo čierna farba len pre mobile */
+  }
 }
 
 /* Mobile Header - Minimalistický */
@@ -29,6 +37,15 @@
   -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* Mobile only: dark header */
+@media (max-width: 1023px) {
+  .mobile-app-header {
+    background: rgba(15, 15, 15, 0.95);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
 }
 
 .mobile-app-header-content {
@@ -52,6 +69,13 @@
   letter-spacing: -0.02em;
 }
 
+/* Mobile only: light text on dark header */
+@media (max-width: 1023px) {
+  .mobile-app-title {
+    color: #ffffff;
+  }
+}
+
 /* Mobile Content Area */
 .mobile-app-content {
   flex: 1;
@@ -59,8 +83,8 @@
   flex-direction: column;
   overflow: hidden;
   position: relative;
-  padding-bottom: 72px;
-  /* Space for tab bar */
+  padding-bottom: 0;
+  /* No padding - heatmap fills to bottom, tab bar is fixed overlay */
 }
 
 /* Mobile Screen - Individual views */
@@ -95,6 +119,8 @@
   padding: 0 !important;
   background: #000;
   z-index: 1;
+  /* Ensure no padding/margin that could create empty space */
+  margin: 0;
 }
 
 .mobile-app-screen.screen-heatmap.active {
@@ -113,6 +139,9 @@
   bottom: 0;
   margin: 0;
   padding: 0;
+  /* Ensure content extends to bottom - no empty space */
+  paddingBottom: 0;
+  marginBottom: 0;
 }
 
 .mobile-app-screen.screen-heatmap .heatmap-preview-container {
@@ -126,6 +155,9 @@
   bottom: 0;
   margin: 0;
   padding: 0;
+  /* Ensure content extends to bottom - no empty space */
+  paddingBottom: 0 !important;
+  marginBottom: 0 !important;
 }
 
 /* Hide all controls on mobile fullscreen heatmap */
@@ -147,6 +179,98 @@
   background: #ffffff;
 }
 
+/* ============================================
+   MOBILE DARK BACKGROUND - Unified Refactoring
+   ============================================
+   All mobile screens (max-width: 1023px) should have dark background (#0f0f0f)
+   This ensures consistent dark theme across all mobile UX sections.
+*/
+
+@media (max-width: 1023px) {
+  /* Base screen backgrounds */
+  .mobile-app-screen.screen-portfolio,
+  .mobile-app-screen.screen-favorites,
+  .mobile-app-screen.screen-earnings,
+  .mobile-app-screen.screen-all-stocks {
+    background: #0f0f0f !important;
+  }
+
+  /* Override ALL white backgrounds in mobile screens - comprehensive selectors */
+  .mobile-app-screen.screen-portfolio [class*="bg-white"],
+  .mobile-app-screen.screen-favorites [class*="bg-white"],
+  .mobile-app-screen.screen-earnings [class*="bg-white"],
+  .mobile-app-screen.screen-all-stocks [class*="bg-white"],
+  .mobile-app-screen.screen-portfolio .bg-white,
+  .mobile-app-screen.screen-favorites .bg-white,
+  .mobile-app-screen.screen-earnings .bg-white,
+  .mobile-app-screen.screen-all-stocks .bg-white {
+    background-color: #0f0f0f !important;
+  }
+
+  /* Override Tailwind dark:bg-gray-900 classes */
+  .mobile-app-screen.screen-portfolio [class*="dark:bg-gray-900"],
+  .mobile-app-screen.screen-favorites [class*="dark:bg-gray-900"],
+  .mobile-app-screen.screen-earnings [class*="dark:bg-gray-900"],
+  .mobile-app-screen.screen-all-stocks [class*="dark:bg-gray-900"] {
+    background-color: #0f0f0f !important;
+  }
+
+  /* Override specific white backgrounds in table/card containers */
+  .mobile-app-screen.screen-portfolio .w-full.bg-white,
+  .mobile-app-screen.screen-favorites .w-full.bg-white,
+  .mobile-app-screen.screen-all-stocks .w-full.bg-white {
+    background-color: #0f0f0f !important;
+  }
+
+  /* Force dark background for direct children containers */
+  .mobile-app-screen.screen-portfolio > *,
+  .mobile-app-screen.screen-favorites > *,
+  .mobile-app-screen.screen-earnings > *,
+  .mobile-app-screen.screen-all-stocks > * {
+    background-color: #0f0f0f !important;
+  }
+
+  /* Section containers (portfolio, favorites, all-stocks, earnings) */
+  .mobile-app-screen.screen-portfolio .portfolio,
+  .mobile-app-screen.screen-favorites .favorites,
+  .mobile-app-screen.screen-all-stocks .all-stocks,
+  .mobile-app-screen.screen-earnings .todays-earnings,
+  .mobile-app-screen.screen-earnings section,
+  /* All section elements */
+  .mobile-app-screen.screen-portfolio section,
+  .mobile-app-screen.screen-favorites section,
+  .mobile-app-screen.screen-all-stocks section,
+  .mobile-app-screen.screen-earnings section {
+    background-color: #0f0f0f !important;
+  }
+
+  /* Override any div with white background class */
+  .mobile-app-screen.screen-portfolio div[class*="bg-white"],
+  .mobile-app-screen.screen-favorites div[class*="bg-white"],
+  .mobile-app-screen.screen-earnings div[class*="bg-white"],
+  .mobile-app-screen.screen-all-stocks div[class*="bg-white"] {
+    background-color: #0f0f0f !important;
+  }
+
+  /* Center search bar in Portfolio section */
+  .mobile-app-screen.screen-portfolio .portfolio-search-wrapper {
+    display: flex !important;
+    justify-content: center !important;
+    width: 100% !important;
+  }
+
+  .mobile-app-screen.screen-portfolio .portfolio-search-container {
+    display: flex !important;
+    justify-content: center !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .mobile-app-screen.screen-portfolio .portfolio-search-input {
+    margin: 0 auto !important;
+  }
+}
+
 /* Mobile: use more of the available width (table-like lists look better edge-to-edge) */
 .mobile-app-screen.screen-portfolio,
 .mobile-app-screen.screen-favorites,
@@ -157,12 +281,13 @@
 }
 
 @media (prefers-color-scheme: dark) {
-
+  /* Mobile background is already set to #0f0f0f via media query above */
+  /* Desktop stays white (#ffffff) */
   .mobile-app-screen.screen-portfolio,
   .mobile-app-screen.screen-favorites,
   .mobile-app-screen.screen-earnings,
   .mobile-app-screen.screen-all-stocks {
-    background: #111827;
+    /* Background handled by mobile media query, not by prefers-color-scheme */
   }
 }
 
@@ -184,6 +309,15 @@
   padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
   height: 72px;
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+}
+
+/* Mobile only: dark tab bar */
+@media (max-width: 1023px) {
+  .mobile-app-tabbar {
+    background: rgba(15, 15, 15, 0.98);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
+  }
 }
 
 .mobile-app-tab {
@@ -267,9 +401,10 @@
 
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
-  /* Background color is already set to #0f0f0f globally, no need to override */
+  /* Mobile background is already set to #0f0f0f via media query above */
+  /* Desktop stays white (#ffffff) */
   .mobile-app {
-    /* Background stays #0f0f0f in all modes */
+    /* Background handled by media query, not by prefers-color-scheme */
   }
 
   .mobile-app-header {
@@ -1105,15 +1240,21 @@
   .portfolio-search-wrapper {
     width: 100%;
     margin-bottom: 1rem;
+    display: flex;
+    justify-content: center;
   }
 
   .portfolio-search-container {
     position: relative;
     width: 100%;
+    max-width: 100%;
+    display: flex;
+    justify-content: center;
   }
 
   .portfolio-search-input {
     width: 100%;
+    max-width: 100%;
     min-height: 48px;
     padding: 0.875rem 1rem;
     font-size: 16px;
@@ -1123,6 +1264,7 @@
     background: var(--clr-bg);
     color: var(--clr-text);
     transition: border-color 0.2s ease;
+    margin: 0 auto;
   }
 
   .portfolio-search-input:focus {
@@ -4173,6 +4315,32 @@ table td strong {
   border-radius: 0;
   box-shadow: none;
   flex-wrap: nowrap;
+}
+
+/* Mobile: center section titles */
+@media (max-width: 1023px) {
+  .section-header {
+    justify-content: center;
+  }
+
+  .section-header .header-main {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  .section-header .header-main h2 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    text-align: center;
+  }
+
+  /* Hide header controls on mobile to keep title centered */
+  .section-header .header-controls-inline {
+    display: none;
+  }
 }
 
 .header-search-inline {
@@ -8175,6 +8343,18 @@ img[data-src].loaded {
 }
 
 /* Dark mode: brighten logos for better visibility */
+.dark .company-logo-img {
+  filter: brightness(1.3) contrast(1.1);
+  /* Brighten by 30% and increase contrast by 10% for better visibility on dark backgrounds */
+}
+
+/* Mobile-specific: even brighter logos for small sizes */
+@media (max-width: 1023px) {
+  .dark .company-logo-img {
+    filter: brightness(1.4) contrast(1.15);
+    /* Slightly brighter on mobile for better readability */
+  }
+}
 .dark .company-logo-img {
   filter: brightness(1.3) contrast(1.1);
   /* Brighten by 30% and increase contrast by 10% for better visibility on dark backgrounds */

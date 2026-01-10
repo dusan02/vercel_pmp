@@ -107,7 +107,7 @@ export const formatCurrencyCompact = (value: number | null | undefined, showPlus
  * - "Consumer Defensive" → "Cons Defensive"
  * - Ostatné sektory zostávajú nezmenené
  */
-export const formatSectorName = (sector: string | null | undefined): string => {
+export function formatSectorName(sector: string | null | undefined): string {
   if (!sector) return 'N/A';
   
   const sectorMap: Record<string, string> = {
@@ -117,4 +117,4 @@ export const formatSectorName = (sector: string | null | undefined): string => {
   };
   
   return sectorMap[sector] || sector;
-}; 
+} 
