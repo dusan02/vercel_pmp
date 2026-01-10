@@ -157,8 +157,8 @@ export const AllStocksSection = React.memo(function AllStocksSection({
 
   return (
     <section className="all-stocks">
-      {/* Desktop Header */}
-      <div className="hidden lg:block section-header">
+      {/* Desktop Header - hidden on mobile */}
+      <div className="hidden lg:flex section-header">
         <div className="header-main">
           <h2>
             <SectionIcon type="globe" size={20} className="section-icon" />
