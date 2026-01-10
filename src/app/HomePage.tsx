@@ -144,26 +144,54 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
   // Mobile bottom navigation state
   const [activeMobileSection, setActiveMobileSection] = useState<'heatmap' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks'>('heatmap');
 
+  // Helper function to validate and set tab
+  const setActiveTab = useCallback((tab: string) => {
+    if (tab === 'heatmap' || tab === 'portfolio' || tab === 'favorites' || tab === 'earnings' || tab === 'allStocks') {
+      setActiveMobileSection(tab as 'heatmap' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks');
+      return true;
+    }
+    return false;
+  }, []);
+
   // Allow deep-linking to a specific mobile tab (e.g. "/?tab=allStocks")
   useEffect(() => {
     if (!isMounted) return;
     try {
       const tab = new URLSearchParams(window.location.search).get('tab');
-      if (tab === 'heatmap' || tab === 'portfolio' || tab === 'favorites' || tab === 'earnings' || tab === 'allStocks') {
-        setActiveMobileSection(tab);
+      if (tab) {
+        setActiveTab(tab);
       }
     } catch {
       // ignore
     }
-  }, [isMounted]);
+  }, [isMounted, setActiveTab]);
+
+  // Listen for browser back/forward navigation
+  useEffect(() => {
+    if (!isMounted) return;
+    const handlePopState = () => {
+      try {
+        const tab = new URLSearchParams(window.location.search).get('tab');
+        if (tab) {
+          setActiveTab(tab);
+        } else {
+          // If no tab in URL, default to heatmap
+          setActiveTab('heatmap');
+        }
+      } catch {
+        // ignore
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [isMounted, setActiveTab]);
 
   // Listen for custom navigation events (e.g., from FavoritesSection)
   useEffect(() => {
     if (!isMounted) return;
     const handleNavChange = (e: CustomEvent<string>) => {
       const tab = e.detail;
-      if (tab === 'heatmap' || tab === 'portfolio' || tab === 'favorites' || tab === 'earnings' || tab === 'allStocks') {
-        setActiveMobileSection(tab);
+      if (setActiveTab(tab)) {
         // Update URL without page reload
         const url = new URL(window.location.href);
         url.searchParams.set('tab', tab);
@@ -172,11 +200,15 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
     };
     window.addEventListener('mobile-nav-change', handleNavChange as EventListener);
     return () => window.removeEventListener('mobile-nav-change', handleNavChange as EventListener);
-  }, [isMounted]);
+  }, [isMounted, setActiveTab]);
 
   // Handle mobile bottom navigation change - VIEW-BASED (tabs, not scroll)
   const handleMobileNavChange = useCallback((tab: 'heatmap' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks') => {
     setActiveMobileSection(tab);
+    // Update URL to keep it in sync
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', tab);
+    window.history.pushState({}, '', url.toString());
   }, []);
 
   // Prefetch neaktívne screens a API endpoints pre rýchlejšie prepínanie
