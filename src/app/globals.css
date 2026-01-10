@@ -219,8 +219,9 @@
 }
 
 .mobile-app-tab.active .mobile-app-tab-icon {
-  color: #2563eb;
-  transform: scale(1.1);
+  /* Keep icon color unchanged - only indicator shows active state */
+  color: #6b7280;
+  transform: none;
 }
 
 .mobile-app-tab-label {
@@ -235,8 +236,9 @@
 }
 
 .mobile-app-tab.active .mobile-app-tab-label {
-  color: #2563eb;
-  font-weight: 600;
+  /* Keep label color unchanged - only indicator shows active state */
+  color: #6b7280;
+  font-weight: 500;
 }
 
 .mobile-app-tab-indicator {
@@ -289,7 +291,8 @@
   }
 
   .mobile-app-tab.active .mobile-app-tab-icon {
-    color: #3b82f6;
+    /* Keep icon color unchanged in dark mode - only indicator shows active state */
+    color: #9ca3af;
   }
 
   .mobile-app-tab-label {
@@ -297,7 +300,8 @@
   }
 
   .mobile-app-tab.active .mobile-app-tab-label {
-    color: #3b82f6;
+    /* Keep label color unchanged in dark mode - only indicator shows active state */
+    color: #9ca3af;
   }
 
   .mobile-app-tab-indicator {
