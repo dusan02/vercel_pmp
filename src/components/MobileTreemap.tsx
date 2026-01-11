@@ -21,6 +21,7 @@ interface MobileTreemapProps {
   onTileClick?: (company: CompanyNode) => void;
   onToggleFavorite?: (ticker: string) => void;
   isFavorite?: (ticker: string) => boolean;
+  activeView?: string | undefined; // Signalizuje, či je heatmap aktívny view (pre automatické zatvorenie sheetu)
 }
 
 // Maximum tiles for mobile (UX + performance)
@@ -57,6 +58,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
   onTileClick,
   onToggleFavorite,
   isFavorite,
+  activeView,
 }) => {
   // Internal zoom for mobile heatmap:
   // zoom-in => more tiles become readable; zoom-out => labels disappear naturally.
@@ -297,6 +299,13 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
   // Bottom sheet state (mobile "hover" replacement)
   const [selectedCompany, setSelectedCompany] = useState<CompanyNode | null>(null);
   const closeSheet = useCallback(() => setSelectedCompany(null), []);
+
+  // UX: Automaticky zatvor sheet pri prepnutí view (z heatmap na iný tab)
+  useEffect(() => {
+    if (activeView !== 'heatmap' && selectedCompany) {
+      setSelectedCompany(null);
+    }
+  }, [activeView, selectedCompany]);
 
   const handleTouchStart = useCallback((ticker: string) => {
     if (!onToggleFavorite) return;
@@ -685,12 +694,11 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
           background: '#000',
           flex: 1,
           minHeight: 0,
+          width: '100%',
+          height: '100%', /* CRITICAL: Fill available height */
           overflowX: zoom > 1 ? 'auto' : 'hidden',
           overflowY: (expanded || zoom > 1) ? 'auto' : 'hidden',
           WebkitOverflowScrolling: 'touch' as any,
-          // Ensure no empty space at bottom - content fills to bottom edge
-          paddingBottom: 0,
-          marginBottom: 0,
         }}
         onTouchEnd={handleDoubleTapReset}
       >
@@ -713,10 +721,8 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
           style={{
             position: 'relative',
             width: containerSize.width * zoom,
-            height: layoutHeight * zoom,
-            // Ensure content extends to bottom edge - no empty space
-            marginBottom: 0,
-            paddingBottom: 0,
+            height: Math.max(layoutHeight * zoom, containerSize.height), /* CRITICAL: Minimum = available height */
+            minHeight: '100%', /* CRITICAL: Ensure content is at least as tall as container */
           }}
         >
           {leaves.map((leaf) => renderLeaf(leaf))}
@@ -736,12 +742,12 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
             style={{
               background: 'rgba(0,0,0,0.45)',
               zIndex: 1000,
-              // Don't block the mobile tab bar
-              bottom: '72px',
+              // Don't block the mobile tab bar + safe area
+              bottom: 'calc(var(--tabbar-h) + env(safe-area-inset-bottom))',
             }}
           />
           <div
-            className="fixed inset-x-0 bottom-0"
+            className="fixed inset-x-0"
             style={{
               zIndex: 1001,
               // Dark background for mobile (consistent with mobile app theme)
@@ -751,11 +757,12 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
               borderTopRightRadius: 16,
               boxShadow: '0 -12px 30px rgba(0,0,0,0.35)',
               padding: '12px 14px',
-              // Keep it compact like desktop tooltip
-              maxHeight: 200,
-              overflow: 'hidden',
-              // Sit above mobile tab bar
-              bottom: '72px',
+              // CRITICAL: Calculate max height from viewport - header - tabbar - safe area
+              // Using CSS variables for consistency
+              maxHeight: 'calc(100dvh - var(--header-h) - var(--tabbar-h) - env(safe-area-inset-bottom))',
+              overflow: 'auto', /* CRITICAL: Allow scroll if content is too tall */
+              // Sit above mobile tab bar + safe area
+              bottom: 'calc(var(--tabbar-h) + env(safe-area-inset-bottom))',
             }}
           >
             {/* Compact Header: Logo + Ticker + Actions */}

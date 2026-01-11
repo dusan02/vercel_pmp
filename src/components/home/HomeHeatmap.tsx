@@ -15,17 +15,18 @@ const HeatmapPreview = dynamic(
 
 interface HomeHeatmapProps {
     wrapperClass?: string;
+    activeView?: string | undefined; // Signalizuje, či je heatmap aktívny view
 }
 
-export function HomeHeatmap({ wrapperClass }: HomeHeatmapProps) {
+export function HomeHeatmap({ wrapperClass, activeView }: HomeHeatmapProps) {
     React.useEffect(() => {
-        console.log('🏠 HomeHeatmap rendered', { wrapperClass });
-    }, [wrapperClass]);
+        console.log('🏠 HomeHeatmap rendered', { wrapperClass, activeView });
+    }, [wrapperClass, activeView]);
 
     return (
         <SectionErrorBoundary sectionName="Heatmap">
             <div className={`${wrapperClass} w-full h-full`} data-debug="home-heatmap-wrapper">
-                <HeatmapPreview />
+                <HeatmapPreview activeView={activeView} />
             </div>
         </SectionErrorBoundary>
     );

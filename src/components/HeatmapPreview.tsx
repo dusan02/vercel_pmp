@@ -28,7 +28,7 @@ const ResponsiveMarketHeatmap = dynamic(
  * Zobrazuje zmenšenú verziu heatmapy, ktorá pri kliknutí presmeruje na plnú stránku
  * Prepínacie buttony (% Change / Mcap Change) sú vedľa nadpisu
  */
-export function HeatmapPreview() {
+export function HeatmapPreview({ activeView }: { activeView?: string | undefined }) {
   const router = useRouter();
   // Centralized metric state with localStorage persistence
   const { metric, setMetric } = useHeatmapMetric('percent');
@@ -96,6 +96,7 @@ export function HeatmapPreview() {
               onMetricChange={setMetric}
               hideMetricButtons={true}
               sectorLabelVariant="compact"
+              activeView={activeView}
             />
           </div>
         </div>
@@ -116,6 +117,7 @@ export function HeatmapPreview() {
               onMetricChange={setMetric}
               hideMetricButtons={true}
               sectorLabelVariant="compact"
+              activeView={activeView}
             />
           </div>
         </div>

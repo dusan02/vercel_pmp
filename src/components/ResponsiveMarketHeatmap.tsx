@@ -28,6 +28,8 @@ export type ResponsiveMarketHeatmapProps = {
   hideMetricButtons?: boolean;
   /** Variant sector labels: 'compact' for homepage, 'full' for heatmap page */
   sectorLabelVariant?: 'compact' | 'full';
+  /** Signalizuje, či je heatmap aktívny view (pre automatické zatvorenie sheetu) */
+  activeView?: string | undefined;
 };
 
 /**
@@ -45,6 +47,7 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
   onMetricChange,
   hideMetricButtons = false,
   sectorLabelVariant = 'compact',
+  activeView,
 }) => {
   // Resize hook
   const { ref, size } = useElementResize();
@@ -239,6 +242,7 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
           metric={metric}
           {...(onMetricChange ? { onMetricChange: onMetricChange as any } : {})}
           {...(onTileClick ? { onTileClick } : {})}
+          activeView={activeView}
         />
       );
     }

@@ -361,7 +361,10 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
               }
             >
               {(preferences.showHeatmapSection ?? true) && (
-                <HomeHeatmap wrapperClass="mobile-heatmap-wrapper" />
+                <HomeHeatmap 
+                  wrapperClass="mobile-heatmap-wrapper"
+                  activeView={activeMobileSection === 'heatmap' ? 'heatmap' : undefined}
+                />
               )}
             </MobileScreen>
             <MobileScreen 

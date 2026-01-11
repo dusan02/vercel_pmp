@@ -6,15 +6,21 @@
    MODERN MOBILE UX - Nový dizajn od základov
    ============================================ */
 
+/* CSS Variables for consistent heights */
+:root {
+  --header-h: 56px;
+  --tabbar-h: 72px;
+}
+
 /* Mobile App - Hlavný wrapper */
 .mobile-app {
   display: flex;
   flex-direction: column;
+  height: 100dvh; /* CRITICAL: Explicit height for flex chain */
+  height: 100vh; /* Fallback */
   min-height: 100vh;
   min-height: 100dvh;
-  /* Dynamic viewport height */
   background: #ffffff;
-  /* Biela farba pre desktop */
   position: relative;
   overflow: hidden;
 }
@@ -98,8 +104,9 @@
   padding-bottom: 0;
   margin-bottom: 0;
   /* Padding top pre fixed header (aby obsah nebol pod headerom) */
-  padding-top: 56px; /* Výška headeru */
-  /* No padding - heatmap fills to bottom, tab bar is fixed overlay */
+  padding-top: var(--header-h);
+  /* CRITICAL: min-height: 0 allows flex child to shrink below content size */
+  min-height: 0;
   /* Touch optimization */
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y; /* Allow vertical scrolling, prevent horizontal */
@@ -165,15 +172,20 @@
 }
 
 /* Fullscreen heatmap container */
+/* CRITICAL: ONE source of truth - no duplicates! */
 .mobile-app-screen.screen-heatmap .mobile-treemap-wrapper {
-  height: 100%;
-  width: 100%;
-  position: relative;
-  margin: 0;
-  padding: 0;
-  /* CRITICAL: Constraint content to visible area above tab bar */
-  padding-bottom: calc(72px + env(safe-area-inset-bottom)) !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  /* CRITICAL: Reserve space for bottom tab bar + safe area */
+  padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom)) !important;
   box-sizing: border-box;
+  overflow: hidden;
+  position: relative;
 }
 
 .mobile-app-screen.screen-heatmap .heatmap-preview-container {
@@ -195,29 +207,15 @@
   opacity: 0 !important;
 }
 
-/* Mobile treemap wrapper - ensure it extends to bottom edge */
-.mobile-app-screen.screen-heatmap .mobile-treemap-wrapper {
-  height: 100% !important;
-  max-height: 100% !important;
-  min-height: 0;
-  margin: 0 !important;
-  padding: 0 !important;
-  margin-bottom: 0 !important;
-  padding-bottom: 0 !important;
-  /* Ensure wrapper extends to bottom - no gap */
-  display: flex;
-  flex-direction: column;
-}
-
 /* Mobile treemap grid - ensure it extends to bottom edge */
 .mobile-app-screen.screen-heatmap .mobile-treemap-grid {
-  flex: 1;
-  min-height: 0;
+  flex: 1 !important;
+  min-height: 0 !important;
+  width: 100% !important;
+  height: 100% !important; /* CRITICAL: Explicit height to fill available space */
   margin: 0 !important;
   padding: 0 !important;
-  margin-bottom: 0 !important;
-  padding-bottom: 0 !important;
-  /* Ensure grid extends to bottom - no gap */
+  position: relative;
 }
 
 /* Mobile heatmap detail panel (bottom sheet) - dark background on mobile */
