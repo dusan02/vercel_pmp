@@ -336,7 +336,7 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
         <MobileApp>
           {/* MobileHeader - viditeľný vo všetkých sekciách okrem heatmap (heatmap má svoj vlastný header) */}
           {activeMobileSection !== 'heatmap' && <MobileHeader />}
-          <div className="mobile-app-content">
+          <div className={`mobile-app-content ${activeMobileSection === 'heatmap' ? 'is-heatmap' : ''}`}>
             <MobileScreen 
               active={activeMobileSection === 'heatmap'} 
               className="screen-heatmap"

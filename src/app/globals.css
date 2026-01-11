@@ -112,6 +112,11 @@
   touch-action: pan-y; /* Allow vertical scrolling, prevent horizontal */
 }
 
+/* Heatmap view: no padding-top (heatmap has its own header) */
+.mobile-app-content.is-heatmap {
+  padding-top: 0; /* Heatmap má vlastný header v MobileTreemap */
+}
+
 /* Desktop: bez vertikálnych čiar */
 @media (min-width: 1024px) {
   .mobile-app-content {
@@ -165,6 +170,9 @@
   height: 100% !important;
   /* CRITICAL: Disable scrolling on wrapper, let inner treemap handle it */
   overflow: hidden !important;
+  /* CRITICAL: Disable transform/transition on iOS Safari - prevents stacking context issues with position: fixed */
+  transform: none !important;
+  transition: none !important;
 }
 
 .mobile-app-screen.screen-heatmap.active {

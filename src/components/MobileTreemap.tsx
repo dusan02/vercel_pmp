@@ -131,6 +131,97 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [containerSize, setContainerSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
 
+  // State for available height (updates on visualViewport changes for iOS Safari/Chrome stability)
+  const [availableHeight, setAvailableHeight] = useState(0);
+
+  // Helper: Measure safe-area-inset-bottom reliably using a probe element
+  const measureSafeAreaBottom = useCallback(() => {
+    try {
+      if (!CSS.supports('padding-bottom: env(safe-area-inset-bottom)')) {
+        return 0;
+      }
+      
+      // Create hidden probe element with safe-area padding
+      const probe = document.createElement('div');
+      probe.style.position = 'fixed';
+      probe.style.bottom = '0';
+      probe.style.left = '0';
+      probe.style.paddingBottom = 'env(safe-area-inset-bottom)';
+      probe.style.visibility = 'hidden';
+      probe.style.pointerEvents = 'none';
+      probe.style.width = '1px';
+      probe.style.height = '1px';
+      document.body.appendChild(probe);
+      
+      // Read computed padding-bottom value
+      const computed = window.getComputedStyle(probe);
+      const paddingBottom = parseFloat(computed.paddingBottom) || 0;
+      
+      document.body.removeChild(probe);
+      return paddingBottom;
+    } catch (e) {
+      return 0;
+    }
+  }, []);
+
+  // Helper: Calculate available height for treemap (accounts for Safari/Chrome viewport differences)
+  const getAvailableTreemapHeight = useCallback(() => {
+    // Use visualViewport if available (more accurate on mobile Safari/Chrome)
+    // visualViewport excludes browser UI (address bar, etc.) which innerHeight includes
+    const vh = window.visualViewport?.height ?? window.innerHeight;
+    
+    // Get safe area bottom (iOS notch/home indicator) - measure reliably
+    const safeAreaBottom = measureSafeAreaBottom();
+    
+    // Header heights
+    // Note: headerH is 0 for heatmap (we removed padding-top with is-heatmap class)
+    const headerH = 0; // No main app header padding for heatmap
+    const tabbarH = 72; // var(--tabbar-h) - bottom navigation
+    const treemapHeaderH = 48; // Fixed header inside MobileTreemap (spacer height after fixed header)
+    
+    // CRITICAL: Do NOT subtract tabbarH here because .mobile-treemap-wrapper already has padding-bottom for tabbar
+    // This prevents "double reservation" - wrapper reserves space via padding-bottom, we just need to fill available viewport
+    // Available height = viewport - safe area - treemap header (tabbar is handled by wrapper padding-bottom)
+    const available = vh - safeAreaBottom - treemapHeaderH;
+    
+    return Math.max(0, available);
+  }, [measureSafeAreaBottom]);
+
+  // Update availableHeight on visualViewport/window resize/scroll (critical for iOS Safari/Chrome)
+  useEffect(() => {
+    const updateAvailableHeight = () => {
+      setAvailableHeight(getAvailableTreemapHeight());
+    };
+
+    // Initial update
+    updateAvailableHeight();
+
+    // Safari needs a small delay after mount
+    const timeoutId = setTimeout(updateAvailableHeight, 50);
+    
+    // Also update on next animation frame (ensures layout is settled)
+    const rafId = requestAnimationFrame(updateAvailableHeight);
+
+    // Listen to visualViewport changes (Safari/Chrome mobile - address bar show/hide)
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', updateAvailableHeight);
+      window.visualViewport.addEventListener('scroll', updateAvailableHeight);
+    }
+
+    // Fallback: window resize (desktop, older browsers)
+    window.addEventListener('resize', updateAvailableHeight);
+
+    return () => {
+      clearTimeout(timeoutId);
+      cancelAnimationFrame(rafId);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', updateAvailableHeight);
+        window.visualViewport.removeEventListener('scroll', updateAvailableHeight);
+      }
+      window.removeEventListener('resize', updateAvailableHeight);
+    };
+  }, [getAvailableTreemapHeight]);
+
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -702,8 +793,45 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
         }}
         onTouchEnd={handleDoubleTapReset}
       >
+        {/* Debug overlay (DEV only) - shows viewport measurements for Safari/Chrome debugging */}
+        {process.env.NODE_ENV === 'development' && (
+          <div
+            style={{
+              position: 'fixed',
+              left: 8,
+              bottom: 'calc(var(--tabbar-h) + 8px)',
+              zIndex: 5000,
+              background: 'rgba(0,0,0,0.65)',
+              color: '#0f0',
+              fontSize: 12,
+              padding: '6px 8px',
+              fontFamily: 'monospace',
+              lineHeight: 1.4,
+              maxWidth: '90%',
+              wordBreak: 'break-word',
+            }}
+          >
+            <div>container: {containerSize.width}×{containerSize.height}</div>
+            <div>innerH: {window.innerHeight}</div>
+            <div>vv: {window.visualViewport?.width ?? 'na'}×{window.visualViewport?.height ?? 'na'}</div>
+            <div>available: {availableHeight} (state)</div>
+            <div>availableCalc: {getAvailableTreemapHeight()} (fn)</div>
+            <div>layoutH×zoom: {layoutHeight * zoom}</div>
+            <div>finalH: {Math.max(layoutHeight * zoom, containerSize.height, availableHeight)}</div>
+          </div>
+        )}
+
+        {/* Pinch hint: position fixed to be above header (zIndex 100) - fixes Safari/Chrome visibility */}
         {showPinchHint && zoom === 1 && (
-          <div className="pointer-events-none absolute left-3 top-3" style={{ zIndex: 5 }}>
+          <div
+            className="pointer-events-none"
+            style={{
+              position: 'fixed',
+              left: 12,
+              top: 64, // 56px (header) + 8px spacing
+              zIndex: 2000, // Above header (zIndex 100)
+            }}
+          >
             <div
               className="px-2.5 py-1.5 rounded-md text-xs font-semibold"
               style={{
@@ -711,6 +839,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
                 color: 'rgba(255,255,255,0.92)',
                 border: '1px solid rgba(255,255,255,0.12)',
                 backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)', // iOS Safari support
               }}
             >
               Pinch to zoom · Double‑tap to reset
@@ -721,7 +850,15 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
           style={{
             position: 'relative',
             width: containerSize.width * zoom,
-            height: Math.max(layoutHeight * zoom, containerSize.height), /* CRITICAL: Minimum = available height */
+            /* CRITICAL: Use availableHeight state (updates on visualViewport changes) instead of just containerSize.height
+               Safari/Chrome often report smaller containerSize.height than actual available space
+               due to visualViewport vs innerHeight differences.
+               availableHeight is updated via event listeners for stable iOS Safari/Chrome behavior. */
+            height: Math.max(
+              layoutHeight * zoom,
+              containerSize.height,
+              availableHeight
+            ),
             minHeight: '100%', /* CRITICAL: Ensure content is at least as tall as container */
           }}
         >
