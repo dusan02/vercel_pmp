@@ -54,8 +54,11 @@ export const PortfolioCardMobile = memo(({
         }
       }}
       className="px-3 py-2 active:bg-gray-50 dark:active:bg-gray-800 transition-colors cursor-pointer select-none outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60"
-      aria-label={`Open details for ${stock.ticker}`}
-      style={{ WebkitTapHighlightColor: 'transparent' }}
+      aria-label={`Open details for ${stock.ticker}, quantity ${quantity}, value ${formattedHoldingDelta}`}
+      style={{ 
+        WebkitTapHighlightColor: 'transparent',
+        touchAction: 'manipulation' // Prevent double-tap zoom
+      }}
     >
       {/* Fixed-column grid so rows align perfectly (like a table) */}
       <div className="grid items-center gap-x-1.5 min-w-0 [grid-template-columns:40px_minmax(56px,1fr)_56px_72px_56px_52px]">

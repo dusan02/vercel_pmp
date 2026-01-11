@@ -1,5 +1,0 @@
-# 🔍 KONTROLA ĎALŠÍCH CHÝB - JEDEN PRÍKAZ
-# Skopírovať a spustiť na serveri
-
-cd /var/www/premarketprice && echo "=== 1. Technology/Communication Equipment ===" && npx prisma db execute --stdin <<< "SELECT \"symbol\", \"name\", \"sector\", \"industry\" FROM \"Ticker\" WHERE \"sector\" = 'Technology' AND \"industry\" = 'Communication Equipment' ORDER BY \"symbol\" LIMIT 30;" && echo "" && echo "=== 2. Real Estate/REIT - Specialty ===" && npx prisma db execute --stdin <<< "SELECT \"symbol\", \"name\", \"sector\", \"industry\" FROM \"Ticker\" WHERE \"sector\" = 'Real Estate' AND \"industry\" = 'REIT - Specialty' ORDER BY \"symbol\" LIMIT 30;" && echo "" && echo "=== 3. NULL sector/industry ===" && npx prisma db execute --stdin <<< "SELECT \"symbol\", \"name\", \"sector\", \"industry\" FROM \"Ticker\" WHERE \"sector\" IS NULL OR \"industry\" IS NULL ORDER BY \"symbol\" LIMIT 30;" && echo "" && echo "✅ Kontrola dokončená!"
-

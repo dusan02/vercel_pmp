@@ -570,8 +570,11 @@ export async function GET(request: NextRequest) {
         }
 
         // Vypočítaj market cap diff - vždy z aktuálnych hodnôt, fallback na denormalized diff
-        marketCapDiff = (sharesOutstanding > 0 && previousClose > 0)
-          ? computeMarketCapDiff(currentPrice, previousClose, sharesOutstanding)
+        // CRITICAL: Use the same reference price as percentChange calculation (for after-hours consistency)
+        // For after-hours/closed sessions, use regularClose if available, otherwise previousClose
+        const referencePrice = regularClose && regularClose > 0 ? regularClose : previousClose;
+        marketCapDiff = (sharesOutstanding > 0 && referencePrice > 0)
+          ? computeMarketCapDiff(currentPrice, referencePrice, sharesOutstanding)
           : (tickerInfo.lastMarketCapDiff || 0);
       }
 

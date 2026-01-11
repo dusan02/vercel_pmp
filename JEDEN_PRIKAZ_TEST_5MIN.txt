@@ -1,4 +1,0 @@
-# 🧪 JEDEN PRÍKAZ - TEST PO 5 MIN
-
-echo "=== 1. Overenie A záznamov (IPv4) ===" && echo "premarketprice.com:" && dig +short premarketprice.com A && echo "www.premarketprice.com:" && dig +short www.premarketprice.com A && echo "" && echo "=== 2. Test HTTPS s IPv4 ===" && curl -4Iv https://premarketprice.com 2>&1 | grep -E "(Trying|subject:|HTTP/)" && echo "" && echo "=== 3. Celý curl výstup ===" && curl -4Iv https://premarketprice.com 2>&1 | head -30 && echo "" && echo "✅ HOTOVO!"
-

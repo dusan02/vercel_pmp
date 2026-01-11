@@ -1,5 +1,0 @@
-cd /var/www/premarketprice && \
-git pull origin main && \
-npx tsx scripts/fix-tsm-sector.ts && \
-echo "✅ TSM sector/industry fixed!"
-

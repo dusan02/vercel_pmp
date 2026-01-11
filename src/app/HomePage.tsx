@@ -334,12 +334,14 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
       {/* Modern Mobile Layout */}
       {(isMounted && !isDesktop) && (
         <MobileApp>
-          <MobileHeader />
+          {/* MobileHeader - viditeľný vo všetkých sekciách okrem heatmap (heatmap má svoj vlastný header) */}
+          {activeMobileSection !== 'heatmap' && <MobileHeader />}
           <div className="mobile-app-content">
             <MobileScreen 
               active={activeMobileSection === 'heatmap'} 
               className="screen-heatmap"
               prefetch={activeMobileSection === 'heatmap'}
+              screenName="Heatmap"
               skeleton={
                 <div className="h-full w-full bg-black p-2">
                   <div className="grid grid-cols-2 gap-2" style={{ gridAutoRows: 'minmax(72px, auto)' }}>
@@ -366,6 +368,7 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
               active={activeMobileSection === 'portfolio'} 
               className="screen-portfolio"
               prefetch={activeMobileSection === 'heatmap'} // Prefetch keď je heatmap aktívny (najpravdepodobnejší ďalší tab)
+              screenName="Portfolio"
               skeleton={<div className="p-4 space-y-3"><div className="h-20 bg-gray-200 rounded animate-pulse" /><div className="h-20 bg-gray-200 rounded animate-pulse" /></div>}
             >
               {(preferences.showPortfolioSection ?? true) && (
@@ -386,6 +389,7 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
               active={activeMobileSection === 'favorites'} 
               className="screen-favorites"
               prefetch={activeMobileSection === 'heatmap'} // Prefetch keď je heatmap aktívny
+              screenName="Favorites"
               skeleton={<div className="p-4 space-y-3"><div className="h-20 bg-gray-200 rounded animate-pulse" /><div className="h-20 bg-gray-200 rounded animate-pulse" /></div>}
             >
               {(preferences.showFavoritesSection ?? true) && (
@@ -404,6 +408,7 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
               active={activeMobileSection === 'earnings'} 
               className="screen-earnings"
               prefetch={false}
+              screenName="Earnings"
               skeleton={<div className="p-4 space-y-3"><div className="h-20 bg-gray-200 rounded animate-pulse" /></div>}
             >
               {(preferences.showEarningsSection ?? true) && (
@@ -414,6 +419,7 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
               active={activeMobileSection === 'allStocks'} 
               className="screen-all-stocks"
               prefetch={false}
+              screenName="All Stocks"
               skeleton={<div className="p-4 space-y-3"><div className="h-20 bg-gray-200 rounded animate-pulse" /><div className="h-20 bg-gray-200 rounded animate-pulse" /></div>}
             >
               {(preferences.showAllStocksSection ?? true) && (

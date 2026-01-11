@@ -1,4 +1,0 @@
-# 🔧 JEDEN PRÍKAZ - VYČISTENIE DNS CACHE
-
-echo "=== 1. Vyčistenie DNS cache ===" && resolvectl flush-caches 2>/dev/null || systemd-resolve --flush-caches 2>/dev/null && echo "✅ Cache vyčistená" && echo "" && echo "=== 2. Reštart DNS resolver ===" && systemctl restart systemd-resolved && echo "✅ DNS resolver reštartovaný" && echo "" && echo "=== 3. Overenie IP adresy ===" && getent hosts premarketprice.com && echo "" && echo "=== 4. Test HTTPS ===" && curl -4Iv https://premarketprice.com 2>&1 | grep -E "(Trying|subject:|HTTP/)" && echo "" && echo "=== 5. Kontrola /etc/hosts ===" && cat /etc/hosts | grep -v "^#" | grep -v "^$" && echo "" && echo "✅ HOTOVO!"
-

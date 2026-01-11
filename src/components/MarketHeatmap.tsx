@@ -228,7 +228,7 @@ export const HeatmapLegend: React.FC<{ timeframe: 'day' | 'week' | 'month'; metr
     month: [-20, -12, -6, 0, 6, 12, 20],
   };
   const scalesB = {
-    day: [-10, -3, -1, 0, 1, 3, 10],
+    day: [-100, -30, -10, 0, 10, 30, 100],
     week: [-30, -10, -3, 0, 3, 10, 30],
     month: [-60, -20, -6, 0, 6, 20, 60],
   };

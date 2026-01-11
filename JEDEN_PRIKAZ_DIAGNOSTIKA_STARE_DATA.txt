@@ -1,4 +1,0 @@
-# 🔍 JEDEN PRÍKAZ - Diagnostika starých dát na earningstable.com (ste v /var/www/premarketprice)
-
-echo "=== 1. PM2 procesy ===" && pm2 list && echo "" && echo "=== 2. Status earnings-cron ===" && pm2 describe earnings-cron 2>/dev/null | grep -E "status|restarts|uptime|error" || echo "⚠️ earnings-cron nebeží!" && echo "" && echo "=== 3. Posledné logy earnings-cron (20 riadkov) ===" && pm2 logs earnings-cron --lines 20 --nostream 2>&1 | tail -20 && echo "" && echo "=== 4. Posledné logy earnings-table (10 riadkov) ===" && pm2 logs earnings-table --lines 10 --nostream 2>&1 | tail -10 && echo "" && echo "=== 5. Test API refresh ===" && curl -X POST http://localhost:5555/api/final-report/refresh 2>&1 | head -5
-

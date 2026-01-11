@@ -1,8 +1,0 @@
-# 🔍 JEDEN PRÍKAZ - TEST REQUESTOV
-# Spustite tento príkaz a potom otvorte https://premarketprice.com v prehliadači
-
-tail -f /var/log/nginx/access.log
-
-# Po otvorení stránky v prehliadači by ste mali vidieť requesty v logu
-# Pre ukončenie: Ctrl+C
-

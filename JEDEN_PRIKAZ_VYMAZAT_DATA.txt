@@ -1,4 +1,0 @@
-# 🗑️ JEDEN PRÍKAZ - Vymazať DÁTA v tabuľkách (nie tabuľky) (ste v /var/www/earnings-table)
-
-echo "=== 1. Zastavenie procesov ===" && pm2 stop earnings-cron earnings-table && echo "" && echo "=== 2. Vymazanie dát v tabuľkách ===" && sqlite3 /var/www/earnings-table/modules/database/prisma/prod.db "DELETE FROM FinhubData; DELETE FROM PolygonData; DELETE FROM FinalReport; VACUUM;" && echo "✅ Dáta vymazané" && echo "" && echo "=== 3. Spustenie earnings-table ===" && pm2 start earnings-table && echo "" && echo "=== 4. Spustenie earnings-cron ===" && pm2 start earnings-cron && echo "" && echo "=== 5. Uloženie PM2 konfigurácie ===" && pm2 save && echo "" && echo "=== 6. Čakanie 5 sekúnd ===" && sleep 5 && echo "" && echo "=== 7. PM2 status ===" && pm2 status && echo "" && echo "=== 8. Test API ===" && curl -s http://localhost:5555/api/health | head -3
-

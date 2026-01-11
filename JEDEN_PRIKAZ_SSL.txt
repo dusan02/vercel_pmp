@@ -1,5 +1,0 @@
-# 🔐 JEDEN PRÍKAZ NA NASTAVENIE SSL PRE PREMARKETPRICE.COM
-# Spustite tento príkaz na serveri (ste prihlásený ako root)
-
-echo "=== 1. Aktualizácia a inštalácia Certbot ===" && apt update && apt install -y certbot python3-certbot-nginx && echo "" && echo "=== 2. Kontrola firewall (porty 80, 443) ===" && ufw allow 80/tcp && ufw allow 443/tcp && ufw reload && echo "" && echo "=== 3. Kontrola DNS ===" && dig premarketprice.com +short && dig www.premarketprice.com +short && echo "" && echo "=== 4. Kontrola Nginx ===" && nginx -t && systemctl status nginx | head -5 && echo "" && echo "=== 5. VYTVORENIE SSL CERTIFIKÁTU ===" && certbot --nginx -d premarketprice.com -d www.premarketprice.com && echo "" && echo "=== 6. Overenie certifikátu ===" && ls -la /etc/letsencrypt/live/premarketprice.com/ && echo "" && echo "=== 7. Reštart Nginx ===" && systemctl restart nginx && echo "" && echo "=== 8. Test SSL ===" && curl -I https://premarketprice.com 2>&1 | head -5 && echo "" && echo "✅ HOTOVO! SSL je nastavený."
-

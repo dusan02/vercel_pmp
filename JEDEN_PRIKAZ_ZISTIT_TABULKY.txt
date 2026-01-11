@@ -1,4 +1,0 @@
-# 🔍 JEDEN PRÍKAZ - Zistiť správne názvy tabuliek (ste v /var/www/earnings-table)
-
-echo "=== 1. Všetky tabuľky ===" && sqlite3 /var/www/earnings-table/modules/database/prisma/prod.db ".tables" && echo "" && echo "=== 2. Štruktúra databázy ===" && sqlite3 /var/www/earnings-table/modules/database/prisma/prod.db ".schema" | head -30
-

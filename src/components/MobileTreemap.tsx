@@ -7,6 +7,9 @@ import { createHeatmapColorScale } from '@/lib/utils/heatmapColors';
 import CompanyLogo from './CompanyLogo';
 import { HeatmapMetricButtons } from './HeatmapMetricButtons';
 import { HeatmapLegend } from './MarketHeatmap';
+import { BrandLogo } from './BrandLogo';
+import { LoginButton } from './LoginButton';
+import { HeatmapToggleMinimal } from './HeatmapToggleMinimal';
 import { hierarchy, treemap, treemapSquarify } from 'd3-hierarchy';
 import { buildHeatmapHierarchy } from '@/lib/utils/heatmapLayout';
 
@@ -297,7 +300,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
 
   const handleTouchStart = useCallback((ticker: string) => {
     if (!onToggleFavorite) return;
-    
+
     const timer = setTimeout(() => {
       setLongPressActive(ticker);
       onToggleFavorite(ticker);
@@ -315,7 +318,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
         navigator.vibrate(50);
       }
     }, 600); // 600ms for long press
-    
+
     longPressTimerRef.current.set(ticker, timer);
   }, [onToggleFavorite]);
 
@@ -341,7 +344,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
 
     // In compact mode, use full available height (no empty space)
     // In expanded mode, use EXPAND_FACTOR to allow vertical scrolling
-    const baseHeight = expanded 
+    const baseHeight = expanded
       ? Math.max(1, Math.floor(height * EXPAND_FACTOR))
       : Math.max(1, height); // Compact: use full height, no multiplier
 
@@ -428,16 +431,16 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
 
       const leaves = sectorRoot.leaves().filter((l: any) => l.data?.meta?.type === 'company');
       const sectorEndY = yCursor + sectorHeight;
-      
+
       for (const leaf of leaves) {
         const l = leaf as any;
         const absY0 = l.y0 + yCursor;
         const absY1 = l.y1 + yCursor;
-        
+
         // Ensure pixel-perfect positioning: floor for start, ceil for end
         // Clamp y1 to not exceed sectorEndY to prevent overlapping with next sector
         const clampedY1 = Math.min(Math.ceil(absY1), sectorEndY);
-        
+
         result.push({
           x0: Math.floor(l.x0),
           x1: Math.ceil(l.x1),
@@ -483,9 +486,9 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     const minDim = Math.min(w, h);
     const tickerClass =
       area >= 9000 && minDim >= 64 ? 'text-xl font-extrabold tracking-tight' :
-      area >= 5200 && minDim >= 48 ? 'text-lg font-bold tracking-tight' :
-      area >= 2600 && minDim >= 34 ? 'text-sm font-semibold tracking-tight' :
-      'text-[11px] font-semibold tracking-tight';
+        area >= 5200 && minDim >= 48 ? 'text-lg font-bold tracking-tight' :
+          area >= 2600 && minDim >= 34 ? 'text-sm font-semibold tracking-tight' :
+            'text-[11px] font-semibold tracking-tight';
 
     // Padding: reduce on mid/small tiles so text has room; still comfortable on large tiles.
     const pad = Math.max(2, Math.min(10, Math.floor(minDim / 12)));
@@ -584,35 +587,43 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
         flexDirection: 'column',
       }}
     >
-      {/* Sticky top bar: compact toggle + legend on one row */}
+      {/* Fixed top bar: Logo + Metric buttons + Compact/Expand + Sign In - všetko v jednom riadku */}
+      {/* Natiahnutý až po bottom navigáciu - border-bottom viditeľný počas celého scrollu */}
       <div
         style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 100,
           background: 'rgba(0,0,0,0.88)',
           borderBottom: '1px solid rgba(255,255,255,0.08)',
           padding: '8px 10px',
           display: 'flex',
           alignItems: 'center',
-          gap: 10,
+          gap: 8,
           flexShrink: 0,
           minWidth: 0,
+          /* Natiahnutý border-bottom - viditeľný počas celého scrollu */
         }}
       >
-        {onMetricChange && (
-          <HeatmapMetricButtons
-            metric={metric}
-            // HeatmapMetricButtons expects HeatmapMetric union; this matches at runtime.
-            onMetricChange={onMetricChange as any}
-            variant="dark"
-            className="scale-[0.85] origin-left"
-          />
-        )}
-
-        <div style={{ flex: 1, minWidth: 0, overflowX: 'auto', WebkitOverflowScrolling: 'touch' as any }}>
-          <div style={{ transform: 'scale(0.82)', transformOrigin: 'left center', width: 'max-content' }}>
-            <HeatmapLegend timeframe={timeframe} metric={metric} />
-          </div>
+        {/* Logo - malé */}
+        <div className="flex-shrink-0">
+          <BrandLogo size={28} />
         </div>
 
+        {/* Metric buttons (% vs $) */}
+        {onMetricChange && (
+          <div className="flex-shrink-0">
+            <HeatmapToggleMinimal
+              metric={metric}
+              onMetricChange={onMetricChange as any}
+              className="origin-left"
+            />
+          </div>
+        )}
+
+        {/* Compact/Expand button - Štvorcový/vertikálny obdĺžnik prepínač */}
         <button
           type="button"
           onClick={() => {
@@ -620,7 +631,6 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
             setExpanded((v) => !v);
             // Reset scroll position when switching from Expanded to Compact
             if (wasExpanded && containerRef.current) {
-              // Use setTimeout to ensure state update happens first
               setTimeout(() => {
                 if (containerRef.current) {
                   containerRef.current.scrollTop = 0;
@@ -629,18 +639,43 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
               }, 0);
             }
           }}
-          className="px-2.5 py-1.5 rounded-md text-xs font-semibold"
+          className="flex items-center justify-center w-[44px] h-[44px] rounded-lg transition-colors flex-shrink-0"
           style={{
-            background: 'rgba(255,255,255,0.10)',
-            color: 'rgba(255,255,255,0.92)',
-            border: '1px solid rgba(255,255,255,0.12)',
+            background: '#1a1a1a', // Farba pozadia
+            border: '1px solid rgba(255, 255, 255, 0.1)', // Jemne sivé hrany (rovnaký odtieň ako buttony v navigácii)
             WebkitTapHighlightColor: 'transparent',
+            touchAction: 'manipulation',
           }}
-          aria-label={expanded ? 'Switch to compact heatmap' : 'Expand heatmap'}
+          aria-label={expanded ? 'Switch to compact view (square)' : 'Expand view (vertical rectangle)'}
         >
-          {expanded ? 'Compact' : 'Expand'}
+          {expanded ? (
+            /* Vertikálny obdĺžnik (expand) - aktuálny stav */
+            <svg width="16" height="20" viewBox="0 0 16 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="2" y="2" width="12" height="16" rx="1" stroke="#6b7280" strokeWidth="1.5" fill="#1a1a1a" />
+            </svg>
+          ) : (
+            /* Štvorcová obrazovka (compact) - aktuálny stav */
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="2" y="2" width="12" height="12" rx="1" stroke="#6b7280" strokeWidth="1.5" fill="#1a1a1a" />
+            </svg>
+          )}
         </button>
+
+        {/* Legenda - skrytá na mobile (< 1024px), viditeľná len na desktop (lg a vyššie) */}
+        <div className="hidden lg:flex flex-1" style={{ minWidth: 0, overflowX: 'auto', WebkitOverflowScrolling: 'touch' as any }}>
+          <div style={{ transform: 'scale(0.82)', transformOrigin: 'left center', width: 'max-content' }}>
+            <HeatmapLegend timeframe={timeframe} metric={metric} />
+          </div>
+        </div>
+
+        {/* Sign In button (len G-čko na mobile) */}
+        <div className="flex-shrink-0 ml-auto">
+          <LoginButton />
+        </div>
       </div>
+
+      {/* Spacer pre fixed header - aby obsah nebol pod headerom */}
+      <div style={{ height: '48px', flexShrink: 0 }} />
 
       <div
         ref={containerRef}
@@ -687,7 +722,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
           {leaves.map((leaf) => renderLeaf(leaf))}
         </div>
       </div>
-      
+
       {/* Removed: "View all stocks" button (caused crashes on some mobile flows) */}
 
       {/* Bottom sheet: details (tap on tile) */}
@@ -783,9 +818,8 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
               {/* Row 3: % Change */}
               <div className="opacity-70">% Change</div>
               <div
-                className={`text-right font-semibold font-mono tabular-nums ${
-                  (selectedCompany.changePercent ?? 0) >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
-                }`}
+                className={`text-right font-semibold font-mono tabular-nums ${(selectedCompany.changePercent ?? 0) >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
+                  }`}
               >
                 {formatPercent(selectedCompany.changePercent ?? 0)}
               </div>
@@ -793,9 +827,8 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
               {/* Row 4: Mcap Δ */}
               <div className="opacity-70">Mcap Δ</div>
               <div
-                className={`text-right font-semibold font-mono tabular-nums ${
-                  (selectedCompany.marketCapDiff ?? 0) >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
-                }`}
+                className={`text-right font-semibold font-mono tabular-nums ${(selectedCompany.marketCapDiff ?? 0) >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
+                  }`}
               >
                 {selectedCompany.marketCapDiff == null ? '—' : formatMarketCapDiff(selectedCompany.marketCapDiff)}
               </div>

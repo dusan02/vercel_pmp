@@ -1,6 +1,7 @@
 'use client';
 
 import React, { ReactNode, useState, useEffect, Suspense } from 'react';
+import { SectionErrorBoundary } from '@/components/SectionErrorBoundary';
 
 interface MobileScreenProps {
   children: ReactNode;
@@ -8,6 +9,7 @@ interface MobileScreenProps {
   className?: string;
   skeleton?: ReactNode;
   prefetch?: boolean; // Prefetch content even when not active
+  screenName?: string; // For error boundary
 }
 
 /**
@@ -15,16 +17,24 @@ interface MobileScreenProps {
  * - Renderuje children len keď je active (alebo prefetch je true)
  * - Zobrazuje skeleton počas načítania
  * - Podporuje smooth transitions
+ * - Error boundary pre každý screen
+ * 
+ * Vylepšenia:
+ * - Error boundary pre lepšiu error handling
+ * - Lepšie loading states
+ * - Accessibility improvements
  */
 export function MobileScreen({ 
   children, 
   active = true, 
   className = '',
   skeleton,
-  prefetch = false
+  prefetch = false,
+  screenName = 'Screen'
 }: MobileScreenProps) {
   const [shouldRender, setShouldRender] = useState(active || prefetch);
   const [hasRendered, setHasRendered] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Lazy load: render len keď je active alebo prefetch
   useEffect(() => {
@@ -35,20 +45,45 @@ export function MobileScreen({
         // Prefetch: oneskorenie 1s (neblokuje initial load)
         // Active: okamžité renderovanie
         const delay = prefetch && !active ? 1000 : 50;
-        const timer = setTimeout(() => setHasRendered(true), delay);
+        const timer = setTimeout(() => {
+          setHasRendered(true);
+          setIsLoading(false);
+        }, delay);
         return () => clearTimeout(timer);
+      } else {
+        setIsLoading(false);
       }
+    } else {
+      setIsLoading(true);
     }
   }, [active, prefetch, hasRendered]);
 
+  // Default skeleton loader
+  const defaultSkeleton = (
+    <div className="p-4 space-y-3" role="status" aria-live="polite" aria-label="Loading content">
+      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-3/4" />
+      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-1/2" />
+    </div>
+  );
+
+  const loadingContent = skeleton || defaultSkeleton;
+
   return (
-    <div className={`mobile-app-screen ${active ? 'active' : ''} ${className}`}>
+    <div 
+      className={`mobile-app-screen ${active ? 'active' : ''} ${className}`}
+      role="tabpanel"
+      aria-hidden={!active}
+      aria-busy={isLoading}
+    >
       {shouldRender ? (
-        <Suspense fallback={skeleton || <div className="p-4 text-center text-gray-500">Loading...</div>}>
-          {hasRendered ? children : (skeleton || <div className="p-4 text-center text-gray-500">Loading...</div>)}
-        </Suspense>
+        <SectionErrorBoundary sectionName={screenName}>
+          <Suspense fallback={loadingContent}>
+            {hasRendered ? children : loadingContent}
+          </Suspense>
+        </SectionErrorBoundary>
       ) : (
-        skeleton || null
+        loadingContent
       )}
     </div>
   );

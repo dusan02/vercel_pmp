@@ -47,7 +47,7 @@ export function HeatmapMetricButtons({
     }
     const newMetric = isPercent ? 'mcap' : 'percent';
     onMetricChange(newMetric);
-    
+
     // Track heatmap metric change event
     event('heatmap_change', {
       metric: newMetric,
@@ -78,9 +78,11 @@ export function HeatmapMetricButtons({
             e.stopPropagation();
             if (!isPercent) onMetricChange('percent');
           }}
-          className={`px-2 py-1 text-[11px] font-semibold rounded-lg transition-colors ${isPercent ? active : inactive}`}
+          className={`min-w-[32px] px-2.5 py-1 text-xs font-bold rounded-md transition-all duration-200 ${isPercent ? active : inactive}`}
+          aria-label="Percent Change"
+          title="Percentage Change"
         >
-          % Change
+          %
         </button>
         <button
           type="button"
@@ -91,9 +93,11 @@ export function HeatmapMetricButtons({
             e.stopPropagation();
             if (isPercent) onMetricChange('mcap');
           }}
-          className={`px-2 py-1 text-[11px] font-semibold rounded-lg transition-colors ${!isPercent ? active : inactive}`}
+          className={`min-w-[32px] px-2.5 py-1 text-xs font-bold rounded-md transition-all duration-200 ${!isPercent ? active : inactive}`}
+          aria-label="Market Cap Change"
+          title="Market Cap Change"
         >
-          Mcap Change
+          $
         </button>
       </div>
     </div>

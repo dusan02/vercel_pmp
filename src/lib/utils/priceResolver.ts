@@ -155,8 +155,20 @@ export function resolveEffectivePrice(
         isStale: false
       };
     }
-    // If no frozen price, try to get last available price (but don't overwrite with day.c = 0)
-    // This handles edge case where worker runs before 20:00 ET freeze
+    // If no frozen price, use regular close (day.c) as fallback
+    // This handles edge case where worker runs before 20:00 ET freeze or frozen price not available
+    // CRITICAL: Use day.c (regular close) instead of null to prevent showing zero/incorrect prices
+    if (snapshot.day?.c && snapshot.day.c > 0) {
+      return {
+        price: snapshot.day.c,
+        source: 'day',
+        timestamp: now,
+        isStale: true, // Mark as stale since it's regular close, not after-hours
+        staleReason: 'No frozen after-hours price; using regular close'
+      };
+    }
+    // No price available
+    return null;
   }
 
   if (session === 'closed' && isWeekendOrHoliday) {
@@ -425,8 +437,21 @@ export function resolveEffectivePrice(
       };
     }
 
-    // Fallback: regularClose (if available) - this is acceptable for after-hours
-    // But we don't have it in snapshot, so return null
+    // Fallback: If no after-hours price available, use day.c (regular close) as fallback
+    // This prevents showing null/zero prices when after-hours data is not available
+    // CRITICAL: This should only be used when there's truly no after-hours data
+    // The UI should still show this as "regular close" price, not "current after-hours price"
+    if (snapshot.day?.c && snapshot.day.c > 0) {
+      return {
+        price: snapshot.day.c,
+        source: 'day',
+        timestamp: now,
+        isStale: true, // Mark as stale since it's regular close, not after-hours
+        staleReason: 'No after-hours price available; using regular close'
+      };
+    }
+
+    // No price available at all
     return null;
   }
 

@@ -1,4 +1,0 @@
-# 🔍 JEDEN PRÍKAZ - Skontrolovať cron a spustiť načítanie dát (ste v /var/www/earnings-table)
-
-echo "=== 1. PM2 status earnings-cron ===" && pm2 status | grep earnings-cron && echo "" && echo "=== 2. Posledné logy (30 riadkov) ===" && pm2 logs earnings-cron --lines 30 --nostream 2>&1 | tail -30 && echo "" && echo "=== 3. Počet záznamov v databáze ===" && sqlite3 /var/www/earnings-table/modules/database/prisma/prod.db "SELECT COUNT(*) FROM finnhub_data; SELECT COUNT(*) FROM polygon_data; SELECT COUNT(*) FROM final_report;" && echo "" && echo "=== 4. Reštart earnings-cron (aby sa spustil okamžite) ===" && pm2 restart earnings-cron && echo "" && echo "=== 5. Čakanie 10 sekúnd ===" && sleep 10 && echo "" && echo "=== 6. Logy po reštarte (20 riadkov) ===" && pm2 logs earnings-cron --lines 20 --nostream 2>&1 | tail -20
-

@@ -1,3 +1,0 @@
-# 🔍 JEDEN PRÍKAZ - Zobraziť error log súbor (ste v /var/www/earnings-table)
-
-echo "=== 1. Error log súbor (posledných 100 riadkov) ===" && cat /root/.pm2/logs/earnings-cron-error.log 2>/dev/null | tail -100 || echo "Error log neexistuje" && echo "" && echo "=== 2. Output log (posledných 100 riadkov) ===" && cat /root/.pm2/logs/earnings-cron-out.log 2>/dev/null | tail -100 || echo "Output log neexistuje" && echo "" && echo "=== 3. Hľadanie detailných chýb ===" && grep -i -E "error|exception|failed|at |stack|synthetic|test" /root/.pm2/logs/earnings-cron-error.log 2>/dev/null | tail -30 || echo "Žiadne detailné chyby"

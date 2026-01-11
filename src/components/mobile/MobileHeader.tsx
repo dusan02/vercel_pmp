@@ -16,7 +16,9 @@ export function MobileHeader() {
           <BrandLogo />
           <span className="mobile-app-title">PreMarketPrice</span>
         </div>
-        <LoginButton />
+        <div className="flex-shrink-0">
+          <LoginButton />
+        </div>
       </div>
     </header>
   );

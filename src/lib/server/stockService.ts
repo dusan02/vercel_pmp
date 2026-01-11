@@ -364,12 +364,16 @@ export async function getStocksList(options: {
       // Guard log: track sharesOutstanding source
       const sharesSource = sharesSourceMap.get(s.symbol) || (sharesOutstanding > 0 ? 'db' : 'missing');
       
+      // CRITICAL: Use the same reference price as percentChange calculation (for after-hours consistency)
+      // For after-hours/closed sessions, use regularClose if available, otherwise previousClose
+      const referencePrice = pct.reference.price || (regularClose > 0 ? regularClose : previousClose);
+      
       // A) Najpresnejšie: shares
-      if (currentPrice > 0 && previousClose > 0 && sharesOutstanding > 0) {
-        marketCapDiff = computeMarketCapDiff(currentPrice, previousClose, sharesOutstanding);
+      if (currentPrice > 0 && referencePrice > 0 && sharesOutstanding > 0) {
+        marketCapDiff = computeMarketCapDiff(currentPrice, referencePrice, sharesOutstanding);
         capDiffMethod = "shares";
         if (marketCap > 1000) {
-          console.log(`✅ ${s.symbol}: Method A (shares) - marketCapDiff=${marketCapDiff}B [sharesSource=${sharesSource}]`);
+          console.log(`✅ ${s.symbol}: Method A (shares) - marketCapDiff=${marketCapDiff}B [sharesSource=${sharesSource}, refPrice=${referencePrice}, refUsed=${pct.reference.used}]`);
         }
       }
       // B) Bez shares: marketCap + percentChange (použijeme dynamicky vypočítaný pct.changePct, nie percentChange z DB)
@@ -383,24 +387,24 @@ export async function getStocksList(options: {
           console.log(`📊 ${s.symbol}: Method B (pct.changePct) - marketCapDiff=${marketCapDiff}B (marketCap=${marketCap}B, percentChange=${pct.changePct}%, method=${capDiffMethod}, reason=${reason})`);
         }
       }
-      // B2) Alternatíva: ak máme marketCap a previousClose, môžeme dopočítať percentChange
-      else if (marketCap > 0 && currentPrice > 0 && previousClose > 0 && previousClose !== currentPrice) {
-        // Vypočítaj percentChange z currentPrice a previousClose
-        const calculatedPct = ((currentPrice - previousClose) / previousClose) * 100;
+      // B2) Alternatíva: ak máme marketCap a referencePrice, môžeme dopočítať percentChange
+      else if (marketCap > 0 && currentPrice > 0 && referencePrice > 0 && referencePrice !== currentPrice) {
+        // Vypočítaj percentChange z currentPrice a referencePrice (same as percentChange calculation)
+        const calculatedPct = ((currentPrice - referencePrice) / referencePrice) * 100;
         if (calculatedPct !== 0) {
           marketCapDiff = computeCapDiffFromMcapPct(marketCap, calculatedPct);
           capDiffMethod = "mcap_pct";
           // Guard log: track why Method B2 was used
           const reason = sharesSource === 'missing' ? 'polygon missing field' : sharesSource === 'fallback' ? 'polygon error' : 'db stale';
           if (marketCap > 1000) {
-            console.log(`📊 ${s.symbol}: Method B2 (calculatedPct) - marketCapDiff=${marketCapDiff}B (marketCap=${marketCap}B, calculatedPct=${calculatedPct}%, method=${capDiffMethod}, reason=${reason}, price=${currentPrice}, prevClose=${previousClose})`);
+            console.log(`📊 ${s.symbol}: Method B2 (calculatedPct) - marketCapDiff=${marketCapDiff}B (marketCap=${marketCap}B, calculatedPct=${calculatedPct}%, method=${capDiffMethod}, reason=${reason}, price=${currentPrice}, refPrice=${referencePrice}, refUsed=${pct.reference.used})`);
           }
         } else if (marketCap > 1000) {
-          console.log(`⚠️ ${s.symbol}: calculatedPct=0 (price=${currentPrice}, prevClose=${previousClose})`);
+          console.log(`⚠️ ${s.symbol}: calculatedPct=0 (price=${currentPrice}, refPrice=${referencePrice})`);
         }
       } else if (marketCap > 1000 && (!sharesOutstanding || sharesOutstanding === 0)) {
         // Debug: prečo sa nepočíta pre veľké spoločnosti
-        console.log(`⚠️ ${s.symbol}: NO METHOD - marketCap=${marketCap}B, price=${currentPrice}, prevClose=${previousClose}, shares=${sharesOutstanding} (type: ${typeof sharesOutstanding}, source=${sharesSource}), pct.changePct=${pct.changePct}, pct.ref.price=${pct.reference.price}, condition A=${currentPrice > 0 && previousClose > 0 && sharesOutstanding > 0}, condition B=${marketCap > 0 && pct.changePct !== 0 && pct.reference.price && pct.reference.price > 0}, condition B2=${marketCap > 0 && currentPrice > 0 && previousClose > 0 && previousClose !== currentPrice}`);
+        console.log(`⚠️ ${s.symbol}: NO METHOD - marketCap=${marketCap}B, price=${currentPrice}, refPrice=${referencePrice}, shares=${sharesOutstanding} (type: ${typeof sharesOutstanding}, source=${sharesSource}), pct.changePct=${pct.changePct}, pct.ref.price=${pct.reference.price}, condition A=${currentPrice > 0 && referencePrice > 0 && sharesOutstanding > 0}, condition B=${marketCap > 0 && pct.changePct !== 0 && pct.reference.price && pct.reference.price > 0}, condition B2=${marketCap > 0 && currentPrice > 0 && referencePrice > 0 && referencePrice !== currentPrice}`);
       }
       // C) Fallback z DB
       else if (s.lastMarketCapDiff && s.lastMarketCapDiff !== 0) {

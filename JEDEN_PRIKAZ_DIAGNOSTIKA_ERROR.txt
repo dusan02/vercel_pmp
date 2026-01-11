@@ -1,4 +1,0 @@
-# 🔍 JEDEN PRÍKAZ - Diagnostika SYNTHETIC TESTS FAILED (ste v /var/www/earnings-table)
-
-echo "=== 1. Detailné logy (100 riadkov) ===" && pm2 logs earnings-cron --lines 100 --nostream 2>&1 | grep -A 10 -B 5 "SYNTHETIC\|FAILED\|ERROR\|error\|Exception\|at " | tail -60 && echo "" && echo "=== 2. Error logy ===" && pm2 logs earnings-cron --err --lines 50 --nostream 2>&1 | tail -30 && echo "" && echo "=== 3. PM2 describe ===" && pm2 describe earnings-cron | grep -E "status|restarts|uptime|error" && echo "" && echo "=== 4. Test databázy ===" && curl -s http://localhost:5555/api/health 2>&1 | head -5
-

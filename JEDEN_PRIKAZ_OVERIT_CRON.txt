@@ -1,4 +1,0 @@
-# ✅ JEDEN PRÍKAZ - Overiť, či cron aktualizuje dáta (ste v /var/www/earnings-table)
-
-echo "=== 1. PM2 status ===" && pm2 status | grep earnings && echo "" && echo "=== 2. Posledné logy earnings-cron (30 riadkov) ===" && pm2 logs earnings-cron --lines 30 --nostream 2>&1 | tail -30 && echo "" && echo "=== 3. Test API endpoint ===" && curl -s http://localhost:5555/api/final-report/stats 2>&1 | head -10
-

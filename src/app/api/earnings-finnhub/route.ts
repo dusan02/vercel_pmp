@@ -384,7 +384,7 @@ async function enrichEarningsData(earnings: EarningsData[]): Promise<EarningsDat
   // Get current session for session-aware percent change calculation
   const etNow = nowET();
   const session = detectSession(etNow);
-  
+
   // Get regularClose for after-hours sessions (batch fetch for all tickers)
   const regularCloseMap = new Map<string, number>();
   if (session === 'after' || session === 'closed') {
@@ -568,10 +568,24 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('❌ Error in /api/earnings-finnhub:', error);
 
-    // Ak je to Finnhub API error (500), vráť prázdne dáta namiesto 500 error
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    if (errorMessage.includes('Finnhub API error: 500')) {
-      console.warn('⚠️ Finnhub API returned 500 - returning empty earnings data instead of error');
+
+    // Handle Finnhub 429 (Rate Limit) specifically
+    if (errorMessage.includes('429')) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Upstream Rate Limit',
+          details: 'Finnhub API rate limit exceeded',
+          timestamp: new Date().toISOString()
+        },
+        { status: 429 }
+      );
+    }
+
+    // Ak je to Finnhub API error (500/503) alebo timeout, vráť prázdne dáta namiesto 500 error
+    if (errorMessage.includes('Finnhub API error: 500') || errorMessage.includes('503') || errorMessage.includes('timeout')) {
+      console.warn(`⚠️ Finnhub API issue (${errorMessage}) - returning empty earnings data`);
       const today = new Date().toISOString().split('T')[0];
       const isToday = date === today;
 
@@ -582,8 +596,8 @@ export async function GET(request: NextRequest) {
           afterMarket: []
         },
         message: isToday
-          ? 'No earnings data available (Finnhub API temporarily unavailable)'
-          : `No earnings data available for ${date} (Finnhub API temporarily unavailable)`,
+          ? 'No earnings data available (Service temporarily unavailable)'
+          : `No earnings data available for ${date} (Service temporarily unavailable)`,
         cached: false
       });
     }

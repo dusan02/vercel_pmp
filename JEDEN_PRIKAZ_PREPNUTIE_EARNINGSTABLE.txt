@@ -1,4 +1,0 @@
-# 🔄 JEDEN PRÍKAZ - PREPNUTIE DO earningstable.com
-
-cd /var/www/earnings-table && pwd && echo "✅ Ste v projekte earningstable.com" && ls -la | head -10
-

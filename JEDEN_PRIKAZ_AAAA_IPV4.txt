@@ -1,4 +1,0 @@
-# 🔍 JEDEN PRÍKAZ - OVERENIE AAAA A TEST IPv4
-
-echo "=== 1. Overenie AAAA záznamov (IPv6) ===" && echo "premarketprice.com:" && dig +short premarketprice.com AAAA && echo "www.premarketprice.com:" && dig +short www.premarketprice.com AAAA && echo "" && echo "=== 2. Overenie A záznamov (IPv4) ===" && echo "premarketprice.com:" && dig +short premarketprice.com A && echo "www.premarketprice.com:" && dig +short www.premarketprice.com A && echo "" && echo "=== 3. Test HTTPS s IPv4 (vynútené) ===" && curl -4Iv https://premarketprice.com 2>&1 | head -25 && echo "" && echo "✅ HOTOVO!"
-

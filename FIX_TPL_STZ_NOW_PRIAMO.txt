@@ -1,5 +1,0 @@
-# 🔧 OPRAVA TPL, STZ, NOW - JEDEN PRÍKAZ NA SERVERI
-# Kopírovať a spustiť priamo na serveri
-
-cd /var/www/premarketprice && echo "=== 1. AKTUÁLNE HODNOTY ===" && npx prisma db execute --stdin <<< "SELECT \"symbol\", \"name\", \"sector\", \"industry\" FROM \"Ticker\" WHERE \"symbol\" IN ('TPL', 'STZ', 'NOW') ORDER BY \"symbol\";" && echo "" && echo "=== 2. APLIKOVANIE OPRAV ===" && npx prisma db execute --stdin <<< "UPDATE \"Ticker\" SET \"sector\" = 'Real Estate', \"industry\" = 'REIT - Specialty', \"updatedAt\" = NOW() WHERE \"symbol\" = 'TPL';" && npx prisma db execute --stdin <<< "UPDATE \"Ticker\" SET \"sector\" = 'Consumer Defensive', \"industry\" = 'Beverages - Alcoholic', \"updatedAt\" = NOW() WHERE \"symbol\" = 'STZ';" && npx prisma db execute --stdin <<< "UPDATE \"Ticker\" SET \"sector\" = 'Technology', \"industry\" = 'Software', \"updatedAt\" = NOW() WHERE \"symbol\" = 'NOW';" && echo "" && echo "=== 3. OVERENIE OPRAV ===" && npx prisma db execute --stdin <<< "SELECT \"symbol\", \"name\", \"sector\", \"industry\" FROM \"Ticker\" WHERE \"symbol\" IN ('TPL', 'STZ', 'NOW') ORDER BY \"symbol\";" && echo "" && echo "✅ Oprava dokončená!"
-

@@ -32,8 +32,8 @@ export function createHeatmapColorScale(timeframe: Timeframe = 'day', metric: He
   // Domain is tuned to keep mid-range moves readable while still clamping extremes.
   const mcapScales = {
     day: {
-      // Most names move within ~0–10B on a typical day; keep extremes clamped.
-      domain: [-10, -3, 0, 3, 10],
+      // Most names move within ~0–100B on a typical day; keep extremes clamped.
+      domain: [-100, -30, 0, 30, 100],
       range: ['#ef4444', '#f87171', '#374151', '#4ade80', '#22c55e'],
     },
     week: {
