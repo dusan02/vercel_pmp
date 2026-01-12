@@ -332,7 +332,10 @@
   user-select: none;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
-  padding: 1rem;
+  /* CRITICAL: No padding-bottom to prevent empty space at bottom - content should touch footer */
+  padding: 1rem 1rem 0 1rem;
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
   opacity: 0;
   /* CRITICAL: Use translate3d instead of translateX to prevent subpixel seams on iOS */
   transform: translate3d(100%, 0, 0);
@@ -460,6 +463,9 @@
   box-shadow: none !important;
   /* CRITICAL: Add padding-top to prevent headings from being stuck under fixed header */
   padding-top: calc(var(--header-h) + 0.5rem) !important;
+  /* CRITICAL: No padding-bottom to prevent empty space - content should extend to footer */
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
 }
 
 /* ============================================
@@ -520,6 +526,14 @@
   .mobile-app-screen.screen-all-stocks .all-stocks,
   .mobile-app-screen.screen-earnings .todays-earnings,
   .mobile-app-screen.screen-earnings section,
+  /* CRITICAL: Remove margin-bottom to prevent empty space at bottom */
+  .mobile-app-screen.screen-portfolio .portfolio,
+  .mobile-app-screen.screen-favorites .favorites,
+  .mobile-app-screen.screen-all-stocks .all-stocks,
+  .mobile-app-screen.screen-earnings .todays-earnings {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+  }
   /* All section elements */
   .mobile-app-screen.screen-portfolio section,
   .mobile-app-screen.screen-favorites section,
@@ -4082,6 +4096,17 @@ table td strong {
   background: transparent;
   box-shadow: none;
   padding: 1.5rem;
+}
+
+/* Mobile: Remove margin-bottom to prevent empty space at bottom */
+@media (max-width: 1023px) {
+  .mobile-app-screen .favorites,
+  .mobile-app-screen .all-stocks,
+  .mobile-app-screen .portfolio,
+  .mobile-app-screen .todays-earnings {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+  }
 }
 
 /* Section Error Boundary Styles */
