@@ -32,17 +32,23 @@ export function LoginButton() {
 
         return (
             <div className="relative" ref={dropdownRef}>
-                {/* Sign Out Button - Simple and Clean */}
+                {/* Sign Out Button - Square and Minimalist (44x44 on mobile, with text on desktop) */}
                 <button
                     onClick={() => {
                         setIsDropdownOpen(false);
                         signOut({ callbackUrl: '/' });
                     }}
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gray-600 hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 shadow-sm"
+                    className="flex items-center justify-center gap-2 w-[44px] h-[44px] lg:w-auto lg:h-auto lg:px-4 lg:py-2 text-sm font-medium text-white rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                    style={{
+                        background: '#1a1a1a',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        WebkitTapHighlightColor: 'transparent',
+                        touchAction: 'manipulation',
+                    }}
                     aria-label="Sign out"
                 >
                     <svg
-                        className="w-4 h-4"
+                        className="w-5 h-5 lg:w-4 lg:h-4"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -54,7 +60,7 @@ export function LoginButton() {
                             d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
                         />
                     </svg>
-                    <span>Sign Out</span>
+                    <span className="hidden lg:inline">Sign Out</span>
                 </button>
 
                 {/* Dropdown Menu */}

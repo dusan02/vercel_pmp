@@ -96,7 +96,7 @@
     box-shadow: none !important;
   }
   
-  /* Header - CRITICAL: Ensure visibility and proper display */
+  /* Header - CRITICAL: Ensure visibility and proper display, prevent white lines */
   .mobile-app-header {
     /* CRITICAL: Isolation context prevents blur artifacts from bleeding */
     isolation: isolate !important;
@@ -108,11 +108,12 @@
     /* Remove backdrop-filter (replace with solid background) */
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    /* Use solid background instead of blur */
-    background: rgba(15, 15, 15, 0.98) !important;
+    /* Use solid background instead of blur - extend beyond viewport to cover seams */
+    background: #0f0f0f !important;
     /* Remove box-shadow completely */
     box-shadow: none !important;
-    /* Remove all borders except bottom */
+    /* Remove ALL borders to prevent white lines */
+    border: none !important;
     border-left: none !important;
     border-right: none !important;
     border-top: none !important;
@@ -127,12 +128,24 @@
     opacity: 1 !important;
     display: block !important;
     pointer-events: auto !important;
-    /* Extend slightly beyond viewport to cover seams */
+    /* CRITICAL: Full width, no margins/padding on sides */
     width: 100% !important;
     max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
   }
   
-  /* Tabbar - CRITICAL: Ensure visibility and proper display, heatmap touches footer */
+  /* Header content - ensure no side padding creates gaps */
+  .mobile-app-header-content {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+  
+  /* Tabbar - CRITICAL: Ensure visibility and proper display, heatmap touches footer, prevent white lines */
   .mobile-app-tabbar {
     /* CRITICAL: Isolation context prevents blur artifacts from bleeding */
     isolation: isolate !important;
@@ -144,11 +157,12 @@
     /* Remove backdrop-filter (replace with solid background) */
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    /* Use solid background instead of blur */
-    background: rgba(15, 15, 15, 0.98) !important;
+    /* Use solid background instead of blur - extend beyond viewport to cover seams */
+    background: #0f0f0f !important;
     /* Remove box-shadow completely */
     box-shadow: none !important;
-    /* Remove all borders except top */
+    /* Remove ALL borders to prevent white lines */
+    border: none !important;
     border-left: none !important;
     border-right: none !important;
     border-bottom: none !important;
@@ -163,9 +177,13 @@
     opacity: 1 !important;
     display: flex !important;
     pointer-events: auto !important;
-    /* Extend to full width */
+    /* CRITICAL: Full width, no margins/padding on sides */
     width: 100% !important;
     max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
     height: var(--tabbar-h) !important;
     padding-bottom: calc(0.5rem + env(safe-area-inset-bottom)) !important;
   }
@@ -440,6 +458,8 @@
   border: none !important;
   outline: none !important;
   box-shadow: none !important;
+  /* CRITICAL: Add padding-top to prevent headings from being stuck under fixed header */
+  padding-top: calc(var(--header-h) + 0.5rem) !important;
 }
 
 /* ============================================
@@ -4626,27 +4646,27 @@ table td strong {
   flex-wrap: nowrap;
 }
 
-/* Mobile: center section titles */
+/* Mobile: left-align section titles (consistent with other headings) */
 @media (max-width: 1023px) {
   .section-header {
-    justify-content: center;
+    justify-content: flex-start;
   }
 
   .section-header .header-main {
     width: 100%;
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
   }
 
   .section-header .header-main h2 {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 0.5rem;
-    text-align: center;
+    text-align: left;
   }
 
-  /* Hide header controls on mobile to keep title centered */
+  /* Hide header controls on mobile */
   .section-header .header-controls-inline {
     display: none;
   }
