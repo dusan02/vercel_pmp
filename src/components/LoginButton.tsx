@@ -104,14 +104,14 @@ export function LoginButton() {
         );
     }
 
-    // Sign In Button - na mobile len ikona, na desktop s textom
+    // Sign In Button - na mobile len ikona (square 44x44), na desktop s textom
     return (
         <button
             onClick={() => {
               event('sign_in_click', { provider: 'google' });
               signIn("google");
             }}
-            className="inline-flex items-center justify-center gap-2 px-3 py-2 lg:px-4 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-sm hover:shadow-md min-w-[44px] min-h-[44px] lg:min-w-0"
+            className="inline-flex items-center justify-center gap-2 px-3 py-2 lg:px-4 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-sm hover:shadow-md w-[44px] h-[44px] lg:w-auto lg:h-auto lg:min-w-0"
             aria-label="Sign in with Google"
         >
             <svg className="w-5 h-5 lg:w-4 lg:h-4 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">

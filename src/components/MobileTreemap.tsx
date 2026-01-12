@@ -687,8 +687,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
         flexDirection: 'column',
       }}
     >
-      {/* Fixed top bar: Logo + Metric buttons + Compact/Expand + Sign In - všetko v jednom riadku */}
-      {/* Natiahnutý až po bottom navigáciu - border-bottom viditeľný počas celého scrollu */}
+      {/* Fixed top bar: Logo + Title + Metric buttons + Compact/Expand + Sign In */}
       <div
         style={{
           position: 'fixed',
@@ -704,73 +703,106 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
           gap: 8,
           flexShrink: 0,
           minWidth: 0,
-          /* Natiahnutý border-bottom - viditeľný počas celého scrollu */
         }}
       >
-        {/* Logo - malé */}
-        <div className="flex-shrink-0">
+        {/* Logo + Title */}
+        <div className="flex items-center gap-2 flex-shrink-0">
           <BrandLogo size={28} />
+          <span className="text-white font-semibold text-sm whitespace-nowrap">PreMarketPrice</span>
         </div>
 
-        {/* Metric buttons (% vs $) */}
-        {onMetricChange && (
-          <div className="flex-shrink-0">
-            <HeatmapToggleMinimal
-            metric={metric}
-            onMetricChange={onMetricChange as any}
-              className="origin-left"
-          />
-          </div>
-        )}
+        {/* Spacer - pushes buttons to the right */}
+        <div className="flex-1" />
 
-        {/* Compact/Expand button - Štvorcový/vertikálny obdĺžnik prepínač */}
-        <button
-          type="button"
-          onClick={() => {
-            const wasExpanded = expanded;
-            setExpanded((v) => !v);
-            // Reset scroll position when switching from Expanded to Compact
-            if (wasExpanded && containerRef.current) {
-              setTimeout(() => {
-                if (containerRef.current) {
-                  containerRef.current.scrollTop = 0;
-                  containerRef.current.scrollLeft = 0;
-                }
-              }, 0);
-            }
-          }}
-          className="flex items-center justify-center w-[44px] h-[44px] rounded-lg transition-colors flex-shrink-0"
-          style={{
-            background: '#1a1a1a', // Farba pozadia
-            border: '1px solid rgba(255, 255, 255, 0.1)', // Jemne sivé hrany (rovnaký odtieň ako buttony v navigácii)
-            WebkitTapHighlightColor: 'transparent',
-            touchAction: 'manipulation',
-          }}
-          aria-label={expanded ? 'Switch to compact view (square)' : 'Expand view (vertical rectangle)'}
-        >
-          {expanded ? (
-            /* Vertikálny obdĺžnik (expand) - aktuálny stav */
-            <svg width="16" height="20" viewBox="0 0 16 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="2" y="2" width="12" height="16" rx="1" stroke="#6b7280" strokeWidth="1.5" fill="#1a1a1a" />
-            </svg>
-          ) : (
-            /* Štvorcová obrazovka (compact) - aktuálny stav */
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="2" y="2" width="12" height="12" rx="1" stroke="#6b7280" strokeWidth="1.5" fill="#1a1a1a" />
-            </svg>
+        {/* Buttons group - all same size (squares 44x44) */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Metric buttons (% vs $) - refactored to square buttons */}
+          {onMetricChange && (
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => onMetricChange('percent')}
+                className="flex items-center justify-center w-[44px] h-[44px] rounded-lg transition-colors"
+                style={{
+                  background: metric === 'percent' ? '#2563eb' : '#1a1a1a',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  color: metric === 'percent' ? '#ffffff' : '#6b7280',
+                  WebkitTapHighlightColor: 'transparent',
+                  touchAction: 'manipulation',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                }}
+                aria-label="Percent Change"
+              >
+                %
+              </button>
+              <button
+                type="button"
+                onClick={() => onMetricChange('mcap')}
+                className="flex items-center justify-center w-[44px] h-[44px] rounded-lg transition-colors"
+                style={{
+                  background: metric === 'mcap' ? '#2563eb' : '#1a1a1a',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  color: metric === 'mcap' ? '#ffffff' : '#6b7280',
+                  WebkitTapHighlightColor: 'transparent',
+                  touchAction: 'manipulation',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                }}
+                aria-label="Market Cap Change"
+              >
+                $
+              </button>
+            </div>
           )}
-        </button>
+
+          {/* Compact/Expand button - Square */}
+          <button
+            type="button"
+            onClick={() => {
+              const wasExpanded = expanded;
+              setExpanded((v) => !v);
+              // Reset scroll position when switching from Expanded to Compact
+              if (wasExpanded && containerRef.current) {
+                setTimeout(() => {
+                  if (containerRef.current) {
+                    containerRef.current.scrollTop = 0;
+                    containerRef.current.scrollLeft = 0;
+                  }
+                }, 0);
+              }
+            }}
+            className="flex items-center justify-center w-[44px] h-[44px] rounded-lg transition-colors flex-shrink-0"
+            style={{
+              background: '#1a1a1a',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              WebkitTapHighlightColor: 'transparent',
+              touchAction: 'manipulation',
+            }}
+            aria-label={expanded ? 'Switch to compact view (square)' : 'Expand view (vertical rectangle)'}
+          >
+            {expanded ? (
+              <svg width="16" height="20" viewBox="0 0 16 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="2" y="2" width="12" height="16" rx="1" stroke="#6b7280" strokeWidth="1.5" fill="#1a1a1a" />
+              </svg>
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="2" y="2" width="12" height="12" rx="1" stroke="#6b7280" strokeWidth="1.5" fill="#1a1a1a" />
+              </svg>
+            )}
+          </button>
+
+          {/* Sign In button - Square 44x44 */}
+          <div className="flex-shrink-0">
+            <LoginButton />
+          </div>
+        </div>
 
         {/* Legenda - skrytá na mobile (< 1024px), viditeľná len na desktop (lg a vyššie) */}
         <div className="hidden lg:flex flex-1" style={{ minWidth: 0, overflowX: 'auto', WebkitOverflowScrolling: 'touch' as any }}>
           <div style={{ transform: 'scale(0.82)', transformOrigin: 'left center', width: 'max-content' }}>
             <HeatmapLegend timeframe={timeframe} metric={metric} />
           </div>
-      </div>
-
-        {/* Sign In button (len G-čko na mobile) */}
-        <div className="flex-shrink-0 ml-auto">
-          <LoginButton />
         </div>
       </div>
 

@@ -13,51 +13,161 @@
 }
 
 /* ============================================
-   MINIMAL PROFI FIX - White Lines (iOS Safari/Chrome)
-   Low Risk, Ship-Ready - Covers all 3 main causes
+   COMPLETE REFACTOR - White Lines Fix (iOS Safari/Chrome)
+   Radical approach: isolation + pseudo-elements + solid backgrounds
    ============================================ */
 @media (max-width: 1023px) {
-  /* Root level - prevent background leaks */
-  html, body {
+  /* Root level - CRITICAL: Zero margins/padding, unified background */
+  html {
     background: #0f0f0f !important;
-    overflow-x: clip;
-    overflow-x: -webkit-clip; /* Fallback for older Safari */
-    width: 100%;
-    max-width: 100%;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    position: relative !important;
   }
   
-  #__next, .mobile-app {
+  body {
     background: #0f0f0f !important;
-    width: 100%;
-    max-width: 100%;
-    overflow-x: clip;
-    overflow-x: -webkit-clip; /* Fallback */
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    position: relative !important;
+    /* Prevent any default browser styles */
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+  }
+  
+  /* Next.js root wrapper */
+  body > div {
+    background: #0f0f0f !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    position: relative !important;
+  }
+  
+  .mobile-app {
+    background: #0f0f0f !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    position: relative !important;
+    /* CRITICAL: Prevent any edge artifacts */
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
   }
   
   .mobile-app-content {
-    overflow-x: clip;
-    overflow-x: -webkit-clip; /* Fallback */
-    width: 100%;
-    max-width: 100%;
+    overflow-x: hidden !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    position: relative !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
   }
   
   /* Transform fix - translate3d already applied to .mobile-app-screen above (line ~200) */
   .mobile-app-screen {
-    width: 100%;
-    max-width: 100%;
-    left: 0;
-    right: 0;
+    width: 100% !important;
+    max-width: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
     contain: paint;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
   }
   
-  /* Remove edge glow from blur layers */
-  .mobile-app-header,
-  .mobile-app-tabbar {
+  /* Header - CRITICAL: Ensure visibility and proper display */
+  .mobile-app-header {
+    /* CRITICAL: Isolation context prevents blur artifacts from bleeding */
+    isolation: isolate !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 100 !important;
+    /* Remove backdrop-filter (replace with solid background) */
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    /* Use solid background instead of blur */
+    background: rgba(15, 15, 15, 0.98) !important;
+    /* Remove box-shadow completely */
     box-shadow: none !important;
-    background-clip: padding-box;
-    -webkit-background-clip: padding-box;
-    outline: 0;
-    border-radius: 0;
+    /* Remove all borders except bottom */
+    border-left: none !important;
+    border-right: none !important;
+    border-top: none !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    /* Background clip to prevent edge artifacts */
+    background-clip: padding-box !important;
+    -webkit-background-clip: padding-box !important;
+    outline: 0 !important;
+    border-radius: 0 !important;
+    /* CRITICAL: Ensure header is visible */
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+    pointer-events: auto !important;
+    /* Extend slightly beyond viewport to cover seams */
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  /* Tabbar - CRITICAL: Ensure visibility and proper display, heatmap touches footer */
+  .mobile-app-tabbar {
+    /* CRITICAL: Isolation context prevents blur artifacts from bleeding */
+    isolation: isolate !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 9999 !important;
+    /* Remove backdrop-filter (replace with solid background) */
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    /* Use solid background instead of blur */
+    background: rgba(15, 15, 15, 0.98) !important;
+    /* Remove box-shadow completely */
+    box-shadow: none !important;
+    /* Remove all borders except top */
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: none !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+    /* Background clip to prevent edge artifacts */
+    background-clip: padding-box !important;
+    -webkit-background-clip: padding-box !important;
+    outline: 0 !important;
+    border-radius: 0 !important;
+    /* CRITICAL: Ensure tabbar is visible */
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: flex !important;
+    pointer-events: auto !important;
+    /* Extend to full width */
+    width: 100% !important;
+    max-width: 100% !important;
+    height: var(--tabbar-h) !important;
+    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom)) !important;
   }
 }
 
@@ -105,18 +215,7 @@
   outline: none !important;
 }
 
-/* Mobile only: dark header */
-@media (max-width: 1023px) {
-  .mobile-app-header {
-    background: rgba(15, 15, 15, 0.95);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-    /* CRITICAL: Remove vertical borders to prevent white lines */
-    border-left: none !important;
-    border-right: none !important;
-    outline: none !important;
-  }
-}
+/* Mobile only: dark header - consolidated with refactor above */
 
 .mobile-app-header-content {
   display: flex;
@@ -270,8 +369,8 @@
   flex-direction: column !important;
   margin: 0 !important;
   padding: 0 !important;
-  /* CRITICAL: Reserve space for bottom tab bar + safe area */
-  padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom)) !important;
+  /* CRITICAL: Heatmap touches footer - no padding-bottom, footer is fixed and overlays */
+  padding-bottom: 0 !important;
   box-sizing: border-box;
   overflow: hidden;
   position: relative;
@@ -296,7 +395,7 @@
   opacity: 0 !important;
 }
 
-/* Mobile treemap grid - ensure it extends to bottom edge */
+/* Mobile treemap grid - ensure it extends to bottom edge, touches footer */
 .mobile-app-screen.screen-heatmap .mobile-treemap-grid {
   flex: 1 !important;
   min-height: 0 !important;
@@ -304,7 +403,11 @@
   height: 100% !important; /* CRITICAL: Explicit height to fill available space */
   margin: 0 !important;
   padding: 0 !important;
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
   position: relative;
+  /* CRITICAL: Heatmap extends to bottom, footer overlays on top */
+  bottom: 0 !important;
 }
 
 /* Mobile heatmap detail panel (bottom sheet) - dark background on mobile */
