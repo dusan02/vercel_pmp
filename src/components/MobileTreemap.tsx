@@ -354,16 +354,30 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     }
   }, []);
 
-  // Reset scroll position when switching from Expanded to Compact mode
+  // Reset scroll position and layout when switching metric, expanded mode, or view
   const prevExpandedRef = useRef(expanded);
+  const prevMetricRef = useRef(metric);
+  
   useEffect(() => {
-    // If we switched from expanded (true) to compact (false), reset scroll
-    if (prevExpandedRef.current === true && expanded === false && containerRef.current) {
+    // Reset scroll position when metric or expanded changes
+    if (containerRef.current) {
       containerRef.current.scrollTop = 0;
       containerRef.current.scrollLeft = 0;
     }
+    // Close detail sheet when metric or view changes (prevents stale data)
+    if (selectedCompany) {
+      setSelectedCompany(null);
+    }
     prevExpandedRef.current = expanded;
-  }, [expanded]);
+    prevMetricRef.current = metric;
+    // Force layout recalculation by triggering resize observer
+    // This ensures heatmap recalculates with new metric/expanded state
+    if (containerRef.current) {
+      // Trigger a resize event to force recalculation
+      const resizeEvent = new Event('resize');
+      window.dispatchEvent(resizeEvent);
+    }
+  }, [expanded, metric]);
 
   const handleDoubleTapReset = useCallback((e: React.TouchEvent) => {
     // Only consider single-finger taps (avoid interfering with pinch)
@@ -933,9 +947,9 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
               borderTopRightRadius: 16,
               boxShadow: '0 -12px 30px rgba(0,0,0,0.35)',
               padding: '12px 14px',
-              // CRITICAL: Calculate max height from viewport - header - tabbar - safe area
-              // Using CSS variables for consistency
-              maxHeight: 'calc(100dvh - var(--header-h) - var(--tabbar-h) - env(safe-area-inset-bottom))',
+              // CRITICAL: Calculate max height from viewport - heatmap header (48px) - tabbar - safe area
+              // Heatmap has its own fixed header (48px), not the main app header (56px)
+              maxHeight: 'calc(100dvh - 48px - var(--tabbar-h) - env(safe-area-inset-bottom))',
               overflow: 'auto', /* CRITICAL: Allow scroll if content is too tall */
               // Sit above mobile tab bar + safe area
               bottom: 'calc(var(--tabbar-h) + env(safe-area-inset-bottom))',
