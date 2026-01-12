@@ -23,11 +23,13 @@ export function HomeHeatmap({ wrapperClass, activeView }: HomeHeatmapProps) {
         console.log('🏠 HomeHeatmap rendered', { wrapperClass, activeView });
     }, [wrapperClass, activeView]);
 
+    // Simplified: pass wrapperClass directly to HeatmapPreview, remove unnecessary wrapper div
     return (
         <SectionErrorBoundary sectionName="Heatmap">
-            <div className={`${wrapperClass} w-full h-full`} data-debug="home-heatmap-wrapper">
-                <HeatmapPreview activeView={activeView} />
-            </div>
+            <HeatmapPreview 
+                {...(activeView !== undefined ? { activeView } : {})}
+                {...(wrapperClass !== undefined ? { wrapperClass } : {})}
+            />
         </SectionErrorBoundary>
     );
 }

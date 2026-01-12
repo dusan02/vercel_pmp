@@ -80,6 +80,14 @@
     box-shadow: none !important;
   }
   
+  /* CRITICAL: Heatmap container must extend to bottom edge - override any padding-bottom */
+  .mobile-app-content.is-heatmap {
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+    height: 100% !important;
+    min-height: 100% !important;
+  }
+  
   /* Transform fix - translate3d already applied to .mobile-app-screen above (line ~200) */
   .mobile-app-screen {
     width: 100% !important;
@@ -291,8 +299,16 @@
 }
 
 /* Heatmap view: no padding-top (heatmap has its own header) */
+/* CRITICAL: Heatmap container must extend to bottom edge (touches navigation) */
 .mobile-app-content.is-heatmap {
-  padding-top: 0; /* Heatmap má vlastný header v MobileTreemap */
+  padding-top: 0 !important; /* Heatmap má vlastný header v MobileTreemap */
+  padding-bottom: 0 !important; /* CRITICAL: No padding-bottom - container extends to navigation */
+  margin-bottom: 0 !important; /* CRITICAL: No margin-bottom - container extends to navigation */
+  height: 100% !important; /* CRITICAL: Explicit height to fill available space */
+  min-height: 100% !important; /* CRITICAL: Ensure minimum height fills container */
+  display: flex !important; /* CRITICAL: Flex layout for proper height calculation */
+  flex-direction: column !important; /* CRITICAL: Column layout for heatmap */
+  overflow: hidden !important; /* CRITICAL: Prevent scrolling on container, let inner handle it */
 }
 
 /* Mobile: explicitne odstrániť vertikálne čiary (prevent white lines on iOS Safari/Chrome) */
@@ -361,6 +377,7 @@
 }
 
 /* Heatmap screen - full screen */
+/* CRITICAL: Container must extend from top to bottom edge (touches navigation) */
 .mobile-app-screen.screen-heatmap {
   padding: 0 !important;
   background: #000;
@@ -368,12 +385,19 @@
   /* Ensure heatmap extends to bottom edge - no gap before navigation */
   margin: 0 !important;
   bottom: 0 !important;
-  height: 100% !important;
+  top: 0 !important; /* CRITICAL: Start from top edge */
+  left: 0 !important; /* CRITICAL: Start from left edge */
+  right: 0 !important; /* CRITICAL: Extend to right edge */
+  height: 100% !important; /* CRITICAL: Fill full height */
+  width: 100% !important; /* CRITICAL: Fill full width */
   /* CRITICAL: Disable scrolling on wrapper, let inner treemap handle it */
   overflow: hidden !important;
   /* CRITICAL: Disable transform/transition on iOS Safari - prevents stacking context issues with position: fixed */
   transform: none !important;
   transition: none !important;
+  /* CRITICAL: Flex layout for proper height calculation */
+  display: flex !important;
+  flex-direction: column !important;
 }
 
 .mobile-app-screen.screen-heatmap.active {
@@ -392,7 +416,10 @@
   padding: 0 !important;
   /* CRITICAL: Heatmap touches footer - no padding-bottom, footer is fixed and overlays */
   padding-bottom: 0 !important;
-  box-sizing: border-box;
+  padding-top: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  box-sizing: border-box !important;
   overflow: hidden;
   position: relative;
 }
@@ -405,32 +432,27 @@
   padding: 0;
 }
 
-/* Desktop heatmap - prevent double scrollbars */
+/* Heatmap containers - simplified CSS, prevent double scrollbars */
 /* CRITICAL: Only one scrollbar should be visible - on MarketHeatmap container when zoomed */
 .heatmap-preview-container {
   overflow: hidden !important;
+  width: 100%;
+  height: 100%;
 }
 
-.heatmap-preview-container > div {
-  overflow: hidden !important;
+/* Desktop heatmap - fixed height preview */
+.heatmap-preview-desktop {
+  height: 400px !important;
+  min-height: 400px !important;
+  cursor: pointer;
 }
 
-/* Desktop heatmap wrapper - ensure no scrollbar here */
-.desktop-heatmap-wrapper {
-  overflow: hidden !important;
-}
-
-.desktop-heatmap-wrapper .heatmap-preview-container {
-  overflow: hidden !important;
-}
-
-.desktop-heatmap-wrapper .heatmap-preview-container > div {
-  overflow: hidden !important;
-}
-
-/* ResponsiveMarketHeatmap wrapper - no scrollbar */
+/* Desktop/Mobile wrapper classes - unified overflow handling */
+.desktop-heatmap-wrapper,
 .mobile-heatmap-wrapper {
   overflow: hidden !important;
+  width: 100%;
+  height: 100%;
 }
 
 /* MarketHeatmap container - only allow scrollbar when zoomed to sector (desktop) */
@@ -470,6 +492,8 @@
   display: flex !important;
   flex-direction: column !important;
   align-items: stretch !important;
+  /* CRITICAL: Remove any padding/margin to maximize heatmap area */
+  box-sizing: border-box !important;
 }
 
 /* Mobile treemap inner wrapper - ensure bottom alignment */
@@ -6513,6 +6537,29 @@ tr:hover {
 .dark .todays-earnings table th.active-sort {
   background-color: var(--clr-border);
   color: var(--clr-text);
+}
+
+/* Portfolio table sortable columns - desktop */
+.portfolio-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s;
+}
+
+.portfolio-table th.sortable:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.dark .portfolio-table th.sortable:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.portfolio-table th.sortable.active-sort {
+  background-color: #e5e5e5;
+}
+
+.dark .portfolio-table th.sortable.active-sort {
+  background-color: var(--clr-border);
 }
 
 .todays-earnings table th.grouped-header .sub-header {

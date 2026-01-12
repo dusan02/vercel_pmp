@@ -48,6 +48,18 @@ export function PortfolioSection({
   const [showPortfolioSearch, setShowPortfolioSearch] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
 
+  // Desktop sort state - persisted in localStorage
+  const [desktopSortKey, setDesktopSortKey] = useState<'ticker' | 'company' | 'sector' | 'industry' | 'quantity' | 'price' | 'percent' | 'value' | null>(() => {
+    if (typeof window === 'undefined') return null;
+    const stored = localStorage.getItem('pmp_portfolio_desktop_sortKey');
+    return (stored as any) || null;
+  });
+  const [desktopAscending, setDesktopAscending] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    const stored = localStorage.getItem('pmp_portfolio_desktop_sortAscending');
+    return stored ? stored === 'true' : false;
+  });
+
   // Mobile sort (unified with Stocks/Favorites sort chips) - persisted in localStorage
   const [mobileSortKey, setMobileSortKey] = useState<'ticker' | 'quantity' | 'price' | 'percent' | 'delta'>(() => {
     if (typeof window === 'undefined') return 'ticker';
@@ -65,8 +77,12 @@ export function PortfolioSection({
     if (typeof window !== 'undefined') {
       localStorage.setItem('pmp_portfolio_sortKey', mobileSortKey);
       localStorage.setItem('pmp_portfolio_sortAscending', String(mobileAscending));
+      if (desktopSortKey !== null) {
+        localStorage.setItem('pmp_portfolio_desktop_sortKey', desktopSortKey);
+        localStorage.setItem('pmp_portfolio_desktop_sortAscending', String(desktopAscending));
+      }
     }
-  }, [mobileSortKey, mobileAscending]);
+  }, [mobileSortKey, mobileAscending, desktopSortKey, desktopAscending]);
 
   // Mobile details bottom-sheet
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
@@ -102,6 +118,51 @@ export function PortfolioSection({
     const v = perShareDelta * (quantity || 0);
     return isFinite(v) ? v : 0;
   };
+
+  // Desktop sort function
+  const sortedPortfolioStocksDesktop = (() => {
+    if (!desktopSortKey) return portfolioStocks;
+    
+    const arr = [...portfolioStocks];
+    arr.sort((a, b) => {
+      const qa = portfolioHoldings[a.ticker] || 0;
+      const qb = portfolioHoldings[b.ticker] || 0;
+      const va = calculatePortfolioValue(a);
+      const vb = calculatePortfolioValue(b);
+
+      let cmp = 0;
+      switch (desktopSortKey) {
+        case 'ticker':
+          cmp = a.ticker.localeCompare(b.ticker);
+          break;
+        case 'company':
+          cmp = getCompanyName(a.ticker).localeCompare(getCompanyName(b.ticker));
+          break;
+        case 'sector':
+          cmp = (a.sector || '').localeCompare(b.sector || '');
+          break;
+        case 'industry':
+          cmp = (a.industry || '').localeCompare(b.industry || '');
+          break;
+        case 'quantity':
+          cmp = qa - qb;
+          break;
+        case 'price':
+          cmp = (a.currentPrice ?? 0) - (b.currentPrice ?? 0);
+          break;
+        case 'percent':
+          cmp = (a.percentChange ?? 0) - (b.percentChange ?? 0);
+          break;
+        case 'value':
+          cmp = va - vb;
+          break;
+      }
+      if (!desktopAscending) cmp = -cmp;
+      if (cmp !== 0) return cmp;
+      return a.ticker.localeCompare(b.ticker); // Secondary sort by ticker
+    });
+    return arr;
+  })();
 
   const sortedPortfolioStocksMobile = (() => {
     const arr = [...portfolioStocks];
@@ -579,19 +640,123 @@ export function PortfolioSection({
           <thead>
             <tr>
               <th className="portfolio-col-logo">Logo</th>
-              <th className="portfolio-col-ticker">Ticker</th>
-              <th className="portfolio-col-company">Company</th>
-              <th className="portfolio-col-sector">Sector</th>
-              <th className="portfolio-col-industry">Industry</th>
-              <th className="portfolio-col-quantity">#</th>
-              <th className="portfolio-col-price">Price</th>
-              <th className="portfolio-col-change">% Change</th>
-              <th className="portfolio-col-value">Value</th>
+              <th 
+                className={`portfolio-col-ticker ${desktopSortKey === 'ticker' ? 'sortable active-sort' : 'sortable'}`}
+                onClick={() => {
+                  if (desktopSortKey === 'ticker') {
+                    setDesktopAscending(v => !v);
+                  } else {
+                    setDesktopSortKey('ticker');
+                    setDesktopAscending(true);
+                  }
+                }}
+                style={{ cursor: 'pointer', userSelect: 'none' }}
+              >
+                Ticker {desktopSortKey === 'ticker' && (desktopAscending ? '▲' : '▼')}
+              </th>
+              <th 
+                className={`portfolio-col-company ${desktopSortKey === 'company' ? 'sortable active-sort' : 'sortable'}`}
+                onClick={() => {
+                  if (desktopSortKey === 'company') {
+                    setDesktopAscending(v => !v);
+                  } else {
+                    setDesktopSortKey('company');
+                    setDesktopAscending(true);
+                  }
+                }}
+                style={{ cursor: 'pointer', userSelect: 'none' }}
+              >
+                Company {desktopSortKey === 'company' && (desktopAscending ? '▲' : '▼')}
+              </th>
+              <th 
+                className={`portfolio-col-sector ${desktopSortKey === 'sector' ? 'sortable active-sort' : 'sortable'}`}
+                onClick={() => {
+                  if (desktopSortKey === 'sector') {
+                    setDesktopAscending(v => !v);
+                  } else {
+                    setDesktopSortKey('sector');
+                    setDesktopAscending(true);
+                  }
+                }}
+                style={{ cursor: 'pointer', userSelect: 'none' }}
+              >
+                Sector {desktopSortKey === 'sector' && (desktopAscending ? '▲' : '▼')}
+              </th>
+              <th 
+                className={`portfolio-col-industry ${desktopSortKey === 'industry' ? 'sortable active-sort' : 'sortable'}`}
+                onClick={() => {
+                  if (desktopSortKey === 'industry') {
+                    setDesktopAscending(v => !v);
+                  } else {
+                    setDesktopSortKey('industry');
+                    setDesktopAscending(true);
+                  }
+                }}
+                style={{ cursor: 'pointer', userSelect: 'none' }}
+              >
+                Industry {desktopSortKey === 'industry' && (desktopAscending ? '▲' : '▼')}
+              </th>
+              <th 
+                className={`portfolio-col-quantity ${desktopSortKey === 'quantity' ? 'sortable active-sort' : 'sortable'}`}
+                onClick={() => {
+                  if (desktopSortKey === 'quantity') {
+                    setDesktopAscending(v => !v);
+                  } else {
+                    setDesktopSortKey('quantity');
+                    setDesktopAscending(false);
+                  }
+                }}
+                style={{ cursor: 'pointer', userSelect: 'none' }}
+              >
+                # {desktopSortKey === 'quantity' && (desktopAscending ? '▲' : '▼')}
+              </th>
+              <th 
+                className={`portfolio-col-price ${desktopSortKey === 'price' ? 'sortable active-sort' : 'sortable'}`}
+                onClick={() => {
+                  if (desktopSortKey === 'price') {
+                    setDesktopAscending(v => !v);
+                  } else {
+                    setDesktopSortKey('price');
+                    setDesktopAscending(false);
+                  }
+                }}
+                style={{ cursor: 'pointer', userSelect: 'none' }}
+              >
+                Price {desktopSortKey === 'price' && (desktopAscending ? '▲' : '▼')}
+              </th>
+              <th 
+                className={`portfolio-col-change ${desktopSortKey === 'percent' ? 'sortable active-sort' : 'sortable'}`}
+                onClick={() => {
+                  if (desktopSortKey === 'percent') {
+                    setDesktopAscending(v => !v);
+                  } else {
+                    setDesktopSortKey('percent');
+                    setDesktopAscending(false);
+                  }
+                }}
+                style={{ cursor: 'pointer', userSelect: 'none' }}
+              >
+                % Change {desktopSortKey === 'percent' && (desktopAscending ? '▲' : '▼')}
+              </th>
+              <th 
+                className={`portfolio-col-value ${desktopSortKey === 'value' ? 'sortable active-sort' : 'sortable'}`}
+                onClick={() => {
+                  if (desktopSortKey === 'value') {
+                    setDesktopAscending(v => !v);
+                  } else {
+                    setDesktopSortKey('value');
+                    setDesktopAscending(false);
+                  }
+                }}
+                style={{ cursor: 'pointer', userSelect: 'none' }}
+              >
+                Value {desktopSortKey === 'value' && (desktopAscending ? '▲' : '▼')}
+              </th>
               <th className="portfolio-col-actions"></th>
             </tr>
           </thead>
         <tbody>
-          {portfolioStocks.length === 0 ? (
+          {sortedPortfolioStocksDesktop.length === 0 ? (
             <tr>
               <td colSpan={10} className="p-0 border-none">
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-2 py-12 text-sm text-slate-500 dark:text-slate-400">
@@ -613,7 +778,7 @@ export function PortfolioSection({
             </tr>
           ) : (
             <>
-              {portfolioStocks.map((stock) => {
+              {sortedPortfolioStocksDesktop.map((stock) => {
                 const quantity = portfolioHoldings[stock.ticker] || 0;
                 const value = calculatePortfolioValue(stock);
 

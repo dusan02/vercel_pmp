@@ -890,11 +890,15 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
                due to visualViewport vs innerHeight differences.
                availableHeight is updated via event listeners for stable iOS Safari/Chrome behavior.
                For compact mode: ensure height matches availableHeight exactly to align with footer.
-               For expanded mode: use layoutHeight * zoom (allows scrolling). */
+               For expanded mode: ensure minimum height matches availableHeight for footer alignment, allow scrolling if content is taller.
+               CRITICAL: Remove all padding/margin to maximize heatmap area. */
             height: expanded 
-              ? Math.max(layoutHeight * zoom, availableHeight) // Expanded: allow scrolling if content is taller
+              ? Math.max(layoutHeight * zoom, availableHeight) // Expanded: minimum availableHeight for footer alignment, allow scrolling if taller
               : Math.max(availableHeight, containerSize.height), // Compact: always fill available height exactly
-            minHeight: expanded ? undefined : '100%', /* Compact: ensure content fills container */
+            minHeight: expanded ? availableHeight : '100%', /* Both modes: ensure minimum height for footer alignment */
+            margin: 0,
+            padding: 0,
+            boxSizing: 'border-box',
           }}
         >
           {leaves.map((leaf) => renderLeaf(leaf))}
@@ -913,7 +917,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
             className="fixed inset-0"
             style={{
               background: 'rgba(0,0,0,0.45)',
-              zIndex: 1000,
+              zIndex: 9999, // CRITICAL: Below detail panel (10000) but above tabbar (9999) - use 9999.5 or same as tabbar
               // Don't block the mobile tab bar + safe area
               bottom: 'calc(var(--tabbar-h) + env(safe-area-inset-bottom))',
             }}
@@ -921,7 +925,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
           <div
             className="fixed inset-x-0"
             style={{
-              zIndex: 1001,
+              zIndex: 10000, // CRITICAL: Higher than tabbar (z-index: 9999) to appear above navigation
               // Dark background for mobile (consistent with mobile app theme)
               background: '#0f0f0f',
               color: '#ffffff',

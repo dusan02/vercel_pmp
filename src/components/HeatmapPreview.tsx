@@ -28,7 +28,7 @@ const ResponsiveMarketHeatmap = dynamic(
  * Zobrazuje zmenšenú verziu heatmapy, ktorá pri kliknutí presmeruje na plnú stránku
  * Prepínacie buttony (% Change / Mcap Change) sú vedľa nadpisu
  */
-export function HeatmapPreview({ activeView }: { activeView?: string | undefined }) {
+export function HeatmapPreview({ activeView, wrapperClass }: { activeView?: string | undefined; wrapperClass?: string }) {
   const router = useRouter();
   // Centralized metric state with localStorage persistence
   const { metric, setMetric } = useHeatmapMetric('percent');
@@ -58,7 +58,7 @@ export function HeatmapPreview({ activeView }: { activeView?: string | undefined
   if (!isMounted) return null;
 
   return (
-    <section className={`heatmap-preview ${!isDesktop ? 'h-full flex flex-col' : ''}`}>
+    <section className={`heatmap-preview ${wrapperClass || ''} ${!isDesktop ? 'h-full flex flex-col' : ''}`}>
       {/* Header - hide on mobile (MobileTreemap has its own) */}
       {isDesktop && (
         <div className="section-header">
@@ -78,50 +78,26 @@ export function HeatmapPreview({ activeView }: { activeView?: string | undefined
         </div>
       )}
 
-      {/* Conditional Content Wrapper */}
-      {isDesktop ? (
-        /* Desktop: Fixed height preview */
-        <div
-          className="relative w-full bg-black overflow-hidden group heatmap-preview-container"
-          style={{ height: '400px', minHeight: '400px', cursor: 'pointer' }}
-          onClick={handleBackgroundClick}
-        >
-          <div className="w-full h-full">
-            <ResponsiveMarketHeatmap
-              apiEndpoint="/api/heatmap"
-              autoRefresh={true}
-              refreshInterval={60000}
-              initialTimeframe="day"
-              controlledMetric={metric}
-              onMetricChange={setMetric}
-              hideMetricButtons={true}
-              sectorLabelVariant="compact"
-              activeView={activeView}
-            />
-          </div>
-        </div>
-      ) : (
-        /* Mobile: Full height in view */
-        <div
-          className="relative w-full bg-black overflow-hidden group heatmap-preview-container flex-1"
-          style={{ cursor: 'pointer' }}
-          onClick={handleBackgroundClick}
-        >
-          <div className="w-full h-full min-h-0">
-            <ResponsiveMarketHeatmap
-              apiEndpoint="/api/heatmap"
-              autoRefresh={true}
-              refreshInterval={60000}
-              initialTimeframe="day"
-              controlledMetric={metric}
-              onMetricChange={setMetric}
-              hideMetricButtons={true}
-              sectorLabelVariant="compact"
-              activeView={activeView}
-            />
-          </div>
-        </div>
-      )}
+      {/* Content Wrapper - simplified: removed unnecessary inner div */}
+      <div
+        className={`relative w-full bg-black overflow-hidden group heatmap-preview-container ${
+          isDesktop ? 'heatmap-preview-desktop' : 'flex-1'
+        }`}
+        style={isDesktop ? { cursor: 'pointer' } : { cursor: 'pointer' }}
+        onClick={handleBackgroundClick}
+      >
+        <ResponsiveMarketHeatmap
+          apiEndpoint="/api/heatmap"
+          autoRefresh={true}
+          refreshInterval={60000}
+          initialTimeframe="day"
+          controlledMetric={metric}
+          onMetricChange={setMetric}
+          hideMetricButtons={true}
+          sectorLabelVariant="compact"
+          activeView={activeView}
+        />
+      </div>
     </section>
   );
 }
