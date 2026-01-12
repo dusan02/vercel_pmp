@@ -400,7 +400,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
 
   const handleTouchStart = useCallback((ticker: string) => {
     if (!onToggleFavorite) return;
-
+    
     const timer = setTimeout(() => {
       setLongPressActive(ticker);
       onToggleFavorite(ticker);
@@ -418,7 +418,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
         navigator.vibrate(50);
       }
     }, 600); // 600ms for long press
-
+    
     longPressTimerRef.current.set(ticker, timer);
   }, [onToggleFavorite]);
 
@@ -444,7 +444,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
 
     // In compact mode, use full available height (no empty space)
     // In expanded mode, use EXPAND_FACTOR to allow vertical scrolling
-    const baseHeight = expanded
+    const baseHeight = expanded 
       ? Math.max(1, Math.floor(height * EXPAND_FACTOR))
       : Math.max(1, height); // Compact: use full height, no multiplier
 
@@ -531,16 +531,16 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
 
       const leaves = sectorRoot.leaves().filter((l: any) => l.data?.meta?.type === 'company');
       const sectorEndY = yCursor + sectorHeight;
-
+      
       for (const leaf of leaves) {
         const l = leaf as any;
         const absY0 = l.y0 + yCursor;
         const absY1 = l.y1 + yCursor;
-
+        
         // Ensure pixel-perfect positioning: floor for start, ceil for end
         // Clamp y1 to not exceed sectorEndY to prevent overlapping with next sector
         const clampedY1 = Math.min(Math.ceil(absY1), sectorEndY);
-
+        
         result.push({
           x0: Math.floor(l.x0),
           x1: Math.ceil(l.x1),
@@ -586,9 +586,9 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     const minDim = Math.min(w, h);
     const tickerClass =
       area >= 9000 && minDim >= 64 ? 'text-xl font-extrabold tracking-tight' :
-        area >= 5200 && minDim >= 48 ? 'text-lg font-bold tracking-tight' :
-          area >= 2600 && minDim >= 34 ? 'text-sm font-semibold tracking-tight' :
-            'text-[11px] font-semibold tracking-tight';
+      area >= 5200 && minDim >= 48 ? 'text-lg font-bold tracking-tight' :
+      area >= 2600 && minDim >= 34 ? 'text-sm font-semibold tracking-tight' :
+      'text-[11px] font-semibold tracking-tight';
 
     // Padding: reduce on mid/small tiles so text has room; still comfortable on large tiles.
     const pad = Math.max(2, Math.min(10, Math.floor(minDim / 12)));
@@ -716,10 +716,10 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
         {onMetricChange && (
           <div className="flex-shrink-0">
             <HeatmapToggleMinimal
-              metric={metric}
-              onMetricChange={onMetricChange as any}
+            metric={metric}
+            onMetricChange={onMetricChange as any}
               className="origin-left"
-            />
+          />
           </div>
         )}
 
@@ -766,7 +766,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
           <div style={{ transform: 'scale(0.82)', transformOrigin: 'left center', width: 'max-content' }}>
             <HeatmapLegend timeframe={timeframe} metric={metric} />
           </div>
-        </div>
+      </div>
 
         {/* Sign In button (len G-čko na mobile) */}
         <div className="flex-shrink-0 ml-auto">
@@ -865,7 +865,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
           {leaves.map((leaf) => renderLeaf(leaf))}
         </div>
       </div>
-
+      
       {/* Removed: "View all stocks" button (caused crashes on some mobile flows) */}
 
       {/* Bottom sheet: details (tap on tile) */}
@@ -963,7 +963,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
               <div className="opacity-70">% Change</div>
               <div
                 className={`text-right font-semibold font-mono tabular-nums ${(selectedCompany.changePercent ?? 0) >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
-                  }`}
+                }`}
               >
                 {formatPercent(selectedCompany.changePercent ?? 0)}
               </div>
@@ -972,7 +972,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
               <div className="opacity-70">Mcap Δ</div>
               <div
                 className={`text-right font-semibold font-mono tabular-nums ${(selectedCompany.marketCapDiff ?? 0) >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
-                  }`}
+                }`}
               >
                 {selectedCompany.marketCapDiff == null ? '—' : formatMarketCapDiff(selectedCompany.marketCapDiff)}
               </div>
