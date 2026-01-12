@@ -405,6 +405,43 @@
   padding: 0;
 }
 
+/* Desktop heatmap - prevent double scrollbars */
+/* CRITICAL: Only one scrollbar should be visible - on MarketHeatmap container when zoomed */
+.heatmap-preview-container {
+  overflow: hidden !important;
+}
+
+.heatmap-preview-container > div {
+  overflow: hidden !important;
+}
+
+/* Desktop heatmap wrapper - ensure no scrollbar here */
+.desktop-heatmap-wrapper {
+  overflow: hidden !important;
+}
+
+.desktop-heatmap-wrapper .heatmap-preview-container {
+  overflow: hidden !important;
+}
+
+.desktop-heatmap-wrapper .heatmap-preview-container > div {
+  overflow: hidden !important;
+}
+
+/* ResponsiveMarketHeatmap wrapper - no scrollbar */
+.mobile-heatmap-wrapper {
+  overflow: hidden !important;
+}
+
+/* MarketHeatmap container - only allow scrollbar when zoomed to sector (desktop) */
+/* On desktop homepage preview, heatmap should never scroll (fixed 400px height) */
+.heatmapContainer {
+  overflow: hidden !important;
+}
+
+/* When zoomed to sector on desktop, allow scrolling only in MarketHeatmap container */
+/* This is handled by inline styles in MarketHeatmap.tsx - no CSS override needed */
+
 /* Hide all controls on mobile fullscreen heatmap */
 .mobile-app-screen.screen-heatmap .section-header,
 .mobile-app-screen.screen-heatmap .heatmap-preview .section-header,
@@ -429,6 +466,16 @@
   position: relative;
   /* CRITICAL: Heatmap extends to bottom, footer overlays on top */
   bottom: 0 !important;
+  /* CRITICAL: Ensure inner wrapper aligns with bottom edge */
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+}
+
+/* Mobile treemap inner wrapper - ensure bottom alignment */
+.mobile-app-screen.screen-heatmap .mobile-treemap-grid > div {
+  /* CRITICAL: In compact mode, ensure height matches container exactly for footer alignment */
+  /* In expanded mode, allow content to be taller (scrolling) */
 }
 
 /* Mobile heatmap detail panel (bottom sheet) - dark background on mobile */
@@ -548,6 +595,52 @@
   .mobile-app-screen.screen-earnings div[class*="bg-white"],
   .mobile-app-screen.screen-all-stocks div[class*="bg-white"] {
     background-color: #0f0f0f !important;
+  }
+
+  /* All Stocks: Force dark background for all containers and elements */
+  .mobile-app-screen.screen-all-stocks .all-stocks {
+    background-color: #0f0f0f !important;
+    background: #0f0f0f !important;
+  }
+
+  .mobile-app-screen.screen-all-stocks .all-stocks > div,
+  .mobile-app-screen.screen-all-stocks .all-stocks > div > div {
+    background-color: #0f0f0f !important;
+    background: #0f0f0f !important;
+  }
+
+  /* All Stocks: Override white/slate backgrounds */
+  .mobile-app-screen.screen-all-stocks .all-stocks [class*="bg-white"],
+  .mobile-app-screen.screen-all-stocks .all-stocks [class*="bg-slate"],
+  .mobile-app-screen.screen-all-stocks .all-stocks [class*="bg-gray"],
+  .mobile-app-screen.screen-all-stocks .all-stocks .w-full[class*="bg-white"],
+  .mobile-app-screen.screen-all-stocks .all-stocks .w-full[class*="dark:bg-gray-900"] {
+    background-color: #0f0f0f !important;
+    background: #0f0f0f !important;
+  }
+
+  /* All Stocks: Override header row background (slightly lighter for visibility) */
+  .mobile-app-screen.screen-all-stocks .all-stocks [class*="bg-slate-50"],
+  .mobile-app-screen.screen-all-stocks .all-stocks [class*="dark:bg-white/5"] {
+    background-color: rgba(15, 15, 15, 0.8) !important;
+    background: rgba(15, 15, 15, 0.8) !important;
+  }
+
+  /* All Stocks: Override filter chips background */
+  .mobile-app-screen.screen-all-stocks .all-stocks [class*="bg-slate-100"],
+  .mobile-app-screen.screen-all-stocks .all-stocks [class*="dark:bg-white/10"] {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+  }
+
+  /* All Stocks: Mobile filters container */
+  .mobile-app-screen.screen-all-stocks .mobile-filters,
+  .mobile-app-screen.screen-all-stocks .mobile-filters-container,
+  .mobile-app-screen.screen-all-stocks .mobile-search-row,
+  .mobile-app-screen.screen-all-stocks .mobile-filters-row,
+  .mobile-app-screen.screen-all-stocks .mobile-results-row {
+    background-color: #0f0f0f !important;
+    background: #0f0f0f !important;
   }
 
   /* Center search bar in Portfolio section */

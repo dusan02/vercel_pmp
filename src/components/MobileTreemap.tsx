@@ -188,6 +188,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
   }, [measureSafeAreaBottom]);
 
   // Update availableHeight on visualViewport/window resize/scroll (critical for iOS Safari/Chrome)
+  // Also update when metric or expanded state changes (affects layout height calculation)
   useEffect(() => {
     const updateAvailableHeight = () => {
       setAvailableHeight(getAvailableTreemapHeight());
@@ -220,7 +221,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
       }
       window.removeEventListener('resize', updateAvailableHeight);
     };
-  }, [getAvailableTreemapHeight]);
+  }, [getAvailableTreemapHeight, metric, expanded]); // CRITICAL: Update when metric or expanded changes
 
   useEffect(() => {
     const el = containerRef.current;
@@ -444,9 +445,11 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
 
     // In compact mode, use full available height (no empty space)
     // In expanded mode, use EXPAND_FACTOR to allow vertical scrolling
+    // CRITICAL: Use availableHeight if available (more accurate for iOS Safari/Chrome)
+    const effectiveHeight = availableHeight > 0 ? availableHeight : height;
     const baseHeight = expanded 
-      ? Math.max(1, Math.floor(height * EXPAND_FACTOR))
-      : Math.max(1, height); // Compact: use full height, no multiplier
+      ? Math.max(1, Math.floor(effectiveHeight * EXPAND_FACTOR))
+      : Math.max(1, effectiveHeight); // Compact: use full available height exactly
 
     // Compact mode: single treemap fill - use full available height
     if (!expanded) {
@@ -558,7 +561,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     // This ensures the bottom edge is perfectly aligned
     const finalLayoutHeight = yCursor;
     return { leaves: result, layoutHeight: finalLayoutHeight };
-  }, [containerSize, sortedData, metric, expanded]);
+  }, [containerSize, sortedData, metric, expanded, availableHeight]); // CRITICAL: Include availableHeight in dependencies
 
   const renderLeaf = useCallback((leaf: { x0: number; y0: number; x1: number; y1: number; data: any }) => {
     const company = leaf.data?.meta?.companyData as CompanyNode | undefined;
@@ -885,13 +888,13 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
             /* CRITICAL: Use availableHeight state (updates on visualViewport changes) instead of just containerSize.height
                Safari/Chrome often report smaller containerSize.height than actual available space
                due to visualViewport vs innerHeight differences.
-               availableHeight is updated via event listeners for stable iOS Safari/Chrome behavior. */
-            height: Math.max(
-              layoutHeight * zoom,
-              containerSize.height,
-              availableHeight
-            ),
-            minHeight: '100%', /* CRITICAL: Ensure content is at least as tall as container */
+               availableHeight is updated via event listeners for stable iOS Safari/Chrome behavior.
+               For compact mode: ensure height matches availableHeight exactly to align with footer.
+               For expanded mode: use layoutHeight * zoom (allows scrolling). */
+            height: expanded 
+              ? Math.max(layoutHeight * zoom, availableHeight) // Expanded: allow scrolling if content is taller
+              : Math.max(availableHeight, containerSize.height), // Compact: always fill available height exactly
+            minHeight: expanded ? undefined : '100%', /* Compact: ensure content fills container */
           }}
         >
           {leaves.map((leaf) => renderLeaf(leaf))}
