@@ -652,7 +652,7 @@ export function PortfolioSection({
                 }}
                 style={{ cursor: 'pointer', userSelect: 'none' }}
               >
-                Ticker {desktopSortKey === 'ticker' && (desktopAscending ? '▲' : '▼')}
+                Ticker
               </th>
               <th 
                 className={`portfolio-col-company ${desktopSortKey === 'company' ? 'sortable active-sort' : 'sortable'}`}
@@ -666,7 +666,7 @@ export function PortfolioSection({
                 }}
                 style={{ cursor: 'pointer', userSelect: 'none' }}
               >
-                Company {desktopSortKey === 'company' && (desktopAscending ? '▲' : '▼')}
+                Company
               </th>
               <th 
                 className={`portfolio-col-sector ${desktopSortKey === 'sector' ? 'sortable active-sort' : 'sortable'}`}
@@ -680,7 +680,7 @@ export function PortfolioSection({
                 }}
                 style={{ cursor: 'pointer', userSelect: 'none' }}
               >
-                Sector {desktopSortKey === 'sector' && (desktopAscending ? '▲' : '▼')}
+                Sector
               </th>
               <th 
                 className={`portfolio-col-industry ${desktopSortKey === 'industry' ? 'sortable active-sort' : 'sortable'}`}
@@ -694,7 +694,7 @@ export function PortfolioSection({
                 }}
                 style={{ cursor: 'pointer', userSelect: 'none' }}
               >
-                Industry {desktopSortKey === 'industry' && (desktopAscending ? '▲' : '▼')}
+                Industry
               </th>
               <th 
                 className={`portfolio-col-quantity ${desktopSortKey === 'quantity' ? 'sortable active-sort' : 'sortable'}`}
@@ -708,7 +708,7 @@ export function PortfolioSection({
                 }}
                 style={{ cursor: 'pointer', userSelect: 'none' }}
               >
-                # {desktopSortKey === 'quantity' && (desktopAscending ? '▲' : '▼')}
+                #
               </th>
               <th 
                 className={`portfolio-col-price ${desktopSortKey === 'price' ? 'sortable active-sort' : 'sortable'}`}
@@ -722,7 +722,7 @@ export function PortfolioSection({
                 }}
                 style={{ cursor: 'pointer', userSelect: 'none' }}
               >
-                Price {desktopSortKey === 'price' && (desktopAscending ? '▲' : '▼')}
+                Price
               </th>
               <th 
                 className={`portfolio-col-change ${desktopSortKey === 'percent' ? 'sortable active-sort' : 'sortable'}`}
@@ -736,7 +736,7 @@ export function PortfolioSection({
                 }}
                 style={{ cursor: 'pointer', userSelect: 'none' }}
               >
-                % Change {desktopSortKey === 'percent' && (desktopAscending ? '▲' : '▼')}
+                % Change
               </th>
               <th 
                 className={`portfolio-col-value ${desktopSortKey === 'value' ? 'sortable active-sort' : 'sortable'}`}
@@ -750,7 +750,7 @@ export function PortfolioSection({
                 }}
                 style={{ cursor: 'pointer', userSelect: 'none' }}
               >
-                Value {desktopSortKey === 'value' && (desktopAscending ? '▲' : '▼')}
+                Value
               </th>
               <th className="portfolio-col-actions"></th>
             </tr>

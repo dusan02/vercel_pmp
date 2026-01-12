@@ -377,27 +377,28 @@
 }
 
 /* Heatmap screen - full screen */
-/* CRITICAL: Container must extend from top to bottom edge (touches navigation) */
-.mobile-app-screen.screen-heatmap {
-  padding: 0 !important;
-  background: #000;
-  z-index: 1;
-  /* Ensure heatmap extends to bottom edge - no gap before navigation */
-  margin: 0 !important;
-  bottom: 0 !important;
-  top: 0 !important; /* CRITICAL: Start from top edge */
-  left: 0 !important; /* CRITICAL: Start from left edge */
-  right: 0 !important; /* CRITICAL: Extend to right edge */
-  height: 100% !important; /* CRITICAL: Fill full height */
-  width: 100% !important; /* CRITICAL: Fill full width */
-  /* CRITICAL: Disable scrolling on wrapper, let inner treemap handle it */
-  overflow: hidden !important;
-  /* CRITICAL: Disable transform/transition on iOS Safari - prevents stacking context issues with position: fixed */
-  transform: none !important;
-  transition: none !important;
-  /* CRITICAL: Flex layout for proper height calculation */
-  display: flex !important;
-  flex-direction: column !important;
+/* CRITICAL: Container ends exactly at top edge of tabbar (no gap, no overlap) */
+@media (max-width: 1023px) {
+  .mobile-app-screen.screen-heatmap {
+    padding: 0 !important;
+    background: #000;
+    z-index: 1;
+    margin: 0 !important;
+    top: 0 !important; /* CRITICAL: Start from top edge */
+    left: 0 !important; /* CRITICAL: Start from left edge */
+    right: 0 !important; /* CRITICAL: Extend to right edge */
+    /* CRITICAL: Heatmap screen ends exactly at top edge of tabbar (no gap) */
+    bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom)) !important;
+    width: 100% !important; /* CRITICAL: Fill full width */
+    /* CRITICAL: Disable scrolling on wrapper, let inner treemap handle it */
+    overflow: hidden !important;
+    /* CRITICAL: Disable transform/transition on iOS Safari - prevents stacking context issues with position: fixed */
+    transform: none !important;
+    transition: none !important;
+    /* CRITICAL: Flex layout for proper height calculation */
+    display: flex !important;
+    flex-direction: column !important;
+  }
 }
 
 .mobile-app-screen.screen-heatmap.active {
@@ -406,22 +407,24 @@
 
 /* Fullscreen heatmap container */
 /* CRITICAL: ONE source of truth - no duplicates! */
-.mobile-app-screen.screen-heatmap .mobile-treemap-wrapper {
-  width: 100% !important;
-  height: 100% !important;
-  min-height: 0 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  /* CRITICAL: Heatmap touches footer - no padding-bottom, footer is fixed and overlays */
-  padding-bottom: 0 !important;
-  padding-top: 0 !important;
-  padding-left: 0 !important;
-  padding-right: 0 !important;
-  box-sizing: border-box !important;
-  overflow: hidden;
-  position: relative;
+@media (max-width: 1023px) {
+  .mobile-app-screen.screen-heatmap .mobile-treemap-wrapper {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    /* CRITICAL: Remove padding-bottom reserve - screen ends at tabbar top edge */
+    padding-bottom: 0 !important;
+    padding-top: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+    overflow: hidden;
+    position: relative;
+  }
 }
 
 .mobile-app-screen.screen-heatmap .heatmap-preview-container {
