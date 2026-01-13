@@ -377,7 +377,16 @@ async function saveRegularClose(apiKey: string, date: string, runId?: string): P
     const dateET = getDateET();
     const dateObj = new Date(dateET + 'T00:00:00'); // Will be interpreted correctly
 
+    // Calculate tomorrow's date for previousClose update
+    // We need to update previousClose for tomorrow so pre-market uses correct reference
+    // Tomorrow's previousClose should be today's regularClose
+    const tomorrow = new Date(dateObj);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowDateStr = getDateET(tomorrow);
+    const tomorrowDateObj = createETDate(tomorrowDateStr);
+
     let saved = 0;
+    let prevCloseUpdated = 0;
     for (const snapshot of snapshots) {
       try {
         const symbol = snapshot.ticker;
@@ -406,6 +415,50 @@ async function saveRegularClose(apiKey: string, date: string, runId?: string): P
             }
           });
           saved++;
+
+          // CRITICAL: Update previousClose for tomorrow
+          // This ensures pre-market next day uses today's regularClose as reference
+          // The date stored should be today (when the close happened), but we update it for tomorrow's reference
+          try {
+            // Update DailyRef for tomorrow - tomorrow's previousClose should be today's regularClose
+            await prisma.dailyRef.upsert({
+              where: {
+                symbol_date: {
+                  symbol,
+                  date: tomorrowDateObj
+                }
+              },
+              update: {
+                previousClose: regularClose,
+                updatedAt: new Date()
+              },
+              create: {
+                symbol,
+                date: tomorrowDateObj,
+                previousClose: regularClose
+              }
+            });
+
+            // Update Redis cache for tomorrow
+            await setPrevClose(tomorrowDateStr, symbol, regularClose);
+
+            // Update Ticker.latestPrevClose and latestPrevCloseDate
+            // This is the denormalized field used by heatmap API
+            // The date should be today (when the close happened)
+            await prisma.ticker.update({
+              where: { symbol },
+              data: {
+                latestPrevClose: regularClose,
+                latestPrevCloseDate: dateObj, // Today's date (when close happened)
+                updatedAt: new Date()
+              }
+            });
+
+            prevCloseUpdated++;
+          } catch (prevCloseError) {
+            // Non-fatal: log but continue
+            console.warn(`⚠️ Failed to update previousClose for ${symbol} (tomorrow):`, prevCloseError);
+          }
         }
       } catch (error) {
         console.error(`Error saving regular close for ${snapshot.ticker}:`, error);
@@ -413,6 +466,7 @@ async function saveRegularClose(apiKey: string, date: string, runId?: string): P
     }
 
     console.log(`✅ [runId:${correlationId}] Saved regular close for ${saved}/${snapshots.length} tickers`);
+    console.log(`✅ [runId:${correlationId}] Updated previousClose for ${prevCloseUpdated} tickers (tomorrow: ${tomorrowDateStr})`);
   } catch (error) {
     console.error(`❌ [runId:${correlationId}] Error in saveRegularClose:`, error);
   }
