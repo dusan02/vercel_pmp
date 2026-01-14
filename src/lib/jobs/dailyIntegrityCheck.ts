@@ -13,6 +13,7 @@ import { getLogoCandidates } from '@/lib/utils/getLogoUrl';
 export type IntegrityIssueCode =
   | 'missing_prev_close'
   | 'stale_prev_close_date'
+  | 'incorrect_prev_close'
   | 'invalid_change_pct'
   | 'change_pct_mismatch'
   | 'missing_market_cap'
@@ -41,8 +42,12 @@ export interface DailyIntegrityOptions {
   fixPrevCloseMaxTickers?: number;
   /** Max number of tickers to auto-fix sharesOutstanding in one run (caps Polygon usage). */
   fixSharesMaxTickers?: number;
+  /** Max number of tickers to auto-fix incorrect prevClose in one run (caps Polygon usage). */
+  fixIncorrectPrevCloseMaxTickers?: number;
   /** Consider price stale if lastPriceUpdated older than this many hours. */
   stalePriceHours?: number;
+  /** Enable verification of prevClose values against Polygon API (can be slow). */
+  verifyPrevCloseValues?: boolean;
 }
 
 export interface DailyIntegritySummary {
@@ -70,6 +75,7 @@ function ensureByCode(base?: Partial<DailyIntegritySummary['byCode']>): DailyInt
   const codes: IntegrityIssueCode[] = [
     'missing_prev_close',
     'stale_prev_close_date',
+    'incorrect_prev_close',
     'invalid_change_pct',
     'change_pct_mismatch',
     'missing_market_cap',
@@ -128,7 +134,9 @@ export async function runDailyIntegrityCheck(
     maxSamplesPerIssue = 15,
     fixPrevCloseMaxTickers = 150,
     fixSharesMaxTickers = 50,
-    stalePriceHours = 36
+    fixIncorrectPrevCloseMaxTickers = 100,
+    stalePriceHours = 36,
+    verifyPrevCloseValues = false
   } = options;
 
   const etNow = nowET();
@@ -169,6 +177,7 @@ export async function runDailyIntegrityCheck(
   const byCode = ensureByCode();
   const symbolsWithIssues = new Set<string>();
   const tickersWithPrice = tickers.filter(t => (t.lastPrice ?? 0) > 0);
+  const incorrectPrevCloseSymbols: string[] = [];
 
   // Expected previous close trading day
   //
@@ -243,6 +252,25 @@ export async function runDailyIntegrityCheck(
       } else if (!sameDay(t.latestPrevCloseDate, expectedPrevCloseDate)) {
         addIssue(byCode, 'stale_prev_close_date', symbol, maxSamplesPerIssue);
         symbolsWithIssues.add(symbol);
+      } else if (verifyPrevCloseValues && prevClose > 0) {
+        // Verify prevClose value against Polygon API (optional, can be slow)
+        // This check is skipped by default to avoid excessive API calls
+        // Enable with verifyPrevCloseValues=true option
+        try {
+          const { getPreviousClose } = await import('@/lib/utils/marketCapUtils');
+          const correctPrevClose = await getPreviousClose(symbol);
+          if (correctPrevClose && correctPrevClose > 0) {
+            const diff = Math.abs(prevClose - correctPrevClose);
+            if (diff > 0.01) { // More than 1 cent difference
+              addIssue(byCode, 'incorrect_prev_close', symbol, maxSamplesPerIssue);
+              symbolsWithIssues.add(symbol);
+              incorrectPrevCloseSymbols.push(symbol);
+            }
+          }
+        } catch (error) {
+          // Silently skip if API call fails (rate limiting, network issues, etc.)
+          // This is a best-effort check
+        }
       }
     }
 
@@ -361,6 +389,81 @@ export async function runDailyIntegrityCheck(
         maxConcurrent: 5
       });
       fixes.prevCloseFixed = result.size;
+    }
+
+    // 1b) Fix incorrect prevClose values (compare with Polygon API and update)
+    const incorrectPrevCloseToFix = Array.from(new Set(incorrectPrevCloseSymbols)).slice(0, fixIncorrectPrevCloseMaxTickers);
+    if (incorrectPrevCloseToFix.length > 0) {
+      const { getPreviousClose } = await import('@/lib/utils/marketCapUtils');
+      const { setPrevClose } = await import('@/lib/redis/operations');
+      const lastTradingDay = getLastTradingDay(createETDate(etDate));
+      const todayStr = getDateET(etNow);
+      
+      let fixedCount = 0;
+      const maxConcurrent = 3; // Conservative to avoid rate limiting
+      
+      for (let i = 0; i < incorrectPrevCloseToFix.length; i += maxConcurrent) {
+        const batch = incorrectPrevCloseToFix.slice(i, i + maxConcurrent);
+        const batchResults = await Promise.allSettled(
+          batch.map(async (symbol) => {
+            try {
+              const correctPrevClose = await getPreviousClose(symbol);
+              if (correctPrevClose && correctPrevClose > 0) {
+                // Update Ticker table
+                await prisma.ticker.update({
+                  where: { symbol },
+                  data: {
+                    latestPrevClose: correctPrevClose,
+                    latestPrevCloseDate: lastTradingDay,
+                    updatedAt: new Date()
+                  }
+                });
+
+                // Update DailyRef table
+                await prisma.dailyRef.upsert({
+                  where: {
+                    symbol_date: {
+                      symbol,
+                      date: lastTradingDay
+                    }
+                  },
+                  update: {
+                    previousClose: correctPrevClose,
+                    updatedAt: new Date()
+                  },
+                  create: {
+                    symbol,
+                    date: lastTradingDay,
+                    previousClose: correctPrevClose
+                  }
+                });
+
+                // Update Redis cache
+                try {
+                  await setPrevClose(todayStr, symbol, correctPrevClose);
+                } catch (error) {
+                  // Non-fatal
+                }
+
+                return true;
+              }
+              return false;
+            } catch (error) {
+              console.warn(`Failed to fix incorrect prevClose for ${symbol}:`, error);
+              return false;
+            }
+          })
+        );
+        
+        fixedCount += batchResults.filter(r => r.status === 'fulfilled' && r.value === true).length;
+        
+        // Rate limiting: small delay between batches
+        if (i + maxConcurrent < incorrectPrevCloseToFix.length) {
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
+      }
+      
+      fixes.prevCloseFixed += fixedCount;
     }
 
     // 2) Fix missing sharesOutstanding (capped, concurrent)
