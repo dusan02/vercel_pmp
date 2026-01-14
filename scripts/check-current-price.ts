@@ -7,10 +7,9 @@
  */
 
 import { prisma } from '../src/lib/db/prisma';
-import { nowET, getDateET, createETDate } from '../src/lib/utils/dateET';
+import { nowET, getDateET, createETDate, isWeekendET } from '../src/lib/utils/dateET';
 import { detectSession } from '../src/lib/utils/timeUtils';
 import { getPricingState } from '../src/lib/utils/pricingStateMachine';
-import { isWeekendET, isMarketHoliday } from '../src/lib/utils/dateET';
 
 const ticker = process.argv[2]?.toUpperCase() || 'AAPL';
 const apiKey = process.env.POLYGON_API_KEY;
@@ -25,7 +24,7 @@ async function checkCurrentPrice() {
   const session = detectSession(etNow);
   const pricingState = getPricingState(etNow);
   const isWeekend = isWeekendET(etNow);
-  const isHoliday = isMarketHoliday(etNow);
+  const isHoliday = false; // TODO: Add holiday check if needed
 
   console.log('📅 Časové informácie:');
   console.log(`   Aktuálny čas (ET): ${etNow.toISOString()}`);
