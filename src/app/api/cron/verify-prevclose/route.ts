@@ -10,7 +10,7 @@
  * Authorization: Bearer token with CRON_SECRET_KEY
  * 
  * Query params:
- * - limit: Max number of tickers to check (default: 200)
+ * - limit: Max number of tickers to check (default: unlimited - checks all)
  * - dryRun: If true, only report issues without fixing (default: false)
  */
 
@@ -21,8 +21,9 @@ import { getLastTradingDay } from '@/lib/utils/timeUtils';
 import { getDateET, createETDate } from '@/lib/utils/dateET';
 import { setPrevClose } from '@/lib/redis/operations';
 
-const DEFAULT_LIMIT = 200;
 const MAX_CONCURRENT = 3; // Conservative to avoid rate limiting
+// Note: By default checks ALL tickers (no limit)
+// Use ?limit=N query param to limit for testing
 
 interface VerifyResult {
   checked: number;
@@ -115,10 +116,11 @@ export async function POST(request: NextRequest) {
     }
 
     const url = new URL(request.url);
-    const limit = parseInt(url.searchParams.get('limit') || String(DEFAULT_LIMIT), 10);
+    const limitParam = url.searchParams.get('limit');
+    const limit = limitParam ? parseInt(limitParam, 10) : undefined; // undefined = no limit
     const dryRun = url.searchParams.get('dryRun') === 'true';
 
-    console.log(`🔍 Starting previousClose verification (limit: ${limit}, dryRun: ${dryRun})...`);
+    console.log(`🔍 Starting previousClose verification (limit: ${limit || 'unlimited'}, dryRun: ${dryRun})...`);
 
     // Get all tickers with previousClose
     const tickers = await prisma.ticker.findMany({
@@ -134,7 +136,7 @@ export async function POST(request: NextRequest) {
       orderBy: {
         symbol: 'asc'
       },
-      take: limit
+      ...(limit ? { take: limit } : {}) // Only apply limit if specified
     });
 
     console.log(`📊 Found ${tickers.length} tickers to verify`);
