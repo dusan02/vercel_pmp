@@ -94,8 +94,11 @@ async function verifyAndFixSectorIndustry() {
     console.log(`📊 Found ${allTickers.length} tickers with sector/industry data\n`);
 
     let fixed = 0;
-    const errors: Array<{ ticker: string; current: string; fixed: string }> = [];
+    const errors: Array<{ ticker: string; current: string; fixed: string; method: 'knownMapping' | 'validationRules' | 'normalizedOnly' }> = [];
     let verified = 0;
+    let fixedByKnownMapping = 0;
+    let fixedByValidationRules = 0;
+    let normalizedOnly = 0;
 
     for (const ticker of allTickers) {
       const symbol = ticker.symbol;
@@ -113,6 +116,7 @@ async function verifyAndFixSectorIndustry() {
           console.log(`❌ ${symbol} (${ticker.name || 'N/A'}):`);
           console.log(`   Current: ${currentSector || 'NULL'} / ${currentIndustry || 'NULL'} ${!isValid ? '(INVALID)' : ''}`);
           console.log(`   Should be: ${correct.sector} / ${correct.industry}`);
+          console.log(`   🔴 HIGH IMPORTANCE: Fixed by known mapping (upstream taxonomy may have changed)`);
 
           // Normalize industry
           const normalizedIndustry = normalizeIndustry(correct.sector, correct.industry);
@@ -130,25 +134,69 @@ async function verifyAndFixSectorIndustry() {
           errors.push({
             ticker: symbol,
             current: `${currentSector || 'NULL'} / ${currentIndustry || 'NULL'}`,
-            fixed: `${correct.sector} / ${normalizedIndustry || correct.industry}`
+            fixed: `${correct.sector} / ${normalizedIndustry || correct.industry}`,
+            method: 'knownMapping'
           });
 
           fixed++;
-          console.log(`   ✅ Fixed!\n`);
+          fixedByKnownMapping++;
+          console.log(`   ✅ Fixed by known mapping!\n`);
         } else {
           verified++;
         }
       } else if (!isValid) {
-        // Invalid combination but no known mapping - log warning
-        console.log(`⚠️  ${symbol} (${ticker.name || 'N/A'}): Invalid combination - ${currentSector || 'NULL'} / ${currentIndustry || 'NULL'}`);
-        // Don't fix automatically without known mapping, but log it
-        errors.push({
-          ticker: symbol,
-          current: `${currentSector || 'NULL'} / ${currentIndustry || 'NULL'}`,
-          fixed: 'NEEDS MANUAL REVIEW'
-        });
+        // Invalid combination but no known mapping - try pattern matching first
+        let needsFix = false;
+        let fixData: { sector: string; industry: string } | null = null;
+
+        for (const pattern of incorrectPatterns) {
+          if (pattern.check(symbol, currentSector, currentIndustry)) {
+            fixData = pattern.fix(symbol);
+            needsFix = true;
+            break;
+          }
+        }
+
+        if (needsFix && fixData) {
+          console.log(`❌ ${symbol} (${ticker.name || 'N/A'}):`);
+          console.log(`   Current: ${currentSector || 'NULL'} / ${currentIndustry || 'NULL'} (INVALID)`);
+          console.log(`   Fixed by validation rules: ${fixData.sector} / ${fixData.industry}`);
+
+          const normalizedIndustry = normalizeIndustry(fixData.sector, fixData.industry);
+
+          await prisma.ticker.update({
+            where: { symbol },
+            data: {
+              sector: fixData.sector,
+              industry: normalizedIndustry || fixData.industry,
+              updatedAt: new Date()
+            }
+          });
+
+          errors.push({
+            ticker: symbol,
+            current: `${currentSector || 'NULL'} / ${currentIndustry || 'NULL'}`,
+            fixed: `${fixData.sector} / ${normalizedIndustry || fixData.industry}`,
+            method: 'validationRules'
+          });
+
+          fixed++;
+          fixedByValidationRules++;
+          console.log(`   ✅ Fixed by validation rules!\n`);
+        } else {
+          // Invalid but no fix available - log warning
+          console.log(`⚠️  ${symbol} (${ticker.name || 'N/A'}): Invalid combination - ${currentSector || 'NULL'} / ${currentIndustry || 'NULL'}`);
+          // Don't fix automatically without known mapping, but log it
+          errors.push({
+            ticker: symbol,
+            current: `${currentSector || 'NULL'} / ${currentIndustry || 'NULL'}`,
+            fixed: 'NEEDS MANUAL REVIEW',
+            method: 'normalizedOnly' // Not actually fixed, but categorized
+          });
+          normalizedOnly++;
+        }
       } else {
-        // Check against incorrect patterns
+        // Valid combination - check against incorrect patterns for edge cases
         let needsFix = false;
         let fixData: { sector: string; industry: string } | null = null;
 
@@ -165,11 +213,13 @@ async function verifyAndFixSectorIndustry() {
           console.log(`   Current: ${currentSector || 'NULL'} / ${currentIndustry || 'NULL'}`);
           console.log(`   Should be: ${fixData.sector} / ${fixData.industry}`);
 
+          const normalizedIndustry = normalizeIndustry(fixData.sector, fixData.industry);
+
           await prisma.ticker.update({
             where: { symbol },
             data: {
               sector: fixData.sector,
-              industry: fixData.industry,
+              industry: normalizedIndustry || fixData.industry,
               updatedAt: new Date()
             }
           });
@@ -177,11 +227,13 @@ async function verifyAndFixSectorIndustry() {
           errors.push({
             ticker: symbol,
             current: `${currentSector || 'NULL'} / ${currentIndustry || 'NULL'}`,
-            fixed: `${fixData.sector} / ${fixData.industry}`
+            fixed: `${fixData.sector} / ${normalizedIndustry || fixData.industry}`,
+            method: 'validationRules'
           });
 
           fixed++;
-          console.log(`   ✅ Fixed!\n`);
+          fixedByValidationRules++;
+          console.log(`   ✅ Fixed by validation rules!\n`);
         } else {
           verified++;
         }

@@ -214,7 +214,9 @@ async function upsertToDB(
   normalized: ReturnType<typeof normalizeSnapshot>,
   previousClose: number | null,
   marketCap: number,
-  marketCapDiff: number
+  marketCapDiff: number,
+  isStaticUpdateLocked: boolean = false,
+  lastChangePctFromCache: number | null | undefined = undefined
 ): Promise<boolean> {
   if (!normalized) return false;
 
@@ -234,13 +236,38 @@ async function upsertToDB(
       console.log(`🔍 Debug DB Upsert ${symbol}: Attempting to set latestPrevClose=${previousClose || 0}, latestPrevCloseDate=${lastTradingDay.toISOString()}`);
     }
 
+    // CRITICAL: During static update lock, preserve lastChangePct if no prevClose
+    // This prevents UI from showing "percentages disappeared" during lock window
+    // We still update price and timestamp, but keep last valid percentage
+    // OPTIMIZATION: Use cached value from batch query if available
+    let changePctToUse = normalized.changePct;
+    if (isStaticUpdateLocked && !previousClose) {
+      if (lastChangePctFromCache !== undefined && lastChangePctFromCache !== null) {
+        // Use cached value (from batch query)
+        changePctToUse = lastChangePctFromCache;
+      } else {
+        // Fallback to per-ticker query (if batch failed)
+        const existingTicker = await prisma.ticker.findUnique({
+          where: { symbol },
+          select: { lastChangePct: true }
+        });
+        if (existingTicker && existingTicker.lastChangePct !== null && existingTicker.lastChangePct !== undefined) {
+          changePctToUse = existingTicker.lastChangePct;
+        }
+      }
+      if (changePctToUse !== normalized.changePct) {
+        console.log(`⚠️  ${symbol}: Preserving lastChangePct=${changePctToUse} during lock (no prevClose)`);
+      }
+    }
+    
     await prisma.ticker.upsert({
       where: { symbol },
       update: {
         // Only update updatedAt and dynamic columns
         updatedAt: new Date(),
         lastPrice: normalized.price,
-        lastChangePct: normalized.changePct,
+        // Preserve lastChangePct during lock if no prevClose (prevents UI flicker)
+        lastChangePct: changePctToUse,
         lastMarketCap: marketCap,
         lastMarketCapDiff: marketCapDiff,
         lastPriceUpdated: normalized.timestamp,
@@ -362,6 +389,25 @@ async function saveRegularClose(apiKey: string, date: string, runId?: string): P
   const correlationId = runId || Date.now().toString(36);
   try {
     console.log(`💾 [runId:${correlationId}] Starting regular close save...`);
+    
+    // IDEMPOTENCY: Check if already saved for today (avoid unnecessary Polygon API calls)
+    const calendarDateETStr = getDateET();
+    const calendarDateET = createETDate(calendarDateETStr);
+    const todayTradingDay = getLastTradingDay(calendarDateET);
+    
+    const existingRegularClose = await prisma.dailyRef.findFirst({
+      where: {
+        date: todayTradingDay,
+        regularClose: { not: null }
+      },
+      select: { symbol: true }
+    });
+    
+    if (existingRegularClose) {
+      console.log(`⏭️  [runId:${correlationId}] Skipping saveRegularClose - already saved for ${getDateET(todayTradingDay)} (idempotent check, saved for ${existingRegularClose.symbol})`);
+      return;
+    }
+    
     const tickers = await getUniverse('sp500');
 
     if (tickers.length === 0) {
@@ -373,17 +419,15 @@ async function saveRegularClose(apiKey: string, date: string, runId?: string): P
     const snapshots = await fetchPolygonSnapshot(tickers, apiKey);
     console.log(`✅ [runId:${correlationId}] Received ${snapshots.length} snapshots`);
 
-    // DST-safe date creation
-    const dateET = getDateET();
-    const dateObj = new Date(dateET + 'T00:00:00'); // Will be interpreted correctly
-
-    // Calculate tomorrow's date for previousClose update
-    // We need to update previousClose for tomorrow so pre-market uses correct reference
-    // Tomorrow's previousClose should be today's regularClose
-    const tomorrow = new Date(dateObj);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowDateStr = getDateET(tomorrow);
-    const tomorrowDateObj = createETDate(tomorrowDateStr);
+    // DST-safe date creation (reuse variables from idempotency check above)
+    // calendarDateETStr, calendarDateET, todayTradingDay already defined above
+    
+    // CRITICAL: Use nextTradingDay, not calendar tomorrow!
+    // This handles weekends/holidays correctly (Friday -> Monday, not Friday -> Saturday)
+    const { getNextTradingDay } = await import('@/lib/utils/pricingStateMachine');
+    const nextTradingDay = getNextTradingDay(todayTradingDay);
+    const nextTradingDateStr = getDateET(nextTradingDay);
+    const nextTradingDateObj = createETDate(nextTradingDateStr);
 
     let saved = 0;
     let prevCloseUpdated = 0;
@@ -396,12 +440,12 @@ async function saveRegularClose(apiKey: string, date: string, runId?: string): P
 
         // INVARIANT: Only save valid prices
         if (regularClose && regularClose > 0) {
-          // Update DailyRef with regular close
+          // Update DailyRef with regular close (for today's trading day)
           await prisma.dailyRef.upsert({
             where: {
               symbol_date: {
                 symbol,
-                date: dateObj
+                date: todayTradingDay
               }
             },
             update: {
@@ -409,23 +453,34 @@ async function saveRegularClose(apiKey: string, date: string, runId?: string): P
             },
             create: {
               symbol,
-              date: dateObj,
+              date: todayTradingDay,
               previousClose: regularClose, // Fallback if previousClose not set
               regularClose
             }
           });
           saved++;
 
-          // CRITICAL: Update previousClose for tomorrow
-          // This ensures pre-market next day uses today's regularClose as reference
-          // The date stored should be today (when the close happened), but we update it for tomorrow's reference
+          // CRITICAL: Update previousClose for nextTradingDay (Model A)
+          // Model A: prevCloseKey(nextTradingDay) = close(todayTradingDay)
+          // This ensures pre-market next trading day uses today's regularClose as reference
           try {
-            // Update DailyRef for tomorrow - tomorrow's previousClose should be today's regularClose
+            // INVARIANT: nextTradingDay must be a trading day (not weekend/holiday)
+            const nextTradingDayET = toET(nextTradingDay);
+            const isNextTradingDayValid = nextTradingDayET.weekday !== 0 && 
+                                         nextTradingDayET.weekday !== 6 && 
+                                         !isMarketHoliday(nextTradingDay);
+            
+            if (!isNextTradingDayValid) {
+              console.error(`❌ INVARIANT VIOLATION: nextTradingDay ${nextTradingDateStr} is not a valid trading day!`);
+              throw new Error(`nextTradingDay ${nextTradingDateStr} is not a valid trading day`);
+            }
+            
+            // Update DailyRef for nextTradingDay - nextTradingDay's previousClose = today's regularClose
             await prisma.dailyRef.upsert({
               where: {
                 symbol_date: {
                   symbol,
-                  date: tomorrowDateObj
+                  date: nextTradingDateObj
                 }
               },
               update: {
@@ -434,22 +489,23 @@ async function saveRegularClose(apiKey: string, date: string, runId?: string): P
               },
               create: {
                 symbol,
-                date: tomorrowDateObj,
+                date: nextTradingDateObj,
                 previousClose: regularClose
               }
             });
 
-            // Update Redis cache for tomorrow
-            await setPrevClose(tomorrowDateStr, symbol, regularClose);
+            // CRITICAL: Redis cache uses Model A: prevCloseKey(date) = close(date-1)
+            // For nextTradingDay, prevClose(nextTradingDay) = close(todayTradingDay) = today's regularClose
+            await setPrevClose(nextTradingDateStr, symbol, regularClose);
 
             // Update Ticker.latestPrevClose and latestPrevCloseDate
             // This is the denormalized field used by heatmap API
-            // The date should be today (when the close happened)
+            // The date should be todayTradingDay (when the close happened)
             await prisma.ticker.update({
               where: { symbol },
               data: {
                 latestPrevClose: regularClose,
-                latestPrevCloseDate: dateObj, // Today's date (when close happened)
+                latestPrevCloseDate: todayTradingDay, // Today's trading day (when close happened)
                 updatedAt: new Date()
               }
             });
@@ -457,7 +513,7 @@ async function saveRegularClose(apiKey: string, date: string, runId?: string): P
             prevCloseUpdated++;
           } catch (prevCloseError) {
             // Non-fatal: log but continue
-            console.warn(`⚠️ Failed to update previousClose for ${symbol} (tomorrow):`, prevCloseError);
+            console.warn(`⚠️ Failed to update previousClose for ${symbol} (nextTradingDay: ${nextTradingDateStr}):`, prevCloseError);
           }
         }
       } catch (error) {
@@ -466,7 +522,7 @@ async function saveRegularClose(apiKey: string, date: string, runId?: string): P
     }
 
     console.log(`✅ [runId:${correlationId}] Saved regular close for ${saved}/${snapshots.length} tickers`);
-    console.log(`✅ [runId:${correlationId}] Updated previousClose for ${prevCloseUpdated} tickers (tomorrow: ${tomorrowDateStr})`);
+    console.log(`✅ [runId:${correlationId}] Updated previousClose for ${prevCloseUpdated} tickers (nextTradingDay: ${nextTradingDateStr}, todayTradingDay: ${getDateET(todayTradingDay)})`);
   } catch (error) {
     console.error(`❌ [runId:${correlationId}] Error in saveRegularClose:`, error);
   }
@@ -500,21 +556,86 @@ export async function ingestBatch(
   }
 
   const session = detectSession(now);
-  const today = getDateET(now); // YYYY-MM-DD in ET (DST-safe)
-  const todayDate = createETDate(today);
+  // CRITICAL: getDateET() returns CALENDAR date in ET, not trading date
+  const calendarDateETStr = getDateET(now); // YYYY-MM-DD calendar date in ET
+  const calendarDateET = createETDate(calendarDateETStr);
+  
+  // For prevClose lookup: we need prevClose for TODAY's trading session
+  // Model A: prevCloseKey(todayTradingDay) = close(yesterdayTradingDay)
+  // So we read from todayTradingDay, not lastTradingDay
+  const todayTradingDay = getLastTradingDay(calendarDateET); // If today is trading day, returns today; if not, returns last trading day
+  const todayTradingDateStr = getDateET(todayTradingDay); // Trading date string for prevClose lookup
+  
   const results: IngestResult[] = [];
 
-  // Fetch previous closes from Redis
-  const prevCloseMap = await getPrevClose(today, tickers);
+  // Check if static data update is in progress (lock)
+  // If locked, we'll still normalize but mark as needing refresh
+  let isStaticUpdateLocked = false;
+  let lockAgeSeconds = 0;
+  try {
+    const { redisClient } = await import('@/lib/redis');
+    if (redisClient && redisClient.isOpen) {
+      const lockKey = 'lock:static_data_update';
+      const lockExists = await redisClient.exists(lockKey);
+      isStaticUpdateLocked = lockExists === 1;
+      
+      if (isStaticUpdateLocked) {
+        // Check lock age from createdAt timestamp (not TTL!)
+        // TTL is time until expiration, not time since creation
+        const lockValueStr = await redisClient.get(lockKey);
+        if (lockValueStr) {
+          try {
+            const lockValue = JSON.parse(lockValueStr);
+            if (lockValue.createdAt) {
+              const now = Date.now();
+              const createdAt = lockValue.createdAt;
+              
+              // Guard: clock skew detection (createdAt in future)
+              if (createdAt > now) {
+                console.warn(`⚠️  Lock createdAt is in future (clock skew detected): createdAt=${new Date(createdAt).toISOString()}, now=${new Date(now).toISOString()}`);
+                lockAgeSeconds = 0; // Ignore invalid timestamp
+              } else {
+                lockAgeSeconds = Math.floor((now - createdAt) / 1000);
+              }
+            } else {
+              // Legacy format - cannot determine age, log warning
+              console.warn('⚠️  Lock exists but no createdAt timestamp (legacy format)');
+              lockAgeSeconds = 0;
+            }
+          } catch (parseError) {
+            // Legacy format (plain string) or poison value - cannot determine age
+            console.warn('⚠️  Lock value not JSON (legacy format or poison value):', parseError instanceof Error ? parseError.message : 'unknown error');
+            lockAgeSeconds = 0; // Safe default: continue with degraded mode
+          }
+        }
+        
+        if (lockAgeSeconds > 45 * 60) { // > 45 minutes
+          console.error(`❌ STALE LOCK DETECTED: lock:static_data_update exists for ${Math.round(lockAgeSeconds / 60)} minutes (>45min threshold). This may indicate a crashed process.`);
+        }
+        
+        if (lockAgeSeconds > 0) {
+          console.log(`⚠️  Static data update in progress (lock age: ${Math.round(lockAgeSeconds / 60)}min) - percentages may need refresh after unlock`);
+        } else {
+          console.log(`⚠️  Static data update in progress - percentages may need refresh after unlock`);
+        }
+      }
+    }
+  } catch (error) {
+    // Non-fatal: continue if lock check fails
+  }
+
+  // Fetch previous closes from Redis (Model A: prevCloseKey(todayTradingDay) = close(yesterdayTradingDay))
+  const prevCloseMap = await getPrevClose(todayTradingDateStr, tickers);
   
   // If no previous closes in Redis, try to load from DB
+  // Model A: DailyRef(date=todayTradingDay).previousClose = close(yesterdayTradingDay)
   if (prevCloseMap.size === 0) {
     console.log('⚠️ No previous closes found in Redis, checking DB...');
     try {
       const dailyRefs = await prisma.dailyRef.findMany({
         where: {
           symbol: { in: tickers },
-          date: todayDate
+          date: todayTradingDay // Use todayTradingDay (Model A: DailyRef(D).previousClose = close(D-1))
         },
         select: { symbol: true, previousClose: true }
       });
@@ -523,8 +644,8 @@ export async function ingestBatch(
         console.log(`✅ Loaded ${dailyRefs.length} previous closes from DB`);
         for (const ref of dailyRefs) {
           prevCloseMap.set(ref.symbol, ref.previousClose);
-          // Also update Redis cache
-          await setPrevClose(today, ref.symbol, ref.previousClose);
+          // Also update Redis cache (Model A: prevCloseKey(todayTradingDay) = close(yesterdayTradingDay))
+          await setPrevClose(todayTradingDateStr, ref.symbol, ref.previousClose);
         }
       }
     } catch (dbError) {
@@ -534,15 +655,18 @@ export async function ingestBatch(
 
   // If still missing previous closes, try to fetch from Polygon (even if market closed)
   // This handles the case where Redis/DB are empty after restart
+  // CRITICAL: Worker percentá len keď prevCloseMap existuje (z Redis alebo DB)
+  // This is a hard invariant: never calculate percentages with null references
   const missingPrevClose = tickers.filter(t => !prevCloseMap.has(t));
-  if (missingPrevClose.length > 0) {
+  if (!isStaticUpdateLocked && missingPrevClose.length > 0) {
     console.log(`⚠️ Missing previous close for ${missingPrevClose.length} tickers, attempting to fetch...`);
     // Only fetch a few to avoid rate limits if many are missing
     const toFetch = missingPrevClose.slice(0, 50); 
-    await bootstrapPreviousCloses(toFetch, apiKey, today);
+    // bootstrapPreviousCloses expects calendar date, will calculate trading day internally
+    await bootstrapPreviousCloses(toFetch, apiKey, calendarDateETStr);
     
-    // Reload map after bootstrap
-    const refreshedMap = await getPrevClose(today, toFetch);
+    // Reload map after bootstrap (use todayTradingDateStr)
+    const refreshedMap = await getPrevClose(todayTradingDateStr, toFetch);
     refreshedMap.forEach((val, key) => prevCloseMap.set(key, val));
   }
 
@@ -595,7 +719,7 @@ export async function ingestBatch(
       const dailyRefs = await prisma.dailyRef.findMany({
         where: {
           symbol: { in: tickers },
-          date: todayDate
+          date: calendarDateET // Use calendarDateET for regularClose lookup (today's date)
         },
         select: { symbol: true, regularClose: true }
       });
@@ -644,6 +768,29 @@ export async function ingestBatch(
     }
   }
 
+  // OPTIMIZATION: Batch fetch lastChangePct for all tickers in batch (if locked)
+  // This avoids per-ticker DB queries during lock
+  const lastChangePctMap = new Map<string, number | null>();
+  if (isStaticUpdateLocked) {
+    try {
+      const tickersWithChangePct = await prisma.ticker.findMany({
+        where: {
+          symbol: { in: tickers }
+        },
+        select: {
+          symbol: true,
+          lastChangePct: true
+        }
+      });
+      tickersWithChangePct.forEach(t => {
+        lastChangePctMap.set(t.symbol, t.lastChangePct);
+      });
+      console.log(`📊 Batch loaded lastChangePct for ${lastChangePctMap.size} tickers (lock optimization)`);
+    } catch (error) {
+      console.warn('⚠️  Failed to batch load lastChangePct, will fallback to per-ticker queries:', error);
+    }
+  }
+
   // Process each snapshot
   for (const snapshot of snapshots) {
     const symbol = snapshot.ticker;
@@ -660,6 +807,8 @@ export async function ingestBatch(
 
     try {
       // Normalize using session-aware resolver
+      // If static update is locked and no prevClose, still normalize (will return null if no prevClose by design)
+      // This prevents calculating % with null reference, but still allows price updates
       const normalized = normalizeSnapshot(
         snapshot,
         previousClose,
@@ -668,6 +817,11 @@ export async function ingestBatch(
         frozenPrice,
         force
       );
+      
+      // Log if locked and no prevClose (for debugging)
+      if (isStaticUpdateLocked && !previousClose && normalized) {
+        console.log(`⚠️  ${symbol}: Normalized during lock without prevClose - % may be 0`);
+      }
       if (!normalized) {
         if (symbol === 'GOOG' || symbol === 'GOOGL') {
           console.log(`   ❌ normalizeSnapshot returned null for ${symbol}`);
@@ -698,7 +852,10 @@ export async function ingestBatch(
 
       // Upsert to DB (includes updating Ticker table for sorting)
       // Pass previousClose - always use adjusted aggregates API value
-      const dbSuccess = await upsertToDB(symbol, session, normalized, previousClose, marketCap, marketCapDiff);
+      // Pass isStaticUpdateLocked to preserve lastChangePct during lock
+      // Pass cached lastChangePct to avoid per-ticker query during lock
+      const cachedLastChangePct = lastChangePctMap.get(symbol);
+      const dbSuccess = await upsertToDB(symbol, session, normalized, previousClose, marketCap, marketCapDiff, isStaticUpdateLocked, cachedLastChangePct);
 
       // Write to Redis (atomic operation)
       const priceData: PriceData = {
@@ -1107,10 +1264,39 @@ async function main() {
           }
         } else {
           // Fallback: save at 16:00 ET if Redis unavailable
+          // Guard: check if already saved for today (safe by design)
           if (hours === 16 && minutes === 0) {
-            const runId = Date.now().toString(36);
-            console.log(`🔄 [runId:${runId}] Saving regular close (Redis unavailable, fallback)...`);
-            await saveRegularClose(apiKey, today, runId);
+            try {
+              const { prisma } = await import('@/lib/db/prisma');
+              const { createETDate } = await import('@/lib/utils/dateET');
+              const { getLastTradingDay } = await import('@/lib/utils/timeUtils');
+              const todayDate = createETDate(today);
+              const todayTradingDay = getLastTradingDay(todayDate);
+              
+              // Check if regular close already saved for today
+              const existingDailyRef = await prisma.dailyRef.findFirst({
+                where: {
+                  date: todayTradingDay,
+                  regularClose: { not: null }
+                },
+                select: { symbol: true }
+              });
+              
+              if (!existingDailyRef) {
+                // Not saved yet - safe to save
+                const runId = Date.now().toString(36);
+                console.log(`🔄 [runId:${runId}] Saving regular close (Redis unavailable, fallback - not saved yet)...`);
+                await saveRegularClose(apiKey, today, runId);
+              } else {
+                console.log(`⏭️  Skipping fallback saveRegularClose - already saved for ${todayTradingDay.toISOString().split('T')[0]}`);
+              }
+            } catch (fallbackError) {
+              console.warn('⚠️  Failed to check if regular close already saved (fallback):', fallbackError);
+              // Continue anyway - better to save twice than not at all
+              const runId = Date.now().toString(36);
+              console.log(`🔄 [runId:${runId}] Saving regular close (Redis unavailable, fallback - check failed)...`);
+              await saveRegularClose(apiKey, today, runId);
+            }
           }
         }
       }
