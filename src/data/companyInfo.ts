@@ -213,10 +213,12 @@ export const tickerDomains: Record<string, string> = {
     'RIO': 'riotinto.com', 'GSK': 'gsk.com', 'MFG': 'mizuhogroup.com', 'INFY': 'infosys.com',
     'CP': 'cpr.ca', 'BCS': 'barclays.com', 'NGG': 'nationalgrid.com', 'BNS': 'scotiabank.com', 'ING': 'ing.com',
     'EQNR': 'equinor.com', 'CM': 'cibc.com', 'CNQ': 'cnrl.com', 'LYG': 'lloydsbankinggroup.com',
+    'TCOM': 'trip.com', 'CTSH': 'cognizant.com', 'WAB': 'wabtec.com',
     'AEM': 'agnicoeagle.com', 'DB': 'deutsche-bank.com', 'NU': 'nu.com', 'CNI': 'cn.ca',
     'DEO': 'diageo.com', 'NWG': 'natwestgroup.com', 'AMX': 'americamovil.com', 'MFC': 'manulife.com',
     'E': 'eni.com', 'WCN': 'wasteconnections.com', 'SU': 'suncor.com', 'TRP': 'tcenergy.com', 'PBR': 'petrobras.com',
-    'HMC': 'honda.com', 'GRMN': 'garmin.com', 'CCEP': 'cocacolaep.com', 'ALC': 'alcon.com', 'TAK': 'takeda.com'
+    'HMC': 'honda.com', 'GRMN': 'garmin.com', 'CCEP': 'cocacolaep.com', 'ALC': 'alcon.com', 'TAK': 'takeda.com',
+    'TCOM': 'trip.com', 'CTSH': 'cognizant.com', 'WAB': 'wabtec.com'
 };
 
 // Color mapping for consistent company colors
@@ -436,5 +438,6 @@ export const companyColors: Record<string, string> = {
     'AEM': '0066CC', 'DB': '0066CC', 'NU': '0066CC', 'CNI': '0066CC',
     'DEO': '0066CC', 'NWG': '0066CC', 'AMX': '0066CC', 'MFC': '0066CC',
     'E': '0066CC', 'WCN': '0066CC', 'SU': '0066CC', 'TRP': '0066CC', 'PBR': '0066CC',
-    'HMC': '0066CC', 'GRMN': '0066CC', 'CCEP': '0066CC', 'ALC': '0066CC', 'TAK': '0066CC'
+    'HMC': '0066CC', 'GRMN': '0066CC', 'CCEP': '0066CC', 'ALC': '0066CC', 'TAK': '0066CC',
+    'TCOM': '0066CC', 'CTSH': '0066CC', 'WAB': '0066CC'
 };
