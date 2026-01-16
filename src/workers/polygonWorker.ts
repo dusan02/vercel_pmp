@@ -1076,12 +1076,22 @@ export async function bootstrapPreviousCloses(
         
         // Save to DB immediately for persistence
         // CRITICAL: Use prevTradingDay (when close happened), not "today"
+        // Also save as regularClose for the previous trading day (this is the regular session close)
         await dbWriteRetry(
           () =>
             prisma.dailyRef.upsert({
               where: { symbol_date: { symbol, date: prevTradingDay } },
-              update: { previousClose: prevClose, updatedAt: new Date() },
-              create: { symbol, date: prevTradingDay, previousClose: prevClose }
+              update: { 
+                previousClose: prevClose,
+                regularClose: prevClose, // Also save as regularClose (same value for previous trading day)
+                updatedAt: new Date() 
+              },
+              create: { 
+                symbol, 
+                date: prevTradingDay, 
+                previousClose: prevClose,
+                regularClose: prevClose // Also save as regularClose
+              }
             }),
           `dailyRef.upsert:${symbol}`
         );
