@@ -1006,9 +1006,10 @@ export async function bootstrapPreviousCloses(
       let prevTradingDay: Date | null = null;
       
       // PRIORITY 1: Explicit /range for expected previous trading day (ET-safe)
+      // This is the most accurate method - always use this first
       try {
         const rangeUrl = `https://api.polygon.io/v2/aggs/ticker/${symbol}/range/1/day/${expectedPrevYMD}/${expectedPrevYMD}?adjusted=true&apiKey=${apiKey}`;
-        const rangeResp = await withRetry(async () => fetch(rangeUrl));
+        const rangeResp = await withRetry(async () => fetch(rangeUrl)); // withRetry has built-in retry logic
         if (rangeResp.ok) {
           const rangeData = await rangeResp.json();
           const c = rangeData?.results?.[0]?.c;
@@ -1018,35 +1019,11 @@ export async function bootstrapPreviousCloses(
           }
         }
       } catch (rangeError) {
-        console.warn(`⚠️ /range expected-day failed for ${symbol}, falling back to /prev:`, rangeError);
+        console.warn(`⚠️ /range expected-day failed for ${symbol}, trying lookback /range:`, rangeError);
       }
 
-      // PRIORITY 2: /prev endpoint (can lag early morning; accept its date if that's all we have)
-      if (!prevClose || !prevTradingDay) {
-        try {
-          const prevUrl = `https://api.polygon.io/v2/aggs/ticker/${symbol}/prev?adjusted=true&apiKey=${apiKey}`;
-          const prevResponse = await withRetry(async () => fetch(prevUrl));
-
-          if (prevResponse.ok) {
-            const prevData = await prevResponse.json();
-            const c = prevData?.results?.[0]?.c;
-            if (typeof c === 'number' && c > 0) {
-              prevClose = c;
-              const timestamp = prevData?.results?.[0]?.t;
-              if (timestamp) {
-                const prevDate = new Date(timestamp);
-                prevTradingDay = createETDate(getDateET(prevDate));
-              } else {
-                prevTradingDay = expectedPrevTradingDay;
-              }
-            }
-          }
-        } catch (prevError) {
-          console.warn(`⚠️ /prev endpoint failed for ${symbol}, trying lookback /range:`, prevError);
-        }
-      }
-
-      // PRIORITY 3: Lookback /range (ET-safe day stepping)
+      // PRIORITY 2: Lookback /range (ET-safe day stepping) - try previous days if expected day fails
+      // This is more reliable than /prev endpoint which can lag early morning
       if (!prevClose || !prevTradingDay) {
         const maxLookback = 10;
         const etMidnight = createETDate(date);
