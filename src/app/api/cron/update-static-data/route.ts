@@ -331,8 +331,29 @@ async function processBatch(
 }
 
 /**
+ * Fetch Polygon snapshot for current price
+ */
+async function fetchPolygonSnapshot(ticker: string, apiKey: string): Promise<any> {
+  try {
+    const url = `https://api.polygon.io/v2/snapshot/locale/us/markets/stocks/tickers/${ticker}?apikey=${apiKey}`;
+    const response = await withRetry(async () => fetch(url));
+    
+    if (!response.ok) {
+      return null;
+    }
+    
+    const data = await response.json();
+    // Single ticker endpoint returns { ticker: {...} }, but also handle batch format as fallback
+    return data.ticker || data.tickers?.[0] || null;
+  } catch (error) {
+    console.error(`Error fetching Polygon snapshot for ${ticker}:`, error);
+    return null;
+  }
+}
+
+/**
  * Verify price consistency between DB, Redis, and Polygon API
- * Checks for mismatches and logs issues
+ * Checks for mismatches and logs issues (includes current price check)
  */
 async function verifyPriceConsistency(
   tickers: string[],
@@ -362,6 +383,7 @@ async function verifyPriceConsistency(
           lastPrice: true,
           latestPrevClose: true,
           latestPrevCloseDate: true,
+          lastChangePct: true,
         }
       });
 
@@ -369,12 +391,38 @@ async function verifyPriceConsistency(
       const redisPrevCloseMap = await getPrevClose(todayTradingDateStr, [ticker]);
       const redisPreviousClose = redisPrevCloseMap.get(ticker) || null;
 
-      // 3. Get data from Polygon API
+      // 3. Get current price from Polygon API
+      const polygonSnapshot = await fetchPolygonSnapshot(ticker, apiKey);
+      const polygonCurrentPrice = polygonSnapshot?.lastTrade?.p || 
+                                   polygonSnapshot?.min?.c || 
+                                   polygonSnapshot?.day?.c || 
+                                   polygonSnapshot?.prevDay?.c ||
+                                   null;
+
+      // 4. Get previous close from Polygon API
       const polygonPrevCloseData = await fetchPolygonPreviousClose(ticker, apiKey, yesterdayDateStr);
       const polygonPreviousClose = polygonPrevCloseData.close;
       const polygonTradingDay = polygonPrevCloseData.tradingDay;
 
-      // 4. Check for issues
+      // 5. Check for issues - Current Price
+      if (!dbTicker?.lastPrice || dbTicker.lastPrice <= 0) {
+        tickerIssues.push('DB price missing or zero');
+      }
+
+      if (!polygonCurrentPrice || polygonCurrentPrice <= 0) {
+        tickerIssues.push('Polygon current price missing or zero');
+      }
+
+      // Check if current prices match (within 0.1% tolerance)
+      if (dbTicker?.lastPrice && polygonCurrentPrice) {
+        const diff = Math.abs(dbTicker.lastPrice - polygonCurrentPrice);
+        const diffPercent = (diff / polygonCurrentPrice) * 100;
+        if (diffPercent > 0.1) {
+          tickerIssues.push(`Price mismatch: DB=$${dbTicker.lastPrice.toFixed(2)}, Polygon=$${polygonCurrentPrice.toFixed(2)} (diff: ${diffPercent.toFixed(2)}%)`);
+        }
+      }
+
+      // 6. Check for issues - Previous Close
       if (!dbTicker?.latestPrevClose || dbTicker.latestPrevClose <= 0) {
         tickerIssues.push('DB previousClose missing or zero');
       }
@@ -387,7 +435,7 @@ async function verifyPriceConsistency(
         tickerIssues.push('Polygon previousClose missing or zero');
       }
 
-      // Check if prices match (within 0.1% tolerance)
+      // Check if previousClose prices match (within 0.1% tolerance)
       if (dbTicker?.latestPrevClose && polygonPreviousClose) {
         const diff = Math.abs(dbTicker.latestPrevClose - polygonPreviousClose);
         const diffPercent = (diff / polygonPreviousClose) * 100;
@@ -396,11 +444,20 @@ async function verifyPriceConsistency(
         }
       }
 
-      // Check if trading day matches
+      // 7. Check if trading day matches
       if (dbTicker?.latestPrevCloseDate && polygonTradingDay) {
         const dbTradingDayStr = getDateET(dbTicker.latestPrevCloseDate);
         if (dbTradingDayStr !== polygonTradingDay) {
           tickerIssues.push(`Trading day mismatch: DB=${dbTradingDayStr}, Polygon=${polygonTradingDay}`);
+        }
+      }
+
+      // 8. Check percent change consistency (if both available)
+      if (dbTicker && dbTicker.lastChangePct !== null && dbTicker.lastPrice && polygonPreviousClose) {
+        const calculatedPct = ((dbTicker.lastPrice / polygonPreviousClose) - 1) * 100;
+        const pctDiff = Math.abs(calculatedPct - dbTicker.lastChangePct);
+        if (pctDiff > 0.01) {
+          tickerIssues.push(`% Change mismatch: DB=${dbTicker.lastChangePct.toFixed(2)}%, Calculated=${calculatedPct.toFixed(2)}%`);
         }
       }
 
