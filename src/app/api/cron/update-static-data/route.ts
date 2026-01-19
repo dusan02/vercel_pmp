@@ -18,8 +18,9 @@ import { getSharesOutstanding, getPreviousClose } from '@/lib/utils/marketCapUti
 import { getAllTrackedTickers } from '@/lib/utils/universeHelpers';
 import { getLastTradingDay } from '@/lib/utils/timeUtils';
 import { getDateET, createETDate } from '@/lib/utils/dateET';
-import { getUniverse } from '@/lib/redis/operations';
+import { getUniverse, getPrevClose } from '@/lib/redis/operations';
 import { bootstrapPreviousCloses } from '@/workers/polygonWorker';
+import { withRetry } from '@/lib/api/rateLimiter';
 
 const BATCH_SIZE = 50; // Process 50 tickers at a time
 const CONCURRENCY_LIMIT = 10; // Max 10 parallel API calls
@@ -329,6 +330,146 @@ async function processBatch(
   return { success, failed };
 }
 
+/**
+ * Verify price consistency between DB, Redis, and Polygon API
+ * Checks for mismatches and logs issues
+ */
+async function verifyPriceConsistency(
+  tickers: string[],
+  apiKey: string
+): Promise<{ checked: number; issues: number; details: Array<{ ticker: string; issues: string[] }> }> {
+  const today = getDateET();
+  const todayTradingDay = getLastTradingDay(createETDate(today));
+  const todayTradingDateStr = getDateET(todayTradingDay);
+  const yesterdayTradingDay = getLastTradingDay(todayTradingDay);
+  const yesterdayDateStr = getDateET(yesterdayTradingDay);
+
+  let checked = 0;
+  let issues = 0;
+  const details: Array<{ ticker: string; issues: string[] }> = [];
+
+  // Sample up to 50 tickers for verification (to avoid rate limits)
+  const tickersToCheck = tickers.slice(0, 50);
+
+  for (const ticker of tickersToCheck) {
+    try {
+      const tickerIssues: string[] = [];
+
+      // 1. Get data from DB
+      const dbTicker = await prisma.ticker.findUnique({
+        where: { symbol: ticker },
+        select: {
+          lastPrice: true,
+          latestPrevClose: true,
+          latestPrevCloseDate: true,
+        }
+      });
+
+      // 2. Get data from Redis
+      const redisPrevCloseMap = await getPrevClose(todayTradingDateStr, [ticker]);
+      const redisPreviousClose = redisPrevCloseMap.get(ticker) || null;
+
+      // 3. Get data from Polygon API
+      const polygonPrevCloseData = await fetchPolygonPreviousClose(ticker, apiKey, yesterdayDateStr);
+      const polygonPreviousClose = polygonPrevCloseData.close;
+      const polygonTradingDay = polygonPrevCloseData.tradingDay;
+
+      // 4. Check for issues
+      if (!dbTicker?.latestPrevClose || dbTicker.latestPrevClose <= 0) {
+        tickerIssues.push('DB previousClose missing or zero');
+      }
+
+      if (!redisPreviousClose || redisPreviousClose <= 0) {
+        tickerIssues.push('Redis previousClose missing or zero');
+      }
+
+      if (!polygonPreviousClose || polygonPreviousClose <= 0) {
+        tickerIssues.push('Polygon previousClose missing or zero');
+      }
+
+      // Check if prices match (within 0.1% tolerance)
+      if (dbTicker?.latestPrevClose && polygonPreviousClose) {
+        const diff = Math.abs(dbTicker.latestPrevClose - polygonPreviousClose);
+        const diffPercent = (diff / polygonPreviousClose) * 100;
+        if (diffPercent > 0.1) {
+          tickerIssues.push(`PreviousClose mismatch: DB=$${dbTicker.latestPrevClose.toFixed(2)}, Polygon=$${polygonPreviousClose.toFixed(2)} (diff: ${diffPercent.toFixed(2)}%)`);
+        }
+      }
+
+      // Check if trading day matches
+      if (dbTicker?.latestPrevCloseDate && polygonTradingDay) {
+        const dbTradingDayStr = getDateET(dbTicker.latestPrevCloseDate);
+        if (dbTradingDayStr !== polygonTradingDay) {
+          tickerIssues.push(`Trading day mismatch: DB=${dbTradingDayStr}, Polygon=${polygonTradingDay}`);
+        }
+      }
+
+      if (tickerIssues.length > 0) {
+        issues++;
+        details.push({ ticker, issues: tickerIssues });
+      }
+
+      checked++;
+
+      // Rate limiting
+      if (checked < tickersToCheck.length) {
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+    } catch (error) {
+      console.error(`Error verifying ${ticker}:`, error);
+      checked++;
+    }
+  }
+
+  // Log summary
+  if (issues > 0) {
+    console.warn(`⚠️  Found ${issues} tickers with price consistency issues:`);
+    details.forEach(({ ticker, issues: tickerIssues }) => {
+      console.warn(`  ${ticker}: ${tickerIssues.join('; ')}`);
+    });
+  }
+
+  return { checked, issues, details };
+}
+
+/**
+ * Fetch previous close from Polygon API
+ */
+async function fetchPolygonPreviousClose(
+  ticker: string,
+  apiKey: string,
+  date: string
+): Promise<{ close: number | null; timestamp: number | null; tradingDay: string | null }> {
+  try {
+    const url = `https://api.polygon.io/v2/aggs/ticker/${ticker}/range/1/day/${date}/${date}?adjusted=true&apiKey=${apiKey}`;
+    const response = await withRetry(async () => fetch(url));
+
+    if (!response.ok) {
+      return { close: null, timestamp: null, tradingDay: null };
+    }
+
+    const data = await response.json();
+    const result = data?.results?.[0];
+
+    if (result && result.c && result.c > 0) {
+      const timestamp = result.t;
+      const timestampDate = timestamp ? new Date(timestamp) : null;
+      const tradingDay = timestampDate ? getDateET(timestampDate) : null;
+
+      return {
+        close: result.c,
+        timestamp: timestamp || null,
+        tradingDay: tradingDay || null
+      };
+    }
+
+    return { close: null, timestamp: null, tradingDay: null };
+  } catch (error) {
+    console.error(`Error fetching Polygon previous close for ${ticker}:`, error);
+    return { close: null, timestamp: null, tradingDay: null };
+  }
+}
+
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
 
@@ -427,6 +568,16 @@ export async function POST(request: NextRequest) {
       );
       console.log(`✅ SharesOutstanding: ${sharesResults.success} updated, ${sharesResults.failed} failed`);
 
+      // STEP 5: Verify price consistency (check for mismatches)
+      console.log('\n📝 Step 5: Verifying price consistency...');
+      let priceCheckResults: { checked: number; issues: number; details: Array<{ ticker: string; issues: string[] }> } = { checked: 0, issues: 0, details: [] };
+      if (apiKey) {
+        priceCheckResults = await verifyPriceConsistency(allTickers, apiKey);
+        console.log(`✅ Price verification: ${priceCheckResults.checked} checked, ${priceCheckResults.issues} issues found`);
+      } else {
+        console.log('⚠️  Skipping price verification - POLYGON_API_KEY not configured');
+      }
+
       // Update cron status after successful completion
       await updateCronStatus();
 
@@ -444,6 +595,7 @@ export async function POST(request: NextRequest) {
             method: 'bootstrap',
             tickersProcessed: allTickers.length,
           },
+          priceVerification: priceCheckResults,
         },
         summary: {
           totalTickers: allTickers.length,
