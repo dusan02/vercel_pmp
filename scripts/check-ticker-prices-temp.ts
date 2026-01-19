@@ -58,15 +58,29 @@ async function fetchPolygonSnapshot(ticker: string, apiKey: string): Promise<any
     const response = await withRetry(async () => fetch(url));
     
     if (!response.ok) {
-      console.warn(`Polygon snapshot API returned ${response.status} for ${ticker}`);
+      console.warn(`⚠️  Polygon snapshot API returned ${response.status} for ${ticker}`);
       return null;
     }
     
     const data = await response.json();
+    
+    // Debug: log if no ticker data
+    if (!data.ticker && !data.tickers) {
+      console.warn(`⚠️  No ticker data in Polygon response for ${ticker}:`, JSON.stringify(data).substring(0, 200));
+    }
+    
     // Single ticker endpoint returns { ticker: {...} }, not { tickers: [...] }
-    return data.ticker || null;
+    // But also handle batch format as fallback
+    const tickerData = data.ticker || data.tickers?.[0] || null;
+    
+    // Debug: log if no price data
+    if (tickerData && !tickerData.lastTrade?.p && !tickerData.min?.c && !tickerData.day?.c && !tickerData.prevDay?.c) {
+      console.warn(`⚠️  No price data in Polygon snapshot for ${ticker} (lastTrade, min, day, prevDay all missing)`);
+    }
+    
+    return tickerData;
   } catch (error) {
-    console.error(`Error fetching Polygon snapshot for ${ticker}:`, error);
+    console.error(`❌ Error fetching Polygon snapshot for ${ticker}:`, error);
     return null;
   }
 }
@@ -127,12 +141,27 @@ async function checkTicker(ticker: string, apiKey: string, todayTradingDateStr: 
   
   // 3. Get data from Polygon API
   const polygonSnapshot = await fetchPolygonSnapshot(ticker, apiKey);
-  // Polygon snapshot structure: { ticker: { lastTrade: { p }, min: { c }, day: { c }, prevDay: { c } } }
+  // Polygon snapshot structure: { lastTrade: { p }, min: { c }, day: { c }, prevDay: { c } }
+  // Note: single ticker endpoint returns { ticker: {...} }, but fetchPolygonSnapshot already extracts tickerData
   const polygonCurrentPrice = polygonSnapshot?.lastTrade?.p || 
                                polygonSnapshot?.min?.c || 
                                polygonSnapshot?.day?.c || 
                                polygonSnapshot?.prevDay?.c ||
                                null;
+  
+  // Debug: log if snapshot exists but no price
+  if (polygonSnapshot && !polygonCurrentPrice) {
+    console.warn(`⚠️  [${ticker}] Polygon snapshot exists but no price found. Available fields:`, {
+      hasLastTrade: !!polygonSnapshot.lastTrade,
+      lastTradeP: polygonSnapshot.lastTrade?.p,
+      hasMin: !!polygonSnapshot.min,
+      minC: polygonSnapshot.min?.c,
+      hasDay: !!polygonSnapshot.day,
+      dayC: polygonSnapshot.day?.c,
+      hasPrevDay: !!polygonSnapshot.prevDay,
+      prevDayC: polygonSnapshot.prevDay?.c
+    });
+  }
   
   // 4. Get previous close from Polygon
   const yesterdayTradingDay = getLastTradingDay(createETDate(todayTradingDateStr));
