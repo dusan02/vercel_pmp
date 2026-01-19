@@ -53,15 +53,18 @@ interface PriceCheckResult {
 
 async function fetchPolygonSnapshot(ticker: string, apiKey: string): Promise<any> {
   try {
-    const url = `https://api.polygon.io/v2/snapshot/locale/us/markets/stocks/tickers?tickers=${ticker}&apiKey=${apiKey}`;
+    // Use single ticker endpoint (not batch endpoint)
+    const url = `https://api.polygon.io/v2/snapshot/locale/us/markets/stocks/tickers/${ticker}?apikey=${apiKey}`;
     const response = await withRetry(async () => fetch(url));
     
     if (!response.ok) {
+      console.warn(`Polygon snapshot API returned ${response.status} for ${ticker}`);
       return null;
     }
     
     const data = await response.json();
-    return data.tickers?.[0] || null;
+    // Single ticker endpoint returns { ticker: {...} }, not { tickers: [...] }
+    return data.ticker || null;
   } catch (error) {
     console.error(`Error fetching Polygon snapshot for ${ticker}:`, error);
     return null;
@@ -124,9 +127,11 @@ async function checkTicker(ticker: string, apiKey: string, todayTradingDateStr: 
   
   // 3. Get data from Polygon API
   const polygonSnapshot = await fetchPolygonSnapshot(ticker, apiKey);
+  // Polygon snapshot structure: { ticker: { lastTrade: { p }, min: { c }, day: { c }, prevDay: { c } } }
   const polygonCurrentPrice = polygonSnapshot?.lastTrade?.p || 
                                polygonSnapshot?.min?.c || 
                                polygonSnapshot?.day?.c || 
+                               polygonSnapshot?.prevDay?.c ||
                                null;
   
   // 4. Get previous close from Polygon
