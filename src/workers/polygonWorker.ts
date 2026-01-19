@@ -1007,15 +1007,28 @@ export async function bootstrapPreviousCloses(
       
       // PRIORITY 1: Explicit /range for expected previous trading day (ET-safe)
       // This is the most accurate method - always use this first
+      // CRITICAL: For ex-US tickers, use timestamp from Polygon API response (not US trading day)
       try {
         const rangeUrl = `https://api.polygon.io/v2/aggs/ticker/${symbol}/range/1/day/${expectedPrevYMD}/${expectedPrevYMD}?adjusted=true&apiKey=${apiKey}`;
         const rangeResp = await withRetry(async () => fetch(rangeUrl)); // withRetry has built-in retry logic
         if (rangeResp.ok) {
           const rangeData = await rangeResp.json();
-          const c = rangeData?.results?.[0]?.c;
+          const result = rangeData?.results?.[0];
+          const c = result?.c;
           if (typeof c === 'number' && c > 0) {
             prevClose = c;
-            prevTradingDay = expectedPrevTradingDay;
+            // CRITICAL: Use timestamp from Polygon API response for ex-US tickers
+            // Polygon API returns the actual trading day for the ticker's home market
+            // This fixes issues with ex-US tickers (TM, SHOP, SAP, RIO) that trade on different markets
+            // Polygon aggregates API returns timestamp in milliseconds (not nanoseconds like snapshot API)
+            const timestamp = result?.t;
+            if (timestamp) {
+              const timestampDate = new Date(timestamp);
+              prevTradingDay = createETDate(getDateET(timestampDate));
+            } else {
+              // Fallback to expected US trading day if no timestamp
+              prevTradingDay = expectedPrevTradingDay;
+            }
           }
         }
       } catch (rangeError) {
@@ -1036,10 +1049,20 @@ export async function bootstrapPreviousCloses(
 
           if (response.ok) {
             const data = await response.json();
-            const c = data?.results?.[0]?.c;
+            const result = data?.results?.[0];
+            const c = result?.c;
             if (typeof c === 'number' && c > 0) {
               prevClose = c;
-              prevTradingDay = createETDate(prevDateStr);
+              // CRITICAL: Use timestamp from Polygon API response for ex-US tickers
+              // This ensures we use the actual trading day from the ticker's home market
+              const timestamp = result?.t;
+              if (timestamp) {
+                const timestampDate = new Date(timestamp);
+                prevTradingDay = createETDate(getDateET(timestampDate));
+              } else {
+                // Fallback to calendar date if no timestamp
+                prevTradingDay = createETDate(prevDateStr);
+              }
               break;
             }
           }
