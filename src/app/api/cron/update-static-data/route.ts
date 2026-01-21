@@ -13,12 +13,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db/prisma';
-import { getSharesOutstanding, getPreviousClose } from '@/lib/utils/marketCapUtils';
 import { getAllTrackedTickers } from '@/lib/utils/universeHelpers';
-import { getLastTradingDay } from '@/lib/utils/timeUtils';
-import { getDateET, createETDate } from '@/lib/utils/dateET';
-import { getUniverse, getPrevClose } from '@/lib/redis/operations';
+import { getDateET } from '@/lib/utils/dateET';
+import { getUniverse } from '@/lib/redis/operations';
 import { bootstrapPreviousCloses } from '@/workers/polygonWorker';
 import { clearRedisPrevCloseCache } from '@/lib/utils/redisCacheUtils';
 import { 
@@ -30,85 +27,14 @@ import { refreshClosingPricesInDB } from '@/lib/utils/closingPricesUtils';
 import { verifyPriceConsistency } from '@/lib/utils/priceVerification';
 import { processBatch } from '@/lib/utils/batchProcessing';
 import { updateCronStatus } from '@/lib/utils/cronStatus';
+import { 
+  updateTickerSharesOutstanding, 
+  updateTickerPreviousClose 
+} from '@/lib/utils/tickerUpdates';
+import { handleCronError, createCronSuccessResponse } from '@/lib/utils/cronErrorHandler';
 
 const BATCH_SIZE = 50; // Process 50 tickers at a time
 const CONCURRENCY_LIMIT = 10; // Max 10 parallel API calls
-
-/**
- * Update sharesOutstanding for a ticker
- */
-async function updateSharesOutstanding(ticker: string): Promise<boolean> {
-  try {
-    const shares = await getSharesOutstanding(ticker);
-    if (shares > 0) {
-      await prisma.ticker.upsert({
-        where: { symbol: ticker },
-        update: { sharesOutstanding: shares },
-        create: {
-          symbol: ticker,
-          sharesOutstanding: shares,
-        },
-      });
-      return true;
-    }
-    return false;
-  } catch (error) {
-    console.error(`Failed to update sharesOutstanding for ${ticker}:`, error);
-    return false;
-  }
-}
-
-/**
- * Update previousClose for a ticker
- * IMPORTANT: date = actual trading day of the close, not "today"
- */
-async function updatePreviousClose(ticker: string): Promise<boolean> {
-  try {
-    const prevClose = await getPreviousClose(ticker);
-    if (prevClose > 0) {
-      // Get the last trading day (the day when this close actually happened)
-      const lastTradingDay = getLastTradingDay();
-
-      // Use findFirst + create/update instead of upsert for compound unique constraint
-      const existing = await prisma.dailyRef.findFirst({
-        where: {
-          symbol: ticker,
-          date: lastTradingDay,
-        },
-      });
-
-      if (existing) {
-        await prisma.dailyRef.update({
-          where: { id: existing.id },
-          data: { previousClose: prevClose },
-        });
-      } else {
-        await prisma.dailyRef.create({
-          data: {
-            symbol: ticker,
-            date: lastTradingDay, // Date of the actual trading day, not "today"
-            previousClose: prevClose,
-          },
-        });
-      }
-
-      // Denormalize to Ticker table for quick access
-      await prisma.ticker.update({
-        where: { symbol: ticker },
-        data: {
-          latestPrevClose: prevClose,
-          latestPrevCloseDate: lastTradingDay,
-        },
-      });
-
-      return true;
-    }
-    return false;
-  } catch (error) {
-    console.error(`Failed to update previousClose for ${ticker}:`, error);
-    return false;
-  }
-}
 
 
 
@@ -192,7 +118,7 @@ export async function POST(request: NextRequest) {
           console.log('⚠️  Falling back to individual previousClose updates...');
           const prevCloseResults = await processBatch(
             allTickers,
-            updatePreviousClose,
+            updateTickerPreviousClose,
             BATCH_SIZE,
             CONCURRENCY_LIMIT
           );
@@ -211,7 +137,7 @@ export async function POST(request: NextRequest) {
       console.log('\n📝 Step 4: Updating sharesOutstanding...');
       const sharesResults = await processBatch(
         allTickers,
-        updateSharesOutstanding,
+        updateTickerSharesOutstanding,
         BATCH_SIZE,
         CONCURRENCY_LIMIT
       );
@@ -234,8 +160,7 @@ export async function POST(request: NextRequest) {
       const totalSuccess = sharesResults.success;
       const totalFailed = sharesResults.failed;
 
-      return NextResponse.json({
-        success: true,
+      return createCronSuccessResponse({
         message: 'Static data update completed with refresh in place',
         results: {
           refresh: refreshResults,
@@ -252,7 +177,6 @@ export async function POST(request: NextRequest) {
           totalFailed,
           duration: `${(duration / 1000).toFixed(2)}s`,
         },
-        timestamp: new Date().toISOString(),
       });
     } finally {
       // Clear lock renewal interval
@@ -266,13 +190,7 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('❌ Error in static data update cron job:', error);
-    return NextResponse.json({
-      success: false,
-      error: 'Internal server error',
-      message: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString(),
-    }, { status: 500 });
+    return handleCronError(error, 'static data update cron job');
   }
 }
 
@@ -300,13 +218,7 @@ export async function GET(request: NextRequest) {
     // Call POST handler with test limit
     return await POST(modifiedRequest);
   } catch (error) {
-    console.error('❌ Error in test update:', error);
-    return NextResponse.json({
-      success: false,
-      error: 'Internal server error',
-      message: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString(),
-    }, { status: 500 });
+    return handleCronError(error, 'test update');
   }
 }
 

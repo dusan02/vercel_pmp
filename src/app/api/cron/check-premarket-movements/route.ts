@@ -17,7 +17,9 @@ import { getDateET, createETDate, nowET } from '@/lib/utils/dateET';
 import { calculatePercentChange } from '@/lib/utils/priceResolver';
 import { getAllTrackedTickers } from '@/lib/utils/universeHelpers';
 import { getPrevClose } from '@/lib/redis/operations';
-import { withRetry } from '@/lib/api/rateLimiter';
+import { fetchPolygonSnapshot, fetchPolygonPreviousClose } from '@/lib/utils/polygonApiHelpers';
+import { verifyCronAuth } from '@/lib/utils/cronAuth';
+import { handleCronError, createGetEndpointWrapper } from '@/lib/utils/cronErrorHandler';
 
 const MOVEMENT_THRESHOLD = 1.0; // ±1% threshold
 const MAX_TICKERS_TO_CHECK = 100; // Limit to avoid rate limits
@@ -184,72 +186,15 @@ async function verifyTickerPrice(
   }
 }
 
-/**
- * Fetch Polygon snapshot
- */
-async function fetchPolygonSnapshot(ticker: string, apiKey: string): Promise<any> {
-  try {
-    const url = `https://api.polygon.io/v2/snapshot/locale/us/markets/stocks/tickers/${ticker}?apikey=${apiKey}`;
-    const response = await withRetry(async () => fetch(url));
-    
-    if (!response.ok) {
-      return null;
-    }
-    
-    const data = await response.json();
-    return data.ticker || data.tickers?.[0] || null;
-  } catch (error) {
-    console.error(`Error fetching Polygon snapshot for ${ticker}:`, error);
-    return null;
-  }
-}
-
-/**
- * Fetch Polygon previous close
- */
-async function fetchPolygonPreviousClose(
-  ticker: string,
-  apiKey: string,
-  date: string
-): Promise<{ close: number | null; timestamp: number | null; tradingDay: string | null }> {
-  try {
-    const url = `https://api.polygon.io/v2/aggs/ticker/${ticker}/range/1/day/${date}/${date}?adjusted=true&apiKey=${apiKey}`;
-    const response = await withRetry(async () => fetch(url));
-
-    if (!response.ok) {
-      return { close: null, timestamp: null, tradingDay: null };
-    }
-
-    const data = await response.json();
-    const result = data?.results?.[0];
-
-    if (result && result.c && result.c > 0) {
-      const timestamp = result.t;
-      const timestampDate = timestamp ? new Date(timestamp) : null;
-      const tradingDay = timestampDate ? getDateET(timestampDate) : null;
-
-      return {
-        close: result.c,
-        timestamp: timestamp || null,
-        tradingDay: tradingDay || null
-      };
-    }
-
-    return { close: null, timestamp: null, tradingDay: null };
-  } catch (error) {
-    console.error(`Error fetching Polygon previous close for ${ticker}:`, error);
-    return { close: null, timestamp: null, tradingDay: null };
-  }
-}
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
 
   try {
     // Verify authorization
-    const authHeader = request.headers.get('authorization');
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET_KEY}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const authError = verifyCronAuth(request);
+    if (authError) {
+      return authError;
     }
 
     const etNow = nowET();
@@ -365,31 +310,15 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Error in pre-market movement check:', error);
-    return NextResponse.json({
-      success: false,
-      error: 'Internal server error',
-      message: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString(),
-    }, { status: 500 });
+    return handleCronError(error, 'pre-market movement check');
   }
 }
 
 // GET endpoint for manual testing
 export async function GET(request: NextRequest) {
-  try {
-    const authHeader = request.headers.get('authorization');
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET_KEY}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Trigger the check
-    const response = await POST(request);
-    return response;
-  } catch (error) {
-    return NextResponse.json({
-      error: 'Internal server error',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+  const authError = verifyCronAuth(request);
+  if (authError) {
+    return authError;
   }
+  return createGetEndpointWrapper(request, POST);
 }
