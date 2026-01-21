@@ -20,192 +20,19 @@ import { getLastTradingDay } from '@/lib/utils/timeUtils';
 import { getDateET, createETDate } from '@/lib/utils/dateET';
 import { getUniverse, getPrevClose } from '@/lib/redis/operations';
 import { bootstrapPreviousCloses } from '@/workers/polygonWorker';
-import { withRetry } from '@/lib/api/rateLimiter';
+import { clearRedisPrevCloseCache } from '@/lib/utils/redisCacheUtils';
+import { 
+  acquireStaticUpdateLock, 
+  renewStaticUpdateLock, 
+  releaseStaticUpdateLock 
+} from '@/lib/utils/staticDataLock';
+import { refreshClosingPricesInDB } from '@/lib/utils/closingPricesUtils';
+import { verifyPriceConsistency } from '@/lib/utils/priceVerification';
+import { processBatch } from '@/lib/utils/batchProcessing';
+import { updateCronStatus } from '@/lib/utils/cronStatus';
 
 const BATCH_SIZE = 50; // Process 50 tickers at a time
 const CONCURRENCY_LIMIT = 10; // Max 10 parallel API calls
-
-/**
- * Clear Redis cache for previous closes
- */
-async function clearRedisPrevCloseCache(): Promise<void> {
-  try {
-    const { redisClient } = await import('@/lib/redis/client');
-    if (redisClient && redisClient.isOpen) {
-      const today = getDateET();
-      const { REDIS_KEYS } = await import('@/lib/redis/keys');
-      const key = REDIS_KEYS.prevclose(today);
-      
-      // Delete the hash key
-      const deleted = await redisClient.del(key);
-      if (deleted > 0) {
-        console.log(`✅ Cleared Redis previous close cache for ${today}`);
-      } else {
-        console.log('ℹ️  No Redis previous close cache entries found for today');
-      }
-      
-      // Also try to clear yesterday's cache (in case it's still there)
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayStr = yesterday.toISOString().split('T')[0];
-      if (yesterdayStr) {
-        const yesterdayKey = REDIS_KEYS.prevclose(yesterdayStr);
-        await redisClient.del(yesterdayKey);
-      }
-    } else {
-      console.log('⚠️  Redis not available - skipping Redis cache clear');
-    }
-  } catch (error) {
-    console.warn('⚠️  Failed to clear Redis cache:', error);
-  }
-}
-
-/**
- * Acquire Redis lock for static data update
- * Prevents worker from calculating percentages during update
- * Uses owner ID for safe renewal and cleanup
- * Lock value contains: { ownerId, createdAt } as JSON for stale detection
- */
-async function acquireStaticUpdateLock(): Promise<{ acquired: boolean; ownerId: string }> {
-  try {
-    const { redisClient } = await import('@/lib/redis/client');
-    if (!redisClient || !redisClient.isOpen) {
-      console.warn('⚠️  Redis not available - cannot acquire lock');
-      return { acquired: false, ownerId: '' };
-    }
-    
-    const lockKey = 'lock:static_data_update';
-    const ownerId = `static_update_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-    const createdAt = Date.now();
-    const lockTTL = 1800; // 30 minutes max
-    
-    // Lock value: JSON with ownerId and createdAt for stale detection
-    const lockValue = JSON.stringify({ ownerId, createdAt });
-    
-    // Try to set lock (SET NX EX - only if not exists, with expiration)
-    const result = await redisClient.set(lockKey, lockValue, {
-      EX: lockTTL,
-      NX: true
-    });
-    
-    return { acquired: result === 'OK', ownerId };
-  } catch (error) {
-    console.warn('⚠️  Failed to acquire static update lock:', error);
-    return { acquired: false, ownerId: '' };
-  }
-}
-
-/**
- * Renew Redis lock (extend TTL)
- * Lock value is JSON, so we need to parse and check ownerId
- */
-async function renewStaticUpdateLock(ownerId: string): Promise<boolean> {
-  try {
-    const { redisClient } = await import('@/lib/redis/client');
-    if (!redisClient || !redisClient.isOpen) {
-      return false;
-    }
-    
-    const lockKey = 'lock:static_data_update';
-    const lockTTL = 1800; // 30 minutes
-    
-    // Check if we still own the lock (parse JSON value)
-    const lockValueStr = await redisClient.get(lockKey);
-    if (lockValueStr) {
-      try {
-        const lockValue = JSON.parse(lockValueStr);
-        if (lockValue.ownerId === ownerId) {
-          await redisClient.expire(lockKey, lockTTL);
-          return true;
-        }
-      } catch (parseError) {
-        // Legacy format (plain ownerId string) - try direct comparison
-        if (lockValueStr === ownerId) {
-          await redisClient.expire(lockKey, lockTTL);
-          return true;
-        }
-      }
-    }
-    return false;
-  } catch (error) {
-    console.warn('⚠️  Failed to renew static update lock:', error);
-    return false;
-  }
-}
-
-/**
- * Release Redis lock for static data update (only if we own it)
- * Lock value is JSON, so we need to parse and check ownerId
- */
-async function releaseStaticUpdateLock(ownerId: string): Promise<void> {
-  try {
-    const { redisClient } = await import('@/lib/redis/client');
-    if (redisClient && redisClient.isOpen) {
-      const lockKey = 'lock:static_data_update';
-      // Only delete if we still own the lock (parse JSON value)
-      const lockValueStr = await redisClient.get(lockKey);
-      if (lockValueStr) {
-        try {
-          const lockValue = JSON.parse(lockValueStr);
-          if (lockValue.ownerId === ownerId) {
-            await redisClient.del(lockKey);
-          } else {
-            console.warn('⚠️  Cannot release lock - not owned by this process');
-          }
-        } catch (parseError) {
-          // Legacy format (plain ownerId string) - try direct comparison
-          if (lockValueStr === ownerId) {
-            await redisClient.del(lockKey);
-          } else {
-            console.warn('⚠️  Cannot release lock - not owned by this process');
-          }
-        }
-      }
-    }
-  } catch (error) {
-    console.warn('⚠️  Failed to release static update lock:', error);
-  }
-}
-
-/**
- * Refresh closing prices in database (refresh in place, don't reset to null)
- * Only updates missing or incorrect values, preserves existing correct values
- */
-async function refreshClosingPricesInDB(): Promise<{ updatedCount: number; deletedToday: number; deletedLastTradingDay: number }> {
-  console.log('🔄 Refreshing closing prices in database (refresh in place)...');
-  
-  // Get today's date and last trading day
-  const today = getDateET();
-  const todayDate = createETDate(today);
-  const lastTradingDay = getLastTradingDay(todayDate);
-  
-  // Delete DailyRef entries for today and last trading day (will be repopulated by bootstrap)
-  // This is safe because we'll immediately repopulate them
-  const deletedToday = await prisma.dailyRef.deleteMany({
-    where: {
-      date: todayDate
-    }
-  });
-  
-  const deletedLastTradingDay = await prisma.dailyRef.deleteMany({
-    where: {
-      date: lastTradingDay
-    }
-  });
-  
-  console.log(`✅ Deleted ${deletedToday.count} DailyRef entries for today`);
-  console.log(`✅ Deleted ${deletedLastTradingDay.count} DailyRef entries for last trading day`);
-  
-  // NOTE: We do NOT reset Ticker.latestPrevClose to null anymore
-  // Bootstrap will update it with correct values, preserving existing correct values
-  // This prevents "window of chaos" where worker calculates percentages with null references
-  
-  return {
-    updatedCount: 0, // Not resetting, so count is 0
-    deletedToday: deletedToday.count,
-    deletedLastTradingDay: deletedLastTradingDay.count
-  };
-}
 
 /**
  * Update sharesOutstanding for a ticker
@@ -283,249 +110,7 @@ async function updatePreviousClose(ticker: string): Promise<boolean> {
   }
 }
 
-/**
- * Process batch of tickers with concurrency limit
- */
-async function processBatch(
-  tickers: string[],
-  processor: (ticker: string) => Promise<boolean>,
-  batchSize: number = BATCH_SIZE,
-  concurrencyLimit: number = CONCURRENCY_LIMIT
-): Promise<{ success: number; failed: number }> {
-  let success = 0;
-  let failed = 0;
 
-  for (let i = 0; i < tickers.length; i += batchSize) {
-    const batch = tickers.slice(i, i + batchSize);
-    console.log(`Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(tickers.length / batchSize)} (${batch.length} tickers)...`);
-
-    // Process with concurrency limit
-    for (let j = 0; j < batch.length; j += concurrencyLimit) {
-      const concurrentBatch = batch.slice(j, j + concurrencyLimit);
-      const results = await Promise.allSettled(
-        concurrentBatch.map(ticker => processor(ticker))
-      );
-
-      results.forEach((result, index) => {
-        if (result.status === 'fulfilled' && result.value) {
-          success++;
-        } else {
-          failed++;
-          console.warn(`Failed to process ${concurrentBatch[index]}:`, result.status === 'rejected' ? result.reason : 'Unknown error');
-        }
-      });
-
-      // Small delay between concurrent batches to avoid rate limiting
-      if (j + concurrencyLimit < batch.length) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-    }
-
-    // Delay between batches
-    if (i + batchSize < tickers.length) {
-      await new Promise(resolve => setTimeout(resolve, 200));
-    }
-  }
-
-  return { success, failed };
-}
-
-/**
- * Fetch Polygon snapshot for current price
- */
-async function fetchPolygonSnapshot(ticker: string, apiKey: string): Promise<any> {
-  try {
-    const url = `https://api.polygon.io/v2/snapshot/locale/us/markets/stocks/tickers/${ticker}?apikey=${apiKey}`;
-    const response = await withRetry(async () => fetch(url));
-    
-    if (!response.ok) {
-      return null;
-    }
-    
-    const data = await response.json();
-    // Single ticker endpoint returns { ticker: {...} }, but also handle batch format as fallback
-    return data.ticker || data.tickers?.[0] || null;
-  } catch (error) {
-    console.error(`Error fetching Polygon snapshot for ${ticker}:`, error);
-    return null;
-  }
-}
-
-/**
- * Verify price consistency between DB, Redis, and Polygon API
- * Checks for mismatches and logs issues (includes current price check)
- */
-async function verifyPriceConsistency(
-  tickers: string[],
-  apiKey: string
-): Promise<{ checked: number; issues: number; details: Array<{ ticker: string; issues: string[] }> }> {
-  const today = getDateET();
-  const todayTradingDay = getLastTradingDay(createETDate(today));
-  const todayTradingDateStr = getDateET(todayTradingDay);
-  const yesterdayTradingDay = getLastTradingDay(todayTradingDay);
-  const yesterdayDateStr = getDateET(yesterdayTradingDay);
-
-  let checked = 0;
-  let issues = 0;
-  const details: Array<{ ticker: string; issues: string[] }> = [];
-
-  // Sample up to 50 tickers for verification (to avoid rate limits)
-  const tickersToCheck = tickers.slice(0, 50);
-
-  for (const ticker of tickersToCheck) {
-    try {
-      const tickerIssues: string[] = [];
-
-      // 1. Get data from DB
-      const dbTicker = await prisma.ticker.findUnique({
-        where: { symbol: ticker },
-        select: {
-          lastPrice: true,
-          latestPrevClose: true,
-          latestPrevCloseDate: true,
-          lastChangePct: true,
-        }
-      });
-
-      // 2. Get data from Redis
-      const redisPrevCloseMap = await getPrevClose(todayTradingDateStr, [ticker]);
-      const redisPreviousClose = redisPrevCloseMap.get(ticker) || null;
-
-      // 3. Get current price from Polygon API
-      const polygonSnapshot = await fetchPolygonSnapshot(ticker, apiKey);
-      const polygonCurrentPrice = polygonSnapshot?.lastTrade?.p || 
-                                   polygonSnapshot?.min?.c || 
-                                   polygonSnapshot?.day?.c || 
-                                   polygonSnapshot?.prevDay?.c ||
-                                   null;
-
-      // 4. Get previous close from Polygon API
-      const polygonPrevCloseData = await fetchPolygonPreviousClose(ticker, apiKey, yesterdayDateStr);
-      const polygonPreviousClose = polygonPrevCloseData.close;
-      const polygonTradingDay = polygonPrevCloseData.tradingDay;
-
-      // 5. Check for issues - Current Price
-      if (!dbTicker?.lastPrice || dbTicker.lastPrice <= 0) {
-        tickerIssues.push('DB price missing or zero');
-      }
-
-      if (!polygonCurrentPrice || polygonCurrentPrice <= 0) {
-        tickerIssues.push('Polygon current price missing or zero');
-      }
-
-      // Check if current prices match (within 0.1% tolerance)
-      if (dbTicker?.lastPrice && polygonCurrentPrice) {
-        const diff = Math.abs(dbTicker.lastPrice - polygonCurrentPrice);
-        const diffPercent = (diff / polygonCurrentPrice) * 100;
-        if (diffPercent > 0.1) {
-          tickerIssues.push(`Price mismatch: DB=$${dbTicker.lastPrice.toFixed(2)}, Polygon=$${polygonCurrentPrice.toFixed(2)} (diff: ${diffPercent.toFixed(2)}%)`);
-        }
-      }
-
-      // 6. Check for issues - Previous Close
-      if (!dbTicker?.latestPrevClose || dbTicker.latestPrevClose <= 0) {
-        tickerIssues.push('DB previousClose missing or zero');
-      }
-
-      if (!redisPreviousClose || redisPreviousClose <= 0) {
-        tickerIssues.push('Redis previousClose missing or zero');
-      }
-
-      if (!polygonPreviousClose || polygonPreviousClose <= 0) {
-        tickerIssues.push('Polygon previousClose missing or zero');
-      }
-
-      // Check if previousClose prices match (within 0.1% tolerance)
-      if (dbTicker?.latestPrevClose && polygonPreviousClose) {
-        const diff = Math.abs(dbTicker.latestPrevClose - polygonPreviousClose);
-        const diffPercent = (diff / polygonPreviousClose) * 100;
-        if (diffPercent > 0.1) {
-          tickerIssues.push(`PreviousClose mismatch: DB=$${dbTicker.latestPrevClose.toFixed(2)}, Polygon=$${polygonPreviousClose.toFixed(2)} (diff: ${diffPercent.toFixed(2)}%)`);
-        }
-      }
-
-      // 7. Check if trading day matches
-      if (dbTicker?.latestPrevCloseDate && polygonTradingDay) {
-        const dbTradingDayStr = getDateET(dbTicker.latestPrevCloseDate);
-        if (dbTradingDayStr !== polygonTradingDay) {
-          tickerIssues.push(`Trading day mismatch: DB=${dbTradingDayStr}, Polygon=${polygonTradingDay}`);
-        }
-      }
-
-      // 8. Check percent change consistency (if both available)
-      if (dbTicker && dbTicker.lastChangePct !== null && dbTicker.lastPrice && polygonPreviousClose) {
-        const calculatedPct = ((dbTicker.lastPrice / polygonPreviousClose) - 1) * 100;
-        const pctDiff = Math.abs(calculatedPct - dbTicker.lastChangePct);
-        if (pctDiff > 0.01) {
-          tickerIssues.push(`% Change mismatch: DB=${dbTicker.lastChangePct.toFixed(2)}%, Calculated=${calculatedPct.toFixed(2)}%`);
-        }
-      }
-
-      if (tickerIssues.length > 0) {
-        issues++;
-        details.push({ ticker, issues: tickerIssues });
-      }
-
-      checked++;
-
-      // Rate limiting
-      if (checked < tickersToCheck.length) {
-        await new Promise(resolve => setTimeout(resolve, 200));
-      }
-    } catch (error) {
-      console.error(`Error verifying ${ticker}:`, error);
-      checked++;
-    }
-  }
-
-  // Log summary
-  if (issues > 0) {
-    console.warn(`⚠️  Found ${issues} tickers with price consistency issues:`);
-    details.forEach(({ ticker, issues: tickerIssues }) => {
-      console.warn(`  ${ticker}: ${tickerIssues.join('; ')}`);
-    });
-  }
-
-  return { checked, issues, details };
-}
-
-/**
- * Fetch previous close from Polygon API
- */
-async function fetchPolygonPreviousClose(
-  ticker: string,
-  apiKey: string,
-  date: string
-): Promise<{ close: number | null; timestamp: number | null; tradingDay: string | null }> {
-  try {
-    const url = `https://api.polygon.io/v2/aggs/ticker/${ticker}/range/1/day/${date}/${date}?adjusted=true&apiKey=${apiKey}`;
-    const response = await withRetry(async () => fetch(url));
-
-    if (!response.ok) {
-      return { close: null, timestamp: null, tradingDay: null };
-    }
-
-    const data = await response.json();
-    const result = data?.results?.[0];
-
-    if (result && result.c && result.c > 0) {
-      const timestamp = result.t;
-      const timestampDate = timestamp ? new Date(timestamp) : null;
-      const tradingDay = timestampDate ? getDateET(timestampDate) : null;
-
-      return {
-        close: result.c,
-        timestamp: timestamp || null,
-        tradingDay: tradingDay || null
-      };
-    }
-
-    return { close: null, timestamp: null, tradingDay: null };
-  } catch (error) {
-    console.error(`Error fetching Polygon previous close for ${ticker}:`, error);
-    return { close: null, timestamp: null, tradingDay: null };
-  }
-}
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
@@ -554,25 +139,31 @@ export async function POST(request: NextRequest) {
           await renewStaticUpdateLock(ownerId);
         }, 5 * 60 * 1000); // Every 5 minutes
       }
-      // Get all tracked tickers
-      const allTickers = await getAllTrackedTickers();
+      // Get all tracked tickers (with optional test limit)
+      const url = new URL(request.url);
+      const testLimit = url.searchParams.get('testLimit');
+      let allTickers = await getAllTrackedTickers();
+      
+      if (testLimit) {
+        const limit = parseInt(testLimit, 10);
+        allTickers = allTickers.slice(0, limit);
+        console.log(`🧪 TEST MODE: Limited to ${allTickers.length} tickers`);
+      }
+      
       console.log(`📊 Found ${allTickers.length} tickers to update`);
-
-      // Update cron status in Redis
-      const updateCronStatus = async () => {
-        try {
-          const { redisClient } = await import('@/lib/redis/client');
-          if (redisClient && redisClient.isOpen) {
-            await redisClient.setEx('cron:static_data:last_success_ts', 86400, Date.now().toString()); // 24 hour TTL
-          }
-        } catch (error) {
-          console.warn('Failed to update cron status:', error);
-        }
-      };
 
       // STEP 1: Clear Redis cache for previous closes
       console.log('\n📝 Step 1: Clearing Redis cache for previous closes...');
       await clearRedisPrevCloseCache();
+      
+      // Check if hard reset is requested (via environment variable or query param)
+      const hardResetParam = url.searchParams.get('hardReset') === 'true';
+      const hardResetEnv = process.env.ENABLE_HARD_RESET === 'true';
+      const shouldHardReset = hardResetParam || hardResetEnv;
+      
+      if (shouldHardReset) {
+        console.log('⚠️  HARD RESET MODE: Will reset Ticker.latestPrevClose to null before bootstrap');
+      }
       
       // STEP 2: Bootstrap previous closes from Polygon FIRST (prepare new data in memory)
       // This ensures we have data ready before deleting old data
@@ -610,9 +201,10 @@ export async function POST(request: NextRequest) {
         
         // STEP 3: Refresh closing prices (delete only stale/broken entries, new ones already populated)
         // This is now safe because bootstrap already populated new values
-        console.log('\n📝 Step 3: Refreshing closing prices in database (cleanup stale entries)...');
-        refreshResults = await refreshClosingPricesInDB();
-        console.log(`✅ Refresh complete: ${refreshResults.deletedToday + refreshResults.deletedLastTradingDay} DailyRef entries deleted (new ones already populated by bootstrap)`);
+        // If hardReset=true, also reset Ticker.latestPrevClose to null
+        console.log(`\n📝 Step 3: Refreshing closing prices in database (${shouldHardReset ? 'HARD RESET' : 'cleanup stale entries'})...`);
+        refreshResults = await refreshClosingPricesInDB(shouldHardReset);
+        console.log(`✅ Refresh complete: ${refreshResults.deletedToday + refreshResults.deletedLastTradingDay} DailyRef entries deleted, ${refreshResults.updatedCount} tickers reset (new ones already populated by bootstrap)`);
       }
 
       // STEP 4: Update sharesOutstanding
@@ -627,7 +219,7 @@ export async function POST(request: NextRequest) {
 
       // STEP 5: Verify price consistency (check for mismatches)
       console.log('\n📝 Step 5: Verifying price consistency...');
-      let priceCheckResults: { checked: number; issues: number; details: Array<{ ticker: string; issues: string[] }> } = { checked: 0, issues: 0, details: [] };
+      let priceCheckResults = { checked: 0, issues: 0, details: [] as Array<{ ticker: string; issues: string[] }> };
       if (apiKey) {
         priceCheckResults = await verifyPriceConsistency(allTickers, apiKey);
         console.log(`✅ Price verification: ${priceCheckResults.checked} checked, ${priceCheckResults.issues} issues found`);
@@ -636,7 +228,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Update cron status after successful completion
-      await updateCronStatus();
+      await updateCronStatus('static_data');
 
       const duration = Date.now() - startTime;
       const totalSuccess = sharesResults.success;
@@ -684,7 +276,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// GET endpoint for manual testing
+// GET endpoint for manual testing (limited to 10 tickers)
 export async function GET(request: NextRequest) {
   try {
     // For testing, allow without auth (in production, require auth)
@@ -695,60 +287,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Run update (limited to first 10 tickers for testing)
-    const allTickers = (await getAllTrackedTickers()).slice(0, 10);
-    console.log(`🧪 Testing with ${allTickers.length} tickers (with reset)...`);
-
-    // Test reset (limited scope)
-    console.log('🧪 Testing reset (limited to test tickers)...');
-    await clearRedisPrevCloseCache();
+    // Create a modified request with test limit and hardReset=true
+    const url = new URL(request.url);
+    url.searchParams.set('testLimit', '10');
+    url.searchParams.set('hardReset', 'true');
     
-    // Reset only test tickers
-    await prisma.ticker.updateMany({
-      where: { symbol: { in: allTickers } },
-      data: {
-        latestPrevClose: null,
-        latestPrevCloseDate: null,
-        updatedAt: new Date()
-      }
+    const modifiedRequest = new NextRequest(url, {
+      method: 'POST',
+      headers: request.headers
     });
 
-    // Try bootstrap for test tickers
-    const apiKey = process.env.POLYGON_API_KEY;
-    if (apiKey) {
-      const today = getDateET();
-      try {
-        await bootstrapPreviousCloses(allTickers, apiKey, today);
-        console.log('✅ Bootstrap complete for test tickers');
-      } catch (error) {
-        console.warn('⚠️  Bootstrap failed, using individual updates:', error);
-        await processBatch(allTickers, updatePreviousClose, 5, 5);
-      }
-    } else {
-      await processBatch(allTickers, updatePreviousClose, 5, 5);
-    }
-
-    const sharesResults = await processBatch(
-      allTickers,
-      updateSharesOutstanding,
-      5, // Smaller batch for testing
-      5  // Lower concurrency for testing
-    );
-
-    return NextResponse.json({
-      success: true,
-      message: 'Test update completed (with reset)',
-      results: {
-        sharesOutstanding: sharesResults,
-        previousClose: {
-          method: 'bootstrap',
-          tickersProcessed: allTickers.length,
-        },
-      },
-      note: 'This was a test run with limited tickers and full reset',
-      timestamp: new Date().toISOString(),
-    });
-
+    // Call POST handler with test limit
+    return await POST(modifiedRequest);
   } catch (error) {
     console.error('❌ Error in test update:', error);
     return NextResponse.json({

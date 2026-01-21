@@ -22,8 +22,9 @@ import { prisma } from '../src/lib/db/prisma';
 import { getUniverse } from '@/lib/redis/operations';
 import { bootstrapPreviousCloses } from '@/workers/polygonWorker';
 import { ingestBatch } from '@/workers/polygonWorker';
-import { getDateET, createETDate } from '@/lib/utils/dateET';
-import { getLastTradingDay } from '@/lib/utils/timeUtils';
+import { getDateET } from '@/lib/utils/dateET';
+import { clearRedisPrevCloseCache } from '@/lib/utils/redisCacheUtils';
+import { refreshClosingPricesInDB } from '@/lib/utils/closingPricesUtils';
 
 function requireEnv(key: string): string {
   const value = process.env[key];
@@ -32,81 +33,6 @@ function requireEnv(key: string): string {
     throw new Error(`${key} is required`);
   }
   return value;
-}
-
-async function clearRedisPrevCloseCache() {
-  try {
-    const { redisClient } = await import('@/lib/redis/client');
-    if (redisClient && redisClient.isOpen) {
-      const today = getDateET();
-      const { REDIS_KEYS } = await import('@/lib/redis/keys');
-      const key = REDIS_KEYS.prevclose(today);
-      
-      // Delete the hash key
-      const deleted = await redisClient.del(key);
-      if (deleted > 0) {
-        console.log(`✅ Cleared Redis previous close cache for ${today}`);
-      } else {
-        console.log('ℹ️  No Redis previous close cache entries found for today');
-      }
-      
-      // Also try to clear yesterday's cache (in case it's still there)
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayStr = yesterday.toISOString().split('T')[0];
-      const yesterdayKey = REDIS_KEYS.prevclose(yesterdayStr);
-      await redisClient.del(yesterdayKey);
-    } else {
-      console.log('⚠️  Redis not available - skipping Redis cache clear');
-    }
-  } catch (error) {
-    console.warn('⚠️  Failed to clear Redis cache:', error);
-  }
-}
-
-async function resetClosingPricesInDB() {
-  console.log('🔄 Resetting closing prices in database...');
-  
-  // Get all tickers
-  const tickers = await prisma.ticker.findMany({
-    select: { symbol: true }
-  });
-  
-  console.log(`📊 Found ${tickers.length} tickers to reset`);
-  
-  // Reset Ticker.latestPrevClose and latestPrevCloseDate
-  const resetTickerResult = await prisma.ticker.updateMany({
-    data: {
-      latestPrevClose: null,
-      latestPrevCloseDate: null,
-      updatedAt: new Date()
-    }
-  });
-  
-  console.log(`✅ Reset latestPrevClose for ${resetTickerResult.count} tickers`);
-  
-  // Get today's date and last trading day
-  const today = getDateET();
-  const todayDate = createETDate(today);
-  const lastTradingDay = getLastTradingDay(todayDate);
-  
-  // Delete DailyRef entries for today and last trading day
-  const deletedToday = await prisma.dailyRef.deleteMany({
-    where: {
-      date: todayDate
-    }
-  });
-  
-  const deletedLastTradingDay = await prisma.dailyRef.deleteMany({
-    where: {
-      date: lastTradingDay
-    }
-  });
-  
-  console.log(`✅ Deleted ${deletedToday.count} DailyRef entries for today`);
-  console.log(`✅ Deleted ${deletedLastTradingDay.count} DailyRef entries for last trading day`);
-  
-  return tickers.map(t => t.symbol);
 }
 
 async function main() {
@@ -122,9 +48,10 @@ async function main() {
     console.log('\n📝 Step 1: Clearing Redis cache...');
     await clearRedisPrevCloseCache();
     
-    // Step 2: Reset closing prices in database
+    // Step 2: Reset closing prices in database (hard reset)
     console.log('\n📝 Step 2: Resetting closing prices in database...');
-    const tickerSymbols = await resetClosingPricesInDB();
+    await refreshClosingPricesInDB(true); // hardReset=true
+    const tickerSymbols = (await prisma.ticker.findMany({ select: { symbol: true } })).map(t => t.symbol);
     
     // Step 3: Get universe (or use tickers from DB)
     console.log('\n📝 Step 3: Getting ticker universe...');
