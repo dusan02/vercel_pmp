@@ -38,6 +38,9 @@ module.exports = {
         PORT: 3000,
         ENABLE_WEBSOCKET: "true",
         DATABASE_URL: envVars.DATABASE_URL || process.env.DATABASE_URL,
+        // Redis - use local Redis if Upstash not configured
+        REDIS_URL: envVars.REDIS_URL || process.env.REDIS_URL || "redis://127.0.0.1:6379",
+        USE_LOCAL_REDIS: "true",
         // Google OAuth
         GOOGLE_CLIENT_ID: envVars.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID,
         GOOGLE_CLIENT_SECRET: envVars.GOOGLE_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET,
@@ -63,6 +66,9 @@ module.exports = {
         ENABLE_WEBSOCKET: "true",
         DATABASE_URL: envVars.DATABASE_URL || process.env.DATABASE_URL,
         POLYGON_API_KEY: envVars.POLYGON_API_KEY || process.env.POLYGON_API_KEY,
+        // Redis - use local Redis if Upstash not configured
+        REDIS_URL: envVars.REDIS_URL || process.env.REDIS_URL || "redis://127.0.0.1:6379",
+        USE_LOCAL_REDIS: "true",
       },
       error_file: "/var/log/pm2/polygon-worker-error.log",
       out_file: "/var/log/pm2/polygon-worker-out.log",

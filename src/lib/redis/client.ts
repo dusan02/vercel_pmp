@@ -10,16 +10,27 @@ const isServerless = process.env.VERCEL === '1' || process.env.NODE_ENV === 'pro
 
 // Initialize Redis client for both serverless and non-serverless environments
 try {
-    // Use Upstash Redis if available
+    let redisUrl: string | null = null;
+    
+    // Priority 1: Use Upstash Redis if available (for Vercel/serverless)
     if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
-        const redisUrl = `redis://default:${process.env.UPSTASH_REDIS_REST_TOKEN}@${process.env.UPSTASH_REDIS_REST_URL.replace('https://', '')}:6379`;
-
+        redisUrl = `redis://default:${process.env.UPSTASH_REDIS_REST_TOKEN}@${process.env.UPSTASH_REDIS_REST_URL.replace('https://', '')}:6379`;
         console.log('🔍 Using Upstash Redis');
-        console.log('🔍 Environment check:', {
-            UPSTASH_REDIS_REST_URL: 'SET',
-            UPSTASH_REDIS_REST_TOKEN: 'SET'
-        });
+    }
+    // Priority 2: Use REDIS_URL if set (for local/server deployments)
+    else if (process.env.REDIS_URL) {
+        redisUrl = process.env.REDIS_URL;
+        console.log('🔍 Using Redis from REDIS_URL');
+    }
+    // Priority 3: Use local Redis (default for server deployments)
+    else if (!isServerless || process.env.USE_LOCAL_REDIS === 'true') {
+        redisUrl = process.env.REDIS_HOST 
+            ? `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT || 6379}`
+            : 'redis://127.0.0.1:6379';
+        console.log('🔍 Using local Redis:', redisUrl);
+    }
 
+    if (redisUrl) {
         redisClient = createClient({
             url: redisUrl,
             socket: {
@@ -59,7 +70,7 @@ try {
             });
         }
     } else {
-        console.log('⚠️ Upstash Redis not configured, using in-memory cache');
+        console.log('⚠️ Redis not configured, using in-memory cache');
         redisClient = null;
     }
 } catch (error) {
@@ -106,9 +117,24 @@ export async function getRedisSubscriber(): Promise<any> {
     }
 
     try {
+        let redisUrl: string | null = null;
+        
+        // Priority 1: Use Upstash Redis if available
         if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
-            const redisUrl = `redis://default:${process.env.UPSTASH_REDIS_REST_TOKEN}@${process.env.UPSTASH_REDIS_REST_URL.replace('https://', '')}:6379`;
+            redisUrl = `redis://default:${process.env.UPSTASH_REDIS_REST_TOKEN}@${process.env.UPSTASH_REDIS_REST_URL.replace('https://', '')}:6379`;
+        }
+        // Priority 2: Use REDIS_URL if set
+        else if (process.env.REDIS_URL) {
+            redisUrl = process.env.REDIS_URL;
+        }
+        // Priority 3: Use local Redis
+        else if (!isServerless || process.env.USE_LOCAL_REDIS === 'true') {
+            redisUrl = process.env.REDIS_HOST 
+                ? `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT || 6379}`
+                : 'redis://127.0.0.1:6379';
+        }
 
+        if (redisUrl) {
             redisSub = createClient({ url: redisUrl });
             redisSub.on('error', (err: any) => {
                 console.error('Redis Sub Error:', err);
