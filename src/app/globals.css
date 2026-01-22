@@ -2080,7 +2080,8 @@
   }
 
   .favorites table thead th,
-  .all-stocks table thead th {
+  .all-stocks table thead th,
+  .todays-earnings table thead th {
     background: var(--clr-surface);
     font-weight: 600;
     font-size: 0.8125rem;
@@ -2172,17 +2173,7 @@
     border-bottom: 1px solid var(--clr-border);
   }
 
-  .todays-earnings table thead th {
-    background: var(--clr-surface);
-    font-weight: 600;
-    font-size: 0.8125rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    padding: 0.875rem 0.75rem;
-    position: sticky;
-    top: 0;
-    z-index: 5;
-  }
+  /* Earnings table headers now use same styles as favorites/all-stocks (see above) */
 
   .todays-earnings table tbody tr {
     transition: background-color 0.15s ease;
