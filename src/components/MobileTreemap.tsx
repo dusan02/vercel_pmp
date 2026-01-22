@@ -26,8 +26,7 @@ interface MobileTreemapProps {
 
 // Maximum tiles for mobile (UX + performance)
 // NOTE: With true treemap layout we can render more while still filling the area.
-const MAX_MOBILE_TILES_COMPACT = 250;
-const MAX_MOBILE_TILES_EXPANDED = 650;
+const MAX_MOBILE_TILES = 650;
 
 type TreemapDatum = {
   name: string;
@@ -63,9 +62,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
   // Internal zoom for mobile heatmap:
   // zoom-in => more tiles become readable; zoom-out => labels disappear naturally.
   const [zoom, setZoom] = useState(1);
-  // Expanded mode: taller treemap canvas with vertical scrolling for larger tiles
-  // Default to compact mode on initial load
-  const [expanded, setExpanded] = useState(false);
+  // Vertical treemap layout with sector strips stacked vertically
   const [showPinchHint, setShowPinchHint] = useState(false);
   const ZOOM_MIN = 1;
   const ZOOM_MAX = 3;
@@ -106,12 +103,11 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
       return true;
     });
 
-    const limit = expanded ? MAX_MOBILE_TILES_EXPANDED : MAX_MOBILE_TILES_COMPACT;
     return uniqueData
       .filter(c => sizeValue(c) > 0)
       .sort((a, b) => sizeValue(b) - sizeValue(a))
-      .slice(0, limit); // CRITICAL: Limit for mobile UX + performance
-  }, [data, metric, expanded]);
+      .slice(0, MAX_MOBILE_TILES); // CRITICAL: Limit for mobile UX + performance
+  }, [data, metric]);
 
   // Color scale
   const colorScale = useMemo(() => createHeatmapColorScale(timeframe, metric === 'mcap' ? 'mcap' : 'percent'), [timeframe, metric]);
@@ -188,7 +184,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
   }, [measureSafeAreaBottom]);
 
   // Update availableHeight on visualViewport/window resize/scroll (critical for iOS Safari/Chrome)
-  // Also update when metric or expanded state changes (affects layout height calculation)
+  // Also update when metric changes (affects layout height calculation)
   useEffect(() => {
     const updateAvailableHeight = () => {
       setAvailableHeight(getAvailableTreemapHeight());
@@ -221,7 +217,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
       }
       window.removeEventListener('resize', updateAvailableHeight);
     };
-  }, [getAvailableTreemapHeight, metric, expanded]); // CRITICAL: Update when metric or expanded changes
+  }, [getAvailableTreemapHeight, metric]); // CRITICAL: Update when metric changes
 
   useEffect(() => {
     const el = containerRef.current;
@@ -354,12 +350,15 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     }
   }, []);
 
-  // Reset scroll position and layout when switching metric, expanded mode, or view
-  const prevExpandedRef = useRef(expanded);
+  // Bottom sheet state (mobile "hover" replacement)
+  const [selectedCompany, setSelectedCompany] = useState<CompanyNode | null>(null);
+  const closeSheet = useCallback(() => setSelectedCompany(null), []);
+
+  // Reset scroll position and layout when switching metric or view
   const prevMetricRef = useRef(metric);
   
   useEffect(() => {
-    // Reset scroll position when metric or expanded changes
+    // Reset scroll position when metric changes
     if (containerRef.current) {
       containerRef.current.scrollTop = 0;
       containerRef.current.scrollLeft = 0;
@@ -368,16 +367,15 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     if (selectedCompany) {
       setSelectedCompany(null);
     }
-    prevExpandedRef.current = expanded;
     prevMetricRef.current = metric;
     // Force layout recalculation by triggering resize observer
-    // This ensures heatmap recalculates with new metric/expanded state
+    // This ensures heatmap recalculates with new metric state
     if (containerRef.current) {
       // Trigger a resize event to force recalculation
       const resizeEvent = new Event('resize');
       window.dispatchEvent(resizeEvent);
     }
-  }, [expanded, metric]);
+  }, [metric, selectedCompany]);
 
   const handleDoubleTapReset = useCallback((e: React.TouchEvent) => {
     // Only consider single-finger taps (avoid interfering with pinch)
@@ -401,10 +399,6 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
   // Prevent "long press" from also triggering a short-tap click afterwards
   const suppressClickRef = useRef<Set<string>>(new Set());
   const suppressTimerRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
-
-  // Bottom sheet state (mobile "hover" replacement)
-  const [selectedCompany, setSelectedCompany] = useState<CompanyNode | null>(null);
-  const closeSheet = useCallback(() => setSelectedCompany(null), []);
 
   // UX: Automaticky zatvor sheet pri prepnutí view (z heatmap na iný tab)
   useEffect(() => {
@@ -447,8 +441,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
   }, []);
 
   // Build treemap rectangles (no gaps).
-  // Compact: single treemap.
-  // Expanded: sector strips stacked vertically, each with its own internal treemap.
+  // Vertical layout: sector strips stacked vertically, each with its own internal treemap.
   const { leaves, layoutHeight } = useMemo((): {
     leaves: Array<{ x0: number; y0: number; x1: number; y1: number; data: any }>;
     layoutHeight: number;
@@ -457,37 +450,15 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     if (width <= 0 || height <= 0) return { leaves: [], layoutHeight: 0 };
     if (!sortedData.length) return { leaves: [], layoutHeight: 0 };
 
-    // In compact mode, use full available height (no empty space)
-    // In expanded mode, use EXPAND_FACTOR to allow vertical scrolling
-    // CRITICAL: Use availableHeight if available (more accurate for iOS Safari/Chrome)
-    const effectiveHeight = availableHeight > 0 ? availableHeight : height;
-    const baseHeight = expanded 
-      ? Math.max(1, Math.floor(effectiveHeight * EXPAND_FACTOR))
-      : Math.max(1, effectiveHeight); // Compact: use full available height exactly
-
-    // Compact mode: single treemap fill - use full available height
-    if (!expanded) {
-      const sectorHierarchy = buildHeatmapHierarchy(sortedData, metric);
-      const root = hierarchy<any>(sectorHierarchy)
-        .sum((d: any) => (typeof d.value === 'number' ? d.value : 0))
-        .sort((a: any, b: any) => (b.value || 0) - (a.value || 0));
-
-      treemap<{ name: string; children: TreemapDatum[] }>()
-        .tile(treemapSquarify)
-        .size([width, baseHeight])
-        .paddingInner(0)
-        .paddingOuter(0)
-        .round(true)(root as any);
-
-      const out = root.leaves().filter((l: any) => l.data?.meta?.type === 'company') as any[];
-      return { leaves: out, layoutHeight: baseHeight };
-    }
-
-    // Expanded mode:
+    // Vertical treemap layout:
     // - sectors are stacked as horizontal strips (full width, variable height)
     // - each sector gets height proportional to total sector value
+    // - use EXPAND_FACTOR to allow vertical scrolling
     // - enforce a reasonable minimum height so small sectors don't collapse into thin bands
     //   (thin bands force companies into stretched horizontal bars).
+    // CRITICAL: Use availableHeight if available (more accurate for iOS Safari/Chrome)
+    const effectiveHeight = availableHeight > 0 ? availableHeight : height;
+    const baseHeight = Math.max(1, Math.floor(effectiveHeight * EXPAND_FACTOR));
     const sectorHierarchy = buildHeatmapHierarchy(sortedData, metric);
     const sectors = sectorHierarchy.children ?? [];
 
@@ -575,7 +546,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     // This ensures the bottom edge is perfectly aligned
     const finalLayoutHeight = yCursor;
     return { leaves: result, layoutHeight: finalLayoutHeight };
-  }, [containerSize, sortedData, metric, expanded, availableHeight]); // CRITICAL: Include availableHeight in dependencies
+  }, [containerSize, sortedData, metric, availableHeight]); // CRITICAL: Include availableHeight in dependencies
 
   const renderLeaf = useCallback((leaf: { x0: number; y0: number; x1: number; y1: number; data: any }) => {
     const company = leaf.data?.meta?.companyData as CompanyNode | undefined;
@@ -704,7 +675,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
         flexDirection: 'column',
       }}
     >
-      {/* Fixed top bar: Logo + Title + Metric buttons + Compact/Expand + Sign In */}
+      {/* Fixed top bar: Logo + Title + Metric buttons + Sign In */}
       <div
         style={{
           position: 'fixed',
@@ -773,42 +744,6 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
             </div>
           )}
 
-          {/* Compact/Expand button - Square */}
-          <button
-            type="button"
-            onClick={() => {
-              const wasExpanded = expanded;
-              setExpanded((v) => !v);
-              // Reset scroll position when switching from Expanded to Compact
-              if (wasExpanded && containerRef.current) {
-                setTimeout(() => {
-                  if (containerRef.current) {
-                    containerRef.current.scrollTop = 0;
-                    containerRef.current.scrollLeft = 0;
-                  }
-                }, 0);
-              }
-            }}
-            className="flex items-center justify-center w-[44px] h-[44px] rounded-lg transition-colors flex-shrink-0"
-            style={{
-              background: '#1a1a1a',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              WebkitTapHighlightColor: 'transparent',
-              touchAction: 'manipulation',
-            }}
-            aria-label={expanded ? 'Switch to compact view (square)' : 'Expand view (vertical rectangle)'}
-          >
-            {expanded ? (
-              <svg width="16" height="20" viewBox="0 0 16 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="2" y="2" width="12" height="16" rx="1" stroke="#6b7280" strokeWidth="1.5" fill="#1a1a1a" />
-              </svg>
-            ) : (
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="2" y="2" width="12" height="12" rx="1" stroke="#6b7280" strokeWidth="1.5" fill="#1a1a1a" />
-              </svg>
-            )}
-          </button>
-
           {/* Sign In button - Square 44x44 */}
           <div className="flex-shrink-0">
             <LoginButton />
@@ -837,7 +772,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
           width: '100%',
           height: '100%', /* CRITICAL: Fill available height */
           overflowX: zoom > 1 ? 'auto' : 'hidden',
-          overflowY: (expanded || zoom > 1) ? 'auto' : 'hidden',
+          overflowY: 'auto', // Always allow vertical scrolling for vertical treemap layout
           WebkitOverflowScrolling: 'touch' as any,
         }}
         onTouchEnd={handleDoubleTapReset}
@@ -903,13 +838,10 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
                Safari/Chrome often report smaller containerSize.height than actual available space
                due to visualViewport vs innerHeight differences.
                availableHeight is updated via event listeners for stable iOS Safari/Chrome behavior.
-               For compact mode: ensure height matches availableHeight exactly to align with footer.
-               For expanded mode: ensure minimum height matches availableHeight for footer alignment, allow scrolling if content is taller.
+               Vertical treemap: ensure minimum height matches availableHeight for footer alignment, allow scrolling if content is taller.
                CRITICAL: Remove all padding/margin to maximize heatmap area. */
-            height: expanded 
-              ? Math.max(layoutHeight * zoom, availableHeight) // Expanded: minimum availableHeight for footer alignment, allow scrolling if taller
-              : Math.max(availableHeight, containerSize.height), // Compact: always fill available height exactly
-            minHeight: expanded ? availableHeight : '100%', /* Both modes: ensure minimum height for footer alignment */
+            height: Math.max(layoutHeight * zoom, availableHeight), // Minimum availableHeight for footer alignment, allow scrolling if taller
+            minHeight: availableHeight, // Ensure minimum height for footer alignment
             margin: 0,
             padding: 0,
             boxSizing: 'border-box',
@@ -955,7 +887,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
               bottom: 'calc(var(--tabbar-h) + env(safe-area-inset-bottom))',
             }}
           >
-            {/* Compact Header: Logo + Ticker + Actions */}
+            {/* Header: Logo + Ticker + Actions */}
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2.5 flex-1 min-w-0">
                 <div className="flex-shrink-0">
@@ -998,7 +930,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
               </div>
             </div>
 
-            {/* Compact Data Grid: 2 columns (Label | Value) */}
+            {/* Data Grid: 2 columns (Label | Value) */}
             <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
               {/* Row 1: Price */}
               <div className="opacity-70">Price</div>
