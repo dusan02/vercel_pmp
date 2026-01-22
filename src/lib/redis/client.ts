@@ -6,7 +6,7 @@ const inMemoryCache = new Map();
 const cacheTimestamps = new Map();
 
 // Check if we're in a serverless environment (Vercel)
-const isServerless = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
+const isServerless = process.env.VERCEL === '1';
 
 // Initialize Redis client for both serverless and non-serverless environments
 try {
@@ -22,7 +22,7 @@ try {
         redisUrl = process.env.REDIS_URL;
         console.log('🔍 Using Redis from REDIS_URL');
     }
-    // Priority 3: Use local Redis (default for server deployments)
+    // Priority 3: Use local Redis (default for server deployments, not Vercel)
     else if (!isServerless || process.env.USE_LOCAL_REDIS === 'true') {
         redisUrl = process.env.REDIS_HOST 
             ? `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT || 6379}`
@@ -127,7 +127,7 @@ export async function getRedisSubscriber(): Promise<any> {
         else if (process.env.REDIS_URL) {
             redisUrl = process.env.REDIS_URL;
         }
-        // Priority 3: Use local Redis
+        // Priority 3: Use local Redis (default for server deployments, not Vercel)
         else if (!isServerless || process.env.USE_LOCAL_REDIS === 'true') {
             redisUrl = process.env.REDIS_HOST 
                 ? `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT || 6379}`
