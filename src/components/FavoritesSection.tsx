@@ -100,14 +100,14 @@ export function FavoritesSection({
       <div className="lg:hidden">
         <div className="w-full bg-white dark:bg-gray-900 border-0 rounded-none overflow-hidden divide-y divide-gray-200 dark:divide-gray-800">
           {/* Header row (mobile) - clickable for sorting */}
-          <div className="px-3 py-1.5 bg-slate-50/80 dark:bg-white/5 text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+          <div className="px-3 py-2 bg-slate-50/80 dark:bg-white/5 text-xs font-semibold text-gray-400 dark:text-gray-400 uppercase tracking-wide">
             {sortKey === 'marketCapDiff' ? (
               <div className="grid items-center gap-x-2 min-w-0 [grid-template-columns:40px_minmax(56px,1fr)_72px_72px_44px]">
                 <div className="text-center">Logo</div>
                 <button
                   type="button"
                   onClick={() => onSort('ticker')}
-                  className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border border-gray-300/50 dark:border-gray-600/50 bg-transparent"
+                  className="text-xs text-gray-400 dark:text-gray-400 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border-none bg-transparent uppercase tracking-wide"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                   aria-label="Sort by ticker"
                 >
@@ -116,7 +116,7 @@ export function FavoritesSection({
                 <button
                   type="button"
                   onClick={() => onSort('marketCap')}
-                  className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border border-gray-300/50 dark:border-gray-600/50 bg-transparent"
+                  className="text-xs text-gray-400 dark:text-gray-400 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border-none bg-transparent uppercase tracking-wide"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                   aria-label="Sort by market cap"
                 >
@@ -125,7 +125,7 @@ export function FavoritesSection({
                 <button
                   type="button"
                   onClick={() => onSort('marketCapDiff')}
-                  className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border border-gray-300/50 dark:border-gray-600/50 bg-transparent"
+                  className="text-xs text-gray-400 dark:text-gray-400 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border-none bg-transparent uppercase tracking-wide"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                   aria-label="Sort by market cap diff"
                 >
@@ -140,7 +140,7 @@ export function FavoritesSection({
                 <button
                   type="button"
                   onClick={() => onSort('ticker')}
-                  className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border border-gray-300/50 dark:border-gray-600/50 bg-transparent"
+                  className="text-xs text-gray-400 dark:text-gray-400 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border-none bg-transparent uppercase tracking-wide"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                   aria-label="Sort by ticker"
                 >
@@ -149,7 +149,7 @@ export function FavoritesSection({
                 <button
                   type="button"
                   onClick={() => onSort('marketCap')}
-                  className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border border-gray-300/50 dark:border-gray-600/50 bg-transparent"
+                  className="text-xs text-gray-400 dark:text-gray-400 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border-none bg-transparent uppercase tracking-wide"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                   aria-label="Sort by market cap"
                 >
@@ -159,7 +159,7 @@ export function FavoritesSection({
                 <button
                   type="button"
                   onClick={() => onSort('percentChange')}
-                  className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border border-gray-300/50 dark:border-gray-600/50 bg-transparent"
+                  className="text-xs text-gray-400 dark:text-gray-400 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border-none bg-transparent uppercase tracking-wide"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                   aria-label="Sort by percent change"
                 >
@@ -173,7 +173,7 @@ export function FavoritesSection({
                 <button
                   type="button"
                   onClick={() => onSort('ticker')}
-                  className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border border-gray-300/50 dark:border-gray-600/50 bg-transparent"
+                  className="text-xs text-gray-400 dark:text-gray-400 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border-none bg-transparent uppercase tracking-wide"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                   aria-label="Sort by ticker"
                 >
@@ -185,7 +185,7 @@ export function FavoritesSection({
                 <button
                   type="button"
                   onClick={() => onSort('currentPrice')}
-                  className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border border-gray-300/50 dark:border-gray-600/50 bg-transparent"
+                  className="text-xs text-gray-400 dark:text-gray-400 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border-none bg-transparent uppercase tracking-wide"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                   aria-label="Sort by price"
                 >
@@ -197,7 +197,7 @@ export function FavoritesSection({
                 <button
                   type="button"
                   onClick={() => onSort('percentChange')}
-                  className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border border-gray-300/50 dark:border-gray-600/50 bg-transparent"
+                  className="text-xs text-gray-400 dark:text-gray-400 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border-none bg-transparent uppercase tracking-wide"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                   aria-label="Sort by percent change"
                 >

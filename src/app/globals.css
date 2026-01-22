@@ -9,7 +9,8 @@
 /* CSS Variables for consistent heights */
 :root {
   --header-h: 56px;
-  --tabbar-h: 72px; /* Base height without safe-area (safe-area is added via padding-bottom) */
+  --tabbar-h: 72px;
+  /* Base height without safe-area (safe-area is added via padding-bottom) */
   /* --tabbar-real-h is set at runtime by MobileTabBar component (measured real height including safe-area) */
 }
 
@@ -18,6 +19,7 @@
    Radical approach: isolation + pseudo-elements + solid backgrounds
    ============================================ */
 @media (max-width: 1023px) {
+
   /* Root level - CRITICAL: Zero margins/padding, unified background */
   html {
     background: #0f0f0f !important;
@@ -28,7 +30,7 @@
     padding: 0 !important;
     position: relative !important;
   }
-  
+
   body {
     background: #0f0f0f !important;
     width: 100% !important;
@@ -42,9 +44,9 @@
     outline: none !important;
     box-shadow: none !important;
   }
-  
+
   /* Next.js root wrapper */
-  body > div {
+  body>div {
     background: #0f0f0f !important;
     width: 100% !important;
     max-width: 100% !important;
@@ -53,7 +55,7 @@
     padding: 0 !important;
     position: relative !important;
   }
-  
+
   .mobile-app {
     background: #0f0f0f !important;
     width: 100% !important;
@@ -67,7 +69,7 @@
     outline: none !important;
     box-shadow: none !important;
   }
-  
+
   .mobile-app-content {
     overflow-x: hidden !important;
     width: 100% !important;
@@ -80,7 +82,7 @@
     outline: none !important;
     box-shadow: none !important;
   }
-  
+
   /* CRITICAL: Heatmap container must extend to bottom edge - override any padding-bottom */
   .mobile-app-content.is-heatmap {
     padding-bottom: 0 !important;
@@ -88,7 +90,7 @@
     height: 100% !important;
     min-height: 100% !important;
   }
-  
+
   /* Transform fix - translate3d already applied to .mobile-app-screen above (line ~200) */
   .mobile-app-screen {
     width: 100% !important;
@@ -104,7 +106,7 @@
     outline: none !important;
     box-shadow: none !important;
   }
-  
+
   /* Header - CRITICAL: Ensure visibility and proper display, prevent white lines */
   .mobile-app-header {
     /* CRITICAL: Isolation context prevents blur artifacts from bleeding */
@@ -145,7 +147,7 @@
     padding-left: 0 !important;
     padding-right: 0 !important;
   }
-  
+
   /* Header content - ensure no side padding creates gaps */
   .mobile-app-header-content {
     margin-left: 0 !important;
@@ -153,7 +155,7 @@
     padding-left: 1rem !important;
     padding-right: 1rem !important;
   }
-  
+
   /* Tabbar - CRITICAL: Ensure visibility and proper display, heatmap touches footer, prevent white lines */
   .mobile-app-tabbar {
     /* CRITICAL: Isolation context prevents blur artifacts from bleeding */
@@ -202,10 +204,14 @@
 .mobile-app {
   display: flex;
   flex-direction: column;
-  height: 100vh; /* Fallback for older browsers */
-  height: var(--app-height, 100dvh); /* CRITICAL: Use visual viewport height (iOS Safari fix) */
-  min-height: 100vh; /* Fallback */
-  min-height: var(--app-height, 100dvh); /* CRITICAL: Use visual viewport height */
+  height: 100vh;
+  /* Fallback for older browsers */
+  height: var(--app-height, 100dvh);
+  /* CRITICAL: Use visual viewport height (iOS Safari fix) */
+  min-height: 100vh;
+  /* Fallback */
+  min-height: var(--app-height, 100dvh);
+  /* CRITICAL: Use visual viewport height */
   background: #ffffff;
   position: relative;
   overflow: hidden;
@@ -218,13 +224,18 @@
 /* DEBUG: Visual boundaries (only in development) - remove in production */
 @media (max-width: 1023px) {
   .mobile-app {
-    /* outline: 1px solid rgba(255, 255, 255, 0.15); */ /* Uncomment for debug */
+    /* outline: 1px solid rgba(255, 255, 255, 0.15); */
+    /* Uncomment for debug */
   }
+
   .mobile-app-screen.screen-heatmap {
-    /* outline: 1px solid rgba(0, 255, 255, 0.25); */ /* Uncomment for debug */
+    /* outline: 1px solid rgba(0, 255, 255, 0.25); */
+    /* Uncomment for debug */
   }
+
   .mobile-app-tabbar {
-    /* outline: 1px solid rgba(255, 0, 255, 0.25); */ /* Uncomment for debug */
+    /* outline: 1px solid rgba(255, 0, 255, 0.25); */
+    /* Uncomment for debug */
   }
 }
 
@@ -309,20 +320,29 @@
   min-height: 0;
   /* Touch optimization */
   -webkit-overflow-scrolling: touch;
-  touch-action: pan-y; /* Allow vertical scrolling, prevent horizontal */
+  touch-action: pan-y;
+  /* Allow vertical scrolling, prevent horizontal */
 }
 
 /* Heatmap view: no padding-top (heatmap has its own header) */
 /* CRITICAL: Heatmap container must extend to bottom edge (touches navigation) */
 .mobile-app-content.is-heatmap {
-  padding-top: 0 !important; /* Heatmap má vlastný header v MobileTreemap */
-  padding-bottom: 0 !important; /* CRITICAL: No padding-bottom - container extends to navigation */
-  margin-bottom: 0 !important; /* CRITICAL: No margin-bottom - container extends to navigation */
-  height: 100% !important; /* CRITICAL: Explicit height to fill available space */
-  min-height: 100% !important; /* CRITICAL: Ensure minimum height fills container */
-  display: flex !important; /* CRITICAL: Flex layout for proper height calculation */
-  flex-direction: column !important; /* CRITICAL: Column layout for heatmap */
-  overflow: hidden !important; /* CRITICAL: Prevent scrolling on container, let inner handle it */
+  padding-top: 0 !important;
+  /* Heatmap má vlastný header v MobileTreemap */
+  padding-bottom: 0 !important;
+  /* CRITICAL: No padding-bottom - container extends to navigation */
+  margin-bottom: 0 !important;
+  /* CRITICAL: No margin-bottom - container extends to navigation */
+  height: 100% !important;
+  /* CRITICAL: Explicit height to fill available space */
+  min-height: 100% !important;
+  /* CRITICAL: Ensure minimum height fills container */
+  display: flex !important;
+  /* CRITICAL: Flex layout for proper height calculation */
+  flex-direction: column !important;
+  /* CRITICAL: Column layout for heatmap */
+  overflow: hidden !important;
+  /* CRITICAL: Prevent scrolling on container, let inner handle it */
 }
 
 /* Mobile: explicitne odstrániť vertikálne čiary (prevent white lines on iOS Safari/Chrome) */
@@ -355,7 +375,8 @@
   overflow-y: auto;
   /* Touch optimization */
   -webkit-overflow-scrolling: touch;
-  touch-action: pan-y; /* Allow vertical scrolling, prevent horizontal */
+  touch-action: pan-y;
+  /* Allow vertical scrolling, prevent horizontal */
   /* Prevent text selection on mobile for better UX */
   -webkit-touch-callout: none;
   -webkit-user-select: none;
@@ -394,16 +415,19 @@
 /* CRITICAL: Container ends exactly at top edge of tabbar (no gap, no overlap) */
 @media (max-width: 1023px) {
   .mobile-app-screen.screen-heatmap {
-    position: fixed !important; /* CRITICAL: Fixed inset to prevent height collapse */
+    position: fixed !important;
+    /* CRITICAL: Fixed inset to prevent height collapse */
     top: 0 !important;
     left: 0 !important;
     right: 0 !important;
-    bottom: var(--tabbar-real-h, var(--tabbar-h)) !important; /* CRITICAL: Heatmap screen ends exactly at top edge of tabbar */
+    bottom: var(--tabbar-real-h, var(--tabbar-h)) !important;
+    /* CRITICAL: Heatmap screen ends exactly at top edge of tabbar */
     width: 100% !important;
     padding: 0 !important;
     margin: 0 !important;
     background: #000;
-    z-index: 1; /* CRITICAL: Lower than tabbar (9999) to ensure proper screen stack */
+    z-index: 1;
+    /* CRITICAL: Lower than tabbar (9999) to ensure proper screen stack */
     overflow: hidden !important;
     /* CRITICAL: Disable transform/transition on iOS Safari - prevents stacking context issues with position: fixed */
     transform: none !important;
@@ -422,8 +446,9 @@
 /* This is the missing link that breaks the flex chain */
 /* Also ensure all direct children have min-height: 0 to prevent flex chain breaks */
 @media (max-width: 1023px) {
+
   /* Ensure all direct children of screen-heatmap have min-height: 0 (prevents flex chain breaks from ErrorBoundary, Suspense, etc.) */
-  .mobile-app-screen.screen-heatmap > * {
+  .mobile-app-screen.screen-heatmap>* {
     min-height: 0 !important;
   }
 
@@ -439,6 +464,7 @@
 /* CRITICAL: ONE source of truth - no duplicates! */
 /* CRITICAL: Explicit flex chain on all 4 layers to prevent height collapse */
 @media (max-width: 1023px) {
+
   .mobile-app-screen.screen-heatmap .mobile-treemap-wrapper,
   .mobile-app-screen.screen-heatmap .heatmap-preview-container,
   .mobile-app-screen.screen-heatmap .heatmap-preview,
@@ -527,7 +553,7 @@
 }
 
 /* Mobile treemap inner wrapper - ensure bottom alignment */
-.mobile-app-screen.screen-heatmap .mobile-treemap-grid > div {
+.mobile-app-screen.screen-heatmap .mobile-treemap-grid>div {
   /* CRITICAL: In compact mode, ensure height matches container exactly for footer alignment */
   /* In expanded mode, allow content to be taller (scrolling) */
 }
@@ -635,6 +661,7 @@
     margin-bottom: 0 !important;
     padding-bottom: 0 !important;
   }
+
   /* All section elements */
   .mobile-app-screen.screen-portfolio section,
   .mobile-app-screen.screen-favorites section,
@@ -657,8 +684,8 @@
     background: #0f0f0f !important;
   }
 
-  .mobile-app-screen.screen-all-stocks .all-stocks > div,
-  .mobile-app-screen.screen-all-stocks .all-stocks > div > div {
+  .mobile-app-screen.screen-all-stocks .all-stocks>div,
+  .mobile-app-screen.screen-all-stocks .all-stocks>div>div {
     background-color: #0f0f0f !important;
     background: #0f0f0f !important;
   }
@@ -760,7 +787,8 @@
   /* CRITICAL: Use box-sizing: border-box and height: auto with min-height for accurate getBoundingClientRect().height */
   box-sizing: border-box !important;
   height: auto !important;
-  min-height: var(--tabbar-h); /* 72px base height */
+  min-height: var(--tabbar-h);
+  /* 72px base height */
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
   /* CRITICAL: Ensure tab bar is always visible, even during interactions */
   visibility: visible !important;
@@ -4242,6 +4270,7 @@ table td strong {
 
 /* Mobile: Remove margin-bottom to prevent empty space at bottom */
 @media (max-width: 1023px) {
+
   .mobile-app-screen .favorites,
   .mobile-app-screen .all-stocks,
   .mobile-app-screen .portfolio,
@@ -8995,4 +9024,38 @@ img[data-src].loaded {
     -webkit-backdrop-filter: none !important;
   }
 }
-*/
+
+/* Global Table Headers Styles */
+th {
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  /* text-sm */
+  color: #9ca3af !important;
+  /* text-gray-400 */
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  padding-top: 0.75rem !important;
+  padding-bottom: 0.75rem !important;
+}
+
+/* Specific overrides for dark mode if needed, though gray-400 works well on dark */
+@media (max-width: 1023px) {
+  th {
+    font-size: 0.75rem !important;
+    /* text-xs (12px) on mobile */
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+}
+
+/* Ensure heatmap container fills available space correctly */
+@media (max-width: 1023px) {
+
+  /* Fix for heatmap screen height calculation */
+  .mobile-app-screen.screen-heatmap .mobile-treemap-wrapper {
+    height: 100% !important;
+    max-height: 100% !important;
+    flex: 1 !important;
+  }
+}

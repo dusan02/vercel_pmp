@@ -661,9 +661,14 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     // CRITICAL: Guard against NaN/0 - fallback to effectiveHeight to prevent UI collapse
     // Use maxBottom as final layout height (not effectiveHeight or yCursor) when valid
     // This ensures wrapper height = actual content height (no empty space)
-    const finalLayoutHeight = Number.isFinite(maxBottom) && maxBottom > 0
-      ? Math.ceil(maxBottom)
-      : Math.max(1, Math.ceil(effectiveHeight)); // Fallback to prevent UI collapse
+    // FIX: If container has height, use it as minimum to ensure full screen fill
+    const containerH = height;
+    const contentH = Number.isFinite(maxBottom) && maxBottom > 0 ? Math.ceil(maxBottom) : 0;
+
+    // If content is smaller than container (and we want to fill usage), stretch or just center?
+    // For treemap, we usually want it to just fill. 
+    // If we have a fixed height container (mobile screen), we should match it unless content is larger.
+    const finalLayoutHeight = Math.max(containerH, contentH, Math.max(1, Math.ceil(effectiveHeight)));
 
     return { leaves: result, layoutHeight: finalLayoutHeight, maxBottom };
   }, [containerSize, sortedData, metric, availableHeight]); // CRITICAL: Include availableHeight in dependencies

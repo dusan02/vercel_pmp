@@ -122,7 +122,7 @@ export function PortfolioSection({
   // Desktop sort function
   const sortedPortfolioStocksDesktop = (() => {
     if (!desktopSortKey) return portfolioStocks;
-    
+
     const arr = [...portfolioStocks];
     arr.sort((a, b) => {
       const qa = portfolioHoldings[a.ticker] || 0;
@@ -237,7 +237,7 @@ export function PortfolioSection({
       ticker: stock.ticker,
       source: 'portfolio_search'
     });
-    
+
     onAddStock(stock.ticker, 1);
     setPortfolioSearchTerm('');
     setPortfolioSearchResults([]);
@@ -346,7 +346,7 @@ export function PortfolioSection({
               role="combobox"
             />
             {showPortfolioSearch && portfolioSearchResults.length > 0 && (
-              <div 
+              <div
                 ref={resultsRef}
                 className="portfolio-search-results"
                 role="listbox"
@@ -371,21 +371,21 @@ export function PortfolioSection({
                       <div className="portfolio-search-result-ticker">{stock.ticker}</div>
                       <div className="portfolio-search-result-name">{getCompanyName(stock.ticker)}</div>
                     </div>
-                  <button
-                    className="portfolio-add-button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      onAddStock(stock.ticker, 1);
-                      setPortfolioSearchTerm('');
-                      setPortfolioSearchResults([]);
-                      setShowPortfolioSearch(false);
-                      searchInputRef.current?.blur();
-                    }}
-                    aria-label={`Add ${stock.ticker} to portfolio`}
-                  >
-                    <Plus size={16} />
-                  </button>
+                    <button
+                      className="portfolio-add-button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        onAddStock(stock.ticker, 1);
+                        setPortfolioSearchTerm('');
+                        setPortfolioSearchResults([]);
+                        setShowPortfolioSearch(false);
+                        searchInputRef.current?.blur();
+                      }}
+                      aria-label={`Add ${stock.ticker} to portfolio`}
+                    >
+                      <Plus size={16} />
+                    </button>
                   </div>
                 ))}
               </div>
@@ -415,116 +415,116 @@ export function PortfolioSection({
         ) : (
           <div className="w-full">
             <div className="w-full bg-white dark:bg-gray-900 border-0 rounded-none overflow-hidden divide-y divide-gray-200 dark:divide-gray-800">
-            {/* Header row (mobile): align with PortfolioCardMobile grid - clickable for sorting */}
-            <div className="px-3 py-1.5 bg-slate-50/80 dark:bg-white/5 text-[11px] font-semibold text-slate-600 dark:text-slate-300">
-              <div className="grid items-center gap-x-1.5 min-w-0 [grid-template-columns:40px_minmax(56px,1fr)_56px_72px_56px_52px]">
-                <div className="text-center">Logo</div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (mobileSortKey === 'ticker') {
-                      setMobileAscending((v) => !v);
-                    } else {
-                      setMobileSortKey('ticker');
-                      setMobileAscending(true);
-                    }
-                  }}
-                  className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border border-gray-300/50 dark:border-gray-600/50 bg-transparent"
-                  style={{ WebkitTapHighlightColor: 'transparent' }}
-                  aria-label="Sort by ticker"
-                >
-                  Ticker
-                  {mobileSortKey === 'ticker' && (
-                    <span className="text-[9px] text-gray-500 dark:text-gray-400">{mobileAscending ? '▲' : '▼'}</span>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (mobileSortKey === 'quantity') {
-                      setMobileAscending((v) => !v);
-                    } else {
-                      setMobileSortKey('quantity');
-                      setMobileAscending(false);
-                    }
-                  }}
-                  className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border border-gray-300/50 dark:border-gray-600/50 bg-transparent"
-                  style={{ WebkitTapHighlightColor: 'transparent' }}
-                  aria-label="Sort by quantity"
-                >
-                  #
-                  {mobileSortKey === 'quantity' && (
-                    <span className="text-[9px] text-gray-500 dark:text-gray-400">{mobileAscending ? '▲' : '▼'}</span>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (mobileSortKey === 'delta') {
-                      setMobileAscending((v) => !v);
-                    } else {
-                      setMobileSortKey('delta');
-                      setMobileAscending(false);
-                    }
-                  }}
-                  className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border border-gray-300/50 dark:border-gray-600/50 bg-transparent"
-                  style={{ WebkitTapHighlightColor: 'transparent' }}
-                  aria-label="Sort by dollar change"
-                >
-                  $
-                  {mobileSortKey === 'delta' && (
-                    <span className="text-[9px] text-gray-500 dark:text-gray-400">{mobileAscending ? '▲' : '▼'}</span>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (mobileSortKey === 'percent') {
-                      setMobileAscending((v) => !v);
-                    } else {
-                      setMobileSortKey('percent');
-                      setMobileAscending(false);
-                    }
-                  }}
-                  className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border border-gray-300/50 dark:border-gray-600/50 bg-transparent"
-                  style={{ WebkitTapHighlightColor: 'transparent' }}
-                  aria-label="Sort by percent"
-                >
-                  %
-                  {mobileSortKey === 'percent' && (
-                    <span className="text-[9px] text-gray-500 dark:text-gray-400">{mobileAscending ? '▲' : '▼'}</span>
-                  )}
-                </button>
-                <div className="text-center">X</div>
+              {/* Header row (mobile): align with PortfolioCardMobile grid - clickable for sorting */}
+              <div className="px-3 py-2 bg-slate-50/80 dark:bg-white/5 text-xs font-semibold text-gray-400 dark:text-gray-400 uppercase tracking-wide">
+                <div className="grid items-center gap-x-1.5 min-w-0 [grid-template-columns:40px_minmax(56px,1fr)_56px_72px_56px_52px]">
+                  <div className="text-center">Logo</div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (mobileSortKey === 'ticker') {
+                        setMobileAscending((v) => !v);
+                      } else {
+                        setMobileSortKey('ticker');
+                        setMobileAscending(true);
+                      }
+                    }}
+                    className="text-xs text-gray-400 dark:text-gray-400 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border-none bg-transparent uppercase tracking-wide"
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
+                    aria-label="Sort by ticker"
+                  >
+                    Ticker
+                    {mobileSortKey === 'ticker' && (
+                      <span className="text-[9px] text-gray-500 dark:text-gray-400">{mobileAscending ? '▲' : '▼'}</span>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (mobileSortKey === 'quantity') {
+                        setMobileAscending((v) => !v);
+                      } else {
+                        setMobileSortKey('quantity');
+                        setMobileAscending(false);
+                      }
+                    }}
+                    className="text-xs text-gray-400 dark:text-gray-400 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border-none bg-transparent uppercase tracking-wide"
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
+                    aria-label="Sort by quantity"
+                  >
+                    #
+                    {mobileSortKey === 'quantity' && (
+                      <span className="text-[9px] text-gray-500 dark:text-gray-400">{mobileAscending ? '▲' : '▼'}</span>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (mobileSortKey === 'delta') {
+                        setMobileAscending((v) => !v);
+                      } else {
+                        setMobileSortKey('delta');
+                        setMobileAscending(false);
+                      }
+                    }}
+                    className="text-xs text-gray-400 dark:text-gray-400 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border-none bg-transparent uppercase tracking-wide"
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
+                    aria-label="Sort by dollar change"
+                  >
+                    $
+                    {mobileSortKey === 'delta' && (
+                      <span className="text-[9px] text-gray-500 dark:text-gray-400">{mobileAscending ? '▲' : '▼'}</span>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (mobileSortKey === 'percent') {
+                        setMobileAscending((v) => !v);
+                      } else {
+                        setMobileSortKey('percent');
+                        setMobileAscending(false);
+                      }
+                    }}
+                    className="text-xs text-gray-400 dark:text-gray-400 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border-none bg-transparent uppercase tracking-wide"
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
+                    aria-label="Sort by percent"
+                  >
+                    %
+                    {mobileSortKey === 'percent' && (
+                      <span className="text-[9px] text-gray-500 dark:text-gray-400">{mobileAscending ? '▲' : '▼'}</span>
+                    )}
+                  </button>
+                  <div className="text-center">X</div>
+                </div>
+              </div>
+
+              {sortedPortfolioStocksMobile.map((stock, index) => {
+                const quantity = portfolioHoldings[stock.ticker] || 0;
+
+                return (
+                  <PortfolioCardMobile
+                    key={stock.ticker}
+                    stock={stock}
+                    quantity={quantity}
+                    onRemoveStock={onRemoveStock}
+                    onOpenDetails={openDetails}
+                    priority={index < 10} // Only first 10 items have priority loading
+                  />
+                );
+              })}
+              {/* Total row for mobile */}
+              <div className="p-4">
+                <div className="rounded-lg p-3" style={{ background: 'rgba(0,0,0,0.04)' }}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600 dark:text-gray-300 font-semibold">Total Portfolio Value:</span>
+                    <span className={`font-bold text-lg ${totalPortfolioValue >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                      {formatCurrencyCompact(totalPortfolioValue, true)}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
-
-            {sortedPortfolioStocksMobile.map((stock, index) => {
-              const quantity = portfolioHoldings[stock.ticker] || 0;
-
-              return (
-                <PortfolioCardMobile
-                  key={stock.ticker}
-                  stock={stock}
-                  quantity={quantity}
-                  onRemoveStock={onRemoveStock}
-                  onOpenDetails={openDetails}
-                  priority={index < 10} // Only first 10 items have priority loading
-                />
-              );
-            })}
-            {/* Total row for mobile */}
-            <div className="p-4">
-              <div className="rounded-lg p-3" style={{ background: 'rgba(0,0,0,0.04)' }}>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600 dark:text-gray-300 font-semibold">Total Portfolio Value:</span>
-                <span className={`font-bold text-lg ${totalPortfolioValue >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                  {formatCurrencyCompact(totalPortfolioValue, true)}
-                </span>
-              </div>
-            </div>
-            </div>
-          </div>
           </div>
         )}
 
@@ -640,7 +640,7 @@ export function PortfolioSection({
           <thead>
             <tr>
               <th className="portfolio-col-logo">Logo</th>
-              <th 
+              <th
                 className={`portfolio-col-ticker ${desktopSortKey === 'ticker' ? 'sortable active-sort' : 'sortable'}`}
                 onClick={() => {
                   if (desktopSortKey === 'ticker') {
@@ -654,7 +654,7 @@ export function PortfolioSection({
               >
                 Ticker
               </th>
-              <th 
+              <th
                 className={`portfolio-col-company ${desktopSortKey === 'company' ? 'sortable active-sort' : 'sortable'}`}
                 onClick={() => {
                   if (desktopSortKey === 'company') {
@@ -668,7 +668,7 @@ export function PortfolioSection({
               >
                 Company
               </th>
-              <th 
+              <th
                 className={`portfolio-col-sector ${desktopSortKey === 'sector' ? 'sortable active-sort' : 'sortable'}`}
                 onClick={() => {
                   if (desktopSortKey === 'sector') {
@@ -682,7 +682,7 @@ export function PortfolioSection({
               >
                 Sector
               </th>
-              <th 
+              <th
                 className={`portfolio-col-industry ${desktopSortKey === 'industry' ? 'sortable active-sort' : 'sortable'}`}
                 onClick={() => {
                   if (desktopSortKey === 'industry') {
@@ -696,7 +696,7 @@ export function PortfolioSection({
               >
                 Industry
               </th>
-              <th 
+              <th
                 className={`portfolio-col-quantity ${desktopSortKey === 'quantity' ? 'sortable active-sort' : 'sortable'}`}
                 onClick={() => {
                   if (desktopSortKey === 'quantity') {
@@ -710,7 +710,7 @@ export function PortfolioSection({
               >
                 #
               </th>
-              <th 
+              <th
                 className={`portfolio-col-price ${desktopSortKey === 'price' ? 'sortable active-sort' : 'sortable'}`}
                 onClick={() => {
                   if (desktopSortKey === 'price') {
@@ -724,7 +724,7 @@ export function PortfolioSection({
               >
                 Price
               </th>
-              <th 
+              <th
                 className={`portfolio-col-change ${desktopSortKey === 'percent' ? 'sortable active-sort' : 'sortable'}`}
                 onClick={() => {
                   if (desktopSortKey === 'percent') {
@@ -738,7 +738,7 @@ export function PortfolioSection({
               >
                 % Change
               </th>
-              <th 
+              <th
                 className={`portfolio-col-value ${desktopSortKey === 'value' ? 'sortable active-sort' : 'sortable'}`}
                 onClick={() => {
                   if (desktopSortKey === 'value') {
@@ -755,127 +755,127 @@ export function PortfolioSection({
               <th className="portfolio-col-actions"></th>
             </tr>
           </thead>
-        <tbody>
-          {sortedPortfolioStocksDesktop.length === 0 ? (
-            <tr>
-              <td colSpan={10} className="p-0 border-none">
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-2 py-12 text-sm text-slate-500 dark:text-slate-400">
-                  <span>Your portfolio is empty.</span>
-                  <button
-                    onClick={() => {
-                      const input = document.querySelector('.portfolio-search-input') as HTMLInputElement;
-                      if (input) {
-                        input.focus();
-                        input.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                      }
-                    }}
-                    className={BUTTON_PRIMARY_MD}
-                  >
-                    Find stocks to add →
-                  </button>
-                </div>
-              </td>
-            </tr>
-          ) : (
-            <>
-              {sortedPortfolioStocksDesktop.map((stock) => {
-                const quantity = portfolioHoldings[stock.ticker] || 0;
-                const value = calculatePortfolioValue(stock);
-
-                // Format price without decimals
-                const price = stock.currentPrice ?? 0;
-                const formattedPrice = isFinite(price) ? Math.round(price).toLocaleString('en-US') : '0';
-
-                // Format percent change with 2 decimal places
-                const percentChange = stock.percentChange ?? 0;
-                const formattedPercent = isFinite(percentChange) 
-                  ? `${percentChange >= 0 ? '+' : ''}${percentChange.toFixed(2)}%`
-                  : '0.00%';
-
-                return (
-                  <tr key={stock.ticker}>
-                    {/* Logo */}
-                    <td>
-                      <div className="logo-container">
-                        <CompanyLogo
-                          ticker={stock.ticker}
-                          logoUrl={stock.logoUrl || `/logos/${stock.ticker.toLowerCase()}-32.webp`}
-                          size={32}
-                          priority={true}
-                        />
-                      </div>
-                    </td>
-                    
-                    {/* Ticker */}
-                    <td>
-                      <strong>{stock.ticker}</strong>
-                    </td>
-                    
-                    {/* Company */}
-                    <td className="company-name">
-                      {getCompanyName(stock.ticker)}
-                    </td>
-                    
-                    {/* Sector */}
-                    <td>{formatSectorName(stock.sector)}</td>
-                    
-                    {/* Industry */}
-                    <td>{stock.industry || 'N/A'}</td>
-                    
-                    {/* Quantity */}
-                    <td>
-                      <PortfolioQuantityInput
-                        value={quantity}
-                        onChange={(newQuantity) => onUpdateQuantity(stock.ticker, newQuantity)}
-                        className="min-w-[100px] w-24"
-                      />
-                    </td>
-                    
-                    {/* Price */}
-                    <td>${formattedPrice}</td>
-                    
-                    {/* % Change */}
-                    <td className={percentChange >= 0 ? 'positive' : 'negative'}>
-                      {formattedPercent}
-                    </td>
-                    
-                    {/* Value */}
-                    <td className={value >= 0 ? 'positive' : 'negative'}>
-                      {formatCurrencyCompact(value, true)}
-                    </td>
-                    
-                    {/* Actions */}
-                    <td>
-                      <button
-                        className="portfolio-delete-button"
-                        onClick={() => onRemoveStock(stock.ticker)}
-                        aria-label={`Remove ${stock.ticker} from portfolio`}
-                        title="Remove from portfolio"
-                      >
-                        <X size={16} />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-              {/* Divider row */}
+          <tbody>
+            {sortedPortfolioStocksDesktop.length === 0 ? (
               <tr>
-                <td colSpan={10} style={{ padding: 0, borderTop: '1px solid var(--clr-border, #e5e7eb)', height: '1px' }}></td>
-              </tr>
-              {/* Total row */}
-              <tr className="portfolio-total-row">
-                <td colSpan={8} style={{ textAlign: 'right', fontWeight: 600, padding: '1rem 0.5rem', verticalAlign: 'middle' }}>
-                  Total:
+                <td colSpan={10} className="p-0 border-none">
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-2 py-12 text-sm text-slate-500 dark:text-slate-400">
+                    <span>Your portfolio is empty.</span>
+                    <button
+                      onClick={() => {
+                        const input = document.querySelector('.portfolio-search-input') as HTMLInputElement;
+                        if (input) {
+                          input.focus();
+                          input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                      }}
+                      className={BUTTON_PRIMARY_MD}
+                    >
+                      Find stocks to add →
+                    </button>
+                  </div>
                 </td>
-                <td className={totalPortfolioValue >= 0 ? 'positive' : 'negative'} style={{ fontWeight: 600, padding: '1rem 0.5rem', whiteSpace: 'nowrap', verticalAlign: 'middle', minWidth: '120px' }}>
-                  {formatCurrencyCompact(totalPortfolioValue, true)}
-                </td>
-                <td></td>
               </tr>
-            </>
-          )}
-        </tbody>
-      </table>
+            ) : (
+              <>
+                {sortedPortfolioStocksDesktop.map((stock) => {
+                  const quantity = portfolioHoldings[stock.ticker] || 0;
+                  const value = calculatePortfolioValue(stock);
+
+                  // Format price without decimals
+                  const price = stock.currentPrice ?? 0;
+                  const formattedPrice = isFinite(price) ? Math.round(price).toLocaleString('en-US') : '0';
+
+                  // Format percent change with 2 decimal places
+                  const percentChange = stock.percentChange ?? 0;
+                  const formattedPercent = isFinite(percentChange)
+                    ? `${percentChange >= 0 ? '+' : ''}${percentChange.toFixed(2)}%`
+                    : '0.00%';
+
+                  return (
+                    <tr key={stock.ticker}>
+                      {/* Logo */}
+                      <td>
+                        <div className="logo-container">
+                          <CompanyLogo
+                            ticker={stock.ticker}
+                            logoUrl={stock.logoUrl || `/logos/${stock.ticker.toLowerCase()}-32.webp`}
+                            size={32}
+                            priority={true}
+                          />
+                        </div>
+                      </td>
+
+                      {/* Ticker */}
+                      <td>
+                        <strong>{stock.ticker}</strong>
+                      </td>
+
+                      {/* Company */}
+                      <td className="company-name">
+                        {getCompanyName(stock.ticker)}
+                      </td>
+
+                      {/* Sector */}
+                      <td>{formatSectorName(stock.sector)}</td>
+
+                      {/* Industry */}
+                      <td>{stock.industry || 'N/A'}</td>
+
+                      {/* Quantity */}
+                      <td>
+                        <PortfolioQuantityInput
+                          value={quantity}
+                          onChange={(newQuantity) => onUpdateQuantity(stock.ticker, newQuantity)}
+                          className="min-w-[100px] w-24"
+                        />
+                      </td>
+
+                      {/* Price */}
+                      <td>${formattedPrice}</td>
+
+                      {/* % Change */}
+                      <td className={percentChange >= 0 ? 'positive' : 'negative'}>
+                        {formattedPercent}
+                      </td>
+
+                      {/* Value */}
+                      <td className={value >= 0 ? 'positive' : 'negative'}>
+                        {formatCurrencyCompact(value, true)}
+                      </td>
+
+                      {/* Actions */}
+                      <td>
+                        <button
+                          className="portfolio-delete-button"
+                          onClick={() => onRemoveStock(stock.ticker)}
+                          aria-label={`Remove ${stock.ticker} from portfolio`}
+                          title="Remove from portfolio"
+                        >
+                          <X size={16} />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {/* Divider row */}
+                <tr>
+                  <td colSpan={10} style={{ padding: 0, borderTop: '1px solid var(--clr-border, #e5e7eb)', height: '1px' }}></td>
+                </tr>
+                {/* Total row */}
+                <tr className="portfolio-total-row">
+                  <td colSpan={8} style={{ textAlign: 'right', fontWeight: 600, padding: '1rem 0.5rem', verticalAlign: 'middle' }}>
+                    Total:
+                  </td>
+                  <td className={totalPortfolioValue >= 0 ? 'positive' : 'negative'} style={{ fontWeight: 600, padding: '1rem 0.5rem', whiteSpace: 'nowrap', verticalAlign: 'middle', minWidth: '120px' }}>
+                    {formatCurrencyCompact(totalPortfolioValue, true)}
+                  </td>
+                  <td></td>
+                </tr>
+              </>
+            )}
+          </tbody>
+        </table>
       </div>
     </section>
   );
