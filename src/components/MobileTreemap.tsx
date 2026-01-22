@@ -639,13 +639,27 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
 
     // CRITICAL: Calculate maxBottom from actual leaf positions (not from yCursor or effectiveHeight)
     // This ensures layoutHeight matches the actual content height, preventing empty space below leaves
+    // Robust calculation that handles different leaf formats and guards against NaN
+    const getLeafBottom = (l: { x0: number; y0: number; x1: number; y1: number; data: any }) => {
+      // Prefer explicit y1 if it exists and is finite
+      if (Number.isFinite(l.y1)) return l.y1;
+      // Fallback to y0 + height (y1 - y0)
+      const height = l.y1 - l.y0;
+      if (Number.isFinite(l.y0) && Number.isFinite(height)) return l.y0 + height;
+      return 0;
+    };
+
     const maxBottom = result.length > 0 
-      ? Math.max(...result.map(l => l.y1))
+      ? result.reduce((m, l) => Math.max(m, getLeafBottom(l)), 0)
       : 0;
     
-    // Use maxBottom as final layout height (not effectiveHeight or yCursor)
+    // CRITICAL: Guard against NaN/0 - fallback to effectiveHeight to prevent UI collapse
+    // Use maxBottom as final layout height (not effectiveHeight or yCursor) when valid
     // This ensures wrapper height = actual content height (no empty space)
-    const finalLayoutHeight = Math.max(1, Math.ceil(maxBottom));
+    const finalLayoutHeight = Number.isFinite(maxBottom) && maxBottom > 0
+      ? Math.ceil(maxBottom)
+      : Math.max(1, Math.ceil(effectiveHeight)); // Fallback to prevent UI collapse
+    
     return { leaves: result, layoutHeight: finalLayoutHeight, maxBottom };
   }, [containerSize, sortedData, metric, availableHeight]); // CRITICAL: Include availableHeight in dependencies
 
@@ -907,6 +921,8 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
             <div>availableCalc: {getAvailableTreemapHeight()} (fn)</div>
             <div>layoutH×zoom: {layoutHeight * zoom}</div>
             <div>maxBottom: {maxBottom}</div>
+            <div>leaves.length: {leaves.length}</div>
+            <div>isFinite(layoutH): {Number.isFinite(layoutHeight) ? 'yes' : 'no'}</div>
             <div>finalH: {layoutHeight * zoom}</div>
             <div style={{ marginTop: '8px', borderTop: '1px solid rgba(0,255,0,0.3)', paddingTop: '4px' }}>
               <div>screen-heatmap: {debugRects.screen ? `${Math.floor(debugRects.screen.width)}×${Math.floor(debugRects.screen.height)}` : 'N/A'}</div>
@@ -946,10 +962,12 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
           style={{
             position: 'relative',
             width: containerSize.width * zoom,
-            /* CRITICAL: Use actual content height (layoutHeight * zoom) - no Math.max to prevent empty space
-               layoutHeight is now calculated from maxBottom, so it matches actual content height exactly */
-            height: layoutHeight * zoom, // Use actual content height (no Math.max to prevent empty space)
-            minHeight: 0, // Remove minHeight constraint - let content determine height
+            /* CRITICAL: Use actual content height (layoutHeight * zoom) when leaves exist
+               Fallback to containerSize.height when no leaves to prevent UI collapse */
+            height: leaves.length > 0 && Number.isFinite(layoutHeight) && layoutHeight > 0
+              ? layoutHeight * zoom
+              : containerSize.height, // Fallback for empty state / errors
+            minHeight: containerSize.height, // Prevent collapse when no leaves
             margin: 0,
             padding: 0,
             boxSizing: 'border-box',
