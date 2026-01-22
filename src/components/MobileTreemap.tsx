@@ -26,7 +26,7 @@ interface MobileTreemapProps {
 
 // Maximum tiles for mobile (UX + performance)
 // NOTE: With true treemap layout we can render more while still filling the area.
-const MAX_MOBILE_TILES = 650;
+const MAX_MOBILE_TILES = 800;
 
 type TreemapDatum = {
   name: string;
@@ -66,7 +66,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
   const [showPinchHint, setShowPinchHint] = useState(false);
   const ZOOM_MIN = 1;
   const ZOOM_MAX = 3;
-  const EXPAND_FACTOR = 1.8;
+  const EXPAND_FACTOR = 3.5;
   const lastTapRef = useRef(0);
   const pinchRef = useRef<{
     active: boolean;
@@ -148,7 +148,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
       if (!CSS.supports('padding-bottom: env(safe-area-inset-bottom)')) {
         return 0;
       }
-      
+
       // Create hidden probe element with safe-area padding
       const probe = document.createElement('div');
       probe.style.position = 'fixed';
@@ -160,11 +160,11 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
       probe.style.width = '1px';
       probe.style.height = '1px';
       document.body.appendChild(probe);
-      
+
       // Read computed padding-bottom value
       const computed = window.getComputedStyle(probe);
       const paddingBottom = parseFloat(computed.paddingBottom) || 0;
-      
+
       document.body.removeChild(probe);
       return paddingBottom;
     } catch (e) {
@@ -177,21 +177,21 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     // Use visualViewport if available (more accurate on mobile Safari/Chrome)
     // visualViewport excludes browser UI (address bar, etc.) which innerHeight includes
     const vh = window.visualViewport?.height ?? window.innerHeight;
-    
+
     // Get safe area bottom (iOS notch/home indicator) - measure reliably
     const safeAreaBottom = measureSafeAreaBottom();
-    
+
     // Header heights
     // Note: headerH is 0 for heatmap (we removed padding-top with is-heatmap class)
     const headerH = 0; // No main app header padding for heatmap
     const tabbarH = 72; // var(--tabbar-h) - bottom navigation
     const treemapHeaderH = 48; // Fixed header inside MobileTreemap (spacer height after fixed header)
-    
+
     // CRITICAL: Do NOT subtract tabbarH here because .mobile-treemap-wrapper already has padding-bottom for tabbar
     // This prevents "double reservation" - wrapper reserves space via padding-bottom, we just need to fill available viewport
     // Available height = viewport - safe area - treemap header (tabbar is handled by wrapper padding-bottom)
     const available = vh - safeAreaBottom - treemapHeaderH;
-    
+
     return Math.max(0, available);
   }, [measureSafeAreaBottom]);
 
@@ -207,7 +207,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
 
     // Safari needs a small delay after mount
     const timeoutId = setTimeout(updateAvailableHeight, 50);
-    
+
     // Also update on next animation frame (ensures layout is settled)
     const rafId = requestAnimationFrame(updateAvailableHeight);
 
@@ -299,7 +299,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
   // Uses ResizeObserver + visualViewport events for precise measurements (no interval spam)
   // Only enabled via ?debug=1 query parameter (not just in development)
   const [showDebug, setShowDebug] = useState(false);
-  
+
   useEffect(() => {
     // Check for ?debug=1 query parameter
     const params = new URLSearchParams(window.location.search);
@@ -450,7 +450,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
 
   // Reset scroll position and layout when switching metric or view
   const prevMetricRef = useRef(metric);
-  
+
   useEffect(() => {
     // Reset scroll position when metric changes
     if (containerRef.current) {
@@ -503,7 +503,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
 
   const handleTouchStart = useCallback((ticker: string) => {
     if (!onToggleFavorite) return;
-    
+
     const timer = setTimeout(() => {
       setLongPressActive(ticker);
       onToggleFavorite(ticker);
@@ -521,7 +521,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
         navigator.vibrate(50);
       }
     }, 600); // 600ms for long press
-    
+
     longPressTimerRef.current.set(ticker, timer);
   }, [onToggleFavorite]);
 
@@ -614,16 +614,16 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
 
       const leaves = sectorRoot.leaves().filter((l: any) => l.data?.meta?.type === 'company');
       const sectorEndY = yCursor + sectorHeight;
-      
+
       for (const leaf of leaves) {
         const l = leaf as any;
         const absY0 = l.y0 + yCursor;
         const absY1 = l.y1 + yCursor;
-        
+
         // Ensure pixel-perfect positioning: floor for start, ceil for end
         // Clamp y1 to not exceed sectorEndY to prevent overlapping with next sector
         const clampedY1 = Math.min(Math.ceil(absY1), sectorEndY);
-        
+
         result.push({
           x0: Math.floor(l.x0),
           x1: Math.ceil(l.x1),
@@ -645,26 +645,26 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
       if (Number.isFinite(l.y1)) return l.y1;
       // Support y2 format
       if (Number.isFinite(l.y2)) return l.y2;
-      
+
       // Fallback to y + height format (support both y/y0 and height)
       const y = Number(l.y ?? l.y0);
       const h = Number(l.height ?? (Number.isFinite(l.y1) && Number.isFinite(l.y0) ? l.y1 - l.y0 : NaN));
       if (Number.isFinite(y) && Number.isFinite(h)) return y + h;
-      
+
       return 0;
     };
 
-    const maxBottom = result.length > 0 
+    const maxBottom = result.length > 0
       ? result.reduce((m, l) => Math.max(m, getLeafBottom(l)), 0)
       : 0;
-    
+
     // CRITICAL: Guard against NaN/0 - fallback to effectiveHeight to prevent UI collapse
     // Use maxBottom as final layout height (not effectiveHeight or yCursor) when valid
     // This ensures wrapper height = actual content height (no empty space)
     const finalLayoutHeight = Number.isFinite(maxBottom) && maxBottom > 0
       ? Math.ceil(maxBottom)
       : Math.max(1, Math.ceil(effectiveHeight)); // Fallback to prevent UI collapse
-    
+
     return { leaves: result, layoutHeight: finalLayoutHeight, maxBottom };
   }, [containerSize, sortedData, metric, availableHeight]); // CRITICAL: Include availableHeight in dependencies
 
@@ -675,7 +675,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     const h0 = Math.max(0, leaf.y1 - leaf.y0);
     const w = w0 * zoom;
     const h = h0 * zoom;
-    if (w < 2 || h < 2) return null;
+    if (w < 1 || h < 1) return null; // CRITICAL: lowered threshold from 2 to 1 (or 0.5)
 
     const color = getColor(company);
     const value = metric === 'percent' ? (company.changePercent ?? 0) : (company.marketCapDiff ?? 0);
@@ -694,9 +694,9 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     const minDim = Math.min(w, h);
     const tickerClass =
       area >= 9000 && minDim >= 64 ? 'text-xl font-extrabold tracking-tight' :
-      area >= 5200 && minDim >= 48 ? 'text-lg font-bold tracking-tight' :
-      area >= 2600 && minDim >= 34 ? 'text-sm font-semibold tracking-tight' :
-      'text-[11px] font-semibold tracking-tight';
+        area >= 5200 && minDim >= 48 ? 'text-lg font-bold tracking-tight' :
+          area >= 2600 && minDim >= 34 ? 'text-sm font-semibold tracking-tight' :
+            'text-[11px] font-semibold tracking-tight';
 
     // Padding: reduce on mid/small tiles so text has room; still comfortable on large tiles.
     const pad = Math.max(2, Math.min(10, Math.floor(minDim / 12)));
@@ -787,7 +787,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
   // This ensures flex layout is resolved before we try to calculate layout
   if (containerSize.width <= 0 || containerSize.height <= 0) {
     return (
-      <div 
+      <div
         ref={containerRef}
         className="mobile-treemap-grid"
         style={{
@@ -1007,7 +1007,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
           {leaves.map((leaf) => renderLeaf(leaf))}
         </div>
       </div>
-      
+
       {/* Removed: "View all stocks" button (caused crashes on some mobile flows) */}
 
       {/* Bottom sheet: details (tap on tile) */}
@@ -1105,7 +1105,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
               <div className="opacity-70">% Change</div>
               <div
                 className={`text-right font-semibold font-mono tabular-nums ${(selectedCompany.changePercent ?? 0) >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
-                }`}
+                  }`}
               >
                 {formatPercent(selectedCompany.changePercent ?? 0)}
               </div>
@@ -1114,7 +1114,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
               <div className="opacity-70">Mcap Δ</div>
               <div
                 className={`text-right font-semibold font-mono tabular-nums ${(selectedCompany.marketCapDiff ?? 0) >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
-                }`}
+                  }`}
               >
                 {selectedCompany.marketCapDiff == null ? '—' : formatMarketCapDiff(selectedCompany.marketCapDiff)}
               </div>
