@@ -201,10 +201,10 @@
 .mobile-app {
   display: flex;
   flex-direction: column;
-  height: 100dvh; /* CRITICAL: Explicit height for flex chain */
-  height: 100vh; /* Fallback */
-  min-height: 100vh;
-  min-height: 100dvh;
+  height: 100vh; /* Fallback for older browsers */
+  height: var(--app-height, 100dvh); /* CRITICAL: Use visual viewport height (iOS Safari fix) */
+  min-height: 100vh; /* Fallback */
+  min-height: var(--app-height, 100dvh); /* CRITICAL: Use visual viewport height */
   background: #ffffff;
   position: relative;
   overflow: hidden;
@@ -387,8 +387,9 @@
     top: 0 !important; /* CRITICAL: Start from top edge */
     left: 0 !important; /* CRITICAL: Start from left edge */
     right: 0 !important; /* CRITICAL: Extend to right edge */
-    /* CRITICAL: Heatmap screen ends exactly at top edge of tabbar (no gap) */
-    bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom)) !important;
+    /* CRITICAL: Heatmap screen ends exactly at top edge of tabbar (no gap)
+       Note: tabbar already has safe-area-inset-bottom in its padding, so we only need tabbar height */
+    bottom: var(--tabbar-h) !important;
     width: 100% !important; /* CRITICAL: Fill full width */
     /* CRITICAL: Disable scrolling on wrapper, let inner treemap handle it */
     overflow: hidden !important;
