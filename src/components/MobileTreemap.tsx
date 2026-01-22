@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useCallback, useEffect, useRef, useState } from 'react';
+import React, { useMemo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { CompanyNode } from './MarketHeatmap';
 import { formatPrice, formatPercent, formatMarketCap, formatMarketCapDiff } from '@/lib/utils/format';
 import { createHeatmapColorScale } from '@/lib/utils/heatmapColors';
@@ -130,6 +130,10 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
   // State for available height (updates on visualViewport changes for iOS Safari/Chrome stability)
   const [availableHeight, setAvailableHeight] = useState(0);
 
+  // Track header height for spacer (accounts for safe-area-inset-top)
+  const headerRef = useRef<HTMLDivElement | null>(null);
+  const [headerH, setHeaderH] = useState(56);
+
   // Helper: Measure safe-area-inset-bottom reliably using a probe element
   const measureSafeAreaBottom = useCallback(() => {
     try {
@@ -218,6 +222,29 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
       window.removeEventListener('resize', updateAvailableHeight);
     };
   }, [getAvailableTreemapHeight, metric]); // CRITICAL: Update when metric changes
+
+  // Measure header height (accounts for safe-area-inset-top)
+  useLayoutEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+
+    const update = () => {
+      const height = el.getBoundingClientRect().height;
+      setHeaderH(height);
+    };
+
+    // Initial measurement
+    update();
+
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    window.addEventListener('resize', update);
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', update);
+    };
+  }, []);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -544,7 +571,8 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
 
     // Final height must match exactly the sum of all sector heights
     // This ensures the bottom edge is perfectly aligned
-    const finalLayoutHeight = yCursor;
+    // CRITICAL: Ensure minimum height matches available viewport height to prevent empty space at bottom
+    const finalLayoutHeight = Math.max(yCursor, effectiveHeight);
     return { leaves: result, layoutHeight: finalLayoutHeight };
   }, [containerSize, sortedData, metric, availableHeight]); // CRITICAL: Include availableHeight in dependencies
 
@@ -677,6 +705,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     >
       {/* Fixed top bar: Logo + Title + Metric buttons + Sign In */}
       <div
+        ref={headerRef}
         style={{
           position: 'fixed',
           top: 0,
@@ -686,6 +715,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
           background: 'rgba(0,0,0,0.88)',
           borderBottom: '1px solid rgba(255,255,255,0.08)',
           padding: '8px 10px',
+          paddingTop: 'calc(8px + env(safe-area-inset-top))', // CRITICAL: Account for iOS notch/status bar
           display: 'flex',
           alignItems: 'center',
           gap: 8,
@@ -759,7 +789,8 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
       </div>
 
       {/* Spacer pre fixed header - aby obsah nebol pod headerom */}
-      <div style={{ height: '48px', flexShrink: 0 }} />
+      {/* CRITICAL: Use measured header height (accounts for safe-area-inset-top) */}
+      <div style={{ height: `${headerH}px`, flexShrink: 0 }} />
 
       <div
         ref={containerRef}
@@ -834,11 +865,11 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
           style={{
             position: 'relative',
             width: containerSize.width * zoom,
-            /* CRITICAL: Use exact layout height for vertical treemap.
+            /* CRITICAL: Ensure minimum height matches viewport to prevent empty space at bottom.
                Allow scrolling if content is taller than viewport.
                CRITICAL: Remove all padding/margin to maximize heatmap area. */
-            height: layoutHeight * zoom, // Use exact layout height, allow scrolling if taller
-            minHeight: 0, // No minimum height - use exact layout height
+            height: Math.max(layoutHeight * zoom, containerSize.height), // Minimum viewport height, allow taller for scrolling
+            minHeight: containerSize.height, // CRITICAL: Minimum height must fill viewport
             margin: 0,
             padding: 0,
             boxSizing: 'border-box',
