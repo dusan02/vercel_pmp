@@ -130,10 +130,23 @@ export async function getStocksList(options: {
         }
       }
 
-      // Apply tie-break: SessionPrice wins when ts is newer OR equal (same as heatmap).
+      // Apply tie-break: Prefer SessionPrice only if it's significantly newer (at least 1 minute)
+      // This prevents using stale SessionPrice that has same timestamp but older price
+      // If SessionPrice is older or same age, prefer Ticker.lastPrice (which is updated more frequently)
+      const STALE_THRESHOLD_MS = 60 * 1000; // 1 minute
       for (const [symbol, sp] of latestSpBySymbol.entries()) {
         const existing = bestPriceBySymbol.get(symbol);
-        if (!existing || sp.ts.getTime() >= existing.ts.getTime()) {
+        if (existing) {
+          const spIsNewer = sp.ts.getTime() > existing.ts.getTime() + STALE_THRESHOLD_MS;
+          
+          // Only use SessionPrice if it's significantly newer (at least 1 minute)
+          // Otherwise prefer Ticker.lastPrice (more reliable, updated by worker)
+          if (spIsNewer) {
+            bestPriceBySymbol.set(symbol, { price: sp.price, ts: sp.ts, source: 'session' });
+          }
+          // If SessionPrice is same age or older, keep Ticker.lastPrice (existing)
+        } else {
+          // No existing price, use SessionPrice
           bestPriceBySymbol.set(symbol, { price: sp.price, ts: sp.ts, source: 'session' });
         }
       }
