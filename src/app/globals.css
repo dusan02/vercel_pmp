@@ -420,7 +420,13 @@
 
 /* CRITICAL: Explicit content wrapper - direct child of position: fixed flex container */
 /* This is the missing link that breaks the flex chain */
+/* Also ensure all direct children have min-height: 0 to prevent flex chain breaks */
 @media (max-width: 1023px) {
+  /* Ensure all direct children of screen-heatmap have min-height: 0 (prevents flex chain breaks from ErrorBoundary, Suspense, etc.) */
+  .mobile-app-screen.screen-heatmap > * {
+    min-height: 0 !important;
+  }
+
   .mobile-app-screen.screen-heatmap .screen-heatmap-content {
     flex: 1 !important;
     min-height: 0 !important;

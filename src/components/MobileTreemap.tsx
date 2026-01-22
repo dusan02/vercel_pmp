@@ -295,10 +295,19 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     };
   }, []);
 
-  // Debug measurement (DEV only) - measure key elements in useLayoutEffect to avoid layout thrash
+  // Debug measurement - measure key elements in useLayoutEffect to avoid layout thrash
   // Uses ResizeObserver + visualViewport events for precise measurements (no interval spam)
+  // Only enabled via ?debug=1 query parameter (not just in development)
+  const [showDebug, setShowDebug] = useState(false);
+  
+  useEffect(() => {
+    // Check for ?debug=1 query parameter
+    const params = new URLSearchParams(window.location.search);
+    setShowDebug(params.get('debug') === '1');
+  }, []);
+
   useLayoutEffect(() => {
-    if (process.env.NODE_ENV !== 'development') return;
+    if (!showDebug) return;
 
     const measure = () => {
       const screenEl = document.querySelector('.mobile-app-screen.screen-heatmap') as HTMLElement | null;
@@ -753,10 +762,10 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     <div
       className="mobile-treemap-wrapper"
       style={{
-        // Fill the available mobile view height (no artificial empty band below)
-        height: '100%',
-        maxHeight: 'none',
+        // CRITICAL: Use flex: 1 instead of height: 100% to properly fill available space in flex chain
+        flex: 1,
         minHeight: 0,
+        maxHeight: 'none',
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
@@ -867,8 +876,9 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
         }}
         onTouchEnd={handleDoubleTapReset}
       >
-        {/* Debug overlay (DEV only) - shows viewport measurements for Safari/Chrome debugging */}
-        {process.env.NODE_ENV === 'development' && debugRects && (
+        {/* Debug overlay - shows viewport measurements for Safari/Chrome debugging */}
+        {/* Only visible when ?debug=1 query parameter is present */}
+        {showDebug && debugRects && (
           <div
             style={{
               position: 'fixed',
