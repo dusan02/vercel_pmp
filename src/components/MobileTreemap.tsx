@@ -229,8 +229,11 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     if (!el) return;
 
     const update = () => {
-      const height = el.getBoundingClientRect().height;
-      setHeaderH(height);
+      const h = el.getBoundingClientRect().height;
+      // Guard against 0/NaN during first paint / font swap
+      if (!Number.isFinite(h) || h <= 0) return;
+      // Clamp to reasonable range (44px min, 120px max) to prevent extreme values
+      setHeaderH(Math.min(120, Math.max(44, Math.round(h))));
     };
 
     // Initial measurement
@@ -571,8 +574,9 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
 
     // Final height must match exactly the sum of all sector heights
     // This ensures the bottom edge is perfectly aligned
-    // CRITICAL: Ensure minimum height matches available viewport height to prevent empty space at bottom
-    const finalLayoutHeight = Math.max(yCursor, effectiveHeight);
+    // CRITICAL: Ensure minimum height matches container height (real DOM measurement, not calculated)
+    // Use containerSize.height as "source of truth" - it's already measured from actual DOM
+    const finalLayoutHeight = Math.max(yCursor, height);
     return { leaves: result, layoutHeight: finalLayoutHeight };
   }, [containerSize, sortedData, metric, availableHeight]); // CRITICAL: Include availableHeight in dependencies
 
@@ -715,7 +719,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
           background: 'rgba(0,0,0,0.88)',
           borderBottom: '1px solid rgba(255,255,255,0.08)',
           padding: '8px 10px',
-          paddingTop: 'calc(8px + env(safe-area-inset-top))', // CRITICAL: Account for iOS notch/status bar
+          paddingTop: 'calc(8px + env(safe-area-inset-top, 0px))', // CRITICAL: Account for iOS notch/status bar (fallback for older browsers)
           display: 'flex',
           alignItems: 'center',
           gap: 8,
