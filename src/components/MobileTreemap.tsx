@@ -774,11 +774,31 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     );
   }, [getColor, metric, isFavorite, onTileClick, handleTouchStart, handleTouchEnd, zoom]);
 
+  // Early return for empty data - but ensure container is still rendered to allow measurement
   if (sortedData.length === 0) {
     return (
       <div className="h-full w-full bg-black flex items-center justify-center text-gray-500">
         <p>No data available</p>
       </div>
+    );
+  }
+
+  // CRITICAL: Don't render treemap until container is measured (prevents empty section on production)
+  // This ensures flex layout is resolved before we try to calculate layout
+  if (containerSize.width <= 0 || containerSize.height <= 0) {
+    return (
+      <div 
+        ref={containerRef}
+        className="mobile-treemap-grid"
+        style={{
+          position: 'relative',
+          background: '#000',
+          flex: 1,
+          minHeight: 0,
+          width: '100%',
+          height: '100%',
+        }}
+      />
     );
   }
 
@@ -972,9 +992,11 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
             /* minHeight: 0 when has data (no gap), containerSize.height when no data (prevent collapse) */
             ...(() => {
               const hasLeaves = leaves.length > 0 && Number.isFinite(layoutHeight) && layoutHeight > 0;
+              // CRITICAL: Ensure we always have a valid height (never 0 or NaN)
+              const fallbackHeight = containerSize.height > 0 ? containerSize.height : 400; // Minimum fallback
               return {
-                height: hasLeaves ? layoutHeight * zoom : containerSize.height,
-                minHeight: hasLeaves ? 0 : containerSize.height, // No gap when has data, prevent collapse when no data
+                height: hasLeaves ? layoutHeight * zoom : fallbackHeight,
+                minHeight: hasLeaves ? 0 : fallbackHeight, // No gap when has data, prevent collapse when no data
               };
             })(),
             margin: 0,
