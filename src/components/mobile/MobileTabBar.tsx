@@ -69,6 +69,35 @@ export function MobileTabBar({ activeTab, onTabChange }: MobileTabBarProps) {
   const tabRefs = useRef<Map<MobileTab, HTMLButtonElement>>(new Map());
   const navRef = useRef<HTMLElement>(null);
 
+  // Measure real tabbar height (including safe-area) and set CSS variable
+  useEffect(() => {
+    const el = navRef.current;
+    if (!el) return;
+
+    const updateTabbarHeight = () => {
+      const height = el.getBoundingClientRect().height;
+      if (height > 0) {
+        // Set real measured height (includes safe-area from padding-bottom)
+        document.documentElement.style.setProperty('--tabbar-real-h', `${Math.floor(height)}px`);
+      }
+    };
+
+    // Initial measurement
+    updateTabbarHeight();
+
+    // Update on resize (orientation change, safe-area changes)
+    const ro = new ResizeObserver(updateTabbarHeight);
+    ro.observe(el);
+    window.addEventListener('resize', updateTabbarHeight);
+    window.addEventListener('orientationchange', updateTabbarHeight);
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', updateTabbarHeight);
+      window.removeEventListener('orientationchange', updateTabbarHeight);
+    };
+  }, []);
+
   // Keyboard navigation
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLButtonElement>, tabId: MobileTab) => {
     const currentIndex = tabs.findIndex(t => t.id === tabId);

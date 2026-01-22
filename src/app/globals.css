@@ -9,7 +9,8 @@
 /* CSS Variables for consistent heights */
 :root {
   --header-h: 56px;
-  --tabbar-h: 72px;
+  --tabbar-h: 72px; /* Base height without safe-area (safe-area is added via padding-bottom) */
+  --tabbar-real-h: 72px; /* Real measured height including safe-area (set by MobileTabBar component) */
 }
 
 /* ============================================
@@ -388,8 +389,9 @@
     left: 0 !important; /* CRITICAL: Start from left edge */
     right: 0 !important; /* CRITICAL: Extend to right edge */
     /* CRITICAL: Heatmap screen ends exactly at top edge of tabbar (no gap)
-       Note: tabbar already has safe-area-inset-bottom in its padding, so we only need tabbar height */
-    bottom: var(--tabbar-h) !important;
+       Use --tabbar-real-h if available (measured real height including safe-area),
+       otherwise fallback to --tabbar-h (base height without safe-area) */
+    bottom: var(--tabbar-real-h, var(--tabbar-h)) !important;
     width: 100% !important; /* CRITICAL: Fill full width */
     /* CRITICAL: Disable scrolling on wrapper, let inner treemap handle it */
     overflow: hidden !important;

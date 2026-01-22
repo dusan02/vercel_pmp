@@ -15,33 +15,36 @@ interface MobileAppProps {
  */
 export function MobileApp({ children }: MobileAppProps) {
   useEffect(() => {
+    let raf = 0;
+
     const setAppHeight = () => {
-      // Use visualViewport if available (more accurate on iOS Safari/Chrome)
-      // visualViewport excludes browser UI (address bar, toolbar) which innerHeight includes
-      const h = window.visualViewport?.height ?? window.innerHeight;
-      document.documentElement.style.setProperty('--app-height', `${Math.floor(h)}px`);
+      // RAF throttle: prevent jank during iOS Safari toolbar animation
+      if (raf) return;
+      raf = window.requestAnimationFrame(() => {
+        raf = 0;
+        // Use visualViewport if available (more accurate on iOS Safari/Chrome)
+        // visualViewport excludes browser UI (address bar, toolbar) which innerHeight includes
+        const h = window.visualViewport?.height ?? window.innerHeight;
+        document.documentElement.style.setProperty('--app-height', `${Math.floor(h)}px`);
+      });
     };
 
     // Initial set
     setAppHeight();
 
+    const vv = window.visualViewport;
     // Update on visualViewport resize (iOS Safari toolbar show/hide)
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', setAppHeight);
-      window.visualViewport.addEventListener('scroll', setAppHeight);
-    }
-
+    vv?.addEventListener('resize', setAppHeight);
+    vv?.addEventListener('scroll', setAppHeight);
     // Fallback: window resize (desktop, older browsers)
     window.addEventListener('resize', setAppHeight);
-
     // Also update on orientation change
     window.addEventListener('orientationchange', setAppHeight);
 
     return () => {
-      if (window.visualViewport) {
-        window.visualViewport.removeEventListener('resize', setAppHeight);
-        window.visualViewport.removeEventListener('scroll', setAppHeight);
-      }
+      if (raf) cancelAnimationFrame(raf);
+      vv?.removeEventListener('resize', setAppHeight);
+      vv?.removeEventListener('scroll', setAppHeight);
       window.removeEventListener('resize', setAppHeight);
       window.removeEventListener('orientationchange', setAppHeight);
     };
