@@ -1632,11 +1632,11 @@
     position: relative;
   }
 
-  /* Heatmap preview - reduced height on mobile */
+  /* Heatmap preview - full height on mobile (no height restriction) */
   @media (max-width: 640px) {
-    .heatmap-preview-container {
-      height: 300px !important;
-      min-height: 300px !important;
+    .mobile-app-screen.screen-heatmap .heatmap-preview-container {
+      height: 100% !important;
+      min-height: 0 !important;
     }
   }
 }
@@ -4226,6 +4226,21 @@ table td strong {
   .mobile-app-screen .todays-earnings {
     margin-bottom: 0 !important;
     padding-bottom: 0 !important;
+  }
+
+  /* CRITICAL: Remove all padding, border, margin for mobile heatmap to fill full screen */
+  .mobile-app-screen.screen-heatmap .heatmap-preview {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
   }
 }
 
