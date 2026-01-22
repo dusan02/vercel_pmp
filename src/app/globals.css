@@ -1907,7 +1907,8 @@
     border-bottom: 1px solid var(--clr-border);
   }
 
-  .portfolio-table thead th {
+  .portfolio-table thead th,
+  .todays-earnings table thead th {
     background: var(--clr-surface);
     font-weight: 600;
     font-size: 0.8125rem;
