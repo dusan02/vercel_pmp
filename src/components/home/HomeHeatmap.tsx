@@ -23,13 +23,16 @@ export function HomeHeatmap({ wrapperClass, activeView }: HomeHeatmapProps) {
         console.log('🏠 HomeHeatmap rendered', { wrapperClass, activeView });
     }, [wrapperClass, activeView]);
 
-    // Simplified: pass wrapperClass directly to HeatmapPreview, remove unnecessary wrapper div
+    // CRITICAL: Add explicit content wrapper for proper flex chain
+    // This ensures containerRef gets correct height from position: fixed parent
     return (
         <SectionErrorBoundary sectionName="Heatmap">
-            <HeatmapPreview 
-                {...(activeView !== undefined ? { activeView } : {})}
-                {...(wrapperClass !== undefined ? { wrapperClass } : {})}
-            />
+            <div className="screen-heatmap-content">
+                <HeatmapPreview 
+                    {...(activeView !== undefined ? { activeView } : {})}
+                    {...(wrapperClass !== undefined ? { wrapperClass } : {})}
+                />
+            </div>
         </SectionErrorBoundary>
     );
 }
