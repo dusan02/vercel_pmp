@@ -834,14 +834,11 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
           style={{
             position: 'relative',
             width: containerSize.width * zoom,
-            /* CRITICAL: Use availableHeight state (updates on visualViewport changes) instead of just containerSize.height
-               Safari/Chrome often report smaller containerSize.height than actual available space
-               due to visualViewport vs innerHeight differences.
-               availableHeight is updated via event listeners for stable iOS Safari/Chrome behavior.
-               Vertical treemap: ensure minimum height matches availableHeight for footer alignment, allow scrolling if content is taller.
+            /* CRITICAL: Use exact layout height for vertical treemap.
+               Allow scrolling if content is taller than viewport.
                CRITICAL: Remove all padding/margin to maximize heatmap area. */
-            height: Math.max(layoutHeight * zoom, availableHeight), // Minimum availableHeight for footer alignment, allow scrolling if taller
-            minHeight: availableHeight, // Ensure minimum height for footer alignment
+            height: layoutHeight * zoom, // Use exact layout height, allow scrolling if taller
+            minHeight: 0, // No minimum height - use exact layout height
             margin: 0,
             padding: 0,
             boxSizing: 'border-box',
