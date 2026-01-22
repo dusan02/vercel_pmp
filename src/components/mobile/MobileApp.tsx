@@ -16,6 +16,7 @@ interface MobileAppProps {
 export function MobileApp({ children }: MobileAppProps) {
   useEffect(() => {
     let raf = 0;
+    let last = -1; // Guard against 1px bounce/micro-oscillation
 
     const setAppHeight = () => {
       // RAF throttle: prevent jank during iOS Safari toolbar animation
@@ -24,8 +25,12 @@ export function MobileApp({ children }: MobileAppProps) {
         raf = 0;
         // Use visualViewport if available (more accurate on iOS Safari/Chrome)
         // visualViewport excludes browser UI (address bar, toolbar) which innerHeight includes
-        const h = window.visualViewport?.height ?? window.innerHeight;
-        document.documentElement.style.setProperty('--app-height', `${Math.floor(h)}px`);
+        const h = Math.floor(window.visualViewport?.height ?? window.innerHeight);
+        // Only update if height actually changed (prevents 1px bounce repaints)
+        if (h !== last) {
+          last = h;
+          document.documentElement.style.setProperty('--app-height', `${h}px`);
+        }
       });
     };
 

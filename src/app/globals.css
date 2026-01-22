@@ -215,6 +215,19 @@
   box-shadow: none !important;
 }
 
+/* DEBUG: Visual boundaries (only in development) - remove in production */
+@media (max-width: 1023px) {
+  .mobile-app {
+    /* outline: 1px solid rgba(255, 255, 255, 0.15); */ /* Uncomment for debug */
+  }
+  .mobile-app-screen.screen-heatmap {
+    /* outline: 1px solid rgba(0, 255, 255, 0.25); */ /* Uncomment for debug */
+  }
+  .mobile-app-tabbar {
+    /* outline: 1px solid rgba(255, 0, 255, 0.25); */ /* Uncomment for debug */
+  }
+}
+
 /* Mobile only: dark background */
 @media (max-width: 1023px) {
   .mobile-app {

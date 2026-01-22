@@ -74,26 +74,30 @@ export function MobileTabBar({ activeTab, onTabChange }: MobileTabBarProps) {
     const el = navRef.current;
     if (!el) return;
 
+    let last = -1; // Guard against 1px bounce/micro-oscillation
+
     const updateTabbarHeight = () => {
-      const height = el.getBoundingClientRect().height;
-      if (height > 0) {
+      const h = Math.floor(el.getBoundingClientRect().height);
+      // Only update if height actually changed (prevents 1px bounce repaints)
+      if (h > 0 && h !== last) {
+        last = h;
         // Set real measured height (includes safe-area from padding-bottom)
-        document.documentElement.style.setProperty('--tabbar-real-h', `${Math.floor(height)}px`);
+        document.documentElement.style.setProperty('--tabbar-real-h', `${h}px`);
       }
     };
 
     // Initial measurement
     updateTabbarHeight();
 
-    // Update on resize (orientation change, safe-area changes)
+    // ResizeObserver catches: safe-area padding changes, font/zoom, layout changes on orientation
+    // orientationchange is kept as explicit fallback for orientation changes
     const ro = new ResizeObserver(updateTabbarHeight);
     ro.observe(el);
-    window.addEventListener('resize', updateTabbarHeight);
+    // Note: window.resize removed - ResizeObserver already handles resize events
     window.addEventListener('orientationchange', updateTabbarHeight);
 
     return () => {
       ro.disconnect();
-      window.removeEventListener('resize', updateTabbarHeight);
       window.removeEventListener('orientationchange', updateTabbarHeight);
     };
   }, []);
