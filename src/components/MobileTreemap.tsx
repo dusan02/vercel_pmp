@@ -640,12 +640,17 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     // CRITICAL: Calculate maxBottom from actual leaf positions (not from yCursor or effectiveHeight)
     // This ensures layoutHeight matches the actual content height, preventing empty space below leaves
     // Robust calculation that handles different leaf formats and guards against NaN
-    const getLeafBottom = (l: { x0: number; y0: number; x1: number; y1: number; data: any }) => {
+    const getLeafBottom = (l: any) => {
       // Prefer explicit y1 if it exists and is finite
       if (Number.isFinite(l.y1)) return l.y1;
-      // Fallback to y0 + height (y1 - y0)
-      const height = l.y1 - l.y0;
-      if (Number.isFinite(l.y0) && Number.isFinite(height)) return l.y0 + height;
+      // Support y2 format
+      if (Number.isFinite(l.y2)) return l.y2;
+      
+      // Fallback to y + height format (support both y/y0 and height)
+      const y = Number(l.y ?? l.y0);
+      const h = Number(l.height ?? (Number.isFinite(l.y1) && Number.isFinite(l.y0) ? l.y1 - l.y0 : NaN));
+      if (Number.isFinite(y) && Number.isFinite(h)) return y + h;
+      
       return 0;
     };
 
@@ -964,10 +969,14 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
             width: containerSize.width * zoom,
             /* CRITICAL: Use actual content height (layoutHeight * zoom) when leaves exist
                Fallback to containerSize.height when no leaves to prevent UI collapse */
-            height: leaves.length > 0 && Number.isFinite(layoutHeight) && layoutHeight > 0
-              ? layoutHeight * zoom
-              : containerSize.height, // Fallback for empty state / errors
-            minHeight: containerSize.height, // Prevent collapse when no leaves
+            /* minHeight: 0 when has data (no gap), containerSize.height when no data (prevent collapse) */
+            ...(() => {
+              const hasLeaves = leaves.length > 0 && Number.isFinite(layoutHeight) && layoutHeight > 0;
+              return {
+                height: hasLeaves ? layoutHeight * zoom : containerSize.height,
+                minHeight: hasLeaves ? 0 : containerSize.height, // No gap when has data, prevent collapse when no data
+              };
+            })(),
             margin: 0,
             padding: 0,
             boxSizing: 'border-box',
