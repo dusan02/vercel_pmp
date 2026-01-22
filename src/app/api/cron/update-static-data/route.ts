@@ -53,8 +53,14 @@ export async function POST(request: NextRequest) {
     // Acquire lock to prevent worker from calculating percentages during update
     const { acquired: lockAcquired, ownerId } = await acquireStaticUpdateLock();
     if (!lockAcquired) {
-      console.warn('⚠️  Could not acquire static update lock - another update may be in progress');
-      // Continue anyway, but log warning
+      console.error('❌ Could not acquire static update lock - another update may be in progress');
+      return NextResponse.json(
+        { 
+          error: 'Lock acquisition failed', 
+          message: 'Another static data update may be in progress. Please wait and try again.' 
+        },
+        { status: 409 } // Conflict status
+      );
     }
 
     let renewLockInterval: NodeJS.Timeout | undefined;
@@ -115,9 +121,10 @@ export async function POST(request: NextRequest) {
         } catch (error) {
           console.error('❌ Error during bootstrap:', error);
           // Continue with individual updates as fallback
+          // Use same ticker list as bootstrap (tickers) not allTickers
           console.log('⚠️  Falling back to individual previousClose updates...');
           const prevCloseResults = await processBatch(
-            allTickers,
+            tickers,
             updateTickerPreviousClose,
             BATCH_SIZE,
             CONCURRENCY_LIMIT
