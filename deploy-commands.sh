@@ -7,7 +7,7 @@ set -e  # Zastaviť pri chybe
 echo "🚀 Začínam nasadenie PremarketPrice..."
 
 # 1. Prejsť do správneho adresára
-cd /var/www/premarketprice/pmp_prod
+cd /var/www/premarketprice
 echo "✅ Adresár: $(pwd)"
 
 # 2. Aktualizovať kód (ak používate git)
