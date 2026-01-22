@@ -394,19 +394,16 @@
 /* CRITICAL: Container ends exactly at top edge of tabbar (no gap, no overlap) */
 @media (max-width: 1023px) {
   .mobile-app-screen.screen-heatmap {
+    position: fixed !important; /* CRITICAL: Fixed inset to prevent height collapse */
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: var(--tabbar-real-h, var(--tabbar-h)) !important; /* CRITICAL: Heatmap screen ends exactly at top edge of tabbar */
+    width: 100% !important;
     padding: 0 !important;
+    margin: 0 !important;
     background: #000;
     z-index: 1;
-    margin: 0 !important;
-    top: 0 !important; /* CRITICAL: Start from top edge */
-    left: 0 !important; /* CRITICAL: Start from left edge */
-    right: 0 !important; /* CRITICAL: Extend to right edge */
-    /* CRITICAL: Heatmap screen ends exactly at top edge of tabbar (no gap)
-       Use --tabbar-real-h if available (measured real height including safe-area),
-       otherwise fallback to --tabbar-h (base height without safe-area) */
-    bottom: var(--tabbar-real-h, var(--tabbar-h)) !important;
-    width: 100% !important; /* CRITICAL: Fill full width */
-    /* CRITICAL: Disable scrolling on wrapper, let inner treemap handle it */
     overflow: hidden !important;
     /* CRITICAL: Disable transform/transition on iOS Safari - prevents stacking context issues with position: fixed */
     transform: none !important;
@@ -425,18 +422,13 @@
 /* CRITICAL: ONE source of truth - no duplicates! */
 @media (max-width: 1023px) {
   .mobile-app-screen.screen-heatmap .mobile-treemap-wrapper {
-    width: 100% !important;
-    height: 100% !important;
+    flex: 1 !important;
     min-height: 0 !important;
+    width: 100% !important;
     display: flex !important;
     flex-direction: column !important;
     margin: 0 !important;
     padding: 0 !important;
-    /* CRITICAL: Remove padding-bottom reserve - screen ends at tabbar top edge */
-    padding-bottom: 0 !important;
-    padding-top: 0 !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
     box-sizing: border-box !important;
     overflow: hidden;
     position: relative;
@@ -444,7 +436,8 @@
 }
 
 .mobile-app-screen.screen-heatmap .heatmap-preview-container {
-  height: 100% !important;
+  flex: 1 !important;
+  min-height: 0 !important;
   width: 100% !important;
   position: relative;
   margin: 0;
@@ -499,19 +492,13 @@
   flex: 1 !important;
   min-height: 0 !important;
   width: 100% !important;
-  height: 100% !important; /* CRITICAL: Explicit height to fill available space */
   margin: 0 !important;
   padding: 0 !important;
-  padding-bottom: 0 !important;
-  margin-bottom: 0 !important;
   position: relative;
-  /* CRITICAL: Heatmap extends to bottom, footer overlays on top */
-  bottom: 0 !important;
-  /* CRITICAL: Ensure inner wrapper aligns with bottom edge */
+  /* CRITICAL: Use flex instead of height: 100% - prevents iOS Safari measurement issues */
   display: flex !important;
   flex-direction: column !important;
   align-items: stretch !important;
-  /* CRITICAL: Remove any padding/margin to maximize heatmap area */
   box-sizing: border-box !important;
 }
 
@@ -4246,15 +4233,15 @@ table td strong {
 
   /* CRITICAL: Remove all padding, border, margin for mobile heatmap to fill full screen */
   .mobile-app-screen.screen-heatmap .heatmap-preview {
+    flex: 1 !important;
+    min-height: 0 !important;
+    width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
     border: none !important;
     border-radius: 0 !important;
     background: transparent !important;
     box-shadow: none !important;
-    width: 100% !important;
-    height: 100% !important;
-    min-height: 0 !important;
     display: flex !important;
     flex-direction: column !important;
   }

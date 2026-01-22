@@ -815,32 +815,51 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
         onTouchEnd={handleDoubleTapReset}
       >
         {/* Debug overlay (DEV only) - shows viewport measurements for Safari/Chrome debugging */}
-        {process.env.NODE_ENV === 'development' && (
-          <div
-            style={{
-              position: 'fixed',
-              left: 8,
-              bottom: 'calc(var(--tabbar-h) + 8px)',
-              zIndex: 5000,
-              background: 'rgba(0,0,0,0.65)',
-              color: '#0f0',
-              fontSize: 12,
-              padding: '6px 8px',
-              fontFamily: 'monospace',
-              lineHeight: 1.4,
-              maxWidth: '90%',
-              wordBreak: 'break-word',
-            }}
-          >
-            <div>container: {containerSize.width}×{containerSize.height}</div>
-            <div>innerH: {window.innerHeight}</div>
-            <div>vv: {window.visualViewport?.width ?? 'na'}×{window.visualViewport?.height ?? 'na'}</div>
-            <div>available: {availableHeight} (state)</div>
-            <div>availableCalc: {getAvailableTreemapHeight()} (fn)</div>
-            <div>layoutH×zoom: {layoutHeight * zoom}</div>
-            <div>finalH: {Math.max(layoutHeight * zoom, containerSize.height, availableHeight)}</div>
-          </div>
-        )}
+        {process.env.NODE_ENV === 'development' && (() => {
+          // Measure key elements for debugging
+          const screenEl = document.querySelector('.mobile-app-screen.screen-heatmap') as HTMLElement;
+          const previewEl = document.querySelector('.mobile-app-screen.screen-heatmap .heatmap-preview') as HTMLElement;
+          const gridEl = containerRef.current;
+          const tabbarEl = document.querySelector('.mobile-app-tabbar') as HTMLElement;
+          
+          const screenRect = screenEl?.getBoundingClientRect();
+          const previewRect = previewEl?.getBoundingClientRect();
+          const gridRect = gridEl?.getBoundingClientRect();
+          const tabbarRect = tabbarEl?.getBoundingClientRect();
+          
+          return (
+            <div
+              style={{
+                position: 'fixed',
+                left: 8,
+                bottom: 'calc(var(--tabbar-h) + 8px)',
+                zIndex: 5000,
+                background: 'rgba(0,0,0,0.65)',
+                color: '#0f0',
+                fontSize: 12,
+                padding: '6px 8px',
+                fontFamily: 'monospace',
+                lineHeight: 1.4,
+                maxWidth: '90%',
+                wordBreak: 'break-word',
+              }}
+            >
+              <div>container: {containerSize.width}×{containerSize.height}</div>
+              <div>innerH: {window.innerHeight}</div>
+              <div>vv: {window.visualViewport?.width ?? 'na'}×{window.visualViewport?.height ?? 'na'}</div>
+              <div>available: {availableHeight} (state)</div>
+              <div>availableCalc: {getAvailableTreemapHeight()} (fn)</div>
+              <div>layoutH×zoom: {layoutHeight * zoom}</div>
+              <div>finalH: {Math.max(layoutHeight * zoom, containerSize.height, availableHeight)}</div>
+              <div style={{ marginTop: '8px', borderTop: '1px solid rgba(0,255,0,0.3)', paddingTop: '4px' }}>
+                <div>screen-heatmap: {screenRect ? `${Math.floor(screenRect.width)}×${Math.floor(screenRect.height)}` : 'N/A'}</div>
+                <div>heatmap-preview: {previewRect ? `${Math.floor(previewRect.width)}×${Math.floor(previewRect.height)}` : 'N/A'}</div>
+                <div>mobile-treemap-grid: {gridRect ? `${Math.floor(gridRect.width)}×${Math.floor(gridRect.height)}` : 'N/A'}</div>
+                <div>tabbar: {tabbarRect ? `${Math.floor(tabbarRect.width)}×${Math.floor(tabbarRect.height)}` : 'N/A'}</div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Pinch hint: position fixed to be above header (zIndex 100) - fixes Safari/Chrome visibility */}
         {showPinchHint && zoom === 1 && (
