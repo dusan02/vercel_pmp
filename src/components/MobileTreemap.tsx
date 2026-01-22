@@ -296,16 +296,17 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
   }, []);
 
   // Debug measurement (DEV only) - measure key elements in useLayoutEffect to avoid layout thrash
+  // Uses ResizeObserver + visualViewport events for precise measurements (no interval spam)
   useLayoutEffect(() => {
     if (process.env.NODE_ENV !== 'development') return;
 
     const measure = () => {
       const screenEl = document.querySelector('.mobile-app-screen.screen-heatmap') as HTMLElement | null;
       const previewEl = document.querySelector('.mobile-app-screen.screen-heatmap .heatmap-preview') as HTMLElement | null;
-      const gridEl = containerRef.current;
+      const gridEl = containerRef.current as HTMLElement | null;
       const tabbarEl = document.querySelector('.mobile-app-tabbar') as HTMLElement | null;
 
-      const r = (el: HTMLElement | null) => el ? el.getBoundingClientRect() : null;
+      const r = (el: HTMLElement | null) => (el ? el.getBoundingClientRect() : null);
 
       setDebugRects({
         screen: r(screenEl),
@@ -318,10 +319,25 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     // Initial measurement
     measure();
 
-    // Update periodically (250ms interval) - could also use ResizeObserver for better performance
-    const id = window.setInterval(measure, 250);
+    // Use visualViewport events for iOS Safari toolbar animations
+    const vv = window.visualViewport;
+    vv?.addEventListener('resize', measure);
+    vv?.addEventListener('scroll', measure);
 
-    return () => window.clearInterval(id);
+    // Use ResizeObserver for DOM size changes
+    const ro = new ResizeObserver(measure);
+    const screenEl = document.querySelector('.mobile-app-screen.screen-heatmap') as HTMLElement | null;
+    if (screenEl) ro.observe(screenEl);
+
+    // Handle orientation changes
+    window.addEventListener('orientationchange', measure);
+
+    return () => {
+      vv?.removeEventListener('resize', measure);
+      vv?.removeEventListener('scroll', measure);
+      ro.disconnect();
+      window.removeEventListener('orientationchange', measure);
+    };
   }, []);
 
   // Pinch-to-zoom (two-finger zoom) on the heatmap canvas area.

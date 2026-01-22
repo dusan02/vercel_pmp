@@ -738,7 +738,10 @@
   border-top: 1px solid rgba(0, 0, 0, 0.08);
   padding: 0.5rem 0;
   padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
-  height: 72px;
+  /* CRITICAL: Use box-sizing: border-box and height: auto with min-height for accurate getBoundingClientRect().height */
+  box-sizing: border-box !important;
+  height: auto !important;
+  min-height: var(--tabbar-h); /* 72px base height */
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
   /* CRITICAL: Ensure tab bar is always visible, even during interactions */
   visibility: visible !important;
