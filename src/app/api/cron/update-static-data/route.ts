@@ -5,7 +5,7 @@
  * Now includes full reset and reload of closing prices from Polygon
  * to ensure all prices are fresh and correct (fixes stale price issues)
  * 
- * Should run once daily at 05:00 ET (10:00 UTC) before market opens
+ * Should run once daily at 04:00 ET (09:00 UTC) before market opens
  * This ensures Polygon API has finalized previous day's closing prices
  * 
  * Usage: POST /api/cron/update-static-data
