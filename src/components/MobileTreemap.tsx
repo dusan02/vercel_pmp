@@ -249,7 +249,9 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     };
   }, []);
 
-  useEffect(() => {
+  // CRITICAL: Use useLayoutEffect to measure container size BEFORE paint
+  // This ensures flex layout is already resolved when we measure
+  useLayoutEffect(() => {
     const el = containerRef.current;
     if (!el) return;
 
@@ -574,9 +576,9 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
 
     // Final height must match exactly the sum of all sector heights
     // This ensures the bottom edge is perfectly aligned
-    // CRITICAL: Ensure minimum height matches container height (real DOM measurement, not calculated)
-    // Use containerSize.height as "source of truth" - it's already measured from actual DOM
-    const finalLayoutHeight = Math.max(yCursor, height);
+    // CRITICAL: Ensure minimum height matches effectiveHeight (which uses availableHeight if available)
+    // effectiveHeight is more accurate than height (containerSize) because it accounts for iOS Safari viewport quirks
+    const finalLayoutHeight = Math.max(yCursor, effectiveHeight);
     return { leaves: result, layoutHeight: finalLayoutHeight };
   }, [containerSize, sortedData, metric, availableHeight]); // CRITICAL: Include availableHeight in dependencies
 
@@ -872,8 +874,11 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
             /* CRITICAL: Ensure minimum height matches viewport to prevent empty space at bottom.
                Allow scrolling if content is taller than viewport.
                CRITICAL: Remove all padding/margin to maximize heatmap area. */
-            height: Math.max(layoutHeight * zoom, containerSize.height), // Minimum viewport height, allow taller for scrolling
-            minHeight: containerSize.height, // CRITICAL: Minimum height must fill viewport
+            height: Math.max(
+              layoutHeight * zoom,
+              Math.max(containerSize.height, availableHeight || 0)
+            ), // Minimum viewport height (use availableHeight as fallback), allow taller for scrolling
+            minHeight: Math.max(containerSize.height, availableHeight || 0), // CRITICAL: Minimum height must fill viewport
             margin: 0,
             padding: 0,
             boxSizing: 'border-box',
