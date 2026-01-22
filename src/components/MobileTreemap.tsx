@@ -295,6 +295,35 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     };
   }, []);
 
+  // Debug measurement (DEV only) - measure key elements in useLayoutEffect to avoid layout thrash
+  useLayoutEffect(() => {
+    if (process.env.NODE_ENV !== 'development') return;
+
+    const measure = () => {
+      const screenEl = document.querySelector('.mobile-app-screen.screen-heatmap') as HTMLElement | null;
+      const previewEl = document.querySelector('.mobile-app-screen.screen-heatmap .heatmap-preview') as HTMLElement | null;
+      const gridEl = containerRef.current;
+      const tabbarEl = document.querySelector('.mobile-app-tabbar') as HTMLElement | null;
+
+      const r = (el: HTMLElement | null) => el ? el.getBoundingClientRect() : null;
+
+      setDebugRects({
+        screen: r(screenEl),
+        preview: r(previewEl),
+        grid: r(gridEl),
+        tabbar: r(tabbarEl),
+      });
+    };
+
+    // Initial measurement
+    measure();
+
+    // Update periodically (250ms interval) - could also use ResizeObserver for better performance
+    const id = window.setInterval(measure, 250);
+
+    return () => window.clearInterval(id);
+  }, []);
+
   // Pinch-to-zoom (two-finger zoom) on the heatmap canvas area.
   // This is the mobile-native interaction (no +/- buttons).
   useEffect(() => {
