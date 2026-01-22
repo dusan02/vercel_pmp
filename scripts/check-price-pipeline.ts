@@ -131,14 +131,15 @@ async function checkTicker(ticker: string, apiKey: string, todayTradingDateStr: 
     select: {
       lastPrice: true,
       latestPrevClose: true,
-      lastUpdate: true,
+      lastPriceUpdated: true,
+      updatedAt: true,
       lastChangePct: true
     }
   });
   
   const dbPrice = dbTicker?.lastPrice || null;
   const dbPreviousClose = dbTicker?.latestPrevClose || null;
-  const dbLastUpdate = dbTicker?.lastUpdate || null;
+  const dbLastUpdate = dbTicker?.lastPriceUpdated || dbTicker?.updatedAt || null;
   const dbPercentChange = dbTicker?.lastChangePct || null;
   
   // 2. Get data from Redis
