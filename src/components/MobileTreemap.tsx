@@ -536,13 +536,14 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
 
   // Build treemap rectangles (no gaps).
   // Vertical layout: sector strips stacked vertically, each with its own internal treemap.
-  const { leaves, layoutHeight } = useMemo((): {
+  const { leaves, layoutHeight, maxBottom } = useMemo((): {
     leaves: Array<{ x0: number; y0: number; x1: number; y1: number; data: any }>;
     layoutHeight: number;
+    maxBottom: number;
   } => {
     const { width, height } = containerSize;
-    if (width <= 0 || height <= 0) return { leaves: [], layoutHeight: 0 };
-    if (!sortedData.length) return { leaves: [], layoutHeight: 0 };
+    if (width <= 0 || height <= 0) return { leaves: [], layoutHeight: 0, maxBottom: 0 };
+    if (!sortedData.length) return { leaves: [], layoutHeight: 0, maxBottom: 0 };
 
     // Vertical treemap layout:
     // - sectors are stacked as horizontal strips (full width, variable height)
@@ -636,12 +637,16 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
       yCursor += sectorHeight;
     }
 
-    // Final height must match exactly the sum of all sector heights
-    // This ensures the bottom edge is perfectly aligned
-    // CRITICAL: Ensure minimum height matches effectiveHeight (which uses availableHeight if available)
-    // effectiveHeight is more accurate than height (containerSize) because it accounts for iOS Safari viewport quirks
-    const finalLayoutHeight = Math.max(yCursor, effectiveHeight);
-    return { leaves: result, layoutHeight: finalLayoutHeight };
+    // CRITICAL: Calculate maxBottom from actual leaf positions (not from yCursor or effectiveHeight)
+    // This ensures layoutHeight matches the actual content height, preventing empty space below leaves
+    const maxBottom = result.length > 0 
+      ? Math.max(...result.map(l => l.y1))
+      : 0;
+    
+    // Use maxBottom as final layout height (not effectiveHeight or yCursor)
+    // This ensures wrapper height = actual content height (no empty space)
+    const finalLayoutHeight = Math.max(1, Math.ceil(maxBottom));
+    return { leaves: result, layoutHeight: finalLayoutHeight, maxBottom };
   }, [containerSize, sortedData, metric, availableHeight]); // CRITICAL: Include availableHeight in dependencies
 
   const renderLeaf = useCallback((leaf: { x0: number; y0: number; x1: number; y1: number; data: any }) => {
@@ -901,7 +906,8 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
             <div>available: {availableHeight} (state)</div>
             <div>availableCalc: {getAvailableTreemapHeight()} (fn)</div>
             <div>layoutH×zoom: {layoutHeight * zoom}</div>
-            <div>finalH: {Math.max(layoutHeight * zoom, containerSize.height, availableHeight)}</div>
+            <div>maxBottom: {maxBottom}</div>
+            <div>finalH: {layoutHeight * zoom}</div>
             <div style={{ marginTop: '8px', borderTop: '1px solid rgba(0,255,0,0.3)', paddingTop: '4px' }}>
               <div>screen-heatmap: {debugRects.screen ? `${Math.floor(debugRects.screen.width)}×${Math.floor(debugRects.screen.height)}` : 'N/A'}</div>
               <div>heatmap-preview: {debugRects.preview ? `${Math.floor(debugRects.preview.width)}×${Math.floor(debugRects.preview.height)}` : 'N/A'}</div>
@@ -940,14 +946,10 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
           style={{
             position: 'relative',
             width: containerSize.width * zoom,
-            /* CRITICAL: Ensure minimum height matches viewport to prevent empty space at bottom.
-               Allow scrolling if content is taller than viewport.
-               CRITICAL: Remove all padding/margin to maximize heatmap area. */
-            height: Math.max(
-              layoutHeight * zoom,
-              Math.max(containerSize.height, availableHeight || 0)
-            ), // Minimum viewport height (use availableHeight as fallback), allow taller for scrolling
-            minHeight: Math.max(containerSize.height, availableHeight || 0), // CRITICAL: Minimum height must fill viewport
+            /* CRITICAL: Use actual content height (layoutHeight * zoom) - no Math.max to prevent empty space
+               layoutHeight is now calculated from maxBottom, so it matches actual content height exactly */
+            height: layoutHeight * zoom, // Use actual content height (no Math.max to prevent empty space)
+            minHeight: 0, // Remove minHeight constraint - let content determine height
             margin: 0,
             padding: 0,
             boxSizing: 'border-box',
