@@ -70,17 +70,17 @@ export function MobileTabBar({ activeTab, onTabChange }: MobileTabBarProps) {
   const navRef = useRef<HTMLElement>(null);
 
   // Measure real tabbar height (including safe-area) and set CSS variable
+  const lastHRef = useRef<number>(-1);
+
   useEffect(() => {
     const el = navRef.current;
     if (!el) return;
 
-    let last = -1; // Guard against 1px bounce/micro-oscillation
-
     const updateTabbarHeight = () => {
       const h = Math.floor(el.getBoundingClientRect().height);
       // Only update if height actually changed (prevents 1px bounce repaints)
-      if (h > 0 && h !== last) {
-        last = h;
+      if (h > 0 && h !== lastHRef.current) {
+        lastHRef.current = h;
         // Set real measured height (includes safe-area from padding-bottom)
         document.documentElement.style.setProperty('--tabbar-real-h', `${h}px`);
       }

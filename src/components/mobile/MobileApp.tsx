@@ -1,6 +1,6 @@
 'use client';
 
-import React, { ReactNode, useEffect } from 'react';
+import React, { ReactNode, useEffect, useRef } from 'react';
 
 interface MobileAppProps {
   children: ReactNode;
@@ -14,21 +14,22 @@ interface MobileAppProps {
  * This fixes iOS Safari issue where 100vh is larger than visible viewport
  */
 export function MobileApp({ children }: MobileAppProps) {
-  useEffect(() => {
-    let raf = 0;
-    let last = -1; // Guard against 1px bounce/micro-oscillation
+  const rafRef = useRef<number>(0);
+  const lastHRef = useRef<number>(-1);
 
+  useEffect(() => {
     const setAppHeight = () => {
       // RAF throttle: prevent jank during iOS Safari toolbar animation
-      if (raf) return;
-      raf = window.requestAnimationFrame(() => {
-        raf = 0;
+      if (rafRef.current) return;
+
+      rafRef.current = window.requestAnimationFrame(() => {
+        rafRef.current = 0;
         // Use visualViewport if available (more accurate on iOS Safari/Chrome)
         // visualViewport excludes browser UI (address bar, toolbar) which innerHeight includes
         const h = Math.floor(window.visualViewport?.height ?? window.innerHeight);
         // Only update if height actually changed (prevents 1px bounce repaints)
-        if (h !== last) {
-          last = h;
+        if (h !== lastHRef.current) {
+          lastHRef.current = h;
           document.documentElement.style.setProperty('--app-height', `${h}px`);
         }
       });
@@ -47,7 +48,7 @@ export function MobileApp({ children }: MobileAppProps) {
     window.addEventListener('orientationchange', setAppHeight);
 
     return () => {
-      if (raf) cancelAnimationFrame(raf);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
       vv?.removeEventListener('resize', setAppHeight);
       vv?.removeEventListener('scroll', setAppHeight);
       window.removeEventListener('resize', setAppHeight);

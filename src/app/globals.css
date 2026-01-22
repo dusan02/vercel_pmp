@@ -10,7 +10,7 @@
 :root {
   --header-h: 56px;
   --tabbar-h: 72px; /* Base height without safe-area (safe-area is added via padding-bottom) */
-  --tabbar-real-h: 72px; /* Real measured height including safe-area (set by MobileTabBar component) */
+  /* --tabbar-real-h is set at runtime by MobileTabBar component (measured real height including safe-area) */
 }
 
 /* ============================================
