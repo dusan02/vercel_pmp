@@ -172,7 +172,8 @@ async function checkTicker(ticker: string, apiKey: string, todayTradingDateStr: 
     if (data && data.length > 0) {
       const stock = data[0];
       apiPrice = stock.currentPrice || stock.price || null;
-      apiPreviousClose = stock.previousClose || stock.prevClose || null;
+      // API returns 'closePrice' not 'previousClose' - this is the previous close value
+      apiPreviousClose = stock.closePrice || stock.previousClose || stock.prevClose || null;
       apiPercentChange = stock.percentChange || stock.changePct || null;
       apiMarketCap = stock.marketCap || null;
     }
