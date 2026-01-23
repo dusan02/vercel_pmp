@@ -185,9 +185,10 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     // Note: headerH is 0 for heatmap (we removed padding-top with is-heatmap class)
     const headerH = 0; // No main app header padding for heatmap
     const tabbarH = 72; // var(--tabbar-h) - bottom navigation
-    const treemapHeaderH = 48; // Fixed header inside MobileTreemap (spacer height after fixed header)
+    const treemapHeaderH = headerH; // Fixed header inside MobileTreemap (spacer height after fixed header)
 
-    // Use full viewport height minus header. We handle tabbar/safe-area via padding-bottom on the scroll container.
+    // CRITICAL: Heatmap screen ends at top edge of tabbar (bottom: var(--tabbar-h))
+    // So available height is viewport minus treemap header only
     const available = vh - treemapHeaderH;
 
     return Math.max(0, available);
@@ -917,6 +918,10 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
           minHeight: 0,
           width: '100%',
           height: '100%', /* CRITICAL: Fill available height */
+          margin: 0,
+          padding: 0,
+          marginBottom: 0, /* CRITICAL: No margin-bottom - extends to navigation */
+          paddingBottom: 0, /* CRITICAL: No padding-bottom - extends to navigation */
           overflowX: zoom > 1 ? 'auto' : 'hidden',
           overflowY: 'auto', // Always allow vertical scrolling for vertical treemap layout
           WebkitOverflowScrolling: 'touch' as any,
