@@ -162,10 +162,27 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
     if (!width || !height || width < minDimension || height < minDimension) {
       console.log('⚠️ Heatmap: Dimensions too small or not ready', { width, height, isMounted, isMobile, minDimension });
       return (
-        <div className="absolute inset-0 flex items-center justify-center text-gray-500 bg-black z-40">
-          <div className="text-center">
-            <div className="animate-pulse text-sm">Measuring container... ({width}x{height})</div>
-            <div className="text-xs mt-2">Min required: {minDimension}px</div>
+        <div 
+          className="absolute inset-0 flex flex-col items-center justify-center gap-2 z-40"
+          style={{
+            background: '#0f0f0f',
+          }}
+        >
+          <div 
+            className="animate-pulse text-sm"
+            style={{
+              color: 'rgba(255, 255, 255, 0.7)',
+            }}
+          >
+            Measuring container... ({width}x{height})
+          </div>
+          <div 
+            className="text-xs"
+            style={{
+              color: 'rgba(255, 255, 255, 0.5)',
+            }}
+          >
+            Min required: {minDimension}px
           </div>
         </div>
       );
@@ -179,12 +196,35 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
 
     if (shouldShowLoading) {
       return (
-        <div className="absolute inset-0 flex items-center justify-center text-gray-500 bg-black z-40">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-            <p className="mb-2">Loading heatmap data...</p>
-            <p className="text-xs text-gray-600">This may take up to 30 seconds on first load</p>
-          </div>
+        <div 
+          className="absolute inset-0 flex flex-col items-center justify-center gap-3 z-40"
+          style={{
+            background: '#0f0f0f',
+          }}
+        >
+          <div 
+            className="animate-spin rounded-full border-b-2 border-white"
+            style={{
+              width: '32px',
+              height: '32px',
+            }}
+          />
+          <span 
+            className="text-base font-semibold"
+            style={{
+              color: '#ffffff',
+            }}
+          >
+            Loading heatmap data...
+          </span>
+          <span 
+            className="text-sm text-center max-w-xs"
+            style={{
+              color: 'rgba(255, 255, 255, 0.6)',
+            }}
+          >
+            This may take up to 30 seconds on first load
+          </span>
         </div>
       );
     }
@@ -207,11 +247,39 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
       );
     }
 
-    // No data state
+    // No data state - REFAKTOROVANÝ
     if (!data || data.length === 0) {
       return (
-        <div className="absolute inset-0 flex items-center justify-center text-gray-500 bg-black z-40">
-          <p>No data available</p>
+        <div 
+          className="absolute inset-0 flex flex-col items-center justify-center gap-3 z-40"
+          style={{
+            background: '#0f0f0f',
+          }}
+        >
+          <div 
+            className="text-6xl mb-2"
+            style={{
+              opacity: 0.3,
+            }}
+          >
+            📈
+          </div>
+          <span 
+            className="text-base font-semibold"
+            style={{
+              color: '#ffffff',
+            }}
+          >
+            No data available
+          </span>
+          <span 
+            className="text-sm"
+            style={{
+              color: 'rgba(255, 255, 255, 0.6)',
+            }}
+          >
+            Heatmap data is loading...
+          </span>
         </div>
       );
     }

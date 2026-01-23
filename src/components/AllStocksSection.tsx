@@ -310,10 +310,40 @@ export const AllStocksSection = React.memo(function AllStocksSection({
           {/* Mobile: Cards layout */}
           <div className="lg:hidden">
             {displayedStocks.length === 0 ? (
-              <div className="text-center p-8 text-gray-500 dark:text-gray-400">
-                {(selectedSector !== 'all' || selectedIndustry !== 'all' || searchTerm.trim().length > 0)
-                  ? 'No results for the selected filters.'
-                  : 'No stocks to display.'}
+              <div 
+                className="flex flex-col items-center justify-center gap-3 py-16 px-4 text-center"
+                style={{
+                  background: '#0f0f0f',
+                }}
+              >
+                <div 
+                  className="text-6xl mb-2"
+                  style={{
+                    opacity: 0.3,
+                  }}
+                >
+                  🔍
+                </div>
+                <span 
+                  className="text-base font-semibold"
+                  style={{
+                    color: '#ffffff',
+                  }}
+                >
+                  {(selectedSector !== 'all' || selectedIndustry !== 'all' || searchTerm.trim().length > 0)
+                    ? 'No results found'
+                    : 'No stocks to display'}
+                </span>
+                <span 
+                  className="text-sm max-w-xs"
+                  style={{
+                    color: 'rgba(255, 255, 255, 0.6)',
+                  }}
+                >
+                  {(selectedSector !== 'all' || selectedIndustry !== 'all' || searchTerm.trim().length > 0)
+                    ? 'Try adjusting your filters or search term'
+                    : 'Stocks will appear here once loaded'}
+                </span>
               </div>
             ) : (
               <div className="w-full bg-white dark:bg-gray-900 border-0 rounded-none overflow-hidden divide-y divide-gray-200 dark:divide-gray-800">

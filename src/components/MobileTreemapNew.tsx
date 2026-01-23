@@ -375,12 +375,26 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
         ) : (
           <div style={{
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
+            gap: '12px',
             height: '100%',
-            color: '#666',
+            background: '#000',
           }}>
-            Loading...
+            <div 
+              className="animate-spin rounded-full border-b-2 border-white"
+              style={{
+                width: '32px',
+                height: '32px',
+              }}
+            />
+            <span style={{
+              color: 'rgba(255, 255, 255, 0.7)',
+              fontSize: '14px',
+            }}>
+              Loading heatmap...
+            </span>
           </div>
         )}
       </div>

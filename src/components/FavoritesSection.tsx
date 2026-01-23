@@ -68,15 +68,49 @@ export function FavoritesSection({
             </h2>
           </div>
         </div>
-        <div className="flex flex-col items-center justify-center gap-2 py-12 text-sm text-slate-500 dark:text-slate-400">
-          <span>No favorites yet.</span>
-          <span className="text-xs text-slate-400 dark:text-slate-500">
-            Tap ☆ next to a stock to add it here.
+        <div 
+          className="flex flex-col items-center justify-center gap-3 py-16 px-4"
+          style={{
+            background: '#0f0f0f',
+          }}
+        >
+          <div 
+            className="text-6xl mb-2"
+            style={{
+              opacity: 0.3,
+            }}
+          >
+            ⭐
+          </div>
+          <span 
+            className="text-base font-semibold"
+            style={{
+              color: '#ffffff',
+            }}
+          >
+            No favorites yet
+          </span>
+          <span 
+            className="text-sm text-center max-w-xs"
+            style={{
+              color: 'rgba(255, 255, 255, 0.6)',
+            }}
+          >
+            Tap ☆ next to a stock to add it here
           </span>
           <button
             onClick={handleBrowseStocks}
-            className="mt-2 px-3 py-2 rounded-md bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors"
-            style={{ WebkitTapHighlightColor: 'transparent' }}
+            className="mt-2 px-5 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold transition-colors"
+            style={{ 
+              WebkitTapHighlightColor: 'transparent',
+              touchAction: 'manipulation',
+            }}
+            onTouchStart={(e) => {
+              e.currentTarget.style.opacity = '0.8';
+            }}
+            onTouchEnd={(e) => {
+              e.currentTarget.style.opacity = '1';
+            }}
           >
             Browse stocks →
           </button>

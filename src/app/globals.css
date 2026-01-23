@@ -562,7 +562,7 @@
   }
 }
 
-/* Other screens */
+/* Other screens - REFAKTOROVANÉ pre konzistentný spacing */
 .mobile-app-screen.screen-portfolio,
 .mobile-app-screen.screen-favorites,
 .mobile-app-screen.screen-earnings,
@@ -583,6 +583,9 @@
   /* CRITICAL: Ensure screen extends to bottom edge */
   height: 100% !important;
   min-height: 100% !important;
+  /* CRITICAL: Consistent padding for content */
+  padding-left: 0 !important;
+  padding-right: 0 !important;
 }
 
 /* ============================================

@@ -397,8 +397,36 @@ export function PortfolioSection({
       {/* Mobile: Cards layout */}
       <div className="lg:hidden flex-1 flex flex-col">
         {portfolioStocks.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center gap-6 py-12 text-sm text-slate-500 dark:text-slate-400 min-h-[60vh] bg-transparent">
-            <span className="text-lg font-medium">Your portfolio is empty.</span>
+          <div 
+            className="flex-1 flex flex-col items-center justify-center gap-3 py-16 px-4 min-h-[60vh] text-center"
+            style={{
+              background: '#0f0f0f',
+            }}
+          >
+            <div 
+              className="text-6xl mb-2"
+              style={{
+                opacity: 0.3,
+              }}
+            >
+              📊
+            </div>
+            <span 
+              className="text-base font-semibold"
+              style={{
+                color: '#ffffff',
+              }}
+            >
+              Your portfolio is empty
+            </span>
+            <span 
+              className="text-sm max-w-xs"
+              style={{
+                color: 'rgba(255, 255, 255, 0.6)',
+              }}
+            >
+              Add stocks to track your investments
+            </span>
             <button
               onClick={() => {
                 const input = document.querySelector('.portfolio-search-input') as HTMLInputElement;
@@ -407,7 +435,17 @@ export function PortfolioSection({
                   input.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
               }}
-              className={`${BUTTON_PRIMARY_MD} mx-auto px-8 py-3 text-base shadow-lg shadow-blue-500/20`}
+              className="mt-2 px-5 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold transition-colors"
+              style={{ 
+                WebkitTapHighlightColor: 'transparent',
+                touchAction: 'manipulation',
+              }}
+              onTouchStart={(e) => {
+                e.currentTarget.style.opacity = '0.8';
+              }}
+              onTouchEnd={(e) => {
+                e.currentTarget.style.opacity = '1';
+              }}
             >
               Find stocks to add →
             </button>
@@ -758,8 +796,36 @@ export function PortfolioSection({
             {sortedPortfolioStocksDesktop.length === 0 ? (
               <tr>
                 <td colSpan={10} className="p-0 border-none">
-                  <div className="flex flex-col sm:flex-row items-center justify-center gap-2 py-12 text-sm text-slate-500 dark:text-slate-400">
-                    <span>Your portfolio is empty.</span>
+                  <div 
+                    className="flex flex-col items-center justify-center gap-3 py-16 px-4"
+                    style={{
+                      background: '#0f0f0f',
+                    }}
+                  >
+                    <div 
+                      className="text-6xl mb-2"
+                      style={{
+                        opacity: 0.3,
+                      }}
+                    >
+                      📊
+                    </div>
+                    <span 
+                      className="text-base font-semibold"
+                      style={{
+                        color: '#ffffff',
+                      }}
+                    >
+                      Your portfolio is empty
+                    </span>
+                    <span 
+                      className="text-sm text-center max-w-xs"
+                      style={{
+                        color: 'rgba(255, 255, 255, 0.6)',
+                      }}
+                    >
+                      Add stocks to track your investments
+                    </span>
                     <button
                       onClick={() => {
                         const input = document.querySelector('.portfolio-search-input') as HTMLInputElement;
@@ -768,7 +834,17 @@ export function PortfolioSection({
                           input.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         }
                       }}
-                      className={BUTTON_PRIMARY_MD}
+                      className="mt-2 px-5 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold transition-colors"
+                      style={{ 
+                        WebkitTapHighlightColor: 'transparent',
+                        touchAction: 'manipulation',
+                      }}
+                      onTouchStart={(e) => {
+                        e.currentTarget.style.opacity = '0.8';
+                      }}
+                      onTouchEnd={(e) => {
+                        e.currentTarget.style.opacity = '1';
+                      }}
                     >
                       Find stocks to add →
                     </button>

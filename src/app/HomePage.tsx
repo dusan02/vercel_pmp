@@ -336,7 +336,8 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
         <MobileApp>
           {/* MobileHeader - viditeľný vo všetkých sekciách okrem heatmap (heatmap má svoj vlastný header) */}
           {activeMobileSection !== 'heatmap' && <MobileHeader />}
-          <div className={`mobile-app-content ${activeMobileSection === 'heatmap' ? 'is-heatmap' : ''}`}>
+          <PullToRefresh onRefresh={loadData} disabled={activeMobileSection === 'heatmap'}>
+            <div className={`mobile-app-content ${activeMobileSection === 'heatmap' ? 'is-heatmap' : ''}`}>
             <MobileScreen 
               active={activeMobileSection === 'heatmap'} 
               className="screen-heatmap"
@@ -412,7 +413,11 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
               className="screen-earnings"
               prefetch={false}
               screenName="Earnings"
-              skeleton={<div className="p-4 space-y-3"><div className="h-20 bg-gray-200 rounded animate-pulse" /></div>}
+              skeleton={
+                <div className="p-4 space-y-3" style={{ background: '#0f0f0f' }}>
+                  <div className="h-20 rounded animate-pulse" style={{ background: 'rgba(255, 255, 255, 0.08)' }} />
+                </div>
+              }
             >
               {(preferences.showEarningsSection ?? true) && (
                 <HomeEarnings />
@@ -423,7 +428,12 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
               className="screen-all-stocks"
               prefetch={false}
               screenName="All Stocks"
-              skeleton={<div className="p-4 space-y-3"><div className="h-20 bg-gray-200 rounded animate-pulse" /><div className="h-20 bg-gray-200 rounded animate-pulse" /></div>}
+              skeleton={
+                <div className="p-4 space-y-3" style={{ background: '#0f0f0f' }}>
+                  <div className="h-20 rounded animate-pulse" style={{ background: 'rgba(255, 255, 255, 0.08)' }} />
+                  <div className="h-20 rounded animate-pulse" style={{ background: 'rgba(255, 255, 255, 0.08)' }} />
+                </div>
+              }
             >
               {(preferences.showAllStocksSection ?? true) && (
                 <HomeAllStocks
@@ -449,7 +459,8 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
                 />
               )}
             </MobileScreen>
-          </div>
+            </div>
+          </PullToRefresh>
           <MobileTabBar
             activeTab={activeMobileSection}
             onTabChange={handleMobileNavChange}

@@ -251,15 +251,53 @@ const EarningsLoader = () => (
   </section>
 );
 
-// Error component for earnings
+// Error component for earnings - REFAKTOROVANÝ
 const EarningsError = ({ error, onRetry }: { error: string; onRetry: () => void }) => (
   <section className="todays-earnings">
     <EarningsHeader />
-    <div className="text-center p-8">
-      <p className="text-red-600 mb-4">Error loading earnings data: {error}</p>
+    <div 
+      className="flex flex-col items-center justify-center gap-3 py-16 px-4 text-center"
+      style={{
+        background: '#0f0f0f',
+      }}
+    >
+      <div 
+        className="text-6xl mb-2"
+        style={{
+          opacity: 0.3,
+        }}
+      >
+        ⚠️
+      </div>
+      <span 
+        className="text-base font-semibold"
+        style={{
+          color: '#ffffff',
+        }}
+      >
+        Error loading earnings data
+      </span>
+      <span 
+        className="text-sm max-w-xs mb-4"
+        style={{
+          color: 'rgba(255, 255, 255, 0.6)',
+        }}
+      >
+        {error}
+      </span>
       <button
         onClick={onRetry}
-        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+        className="px-5 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold transition-colors"
+        style={{ 
+          WebkitTapHighlightColor: 'transparent',
+          touchAction: 'manipulation',
+        }}
+        onTouchStart={(e) => {
+          e.currentTarget.style.opacity = '0.8';
+        }}
+        onTouchEnd={(e) => {
+          e.currentTarget.style.opacity = '1';
+        }}
       >
         Try Again
       </button>
@@ -267,24 +305,50 @@ const EarningsError = ({ error, onRetry }: { error: string; onRetry: () => void 
   </section>
 );
 
-// Empty state component for earnings
+// Empty state component for earnings - REFAKTOROVANÝ
 const EarningsEmpty = () => (
   <section className="todays-earnings">
     <EarningsHeader />
-    <div className="text-center p-8 text-gray-900 dark:text-gray-100">
-      <p className="text-base md:text-lg font-normal">
-        No major company earnings scheduled for today.
-        <br />
+    <div 
+      className="flex flex-col items-center justify-center gap-3 py-16 px-4 text-center"
+      style={{
+        background: '#0f0f0f',
+      }}
+    >
+      <div 
+        className="text-6xl mb-2"
+        style={{
+          opacity: 0.3,
+        }}
+      >
+        📅
+      </div>
+      <span 
+        className="text-base font-semibold"
+        style={{
+          color: '#ffffff',
+        }}
+      >
+        No earnings scheduled for today
+      </span>
+      <p 
+        className="text-sm max-w-xs"
+        style={{
+          color: 'rgba(255, 255, 255, 0.6)',
+        }}
+      >
         For the full list, visit{' '}
         <a
           href="https://www.earningstable.com"
           target="_blank"
           rel="noopener noreferrer"
-          className="underline text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors font-semibold"
+          className="underline font-semibold"
+          style={{
+            color: '#3b82f6',
+          }}
         >
           www.earningstable.com
         </a>
-        .
       </p>
     </div>
   </section>

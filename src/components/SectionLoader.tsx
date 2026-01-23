@@ -11,12 +11,28 @@ interface SectionLoaderProps {
 
 export function SectionLoader({ message = 'Loading...' }: SectionLoaderProps) {
   return (
-    <div className="flex items-center justify-center gap-3 p-8">
-      <span
-        className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-700 dark:border-gray-700 dark:border-t-gray-200"
+    <div 
+      className="flex flex-col items-center justify-center gap-3 p-8"
+      style={{
+        background: '#0f0f0f',
+      }}
+    >
+      <div 
+        className="animate-spin rounded-full border-b-2 border-white"
+        style={{
+          width: '32px',
+          height: '32px',
+        }}
         aria-hidden="true"
       />
-      <span className="text-gray-700 dark:text-gray-300">{message}</span>
+      <span 
+        style={{
+          color: 'rgba(255, 255, 255, 0.7)',
+          fontSize: '14px',
+        }}
+      >
+        {message}
+      </span>
     </div>
   );
 }

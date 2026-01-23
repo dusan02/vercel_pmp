@@ -58,12 +58,35 @@ export function MobileScreen({
     }
   }, [active, prefetch, hasRendered]);
 
-  // Default skeleton loader
+  // Default skeleton loader - REFAKTOROVANÝ pre dark theme mobile
   const defaultSkeleton = (
-    <div className="p-4 space-y-3" role="status" aria-live="polite" aria-label="Loading content">
-      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-3/4" />
-      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-1/2" />
+    <div 
+      className="p-4 space-y-3" 
+      role="status" 
+      aria-live="polite" 
+      aria-label="Loading content"
+      style={{
+        background: '#0f0f0f',
+      }}
+    >
+      <div 
+        className="h-4 rounded animate-pulse" 
+        style={{
+          background: 'rgba(255, 255, 255, 0.08)',
+        }}
+      />
+      <div 
+        className="h-4 rounded animate-pulse w-3/4" 
+        style={{
+          background: 'rgba(255, 255, 255, 0.08)',
+        }}
+      />
+      <div 
+        className="h-4 rounded animate-pulse w-1/2" 
+        style={{
+          background: 'rgba(255, 255, 255, 0.08)',
+        }}
+      />
     </div>
   );
 
