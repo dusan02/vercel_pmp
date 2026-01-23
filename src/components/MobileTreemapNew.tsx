@@ -270,9 +270,10 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
         top: 0,
         left: 0,
         right: 0,
-        bottom: 'var(--tabbar-h, 72px)',
+        /* CRITICAL: Use --tabbar-real-h if available (includes safe-area), otherwise fallback to --tabbar-h */
+        bottom: 'var(--tabbar-real-h, var(--tabbar-h, 72px))',
         width: '100%',
-        height: 'calc(100vh - var(--tabbar-h, 72px))',
+        height: 'calc(100vh - var(--tabbar-real-h, var(--tabbar-h, 72px)))',
         display: 'flex',
         flexDirection: 'column',
         background: '#000',

@@ -81,8 +81,15 @@ export function MobileTabBar({ activeTab, onTabChange }: MobileTabBarProps) {
       // Only update if height actually changed (prevents 1px bounce repaints)
       if (h > 0 && h !== lastHRef.current) {
         lastHRef.current = h;
-        // Set real measured height (includes safe-area from padding-bottom)
+        // CRITICAL: Set real measured height (includes safe-area from padding-bottom)
+        // This is used by MobileTreemapNew to position correctly
         document.documentElement.style.setProperty('--tabbar-real-h', `${h}px`);
+        // Also update base height if it differs significantly (for consistency)
+        const baseHeight = 72; // var(--tabbar-h)
+        if (Math.abs(h - baseHeight) > 5) {
+          // Safe-area is significant, ensure consistency
+          console.log(`[MobileTabBar] Real height: ${h}px (base: ${baseHeight}px, safe-area: ${h - baseHeight}px)`);
+        }
       }
     };
 

@@ -765,7 +765,7 @@
   }
 }
 
-/* Mobile Tab Bar - Modern bottom navigation */
+/* Mobile Tab Bar - REFAKTOROVANÝ - Jednoduchší prístup */
 .mobile-app-tabbar {
   position: fixed !important;
   bottom: 0 !important;
@@ -775,47 +775,45 @@
   display: flex !important;
   align-items: center;
   justify-content: space-around;
-  background: rgba(255, 255, 255, 0.98);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
-  padding: 0.5rem 0;
-  padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
-  /* CRITICAL: Use box-sizing: border-box and height: auto with min-height for accurate getBoundingClientRect().height */
-  box-sizing: border-box !important;
-  height: auto !important;
-  min-height: var(--tabbar-h);
+  /* CRITICAL: Solid background - no blur for better performance and no artifacts */
+  background: #0f0f0f !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  /* CRITICAL: Fixed height - no auto, no min-height confusion */
+  height: var(--tabbar-h) !important;
   /* 72px base height */
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
-  /* CRITICAL: Ensure tab bar is always visible, even during interactions */
+  padding: 0 !important;
+  padding-top: 0.5rem !important;
+  padding-bottom: calc(0.5rem + env(safe-area-inset-bottom)) !important;
+  /* CRITICAL: Box-sizing for accurate height calculation */
+  box-sizing: border-box !important;
+  /* CRITICAL: No box-shadow to prevent visual artifacts */
+  box-shadow: none !important;
+  /* CRITICAL: Remove all borders except top */
+  border-left: none !important;
+  border-right: none !important;
+  border-bottom: none !important;
+  outline: none !important;
+  /* CRITICAL: Ensure tab bar is always visible */
   visibility: visible !important;
   opacity: 1 !important;
   pointer-events: auto !important;
+  /* CRITICAL: Full width, no margins */
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
 }
 
-/* Mobile only: dark tab bar */
+/* Mobile only: dark tab bar - REFAKTOROVANÉ */
 @media (max-width: 1023px) {
   .mobile-app-tabbar {
-    background: rgba(15, 15, 15, 0.98) !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    /* CRITICAL: Remove vertical borders to prevent white lines on iOS Safari/Chrome */
-    border-left: none !important;
-    border-right: none !important;
-    outline: none !important;
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
+    /* CRITICAL: All styles already in base .mobile-app-tabbar above */
+    /* Just ensure text/icons are white on dark background */
+    color: #ffffff !important;
     /* iOS hairline fix: prevent subpixel rendering artifacts */
     transform: translateZ(0);
     -webkit-transform: translateZ(0);
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
-    /* CRITICAL: Ensure tab bar stays visible on mobile */
-    position: fixed !important;
-    z-index: 9999 !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    pointer-events: auto !important;
-    /* CRITICAL: Ensure text/icons are white on dark background */
-    color: #ffffff !important;
   }
 
   .mobile-app-tab-icon,
