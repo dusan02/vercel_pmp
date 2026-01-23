@@ -187,10 +187,8 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     const tabbarH = 72; // var(--tabbar-h) - bottom navigation
     const treemapHeaderH = 48; // Fixed header inside MobileTreemap (spacer height after fixed header)
 
-    // CRITICAL: Do NOT subtract tabbarH here because .mobile-treemap-wrapper already has padding-bottom for tabbar
-    // This prevents "double reservation" - wrapper reserves space via padding-bottom, we just need to fill available viewport
-    // Available height = viewport - safe area - treemap header (tabbar is handled by wrapper padding-bottom)
-    const available = vh - safeAreaBottom - treemapHeaderH;
+    // Use full viewport height minus header. We handle tabbar/safe-area via padding-bottom on the scroll container.
+    const available = vh - treemapHeaderH;
 
     return Math.max(0, available);
   }, [measureSafeAreaBottom]);
@@ -693,7 +691,7 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
     const area = w * h;
     const showTicker = area >= 360;
     const showValue = area >= 900 && w >= 44 && h >= 22; // % change OR B$ diff (based on metric)
-    const showPrice = metric === 'percent' && !!company.currentPrice && area >= 1400 && w >= 60 && h >= 30;
+    const showPrice = false;
 
     // Typography tuned for mobile: base it on area (not just width/height) so medium tiles remain readable.
     const minDim = Math.min(w, h);
@@ -1006,7 +1004,8 @@ export const MobileTreemap: React.FC<MobileTreemapProps> = ({
             })(),
             margin: 0,
             padding: 0,
-            boxSizing: 'border-box',
+            paddingBottom: 'calc(var(--tabbar-h) + env(safe-area-inset-bottom))',
+            boxSizing: 'content-box',
           }}
         >
           {leaves.map((leaf) => renderLeaf(leaf))}

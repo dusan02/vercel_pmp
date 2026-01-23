@@ -98,12 +98,11 @@ export function FavoritesSection({
 
       {/* Mobile: Cards layout */}
       <div className="lg:hidden">
-        <div className="w-full bg-white dark:bg-gray-900 border-0 rounded-none overflow-hidden divide-y divide-gray-200 dark:divide-gray-800">
+        <div className="w-full bg-white dark:bg-gray-900 border-none outline-none ring-0 rounded-none overflow-hidden divide-y divide-gray-200 dark:divide-gray-800">
           {/* Header row (mobile) - clickable for sorting */}
           <div className="px-3 py-2 bg-slate-50/80 dark:bg-white/5 text-xs font-semibold text-gray-400 dark:text-gray-400 uppercase tracking-wide">
             {sortKey === 'marketCapDiff' ? (
-              <div className="grid items-center gap-x-2 min-w-0 [grid-template-columns:40px_minmax(56px,1fr)_72px_72px_44px]">
-                <div className="text-center">Logo</div>
+              <div className="grid items-center gap-x-2 min-w-0 [grid-template-columns:minmax(56px,1fr)_72px_72px_44px]">
                 <button
                   type="button"
                   onClick={() => onSort('ticker')}
@@ -135,8 +134,7 @@ export function FavoritesSection({
                 <div className="text-center">★</div>
               </div>
             ) : sortKey === 'marketCap' ? (
-              <div className="grid items-center gap-x-2 min-w-0 [grid-template-columns:40px_minmax(56px,1fr)_96px_56px_44px]">
-                <div className="text-center">Logo</div>
+              <div className="grid items-center gap-x-2 min-w-0 [grid-template-columns:minmax(56px,1fr)_96px_56px_44px]">
                 <button
                   type="button"
                   onClick={() => onSort('ticker')}
@@ -168,8 +166,7 @@ export function FavoritesSection({
                 <div className="text-center">★</div>
               </div>
             ) : (
-              <div className="grid items-center gap-x-2 min-w-0 [grid-template-columns:40px_minmax(56px,1fr)_96px_56px_44px]">
-                <div className="text-center">Logo</div>
+              <div className="grid items-center gap-x-2 min-w-0 [grid-template-columns:minmax(56px,1fr)_96px_56px_44px]">
                 <button
                   type="button"
                   onClick={() => onSort('ticker')}

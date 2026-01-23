@@ -323,15 +323,15 @@ export function PortfolioSection({
 
   return (
     <section className="portfolio">
-      <div className="section-header">
-        <div className="header-main">
+      <div className="section-header flex flex-col lg:flex-row items-center gap-4 lg:gap-0">
+        <div className="header-main w-full lg:w-auto flex justify-center lg:justify-start">
           <h2 className="portfolio-header">
             <SectionIcon type="pie" size={20} className="section-icon" />
             <span>Portfolio</span>
           </h2>
         </div>
-        <div className="portfolio-search-wrapper">
-          <div className="portfolio-search-container">
+        <div className="portfolio-search-wrapper w-full flex justify-center lg:justify-end">
+          <div className="portfolio-search-container w-full max-w-md">
             <input
               ref={searchInputRef}
               type="text"
@@ -339,7 +339,7 @@ export function PortfolioSection({
               value={portfolioSearchTerm}
               onChange={handlePortfolioSearchChange}
               onKeyDown={handleKeyDown}
-              className="portfolio-search-input"
+              className="portfolio-search-input text-center lg:text-left"
               aria-label="Search stocks to add to portfolio"
               aria-expanded={showPortfolioSearch}
               aria-haspopup="listbox"
@@ -395,10 +395,10 @@ export function PortfolioSection({
       </div>
 
       {/* Mobile: Cards layout */}
-      <div className="lg:hidden">
+      <div className="lg:hidden flex-1 flex flex-col">
         {portfolioStocks.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-2 py-12 text-sm text-slate-500 dark:text-slate-400">
-            <span>Your portfolio is empty.</span>
+          <div className="flex-1 flex flex-col items-center justify-center gap-6 py-12 text-sm text-slate-500 dark:text-slate-400 min-h-[60vh] bg-transparent">
+            <span className="text-lg font-medium">Your portfolio is empty.</span>
             <button
               onClick={() => {
                 const input = document.querySelector('.portfolio-search-input') as HTMLInputElement;
@@ -407,18 +407,17 @@ export function PortfolioSection({
                   input.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
               }}
-              className={BUTTON_PRIMARY_MD}
+              className={`${BUTTON_PRIMARY_MD} mx-auto px-8 py-3 text-base shadow-lg shadow-blue-500/20`}
             >
               Find stocks to add →
             </button>
           </div>
         ) : (
           <div className="w-full">
-            <div className="w-full bg-white dark:bg-gray-900 border-0 rounded-none overflow-hidden divide-y divide-gray-200 dark:divide-gray-800">
+            <div className="w-full bg-white dark:bg-gray-900 border-none outline-none ring-0 rounded-none overflow-hidden divide-y divide-gray-200 dark:divide-gray-800">
               {/* Header row (mobile): align with PortfolioCardMobile grid - clickable for sorting */}
               <div className="px-3 py-2 bg-slate-50/80 dark:bg-white/5 text-xs font-semibold text-gray-400 dark:text-gray-400 uppercase tracking-wide">
-                <div className="grid items-center gap-x-1.5 min-w-0 [grid-template-columns:40px_minmax(56px,1fr)_56px_72px_56px_52px]">
-                  <div className="text-center">Logo</div>
+                <div className="grid items-center gap-x-1.5 min-w-0 [grid-template-columns:minmax(56px,1fr)_56px_72px_56px_52px]">
                   <button
                     type="button"
                     onClick={() => {

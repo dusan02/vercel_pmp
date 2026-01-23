@@ -420,8 +420,8 @@
     top: 0 !important;
     left: 0 !important;
     right: 0 !important;
-    bottom: var(--tabbar-real-h, var(--tabbar-h)) !important;
-    /* CRITICAL: Heatmap screen ends exactly at top edge of tabbar */
+    bottom: 0 !important;
+    /* CRITICAL: Heatmap screen ends at bottom screen edge (behind tabbar) */
     width: 100% !important;
     padding: 0 !important;
     margin: 0 !important;
@@ -729,6 +729,8 @@
     display: flex !important;
     justify-content: center !important;
     width: 100% !important;
+    padding: 0 1rem !important;
+    /* Add padding for small screens */
   }
 
   .mobile-app-screen.screen-portfolio .portfolio-search-container {
@@ -739,7 +741,12 @@
   }
 
   .mobile-app-screen.screen-portfolio .portfolio-search-input {
-    margin: 0 auto !important;
+    display: block !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    text-align: center;
+    max-width: 400px;
+    width: 100% !important;
   }
 }
 
@@ -817,6 +824,19 @@
     visibility: visible !important;
     opacity: 1 !important;
     pointer-events: auto !important;
+    /* CRITICAL: Ensure text/icons are white on dark background */
+    color: #ffffff !important;
+  }
+
+  .mobile-app-tab-icon,
+  .mobile-app-tab-label {
+    color: #e5e7eb !important;
+    /* gray-200 */
+  }
+
+  .mobile-app-tab.active .mobile-app-tab-icon,
+  .mobile-app-tab.active .mobile-app-tab-label {
+    color: #ffffff !important;
   }
 }
 

@@ -320,8 +320,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
                 {/* Header row (mobile) - clickable for sorting */}
                 <div className="px-3 py-1.5 bg-slate-50/80 dark:bg-white/5 text-[11px] font-semibold text-slate-600 dark:text-slate-300">
                   {sortKey === 'marketCapDiff' ? (
-                    <div className="grid items-center gap-x-2 min-w-0 [grid-template-columns:40px_minmax(56px,1fr)_72px_72px_44px]">
-                      <div className="text-center">Logo</div>
+                    <div className="grid items-center gap-x-2 min-w-0 [grid-template-columns:minmax(56px,1fr)_72px_72px_44px]">
                       <button
                         type="button"
                         onClick={() => onSort('ticker')}
@@ -353,8 +352,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
                       <div className="text-center">★</div>
                     </div>
                   ) : sortKey === 'marketCap' ? (
-                    <div className="grid items-center gap-x-2 min-w-0 [grid-template-columns:40px_minmax(56px,1fr)_96px_56px_44px]">
-                      <div className="text-center">Logo</div>
+                    <div className="grid items-center gap-x-2 min-w-0 [grid-template-columns:minmax(56px,1fr)_96px_56px_44px]">
                       <button
                         type="button"
                         onClick={() => onSort('ticker')}
@@ -386,8 +384,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
                       <div className="text-center">★</div>
                     </div>
                   ) : (
-                    <div className="grid items-center gap-x-2 min-w-0 [grid-template-columns:40px_minmax(56px,1fr)_96px_56px_44px]">
-                      <div className="text-center">Logo</div>
+                    <div className="grid items-center gap-x-2 min-w-0 [grid-template-columns:minmax(56px,1fr)_96px_56px_44px]">
                       <button
                         type="button"
                         onClick={() => onSort('ticker')}
