@@ -28,16 +28,16 @@ export function QualityBadge({ quality, as_of, source, pollInterval = 60 }: Qual
   };
 
   const getQualityColor = () => {
-    if (isStale) return 'text-orange-600 bg-orange-50';
+    if (isStale) return 'text-orange-400 bg-orange-500/20 border-orange-500/30';
     switch (quality) {
       case 'delayed_15m':
-        return 'text-yellow-600 bg-yellow-50';
+        return 'text-yellow-400 bg-yellow-500/20 border-yellow-500/30';
       case 'rest':
-        return 'text-green-600 bg-green-50';
+        return 'text-green-400 bg-green-500/20 border-green-500/30';
       case 'snapshot':
-        return 'text-blue-600 bg-blue-50';
+        return 'text-blue-400 bg-blue-500/20 border-blue-500/30';
       default:
-        return 'text-gray-600 bg-gray-50';
+        return 'text-gray-400 bg-gray-500/20 border-gray-500/30';
     }
   };
 
@@ -64,14 +64,18 @@ export function QualityBadge({ quality, as_of, source, pollInterval = 60 }: Qual
 
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getQualityColor()}`}
+      className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium border ${getQualityColor()}`}
       title={tooltipText}
+      style={{
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+      }}
     >
-      {isStale && '⚠️ '}
-      {getQualityLabel()}
+      {isStale && <span className="mr-1">⚠️</span>}
+      <span className="font-semibold">{getQualityLabel()}</span>
       {as_of && (
-        <span className="ml-1 text-xs opacity-75">
-          ({formatAsOf(as_of)})
+        <span className="ml-1.5 text-[10px] opacity-70">
+          {formatAsOf(as_of)}
         </span>
       )}
     </span>

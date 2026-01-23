@@ -56,6 +56,9 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   const [containerSize, setContainerSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
   const [headerH, setHeaderH] = useState(48);
   const [availableHeight, setAvailableHeight] = useState(0);
+  // Detail panel state
+  const [selectedCompany, setSelectedCompany] = useState<CompanyNode | null>(null);
+  const closeSheet = useCallback(() => setSelectedCompany(null), []);
 
   // Sort data
   const sortedData = useMemo(() => {
@@ -216,7 +219,10 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
       return (
         <div
           key={`${company.symbol}-${index}`}
-          onClick={() => onTileClick?.(company)}
+          onClick={() => {
+            setSelectedCompany(company);
+            onTileClick?.(company);
+          }}
           style={{
             position: 'absolute',
             left: `${x}px`,
@@ -378,6 +384,119 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
           </div>
         )}
       </div>
+
+      {/* Detail Panel - Bottom Sheet (tap on tile) */}
+      {selectedCompany && (
+        <>
+          <button
+            type="button"
+            aria-label="Close details"
+            onClick={closeSheet}
+            className="fixed inset-0"
+            style={{
+              background: 'rgba(0,0,0,0.6)',
+              zIndex: 9998,
+              bottom: 'calc(var(--tabbar-real-h, var(--tabbar-h, 72px)) + env(safe-area-inset-bottom))',
+              backdropFilter: 'blur(4px)',
+              WebkitBackdropFilter: 'blur(4px)',
+            }}
+          />
+          <div
+            className="fixed inset-x-0"
+            style={{
+              zIndex: 10000,
+              background: '#0f0f0f',
+              color: '#ffffff',
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
+              boxShadow: '0 -8px 32px rgba(0,0,0,0.5)',
+              padding: '16px',
+              maxHeight: 'calc(100dvh - 48px - var(--tabbar-real-h, var(--tabbar-h, 72px)) - env(safe-area-inset-bottom))',
+              overflow: 'auto',
+              bottom: 'calc(var(--tabbar-real-h, var(--tabbar-h, 72px)) + env(safe-area-inset-bottom))',
+              WebkitOverflowScrolling: 'touch',
+            }}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="flex-shrink-0">
+                  <CompanyLogo ticker={selectedCompany.symbol} size={40} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-lg font-bold leading-tight">
+                    {selectedCompany.symbol}
+                  </div>
+                  <div className="text-xs opacity-70 leading-tight mt-1 truncate">
+                    {selectedCompany.sector} · {selectedCompany.industry}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {onToggleFavorite && (
+                  <button
+                    type="button"
+                    onClick={() => onToggleFavorite(selectedCompany.symbol)}
+                    className="w-10 h-10 rounded-lg flex items-center justify-center text-lg transition-colors"
+                    style={{
+                      background: (isFavorite && isFavorite(selectedCompany.symbol)) ? 'rgba(251,191,36,0.2)' : 'rgba(255,255,255,0.1)',
+                      color: (isFavorite && isFavorite(selectedCompany.symbol)) ? '#fbbf24' : '#ffffff',
+                      WebkitTapHighlightColor: 'transparent',
+                    }}
+                    aria-label={(isFavorite && isFavorite(selectedCompany.symbol)) ? 'Remove from favorites' : 'Add to favorites'}
+                  >
+                    {(isFavorite && isFavorite(selectedCompany.symbol)) ? '★' : '☆'}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={closeSheet}
+                  className="w-10 h-10 rounded-lg flex items-center justify-center text-lg font-semibold transition-colors"
+                  style={{ 
+                    background: 'rgba(255,255,255,0.1)', 
+                    color: '#ffffff', 
+                    WebkitTapHighlightColor: 'transparent' 
+                  }}
+                  aria-label="Close"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* Data Grid */}
+            <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+              <div className="opacity-70 text-xs">Price</div>
+              <div className="text-right font-semibold font-mono tabular-nums">
+                {selectedCompany.currentPrice ? `$${formatPrice(selectedCompany.currentPrice)}` : '—'}
+              </div>
+
+              <div className="opacity-70 text-xs">Market Cap</div>
+              <div className="text-right font-semibold font-mono tabular-nums">
+                {formatMarketCap(selectedCompany.marketCap ?? 0)}
+              </div>
+
+              <div className="opacity-70 text-xs">% Change</div>
+              <div
+                className={`text-right font-semibold font-mono tabular-nums ${
+                  (selectedCompany.changePercent ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'
+                }`}
+              >
+                {formatPercent(selectedCompany.changePercent ?? 0)}
+              </div>
+
+              <div className="opacity-70 text-xs">Mcap Δ</div>
+              <div
+                className={`text-right font-semibold font-mono tabular-nums ${
+                  (selectedCompany.marketCapDiff ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'
+                }`}
+              >
+                {selectedCompany.marketCapDiff == null ? '—' : formatMarketCapDiff(selectedCompany.marketCapDiff)}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };

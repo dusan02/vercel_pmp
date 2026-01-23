@@ -90,34 +90,38 @@ export default function CookieConsent({ onAccept }: CookieConsentProps) {
 
   return (
     <div
-      className="fixed left-0 right-0 z-[2000] p-4"
+      className="fixed left-0 right-0 z-[2000]"
       style={{
-        // Keep the banner ABOVE the mobile bottom tab bar and safe-area.
-        // CRITICAL: Fixed positioning means this doesn't affect layout flow - heatmap should extend to navigation
-        bottom: 'calc(72px + env(safe-area-inset-bottom))',
-        backgroundColor: 'var(--clr-bg)',
-        borderTop: '1px solid var(--clr-border)',
-        boxShadow: '0 -2px 8px rgba(0, 0, 0, 0.05)',
-        // Ensure banner doesn't create layout space reservation
+        // CRITICAL: Use --tabbar-real-h if available (includes safe-area), otherwise fallback to --tabbar-h
+        bottom: 'calc(var(--tabbar-real-h, var(--tabbar-h, 72px)) + env(safe-area-inset-bottom))',
+        backgroundColor: '#0f0f0f',
+        borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+        boxShadow: '0 -4px 12px rgba(0, 0, 0, 0.3)',
         pointerEvents: 'auto',
+        padding: '12px 16px',
       }}
     >
-      <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex-1">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">
-            🍪 Cookies & Privacy
+      <div className="w-full flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 max-w-7xl mx-auto">
+        <div className="flex-1 min-w-0">
+          <h3 className="text-sm font-semibold text-white mb-1.5 flex items-center gap-2">
+            <span>🍪</span>
+            <span>Cookies & Privacy</span>
           </h3>
-          <p className="text-xs text-gray-600 dark:text-gray-300">
+          <p className="text-xs text-gray-400 leading-relaxed">
             We use cookies to store your preferences and favorite stocks. 
             Your data remains on your device and is not sent to servers.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-shrink-0">
           <button
             onClick={handleAccept}
-            className="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-md hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 transition-colors shadow-md"
+            className="px-5 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors shadow-lg"
+            style={{
+              WebkitTapHighlightColor: 'transparent',
+              touchAction: 'manipulation',
+            }}
           >
-            OK
+            Accept
           </button>
         </div>
       </div>
