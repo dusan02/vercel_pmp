@@ -396,31 +396,55 @@ export default function TodaysEarningsFinnhub() {
           <div className="lg:hidden">
             <div className="w-full bg-white dark:bg-gray-900 border-none outline-none ring-0 rounded-none overflow-hidden divide-y divide-gray-200 dark:divide-gray-800">
               {/* Mobile Header */}
-              <div className="px-3 py-2 bg-slate-50/80 dark:bg-white/5 text-xs font-semibold text-gray-400 dark:text-gray-400 uppercase tracking-wide">
+              <div className="px-3 py-2 bg-transparent text-xs font-semibold text-gray-400 dark:text-gray-400 uppercase tracking-wide">
                 <div className="grid items-center gap-x-2 min-w-0 [grid-template-columns:minmax(56px,1fr)_72px_72px_56px]">
                   <button
+                    type="button"
                     onClick={() => handleSort('ticker')}
-                    className="text-left font-semibold"
+                    className="text-xs text-gray-400 dark:text-gray-400 font-semibold text-left cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-start gap-0.5 px-1 py-0.5 rounded border-none bg-transparent uppercase tracking-wide"
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
+                    aria-label="Sort by ticker"
                   >
                     Ticker
+                    {sortKey === 'ticker' && (
+                      <span className="text-[9px] text-gray-500 dark:text-gray-400">{ascending ? '▲' : '▼'}</span>
+                    )}
                   </button>
                   <button
+                    type="button"
                     onClick={() => handleSort('marketCap')}
-                    className="text-center font-semibold"
+                    className="text-xs text-gray-400 dark:text-gray-400 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border-none bg-transparent uppercase tracking-wide"
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
+                    aria-label="Sort by market cap"
                   >
                     Mkt Cap
+                    {sortKey === 'marketCap' && (
+                      <span className="text-[9px] text-gray-500 dark:text-gray-400">{ascending ? '▲' : '▼'}</span>
+                    )}
                   </button>
                   <button
+                    type="button"
                     onClick={() => handleSort('percentChange')}
-                    className="text-center font-semibold"
+                    className="text-xs text-gray-400 dark:text-gray-400 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border-none bg-transparent uppercase tracking-wide"
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
+                    aria-label="Sort by percent change"
                   >
                     %
+                    {sortKey === 'percentChange' && (
+                      <span className="text-[9px] text-gray-500 dark:text-gray-400">{ascending ? '▲' : '▼'}</span>
+                    )}
                   </button>
                   <button
+                    type="button"
                     onClick={() => handleSort('marketCapDiff')}
-                    className="text-center font-semibold"
+                    className="text-xs text-gray-400 dark:text-gray-400 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border-none bg-transparent uppercase tracking-wide"
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
+                    aria-label="Sort by market cap diff"
                   >
                     Diff
+                    {sortKey === 'marketCapDiff' && (
+                      <span className="text-[9px] text-gray-500 dark:text-gray-400">{ascending ? '▲' : '▼'}</span>
+                    )}
                   </button>
                 </div>
               </div>
