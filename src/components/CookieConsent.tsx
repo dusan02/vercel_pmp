@@ -93,10 +93,13 @@ export default function CookieConsent({ onAccept }: CookieConsentProps) {
       className="fixed left-0 right-0 z-[2000] p-4"
       style={{
         // Keep the banner ABOVE the mobile bottom tab bar and safe-area.
+        // CRITICAL: Fixed positioning means this doesn't affect layout flow - heatmap should extend to navigation
         bottom: 'calc(72px + env(safe-area-inset-bottom))',
         backgroundColor: 'var(--clr-bg)',
         borderTop: '1px solid var(--clr-border)',
         boxShadow: '0 -2px 8px rgba(0, 0, 0, 0.05)',
+        // Ensure banner doesn't create layout space reservation
+        pointerEvents: 'auto',
       }}
     >
       <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-4">

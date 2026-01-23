@@ -424,7 +424,11 @@
     /* CRITICAL: Heatmap screen ends at bottom screen edge (behind tabbar) */
     width: 100% !important;
     padding: 0 !important;
+    padding-bottom: 0 !important;
+    /* CRITICAL: No padding-bottom - heatmap extends to navigation, CookieConsent is fixed and doesn't affect layout */
     margin: 0 !important;
+    margin-bottom: 0 !important;
+    /* CRITICAL: No margin-bottom - heatmap extends to navigation */
     background: #000;
     z-index: 1;
     /* CRITICAL: Lower than tabbar (9999) to ensure proper screen stack */
@@ -479,6 +483,8 @@
     flex-direction: column !important;
     margin: 0 !important;
     padding: 0 !important;
+    padding-bottom: 0 !important;
+    /* CRITICAL: No padding-bottom - heatmap extends to navigation, CookieConsent is fixed and doesn't affect layout */
     box-sizing: border-box !important;
     overflow: hidden;
     position: relative;
@@ -544,6 +550,8 @@
   width: 100% !important;
   margin: 0 !important;
   padding: 0 !important;
+  padding-bottom: 0 !important;
+  /* CRITICAL: No padding-bottom - heatmap extends to navigation, CookieConsent is fixed and doesn't affect layout */
   position: relative;
   /* CRITICAL: Use flex instead of height: 100% - prevents iOS Safari measurement issues */
   display: flex !important;
