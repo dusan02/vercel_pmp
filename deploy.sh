@@ -1,0 +1,40 @@
+#!/bin/bash
+# 🚀 Rýchly deployment script pre PremarketPrice
+# Tento script sa spúšťa na serveri po SSH prihlásení
+
+set -e  # Zastaviť pri chybe
+
+echo "🚀 Začínam nasadenie PremarketPrice..."
+echo ""
+
+# 1. Prejsť do správneho adresára
+cd /var/www/premarketprice
+echo "✅ Adresár: $(pwd)"
+
+# 2. Aktualizovať kód z gitu
+echo "📥 Aktualizujem kód z gitu..."
+git pull origin main
+
+# 3. Inštalovať závislosti
+echo "📦 Inštalujem závislosti..."
+npm ci
+
+# 4. Generovať Prisma klienta
+echo "🗄️ Generujem Prisma klienta..."
+npx prisma generate
+
+# 5. Build aplikácie
+echo "🔨 Buildujem aplikáciu..."
+npm run build
+
+# 6. Reštartovať PM2 procesy
+echo "🔄 Reštartujem PM2 procesy..."
+pm2 restart all --update-env
+
+# 7. Zobraziť status
+echo ""
+echo "📊 Status PM2 procesov:"
+pm2 status
+
+echo ""
+echo "✅ Nasadenie dokončené!"

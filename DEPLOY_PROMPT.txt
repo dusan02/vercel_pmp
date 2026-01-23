@@ -1,0 +1,44 @@
+🚀 PROMPT PRE RÝCHLE NASADENIE
+
+Potrebujem rýchly deployment script pre moju Next.js aplikáciu na VPS serveri. 
+
+Postup nasadenia:
+1. SSH prihlásenie: ssh root@89.185.250.213 (heslo: nahodné_heslo123)
+2. cd /var/www/premarketprice
+3. git pull origin main
+4. npm ci
+5. npx prisma generate
+6. npm run build
+7. pm2 restart all --update-env
+
+Vytvor mi:
+- Bash script (deploy.sh) s týmito príkazmi, ktorý sa spustí na serveri
+- PowerShell script (deploy.ps1) pre automatizáciu SSH z Windows
+- Jednoduchý SSH one-liner príkaz, ktorý môžem skopírovať a spustiť
+- Dokumentáciu s rôznymi metódami deploymentu a riešením problémov
+
+---
+
+📋 RÝCHLY ONE-LINER (skopíruj a spusti):
+
+ssh root@89.185.250.213 "cd /var/www/premarketprice && git pull origin main && npm ci && npx prisma generate && npm run build && pm2 restart all --update-env"
+
+---
+
+🔐 S HESLOM (ak máš sshpass):
+
+sshpass -p 'nahodné_heslo123' ssh root@89.185.250.213 "cd /var/www/premarketprice && git pull origin main && npm ci && npx prisma generate && npm run build && pm2 restart all --update-env"
+
+---
+
+📝 MANUÁLNY POSTUP:
+
+ssh root@89.185.250.213
+# Heslo: nahodné_heslo123
+
+cd /var/www/premarketprice
+git pull origin main
+npm ci
+npx prisma generate
+npm run build
+pm2 restart all --update-env
