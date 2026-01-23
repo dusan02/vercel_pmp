@@ -124,7 +124,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
     updateSize();
     window.addEventListener('resize', updateSize);
     window.visualViewport?.addEventListener('resize', updateSize);
-    
+
     return () => {
       window.removeEventListener('resize', updateSize);
       window.visualViewport?.removeEventListener('resize', updateSize);
@@ -154,7 +154,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
     const baseHeight = availableHeight;
     const MIN_SECTOR_HEIGHT = 56;
     const sectorHeights: number[] = [];
-    
+
     for (let i = 0; i < sectors.length; i++) {
       const raw = Math.round(baseHeight * ((sectorSums[i] || 0) / totalSum));
       sectorHeights.push(Math.max(MIN_SECTOR_HEIGHT, raw));
@@ -169,14 +169,14 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
 
       const sectorHeight: number = sectorHeights[sectorIdx] ?? 0;
       if (sectorHeight <= 0) return; // Skip if invalid height
-      
+
       const sectorHierarchyNode = hierarchy(sector)
         .sum((d: any) => d.value || 0)
         .sort((a: any, b: any) => (b.value || 0) - (a.value || 0));
 
       const width: number = containerSize.width ?? 0;
       if (width <= 0) return; // Skip if invalid width
-      
+
       const sectorTreemap = treemap()
         .size([width, sectorHeight])
         .padding(0)
@@ -246,7 +246,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
             e.currentTarget.style.opacity = '1';
           }}
         >
-          <div style={{ 
+          <div style={{
             fontSize: Math.min(width, height) > 60 ? '12px' : '10px',
             fontWeight: 'bold',
             color: '#ffffff',
@@ -279,7 +279,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
         /* CRITICAL: Use --tabbar-real-h if available (includes safe-area), otherwise fallback to --tabbar-h */
         bottom: 'var(--tabbar-real-h, var(--tabbar-h, 72px))',
         width: '100%',
-        height: 'calc(100vh - var(--tabbar-real-h, var(--tabbar-h, 72px)))',
+        height: 'calc(100dvh - var(--tabbar-real-h, var(--tabbar-h, 72px)))',
         display: 'flex',
         flexDirection: 'column',
         background: '#000',
@@ -366,7 +366,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
           <div style={{
             position: 'relative',
             width: '100%',
-            height: treemapData && Array.isArray(treemapData) 
+            height: treemapData && Array.isArray(treemapData)
               ? Math.max(availableHeight, treemapData[treemapData.length - 1]?.y1 || availableHeight)
               : availableHeight,
           }}>
@@ -382,7 +382,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
             height: '100%',
             background: '#000',
           }}>
-            <div 
+            <div
               className="animate-spin rounded-full border-b-2 border-white"
               style={{
                 width: '32px',
@@ -466,10 +466,10 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                   type="button"
                   onClick={closeSheet}
                   className="w-10 h-10 rounded-lg flex items-center justify-center text-lg font-semibold transition-colors"
-                  style={{ 
-                    background: 'rgba(255,255,255,0.1)', 
-                    color: '#ffffff', 
-                    WebkitTapHighlightColor: 'transparent' 
+                  style={{
+                    background: 'rgba(255,255,255,0.1)',
+                    color: '#ffffff',
+                    WebkitTapHighlightColor: 'transparent'
                   }}
                   aria-label="Close"
                 >
@@ -492,18 +492,16 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
 
               <div className="opacity-70 text-xs">% Change</div>
               <div
-                className={`text-right font-semibold font-mono tabular-nums ${
-                  (selectedCompany.changePercent ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'
-                }`}
+                className={`text-right font-semibold font-mono tabular-nums ${(selectedCompany.changePercent ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'
+                  }`}
               >
                 {formatPercent(selectedCompany.changePercent ?? 0)}
               </div>
 
               <div className="opacity-70 text-xs">Mcap Δ</div>
               <div
-                className={`text-right font-semibold font-mono tabular-nums ${
-                  (selectedCompany.marketCapDiff ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'
-                }`}
+                className={`text-right font-semibold font-mono tabular-nums ${(selectedCompany.marketCapDiff ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'
+                  }`}
               >
                 {selectedCompany.marketCapDiff == null ? '—' : formatMarketCapDiff(selectedCompany.marketCapDiff)}
               </div>

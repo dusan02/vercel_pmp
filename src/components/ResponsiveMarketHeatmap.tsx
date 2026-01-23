@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { MarketHeatmap, CompanyNode, useElementResize, HeatmapMetric } from './MarketHeatmap';
-import { MobileTreemap } from './MobileTreemap';
 import { useHeatmapData } from '@/hooks/useHeatmapData';
 import { useHeatmapMetric } from '@/hooks/useHeatmapMetric';
 import { HeatmapMetricButtons } from './HeatmapMetricButtons';
@@ -162,13 +161,13 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
     if (!width || !height || width < minDimension || height < minDimension) {
       console.log('⚠️ Heatmap: Dimensions too small or not ready', { width, height, isMounted, isMobile, minDimension });
       return (
-        <div 
+        <div
           className="absolute inset-0 flex flex-col items-center justify-center gap-2 z-40"
           style={{
             background: '#0f0f0f',
           }}
         >
-          <div 
+          <div
             className="animate-pulse text-sm"
             style={{
               color: 'rgba(255, 255, 255, 0.7)',
@@ -176,7 +175,7 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
           >
             Measuring container... ({width}x{height})
           </div>
-          <div 
+          <div
             className="text-xs"
             style={{
               color: 'rgba(255, 255, 255, 0.5)',
@@ -196,20 +195,20 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
 
     if (shouldShowLoading) {
       return (
-        <div 
+        <div
           className="absolute inset-0 flex flex-col items-center justify-center gap-3 z-40"
           style={{
             background: '#0f0f0f',
           }}
         >
-          <div 
+          <div
             className="animate-spin rounded-full border-b-2 border-white"
             style={{
               width: '32px',
               height: '32px',
             }}
           />
-          <span 
+          <span
             className="text-base font-semibold"
             style={{
               color: '#ffffff',
@@ -217,7 +216,7 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
           >
             Loading heatmap data...
           </span>
-          <span 
+          <span
             className="text-sm text-center max-w-xs"
             style={{
               color: 'rgba(255, 255, 255, 0.6)',
@@ -250,13 +249,13 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
     // No data state - REFAKTOROVANÝ
     if (!data || data.length === 0) {
       return (
-        <div 
+        <div
           className="absolute inset-0 flex flex-col items-center justify-center gap-3 z-40"
           style={{
             background: '#0f0f0f',
           }}
         >
-          <div 
+          <div
             className="text-6xl mb-2"
             style={{
               opacity: 0.3,
@@ -264,7 +263,7 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
           >
             📈
           </div>
-          <span 
+          <span
             className="text-base font-semibold"
             style={{
               color: '#ffffff',
@@ -272,7 +271,7 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
           >
             No data available
           </span>
-          <span 
+          <span
             className="text-sm"
             style={{
               color: 'rgba(255, 255, 255, 0.6)',
