@@ -411,35 +411,28 @@
   -webkit-backface-visibility: hidden;
 }
 
-/* Heatmap screen - full screen */
-/* CRITICAL: Container ends exactly at top edge of tabbar (no gap, no overlap) */
+/* Heatmap screen - NOVÝ PRÍSTUP - úplne nový layout */
+/* CRITICAL: MobileTreemapNew handles its own positioning with position: fixed */
 @media (max-width: 1023px) {
   .mobile-app-screen.screen-heatmap {
-    position: fixed !important;
-    /* CRITICAL: Fixed inset to prevent height collapse */
+    position: relative !important;
+    /* CRITICAL: Let MobileTreemapNew handle positioning */
     top: 0 !important;
     left: 0 !important;
     right: 0 !important;
-    /* CRITICAL: Heatmap screen ends at top edge of tabbar (not at bottom of screen) */
-    bottom: var(--tabbar-h, 72px) !important;
-    /* CRITICAL: Account for safe-area-inset-bottom if tabbar has it */
+    bottom: auto !important;
     width: 100% !important;
     padding: 0 !important;
-    padding-bottom: 0 !important;
-    /* CRITICAL: No padding-bottom - heatmap extends to navigation */
     margin: 0 !important;
-    margin-bottom: 0 !important;
-    /* CRITICAL: No margin-bottom - heatmap extends to navigation */
-    background: #000;
+    background: transparent !important;
+    /* CRITICAL: Transparent background - MobileTreemapNew has its own */
     z-index: 1;
-    /* CRITICAL: Lower than tabbar (9999) to ensure proper screen stack */
     overflow: hidden !important;
-    /* CRITICAL: Disable transform/transition on iOS Safari - prevents stacking context issues with position: fixed */
+    /* CRITICAL: Disable transform/transition - not needed with new approach */
     transform: none !important;
     transition: none !important;
-    /* CRITICAL: Flex layout for proper height calculation */
-    display: flex !important;
-    flex-direction: column !important;
+    display: block !important;
+    /* CRITICAL: Simple block layout - no flex needed */
   }
 }
 
@@ -465,42 +458,15 @@
   }
 }
 
-/* Fullscreen heatmap container */
-/* CRITICAL: ONE source of truth - no duplicates! */
-/* CRITICAL: Explicit flex chain on all 4 layers to prevent height collapse */
+/* NOVÝ PRÍSTUP - MobileTreemapNew handles everything */
+/* No need for complex wrapper CSS - component is self-contained */
 @media (max-width: 1023px) {
-
+  /* Remove all old wrapper styles - not needed with new approach */
   .mobile-app-screen.screen-heatmap .mobile-treemap-wrapper,
   .mobile-app-screen.screen-heatmap .heatmap-preview-container,
   .mobile-app-screen.screen-heatmap .heatmap-preview,
   .mobile-app-screen.screen-heatmap .mobile-treemap-grid {
-    flex: 1 !important;
-    min-height: 0 !important;
-  }
-
-  .mobile-app-screen.screen-heatmap .mobile-treemap-wrapper {
-    width: 100% !important;
-    display: flex !important;
-    flex-direction: column !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    padding-bottom: 0 !important;
-    /* CRITICAL: No padding-bottom - heatmap extends to navigation, CookieConsent is fixed and doesn't affect layout */
-    margin-bottom: 0 !important;
-    /* CRITICAL: No margin-bottom - heatmap extends to navigation */
-    box-sizing: border-box !important;
-    overflow: hidden;
-    position: relative;
-    /* CRITICAL: Ensure wrapper extends to bottom edge - no gap */
-    flex: 1 !important;
-    min-height: 0 !important;
-  }
-
-  .mobile-app-screen.screen-heatmap .heatmap-preview-container {
-    width: 100% !important;
-    position: relative;
-    margin: 0;
-    padding: 0;
+    /* Styles removed - MobileTreemapNew handles its own layout */
   }
 }
 

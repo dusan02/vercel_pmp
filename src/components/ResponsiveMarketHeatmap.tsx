@@ -1,11 +1,18 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { MarketHeatmap, CompanyNode, useElementResize, HeatmapMetric } from './MarketHeatmap';
 import { MobileTreemap } from './MobileTreemap';
 import { useHeatmapData } from '@/hooks/useHeatmapData';
 import { useHeatmapMetric } from '@/hooks/useHeatmapMetric';
 import { HeatmapMetricButtons } from './HeatmapMetricButtons';
+
+// Dynamic import for new mobile treemap (client-side only)
+const MobileTreemapNew = dynamic(
+  () => import('@/components/MobileTreemapNew').then(mod => ({ default: mod.MobileTreemapNew })),
+  { ssr: false }
+);
 
 export type ResponsiveMarketHeatmapProps = {
   /** API endpoint pre načítanie dát (default: /api/heatmap) */
@@ -235,8 +242,9 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
         );
       }
 
+      // Use new MobileTreemapNew component - completely new approach
       return (
-        <MobileTreemap
+        <MobileTreemapNew
           data={data || []}
           timeframe={timeframe}
           metric={metric}
