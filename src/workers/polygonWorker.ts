@@ -997,7 +997,11 @@ export async function bootstrapPreviousCloses(
     return null;
   };
 
-  const expectedPrevTradingDay = getLastTradingDay(createETDate(date));
+  // Trading-day anchors (ET-safe)
+  // - todayTradingDay: the trading day corresponding to `date` (weekends/holidays collapse to last trading day)
+  // - expectedPrevYMD: the calendar string we *expect* the previous close to belong to (typically yesterday trading day)
+  const todayTradingDay = getLastTradingDay(createETDate(date));
+  const expectedPrevTradingDay = getLastTradingDay(todayTradingDay);
   const expectedPrevYMD = getDateET(expectedPrevTradingDay);
 
   for (const symbol of tickers) {
@@ -1094,6 +1098,25 @@ export async function bootstrapPreviousCloses(
               }
             }),
           `dailyRef.upsert:${symbol}`
+        );
+
+        // Also ensure today's trading-day DailyRef has `previousClose` populated.
+        // Many parts of the app read today's row for reference, even before any snapshot ingest runs.
+        await dbWriteRetry(
+          () =>
+            prisma.dailyRef.upsert({
+              where: { symbol_date: { symbol, date: todayTradingDay } },
+              update: {
+                previousClose: prevClose,
+                updatedAt: new Date()
+              },
+              create: {
+                symbol,
+                date: todayTradingDay,
+                previousClose: prevClose
+              }
+            }),
+          `dailyRef.upsert(todayPrevClose):${symbol}`
         );
 
         // Also update Ticker.latestPrevClose and latestPrevCloseDate for consistency

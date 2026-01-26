@@ -18,6 +18,7 @@ import { getDateET } from '@/lib/utils/dateET';
 import { getUniverse } from '@/lib/redis/operations';
 import { bootstrapPreviousCloses } from '@/workers/polygonWorker';
 import { clearRedisPrevCloseCache } from '@/lib/utils/redisCacheUtils';
+import { verifyCronAuth } from '@/lib/utils/cronAuth';
 import { 
   acquireStaticUpdateLock, 
   renewStaticUpdateLock, 
@@ -42,11 +43,9 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now();
 
   try {
-    // Verify authorization
-    const authHeader = request.headers.get('authorization');
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET_KEY}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Verify authorization (shared helper)
+    const authError = verifyCronAuth(request);
+    if (authError) return authError;
 
     console.log('🚀 Starting daily static data update with refresh in place...');
 
@@ -97,15 +96,20 @@ export async function POST(request: NextRequest) {
         console.log('⚠️  HARD RESET MODE: Will reset Ticker.latestPrevClose to null before bootstrap');
       }
       
-      // STEP 2: Bootstrap previous closes from Polygon FIRST (prepare new data in memory)
-      // This ensures we have data ready before deleting old data
-      console.log('\n📝 Step 2: Bootstrapping previous closes from Polygon (prepare new data)...');
+      // STEP 2: Refresh closing prices in DB (delete today/yesterday refs; optional hard reset)
+      // Safe because we hold a lock during the update window.
+      console.log(`\n📝 Step 2: Refreshing closing prices in database (${shouldHardReset ? 'HARD RESET' : 'cleanup stale entries'})...`);
       const apiKey = process.env.POLYGON_API_KEY;
       let refreshResults = { updatedCount: 0, deletedToday: 0, deletedLastTradingDay: 0 };
       
       if (!apiKey) {
-        console.error('❌ POLYGON_API_KEY not configured, skipping bootstrap');
+        console.error('❌ POLYGON_API_KEY not configured, skipping close refresh/bootstrap');
       } else {
+        refreshResults = await refreshClosingPricesInDB(shouldHardReset);
+        console.log(
+          `✅ Refresh complete: ${refreshResults.deletedToday + refreshResults.deletedLastTradingDay} DailyRef entries deleted, ${refreshResults.updatedCount} tickers reset`
+        );
+
         // Get universe tickers (or use all tracked tickers)
         let tickers = await getUniverse('sp500');
         if (tickers.length === 0) {
@@ -115,7 +119,8 @@ export async function POST(request: NextRequest) {
         
         const calendarDateETStr = getDateET();
         try {
-          // Bootstrap first - this populates DB with new prevClose values
+          // STEP 3: Bootstrap previous closes from Polygon (re-populate DB refs + Redis cache)
+          console.log('\n📝 Step 3: Bootstrapping previous closes from Polygon...');
           await bootstrapPreviousCloses(tickers, apiKey, calendarDateETStr);
           console.log(`✅ Bootstrap complete: Previous closes reloaded from Polygon for ${tickers.length} tickers`);
         } catch (error) {
@@ -131,13 +136,6 @@ export async function POST(request: NextRequest) {
           );
           console.log(`✅ PreviousClose (fallback): ${prevCloseResults.success} updated, ${prevCloseResults.failed} failed`);
         }
-        
-        // STEP 3: Refresh closing prices (delete only stale/broken entries, new ones already populated)
-        // This is now safe because bootstrap already populated new values
-        // If hardReset=true, also reset Ticker.latestPrevClose to null
-        console.log(`\n📝 Step 3: Refreshing closing prices in database (${shouldHardReset ? 'HARD RESET' : 'cleanup stale entries'})...`);
-        refreshResults = await refreshClosingPricesInDB(shouldHardReset);
-        console.log(`✅ Refresh complete: ${refreshResults.deletedToday + refreshResults.deletedLastTradingDay} DailyRef entries deleted, ${refreshResults.updatedCount} tickers reset (new ones already populated by bootstrap)`);
       }
 
       // STEP 4: Update sharesOutstanding

@@ -134,5 +134,28 @@ module.exports = {
       cron_restart: "0 10 * * *",
       autorestart: false,
     },
+    {
+      // Daily early-morning refresh (prevClose + sharesOutstanding + consistency checks)
+      // Runs the same logic as Vercel cron (/api/cron/update-static-data) but on the VPS via PM2.
+      name: "daily-static-data-refresh",
+      script: "scripts/trigger-daily-refresh.ts",
+      interpreter: "npx",
+      interpreter_args: "tsx",
+      cwd: "/var/www/premarketprice",
+      instances: 1,
+      exec_mode: "fork",
+      env_production: {
+        NODE_ENV: "production",
+        // Call the local Next.js server directly (avoids external DNS/SSL issues)
+        BASE_URL: "http://127.0.0.1:3000",
+        CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || process.env.CRON_SECRET_KEY,
+      },
+      error_file: "/var/log/pm2/daily-static-data-refresh-error.log",
+      out_file: "/var/log/pm2/daily-static-data-refresh-out.log",
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      // 09:00 UTC ~= 04:00 ET (winter) / 05:00 ET (summer)
+      cron_restart: "0 9 * * *",
+      autorestart: false,
+    },
   ],
 };
