@@ -18,7 +18,7 @@ import {
   atomicUpdatePrice
 } from '@/lib/redis/operations';
 import { PriceData } from '@/lib/types';
-import { detectSession, isMarketOpen, isMarketHoliday, mapToRedisSession, getLastTradingDay } from '@/lib/utils/timeUtils';
+import { detectSession, isMarketOpen, isMarketHoliday, mapToRedisSession, getLastTradingDay, getTradingDay } from '@/lib/utils/timeUtils';
 import { nowET, getDateET, createETDate, isWeekendET, toET } from '@/lib/utils/dateET';
 import { resolveEffectivePrice, calculatePercentChange } from '@/lib/utils/priceResolver';
 import { getPricingState, canOverwritePrice, getPreviousCloseTTL } from '@/lib/utils/pricingStateMachine';
@@ -560,11 +560,10 @@ export async function ingestBatch(
   const calendarDateETStr = getDateET(now); // YYYY-MM-DD calendar date in ET
   const calendarDateET = createETDate(calendarDateETStr);
   
-  // For prevClose lookup: we need prevClose for TODAY's trading session
-  // Model A: prevCloseKey(todayTradingDay) = close(yesterdayTradingDay)
-  // So we read from todayTradingDay, not lastTradingDay
-  const todayTradingDay = getLastTradingDay(calendarDateET); // If today is trading day, returns today; if not, returns last trading day
-  const todayTradingDateStr = getDateET(todayTradingDay); // Trading date string for prevClose lookup
+  // For prevClose lookup: key by CALENDAR ET date.
+  // prevClose(Mon) should be Fri close; prevClose(Tue) should be Mon close, etc.
+  const todayTradingDay = getTradingDay(calendarDateET);
+  const prevTradingDay = getLastTradingDay(todayTradingDay); // strictly previous trading day
   
   const results: IngestResult[] = [];
 
@@ -624,18 +623,18 @@ export async function ingestBatch(
     // Non-fatal: continue if lock check fails
   }
 
-  // Fetch previous closes from Redis (Model A: prevCloseKey(todayTradingDay) = close(yesterdayTradingDay))
-  const prevCloseMap = await getPrevClose(todayTradingDateStr, tickers);
+  // Fetch previous closes from Redis (keyed by calendar date)
+  const prevCloseMap = await getPrevClose(calendarDateETStr, tickers);
   
   // If no previous closes in Redis, try to load from DB
-  // Model A: DailyRef(date=todayTradingDay).previousClose = close(yesterdayTradingDay)
+  // DailyRef(date=calendarDateET).previousClose = close(prevTradingDay)
   if (prevCloseMap.size === 0) {
     console.log('⚠️ No previous closes found in Redis, checking DB...');
     try {
       const dailyRefs = await prisma.dailyRef.findMany({
         where: {
           symbol: { in: tickers },
-          date: todayTradingDay // Use todayTradingDay (Model A: DailyRef(D).previousClose = close(D-1))
+          date: calendarDateET
         },
         select: { symbol: true, previousClose: true }
       });
@@ -644,8 +643,8 @@ export async function ingestBatch(
         console.log(`✅ Loaded ${dailyRefs.length} previous closes from DB`);
         for (const ref of dailyRefs) {
           prevCloseMap.set(ref.symbol, ref.previousClose);
-          // Also update Redis cache (Model A: prevCloseKey(todayTradingDay) = close(yesterdayTradingDay))
-          await setPrevClose(todayTradingDateStr, ref.symbol, ref.previousClose);
+          // Also update Redis cache (keyed by calendar date)
+          await setPrevClose(calendarDateETStr, ref.symbol, ref.previousClose);
         }
       }
     } catch (dbError) {
@@ -665,8 +664,8 @@ export async function ingestBatch(
     // bootstrapPreviousCloses expects calendar date, will calculate trading day internally
     await bootstrapPreviousCloses(toFetch, apiKey, calendarDateETStr);
     
-    // Reload map after bootstrap (use todayTradingDateStr)
-    const refreshedMap = await getPrevClose(todayTradingDateStr, toFetch);
+    // Reload map after bootstrap (keyed by calendar date)
+    const refreshedMap = await getPrevClose(calendarDateETStr, toFetch);
     refreshedMap.forEach((val, key) => prevCloseMap.set(key, val));
   }
 
@@ -997,13 +996,15 @@ export async function bootstrapPreviousCloses(
     return null;
   };
 
-  // Trading-day anchors (ET-safe)
-  // For any calendar date (including weekends/holidays), the "previous close" we want is:
-  // the close of the last trading day at or before that calendar date.
+  // PrevClose model (calendar-date keyed):
+  // - Key: calendar date in ET (YYYY-MM-DD)
+  // - Value: close of the previous TRADING day
   //
-  // Example: Monday pre-market -> previous close should be Friday close (NOT Thursday).
-  const todayTradingDay = getLastTradingDay(createETDate(date));
-  const expectedPrevTradingDay = todayTradingDay;
+  // Example: Monday session -> prevClose should be Friday close.
+  const calendarDateET = createETDate(date);
+  const todayTradingDay = getTradingDay(calendarDateET);
+  const prevTradingDay = getLastTradingDay(todayTradingDay);
+  const expectedPrevTradingDay = prevTradingDay;
   const expectedPrevYMD = getDateET(expectedPrevTradingDay);
 
   for (const symbol of tickers) {
@@ -1078,10 +1079,11 @@ export async function bootstrapPreviousCloses(
 
       // Save to DB and Redis if we found a valid previous close
       if (prevClose > 0 && prevTradingDay) {
+        // Redis key: calendar date (ET)
         await setPrevClose(date, symbol, prevClose);
         
         // Save to DB immediately for persistence
-        // CRITICAL: Use prevTradingDay (when close happened), not "today"
+        // CRITICAL: Use prevTradingDay (when close happened) for DailyRef(regClose) & Ticker.latestPrevCloseDate
         // Also save as regularClose for the previous trading day (this is the regular session close)
         await dbWriteRetry(
           () =>
@@ -1102,19 +1104,18 @@ export async function bootstrapPreviousCloses(
           `dailyRef.upsert:${symbol}`
         );
 
-        // Also ensure today's trading-day DailyRef has `previousClose` populated.
-        // Many parts of the app read today's row for reference, even before any snapshot ingest runs.
+        // Ensure CALENDAR-date DailyRef has `previousClose` populated (used by APIs/UI for current session).
         await dbWriteRetry(
           () =>
             prisma.dailyRef.upsert({
-              where: { symbol_date: { symbol, date: todayTradingDay } },
+              where: { symbol_date: { symbol, date: calendarDateET } },
               update: {
                 previousClose: prevClose,
                 updatedAt: new Date()
               },
               create: {
                 symbol,
-                date: todayTradingDay,
+                date: calendarDateET,
                 previousClose: prevClose
               }
             }),
@@ -1128,7 +1129,7 @@ export async function bootstrapPreviousCloses(
               where: { symbol },
               data: {
                 latestPrevClose: prevClose,
-                latestPrevCloseDate: prevTradingDay
+                latestPrevCloseDate: prevTradingDay // date of the close
               }
             }),
           `ticker.update(prevClose):${symbol}`
@@ -1207,7 +1208,7 @@ async function main() {
         let isStale = false;
         try {
           const { prisma } = await import('@/lib/db/prisma');
-          const expectedPrevYMD = getDateET(getLastTradingDay(createETDate(today)));
+          const expectedPrevYMD = getDateET(getLastTradingDay(getTradingDay(createETDate(today))));
           const sampleSymbols = tickers.slice(0, 25);
           const rows = await prisma.ticker.findMany({
             where: { symbol: { in: sampleSymbols } },

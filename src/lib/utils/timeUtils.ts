@@ -215,6 +215,23 @@ export function getLastTradingDay(beforeDate?: Date): Date {
 }
 
 /**
+ * Get the trading day for a given calendar date (ET).
+ * - If the given date is a trading day, returns THAT same ET calendar date at ET midnight.
+ * - If weekend/holiday, returns the most recent prior trading day.
+ *
+ * This differs from `getLastTradingDay()`, which returns the previous trading day strictly before the given date.
+ */
+export function getTradingDay(date?: Date): Date {
+  const base = date || nowET();
+  const w = toET(base).weekday;
+  const isWeekend = w === 0 || w === 6;
+  if (!isWeekend && !isMarketHoliday(base)) {
+    return createETDate(getDateET(base)); // same calendar date in ET
+  }
+  return getLastTradingDay(base);
+}
+
+/**
  * Get the last trading day's date as string (YYYY-MM-DD)
  */
 export function getLastTradingDayString(beforeDate?: Date): string {
