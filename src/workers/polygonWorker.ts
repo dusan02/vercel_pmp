@@ -1540,9 +1540,11 @@ async function main() {
       const lastUpdateMap = new Map<string, number>();
       
       // Adjust intervals based on session
-      const isPreMarketOrAfterHours = session === 'pre' || session === 'after' || (session === 'closed' && !isWeekendOrHoliday);
-      const PREMIUM_INTERVAL = isPreMarketOrAfterHours ? 5 * 60 * 1000 : 60 * 1000; // 5min for pre-market, 60s for live
-      const REST_INTERVAL = 5 * 60 * 1000; // 5 min for rest (same for all)
+      // Goal: keep major tickers highly fresh even in pre-market, while keeping overall API load reasonable.
+      const isPreMarket = session === 'pre';
+      const isOffHours = session === 'after' || (session === 'closed' && !isWeekendOrHoliday);
+      const PREMIUM_INTERVAL = isPreMarket ? 60 * 1000 : isOffHours ? 2 * 60 * 1000 : 60 * 1000; // pre: 60s, off-hours: 2min, live: 60s
+      const REST_INTERVAL = 5 * 60 * 1000; // keep rest at 5min to avoid rate-limit pressure
 
       // Load last update times from Redis (using freshness metrics hash - O(1))
       if (redisClient && redisClient.isOpen) {
@@ -1583,7 +1585,7 @@ async function main() {
       const restNeedingUpdate = tickersNeedingUpdate.filter(t => !premiumTickers.includes(t));
       const prioritizedTickers = [...premiumNeedingUpdate, ...restNeedingUpdate];
 
-      const intervalDesc = isPreMarketOrAfterHours ? '5min' : '60s';
+      const intervalDesc = isPreMarket ? '60s' : isOffHours ? '2min' : '60s';
       console.log(`📊 Processing ${prioritizedTickers.length} tickers: ${premiumNeedingUpdate.length} premium (${intervalDesc}), ${restNeedingUpdate.length} rest (5min)`);
 
       // Dynamic batch size and delay based on rate limit
