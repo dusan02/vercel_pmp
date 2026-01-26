@@ -998,10 +998,12 @@ export async function bootstrapPreviousCloses(
   };
 
   // Trading-day anchors (ET-safe)
-  // - todayTradingDay: the trading day corresponding to `date` (weekends/holidays collapse to last trading day)
-  // - expectedPrevYMD: the calendar string we *expect* the previous close to belong to (typically yesterday trading day)
+  // For any calendar date (including weekends/holidays), the "previous close" we want is:
+  // the close of the last trading day at or before that calendar date.
+  //
+  // Example: Monday pre-market -> previous close should be Friday close (NOT Thursday).
   const todayTradingDay = getLastTradingDay(createETDate(date));
-  const expectedPrevTradingDay = getLastTradingDay(todayTradingDay);
+  const expectedPrevTradingDay = todayTradingDay;
   const expectedPrevYMD = getDateET(expectedPrevTradingDay);
 
   for (const symbol of tickers) {

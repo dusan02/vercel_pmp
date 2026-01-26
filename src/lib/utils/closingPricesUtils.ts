@@ -26,28 +26,27 @@ export async function refreshClosingPricesInDB(
     console.log('🔄 Refreshing closing prices in database (refresh in place)...');
   }
   
-  // Get today's trading day (ET) and yesterday's trading day
+  // Get today's calendar date (ET) and last trading day at or before today.
   const today = getDateET();
   const todayDate = createETDate(today);
-  const todayTradingDay = getLastTradingDay(todayDate);
-  const yesterdayTradingDay = getLastTradingDay(todayTradingDay);
+  const lastTradingDay = getLastTradingDay(todayDate);
   
-  // Delete DailyRef entries for todayTradingDay and yesterdayTradingDay (will be repopulated by bootstrap)
+  // Delete DailyRef entries for today's calendar date and last trading day (will be repopulated by bootstrap)
   // This is safe because we'll immediately repopulate them
   const deletedToday = await prisma.dailyRef.deleteMany({
     where: {
-      date: todayTradingDay
+      date: todayDate
     }
   });
   
   const deletedLastTradingDay = await prisma.dailyRef.deleteMany({
     where: {
-      date: yesterdayTradingDay
+      date: lastTradingDay
     }
   });
   
   console.log(`✅ Deleted ${deletedToday.count} DailyRef entries for today`);
-  console.log(`✅ Deleted ${deletedLastTradingDay.count} DailyRef entries for yesterday trading day`);
+  console.log(`✅ Deleted ${deletedLastTradingDay.count} DailyRef entries for last trading day`);
   
   let updatedCount = 0;
   
