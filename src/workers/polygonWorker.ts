@@ -1601,16 +1601,19 @@ async function main() {
         console.log(`📥 Processing batch ${batchNum}/${totalBatches} (${batch.length} tickers)...`);
 
         try {
-          await ingestBatch(batch, apiKey);
-          hasSuccess = true;
+          const results = await ingestBatch(batch, apiKey);
+          const successSymbols = results.filter(r => r.success).map(r => r.symbol);
+          if (successSymbols.length > 0) {
+            hasSuccess = true;
+          }
 
           // Update freshness metrics (O(1) hash operation)
           if (redisClient && redisClient.isOpen) {
             const { updateFreshnessTimestampsBatch } = await import('@/lib/utils/freshnessMetrics');
             const freshnessUpdates = new Map<string, number>();
-            batch.forEach(ticker => {
-              freshnessUpdates.set(ticker, now);
-            });
+            // CRITICAL: only mark freshness for tickers that actually succeeded.
+            // Otherwise failed tickers look "fresh" and won't be retried until the next interval.
+            successSymbols.forEach(ticker => freshnessUpdates.set(ticker, now));
             await updateFreshnessTimestampsBatch(freshnessUpdates).catch(err => {
               console.warn('Failed to update freshness metrics:', err);
             });
