@@ -43,6 +43,11 @@ export function HeatmapPreview({ activeView, wrapperClass }: { activeView?: stri
 
   // Handler pre klik na pozadí (nie na buttonoch)
   const handleBackgroundClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    // Na mobile (ak sme v heatmap tabe), nechceme redirect, aby fungoval bottom sheet
+    if (!isDesktop && activeView === 'heatmap') {
+      return;
+    }
+
     // Skontroluj, či klik nebol na button alebo interaktívnom elemente
     const target = e.target as HTMLElement;
     const isInteractive = target.closest('button') ||
@@ -52,7 +57,7 @@ export function HeatmapPreview({ activeView, wrapperClass }: { activeView?: stri
     if (!isInteractive) {
       router.push('/heatmap');
     }
-  }, [router]);
+  }, [router, isDesktop, activeView]);
 
   // Prevent hydration mismatch by only rendering after mount OR using CSS gating for SSR
   if (!isMounted) return null;
@@ -80,9 +85,8 @@ export function HeatmapPreview({ activeView, wrapperClass }: { activeView?: stri
 
       {/* Content Wrapper - simplified: removed unnecessary inner div */}
       <div
-        className={`relative w-full bg-black overflow-hidden group heatmap-preview-container ${
-          isDesktop ? 'heatmap-preview-desktop' : 'flex-1'
-        }`}
+        className={`relative w-full bg-black overflow-hidden group heatmap-preview-container ${isDesktop ? 'heatmap-preview-desktop' : 'flex-1'
+          }`}
         style={isDesktop ? { cursor: 'pointer' } : { cursor: 'pointer' }}
         onClick={handleBackgroundClick}
       >

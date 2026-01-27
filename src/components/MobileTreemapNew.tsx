@@ -55,7 +55,6 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   const headerRef = useRef<HTMLDivElement | null>(null);
   const [containerSize, setContainerSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
   const [headerH, setHeaderH] = useState(48);
-  const [availableHeight, setAvailableHeight] = useState(0);
   // Detail panel state
   const [selectedCompany, setSelectedCompany] = useState<CompanyNode | null>(null);
   const closeSheet = useCallback(() => setSelectedCompany(null), []);
@@ -94,14 +93,6 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
     return colorScale(value);
   }, [metric, colorScale]);
 
-  // Calculate available height: viewport - header - tabbar
-  const calculateAvailableHeight = useCallback(() => {
-    const vh = window.visualViewport?.height ?? window.innerHeight;
-    const tabbarH = 72; // var(--tabbar-h)
-    const headerHeight = headerH;
-    const available = vh - headerHeight - tabbarH;
-    return Math.max(0, available);
-  }, [headerH]);
 
   // Measure header height
   useLayoutEffect(() => {
@@ -111,14 +102,17 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
     }
   }, []);
 
-  // Update container size and available height
+  // Update container size
   useLayoutEffect(() => {
     const updateSize = () => {
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
-        setContainerSize({ width: rect.width, height: rect.height });
+        // Use floor/ceil to avoid subpixel gaps
+        setContainerSize({
+          width: Math.floor(rect.width),
+          height: Math.floor(rect.height)
+        });
       }
-      setAvailableHeight(calculateAvailableHeight());
     };
 
     updateSize();
@@ -129,19 +123,17 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
       window.removeEventListener('resize', updateSize);
       window.visualViewport?.removeEventListener('resize', updateSize);
     };
-  }, [calculateAvailableHeight]);
+  }, []);
 
   // Build treemap hierarchy using buildHeatmapHierarchy (same as original)
-  const treemapData = useMemo(() => {
-    if (sortedData.length === 0 || containerSize.width <= 0 || availableHeight <= 0) return null;
+  const treemapResult = useMemo(() => {
+    if (sortedData.length === 0 || containerSize.width <= 0 || containerSize.height <= 0) return { tiles: [], sectors: [] };
 
-    // Use buildHeatmapHierarchy for sector-based layout
     const sectorHierarchy = buildHeatmapHierarchy(sortedData, metric);
     const sectors = sectorHierarchy.children ?? [];
 
-    if (sectors.length === 0) return null;
+    if (sectors.length === 0) return { tiles: [], sectors: [] };
 
-    // Calculate sector heights (vertical layout - sectors stacked)
     const sumSector = (sector: any) => {
       const children = sector?.children ?? [];
       return children.reduce((sum: number, c: any) => sum + (c?.value || 0), 0);
@@ -150,32 +142,42 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
     const sectorSums = sectors.map(sumSector);
     const totalSum = sectorSums.reduce((a, b) => a + b, 0) || 1;
 
-    // Use availableHeight for accurate calculation
-    const baseHeight = availableHeight;
-    const MIN_SECTOR_HEIGHT = 56;
+    // CRITICAL: Use measured container height to eliminate gaps
+    const baseHeight = containerSize.height;
+    const MIN_SECTOR_HEIGHT = 48; // Lowered slightly to allow more flexibility
     const sectorHeights: number[] = [];
+    let allocatedHeight = 0;
 
     for (let i = 0; i < sectors.length; i++) {
-      const raw = Math.round(baseHeight * ((sectorSums[i] || 0) / totalSum));
-      sectorHeights.push(Math.max(MIN_SECTOR_HEIGHT, raw));
+      if (i === sectors.length - 1) {
+        // Last sector takes exactly what's left to avoid gaps
+        sectorHeights.push(Math.max(MIN_SECTOR_HEIGHT, baseHeight - allocatedHeight));
+      } else {
+        const raw = Math.round(baseHeight * ((sectorSums[i] || 0) / totalSum));
+        const finalH = Math.max(MIN_SECTOR_HEIGHT, raw);
+        sectorHeights.push(finalH);
+        allocatedHeight += finalH;
+      }
     }
 
-    // Build treemap for each sector
     const allLeaves: Array<{ x0: number; y0: number; x1: number; y1: number; company: CompanyNode }> = [];
+    const sectorHeaders: Array<{ name: string; y: number; height: number }> = [];
     let currentY = 0;
 
     sectors.forEach((sector: any, sectorIdx: number) => {
       if (!sector.children || sector.children.length === 0) return;
 
       const sectorHeight: number = sectorHeights[sectorIdx] ?? 0;
-      if (sectorHeight <= 0) return; // Skip if invalid height
+      if (sectorHeight <= 0) return;
+
+      sectorHeaders.push({ name: sector.name, y: currentY, height: sectorHeight });
 
       const sectorHierarchyNode = hierarchy(sector)
         .sum((d: any) => d.value || 0)
         .sort((a: any, b: any) => (b.value || 0) - (a.value || 0));
 
       const width: number = containerSize.width ?? 0;
-      if (width <= 0) return; // Skip if invalid width
+      if (width <= 0) return;
 
       const sectorTreemap = treemap()
         .size([width, sectorHeight])
@@ -185,7 +187,6 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
 
       sectorTreemap(sectorHierarchyNode);
 
-      // Extract leaves and adjust Y position
       sectorHierarchyNode.leaves().forEach((leaf: any) => {
         allLeaves.push({
           x0: leaf.x0 || 0,
@@ -199,74 +200,129 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
       currentY += sectorHeight;
     });
 
-    return allLeaves;
-  }, [sortedData, metric, containerSize, availableHeight]);
+    return { tiles: allLeaves, sectors: sectorHeaders };
+  }, [sortedData, metric, containerSize]);
 
-  // Render treemap tiles
-  const renderTiles = () => {
+  const { tiles: treemapData, sectors: sectorHeaders } = treemapResult;
+
+  // Render treemap tiles and headers
+  const renderHeatmapContent = () => {
     if (!treemapData || !Array.isArray(treemapData)) return null;
 
-    return treemapData.map((leaf, index) => {
-      const company = leaf.company;
-      const color = getColor(company);
-      const x = leaf.x0;
-      const y = leaf.y0;
-      const width = leaf.x1 - leaf.x0;
-      const height = leaf.y1 - leaf.y0;
-
-      if (width <= 0 || height <= 0) return null;
-
-      return (
-        <div
-          key={`${company.symbol}-${index}`}
-          onClick={() => {
-            setSelectedCompany(company);
-            onTileClick?.(company);
-          }}
-          style={{
-            position: 'absolute',
-            left: `${x}px`,
-            top: `${y}px`,
-            width: `${width}px`,
-            height: `${height}px`,
-            background: color,
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            cursor: 'pointer',
-            transition: 'opacity 0.2s',
-            WebkitTapHighlightColor: 'transparent',
-          }}
-          onTouchStart={(e) => {
-            e.currentTarget.style.opacity = '0.8';
-          }}
-          onTouchEnd={(e) => {
-            e.currentTarget.style.opacity = '1';
-          }}
-        >
-          <div style={{
-            fontSize: Math.min(width, height) > 60 ? '12px' : '10px',
-            fontWeight: 'bold',
-            color: '#ffffff',
-            textAlign: 'center',
-            padding: '4px',
-          }}>
-            {company.symbol}
-          </div>
-          {Math.min(width, height) > 60 && (
+    return (
+      <>
+        {/* Sector Labels (Background) */}
+        {sectorHeaders.map((header, idx) => (
+          <div
+            key={`sector-${idx}`}
+            style={{
+              position: 'absolute',
+              top: `${header.y}px`,
+              left: 0,
+              width: '100%',
+              height: `${header.height}px`,
+              pointerEvents: 'none',
+              zIndex: 0,
+            }}
+          >
             <div style={{
+              position: 'sticky',
+              top: '0px',
+              padding: '4px 8px',
               fontSize: '10px',
-              color: 'rgba(255, 255, 255, 0.8)',
-              textAlign: 'center',
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              color: 'rgba(255, 255, 255, 0.2)',
+              letterSpacing: '0.05em',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              maxWidth: '80%',
             }}>
-              {formatPercent(company.changePercent)}
+              {header.name}
             </div>
-          )}
-        </div>
-      );
-    });
+          </div>
+        ))}
+
+        {/* Company Tiles */}
+        {treemapData.map((leaf, index) => {
+          const company = leaf.company;
+          const color = getColor(company);
+          const x = leaf.x0;
+          const y = leaf.y0;
+          const width = leaf.x1 - leaf.x0;
+          const height = leaf.y1 - leaf.y0;
+
+          if (width <= 0 || height <= 0) return null;
+
+          return (
+            <div
+              key={`${company.symbol}-${index}`}
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedCompany(company);
+                onTileClick?.(company);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setSelectedCompany(company);
+                  onTileClick?.(company);
+                }
+              }}
+              style={{
+                position: 'absolute',
+                left: `${x}px`,
+                top: `${y}px`,
+                width: `${width}px`,
+                height: `${height}px`,
+                background: color,
+                border: '1px solid rgba(0, 0, 0, 0.4)',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+                cursor: 'pointer',
+                transition: 'transform 0.15s ease-out, opacity 0.15s ease-out',
+                WebkitTapHighlightColor: 'transparent',
+                zIndex: 1,
+              }}
+              onTouchStart={(e) => {
+                e.currentTarget.style.transform = 'scale(0.96)';
+                e.currentTarget.style.opacity = '0.9';
+              }}
+              onTouchEnd={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+                e.currentTarget.style.opacity = '1';
+              }}
+            >
+              <div style={{
+                fontSize: Math.min(width, height) > 50 ? '13px' : '10px',
+                fontWeight: 700,
+                color: '#ffffff',
+                textAlign: 'center',
+                textShadow: '0 1px 2px rgba(0,0,0,0.5)',
+              }}>
+                {company.symbol}
+              </div>
+              {Math.min(width, height) > 40 && (
+                <div style={{
+                  fontSize: '9px',
+                  fontWeight: 500,
+                  color: 'rgba(255, 255, 255, 0.9)',
+                  textAlign: 'center',
+                  marginTop: '1px',
+                }}>
+                  {formatPercent(company.changePercent)}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </>
+    );
   };
 
   return (
@@ -296,9 +352,11 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
           left: 0,
           right: 0,
           zIndex: 100,
-          background: 'rgba(0,0,0,0.95)',
+          background: 'rgba(0,0,0,0.92)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
           borderBottom: '1px solid rgba(255,255,255,0.08)',
-          padding: '8px 10px',
+          padding: '8px 12px',
           paddingTop: 'calc(8px + env(safe-area-inset-top, 0px))',
           display: 'flex',
           alignItems: 'center',
@@ -307,20 +365,19 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
         }}
       >
         <div className="flex items-center gap-2 flex-shrink-0">
-          <BrandLogo size={28} />
-          <span className="text-white font-semibold text-sm whitespace-nowrap">PreMarketPrice</span>
+          <BrandLogo size={24} />
+          <span className="text-white font-bold text-sm tracking-tight">PreMarketPrice</span>
         </div>
         <div className="flex-1" />
         {onMetricChange && (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center bg-white/5 rounded-lg p-1 border border-white/10">
             <button
               type="button"
               onClick={() => onMetricChange('percent')}
-              className="flex items-center justify-center w-[44px] h-[44px] rounded-lg transition-colors"
+              className="px-3 h-8 rounded-md text-xs font-bold transition-all"
               style={{
-                background: metric === 'percent' ? '#2563eb' : '#1a1a1a',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                color: metric === 'percent' ? '#ffffff' : '#6b7280',
+                background: metric === 'percent' ? '#2563eb' : 'transparent',
+                color: metric === 'percent' ? '#ffffff' : '#94a3b8',
                 WebkitTapHighlightColor: 'transparent',
               }}
             >
@@ -329,11 +386,10 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
             <button
               type="button"
               onClick={() => onMetricChange('mcap')}
-              className="flex items-center justify-center w-[44px] h-[44px] rounded-lg transition-colors"
+              className="px-3 h-8 rounded-md text-xs font-bold transition-all"
               style={{
-                background: metric === 'mcap' ? '#2563eb' : '#1a1a1a',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                color: metric === 'mcap' ? '#ffffff' : '#6b7280',
+                background: metric === 'mcap' ? '#2563eb' : 'transparent',
+                color: metric === 'mcap' ? '#ffffff' : '#94a3b8',
                 WebkitTapHighlightColor: 'transparent',
               }}
             >
@@ -341,7 +397,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
             </button>
           </div>
         )}
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 ml-1">
           <LoginButton />
         </div>
       </div>
@@ -362,15 +418,15 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
           WebkitOverflowScrolling: 'touch',
         }}
       >
-        {sortedData.length > 0 && containerSize.width > 0 && availableHeight > 0 ? (
+        {sortedData.length > 0 && containerSize.width > 0 && containerSize.height > 0 ? (
           <div style={{
             position: 'relative',
             width: '100%',
             height: treemapData && Array.isArray(treemapData)
-              ? Math.max(availableHeight, treemapData[treemapData.length - 1]?.y1 || availableHeight)
-              : availableHeight,
+              ? Math.max(containerSize.height, (treemapData[treemapData.length - 1]?.y1 || 0))
+              : containerSize.height,
           }}>
-            {renderTiles()}
+            {renderHeatmapContent()}
           </div>
         ) : (
           <div style={{
@@ -379,7 +435,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
             alignItems: 'center',
             justifyContent: 'center',
             gap: '12px',
-            height: '100%',
+            height: `${containerSize.height}px`,
             background: '#000',
           }}>
             <div
@@ -410,7 +466,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
             style={{
               background: 'rgba(0,0,0,0.6)',
               zIndex: 9998,
-              bottom: 'calc(var(--tabbar-real-h, var(--tabbar-h, 72px)) + env(safe-area-inset-bottom))',
+              bottom: 'var(--tabbar-real-h, var(--tabbar-h, 72px))',
               backdropFilter: 'blur(4px)',
               WebkitBackdropFilter: 'blur(4px)',
             }}
@@ -425,9 +481,9 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
               borderTopRightRadius: 20,
               boxShadow: '0 -8px 32px rgba(0,0,0,0.5)',
               padding: '16px',
-              maxHeight: 'calc(100dvh - 48px - var(--tabbar-real-h, var(--tabbar-h, 72px)) - env(safe-area-inset-bottom))',
+              maxHeight: 'calc(100dvh - 48px - var(--tabbar-real-h, var(--tabbar-h, 72px)))',
               overflow: 'auto',
-              bottom: 'calc(var(--tabbar-real-h, var(--tabbar-h, 72px)) + env(safe-area-inset-bottom))',
+              bottom: 'var(--tabbar-real-h, var(--tabbar-h, 72px))',
               WebkitOverflowScrolling: 'touch',
             }}
           >
