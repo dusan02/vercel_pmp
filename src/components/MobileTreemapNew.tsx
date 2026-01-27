@@ -327,27 +327,19 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
 
   return (
     <div
+      className="flex flex-col w-full bg-black overflow-hidden"
       style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        /* CRITICAL: Use --tabbar-real-h if available (includes safe-area), otherwise fallback to --tabbar-h */
-        bottom: 'var(--tabbar-real-h, var(--tabbar-h, 72px))',
-        width: '100%',
-        height: 'calc(100dvh - var(--tabbar-real-h, var(--tabbar-h, 72px)))',
-        display: 'flex',
-        flexDirection: 'column',
-        background: '#000',
+        position: 'relative',
+        height: '100%',
+        minHeight: '100%',
         zIndex: 1,
-        overflow: 'hidden',
       }}
     >
-      {/* Fixed Header */}
+      {/* Header - Sticky instead of Fixed to stay within the screen context */}
       <div
         ref={headerRef}
         style={{
-          position: 'fixed',
+          position: 'sticky',
           top: 0,
           left: 0,
           right: 0,
@@ -435,7 +427,8 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
             alignItems: 'center',
             justifyContent: 'center',
             gap: '12px',
-            height: `${containerSize.height}px`,
+            height: '100%',
+            minHeight: '300px',
             background: '#000',
           }}>
             <div

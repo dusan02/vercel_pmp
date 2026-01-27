@@ -73,7 +73,11 @@ const formatEarningsValue = (value: number | null, isPercent = false, isCurrency
   if (isCurrency) {
     return `$${value.toFixed(2)}`;
   }
-  return value.toFixed(2);
+  // Default: 0 decimals with space as thousands separator
+  return value.toLocaleString('en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).replace(/,/g, ' ');
 };
 
 // Custom hook pre earnings data
@@ -255,13 +259,13 @@ const EarningsLoader = () => (
 const EarningsError = ({ error, onRetry }: { error: string; onRetry: () => void }) => (
   <section className="todays-earnings">
     <EarningsHeader />
-    <div 
+    <div
       className="flex flex-col items-center justify-center gap-3 py-16 px-4 text-center"
       style={{
         background: '#0f0f0f',
       }}
     >
-      <div 
+      <div
         className="text-6xl mb-2"
         style={{
           opacity: 0.3,
@@ -269,7 +273,7 @@ const EarningsError = ({ error, onRetry }: { error: string; onRetry: () => void 
       >
         ⚠️
       </div>
-      <span 
+      <span
         className="text-base font-semibold"
         style={{
           color: '#ffffff',
@@ -277,7 +281,7 @@ const EarningsError = ({ error, onRetry }: { error: string; onRetry: () => void 
       >
         Error loading earnings data
       </span>
-      <span 
+      <span
         className="text-sm max-w-xs mb-4"
         style={{
           color: 'rgba(255, 255, 255, 0.6)',
@@ -288,7 +292,7 @@ const EarningsError = ({ error, onRetry }: { error: string; onRetry: () => void 
       <button
         onClick={onRetry}
         className="px-5 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold transition-colors"
-        style={{ 
+        style={{
           WebkitTapHighlightColor: 'transparent',
           touchAction: 'manipulation',
         }}
@@ -309,13 +313,13 @@ const EarningsError = ({ error, onRetry }: { error: string; onRetry: () => void 
 const EarningsEmpty = () => (
   <section className="todays-earnings">
     <EarningsHeader />
-    <div 
+    <div
       className="flex flex-col items-center justify-center gap-3 py-16 px-4 text-center"
       style={{
         background: '#0f0f0f',
       }}
     >
-      <div 
+      <div
         className="text-6xl mb-2"
         style={{
           opacity: 0.3,
@@ -323,7 +327,7 @@ const EarningsEmpty = () => (
       >
         📅
       </div>
-      <span 
+      <span
         className="text-base font-semibold"
         style={{
           color: '#ffffff',
@@ -331,7 +335,7 @@ const EarningsEmpty = () => (
       >
         No earnings scheduled for today
       </span>
-      <p 
+      <p
         className="text-sm max-w-xs"
         style={{
           color: 'rgba(255, 255, 255, 0.6)',
