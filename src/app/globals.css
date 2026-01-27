@@ -81,6 +81,46 @@
       overscroll-behavior-y: contain;
     }
   }
+
+  /* Mobile app layout - Critical for proper height */
+  @media (max-width: 1023px) {
+    .mobile-app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      min-height: 100vh;
+      background: #0f0f0f;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Support dynamic viewport height (iOS Safari) */
+    @supports (height: 100dvh) {
+      .mobile-app {
+        height: 100dvh;
+        min-height: 100dvh;
+      }
+    }
+
+    .mobile-app-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+      min-height: 0;
+      padding-top: var(--header-h);
+    }
+
+    /* CRITICAL: Heatmap view fills entire height */
+    .mobile-app-content.is-heatmap {
+      padding-top: 0;
+      padding-bottom: 0;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+  }
 }
 
 /* ============================================
