@@ -68,7 +68,7 @@ export async function getStocksList(options: {
 
     // Only apply offset when fetching all tickers (not when specific tickers are requested)
     const effectiveOffset = (tickers && tickers.length > 0) ? undefined : offset;
-    
+
     // Guard log: explicit tickers mode ignores offset/limit
     if (tickers && tickers.length > 0 && (offset !== 0 || (limit && limit > 0))) {
       console.log(`🔍 Explicit tickers mode: ignoring offset=${offset} and limit=${limit}, returning all ${tickers.length} requested tickers`);
@@ -138,7 +138,7 @@ export async function getStocksList(options: {
         const existing = bestPriceBySymbol.get(symbol);
         if (existing) {
           const spIsNewer = sp.ts.getTime() > existing.ts.getTime() + STALE_THRESHOLD_MS;
-          
+
           // Only use SessionPrice if it's significantly newer (at least 1 minute)
           // Otherwise prefer Ticker.lastPrice (more reliable, updated by worker)
           if (spIsNewer) {
@@ -198,7 +198,7 @@ export async function getStocksList(options: {
     const tickersNeedingPrevClose = stocks
       .filter(s => (priceBySymbol.get(s.symbol) || 0) > 0 && (s.latestPrevClose || 0) === 0)
       .map(s => s.symbol);
-    
+
     const onDemandPrevCloseMap = new Map<string, number>();
     if (tickersNeedingPrevClose.length > 0) {
       try {
@@ -227,7 +227,7 @@ export async function getStocksList(options: {
     // Request-scoped memoization: track in-flight promises to avoid duplicate API calls
     const sharesFetchPromises = new Map<string, Promise<number>>();
     const sharesSourceMap = new Map<string, 'db' | 'polygon' | 'fallback' | 'missing'>(); // Guard log tracking
-    
+
     const tickersNeedingShares = stocks
       .filter(s => {
         const hasPrice = (priceBySymbol.get(s.symbol) || 0) > 0;
@@ -239,13 +239,13 @@ export async function getStocksList(options: {
         return hasPrice && hasPrevClose && missingShares;
       })
       .map(s => s.symbol);
-    
+
     const onDemandSharesMap = new Map<string, number>();
     if (tickersNeedingShares.length > 0) {
       try {
         // Fetch shares in parallel (with limit to avoid rate limits)
         const maxConcurrent = 5;
-        
+
         for (let i = 0; i < tickersNeedingShares.length; i += maxConcurrent) {
           const batch = tickersNeedingShares.slice(i, i + maxConcurrent);
           const batchPromises = batch.map(async (ticker) => {
@@ -285,7 +285,7 @@ export async function getStocksList(options: {
           // Wait for batch to complete before starting next batch
           await Promise.all(batchPromises);
         }
-        
+
         console.log(`✅ On-demand fetched ${onDemandSharesMap.size} sharesOutstanding for /api/stocks (sources: ${Array.from(sharesSourceMap.values()).filter(s => s !== 'db').join(', ') || 'none'})`);
       } catch (error) {
         console.warn(`⚠️ On-demand sharesOutstanding fetch failed in stockService:`, error);
@@ -298,12 +298,12 @@ export async function getStocksList(options: {
     // SQLite (used on this server) will frequently time out / lock under concurrent writes (P1008),
     // which degrades UX and can cascade into 502s behind nginx.
     // Persistence is handled by background workers (pmp-polygon-worker).
-    
+
     // DEBUG: Log pred map
     if (tickers && tickers.some(t => ['NVDA', 'GOOG', 'MSFT'].includes(t))) {
       console.log(`🔍 About to map ${stocks.length} stocks`);
     }
-    
+
     const results: StockData[] = stocks.map(s => {
       const best = bestPriceBySymbol.get(s.symbol);
       const currentPrice = best?.price || 0;
@@ -323,9 +323,9 @@ export async function getStocksList(options: {
       // to appear stale even though they were updated recently.
       const thresholdMin =
         session === 'live' ? 5 :
-        session === 'pre' ? 30 :
-        session === 'after' ? 30 :
-        60;
+          session === 'pre' ? 30 :
+            session === 'after' ? 30 :
+              60;
       const ageMs = etNow.getTime() - lastTs.getTime();
       const isStale = !isFrozen && currentPrice > 0 && ageMs > thresholdMin * 60_000;
 
@@ -360,7 +360,7 @@ export async function getStocksList(options: {
       // Metóda B (medium): marketCap + percentChange (použijeme dynamicky vypočítaný pct.changePct)
       // Fallback: lastMarketCapDiff z DB
       type CapDiffMethod = "shares" | "mcap_pct" | "db_fallback" | "none";
-      
+
       const computeCapDiffFromMcapPct = (mcap: number, pct: number): number => {
         // marketCap je v biliónoch (billions), percentChange v %
         return mcap * (pct / 100);
@@ -376,11 +376,11 @@ export async function getStocksList(options: {
 
       // Guard log: track sharesOutstanding source
       const sharesSource = sharesSourceMap.get(s.symbol) || (sharesOutstanding > 0 ? 'db' : 'missing');
-      
+
       // CRITICAL: Use the same reference price as percentChange calculation (for after-hours consistency)
       // For after-hours/closed sessions, use regularClose if available, otherwise previousClose
       const referencePrice = pct.reference.price || (regularClose > 0 ? regularClose : previousClose);
-      
+
       // A) Najpresnejšie: shares
       if (currentPrice > 0 && referencePrice > 0 && sharesOutstanding > 0) {
         marketCapDiff = computeMarketCapDiff(currentPrice, referencePrice, sharesOutstanding);
@@ -430,7 +430,7 @@ export async function getStocksList(options: {
         marketCapDiff = 0;
         capDiffMethod = "none";
       } else if (marketCap > 0) {
-        const maxAbs = marketCap * 0.15; // 15% cap guard
+        const maxAbs = marketCap * 0.50; // 50% cap guard (relaxed from 15% to allow for earnings volatility)
         if (Math.abs(marketCapDiff) > maxAbs) {
           // Ak sem padneš, zvyčajne je percentChange alebo marketCap chyba z API
           marketCapDiff = 0;
