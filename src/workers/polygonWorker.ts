@@ -259,7 +259,7 @@ async function upsertToDB(
         console.log(`⚠️  ${symbol}: Preserving lastChangePct=${changePctToUse} during lock (no prevClose)`);
       }
     }
-    
+
     await prisma.ticker.upsert({
       where: { symbol },
       update: {
@@ -273,7 +273,7 @@ async function upsertToDB(
         lastPriceUpdated: normalized.timestamp,
         // Always update latestPrevClose AND latestPrevCloseDate together if we have previousClose
         // This ensures consistency - the date must match when the previous close actually happened
-        ...(previousClose ? { 
+        ...(previousClose ? {
           latestPrevClose: previousClose,
           latestPrevCloseDate: lastTradingDay
         } : {})
@@ -308,10 +308,10 @@ async function upsertToDB(
     // Check if we can overwrite based on pricing state
     const canOverwrite = existing && existing.lastPrice && existing.lastPrice > 0
       ? canOverwritePrice(
-          pricingState,
-          { price: existing.lastPrice, timestamp: existing.lastTs, session: existing.session },
-          { price: normalized.price, timestamp: normalized.timestamp }
-        )
+        pricingState,
+        { price: existing.lastPrice, timestamp: existing.lastTs, session: existing.session },
+        { price: normalized.price, timestamp: normalized.timestamp }
+      )
       : true; // No existing price or invalid existing, can always write
 
     // Only update if can overwrite and incoming timestamp is newer or equal
@@ -389,12 +389,12 @@ async function saveRegularClose(apiKey: string, date: string, runId?: string): P
   const correlationId = runId || Date.now().toString(36);
   try {
     console.log(`💾 [runId:${correlationId}] Starting regular close save...`);
-    
+
     // IDEMPOTENCY: Check if already saved for today (avoid unnecessary Polygon API calls)
     const calendarDateETStr = getDateET();
     const calendarDateET = createETDate(calendarDateETStr);
-    const todayTradingDay = getLastTradingDay(calendarDateET);
-    
+    const todayTradingDay = getTradingDay(calendarDateET);
+
     const existingRegularClose = await prisma.dailyRef.findFirst({
       where: {
         date: todayTradingDay,
@@ -402,12 +402,12 @@ async function saveRegularClose(apiKey: string, date: string, runId?: string): P
       },
       select: { symbol: true }
     });
-    
+
     if (existingRegularClose) {
       console.log(`⏭️  [runId:${correlationId}] Skipping saveRegularClose - already saved for ${getDateET(todayTradingDay)} (idempotent check, saved for ${existingRegularClose.symbol})`);
       return;
     }
-    
+
     const tickers = await getUniverse('sp500');
 
     if (tickers.length === 0) {
@@ -421,7 +421,7 @@ async function saveRegularClose(apiKey: string, date: string, runId?: string): P
 
     // DST-safe date creation (reuse variables from idempotency check above)
     // calendarDateETStr, calendarDateET, todayTradingDay already defined above
-    
+
     // CRITICAL: Use nextTradingDay, not calendar tomorrow!
     // This handles weekends/holidays correctly (Friday -> Monday, not Friday -> Saturday)
     const { getNextTradingDay } = await import('@/lib/utils/pricingStateMachine');
@@ -466,15 +466,15 @@ async function saveRegularClose(apiKey: string, date: string, runId?: string): P
           try {
             // INVARIANT: nextTradingDay must be a trading day (not weekend/holiday)
             const nextTradingDayET = toET(nextTradingDay);
-            const isNextTradingDayValid = nextTradingDayET.weekday !== 0 && 
-                                         nextTradingDayET.weekday !== 6 && 
-                                         !isMarketHoliday(nextTradingDay);
-            
+            const isNextTradingDayValid = nextTradingDayET.weekday !== 0 &&
+              nextTradingDayET.weekday !== 6 &&
+              !isMarketHoliday(nextTradingDay);
+
             if (!isNextTradingDayValid) {
               console.error(`❌ INVARIANT VIOLATION: nextTradingDay ${nextTradingDateStr} is not a valid trading day!`);
               throw new Error(`nextTradingDay ${nextTradingDateStr} is not a valid trading day`);
             }
-            
+
             // Update DailyRef for nextTradingDay - nextTradingDay's previousClose = today's regularClose
             await prisma.dailyRef.upsert({
               where: {
@@ -559,12 +559,12 @@ export async function ingestBatch(
   // CRITICAL: getDateET() returns CALENDAR date in ET, not trading date
   const calendarDateETStr = getDateET(now); // YYYY-MM-DD calendar date in ET
   const calendarDateET = createETDate(calendarDateETStr);
-  
+
   // For prevClose lookup: key by CALENDAR ET date.
   // prevClose(Mon) should be Fri close; prevClose(Tue) should be Mon close, etc.
   const todayTradingDay = getTradingDay(calendarDateET);
   const prevTradingDay = getLastTradingDay(todayTradingDay); // strictly previous trading day
-  
+
   const results: IngestResult[] = [];
 
   // Check if static data update is in progress (lock)
@@ -577,7 +577,7 @@ export async function ingestBatch(
       const lockKey = 'lock:static_data_update';
       const lockExists = await redisClient.exists(lockKey);
       isStaticUpdateLocked = lockExists === 1;
-      
+
       if (isStaticUpdateLocked) {
         // Check lock age from createdAt timestamp (not TTL!)
         // TTL is time until expiration, not time since creation
@@ -588,7 +588,7 @@ export async function ingestBatch(
             if (lockValue.createdAt) {
               const now = Date.now();
               const createdAt = lockValue.createdAt;
-              
+
               // Guard: clock skew detection (createdAt in future)
               if (createdAt > now) {
                 console.warn(`⚠️  Lock createdAt is in future (clock skew detected): createdAt=${new Date(createdAt).toISOString()}, now=${new Date(now).toISOString()}`);
@@ -607,11 +607,11 @@ export async function ingestBatch(
             lockAgeSeconds = 0; // Safe default: continue with degraded mode
           }
         }
-        
+
         if (lockAgeSeconds > 45 * 60) { // > 45 minutes
           console.error(`❌ STALE LOCK DETECTED: lock:static_data_update exists for ${Math.round(lockAgeSeconds / 60)} minutes (>45min threshold). This may indicate a crashed process.`);
         }
-        
+
         if (lockAgeSeconds > 0) {
           console.log(`⚠️  Static data update in progress (lock age: ${Math.round(lockAgeSeconds / 60)}min) - percentages may need refresh after unlock`);
         } else {
@@ -625,7 +625,7 @@ export async function ingestBatch(
 
   // Fetch previous closes from Redis (keyed by calendar date)
   const prevCloseMap = await getPrevClose(calendarDateETStr, tickers);
-  
+
   // If no previous closes in Redis, try to load from DB
   // DailyRef(date=calendarDateET).previousClose = close(prevTradingDay)
   if (prevCloseMap.size === 0) {
@@ -638,7 +638,7 @@ export async function ingestBatch(
         },
         select: { symbol: true, previousClose: true }
       });
-      
+
       if (dailyRefs.length > 0) {
         console.log(`✅ Loaded ${dailyRefs.length} previous closes from DB`);
         for (const ref of dailyRefs) {
@@ -660,10 +660,10 @@ export async function ingestBatch(
   if (!isStaticUpdateLocked && missingPrevClose.length > 0) {
     console.log(`⚠️ Missing previous close for ${missingPrevClose.length} tickers, attempting to fetch...`);
     // Only fetch a few to avoid rate limits if many are missing
-    const toFetch = missingPrevClose.slice(0, 50); 
+    const toFetch = missingPrevClose.slice(0, 50);
     // bootstrapPreviousCloses expects calendar date, will calculate trading day internally
     await bootstrapPreviousCloses(toFetch, apiKey, calendarDateETStr);
-    
+
     // Reload map after bootstrap (keyed by calendar date)
     const refreshedMap = await getPrevClose(calendarDateETStr, toFetch);
     refreshedMap.forEach((val, key) => prevCloseMap.set(key, val));
@@ -710,7 +710,7 @@ export async function ingestBatch(
 
   // Get pricing state (for freeze mechanism)
   const pricingState = pricingStateAtStart;
-  
+
   // Get regular close for after-hours/overnight percent change calculation
   const regularCloseMap = new Map<string, number>();
   if (session === 'after' || session === 'closed') {
@@ -816,7 +816,7 @@ export async function ingestBatch(
         frozenPrice,
         force
       );
-      
+
       // Log if locked and no prevClose (for debugging)
       if (isStaticUpdateLocked && !previousClose && normalized) {
         console.log(`⚠️  ${symbol}: Normalized during lock without prevClose - % may be 0`);
@@ -954,24 +954,12 @@ export async function bootstrapPreviousCloses(
   apiKey: string,
   date: string // YYYY-MM-DD
 ): Promise<void> {
-  console.log(`🔄 Bootstrapping previous closes for ${tickers.length} tickers...`);
-
-  // Fetch previous day's close prices from Polygon aggregates
-  //
-  // IMPORTANT (timezone correctness):
-  // Do NOT use `new Date('YYYY-MM-DD')` + `setDate()` to derive prior dates.
-  // That approach is sensitive to the server timezone (e.g. CET) and can shift the ISO day,
-  // causing us to fetch/save the wrong trading day (often 1–2 days off).
-  //
-  // Strategy:
-  // 1) Compute the expected previous trading day using ET-safe helpers.
-  // 2) Prefer an explicit /range query for that expected day.
-  // 3) Fall back to /prev only if /range isn't available yet.
+  console.log(`🔄 Bootstrapping previous closes for ${tickers.length} tickers (Optimized: Snapshot API)...`);
 
   const isLikelySqlite = (process.env.DATABASE_URL || '').startsWith('file:');
   const dbWriteRetry = async <T>(fn: () => Promise<T>, label: string): Promise<T | null> => {
-    const maxAttempts = isLikelySqlite ? 6 : 3;
-    let delayMs = 75;
+    const maxAttempts = isLikelySqlite ? 10 : 3;
+    let delayMs = 100;
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
         return await fn();
@@ -990,163 +978,109 @@ export async function bootstrapPreviousCloses(
         }
 
         await sleep(delayMs);
-        delayMs = Math.min(1500, Math.floor(delayMs * 1.8));
+        delayMs = Math.min(2000, Math.floor(delayMs * 2));
       }
     }
     return null;
   };
 
-  // PrevClose model (calendar-date keyed):
-  // - Key: calendar date in ET (YYYY-MM-DD)
-  // - Value: close of the previous TRADING day
-  //
-  // Example: Monday session -> prevClose should be Friday close.
   const calendarDateET = createETDate(date);
   const todayTradingDay = getTradingDay(calendarDateET);
   const prevTradingDay = getLastTradingDay(todayTradingDay);
-  const expectedPrevTradingDay = prevTradingDay;
-  const expectedPrevYMD = getDateET(expectedPrevTradingDay);
+  const expectedPrevYMD = getDateET(prevTradingDay);
+
+  // 1. Fetch snapshots in large batches
+  console.log('📥 Fetching snapshots for batch previous day reference...');
+  const snapshots = await fetchPolygonSnapshot(tickers, apiKey);
+  const snapshotMap = new Map<string, PolygonSnapshot>();
+  snapshots.forEach(s => snapshotMap.set(s.ticker, s));
+  console.log(`✅ Received ${snapshots.length} snapshots`);
+
+  let snapshotHits = 0;
+  let fallbackHits = 0;
+  let failedCount = 0;
 
   for (const symbol of tickers) {
     try {
       let prevClose = 0;
-      let prevTradingDay: Date | null = null;
-      
-      // PRIORITY 1: Explicit /range for expected previous trading day (ET-safe)
-      // This is the most accurate method - always use this first
-      // CRITICAL: For ex-US tickers, use timestamp from Polygon API response (not US trading day)
-      try {
-        const rangeUrl = `https://api.polygon.io/v2/aggs/ticker/${symbol}/range/1/day/${expectedPrevYMD}/${expectedPrevYMD}?adjusted=true&apiKey=${apiKey}`;
-        const rangeResp = await withRetry(async () => fetch(rangeUrl)); // withRetry has built-in retry logic
-        if (rangeResp.ok) {
-          const rangeData = await rangeResp.json();
-          const result = rangeData?.results?.[0];
-          const c = result?.c;
-          if (typeof c === 'number' && c > 0) {
-            prevClose = c;
-            // CRITICAL: Use timestamp from Polygon API response for ex-US tickers
-            // Polygon API returns the actual trading day for the ticker's home market
-            // This fixes issues with ex-US tickers (TM, SHOP, SAP, RIO) that trade on different markets
-            // Polygon aggregates API returns timestamp in milliseconds (not nanoseconds like snapshot API)
-            const timestamp = result?.t;
-            if (timestamp) {
-              const timestampDate = new Date(timestamp);
-              prevTradingDay = createETDate(getDateET(timestampDate));
-            } else {
-              // Fallback to expected US trading day if no timestamp
-              prevTradingDay = expectedPrevTradingDay;
-            }
-          }
-        }
-      } catch (rangeError) {
-        console.warn(`⚠️ /range expected-day failed for ${symbol}, trying lookback /range:`, rangeError);
+      let actualPrevTradingDay: Date | null = null;
+
+      // PRIORITY 1: Use Snapshot data if available (prevDay.c)
+      const snapshot = snapshotMap.get(symbol);
+      if (snapshot?.prevDay?.c && snapshot.prevDay.c > 0) {
+        prevClose = snapshot.prevDay.c;
+        actualPrevTradingDay = prevTradingDay;
+        snapshotHits++;
       }
 
-      // PRIORITY 2: Lookback /range (ET-safe day stepping) - try previous days if expected day fails
-      // This is more reliable than /prev endpoint which can lag early morning
-      if (!prevClose || !prevTradingDay) {
-        const maxLookback = 10;
-        const etMidnight = createETDate(date);
-        for (let i = 1; i <= maxLookback; i++) {
-          const candidate = new Date(etMidnight.getTime() - i * 24 * 60 * 60 * 1000);
-          const prevDateStr = getDateET(candidate);
-
-          const url = `https://api.polygon.io/v2/aggs/ticker/${symbol}/range/1/day/${prevDateStr}/${prevDateStr}?adjusted=true&apiKey=${apiKey}`;
-          const response = await withRetry(async () => fetch(url));
-
-          if (response.ok) {
-            const data = await response.json();
-            const result = data?.results?.[0];
+      // PRIORITY 2: Fallback to slow Range API if snapshot missing or invalid
+      if (!prevClose || prevClose <= 0) {
+        try {
+          const rangeUrl = `https://api.polygon.io/v2/aggs/ticker/${symbol}/range/1/day/${expectedPrevYMD}/${expectedPrevYMD}?adjusted=true&apiKey=${apiKey}`;
+          const rangeResp = await withRetry(async () => fetch(rangeUrl));
+          if (rangeResp && rangeResp.ok) {
+            const rangeData = await rangeResp.json();
+            const result = rangeData?.results?.[0];
             const c = result?.c;
             if (typeof c === 'number' && c > 0) {
               prevClose = c;
-              // CRITICAL: Use timestamp from Polygon API response for ex-US tickers
-              // This ensures we use the actual trading day from the ticker's home market
               const timestamp = result?.t;
               if (timestamp) {
                 const timestampDate = new Date(timestamp);
-                prevTradingDay = createETDate(getDateET(timestampDate));
+                actualPrevTradingDay = createETDate(getDateET(timestampDate));
               } else {
-                // Fallback to calendar date if no timestamp
-                prevTradingDay = createETDate(prevDateStr);
+                actualPrevTradingDay = prevTradingDay;
               }
-              break;
+              fallbackHits++;
             }
           }
-          await sleep(100);
+        } catch (rangeError) {
+          // ignore
         }
       }
 
-      // Save to DB and Redis if we found a valid previous close
-      if (prevClose > 0 && prevTradingDay) {
-        // Redis key: calendar date (ET)
+      // Save to DB and Redis
+      if (prevClose > 0 && actualPrevTradingDay) {
         await setPrevClose(date, symbol, prevClose);
-        
-        // Save to DB immediately for persistence
-        // CRITICAL: Use prevTradingDay (when close happened) for DailyRef(regClose) & Ticker.latestPrevCloseDate
-        // Also save as regularClose for the previous trading day (this is the regular session close)
+
         await dbWriteRetry(
-          () =>
-            prisma.dailyRef.upsert({
-              where: { symbol_date: { symbol, date: prevTradingDay } },
-              update: { 
-                previousClose: prevClose,
-                regularClose: prevClose, // Also save as regularClose (same value for previous trading day)
-                updatedAt: new Date() 
-              },
-              create: { 
-                symbol, 
-                date: prevTradingDay, 
-                previousClose: prevClose,
-                regularClose: prevClose // Also save as regularClose
-              }
-            }),
+          () => prisma.dailyRef.upsert({
+            where: { symbol_date: { symbol, date: actualPrevTradingDay! } },
+            update: { previousClose: prevClose, regularClose: prevClose, updatedAt: new Date() },
+            create: { symbol, date: actualPrevTradingDay!, previousClose: prevClose, regularClose: prevClose }
+          }),
           `dailyRef.upsert:${symbol}`
         );
 
-        // Ensure CALENDAR-date DailyRef has `previousClose` populated (used by APIs/UI for current session).
         await dbWriteRetry(
-          () =>
-            prisma.dailyRef.upsert({
-              where: { symbol_date: { symbol, date: calendarDateET } },
-              update: {
-                previousClose: prevClose,
-                updatedAt: new Date()
-              },
-              create: {
-                symbol,
-                date: calendarDateET,
-                previousClose: prevClose
-              }
-            }),
+          () => prisma.dailyRef.upsert({
+            where: { symbol_date: { symbol, date: calendarDateET } },
+            update: { previousClose: prevClose, updatedAt: new Date() },
+            create: { symbol, date: calendarDateET, previousClose: prevClose }
+          }),
           `dailyRef.upsert(todayPrevClose):${symbol}`
         );
 
-        // Also update Ticker.latestPrevClose and latestPrevCloseDate for consistency
         await dbWriteRetry(
-          () =>
-            prisma.ticker.update({
-              where: { symbol },
-              data: {
-                latestPrevClose: prevClose,
-                latestPrevCloseDate: prevTradingDay // date of the close
-              }
-            }),
+          () => prisma.ticker.update({
+            where: { symbol },
+            data: { latestPrevClose: prevClose, latestPrevCloseDate: actualPrevTradingDay }
+          }),
           `ticker.update(prevClose):${symbol}`
         );
-
-        const prevDateStr = getDateET(prevTradingDay);
-        console.log(`✅ Set previous close for ${symbol} (from ${prevDateStr}): $${prevClose}, saved with date ${prevDateStr}`);
       } else {
-        console.warn(`⚠️ Could not find previous close for ${symbol} after trying /prev and /range endpoints`);
+        failedCount++;
       }
 
-      // Rate limiting
-      await sleep(200);
+      // Avoid DB lock pressure
+      if (fallbackHits > 0 && fallbackHits % 5 === 0) await sleep(100);
     } catch (error) {
       console.error(`Error bootstrapping ${symbol}:`, error);
+      failedCount++;
     }
   }
+
+  console.log(`✅ Bootstrap complete: ${snapshotHits} from snapshot, ${fallbackHits} from fallback, ${failedCount} failed`);
 }
 
 /**
@@ -1252,10 +1186,10 @@ async function main() {
           const lastRegularCloseSave = await redisClient.get(`regular_close:last_save:${today}`);
           const now = Date.now();
           const fiveMinAgo = now - (5 * 60 * 1000);
-          
+
           // Save/retry if: (1) first time (16:00), or (2) last save was > 5 min ago
           const shouldSave = !lastRegularCloseSave || parseInt(lastRegularCloseSave, 10) < fiveMinAgo;
-          
+
           if (shouldSave) {
             // Check if regular close is missing for any tickers
             // Use stratified sample: top 50 (premium) + random 50 (to catch batch failures)
@@ -1266,7 +1200,7 @@ async function main() {
             const remainingTickers = tickers.filter(t => !premiumTickers.includes(t));
             const randomTickers: string[] = [];
             const randomCount = Math.min(50, remainingTickers.length);
-            
+
             // Fisher-Yates shuffle for first N elements (more efficient than full sort)
             for (let i = 0; i < randomCount; i++) {
               const j = Math.floor(Math.random() * (remainingTickers.length - i)) + i;
@@ -1277,12 +1211,12 @@ async function main() {
                 randomTickers.push(temp);
               }
             }
-            
+
             const sampleTickers = [...premiumTickers, ...randomTickers];
-            
+
             const { prisma } = await import('@/lib/db/prisma');
             const dateObj = createETDate(today);
-            
+
             const missingCount = await prisma.dailyRef.count({
               where: {
                 symbol: { in: sampleTickers },
@@ -1290,7 +1224,7 @@ async function main() {
                 regularClose: null
               }
             });
-            
+
             if (missingCount > 0 || !lastRegularCloseSave) {
               const runId = Date.now().toString(36);
               console.log(`🔄 [runId:${runId}] Saving regular close (retry: ${!!lastRegularCloseSave})...`);
@@ -1308,7 +1242,7 @@ async function main() {
               const { getLastTradingDay } = await import('@/lib/utils/timeUtils');
               const todayDate = createETDate(today);
               const todayTradingDay = getLastTradingDay(todayDate);
-              
+
               // Check if regular close already saved for today
               const existingDailyRef = await prisma.dailyRef.findFirst({
                 where: {
@@ -1317,7 +1251,7 @@ async function main() {
                 },
                 select: { symbol: true }
               });
-              
+
               if (!existingDailyRef) {
                 // Not saved yet - safe to save
                 const runId = Date.now().toString(36);
@@ -1365,16 +1299,16 @@ async function main() {
       const hours = et.hour;
       const minutes = et.minute;
       const dayOfWeek = et.weekday;
-      
+
       // Pre-market + live trading: 07:30-15:55 ET (DST-safe via toET())
       // Stop at 15:55 to avoid overlap with regular close save at 16:00
-      const isPreMarketOrLive = (hours >= 7 && hours < 15) || 
-                               (hours === 7 && minutes >= 30) ||
-                               (hours === 15 && minutes < 55);
-      
+      const isPreMarketOrLive = (hours >= 7 && hours < 15) ||
+        (hours === 7 && minutes >= 30) ||
+        (hours === 15 && minutes < 55);
+
       // Only on weekdays (1-5 = Monday-Friday)
       const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
-      
+
       if (!isPreMarketOrLive || !isWeekday) {
         return; // Outside bulk preload window
       }
@@ -1389,7 +1323,7 @@ async function main() {
       const lastPreloadStr = await redisClient.get(lastPreloadKey);
       const now = Date.now();
       const fiveMinAgo = now - (5 * 60 * 1000);
-      
+
       // Check timestamp (not TTL-based gating)
       if (lastPreloadStr && parseInt(lastPreloadStr, 10) >= fiveMinAgo) {
         return; // Too soon since last preload
@@ -1398,7 +1332,7 @@ async function main() {
       // Acquire lock to prevent parallel execution
       const { withLock } = await import('@/lib/utils/redisLocks');
       const { preloadBulkStocks } = await import('./backgroundPreloader');
-      
+
       const result = await withLock(
         'bulk_preload',
         8 * 60, // 8 min TTL (2x typical runtime ~3-4 min, prevents expiration during run)
@@ -1419,19 +1353,19 @@ async function main() {
 
           // Generate correlation ID for this run
           const runId = Date.now().toString(36);
-          
+
           // Run bulk preload with duration tracking
           const preloadStartTime = Date.now();
           let preloadSuccess = true;
           let preloadError: string | null = null;
-          
+
           console.log(`🔄 [runId:${runId}] Starting bulk preload...`);
-          
+
           try {
             await preloadBulkStocks(apiKey);
             const preloadDuration = Date.now() - preloadStartTime;
             const preloadDurationMin = preloadDuration / (60 * 1000);
-            
+
             // Max runtime alarms (warn at 6 min, error at 10 min)
             if (preloadDurationMin > 10) {
               const errorMsg = `Bulk preload took ${preloadDurationMin.toFixed(1)}min (exceeds 10min threshold) - possible Polygon/Redis/DB slowdown`;
@@ -1440,7 +1374,7 @@ async function main() {
             } else if (preloadDurationMin > 6) {
               console.warn(`⚠️ [runId:${runId}] Bulk preload took ${preloadDurationMin.toFixed(1)}min (exceeds 6min threshold) - monitoring for slowdown`);
             }
-            
+
             // Update last preload timestamp and metrics (no TTL - persistent, not TTL-based gating)
             await redisClient.set(lastPreloadKey, now.toString());
             await redisClient.set('bulk:last_duration_ms', preloadDuration.toString());
@@ -1448,32 +1382,32 @@ async function main() {
             if (preloadDurationMin <= 10) {
               await redisClient.del('bulk:last_error'); // Clear error on success (unless exceeded 10min)
             }
-            
+
             // Check for stale bulk preload (alert if age > 10 min during window 07:30-15:55)
             const etNow = nowET();
             const et = toET(etNow);
             const hours = et.hour;
             const minutes = et.minute;
-            const isPreMarketOrLive = (hours >= 7 && hours < 15) || 
-                                     (hours === 7 && minutes >= 30) ||
-                                     (hours === 15 && minutes < 55);
-            
+            const isPreMarketOrLive = (hours >= 7 && hours < 15) ||
+              (hours === 7 && minutes >= 30) ||
+              (hours === 15 && minutes < 55);
+
             if (isPreMarketOrLive) {
               const bulkAgeMinutes = Math.floor((now - parseInt(await redisClient.get('bulk:last_success_ts') || '0', 10)) / 60000);
               if (bulkAgeMinutes > 10) {
                 console.error(`ALERT: [runId:${runId}] Bulk preload stale - last success ${bulkAgeMinutes}min ago (threshold: 10min) during market hours`);
               }
             }
-            
+
             console.log(`✅ [runId:${runId}] Bulk preload completed in ${preloadDuration}ms (${preloadDurationMin.toFixed(1)}min)`);
           } catch (error) {
             preloadSuccess = false;
             preloadError = error instanceof Error ? error.message : String(error);
             const preloadDuration = Date.now() - preloadStartTime;
-            
+
             await redisClient.set('bulk:last_duration_ms', preloadDuration.toString());
             await redisClient.set('bulk:last_error', preloadError);
-            
+
             console.error(`❌ Bulk preload failed after ${preloadDuration}ms:`, error);
             throw error; // Re-throw to let withLock handle it
           }
@@ -1504,7 +1438,7 @@ async function main() {
       // CRITICAL: For premarketprice.com, we MUST ingest pre-market and after-hours data!
       // Only skip on weekends/holidays (true closed days)
       const isWeekendOrHoliday = isWeekendET(etNow) || isMarketHoliday(etNow);
-      
+
       if (session === 'closed' && isWeekendOrHoliday) {
         // True closed day (weekend/holiday) - only bootstrap previous closes if missing
         const today = getDateET(etNow);
@@ -1539,7 +1473,7 @@ async function main() {
       // Load last update times from Redis (persistent across restarts)
       const { redisClient } = await import('@/lib/redis');
       const lastUpdateMap = new Map<string, number>();
-      
+
       // Adjust intervals based on session
       // Goal: keep major tickers highly fresh even in pre-market, while keeping overall API load reasonable.
       const isPreMarket = session === 'pre';
@@ -1553,7 +1487,7 @@ async function main() {
           const { getFreshnessMetrics } = await import('@/lib/utils/freshnessMetrics');
           const hashKey = 'freshness:last_update';
           const timestamps = await redisClient.hGetAll(hashKey);
-          
+
           tickers.forEach((ticker) => {
             const timestampStr = timestamps[ticker];
             if (timestampStr) {
@@ -1607,7 +1541,7 @@ async function main() {
           const results = await ingestBatch(batch, apiKey);
           const successSymbols = results.filter(r => r.success).map(r => r.symbol);
           if (successSymbols.length > 0) {
-          hasSuccess = true;
+            hasSuccess = true;
           }
 
           // Update freshness metrics (O(1) hash operation)

@@ -25,31 +25,39 @@ export async function refreshClosingPricesInDB(
   } else {
     console.log('🔄 Refreshing closing prices in database (refresh in place)...');
   }
-  
+
   // Get today's calendar date (ET) and last trading day at or before today.
   const today = getDateET();
   const todayDate = createETDate(today);
   const lastTradingDay = getLastTradingDay(todayDate);
-  
-  // Delete DailyRef entries for today's calendar date and last trading day (will be repopulated by bootstrap)
-  // This is safe because we'll immediately repopulate them
-  const deletedToday = await prisma.dailyRef.deleteMany({
-    where: {
-      date: todayDate
-    }
-  });
-  
-  const deletedLastTradingDay = await prisma.dailyRef.deleteMany({
-    where: {
-      date: lastTradingDay
-    }
-  });
-  
-  console.log(`✅ Deleted ${deletedToday.count} DailyRef entries for today`);
-  console.log(`✅ Deleted ${deletedLastTradingDay.count} DailyRef entries for last trading day`);
-  
+
+  let deletedTodayCount = 0;
+  let deletedLastTradingDayCount = 0;
+
+  if (hardReset) {
+    // Delete DailyRef entries for today's calendar date and last trading day (will be repopulated by bootstrap)
+    // This is safe because we'll immediately repopulate them
+    const deletedToday = await prisma.dailyRef.deleteMany({
+      where: {
+        date: todayDate
+      }
+    });
+
+    const deletedLastTradingDay = await prisma.dailyRef.deleteMany({
+      where: {
+        date: lastTradingDay
+      }
+    });
+
+    deletedTodayCount = deletedToday.count;
+    deletedLastTradingDayCount = deletedLastTradingDay.count;
+
+    console.log(`✅ Deleted ${deletedTodayCount} DailyRef entries for today`);
+    console.log(`✅ Deleted ${deletedLastTradingDayCount} DailyRef entries for last trading day`);
+  }
+
   let updatedCount = 0;
-  
+
   // Hard reset: Reset Ticker.latestPrevClose to null (only if hardReset=true)
   if (hardReset) {
     const resetTickerResult = await prisma.ticker.updateMany({
@@ -66,10 +74,10 @@ export async function refreshClosingPricesInDB(
     // Bootstrap will update it with correct values, preserving existing correct values
     // This prevents "window of chaos" where worker calculates percentages with null references
   }
-  
+
   return {
     updatedCount,
-    deletedToday: deletedToday.count,
-    deletedLastTradingDay: deletedLastTradingDay.count
+    deletedToday: deletedTodayCount,
+    deletedLastTradingDay: deletedLastTradingDayCount
   };
 }
