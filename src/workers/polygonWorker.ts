@@ -1607,7 +1607,7 @@ async function main() {
           const results = await ingestBatch(batch, apiKey);
           const successSymbols = results.filter(r => r.success).map(r => r.symbol);
           if (successSymbols.length > 0) {
-            hasSuccess = true;
+          hasSuccess = true;
           }
 
           // Update freshness metrics (O(1) hash operation)

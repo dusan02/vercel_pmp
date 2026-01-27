@@ -23,7 +23,7 @@ import { prisma } from '../src/lib/db/prisma';
 import { getUniverse } from '@/lib/redis/operations';
 import { bootstrapPreviousCloses } from '@/workers/polygonWorker';
 import { getDateET, createETDate } from '@/lib/utils/dateET';
-import { getLastTradingDay } from '@/lib/utils/timeUtils';
+import { getLastTradingDay, getTradingDay } from '@/lib/utils/timeUtils';
 import { setPrevClose } from '@/lib/redis/operations';
 import { withRetry } from '@/lib/api/rateLimiter';
 
@@ -80,7 +80,8 @@ async function main() {
   // Get trading days
   const today = getDateET();
   const todayDate = createETDate(today);
-  const todayTradingDay = getLastTradingDay(todayDate);
+  // Use trading-day for the session (Mon stays Mon; weekend collapses to last trading day)
+  const todayTradingDay = getTradingDay(todayDate);
   const yesterdayTradingDay = getLastTradingDay(todayTradingDay);
   
   const yesterdayDateStr = getDateET(yesterdayTradingDay);

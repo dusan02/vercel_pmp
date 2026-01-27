@@ -5,7 +5,8 @@
 
 import { prisma } from '@/lib/db/prisma';
 import { getSharesOutstanding, getPreviousClose } from './marketCapUtils';
-import { getLastTradingDay } from './timeUtils';
+import { getLastTradingDay, getTradingDay } from './timeUtils';
+import { getDateET, createETDate } from './dateET';
 
 /**
  * Update sharesOutstanding for a ticker
@@ -39,14 +40,16 @@ export async function updateTickerPreviousClose(ticker: string): Promise<boolean
   try {
     const prevClose = await getPreviousClose(ticker);
     if (prevClose > 0) {
-      // Get the last trading day (the day when this close actually happened)
-      const lastTradingDay = getLastTradingDay();
+      // PrevClose model: calendar-date key (ET) -> close(prevTradingDay)
+      const calendarDateETStr = getDateET();
+      const calendarDateET = createETDate(calendarDateETStr);
+      const prevTradingDay = getLastTradingDay(getTradingDay(calendarDateET));
 
       // Use findFirst + create/update instead of upsert for compound unique constraint
       const existing = await prisma.dailyRef.findFirst({
         where: {
           symbol: ticker,
-          date: lastTradingDay,
+          date: calendarDateET,
         },
       });
 
@@ -59,7 +62,7 @@ export async function updateTickerPreviousClose(ticker: string): Promise<boolean
         await prisma.dailyRef.create({
           data: {
             symbol: ticker,
-            date: lastTradingDay, // Date of the actual trading day, not "today"
+            date: calendarDateET, // Calendar date (ET) for the session
             previousClose: prevClose,
           },
         });
@@ -70,7 +73,7 @@ export async function updateTickerPreviousClose(ticker: string): Promise<boolean
         where: { symbol: ticker },
         data: {
           latestPrevClose: prevClose,
-          latestPrevCloseDate: lastTradingDay,
+          latestPrevCloseDate: prevTradingDay, // Date of the close
         },
       });
 
