@@ -104,11 +104,12 @@ export function MobileLayout({ activeTab, onTabChange, screens }: MobileLayoutPr
                         initial="enter"
                         animate="center"
                         exit="exit"
-                        className="absolute inset-0 w-full h-full overflow-y-auto px-4 py-2 pb-20 scroll-smooth touch-pan-y"
+                        className={`absolute inset-0 w-full h-full scroll-smooth touch-pan-y ${activeTab === 'heatmap'
+                                ? 'overflow-hidden p-0'
+                                : 'overflow-y-auto px-4 py-2 pb-20'
+                            }`}
                         style={{
-                            WebkitOverflowScrolling: 'touch',
-                            // Heatmap needs special handling (no padding, full edge-to-edge)
-                            padding: activeTab === 'heatmap' ? 0 : undefined
+                            WebkitOverflowScrolling: 'touch'
                         }}
                     >
                         {screens[activeTab]}
