@@ -11,6 +11,7 @@ import { getCompanyName } from '@/lib/companyNames';
 import { StockData } from '@/lib/types';
 import { PortfolioQuantityInput } from './PortfolioQuantityInput';
 import { PortfolioCardMobile } from './PortfolioCardMobile';
+import { PortfolioDonutChart } from './PortfolioDonutChart';
 import { formatCurrencyCompact, formatPercent, formatPrice, formatSectorName } from '@/lib/utils/format';
 import { event } from '@/lib/ga';
 import {
@@ -452,6 +453,17 @@ export function PortfolioSection({
           </div>
         ) : (
           <div className="w-full">
+            {/* Portfolio Donut Chart */}
+            <div className="mb-6">
+              <PortfolioDonutChart
+                data={portfolioStocks.map(stock => ({
+                  ticker: stock.ticker,
+                  value: calculatePortfolioValue(stock),
+                }))}
+                size={240}
+              />
+            </div>
+
             <div className="w-full bg-white dark:bg-gray-900 border-none outline-none ring-0 rounded-none overflow-hidden divide-y divide-gray-200 dark:divide-gray-800">
               {/* Header row (mobile): align with PortfolioCardMobile grid - clickable for sorting */}
               <div className="px-3 py-2 bg-slate-50/80 dark:bg-white/5 text-xs font-semibold text-gray-400 dark:text-gray-400 uppercase tracking-wide">
@@ -673,6 +685,19 @@ export function PortfolioSection({
 
       {/* Desktop: Table layout */}
       <div className="hidden lg:block portfolio-table-wrapper">
+        {/* Portfolio Donut Chart - Desktop */}
+        {portfolioStocks.length > 0 && (
+          <div className="mb-6">
+            <PortfolioDonutChart
+              data={portfolioStocks.map(stock => ({
+                ticker: stock.ticker,
+                value: calculatePortfolioValue(stock),
+              }))}
+              size={280}
+            />
+          </div>
+        )}
+
         <table className="portfolio-table">
           <thead>
             <tr>
