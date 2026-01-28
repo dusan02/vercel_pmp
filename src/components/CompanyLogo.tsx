@@ -51,10 +51,10 @@ export default function CompanyLogo({
   // Generate lightweight placeholder immediately (no layout shift)
   const placeholderSrc = useMemo(() => generateLQPlaceholder(ticker, w, h), [ticker, w, h]);
 
-  // Unified strategy: Always use API endpoint for consistent behavior
+  // Unified strategy: Prioritize passed logoUrl, otherwise use API endpoint
   // API will try: static file -> Redis cache -> external API -> placeholder
   // Encode ticker to handle special characters like BRK.B
-  const logoSrc = `/api/logo/${encodeURIComponent(ticker)}?s=${size}`;
+  const logoSrc = logoUrl || `/api/logo/${encodeURIComponent(ticker)}?s=${size}`;
 
   // Reset error state and loading state when ticker changes
   useEffect(() => {

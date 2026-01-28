@@ -27,15 +27,33 @@ export default function ScrollToTopButton({ showAfterPx = 400 }: ScrollToTopButt
       if (rafId !== null) return;
       rafId = window.requestAnimationFrame(() => {
         rafId = null;
-        setVisible(getScrollTop() >= showAfterPx);
+        // Check window/body scroll
+        const scrollTop = document.scrollingElement?.scrollTop ?? window.scrollY ?? 0;
+
+        // Also check mobile container if it exists
+        const mobileContainer = document.querySelector('.mobile-app-content');
+        const mobileScrollTop = mobileContainer ? mobileContainer.scrollTop : 0;
+
+        // Visible if EITHER is scrolled enough
+        setVisible(Math.max(scrollTop, mobileScrollTop) >= showAfterPx);
       });
     };
 
     onScroll(); // init
     window.addEventListener('scroll', onScroll, { passive: true });
+
+    // Attach to mobile container too
+    const mobileContainer = document.querySelector('.mobile-app-content');
+    if (mobileContainer) {
+      mobileContainer.addEventListener('scroll', onScroll, { passive: true });
+    }
+
     return () => {
       if (rafId !== null) window.cancelAnimationFrame(rafId);
       window.removeEventListener('scroll', onScroll);
+      if (mobileContainer) {
+        mobileContainer.removeEventListener('scroll', onScroll);
+      }
     };
   }, [showAfterPx]);
 
@@ -48,17 +66,18 @@ export default function ScrollToTopButton({ showAfterPx = 400 }: ScrollToTopButt
     <button
       type="button"
       onClick={() => {
-        const scroller = document.scrollingElement;
-        if (scroller && typeof (scroller as any).scrollTo === 'function') {
-          (scroller as any).scrollTo({ top: 0, behavior });
-        } else {
-          window.scrollTo({ top: 0, behavior });
+        // scroll window
+        window.scrollTo({ top: 0, behavior });
+        // scroll mobile container
+        const mobileContainer = document.querySelector('.mobile-app-content');
+        if (mobileContainer) {
+          mobileContainer.scrollTo({ top: 0, behavior });
         }
       }}
       aria-label="Scroll to top"
       title="Up"
       className={[
-        'fixed bottom-[calc(5rem+1.25rem)] lg:bottom-5 right-5 z-[60]', // Mobile: 80px bottom nav + 1.25rem margin, Desktop: bottom-5
+        'fixed bottom-[calc(5rem+1.25rem)] lg:bottom-16 right-5 z-[999]', // Mobile: above tabbar, Desktop: adjusted bottom
         'rounded-full shadow-lg',
         'bg-blue-600 text-white',
         'hover:bg-blue-700 active:scale-95',
