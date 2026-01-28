@@ -39,26 +39,19 @@ interface AllStocksSectionProps {
 
 // Table header configuration - Desktop (full)
 const TABLE_HEADERS_DESKTOP: { key?: SortKey; label: string; sortable: boolean; className?: string }[] = [
-  { label: 'Logo', sortable: false },
+  { label: 'Logo', sortable: false, className: 'hidden lg:table-cell' },
   { key: 'ticker', label: 'Ticker', sortable: true },
-  { label: 'Company', sortable: false },
-  { key: 'sector', label: 'Sector', sortable: true },
-  { key: 'industry', label: 'Industry', sortable: true, className: '!text-left' },
-  { key: 'marketCap', label: 'Market Cap', sortable: true, className: 'whitespace-nowrap' },
-  { key: 'marketCapDiff', label: 'Cap Diff', sortable: true },
+  { label: 'Company', sortable: false, className: 'hidden lg:table-cell' },
+  { key: 'sector', label: 'Sector', sortable: true, className: 'hidden lg:table-cell' },
+  { key: 'industry', label: 'Industry', sortable: true, className: '!text-left hidden lg:table-cell' },
+  { key: 'marketCap', label: 'Market Cap', sortable: true, className: 'whitespace-nowrap hidden lg:table-cell' },
+  { key: 'marketCapDiff', label: 'Cap Diff', sortable: true, className: 'hidden lg:table-cell' },
   { key: 'currentPrice', label: 'Price', sortable: true },
   { key: 'percentChange', label: '% Change', sortable: true, className: 'whitespace-nowrap' },
   { label: 'Favorites', sortable: false },
 ];
 
-// Table header configuration - Mobile (5 columns only)
-const TABLE_HEADERS_MOBILE: { key?: SortKey; label: string; sortable: boolean }[] = [
-  { label: 'Logo', sortable: false },
-  { key: 'ticker', label: 'Ticker', sortable: true },
-  { key: 'percentChange', label: '% Change', sortable: true },
-  { key: 'marketCapDiff', label: 'Cap Diff', sortable: true },
-  { label: 'Action', sortable: false },
-];
+
 
 export const AllStocksSection = React.memo(function AllStocksSection({
   displayedStocks,
@@ -307,176 +300,10 @@ export const AllStocksSection = React.memo(function AllStocksSection({
         <SectionLoader message="Loading stocks..." />
       ) : (
         <>
-          {/* Mobile: Cards layout */}
-          <div className="lg:hidden">
-            {displayedStocks.length === 0 ? (
-              <div
-                className="flex flex-col items-center justify-center gap-3 py-16 px-4 text-center"
-                style={{
-                  background: '#0f0f0f',
-                }}
-              >
-                <div
-                  className="text-6xl mb-2"
-                  style={{
-                    opacity: 0.3,
-                  }}
-                >
-                  🔍
-                </div>
-                <span
-                  className="text-base font-semibold"
-                  style={{
-                    color: '#ffffff',
-                  }}
-                >
-                  {(selectedSector !== 'all' || selectedIndustry !== 'all' || searchTerm.trim().length > 0)
-                    ? 'No results found'
-                    : 'No stocks to display'}
-                </span>
-                <span
-                  className="text-sm max-w-xs"
-                  style={{
-                    color: 'rgba(255, 255, 255, 0.6)',
-                  }}
-                >
-                  {(selectedSector !== 'all' || selectedIndustry !== 'all' || searchTerm.trim().length > 0)
-                    ? 'Try adjusting your filters or search term'
-                    : 'Stocks will appear here once loaded'}
-                </span>
-              </div>
-            ) : (
-              <div className="w-full bg-white dark:bg-gray-900 border-0 rounded-none overflow-hidden divide-y divide-gray-200 dark:divide-gray-800">
-                {/* Header row (mobile) - clickable for sorting */}
-                <div className="px-3 py-1.5 bg-slate-50/80 dark:bg-white/5 text-[11px] font-semibold text-slate-600 dark:text-slate-300">
-                  {sortKey === 'marketCapDiff' ? (
-                    <div className="grid items-center gap-x-2 min-w-0 [grid-template-columns:minmax(56px,1fr)_72px_72px_44px]">
-                      <button
-                        type="button"
-                        onClick={() => onSort('ticker')}
-                        className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border border-gray-300/50 dark:border-gray-600/50 bg-transparent"
-                        style={{ WebkitTapHighlightColor: 'transparent' }}
-                        aria-label="Sort by ticker"
-                      >
-                        Ticker
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onSort('marketCap')}
-                        className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border border-gray-300/50 dark:border-gray-600/50 bg-transparent"
-                        style={{ WebkitTapHighlightColor: 'transparent' }}
-                        aria-label="Sort by market cap"
-                      >
-                        Mkt Cap
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onSort('marketCapDiff')}
-                        className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border border-gray-300/50 dark:border-gray-600/50 bg-transparent"
-                        style={{ WebkitTapHighlightColor: 'transparent' }}
-                        aria-label="Sort by market cap diff"
-                      >
-                        Δ
-                        <span className="text-[9px] text-gray-500 dark:text-gray-400">{ascending ? '▲' : '▼'}</span>
-                      </button>
-                      <div className="text-center">★</div>
-                    </div>
-                  ) : sortKey === 'marketCap' ? (
-                    <div className="grid items-center gap-x-2 min-w-0 [grid-template-columns:minmax(56px,1fr)_96px_56px_44px]">
-                      <button
-                        type="button"
-                        onClick={() => onSort('ticker')}
-                        className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border border-gray-300/50 dark:border-gray-600/50 bg-transparent"
-                        style={{ WebkitTapHighlightColor: 'transparent' }}
-                        aria-label="Sort by ticker"
-                      >
-                        Ticker
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onSort('marketCap')}
-                        className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border border-gray-300/50 dark:border-gray-600/50 bg-transparent"
-                        style={{ WebkitTapHighlightColor: 'transparent' }}
-                        aria-label="Sort by market cap"
-                      >
-                        Mkt Cap
-                        <span className="text-[9px] text-gray-500 dark:text-gray-400">{ascending ? '▲' : '▼'}</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onSort('percentChange')}
-                        className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border border-gray-300/50 dark:border-gray-600/50 bg-transparent"
-                        style={{ WebkitTapHighlightColor: 'transparent' }}
-                        aria-label="Sort by percent change"
-                      >
-                        %
-                      </button>
-                      <div className="text-center">★</div>
-                    </div>
-                  ) : (
-                    <div className="grid items-center gap-x-2 min-w-0 [grid-template-columns:minmax(56px,1fr)_96px_56px_44px]">
-                      <button
-                        type="button"
-                        onClick={() => onSort('ticker')}
-                        className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border border-gray-300/50 dark:border-gray-600/50 bg-transparent"
-                        style={{ WebkitTapHighlightColor: 'transparent' }}
-                        aria-label="Sort by ticker"
-                      >
-                        Ticker
-                        {sortKey === 'ticker' && (
-                          <span className="text-[9px] text-gray-500 dark:text-gray-400">{ascending ? '▲' : '▼'}</span>
-                        )}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onSort('currentPrice')}
-                        className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border border-gray-300/50 dark:border-gray-600/50 bg-transparent"
-                        style={{ WebkitTapHighlightColor: 'transparent' }}
-                        aria-label="Sort by price"
-                      >
-                        Price
-                        {sortKey === 'currentPrice' && (
-                          <span className="text-[9px] text-gray-500 dark:text-gray-400">{ascending ? '▲' : '▼'}</span>
-                        )}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onSort('percentChange')}
-                        className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border border-gray-300/50 dark:border-gray-600/50 bg-transparent"
-                        style={{ WebkitTapHighlightColor: 'transparent' }}
-                        aria-label="Sort by percent change"
-                      >
-                        %
-                        {sortKey === 'percentChange' && (
-                          <span className="text-[9px] text-gray-500 dark:text-gray-400">{ascending ? '▲' : '▼'}</span>
-                        )}
-                      </button>
-                      <div className="text-center">★</div>
-                    </div>
-                  )}
-                </div>
-                {displayedStocks.map((stock, index) => (
-                  <StockCardMobile
-                    key={stock.ticker}
-                    stock={stock}
-                    isFavorite={isFavorite(stock.ticker)}
-                    onToggleFavorite={favoriteHandlers.get(stock.ticker) || (() => onToggleFavorite(stock.ticker))}
-                    displayMode={
-                      sortKey === 'marketCapDiff'
-                        ? 'capDiff'
-                        : sortKey === 'marketCap'
-                          ? 'cap'
-                          : 'default'
-                    }
-                    priority={index < 100}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
+
 
           {/* Desktop: Table layout */}
-          <div className="hidden lg:block table-wrapper-mobile-safe">
+          <div className="table-wrapper-mobile-safe">
             <table>
               <thead>
                 <tr>

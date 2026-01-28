@@ -477,87 +477,21 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
 
       {allEarnings.length > 0 ? (
         <>
-          {/* Mobile: Cards layout */}
-          <div className="lg:hidden">
-            <div className="w-full bg-white dark:bg-gray-900 border-none outline-none ring-0 rounded-none overflow-hidden divide-y divide-gray-200 dark:divide-gray-800">
-              {/* Mobile Header */}
-              <div className="px-3 py-2 bg-transparent text-xs font-semibold text-gray-400 dark:text-gray-400 uppercase tracking-wide">
-                <div className="grid items-center gap-x-2 min-w-0 [grid-template-columns:minmax(56px,1fr)_72px_72px_56px]">
-                  <button
-                    type="button"
-                    onClick={() => handleSort('ticker')}
-                    className="text-xs text-gray-400 dark:text-gray-400 font-semibold text-left cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-start gap-0.5 px-1 py-0.5 rounded border-none bg-transparent uppercase tracking-wide"
-                    style={{ WebkitTapHighlightColor: 'transparent' }}
-                    aria-label="Sort by ticker"
-                  >
-                    Ticker
-                    {sortKey === 'ticker' && (
-                      <span className="text-[9px] text-gray-500 dark:text-gray-400">{ascending ? '▲' : '▼'}</span>
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleSort('marketCap')}
-                    className="text-xs text-gray-400 dark:text-gray-400 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border-none bg-transparent uppercase tracking-wide"
-                    style={{ WebkitTapHighlightColor: 'transparent' }}
-                    aria-label="Sort by market cap"
-                  >
-                    Mkt Cap
-                    {sortKey === 'marketCap' && (
-                      <span className="text-[9px] text-gray-500 dark:text-gray-400">{ascending ? '▲' : '▼'}</span>
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleSort('percentChange')}
-                    className="text-xs text-gray-400 dark:text-gray-400 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border-none bg-transparent uppercase tracking-wide"
-                    style={{ WebkitTapHighlightColor: 'transparent' }}
-                    aria-label="Sort by percent change"
-                  >
-                    %
-                    {sortKey === 'percentChange' && (
-                      <span className="text-[9px] text-gray-500 dark:text-gray-400">{ascending ? '▲' : '▼'}</span>
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleSort('marketCapDiff')}
-                    className="text-xs text-gray-400 dark:text-gray-400 font-semibold text-center cursor-pointer hover:opacity-70 transition-opacity flex items-center justify-center gap-0.5 px-1 py-0.5 rounded border-none bg-transparent uppercase tracking-wide"
-                    style={{ WebkitTapHighlightColor: 'transparent' }}
-                    aria-label="Sort by market cap diff"
-                  >
-                    Diff
-                    {sortKey === 'marketCapDiff' && (
-                      <span className="text-[9px] text-gray-500 dark:text-gray-400">{ascending ? '▲' : '▼'}</span>
-                    )}
-                  </button>
-                </div>
-              </div>
 
-              {/* Mobile List */}
-              {allEarnings.map((earning, index) => (
-                <EarningsCardMobile
-                  key={`${earning.ticker}-${index}`}
-                  earning={earning}
-                  priority={index < 20}
-                />
-              ))}
-            </div>
-          </div>
 
           {/* Desktop: Table layout */}
-          <div className="hidden lg:block overflow-x-auto">
+          <div className="overflow-x-auto">
             <table>
               <thead>
                 <tr>
-                  <th>Logo</th>
+                  <th className="hidden lg:table-cell">Logo</th>
                   <th onClick={() => handleSort('ticker')} className={`sortable ${sortKey === 'ticker' ? 'active-sort' : ''}`}>
                     Ticker
                   </th>
-                  <th onClick={() => handleSort('companyName')} className={`sortable ${sortKey === 'companyName' ? 'active-sort' : ''}`}>
+                  <th onClick={() => handleSort('companyName')} className={`hidden lg:table-cell sortable ${sortKey === 'companyName' ? 'active-sort' : ''}`}>
                     Company Name
                   </th>
-                  <th onClick={() => handleSort('marketCap')} className={`sortable whitespace-nowrap ${sortKey === 'marketCap' ? 'active-sort' : ''}`}>
+                  <th onClick={() => handleSort('marketCap')} className={`hidden lg:table-cell sortable whitespace-nowrap ${sortKey === 'marketCap' ? 'active-sort' : ''}`}>
                     Market Cap
                   </th>
                   <th className="grouped-header">
@@ -579,7 +513,7 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
                   <th onClick={() => handleSort('percentChange')} className={`sortable whitespace-nowrap ${sortKey === 'percentChange' ? 'active-sort' : ''}`}>
                     % Change
                   </th>
-                  <th onClick={() => handleSort('marketCapDiff')} className={`sortable ${sortKey === 'marketCapDiff' ? 'active-sort' : ''}`}>
+                  <th onClick={() => handleSort('marketCapDiff')} className={`hidden lg:table-cell sortable ${sortKey === 'marketCapDiff' ? 'active-sort' : ''}`}>
                     Cap Diff
                   </th>
                 </tr>
@@ -606,7 +540,7 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
 
                   return (
                     <tr key={`${earning.ticker}-${index}-desktop`}>
-                      <td>
+                      <td className="hidden lg:table-cell">
                         <div className="flex justify-center items-center w-full">
                           <CompanyLogo
                             ticker={earning.ticker.trim().toUpperCase()}
@@ -617,8 +551,8 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
                         </div>
                       </td>
                       <td><strong>{earning.ticker}</strong></td>
-                      <td className="company-name">{getCompanyName(earning.ticker)}</td>
-                      <td>{earning.marketCap !== null ? formatBillions(earning.marketCap) : '-'}</td>
+                      <td className="company-name hidden lg:table-cell">{getCompanyName(earning.ticker)}</td>
+                      <td className="hidden lg:table-cell">{earning.marketCap !== null ? formatBillions(earning.marketCap) : '-'}</td>
                       <td className="grouped-cell">
                         <div className="cell-value">{formatEarningsValue(earning.epsEstimate, false, true)}</div>
                         <div className={`cell-value ${earning.epsActual !== null && earning.epsEstimate !== null ? (earning.epsActual >= earning.epsEstimate ? 'positive' : 'negative') : ''}`}>
@@ -634,7 +568,7 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
                       <td className={getValueClass(earning.percentChange, earning.percentChange !== null && earning.percentChange >= 0)}>
                         {formatPercentChange(earning.percentChange)}
                       </td>
-                      <td className={getValueClass(earning.marketCapDiff, earning.marketCapDiff !== null && earning.marketCapDiff >= 0)}>
+                      <td className={getValueClass(earning.marketCapDiff, earning.marketCapDiff !== null && earning.marketCapDiff >= 0) + " hidden lg:table-cell"}>
                         {formatMarketCapDiff(earning.marketCapDiff)}
                       </td>
                     </tr>

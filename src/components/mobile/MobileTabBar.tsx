@@ -23,33 +23,33 @@ const HeatmapTabIcon: React.FC<{ size?: number; className?: string }> = ({ size 
 );
 
 const tabs: TabItem[] = [
-  { 
-    id: 'heatmap', 
-    label: 'Heatmap', 
+  {
+    id: 'heatmap',
+    label: 'Heatmap',
     icon: HeatmapTabIcon,
     ariaDescription: 'View market heatmap by sectors'
   },
-  { 
-    id: 'portfolio', 
-    label: 'Portfolio', 
+  {
+    id: 'portfolio',
+    label: 'Portfolio',
     icon: PieChart,
     ariaDescription: 'View and manage your portfolio'
   },
-  { 
-    id: 'favorites', 
-    label: 'Favorites', 
+  {
+    id: 'favorites',
+    label: 'Favorites',
     icon: Star,
     ariaDescription: 'View your favorite stocks'
   },
-  { 
-    id: 'earnings', 
-    label: 'Earnings', 
+  {
+    id: 'earnings',
+    label: 'Earnings',
     icon: Calendar,
     ariaDescription: 'View today\'s earnings calendar'
   },
-  { 
-    id: 'allStocks', 
-    label: 'Stocks', 
+  {
+    id: 'allStocks',
+    label: 'Stocks',
     icon: Globe,
     ariaDescription: 'Browse all available stocks'
   },
@@ -159,8 +159,8 @@ export function MobileTabBar({ activeTab, onTabChange }: MobileTabBarProps) {
     const activeTabEl = tabRefs.current.get(activeTab);
     if (activeTabEl && document.activeElement !== activeTabEl) {
       // Only focus if user is navigating with keyboard
-      const isKeyboardNavigation = document.activeElement?.tagName === 'BUTTON' || 
-                                   document.activeElement === navRef.current;
+      const isKeyboardNavigation = document.activeElement?.tagName === 'BUTTON' ||
+        document.activeElement === navRef.current;
       if (isKeyboardNavigation) {
         activeTabEl.focus();
       }
@@ -168,10 +168,10 @@ export function MobileTabBar({ activeTab, onTabChange }: MobileTabBarProps) {
   }, [activeTab]);
 
   return (
-    <nav 
+    <nav
       ref={navRef}
-      className="mobile-app-tabbar" 
-      role="tablist" 
+      className="mobile-app-tabbar"
+      role="tablist"
       aria-label="Main navigation"
       aria-orientation="horizontal"
     >
@@ -191,7 +191,7 @@ export function MobileTabBar({ activeTab, onTabChange }: MobileTabBarProps) {
             aria-label={tab.label}
             aria-describedby={tab.ariaDescription ? `tab-desc-${tab.id}` : undefined}
             tabIndex={isActive ? 0 : -1}
-            style={{ 
+            style={{
               WebkitTapHighlightColor: 'transparent',
               touchAction: 'manipulation' // Prevent double-tap zoom
             }}
@@ -199,15 +199,15 @@ export function MobileTabBar({ activeTab, onTabChange }: MobileTabBarProps) {
             <div className="mobile-app-tab-icon" aria-hidden="true">
               <Icon size={22} />
             </div>
-            <span className="mobile-app-tab-label">{tab.label}</span>
+            {/* Label removed for icon-only nav */}
             {tab.ariaDescription && (
               <span id={`tab-desc-${tab.id}`} className="sr-only">
                 {tab.ariaDescription}
               </span>
             )}
             {isActive && (
-              <div 
-                className="mobile-app-tab-indicator" 
+              <div
+                className="mobile-app-tab-indicator"
                 aria-hidden="true"
                 aria-label="Active tab indicator"
               />

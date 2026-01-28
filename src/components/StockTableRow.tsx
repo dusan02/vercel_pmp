@@ -41,24 +41,17 @@ export const StockTableRow = memo(({
         isFavorite={isFavorite}
         className="lg:hidden"
       >
-        {/* Logo - smaller on mobile */}
-        <td>
-          <div className="logo-container">
-            <CompanyLogo ticker={stock.ticker} {...(stock.logoUrl ? { logoUrl: stock.logoUrl } : {})} size={24} priority={priority} />
-          </div>
-        </td>
-
         {/* Ticker */}
         <td><strong>{stock.ticker}</strong></td>
+
+        {/* Price - Added for mobile */}
+        <td>
+          {hasValidPrice ? `$${formattedPrice}` : '—'}
+        </td>
 
         {/* % Change */}
         <td className={stock.percentChange >= 0 ? 'positive' : 'negative'}>
           {formattedPercentChange}
-        </td>
-
-        {/* Cap Diff */}
-        <td className={stock.marketCapDiff >= 0 ? 'positive' : 'negative'}>
-          {formattedMarketCapDiff}
         </td>
 
         {/* Action - Favorite button */}

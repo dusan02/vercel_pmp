@@ -14,6 +14,7 @@ interface HeatmapMetricButtonsProps {
   onMetricChange: (metric: HeatmapMetric) => void;
   className?: string;
   variant?: 'light' | 'dark'; // 'light' for light background (homepage), 'dark' for dark background (heatmap page)
+  size?: 'sm' | 'md';
 }
 
 export function HeatmapMetricButtons({
@@ -21,6 +22,7 @@ export function HeatmapMetricButtons({
   onMetricChange,
   className = '',
   variant = 'light', // Default to light for homepage
+  size = 'md',
 }: HeatmapMetricButtonsProps) {
   const [mounted, setMounted] = useState(false);
 
@@ -62,6 +64,11 @@ export function HeatmapMetricButtons({
   const active = 'bg-blue-600 text-white';
   const inactive = isDark ? 'bg-white/10 text-white/75' : 'bg-slate-200 text-slate-700';
 
+  // Size classes
+  const btnClasses = size === 'sm'
+    ? 'min-w-[28px] px-2 py-0.5 text-[10px]'
+    : 'min-w-[32px] px-2.5 py-1 text-xs';
+
   return (
     <div
       className={`inline-flex items-center ${className}`}
@@ -78,7 +85,7 @@ export function HeatmapMetricButtons({
             e.stopPropagation();
             if (!isPercent) onMetricChange('percent');
           }}
-          className={`min-w-[32px] px-2.5 py-1 text-xs font-bold rounded-md transition-all duration-200 ${isPercent ? active : inactive}`}
+          className={`${btnClasses} font-bold rounded-md transition-all duration-200 ${isPercent ? active : inactive}`}
           aria-label="Percent Change"
           title="Percentage Change"
         >
@@ -93,7 +100,7 @@ export function HeatmapMetricButtons({
             e.stopPropagation();
             if (isPercent) onMetricChange('mcap');
           }}
-          className={`min-w-[32px] px-2.5 py-1 text-xs font-bold rounded-md transition-all duration-200 ${!isPercent ? active : inactive}`}
+          className={`${btnClasses} font-bold rounded-md transition-all duration-200 ${!isPercent ? active : inactive}`}
           aria-label="Market Cap Change"
           title="Market Cap Change"
         >

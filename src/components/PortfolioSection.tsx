@@ -747,7 +747,7 @@ export function PortfolioSection({
         <table className="portfolio-table">
           <thead>
             <tr>
-              <th className="portfolio-col-logo">Logo</th>
+              <th className="portfolio-col-logo hidden md:table-cell">Logo</th>
               <th
                 className={`portfolio-col-ticker ${desktopSortKey === 'ticker' ? 'sortable active-sort' : 'sortable'}`}
                 onClick={() => {
@@ -763,7 +763,7 @@ export function PortfolioSection({
                 Ticker
               </th>
               <th
-                className={`portfolio-col-company ${desktopSortKey === 'company' ? 'sortable active-sort' : 'sortable'}`}
+                className={`portfolio-col-company hidden md:table-cell ${desktopSortKey === 'company' ? 'sortable active-sort' : 'sortable'}`}
                 onClick={() => {
                   if (desktopSortKey === 'company') {
                     setDesktopAscending(v => !v);
@@ -777,7 +777,7 @@ export function PortfolioSection({
                 Company
               </th>
               <th
-                className={`portfolio-col-sector ${desktopSortKey === 'sector' ? 'sortable active-sort' : 'sortable'}`}
+                className={`portfolio-col-sector hidden md:table-cell ${desktopSortKey === 'sector' ? 'sortable active-sort' : 'sortable'}`}
                 onClick={() => {
                   if (desktopSortKey === 'sector') {
                     setDesktopAscending(v => !v);
@@ -791,7 +791,7 @@ export function PortfolioSection({
                 Sector
               </th>
               <th
-                className={`portfolio-col-industry !text-left ${desktopSortKey === 'industry' ? 'sortable active-sort' : 'sortable'}`}
+                className={`portfolio-col-industry !text-left hidden md:table-cell ${desktopSortKey === 'industry' ? 'sortable active-sort' : 'sortable'}`}
                 onClick={() => {
                   if (desktopSortKey === 'industry') {
                     setDesktopAscending(v => !v);
@@ -819,7 +819,7 @@ export function PortfolioSection({
                 #
               </th>
               <th
-                className={`portfolio-col-price ${desktopSortKey === 'price' ? 'sortable active-sort' : 'sortable'}`}
+                className={`portfolio-col-price hidden md:table-cell ${desktopSortKey === 'price' ? 'sortable active-sort' : 'sortable'}`}
                 onClick={() => {
                   if (desktopSortKey === 'price') {
                     setDesktopAscending(v => !v);
@@ -941,7 +941,7 @@ export function PortfolioSection({
                   return (
                     <tr key={stock.ticker}>
                       {/* Logo */}
-                      <td>
+                      <td className="hidden md:table-cell">
                         <div className="logo-container">
                           <CompanyLogo
                             ticker={stock.ticker}
@@ -958,15 +958,15 @@ export function PortfolioSection({
                       </td>
 
                       {/* Company */}
-                      <td className="company-name">
+                      <td className="company-name hidden md:table-cell">
                         {getCompanyName(stock.ticker)}
                       </td>
 
                       {/* Sector */}
-                      <td>{formatSectorName(stock.sector)}</td>
+                      <td className="hidden md:table-cell">{formatSectorName(stock.sector)}</td>
 
                       {/* Industry */}
-                      <td className="!text-left">{stock.industry || 'N/A'}</td>
+                      <td className="!text-left hidden md:table-cell">{stock.industry || 'N/A'}</td>
 
                       {/* Quantity */}
                       <td>
@@ -978,7 +978,7 @@ export function PortfolioSection({
                       </td>
 
                       {/* Price */}
-                      <td>${formattedPrice}</td>
+                      <td className="hidden md:table-cell">${formattedPrice}</td>
 
                       {/* % Change */}
                       <td className={percentChange >= 0 ? 'positive' : 'negative'}>
@@ -1009,8 +1009,19 @@ export function PortfolioSection({
                   <td colSpan={10} style={{ padding: 0, borderTop: '1px solid var(--clr-border, #e5e7eb)', height: '1px' }}></td>
                 </tr>
                 {/* Total row */}
-                <tr className="portfolio-total-row">
+                {/* Total row - Desktop (colSpan 8) */}
+                <tr className="portfolio-total-row hidden md:table-row">
                   <td colSpan={8} style={{ textAlign: 'right', fontWeight: 600, padding: '1rem 0.5rem', verticalAlign: 'middle' }}>
+                    Total:
+                  </td>
+                  <td className={totalPortfolioValue >= 0 ? 'positive' : 'negative'} style={{ fontWeight: 600, padding: '1rem 0.5rem', whiteSpace: 'nowrap', verticalAlign: 'middle', minWidth: '120px' }}>
+                    {formatCurrencyCompact(totalPortfolioValue, true)}
+                  </td>
+                  <td></td>
+                </tr>
+                {/* Total row - Mobile (colSpan 3 - Ticker, Qty, %) */}
+                <tr className="portfolio-total-row md:hidden">
+                  <td colSpan={3} style={{ textAlign: 'right', fontWeight: 600, padding: '1rem 0.5rem', verticalAlign: 'middle' }}>
                     Total:
                   </td>
                   <td className={totalPortfolioValue >= 0 ? 'positive' : 'negative'} style={{ fontWeight: 600, padding: '1rem 0.5rem', whiteSpace: 'nowrap', verticalAlign: 'middle', minWidth: '120px' }}>

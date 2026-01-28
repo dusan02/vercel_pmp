@@ -83,6 +83,25 @@ export function HeatmapPreview({ activeView, wrapperClass }: { activeView?: stri
         </div>
       )}
 
+      {/* Mobile Header with Toggles */}
+      {!isDesktop && (
+        <div className="flex items-center justify-between px-3 py-2 bg-black border-b border-white/10 shrink-0">
+          <div className="flex items-center">
+            <h2 className="flex items-center gap-2 text-lg font-bold text-white m-0">
+              <SectionIcon type="heatmap" size={20} className="text-white" />
+              <span>Market Heatmap</span>
+            </h2>
+          </div>
+          <div className="flex items-center">
+            <HeatmapMetricButtons
+              metric={metric}
+              onMetricChange={setMetric}
+              size="sm"
+            />
+          </div>
+        </div>
+      )}
+
       {/* Content Wrapper - simplified: removed unnecessary inner div */}
       <div
         className={`relative w-full bg-black overflow-hidden group heatmap-preview-container ${isDesktop ? 'heatmap-preview-desktop h-[600px]' : 'flex-1'
