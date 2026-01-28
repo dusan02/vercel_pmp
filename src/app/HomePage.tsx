@@ -135,13 +135,13 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
     }
   }, []);
 
-  // Mobile bottom navigation state
-  const [activeMobileSection, setActiveMobileSection] = useState<'heatmap' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks'>('heatmap');
+  // Navigation state (unified for mobile and desktop)
+  const [activeSection, setActiveSection] = useState<'heatmap' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks'>('heatmap');
 
   // Helper function to validate and set tab
   const setActiveTab = useCallback((tab: string) => {
     if (tab === 'heatmap' || tab === 'portfolio' || tab === 'favorites' || tab === 'earnings' || tab === 'allStocks') {
-      setActiveMobileSection(tab as 'heatmap' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks');
+      setActiveSection(tab as 'heatmap' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks');
       return true;
     }
     return false;
@@ -198,18 +198,19 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
 
   // Handle mobile bottom navigation change - VIEW-BASED (tabs, not scroll)
   const handleMobileNavChange = useCallback((tab: 'heatmap' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks') => {
-    setActiveMobileSection(tab);
+    setActiveSection(tab);
     // Update URL to keep it in sync
     const url = new URL(window.location.href);
-    url.searchParams.set('tab', tab);
-    window.history.pushState({}, '', url.toString());
+    const navUrl = new URL(window.location.href);
+    navUrl.searchParams.set('tab', tab);
+    window.history.pushState({}, '', navUrl.toString());
   }, []);
 
   // Prefetch neaktívne screens a API endpoints pre rýchlejšie prepínanie
-  useMobilePrefetch(activeMobileSection);
+  useMobilePrefetch(activeSection);
 
   // CRITICAL: Mobile optimization - prioritizuje heatmap (prvá obrazovka)
-  useMobileOptimization(activeMobileSection);
+  useMobileOptimization(activeSection);
 
   const { favorites, toggleFavorite, isFavorite } = useFavorites();
   const { isOnline } = usePWA();
@@ -331,13 +332,13 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
       {(isMounted && !isDesktop) && (
         <MobileApp>
           {/* MobileHeader - viditeľný vo všetkých sekciách okrem heatmap (heatmap má svoj vlastný header) */}
-          {activeMobileSection !== 'heatmap' && <MobileHeader />}
-          <PullToRefresh onRefresh={loadData} disabled={activeMobileSection === 'heatmap'}>
-            <div className={`mobile-app-content ${activeMobileSection === 'heatmap' ? 'is-heatmap' : ''}`}>
+          {activeSection !== 'heatmap' && <MobileHeader />}
+          <PullToRefresh onRefresh={loadData} disabled={activeSection === 'heatmap'}>
+            <div className={`mobile-app-content ${activeSection === 'heatmap' ? 'is-heatmap' : ''}`}>
               <MobileScreen
-                active={activeMobileSection === 'heatmap'}
+                active={activeSection === 'heatmap'}
                 className="screen-heatmap"
-                prefetch={activeMobileSection === 'heatmap'}
+                prefetch={activeSection === 'heatmap'}
                 screenName="Heatmap"
                 skeleton={
                   <div className="h-full w-full bg-black p-2">
@@ -360,14 +361,14 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
                 {(preferences.showHeatmapSection ?? true) && (
                   <HomeHeatmap
                     wrapperClass="mobile-heatmap-wrapper"
-                    activeView={activeMobileSection === 'heatmap' ? 'heatmap' : undefined}
+                    activeView={activeSection === 'heatmap' ? 'heatmap' : undefined}
                   />
                 )}
               </MobileScreen>
               <MobileScreen
-                active={activeMobileSection === 'portfolio'}
+                active={activeSection === 'portfolio'}
                 className="screen-portfolio"
-                prefetch={activeMobileSection === 'heatmap'} // Prefetch keď je heatmap aktívny (najpravdepodobnejší ďalší tab)
+                prefetch={activeSection === 'heatmap'} // Prefetch keď je heatmap aktívny (najpravdepodobnejší ďalší tab)
                 screenName="Portfolio"
                 skeleton={<div className="p-4 space-y-3"><div className="h-20 bg-gray-200 rounded animate-pulse" /><div className="h-20 bg-gray-200 rounded animate-pulse" /></div>}
               >
@@ -387,9 +388,9 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
                 )}
               </MobileScreen>
               <MobileScreen
-                active={activeMobileSection === 'favorites'}
+                active={activeSection === 'favorites'}
                 className="screen-favorites"
-                prefetch={activeMobileSection === 'heatmap'} // Prefetch keď je heatmap aktívny
+                prefetch={activeSection === 'heatmap'} // Prefetch keď je heatmap aktívny
                 screenName="Favorites"
                 skeleton={<div className="p-4 space-y-3"><div className="h-20 bg-gray-200 rounded animate-pulse" /><div className="h-20 bg-gray-200 rounded animate-pulse" /></div>}
               >
@@ -406,7 +407,7 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
                 )}
               </MobileScreen>
               <MobileScreen
-                active={activeMobileSection === 'earnings'}
+                active={activeSection === 'earnings'}
                 className="screen-earnings"
                 prefetch={false}
                 screenName="Earnings"
@@ -421,7 +422,7 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
                 )}
               </MobileScreen>
               <MobileScreen
-                active={activeMobileSection === 'allStocks'}
+                active={activeSection === 'allStocks'}
                 className="screen-all-stocks"
                 prefetch={false}
                 screenName="All Stocks"
@@ -459,7 +460,7 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
             </div>
           </PullToRefresh>
           <MobileTabBar
-            activeTab={activeMobileSection}
+            activeTab={activeSection}
             onTabChange={handleMobileNavChange}
           />
         </MobileApp>
@@ -496,9 +497,8 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
                         navigation={
                           <div className="hidden lg:block">
                             <SectionNavigation
-                              preferences={preferences}
-                              onToggleSection={(key) => savePreferences({ [key]: !(preferences[key] ?? true) })}
-                              onScrollToSection={scrollToSection}
+                              activeTab={activeSection}
+                              onTabChange={(tab: string) => setActiveSection(tab as any)}
                             />
                           </div>
                         }
@@ -514,16 +514,16 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
                         </div>
                       )}
 
-                      {/* --- DESKTOP LAYOUT (Scroll Based) --- */}
+                      {/* --- DESKTOP LAYOUT (Tab Based) --- */}
                       <div className="desktop-layout-wrapper">
-                        {(preferences.showHeatmapSection ?? true) && (
-                          <div id="section-heatmap" className="scroll-mt-20">
+                        {activeSection === 'heatmap' && (
+                          <div className="tab-content relative fade-in">
                             <HomeHeatmap wrapperClass="desktop-heatmap-wrapper" />
                           </div>
                         )}
 
-                        {(preferences.showPortfolioSection ?? true) && (
-                          <div id="section-portfolio" className="scroll-mt-20">
+                        {activeSection === 'portfolio' && (
+                          <div className="tab-content fade-in">
                             <HomePortfolio
                               portfolioStocks={portfolioStocks}
                               portfolioHoldings={portfolioHoldings}
@@ -532,14 +532,15 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
                               onUpdateQuantity={updateQuantity}
                               onRemoveStock={removeStock}
                               onAddStock={addStock}
-                              calculatePortfolioValue={calculateStockValue}
+                              calculatePortfolioValue={calculateDailyChange}
+                              calculateTotalValue={calculateTotalStockValue}
                               totalPortfolioValue={totalPortfolioValue}
                             />
                           </div>
                         )}
 
-                        {(preferences.showFavoritesSection ?? true) && (
-                          <div id="section-favorites" className="scroll-mt-20">
+                        {activeSection === 'favorites' && (
+                          <div className="tab-content fade-in">
                             <HomeFavorites
                               favoriteStocks={favoriteStocksSorted}
                               loading={loadingStates.favorites}
@@ -552,14 +553,14 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
                           </div>
                         )}
 
-                        {(preferences.showEarningsSection ?? true) && (
-                          <div id="section-earnings" className="scroll-mt-20">
+                        {activeSection === 'earnings' && (
+                          <div className="tab-content fade-in">
                             <HomeEarnings initialData={initialEarningsData} />
                           </div>
                         )}
 
-                        {(preferences.showAllStocksSection ?? true) && (
-                          <div id="section-all-stocks" className="scroll-mt-20">
+                        {activeSection === 'allStocks' && (
+                          <div className="tab-content fade-in">
                             <HomeAllStocks
                               displayedStocks={displayedStocks}
                               loading={loadingStates.top50Stocks}
