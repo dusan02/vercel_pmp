@@ -85,7 +85,7 @@ export function HeatmapPreview({ activeView, wrapperClass }: { activeView?: stri
 
       {/* Content Wrapper - simplified: removed unnecessary inner div */}
       <div
-        className={`relative w-full bg-black overflow-hidden group heatmap-preview-container ${isDesktop ? 'heatmap-preview-desktop' : 'flex-1'
+        className={`relative w-full bg-black overflow-hidden group heatmap-preview-container ${isDesktop ? 'heatmap-preview-desktop h-[600px]' : 'flex-1'
           }`}
         style={isDesktop ? { cursor: 'pointer' } : { cursor: 'pointer' }}
         onClick={handleBackgroundClick}

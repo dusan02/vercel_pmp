@@ -163,13 +163,13 @@ export const AllStocksSection = React.memo(function AllStocksSection({
       {isDesktop && (
         <div className="flex items-center justify-between mb-4 px-4">
           <div className="flex items-center mr-4">
-            <h2 className="flex items-center gap-2 text-xl font-bold text-gray-900 dark:text-white m-0">
-              <SectionIcon type="globe" size={24} className="text-gray-900 dark:text-white" />
+            <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--clr-text)] m-0">
+              <SectionIcon type="globe" size={24} className="text-[var(--clr-text)]" />
               <span>All Stocks</span>
             </h2>
           </div>
           <div className="flex flex-1 items-center justify-end gap-3 min-w-0">
-            <div className="w-64">
+            <div className="w-72">
               <StockSearchBar
                 searchTerm={searchTerm}
                 onSearchChange={onSearchChange}
@@ -180,7 +180,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
                 value={selectedSector}
                 onChange={handleSectorChange}
                 options={sectorOptions}
-                className="sector-filter w-64"
+                className="sector-filter w-72"
                 ariaLabel="Filter by sector"
                 placeholder="All Sectors"
               />
@@ -188,7 +188,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
                 value={selectedIndustry}
                 onChange={onIndustryChange}
                 options={industryOptions}
-                className="industry-filter w-64"
+                className="industry-filter w-72"
                 ariaLabel="Filter by industry"
                 placeholder="All Industries"
               />

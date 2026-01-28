@@ -254,8 +254,8 @@ function useEarningsData(date: string, initialData?: EarningsResponse | null) {
 const EarningsHeader = () => (
   <div className="flex items-center justify-between mb-4 px-4">
     <div className="flex items-center">
-      <h2 className="flex items-center gap-2 text-xl font-bold text-gray-900 dark:text-white m-0">
-        <SectionIcon type="calendar" size={24} className="text-gray-900 dark:text-white" />
+      <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--clr-text)] m-0">
+        <SectionIcon type="calendar" size={24} className="text-[var(--clr-text)]" />
         <span>Today&apos;s Earnings</span>
       </h2>
     </div>
@@ -607,12 +607,11 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
                   return (
                     <tr key={`${earning.ticker}-${index}-desktop`}>
                       <td>
-                        <div className="logo-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                          {/* Priority loading for first 15 logos (above the fold) */}
+                        <div className="flex justify-center items-center w-full">
                           <CompanyLogo
                             ticker={earning.ticker.trim().toUpperCase()}
                             {...(earning.logoUrl ? { logoUrl: earning.logoUrl } : {})}
-                            size={40}
+                            size={32}
                             priority={index < 15}
                           />
                         </div>
