@@ -46,11 +46,8 @@ export function PortfolioPerformanceTreemap({ data }: PortfolioPerformanceTreema
 
     return (
         <div className="w-full p-4 md:p-6 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
-            <h3 className="text-base font-semibold text-[var(--clr-subtext)] mb-4 uppercase tracking-wider flex justify-between items-center">
-                <span>Performance Map (Daily P&L)</span>
-                <span className="text-xs normal-case opacity-70">
-                    Size = |Daily P&L| • Color = Daily Change %
-                </span>
+            <h3 className="text-base font-semibold text-[var(--clr-subtext)] mb-4 uppercase tracking-wider">
+                Performance Map (Daily P&L)
             </h3>
 
             <div
