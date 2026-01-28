@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { StockData } from '@/lib/types';
 import { formatPrice, formatPercent } from '@/lib/utils/format';
 import { logger } from '@/lib/utils/logger';
+import CompanyLogo from './CompanyLogo';
 
 const INDICES = [
     { ticker: 'SPY', name: 'S&P 500' },
@@ -97,7 +98,10 @@ export function MarketIndices() {
 
                         return (
                             <div key={ticker} className="flex flex-col bg-[var(--clr-bg)] border border-[var(--clr-border-subtle)] rounded-md px-2 sm:px-3 py-1.5 min-w-[80px] sm:min-w-[100px] transition-all duration-200 cursor-default relative overflow-hidden hover:border-blue-500/40 hover:bg-[var(--clr-bg-hover)] animate-in fade-in duration-500" title={`${name} (${ticker})`}>
-                                <span className="text-[0.6875rem] sm:text-xs font-bold text-[var(--clr-text)] m-0 tracking-wide">{ticker}</span>
+                                <div className="flex items-center gap-1.5 mb-1">
+                                    <CompanyLogo ticker={ticker} size={16} className="rounded-sm" />
+                                    <span className="text-[0.6875rem] sm:text-xs font-bold text-[var(--clr-text)] m-0 tracking-wide">{ticker}</span>
+                                </div>
                                 <div className="mt-1">
                                     <div className="text-[0.8125rem] sm:text-[0.9375rem] font-extrabold text-[var(--clr-text)] font-mono my-0.5 sm:my-1 leading-tight tracking-tight">
                                         {loading && !stock ? (

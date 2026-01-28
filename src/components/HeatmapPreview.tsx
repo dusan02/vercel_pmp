@@ -66,10 +66,10 @@ export function HeatmapPreview({ activeView, wrapperClass }: { activeView?: stri
     <section className={`heatmap-preview ${wrapperClass || ''} ${!isDesktop ? 'h-full flex flex-col' : ''}`}>
       {/* Header - hide on mobile (MobileTreemap has its own) */}
       {isDesktop && (
-        <div className="section-header">
-          <div className="header-main">
-            <h2 className="flex items-center gap-2">
-              <SectionIcon type="heatmap" size={24} className="section-icon" />
+        <div className="flex items-center justify-between mb-4 px-4">
+          <div className="flex items-center">
+            <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--clr-text)] m-0">
+              <SectionIcon type="heatmap" size={24} className="text-[var(--clr-text)]" />
               <span>Market Heatmap</span>
             </h2>
           </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
+import { ChevronUp } from 'lucide-react';
 
 type ScrollToTopButtonProps = {
   /** Show button after scrolling this many pixels */
@@ -12,16 +13,11 @@ function prefersReducedMotion(): boolean {
   return window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
 }
 
-export default function ScrollToTopButton({ showAfterPx = 400 }: ScrollToTopButtonProps) {
+export default function ScrollToTopButton({ showAfterPx = 300 }: ScrollToTopButtonProps) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     let rafId: number | null = null;
-
-    const getScrollTop = () => {
-      // More reliable than window.scrollY across browsers / doctypes
-      return document.scrollingElement?.scrollTop ?? window.scrollY ?? 0;
-    };
 
     const onScroll = () => {
       if (rafId !== null) return;
@@ -59,7 +55,7 @@ export default function ScrollToTopButton({ showAfterPx = 400 }: ScrollToTopButt
 
   const behavior = useMemo(() => (prefersReducedMotion() ? 'auto' : 'smooth'), []);
 
-  // Keep DOM clean (and avoid a11y snapshots showing the button when hidden)
+  // Keep DOM clean
   if (!visible) return null;
 
   return (
@@ -75,21 +71,21 @@ export default function ScrollToTopButton({ showAfterPx = 400 }: ScrollToTopButt
         }
       }}
       aria-label="Scroll to top"
-      title="Up"
+      title="Scroll to Top"
       className={[
-        'fixed bottom-[calc(5rem+1.25rem)] lg:bottom-16 right-5 z-[999]', // Mobile: above tabbar, Desktop: adjusted bottom
-        'rounded-full shadow-lg',
+        'fixed bottom-24 lg:bottom-10 right-6 z-[9999]',
+        'rounded-full shadow-xl',
         'bg-blue-600 text-white',
-        'hover:bg-blue-700 active:scale-95',
-        'transition-all duration-200',
+        'hover:bg-blue-700 hover:shadow-2xl active:scale-95',
+        'transition-all duration-300 ease-in-out',
         'w-12 h-12',
         'flex items-center justify-center',
         'focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2',
         'dark:focus:ring-offset-slate-900',
-        'opacity-100 pointer-events-auto translate-y-0',
+        'opacity-100 translate-y-0',
       ].join(' ')}
     >
-      <span className="text-sm font-bold tracking-wide">UP</span>
+      <ChevronUp size={28} strokeWidth={3} />
     </button>
   );
 }

@@ -2,7 +2,7 @@
 
 import React, { memo } from 'react';
 import { formatBillions, formatPercent } from '@/lib/utils/format';
-import { getCompanyName } from '@/lib/companyNames';
+import CompanyLogo from './CompanyLogo';
 
 interface EarningsData {
     ticker: string;
@@ -57,12 +57,15 @@ export const EarningsCardMobile = memo(({ earning, priority = false }: EarningsC
             {/* Grid matching other mobile cards (No Logo) */}
             <div className="grid items-center gap-x-2 min-w-0 [grid-template-columns:minmax(56px,1fr)_72px_72px_56px]">
                 {/* Ticker */}
-                <div className="min-w-0 text-left">
-                    <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100 tracking-tight truncate">
-                        {earning.ticker}
-                    </h3>
-                    <div className="text-[10px] text-gray-500 truncate">
-                        {getCompanyName(earning.ticker)}
+                <div className="min-w-0 flex items-center gap-2 text-left">
+                    <CompanyLogo ticker={earning.ticker} {...(earning.logoUrl ? { logoUrl: earning.logoUrl } : {})} size={28} className="rounded-sm shrink-0" />
+                    <div className="min-w-0 overflow-hidden">
+                        <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100 tracking-tight truncate">
+                            {earning.ticker}
+                        </h3>
+                        <div className="text-[10px] text-gray-500 truncate">
+                            {getCompanyName(earning.ticker)}
+                        </div>
                     </div>
                 </div>
 
