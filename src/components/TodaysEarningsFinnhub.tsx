@@ -81,12 +81,21 @@ const formatEarningsValue = (value: number | null, isPercent = false, isCurrency
 };
 
 // Custom hook pre earnings data
-function useEarningsData(date: string) {
-  const [data, setData] = useState<EarningsResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+function useEarningsData(date: string, initialData?: EarningsResponse | null) {
+  const [data, setData] = useState<EarningsResponse | null>(initialData || null);
+  const [isLoading, setIsLoading] = useState(!initialData);
   const [error, setError] = useState<string | null>(null);
 
+  // Skip initial load if we have data
+  const hasInitialized = React.useRef(!!initialData);
+
   const fetchData = async (refresh = false) => {
+    // If we have initial data and not refreshing, skip
+    if (hasInitialized.current && !refresh) {
+      hasInitialized.current = false;
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
@@ -217,7 +226,14 @@ function useEarningsData(date: string) {
 
   useEffect(() => {
     if (date) {
-      fetchData();
+      // If initialized, skip first fetch unless date changed significantly
+      if (!hasInitialized.current) {
+        fetchData();
+      } else {
+        // Reset flag for future date changes
+        // If "date" prop is same as initial data date, this is fine.
+        // Effectively we skip the very first effect run if we have initialData
+      }
 
       // Auto-refresh for today's earnings every 10 minutes (reduced frequency to avoid rate limiting)
       const today = new Date().toISOString().split('T')[0];
@@ -229,6 +245,7 @@ function useEarningsData(date: string) {
         return () => clearInterval(interval);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [date]);
 
   return { data, isLoading, error, refetch: () => fetchData(true) };
@@ -358,7 +375,7 @@ const EarningsEmpty = () => (
   </section>
 );
 
-export default function TodaysEarningsFinnhub() {
+export default function TodaysEarningsFinnhub({ initialData }: { initialData?: any }) {
   const [currentDate, setCurrentDate] = useState('');
   const [sortKey, setSortKey] = useState<keyof EarningsData>('marketCap');
   const [ascending, setAscending] = useState(false);
@@ -402,7 +419,7 @@ export default function TodaysEarningsFinnhub() {
     };
   }, []);
 
-  const { data, isLoading, error, refetch } = useEarningsData(currentDate);
+  const { data, isLoading, error, refetch } = useEarningsData(currentDate, initialData);
 
   const handleSort = (key: keyof EarningsData) => {
     if (sortKey === key) {

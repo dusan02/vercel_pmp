@@ -245,6 +245,10 @@
     border-collapse: separate;
     border-spacing: 0;
     margin-top: 1rem;
+    border: 1px solid var(--clr-border);
+    border-radius: 8px;
+    /* Slightly rounded corners */
+    overflow: hidden;
   }
 
   th,

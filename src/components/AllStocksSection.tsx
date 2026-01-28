@@ -180,7 +180,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
                 value={selectedSector}
                 onChange={handleSectorChange}
                 options={sectorOptions}
-                className="sector-filter w-48"
+                className="sector-filter w-64"
                 ariaLabel="Filter by sector"
                 placeholder="All Sectors"
               />
@@ -188,7 +188,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
                 value={selectedIndustry}
                 onChange={onIndustryChange}
                 options={industryOptions}
-                className="industry-filter w-48"
+                className="industry-filter w-64"
                 ariaLabel="Filter by industry"
                 placeholder="All Industries"
               />

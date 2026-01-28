@@ -101,9 +101,10 @@ import { useMobileOptimization } from '@/hooks/useMobileOptimization';
 
 interface HomePageProps {
   initialData?: StockData[];
+  initialEarningsData?: any;
 }
 
-export default function HomePage({ initialData = [] }: HomePageProps) {
+export default function HomePage({ initialData = [], initialEarningsData }: HomePageProps) {
   // Auto-repair localStorage on mount (fixes corrupted cache issues)
   useEffect(() => {
     autoRepairLocalStorage();
@@ -413,7 +414,7 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
                 }
               >
                 {(preferences.showEarningsSection ?? true) && (
-                  <HomeEarnings />
+                  <HomeEarnings initialData={initialEarningsData} />
                 )}
               </MobileScreen>
               <MobileScreen
@@ -550,7 +551,7 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
 
                         {(preferences.showEarningsSection ?? true) && (
                           <div id="section-earnings" className="scroll-mt-20">
-                            <HomeEarnings />
+                            <HomeEarnings initialData={initialEarningsData} />
                           </div>
                         )}
 
