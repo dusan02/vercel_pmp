@@ -1,0 +1,510 @@
+/* ============================================
+   HEADER STYLES (Restored from header-code.css)
+   ============================================ */
+:root {
+    /* Inherit from globals if possible, but keep fallbacks */
+    --header-height: 64px;
+}
+
+/* === HEADER CONTAINER === */
+.header {
+    width: 100%;
+    background: var(--clr-surface);
+    border-bottom: 1px solid var(--clr-border);
+    position: relative;
+    z-index: 50;
+    padding: 0.5rem 0;
+    /* Fix specific to screenshot: ensure it's not text-align center globally if that was copied from style.css */
+    text-align: left;
+}
+
+.header-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 1rem;
+    gap: 1rem;
+}
+
+/* LEFT ZONE: Branding */
+.header-left {
+    flex: 0 0 auto;
+    min-width: 200px;
+    display: flex;
+    align-items: center;
+}
+
+.brand-container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+    color: inherit;
+}
+
+.brand-logo {
+    flex-shrink: 0;
+}
+
+.brand-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.125rem;
+}
+
+.brand-minimal {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 1.25rem;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin: 0;
+    color: var(--clr-text);
+    white-space: nowrap;
+}
+
+.brand-premarket {
+    color: var(--clr-text);
+}
+
+.brand-price {
+    color: var(--clr-primary);
+}
+
+.brand-tagline {
+    font-size: 0.6875rem;
+    color: var(--clr-subtext);
+    margin: 0;
+    font-weight: 500;
+    white-space: nowrap;
+    letter-spacing: 0.01em;
+}
+
+/* CENTER ZONE: Market Indices */
+.header-center {
+    flex: 1 1 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Market Indices Components */
+.market-indicators-container {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    width: 100%;
+    justify-content: center;
+}
+
+.logo-separator {
+    width: 1px;
+    height: 24px;
+    background: var(--clr-border);
+    margin: 0 0.5rem;
+    display: none;
+    /* Hidden by default */
+}
+
+.market-indicators-section {
+    display: flex;
+    align-items: center;
+}
+
+.market-indicators-section .market-indicators {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.market-indicators-section .market-indicator {
+    display: flex;
+    flex-direction: column;
+    background: var(--clr-bg);
+    border: 1px solid var(--clr-border-subtle);
+    border-radius: 6px;
+    padding: 0.375rem 0.75rem;
+    min-width: 100px;
+    transition: all 0.2s ease;
+    cursor: default;
+    position: relative;
+    overflow: hidden;
+}
+
+.market-indicators-section .market-indicator:hover {
+    border-color: rgba(37, 99, 235, 0.4);
+    background: var(--clr-bg-hover);
+}
+
+.market-indicators-section .indicator-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.25rem;
+}
+
+.market-indicators-section .indicator-name {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--clr-text);
+    margin: 0;
+    letter-spacing: 0.01em;
+    padding: 0;
+}
+
+.market-indicators-section .indicator-symbol {
+    font-size: 0.625rem;
+    font-weight: 700;
+    color: var(--clr-subtext);
+    background: var(--clr-bg);
+    padding: 0.1rem 0.3rem;
+    border-radius: 0.25rem;
+    border: 1px solid var(--clr-border);
+    letter-spacing: 0.05em;
+}
+
+.market-indicators-section .indicator-values {
+    margin-top: 0.25rem;
+}
+
+.market-indicators-section .indicator-price {
+    font-size: 0.9375rem;
+    font-weight: 800;
+    color: var(--clr-text);
+    font-family: 'Inter', 'SF Mono', 'Monaco', 'Consolas', monospace;
+    margin: 0.25rem 0;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    padding: 0;
+}
+
+.market-indicators-section .indicator-change {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    margin-top: 0.1875rem;
+}
+
+.market-indicators-section .indicator-change.positive {
+    color: var(--clr-positive);
+}
+
+.market-indicators-section .indicator-change.negative {
+    color: var(--clr-negative);
+}
+
+/* RIGHT ZONE: Navigation */
+.header-right {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.header-right nav,
+.header-nav-container {
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    gap: 0.25rem;
+}
+
+.header-right .group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin: 0;
+    font-weight: 600;
+    font-size: 0.8125rem;
+    color: var(--clr-text);
+    cursor: pointer;
+    background: transparent;
+    border: none;
+}
+
+.header-right .group:hover {
+    background: var(--clr-bg-hover);
+    transform: translateY(-1px);
+}
+
+.dark .header-right .group:hover {
+    background: var(--clr-bg-hover-dark);
+}
+
+.header-right .group svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+.header-right .group.active {
+    background: rgba(37, 99, 235, 0.1);
+    color: rgb(37, 99, 235);
+}
+
+.dark .header-right .group.active {
+    background: rgba(59, 130, 246, 0.2);
+    color: rgb(147, 197, 253);
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+/* Tablet */
+@media (max-width: 1024px) {
+    .header-container {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        padding: 0 0.75rem;
+    }
+
+    .header-left {
+        flex: 0 0 auto;
+    }
+
+    .header-center {
+        flex: 1 1 100%;
+        order: 3;
+        justify-content: center;
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+
+    .header-right {
+        flex: 1 1 auto;
+        justify-content: flex-end;
+    }
+
+    .header-right .header-nav-container {
+        flex-wrap: wrap;
+        gap: 0.375rem;
+    }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .header {
+        padding: 0.5rem 0;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+
+    .header-container {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        gap: 0.5rem;
+        padding: 0 0.5rem;
+        align-items: center;
+    }
+
+    .brand-container {
+        gap: 0.5rem;
+    }
+
+    .brand-logo {
+        width: 28px;
+        height: 28px;
+        flex-shrink: 0;
+    }
+
+    .brand-content {
+        gap: 0;
+    }
+
+    .brand-minimal {
+        font-size: 0.9375rem;
+        line-height: 1.125rem;
+    }
+
+    .brand-tagline {
+        display: none;
+    }
+
+    .header-center {
+        flex: 1 1 auto;
+        min-width: 0;
+        order: 2;
+        margin: 0;
+        padding: 0;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .header-center::-webkit-scrollbar {
+        display: none;
+    }
+
+    .market-indicators-container {
+        gap: 0.375rem;
+        justify-content: flex-start;
+        padding: 0 0.25rem;
+    }
+
+    .market-indicators-section .market-indicators {
+        gap: 0.375rem;
+        flex-wrap: nowrap;
+    }
+
+    .market-indicators-section .market-indicator {
+        min-width: 80px;
+        max-width: 90px;
+        padding: 0.4375rem 0.5rem;
+        flex-shrink: 0;
+    }
+
+    .market-indicators-section .indicator-name {
+        font-size: 0.6875rem;
+        margin: 0 0 0.1875rem 0;
+    }
+
+    .market-indicators-section .indicator-symbol {
+        font-size: 0.5625rem;
+        padding: 0.0625rem 0.25rem;
+    }
+
+    .market-indicators-section .indicator-price {
+        font-size: 0.8125rem;
+        margin: 0.1875rem 0;
+    }
+
+    .market-indicators-section .indicator-change {
+        font-size: 0.6875rem;
+    }
+
+    .header-right {
+        flex: 0 0 auto;
+        order: 3;
+        min-width: 0;
+    }
+
+    .header-right .header-nav-container {
+        flex-direction: row;
+        gap: 0.25rem;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        padding: 0 0.25rem;
+    }
+
+    .header-right .header-nav-container::-webkit-scrollbar {
+        display: none;
+    }
+
+    .header-right .group {
+        padding: 0.5rem 0.625rem;
+        font-size: 0.75rem;
+        min-width: fit-content;
+        flex-shrink: 0;
+        min-height: 44px;
+        min-width: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .header-right .group svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .header-right .group,
+    .market-indicators-section .market-indicator {
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+        -webkit-touch-callout: none;
+        user-select: none;
+    }
+
+    .header-center,
+    .header-right .header-nav-container {
+        scroll-behavior: smooth;
+    }
+}
+
+/* Small Mobile */
+@media (max-width: 480px) {
+    .header {
+        padding: 0.4375rem 0;
+    }
+
+    .header-container {
+        gap: 0.375rem;
+        padding: 0 0.375rem;
+    }
+
+    .brand-logo {
+        width: 24px;
+        height: 24px;
+    }
+
+    .brand-minimal {
+        font-size: 0.875rem;
+        line-height: 1rem;
+    }
+
+    .market-indicators-section .market-indicator {
+        min-width: 70px;
+        max-width: 80px;
+        padding: 0.375rem 0.4375rem;
+    }
+
+    .market-indicators-section .indicator-price {
+        font-size: 0.75rem;
+    }
+
+    .market-indicators-section .indicator-change {
+        font-size: 0.625rem;
+    }
+
+    .header-right .group {
+        padding: 0.4375rem 0.5rem;
+        font-size: 0.6875rem;
+    }
+
+    .header-right .group span {
+        display: none;
+    }
+
+    .header-right .group {
+        min-width: 44px;
+        padding: 0.5rem;
+    }
+}
+
+/* Landscape Mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+    .header {
+        padding: 0.375rem 0;
+    }
+
+    .header-container {
+        gap: 0.75rem;
+    }
+
+    .brand-tagline {
+        display: none;
+    }
+
+    .market-indicators-section .market-indicator {
+        min-width: 85px;
+        max-width: 95px;
+    }
+}
