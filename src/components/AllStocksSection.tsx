@@ -161,10 +161,10 @@ export const AllStocksSection = React.memo(function AllStocksSection({
     <section className="all-stocks">
       {/* Desktop Header - only rendered on desktop */}
       {isDesktop && (
-        <div className="section-header flex flex-row items-center justify-between mb-4">
-          <div className="header-main shrink-0 mr-4">
-            <h2 className="flex items-center gap-2 text-xl font-semibold m-0">
-              <SectionIcon type="globe" size={20} className="section-icon" />
+        <div className="flex items-center justify-between mb-4 px-4">
+          <div className="flex items-center mr-4">
+            <h2 className="flex items-center gap-2 text-xl font-bold text-gray-900 dark:text-white m-0">
+              <SectionIcon type="globe" size={24} className="text-gray-900 dark:text-white" />
               <span>All Stocks</span>
             </h2>
           </div>

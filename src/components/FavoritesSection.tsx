@@ -135,10 +135,10 @@ export function FavoritesSection({
 
   return (
     <section className="favorites">
-      <div className="section-header">
-        <div className="header-main">
-          <h2>
-            <SectionIcon type="star" size={20} className="section-icon" />
+      <div className="flex items-center justify-between mb-4 px-4">
+        <div className="flex items-center">
+          <h2 className="flex items-center gap-2 text-xl font-bold text-gray-900 dark:text-white m-0">
+            <SectionIcon type="star" size={24} className="text-gray-900 dark:text-white" />
             <span>Favorites</span>
           </h2>
         </div>

@@ -252,10 +252,10 @@ function useEarningsData(date: string, initialData?: EarningsResponse | null) {
 }
 
 const EarningsHeader = () => (
-  <div className="section-header">
-    <div className="header-main w-full flex justify-start">
-      <h2 className="w-full flex items-center justify-start text-left gap-2">
-        <SectionIcon type="calendar" size={20} className="section-icon" />
+  <div className="flex items-center justify-between mb-4 px-4">
+    <div className="flex items-center">
+      <h2 className="flex items-center gap-2 text-xl font-bold text-gray-900 dark:text-white m-0">
+        <SectionIcon type="calendar" size={24} className="text-gray-900 dark:text-white" />
         <span>Today&apos;s Earnings</span>
       </h2>
     </div>

@@ -393,7 +393,7 @@ export function PortfolioSection({
 
   return (
     <section className="portfolio">
-      <div className="flex items-center justify-between mb-4 px-4 pt-4">
+      <div className="flex items-center justify-between mb-4 px-4">
         <div className="flex items-center">
           <h2 className="flex items-center gap-2 text-xl font-bold text-gray-900 dark:text-white m-0">
             <SectionIcon type="pie" size={24} className="text-gray-900 dark:text-white" />
