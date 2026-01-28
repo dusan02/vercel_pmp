@@ -779,7 +779,9 @@ export function PortfolioSection({
                     ticker: stock.ticker,
                     value,
                     dailyChangePercent: stock.percentChange || 0,
-                    dailyChangeValue: dailyChange
+                    dailyChangeValue: dailyChange,
+                    sector: stock.sector || 'Unknown',
+                    industry: stock.industry || 'Unknown'
                   };
                 })}
               />
