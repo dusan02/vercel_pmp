@@ -137,7 +137,7 @@ export function FavoritesSection({
     <section className="favorites">
       <div className="flex items-center justify-between mb-4 px-4">
         <div className="flex items-center">
-          <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--clr-text)] m-0 relative -top-0.5">
+          <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--clr-text)] m-0 relative -top-1.5">
             <SectionIcon type="star" size={24} className="text-[var(--clr-text)]" />
             <span>Favorites</span>
           </h2>
@@ -287,10 +287,10 @@ export function FavoritesSection({
               <th onClick={() => onSort("sector" as SortKey)} className={`sortable ${sortKey === "sector" ? "active-sort" : ""}`}>
                 Sector
               </th>
-              <th onClick={() => onSort("industry" as SortKey)} className={`sortable text-left ${sortKey === "industry" ? "active-sort" : ""}`}>
+              <th onClick={() => onSort("industry" as SortKey)} className={`sortable !text-left ${sortKey === "industry" ? "active-sort" : ""}`}>
                 Industry
               </th>
-              <th onClick={() => onSort("marketCap" as SortKey)} className={`sortable ${sortKey === "marketCap" ? "active-sort" : ""}`}>
+              <th onClick={() => onSort("marketCap" as SortKey)} className={`sortable whitespace-nowrap ${sortKey === "marketCap" ? "active-sort" : ""}`}>
                 Market Cap
               </th>
               <th onClick={() => onSort("marketCapDiff" as SortKey)} className={`sortable ${sortKey === "marketCapDiff" ? "active-sort" : ""}`}>
@@ -299,7 +299,7 @@ export function FavoritesSection({
               <th onClick={() => onSort("currentPrice" as SortKey)} className={`sortable ${sortKey === "currentPrice" ? "active-sort" : ""}`}>
                 Price
               </th>
-              <th onClick={() => onSort("percentChange" as SortKey)} className={`sortable ${sortKey === "percentChange" ? "active-sort" : ""}`}>
+              <th onClick={() => onSort("percentChange" as SortKey)} className={`sortable whitespace-nowrap ${sortKey === "percentChange" ? "active-sort" : ""}`}>
                 % Change
               </th>
               <th>Favorites</th>

@@ -395,7 +395,7 @@ export function PortfolioSection({
     <section className="portfolio">
       <div className="flex items-center justify-between mb-4 px-4">
         <div className="flex items-center">
-          <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--clr-text)] m-0 relative -top-0.5">
+          <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--clr-text)] m-0 relative -top-1.5">
             <SectionIcon type="pie" size={24} className="text-[var(--clr-text)]" />
             <span>Portfolio</span>
           </h2>
@@ -791,7 +791,7 @@ export function PortfolioSection({
                 Sector
               </th>
               <th
-                className={`portfolio-col-industry ${desktopSortKey === 'industry' ? 'sortable active-sort' : 'sortable'}`}
+                className={`portfolio-col-industry !text-left ${desktopSortKey === 'industry' ? 'sortable active-sort' : 'sortable'}`}
                 onClick={() => {
                   if (desktopSortKey === 'industry') {
                     setDesktopAscending(v => !v);
@@ -833,7 +833,7 @@ export function PortfolioSection({
                 Price
               </th>
               <th
-                className={`portfolio-col-change ${desktopSortKey === 'percent' ? 'sortable active-sort' : 'sortable'}`}
+                className={`portfolio-col-change whitespace-nowrap ${desktopSortKey === 'percent' ? 'sortable active-sort' : 'sortable'}`}
                 onClick={() => {
                   if (desktopSortKey === 'percent') {
                     setDesktopAscending(v => !v);
@@ -966,7 +966,7 @@ export function PortfolioSection({
                       <td>{formatSectorName(stock.sector)}</td>
 
                       {/* Industry */}
-                      <td className="text-left">{stock.industry || 'N/A'}</td>
+                      <td className="!text-left">{stock.industry || 'N/A'}</td>
 
                       {/* Quantity */}
                       <td>

@@ -254,7 +254,7 @@ function useEarningsData(date: string, initialData?: EarningsResponse | null) {
 const EarningsHeader = () => (
   <div className="flex items-center justify-between mb-4 px-4">
     <div className="flex items-center">
-      <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--clr-text)] m-0">
+      <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--clr-text)] m-0 relative -top-1.5">
         <SectionIcon type="calendar" size={24} className="text-[var(--clr-text)]" />
         <span>Today&apos;s Earnings</span>
       </h2>
@@ -557,7 +557,7 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
                   <th onClick={() => handleSort('companyName')} className={`sortable ${sortKey === 'companyName' ? 'active-sort' : ''}`}>
                     Company Name
                   </th>
-                  <th onClick={() => handleSort('marketCap')} className={`sortable ${sortKey === 'marketCap' ? 'active-sort' : ''}`}>
+                  <th onClick={() => handleSort('marketCap')} className={`sortable whitespace-nowrap ${sortKey === 'marketCap' ? 'active-sort' : ''}`}>
                     Market Cap
                   </th>
                   <th className="grouped-header">
@@ -576,7 +576,7 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
                       <span onClick={() => handleSort('revenueActual')} className="sortable sub-sortable">Rep</span>
                     </div>
                   </th>
-                  <th onClick={() => handleSort('percentChange')} className={`sortable ${sortKey === 'percentChange' ? 'active-sort' : ''}`}>
+                  <th onClick={() => handleSort('percentChange')} className={`sortable whitespace-nowrap ${sortKey === 'percentChange' ? 'active-sort' : ''}`}>
                     % Change
                   </th>
                   <th onClick={() => handleSort('marketCapDiff')} className={`sortable ${sortKey === 'marketCapDiff' ? 'active-sort' : ''}`}>

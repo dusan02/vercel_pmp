@@ -104,7 +104,7 @@ export default function CompanyLogo({
         placeholder="blur"
         blurDataURL={placeholderSrc}
         onError={() => setHasError(true)}
-        unoptimized={false} // Enable extensive optimization
+        unoptimized={true} // Enable extensive optimization - FALSE, disable to prevent 400 errors with API SVGs
       />
     </div>
   );

@@ -106,7 +106,7 @@ export const StockTableRow = memo(({
         <td>{formatSectorName(stock.sector)}</td>
 
         {/* Industry */}
-        <td className="text-left">{stock.industry || 'N/A'}</td>
+        <td className="!text-left">{stock.industry || 'N/A'}</td>
 
         {/* Market Cap */}
         <td>{hasValidMarketCap ? formattedMarketCap : '—'}</td>

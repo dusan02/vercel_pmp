@@ -14,6 +14,7 @@ const CHART_COLORS = [
     '#E91E63', // Pink
     '#CDDC39', // Lime
     '#3F51B5', // Indigo
+    '#000000', // Black
 ];
 
 interface PortfolioDonutChartProps {
@@ -26,6 +27,8 @@ interface PortfolioDonutChartProps {
 
 export function PortfolioDonutChart({ data, size = 200 }: PortfolioDonutChartProps) {
     const [hoveredTicker, setHoveredTicker] = useState<string | null>(null);
+    // Track custom color indices for each ticker
+    const [colorIndices, setColorIndices] = useState<Record<string, number>>({});
 
     const { slices, totalValue } = useMemo(() => {
         const total = data.reduce((sum, item) => sum + item.value, 0);
@@ -42,18 +45,38 @@ export function PortfolioDonutChart({ data, size = 200 }: PortfolioDonutChartPro
             const middleAngle = startAngle + (endAngle - startAngle) / 2;
             accumulatedAngle = endAngle;
 
+            // Determine color index: override from state or default to position
+            const defaultIndex = index % CHART_COLORS.length;
+            const effectiveIndex = colorIndices[item.ticker] ?? defaultIndex;
+
             return {
                 ...item,
                 percentage,
                 startAngle,
                 endAngle,
                 middleAngle,
-                color: CHART_COLORS[index % CHART_COLORS.length],
+                colorIndex: effectiveIndex,
+                color: CHART_COLORS[effectiveIndex % CHART_COLORS.length],
             };
         });
 
         return { slices: slicesWithCoords, totalValue: total };
-    }, [data]);
+    }, [data, colorIndices]);
+
+    const handleSliceClick = (e: React.MouseEvent, ticker: string, currentIndex: number) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const direction = e.type === 'contextmenu' ? -1 : 1;
+        const totalColors = CHART_COLORS.length;
+        // Calculate next index causing a loop
+        const nextIndex = (currentIndex + direction + totalColors) % totalColors;
+
+        setColorIndices(prev => ({
+            ...prev,
+            [ticker]: nextIndex
+        }));
+    };
 
     if (slices.length === 0) return null;
 
@@ -95,115 +118,122 @@ export function PortfolioDonutChart({ data, size = 200 }: PortfolioDonutChartPro
     };
 
     return (
-        <div className="w-full flex justify-center bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-            <div className="relative w-full max-w-[600px] aspect-[1.3] min-h-[300px]">
-                <svg
-                    viewBox={`0 0 ${viewBoxSize} ${viewBoxSize}`}
-                    preserveAspectRatio="xMidYMid meet"
-                    className="w-full h-full"
-                >
-                    <g transform={`translate(${center}, ${center})`}>
-                        {/* 1. Slices */}
-                        {slices.map((slice) => {
-                            const isHovered = hoveredTicker === slice.ticker;
-                            const path = createArc(
-                                slice.startAngle,
-                                slice.endAngle,
-                                isHovered ? outerRadius + 5 : outerRadius,
-                                innerRadius
-                            );
+        <div className="w-full p-6 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+            <h3 className="text-base font-semibold text-[var(--clr-subtext)] mb-4 uppercase tracking-wider">
+                Donut Chart
+            </h3>
+            <div className="flex justify-center">
+                <div className="relative w-full max-w-[600px] aspect-[1.3] min-h-[300px]">
+                    <svg
+                        viewBox={`0 0 ${viewBoxSize} ${viewBoxSize}`}
+                        preserveAspectRatio="xMidYMid meet"
+                        className="w-full h-full"
+                    >
+                        <g transform={`translate(${center}, ${center})`}>
+                            {/* 1. Slices */}
+                            {slices.map((slice) => {
+                                const isHovered = hoveredTicker === slice.ticker;
+                                const path = createArc(
+                                    slice.startAngle,
+                                    slice.endAngle,
+                                    isHovered ? outerRadius + 5 : outerRadius,
+                                    innerRadius
+                                );
 
-                            return (
-                                <g key={slice.ticker}>
-                                    <path
-                                        d={path}
-                                        fill={slice.color}
-                                        stroke="white"
-                                        strokeWidth="2"
-                                        className="transition-all duration-200 cursor-pointer"
-                                        onMouseEnter={() => setHoveredTicker(slice.ticker)}
-                                        onMouseLeave={() => setHoveredTicker(null)}
-                                        style={{ opacity: hoveredTicker && !isHovered ? 0.6 : 1 }}
-                                    >
-                                        <title>{slice.ticker}: ${slice.value.toLocaleString()} ({slice.percentage.toFixed(1)}%)</title>
-                                    </path>
-                                </g>
-                            );
-                        })}
+                                return (
+                                    <g key={slice.ticker}>
+                                        <path
+                                            d={path}
+                                            fill={slice.color}
+                                            stroke="white"
+                                            strokeWidth="2"
+                                            className="transition-all duration-200 cursor-pointer"
+                                            onMouseEnter={() => setHoveredTicker(slice.ticker)}
+                                            onMouseLeave={() => setHoveredTicker(null)}
+                                            onClick={(e) => handleSliceClick(e, slice.ticker, slice.colorIndex)}
+                                            onContextMenu={(e) => handleSliceClick(e, slice.ticker, slice.colorIndex)}
+                                            style={{ opacity: hoveredTicker && !isHovered ? 0.6 : 1 }}
+                                        >
+                                            <title>{slice.ticker}: ${slice.value.toLocaleString()} ({slice.percentage.toFixed(1)}%)</title>
+                                        </path>
+                                    </g>
+                                );
+                            })}
 
-                        {/* 2. Labels & Lines */}
-                        {slices.map((slice) => {
-                            // Only show label if slice is > 1% to avoid clutter, or if there are few items
-                            if (slice.percentage < 1 && slices.length > 10) return null;
+                            {/* 2. Labels & Lines */}
+                            {slices.map((slice) => {
+                                // Only show label if slice is > 1% to avoid clutter, or if there are few items
+                                if (slice.percentage < 1 && slices.length > 10) return null;
 
-                            const startPt = polarToCartesian(0, 0, outerRadius, slice.middleAngle);
-                            const elbowPt = polarToCartesian(0, 0, labelRadius, slice.middleAngle);
+                                const startPt = polarToCartesian(0, 0, outerRadius, slice.middleAngle);
+                                const elbowPt = polarToCartesian(0, 0, labelRadius, slice.middleAngle);
 
-                            // Determine text side roughly based on angle
-                            const isRightSide = slice.middleAngle < 180;
-                            const xSign = isRightSide ? 1 : -1;
+                                // Determine text side roughly based on angle
+                                const isRightSide = slice.middleAngle < 180;
+                                const xSign = isRightSide ? 1 : -1;
 
-                            // End point for the line
-                            const endPt = {
-                                x: elbowPt.x + (20 * xSign),
-                                y: elbowPt.y
-                            };
+                                // End point for the line
+                                const endPt = {
+                                    x: elbowPt.x + (20 * xSign),
+                                    y: elbowPt.y
+                                };
 
-                            // Text anchor position
-                            const textAnchor = isRightSide ? 'start' : 'end';
-                            const textX = endPt.x + (5 * xSign);
-                            const textY = endPt.y;
+                                // Text anchor position
+                                const textAnchor = isRightSide ? 'start' : 'end';
+                                const textX = endPt.x + (5 * xSign);
+                                const textY = endPt.y;
 
-                            return (
-                                <g key={`label-${slice.ticker}`} className="pointer-events-none">
-                                    {/* Connection Line */}
-                                    <polyline
-                                        points={`${startPt.x},${startPt.y} ${elbowPt.x},${elbowPt.y} ${endPt.x},${endPt.y}`}
-                                        fill="none"
-                                        stroke="#9ca3af" // gray-400
-                                        strokeWidth="1"
-                                    />
+                                return (
+                                    <g key={`label-${slice.ticker}`} className="pointer-events-none">
+                                        {/* Connection Line */}
+                                        <polyline
+                                            points={`${startPt.x},${startPt.y} ${elbowPt.x},${elbowPt.y} ${endPt.x},${endPt.y}`}
+                                            fill="none"
+                                            stroke="#9ca3af" // gray-400
+                                            strokeWidth="1"
+                                        />
 
-                                    {/* Text Label */}
-                                    <text
-                                        x={textX}
-                                        y={textY - 4} // Ticker above line
-                                        textAnchor={textAnchor}
-                                        className="text-xs sm:text-sm font-bold fill-gray-900 dark:fill-gray-100"
-                                    >
-                                        {slice.ticker}
-                                    </text>
-                                    <text
-                                        x={textX}
-                                        y={textY + 10} // Percent below line
-                                        textAnchor={textAnchor}
-                                        className="text-[10px] sm:text-xs fill-gray-500 dark:fill-gray-400"
-                                    >
-                                        {slice.percentage.toFixed(1)}%
-                                    </text>
-                                </g>
-                            );
-                        })}
+                                        {/* Text Label */}
+                                        <text
+                                            x={textX}
+                                            y={textY - 4} // Ticker above line
+                                            textAnchor={textAnchor}
+                                            className="text-xs sm:text-sm font-bold fill-gray-900 dark:fill-gray-100"
+                                        >
+                                            {slice.ticker}
+                                        </text>
+                                        <text
+                                            x={textX}
+                                            y={textY + 10} // Percent below line
+                                            textAnchor={textAnchor}
+                                            className="text-[10px] sm:text-xs fill-gray-500 dark:fill-gray-400"
+                                        >
+                                            {slice.percentage.toFixed(1)}%
+                                        </text>
+                                    </g>
+                                );
+                            })}
 
-                        {/* Center text (Total) */}
-                        <text
-                            x="0"
-                            y="-5"
-                            textAnchor="middle"
-                            className="text-sm font-medium fill-gray-500 dark:fill-gray-400"
-                        >
-                            Total
-                        </text>
-                        <text
-                            x="0"
-                            y="15"
-                            textAnchor="middle"
-                            className="text-lg font-bold fill-gray-900 dark:fill-gray-100"
-                        >
-                            ${(totalValue / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })}k
-                        </text>
-                    </g>
-                </svg>
+                            {/* Center text (Total) */}
+                            <text
+                                x="0"
+                                y="-5"
+                                textAnchor="middle"
+                                className="text-sm font-medium fill-gray-500 dark:fill-gray-400"
+                            >
+                                Total
+                            </text>
+                            <text
+                                x="0"
+                                y="15"
+                                textAnchor="middle"
+                                className="text-lg font-bold fill-gray-900 dark:fill-gray-100"
+                            >
+                                ${(totalValue / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })}k
+                            </text>
+                        </g>
+                    </svg>
+                </div>
             </div>
         </div>
     );

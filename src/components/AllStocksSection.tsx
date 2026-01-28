@@ -43,11 +43,11 @@ const TABLE_HEADERS_DESKTOP: { key?: SortKey; label: string; sortable: boolean; 
   { key: 'ticker', label: 'Ticker', sortable: true },
   { label: 'Company', sortable: false },
   { key: 'sector', label: 'Sector', sortable: true },
-  { key: 'industry', label: 'Industry', sortable: true, className: 'text-left' },
-  { key: 'marketCap', label: 'Market Cap', sortable: true },
+  { key: 'industry', label: 'Industry', sortable: true, className: '!text-left' },
+  { key: 'marketCap', label: 'Market Cap', sortable: true, className: 'whitespace-nowrap' },
   { key: 'marketCapDiff', label: 'Cap Diff', sortable: true },
   { key: 'currentPrice', label: 'Price', sortable: true },
-  { key: 'percentChange', label: '% Change', sortable: true },
+  { key: 'percentChange', label: '% Change', sortable: true, className: 'whitespace-nowrap' },
   { label: 'Favorites', sortable: false },
 ];
 
@@ -163,7 +163,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
       {isDesktop && (
         <div className="flex items-center justify-between mb-4 px-4">
           <div className="flex items-center mr-4">
-            <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--clr-text)] m-0 relative -top-0.5">
+            <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--clr-text)] m-0 relative -top-1.5">
               <SectionIcon type="globe" size={24} className="text-[var(--clr-text)]" />
               <span>All Stocks</span>
             </h2>
