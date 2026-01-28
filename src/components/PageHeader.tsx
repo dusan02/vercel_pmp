@@ -38,19 +38,19 @@ export function PageHeader({ navigation }: PageHeaderProps) {
           <div className="flex items-center justify-between w-full border-b border-[var(--clr-border-subtle)] pb-2">
             {/* Branding */}
             <div className="header-left">
-              <div className="brand-container">
-                <BrandLogo size={48} className="brand-logo" />
-                <div className="brand-content">
-                  <h1 className="brand-minimal">
+              <div className="flex flex-col justify-center">
+                <div className="flex items-center gap-3">
+                  <BrandLogo size={42} className="brand-logo" />
+                  <h1 className="brand-minimal text-2xl m-0 leading-none">
                     <span className="brand-name">
-                      <span className="brand-premarket">PreMarket</span>
-                      <span className="brand-price"> Price</span>
+                      <span className="brand-premarket text-[var(--clr-text)]">PreMarket</span>
+                      <span className="brand-price text-blue-600"> Price</span>
                     </span>
                   </h1>
-                  <p className="brand-tagline">
-                    Trade ahead of the market
-                  </p>
                 </div>
+                <p className="brand-tagline text-xs font-medium text-[var(--clr-subtext)] pl-[54px] -mt-1">
+                  Trade ahead of the market
+                </p>
               </div>
             </div>
 
