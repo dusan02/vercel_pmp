@@ -279,6 +279,25 @@
     background: var(--clr-bg);
   }
 
+  /* Right-align numeric columns (from 5th column onwards) */
+  /* Columns 1-4 are typically: Logo, Ticker, Company, Sector/Industry */
+  /* Columns 5+ are typically: #, Price, %, Market Cap, Value */
+  th:nth-child(n+5):not(.text-left),
+  td:nth-child(n+5):not(.text-left) {
+    text-align: right !important;
+  }
+
+  /* Respect explicit text-right class */
+  .text-right {
+    text-align: right !important;
+  }
+
+  /* Logo column centered */
+  th:first-child,
+  td:first-child {
+    text-align: center !important;
+  }
+
   /* Utility Classes */
   .positive {
     color: var(--clr-positive);
