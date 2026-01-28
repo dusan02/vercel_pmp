@@ -72,8 +72,12 @@ export default function ScrollToTopButton({ showAfterPx = 300 }: ScrollToTopButt
       }}
       aria-label="Scroll to top"
       title="Scroll to Top"
+      style={{
+        zIndex: 99999,
+        pointerEvents: 'auto',
+      }}
       className={[
-        'fixed bottom-24 lg:bottom-10 right-6 z-[9999]',
+        'fixed bottom-24 lg:bottom-10 right-6',
         'rounded-full shadow-xl',
         'bg-blue-600 text-white',
         'hover:bg-blue-700 hover:shadow-2xl active:scale-95',
