@@ -27,41 +27,30 @@ import styles from '@/styles/heatmap.module.css';
 // --- HELPER FUNCTIONS ---
 
 /**
- * Calculate sector summary (avg % change or total mcap delta)
+ * Calculate sector summary (weighted avg % change or total mcap delta)
+ * Now uses pre-calculated weighted average from sector meta
  */
 function calculateSectorSummary(
-  sectorName: string,
-  allLeaves: TreemapLeaf[],
+  sectorNode: TreemapNode,
   metric: HeatmapMetric
 ): string | null {
-  // Get all companies in this sector
-  const sectorCompanies = allLeaves
-    .filter(leaf => {
-      const company = leaf.data.meta?.companyData;
-      return company && company.sector === sectorName;
-    })
-    .map(leaf => leaf.data.meta?.companyData)
-    .filter((c): c is CompanyNode => c !== undefined);
-
-  if (sectorCompanies.length === 0) return null;
+  const sectorMeta = sectorNode.data.meta;
 
   if (metric === 'percent') {
-    // Calculate median (better than average for outliers)
-    const changes = sectorCompanies
-      .map(c => c.changePercent)
-      .filter(p => p !== null && p !== undefined && !isNaN(p))
-      .sort((a, b) => a - b);
-
-    if (changes.length === 0) return null;
-
-    const midIndex = Math.floor(changes.length / 2);
-    const median = changes.length % 2 === 0
-      ? (changes[midIndex - 1]! + changes[midIndex]!) / 2
-      : changes[midIndex]!;
-
-    return formatPercent(median);
+    // Use pre-calculated weighted average from sector meta
+    if (sectorMeta?.weightedAvgPercent !== undefined && !isNaN(sectorMeta.weightedAvgPercent)) {
+      return formatPercent(sectorMeta.weightedAvgPercent);
+    }
+    return null;
   } else {
     // Calculate total market cap delta for sector
+    // Get all companies in this sector
+    const sectorCompanies = sectorNode.leaves()
+      .map((leaf: any) => leaf.data.meta?.companyData)
+      .filter((c): c is CompanyNode => c !== undefined);
+
+    if (sectorCompanies.length === 0) return null;
+
     const totalDelta = sectorCompanies.reduce((sum, c) => {
       return sum + (c.marketCapDiff || 0);
     }, 0);
@@ -166,6 +155,11 @@ export interface HierarchyData {
   meta?: {
     type: 'root' | 'sector' | 'industry' | 'company';
     companyData?: CompanyNode; // Plné dáta pre listy
+    // Agregované hodnoty pre sektory/priemysly
+    totalMarketCap?: number;
+    weightedPercentSum?: number;
+    weightedAvgPercent?: number;
+    companyCount?: number;
   };
 }
 
@@ -1013,7 +1007,7 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
 
                 // Calculate sector summary for full variant
                 const sectorSummary = sectorLabelVariant === 'full' && LAYOUT_CONFIG.SECTOR_LABEL_FULL.SHOW_SUMMARY
-                  ? calculateSectorSummary(data.name, allLeaves, metric)
+                  ? calculateSectorSummary(node as TreemapNode, metric)
                   : null;
 
                 // Dynamically truncate sector name based on available width
@@ -1167,7 +1161,7 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
 
                 // Calculate sector summary for full variant
                 const sectorSummary = sectorLabelVariant === 'full' && LAYOUT_CONFIG.SECTOR_LABEL_FULL.SHOW_SUMMARY
-                  ? calculateSectorSummary(data.name, allLeaves, metric)
+                  ? calculateSectorSummary(node as TreemapNode, metric)
                   : null;
 
                 // Dynamically truncate sector name based on available width

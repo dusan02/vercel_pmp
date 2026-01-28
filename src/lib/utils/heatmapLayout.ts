@@ -46,7 +46,17 @@ export function buildHeatmapHierarchy(
     // 1. Nájdi alebo vytvor Sektor
     let sectorNode = sectorMap.get(company.sector);
     if (!sectorNode) {
-      sectorNode = { name: company.sector, children: [], meta: { type: 'sector' } };
+      // Vytvor sektor s agregačnými hodnotami
+      sectorNode = {
+        name: company.sector,
+        children: [],
+        meta: {
+          type: 'sector',
+          totalMarketCap: 0,
+          weightedPercentSum: 0,
+          companyCount: 0
+        }
+      };
       sectorMap.set(company.sector, sectorNode);
       root.children!.push(sectorNode);
     }
@@ -63,6 +73,13 @@ export function buildHeatmapHierarchy(
       },
     };
     sectorNode.children!.push(companyLeaf);
+
+    // Aktualizuj agregácie pre sektor (vážený priemer)
+    if (sectorNode.meta && company.marketCap && company.changePercent !== undefined && !isNaN(company.changePercent)) {
+      sectorNode.meta.totalMarketCap! += company.marketCap;
+      sectorNode.meta.weightedPercentSum! += company.changePercent * company.marketCap;
+      sectorNode.meta.companyCount!++;
+    }
   }
 
   // Deterministické zoradenie:
@@ -80,34 +97,44 @@ export function buildHeatmapHierarchy(
       if (sector.children) {
         sector.children.sort((a, b) => (sumValues(b) - sumValues(a)));
       }
+
+      // Vypočítaj vážený priemer pre každý sektor
+      if (sector.meta && sector.meta.totalMarketCap && sector.meta.totalMarketCap > 0) {
+        sector.meta.weightedAvgPercent = sector.meta.weightedPercentSum! / sector.meta.totalMarketCap;
+
+        if (process.env.NODE_ENV !== 'production') {
+          console.log(`📊 Sektor ${sector.name}: ${sector.meta.companyCount} firiem, vážený priemer: ${sector.meta.weightedAvgPercent.toFixed(2)}%`);
+        }
+      }
     }
-    
+
     // Zoraď sektory podľa sumy value desc, ale "Technology" je vždy prvá a "Other" je vždy posledný
     root.children.sort((a, b) => {
       const aIsTechnology = a.name === 'Technology';
       const bIsTechnology = b.name === 'Technology';
       const aIsOther = a.name === 'Other';
       const bIsOther = b.name === 'Other';
-      
+
       // Technology is always first
       if (aIsTechnology && !bIsTechnology) return -1;
       if (!aIsTechnology && bIsTechnology) return 1;
-      
+
       // "Other" sektor je vždy posledný
       if (aIsOther && !bIsOther) return 1;
       if (!aIsOther && bIsOther) return -1;
       if (aIsOther && bIsOther) return 0; // Oba sú Other - zachovať poradie
-      
+
       // Ostatné sektory podľa sumy value desc
       return sumValues(b) - sumValues(a);
     });
-    
+
     // Logovanie zoradenia sektorov (len v development)
     if (process.env.NODE_ENV !== 'production' && root.children.length > 0) {
       const sectorOrder = root.children.map(s => ({
         name: s.name,
         totalValue: sumValues(s),
-        companyCount: s.children?.length || 0
+        companyCount: s.children?.length || 0,
+        weightedAvgPercent: s.meta?.weightedAvgPercent?.toFixed(2) || 'N/A'
       }));
       console.log('📊 Heatmap sector order (by total market cap):', sectorOrder);
     }
