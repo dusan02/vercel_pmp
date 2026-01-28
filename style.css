@@ -1,0 +1,148 @@
+/* === RESET & BASE ======================================= */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --clr-bg:#f7f8fa;
+  --clr-surface:#ffffff;
+  --clr-border:#e5e7eb;
+  --clr-text:#111827;
+  --clr-subtext:#4b5563;
+  --clr-primary:#2563eb;
+  --clr-primary-hover:#1d4ed8;
+  --clr-positive:#16a34a;
+  --clr-negative:#dc2626;
+  --clr-error:#dc2626;
+  --clr-error-bg:#fef2f2;
+  --radius:0.5rem;
+  --shadow:0 2px 8px rgba(0,0,0,0.05);
+  --font-sans:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --clr-bg:#0f172a;
+    --clr-surface:#1e293b;
+    --clr-border:#334155;
+    --clr-text:#f1f5f9;
+    --clr-subtext:#94a3b8;
+    --clr-primary:#3b82f6;
+    --clr-primary-hover:#60a5fa;
+    --clr-error-bg:#450a0a;
+    --shadow:0 2px 8px rgba(0,0,0,0.4);
+  }
+}
+html{font-size:16px}
+body{font-family:var(--font-sans);background:var(--clr-bg);color:var(--clr-text);line-height:1.5;padding:1rem}
+
+/* === GENERAL LAYOUT ===================================== */
+.container{
+  max-width:72rem;
+  margin-inline:auto;
+  padding:1.5rem;
+  background:var(--clr-surface);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+}
+
+/* === HEADER ============================================= */
+.header{text-align:center;margin-bottom:2rem;padding-bottom:1rem;border-bottom:1px solid var(--clr-border)}
+.header h1{font-size:2rem;font-weight:700;margin-bottom:0.25rem}
+.header p{color:var(--clr-subtext);margin-bottom:1rem}
+button{
+  background:var(--clr-primary);
+  color:#fff;
+  padding:0.6rem 1.25rem;
+  font-weight:600;
+  border:none;
+  border-radius:var(--radius);
+  cursor:pointer;
+  transition:background .2s;
+}
+button:hover{background:var(--clr-primary-hover)}
+button:disabled{background:#9ca3af;cursor:not-allowed}
+
+/* === TEST BAR =========================================== */
+.test-bar{
+  background:#ef4444;
+  color:#fff;
+  padding:0.5rem 1rem;
+  text-align:center;
+  font-weight:700;
+  border-radius:var(--radius);
+  margin-bottom:1.5rem;
+}
+
+/* === ERROR CONTAINER ==================================== */
+.error{
+  background:var(--clr-error-bg);
+  border:1px solid var(--clr-error);
+  color:var(--clr-error);
+  padding:1rem;
+  margin-bottom:1.5rem;
+  border-radius:var(--radius);
+}
+
+/* === TABLES ============================================= */
+table{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+  margin-top:1rem;
+}
+th,td{padding:0.75rem 0.5rem;text-align:left}
+th{
+  background:var(--clr-bg);
+  border-bottom:2px solid var(--clr-border);
+  font-size:0.875rem;
+  text-transform:uppercase;
+  letter-spacing:0.02em;
+  font-weight:600;
+}
+tr:not(:last-child) td{border-bottom:1px solid var(--clr-border)}
+tr:hover{background:var(--clr-bg)}
+.positive{color:var(--clr-positive);font-weight:600}
+.negative{color:var(--clr-negative);font-weight:600}
+
+/* === FAVORITES / SECTIONS =============================== */
+.favorites,.all-stocks{margin-bottom:2rem}
+.favorites h2,.all-stocks h2{
+  font-size:1.25rem;
+  font-weight:600;
+  margin:2rem 0 0.75rem;
+  display:flex;
+  align-items:center;
+  gap:0.5rem;
+}
+.favorites h2::before,.all-stocks h2::before{
+  content:attr(data-icon);
+  font-size:1.1em;
+}
+
+.favorite-btn{
+  background:none;
+  border:none;
+  font-size:1.2rem;
+  cursor:pointer;
+  transition:transform .15s;
+  padding:0.25rem;
+}
+.favorite-btn:hover{transform:scale(1.25)}
+
+/* === FOOTER ============================================= */
+.footer{
+  text-align:center;
+  margin-top:3rem;
+  padding-top:1rem;
+  border-top:1px solid var(--clr-border);
+  color:var(--clr-subtext);
+  font-size:0.875rem;
+}
+.footer a{color:var(--clr-primary);text-decoration:none}
+.footer a:hover{text-decoration:underline}
+
+/* === RESPONSIVE ========================================= */
+@media(max-width:640px){
+  body{padding:0.5rem}
+  .container{padding:1rem}
+  th,td{padding:0.5rem 0.25rem;font-size:0.85rem}
+  .header h1{font-size:1.5rem}
+  .test-bar{font-size:0.875rem}
+} 
