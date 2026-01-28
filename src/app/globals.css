@@ -328,10 +328,8 @@
     margin-bottom: 1rem;
   }
 
-  .favorites,
-  .all-stocks {
-    margin-bottom: 2rem;
-  }
+  /* Legacy spacing removed - see Unified Section Spacing below */
+  /* .favorites, .all-stocks { margin-bottom: 2rem; } */
 
   /* Section Headers with Icons */
   .favorites h2,
@@ -387,10 +385,13 @@
    ============================================ */
 @layer components {
 
-  /* --- Portfolio Section Spacing --- */
-  .portfolio {
-    margin-top: 3rem;
-    /* Fix: Added spacing from heatmap */
+  /* --- Unified Section Spacing --- */
+  .portfolio,
+  .favorites,
+  .todays-earnings,
+  .all-stocks {
+    margin-top: 4rem;
+    margin-bottom: 3rem;
   }
 
   /* --- Custom Dropdown Menu --- */
