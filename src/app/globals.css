@@ -330,7 +330,9 @@
 
   /* Section Headers with Icons */
   .favorites h2,
-  .all-stocks h2 {
+  .all-stocks h2,
+  .portfolio h2,
+  .todays-earnings h2 {
     font-size: 1.25rem;
     font-weight: 600;
     margin: 2rem 0 0.75rem;

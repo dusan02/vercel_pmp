@@ -325,7 +325,7 @@ export function PortfolioSection({
     <section className="portfolio">
       <div className="section-header flex flex-col lg:flex-row items-center gap-4 lg:gap-0">
         <div className="header-main w-full lg:w-auto flex justify-center lg:justify-start">
-          <h2 className="portfolio-header">
+          <h2>
             <SectionIcon type="pie" size={20} className="section-icon" />
             <span>Portfolio</span>
           </h2>
@@ -397,13 +397,13 @@ export function PortfolioSection({
       {/* Mobile: Cards layout */}
       <div className="lg:hidden flex-1 flex flex-col">
         {portfolioStocks.length === 0 ? (
-          <div 
+          <div
             className="flex-1 flex flex-col items-center justify-center gap-3 py-16 px-4 min-h-[60vh] text-center"
             style={{
               background: '#0f0f0f',
             }}
           >
-            <div 
+            <div
               className="text-6xl mb-2"
               style={{
                 opacity: 0.3,
@@ -411,7 +411,7 @@ export function PortfolioSection({
             >
               📊
             </div>
-            <span 
+            <span
               className="text-base font-semibold"
               style={{
                 color: '#ffffff',
@@ -419,7 +419,7 @@ export function PortfolioSection({
             >
               Your portfolio is empty
             </span>
-            <span 
+            <span
               className="text-sm max-w-xs"
               style={{
                 color: 'rgba(255, 255, 255, 0.6)',
@@ -436,7 +436,7 @@ export function PortfolioSection({
                 }
               }}
               className="mt-2 px-5 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold transition-colors"
-              style={{ 
+              style={{
                 WebkitTapHighlightColor: 'transparent',
                 touchAction: 'manipulation',
               }}
@@ -796,13 +796,13 @@ export function PortfolioSection({
             {sortedPortfolioStocksDesktop.length === 0 ? (
               <tr>
                 <td colSpan={10} className="p-0 border-none">
-                  <div 
+                  <div
                     className="flex flex-col items-center justify-center gap-3 py-16 px-4"
                     style={{
                       background: '#0f0f0f',
                     }}
                   >
-                    <div 
+                    <div
                       className="text-6xl mb-2"
                       style={{
                         opacity: 0.3,
@@ -810,7 +810,7 @@ export function PortfolioSection({
                     >
                       📊
                     </div>
-                    <span 
+                    <span
                       className="text-base font-semibold"
                       style={{
                         color: '#ffffff',
@@ -818,7 +818,7 @@ export function PortfolioSection({
                     >
                       Your portfolio is empty
                     </span>
-                    <span 
+                    <span
                       className="text-sm text-center max-w-xs"
                       style={{
                         color: 'rgba(255, 255, 255, 0.6)',
@@ -835,7 +835,7 @@ export function PortfolioSection({
                         }
                       }}
                       className="mt-2 px-5 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold transition-colors"
-                      style={{ 
+                      style={{
                         WebkitTapHighlightColor: 'transparent',
                         touchAction: 'manipulation',
                       }}
