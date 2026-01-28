@@ -408,12 +408,11 @@
    ============================================ */
 @layer components {
 
-  /* --- Unified Section Spacing --- */
   .portfolio,
   .favorites,
   .todays-earnings,
   .all-stocks {
-    margin-top: 4rem;
+    margin-top: 1.5rem;
     margin-bottom: 3rem;
   }
 
