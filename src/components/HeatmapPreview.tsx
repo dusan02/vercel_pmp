@@ -68,8 +68,8 @@ export function HeatmapPreview({ activeView, wrapperClass }: { activeView?: stri
       {isDesktop && (
         <div className="section-header">
           <div className="header-main">
-            <h2>
-              <SectionIcon type="heatmap" size={20} className="section-icon" />
+            <h2 className="flex items-center gap-2">
+              <SectionIcon type="heatmap" size={24} className="section-icon" />
               <span>Market Heatmap</span>
             </h2>
           </div>

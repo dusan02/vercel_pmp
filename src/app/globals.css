@@ -254,12 +254,17 @@
   }
 
   th {
-    background: var(--clr-bg);
+    background: #eff6ff;
     border-bottom: 2px solid var(--clr-border);
     font-size: 0.875rem;
     text-transform: uppercase;
     letter-spacing: 0.02em;
     font-weight: 600;
+  }
+
+  .dark th {
+    background: #1e293b;
+    /* Keep dark mode consistent */
   }
 
   tr:not(:last-child) td {
