@@ -400,7 +400,7 @@ export function PortfolioSection({
           <div
             className="flex-1 flex flex-col items-center justify-center gap-3 py-16 px-4 min-h-[60vh] text-center"
             style={{
-              background: '#0f0f0f',
+              background: '#ffffff',
             }}
           >
             <div
@@ -414,7 +414,7 @@ export function PortfolioSection({
             <span
               className="text-base font-semibold"
               style={{
-                color: '#ffffff',
+                color: '#000000',
               }}
             >
               Your portfolio is empty
@@ -422,7 +422,7 @@ export function PortfolioSection({
             <span
               className="text-sm max-w-xs"
               style={{
-                color: 'rgba(255, 255, 255, 0.6)',
+                color: 'rgba(0, 0, 0, 0.6)',
               }}
             >
               Add stocks to track your investments
@@ -799,7 +799,7 @@ export function PortfolioSection({
                   <div
                     className="flex flex-col items-center justify-center gap-3 py-16 px-4"
                     style={{
-                      background: '#0f0f0f',
+                      background: '#ffffff',
                     }}
                   >
                     <div
@@ -813,7 +813,7 @@ export function PortfolioSection({
                     <span
                       className="text-base font-semibold"
                       style={{
-                        color: '#ffffff',
+                        color: '#000000',
                       }}
                     >
                       Your portfolio is empty
@@ -821,7 +821,7 @@ export function PortfolioSection({
                     <span
                       className="text-sm text-center max-w-xs"
                       style={{
-                        color: 'rgba(255, 255, 255, 0.6)',
+                        color: 'rgba(0, 0, 0, 0.6)',
                       }}
                     >
                       Add stocks to track your investments

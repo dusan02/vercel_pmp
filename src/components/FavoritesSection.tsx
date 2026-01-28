@@ -68,13 +68,13 @@ export function FavoritesSection({
             </h2>
           </div>
         </div>
-        <div 
+        <div
           className="flex flex-col items-center justify-center gap-3 py-16 px-4"
           style={{
-            background: '#0f0f0f',
+            background: '#ffffff',
           }}
         >
-          <div 
+          <div
             className="text-6xl mb-2"
             style={{
               opacity: 0.3,
@@ -82,18 +82,18 @@ export function FavoritesSection({
           >
             ⭐
           </div>
-          <span 
+          <span
             className="text-base font-semibold"
             style={{
-              color: '#ffffff',
+              color: '#000000',
             }}
           >
             No favorites yet
           </span>
-          <span 
+          <span
             className="text-sm text-center max-w-xs"
             style={{
-              color: 'rgba(255, 255, 255, 0.6)',
+              color: 'rgba(0, 0, 0, 0.6)',
             }}
           >
             Tap ☆ next to a stock to add it here
@@ -101,7 +101,7 @@ export function FavoritesSection({
           <button
             onClick={handleBrowseStocks}
             className="mt-2 px-5 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold transition-colors"
-            style={{ 
+            style={{
               WebkitTapHighlightColor: 'transparent',
               touchAction: 'manipulation',
             }}
