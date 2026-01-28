@@ -26,19 +26,50 @@
   --color-negative: #ef4444;
   --color-accent: #3b82f6;
 
-  /* Legacy variable mappings (from style.css) for backward compatibility */
-  --clr-bg: var(--color-bg-secondary);
-  --clr-surface: var(--color-bg-tertiary);
-  --clr-border: var(--color-border);
-  --clr-text: var(--color-text-primary);
-  --clr-subtext: var(--color-text-secondary);
-  --clr-primary: var(--color-accent);
+  /* ========================================================================
+     LEGACY VARIABLE MAPPINGS (Restored from style.css)
+     ======================================================================== */
+  /* Default (Light Mode) */
+  --clr-bg: #f7f8fa;
+  --clr-surface: #ffffff;
+  --clr-border: #e5e7eb;
+  --clr-text: #111827;
+  --clr-subtext: #4b5563;
+  --clr-primary: #2563eb;
   --clr-primary-hover: #1d4ed8;
-  --clr-positive: var(--color-positive);
-  --clr-negative: var(--color-negative);
+  --clr-positive: #16a34a;
+  --clr-negative: #dc2626;
   --clr-error: #dc2626;
-  --clr-error-bg: #450a0a;
+  --clr-error-bg: #fef2f2;
   --radius: 0.5rem;
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Dark Mode Overrides for Legacy Variables */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --clr-bg: #0f172a;
+    --clr-surface: #1e293b;
+    --clr-border: #334155;
+    --clr-text: #f1f5f9;
+    --clr-subtext: #94a3b8;
+    --clr-primary: #3b82f6;
+    --clr-primary-hover: #60a5fa;
+    --clr-error-bg: #450a0a;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* Ensure these apply if .dark class is used manually */
+.dark {
+  --clr-bg: #0f172a;
+  --clr-surface: #1e293b;
+  --clr-border: #334155;
+  --clr-text: #f1f5f9;
+  --clr-subtext: #94a3b8;
+  --clr-primary: #3b82f6;
+  --clr-primary-hover: #60a5fa;
+  --clr-error-bg: #450a0a;
   --shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
