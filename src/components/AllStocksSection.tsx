@@ -38,12 +38,12 @@ interface AllStocksSectionProps {
 }
 
 // Table header configuration - Desktop (full)
-const TABLE_HEADERS_DESKTOP: { key?: SortKey; label: string; sortable: boolean }[] = [
+const TABLE_HEADERS_DESKTOP: { key?: SortKey; label: string; sortable: boolean; className?: string }[] = [
   { label: 'Logo', sortable: false },
   { key: 'ticker', label: 'Ticker', sortable: true },
   { label: 'Company', sortable: false },
   { key: 'sector', label: 'Sector', sortable: true },
-  { key: 'industry', label: 'Industry', sortable: true },
+  { key: 'industry', label: 'Industry', sortable: true, className: 'text-left' },
   { key: 'marketCap', label: 'Market Cap', sortable: true },
   { key: 'marketCapDiff', label: 'Cap Diff', sortable: true },
   { key: 'currentPrice', label: 'Price', sortable: true },
@@ -163,7 +163,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
       {isDesktop && (
         <div className="flex items-center justify-between mb-4 px-4">
           <div className="flex items-center mr-4">
-            <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--clr-text)] m-0">
+            <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--clr-text)] m-0 relative -top-0.5">
               <SectionIcon type="globe" size={24} className="text-[var(--clr-text)]" />
               <span>All Stocks</span>
             </h2>
@@ -484,7 +484,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
                     <th
                       key={index}
                       onClick={header.sortable && header.key ? () => onSort(header.key!) : undefined}
-                      className={header.sortable ? `sortable ${sortKey === header.key ? "active-sort" : ""}` : undefined}
+                      className={`${header.sortable ? 'sortable' : ''} ${sortKey === header.key ? 'active-sort' : ''} ${header.className || ''}`.trim()}
                     >
                       {header.label}
                     </th>

@@ -395,7 +395,7 @@ export function PortfolioSection({
     <section className="portfolio">
       <div className="flex items-center justify-between mb-4 px-4">
         <div className="flex items-center">
-          <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--clr-text)] m-0">
+          <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--clr-text)] m-0 relative -top-0.5">
             <SectionIcon type="pie" size={24} className="text-[var(--clr-text)]" />
             <span>Portfolio</span>
           </h2>
@@ -966,7 +966,7 @@ export function PortfolioSection({
                       <td>{formatSectorName(stock.sector)}</td>
 
                       {/* Industry */}
-                      <td>{stock.industry || 'N/A'}</td>
+                      <td className="text-left">{stock.industry || 'N/A'}</td>
 
                       {/* Quantity */}
                       <td>

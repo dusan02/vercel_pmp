@@ -169,7 +169,7 @@ export function PortfolioDonutChart({ data, size = 200 }: PortfolioDonutChartPro
                                         x={textX}
                                         y={textY - 4} // Ticker above line
                                         textAnchor={textAnchor}
-                                        className="text-[10px] sm:text-xs font-bold fill-gray-900 dark:fill-gray-100"
+                                        className="text-xs sm:text-sm font-bold fill-gray-900 dark:fill-gray-100"
                                     >
                                         {slice.ticker}
                                     </text>
@@ -177,7 +177,7 @@ export function PortfolioDonutChart({ data, size = 200 }: PortfolioDonutChartPro
                                         x={textX}
                                         y={textY + 10} // Percent below line
                                         textAnchor={textAnchor}
-                                        className="text-[9px] sm:text-[10px] fill-gray-500 dark:fill-gray-400"
+                                        className="text-[10px] sm:text-xs fill-gray-500 dark:fill-gray-400"
                                     >
                                         {slice.percentage.toFixed(1)}%
                                     </text>
@@ -190,7 +190,7 @@ export function PortfolioDonutChart({ data, size = 200 }: PortfolioDonutChartPro
                             x="0"
                             y="-5"
                             textAnchor="middle"
-                            className="text-xs font-medium fill-gray-500 dark:fill-gray-400"
+                            className="text-sm font-medium fill-gray-500 dark:fill-gray-400"
                         >
                             Total
                         </text>
@@ -198,7 +198,7 @@ export function PortfolioDonutChart({ data, size = 200 }: PortfolioDonutChartPro
                             x="0"
                             y="15"
                             textAnchor="middle"
-                            className="text-sm font-bold fill-gray-900 dark:fill-gray-100"
+                            className="text-lg font-bold fill-gray-900 dark:fill-gray-100"
                         >
                             ${(totalValue / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })}k
                         </text>

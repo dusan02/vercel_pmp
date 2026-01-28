@@ -47,20 +47,20 @@ export const StockTableRow = memo(({
             <CompanyLogo ticker={stock.ticker} {...(stock.logoUrl ? { logoUrl: stock.logoUrl } : {})} size={24} priority={priority} />
           </div>
         </td>
-        
+
         {/* Ticker */}
         <td><strong>{stock.ticker}</strong></td>
-        
+
         {/* % Change */}
         <td className={stock.percentChange >= 0 ? 'positive' : 'negative'}>
           {formattedPercentChange}
         </td>
-        
+
         {/* Cap Diff */}
         <td className={stock.marketCapDiff >= 0 ? 'positive' : 'negative'}>
           {formattedMarketCapDiff}
         </td>
-        
+
         {/* Action - Favorite button */}
         <td>
           <button
@@ -76,7 +76,7 @@ export const StockTableRow = memo(({
           </button>
         </td>
       </SwipeableTableRow>
-    
+
       {/* Desktop: Full columns (CSS gating - hidden lg:table-row) */}
       <SwipeableTableRow
         onToggleFavorite={onToggleFavorite}
@@ -95,35 +95,35 @@ export const StockTableRow = memo(({
             />
           </div>
         </td>
-        
+
         {/* Ticker */}
         <td><strong>{stock.ticker}</strong></td>
-        
+
         {/* Company */}
         <td className="company-name">{companyName}</td>
-        
+
         {/* Sector */}
         <td>{formatSectorName(stock.sector)}</td>
-        
+
         {/* Industry */}
-        <td>{stock.industry || 'N/A'}</td>
-        
+        <td className="text-left">{stock.industry || 'N/A'}</td>
+
         {/* Market Cap */}
         <td>{hasValidMarketCap ? formattedMarketCap : '—'}</td>
-        
+
         {/* Cap Diff */}
         <td className={stock.marketCapDiff >= 0 ? 'positive' : 'negative'}>
           {formattedMarketCapDiff}
         </td>
-        
+
         {/* Price */}
         <td>{hasValidPrice ? `$${formattedPrice}` : '—'}</td>
-        
+
         {/* % Change */}
         <td className={stock.percentChange >= 0 ? 'positive' : 'negative'}>
           {formattedPercentChange}
         </td>
-        
+
         {/* Favorites */}
         <td>
           <button

@@ -155,7 +155,7 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
   ) : null;
 
   return (
-    <div 
+    <div
       ref={dropdownRef}
       className={`custom-dropdown ${className} ${isOpen ? 'open' : ''}`}
       role="combobox"
@@ -164,17 +164,17 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
     >
       <button
         type="button"
-        className="custom-dropdown-trigger"
+        className="custom-dropdown-trigger w-full flex items-center justify-between px-3 py-2 bg-[var(--clr-surface)] border border-[var(--clr-border)] rounded-md text-[var(--clr-text)]"
         ref={triggerRef}
         onClick={() => setIsOpen((v) => !v)}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
       >
-        <span className="custom-dropdown-value">
+        <span className="custom-dropdown-value truncate mr-2">
           {selectedOption?.label || placeholder || 'Select...'}
         </span>
-        <ChevronDown 
-          className={`custom-dropdown-arrow ${isOpen ? 'open' : ''}`}
+        <ChevronDown
+          className={`custom-dropdown-arrow flex-shrink-0 ${isOpen ? 'open' : ''}`}
           size={16}
         />
       </button>

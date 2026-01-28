@@ -25,7 +25,7 @@ export function PortfolioDailyChangeChart({ data }: PortfolioDailyChangeChartPro
 
     return (
         <div className="w-full p-6 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 overflow-x-auto">
-            <h3 className="text-sm font-semibold text-[var(--clr-subtext)] mb-4 uppercase tracking-wider">
+            <h3 className="text-base font-semibold text-[var(--clr-subtext)] mb-4 uppercase tracking-wider">
                 Daily Change
             </h3>
 
@@ -41,7 +41,7 @@ export function PortfolioDailyChangeChart({ data }: PortfolioDailyChangeChartPro
                             {/* Bar container - takes available vertical space */}
                             <div className="flex-1 w-full flex items-end justify-center relative">
                                 {/* Value label above bar */}
-                                <div className="mb-1 opacity-0 group-hover:opacity-100 transition-opacity text-xs font-medium whitespace-nowrap z-10 absolute bottom-full">
+                                <div className="mb-1 opacity-0 group-hover:opacity-100 transition-opacity text-sm font-medium whitespace-nowrap z-10 absolute bottom-full">
                                     <span className={isPositive ? 'text-green-600' : 'text-red-600'}>
                                         {item.dailyChange > 0 ? '+' : ''}
                                         ${Math.abs(item.dailyChange).toLocaleString(undefined, { maximumFractionDigits: 0 })}
@@ -60,12 +60,12 @@ export function PortfolioDailyChangeChart({ data }: PortfolioDailyChangeChartPro
                             <div className="w-full h-px bg-gray-200 dark:bg-gray-700" />
 
                             {/* Ticker label */}
-                            <div className="mt-2 text-xs font-bold text-[var(--clr-text)] text-center truncate w-full">
+                            <div className="mt-2 text-sm font-bold text-[var(--clr-text)] text-center truncate w-full">
                                 {item.ticker}
                             </div>
 
                             {/* Change Value below ticker */}
-                            <div className={`text-[10px] font-medium text-center ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                            <div className={`text-xs font-medium text-center ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
                                 {item.dailyChange > 0 ? '+' : ''}
                                 {Math.abs(item.dailyChange) >= 1000
                                     ? `$${(Math.abs(item.dailyChange) / 1000).toFixed(1)}k`
