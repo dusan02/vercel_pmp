@@ -12,6 +12,7 @@ interface HomePortfolioProps {
     onRemoveStock: (ticker: string) => void;
     onAddStock: (ticker: string, quantity?: number) => void;
     calculatePortfolioValue: (stock: StockData) => number;
+    calculateTotalValue?: (stock: StockData) => number;
     totalPortfolioValue: number;
 }
 
@@ -24,6 +25,7 @@ export function HomePortfolio({
     onRemoveStock,
     onAddStock,
     calculatePortfolioValue,
+    calculateTotalValue,
     totalPortfolioValue
 }: HomePortfolioProps) {
     return (
@@ -37,6 +39,7 @@ export function HomePortfolio({
                 onRemoveStock={onRemoveStock}
                 onAddStock={onAddStock}
                 calculatePortfolioValue={calculatePortfolioValue}
+                calculateTotalValue={calculateTotalValue}
                 totalPortfolioValue={totalPortfolioValue}
             />
         </SectionErrorBoundary>

@@ -233,7 +233,9 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
     updateQuantity,
     removeStock,
     addStock,
-    calculateStockValue,
+    calculateStockValue, // DEPRECATED: daily change
+    calculateTotalStockValue, // Total value
+    calculateDailyChange, // Daily change
     totalPortfolioValue,
     portfolioStocks
   } = usePortfolio({ stockData });
@@ -378,7 +380,8 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
                     onUpdateQuantity={updateQuantity}
                     onRemoveStock={removeStock}
                     onAddStock={addStock}
-                    calculatePortfolioValue={calculateStockValue}
+                    calculatePortfolioValue={calculateDailyChange}
+                    calculateTotalValue={calculateTotalStockValue}
                     totalPortfolioValue={totalPortfolioValue}
                   />
                 )}

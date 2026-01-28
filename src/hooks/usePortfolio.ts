@@ -36,7 +36,7 @@ export function usePortfolio(props?: UsePortfolioProps) {
           }
           setPortfolioHoldingsState(validated);
           // Save back if any values were capped
-          const needsUpdate = Object.entries(parsed).some(([key, value]) => 
+          const needsUpdate = Object.entries(parsed).some(([key, value]) =>
             typeof value === 'number' && value > MAX_QUANTITY
           );
           if (needsUpdate) {
@@ -111,10 +111,10 @@ export function usePortfolio(props?: UsePortfolioProps) {
   const updateQuantity = useCallback(async (ticker: string, quantity: number) => {
     // Enforce maximum limit of 1,000,000
     const MAX_QUANTITY = 1_000_000;
-    const q = (typeof quantity === 'number' && isFinite(quantity) && quantity >= 0) 
-      ? Math.min(quantity, MAX_QUANTITY) 
+    const q = (typeof quantity === 'number' && isFinite(quantity) && quantity >= 0)
+      ? Math.min(quantity, MAX_QUANTITY)
       : 0;
-    
+
     // Optimistic update
     setPortfolioHoldings(prev => {
       const updated = { ...prev };
@@ -169,27 +169,37 @@ export function usePortfolio(props?: UsePortfolioProps) {
     }
   }, [setPortfolioHoldings, session?.user?.id]);
 
-  // Calculate individual stock value
-  const calculateStockValue = useCallback((stock: StockData): number => {
+  // Calculate total portfolio value for a stock (quantity × current price)
+  const calculateTotalStockValue = useCallback((stock: StockData): number => {
     const quantity = portfolioHoldings[stock.ticker] || 0;
     if (quantity === 0) return 0;
-    // Use pre-market price if available and non-zero, otherwise close price
+    const currentPrice = stock.currentPrice || stock.closePrice;
+    return currentPrice * quantity;
+  }, [portfolioHoldings]);
+
+  // Calculate daily change for a stock (current value - previous value)
+  const calculateDailyChange = useCallback((stock: StockData): number => {
+    const quantity = portfolioHoldings[stock.ticker] || 0;
+    if (quantity === 0) return 0;
     const currentPrice = stock.currentPrice || stock.closePrice;
     const currentValue = currentPrice * quantity;
     const previousValue = stock.closePrice * quantity;
-    // Value change since previous close
     return currentValue - previousValue;
   }, [portfolioHoldings]);
 
-  // Calculate total portfolio value change
+  // DEPRECATED: Use calculateDailyChange instead
+  // Kept for backwards compatibility
+  const calculateStockValue = calculateDailyChange;
+
+  // Calculate total portfolio value change (sum of all daily changes)
   const totalPortfolioValue = useMemo(() => {
     return stockData.reduce((total, stock) => {
       if (portfolioHoldings[stock.ticker]) {
-        return total + calculateStockValue(stock);
+        return total + calculateDailyChange(stock);
       }
       return total;
     }, 0);
-  }, [stockData, portfolioHoldings, calculateStockValue]);
+  }, [stockData, portfolioHoldings, calculateDailyChange]);
 
   // Get portfolio stocks logic (moved from HomePage)
   const portfolioStocks = useMemo(() => {
@@ -231,8 +241,10 @@ export function usePortfolio(props?: UsePortfolioProps) {
     removeStock,
     addStock,
     isLoaded,
-    calculateStockValue, // New
-    totalPortfolioValue, // New
-    portfolioStocks // New
+    calculateStockValue, // DEPRECATED: Use calculateDailyChange
+    calculateTotalStockValue, // New: Total portfolio value
+    calculateDailyChange, // New: Daily change value
+    totalPortfolioValue, // Total daily change
+    portfolioStocks
   };
 }

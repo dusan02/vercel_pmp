@@ -12,6 +12,7 @@ import { StockData } from '@/lib/types';
 import { PortfolioQuantityInput } from './PortfolioQuantityInput';
 import { PortfolioCardMobile } from './PortfolioCardMobile';
 import { PortfolioDonutChart } from './PortfolioDonutChart';
+import { PortfolioDailyChangeChart } from './PortfolioDailyChangeChart';
 import { formatCurrencyCompact, formatPercent, formatPrice, formatSectorName } from '@/lib/utils/format';
 import { event } from '@/lib/ga';
 import {
@@ -29,7 +30,8 @@ interface PortfolioSectionProps {
   onUpdateQuantity: (ticker: string, quantity: number) => void;
   onRemoveStock: (ticker: string) => void;
   onAddStock: (ticker: string, quantity?: number) => void;
-  calculatePortfolioValue: (stock: StockData) => number;
+  calculatePortfolioValue: (stock: StockData) => number; // Daily change
+  calculateTotalValue?: ((stock: StockData) => number) | undefined; // Total value (NEW)
   totalPortfolioValue: number;
 }
 
@@ -42,6 +44,7 @@ export function PortfolioSection({
   onRemoveStock,
   onAddStock,
   calculatePortfolioValue,
+  calculateTotalValue,
   totalPortfolioValue
 }: PortfolioSectionProps) {
   const [portfolioSearchTerm, setPortfolioSearchTerm] = useState('');
@@ -456,11 +459,26 @@ export function PortfolioSection({
             {/* Portfolio Donut Chart */}
             <div className="mb-6">
               <PortfolioDonutChart
+                data={portfolioStocks.map(stock => {
+                  // Use calculateTotalValue if provided, otherwise calculate manually
+                  const value = calculateTotalValue
+                    ? calculateTotalValue(stock)
+                    : (portfolioHoldings[stock.ticker] || 0) * (stock.currentPrice || stock.closePrice);
+                  return {
+                    ticker: stock.ticker,
+                    value,
+                  };
+                })}
+              />
+            </div>
+
+            {/* Portfolio Daily Change Chart */}
+            <div className="mb-6">
+              <PortfolioDailyChangeChart
                 data={portfolioStocks.map(stock => ({
                   ticker: stock.ticker,
-                  value: calculatePortfolioValue(stock),
+                  dailyChange: calculatePortfolioValue(stock),
                 }))}
-                size={240}
               />
             </div>
 
@@ -689,11 +707,28 @@ export function PortfolioSection({
         {portfolioStocks.length > 0 && (
           <div className="mb-6">
             <PortfolioDonutChart
+              data={portfolioStocks.map(stock => {
+                const value = calculateTotalValue
+                  ? calculateTotalValue(stock)
+                  : (portfolioHoldings[stock.ticker] || 0) * (stock.currentPrice || stock.closePrice);
+                return {
+                  ticker: stock.ticker,
+                  value,
+                };
+              })}
+              size={280}
+            />
+          </div>
+        )}
+
+        {/* Portfolio Daily Change Chart - Desktop */}
+        {portfolioStocks.length > 0 && (
+          <div className="mb-6">
+            <PortfolioDailyChangeChart
               data={portfolioStocks.map(stock => ({
                 ticker: stock.ticker,
-                value: calculatePortfolioValue(stock),
+                dailyChange: calculatePortfolioValue(stock),
               }))}
-              size={280}
             />
           </div>
         )}

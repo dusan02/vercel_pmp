@@ -129,25 +129,27 @@ export function PortfolioDonutChart({ data, size = 200 }: PortfolioDonutChartPro
             </div>
 
             {/* Legend */}
-            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto">
+            <div className="flex-1 grid grid-cols-2 lg:grid-cols-2 gap-x-6 gap-y-1 max-h-64 overflow-y-auto content-center">
                 {chartData.map((slice) => (
                     <div
                         key={slice.ticker}
                         className="flex items-center gap-2 text-sm"
                     >
                         <div
-                            className="w-4 h-4 rounded-sm flex-shrink-0"
+                            className="w-3 h-3 rounded-sm flex-shrink-0"
                             style={{ backgroundColor: slice.color }}
                         />
-                        <span className="font-semibold text-gray-900 dark:text-gray-100 min-w-[60px]">
-                            {slice.ticker}
-                        </span>
-                        <span className="text-gray-600 dark:text-gray-400 ml-auto">
-                            ${slice.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                        </span>
-                        <span className="text-gray-500 dark:text-gray-500 text-xs min-w-[45px] text-right">
-                            ({slice.percentage.toFixed(1)}%)
-                        </span>
+                        <div className="flex items-baseline gap-2">
+                            <span className="font-bold text-gray-900 dark:text-gray-100">
+                                {slice.ticker}
+                            </span>
+                            <span className="text-gray-600 dark:text-gray-300">
+                                ${slice.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                            </span>
+                            <span className="text-gray-400 dark:text-gray-500 text-xs">
+                                ({slice.percentage.toFixed(1)}%)
+                            </span>
+                        </div>
                     </div>
                 ))}
             </div>
