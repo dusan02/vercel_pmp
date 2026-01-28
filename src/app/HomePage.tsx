@@ -92,7 +92,7 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { StockData } from '@/lib/types';
 import { useStockData } from '@/hooks/useStockData';
 import { useStockFilter } from '@/hooks/useStockFilter';
-import { useLogoLoader } from '@/hooks/useLogoLoader';
+// import { useLogoLoader } from '@/hooks/useLogoLoader';
 import { useTablePerformance } from '@/hooks/useTablePerformance';
 import { autoRepairLocalStorage } from '@/lib/utils/clearCache';
 import { logger } from '@/lib/utils/logger';
@@ -313,13 +313,13 @@ export default function HomePage({ initialData = [] }: HomePageProps) {
     }
   }, [optimizedAllStocks.length, displayedStocks.length, displayLimit]);
 
-  // Optimized logo loading hook
-  const displayedTickers = useMemo(() => displayedStocks.map(s => s.ticker), [displayedStocks]);
-  useLogoLoader({
-    tickers: displayedTickers,
-    priorityCount: 100,
-    size: 32
-  });
+  // Optimized logo loading hook - REMOVED: Redundant and causes preload warnings
+  // const displayedTickers = useMemo(() => displayedStocks.map(s => s.ticker), [displayedStocks]);
+  // useLogoLoader({
+  //   tickers: displayedTickers,
+  //   priorityCount: 100,
+  //   size: 32
+  // });
 
 
   return (
