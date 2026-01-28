@@ -5,10 +5,9 @@ import { getProjectTickers } from '@/data/defaultTickers';
 import { logger } from '@/lib/utils/logger';
 import { getDateET, createETDate } from '@/lib/utils/dateET';
 
-// Force dynamic to ensure fresh data on every request (SSR)
-export const dynamic = 'force-dynamic';
-// Revalidate every 60 seconds as a fallback
-export const revalidate = 60;
+// Enable ISR (Incremental Static Regeneration) for better performance
+// Page is cached and regenerated every 10 seconds
+export const revalidate = 10;
 
 export default async function Page() {
   // Server-side data fetching for initial render (SSR)

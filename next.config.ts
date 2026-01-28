@@ -20,7 +20,7 @@ const nextConfig: NextConfig = {
   // Experimental features for better performance
   experimental: {
     // optimizeCss: true, // Temporarily disabled due to critters module issue
-    optimizePackageImports: ['lucide-react'],
+    optimizePackageImports: ['lucide-react', 'd3-hierarchy', 'd3-scale'],
   },
 
   // Removed webpackDevMiddleware config - may interfere with webpack runtime

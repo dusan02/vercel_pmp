@@ -32,6 +32,10 @@ export async function GET(request: NextRequest) {
         order,
         timestamp: new Date().toISOString(),
         ...(errors.length > 0 && { warnings: errors })
+      }, {
+        headers: {
+          'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=30'
+        }
       });
     }
 
@@ -88,7 +92,11 @@ export async function GET(request: NextRequest) {
       response.message = `Successfully fetched ${data.length} stocks, but encountered ${errors.length} errors`;
     }
 
-    return NextResponse.json(response);
+    return NextResponse.json(response, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=30'
+      }
+    });
 
   } catch (error) {
     console.error('❌ Error in /api/stocks:', error);

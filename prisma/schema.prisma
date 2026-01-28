@@ -142,6 +142,8 @@ model Ticker {
   @@index([lastChangePct])
   @@index([lastMarketCap])
   @@index([lastMarketCapDiff])
+  @@index([sector, lastMarketCap])
+  @@index([industry, lastMarketCap])
 }
 
 model DailyRef {
