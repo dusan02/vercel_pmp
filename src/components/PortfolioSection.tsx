@@ -325,6 +325,72 @@ export function PortfolioSection({
     );
   }
 
+  // Reusable Search Bar Component
+  const searchBar = (
+    <div className="w-full flex justify-end mb-4 relative z-20">
+      <div className="portfolio-search-container w-full max-w-md relative">
+        <input
+          ref={searchInputRef}
+          type="text"
+          placeholder="Search by ticker or company name..."
+          value={portfolioSearchTerm}
+          onChange={handlePortfolioSearchChange}
+          onKeyDown={handleKeyDown}
+          className="portfolio-search-input text-left" // Left align
+          aria-label="Search stocks to add to portfolio"
+          aria-expanded={showPortfolioSearch}
+          aria-haspopup="listbox"
+          role="combobox"
+        />
+        {showPortfolioSearch && portfolioSearchResults.length > 0 && (
+          <div
+            ref={resultsRef}
+            className="portfolio-search-results"
+            role="listbox"
+            aria-label="Search results"
+          >
+            {portfolioSearchResults.map((stock, index) => (
+              <div
+                key={stock.ticker}
+                ref={(el) => {
+                  itemRefs.current[index] = el;
+                }}
+                className={`portfolio-search-result-item ${selectedIndex === index ? 'selected' : ''}`}
+                onClick={() => handleAddStock(stock)}
+                onMouseEnter={() => setSelectedIndex(index)}
+                role="option"
+                aria-selected={selectedIndex === index}
+              >
+                <div className="portfolio-search-result-logo">
+                  <CompanyLogo ticker={stock.ticker} {...(stock.logoUrl ? { logoUrl: stock.logoUrl } : {})} size={24} priority={true} />
+                </div>
+                <div className="portfolio-search-result-info">
+                  <div className="portfolio-search-result-ticker">{stock.ticker}</div>
+                  <div className="portfolio-search-result-name">{stock.companyName || stock.ticker}</div>
+                </div>
+                <button
+                  className="portfolio-add-button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    onAddStock(stock.ticker, 1);
+                    setPortfolioSearchTerm('');
+                    setPortfolioSearchResults([]);
+                    setShowPortfolioSearch(false);
+                    searchInputRef.current?.blur();
+                  }}
+                  aria-label={`Add ${stock.ticker} to portfolio`}
+                >
+                  <Plus size={16} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <section className="portfolio">
       <div className="section-header flex flex-col lg:flex-row items-center gap-4 lg:gap-0">
@@ -334,68 +400,7 @@ export function PortfolioSection({
             <span>Portfolio</span>
           </h2>
         </div>
-        <div className="portfolio-search-wrapper w-full flex justify-center lg:justify-end">
-          <div className="portfolio-search-container w-full max-w-md">
-            <input
-              ref={searchInputRef}
-              type="text"
-              placeholder="Search by ticker or company name..."
-              value={portfolioSearchTerm}
-              onChange={handlePortfolioSearchChange}
-              onKeyDown={handleKeyDown}
-              className="portfolio-search-input text-center lg:text-left"
-              aria-label="Search stocks to add to portfolio"
-              aria-expanded={showPortfolioSearch}
-              aria-haspopup="listbox"
-              role="combobox"
-            />
-            {showPortfolioSearch && portfolioSearchResults.length > 0 && (
-              <div
-                ref={resultsRef}
-                className="portfolio-search-results"
-                role="listbox"
-                aria-label="Search results"
-              >
-                {portfolioSearchResults.map((stock, index) => (
-                  <div
-                    key={stock.ticker}
-                    ref={(el) => {
-                      itemRefs.current[index] = el;
-                    }}
-                    className={`portfolio-search-result-item ${selectedIndex === index ? 'selected' : ''}`}
-                    onClick={() => handleAddStock(stock)}
-                    onMouseEnter={() => setSelectedIndex(index)}
-                    role="option"
-                    aria-selected={selectedIndex === index}
-                  >
-                    <div className="portfolio-search-result-logo">
-                      <CompanyLogo ticker={stock.ticker} {...(stock.logoUrl ? { logoUrl: stock.logoUrl } : {})} size={24} priority={true} /> {/* Search results sú vždy priority */}
-                    </div>
-                    <div className="portfolio-search-result-info">
-                      <div className="portfolio-search-result-ticker">{stock.ticker}</div>
-                      <div className="portfolio-search-result-name">{getCompanyName(stock.ticker)}</div>
-                    </div>
-                    <button
-                      className="portfolio-add-button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        onAddStock(stock.ticker, 1);
-                        setPortfolioSearchTerm('');
-                        setPortfolioSearchResults([]);
-                        setShowPortfolioSearch(false);
-                        searchInputRef.current?.blur();
-                      }}
-                      aria-label={`Add ${stock.ticker} to portfolio`}
-                    >
-                      <Plus size={16} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+
       </div>
 
       {/* Mobile: Cards layout */}
@@ -456,6 +461,9 @@ export function PortfolioSection({
           </div>
         ) : (
           <div className="w-full">
+            {/* Search Bar - Mobile */}
+            {searchBar}
+
             {/* Portfolio Donut Chart */}
             <div className="mb-6">
               <PortfolioDonutChart
@@ -703,35 +711,39 @@ export function PortfolioSection({
 
       {/* Desktop: Table layout */}
       <div className="hidden lg:block portfolio-table-wrapper">
-        {/* Portfolio Donut Chart - Desktop */}
-        {portfolioStocks.length > 0 && (
-          <div className="mb-6">
-            <PortfolioDonutChart
-              data={portfolioStocks.map(stock => {
-                const value = calculateTotalValue
-                  ? calculateTotalValue(stock)
-                  : (portfolioHoldings[stock.ticker] || 0) * (stock.currentPrice || stock.closePrice);
-                return {
-                  ticker: stock.ticker,
-                  value,
-                };
-              })}
-              size={280}
-            />
-          </div>
-        )}
+        {/* Charts Grid - Desktop */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {portfolioStocks.length > 0 && (
+            <div className="w-full">
+              <PortfolioDonutChart
+                data={portfolioStocks.map(stock => {
+                  const value = calculateTotalValue
+                    ? calculateTotalValue(stock)
+                    : (portfolioHoldings[stock.ticker] || 0) * (stock.currentPrice || stock.closePrice);
+                  return {
+                    ticker: stock.ticker,
+                    value,
+                  };
+                })}
+                size={280}
+              />
+            </div>
+          )}
 
-        {/* Portfolio Daily Change Chart - Desktop */}
-        {portfolioStocks.length > 0 && (
-          <div className="mb-6">
-            <PortfolioDailyChangeChart
-              data={portfolioStocks.map(stock => ({
-                ticker: stock.ticker,
-                dailyChange: calculatePortfolioValue(stock),
-              }))}
-            />
-          </div>
-        )}
+          {portfolioStocks.length > 0 && (
+            <div className="w-full">
+              <PortfolioDailyChangeChart
+                data={portfolioStocks.map(stock => ({
+                  ticker: stock.ticker,
+                  dailyChange: calculatePortfolioValue(stock),
+                }))}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Search Bar - Desktop */}
+        {searchBar}
 
         <table className="portfolio-table">
           <thead>
