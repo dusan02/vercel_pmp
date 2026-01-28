@@ -209,6 +209,35 @@ export async function GET(
           // DB not available or not configured; ignore
         }
 
+        // 4a. Finnhub (Preferred external source - High Quality)
+        let finnhubLogoUrl: string | null = null;
+        const finnhubKey = process.env.FINNHUB_API_KEY;
+        if (finnhubKey) {
+          try {
+            const fhUrl = `https://finnhub.io/api/v1/stock/profile2?symbol=${symbol}&token=${finnhubKey}`;
+            const r = await fetch(fhUrl, { signal: AbortSignal.timeout(5000) });
+            if (r.ok) {
+              const j: any = await r.json();
+              // Finnhub logos are often nice squared icons
+              if (j && j.logo && typeof j.logo === 'string' && j.logo.startsWith('http')) {
+                // Fix: Finnhub returns http:// sometimes, force https
+                finnhubLogoUrl = j.logo.replace(/^http:\/\//i, 'https://');
+
+                // Persist to DB (update if better)
+                try {
+                  await prisma.ticker.upsert({
+                    where: { symbol },
+                    update: { logoUrl: finnhubLogoUrl },
+                    create: { symbol, logoUrl: finnhubLogoUrl }
+                  });
+                } catch { }
+              }
+            }
+          } catch (e) {
+            // ignore finnhub errors
+          }
+        }
+
         // 5. Polygon branding fallback (for SP500 tickers without domain mapping)
         let polygonLogoUrl: string | null = null;
         let derivedDomain: string | null = null;
@@ -263,16 +292,17 @@ export async function GET(
         // 6. Resolve logo URLs (candidates)
         const domainCandidates = derivedDomain
           ? [
-              `https://logo.clearbit.com/${derivedDomain}?size=${size}`,
-              `https://www.google.com/s2/favicons?domain=${derivedDomain}&sz=${size}`,
-              `https://icons.duckduckgo.com/ip3/${derivedDomain}.ico`,
-            ]
+            `https://logo.clearbit.com/${derivedDomain}?size=${size}`,
+            `https://www.google.com/s2/favicons?domain=${derivedDomain}&sz=${size}`,
+            `https://icons.duckduckgo.com/ip3/${derivedDomain}.ico`,
+          ]
           : [];
 
         const logoCandidates = Array.from(
           new Set(
             [
               ...(cachedPreferredUrl ? [cachedPreferredUrl] : []),
+              ...(finnhubLogoUrl ? [finnhubLogoUrl] : []),
               ...(dbLogoUrl ? [dbLogoUrl] : []),
               ...(polygonLogoUrl ? [polygonLogoUrl] : []),
               ...domainCandidates,

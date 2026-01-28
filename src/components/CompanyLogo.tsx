@@ -193,7 +193,7 @@ export default function CompanyLogo({
         overflow: 'hidden',
         background: 'var(--clr-surface)',
         boxSizing: 'border-box',
-        padding: 2,
+        // Padding removed to maximize logo size
       }}
       className={className}
     >
