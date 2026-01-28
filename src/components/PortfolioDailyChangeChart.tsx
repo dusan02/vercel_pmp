@@ -48,7 +48,7 @@ export function PortfolioDailyChangeChart({ data }: PortfolioDailyChangeChartPro
 
                             {/* Bar */}
                             <div
-                                className={`w-full rounded-t-sm transition-all duration-300 ${isPositive ? 'bg-green-200 dark:bg-green-900/40 hover:bg-green-300' : 'bg-red-200 dark:bg-red-900/40 hover:bg-red-300'
+                                className={`w-full rounded-t-sm transition-all duration-300 ${isPositive ? 'bg-green-400 dark:bg-green-600/60 hover:bg-green-500' : 'bg-red-400 dark:bg-red-600/60 hover:bg-red-500'
                                     }`}
                                 style={{ height: `${displayHeight}%` }}
                             />
