@@ -35,23 +35,13 @@ export function FavoritesSection({
   const handleBrowseStocks = () => {
     // On mobile: trigger tab change via custom event
     if (typeof window !== 'undefined') {
-      // Check if mobile (tab-based navigation)
-      const isMobile = window.innerWidth <= 768;
+      // Trigger navigation via custom event for both mobile and desktop (since both use tab-based navigation)
+      window.dispatchEvent(new CustomEvent('mobile-nav-change', { detail: 'allStocks' }));
 
-      if (isMobile) {
-        // Mobile: Change tab via custom event
-        window.dispatchEvent(new CustomEvent('mobile-nav-change', { detail: 'allStocks' }));
-        // Update URL
-        const url = new URL(window.location.href);
-        url.searchParams.set('tab', 'allStocks');
-        window.history.pushState({}, '', url.toString());
-      } else {
-        // Desktop: Scroll to All Stocks section
-        const allStocksSection = document.querySelector('.all-stocks');
-        if (allStocksSection) {
-          allStocksSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }
+      // Update URL
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', 'allStocks');
+      window.history.pushState({}, '', url.toString());
     }
   };
 

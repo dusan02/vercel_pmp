@@ -70,7 +70,7 @@ function adjustColor(hex: string, percent: number) {
     return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 }
 
-export function PortfolioDonutChart({ data, size = 300 }: PortfolioDonutChartProps) {
+export function PortfolioSectorDistributionChart({ data, size = 300 }: PortfolioDonutChartProps) {
     const [hoveredNode, setHoveredNode] = useState<string | null>(null);
 
     const { nodes, totalValue } = useMemo(() => {
@@ -223,7 +223,7 @@ export function PortfolioDonutChart({ data, size = 300 }: PortfolioDonutChartPro
     return (
         <div className="w-full p-6 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
             <h3 className="text-base font-semibold text-[var(--clr-subtext)] mb-4 uppercase tracking-wider">
-                Holdings Distribution
+                Segment Distribution
             </h3>
             <div className="flex justify-center">
                 <div

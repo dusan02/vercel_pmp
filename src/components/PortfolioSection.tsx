@@ -11,8 +11,9 @@ import { getCompanyName } from '@/lib/companyNames';
 import { StockData } from '@/lib/types';
 import { PortfolioQuantityInput } from './PortfolioQuantityInput';
 import { PortfolioCardMobile } from './PortfolioCardMobile';
-import { PortfolioDonutChart } from './PortfolioDonutChart';
-import { PortfolioDailyChangeChart } from './PortfolioDailyChangeChart';
+import { PortfolioSectorDistributionChart } from './PortfolioSectorDistributionChart';
+import { PortfolioStockDistributionChart } from './PortfolioStockDistributionChart';
+import { PortfolioPerformanceTreemap } from './PortfolioPerformanceTreemap';
 import { formatCurrencyCompact, formatPercent, formatPrice, formatSectorName } from '@/lib/utils/format';
 import { event } from '@/lib/ga';
 import {
@@ -463,9 +464,22 @@ export function PortfolioSection({
             {/* Search Bar - Mobile */}
             {searchBar}
 
-            {/* Portfolio Donut Chart */}
-            <div className="mb-6">
-              <PortfolioDonutChart
+            {/* Portfolio Charts - Mobile Stack */}
+            <div className="mb-6 flex flex-col gap-6">
+              <PortfolioStockDistributionChart
+                data={portfolioStocks.map(stock => {
+                  const value = calculateTotalValue
+                    ? calculateTotalValue(stock)
+                    : (portfolioHoldings[stock.ticker] || 0) * (stock.currentPrice || stock.closePrice);
+                  return {
+                    ticker: stock.ticker,
+                    value,
+                  };
+                })}
+                size={220}
+              />
+
+              <PortfolioSectorDistributionChart
                 data={portfolioStocks.map(stock => {
                   // Use calculateTotalValue if provided, otherwise calculate manually
                   const value = calculateTotalValue
@@ -478,16 +492,22 @@ export function PortfolioSection({
                     industry: stock.industry || 'Unknown'
                   };
                 })}
+                size={220}
               />
-            </div>
 
-            {/* Portfolio Daily Change Chart */}
-            <div className="mb-6">
-              <PortfolioDailyChangeChart
-                data={portfolioStocks.map(stock => ({
-                  ticker: stock.ticker,
-                  dailyChange: calculatePortfolioValue(stock),
-                }))}
+              <PortfolioPerformanceTreemap
+                data={portfolioStocks.map(stock => {
+                  const value = calculateTotalValue
+                    ? calculateTotalValue(stock)
+                    : (portfolioHoldings[stock.ticker] || 0) * (stock.currentPrice || stock.closePrice);
+                  const dailyChange = calculatePortfolioValue(stock);
+                  return {
+                    ticker: stock.ticker,
+                    value,
+                    dailyChangePercent: stock.percentChange || 0,
+                    dailyChangeValue: dailyChange
+                  };
+                })}
               />
             </div>
 
@@ -713,37 +733,59 @@ export function PortfolioSection({
       {/* Desktop: Table layout */}
       <div className="hidden lg:block portfolio-table-wrapper">
         {/* Charts Grid - Desktop */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {portfolioStocks.length > 0 && (
+        {portfolioStocks.length > 0 && (
+          <div className="flex flex-col gap-6 mb-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="w-full">
+                <PortfolioStockDistributionChart
+                  data={portfolioStocks.map(stock => {
+                    const value = calculateTotalValue
+                      ? calculateTotalValue(stock)
+                      : (portfolioHoldings[stock.ticker] || 0) * (stock.currentPrice || stock.closePrice);
+                    return {
+                      ticker: stock.ticker,
+                      value,
+                    };
+                  })}
+                  size={280}
+                />
+              </div>
+              <div className="w-full">
+                <PortfolioSectorDistributionChart
+                  data={portfolioStocks.map(stock => {
+                    const value = calculateTotalValue
+                      ? calculateTotalValue(stock)
+                      : (portfolioHoldings[stock.ticker] || 0) * (stock.currentPrice || stock.closePrice);
+                    return {
+                      ticker: stock.ticker,
+                      value,
+                      sector: stock.sector || 'Unknown',
+                      industry: stock.industry || 'Unknown'
+                    };
+                  })}
+                  size={280}
+                />
+              </div>
+            </div>
+
             <div className="w-full">
-              <PortfolioDonutChart
+              <PortfolioPerformanceTreemap
                 data={portfolioStocks.map(stock => {
                   const value = calculateTotalValue
                     ? calculateTotalValue(stock)
                     : (portfolioHoldings[stock.ticker] || 0) * (stock.currentPrice || stock.closePrice);
+                  const dailyChange = calculatePortfolioValue(stock);
                   return {
                     ticker: stock.ticker,
                     value,
-                    sector: stock.sector || 'Unknown',
-                    industry: stock.industry || 'Unknown'
+                    dailyChangePercent: stock.percentChange || 0,
+                    dailyChangeValue: dailyChange
                   };
                 })}
-                size={280}
               />
             </div>
-          )}
-
-          {portfolioStocks.length > 0 && (
-            <div className="w-full">
-              <PortfolioDailyChangeChart
-                data={portfolioStocks.map(stock => ({
-                  ticker: stock.ticker,
-                  dailyChange: calculatePortfolioValue(stock),
-                }))}
-              />
-            </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Search Bar - Desktop */}
         {searchBar}
