@@ -332,7 +332,11 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
       {(isMounted && !isDesktop) && (
         <MobileApp>
           {/* MobileHeader - viditeľný vo všetkých sekciách okrem heatmap (heatmap má svoj vlastný header) */}
-          {activeSection !== 'heatmap' && <MobileHeader />}
+          {activeSection !== 'heatmap' && (
+            <MobileHeader
+              onLogoClick={() => handleMobileNavChange('heatmap')}
+            />
+          )}
           <PullToRefresh onRefresh={loadData} disabled={activeSection === 'heatmap'}>
             <div className={`mobile-app-content ${activeSection === 'heatmap' ? 'is-heatmap' : ''}`}>
               <MobileScreen
@@ -494,6 +498,7 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
                   <div className="header-wrapper">
                     <div className="container mx-auto px-4">
                       <PageHeader
+                        onLogoClick={() => setActiveSection('heatmap')}
                         navigation={
                           <div className="hidden lg:block">
                             <SectionNavigation

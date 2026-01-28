@@ -8,11 +8,18 @@ import { LoginButton } from '../LoginButton';
  * MobileHeader - Moderný minimalistický header
  * Len logo + brand + sign in
  */
-export function MobileHeader() {
+interface MobileHeaderProps {
+  onLogoClick?: () => void;
+}
+
+export function MobileHeader({ onLogoClick }: MobileHeaderProps) {
   return (
     <header className="mobile-app-header">
       <div className="mobile-app-header-content">
-        <div className="mobile-app-brand">
+        <div
+          className="mobile-app-brand cursor-pointer"
+          onClick={onLogoClick}
+        >
           <BrandLogo />
           <span className="mobile-app-title">PreMarketPrice</span>
         </div>
