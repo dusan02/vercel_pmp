@@ -52,8 +52,14 @@ export function PortfolioPerformanceTreemap({ data }: PortfolioPerformanceTreema
 
             <div
                 ref={ref}
-                className={`relative w-full h-[600px] bg-black overflow-hidden select-none ${styles.heatmapContainer}`}
-                style={{ backgroundColor: '#000000' }}
+                className="relative w-full overflow-hidden select-none"
+                style={{
+                    width: '100%',
+                    height: '600px',
+                    minHeight: '600px',
+                    backgroundColor: '#000000',
+                    color: 'white' // ensure any text inside is visible against black
+                }}
             >
                 {width > 0 && height > 0 && (
                     <MarketHeatmap

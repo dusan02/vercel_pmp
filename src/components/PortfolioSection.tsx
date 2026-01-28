@@ -13,7 +13,7 @@ import { PortfolioQuantityInput } from './PortfolioQuantityInput';
 import { PortfolioCardMobile } from './PortfolioCardMobile';
 import { PortfolioSectorDistributionChart } from './PortfolioSectorDistributionChart';
 import { PortfolioStockDistributionChart } from './PortfolioStockDistributionChart';
-import { PortfolioPerformanceTreemap } from './PortfolioPerformanceTreemap';
+import { PortfolioPerformanceTreemap } from './PortfolioTreemapNew';
 import { formatCurrencyCompact, formatPercent, formatPrice, formatSectorName } from '@/lib/utils/format';
 import { event } from '@/lib/ga';
 import {
