@@ -393,14 +393,13 @@ export function PortfolioSection({
 
   return (
     <section className="portfolio">
-      <div className="section-header flex flex-col lg:flex-row items-center gap-4 lg:gap-0">
-        <div className="header-main w-full lg:w-auto flex justify-center lg:justify-start">
-          <h2>
-            <SectionIcon type="pie" size={20} className="section-icon" />
+      <div className="flex items-center justify-between mb-4 px-4 pt-4">
+        <div className="flex items-center">
+          <h2 className="flex items-center gap-2 text-xl font-bold text-gray-900 dark:text-white m-0">
+            <SectionIcon type="pie" size={24} className="text-gray-900 dark:text-white" />
             <span>Portfolio</span>
           </h2>
         </div>
-
       </div>
 
       {/* Mobile: Cards layout */}

@@ -34,7 +34,7 @@ export function PortfolioDailyChangeChart({ data }: PortfolioDailyChangeChartPro
                     const isPositive = item.dailyChange >= 0;
                     const heightPercent = maxAbsValue > 0 ? (Math.abs(item.dailyChange) / maxAbsValue) * 100 : 0;
                     // Ensure at least some visibility for small values
-                    const displayHeight = Math.max(heightPercent, 2);
+                    const displayHeight = Math.max(heightPercent, 5);
 
                     return (
                         <div key={item.ticker} className="flex flex-col items-center group w-12 sm:w-16">
@@ -48,7 +48,7 @@ export function PortfolioDailyChangeChart({ data }: PortfolioDailyChangeChartPro
 
                             {/* Bar */}
                             <div
-                                className={`w-full rounded-t-sm transition-all duration-300 ${isPositive ? 'bg-green-400 dark:bg-green-600/60 hover:bg-green-500' : 'bg-red-400 dark:bg-red-600/60 hover:bg-red-500'
+                                className={`w-full rounded-t-sm transition-all duration-300 ${isPositive ? 'bg-green-500 dark:bg-green-500/80 hover:bg-green-600' : 'bg-red-500 dark:bg-red-500/80 hover:bg-red-600'
                                     }`}
                                 style={{ height: `${displayHeight}%` }}
                             />
