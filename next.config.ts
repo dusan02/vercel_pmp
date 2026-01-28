@@ -7,14 +7,35 @@ const nextConfig: NextConfig = {
     CUSTOM_KEY: process.env.CUSTOM_KEY,
   },
 
-  // Image optimization for local logos
+  // Image optimization
   images: {
-    // No remote patterns needed - all logos are local now
     formats: ['image/webp', 'image/avif'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    minimumCacheTTL: 60 * 60 * 24 * 365, // 1 year for local assets
+    minimumCacheTTL: 60 * 60 * 24 * 365, // 1 year
     unoptimized: false,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'api.polygon.io',
+      },
+      {
+        protocol: 'https',
+        hostname: 'logo.clearbit.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'finnhub.io',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.google.com', // For favicons
+      },
+      {
+        protocol: 'https',
+        hostname: 'icons.duckduckgo.com',
+      },
+    ],
   },
 
   // Experimental features for better performance

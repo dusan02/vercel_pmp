@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 
-// Google Sheets color palette
+// Consistent color palette
 const CHART_COLORS = [
     '#4285F4', // Blue
     '#EA4335', // Red
@@ -16,59 +16,59 @@ const CHART_COLORS = [
     '#3F51B5', // Indigo
 ];
 
-interface PortfolioSlice {
-    ticker: string;
-    value: number;
-    percentage: number;
-    color: string;
-}
-
 interface PortfolioDonutChartProps {
     data: Array<{
         ticker: string;
         value: number;
     }>;
-    size?: number;
+    size?: number; // Base size for the donut itself
 }
 
 export function PortfolioDonutChart({ data, size = 200 }: PortfolioDonutChartProps) {
-    const chartData = useMemo(() => {
-        // Calculate total value
-        const totalValue = data.reduce((sum, item) => sum + item.value, 0);
+    const [hoveredTicker, setHoveredTicker] = useState<string | null>(null);
 
-        if (totalValue === 0) return [];
+    const { slices, totalValue } = useMemo(() => {
+        const total = data.reduce((sum, item) => sum + item.value, 0);
+        if (total === 0) return { slices: [], totalValue: 0 };
 
-        // Sort by value descending and assign colors
-        const sorted = [...data]
-            .sort((a, b) => b.value - a.value)
-            .map((item, index) => ({
-                ticker: item.ticker,
-                value: item.value,
-                percentage: (item.value / totalValue) * 100,
+        // Sort desc
+        const sorted = [...data].sort((a, b) => b.value - a.value);
+
+        let accumulatedAngle = 0;
+        const slicesWithCoords = sorted.map((item, index) => {
+            const percentage = (item.value / total) * 100;
+            const startAngle = accumulatedAngle;
+            const endAngle = accumulatedAngle + (percentage / 100) * 360;
+            const middleAngle = startAngle + (endAngle - startAngle) / 2;
+            accumulatedAngle = endAngle;
+
+            return {
+                ...item,
+                percentage,
+                startAngle,
+                endAngle,
+                middleAngle,
                 color: CHART_COLORS[index % CHART_COLORS.length],
-            }));
+            };
+        });
 
-        return sorted;
+        return { slices: slicesWithCoords, totalValue: total };
     }, [data]);
 
-    // Calculate SVG path for donut segments
-    const createArc = (startAngle: number, endAngle: number, outerRadius: number, innerRadius: number) => {
-        const start = polarToCartesian(0, 0, outerRadius, endAngle);
-        const end = polarToCartesian(0, 0, outerRadius, startAngle);
-        const innerStart = polarToCartesian(0, 0, innerRadius, endAngle);
-        const innerEnd = polarToCartesian(0, 0, innerRadius, startAngle);
+    if (slices.length === 0) return null;
 
-        const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
+    // Radius config
+    const outerRadius = size / 2;
+    const innerRadius = outerRadius * 0.6; // Donut hole
+    const labelRadius = outerRadius + 20;  // Radius where the line break starts
+    const textRadius = outerRadius + 40;   // Radius where text starts
 
-        return [
-            'M', start.x, start.y,
-            'A', outerRadius, outerRadius, 0, largeArcFlag, 0, end.x, end.y,
-            'L', innerEnd.x, innerEnd.y,
-            'A', innerRadius, innerRadius, 0, largeArcFlag, 1, innerStart.x, innerStart.y,
-            'Z'
-        ].join(' ');
-    };
+    // Increase viewBox to accommodate labels (approx +150px each side worst case)
+    const padding = 120;
+    const viewBoxSize = size + padding * 2;
+    const center = viewBoxSize / 2;
 
+    // Helper functions
     const polarToCartesian = (centerX: number, centerY: number, radius: number, angleInDegrees: number) => {
         const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180.0;
         return {
@@ -77,83 +77,133 @@ export function PortfolioDonutChart({ data, size = 200 }: PortfolioDonutChartPro
         };
     };
 
-    if (chartData.length === 0) {
-        return null;
-    }
+    const createArc = (startAngle: number, endAngle: number, outerRad: number, innerRad: number) => {
+        const start = polarToCartesian(0, 0, outerRad, endAngle);
+        const end = polarToCartesian(0, 0, outerRad, startAngle);
+        const innerStart = polarToCartesian(0, 0, innerRad, endAngle);
+        const innerEnd = polarToCartesian(0, 0, innerRad, startAngle);
 
-    const outerRadius = size / 2;
-    const innerRadius = outerRadius * 0.6; // 40% hole
-    const viewBoxSize = size + 20; // Add padding
-    const center = viewBoxSize / 2;
+        const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
 
-    let currentAngle = 0;
+        return [
+            'M', start.x, start.y,
+            'A', outerRad, outerRad, 0, largeArcFlag, 0, end.x, end.y,
+            'L', innerEnd.x, innerEnd.y,
+            'A', innerRad, innerRad, 0, largeArcFlag, 1, innerStart.x, innerStart.y,
+            'Z'
+        ].join(' ');
+    };
 
     return (
-        <div className="flex flex-col lg:flex-row items-center gap-6 p-6 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
-            {/* Chart */}
-            <div className="flex-shrink-0">
+        <div className="w-full flex justify-center bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+            <div className="relative w-full max-w-[600px] aspect-[1.3] min-h-[300px]">
                 <svg
-                    width={size}
-                    height={size}
                     viewBox={`0 0 ${viewBoxSize} ${viewBoxSize}`}
-                    className="drop-shadow-md"
+                    preserveAspectRatio="xMidYMid meet"
+                    className="w-full h-full"
                 >
                     <g transform={`translate(${center}, ${center})`}>
-                        {chartData.map((slice, index) => {
-                            const startAngle = currentAngle;
-                            const endAngle = currentAngle + (slice.percentage / 100) * 360;
-                            currentAngle = endAngle;
-
-                            const path = createArc(startAngle, endAngle, outerRadius, innerRadius);
+                        {/* 1. Slices */}
+                        {slices.map((slice) => {
+                            const isHovered = hoveredTicker === slice.ticker;
+                            const path = createArc(
+                                slice.startAngle,
+                                slice.endAngle,
+                                isHovered ? outerRadius + 5 : outerRadius,
+                                innerRadius
+                            );
 
                             return (
-                                <path
-                                    key={slice.ticker}
-                                    d={path}
-                                    fill={slice.color}
-                                    stroke="white"
-                                    strokeWidth="2"
-                                    className="transition-opacity hover:opacity-80 cursor-pointer"
-                                    style={{
-                                        filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.1))',
-                                    }}
-                                >
-                                    <title>
-                                        {slice.ticker}: ${slice.value.toLocaleString()} ({slice.percentage.toFixed(1)}%)
-                                    </title>
-                                </path>
+                                <g key={slice.ticker}>
+                                    <path
+                                        d={path}
+                                        fill={slice.color}
+                                        stroke="white"
+                                        strokeWidth="2"
+                                        className="transition-all duration-200 cursor-pointer"
+                                        onMouseEnter={() => setHoveredTicker(slice.ticker)}
+                                        onMouseLeave={() => setHoveredTicker(null)}
+                                        style={{ opacity: hoveredTicker && !isHovered ? 0.6 : 1 }}
+                                    >
+                                        <title>{slice.ticker}: ${slice.value.toLocaleString()} ({slice.percentage.toFixed(1)}%)</title>
+                                    </path>
+                                </g>
                             );
                         })}
+
+                        {/* 2. Labels & Lines */}
+                        {slices.map((slice) => {
+                            // Only show label if slice is > 1% to avoid clutter, or if there are few items
+                            if (slice.percentage < 1 && slices.length > 10) return null;
+
+                            const startPt = polarToCartesian(0, 0, outerRadius, slice.middleAngle);
+                            const elbowPt = polarToCartesian(0, 0, labelRadius, slice.middleAngle);
+
+                            // Determine text side roughly based on angle
+                            const isRightSide = slice.middleAngle < 180;
+                            const xSign = isRightSide ? 1 : -1;
+
+                            // End point for the line
+                            const endPt = {
+                                x: elbowPt.x + (20 * xSign),
+                                y: elbowPt.y
+                            };
+
+                            // Text anchor position
+                            const textAnchor = isRightSide ? 'start' : 'end';
+                            const textX = endPt.x + (5 * xSign);
+                            const textY = endPt.y;
+
+                            return (
+                                <g key={`label-${slice.ticker}`} className="pointer-events-none">
+                                    {/* Connection Line */}
+                                    <polyline
+                                        points={`${startPt.x},${startPt.y} ${elbowPt.x},${elbowPt.y} ${endPt.x},${endPt.y}`}
+                                        fill="none"
+                                        stroke="#9ca3af" // gray-400
+                                        strokeWidth="1"
+                                    />
+
+                                    {/* Text Label */}
+                                    <text
+                                        x={textX}
+                                        y={textY - 4} // Ticker above line
+                                        textAnchor={textAnchor}
+                                        className="text-[10px] sm:text-xs font-bold fill-gray-900 dark:fill-gray-100"
+                                    >
+                                        {slice.ticker}
+                                    </text>
+                                    <text
+                                        x={textX}
+                                        y={textY + 10} // Percent below line
+                                        textAnchor={textAnchor}
+                                        className="text-[9px] sm:text-[10px] fill-gray-500 dark:fill-gray-400"
+                                    >
+                                        {slice.percentage.toFixed(1)}%
+                                    </text>
+                                </g>
+                            );
+                        })}
+
+                        {/* Center text (Total) */}
+                        <text
+                            x="0"
+                            y="-5"
+                            textAnchor="middle"
+                            className="text-xs font-medium fill-gray-500 dark:fill-gray-400"
+                        >
+                            Total
+                        </text>
+                        <text
+                            x="0"
+                            y="15"
+                            textAnchor="middle"
+                            className="text-sm font-bold fill-gray-900 dark:fill-gray-100"
+                        >
+                            ${(totalValue / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })}k
+                        </text>
                     </g>
                 </svg>
-            </div>
-
-            {/* Legend */}
-            <div className="flex-1 flex flex-col gap-1 max-h-64 overflow-y-auto justify-center min-w-[140px]">
-                {chartData.map((slice) => (
-                    <div
-                        key={slice.ticker}
-                        className="flex items-center gap-2 text-sm"
-                    >
-                        <div
-                            className="w-3 h-3 rounded-sm flex-shrink-0"
-                            style={{ backgroundColor: slice.color }}
-                        />
-                        <div className="flex items-center gap-2 w-full">
-                            <span className="font-bold text-gray-900 dark:text-gray-100 w-12">
-                                {slice.ticker}
-                            </span>
-                            <div className="flex flex-col leading-none">
-                                <span className="text-gray-700 dark:text-gray-300 font-medium">
-                                    ${slice.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                                </span>
-                                <span className="text-gray-400 dark:text-gray-500 text-[10px]">
-                                    {slice.percentage.toFixed(1)}%
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                ))}
             </div>
         </div>
     );
