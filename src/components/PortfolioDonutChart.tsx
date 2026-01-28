@@ -1,19 +1,28 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
+import * as d3Hierarchy from 'd3-hierarchy';
+import { scaleLinear } from 'd3-scale';
 
-// Consistent color palette
-const CHART_COLORS = [
-    '#4285F4', // Blue
-    '#EA4335', // Red
-    '#FBBC04', // Yellow
-    '#34A853', // Green
-    '#9C27B0', // Purple
-    '#FF6D00', // Orange
-    '#00ACC1', // Teal
-    '#E91E63', // Pink
-    '#CDDC39', // Lime
-    '#3F51B5', // Indigo
+// Map sectors to specific base colors for consistency
+const SECTOR_COLORS: Record<string, string> = {
+    'Technology': '#4285F4', // Blue
+    'Healthcare': '#EA4335', // Red
+    'Financial Services': '#34A853', // Green
+    'Consumer Cyclical': '#FBBC04', // Yellow
+    'Communication Services': '#9C27B0', // Purple
+    'Industrials': '#FF6D00', // Orange
+    'Consumer Defensive': '#00ACC1', // Teal
+    'Energy': '#E91E63', // Pink
+    'Real Estate': '#CDDC39', // Lime
+    'Utilities': '#3F51B5', // Indigo
+    'Basic Materials': '#795548', // Brown
+};
+
+const FALLBACK_COLORS = [
+    '#607D8B', // Blue Grey
+    '#9E9E9E', // Grey
+    '#795548', // Brown
     '#000000', // Black
 ];
 
@@ -21,98 +30,192 @@ interface PortfolioDonutChartProps {
     data: Array<{
         ticker: string;
         value: number;
+        sector: string;
+        industry: string;
     }>;
-    size?: number; // Base size for the donut itself
+    size?: number;
 }
 
-export function PortfolioDonutChart({ data, size = 200 }: PortfolioDonutChartProps) {
-    const [hoveredTicker, setHoveredTicker] = useState<string | null>(null);
-    // Track custom color indices for each ticker
-    const [colorIndices, setColorIndices] = useState<Record<string, number>>({});
+// Helper to lighten/darken a hex color
+// simplistic implementation since we might not have d3-color
+function adjustColor(hex: string, percent: number) {
+    if (!hex) return '#000000';
+    // strip the leading # if it's there
+    hex = hex.replace(/^\s*#|\s*$/g, '');
 
-    const { slices, totalValue } = useMemo(() => {
+    // convert 3 char codes --> 6, e.g. `E0F` --> `EE00FF`
+    if (hex.length === 3) {
+        hex = hex.replace(/(.)/g, '$1$1');
+    }
+
+    let r = parseInt(hex.substr(0, 2), 16);
+    let g = parseInt(hex.substr(2, 2), 16);
+    let b = parseInt(hex.substr(4, 2), 16);
+
+    if (isNaN(r) || isNaN(g) || isNaN(b)) return hex;
+
+    // calculated adjustment
+    const amt = Math.floor(2.55 * percent);
+
+    // adjust
+    r += amt;
+    g += amt;
+    b += amt;
+
+    // clamp
+    if (r > 255) r = 255; else if (r < 0) r = 0;
+    if (g > 255) g = 255; else if (g < 0) g = 0;
+    if (b > 255) b = 255; else if (b < 0) b = 0;
+
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
+export function PortfolioDonutChart({ data, size = 300 }: PortfolioDonutChartProps) {
+    const [hoveredNode, setHoveredNode] = useState<string | null>(null);
+
+    const { nodes, totalValue } = useMemo(() => {
         const total = data.reduce((sum, item) => sum + item.value, 0);
-        if (total === 0) return { slices: [], totalValue: 0 };
+        if (total === 0) return { nodes: [], totalValue: 0 };
 
-        // Sort desc
-        const sorted = [...data].sort((a, b) => b.value - a.value);
+        // 1. Group by Sector -> Industry
+        const hierarchyMap = new Map<string, Map<string, number>>();
 
-        let accumulatedAngle = 0;
-        const slicesWithCoords = sorted.map((item, index) => {
-            const percentage = (item.value / total) * 100;
-            const startAngle = accumulatedAngle;
-            const endAngle = accumulatedAngle + (percentage / 100) * 360;
-            const middleAngle = startAngle + (endAngle - startAngle) / 2;
-            accumulatedAngle = endAngle;
+        data.forEach(item => {
+            const sector = item.sector || 'Unknown';
+            const industry = item.industry || 'Unknown';
 
-            // Determine color index: override from state or default to position
-            const defaultIndex = index % CHART_COLORS.length;
-            const effectiveIndex = colorIndices[item.ticker] ?? defaultIndex;
+            if (!hierarchyMap.has(sector)) {
+                hierarchyMap.set(sector, new Map());
+            }
+            const sectorMap = hierarchyMap.get(sector)!;
+            sectorMap.set(industry, (sectorMap.get(industry) || 0) + item.value);
+        });
+
+        // 2. Build d3 hierarchy object
+        const rootObject = {
+            name: 'root',
+            value: 0, // will be summed by d3
+            children: Array.from(hierarchyMap.entries()).map(([sectorName, industryMap]) => ({
+                name: sectorName,
+                children: Array.from(industryMap.entries()).map(([industryName, val]) => ({
+                    name: industryName,
+                    value: val
+                }))
+            }))
+        };
+
+        const root = d3Hierarchy.hierarchy(rootObject)
+            .sum(d => d.value || 0)
+            .sort((a, b) => (b.value || 0) - (a.value || 0));
+
+        // 3. Partition layout
+        // Use generic <any> to allow flexibility with d3 types
+        const partition = d3Hierarchy.partition<any>()
+            .size([2 * Math.PI, 1]); // x is angle (radians), y is radius (0..1)
+
+        const rootNode = partition(root);
+
+        // 4. Process nodes for rendering
+        const descendants = rootNode.descendants().filter(d => d.depth > 0); // skip root
+
+        // Assign colors
+        const sectorColorMap: Record<string, string> = {};
+
+        // Populate sector colors first
+        descendants.filter(d => d.depth === 1).forEach((node, i) => {
+            const sectorName = node.data.name || 'Unknown';
+            // Use predefined or fallback
+            sectorColorMap[sectorName] = SECTOR_COLORS[sectorName] || FALLBACK_COLORS[i % FALLBACK_COLORS.length] || '#000000';
+        });
+
+        const processedNodes = descendants.map(node => {
+            // Find parent sector for coloring
+            const isSector = node.depth === 1;
+            const sectorNode = isSector ? node : node.parent!;
+            const sectorName = sectorNode.data.name || 'Unknown';
+            const baseColor = sectorColorMap[sectorName] || '#000000';
+
+            let color = baseColor;
+
+            if (!isSector) {
+                // It's an industry. Calculate shade.
+                const siblings = sectorNode.children || [];
+                const index = siblings.indexOf(node);
+                const count = siblings.length;
+
+                // Generate shades: -20% (darker) to +20% (lighter)
+                // If only 1 child, use base color
+                if (count > 1) {
+                    // range from -20 to +20
+                    // 0 -> -20, count-1 -> +20
+                    const percent = count === 1 ? 0 : -30 + (index / (count - 1)) * 60;
+                    color = adjustColor(baseColor, percent);
+                } else {
+                    // Slightly distinct from sector base to show boundary
+                    color = adjustColor(baseColor, 10);
+                }
+            }
 
             return {
-                ...item,
-                percentage,
-                startAngle,
-                endAngle,
-                middleAngle,
-                colorIndex: effectiveIndex,
-                color: CHART_COLORS[effectiveIndex % CHART_COLORS.length],
+                name: node.data.name,
+                value: node.value || 0,
+                percentage: ((node.value || 0) / total) * 100,
+                depth: node.depth,
+                x0: node.x0,
+                x1: node.x1,
+                color,
+                sector: sectorName
             };
         });
 
-        return { slices: slicesWithCoords, totalValue: total };
-    }, [data, colorIndices]);
+        return { nodes: processedNodes, totalValue: total };
+    }, [data]);
 
-    const handleSliceClick = (e: React.MouseEvent, ticker: string, currentIndex: number) => {
-        e.preventDefault();
-        e.stopPropagation();
+    if (nodes.length === 0) return null;
 
-        const direction = e.type === 'contextmenu' ? -1 : 1;
-        const totalColors = CHART_COLORS.length;
-        // Calculate next index causing a loop
-        const nextIndex = (currentIndex + direction + totalColors) % totalColors;
-
-        setColorIndices(prev => ({
-            ...prev,
-            [ticker]: nextIndex
-        }));
-    };
-
-    if (slices.length === 0) return null;
-
-    // Radius config
-    const outerRadius = size / 2;
-    const innerRadius = outerRadius * 0.6; // Donut hole
-    const labelRadius = outerRadius + 20;  // Radius where the line break starts
-    const textRadius = outerRadius + 40;   // Radius where text starts
-
-    // Increase viewBox to accommodate labels (approx +150px each side worst case)
-    const padding = 120;
+    // Dimensions
+    const padding = 140; // Space for labels
     const viewBoxSize = size + padding * 2;
     const center = viewBoxSize / 2;
+    const radius = size / 2;
 
-    // Helper functions
-    const polarToCartesian = (centerX: number, centerY: number, radius: number, angleInDegrees: number) => {
-        const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180.0;
+    // Radii configuration
+    const innerRadius = radius * 0.45; // Hole
+    const middleRadius = radius * 0.7; // Boundary between Sector and Industry
+    const outerRadius = radius;
+
+    // Functions
+    const getRadii = (depth: number) => {
+        if (depth === 1) return { inner: innerRadius, outer: middleRadius }; // Sector
+        return { inner: middleRadius, outer: outerRadius }; // Industry
+    };
+
+    const polarToCartesian = (angle: number, r: number) => {
+        // angle is in radians, 0 is at 12 o'clock if we rotate
+        // d3 x0 is [0, 2PI] starting from 12 o'clock usually with partition?
+        // Actually d3.partition uses standard math: 0 is 3 o'clock?
+        // We will rotate -PI/2
+        const a = angle - Math.PI / 2;
         return {
-            x: centerX + radius * Math.cos(angleInRadians),
-            y: centerY + radius * Math.sin(angleInRadians),
+            x: r * Math.cos(a),
+            y: r * Math.sin(a)
         };
     };
 
-    const createArc = (startAngle: number, endAngle: number, outerRad: number, innerRad: number) => {
-        const start = polarToCartesian(0, 0, outerRad, endAngle);
-        const end = polarToCartesian(0, 0, outerRad, startAngle);
-        const innerStart = polarToCartesian(0, 0, innerRad, endAngle);
-        const innerEnd = polarToCartesian(0, 0, innerRad, startAngle);
+    const createPath = (startAngle: number, endAngle: number, rInner: number, rOuter: number) => {
+        // SVG Arc
+        const startOuter = polarToCartesian(endAngle, rOuter);
+        const endOuter = polarToCartesian(startAngle, rOuter);
+        const startInner = polarToCartesian(endAngle, rInner);
+        const endInner = polarToCartesian(startAngle, rInner);
 
-        const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
+        const largeArc = endAngle - startAngle <= Math.PI ? 0 : 1;
 
         return [
-            'M', start.x, start.y,
-            'A', outerRad, outerRad, 0, largeArcFlag, 0, end.x, end.y,
-            'L', innerEnd.x, innerEnd.y,
-            'A', innerRad, innerRad, 0, largeArcFlag, 1, innerStart.x, innerStart.y,
+            'M', startOuter.x, startOuter.y,
+            'A', rOuter, rOuter, 0, largeArc, 0, endOuter.x, endOuter.y,
+            'L', endInner.x, endInner.y,
+            'A', rInner, rInner, 0, largeArc, 1, startInner.x, startInner.y,
             'Z'
         ].join(' ');
     };
@@ -120,104 +223,99 @@ export function PortfolioDonutChart({ data, size = 200 }: PortfolioDonutChartPro
     return (
         <div className="w-full p-6 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
             <h3 className="text-base font-semibold text-[var(--clr-subtext)] mb-4 uppercase tracking-wider">
-                Donut Chart
+                Holdings Distribution
             </h3>
             <div className="flex justify-center">
-                <div className="relative w-full max-w-[600px] aspect-[1.3] min-h-[300px]">
+                <div
+                    className="relative w-full"
+                    style={{ maxWidth: viewBoxSize, aspectRatio: 1 }}
+                >
                     <svg
                         viewBox={`0 0 ${viewBoxSize} ${viewBoxSize}`}
                         preserveAspectRatio="xMidYMid meet"
                         className="w-full h-full"
                     >
                         <g transform={`translate(${center}, ${center})`}>
-                            {/* 1. Slices */}
-                            {slices.map((slice) => {
-                                const isHovered = hoveredTicker === slice.ticker;
-                                const path = createArc(
-                                    slice.startAngle,
-                                    slice.endAngle,
-                                    isHovered ? outerRadius + 5 : outerRadius,
-                                    innerRadius
-                                );
+                            {/* Slices */}
+                            {nodes.map((node, i) => {
+                                const { inner, outer } = getRadii(node.depth);
+                                const isHovered = hoveredNode === node.name;
+
+                                // Expand slightly on hover
+                                const displayOuter = isHovered ? outer + 5 : outer;
 
                                 return (
-                                    <g key={slice.ticker}>
-                                        <path
-                                            d={path}
-                                            fill={slice.color}
-                                            stroke="white"
-                                            strokeWidth="2"
-                                            className="transition-all duration-200 cursor-pointer"
-                                            onMouseEnter={() => setHoveredTicker(slice.ticker)}
-                                            onMouseLeave={() => setHoveredTicker(null)}
-                                            onClick={(e) => handleSliceClick(e, slice.ticker, slice.colorIndex)}
-                                            onContextMenu={(e) => handleSliceClick(e, slice.ticker, slice.colorIndex)}
-                                            style={{ opacity: hoveredTicker && !isHovered ? 0.6 : 1 }}
-                                        >
-                                            <title>{slice.ticker}: ${slice.value.toLocaleString()} ({slice.percentage.toFixed(1)}%)</title>
-                                        </path>
-                                    </g>
+                                    <path
+                                        key={`${node.depth}-${i}`}
+                                        d={createPath(node.x0, node.x1, inner, displayOuter)}
+                                        fill={node.color}
+                                        stroke="white"
+                                        strokeWidth="1.5"
+                                        className="transition-all duration-200 cursor-pointer"
+                                        onMouseEnter={() => setHoveredNode(node.name || null)}
+                                        onMouseLeave={() => setHoveredNode(null)}
+                                        style={{ opacity: hoveredNode && hoveredNode !== node.name && hoveredNode !== node.sector ? 0.5 : 1 }}
+                                    >
+                                        <title>{node.name}: ${node.value.toLocaleString()} ({node.percentage.toFixed(1)}%)</title>
+                                    </path>
                                 );
                             })}
 
-                            {/* 2. Labels & Lines */}
-                            {slices.map((slice) => {
-                                // Only show label if slice is > 1% to avoid clutter, or if there are few items
-                                if (slice.percentage < 1 && slices.length > 10) return null;
+                            {/* Labels for Outer Layer (Industries) */}
+                            {nodes.filter(n => n.depth === 2 && n.percentage > 2).map((node, i) => {
+                                // Calculate position
+                                const midAngle = (node.x0 + node.x1) / 2;
+                                const { outer } = getRadii(node.depth);
 
-                                const startPt = polarToCartesian(0, 0, outerRadius, slice.middleAngle);
-                                const elbowPt = polarToCartesian(0, 0, labelRadius, slice.middleAngle);
+                                const labelR = outer + 20;
+                                const pos = polarToCartesian(midAngle, labelR);
+                                // Is right side? Angle 0 is top (after -PI/2).
+                                // So from 0 to PI is Right side? No.
+                                // 0 is top. PI is bottom.
+                                // 0..PI is Right. PI..2PI is Left.
+                                // Wait, d3 partition: 0 is ...?
+                                // If I rotate -PI/2 in polarToCartesian:
+                                // d3 angle 0 -> -PI/2 (top).
+                                // d3 angle PI -> PI/2 (bottom).
+                                // So 0..PI is Right side.
+                                const isRight = midAngle < Math.PI;
 
-                                // Determine text side roughly based on angle
-                                const isRightSide = slice.middleAngle < 180;
-                                const xSign = isRightSide ? 1 : -1;
-
-                                // End point for the line
-                                const endPt = {
-                                    x: elbowPt.x + (20 * xSign),
-                                    y: elbowPt.y
-                                };
-
-                                // Text anchor position
-                                const textAnchor = isRightSide ? 'start' : 'end';
-                                const textX = endPt.x + (5 * xSign);
-                                const textY = endPt.y;
+                                // Elbow line
+                                const elbowStart = polarToCartesian(midAngle, outer);
+                                const elbowEnd = { x: isRight ? pos.x + 20 : pos.x - 20, y: pos.y };
 
                                 return (
-                                    <g key={`label-${slice.ticker}`} className="pointer-events-none">
-                                        {/* Connection Line */}
+                                    <g key={`label-${i}`} className="pointer-events-none">
                                         <polyline
-                                            points={`${startPt.x},${startPt.y} ${elbowPt.x},${elbowPt.y} ${endPt.x},${endPt.y}`}
+                                            points={`${elbowStart.x},${elbowStart.y} ${pos.x},${pos.y} ${elbowEnd.x},${elbowEnd.y}`}
                                             fill="none"
-                                            stroke="#9ca3af" // gray-400
+                                            stroke="#9ca3af"
                                             strokeWidth="1"
                                         />
-
-                                        {/* Text Label */}
                                         <text
-                                            x={textX}
-                                            y={textY - 4} // Ticker above line
-                                            textAnchor={textAnchor}
-                                            className="text-xs sm:text-sm font-bold fill-gray-900 dark:fill-gray-100"
+                                            x={elbowEnd.x + (isRight ? 5 : -5)}
+                                            y={elbowEnd.y + 4}
+                                            textAnchor={isRight ? 'start' : 'end'}
+                                            className="text-xs font-bold fill-gray-900 dark:fill-gray-100"
                                         >
-                                            {slice.ticker}
+                                            {node.name}
                                         </text>
                                         <text
-                                            x={textX}
-                                            y={textY + 10} // Percent below line
-                                            textAnchor={textAnchor}
-                                            className="text-[10px] sm:text-xs fill-gray-500 dark:fill-gray-400"
+                                            x={elbowEnd.x + (isRight ? 5 : -5)}
+                                            y={elbowEnd.y + 16}
+                                            textAnchor={isRight ? 'start' : 'end'}
+                                            className="text-[10px] fill-gray-500 dark:fill-gray-400"
                                         >
-                                            {slice.percentage.toFixed(1)}%
+                                            {node.percentage.toFixed(1)}%
                                         </text>
                                     </g>
                                 );
                             })}
 
-                            {/* Center text (Total) */}
+                            {/* Center Total */}
                             <text
                                 x="0"
-                                y="-5"
+                                y="-10"
                                 textAnchor="middle"
                                 className="text-sm font-medium fill-gray-500 dark:fill-gray-400"
                             >
@@ -227,9 +325,9 @@ export function PortfolioDonutChart({ data, size = 200 }: PortfolioDonutChartPro
                                 x="0"
                                 y="15"
                                 textAnchor="middle"
-                                className="text-lg font-bold fill-gray-900 dark:fill-gray-100"
+                                className="text-xl font-bold fill-gray-900 dark:fill-gray-100"
                             >
-                                ${(totalValue / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })}k
+                                ${formatCompact(totalValue)}
                             </text>
                         </g>
                     </svg>
@@ -237,4 +335,10 @@ export function PortfolioDonutChart({ data, size = 200 }: PortfolioDonutChartPro
             </div>
         </div>
     );
+}
+
+function formatCompact(num: number) {
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
+    return num.toFixed(0);
 }

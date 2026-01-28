@@ -474,6 +474,8 @@ export function PortfolioSection({
                   return {
                     ticker: stock.ticker,
                     value,
+                    sector: stock.sector || 'Unknown',
+                    industry: stock.industry || 'Unknown'
                   };
                 })}
               />
@@ -722,6 +724,8 @@ export function PortfolioSection({
                   return {
                     ticker: stock.ticker,
                     value,
+                    sector: stock.sector || 'Unknown',
+                    industry: stock.industry || 'Unknown'
                   };
                 })}
                 size={280}
