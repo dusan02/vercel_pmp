@@ -161,26 +161,26 @@ export const AllStocksSection = React.memo(function AllStocksSection({
     <section className="all-stocks">
       {/* Desktop Header - only rendered on desktop */}
       {isDesktop && (
-        <div className="section-header">
-          <div className="header-main">
-            <h2>
+        <div className="section-header flex flex-row items-center justify-between mb-4">
+          <div className="header-main shrink-0 mr-4">
+            <h2 className="flex items-center gap-2 text-xl font-semibold m-0">
               <SectionIcon type="globe" size={20} className="section-icon" />
               <span>All Stocks</span>
             </h2>
           </div>
-          <div className="header-controls-inline">
-            <div className="header-search-inline">
+          <div className="flex flex-1 items-center justify-end gap-3 min-w-0">
+            <div className="w-64">
               <StockSearchBar
                 searchTerm={searchTerm}
                 onSearchChange={onSearchChange}
               />
             </div>
-            <div className="header-filters-inline">
+            <div className="flex items-center gap-3">
               <CustomDropdown
                 value={selectedSector}
                 onChange={handleSectorChange}
                 options={sectorOptions}
-                className="sector-filter"
+                className="sector-filter w-48"
                 ariaLabel="Filter by sector"
                 placeholder="All Sectors"
               />
@@ -188,7 +188,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
                 value={selectedIndustry}
                 onChange={onIndustryChange}
                 options={industryOptions}
-                className="industry-filter"
+                className="industry-filter w-48"
                 ariaLabel="Filter by industry"
                 placeholder="All Industries"
               />
@@ -310,13 +310,13 @@ export const AllStocksSection = React.memo(function AllStocksSection({
           {/* Mobile: Cards layout */}
           <div className="lg:hidden">
             {displayedStocks.length === 0 ? (
-              <div 
+              <div
                 className="flex flex-col items-center justify-center gap-3 py-16 px-4 text-center"
                 style={{
                   background: '#0f0f0f',
                 }}
               >
-                <div 
+                <div
                   className="text-6xl mb-2"
                   style={{
                     opacity: 0.3,
@@ -324,7 +324,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
                 >
                   🔍
                 </div>
-                <span 
+                <span
                   className="text-base font-semibold"
                   style={{
                     color: '#ffffff',
@@ -334,7 +334,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
                     ? 'No results found'
                     : 'No stocks to display'}
                 </span>
-                <span 
+                <span
                   className="text-sm max-w-xs"
                   style={{
                     color: 'rgba(255, 255, 255, 0.6)',
