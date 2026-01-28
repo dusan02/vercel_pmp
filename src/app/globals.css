@@ -411,7 +411,8 @@
   .portfolio,
   .favorites,
   .todays-earnings,
-  .all-stocks {
+  .all-stocks,
+  .desktop-heatmap-wrapper {
     margin-top: 1.5rem;
     margin-bottom: 3rem;
   }
