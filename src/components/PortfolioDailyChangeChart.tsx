@@ -29,7 +29,7 @@ export function PortfolioDailyChangeChart({ data }: PortfolioDailyChangeChartPro
                 Daily Change
             </h3>
 
-            <div className="flex items-end gap-2 h-64 min-w-max pb-2">
+            <div className="flex gap-2 h-64 min-w-max pb-2">
                 {chartData.map((item) => {
                     const isPositive = item.dailyChange >= 0;
                     const rawHeight = maxAbsValue > 0 ? (Math.abs(item.dailyChange) / maxAbsValue) * 100 : 0;
@@ -37,26 +37,27 @@ export function PortfolioDailyChangeChart({ data }: PortfolioDailyChangeChartPro
                     const heightPercent = Math.max(rawHeight, 1);
 
                     return (
-                        <div key={item.ticker} className="flex flex-col items-center group w-12 sm:w-16">
-                            {/* Value label above bar (always visible for large screens, group-hover for others if needed, but keeping hover for compactness) */}
-                            <div className="mb-1 opacity-0 group-hover:opacity-100 transition-opacity text-xs font-medium whitespace-nowrap z-10 absolute -mt-6">
-                                <span className={isPositive ? 'text-green-600' : 'text-red-600'}>
-                                    {item.dailyChange > 0 ? '+' : ''}
-                                    ${Math.abs(item.dailyChange).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                                </span>
-                            </div>
+                        <div key={item.ticker} className="flex flex-col items-center h-full group w-12 sm:w-16">
+                            {/* Bar container - takes available vertical space */}
+                            <div className="flex-1 w-full flex items-end justify-center relative">
+                                {/* Value label above bar */}
+                                <div className="mb-1 opacity-0 group-hover:opacity-100 transition-opacity text-xs font-medium whitespace-nowrap z-10 absolute bottom-full">
+                                    <span className={isPositive ? 'text-green-600' : 'text-red-600'}>
+                                        {item.dailyChange > 0 ? '+' : ''}
+                                        ${Math.abs(item.dailyChange).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                    </span>
+                                </div>
 
-                            {/* Bar */}
-                            <div
-                                className={`w-full rounded-t-sm transition-all duration-300 relative ${isPositive ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'
-                                    }`}
-                                style={{ height: `${heightPercent}%`, minHeight: '4px' }}
-                            >
-                                {/* Inner visual for very small values */}
+                                {/* Bar */}
+                                <div
+                                    className={`w-full rounded-t-sm transition-all duration-300 ${isPositive ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'
+                                        }`}
+                                    style={{ height: `${heightPercent}%`, minHeight: '4px' }}
+                                ></div>
                             </div>
 
                             {/* Baseline */}
-                            <div className="w-full h-px bg-gray-200 dark:bg-gray-700 mt-[-1px]" />
+                            <div className="w-full h-px bg-gray-200 dark:bg-gray-700" />
 
                             {/* Ticker label */}
                             <div className="mt-2 text-xs font-bold text-[var(--clr-text)] text-center truncate w-full">
