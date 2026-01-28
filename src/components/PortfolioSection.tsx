@@ -52,33 +52,30 @@ export function PortfolioSection({
   const [showPortfolioSearch, setShowPortfolioSearch] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
 
-  // Desktop sort state - persisted in localStorage
-  const [desktopSortKey, setDesktopSortKey] = useState<'ticker' | 'company' | 'sector' | 'industry' | 'quantity' | 'price' | 'percent' | 'value' | null>(() => {
-    if (typeof window === 'undefined') return null;
-    const stored = localStorage.getItem('pmp_portfolio_desktop_sortKey');
-    return (stored as any) || null;
-  });
-  const [desktopAscending, setDesktopAscending] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    const stored = localStorage.getItem('pmp_portfolio_desktop_sortAscending');
-    return stored ? stored === 'true' : false;
-  });
+  // Desktop sort state - initialized with null to prevent hydration mismatch
+  const [desktopSortKey, setDesktopSortKey] = useState<'ticker' | 'company' | 'sector' | 'industry' | 'quantity' | 'price' | 'percent' | 'value' | null>(null);
+  const [desktopAscending, setDesktopAscending] = useState<boolean>(false);
 
-  // Mobile sort (unified with Stocks/Favorites sort chips) - persisted in localStorage
-  const [mobileSortKey, setMobileSortKey] = useState<'ticker' | 'quantity' | 'price' | 'percent' | 'delta'>(() => {
-    if (typeof window === 'undefined') return 'ticker';
-    const stored = localStorage.getItem('pmp_portfolio_sortKey');
-    return (stored as any) || 'ticker';
-  });
-  const [mobileAscending, setMobileAscending] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return true;
-    const stored = localStorage.getItem('pmp_portfolio_sortAscending');
-    return stored ? stored === 'true' : true;
-  });
+  // Mobile sort state - initialized with default to prevent hydration mismatch
+  const [mobileSortKey, setMobileSortKey] = useState<'ticker' | 'quantity' | 'price' | 'percent' | 'delta'>('ticker');
+  const [mobileAscending, setMobileAscending] = useState<boolean>(true);
+
+  // Load persisted state only on client mount
+  useEffect(() => {
+    const storedDesktopKey = localStorage.getItem('pmp_portfolio_desktop_sortKey');
+    const storedDesktopAsc = localStorage.getItem('pmp_portfolio_desktop_sortAscending');
+    const storedMobileKey = localStorage.getItem('pmp_portfolio_sortKey');
+    const storedMobileAsc = localStorage.getItem('pmp_portfolio_sortAscending');
+
+    if (storedDesktopKey) setDesktopSortKey(storedDesktopKey as any);
+    if (storedDesktopAsc) setDesktopAscending(storedDesktopAsc === 'true');
+    if (storedMobileKey) setMobileSortKey(storedMobileKey as any);
+    if (storedMobileAsc) setMobileAscending(storedMobileAsc === 'true');
+  }, []);
 
   // Persist sort state to localStorage
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined') { // Redundant check but safe
       localStorage.setItem('pmp_portfolio_sortKey', mobileSortKey);
       localStorage.setItem('pmp_portfolio_sortAscending', String(mobileAscending));
       if (desktopSortKey !== null) {
@@ -111,7 +108,7 @@ export function PortfolioSection({
     setIsDetailsOpen(true);
   };
 
-  const getHoldingDelta = (stock: StockData, quantity: number) => {
+  const getHoldingDelta = useCallback((stock: StockData, quantity: number) => {
     const price = stock.currentPrice ?? 0;
     const pct = stock.percentChange ?? 0;
     if (!isFinite(price) || price <= 0) return 0;
@@ -121,10 +118,19 @@ export function PortfolioSection({
     const perShareDelta = price - prev;
     const v = perShareDelta * (quantity || 0);
     return isFinite(v) ? v : 0;
-  };
+  }, []);
 
-  // Desktop sort function
-  const sortedPortfolioStocksDesktop = (() => {
+  // Memoize handlers to prevent unnecessary re-renders of children
+  const favoriteHandlers = useMemo(() => {
+    const handlers = new Map<string, () => void>();
+    portfolioStocks.forEach(stock => {
+      handlers.set(stock.ticker, () => onToggleFavorite(stock.ticker));
+    });
+    return handlers;
+  }, [portfolioStocks, onToggleFavorite]);
+
+  // Desktop sort function - MEMOIZED
+  const sortedPortfolioStocksDesktop = useMemo(() => {
     if (!desktopSortKey) return portfolioStocks;
 
     const arr = [...portfolioStocks];
@@ -166,9 +172,10 @@ export function PortfolioSection({
       return a.ticker.localeCompare(b.ticker); // Secondary sort by ticker
     });
     return arr;
-  })();
+  }, [portfolioStocks, desktopSortKey, desktopAscending, portfolioHoldings, calculatePortfolioValue]);
 
-  const sortedPortfolioStocksMobile = (() => {
+  // Mobile sort function - MEMOIZED
+  const sortedPortfolioStocksMobile = useMemo(() => {
     const arr = [...portfolioStocks];
     arr.sort((a, b) => {
       const qa = portfolioHoldings[a.ticker] || 0;
@@ -203,7 +210,7 @@ export function PortfolioSection({
       return a.ticker.localeCompare(b.ticker);
     });
     return arr;
-  })();
+  }, [portfolioStocks, mobileSortKey, mobileAscending, portfolioHoldings, getHoldingDelta]);
 
   const searchStocksForPortfolio = (searchTerm: string) => {
     if (!searchTerm || searchTerm.trim().length < 1) {
@@ -993,9 +1000,9 @@ export function PortfolioSection({
                       {/* Actions */}
                       <td>
                         <button
-                          className="portfolio-delete-button"
-                          onClick={() => onRemoveStock(stock.ticker)}
-                          aria-label={`Remove ${stock.ticker} from portfolio`}
+                          isFavorite={isFavorite(stock.ticker)}
+                          onToggleFavorite={favoriteHandlers.get(stock.ticker) || (() => onToggleFavorite(stock.ticker))}
+                          priority={true} aria-label={`Remove ${stock.ticker} from portfolio`}
                           title="Remove from portfolio"
                         >
                           <X size={16} />
