@@ -2,6 +2,7 @@
 
 import React, { memo } from 'react';
 import { formatBillions, formatPercent } from '@/lib/utils/format';
+import { getCompanyName } from '@/lib/companyNames';
 import CompanyLogo from './CompanyLogo';
 
 interface EarningsData {
