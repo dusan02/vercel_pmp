@@ -593,7 +593,7 @@ export default function TodaysEarningsFinnhub() {
                         <div className="logo-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                           {/* Priority loading for first 15 logos (above the fold) */}
                           <CompanyLogo
-                            ticker={earning.ticker}
+                            ticker={earning.ticker.trim().toUpperCase()}
                             {...(earning.logoUrl ? { logoUrl: earning.logoUrl } : {})}
                             size={40}
                             priority={index < 15}
