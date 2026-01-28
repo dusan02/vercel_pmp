@@ -25,6 +25,21 @@
   --color-positive: #22c55e;
   --color-negative: #ef4444;
   --color-accent: #3b82f6;
+
+  /* Legacy variable mappings (from style.css) for backward compatibility */
+  --clr-bg: var(--color-bg-secondary);
+  --clr-surface: var(--color-bg-tertiary);
+  --clr-border: var(--color-border);
+  --clr-text: var(--color-text-primary);
+  --clr-subtext: var(--color-text-secondary);
+  --clr-primary: var(--color-accent);
+  --clr-primary-hover: #1d4ed8;
+  --clr-positive: var(--color-positive);
+  --clr-negative: var(--color-negative);
+  --clr-error: #dc2626;
+  --clr-error-bg: #450a0a;
+  --radius: 0.5rem;
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 /* ============================================
@@ -185,5 +200,67 @@
 
   .no-print {
     display: none !important;
+  }
+}
+
+/* ============================================
+   LEGACY STYLES MIGRATION (from style.css)
+   ============================================ */
+@layer components {
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 1rem;
+  }
+
+  th,
+  td {
+    padding: 0.75rem 0.5rem;
+    text-align: left;
+  }
+
+  th {
+    background: var(--clr-bg);
+    border-bottom: 2px solid var(--clr-border);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    font-weight: 600;
+  }
+
+  tr:not(:last-child) td {
+    border-bottom: 1px solid var(--clr-border);
+  }
+
+  tr:hover {
+    background: var(--clr-bg);
+  }
+
+  /* Utility Classes */
+  .positive {
+    color: var(--clr-positive);
+    font-weight: 600;
+  }
+
+  .negative {
+    color: var(--clr-negative);
+    font-weight: 600;
+  }
+
+  /* Buttons */
+  .favorite-btn {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: transform 0.15s;
+    padding: 0.25rem;
+  }
+
+  .favorite-btn:hover {
+    transform: scale(1.25);
   }
 }
