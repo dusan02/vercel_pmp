@@ -81,6 +81,10 @@ const MobileTabBar = dynamic(
   () => import('@/components/mobile/MobileTabBar').then((mod) => mod.MobileTabBar),
   { ssr: false }
 );
+const MobileSkeleton = dynamic(
+  () => import('@/components/mobile/MobileSkeleton').then((mod) => mod.MobileSkeleton),
+  { ssr: false }
+);
 
 // Hooks and utilities
 import { useFavorites } from '@/hooks/useFavorites';
@@ -344,23 +348,7 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
                 className="screen-heatmap"
                 prefetch={activeSection === 'heatmap'}
                 screenName="Heatmap"
-                skeleton={
-                  <div className="h-full w-full bg-black p-2">
-                    <div className="grid grid-cols-2 gap-2" style={{ gridAutoRows: 'minmax(72px, auto)' }}>
-                      {Array.from({ length: 8 }).map((_, i) => (
-                        <div
-                          key={i}
-                          className="bg-gray-800 rounded animate-pulse"
-                          style={{
-                            gridColumn: i < 2 ? 'span 2' : 'span 1',
-                            gridRow: i < 2 ? 'span 2' : 'span 1',
-                            animationDelay: `${i * 50}ms`,
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                }
+                skeleton={<MobileSkeleton type="heatmap" />}
               >
                 {(preferences.showHeatmapSection ?? true) && (
                   <HomeHeatmap
@@ -374,7 +362,7 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
                 className="screen-portfolio"
                 prefetch={activeSection === 'heatmap'} // Prefetch keď je heatmap aktívny (najpravdepodobnejší ďalší tab)
                 screenName="Portfolio"
-                skeleton={<div className="p-4 space-y-3"><div className="h-20 bg-gray-200 rounded animate-pulse" /><div className="h-20 bg-gray-200 rounded animate-pulse" /></div>}
+                skeleton={<MobileSkeleton type="cards" count={2} />}
               >
                 {(preferences.showPortfolioSection ?? true) && (
                   <HomePortfolio
@@ -396,7 +384,7 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
                 className="screen-favorites"
                 prefetch={activeSection === 'heatmap'} // Prefetch keď je heatmap aktívny
                 screenName="Favorites"
-                skeleton={<div className="p-4 space-y-3"><div className="h-20 bg-gray-200 rounded animate-pulse" /><div className="h-20 bg-gray-200 rounded animate-pulse" /></div>}
+                skeleton={<MobileSkeleton type="cards" count={2} />}
               >
                 {(preferences.showFavoritesSection ?? true) && (
                   <HomeFavorites
@@ -415,11 +403,7 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
                 className="screen-earnings"
                 prefetch={false}
                 screenName="Earnings"
-                skeleton={
-                  <div className="p-4 space-y-3" style={{ background: '#0f0f0f' }}>
-                    <div className="h-20 rounded animate-pulse" style={{ background: 'rgba(255, 255, 255, 0.08)' }} />
-                  </div>
-                }
+                skeleton={<MobileSkeleton type="earnings" count={1} />}
               >
                 {(preferences.showEarningsSection ?? true) && (
                   <HomeEarnings initialData={initialEarningsData} />
@@ -430,12 +414,7 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
                 className="screen-all-stocks"
                 prefetch={false}
                 screenName="All Stocks"
-                skeleton={
-                  <div className="p-4 space-y-3" style={{ background: '#0f0f0f' }}>
-                    <div className="h-20 rounded animate-pulse" style={{ background: 'rgba(255, 255, 255, 0.08)' }} />
-                    <div className="h-20 rounded animate-pulse" style={{ background: 'rgba(255, 255, 255, 0.08)' }} />
-                  </div>
-                }
+                skeleton={<MobileSkeleton type="list" count={2} />}
               >
                 {(preferences.showAllStocksSection ?? true) && (
                   <HomeAllStocks

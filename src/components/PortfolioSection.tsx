@@ -2,7 +2,7 @@
  * Portfolio Section Component
  */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { X, Plus } from 'lucide-react';
 import { SectionIcon } from './SectionIcon';
 import { SectionLoader } from './SectionLoader';
@@ -120,14 +120,7 @@ export function PortfolioSection({
     return isFinite(v) ? v : 0;
   }, []);
 
-  // Memoize handlers to prevent unnecessary re-renders of children
-  const favoriteHandlers = useMemo(() => {
-    const handlers = new Map<string, () => void>();
-    portfolioStocks.forEach(stock => {
-      handlers.set(stock.ticker, () => onToggleFavorite(stock.ticker));
-    });
-    return handlers;
-  }, [portfolioStocks, onToggleFavorite]);
+
 
   // Desktop sort function - MEMOIZED
   const sortedPortfolioStocksDesktop = useMemo(() => {
@@ -1000,9 +993,9 @@ export function PortfolioSection({
                       {/* Actions */}
                       <td>
                         <button
-                          isFavorite={isFavorite(stock.ticker)}
-                          onToggleFavorite={favoriteHandlers.get(stock.ticker) || (() => onToggleFavorite(stock.ticker))}
-                          priority={true} aria-label={`Remove ${stock.ticker} from portfolio`}
+                          className="portfolio-delete-button"
+                          onClick={() => onRemoveStock(stock.ticker)}
+                          aria-label={`Remove ${stock.ticker} from portfolio`}
                           title="Remove from portfolio"
                         >
                           <X size={16} />
