@@ -33,11 +33,25 @@ export function FavoritesSection({
   const router = useRouter();
 
   const handleBrowseStocks = () => {
-    // Update URL and trigger navigation in HomePage
-    router.push('/?tab=allStocks');
-    // Also try to trigger navigation via custom event (if HomePage listens)
+    // On mobile: trigger tab change via custom event
     if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('mobile-nav-change', { detail: 'allStocks' }));
+      // Check if mobile (tab-based navigation)
+      const isMobile = window.innerWidth <= 768;
+
+      if (isMobile) {
+        // Mobile: Change tab via custom event
+        window.dispatchEvent(new CustomEvent('mobile-nav-change', { detail: 'allStocks' }));
+        // Update URL
+        const url = new URL(window.location.href);
+        url.searchParams.set('tab', 'allStocks');
+        window.history.pushState({}, '', url.toString());
+      } else {
+        // Desktop: Scroll to All Stocks section
+        const allStocksSection = document.querySelector('.all-stocks');
+        if (allStocksSection) {
+          allStocksSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
     }
   };
 
