@@ -35,9 +35,10 @@ export const AdaptiveTable: React.FC<AdaptiveTableProps> = ({
     visibleColumns.forEach(column => {
       switch (column) {
         case 'logo':
-          headers.push(<th key="logo">Logo</th>);
+          headers.push(<th key="logo" className="text-center">Logo</th>);
           break;
         case 'ticker':
+          // Kept left aligned
           headers.push(
             <th key="ticker" onClick={() => onSort('ticker' as SortKey)} className={`sortable ${sortKey === 'ticker' ? 'active-sort' : ''}`}>
               Ticker
@@ -49,34 +50,34 @@ export const AdaptiveTable: React.FC<AdaptiveTableProps> = ({
           break;
         case 'currentPrice':
           headers.push(
-            <th key="currentPrice" onClick={() => onSort('currentPrice' as SortKey)} className={`sortable ${sortKey === 'currentPrice' ? 'active-sort' : ''}`}>
+            <th key="currentPrice" onClick={() => onSort('currentPrice' as SortKey)} className={`sortable ${sortKey === 'currentPrice' ? 'active-sort' : ''} text-center`}>
               Price
             </th>
           );
           break;
         case 'percentChange':
           headers.push(
-            <th key="percentChange" onClick={() => onSort('percentChange' as SortKey)} className={`sortable ${sortKey === 'percentChange' ? 'active-sort' : ''}`}>
+            <th key="percentChange" onClick={() => onSort('percentChange' as SortKey)} className={`sortable ${sortKey === 'percentChange' ? 'active-sort' : ''} text-center`}>
               % Change
             </th>
           );
           break;
         case 'marketCap':
           headers.push(
-            <th key="marketCap" onClick={() => onSort('marketCap' as SortKey)} className={`sortable ${sortKey === 'marketCap' ? 'active-sort' : ''}`}>
+            <th key="marketCap" onClick={() => onSort('marketCap' as SortKey)} className={`sortable ${sortKey === 'marketCap' ? 'active-sort' : ''} text-center`}>
               Market Cap
             </th>
           );
           break;
         case 'marketCapDiff':
           headers.push(
-            <th key="marketCapDiff" onClick={() => onSort('marketCapDiff' as SortKey)} className={`sortable ${sortKey === 'marketCapDiff' ? 'active-sort' : ''}`}>
+            <th key="marketCapDiff" onClick={() => onSort('marketCapDiff' as SortKey)} className={`sortable ${sortKey === 'marketCapDiff' ? 'active-sort' : ''} text-center`}>
               Cap Diff
             </th>
           );
           break;
         case 'favorites':
-          headers.push(<th key="favorites">Favorites</th>);
+          headers.push(<th key="favorites" className="text-center">Favorites</th>);
           break;
       }
     });

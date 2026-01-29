@@ -39,15 +39,15 @@ interface AllStocksSectionProps {
 
 // Table header configuration - Desktop (full)
 const TABLE_HEADERS_DESKTOP: { key?: SortKey; label: string; sortable: boolean; className?: string }[] = [
-  { label: 'Logo', sortable: false, className: 'hidden lg:table-cell' },
+  { label: 'Logo', sortable: false, className: 'hidden lg:table-cell text-center' },
   { key: 'ticker', label: 'Ticker', sortable: true },
   { label: 'Company', sortable: false, className: 'hidden lg:table-cell' },
   { key: 'sector', label: 'Sector', sortable: true, className: 'hidden lg:table-cell' },
   { key: 'industry', label: 'Industry', sortable: true, className: '!text-left hidden lg:table-cell' },
-  { key: 'marketCap', label: 'Market Cap', sortable: true, className: 'whitespace-nowrap hidden lg:table-cell' },
-  { key: 'marketCapDiff', label: 'Cap Diff', sortable: true, className: 'hidden lg:table-cell' },
-  { key: 'currentPrice', label: 'Price', sortable: true },
-  { key: 'percentChange', label: '% Change', sortable: true, className: 'whitespace-nowrap' },
+  { key: 'marketCap', label: 'Market Cap', sortable: true, className: 'whitespace-nowrap hidden lg:table-cell text-center' },
+  { key: 'marketCapDiff', label: 'Cap Diff', sortable: true, className: 'hidden lg:table-cell text-center' },
+  { key: 'currentPrice', label: 'Price', sortable: true, className: 'text-center' },
+  { key: 'percentChange', label: '% Change', sortable: true, className: 'whitespace-nowrap text-center' },
   { label: 'Favorites', sortable: false, className: 'text-center' },
 ];
 

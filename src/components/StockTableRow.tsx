@@ -100,23 +100,23 @@ export const StockTableRow = memo(({
         <td className="!text-left">{stock.industry || 'N/A'}</td>
 
         {/* Market Cap */}
-        <td>{hasValidMarketCap ? formattedMarketCap : '—'}</td>
+        <td className="text-right tabular-nums">{hasValidMarketCap ? formattedMarketCap : '—'}</td>
 
         {/* Cap Diff */}
-        <td className={stock.marketCapDiff >= 0 ? 'positive' : 'negative'}>
+        <td className={`${stock.marketCapDiff >= 0 ? 'positive' : 'negative'} text-right tabular-nums`}>
           {formattedMarketCapDiff}
         </td>
 
         {/* Price */}
-        <td>{hasValidPrice ? `$${formattedPrice}` : '—'}</td>
+        <td className="text-right tabular-nums">{hasValidPrice ? `$${formattedPrice}` : '—'}</td>
 
         {/* % Change */}
-        <td className={stock.percentChange >= 0 ? 'positive' : 'negative'}>
+        <td className={`${stock.percentChange >= 0 ? 'positive' : 'negative'} text-right tabular-nums`}>
           {formattedPercentChange}
         </td>
 
         {/* Favorites */}
-        <td className="text-center">
+        <td className="text-center" style={{ width: '1%', whiteSpace: 'nowrap' }}>
           <button
             className={`favorite-btn ${isFavorite ? 'favorited' : ''}`}
             onClick={(e) => {

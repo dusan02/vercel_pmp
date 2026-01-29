@@ -195,9 +195,9 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
                     );
                     if (!fittedSymbol) return;
 
-                    const text = metric === 'mcap'
+                    const text = company.displayValue || (metric === 'mcap'
                         ? formatMarketCapDiff(company.marketCapDiff)
-                        : formatPercent(company.changePercent);
+                        : formatPercent(company.changePercent));
 
                     const fittedValue = fitFontPxToBox(
                         ctx,

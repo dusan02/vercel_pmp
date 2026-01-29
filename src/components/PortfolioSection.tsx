@@ -941,7 +941,7 @@ export function PortfolioSection({
                 Industry
               </th>
               <th
-                className={`portfolio-col-quantity ${desktopSortKey === 'quantity' ? 'sortable active-sort' : 'sortable'}`}
+                className={`portfolio-col-quantity text-center ${desktopSortKey === 'quantity' ? 'sortable active-sort' : 'sortable'}`}
                 onClick={() => {
                   if (desktopSortKey === 'quantity') {
                     setDesktopAscending(v => !v);
@@ -955,7 +955,7 @@ export function PortfolioSection({
                 #
               </th>
               <th
-                className={`portfolio-col-price hidden md:table-cell ${desktopSortKey === 'price' ? 'sortable active-sort' : 'sortable'}`}
+                className={`portfolio-col-price text-center hidden md:table-cell ${desktopSortKey === 'price' ? 'sortable active-sort' : 'sortable'}`}
                 onClick={() => {
                   if (desktopSortKey === 'price') {
                     setDesktopAscending(v => !v);
@@ -969,7 +969,7 @@ export function PortfolioSection({
                 Price
               </th>
               <th
-                className={`portfolio-col-change whitespace-nowrap ${desktopSortKey === 'percent' ? 'sortable active-sort' : 'sortable'}`}
+                className={`portfolio-col-change text-center whitespace-nowrap ${desktopSortKey === 'percent' ? 'sortable active-sort' : 'sortable'}`}
                 onClick={() => {
                   if (desktopSortKey === 'percent') {
                     setDesktopAscending(v => !v);
@@ -983,7 +983,7 @@ export function PortfolioSection({
                 % Change
               </th>
               <th
-                className={`portfolio-col-value ${desktopSortKey === 'value' ? 'sortable active-sort' : 'sortable'}`}
+                className={`portfolio-col-value text-center ${desktopSortKey === 'value' ? 'sortable active-sort' : 'sortable'}`}
                 onClick={() => {
                   if (desktopSortKey === 'value') {
                     setDesktopAscending(v => !v);
@@ -996,7 +996,7 @@ export function PortfolioSection({
               >
                 Daily P&L
               </th>
-              <th className="portfolio-col-actions"></th>
+              <th className="portfolio-col-actions text-center"></th>
             </tr>
           </thead>
           <tbody>
@@ -1114,22 +1114,22 @@ export function PortfolioSection({
                       </td>
 
                       {/* Price */}
-                      <td className="hidden md:table-cell">${formattedPrice}</td>
+                      <td className="hidden md:table-cell text-right tabular-nums">${formattedPrice}</td>
 
                       {/* % Change */}
-                      <td className={percentChange >= 0 ? 'positive' : 'negative'}>
+                      <td className={`${percentChange >= 0 ? 'positive' : 'negative'} text-right tabular-nums`}>
                         {formattedPercent}
                       </td>
 
                       {/* Value */}
-                      <td className={value >= 0 ? 'positive' : 'negative'}>
+                      <td className={`${value >= 0 ? 'positive' : 'negative'} text-right tabular-nums`}>
                         {formatCurrencyCompact(value, true)}
                       </td>
 
                       {/* Actions */}
-                      <td className="text-center">
+                      <td className="text-center pl-0">
                         <button
-                          className="portfolio-delete-button"
+                          className="portfolio-delete-button mx-auto"
                           onClick={() => onRemoveStock(stock.ticker)}
                           aria-label={`Remove ${stock.ticker} from portfolio`}
                           title="Remove from portfolio"
@@ -1150,10 +1150,10 @@ export function PortfolioSection({
                   <td colSpan={7} style={{ textAlign: 'right', fontWeight: 600, padding: '1rem 0.5rem', verticalAlign: 'middle' }}>
                     Total:
                   </td>
-                  <td className={weightedDailyChangePercent >= 0 ? 'positive' : 'negative'} style={{ fontWeight: 600, padding: '1rem 0.5rem', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
+                  <td className={`${weightedDailyChangePercent >= 0 ? 'positive' : 'negative'} text-right tabular-nums`} style={{ fontWeight: 600, padding: '1rem 0.5rem', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
                     {formatPercent(weightedDailyChangePercent)}
                   </td>
-                  <td className={totalDailyChange >= 0 ? 'positive' : 'negative'} style={{ fontWeight: 600, padding: '1rem 0.5rem', whiteSpace: 'nowrap', verticalAlign: 'middle', minWidth: '120px' }}>
+                  <td className={`${totalDailyChange >= 0 ? 'positive' : 'negative'} text-right tabular-nums`} style={{ fontWeight: 600, padding: '1rem 0.5rem', whiteSpace: 'nowrap', verticalAlign: 'middle', minWidth: '120px' }}>
                     {formatCurrencyCompact(totalDailyChange, true)}
                   </td>
                   <td></td>

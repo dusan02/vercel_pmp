@@ -298,6 +298,66 @@
     text-align: center !important;
   }
 
+  /* Portfolio Table Column Widths */
+  .portfolio-table th,
+  .portfolio-table td {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Specific column widths to ensure "X" button and values are tight */
+  .portfolio-col-ticker {
+    width: 80px;
+  }
+
+  .portfolio-col-logo {
+    width: 60px;
+    text-align: center;
+  }
+
+  .portfolio-col-company {
+    max-width: 180px;
+  }
+
+  .portfolio-col-sector {
+    max-width: 140px;
+  }
+
+  .portfolio-col-quantity {
+    width: 100px;
+    text-align: center !important;
+  }
+
+  .portfolio-col-price {
+    width: 100px;
+    text-align: right !important;
+  }
+
+  .portfolio-col-change {
+    width: 100px;
+    text-align: right !important;
+  }
+
+  .portfolio-col-value {
+    width: 140px;
+    text-align: right !important;
+  }
+
+  /* Shrink-wrap the actions column (X button) so it sits close to the value */
+  .portfolio-col-actions {
+    width: 1%;
+    white-space: nowrap;
+    text-align: center !important;
+    padding-left: 0 !important;
+  }
+
+  /* Tabular numbers for alignment */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  }
+
   /* Utility Classes */
   .positive {
     color: var(--clr-positive);
