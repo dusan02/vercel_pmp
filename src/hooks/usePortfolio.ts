@@ -191,15 +191,15 @@ export function usePortfolio(props?: UsePortfolioProps) {
   // Kept for backwards compatibility
   const calculateStockValue = calculateDailyChange;
 
-  // Calculate total portfolio value change (sum of all daily changes)
+  // Calculate total portfolio value (sum of all position values)
   const totalPortfolioValue = useMemo(() => {
     return stockData.reduce((total, stock) => {
       if (portfolioHoldings[stock.ticker]) {
-        return total + calculateDailyChange(stock);
+        return total + calculateTotalStockValue(stock);
       }
       return total;
     }, 0);
-  }, [stockData, portfolioHoldings, calculateDailyChange]);
+  }, [stockData, portfolioHoldings, calculateTotalStockValue]);
 
   // Get portfolio stocks logic (moved from HomePage)
   const portfolioStocks = useMemo(() => {
