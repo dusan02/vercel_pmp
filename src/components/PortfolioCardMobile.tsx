@@ -1,112 +1,86 @@
 'use client';
 
-import React, { memo, useMemo } from 'react';
+import React, { memo } from 'react';
 import { StockData } from '@/lib/types';
 import { formatCurrencyCompact, formatPrice, formatPercent } from '@/lib/utils/format';
 import CompanyLogo from './CompanyLogo';
 import { X } from 'lucide-react';
+import { getCompanyName } from '@/lib/companyNames';
+import { PortfolioQuantityInput } from './PortfolioQuantityInput';
 
 interface PortfolioCardMobileProps {
   stock: StockData;
   quantity: number;
-  onRemoveStock: (ticker: string) => void;
-  onOpenDetails: (ticker: string) => void;
-  priority?: boolean;
+  onUpdateQuantity: (ticker: string, quantity: number) => void;
+  onRemove: (ticker: string) => void;
+  calculateValue: (stock: StockData) => number;
+  onOpenDetails?: (ticker: string) => void;
 }
 
 export const PortfolioCardMobile = memo(({
   stock,
   quantity,
-  onRemoveStock,
-  onOpenDetails,
-  priority = false
+  onUpdateQuantity,
+  onRemove,
+  calculateValue,
+  onOpenDetails
 }: PortfolioCardMobileProps) => {
   const formattedPrice = formatPrice(stock.currentPrice);
   const formattedPercentChange = formatPercent(stock.percentChange);
   const isPositive = stock.percentChange >= 0;
 
-  // "Value" requested: daily $ change of the holding, derived from % change and price.
-  // Approximate prevClose from percent change: prev = current / (1 + pct/100)
-  const holdingDelta = useMemo(() => {
-    const price = stock.currentPrice ?? 0;
-    const pct = stock.percentChange ?? 0;
-    if (!isFinite(price) || price <= 0) return 0;
-    if (!isFinite(pct)) return 0;
-    // Avoid division blowups around -100%
-    if (pct <= -99.999) return 0;
-    const prev = price / (1 + pct / 100);
-    const perShareDelta = price - prev;
-    const v = perShareDelta * (quantity || 0);
-    return isFinite(v) ? v : 0;
-  }, [quantity, stock.currentPrice, stock.percentChange]);
-  const holdingDeltaIsPositive = holdingDelta >= 0;
-  const formattedHoldingDelta = useMemo(() => formatCurrencyCompact(holdingDelta, true), [holdingDelta]);
+  // Calculate Value (Daily P&L)
+  const value = calculateValue(stock);
+  const valueIsPositive = value >= 0;
+  const formattedValue = formatCurrencyCompact(value, true);
 
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onClick={() => onOpenDetails(stock.ticker)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onOpenDetails(stock.ticker);
-        }
-      }}
-      className="px-3 py-2 active:bg-gray-50 dark:active:bg-gray-800 transition-colors cursor-pointer select-none outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60"
-      aria-label={`Open details for ${stock.ticker}, quantity ${quantity}, value ${formattedHoldingDelta}`}
-      style={{
-        WebkitTapHighlightColor: 'transparent',
-        touchAction: 'manipulation' // Prevent double-tap zoom
-      }}
+      className="px-3 py-3 bg-white dark:bg-white/5 border-b border-gray-100 dark:border-gray-800 last:border-0"
     >
-      {/* Fixed-column grid so rows align perfectly (like a table) */}
-      <div className="grid items-center gap-x-1.5 min-w-0 [grid-template-columns:minmax(56px,1fr)_56px_72px_56px_52px]">
-
-        {/* Ticker */}
-        <div className="min-w-0 text-center">
-          <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100 tracking-tight truncate">
-            {stock.ticker}
-          </h3>
+      {/* Grid Layout similar to table rows but optimized for mobile */}
+      <div className="grid grid-cols-[1fr_auto] gap-2 mb-2">
+        {/* Top Row: Ticker and Price */}
+        <div className="flex items-center gap-2 overflow-hidden">
+          <CompanyLogo
+            ticker={stock.ticker}
+            logoUrl={stock.logoUrl || `/logos/${stock.ticker.toLowerCase()}-32.webp`}
+            size={24}
+          />
+          <div className="min-w-0">
+            <div className="font-bold text-sm truncate">{stock.ticker}</div>
+            <div className="text-xs text-gray-500 truncate">{getCompanyName(stock.ticker)}</div>
+          </div>
         </div>
+        <div className="text-right">
+          <div className="font-mono text-sm font-semibold">${formattedPrice}</div>
+          <div className={`text-xs font-mono ${isPositive ? 'text-green-600' : 'text-red-500'}`}>
+            {formattedPercentChange}
+          </div>
+        </div>
+      </div>
 
-        {/* # (Quantity) */}
-        <div className="justify-self-center">
-          <div className="w-[56px] text-center px-2 py-1 rounded-md text-xs font-semibold tabular-nums bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-white/80">
-            #{quantity}
+      <div className="grid grid-cols-[auto_1fr_auto] gap-3 items-center">
+        {/* Quantity Input */}
+        <PortfolioQuantityInput
+          value={quantity}
+          onChange={(qty) => onUpdateQuantity(stock.ticker, qty)}
+          className="w-20"
+        />
+
+        {/* Daily P&L */}
+        <div className="text-right">
+          <div className="text-[10px] text-gray-500 uppercase tracking-wider">Daily P&L</div>
+          <div className={`font-mono text-sm ${valueIsPositive ? 'text-green-600' : 'text-red-500'}`}>
+            {formattedValue}
           </div>
         </div>
 
-        {/* Price */}
-        <div className="text-center min-w-0 overflow-hidden">
-          <div className="font-mono font-semibold text-gray-900 dark:text-gray-100 text-sm tabular-nums truncate">
-            ${formattedPrice}
-          </div>
-          <div className={`text-[11px] font-mono tabular-nums truncate ${holdingDeltaIsPositive ? 'text-green-600' : 'text-red-600'}`}>
-            {formattedHoldingDelta}
-          </div>
-        </div>
-
-        {/* % Change */}
-        <div className={`text-xs font-semibold text-center tabular-nums ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-          {formattedPercentChange}
-        </div>
-
-        {/* Action - Remove */}
+        {/* Remove Button */}
         <button
-          type="button"
-          onPointerDown={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onRemoveStock(stock.ticker);
-          }}
-          className="w-12 h-12 flex items-center justify-center text-red-600 bg-transparent active:bg-transparent rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 justify-self-center flex-shrink-0"
-          aria-label={`Remove ${stock.ticker} from portfolio`}
-          style={{ WebkitTapHighlightColor: 'transparent' }}
+          onClick={() => onRemove(stock.ticker)}
+          className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+          aria-label="Remove"
         >
           <X size={20} />
         </button>
@@ -116,4 +90,3 @@ export const PortfolioCardMobile = memo(({
 });
 
 PortfolioCardMobile.displayName = 'PortfolioCardMobile';
-

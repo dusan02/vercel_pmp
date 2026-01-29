@@ -43,9 +43,8 @@ export function PortfolioPerformanceTreemap({ data, metric = 'percent' }: Portfo
             changePercent: metric === 'percent' ? item.dailyChangePercent : item.dailyChangeValue,
             marketCapDiff: item.dailyChangeValue, // Tooltip value
             // Provide formatted display value for custom rendering
-            displayValue: metric === 'dollar'
-                ? formatCurrencyCompact(item.dailyChangeValue, true)
-                : formatPercent(item.dailyChangePercent),
+            // User Request: Show both % change AND dollar value in the square
+            displayValue: `${formatPercent(item.dailyChangePercent)}\n${formatCurrencyCompact(item.dailyChangeValue, true)}`,
             currentPrice: 0,
             isStale: false
         }));

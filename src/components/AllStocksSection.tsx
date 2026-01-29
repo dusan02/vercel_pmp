@@ -7,12 +7,14 @@ import { SortKey } from '@/hooks/useSortableData';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { SectionIcon } from './SectionIcon';
 import { StockSearchBar } from './StockSearchBar';
-import { StockTableRow } from './StockTableRow';
+import { UniversalTable, ColumnDef } from './UniversalTable';
 import { StockCardMobile } from './StockCardMobile';
 import { SectionLoader } from './SectionLoader';
 import { CustomDropdown } from './CustomDropdown';
 import { StockData } from '@/lib/types';
-import { formatSectorName } from '@/lib/utils/format';
+import { formatSectorName, formatBillions, formatMarketCapDiff, formatPrice, formatPercent } from '@/lib/utils/format';
+import CompanyLogo from './CompanyLogo';
+import { getCompanyName } from '@/lib/companyNames';
 
 interface AllStocksSectionProps {
   displayedStocks: StockData[];
@@ -106,23 +108,126 @@ export const AllStocksSection = React.memo(function AllStocksSection({
     ...availableIndustries.map(industry => ({ value: industry, label: industry }))
   ], [availableIndustries]);
 
-  // Memoize favorite handlers per stock
-  const favoriteHandlers = useMemo(() => {
-    const handlers = new Map<string, () => void>();
-    displayedStocks.forEach(stock => {
-      handlers.set(stock.ticker, () => onToggleFavorite(stock.ticker));
-    });
-    return handlers;
-  }, [displayedStocks, onToggleFavorite]);
+  // Column Definitions for UniversalTable
+  const columns: ColumnDef<StockData>[] = useMemo(() => [
+    {
+      key: 'logo',
+      header: 'Logo',
+      align: 'center',
+      className: 'hidden lg:table-cell',
+      width: '60px',
+      render: (stock) => (
+        <div className="flex justify-center">
+          <CompanyLogo ticker={stock.ticker} {...(stock.logoUrl ? { logoUrl: stock.logoUrl } : {})} size={32} />
+        </div>
+      )
+    },
+    {
+      key: 'ticker',
+      header: 'Ticker',
+      sortable: true,
+      render: (stock) => <strong>{stock.ticker}</strong>
+    },
+    {
+      key: 'companyName',
+      header: 'Company',
+      className: 'hidden lg:table-cell',
+      render: (stock) => <span className="block truncate max-w-[180px]">{getCompanyName(stock.ticker)}</span>
+    },
+    {
+      key: 'sector',
+      header: 'Sector',
+      sortable: true,
+      className: 'hidden lg:table-cell',
+      render: (stock) => formatSectorName(stock.sector)
+    },
+    {
+      key: 'industry',
+      header: 'Industry',
+      sortable: true,
+      className: 'hidden lg:table-cell',
+      render: (stock) => stock.industry || 'N/A'
+    },
+    {
+      key: 'marketCap',
+      header: 'Market Cap',
+      sortable: true,
+      align: 'center',
+      className: 'whitespace-nowrap hidden lg:table-cell',
+      render: (stock) => <span className="tabular-nums block w-full text-right">{formatBillions(stock.marketCap)}</span>
+    },
+    {
+      key: 'marketCapDiff',
+      header: 'Cap Diff',
+      sortable: true,
+      align: 'center',
+      className: 'hidden lg:table-cell',
+      render: (stock) => {
+        const diff = stock.marketCapDiff ?? 0;
+        return (
+          <span className={`tabular-nums block w-full text-right ${diff >= 0 ? 'positive' : 'negative'}`}>
+            {formatMarketCapDiff(diff)}
+          </span>
+        );
+      }
+    },
+    {
+      key: 'currentPrice',
+      header: 'Price',
+      sortable: true,
+      align: 'center',
+      render: (stock) => {
+        const price = stock.currentPrice ?? 0;
+        return (
+          <span className="tabular-nums block w-full text-right">
+            {isFinite(price) ? formatPrice(price) : '—'}
+          </span>
+        );
+      }
+    },
+    {
+      key: 'percentChange',
+      header: '% Change',
+      sortable: true,
+      align: 'center',
+      width: '100px',
+      render: (stock) => {
+        const pct = stock.percentChange ?? 0;
+        return (
+          <span className={`tabular-nums block w-full text-right ${pct >= 0 ? 'positive' : 'negative'}`}>
+            {formatPercent(pct)}
+          </span>
+        );
+      }
+    },
+    {
+      key: 'favorites',
+      header: 'Favorites',
+      align: 'center',
+      width: '1%',
+      render: (stock) => {
+        const fav = isFavorite(stock.ticker);
+        return (
+          <button
+            className={`favorite-btn ${fav ? 'favorited' : ''} inline-flex justify-center w-full`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleFavorite(stock.ticker);
+            }}
+            title={fav ? 'Remove from favorites' : 'Add to favorites'}
+          >
+            {fav ? '★' : '☆'}
+          </button>
+        );
+      }
+    }
+  ], [isFavorite, onToggleFavorite]);
 
-  // Mobile sort chips
-  const mobileSortOptions: { key: SortKey; label: string }[] = useMemo(() => ([
-    { key: 'percentChange', label: '% Change' },
-    { key: 'marketCapDiff', label: 'Cap Diff' },
-    { key: 'currentPrice', label: 'Price' },
-    { key: 'marketCap', label: 'Mkt Cap' },
-    { key: 'ticker', label: 'Ticker' },
-  ]), []);
+
+  // Mobile Sort Options (Pass props down implicitly via internal sort handler of component?) 
+  // Wait, AllStocksSection receives sortKey and ascending.
+  // The component UniversalTable calls onSort(key).
+  // Everything aligns.
 
   // Mobile: Infinite load within the mobile scroll container (not window)
   useEffect(() => {
@@ -296,77 +401,49 @@ export const AllStocksSection = React.memo(function AllStocksSection({
         </div>
       </div>
 
-      {loading ? (
-        <SectionLoader message="Loading stocks..." />
-      ) : (
-        <>
+      <UniversalTable
+        data={displayedStocks}
+        columns={columns}
+        keyExtractor={(item) => item.ticker}
+        isLoading={loading}
+        sortKey={sortKey}
+        ascending={ascending}
+        onSort={onSort}
+        emptyMessage={(selectedSector !== 'all' || selectedIndustry !== 'all' || searchTerm.trim().length > 0)
+          ? 'No results for the selected filters.'
+          : 'No stocks to display.'}
+        renderMobileCard={(stock) => (
+          <StockCardMobile
+            stock={stock}
+            isFavorite={isFavorite(stock.ticker)}
+            onToggleFavorite={() => onToggleFavorite(stock.ticker)}
+          />
+        )}
+      />
 
-
-          {/* Desktop: Table layout */}
-          <div className="table-wrapper-mobile-safe">
-            <table>
-              <thead>
-                <tr>
-                  {TABLE_HEADERS_DESKTOP.map((header, index) => (
-                    <th
-                      key={index}
-                      onClick={header.sortable && header.key ? () => onSort(header.key!) : undefined}
-                      className={`${header.sortable ? 'sortable' : ''} ${sortKey === header.key ? 'active-sort' : ''} ${header.className || ''}`.trim()}
-                    >
-                      {header.label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {displayedStocks.length === 0 ? (
-                  <tr>
-                    <td colSpan={10} style={{ textAlign: 'center', padding: '2rem', color: 'var(--clr-subtext)' }}>
-                      {(selectedSector !== 'all' || selectedIndustry !== 'all' || searchTerm.trim().length > 0)
-                        ? 'No results for the selected filters.'
-                        : 'No stocks to display.'}
-                    </td>
-                  </tr>
-                ) : (
-                  displayedStocks.map((stock, index) => (
-                    <StockTableRow
-                      key={stock.ticker}
-                      stock={stock}
-                      isFavorite={isFavorite(stock.ticker)}
-                      onToggleFavorite={favoriteHandlers.get(stock.ticker) || (() => onToggleFavorite(stock.ticker))}
-                      priority={index < 100}
-                    />
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* End of list indicator */}
-          {!hasMore && displayedStocks.length > 0 && (
-            <div className="end-of-list">
-              <span>All stocks are displayed</span>
-            </div>
-          )}
-
-          {/* Mobile: infinite loading sentinel + fallback button */}
-          <div className="lg:hidden">
-            <div ref={sentinelRef} style={{ height: 1 }} />
-            {hasMore && onLoadMore && (
-              <div className="mobile-load-more">
-                <button
-                  type="button"
-                  className="mobile-load-more-btn"
-                  onClick={onLoadMore}
-                  disabled={isLoadingMore}
-                >
-                  {isLoadingMore ? 'Loading…' : 'Load more'}
-                </button>
-              </div>
-            )}
-          </div>
-        </>
+      {/* End of list indicator */}
+      {!hasMore && displayedStocks.length > 0 && (
+        <div className="end-of-list">
+          <span>All stocks are displayed</span>
+        </div>
       )}
+
+      {/* Mobile: infinite loading sentinel + fallback button */}
+      <div className="lg:hidden">
+        <div ref={sentinelRef} style={{ height: 1 }} />
+        {hasMore && onLoadMore && (
+          <div className="mobile-load-more">
+            <button
+              type="button"
+              className="mobile-load-more-btn"
+              onClick={onLoadMore}
+              disabled={isLoadingMore}
+            >
+              {isLoadingMore ? 'Loading…' : 'Load more'}
+            </button>
+          </div>
+        )}
+      </div>
     </section>
   );
 });
