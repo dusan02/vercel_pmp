@@ -164,7 +164,7 @@ export function FavoritesSection({
               <th onClick={() => onSort("percentChange" as SortKey)} className={`sortable whitespace-nowrap ${sortKey === "percentChange" ? "active-sort" : ""}`}>
                 % Change
               </th>
-              <th>Favorites</th>
+              <th className="text-center">Favorites</th>
             </tr>
           </thead>
           <tbody>

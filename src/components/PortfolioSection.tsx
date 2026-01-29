@@ -57,9 +57,13 @@ export function PortfolioSection({
   const [desktopSortKey, setDesktopSortKey] = useState<'ticker' | 'company' | 'sector' | 'industry' | 'quantity' | 'price' | 'percent' | 'value' | null>(null);
   const [desktopAscending, setDesktopAscending] = useState<boolean>(false);
 
-  // Mobile sort state - initialized with default to prevent hydration mismatch
   const [mobileSortKey, setMobileSortKey] = useState<'ticker' | 'quantity' | 'price' | 'percent' | 'delta'>('ticker');
   const [mobileAscending, setMobileAscending] = useState<boolean>(true);
+
+  // Heatmap Metric State (percent vs dollar)
+  const [heatmapMetric, setHeatmapMetric] = useState<'percent' | 'dollar'>('percent');
+
+
 
   // Load persisted state only on client mount
   useEffect(() => {
@@ -98,6 +102,22 @@ export function PortfolioSection({
     : null;
 
   const selectedQuantity = selectedTicker ? (portfolioHoldings[selectedTicker] ?? 0) : 0;
+
+  // Calculate Total Asset Value (Real Portfolio Value)
+  const totalAssetValue = useMemo(() => {
+    return portfolioStocks.reduce((sum, stock) => {
+      const val = calculateTotalValue
+        ? calculateTotalValue(stock)
+        : (portfolioHoldings[stock.ticker] || 0) * (stock.currentPrice || stock.closePrice);
+      return sum + val;
+    }, 0);
+  }, [portfolioStocks, portfolioHoldings, calculateTotalValue]);
+
+  // Calculate Weighted Average % Change
+  // Formula: Daily Change $ / (Current Value - Daily Change $)
+  const totalDailyChange = totalPortfolioValue; // Rename for clarity
+  const previousValue = totalAssetValue - totalDailyChange;
+  const weightedDailyChangePercent = previousValue !== 0 ? (totalDailyChange / previousValue) * 100 : 0;
 
   const closeDetails = () => {
     setIsDetailsOpen(false);
@@ -403,6 +423,36 @@ export function PortfolioSection({
         </div>
       </div>
 
+      {/* Portfolio Summary Header */}
+      {portfolioStocks.length > 0 && (
+        <div className="px-4 mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">Portfolio Value</div>
+              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                {formatCurrencyCompact(totalAssetValue, true)}
+              </div>
+            </div>
+
+            <div className="flex gap-8">
+              <div>
+                <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">Daily Change</div>
+                <div className={`text-xl font-bold ${totalDailyChange >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                  {formatCurrencyCompact(totalDailyChange, true)}
+                </div>
+              </div>
+
+              <div>
+                <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">Daily %</div>
+                <div className={`text-xl font-bold ${weightedDailyChangePercent >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                  {formatPercent(weightedDailyChangePercent)}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Mobile: Cards layout */}
       <div className="lg:hidden flex-1 flex flex-col">
         {portfolioStocks.length === 0 ? (
@@ -510,6 +560,7 @@ export function PortfolioSection({
                     industry: stock.industry || 'Unknown'
                   };
                 })}
+                metric={heatmapMetric}
               />
             </div>
 
@@ -615,7 +666,7 @@ export function PortfolioSection({
               <div className="p-4">
                 <div className="rounded-lg p-3" style={{ background: 'rgba(0,0,0,0.04)' }}>
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-600 dark:text-gray-300 font-semibold">Total Portfolio Value:</span>
+                    <span className="text-gray-600 dark:text-gray-300 font-semibold">Total Daily Change:</span>
                     <span className={`font-bold text-lg ${totalPortfolioValue >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                       {formatCurrencyCompact(totalPortfolioValue, true)}
                     </span>
@@ -770,7 +821,29 @@ export function PortfolioSection({
               </div>
             </div>
 
-            <div className="w-full">
+            <div className="w-full relative">
+              {/* Metric Toggle Buttons */}
+              <div className="absolute top-4 right-4 z-10 flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1 border border-gray-200 dark:border-gray-700">
+                <button
+                  onClick={() => setHeatmapMetric('percent')}
+                  className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${heatmapMetric === 'percent'
+                    ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                    }`}
+                >
+                  %
+                </button>
+                <button
+                  onClick={() => setHeatmapMetric('dollar')}
+                  className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${heatmapMetric === 'dollar'
+                    ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                    }`}
+                >
+                  $
+                </button>
+              </div>
+
               <PortfolioPerformanceTreemap
                 data={portfolioStocks.map(stock => {
                   const value = calculateTotalValue
@@ -786,6 +859,7 @@ export function PortfolioSection({
                     industry: stock.industry || 'Unknown'
                   };
                 })}
+                metric={heatmapMetric}
               />
             </div>
           </div>
@@ -908,7 +982,7 @@ export function PortfolioSection({
                 }}
                 style={{ cursor: 'pointer', userSelect: 'none' }}
               >
-                Value
+                Daily P&L
               </th>
               <th className="portfolio-col-actions"></th>
             </tr>
@@ -1041,7 +1115,7 @@ export function PortfolioSection({
                       </td>
 
                       {/* Actions */}
-                      <td>
+                      <td className="text-center">
                         <button
                           className="portfolio-delete-button"
                           onClick={() => onRemoveStock(stock.ticker)}
@@ -1059,13 +1133,16 @@ export function PortfolioSection({
                   <td colSpan={10} style={{ padding: 0, borderTop: '1px solid var(--clr-border, #e5e7eb)', height: '1px' }}></td>
                 </tr>
                 {/* Total row */}
-                {/* Total row - Desktop (colSpan 8) */}
-                <tr className="portfolio-total-row hidden md:table-row">
-                  <td colSpan={8} style={{ textAlign: 'right', fontWeight: 600, padding: '1rem 0.5rem', verticalAlign: 'middle' }}>
+                {/* Total row - Desktop (colSpan 7) */}
+                <tr className="portfolio-total-row hidden md:table-row" style={{ backgroundColor: 'var(--clr-bg-yellow-light, #fffbeb)' }}>
+                  <td colSpan={7} style={{ textAlign: 'right', fontWeight: 600, padding: '1rem 0.5rem', verticalAlign: 'middle' }}>
                     Total:
                   </td>
-                  <td className={totalPortfolioValue >= 0 ? 'positive' : 'negative'} style={{ fontWeight: 600, padding: '1rem 0.5rem', whiteSpace: 'nowrap', verticalAlign: 'middle', minWidth: '120px' }}>
-                    {formatCurrencyCompact(totalPortfolioValue, true)}
+                  <td className={weightedDailyChangePercent >= 0 ? 'positive' : 'negative'} style={{ fontWeight: 600, padding: '1rem 0.5rem', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
+                    {formatPercent(weightedDailyChangePercent)}
+                  </td>
+                  <td className={totalDailyChange >= 0 ? 'positive' : 'negative'} style={{ fontWeight: 600, padding: '1rem 0.5rem', whiteSpace: 'nowrap', verticalAlign: 'middle', minWidth: '120px' }}>
+                    {formatCurrencyCompact(totalDailyChange, true)}
                   </td>
                   <td></td>
                 </tr>

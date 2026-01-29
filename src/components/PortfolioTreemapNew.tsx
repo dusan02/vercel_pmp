@@ -16,9 +16,10 @@ interface PortfolioPerformanceTreemapProps {
         sector?: string;
         industry?: string;
     }>;
+    metric?: 'percent' | 'dollar';
 }
 
-export function PortfolioPerformanceTreemap({ data }: PortfolioPerformanceTreemapProps) {
+export function PortfolioPerformanceTreemap({ data, metric = 'percent' }: PortfolioPerformanceTreemapProps) {
     const { ref, size } = useElementResize();
     const width = size.width;
     const height = size.height;
@@ -33,16 +34,15 @@ export function PortfolioPerformanceTreemap({ data }: PortfolioPerformanceTreema
             name: item.ticker,
             sector: item.sector || 'Unknown',
             industry: item.industry || 'Unknown',
-            // Map Absolute Daily P&L to marketCap (Size)
-            // Use Math.max(0.01, ...) to ensure even flat stocks exist in hierarchy, 
-            // though d3 might hide tiny ones.
-            marketCap: Math.max(0.01, Math.abs(item.dailyChangeValue)),
-            changePercent: item.dailyChangePercent, // Color
+            // Size = Position Value (always, for stability) determines importance in portfolio
+            marketCap: Math.max(0.01, item.value),
+            // Color/Change logic depends on metric
+            changePercent: metric === 'percent' ? item.dailyChangePercent : item.dailyChangeValue,
             marketCapDiff: item.dailyChangeValue, // Tooltip value
             currentPrice: 0,
             isStale: false
         }));
-    }, [data]);
+    }, [data, metric]);
 
     return (
         <div className="w-full p-4 md:p-6 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
@@ -67,7 +67,7 @@ export function PortfolioPerformanceTreemap({ data }: PortfolioPerformanceTreema
                         width={width}
                         height={height}
                         timeframe="day"
-                        metric="percent" // Color by Percent
+                        metric={metric === 'dollar' ? 'mcap' : 'percent'} // Map 'dollar' to 'mcap' which MarketHeatmap interprets as absolute value coloring
                         sectorLabelVariant="compact"
                     />
                 )}

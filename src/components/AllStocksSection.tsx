@@ -48,7 +48,7 @@ const TABLE_HEADERS_DESKTOP: { key?: SortKey; label: string; sortable: boolean; 
   { key: 'marketCapDiff', label: 'Cap Diff', sortable: true, className: 'hidden lg:table-cell' },
   { key: 'currentPrice', label: 'Price', sortable: true },
   { key: 'percentChange', label: '% Change', sortable: true, className: 'whitespace-nowrap' },
-  { label: 'Favorites', sortable: false },
+  { label: 'Favorites', sortable: false, className: 'text-center' },
 ];
 
 

@@ -55,7 +55,7 @@ export const StockTableRow = memo(({
         </td>
 
         {/* Action - Favorite button */}
-        <td>
+        <td className="text-center">
           <button
             className={`favorite-btn ${isFavorite ? 'favorited' : ''}`}
             onClick={(e) => {
@@ -118,7 +118,7 @@ export const StockTableRow = memo(({
         </td>
 
         {/* Favorites */}
-        <td>
+        <td className="text-center">
           <button
             className={`favorite-btn ${isFavorite ? 'favorited' : ''}`}
             onClick={(e) => {
