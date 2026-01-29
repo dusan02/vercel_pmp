@@ -350,18 +350,7 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
         />
 
         {/* Last updated indicator - only on desktop (mobile has it in header or can be added) */}
-        {dataAgeDisplay && !isMobile && (
-          <div
-            className={`absolute bottom-2 right-2 px-2 py-1 rounded text-xs z-50 ${isDataStale
-              ? 'bg-yellow-500/80 text-yellow-900'
-              : 'bg-black/60 text-gray-300'
-              }`}
-            title={`Last updated: ${lastUpdated}`}
-          >
-            Updated {dataAgeDisplay}
-            {isDataStale && ' ⚠️'}
-          </div>
-        )}
+
       </>
     );
   };

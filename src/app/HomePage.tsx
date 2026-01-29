@@ -476,18 +476,22 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
 
                   <div className="header-wrapper">
                     <div className="container mx-auto px-4">
-                      <PageHeader
-                        onLogoClick={() => setActiveSection('heatmap')}
-                        navigation={
-                          <div className="hidden lg:block">
-                            <SectionNavigation
-                              activeTab={activeSection}
-                              onTabChange={(tab: string) => setActiveSection(tab as any)}
-                            />
-                          </div>
-                        }
-                      />
+                      {/* --- DESKTOP LAYOUT (Tab Based) --- */}
+                      <div className="desktop-layout-wrapper">
+                        <PageHeader
+                          onLogoClick={() => handleMobileNavChange('heatmap')}
+                          navigation={
+                            <div className="hidden lg:block">
+                              <SectionNavigation
+                                activeTab={activeSection}
+                                onTabChange={(tab: string) => handleMobileNavChange(tab as any)}
+                              />
+                            </div>
+                          }
+                        />
+                      </div>
                     </div>
+
                   </div>
 
                   <main className="container" role="main">
@@ -588,8 +592,9 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
             </PerformanceOptimizer>
           </Suspense>
 
-        </div>
-      )}
+        </div >
+      )
+      }
       {/* Cookie consent must exist on mobile too; favorites depend on consent for local persistence */}
       <CookieConsent onAccept={() => setConsent(true)} />
     </>

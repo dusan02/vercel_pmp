@@ -101,9 +101,9 @@ export const HeatmapTile = React.memo<HeatmapTileProps>(({
               className={styles.heatmapTilePercent}
               style={{ fontSize: `${labelConfig.percentFontPx}px` }}
             >
-              {metric === 'mcap'
+              {company.displayValue || (metric === 'mcap'
                 ? formatMarketCapDiff(company.marketCapDiff)
-                : formatPercent(company.changePercent)}
+                : formatPercent(company.changePercent))}
             </div>
           )}
         </div>

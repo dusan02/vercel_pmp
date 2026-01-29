@@ -78,15 +78,13 @@ export const StockTableRow = memo(({
       >
         {/* Logo */}
         <td>
-          <div className="logo-container">
-            <CompanyLogo
-              ticker={stock.ticker}
-              {...(stock.logoUrl ? { logoUrl: stock.logoUrl } : {})}
-              width={56}
-              height={40}
-              priority={priority}
-            />
-          </div>
+          <CompanyLogo
+            ticker={stock.ticker}
+            {...(stock.logoUrl ? { logoUrl: stock.logoUrl } : {})}
+            width={88}
+            height={52}
+            priority={priority}
+          />
         </td>
 
         {/* Ticker */}
@@ -131,7 +129,7 @@ export const StockTableRow = memo(({
             {isFavorite ? '★' : '☆'}
           </button>
         </td>
-      </SwipeableTableRow>
+      </SwipeableTableRow >
     </>
   );
 }, (prevProps, nextProps) => {

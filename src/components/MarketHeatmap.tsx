@@ -112,6 +112,8 @@ export type CompanyNode = {
   isStale?: boolean;
   /** ISO timestamp for the price used to compute change (best-effort). */
   lastUpdated?: string;
+  /** Custom formatted value to display (overrides default formatting) */
+  displayValue?: string;
 };
 
 /**
@@ -1098,17 +1100,18 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
                 return (
                   <div
                     key={`sector-border-${data.name}-${x0}-${y0}`}
-                    className="absolute cursor-pointer"
+                    className="absolute cursor-pointer transition-all duration-200 ease-in-out"
                     style={{
                       left: x0 * scale + offset.x,
                       top: y0 * scale + offset.y,
                       width: nodeWidth * scale,
                       height: nodeHeight * scale,
                       pointerEvents: 'auto',
-                      // Thicker black border to separate sectors visually (1.5px solid black - half of original 3px)
-                      border: '1.5px solid #000000',
+                      // Reactive border based on hover state
+                      border: isHovered ? '2px solid rgba(255, 255, 255, 0.8)' : '1.5px solid #000000',
+                      boxShadow: isHovered ? 'inset 0 0 20px rgba(255, 255, 255, 0.1)' : 'none',
                       boxSizing: 'border-box',
-                      zIndex: 10, // Above tiles to ensure border is visible
+                      zIndex: isHovered ? 20 : 10, // Bring forward on hover
                     }}
                     onMouseEnter={() => setHoveredSector(data.name)}
                     onMouseLeave={() => setHoveredSector(null)}
@@ -1116,7 +1119,7 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
                   >
                     {/* Hover overlay pre sektor */}
                     {isHovered && (
-                      <div className="absolute inset-0 bg-blue-500 opacity-10 pointer-events-none" />
+                      <div className={styles.heatmapSectorHover} />
                     )}
                   </div>
                 );
@@ -1140,8 +1143,7 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
                 const labelHeight = labelConfig.HEIGHT;
 
                 // Check if sector is large enough (both width and height)
-                // Increased minimum size to prevent overlapping on small sectors
-                const minSizeForLabel = 80; // Increased from 50 to prevent overlap
+                const minSizeForLabel = 80;
                 const minHeightForLabel = labelHeight + 8;
                 const showLabel = scaledWidth > minSizeForLabel
                   && scaledHeight > minHeightForLabel
@@ -1176,7 +1178,7 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
                     className={`${styles.sectorLabelWrap} ${sectorLabelVariant === 'full'
                       ? styles.sectorLabelWrapFull
                       : styles.sectorLabelWrapCompact
-                      }`}
+                      } ${zoomedSector ? styles.heatmapZoomEnter : ''}`} /* Add zoom entry animation */
                     style={{
                       left: x0 * scale + offset.x,
                       top: y0 * scale + offset.y,
@@ -1185,7 +1187,11 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
                       height: labelHeight,
                       paddingLeft: labelConfig.LEFT,
                       overflow: 'hidden', // Ensure text doesn't overflow
+                      pointerEvents: 'auto' // Ensure hover events work
                     }}
+                    onMouseEnter={() => setHoveredSector(data.name)}
+                    onMouseLeave={() => setHoveredSector(null)}
+                    onClick={() => handleSectorClick(data.name)}
                   >
                     {sectorLabelVariant === 'full' ? (
                       <div className={styles.sectorLabelStripFull} style={{ fontSize: responsiveFontSize }}>

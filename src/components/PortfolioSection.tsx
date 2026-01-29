@@ -414,44 +414,56 @@ export function PortfolioSection({
 
   return (
     <section className="portfolio">
-      <div className="flex items-center justify-between mb-4 px-4">
-        <div className="flex items-center">
+      <div className="flex items-center justify-between mb-4 px-4 sticky top-0 bg-white dark:bg-[#000000] z-20 py-2">
+        <div className="flex items-center gap-6">
           <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--clr-text)] m-0 relative -top-1.5">
             <SectionIcon type="pie" size={24} className="text-[var(--clr-text)]" />
             <span>Portfolio</span>
           </h2>
-        </div>
-      </div>
 
-      {/* Portfolio Summary Header */}
-      {portfolioStocks.length > 0 && (
-        <div className="px-4 mb-6">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">Portfolio Value</div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+          {/* Inline Summary Stats (Desktop) */}
+          <div className="hidden lg:flex items-center gap-6">
+            <div className="flex flex-col">
+              <span className="text-xs text-gray-500 font-medium">Total Value</span>
+              <span className="text-lg font-bold text-gray-900 dark:text-gray-100 leading-none">
                 {formatCurrencyCompact(totalAssetValue, true)}
-              </div>
+              </span>
             </div>
-
-            <div className="flex gap-8">
-              <div>
-                <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">Daily Change</div>
-                <div className={`text-xl font-bold ${totalDailyChange >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                  {formatCurrencyCompact(totalDailyChange, true)}
-                </div>
-              </div>
-
-              <div>
-                <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">Daily %</div>
-                <div className={`text-xl font-bold ${weightedDailyChangePercent >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                  {formatPercent(weightedDailyChangePercent)}
-                </div>
-              </div>
+            <div className="flex flex-col">
+              <span className="text-xs text-gray-500 font-medium">Daily P&L</span>
+              <span className={`text-lg font-bold leading-none ${totalDailyChange >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'}`}>
+                {formatCurrencyCompact(totalDailyChange, true)}
+              </span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs text-gray-500 font-medium">Daily %</span>
+              <span className={`text-lg font-bold leading-none ${weightedDailyChangePercent >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'}`}>
+                {formatPercent(weightedDailyChangePercent)}
+              </span>
             </div>
           </div>
         </div>
-      )}
+      </div>
+
+      {/* Mobile Summary Card (Keep for mobile, hide on desktop) */}
+      <div className="lg:hidden px-4 mb-4">
+        <div className="bg-white dark:bg-gray-900 rounded-xl p-4 border border-gray-100 dark:border-gray-800 flex justify-between items-center shadow-sm">
+          <div>
+            <div className="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-1">Portfolio Value</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">
+              {formatCurrencyCompact(totalAssetValue, true)}
+            </div>
+          </div>
+          <div className="text-right">
+            <div className={`text-lg font-bold ${totalDailyChange >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+              {formatCurrencyCompact(totalDailyChange, true)}
+            </div>
+            <div className={`text-sm font-medium ${weightedDailyChangePercent >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+              {formatPercent(weightedDailyChangePercent)}
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Mobile: Cards layout */}
       <div className="lg:hidden flex-1 flex flex-col">

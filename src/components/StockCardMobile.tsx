@@ -50,7 +50,7 @@ export const StockCardMobile = memo(({
 
         {/* Ticker */}
         <div className="min-w-0 flex flex-col items-center justify-center gap-1">
-          <CompanyLogo ticker={stock.ticker} {...(stock.logoUrl ? { logoUrl: stock.logoUrl } : {})} size={24} className="rounded-sm" />
+          <CompanyLogo ticker={stock.ticker} {...(stock.logoUrl ? { logoUrl: stock.logoUrl } : {})} size={40} className="rounded-sm" />
           <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100 tracking-tight truncate w-full text-center">
             {stock.ticker}
           </h3>

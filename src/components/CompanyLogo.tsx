@@ -25,7 +25,7 @@ function generateLQPlaceholder(ticker: string, width: number, height: number): s
 
   return `data:image/svg+xml,${encodeURIComponent(
     `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
-      <rect width="${width}" height="${height}" fill="${color}" rx="6"/>
+      <rect width="${width}" height="${height}" fill="${color}" rx="2"/>
       <text x="50%" y="50%" font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="bold" 
             fill="white" text-anchor="middle" dominant-baseline="central">${initial}</text>
     </svg>`
@@ -62,7 +62,7 @@ export default function CompanyLogo({
         fontSize: Math.max(8, Math.min(w, h) * 0.3),
         minWidth: w,
         minHeight: h,
-        borderRadius: 8,
+        borderRadius: 2, // Sharper corners
         background: 'linear-gradient(135deg, #2563eb, #1e40af)',
         boxSizing: 'border-box',
       }}
@@ -84,7 +84,7 @@ export default function CompanyLogo({
         height: h,
         position: 'relative',
         flexShrink: 0,
-        borderRadius: 8,
+        borderRadius: 2, // Sharper corners (was 8)
         overflow: 'hidden',
         background: 'var(--clr-surface)',
       }}

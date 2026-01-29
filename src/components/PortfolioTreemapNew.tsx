@@ -6,6 +6,7 @@ import { CompanyNode } from './MarketHeatmap';
 import styles from '@/styles/heatmap.module.css';
 import { MarketHeatmap } from './MarketHeatmap';
 import { useElementResize } from './MarketHeatmap';
+import { formatCurrencyCompact, formatPercent } from '@/lib/utils/format';
 
 interface PortfolioPerformanceTreemapProps {
     data: Array<{
@@ -34,11 +35,17 @@ export function PortfolioPerformanceTreemap({ data, metric = 'percent' }: Portfo
             name: item.ticker,
             sector: item.sector || 'Unknown',
             industry: item.industry || 'Unknown',
+
+
             // Size = Position Value (always, for stability) determines importance in portfolio
             marketCap: Math.max(0.01, item.value),
             // Color/Change logic depends on metric
             changePercent: metric === 'percent' ? item.dailyChangePercent : item.dailyChangeValue,
             marketCapDiff: item.dailyChangeValue, // Tooltip value
+            // Provide formatted display value for custom rendering
+            displayValue: metric === 'dollar'
+                ? formatCurrencyCompact(item.dailyChangeValue, true)
+                : formatPercent(item.dailyChangePercent),
             currentPrice: 0,
             isStale: false
         }));
