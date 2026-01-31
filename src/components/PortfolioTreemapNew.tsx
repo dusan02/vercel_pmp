@@ -36,10 +36,9 @@ export function PortfolioPerformanceTreemap({ data, metric = 'percent' }: Portfo
             sector: item.sector || 'Unknown',
             industry: item.industry || 'Unknown',
 
-
-            // Size = Position Value (always, for stability) determines importance in portfolio
-            marketCap: Math.max(0.01, item.value),
-            // Color/Change logic depends on metric
+            // Size = Absolute Daily P&L (Magnitude of Gain/Loss) - as requested by user
+            marketCap: Math.max(0.01, Math.abs(item.dailyChangeValue)),
+            // Color/Change logic depends on metric (default to dailyChangePercent for color intensity)
             changePercent: metric === 'percent' ? item.dailyChangePercent : item.dailyChangeValue,
             marketCapDiff: item.dailyChangeValue, // Tooltip value
             // Provide formatted display value for custom rendering

@@ -56,7 +56,7 @@ export function PageHeader({ navigation, onLogoClick }: PageHeaderProps) {
                   </h1>
                 </div>
                 <p className="text-xs font-medium text-[var(--clr-subtext)] pl-[54px] -mt-1 tracking-wide">
-                  Trade ahead of the market
+                  Cenová mapa pred otvorením trhu
                 </p>
               </div>
             </div>

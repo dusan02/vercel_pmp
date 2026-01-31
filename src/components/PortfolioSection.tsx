@@ -197,12 +197,12 @@ export function PortfolioSection({
       align: 'center',
       render: (stock) => (
         <button
-          className="portfolio-delete-button mx-auto"
+          className="flex items-center justify-center w-8 h-8 mx-auto rounded-lg text-gray-400 hover:text-red-500 hover:bg-gray-100 dark:hover:bg-red-900/20 transition-all duration-200"
           onClick={() => onRemoveStock(stock.ticker)}
           aria-label={`Remove ${stock.ticker} from portfolio`}
           title="Remove from portfolio"
         >
-          <X size={16} />
+          <X size={18} />
         </button>
       )
     }
@@ -245,7 +245,7 @@ export function PortfolioSection({
 
   // Footer Row for UniversalTable
   const footerRow = portfolioStocks.length > 0 ? (
-    <tr className="portfolio-total-row hidden md:table-row" style={{ backgroundColor: 'var(--clr-bg-yellow-light, #fffbeb)' }}>
+    <tr className="portfolio-total-row hidden md:table-row" style={{ backgroundColor: 'var(--clr-bg-yellow-light, #fffbeb)', borderTop: '3px double #3b82f6' }}>
       <td colSpan={7} className="text-right font-semibold py-4 px-2 align-middle">
         Total:
       </td>
@@ -271,15 +271,15 @@ export function PortfolioSection({
 
         {/* Desktop Stats (Header) */}
         {portfolioStocks.length > 0 && (
-          <div className="portfolio-stats hidden md:flex gap-6 text-sm font-medium">
-            <div className="flex gap-2">
-              <span className="text-[var(--clr-subtext)]">Total Value:</span>
-              <span>{formatCurrencyCompact(totalPortfolioValue, true)}</span>
+          <div className="portfolio-stats hidden md:flex gap-8 items-baseline">
+            <div className="flex gap-2 items-baseline">
+              <span className="text-[var(--clr-subtext)] text-base">Total Value:</span>
+              <span className="text-2xl font-bold">{formatCurrencyCompact(totalPortfolioValue, true)}</span>
             </div>
-            <div className="flex gap-2">
-              <span className="text-[var(--clr-subtext)]">Daily Change:</span>
-              <span className={totalDailyChange >= 0 ? 'positive' : 'negative'}>
-                {formatCurrencyCompact(totalDailyChange, true)} ({formatPercent(weightedDailyChangePercent)})
+            <div className="flex gap-2 items-baseline">
+              <span className="text-[var(--clr-subtext)] text-base">Daily Change:</span>
+              <span className={`text-2xl font-bold ${totalDailyChange >= 0 ? 'positive' : 'negative'}`}>
+                {formatCurrencyCompact(totalDailyChange, true)} <span className="text-lg font-medium text-opacity-80">({formatPercent(weightedDailyChangePercent)})</span>
               </span>
             </div>
           </div>

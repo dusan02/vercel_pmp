@@ -14,7 +14,7 @@
         },
         {
             "path": "/api/cron/update-static-data",
-            "schedule": "0 9 * * *"
+            "schedule": "5 5 * * *"
         },
         {
             "path": "/api/cron/verify-prevclose",

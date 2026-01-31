@@ -20,7 +20,6 @@ export function MarketIndices() {
         let abortController: AbortController | null = null;
 
         const fetchIndices = async () => {
-            // Abort previous request if still pending
             if (abortController) {
                 abortController.abort();
             }
@@ -47,90 +46,83 @@ export function MarketIndices() {
                     setData(map);
                 }
             } catch (err: any) {
-                // Silently handle abort errors
-                if (err.name === 'AbortError' || err.message?.includes('aborted')) {
-                    return;
+                if (err.name === 'AbortError' || err.message?.includes('aborted')) return;
+                // Silent error handling in production
+                if (process.env.NODE_ENV === 'development') {
+                    console.warn('MarketIndices fetch error:', err);
                 }
-
-                // Handle network errors gracefully - don't log to console in production
-                const isNetworkError = err.message?.includes('Failed to fetch') ||
-                    err.message?.includes('NetworkError') ||
-                    !err.message;
-
-                if (isNetworkError) {
-                    // Only log in development mode
-                    if (process.env.NODE_ENV === 'development') {
-                        logger.warn('MarketIndices: Network error - server may be unavailable');
-                    }
-                } else {
-                    // Only log unexpected errors in development
-                    if (process.env.NODE_ENV === 'development') {
-                        logger.error('MarketIndices: Failed to fetch indices', err, { tickers });
-                    }
-                }
-                // Keep existing data if available, don't clear on error
             } finally {
                 setLoading(false);
             }
         };
 
         fetchIndices();
-        // Auto-refresh every minute
         const interval = setInterval(fetchIndices, 60000);
         return () => {
             clearInterval(interval);
-            if (abortController) {
-                abortController.abort();
-            }
+            if (abortController) (abortController as AbortController).abort();
         };
     }, []);
 
     return (
         <div className="flex items-center">
-            <div className="flex items-center gap-1.5 sm:gap-6 w-full justify-start sm:justify-center px-1 lg:px-0">
-                <div className="flex gap-1.5 sm:gap-3 flex-nowrap">
-                    {INDICES.map(({ ticker, name }) => {
-                        const stock = data[ticker];
-                        const price = stock?.currentPrice;
-                        const change = stock?.percentChange;
-                        // Default to positive (green) if 0 or unknown, similar to placeholder style
-                        const isPositive = (change || 0) >= 0;
+            <div className="flex items-center gap-3 w-full justify-start sm:justify-center px-1 lg:px-0">
+                {INDICES.map(({ ticker, name }) => {
+                    const stock = data[ticker];
+                    const price = stock?.currentPrice;
+                    const change = stock?.percentChange;
+                    const isPositive = (change || 0) >= 0;
 
-                        return (
-                            <div key={ticker} className="flex flex-col bg-[var(--clr-bg)] border border-[var(--clr-border-subtle)] rounded-md px-2 sm:px-3 py-1.5 min-w-[80px] sm:min-w-[100px] transition-all duration-200 cursor-default relative overflow-hidden hover:border-blue-500/40 hover:bg-[var(--clr-bg-hover)] animate-in fade-in duration-500" title={`${name} (${ticker})`}>
-                                <div className="flex items-center gap-1.5 mb-1">
-                                    <CompanyLogo ticker={ticker} size={16} className="rounded-sm" />
-                                    <span className="text-[0.6875rem] sm:text-xs font-bold text-[var(--clr-text)] m-0 tracking-wide">{ticker}</span>
+                    return (
+                        <div
+                            key={ticker}
+                            className="group flex flex-col justify-between
+                                bg-gray-50 dark:bg-white/5 
+                                hover:bg-white dark:hover:bg-white/10
+                                rounded-xl 
+                                px-4 py-2.5 
+                                min-w-[110px] sm:min-w-[130px] 
+                                transition-all duration-300 ease-out
+                                cursor-default 
+                                relative overflow-hidden
+                                shadow-sm hover:shadow-md
+                                border border-transparent hover:border-gray-100 dark:hover:border-white/10"
+                            title={`${name} (${ticker})`}
+                        >
+                            {/* Header: Logo + Ticker */}
+                            <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                    <CompanyLogo ticker={ticker} size={20} className="rounded-md" />
+                                    <span className="text-sm font-bold text-[var(--clr-text)] tracking-tight">{ticker}</span>
                                 </div>
-                                <div className="mt-1">
-                                    <div className="text-[0.8125rem] sm:text-[0.9375rem] font-extrabold text-[var(--clr-text)] font-mono my-0.5 sm:my-1 leading-tight tracking-tight">
-                                        {loading && !stock ? (
-                                            <span className="animate-pulse bg-gray-200 dark:bg-gray-700 h-6 w-24 block rounded"></span>
-                                        ) : (
-                                            `$${formatPrice(price)}`
-                                        )}
-                                    </div>
-                                    <div className={`flex items-center gap-1 text-[0.6875rem] sm:text-[0.8125rem] font-bold tracking-wide mt-0.5 ${isPositive ? 'text-[var(--clr-positive)]' : 'text-[var(--clr-negative)]'}`}>
-                                        {isPositive ? (
-                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                <polyline points="18 15 12 9 6 15" />
-                                            </svg>
-                                        ) : (
-                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                <polyline points="6 9 12 15 18 9" />
-                                            </svg>
-                                        )}
-                                        {loading && !stock ? (
-                                            <span className="animate-pulse bg-gray-200 dark:bg-gray-700 h-4 w-16 block rounded mt-1"></span>
-                                        ) : (
-                                            <span>{formatPercent(change)}</span>
-                                        )}
-                                    </div>
-                                </div>
+                                {/* Placeholder for sparkline or mini-indicator */}
                             </div>
-                        );
-                    })}
-                </div>
+
+                            {/* Price Section */}
+                            <div className="flex flex-col items-start gap-0.5">
+                                <span className="text-lg font-bold text-[var(--clr-text)] font-mono leading-none tracking-tight">
+                                    {loading && !stock ? (
+                                        <span className="animate-pulse bg-gray-200 dark:bg-gray-700 h-5 w-20 block rounded"></span>
+                                    ) : (
+                                        `$${formatPrice(price)}`
+                                    )}
+                                </span>
+
+                                <span className={`flex items-center gap-1 text-xs font-bold leading-none
+                                    ${isPositive ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}
+                                >
+                                    {loading && !stock ? (
+                                        <span className="animate-pulse bg-gray-200 dark:bg-gray-700 h-3 w-12 block rounded mt-1"></span>
+                                    ) : (
+                                        <>
+                                            <span>{isPositive ? '+' : ''}{formatPercent(change)}</span>
+                                        </>
+                                    )}
+                                </span>
+                            </div>
+                        </div>
+                    );
+                })}
             </div>
         </div>
     );
