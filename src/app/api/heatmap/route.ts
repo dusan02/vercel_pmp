@@ -10,7 +10,7 @@ import { getDateET, createETDate, toET } from '@/lib/utils/dateET';
 import { detectSession, nowET } from '@/lib/utils/timeUtils';
 
 const CACHE_KEY = 'heatmap-data';
-const CACHE_TTL = 600; // 10 minút (z pôvodných 30s)
+const CACHE_TTL = 900; // 15 minút (prekvitie s 10m cronom)
 const ETAG_BUCKET_SIZE = 5000; // 5 sekúnd
 
 const MAX_DATA_AGE_FOR_ETAG = 5 * 60 * 1000; // 5 minút - ak sú dáta staršie, nevrátime 304

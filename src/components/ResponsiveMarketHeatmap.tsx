@@ -161,26 +161,11 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
     if (!width || !height || width < minDimension || height < minDimension) {
       console.log('⚠️ Heatmap: Dimensions too small or not ready', { width, height, isMounted, isMobile, minDimension });
       return (
-        <div
-          className="absolute inset-0 flex flex-col items-center justify-center gap-2 z-40"
-          style={{
-            background: '#0f0f0f',
-          }}
-        >
-          <div
-            className="animate-pulse text-sm"
-            style={{
-              color: 'rgba(255, 255, 255, 0.7)',
-            }}
-          >
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 z-40 bg-white dark:bg-transparent">
+          <div className="animate-pulse text-sm text-gray-400">
             Measuring container... ({width}x{height})
           </div>
-          <div
-            className="text-xs"
-            style={{
-              color: 'rgba(255, 255, 255, 0.5)',
-            }}
-          >
+          <div className="text-xs text-gray-300">
             Min required: {minDimension}px
           </div>
         </div>
@@ -195,33 +180,12 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
 
     if (shouldShowLoading) {
       return (
-        <div
-          className="absolute inset-0 flex flex-col items-center justify-center gap-3 z-40"
-          style={{
-            background: '#0f0f0f',
-          }}
-        >
-          <div
-            className="animate-spin rounded-full border-b-2 border-white"
-            style={{
-              width: '32px',
-              height: '32px',
-            }}
-          />
-          <span
-            className="text-base font-semibold"
-            style={{
-              color: '#ffffff',
-            }}
-          >
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 z-40 bg-white dark:bg-transparent">
+          <div className="animate-spin rounded-full border-b-2 border-blue-600 w-8 h-8" />
+          <span className="text-base font-semibold text-gray-900 dark:text-white">
             Loading heatmap data...
           </span>
-          <span
-            className="text-sm text-center max-w-xs"
-            style={{
-              color: 'rgba(255, 255, 255, 0.6)',
-            }}
-          >
+          <span className="text-sm text-center max-w-xs text-gray-500 dark:text-gray-400">
             This may take up to 30 seconds on first load
           </span>
         </div>
@@ -231,13 +195,13 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
     // Error state
     if (error && (!data || data.length === 0)) {
       return (
-        <div className="absolute inset-0 flex items-center justify-center text-red-500 bg-black z-40">
+        <div className="absolute inset-0 flex items-center justify-center text-red-500 bg-white dark:bg-black z-40">
           <div className="text-center">
-            <p className="mb-2">Error loading heatmap</p>
-            <p className="text-sm text-gray-500">{error}</p>
+            <p className="mb-2 font-bold">Error loading heatmap</p>
+            <p className="text-sm text-gray-500 mb-4">{error}</p>
             <button
               onClick={() => refetch()}
-              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
             >
               Retry
             </button>
@@ -249,34 +213,14 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
     // No data state - REFAKTOROVANÝ
     if (!data || data.length === 0) {
       return (
-        <div
-          className="absolute inset-0 flex flex-col items-center justify-center gap-3 z-40"
-          style={{
-            background: '#0f0f0f',
-          }}
-        >
-          <div
-            className="text-6xl mb-2"
-            style={{
-              opacity: 0.3,
-            }}
-          >
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 z-40 bg-white dark:bg-transparent">
+          <div className="text-6xl mb-2 opacity-50 grayscale">
             📈
           </div>
-          <span
-            className="text-base font-semibold"
-            style={{
-              color: '#ffffff',
-            }}
-          >
+          <span className="text-base font-semibold text-gray-900 dark:text-white">
             No data available
           </span>
-          <span
-            className="text-sm"
-            style={{
-              color: 'rgba(255, 255, 255, 0.6)',
-            }}
-          >
+          <span className="text-sm text-gray-500 dark:text-gray-400">
             Heatmap data is loading...
           </span>
         </div>
