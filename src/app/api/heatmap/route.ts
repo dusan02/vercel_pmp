@@ -10,7 +10,7 @@ import { getDateET, createETDate, toET } from '@/lib/utils/dateET';
 import { detectSession, nowET } from '@/lib/utils/timeUtils';
 
 const CACHE_KEY = 'heatmap-data';
-const CACHE_TTL = 30; // 30 sekúnd
+const CACHE_TTL = 600; // 10 minút (z pôvodných 30s)
 const ETAG_BUCKET_SIZE = 5000; // 5 sekúnd
 
 const MAX_DATA_AGE_FOR_ETAG = 5 * 60 * 1000; // 5 minút - ak sú dáta staršie, nevrátime 304
@@ -379,7 +379,7 @@ export async function GET(request: NextRequest) {
     // This prevents using stale regularClose from yesterday which causes incorrect % changes
     const todayDateStr = getDateET(etNow);
     const todayDateObj = createETDate(todayDateStr);
-    
+
     for (const dr of dailyRefs) {
       if (!previousCloseMap.has(dr.symbol)) {
         previousCloseMap.set(dr.symbol, dr.previousClose);
@@ -449,7 +449,7 @@ export async function GET(request: NextRequest) {
     if (tickersNeedingPrevClose.length > 0) {
       const onDemandStartTime = Date.now();
       console.log(`🔄 On-demand fetching previousClose for ${missingPrevCloseBefore} tickers (max 50, timeout 600ms)...`);
-      
+
       try {
         const { fetchPreviousClosesBatchAndPersist } = await import('@/lib/utils/onDemandPrevClose');
         const onDemandResults = await fetchPreviousClosesBatchAndPersist(
@@ -461,11 +461,11 @@ export async function GET(request: NextRequest) {
             maxConcurrent: 5        // 5 concurrent fetches
           }
         );
-        
+
         onDemandResults.forEach((prevClose, ticker) => {
           prevCloseBatchMap.set(ticker, prevClose);
         });
-        
+
         const onDemandDuration = Date.now() - onDemandStartTime;
         const missingPrevCloseAfter = missingPrevCloseBefore - prevCloseBatchMap.size;
         console.log(`✅ On-demand prevClose: ${missingPrevCloseBefore} missing → ${prevCloseBatchMap.size} fetched → ${missingPrevCloseAfter} still missing (${onDemandDuration}ms, persisted to DB)`);
@@ -595,9 +595,9 @@ export async function GET(request: NextRequest) {
       // to appear stale even though they were updated recently.
       const thresholdMin =
         session === 'live' ? 5 :
-        session === 'pre' ? 30 :
-        session === 'after' ? 30 :
-        60;
+          session === 'pre' ? 30 :
+            session === 'after' ? 30 :
+              60;
       const nowMs = etNow.getTime();
       const isStale = currentPrice > 0 && priceTsMs > 0 && (nowMs - priceTsMs) > thresholdMin * 60_000;
       const lastUpdatedIso = priceTsMs ? new Date(priceTsMs).toISOString() : undefined;
