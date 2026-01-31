@@ -276,49 +276,19 @@ const EarningsLoader = () => (
 const EarningsError = ({ error, onRetry }: { error: string; onRetry: () => void }) => (
   <section className="todays-earnings">
     <EarningsHeader />
-    <div
-      className="flex flex-col items-center justify-center gap-3 py-16 px-4 text-center"
-      style={{
-        background: '#0f0f0f',
-      }}
-    >
-      <div
-        className="text-6xl mb-2"
-        style={{
-          opacity: 0.3,
-        }}
-      >
+    <div className="flex flex-col items-center justify-center gap-3 py-16 px-4 text-center bg-white dark:bg-transparent rounded-xl border border-gray-100 dark:border-gray-800">
+      <div className="text-6xl mb-2 opacity-50 grayscale">
         ⚠️
       </div>
-      <span
-        className="text-base font-semibold"
-        style={{
-          color: '#ffffff',
-        }}
-      >
+      <span className="text-base font-semibold text-gray-900 dark:text-white">
         Error loading earnings data
       </span>
-      <span
-        className="text-sm max-w-xs mb-4"
-        style={{
-          color: 'rgba(255, 255, 255, 0.6)',
-        }}
-      >
+      <span className="text-sm max-w-xs mb-4 text-gray-500 dark:text-gray-400">
         {error}
       </span>
       <button
         onClick={onRetry}
-        className="px-5 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold transition-colors"
-        style={{
-          WebkitTapHighlightColor: 'transparent',
-          touchAction: 'manipulation',
-        }}
-        onTouchStart={(e) => {
-          e.currentTarget.style.opacity = '0.8';
-        }}
-        onTouchEnd={(e) => {
-          e.currentTarget.style.opacity = '1';
-        }}
+        className="px-5 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold transition-colors hover:bg-blue-700"
       >
         Try Again
       </button>
@@ -330,43 +300,20 @@ const EarningsError = ({ error, onRetry }: { error: string; onRetry: () => void 
 const EarningsEmpty = () => (
   <section className="todays-earnings">
     <EarningsHeader />
-    <div
-      className="flex flex-col items-center justify-center gap-3 py-16 px-4 text-center"
-      style={{
-        background: '#0f0f0f',
-      }}
-    >
-      <div
-        className="text-6xl mb-2"
-        style={{
-          opacity: 0.3,
-        }}
-      >
+    <div className="flex flex-col items-center justify-center gap-3 py-16 px-4 text-center bg-white dark:bg-transparent rounded-xl border border-gray-100 dark:border-gray-800">
+      <div className="text-6xl mb-2 opacity-50 grayscale">
         📅
       </div>
-      <span
-        className="text-base font-semibold"
-        style={{
-          color: '#ffffff',
-        }}
-      >
+      <span className="text-base font-semibold text-gray-900 dark:text-white">
         No earnings scheduled for today
       </span>
-      <p
-        className="text-sm max-w-xs"
-        style={{
-          color: 'rgba(255, 255, 255, 0.6)',
-        }}
-      >
+      <p className="text-sm max-w-xs text-gray-500 dark:text-gray-400">
         For the full list, visit{' '}
         <a
           href="https://www.earningstable.com"
           target="_blank"
           rel="noopener noreferrer"
-          className="underline font-semibold"
-          style={{
-            color: '#3b82f6',
-          }}
+          className="underline font-semibold text-blue-600 hover:text-blue-700"
         >
           www.earningstable.com
         </a>

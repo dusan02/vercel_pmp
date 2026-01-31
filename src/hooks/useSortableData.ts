@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 
-export type SortKey = "ticker" | "marketCap" | "currentPrice" | "percentChange" | "marketCapDiff" | "sector" | "industry" | "estimate_eps" | "actual_eps" | "estimate_revenue" | "actual_revenue" | "percent_change" | "market_cap_diff";
+export type SortKey = "ticker" | "marketCap" | "currentPrice" | "percentChange" | "marketCapDiff" | "sector" | "industry" | "estimate_eps" | "actual_eps" | "estimate_revenue" | "actual_revenue" | "percent_change" | "market_cap_diff" | "value";
 
 export interface UseSortableDataOptions<T> {
   items: T[];
@@ -9,8 +9,8 @@ export interface UseSortableDataOptions<T> {
 }
 
 export function useSortableData<T extends Record<string, any>>(
-  items: T[], 
-  initKey?: SortKey, 
+  items: T[],
+  initKey?: SortKey,
   initAsc: boolean = false,
   storageKey?: string // Optional localStorage key for persistence
 ): {
@@ -38,29 +38,29 @@ export function useSortableData<T extends Record<string, any>>(
 
   const sorted = useMemo(() => {
     if (!sortKey) return items;
-    
+
     const data = [...items];
     data.sort((a, b) => {
       const valA = a[sortKey];
       const valB = b[sortKey];
-      
+
       // Handle null/undefined values
       if (valA == null && valB == null) return 0;
       if (valA == null) return 1;
       if (valB == null) return -1;
-      
+
       // Handle numbers
       if (typeof valA === 'number' && typeof valB === 'number') {
         return ascending ? valA - valB : valB - valA;
       }
-      
+
       // Handle strings
       if (typeof valA === 'string' && typeof valB === 'string') {
-        return ascending 
+        return ascending
           ? valA.localeCompare(valB)
           : valB.localeCompare(valA);
       }
-      
+
       // Fallback comparison
       if (valA === valB) return 0;
       return (valA > valB ? 1 : -1) * (ascending ? 1 : -1);

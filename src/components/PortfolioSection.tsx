@@ -54,13 +54,21 @@ export function PortfolioSection({
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  // Pre-calculate value (Daily P&L) for sorting
+  const enhancedPortfolioStocks = useMemo(() => {
+    return portfolioStocks.map(stock => ({
+      ...stock,
+      value: calculatePortfolioValue(stock) || 0
+    }));
+  }, [portfolioStocks, calculatePortfolioValue]);
+
   // Sorting Logic
   const {
     sorted: sortedPortfolioStocks,
     sortKey,
     ascending,
     requestSort
-  } = useSortableData(portfolioStocks, 'ticker', true);
+  } = useSortableData(enhancedPortfolioStocks, 'ticker', true);
 
   // Calculate Global Stats (Daily Change)
   const totalDailyChange = useMemo(() => {
@@ -181,6 +189,7 @@ export function PortfolioSection({
     {
       key: 'value',
       header: 'Daily P&L',
+      sortable: true,
       align: 'right',
       render: (stock) => {
         const value = calculatePortfolioValue(stock);
@@ -304,39 +313,7 @@ export function PortfolioSection({
         </div>
       )}
 
-      {/* Search Bar */}
-      <div className="px-4 mb-6 relative">
-        <div className="relative">
-          <input
-            ref={searchInputRef}
-            type="search"
-            placeholder="Search stocks to add..."
-            value={portfolioSearchTerm}
-            onChange={(e) => setPortfolioSearchTerm(e.target.value)}
-            onFocus={() => setShowPortfolioSearch(true)}
-            onBlur={() => setTimeout(() => setShowPortfolioSearch(false), 200)}
-            className="w-full px-4 py-2 border rounded-lg dark:bg-black/20 dark:border-gray-700"
-          />
-          {showPortfolioSearch && portfolioSearchResults.length > 0 && (
-            <div className="absolute top-100 left-0 right-0 z-50 bg-white dark:bg-gray-800 shadow-xl border rounded-lg mt-1 max-h-60 overflow-y-auto">
-              {portfolioSearchResults.map((stock) => (
-                <button
-                  key={stock.ticker}
-                  className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/5 border-b last:border-0"
-                  onClick={() => {
-                    onAddStock(stock.ticker);
-                    setPortfolioSearchTerm('');
-                  }}
-                >
-                  <span className="font-bold">{stock.ticker}</span> - {getCompanyName(stock.ticker)}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Visualizations: Order -> Donuts -> Treemap -> Table */}
+      {/* Visualizations: Order -> Donuts -> Treemap */}
       {portfolioStocks.length > 0 && (
         <div className="mb-8 space-y-8 px-4">
           {/* 1. Donut Charts */}
@@ -349,6 +326,40 @@ export function PortfolioSection({
           <PortfolioPerformanceTreemap data={chartData} />
         </div>
       )}
+
+      {/* Search Bar - Moved above table */}
+      <div className="px-4 mb-6 relative">
+        <div className="relative">
+          <input
+            ref={searchInputRef}
+            type="search"
+            placeholder="Search stocks to add..."
+            value={portfolioSearchTerm}
+            onChange={(e) => setPortfolioSearchTerm(e.target.value)}
+            onFocus={() => setShowPortfolioSearch(true)}
+            onBlur={() => setTimeout(() => setShowPortfolioSearch(false), 200)}
+            className="w-full px-4 py-2 border rounded-lg dark:bg-black/20 dark:border-gray-700 focus:ring-2 focus:ring-blue-500/50 outline-none transition-all"
+          />
+          {showPortfolioSearch && portfolioSearchResults.length > 0 && (
+            <div className="absolute top-full left-0 right-0 z-[60] bg-white dark:bg-gray-800 shadow-xl border rounded-lg mt-1 max-h-60 overflow-y-auto ring-1 ring-black/5">
+              {portfolioSearchResults.map((stock) => (
+                <button
+                  key={stock.ticker}
+                  className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/5 border-b last:border-0 border-gray-100 dark:border-gray-700/50 transition-colors"
+                  onClick={() => {
+                    onAddStock(stock.ticker);
+                    setPortfolioSearchTerm('');
+                  }}
+                >
+                  <span className="font-bold text-blue-600 dark:text-blue-400">{stock.ticker}</span>
+                  <span className="mx-2 text-gray-300">|</span>
+                  <span className="text-sm font-medium">{getCompanyName(stock.ticker)}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* 3. Table */}
       <UniversalTable

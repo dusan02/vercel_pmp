@@ -267,7 +267,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
             </h2>
           </div>
           <div className="flex flex-1 items-center justify-end gap-3 min-w-0">
-            <div className="w-72">
+            <div className="w-80 xl:w-96">
               <StockSearchBar
                 searchTerm={searchTerm}
                 onSearchChange={onSearchChange}
