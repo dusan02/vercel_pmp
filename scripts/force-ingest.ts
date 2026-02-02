@@ -1,81 +1,37 @@
-/**
- * Force ingest - ingest data even when market is closed (for testing)
- * Run: npx tsx scripts/force-ingest.ts
- * 
- * Note: Assumes .env.local is loaded by PM2 or manually via dotenv
- */
 
-// Ensure DATABASE_URL is set
-if (!process.env.DATABASE_URL) {
-  process.env.DATABASE_URL = 'file:./prisma/dev.db';
-}
-
-import { getUniverse } from '@/lib/redis/operations';
-import { ingestBatch } from '@/workers/polygonWorker';
+import { ingestBatch } from '../src/workers/polygonWorker';
+import { getAllTrackedTickers } from '../src/lib/utils/universeHelpers';
+import { logger } from '../src/lib/utils/logger';
 
 async function main() {
-  console.log('🔄 Starting FORCE ingest (ignoring market status)...');
-  console.log(`📊 DATABASE_URL: ${process.env.DATABASE_URL}`);
-  
   const apiKey = process.env.POLYGON_API_KEY;
   if (!apiKey) {
-    console.error('❌ POLYGON_API_KEY not configured');
+    console.error("❌ POLYGON_API_KEY not set");
     process.exit(1);
   }
-  
-  // Get universe
-  let tickers = await getUniverse('sp500');
-  if (tickers.length === 0) {
-    console.log('⚠️ Universe is empty, using getAllProjectTickers...');
-    const { getAllProjectTickers } = await import('@/data/defaultTickers');
-    tickers = getAllProjectTickers('pmp');
+
+  console.log("🚀 Starting FORCE ingest (bypassing timestamp checks)...");
+
+  // Get all tickers
+  const tickers = await getAllTrackedTickers();
+  console.log(`📊 Found ${tickers.length} tickers to force update.`);
+
+  const BATCH_SIZE = 50;
+
+  for (let i = 0; i < tickers.length; i += BATCH_SIZE) {
+    const batch = tickers.slice(i, i + BATCH_SIZE);
+    console.log(`Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(tickers.length / BATCH_SIZE)}...`);
+
+    // Force = true
+    await ingestBatch(batch, apiKey, true);
+
+    // Rate limit
+    if (i + BATCH_SIZE < tickers.length) {
+      await new Promise(r => setTimeout(r, 2000));
+    }
   }
-  
-  // Ingest first 100 tickers (can be increased)
-  const batchSize = 100;
-  const testBatch = tickers.slice(0, batchSize);
-  console.log(`📊 Ingesting ${testBatch.length} tickers (first ${batchSize} from universe)...`);
-  
-  try {
-    // Use force=true to bypass pricing state machine (for weekend/holiday ingest)
-    const results = await ingestBatch(testBatch, apiKey, true);
-    const successCount = results.filter(r => r.success).length;
-    
-    console.log(`\n✅ Ingest complete: ${successCount}/${testBatch.length} successful`);
-    console.log('\n📊 Results:');
-    results.forEach(r => {
-      if (r.success) {
-        console.log(`  ✅ ${r.symbol}: $${r.price.toFixed(2)} (${r.changePct > 0 ? '+' : ''}${r.changePct.toFixed(2)}%)`);
-      } else {
-        console.log(`  ❌ ${r.symbol}: ${r.error}`);
-      }
-    });
-    
-    // Check DB
-    console.log('\n🔍 Checking DB...');
-    const { PrismaClient } = await import('@prisma/client');
-    const prisma = new PrismaClient();
-    
-    const count = await prisma.sessionPrice.count({
-      where: {
-        symbol: { in: testBatch }
-      }
-    });
-    
-    console.log(`✅ Found ${count} records in SessionPrice table`);
-    
-    await prisma.$disconnect();
-    
-  } catch (error) {
-    console.error('❌ Error:', error);
-    process.exit(1);
-  }
-  
-  process.exit(0);
+
+  console.log("✅ Force ingest complete.");
 }
 
-main().catch(error => {
-  console.error('❌ Error:', error);
-  process.exit(1);
-});
-
+main().catch(console.error);

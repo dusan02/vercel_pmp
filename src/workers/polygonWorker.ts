@@ -217,62 +217,109 @@ async function upsertToDB(
   marketCapDiff: number,
   isStaticUpdateLocked: boolean = false,
   lastChangePctFromCache: number | null | undefined = undefined
-): Promise<boolean> {
-  if (!normalized) return false;
+): Promise<{ success: boolean; effectiveChangePct: number }> {
+  if (!normalized) return { success: false, effectiveChangePct: 0 };
 
   try {
     // CRITICAL: Use getDateET() for date, not UTC midnight!
-    // This prevents date boundary issues (e.g., 23:00 ET = 04:00 UTC next day)
     const dateET = getDateET(); // YYYY-MM-DD string in ET
     const today = createETDate(dateET); // ET midnight (DST-safe)
 
-    // Get last trading day for previousClose date (the day when previousClose actually happened)
-    // This ensures latestPrevCloseDate matches the actual trading day of the previous close
+    // Get last trading day for previousClose date
     const lastTradingDay = getLastTradingDay();
 
-    // Upsert ticker if not exists
-    // Update price/market cap columns for sorting
-    if (symbol === 'GOOG' || symbol === 'GOOGL') {
-      console.log(`🔍 Debug DB Upsert ${symbol}: Attempting to set latestPrevClose=${previousClose || 0}, latestPrevCloseDate=${lastTradingDay.toISOString()}`);
+    // 1. Fetch existing ticker to check staleness and preserve data
+    const existingTicker = await prisma.ticker.findUnique({
+      where: { symbol },
+      select: {
+        lastPriceUpdated: true,
+        lastChangePct: true,
+        latestPrevClose: true,
+        // Fetch other fields if we need to merge? (Usually not needed for this logic)
+      }
+    });
+
+    // 2. Staleness Check
+    // If we have an existing price update that is NEWER than the incoming snapshot,
+    // we should NOT overwrite the price/change/diff.
+    // However, if previousClose is provided, we might still want to update that?
+    // Generally, snapshots usually come in order, but forceful ingest or racing workers can cause out-of-order.
+    let skipPriceUpdate = false;
+    if (existingTicker?.lastPriceUpdated && normalized.timestamp < existingTicker.lastPriceUpdated) {
+      if (!isStaticUpdateLocked) {
+        // Only log if not locked (during lock we might be reprocessing old data intentionally?)
+        // Actually, even in lock, we shouldn't overwrite new data with old data.
+        console.log(`⏭️ Skipping price update for ${symbol} - incoming data is older (${normalized.timestamp.toISOString()} < ${existingTicker.lastPriceUpdated.toISOString()})`);
+      }
+      skipPriceUpdate = true;
     }
 
-    // CRITICAL: During static update lock, preserve lastChangePct if no prevClose
-    // This prevents UI from showing "percentages disappeared" during lock window
-    // We still update price and timestamp, but keep last valid percentage
-    // OPTIMIZATION: Use cached value from batch query if available
+    // 3. Resolve Change Pct to Use
+    // If we have a valid reference, use the calculated changePct.
+    // If NOT (e.g. no prevClose), try to preserve existing changePct from DB or cache.
     let changePctToUse = normalized.changePct;
-    if (isStaticUpdateLocked && !previousClose) {
+    const hasValidReference = normalized.reference && normalized.reference.used !== null;
+
+    if (!hasValidReference) {
+      // Logic from original code "isStaticUpdateLocked && !previousClose" extended to general case
+      // If we computed 0% because of missing reference, DO NOT SAVE 0%.
+      // Use cached value or existing DB value.
       if (lastChangePctFromCache !== undefined && lastChangePctFromCache !== null) {
-        // Use cached value (from batch query)
         changePctToUse = lastChangePctFromCache;
-      } else {
-        // Fallback to per-ticker query (if batch failed)
-        const existingTicker = await prisma.ticker.findUnique({
-          where: { symbol },
-          select: { lastChangePct: true }
-        });
-        if (existingTicker && existingTicker.lastChangePct !== null && existingTicker.lastChangePct !== undefined) {
-          changePctToUse = existingTicker.lastChangePct;
-        }
+      } else if (existingTicker?.lastChangePct !== null && existingTicker?.lastChangePct !== undefined) {
+        changePctToUse = existingTicker.lastChangePct;
       }
-      if (changePctToUse !== normalized.changePct) {
-        console.log(`⚠️  ${symbol}: Preserving lastChangePct=${changePctToUse} during lock (no prevClose)`);
-      }
+
+      // Log limits: only if it changed significantly or first time
+      // console.log(`⚠️ ${symbol}: No reference price (prevClose=${previousClose}), preserving lastChangePct=${changePctToUse}`);
     }
 
+    // If skipping price update, forced to use existing pct (so we return the correct "current" pct)
+    if (skipPriceUpdate && existingTicker?.lastChangePct !== null && existingTicker?.lastChangePct !== undefined) {
+      changePctToUse = existingTicker.lastChangePct;
+    }
+
+    // 4. Perform Upsert (conditional based on staleness)
+    // We always want to upsert to ensure the "Ticker" record exists (create case),
+    // but update only minimal fields if stale.
+
+    if (skipPriceUpdate) {
+      // Only update "static" or non-price fields if needed, OR just ensure existence.
+      // For now, if price is skipped, we basically do nothing for the Ticker update 
+      // regarding price, but we might check if we need to update previousClose?
+      // Let's assume if price is old, everything in this snapshot is old.
+      // BUT, we might be here just to update 'latestPrevClose' if we learned it recently?
+      // upsertToDB is mainly driven by snapshot ingest.
+
+      // If it's a "create" case (existingTicker is null), skipPriceUpdate is false.
+      // So here existingTicker is NOT null.
+
+      // Maybe just update Reference info if provided?
+      if (previousClose && existingTicker && (!existingTicker.latestPrevClose || previousClose !== existingTicker.latestPrevClose)) {
+        await prisma.ticker.update({
+          where: { symbol },
+          data: {
+            latestPrevClose: previousClose,
+            latestPrevCloseDate: lastTradingDay,
+            updatedAt: new Date()
+          }
+        });
+      }
+
+      // Return existing change pct as the "effective" one
+      return { success: true, effectiveChangePct: changePctToUse };
+    }
+
+    // Standard Upsert (New Data or Create)
     await prisma.ticker.upsert({
       where: { symbol },
       update: {
-        // Only update updatedAt and dynamic columns
         updatedAt: new Date(),
         lastPrice: normalized.price,
-        // Preserve lastChangePct during lock if no prevClose (prevents UI flicker)
         lastChangePct: changePctToUse,
         lastMarketCap: marketCap,
         lastMarketCapDiff: marketCapDiff,
         lastPriceUpdated: normalized.timestamp,
-        // Always update latestPrevClose AND latestPrevCloseDate together if we have previousClose
-        // This ensures consistency - the date must match when the previous close actually happened
         ...(previousClose ? {
           latestPrevClose: previousClose,
           latestPrevCloseDate: lastTradingDay
@@ -280,10 +327,9 @@ async function upsertToDB(
       },
       create: {
         symbol,
-        // Static fields will be populated by bootstrap script
         updatedAt: new Date(),
         lastPrice: normalized.price,
-        lastChangePct: normalized.changePct,
+        lastChangePct: changePctToUse,
         lastMarketCap: marketCap,
         lastMarketCapDiff: marketCapDiff,
         lastPriceUpdated: normalized.timestamp,
@@ -292,90 +338,56 @@ async function upsertToDB(
       }
     });
 
-    // Upsert session price (only if newer - idempotent)
-    // CRITICAL: Check pricing state to prevent overwriting frozen prices
+    // Upsert session price (SessionPrice)
+    // Same logic: check staleness against SessionPrice table
     const pricingState = getPricingState(nowET());
-    const existing = await prisma.sessionPrice.findUnique({
-      where: {
-        symbol_date_session: {
-          symbol,
-          date: today,
-          session
-        }
-      }
+    const existingSession = await prisma.sessionPrice.findUnique({
+      where: { symbol_date_session: { symbol, date: today, session } }
     });
 
-    // Check if we can overwrite based on pricing state
-    const canOverwrite = existing && existing.lastPrice && existing.lastPrice > 0
+    const sessionCanOverwrite = existingSession && existingSession.lastPrice && existingSession.lastPrice > 0
       ? canOverwritePrice(
         pricingState,
-        { price: existing.lastPrice, timestamp: existing.lastTs, session: existing.session },
+        { price: existingSession.lastPrice, timestamp: existingSession.lastTs, session: existingSession.session },
         { price: normalized.price, timestamp: normalized.timestamp }
       )
-      : true; // No existing price or invalid existing, can always write
+      : true;
 
-    // Only update if can overwrite and incoming timestamp is newer or equal
-    if (canOverwrite && (!existing || normalized.timestamp >= existing.lastTs)) {
+    if (sessionCanOverwrite && (!existingSession || normalized.timestamp >= existingSession.lastTs)) {
       await prisma.sessionPrice.upsert({
-        where: {
-          symbol_date_session: {
-            symbol,
-            date: today,
-            session
-          }
-        },
+        where: { symbol_date_session: { symbol, date: today, session } },
         update: {
           lastPrice: normalized.price,
           lastTs: normalized.timestamp,
-          changePct: normalized.changePct,
+          changePct: changePctToUse, // Use the resolved pct
           source: normalized.quality,
           quality: normalized.quality,
           updatedAt: new Date()
         },
         create: {
-          symbol,
-          date: today,
-          session,
+          symbol, date: today, session,
           lastPrice: normalized.price,
           lastTs: normalized.timestamp,
-          changePct: normalized.changePct,
+          changePct: changePctToUse, // Use the resolved pct
           source: normalized.quality,
           quality: normalized.quality
         }
       });
-    } else {
-      if (existing) {
-        console.log(`⏭️ Skipping ${symbol} - existing data is newer (${existing.lastTs} > ${normalized.timestamp})`);
-      } else {
-        console.log(`⏭️ Skipping ${symbol} - cannot overwrite (frozen state or invalid price)`);
-      }
     }
 
     // Upsert daily ref if previous close is available
     if (previousClose) {
       await prisma.dailyRef.upsert({
-        where: {
-          symbol_date: {
-            symbol,
-            date: today
-          }
-        },
-        update: {
-          previousClose,
-          updatedAt: new Date()
-        },
-        create: {
-          symbol,
-          date: today,
-          previousClose
-        }
+        where: { symbol_date: { symbol, date: today } },
+        update: { previousClose, updatedAt: new Date() },
+        create: { symbol, date: today, previousClose }
       });
     }
 
-    return true;
+    return { success: true, effectiveChangePct: changePctToUse };
   } catch (error) {
     console.error(`Error upserting ${symbol} to DB:`, error);
-    return false;
+    return { success: false, effectiveChangePct: normalized ? normalized.changePct : 0 };
   }
 }
 
@@ -854,12 +866,14 @@ export async function ingestBatch(
       // Pass isStaticUpdateLocked to preserve lastChangePct during lock
       // Pass cached lastChangePct to avoid per-ticker query during lock
       const cachedLastChangePct = lastChangePctMap.get(symbol);
-      const dbSuccess = await upsertToDB(symbol, session, normalized, previousClose, marketCap, marketCapDiff, isStaticUpdateLocked, cachedLastChangePct);
+      const { success: dbSuccess, effectiveChangePct } = await upsertToDB(
+        symbol, session, normalized, previousClose, marketCap, marketCapDiff, isStaticUpdateLocked, cachedLastChangePct
+      );
 
       // Write to Redis (atomic operation)
       const priceData: PriceData = {
         p: normalized.price,
-        change: normalized.changePct,
+        change: effectiveChangePct, // CRITICAL: Use resolved effective percent, not normalized (which might be 0)
         ts: normalized.timestamp.getTime(),
         source: normalized.quality,
         quality: normalized.quality
@@ -869,7 +883,7 @@ export async function ingestBatch(
       const redisSession = mapToRedisSession(session);
 
       // Atomic update: last price + heatmap
-      await atomicUpdatePrice(redisSession, symbol, priceData, normalized.changePct);
+      await atomicUpdatePrice(redisSession, symbol, priceData, effectiveChangePct);
 
       // Get ticker info for name/sector
       const ticker = await prisma.ticker.findUnique({
@@ -884,7 +898,7 @@ export async function ingestBatch(
         price: normalized.price,
         marketCap,
         marketCapDiff,
-        changePct: normalized.changePct,
+        changePct: effectiveChangePct, // Use effective pct
         name: ticker?.name ?? undefined,
         sector: ticker?.sector ?? undefined,
         industry: ticker?.industry ?? undefined
@@ -911,7 +925,7 @@ export async function ingestBatch(
         checkAndUpdateStats('price', normalized.price),
         checkAndUpdateStats('cap', marketCap),
         checkAndUpdateStats('capdiff', marketCapDiff),
-        checkAndUpdateStats('chg', Math.round(normalized.changePct * 10000))
+        checkAndUpdateStats('chg', Math.round(effectiveChangePct * 10000))
       ]);
 
       // Publish to Redis Pub/Sub (for WebSocket)
@@ -920,7 +934,7 @@ export async function ingestBatch(
       results.push({
         symbol,
         price: normalized.price,
-        changePct: normalized.changePct,
+        changePct: effectiveChangePct,
         timestamp: normalized.timestamp,
         quality: normalized.quality,
         success: dbSuccess
