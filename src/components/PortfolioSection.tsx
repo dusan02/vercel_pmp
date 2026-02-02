@@ -313,19 +313,7 @@ export function PortfolioSection({
         </div>
       )}
 
-      {/* Visualizations: Order -> Donuts -> Treemap */}
-      <div className="mb-8 space-y-8 px-4">
-        {/* 1. Donut Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <PortfolioSectorDistributionChart data={chartData} />
-          <PortfolioStockDistributionChart data={chartData} />
-        </div>
-
-        {/* 2. Heatmap */}
-        {portfolioStocks.length > 0 && <PortfolioPerformanceTreemap data={chartData} />}
-      </div>
-
-      {/* Search Bar - Moved above table */}
+      {/* Search Bar - Moved above visualizations for better access */}
       <div className="px-4 mb-6 relative">
         <div className="relative">
           <input
@@ -357,6 +345,18 @@ export function PortfolioSection({
             </div>
           )}
         </div>
+      </div>
+
+      {/* Visualizations: Order -> Donuts -> Treemap */}
+      <div className="mb-8 space-y-8 px-4">
+        {/* 1. Donut Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <PortfolioSectorDistributionChart data={chartData} />
+          <PortfolioStockDistributionChart data={chartData} />
+        </div>
+
+        {/* 2. Heatmap */}
+        {portfolioStocks.length > 0 && <PortfolioPerformanceTreemap data={chartData} />}
       </div>
 
       {/* 3. Table */}

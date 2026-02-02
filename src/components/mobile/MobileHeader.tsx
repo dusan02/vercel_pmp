@@ -15,13 +15,13 @@ interface MobileHeaderProps {
 export function MobileHeader({ onLogoClick }: MobileHeaderProps) {
   return (
     <header className="mobile-app-header">
-      <div className="mobile-app-header-content">
+      <div className="flex items-center justify-between w-full px-4 py-2 h-full">
         <div
-          className="mobile-app-brand cursor-pointer"
+          className="flex items-center gap-2 cursor-pointer"
           onClick={onLogoClick}
         >
-          <BrandLogo />
-          <span className="mobile-app-title">PreMarketPrice</span>
+          <BrandLogo size={24} />
+          <span className="font-bold text-sm tracking-tight text-white">PreMarketPrice</span>
         </div>
         <div className="flex-shrink-0">
           <LoginButton />
