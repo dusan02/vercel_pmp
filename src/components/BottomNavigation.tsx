@@ -63,9 +63,16 @@ export function BottomNavigation({ activeSection, onSectionChange }: BottomNavig
   };
 
   return (
-    <div
-      className="lg:hidden fixed bottom-0 left-0 w-full border-t border-gray-800 z-[100] pb-safe"
-      style={{ backgroundColor: '#0f0f0f' }}
+    <nav
+      role="navigation"
+      aria-label="Main navigation"
+      className="lg:hidden fixed bottom-0 left-0 w-full border-t border-gray-800 z-[110]"
+      style={{
+        backgroundColor: '#0f0f0f',
+        paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 0.5rem)',
+        paddingLeft: 'env(safe-area-inset-left, 0px)',
+        paddingRight: 'env(safe-area-inset-right, 0px)'
+      }}
     >
       <div className="flex justify-around items-center h-16">
         {navItems.map((item) => {
@@ -76,15 +83,20 @@ export function BottomNavigation({ activeSection, onSectionChange }: BottomNavig
             <button
               key={item.id}
               onClick={() => handleNavigation(item)}
-              className={`flex flex-col items-center justify-center w-full h-full active:bg-gray-100 dark:active:bg-gray-800 transition-colors ${active ? 'text-blue-600' : 'text-[var(--clr-subtext)]'
+              className={`flex flex-col items-center justify-center w-full h-full transition-all rounded-lg
+                ${active
+                  ? 'text-blue-600 bg-blue-600/10'
+                  : 'text-[var(--clr-subtext)] active:bg-gray-800'
                 }`}
               aria-label={item.label}
+              aria-current={active ? 'page' : undefined}
+              style={{ minWidth: '44px', minHeight: '44px' }}
             >
               <Icon size={24} strokeWidth={active ? 2.5 : 2} />
             </button>
           );
         })}
       </div>
-    </div>
+    </nav>
   );
 }

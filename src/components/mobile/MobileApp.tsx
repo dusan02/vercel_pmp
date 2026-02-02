@@ -63,7 +63,7 @@ export function MobileApp({ children }: MobileAppProps) {
         height: 'var(--app-height, 100dvh)',
         position: 'fixed',
         inset: 0,
-        zIndex: 50 // Ensure it's above other content but below modals
+        zIndex: 40 // Below navigation (z-100) to prevent conflicts
       }}
     >
       {children}
