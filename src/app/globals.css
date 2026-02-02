@@ -355,7 +355,6 @@
   /* Tabular numbers for alignment */
   .tabular-nums {
     font-variant-numeric: tabular-nums;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   }
 
   /* Utility Classes */
