@@ -221,10 +221,11 @@ export async function GET(request: NextRequest) {
     const today = createETDate(todayYMD);       // ET midnight (UTC instant)
     const tomorrow = createETDate(tomorrowYMD); // next ET midnight
 
-    // 24h okno: od teraz späť 24 hodín (instant-based)
+    // 24h okno: od teraz späť 7 dní (na pokrytie víkendov/sviatkov)
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-    console.log(`📅 Date range: ${dayAgo.toISOString()} to ${tomorrow.toISOString()} (last 24 hours for heatmap.today)`);
+    console.log(`📅 Date range: ${oneWeekAgo.toISOString()} to ${tomorrow.toISOString()} (last 7 days for DailyRef fallback)`);
 
     // Parallel fetch SessionPrice and DailyRef for better performance
     let allSessionPrices: SessionPrice[] = [];
@@ -247,7 +248,7 @@ export async function GET(request: NextRequest) {
         prisma.dailyRef.findMany({
           where: {
             symbol: { in: tickerSymbols },
-            date: { gte: dayAgo, lte: today }, // <= today to get last trading day (24h okno)
+            date: { gte: oneWeekAgo, lte: today }, // <= today to get last trading day
           },
           orderBy: {
             date: 'desc',
@@ -259,7 +260,7 @@ export async function GET(request: NextRequest) {
       allDailyRefs = dailyRefsResult;
 
       console.log(`💰 Found ${allSessionPrices.length} SessionPrice records`);
-      console.log(`📊 Found ${allDailyRefs.length} DailyRef records`);
+      console.log(`📊 Found ${allDailyRefs.length} DailyRef records (last 7 days state)`);
     } catch (dbError) {
       console.error('❌ Error fetching SessionPrice or DailyRef:', dbError);
       // Fallback to empty arrays
@@ -311,19 +312,16 @@ export async function GET(request: NextRequest) {
       console.warn(`⚠️ Low data freshness: Only ${recentPrices.length}/${sessionPrices.length} records from last hour`);
     }
 
-    // Helper funkcia pre získanie najnovších DailyRef pre každý ticker (manuálne distinct)
-    // Pre DailyRef: berieme prvý záznam (už zoradené podľa date desc)
-    const getLatestDailyRefs = (records: typeof allDailyRefs) => {
-      const refMap = new Map<string, typeof allDailyRefs[0]>();
-      for (const dr of records) {
-        if (!refMap.has(dr.symbol)) {
-          refMap.set(dr.symbol, dr);
-        }
+    // DailyRefs are already sorted by date desc
+    // We just want the FIRST one for each ticker, as that is the "most recent" one
+    // But we need to keep all of them temporarily to determine "is today"
+    const latestDailyRefsMap = new Map<string, typeof allDailyRefs[0]>();
+    for (const dr of allDailyRefs) {
+      if (!latestDailyRefsMap.has(dr.symbol)) {
+        latestDailyRefsMap.set(dr.symbol, dr);
       }
-      return Array.from(refMap.values());
-    };
-
-    const dailyRefs = getLatestDailyRefs(allDailyRefs);
+    }
+    const dailyRefs = Array.from(latestDailyRefsMap.values());
     console.log(`📊 Unique DailyRef records: ${dailyRefs.length}`);
 
     // Vytvor mapy pre rýchle lookup
@@ -367,34 +365,68 @@ export async function GET(request: NextRequest) {
     const previousCloseMap = new Map<string, number>();
     const regularCloseMap = new Map<string, number>();
 
-    // First, use denormalized latestPrevClose from Ticker
-    tickerMap.forEach((info, symbol) => {
-      if (info.latestPrevClose && info.latestPrevClose > 0) {
-        previousCloseMap.set(symbol, info.latestPrevClose);
-      }
-    });
-
     // Fallback: Use DailyRef for tickers without latestPrevClose
-    // CRITICAL: Only use regularClose from TODAY (not previous day)
-    // This prevents using stale regularClose from yesterday which causes incorrect % changes
+    // CRITICAL: Logic update for "Monday Problem"
+    // 1. If DailyRef is from TODAY, use its previousClose (which is Yesterday's Close).
+    // 2. If DailyRef is from OLDER (e.g. Friday), use its regularClose (e.g. Friday's Close).
     const todayDateStr = getDateET(etNow);
     const todayDateObj = createETDate(todayDateStr);
+    const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][etNow.getDay()];
+
+    // Debug stats container
+    const debug = request.nextUrl.searchParams.get('debug') === 'true';
+    const debugStats = {
+      totalDailyRefs: 0,
+      dailyRefsUsedConfig: {
+        todayDateStr: todayDateStr,
+        todayName: dayName,
+        isMonday: etNow.getDay() === 1
+      },
+      counts: {
+        totalTickers: tickerSymbols.length,
+        dailyRefToday: 0,     // Used previousClose from Today's record
+        dailyRefOlder: 0,     // Used regularClose from Older record
+        tickerFallback: 0,    // Used Ticker.latestPrevClose
+        missing: 0            // No prev close found
+      }
+    };
+
+    debugStats.totalDailyRefs = dailyRefs.length;
 
     for (const dr of dailyRefs) {
-      if (!previousCloseMap.has(dr.symbol)) {
-        previousCloseMap.set(dr.symbol, dr.previousClose);
-      }
+      const drDate = new Date(dr.date);
+      // createETDate returns midnight, so we can compare timestamps directly if dr.date is also midnight-based from DB
+      // But just to be safe, compare substrings
+      const drDateStr = getDateET(drDate);
+      const isToday = drDateStr === todayDateStr;
+
       // Also collect regularClose for after-hours sessions
       // ONLY use regularClose from TODAY - prevent using yesterday's regularClose
       if (dr.regularClose && dr.regularClose > 0) {
-        // Check if this DailyRef is from today
-        const drDate = new Date(dr.date);
-        const isToday = drDate.getTime() === todayDateObj.getTime();
         if (isToday) {
           regularCloseMap.set(dr.symbol, dr.regularClose);
         }
       }
+
+      if (!previousCloseMap.has(dr.symbol)) {
+        if (isToday) {
+          // Record is from Today -> previousClose is Yesterday's close
+          previousCloseMap.set(dr.symbol, dr.previousClose);
+          debugStats.counts.dailyRefToday++;
+        } else {
+          // Record is Older (e.g. Friday) -> regularClose is Friday's close, which acts as today's previousClose
+          // Only use if regularClose is valid
+          if (dr.regularClose && dr.regularClose > 0) {
+            previousCloseMap.set(dr.symbol, dr.regularClose);
+            debugStats.counts.dailyRefOlder++;
+          }
+        }
+      }
     }
+
+    // Capture how many came from Ticker table initially
+    // Capture how many came from Ticker table initially
+    // Calculated above in debugStats.counts.tickerFallback
 
     // 3. Batch fetch cache pre všetky tickery naraz (optimalizácia N+1 problému)
     const project = 'pmp';
@@ -710,6 +742,7 @@ export async function GET(request: NextRequest) {
           data: [],
           count: 0,
           timestamp: new Date().toISOString(),
+          ...(debug ? { debug: debugStats } : {})
         },
         { status: 200 } // Vráť 200, aby sa zobrazil error message
       );
@@ -734,6 +767,7 @@ export async function GET(request: NextRequest) {
           count: payload.length,
           timestamp: new Date().toISOString(),
           lastUpdatedAt: lastUpdatedAt, // Max updatedAt z SessionPrice
+          ...(debug ? { debug: debugStats } : {})
         }, {
           headers: {
             'ETag': etag,
@@ -754,6 +788,7 @@ export async function GET(request: NextRequest) {
           count: payload.length,
           timestamp: new Date().toISOString(),
           lastUpdatedAt: lastUpdatedAt,
+          ...(debug ? { debug: debugStats } : {})
         }, {
           headers: {
             'Cache-Control': 'public, max-age=10, stale-while-revalidate=30',
