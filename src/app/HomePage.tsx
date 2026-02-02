@@ -353,7 +353,6 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
           )}
           <PullToRefresh
             onRefresh={loadData}
-            disabled={activeSection === 'heatmap'}
             className="flex-1 w-full relative overflow-hidden"
           >
             <div className={`mobile-app-content ${activeSection === 'heatmap' ? 'is-heatmap' : ''}`}>

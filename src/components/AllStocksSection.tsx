@@ -256,7 +256,24 @@ export const AllStocksSection = React.memo(function AllStocksSection({
   }, [onLoadMore, hasMore, isLoadingMore]);
 
   return (
-    <section className="all-stocks">
+    <section className="all-stocks relative">
+      {/* Loading Overlay for Remaining Stocks */}
+      {isLoadingMore && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center lg:hidden">
+          <div className="bg-white dark:bg-gray-900 rounded-xl p-6 shadow-2xl max-w-xs mx-4">
+            <div className="flex flex-col items-center gap-3">
+              <div className="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full"></div>
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                Loading all stocks...
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                This may take a few seconds
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Desktop Header - only rendered on desktop */}
       {isDesktop && (
         <div className="flex items-center justify-between mb-4 px-4">
