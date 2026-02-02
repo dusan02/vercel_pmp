@@ -148,6 +148,37 @@
       }
     }
 
+    /* Mobile app content - container for all screens */
+    .mobile-app-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      min-height: 0;
+      /* Critical for flex child */
+    }
+
+    /* Mobile screens - CRITICAL: Only show active screen */
+    .mobile-app-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: none;
+      /* Hide by default */
+      flex-direction: column;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Show only active screen */
+    .mobile-app-screen.active {
+      display: flex;
+    }
+
     /* Mobile Header - Sticky at top */
     .mobile-app-header {
       position: sticky;
