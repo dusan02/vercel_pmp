@@ -155,7 +155,8 @@
       overflow: hidden;
       position: relative;
       min-height: 0;
-      padding-top: var(--header-h);
+      /* padding-top removed because Header is now flex item, not fixed */
+      padding-top: 0;
     }
 
     /* CRITICAL: Heatmap view fills entire height */
@@ -626,6 +627,8 @@
     height: 100%;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    padding-bottom: 8rem;
+    /* Ensure content clears bottom navigation */
   }
 
   .mobile-app-screen.active {
