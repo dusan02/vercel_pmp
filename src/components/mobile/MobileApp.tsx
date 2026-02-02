@@ -57,7 +57,15 @@ export function MobileApp({ children }: MobileAppProps) {
   }, []);
 
   return (
-    <div className="mobile-app">
+    <div
+      className="mobile-app flex flex-col w-full overflow-hidden"
+      style={{
+        height: 'var(--app-height, 100dvh)',
+        position: 'fixed',
+        inset: 0,
+        zIndex: 50 // Ensure it's above other content but below modals
+      }}
+    >
       {children}
     </div>
   );
