@@ -164,7 +164,7 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
     >
       <button
         type="button"
-        className="custom-dropdown-trigger w-full flex items-center justify-between px-3 py-2 bg-[var(--clr-surface)] border border-[var(--clr-border)] rounded-md text-[var(--clr-text)]"
+        className="custom-dropdown-trigger w-full flex items-center justify-between px-3 py-2 bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 rounded-md"
         ref={triggerRef}
         onClick={() => setIsOpen((v) => !v)}
         aria-haspopup="listbox"

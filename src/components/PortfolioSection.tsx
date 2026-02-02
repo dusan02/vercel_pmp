@@ -166,7 +166,7 @@ export function PortfolioSection({
       header: 'Price',
       sortable: true,
       align: 'right',
-      className: 'hidden md:table-cell',
+      className: 'text-right',
       render: (stock) => {
         const price = stock.currentPrice ?? 0;
         return <span className="tabular-nums">${isFinite(price) ? Math.round(price).toLocaleString('en-US') : '0'}</span>;
@@ -176,7 +176,7 @@ export function PortfolioSection({
       key: 'percentChange',
       header: '% Change',
       sortable: true,
-      align: 'right',
+      className: 'hidden md:table-cell',
       render: (stock) => {
         const pct = stock.percentChange ?? 0;
         return (
@@ -314,18 +314,16 @@ export function PortfolioSection({
       )}
 
       {/* Visualizations: Order -> Donuts -> Treemap */}
-      {portfolioStocks.length > 0 && (
-        <div className="mb-8 space-y-8 px-4">
-          {/* 1. Donut Charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <PortfolioSectorDistributionChart data={chartData} />
-            <PortfolioStockDistributionChart data={chartData} />
-          </div>
-
-          {/* 2. Heatmap */}
-          <PortfolioPerformanceTreemap data={chartData} />
+      <div className="mb-8 space-y-8 px-4">
+        {/* 1. Donut Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <PortfolioSectorDistributionChart data={chartData} />
+          <PortfolioStockDistributionChart data={chartData} />
         </div>
-      )}
+
+        {/* 2. Heatmap */}
+        {portfolioStocks.length > 0 && <PortfolioPerformanceTreemap data={chartData} />}
+      </div>
 
       {/* Search Bar - Moved above table */}
       <div className="px-4 mb-6 relative">
@@ -338,7 +336,7 @@ export function PortfolioSection({
             onChange={(e) => setPortfolioSearchTerm(e.target.value)}
             onFocus={() => setShowPortfolioSearch(true)}
             onBlur={() => setTimeout(() => setShowPortfolioSearch(false), 200)}
-            className="w-full px-4 py-2 border rounded-lg dark:bg-black/20 dark:border-gray-700 focus:ring-2 focus:ring-blue-500/50 outline-none transition-all"
+            className="w-full px-4 py-2 border rounded-lg bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500/50 outline-none transition-all"
           />
           {showPortfolioSearch && portfolioSearchResults.length > 0 && (
             <div className="absolute top-full left-0 right-0 z-[60] bg-white dark:bg-gray-800 shadow-xl border rounded-lg mt-1 max-h-60 overflow-y-auto ring-1 ring-black/5">
@@ -377,15 +375,7 @@ export function PortfolioSection({
             <p className="text-[var(--clr-subtext)] mb-4">Add stocks to track your performance</p>
           </div>
         }
-        renderMobileCard={(stock) => (
-          <PortfolioCardMobile
-            stock={stock}
-            quantity={portfolioHoldings[stock.ticker] || 0}
-            onUpdateQuantity={onUpdateQuantity}
-            onRemove={onRemoveStock}
-            calculateValue={calculatePortfolioValue}
-          />
-        )}
+        forceTable={true}
         footer={footerRow}
       />
     </section>

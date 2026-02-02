@@ -859,8 +859,8 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
         // CRITICAL: On mobile, this container handles ALL scrolling
         // Set overflow to auto to enable scrolling, but only on mobile
         // On desktop, use hidden as before
-        overflow: isMobile ? 'auto' : 'hidden',
         overflowX: 'hidden', // Never allow horizontal scrolling
+        overflowY: isMobile ? 'auto' : 'hidden', // Vertical scrolling only on mobile
         height: isMobile ? contentHeight : '100%',
         minHeight: isMobile ? contentHeight : undefined,
         position: 'relative',

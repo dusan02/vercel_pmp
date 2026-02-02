@@ -58,7 +58,38 @@ export function PortfolioStockDistributionChart({ data, size = 300 }: PortfolioS
         return { slices: slicesWithCoords, totalValue: total };
     }, [data]);
 
-    if (slices.length === 0) return null;
+    if (slices.length === 0) {
+        // Empty State Placeholder
+        const placeholderRadius = size / 2;
+        const placeholderInner = placeholderRadius * 0.6;
+
+        return (
+            <div className="w-full p-6 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+                <h3 className="text-base font-semibold text-[var(--clr-subtext)] mb-4 uppercase tracking-wider">
+                    Asset Allocation
+                </h3>
+                <div className="flex justify-center flex-col items-center">
+                    <div
+                        className="relative w-full opacity-30 grayscale"
+                        style={{ maxWidth: size + 240, aspectRatio: 1 }}
+                    >
+                        <svg
+                            viewBox={`0 0 ${size + 240} ${size + 240}`}
+                            preserveAspectRatio="xMidYMid meet"
+                            className="w-full h-full"
+                        >
+                            <g transform={`translate(${(size + 240) / 2}, ${(size + 240) / 2})`}>
+                                {/* Placeholder Donut */}
+                                <circle r={placeholderRadius} fill="none" stroke="var(--clr-border)" strokeWidth="2" strokeDasharray="4 4" />
+                                <circle r={placeholderInner} fill="none" stroke="var(--clr-border)" strokeWidth="2" strokeDasharray="4 4" />
+                                <text textAnchor="middle" dy="0.3em" className="fill-gray-400 text-sm font-medium">No Data</text>
+                            </g>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     // Radius config
     const outerRadius = size / 2;

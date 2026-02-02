@@ -143,7 +143,9 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
     const totalSum = sectorSums.reduce((a, b) => a + b, 0) || 1;
 
     // CRITICAL: Use measured container height to eliminate gaps
-    const baseHeight = containerSize.height;
+    // Force minimum height to allow scrolling as requested
+    const scrollHeight = Math.max(containerSize.height, 800);
+    const baseHeight = scrollHeight;
     const MIN_SECTOR_HEIGHT = 48; // Lowered slightly to allow more flexibility
     const sectorHeights: number[] = [];
     let allocatedHeight = 0;

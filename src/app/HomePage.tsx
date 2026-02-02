@@ -77,8 +77,8 @@ const MobileScreen = dynamic(
   () => import('@/components/mobile/MobileScreen').then((mod) => mod.MobileScreen),
   { ssr: false }
 );
-const MobileTabBar = dynamic(
-  () => import('@/components/mobile/MobileTabBar').then((mod) => mod.MobileTabBar),
+const BottomNavigation = dynamic(
+  () => import('@/components/BottomNavigation').then((mod) => mod.BottomNavigation),
   { ssr: false }
 );
 const MobileSkeleton = dynamic(
@@ -341,7 +341,11 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
               onLogoClick={() => handleMobileNavChange('heatmap')}
             />
           )}
-          <PullToRefresh onRefresh={loadData} disabled={activeSection === 'heatmap'}>
+          <PullToRefresh
+            onRefresh={loadData}
+            disabled={activeSection === 'heatmap'}
+            className="flex-1 w-full relative overflow-hidden"
+          >
             <div className={`mobile-app-content ${activeSection === 'heatmap' ? 'is-heatmap' : ''}`}>
               <MobileScreen
                 active={activeSection === 'heatmap'}
@@ -442,9 +446,9 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
               </MobileScreen>
             </div>
           </PullToRefresh>
-          <MobileTabBar
-            activeTab={activeSection}
-            onTabChange={handleMobileNavChange}
+          <BottomNavigation
+            activeSection={activeSection}
+            onSectionChange={handleMobileNavChange}
           />
         </MobileApp>
       )}

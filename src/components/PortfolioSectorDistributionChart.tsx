@@ -70,6 +70,33 @@ function adjustColor(hex: string, percent: number) {
     return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 }
 
+// Helper functions for SVG paths
+const polarToCartesian = (angle: number, r: number) => {
+    // angle is in radians, 0 is at 12 o'clock if we rotate -PI/2
+    const a = angle - Math.PI / 2;
+    return {
+        x: r * Math.cos(a),
+        y: r * Math.sin(a)
+    };
+};
+
+const createArcPath = (startAngle: number, endAngle: number, rInner: number, rOuter: number) => {
+    const startOuter = polarToCartesian(endAngle, rOuter);
+    const endOuter = polarToCartesian(startAngle, rOuter);
+    const startInner = polarToCartesian(endAngle, rInner);
+    const endInner = polarToCartesian(startAngle, rInner);
+
+    const largeArc = endAngle - startAngle <= Math.PI ? 0 : 1;
+
+    return [
+        'M', startOuter.x, startOuter.y,
+        'A', rOuter, rOuter, 0, largeArc, 0, endOuter.x, endOuter.y,
+        'L', endInner.x, endInner.y,
+        'A', rInner, rInner, 0, largeArc, 1, startInner.x, startInner.y,
+        'Z'
+    ].join(' ');
+};
+
 export function PortfolioSectorDistributionChart({ data, size = 300 }: PortfolioDonutChartProps) {
     const [hoveredNode, setHoveredNode] = useState<string | null>(null);
 
@@ -171,7 +198,44 @@ export function PortfolioSectorDistributionChart({ data, size = 300 }: Portfolio
         return { nodes: processedNodes, totalValue: total };
     }, [data]);
 
-    if (nodes.length === 0) return null;
+    if (nodes.length === 0) {
+        // Empty State Placeholder
+        const placeholderRadius = size / 2;
+        const placeholderInner = placeholderRadius * 0.45;
+        // const placeholderMiddle = placeholderRadius * 0.7; // Unused
+
+        return (
+            <div className="w-full p-6 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+                <h3 className="text-base font-semibold text-[var(--clr-subtext)] mb-4 uppercase tracking-wider">
+                    Segment Distribution
+                </h3>
+                <div className="flex justify-center flex-col items-center">
+                    <div
+                        className="relative w-full opacity-30 grayscale"
+                        style={{ maxWidth: size + 280, aspectRatio: 1 }}
+                    >
+                        <svg
+                            viewBox={`0 0 ${size + 280} ${size + 280}`}
+                            preserveAspectRatio="xMidYMid meet"
+                            className="w-full h-full"
+                        >
+                            <g transform={`translate(${(size + 280) / 2}, ${(size + 280) / 2})`}>
+                                {/* Placeholder Donut */}
+                                <path
+                                    d={createArcPath(0, 2 * Math.PI, placeholderInner, placeholderRadius)}
+                                    fill="none"
+                                    stroke="var(--clr-border)"
+                                    strokeWidth="20"
+                                    strokeDasharray="10 5"
+                                />
+                                <text textAnchor="middle" dy="0.3em" className="fill-gray-400 text-sm font-medium">No Data</text>
+                            </g>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     // Dimensions
     const padding = 140; // Space for labels
@@ -188,36 +252,6 @@ export function PortfolioSectorDistributionChart({ data, size = 300 }: Portfolio
     const getRadii = (depth: number) => {
         if (depth === 1) return { inner: innerRadius, outer: middleRadius }; // Sector
         return { inner: middleRadius, outer: outerRadius }; // Industry
-    };
-
-    const polarToCartesian = (angle: number, r: number) => {
-        // angle is in radians, 0 is at 12 o'clock if we rotate
-        // d3 x0 is [0, 2PI] starting from 12 o'clock usually with partition?
-        // Actually d3.partition uses standard math: 0 is 3 o'clock?
-        // We will rotate -PI/2
-        const a = angle - Math.PI / 2;
-        return {
-            x: r * Math.cos(a),
-            y: r * Math.sin(a)
-        };
-    };
-
-    const createPath = (startAngle: number, endAngle: number, rInner: number, rOuter: number) => {
-        // SVG Arc
-        const startOuter = polarToCartesian(endAngle, rOuter);
-        const endOuter = polarToCartesian(startAngle, rOuter);
-        const startInner = polarToCartesian(endAngle, rInner);
-        const endInner = polarToCartesian(startAngle, rInner);
-
-        const largeArc = endAngle - startAngle <= Math.PI ? 0 : 1;
-
-        return [
-            'M', startOuter.x, startOuter.y,
-            'A', rOuter, rOuter, 0, largeArc, 0, endOuter.x, endOuter.y,
-            'L', endInner.x, endInner.y,
-            'A', rInner, rInner, 0, largeArc, 1, startInner.x, startInner.y,
-            'Z'
-        ].join(' ');
     };
 
     return (
@@ -247,7 +281,7 @@ export function PortfolioSectorDistributionChart({ data, size = 300 }: Portfolio
                                 return (
                                     <path
                                         key={`${node.depth}-${i}`}
-                                        d={createPath(node.x0, node.x1, inner, displayOuter)}
+                                        d={createArcPath(node.x0, node.x1, inner, displayOuter)}
                                         fill={node.color}
                                         stroke="white"
                                         strokeWidth="1.5"
@@ -269,15 +303,6 @@ export function PortfolioSectorDistributionChart({ data, size = 300 }: Portfolio
 
                                 const labelR = outer + 20;
                                 const pos = polarToCartesian(midAngle, labelR);
-                                // Is right side? Angle 0 is top (after -PI/2).
-                                // So from 0 to PI is Right side? No.
-                                // 0 is top. PI is bottom.
-                                // 0..PI is Right. PI..2PI is Left.
-                                // Wait, d3 partition: 0 is ...?
-                                // If I rotate -PI/2 in polarToCartesian:
-                                // d3 angle 0 -> -PI/2 (top).
-                                // d3 angle PI -> PI/2 (bottom).
-                                // So 0..PI is Right side.
                                 const isRight = midAngle < Math.PI;
 
                                 // Elbow line

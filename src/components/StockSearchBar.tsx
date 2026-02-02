@@ -63,7 +63,7 @@ export function StockSearchBar({
         placeholder={placeholder}
         value={localValue}
         onChange={handleChange}
-        className="w-full bg-[var(--clr-bg)] border border-[var(--clr-border)] rounded-md px-4 py-2 text-[var(--clr-text)] focus:border-[var(--clr-primary)] outline-none transition-colors"
+        className="w-full px-4 py-2 border rounded-md bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500/50 outline-none transition-all"
         aria-label="Search stocks by company name or ticker"
       />
     </div>

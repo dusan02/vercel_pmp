@@ -94,8 +94,8 @@ export function UniversalTable<T>({
                                 <th
                                     key={col.key}
                                     className={`
-                    py-3 px-2 font-semibold text-xs md:text-sm text-[var(--clr-subtext)]
-                    ${col.sortable ? 'cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors select-none' : ''}
+                    py-3 px-2 font-semibold text-xs md:text-sm bg-[#1a1a1a] text-white border-b border-white/10
+                    ${col.sortable ? 'cursor-pointer hover:bg-white/5 transition-colors select-none' : ''}
                     ${col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left'}
                     ${col.className || ''}
                     ${col.sortable && sortKey === col.key ? 'active-sort' : ''}

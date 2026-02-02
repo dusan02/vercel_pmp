@@ -31,7 +31,7 @@ export function PullToRefresh({
 
   const handleRefresh = async () => {
     if (disabled || isRefreshing) return;
-    
+
     setIsRefreshing(true);
     try {
       await onRefresh();
@@ -51,18 +51,18 @@ export function PullToRefresh({
   // Update pull distance for visual feedback - only on client
   useEffect(() => {
     if (!isClient) return;
-    
+
     const element = containerRef.current;
     if (!element) return;
 
     const handleTouchMove = (e: TouchEvent) => {
       if (disabled) return;
-      
+
       const touch = e.touches[0];
       if (!touch) return;
       const rect = element.getBoundingClientRect();
       const pullDistance = Math.max(0, (rect.top - touch.clientY) * resistance);
-      
+
       setPullDistance(pullDistance);
     };
 
@@ -82,7 +82,7 @@ export function PullToRefresh({
   // Add spinner styles - only on client
   useEffect(() => {
     if (!isClient) return;
-    
+
     const spinnerStyles = `
       @keyframes spin {
         0% { transform: rotate(0deg); }
@@ -169,7 +169,7 @@ export function PullToRefresh({
 
       {/* Main content */}
       <div
-        className="pull-to-refresh-content"
+        className="pull-to-refresh-content h-full"
         style={{
           transform: isClient && showRefreshIndicator ? `translateY(${Math.min(pullDistance, threshold)}px)` : 'none',
           transition: isClient && showRefreshIndicator ? 'none' : 'transform 0.3s ease'

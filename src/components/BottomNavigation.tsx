@@ -1,74 +1,90 @@
 'use client';
 
 import React from 'react';
-import { Home, Star, Calendar, BarChart3, PieChart } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { LayoutGrid, PieChart, Star, Calendar, List } from 'lucide-react';
 
 interface BottomNavigationProps {
-  activeSection: 'heatmap' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks';
-  onSectionChange: (section: 'heatmap' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks') => void;
+  activeSection?: string;
+  onSectionChange?: (section: any) => void;
 }
 
-export const BottomNavigation: React.FC<BottomNavigationProps> = ({
-  activeSection,
-  onSectionChange
-}) => {
+export function BottomNavigation({ activeSection, onSectionChange }: BottomNavigationProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+
   const navItems = [
     {
-      id: 'heatmap' as const,
+      id: 'heatmap',
       label: 'Heatmap',
-      icon: BarChart3,
-      color: 'text-blue-600'
+      icon: LayoutGrid,
+      path: '/',
+      isActive: (p: string, section?: string) => section === 'heatmap' || p === '/' || p.startsWith('/heatmap')
     },
     {
-      id: 'portfolio' as const,
+      id: 'portfolio',
       label: 'Portfolio',
       icon: PieChart,
-      color: 'text-purple-600'
+      path: '/#portfolio',
+      isActive: (p: string, section?: string) => section === 'portfolio' || p === '/portfolio' || p.includes('portfolio')
     },
     {
-      id: 'favorites' as const,
+      id: 'favorites',
       label: 'Favorites',
       icon: Star,
-      color: 'text-yellow-600'
+      path: '/#favorites',
+      isActive: (p: string, section?: string) => section === 'favorites' || p === '/favorites' || p.includes('favorites')
     },
     {
-      id: 'earnings' as const,
+      id: 'earnings',
       label: 'Earnings',
       icon: Calendar,
-      color: 'text-green-600'
+      path: '/#earnings',
+      isActive: (p: string, section?: string) => section === 'earnings' || p === '/earnings' || p.includes('earnings')
     },
     {
-      id: 'allStocks' as const,
+      id: 'all-stocks',
       label: 'All Stocks',
-      icon: BarChart3,
-      color: 'text-indigo-600'
+      icon: List,
+      path: '/#all-stocks',
+      isActive: (p: string, section?: string) => section === 'allStocks' || section === 'all-stocks' || p === '/stocks' || p.includes('stocks')
     }
   ];
 
+  const handleNavigation = (item: typeof navItems[0]) => {
+    if (onSectionChange) {
+      // Convert id to expected section name if needed (e.g. all-stocks -> allStocks)
+      // MobileShell expects: 'heatmap' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks'
+      const sectionName = item.id === 'all-stocks' ? 'allStocks' : item.id;
+      onSectionChange(sectionName);
+    } else {
+      router.push(item.path);
+    }
+  };
+
   return (
-    <nav className="bottom-navigation">
-      {navItems.map((item) => {
-        const Icon = item.icon;
-        const isActive = activeSection === item.id;
-        
-        return (
-          <button
-            key={item.id}
-            onClick={() => onSectionChange(item.id)}
-            className={`nav-item ${isActive ? 'active' : ''}`}
-            aria-label={item.label}
-          >
-            <Icon 
-              className={`nav-icon ${isActive ? item.color : 'text-gray-500'}`} 
-              size={24} 
-            />
-            <span className={`nav-label ${isActive ? 'text-blue-600' : 'text-gray-500'}`}>
-              {item.label}
-            </span>
-            {isActive && <div className="active-indicator" />}
-          </button>
-        );
-      })}
-    </nav>
+    <div
+      className="lg:hidden fixed bottom-0 left-0 w-full border-t border-gray-800 z-[100] pb-safe"
+      style={{ backgroundColor: '#0f0f0f' }}
+    >
+      <div className="flex justify-around items-center h-16">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const active = item.isActive(pathname, activeSection);
+
+          return (
+            <button
+              key={item.id}
+              onClick={() => handleNavigation(item)}
+              className={`flex flex-col items-center justify-center w-full h-full active:bg-gray-100 dark:active:bg-gray-800 transition-colors ${active ? 'text-blue-600' : 'text-[var(--clr-subtext)]'
+                }`}
+              aria-label={item.label}
+            >
+              <Icon size={24} strokeWidth={active ? 2.5 : 2} />
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
-}; 
+}

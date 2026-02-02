@@ -5,7 +5,7 @@
 
 /* Container */
 .heatmapContainer {
-  @apply relative w-full h-full bg-black text-white overflow-hidden;
+  @apply relative w-full h-full bg-black text-white;
 }
 
 .heatmapLoading {

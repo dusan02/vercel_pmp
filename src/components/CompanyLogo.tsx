@@ -101,8 +101,10 @@ export default function CompanyLogo({
         }}
         priority={priority}
         loading={priority ? 'eager' : 'lazy'}
-        placeholder="blur"
-        blurDataURL={placeholderSrc}
+        {...(w >= 40 && h >= 40 ? {
+          placeholder: 'blur',
+          blurDataURL: placeholderSrc
+        } : {})}
         onError={() => setHasError(true)}
         unoptimized={true} // Enable extensive optimization - FALSE, disable to prevent 400 errors with API SVGs
       />

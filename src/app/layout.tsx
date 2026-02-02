@@ -244,7 +244,7 @@ export default function RootLayout({
           />
         )}
       </head>
-      <body className={`${inter.variable} ${spaceGrotesk.variable} ${inter.className}`}>
+      <body className={`${inter.variable} ${spaceGrotesk.variable} ${inter.className} lg:mb-0 mb-16`}>
         {/* Global recovery for deploy-time chunk 404s (stale cached HTML/SW) */}
         <ChunkLoadRecovery />
         {/* Google Analytics 4 */}
