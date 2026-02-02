@@ -35,11 +35,6 @@ export function HeatmapPreview({ activeView, wrapperClass }: { activeView?: stri
 
   // Use hook for reliable desktop/mobile detection
   const isDesktop = useMediaQuery('(min-width: 1024px)');
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   // Handler pre klik na pozadí (nie na buttonoch)
   const handleBackgroundClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -58,9 +53,6 @@ export function HeatmapPreview({ activeView, wrapperClass }: { activeView?: stri
       router.push('/heatmap');
     }
   }, [router, isDesktop, activeView]);
-
-  // Prevent hydration mismatch by only rendering after mount OR using CSS gating for SSR
-  if (!isMounted) return null;
 
   return (
     <section className={`heatmap-preview ${wrapperClass || ''} ${!isDesktop ? 'h-full flex flex-col' : ''}`}>
@@ -108,4 +100,3 @@ export function HeatmapPreview({ activeView, wrapperClass }: { activeView?: stri
     </section>
   );
 }
-

@@ -349,14 +349,45 @@ export function PortfolioSection({
 
       {/* Visualizations: Order -> Donuts -> Treemap */}
       <div className="mb-8 space-y-8 px-4">
-        {/* 1. Donut Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <PortfolioSectorDistributionChart data={chartData} />
-          <PortfolioStockDistributionChart data={chartData} />
-        </div>
+        {portfolioStocks.length === 0 ? (
+          /* Empty State - Guide user to add stocks */
+          <div className="flex flex-col items-center justify-center py-16 px-4">
+            <div className="max-w-md text-center space-y-4">
+              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-blue-600/10 flex items-center justify-center">
+                <SectionIcon type="pie" size={40} className="text-blue-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-[var(--clr-text)]">
+                Start Building Your Portfolio
+              </h3>
+              <p className="text-[var(--clr-subtext)] text-lg">
+                Add stocks using the search bar above to track your investments and visualize your portfolio performance.
+              </p>
+              <div className="mt-6 p-4 bg-blue-600/5 border border-blue-600/20 rounded-lg">
+                <p className="text-sm text-[var(--clr-text)] mb-2">
+                  <strong>What you'll see:</strong>
+                </p>
+                <ul className="text-sm text-[var(--clr-subtext)] text-left space-y-1">
+                  <li>📊 Sector & stock distribution charts</li>
+                  <li>🗺️ Interactive performance heatmap</li>
+                  <li>📈 Real-time portfolio value tracking</li>
+                  <li>💰 Daily P&L and percentage changes</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* Charts - Only show when portfolio has stocks */
+          <>
+            {/* 1. Donut Charts */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <PortfolioSectorDistributionChart data={chartData} />
+              <PortfolioStockDistributionChart data={chartData} />
+            </div>
 
-        {/* 2. Heatmap */}
-        {portfolioStocks.length > 0 && <PortfolioPerformanceTreemap data={chartData} />}
+            {/* 2. Heatmap */}
+            <PortfolioPerformanceTreemap data={chartData} />
+          </>
+        )}
       </div>
 
       {/* 3. Table */}
