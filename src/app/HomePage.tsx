@@ -2,7 +2,7 @@
 
 // Client component containing all page logic
 // This is imported by page.tsx (server component)
-import React, { useState, useEffect, Suspense, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, Suspense, useMemo, useCallback, useRef } from 'react';
 import dynamic from 'next/dynamic';
 
 // All component imports moved to dynamic imports - fixed pattern for named exports
@@ -231,6 +231,16 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
     initialData,
     favorites
   });
+
+  // Auto-load all stocks when user navigates to All Stocks section
+  const allStocksLoadedRef = useRef(false);
+  useEffect(() => {
+    if (activeSection === 'allStocks' && !allStocksLoadedRef.current && !loadingStates.remainingStocks) {
+      console.log('🔄 User navigated to All Stocks - loading all remaining stocks...');
+      fetchRemainingStocksData();
+      allStocksLoadedRef.current = true;
+    }
+  }, [activeSection, fetchRemainingStocksData, loadingStates.remainingStocks]);
 
   // Hooks for core functionality - Refactored to use updated hook logic
   const {
