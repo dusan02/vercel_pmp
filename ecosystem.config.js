@@ -32,15 +32,13 @@ module.exports = {
       interpreter_args: "tsx",
       cwd: "/var/www/premarketprice",
       
-      // Cluster mode for load balancing and zero-downtime deploys
-      instances: 2,
-      exec_mode: "cluster",
+      // Fork mode - cluster mode causes crashes with Next.js custom server
+      instances: 1,
+      exec_mode: "fork",
       
       // Resource management - prevent memory leaks and ensure restarts
       max_memory_restart: "1G",
       kill_timeout: 5000,
-      wait_ready: true,
-      listen_timeout: 10000,
       
       // Restart strategy
       max_restarts: 10,
