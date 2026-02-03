@@ -80,7 +80,7 @@ export function MobileLayout({ activeTab, onTabChange, screens }: MobileLayoutPr
     };
 
     return (
-        <div className="fixed inset-0 flex flex-col bg-black overflow-hidden font-sans text-white select-none touch-none"
+        <div className="fixed inset-0 flex flex-col bg-black overflow-hidden font-sans text-white select-none"
             style={{ height: 'var(--app-height, 100vh)' }}>
 
             {/* Dynamic Header */}
@@ -105,8 +105,8 @@ export function MobileLayout({ activeTab, onTabChange, screens }: MobileLayoutPr
                         animate="center"
                         exit="exit"
                         className={`absolute inset-0 w-full h-full scroll-smooth touch-pan-y ${activeTab === 'heatmap'
-                                ? 'overflow-hidden p-0'
-                                : 'overflow-y-auto px-4 py-2 pb-20'
+                            ? 'overflow-hidden p-0'
+                            : 'overflow-y-auto px-4 py-2 pb-20'
                             }`}
                         style={{
                             WebkitOverflowScrolling: 'touch'
