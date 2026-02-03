@@ -211,7 +211,14 @@ export function FavoritesSection({
         ascending={ascending}
         onSort={onSort}
         emptyMessage={emptyState}
-        forceTable={true}
+        renderMobileCard={(stock) => (
+          <StockCardMobile
+            stock={stock}
+            isFavorite={isFavorite(stock.ticker)}
+            onToggleFavorite={() => onToggleFavorite(stock.ticker)}
+          />
+        )}
+      // forceTable={true} // REMOVED to enable mobile cards
       />
     </section>
   );

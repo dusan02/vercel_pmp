@@ -429,7 +429,14 @@ export const AllStocksSection = React.memo(function AllStocksSection({
         emptyMessage={(selectedSector !== 'all' || selectedIndustry !== 'all' || searchTerm.trim().length > 0)
           ? 'No results for the selected filters.'
           : 'No stocks to display.'}
-        forceTable={true}
+        renderMobileCard={(stock) => (
+          <StockCardMobile
+            stock={stock}
+            isFavorite={isFavorite(stock.ticker)}
+            onToggleFavorite={() => onToggleFavorite(stock.ticker)}
+          />
+        )}
+      // forceTable={true} // REMOVED to enable mobile cards
       />
 
       {/* End of list indicator */}

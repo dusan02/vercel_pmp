@@ -426,8 +426,20 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
         <>
 
 
+
+          {/* Mobile: Card Layout */}
+          <div className="lg:hidden flex flex-col divide-y divide-gray-100 dark:divide-gray-800">
+            {allEarnings.map((earning, index) => (
+              <EarningsCardMobile
+                key={`${earning.ticker}-mobile-${index}`}
+                earning={earning}
+                priority={index < 10}
+              />
+            ))}
+          </div>
+
           {/* Desktop: Table layout */}
-          <div className="overflow-x-auto">
+          <div className="hidden lg:block overflow-x-auto">
             <table>
               <thead>
                 <tr>

@@ -59,7 +59,13 @@ export const EarningsCardMobile = memo(({ earning, priority = false }: EarningsC
             <div className="grid items-center gap-x-2 min-w-0 [grid-template-columns:minmax(56px,1fr)_72px_72px_56px]">
                 {/* Ticker */}
                 <div className="min-w-0 flex items-center gap-2 text-left">
-                    <CompanyLogo ticker={earning.ticker} {...(earning.logoUrl ? { logoUrl: earning.logoUrl } : {})} size={28} className="rounded-sm shrink-0" />
+                    <CompanyLogo
+                        ticker={earning.ticker}
+                        {...(earning.logoUrl ? { logoUrl: earning.logoUrl } : {})}
+                        size={28}
+                        className="rounded-sm shrink-0"
+                        priority={priority}
+                    />
                     <div className="min-w-0 overflow-hidden">
                         <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100 tracking-tight truncate">
                             {earning.ticker}

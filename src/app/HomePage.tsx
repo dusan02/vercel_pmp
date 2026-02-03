@@ -85,6 +85,10 @@ const MobileSkeleton = dynamic(
   () => import('@/components/mobile/MobileSkeleton').then((mod) => mod.MobileSkeleton),
   { ssr: false }
 );
+const FloatingSearchButton = dynamic(
+  () => import('@/components/mobile/FloatingSearchButton').then((mod) => mod.FloatingSearchButton),
+  { ssr: false }
+);
 
 // Hooks and utilities
 import { useFavorites } from '@/hooks/useFavorites';
@@ -457,6 +461,7 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
               </MobileScreen>
             </div>
           </PullToRefresh>
+          <FloatingSearchButton onClick={() => handleMobileNavChange('allStocks')} />
           <BottomNavigation
             activeSection={activeSection}
             onSectionChange={handleMobileNavChange}

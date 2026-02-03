@@ -409,7 +409,16 @@ export function PortfolioSection({
             <p className="text-[var(--clr-subtext)] mb-4">Add stocks to track your performance</p>
           </div>
         }
-        forceTable={true}
+        renderMobileCard={(stock) => (
+          <PortfolioCardMobile
+            stock={stock}
+            quantity={portfolioHoldings[stock.ticker] || 0}
+            onUpdateQuantity={onUpdateQuantity}
+            onRemove={onRemoveStock}
+            calculateValue={calculatePortfolioValue}
+          />
+        )}
+        // forceTable={true} // REMOVED to enable mobile cards
         footer={footerRow}
       />
     </section>
