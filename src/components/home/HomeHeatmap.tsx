@@ -19,16 +19,14 @@ interface HomeHeatmapProps {
 }
 
 export function HomeHeatmap({ wrapperClass, activeView }: HomeHeatmapProps) {
-    React.useEffect(() => {
-        console.log('🏠 HomeHeatmap rendered', { wrapperClass, activeView });
-    }, [wrapperClass, activeView]);
+
 
     // CRITICAL: Add explicit content wrapper for proper flex chain
     // This ensures containerRef gets correct height from position: fixed parent
     return (
         <SectionErrorBoundary sectionName="Heatmap">
             <div className="screen-heatmap-content">
-                <HeatmapPreview 
+                <HeatmapPreview
                     {...(activeView !== undefined ? { activeView } : {})}
                     {...(wrapperClass !== undefined ? { wrapperClass } : {})}
                 />

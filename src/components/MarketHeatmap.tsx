@@ -47,12 +47,14 @@ function calculateSectorSummary(
     // Get all companies in this sector
     const sectorCompanies = sectorNode.leaves()
       .map((leaf: any) => leaf.data.meta?.companyData)
-      .filter((c): c is CompanyNode => c !== undefined);
+      .filter((c): c is CompanyNode => c !== undefined && c !== null);
 
     if (sectorCompanies.length === 0) return null;
 
     const totalDelta = sectorCompanies.reduce((sum, c) => {
-      return sum + (c.marketCapDiff || 0);
+      // Defensive check: ensure c exists and has marketCapDiff
+      if (!c || typeof c.marketCapDiff !== 'number') return sum;
+      return sum + c.marketCapDiff;
     }, 0);
 
     if (Math.abs(totalDelta) < 0.01) return null; // Too small to display

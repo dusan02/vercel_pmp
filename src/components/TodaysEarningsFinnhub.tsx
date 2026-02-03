@@ -438,7 +438,7 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
                   <th onClick={() => handleSort('companyName')} className={`hidden lg:table-cell sortable ${sortKey === 'companyName' ? 'active-sort' : ''}`}>
                     Company Name
                   </th>
-                  <th onClick={() => handleSort('marketCap')} className={`hidden lg:table-cell sortable whitespace-nowrap ${sortKey === 'marketCap' ? 'active-sort' : ''}`}>
+                  <th onClick={() => handleSort('marketCap')} className={`hidden lg:table-cell sortable whitespace-nowrap text-right ${sortKey === 'marketCap' ? 'active-sort' : ''}`}>
                     Market Cap
                   </th>
                   <th className="grouped-header">
@@ -499,7 +499,7 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
                       </td>
                       <td><strong>{earning.ticker}</strong></td>
                       <td className="company-name hidden lg:table-cell">{getCompanyName(earning.ticker)}</td>
-                      <td className="hidden lg:table-cell">{earning.marketCap !== null ? formatBillions(earning.marketCap) : '-'}</td>
+                      <td className="hidden lg:table-cell text-right">{earning.marketCap !== null ? formatBillions(earning.marketCap) : '-'}</td>
                       <td className="grouped-cell">
                         <div className="cell-value">{formatEarningsValue(earning.epsEstimate, false, true)}</div>
                         <div className={`cell-value ${earning.epsActual !== null && earning.epsEstimate !== null ? (earning.epsActual >= earning.epsEstimate ? 'positive' : 'negative') : ''}`}>

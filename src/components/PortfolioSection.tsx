@@ -176,7 +176,8 @@ export function PortfolioSection({
       key: 'percentChange',
       header: '% Change',
       sortable: true,
-      className: 'hidden md:table-cell',
+      align: 'right',
+      className: 'text-right hidden md:table-cell',
       render: (stock) => {
         const pct = stock.percentChange ?? 0;
         return (

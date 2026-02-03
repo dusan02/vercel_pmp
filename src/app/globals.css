@@ -172,6 +172,23 @@
       overflow-y: auto;
       overflow-x: hidden;
       -webkit-overflow-scrolling: touch;
+      /* Consolidated padding from bottom of file */
+      padding-bottom: calc(var(--tabbar-h, 72px) + env(safe-area-inset-bottom, 0px) + 1rem);
+    }
+
+    /* Heatmap needs full space (no padding) because it handles its own layout */
+    .mobile-app-screen.screen-heatmap {
+      padding-bottom: 0;
+    }
+
+    /* Container for heatmap content must fill the screen */
+    .screen-heatmap-content {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
     }
 
     /* Show only active screen */
@@ -196,6 +213,8 @@
 
     .mobile-app-content {
       flex: 1;
+      height: 100%;
+      /* CRITICAL: Ensure it takes full height of parent */
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -666,19 +685,5 @@
     background: var(--clr-primary-hover);
   }
 
-  /* Mobile App Screen - View Switching */
-  .mobile-app-screen {
-    display: none;
-    width: 100%;
-    height: 100%;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    /* Proper bottom padding: tab bar (64px) + safe area + comfort margin */
-    padding-bottom: calc(var(--tabbar-h, 72px) + env(safe-area-inset-bottom, 0px) + 1rem);
-  }
 
-  .mobile-app-screen.active {
-    display: block;
-    animation: fadeIn 0.2s ease-out;
-  }
 }

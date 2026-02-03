@@ -24,17 +24,17 @@ interface MobileScreenProps {
  * - Lepšie loading states
  * - Accessibility improvements
  */
-export function MobileScreen({ 
-  children, 
-  active = true, 
+export function MobileScreen({
+  children,
+  active = true,
   className = '',
   skeleton,
   prefetch = false,
   screenName = 'Screen'
 }: MobileScreenProps) {
   const [shouldRender, setShouldRender] = useState(active || prefetch);
-  const [hasRendered, setHasRendered] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [hasRendered, setHasRendered] = useState(active); // Initialize to true if initially active
+  const [isLoading, setIsLoading] = useState(!active); // Not loading if initially active
 
   // Lazy load: render len keď je active alebo prefetch
   useEffect(() => {
@@ -42,14 +42,18 @@ export function MobileScreen({
       setShouldRender(true);
       // Označ ako rendered po prvom načítaní
       if (!hasRendered) {
-        // Prefetch: oneskorenie 1s (neblokuje initial load)
-        // Active: okamžité renderovanie
-        const delay = prefetch && !active ? 1000 : 50;
-        const timer = setTimeout(() => {
+        if (active) {
+          // Active screen: render immediately, no delay
           setHasRendered(true);
           setIsLoading(false);
-        }, delay);
-        return () => clearTimeout(timer);
+        } else if (prefetch) {
+          // Prefetch: oneskorenie 1s (neblokuje initial load)
+          const timer = setTimeout(() => {
+            setHasRendered(true);
+            setIsLoading(false);
+          }, 1000);
+          return () => clearTimeout(timer);
+        }
       } else {
         setIsLoading(false);
       }
@@ -60,29 +64,29 @@ export function MobileScreen({
 
   // Default skeleton loader - REFAKTOROVANÝ pre dark theme mobile
   const defaultSkeleton = (
-    <div 
-      className="p-4 space-y-3" 
-      role="status" 
-      aria-live="polite" 
+    <div
+      className="p-4 space-y-3"
+      role="status"
+      aria-live="polite"
       aria-label="Loading content"
       style={{
         background: '#0f0f0f',
       }}
     >
-      <div 
-        className="h-4 rounded animate-pulse" 
+      <div
+        className="h-4 rounded animate-pulse"
         style={{
           background: 'rgba(255, 255, 255, 0.08)',
         }}
       />
-      <div 
-        className="h-4 rounded animate-pulse w-3/4" 
+      <div
+        className="h-4 rounded animate-pulse w-3/4"
         style={{
           background: 'rgba(255, 255, 255, 0.08)',
         }}
       />
-      <div 
-        className="h-4 rounded animate-pulse w-1/2" 
+      <div
+        className="h-4 rounded animate-pulse w-1/2"
         style={{
           background: 'rgba(255, 255, 255, 0.08)',
         }}
@@ -93,7 +97,7 @@ export function MobileScreen({
   const loadingContent = skeleton || defaultSkeleton;
 
   return (
-    <div 
+    <div
       className={`mobile-app-screen ${active ? 'active' : ''} ${className}`}
       role="tabpanel"
       aria-hidden={!active}

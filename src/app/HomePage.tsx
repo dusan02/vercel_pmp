@@ -156,8 +156,10 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
     if (!isMounted) return;
     try {
       const tab = new URLSearchParams(window.location.search).get('tab');
+      console.log('🔍 Deep-link tab detection:', { tab, currentActiveSection: activeSection });
       if (tab) {
-        setActiveTab(tab);
+        const success = setActiveTab(tab);
+        console.log('🔍 setActiveTab result:', { tab, success, newActiveSection: activeSection });
       }
     } catch {
       // ignore

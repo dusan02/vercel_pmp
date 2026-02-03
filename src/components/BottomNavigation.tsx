@@ -19,35 +19,35 @@ export function BottomNavigation({ activeSection, onSectionChange }: BottomNavig
       label: 'Heatmap',
       icon: LayoutGrid,
       path: '/',
-      isActive: (p: string, section?: string) => section === 'heatmap' || p === '/' || p.startsWith('/heatmap')
+      isActive: (section?: string) => section === 'heatmap'
     },
     {
       id: 'portfolio',
       label: 'Portfolio',
       icon: PieChart,
       path: '/#portfolio',
-      isActive: (p: string, section?: string) => section === 'portfolio' || p === '/portfolio' || p.includes('portfolio')
+      isActive: (section?: string) => section === 'portfolio'
     },
     {
       id: 'favorites',
       label: 'Favorites',
       icon: Star,
       path: '/#favorites',
-      isActive: (p: string, section?: string) => section === 'favorites' || p === '/favorites' || p.includes('favorites')
+      isActive: (section?: string) => section === 'favorites'
     },
     {
       id: 'earnings',
       label: 'Earnings',
       icon: Calendar,
       path: '/#earnings',
-      isActive: (p: string, section?: string) => section === 'earnings' || p === '/earnings' || p.includes('earnings')
+      isActive: (section?: string) => section === 'earnings'
     },
     {
       id: 'all-stocks',
       label: 'All Stocks',
       icon: List,
       path: '/#all-stocks',
-      isActive: (p: string, section?: string) => section === 'allStocks' || section === 'all-stocks' || p === '/stocks' || p.includes('stocks')
+      isActive: (section?: string) => section === 'allStocks' || section === 'all-stocks'
     }
   ];
 
@@ -77,7 +77,7 @@ export function BottomNavigation({ activeSection, onSectionChange }: BottomNavig
       <div className="flex justify-around items-center h-16">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const active = item.isActive(pathname, activeSection);
+          const active = item.isActive(activeSection);
 
           return (
             <button
