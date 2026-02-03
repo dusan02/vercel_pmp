@@ -31,8 +31,22 @@ module.exports = {
       interpreter: "npx",
       interpreter_args: "tsx",
       cwd: "/var/www/premarketprice",
-      instances: 1,
-      exec_mode: "fork",
+      
+      // Cluster mode for load balancing and zero-downtime deploys
+      instances: 2,
+      exec_mode: "cluster",
+      
+      // Resource management - prevent memory leaks and ensure restarts
+      max_memory_restart: "1G",
+      kill_timeout: 5000,
+      wait_ready: true,
+      listen_timeout: 10000,
+      
+      // Restart strategy
+      max_restarts: 10,
+      min_uptime: "10s",
+      autorestart: true,
+      
       env_production: {
         NODE_ENV: "production",
         PORT: 3000,
@@ -51,6 +65,7 @@ module.exports = {
       error_file: "/var/log/pm2/premarketprice-error.log",
       out_file: "/var/log/pm2/premarketprice-out.log",
       log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      merge_logs: true,
     },
     {
       name: "pmp-polygon-worker",
