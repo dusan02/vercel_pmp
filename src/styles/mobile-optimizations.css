@@ -9,6 +9,7 @@
 
 /* Minimum touch target size: 44x44px (Apple HIG, Material Design) */
 @media (max-width: 1024px) {
+
   /* Buttons */
   button,
   .btn,
@@ -47,7 +48,8 @@
   select {
     min-height: 44px;
     padding: 0.75rem 1rem;
-    font-size: 1rem; /* Prevents zoom on iOS */
+    font-size: 1rem;
+    /* Prevents zoom on iOS */
   }
 }
 
@@ -395,6 +397,7 @@
    ============================================ */
 
 @media (max-width: 1024px) {
+
   .favorites,
   .all-stocks,
   .earnings-section {
@@ -411,6 +414,7 @@
 }
 
 @media (max-width: 768px) {
+
   .favorites table,
   .all-stocks table,
   .earnings-section table {
@@ -418,9 +422,11 @@
   }
 
   /* Hide less important columns */
-  .favorites table th:nth-child(4), /* Sector */
+  .favorites table th:nth-child(4),
+  /* Sector */
   .favorites table td:nth-child(4),
-  .favorites table th:nth-child(5), /* Industry */
+  .favorites table th:nth-child(5),
+  /* Industry */
   .favorites table td:nth-child(5),
   .all-stocks table th:nth-child(4),
   .all-stocks table td:nth-child(4),
@@ -447,6 +453,7 @@
 }
 
 @media (max-width: 480px) {
+
   .favorites table,
   .all-stocks table {
     min-width: 600px;
@@ -530,6 +537,7 @@
 
 /* Prevent text selection on tap */
 @media (max-width: 768px) {
+
   button,
   .nav-item,
   .group,
@@ -579,6 +587,7 @@
    ============================================ */
 
 @media (min-width: 769px) and (max-width: 1024px) {
+
   /* Better use of tablet screen space */
   .header-container {
     max-width: 100%;
@@ -601,6 +610,7 @@
    ============================================ */
 
 @media (max-width: 1024px) {
+
   /* Larger focus indicators */
   button:focus-visible,
   a:focus-visible,
@@ -617,3 +627,74 @@
   }
 }
 
+/* ============================================
+   MOBILE APP TAB BAR (CRITICAL)
+   ============================================ */
+@media (max-width: 1023px) {
+  .mobile-app-tabbar {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    height: var(--tabbar-h, 72px);
+    background: #0f0f0f;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .mobile-app-tab {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    height: 100%;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    transition: color 0.2s ease;
+    padding: 0.5rem;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mobile-app-tab:active {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .mobile-app-tab.active {
+    color: #3b82f6;
+  }
+
+  .mobile-app-tab-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.375rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .mobile-app-tab-indicator {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 32px;
+    height: 3px;
+    background: #3b82f6;
+    border-radius: 2px 2px 0 0;
+    animation: slideUp 0.2s ease-out;
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateX(-50%) translateY(3px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  }
+}
