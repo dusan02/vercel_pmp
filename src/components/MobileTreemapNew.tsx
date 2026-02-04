@@ -129,7 +129,8 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
         sectorHeights.push(Math.max(MIN_SECTOR_HEIGHT, baseHeight - allocatedHeight));
       } else {
         const raw = Math.round(baseHeight * ((sectorSums[i] || 0) / totalSum));
-        const finalH = Math.max(MIN_SECTOR_HEIGHT, raw);
+        // Use Math.round to ensure integer height
+        const finalH = Math.round(Math.max(MIN_SECTOR_HEIGHT, raw));
         sectorHeights.push(finalH);
         allocatedHeight += finalH;
       }
@@ -158,7 +159,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
         .size([width, sectorHeight])
         .padding(0)
         .paddingInner(1) // Add 1px gap between tiles to prevent overlaps
-        .round(true)
+        .round(true) // Enable rounding to align to pixels
         .tile(treemapSquarify);
 
       sectorTreemap(sectorHierarchyNode);

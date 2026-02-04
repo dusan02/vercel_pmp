@@ -53,7 +53,10 @@ export function PortfolioPerformanceTreemap({ data, metric = 'percent' }: Portfo
     // Min 250px, Max 600px. Approx 100px per row/item logic?
     // If 1 item, aspect ratio should be reasonable (e.g. 16:9 or 2:1), not 1:3 vertical.
     // Let's use a base height and clamp it.
-    const dynamicHeight = Math.min(600, Math.max(250, heatmapData.length * 120));
+    // Dynamic height based on number of stocks to prevent giant empty squares
+    // Min 250px, NO MAX cap - allow it to grow to fit all items (approx 120px per row)
+    // This allows the Mobile page to expand and scroll naturally.
+    const dynamicHeight = Math.max(250, heatmapData.length * 120);
 
     return (
         <div className="w-full p-4 md:p-6 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
@@ -63,7 +66,7 @@ export function PortfolioPerformanceTreemap({ data, metric = 'percent' }: Portfo
 
             <div
                 ref={ref}
-                className="relative w-full overflow-y-auto overflow-x-hidden select-none"
+                className="relative w-full overflow-hidden select-none"
                 style={{
                     width: '100%',
                     height: `${dynamicHeight}px`,
