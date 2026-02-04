@@ -49,6 +49,12 @@ export function PortfolioPerformanceTreemap({ data, metric = 'percent' }: Portfo
         }));
     }, [data, metric]);
 
+    // Dynamic height based on number of stocks to prevent giant empty squares
+    // Min 250px, Max 600px. Approx 100px per row/item logic?
+    // If 1 item, aspect ratio should be reasonable (e.g. 16:9 or 2:1), not 1:3 vertical.
+    // Let's use a base height and clamp it.
+    const dynamicHeight = Math.min(600, Math.max(250, heatmapData.length * 120));
+
     return (
         <div className="w-full p-4 md:p-6 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
             <h3 className="text-base font-semibold text-[var(--clr-subtext)] mb-4 uppercase tracking-wider">
@@ -60,17 +66,17 @@ export function PortfolioPerformanceTreemap({ data, metric = 'percent' }: Portfo
                 className="relative w-full overflow-hidden select-none"
                 style={{
                     width: '100%',
-                    height: '600px',
-                    minHeight: '600px',
+                    height: `${dynamicHeight}px`,
+                    minHeight: '250px',
                     backgroundColor: '#000000',
                     color: 'white' // ensure any text inside is visible against black
                 }}
             >
-                {width > 0 && height > 0 && (
+                {width > 0 && dynamicHeight > 0 && (
                     <MarketHeatmap
                         data={heatmapData}
                         width={width}
-                        height={height}
+                        height={dynamicHeight}
                         timeframe="day"
                         metric={metric === 'dollar' ? 'mcap' : 'percent'} // Map 'dollar' to 'mcap' which MarketHeatmap interprets as absolute value coloring
                         sectorLabelVariant="compact"

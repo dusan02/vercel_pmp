@@ -359,6 +359,7 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
           )}
           <PullToRefresh
             onRefresh={loadData}
+            disabled={activeSection === 'heatmap'} // Disable PTR on heatmap to allow scrolling up
             className="flex-1 w-full relative overflow-hidden"
           >
             <div className={`mobile-app-content ${activeSection === 'heatmap' ? 'is-heatmap' : ''}`}>
@@ -461,7 +462,7 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
               </MobileScreen>
             </div>
           </PullToRefresh>
-          <FloatingSearchButton onClick={() => handleMobileNavChange('allStocks')} />
+          {/* Floating Search Button Removed */}
           <BottomNavigation
             activeSection={activeSection}
             onSectionChange={handleMobileNavChange}
