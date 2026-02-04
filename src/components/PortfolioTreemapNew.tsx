@@ -63,7 +63,7 @@ export function PortfolioPerformanceTreemap({ data, metric = 'percent' }: Portfo
 
             <div
                 ref={ref}
-                className="relative w-full overflow-hidden select-none"
+                className="relative w-full overflow-y-auto overflow-x-hidden select-none"
                 style={{
                     width: '100%',
                     height: `${dynamicHeight}px`,

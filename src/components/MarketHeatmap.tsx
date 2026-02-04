@@ -447,7 +447,9 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
         const sectorHeight = (sectorValue / totalValue) * estimatedTotalHeight;
         // Minimum height should be reasonable - 60% of viewport to prevent too much empty space
         const minSectorHeight = height * 0.6; // Minimum height = 60% of viewport
-        const finalSectorHeight = Math.max(sectorHeight, minSectorHeight);
+
+        // Use Math.round to ensure integer pixel values and prevent subpixel overlaps
+        const finalSectorHeight = Math.round(Math.max(sectorHeight, minSectorHeight));
 
         // Create separate treemap for this sector
         const sectorData: HierarchyData = {
@@ -467,6 +469,7 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
           .paddingLeft(0)
           .paddingRight(0)
           .paddingBottom(0)
+          .round(true) // Enable rounding to align to pixels
           .tile(treemapSquarify);
 
         sectorTreemap(sectorHierarchy);
