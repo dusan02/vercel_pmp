@@ -21,7 +21,7 @@ interface MobileTreemapNewProps {
   activeView?: string | undefined;
 }
 
-const MAX_MOBILE_TILES = 120; // Reduced for better mobile visibility and performance
+const MAX_MOBILE_TILES = 600; // Increased to cover S&P 500
 
 export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   data,
@@ -161,7 +161,6 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
         .size([width, sectorHeight])
         .padding(0)
         .paddingInner(0) // 0px border/gap to prevent gaps/jagged edges
-        .round(true)     // Integers only
         .tile(treemapSquarify);
 
       sectorTreemap(sectorHierarchyNode);

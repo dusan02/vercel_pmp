@@ -2,13 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-html,
-body {
-  overscroll-behavior-y: none;
-  /* Prevent elastic scrolling/refresh pull on mobile */
-  height: 100%;
-}
-
 /* ============================================
    ESSENTIAL CSS VARIABLES
    ============================================ */
