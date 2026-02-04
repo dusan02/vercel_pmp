@@ -100,12 +100,12 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
 
   // Build treemap hierarchy using buildHeatmapHierarchy (same as original)
   const treemapResult = useMemo(() => {
-    if (sortedData.length === 0 || containerSize.width <= 0 || containerSize.height <= 0) return { tiles: [], sectors: [] };
+    if (sortedData.length === 0 || containerSize.width <= 0 || containerSize.height <= 0) return { sectors: [] };
 
     const sectorHierarchy = buildHeatmapHierarchy(sortedData, metric);
     const sectors = sectorHierarchy.children ?? [];
 
-    if (sectors.length === 0) return { tiles: [], sectors: [] };
+    if (sectors.length === 0) return { sectors: [] };
 
     const sumSector = (sector: any) => {
       const children = sector?.children ?? [];
@@ -115,186 +115,185 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
     const sectorSums = sectors.map(sumSector);
     const totalSum = sectorSums.reduce((a, b) => a + b, 0) || 1;
 
-    // CRITICAL: Use measured container height to eliminate gaps
-    // Force minimum height to allow scrolling as requested
-    const scrollHeight = Math.max(containerSize.height, 800);
-    const baseHeight = scrollHeight;
-    const MIN_SECTOR_HEIGHT = 48; // Lowered slightly to allow more flexibility
+    // --- REFRACTORED LOGIC FOR SEGMENTED BLOCKS ---
+
+    // 1. Calculate sector heights based on total available scroll area
+    // Use a multiplier to ensure the heatmap is tall enough to be readable
+    // Min 800px or screen height * 1.5
+    const totalContentHeight = Math.max(containerSize.height * 1.2, 900);
+    const baseHeight = totalContentHeight;
+    const MIN_SECTOR_HEIGHT = 80; // Minimum usable height for a small sector
+
     const sectorHeights: number[] = [];
     let allocatedHeight = 0;
 
     for (let i = 0; i < sectors.length; i++) {
       if (i === sectors.length - 1) {
-        // Last sector takes exactly what's left to avoid gaps
-        sectorHeights.push(Math.max(MIN_SECTOR_HEIGHT, baseHeight - allocatedHeight));
+        // Last sector takes exactly what's left
+        const h = Math.max(MIN_SECTOR_HEIGHT, baseHeight - allocatedHeight);
+        sectorHeights.push(Math.round(h));
       } else {
         const raw = Math.round(baseHeight * ((sectorSums[i] || 0) / totalSum));
-        // Use Math.round to ensure integer height
+        // Ensure integer height
         const finalH = Math.round(Math.max(MIN_SECTOR_HEIGHT, raw));
         sectorHeights.push(finalH);
         allocatedHeight += finalH;
       }
     }
 
-    const allLeaves: Array<{ x0: number; y0: number; x1: number; y1: number; company: CompanyNode }> = [];
-    const sectorHeaders: Array<{ name: string; y: number; height: number }> = [];
-    let currentY = 0;
+    // 2. Build Sector Blocks with their own independent Treemaps
+    const sectorBlocks = sectors.map((sector: any, sectorIdx: number) => {
+      if (!sector.children || sector.children.length === 0) return null;
 
-    sectors.forEach((sector: any, sectorIdx: number) => {
-      if (!sector.children || sector.children.length === 0) return;
+      const sectorHeight = sectorHeights[sectorIdx] ?? 0;
+      if (sectorHeight <= 0) return null;
 
-      const sectorHeight: number = sectorHeights[sectorIdx] ?? 0;
-      if (sectorHeight <= 0) return;
+      const width = containerSize.width;
+      if (width <= 0) return null;
 
-      sectorHeaders.push({ name: sector.name, y: currentY, height: sectorHeight });
-
+      // Create hierarchy for JUST this sector
       const sectorHierarchyNode = hierarchy(sector)
         .sum((d: any) => d.value || 0)
         .sort((a: any, b: any) => (b.value || 0) - (a.value || 0));
 
-      const width: number = containerSize.width ?? 0;
-      if (width <= 0) return;
-
+      // Calculate Treemap layout for this sector block (0,0 is top-left of the block)
       const sectorTreemap = treemap()
         .size([width, sectorHeight])
         .padding(0)
-        .paddingInner(1) // Add 1px gap between tiles to prevent overlaps
-        .round(true) // Enable rounding to align to pixels
+        .paddingInner(1) // 1px border/gap
+        .round(true)     // Integers only
         .tile(treemapSquarify);
 
       sectorTreemap(sectorHierarchyNode);
 
-      sectorHierarchyNode.leaves().forEach((leaf: any) => {
-        allLeaves.push({
-          x0: leaf.x0 || 0,
-          y0: (leaf.y0 || 0) + currentY,
-          x1: leaf.x1 || 0,
-          y1: (leaf.y1 || 0) + currentY,
-          company: leaf.data.meta?.companyData || leaf.data,
-        });
-      });
+      // Extract leaves relative to this sector block
+      const sectorLeaves = sectorHierarchyNode.leaves().map((leaf: any) => ({
+        x0: leaf.x0,
+        y0: leaf.y0,
+        x1: leaf.x1,
+        y1: leaf.y1,
+        company: leaf.data.meta?.companyData || leaf.data,
+      }));
 
-      currentY += sectorHeight;
-    });
+      return {
+        name: sector.name,
+        height: sectorHeight,
+        children: sectorLeaves
+      };
+    }).filter(Boolean); // Filter out nulls
 
-    return { tiles: allLeaves, sectors: sectorHeaders };
+    return { sectors: sectorBlocks }; // No more flat 'tiles' array needed
   }, [sortedData, metric, containerSize]);
 
-  const { tiles: treemapData, sectors: sectorHeaders } = treemapResult;
+  // Direct use of treemapResult.sectors in JSX.
+  const { sectors: sectorBlocks } = treemapResult;
 
   // Render treemap tiles and headers
   const renderHeatmapContent = () => {
-    if (!treemapData || !Array.isArray(treemapData)) return null;
+    if (!sectorBlocks || !Array.isArray(sectorBlocks)) return null;
 
     return (
       <>
-        {/* Sector Labels (Background) */}
-        {sectorHeaders.map((header, idx) => (
-          <div
-            key={`sector-${idx}`}
-            style={{
-              position: 'absolute',
-              top: `${header.y}px`,
-              left: 0,
-              width: '100%',
-              height: `${header.height}px`,
-              pointerEvents: 'none',
-              zIndex: 0,
-            }}
-          >
-            <div style={{
-              position: 'sticky',
-              top: '0px',
-              padding: '4px 8px',
-              fontSize: '10px',
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              color: 'rgba(255, 255, 255, 0.2)',
-              letterSpacing: '0.05em',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              maxWidth: '80%',
-            }}>
-              {header.name}
-            </div>
-          </div>
-        ))}
-
-        {/* Company Tiles */}
-        {treemapData.map((leaf, index) => {
-          const company = leaf.company;
-          const color = getColor(company);
-          const x = leaf.x0;
-          const y = leaf.y0;
-          const width = leaf.x1 - leaf.x0;
-          const height = leaf.y1 - leaf.y0;
-
-          if (width <= 0 || height <= 0) return null;
+        {sectorBlocks.map((sector) => {
+          if (!sector) return null; // Safety check
 
           return (
             <div
-              key={`${company.symbol}-${index}`}
-              role="button"
-              tabIndex={0}
-              onClick={(e) => {
-                e.stopPropagation();
-                setSelectedCompany(company);
-                onTileClick?.(company);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  setSelectedCompany(company);
-                  onTileClick?.(company);
-                }
-              }}
+              key={sector.name}
               style={{
-                position: 'absolute',
-                left: `${x}px`,
-                top: `${y}px`,
-                width: `${width}px`,
-                height: `${height}px`,
-                background: color,
-                border: '1px solid rgba(0, 0, 0, 0.4)', // Optional: keep border for definition or remove if padding is enough
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'center',
-                cursor: 'pointer',
-                transition: 'transform 0.15s ease-out, opacity 0.15s ease-out',
-                WebkitTapHighlightColor: 'transparent',
-                zIndex: 1,
-              }}
-              onTouchStart={(e) => {
-                e.currentTarget.style.transform = 'scale(0.96)';
-                e.currentTarget.style.opacity = '0.9';
-              }}
-              onTouchEnd={(e) => {
-                e.currentTarget.style.transform = 'scale(1)';
-                e.currentTarget.style.opacity = '1';
+                position: 'relative',
+                width: '100%',
+                height: `${sector.height}px`,
+                flexShrink: 0,
+                display: 'block', // Ensure it's a block context
               }}
             >
-              <div style={{
-                fontSize: Math.min(width, height) > 50 ? '13px' : '10px',
-                fontWeight: 700,
-                color: '#ffffff',
-                textAlign: 'center',
-                textShadow: '0 1px 2px rgba(0,0,0,0.5)',
-              }}>
-                {company.symbol}
-              </div>
-              {Math.min(width, height) > 40 && (
-                <div style={{
-                  fontSize: '9px',
-                  fontWeight: 500,
+              {/* Sticky Sector Header */}
+              <div
+                style={{
+                  position: 'sticky',
+                  top: '0px',
+                  zIndex: 8, // Sticky header z-index
+                  padding: '4px 8px',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
                   color: 'rgba(255, 255, 255, 0.9)',
-                  textAlign: 'center',
-                  marginTop: '1px',
-                }}>
-                  {formatPercent(company.changePercent)}
-                </div>
-              )}
+                  textShadow: '0 1px 4px rgba(0,0,0,0.8)',
+                  letterSpacing: '0.05em',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  pointerEvents: 'none', // Allow clicking through to tiles
+                  mixBlendMode: 'difference', // Ensure visibility on any color
+                }}
+              >
+                {sector.name}
+              </div>
+
+              {/* Render Tiles for this Sector */}
+              {sector.children.map((leaf: any, i: number) => {
+                const company = leaf.company;
+                const color = getColor(company);
+                // Coordinates are now relative to the SECTOR block, not global
+                const x = leaf.x0;
+                const y = leaf.y0;
+                const width = leaf.x1 - leaf.x0;
+                const height = leaf.y1 - leaf.y0;
+
+                if (width <= 0 || height <= 0) return null;
+
+                return (
+                  <div
+                    key={`${company.symbol}-${i}`}
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedCompany(company);
+                      onTileClick?.(company);
+                    }}
+                    style={{
+                      position: 'absolute',
+                      left: `${x}px`,
+                      top: `${y}px`,
+                      width: `${width}px`,
+                      height: `${height}px`,
+                      background: color,
+                      border: '1px solid rgba(0, 0, 0, 0.2)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      cursor: 'pointer',
+                      zIndex: 1, // Tile z-index
+                    }}
+                  >
+                    <div style={{
+                      fontSize: Math.min(width, height) > 50 ? '13px' : '10px',
+                      fontWeight: 700,
+                      color: '#ffffff',
+                      textAlign: 'center',
+                      textShadow: '0 1px 2px rgba(0,0,0,0.5)',
+                      pointerEvents: 'none', // Allow click on tile
+                    }}>
+                      {company.symbol}
+                    </div>
+                    {Math.min(width, height) > 40 && (
+                      <div style={{
+                        fontSize: '9px',
+                        fontWeight: 500,
+                        color: 'rgba(255, 255, 255, 0.9)',
+                        textAlign: 'center',
+                        marginTop: '1px',
+                        pointerEvents: 'none',
+                      }}>
+                        {formatPercent(company.changePercent)}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           );
         })}
@@ -367,30 +366,31 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
 
       {/* Spacer REMOVED */}
 
-      {/* Treemap Container - fills remaining space exactly */}
+      {/* Treemap Container - Segmented Blocks */}
       <div
         ref={containerRef}
+        className="mobile-heatmap-scroll"
         style={{
           flex: 1,
           minHeight: 0,
           width: '100%',
           position: 'relative',
           background: '#000',
-          overflow: 'auto',
+          overflowY: 'auto',
+          overflowX: 'hidden',
           WebkitOverflowScrolling: 'touch',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'stretch',
+          gap: '8px', // Distinct gap between sector blocks
+          paddingBottom: '20px',
         }}
       >
-        {sortedData.length > 0 && containerSize.width > 0 && containerSize.height > 0 ? (
-          <div style={{
-            position: 'relative',
-            width: '100%',
-            height: treemapData && Array.isArray(treemapData)
-              ? Math.max(containerSize.height, (treemapData[treemapData.length - 1]?.y1 || 0))
-              : containerSize.height,
-          }}>
-            {renderHeatmapContent()}
-          </div>
+        {treemapResult.sectors && treemapResult.sectors.length > 0 && containerSize.width > 0 ? (
+          renderHeatmapContent()
         ) : (
+
+
           <div style={{
             display: 'flex',
             flexDirection: 'column',
@@ -416,118 +416,120 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
             </span>
           </div>
         )}
-      </div>
+      </div >
 
       {/* Detail Panel - Bottom Sheet (tap on tile) */}
-      {selectedCompany && (
-        <>
-          <button
-            type="button"
-            aria-label="Close details"
-            onClick={closeSheet}
-            className="fixed inset-0"
-            style={{
-              background: 'rgba(0,0,0,0.6)',
-              zIndex: 9998,
-              bottom: 'var(--tabbar-real-h, var(--tabbar-h, 72px))',
-              backdropFilter: 'blur(4px)',
-              WebkitBackdropFilter: 'blur(4px)',
-            }}
-          />
-          <div
-            className="fixed inset-x-0"
-            style={{
-              zIndex: 10000,
-              background: '#0f0f0f',
-              color: '#ffffff',
-              borderTopLeftRadius: 20,
-              borderTopRightRadius: 20,
-              boxShadow: '0 -8px 32px rgba(0,0,0,0.5)',
-              padding: '16px',
-              maxHeight: 'calc(100dvh - 48px - var(--tabbar-real-h, var(--tabbar-h, 72px)))',
-              overflow: 'auto',
-              bottom: 'var(--tabbar-real-h, var(--tabbar-h, 72px))',
-              WebkitOverflowScrolling: 'touch',
-            }}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="flex-shrink-0">
-                  <CompanyLogo ticker={selectedCompany.symbol} size={40} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-lg font-bold leading-tight">
-                    {selectedCompany.symbol}
+      {
+        selectedCompany && (
+          <>
+            <button
+              type="button"
+              aria-label="Close details"
+              onClick={closeSheet}
+              className="fixed inset-0"
+              style={{
+                background: 'rgba(0,0,0,0.6)',
+                zIndex: 9998,
+                bottom: 'var(--tabbar-real-h, var(--tabbar-h, 72px))',
+                backdropFilter: 'blur(4px)',
+                WebkitBackdropFilter: 'blur(4px)',
+              }}
+            />
+            <div
+              className="fixed inset-x-0"
+              style={{
+                zIndex: 10000,
+                background: '#0f0f0f',
+                color: '#ffffff',
+                borderTopLeftRadius: 20,
+                borderTopRightRadius: 20,
+                boxShadow: '0 -8px 32px rgba(0,0,0,0.5)',
+                padding: '16px',
+                maxHeight: 'calc(100dvh - 48px - var(--tabbar-real-h, var(--tabbar-h, 72px)))',
+                overflow: 'auto',
+                bottom: 'var(--tabbar-real-h, var(--tabbar-h, 72px))',
+                WebkitOverflowScrolling: 'touch',
+              }}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="flex-shrink-0">
+                    <CompanyLogo ticker={selectedCompany.symbol} size={40} />
                   </div>
-                  <div className="text-xs opacity-70 leading-tight mt-1 truncate">
-                    {selectedCompany.sector} · {selectedCompany.industry}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-lg font-bold leading-tight">
+                      {selectedCompany.symbol}
+                    </div>
+                    <div className="text-xs opacity-70 leading-tight mt-1 truncate">
+                      {selectedCompany.sector} · {selectedCompany.industry}
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                {onToggleFavorite && (
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {onToggleFavorite && (
+                    <button
+                      type="button"
+                      onClick={() => onToggleFavorite(selectedCompany.symbol)}
+                      className="w-10 h-10 rounded-lg flex items-center justify-center text-lg transition-colors"
+                      style={{
+                        background: (isFavorite && isFavorite(selectedCompany.symbol)) ? 'rgba(251,191,36,0.2)' : 'rgba(255,255,255,0.1)',
+                        color: (isFavorite && isFavorite(selectedCompany.symbol)) ? '#fbbf24' : '#ffffff',
+                        WebkitTapHighlightColor: 'transparent',
+                      }}
+                      aria-label={(isFavorite && isFavorite(selectedCompany.symbol)) ? 'Remove from favorites' : 'Add to favorites'}
+                    >
+                      {(isFavorite && isFavorite(selectedCompany.symbol)) ? '★' : '☆'}
+                    </button>
+                  )}
                   <button
                     type="button"
-                    onClick={() => onToggleFavorite(selectedCompany.symbol)}
-                    className="w-10 h-10 rounded-lg flex items-center justify-center text-lg transition-colors"
+                    onClick={closeSheet}
+                    className="w-10 h-10 rounded-lg flex items-center justify-center text-lg font-semibold transition-colors"
                     style={{
-                      background: (isFavorite && isFavorite(selectedCompany.symbol)) ? 'rgba(251,191,36,0.2)' : 'rgba(255,255,255,0.1)',
-                      color: (isFavorite && isFavorite(selectedCompany.symbol)) ? '#fbbf24' : '#ffffff',
-                      WebkitTapHighlightColor: 'transparent',
+                      background: 'rgba(255,255,255,0.1)',
+                      color: '#ffffff',
+                      WebkitTapHighlightColor: 'transparent'
                     }}
-                    aria-label={(isFavorite && isFavorite(selectedCompany.symbol)) ? 'Remove from favorites' : 'Add to favorites'}
+                    aria-label="Close"
                   >
-                    {(isFavorite && isFavorite(selectedCompany.symbol)) ? '★' : '☆'}
+                    ✕
                   </button>
-                )}
-                <button
-                  type="button"
-                  onClick={closeSheet}
-                  className="w-10 h-10 rounded-lg flex items-center justify-center text-lg font-semibold transition-colors"
-                  style={{
-                    background: 'rgba(255,255,255,0.1)',
-                    color: '#ffffff',
-                    WebkitTapHighlightColor: 'transparent'
-                  }}
-                  aria-label="Close"
+                </div>
+              </div>
+
+              {/* Data Grid */}
+              <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+                <div className="opacity-70 text-xs">Price</div>
+                <div className="text-right font-semibold font-mono tabular-nums">
+                  {selectedCompany.currentPrice ? `$${formatPrice(selectedCompany.currentPrice)}` : '—'}
+                </div>
+
+                <div className="opacity-70 text-xs">Market Cap</div>
+                <div className="text-right font-semibold font-mono tabular-nums">
+                  {formatMarketCap(selectedCompany.marketCap ?? 0)}
+                </div>
+
+                <div className="opacity-70 text-xs">% Change</div>
+                <div
+                  className={`text-right font-semibold font-mono tabular-nums ${(selectedCompany.changePercent ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'
+                    }`}
                 >
-                  ✕
-                </button>
+                  {formatPercent(selectedCompany.changePercent ?? 0)}
+                </div>
+
+                <div className="opacity-70 text-xs">Mcap Δ</div>
+                <div
+                  className={`text-right font-semibold font-mono tabular-nums ${(selectedCompany.marketCapDiff ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'
+                    }`}
+                >
+                  {selectedCompany.marketCapDiff == null ? '—' : formatMarketCapDiff(selectedCompany.marketCapDiff)}
+                </div>
               </div>
             </div>
-
-            {/* Data Grid */}
-            <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-              <div className="opacity-70 text-xs">Price</div>
-              <div className="text-right font-semibold font-mono tabular-nums">
-                {selectedCompany.currentPrice ? `$${formatPrice(selectedCompany.currentPrice)}` : '—'}
-              </div>
-
-              <div className="opacity-70 text-xs">Market Cap</div>
-              <div className="text-right font-semibold font-mono tabular-nums">
-                {formatMarketCap(selectedCompany.marketCap ?? 0)}
-              </div>
-
-              <div className="opacity-70 text-xs">% Change</div>
-              <div
-                className={`text-right font-semibold font-mono tabular-nums ${(selectedCompany.changePercent ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'
-                  }`}
-              >
-                {formatPercent(selectedCompany.changePercent ?? 0)}
-              </div>
-
-              <div className="opacity-70 text-xs">Mcap Δ</div>
-              <div
-                className={`text-right font-semibold font-mono tabular-nums ${(selectedCompany.marketCapDiff ?? 0) >= 0 ? 'text-green-400' : 'text-red-400'
-                  }`}
-              >
-                {selectedCompany.marketCapDiff == null ? '—' : formatMarketCapDiff(selectedCompany.marketCapDiff)}
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-    </div>
+          </>
+        )
+      }
+    </div >
   );
 };
