@@ -59,7 +59,7 @@ export const PortfolioCardMobile = memo(({
             ${formattedPrice}
           </div>
           <div className={`text-[11px] font-mono leading-tight mt-0.5 ${value >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-            {value >= 0 ? '+' : ''}{formattedValue}
+            {formattedValue}
           </div>
         </div>
 

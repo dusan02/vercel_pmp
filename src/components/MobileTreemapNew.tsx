@@ -1,16 +1,14 @@
 'use client';
 
-import React, { useMemo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, { useMemo, useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { CompanyNode } from './MarketHeatmap';
 import { formatPrice, formatPercent, formatMarketCap, formatMarketCapDiff } from '@/lib/utils/format';
 import { createHeatmapColorScale } from '@/lib/utils/heatmapColors';
 import CompanyLogo from './CompanyLogo';
-import { HeatmapMetricButtons } from './HeatmapMetricButtons';
 import { BrandLogo } from './BrandLogo';
 import { LoginButton } from './LoginButton';
 import { hierarchy, treemap, treemapSquarify } from 'd3-hierarchy';
 import { buildHeatmapHierarchy } from '@/lib/utils/heatmapLayout';
-import type { HierarchyData } from '@/components/MarketHeatmap';
 
 interface MobileTreemapNewProps {
   data: CompanyNode[];
@@ -23,23 +21,8 @@ interface MobileTreemapNewProps {
   activeView?: string | undefined;
 }
 
-const MAX_MOBILE_TILES = 800;
+const MAX_MOBILE_TILES = 120; // Reduced for better mobile visibility and performance
 
-type TreemapDatum = {
-  name: string;
-  value: number;
-  company: CompanyNode;
-};
-
-/**
- * NOVÝ MOBILE HEATMAP - Úplne nový prístup
- * 
- * Princíp:
- * - Jednoduchý layout bez zbytočných wrapperov
- * - Presná výška: 100vh - header - tabbar
- * - Žiadny čierny priestor
- * - Flexbox layout s presnými výpočtami
- */
 export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   data,
   timeframe = 'day',
@@ -50,11 +33,9 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   isFavorite,
   activeView,
 }) => {
-  const [zoom, setZoom] = useState(1);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const headerRef = useRef<HTMLDivElement | null>(null);
   const [containerSize, setContainerSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
-  const [headerH, setHeaderH] = useState(48);
+
   // Detail panel state
   const [selectedCompany, setSelectedCompany] = useState<CompanyNode | null>(null);
   const closeSheet = useCallback(() => setSelectedCompany(null), []);
@@ -93,14 +74,6 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
     return colorScale(value);
   }, [metric, colorScale]);
 
-
-  // Measure header height
-  useLayoutEffect(() => {
-    if (headerRef.current) {
-      const rect = headerRef.current.getBoundingClientRect();
-      setHeaderH(Math.ceil(rect.height));
-    }
-  }, []);
 
   // Update container size
   useLayoutEffect(() => {
@@ -282,7 +255,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                 width: `${width}px`,
                 height: `${height}px`,
                 background: color,
-                border: '1px solid rgba(0, 0, 0, 0.4)',
+                border: '1px solid rgba(0, 0, 0, 0.4)', // Optional: keep border for definition or remove if padding is enough
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'center',
@@ -338,18 +311,12 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
         zIndex: 1,
       }}
     >
-      {/* Header - Sticky instead of Fixed to stay within the screen context */}
+      {/* Header - Relative positioning */}
       <div
-        ref={headerRef}
         style={{
-          position: 'sticky',
-          top: 0,
-          left: 0,
-          right: 0,
+          position: 'relative',
           zIndex: 100,
           background: 'rgba(0,0,0,0.92)',
-          backdropFilter: 'blur(10px)',
-          WebkitBackdropFilter: 'blur(10px)',
           borderBottom: '1px solid rgba(255,255,255,0.08)',
           padding: '8px 12px',
           paddingTop: 'calc(8px + env(safe-area-inset-top, 0px))',
@@ -397,8 +364,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
         </div>
       </div>
 
-      {/* Spacer for fixed header */}
-      <div style={{ height: `${headerH}px`, flexShrink: 0 }} />
+      {/* Spacer REMOVED */}
 
       {/* Treemap Container - fills remaining space exactly */}
       <div
