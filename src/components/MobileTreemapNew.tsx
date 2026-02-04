@@ -160,7 +160,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
       const sectorTreemap = treemap()
         .size([width, sectorHeight])
         .padding(0)
-        .paddingInner(1) // 1px border/gap
+        .paddingInner(0) // 0px border/gap to prevent gaps/jagged edges
         .round(true)     // Integers only
         .tile(treemapSquarify);
 
