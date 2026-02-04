@@ -201,99 +201,108 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
             <div
               key={sector.name}
               style={{
-                position: 'relative',
+                display: 'block',
                 width: '100%',
-                height: `${sector.height}px`,
-                flexShrink: 0,
-                display: 'block', // Ensure it's a block context
+                marginBottom: '10px', // Sector Spacing
               }}
             >
-              {/* Sticky Sector Header */}
+              {/* Static Sector Header */}
               <div
                 style={{
-                  position: 'sticky',
-                  top: '0px',
-                  zIndex: 8, // Sticky header z-index
-                  padding: '4px 8px',
+                  padding: '6px 8px',
                   fontSize: '11px',
                   fontWeight: 700,
                   textTransform: 'uppercase',
-                  color: 'rgba(255, 255, 255, 0.9)',
-                  textShadow: '0 1px 4px rgba(0,0,0,0.8)',
-                  letterSpacing: '0.05em',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  pointerEvents: 'none', // Allow clicking through to tiles
-                  mixBlendMode: 'difference', // Ensure visibility on any color
+                  letterSpacing: '0.06em',
+                  color: 'rgba(255, 255, 255, 0.85)',
                 }}
               >
                 {sector.name}
               </div>
 
-              {/* Render Tiles for this Sector */}
-              {sector.children.map((leaf: any, i: number) => {
-                const company = leaf.company;
-                const color = getColor(company);
-                // Coordinates are now relative to the SECTOR block, not global
-                const x = leaf.x0;
-                const y = leaf.y0;
-                const width = leaf.x1 - leaf.x0;
-                const height = leaf.y1 - leaf.y0;
+              {/* Sector Divider */}
+              <div
+                style={{
+                  height: '1px',
+                  background: 'rgba(255, 255, 255, 0.06)',
+                  marginBottom: '6px',
+                  marginLeft: '8px',
+                  marginRight: '8px',
+                }}
+              />
 
-                if (width <= 0 || height <= 0) return null;
+              {/* Relative Container for D3 Tiles */}
+              <div
+                style={{
+                  position: 'relative',
+                  width: '100%',
+                  height: `${sector.height}px`,
+                }}
+              >
+                {/* Render Tiles for this Sector */}
+                {sector.children.map((leaf: any, i: number) => {
+                  const company = leaf.company;
+                  const color = getColor(company);
+                  // Coordinates are now relative to the SECTOR block, not global
+                  const x = leaf.x0;
+                  const y = leaf.y0;
+                  const width = leaf.x1 - leaf.x0;
+                  const height = leaf.y1 - leaf.y0;
 
-                return (
-                  <div
-                    key={`${company.symbol}-${i}`}
-                    role="button"
-                    tabIndex={0}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedCompany(company);
-                      onTileClick?.(company);
-                    }}
-                    style={{
-                      position: 'absolute',
-                      left: `${x}px`,
-                      top: `${y}px`,
-                      width: `${width}px`,
-                      height: `${height}px`,
-                      background: color,
-                      border: '1px solid rgba(0, 0, 0, 0.2)',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      cursor: 'pointer',
-                      zIndex: 1, // Tile z-index
-                    }}
-                  >
-                    <div style={{
-                      fontSize: Math.min(width, height) > 50 ? '13px' : '10px',
-                      fontWeight: 700,
-                      color: '#ffffff',
-                      textAlign: 'center',
-                      textShadow: '0 1px 2px rgba(0,0,0,0.5)',
-                      pointerEvents: 'none', // Allow click on tile
-                    }}>
-                      {company.symbol}
-                    </div>
-                    {Math.min(width, height) > 40 && (
+                  if (width <= 0 || height <= 0) return null;
+
+                  return (
+                    <div
+                      key={`${company.symbol}-${i}`}
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedCompany(company);
+                        onTileClick?.(company);
+                      }}
+                      style={{
+                        position: 'absolute',
+                        left: `${x}px`,
+                        top: `${y}px`,
+                        width: `${width}px`,
+                        height: `${height}px`,
+                        background: color,
+                        border: '1px solid rgba(0, 0, 0, 0.2)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        cursor: 'pointer',
+                        zIndex: 1, // Tile z-index
+                      }}
+                    >
                       <div style={{
-                        fontSize: '9px',
-                        fontWeight: 500,
-                        color: 'rgba(255, 255, 255, 0.9)',
+                        fontSize: Math.min(width, height) > 50 ? '13px' : '10px',
+                        fontWeight: 700,
+                        color: '#ffffff',
                         textAlign: 'center',
-                        marginTop: '1px',
-                        pointerEvents: 'none',
+                        textShadow: '0 1px 2px rgba(0,0,0,0.5)',
+                        pointerEvents: 'none', // Allow click on tile
                       }}>
-                        {formatPercent(company.changePercent)}
+                        {company.symbol}
                       </div>
-                    )}
-                  </div>
-                );
-              })}
+                      {Math.min(width, height) > 40 && (
+                        <div style={{
+                          fontSize: '9px',
+                          fontWeight: 500,
+                          color: 'rgba(255, 255, 255, 0.9)',
+                          textAlign: 'center',
+                          marginTop: '1px',
+                          pointerEvents: 'none',
+                        }}>
+                          {formatPercent(company.changePercent)}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           );
         })}
