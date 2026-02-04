@@ -184,6 +184,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
       const sectorTreemap = treemap()
         .size([width, sectorHeight])
         .padding(0)
+        .paddingInner(1) // Add 1px gap between tiles to prevent overlaps
         .round(true)
         .tile(treemapSquarify);
 

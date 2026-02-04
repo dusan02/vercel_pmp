@@ -179,6 +179,8 @@
     /* Heatmap needs full space (no padding) because it handles its own layout */
     .mobile-app-screen.screen-heatmap {
       padding-bottom: 0;
+      overflow: hidden !important;
+      /* CRITICAL: Disable parent scroll, let heatmap handle it */
     }
 
     /* Container for heatmap content must fill the screen */
@@ -362,7 +364,7 @@
   /* Logo column centered */
   th:first-child,
   td:first-child {
-    text-align: center !important;
+    text-align: left !important;
   }
 
   /* Portfolio Table Column Widths */

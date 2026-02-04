@@ -53,11 +53,11 @@ export function FavoritesSection({
     {
       key: 'logo',
       header: 'Logo',
-      align: 'center',
+      align: 'left',
       className: 'hidden lg:table-cell',
       width: '60px',
       render: (stock) => (
-        <div className="flex justify-center">
+        <div className="flex justify-start pl-2">
           <CompanyLogo ticker={stock.ticker} {...(stock.logoUrl ? { logoUrl: stock.logoUrl } : {})} size={32} />
         </div>
       )

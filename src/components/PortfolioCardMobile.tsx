@@ -35,51 +35,47 @@ export const PortfolioCardMobile = memo(({
   const formattedValue = formatCurrencyCompact(value, true);
 
   return (
-    <div
-      className="px-3 py-3 bg-white dark:bg-white/5 border-b border-gray-100 dark:border-gray-800 last:border-0"
-    >
-      {/* Grid Layout similar to table rows but optimized for mobile */}
-      <div className="grid grid-cols-[1fr_auto] gap-2 mb-2">
-        {/* Top Row: Ticker and Price */}
-        <div className="flex items-center gap-2 overflow-hidden">
-          <CompanyLogo
-            ticker={stock.ticker}
-            logoUrl={stock.logoUrl || `/logos/${stock.ticker.toLowerCase()}-32.webp`}
-            size={24}
-          />
-          <div className="min-w-0">
-            <div className="font-bold text-sm truncate">{stock.ticker}</div>
-            <div className="text-xs text-gray-500 truncate">{getCompanyName(stock.ticker)}</div>
-          </div>
-        </div>
-        <div className="text-right">
-          <div className="font-mono text-sm font-semibold">${formattedPrice}</div>
-          <div className={`text-xs font-mono ${isPositive ? 'text-green-600' : 'text-red-500'}`}>
-            {formattedPercentChange}
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-[auto_1fr_auto] gap-3 items-center">
-        {/* Quantity Input */}
-        <PortfolioQuantityInput
-          value={quantity}
-          onChange={(qty) => onUpdateQuantity(stock.ticker, qty)}
-          className="w-20"
+    <div className="px-3 py-3 bg-white dark:bg-white/5 border-b border-gray-100 dark:border-gray-800 last:border-0">
+      <div className="flex items-center gap-3">
+        {/* 1. Logo (Larger ~40px) */}
+        <CompanyLogo
+          ticker={stock.ticker}
+          logoUrl={stock.logoUrl || `/logos/${stock.ticker.toLowerCase()}-32.webp`}
+          size={42}
+          className="shrink-0 rounded-md"
         />
 
-        {/* Daily P&L */}
-        <div className="text-right">
-          <div className="text-[10px] text-gray-500 uppercase tracking-wider">Daily P&L</div>
-          <div className={`font-mono text-sm ${valueIsPositive ? 'text-green-600' : 'text-red-500'}`}>
-            {formattedValue}
+        {/* 2. Ticker & Name */}
+        <div className="flex-1 min-w-0 flex flex-col justify-center">
+          <div className="font-bold text-base leading-tight truncate">{stock.ticker}</div>
+          <div className="text-[11px] text-gray-500 truncate leading-tight mt-0.5">
+            {getCompanyName(stock.ticker)}
           </div>
         </div>
 
-        {/* Remove Button */}
+        {/* 3. Price & P&L (Vertical Stack) */}
+        <div className="flex flex-col items-end justify-center shrink-0 min-w-[60px]">
+          <div className="font-mono text-sm font-semibold leading-tight">
+            ${formattedPrice}
+          </div>
+          <div className={`text-[11px] font-mono leading-tight mt-0.5 ${value >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+            {value >= 0 ? '+' : ''}{formattedValue}
+          </div>
+        </div>
+
+        {/* 4. Quantity Input */}
+        <div className="shrink-0">
+          <PortfolioQuantityInput
+            value={quantity}
+            onChange={(qty) => onUpdateQuantity(stock.ticker, qty)}
+            className="w-14 text-center h-9 text-sm"
+          />
+        </div>
+
+        {/* 5. Remove X (Small, unobtrusive) */}
         <button
           onClick={() => onRemove(stock.ticker)}
-          className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+          className="p-2 text-gray-300 hover:text-red-500 transition-colors -mr-2 shrink-0"
           aria-label="Remove"
         >
           <X size={20} />

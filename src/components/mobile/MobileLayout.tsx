@@ -106,7 +106,7 @@ export function MobileLayout({ activeTab, onTabChange, screens }: MobileLayoutPr
                         exit="exit"
                         className={`absolute inset-0 w-full h-full scroll-smooth touch-pan-y ${activeTab === 'heatmap'
                             ? 'overflow-hidden p-0'
-                            : 'overflow-y-auto px-4 py-2 pb-20'
+                            : 'overflow-hidden'
                             }`}
                         style={{
                             WebkitOverflowScrolling: 'touch'
