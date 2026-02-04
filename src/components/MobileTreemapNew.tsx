@@ -122,7 +122,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
     // Min 800px or screen height * 1.5
     const totalContentHeight = Math.max(containerSize.height * 1.2, 900);
     const baseHeight = totalContentHeight;
-    const MIN_SECTOR_HEIGHT = 80; // Minimum usable height for a small sector
+    const MIN_SECTOR_HEIGHT = 96; // Minimum usable height for a small sector
 
     const sectorHeights: number[] = [];
     let allocatedHeight = 0;
@@ -203,7 +203,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
               style={{
                 display: 'block',
                 width: '100%',
-                marginBottom: '10px', // Sector Spacing
+                // Gap handled by parent container
               }}
             >
               {/* Static Sector Header */}
