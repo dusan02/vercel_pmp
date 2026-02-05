@@ -22,6 +22,7 @@ interface MobileTreemapNewProps {
 }
 
 const MAX_MOBILE_TILES = 500; // Target: S&P 500
+const MIN_TILE_VALUE_B = 1e-6; // 0.000001B = $1k (prevents D3 from dropping 0-valued tiles)
 
 export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   data,
@@ -52,12 +53,17 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
       return true;
     });
 
-    // IMPORTANT: keep layout sizing stable across metric toggles.
-    // Always size tiles by market cap (S&P 500-style treemap); metric only affects color/value display.
-    return uniqueData
+    // Keep a stable ticker set (top 500 by market cap), but allow layout sizing to change by metric later.
+    // We enrich marketCapDiffAbs so $ sizing can work reliably even if the API didn't send it.
+    const top = uniqueData
       .filter(c => (c.marketCap ?? 0) > 0)
       .sort((a, b) => (b.marketCap ?? 0) - (a.marketCap ?? 0))
       .slice(0, MAX_MOBILE_TILES);
+
+    return top.map((c) => ({
+      ...c,
+      marketCapDiffAbs: c.marketCapDiffAbs ?? Math.max(MIN_TILE_VALUE_B, Math.abs(c.marketCapDiff ?? 0)),
+    }));
   }, [data]);
 
   // For easy verification (prod too): how many unique tickers are shown
@@ -130,8 +136,11 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   const treemapResult = useMemo(() => {
     if (sortedData.length === 0 || containerSize.width <= 0 || containerSize.height <= 0) return { sectors: [] };
 
-    // Always compute treemap areas from market cap (percent metric in our model uses marketCap as value)
-    const sectorHierarchy = buildHeatmapHierarchy(sortedData, 'percent');
+    // Compute treemap areas based on selected metric:
+    // - % view: size by market cap (classic S&P 500 heatmap)
+    // - $ view: size by absolute market cap change (mcap diff)
+    const layoutMetric = metric === 'mcap' ? 'mcap' : 'percent';
+    const sectorHierarchy = buildHeatmapHierarchy(sortedData, layoutMetric);
     const sectors = sectorHierarchy.children ?? [];
 
     if (sectors.length === 0) return { sectors: [] };
@@ -228,7 +237,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
     }).filter(Boolean); // Filter out nulls
 
     return { sectors: sectorBlocks }; // No more flat 'tiles' array needed
-  }, [sortedData, containerSize]);
+  }, [sortedData, metric, containerSize]);
 
   // Direct use of treemapResult.sectors in JSX.
   const { sectors: sectorBlocks } = treemapResult;
