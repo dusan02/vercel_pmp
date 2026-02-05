@@ -167,15 +167,15 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
       sectorTreemap(sectorHierarchyNode);
 
       // Extract leaves relative to this sector block
-      const clampInt = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
+      const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
       const sectorLeaves = sectorHierarchyNode.leaves().map((leaf: any) => {
-        // Pixel-snap + clamp to sector bounds to prevent 1px overflow/underflow (jagged bottom edge).
-        const x0 = clampInt(Math.floor(leaf.x0 ?? 0), 0, Math.max(0, width - 1));
-        const y0 = clampInt(Math.floor(leaf.y0 ?? 0), 0, Math.max(0, sectorHeight - 1));
-        const x1Raw = Math.ceil(leaf.x1 ?? 0);
-        const y1Raw = Math.ceil(leaf.y1 ?? 0);
-        const x1 = clampInt(Math.max(x0 + 1, x1Raw), 1, width);
-        const y1 = clampInt(Math.max(y0 + 1, y1Raw), 1, sectorHeight);
+        // IMPORTANT:
+        // D3 treemap with `.round(true)` already produces a non-overlapping integer tiling.
+        // Avoid floor/ceil expansion here, which can create 1px overlaps between neighbors.
+        const x0 = clamp(leaf.x0 ?? 0, 0, width);
+        const y0 = clamp(leaf.y0 ?? 0, 0, sectorHeight);
+        const x1 = clamp(leaf.x1 ?? 0, 0, width);
+        const y1 = clamp(leaf.y1 ?? 0, 0, sectorHeight);
 
         return {
           x0,
@@ -184,6 +184,11 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
           y1,
           company: leaf.data.meta?.companyData || leaf.data,
         };
+      }).filter((leaf: any) => {
+        // Drop degenerate tiles (can happen for extremely small values after rounding)
+        const w = (leaf.x1 - leaf.x0);
+        const h = (leaf.y1 - leaf.y0);
+        return w > 0 && h > 0;
       });
 
       return {
