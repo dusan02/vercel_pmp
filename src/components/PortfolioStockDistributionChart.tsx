@@ -144,19 +144,24 @@ export function PortfolioStockDistributionChart({ data, size = 300 }: PortfolioS
                     >
                         <g transform={`translate(${center}, ${center})`}>
                             {/* 1. Slices */}
-                            {slices.map((slice) => {
+                            {slices.flatMap((slice) => {
                                 const isHovered = hoveredTicker === slice.ticker;
-                                const path = createArc(
-                                    slice.startAngle,
-                                    slice.endAngle,
-                                    isHovered ? outerRadius + 5 : outerRadius,
-                                    innerRadius
-                                );
+                                const outer = isHovered ? outerRadius + 5 : outerRadius;
+                                const angleSpan = slice.endAngle - slice.startAngle;
 
-                                return (
+                                // SVG arc can't render a perfect 360° arc in a single path (start=end degenerates).
+                                // For 100% allocation (single ticker), split into two 180° arcs.
+                                const paths = angleSpan >= 359.999
+                                    ? [
+                                        createArc(slice.startAngle, slice.startAngle + 180, outer, innerRadius),
+                                        createArc(slice.startAngle + 180, slice.startAngle + 360, outer, innerRadius),
+                                      ]
+                                    : [createArc(slice.startAngle, slice.endAngle, outer, innerRadius)];
+
+                                return paths.map((d, idx) => (
                                     <path
-                                        key={slice.ticker}
-                                        d={path}
+                                        key={`${slice.ticker}-${idx}`}
+                                        d={d}
                                         fill={slice.color}
                                         stroke="white"
                                         strokeWidth="2"
@@ -167,7 +172,7 @@ export function PortfolioStockDistributionChart({ data, size = 300 }: PortfolioS
                                     >
                                         <title>{slice.ticker}: ${slice.value.toLocaleString()} ({slice.percentage.toFixed(1)}%)</title>
                                     </path>
-                                );
+                                ));
                             })}
 
                             {/* 2. Labels & Lines */}

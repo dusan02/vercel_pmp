@@ -26,9 +26,7 @@ export function PortfolioPerformanceTreemap({ data, metric = 'percent' }: Portfo
     const height = size.height;
 
     // Transform portfolio data to CompanyNode format
-    // Logic changed per user request:
-    // Size = Absolute Daily P&L (Magnitude of Gain/Loss)
-    // Color = Daily % Change (Performance)
+    // UX: Size should be position value (so all holdings are visible), while color/value reflect performance.
     const heatmapData: CompanyNode[] = useMemo(() => {
         return data.map(item => ({
             symbol: item.ticker,
@@ -36,10 +34,10 @@ export function PortfolioPerformanceTreemap({ data, metric = 'percent' }: Portfo
             sector: item.sector || 'Unknown',
             industry: item.industry || 'Unknown',
 
-            // Size = Absolute Daily P&L (Magnitude of Gain/Loss) - as requested by user
-            marketCap: Math.max(0.01, Math.abs(item.dailyChangeValue)),
-            // Color/Change logic depends on metric (default to dailyChangePercent for color intensity)
-            changePercent: metric === 'percent' ? item.dailyChangePercent : item.dailyChangeValue,
+            // Size = position value (quantity * price). Keep a small minimum so tiny positions still render.
+            marketCap: Math.max(1, item.value || 0),
+            // Color/Change: always drive by % by default (stable scale across portfolios)
+            changePercent: item.dailyChangePercent || 0,
             marketCapDiff: item.dailyChangeValue, // Tooltip value
             // Provide formatted display value for custom rendering
             // User Request: Show both % change AND dollar value in the square
@@ -81,7 +79,7 @@ export function PortfolioPerformanceTreemap({ data, metric = 'percent' }: Portfo
                         width={width}
                         height={dynamicHeight}
                         timeframe="day"
-                        metric={metric === 'dollar' ? 'mcap' : 'percent'} // Map 'dollar' to 'mcap' which MarketHeatmap interprets as absolute value coloring
+                        metric="percent"
                         sectorLabelVariant="compact"
                     />
                 )}

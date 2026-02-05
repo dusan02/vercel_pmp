@@ -271,17 +271,25 @@ export function PortfolioSectorDistributionChart({ data, size = 300 }: Portfolio
                     >
                         <g transform={`translate(${center}, ${center})`}>
                             {/* Slices */}
-                            {nodes.map((node, i) => {
+                            {nodes.flatMap((node, i) => {
                                 const { inner, outer } = getRadii(node.depth);
                                 const isHovered = hoveredNode === node.name;
 
                                 // Expand slightly on hover
                                 const displayOuter = isHovered ? outer + 5 : outer;
+                                const span = node.x1 - node.x0;
+                                const TWO_PI = Math.PI * 2;
+                                const paths = span >= TWO_PI - 1e-6
+                                    ? [
+                                        createArcPath(node.x0, node.x0 + Math.PI, inner, displayOuter),
+                                        createArcPath(node.x0 + Math.PI, node.x1, inner, displayOuter),
+                                      ]
+                                    : [createArcPath(node.x0, node.x1, inner, displayOuter)];
 
-                                return (
+                                return paths.map((d, idx) => (
                                     <path
-                                        key={`${node.depth}-${i}`}
-                                        d={createArcPath(node.x0, node.x1, inner, displayOuter)}
+                                        key={`${node.depth}-${i}-${idx}`}
+                                        d={d}
                                         fill={node.color}
                                         stroke="white"
                                         strokeWidth="1.5"
@@ -292,7 +300,7 @@ export function PortfolioSectorDistributionChart({ data, size = 300 }: Portfolio
                                     >
                                         <title>{node.name}: ${node.value.toLocaleString()} ({node.percentage.toFixed(1)}%)</title>
                                     </path>
-                                );
+                                ));
                             })}
 
                             {/* Labels for Outer Layer (Industries) */}
