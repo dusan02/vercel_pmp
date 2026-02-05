@@ -21,7 +21,7 @@ interface MobileTreemapNewProps {
   activeView?: string | undefined;
 }
 
-const MAX_MOBILE_TILES = 600; // Increased to cover S&P 500
+const MAX_MOBILE_TILES = 500; // Target: S&P 500
 
 export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   data,
@@ -44,11 +44,6 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   const sortedData = useMemo(() => {
     if (!data || data.length === 0) return [];
 
-    const sizeValue = (c: CompanyNode) => {
-      if (metric === 'mcap') return c.marketCapDiffAbs ?? Math.abs(c.marketCapDiff ?? 0);
-      return c.marketCap || 0;
-    };
-
     const seen = new Set<string>();
     const uniqueData = data.filter(c => {
       const symbol = c.symbol?.toUpperCase();
@@ -57,11 +52,16 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
       return true;
     });
 
+    // IMPORTANT: keep layout sizing stable across metric toggles.
+    // Always size tiles by market cap (S&P 500-style treemap); metric only affects color/value display.
     return uniqueData
-      .filter(c => sizeValue(c) > 0)
-      .sort((a, b) => sizeValue(b) - sizeValue(a))
+      .filter(c => (c.marketCap ?? 0) > 0)
+      .sort((a, b) => (b.marketCap ?? 0) - (a.marketCap ?? 0))
       .slice(0, MAX_MOBILE_TILES);
-  }, [data, metric]);
+  }, [data]);
+
+  // For easy verification (prod too): how many unique tickers are shown
+  const tileCount = sortedData.length;
 
   // Color scale
   const colorScale = useMemo(() => createHeatmapColorScale(timeframe, metric === 'mcap' ? 'mcap' : 'percent'), [timeframe, metric]);
@@ -73,6 +73,34 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
     if (value === null || value === undefined) return '#1a1a1a';
     return colorScale(value);
   }, [metric, colorScale]);
+
+  // Tile label rules: center text, responsive sizing, hide on tiny tiles
+  const getTileLabel = useCallback((company: CompanyNode, w: number, h: number) => {
+    const minDim = Math.min(w, h);
+
+    // Too small → no text at all
+    if (minDim < 18) {
+      return { showSymbol: false, showValue: false, symbol: '', value: '', symbolFontPx: 0, valueFontPx: 0 };
+    }
+
+    const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
+    const symbolFontPx = Math.round(clamp(minDim * 0.28, 9, 16));
+    const showValue = minDim >= 34; // value line needs more room
+    const valueFontPx = Math.round(clamp(symbolFontPx - 4, 8, 12));
+
+    const valueText = metric === 'percent'
+      ? formatPercent(company.changePercent ?? 0)
+      : (company.marketCapDiff == null ? '' : formatMarketCapDiff(company.marketCapDiff));
+
+    return {
+      showSymbol: true,
+      showValue: showValue && valueText.length > 0,
+      symbol: company.symbol,
+      value: valueText,
+      symbolFontPx,
+      valueFontPx,
+    };
+  }, [metric]);
 
 
   // Update container size
@@ -102,7 +130,8 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   const treemapResult = useMemo(() => {
     if (sortedData.length === 0 || containerSize.width <= 0 || containerSize.height <= 0) return { sectors: [] };
 
-    const sectorHierarchy = buildHeatmapHierarchy(sortedData, metric);
+    // Always compute treemap areas from market cap (percent metric in our model uses marketCap as value)
+    const sectorHierarchy = buildHeatmapHierarchy(sortedData, 'percent');
     const sectors = sectorHierarchy.children ?? [];
 
     if (sectors.length === 0) return { sectors: [] };
@@ -199,7 +228,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
     }).filter(Boolean); // Filter out nulls
 
     return { sectors: sectorBlocks }; // No more flat 'tiles' array needed
-  }, [sortedData, metric, containerSize]);
+  }, [sortedData, containerSize]);
 
   // Direct use of treemapResult.sectors in JSX.
   const { sectors: sectorBlocks } = treemapResult;
@@ -268,6 +297,8 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
 
                   if (width <= 0 || height <= 0) return null;
 
+                  const label = getTileLabel(company, width, height);
+
                   return (
                     <div
                       key={`${company.symbol}-${i}`}
@@ -296,26 +327,46 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                         zIndex: 1, // Tile z-index
                       }}
                     >
-                      <div style={{
-                        fontSize: Math.min(width, height) > 50 ? '13px' : '10px',
-                        fontWeight: 700,
-                        color: '#ffffff',
-                        textAlign: 'center',
-                        textShadow: '0 1px 2px rgba(0,0,0,0.5)',
-                        pointerEvents: 'none', // Allow click on tile
-                      }}>
-                        {company.symbol}
-                      </div>
-                      {Math.min(width, height) > 40 && (
-                        <div style={{
-                          fontSize: '9px',
-                          fontWeight: 500,
-                          color: 'rgba(255, 255, 255, 0.9)',
-                          textAlign: 'center',
-                          marginTop: '1px',
-                          pointerEvents: 'none',
-                        }}>
-                          {formatPercent(company.changePercent)}
+                      {(label.showSymbol || label.showValue) && (
+                        <div
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            pointerEvents: 'none',
+                            textAlign: 'center',
+                            lineHeight: 1.05,
+                            gap: label.showValue ? 2 : 0,
+                          }}
+                        >
+                          {label.showSymbol && (
+                            <div
+                              style={{
+                                fontSize: `${label.symbolFontPx}px`,
+                                fontWeight: 800,
+                                color: '#ffffff',
+                                textShadow: '0 1px 2px rgba(0,0,0,0.55)',
+                                letterSpacing: '0.01em',
+                              }}
+                            >
+                              {label.symbol}
+                            </div>
+                          )}
+                          {label.showValue && (
+                            <div
+                              style={{
+                                fontSize: `${label.valueFontPx}px`,
+                                fontWeight: 600,
+                                color: 'rgba(255, 255, 255, 0.92)',
+                                textShadow: '0 1px 2px rgba(0,0,0,0.45)',
+                              }}
+                            >
+                              {label.value}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -357,6 +408,19 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
         <div className="flex items-center gap-2 flex-shrink-0">
           <BrandLogo size={24} />
           <span className="text-white font-bold text-sm tracking-tight">PreMarketPrice</span>
+          <span
+            style={{
+              fontSize: 11,
+              fontWeight: 600,
+              color: 'rgba(255,255,255,0.55)',
+              marginLeft: 6,
+              letterSpacing: '0.02em',
+            }}
+            aria-label={`Heatmap tickers shown: ${tileCount}`}
+            title={`Tickers shown: ${tileCount}`}
+          >
+            {tileCount}
+          </span>
         </div>
         <div className="flex-1" />
         {onMetricChange && (
