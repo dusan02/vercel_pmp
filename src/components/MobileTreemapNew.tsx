@@ -268,6 +268,8 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                         height: `${height}px`,
                         background: color,
                         border: '1px solid rgba(0, 0, 0, 0.2)',
+                        boxSizing: 'border-box', // CRITICAL: prevent border from expanding tile and overlapping neighbors
+                        overflow: 'hidden',
                         display: 'flex',
                         flexDirection: 'column',
                         justifyContent: 'center',

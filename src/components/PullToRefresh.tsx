@@ -45,7 +45,8 @@ export function PullToRefresh({
   // Only call the hook on the client side
   const { isPulling } = usePullToRefresh(containerRef as React.RefObject<HTMLElement>, handleRefresh, {
     threshold,
-    resistance
+    resistance,
+    disabled
   });
 
   // Update pull distance for visual feedback - only on client
@@ -118,7 +119,8 @@ export function PullToRefresh({
       style={{
         position: 'relative',
         overflow: 'hidden',
-        touchAction: 'pan-y'
+        // If disabled, don't set pan-y here (lets inner scroll containers behave normally).
+        touchAction: disabled ? 'auto' : 'pan-y'
       }}
     >
       {/* Pull-to-refresh indicator - only render on client */}

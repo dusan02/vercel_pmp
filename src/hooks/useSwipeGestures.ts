@@ -164,14 +164,15 @@ export function useSwipeGestures(
 export function usePullToRefresh(
   elementRef: React.RefObject<HTMLElement>,
   onRefresh: () => void,
-  config: { threshold?: number; resistance?: number } = {}
+  config: { threshold?: number; resistance?: number; disabled?: boolean } = {}
 ) {
   const [isClient, setIsClient] = useState(false);
   
-  const { threshold = 80, resistance = 0.6 } = config;
+  const { threshold = 80, resistance = 0.6, disabled = false } = config;
   const pullStartRef = useRef<number | null>(null);
   const pullDistanceRef = useRef<number>(0);
   const isPullingRef = useRef<boolean>(false);
+  const scrollContainerRef = useRef<HTMLElement | null>(null);
 
   // Ensure we're on the client side
   useEffect(() => {
@@ -180,21 +181,41 @@ export function usePullToRefresh(
 
   const handleTouchStart = useCallback((e: TouchEvent) => {
     if (!isClient) return;
+    if (disabled) return;
     
     const element = elementRef.current;
     if (!element) return;
 
-    // Only trigger pull-to-refresh when at the top of the page
-    if (element.scrollTop === 0) {
+    // Only trigger pull-to-refresh when the *actual scroll container* is at top.
+    // The wrapper itself is often overflow-hidden, while a child (.mobile-app-screen) scrolls.
+    const findScrollableAncestor = (start: HTMLElement | null, stopAt: HTMLElement): HTMLElement | null => {
+      let el: HTMLElement | null = start;
+      while (el && el !== stopAt) {
+        const style = window.getComputedStyle(el);
+        const overflowY = style.overflowY;
+        const canScrollY = (overflowY === 'auto' || overflowY === 'scroll') && (el.scrollHeight > el.clientHeight + 1);
+        if (canScrollY) return el;
+        el = el.parentElement;
+      }
+      return null;
+    };
+
+    const target = (e.target as HTMLElement | null);
+    const scrollEl = findScrollableAncestor(target, element) ?? (document.scrollingElement as HTMLElement | null);
+    scrollContainerRef.current = scrollEl;
+
+    const scrollTop = scrollEl ? scrollEl.scrollTop : 0;
+    if (scrollTop <= 0) {
       const touch = e.touches[0];
       if (!touch) return;
       pullStartRef.current = touch.clientY;
       isPullingRef.current = true;
     }
-  }, [isClient, elementRef]);
+  }, [isClient, elementRef, disabled]);
 
   const handleTouchMove = useCallback((e: TouchEvent) => {
     if (!isClient) return;
+    if (disabled) return;
     if (!isPullingRef.current || !pullStartRef.current) return;
 
     const touch = e.touches[0];
@@ -213,10 +234,11 @@ export function usePullToRefresh(
 
       e.preventDefault();
     }
-  }, [isClient, elementRef, resistance, threshold]);
+  }, [isClient, elementRef, resistance, threshold, disabled]);
 
   const handleTouchEnd = useCallback(() => {
     if (!isClient) return;
+    if (disabled) return;
     if (!isPullingRef.current) return;
 
     const element = elementRef.current;
@@ -235,10 +257,12 @@ export function usePullToRefresh(
     pullStartRef.current = null;
     pullDistanceRef.current = 0;
     isPullingRef.current = false;
-  }, [isClient, elementRef, threshold, onRefresh]);
+    scrollContainerRef.current = null;
+  }, [isClient, elementRef, threshold, onRefresh, disabled]);
 
   useEffect(() => {
     if (!isClient) return;
+    if (disabled) return;
     
     const element = elementRef.current;
     if (!element) return;
@@ -252,7 +276,7 @@ export function usePullToRefresh(
       element.removeEventListener('touchmove', handleTouchMove);
       element.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [isClient, elementRef, handleTouchStart, handleTouchMove, handleTouchEnd]);
+  }, [isClient, disabled, elementRef, handleTouchStart, handleTouchMove, handleTouchEnd]);
 
   return {
     isPulling: isClient ? isPullingRef.current : false,
