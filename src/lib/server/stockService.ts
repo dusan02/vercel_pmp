@@ -6,6 +6,7 @@ import { getPricingState } from '@/lib/utils/pricingStateMachine';
 import { calculatePercentChange } from '@/lib/utils/priceResolver';
 
 import { StockData } from '@/lib/types';
+import { SECTOR_INDUSTRY_OVERRIDES } from '@/data/sectorIndustryOverrides';
 
 interface StockServiceResult {
   data: StockData[];
@@ -448,8 +449,21 @@ export async function getStocksList(options: {
       return {
         ticker: s.symbol,
         companyName: s.name || '',
-        sector: s.sector || '',
-        industry: s.industry || '',
+        sector: (() => {
+          const raw = (s.sector || '').trim();
+          const ov = SECTOR_INDUSTRY_OVERRIDES[s.symbol];
+          if (ov && (!raw || raw === 'Other' || raw === 'Unrecognized')) return ov.sector;
+          return raw;
+        })(),
+        industry: (() => {
+          const raw = (s.industry || '').trim();
+          const sectorRaw = (s.sector || '').trim();
+          const ov = SECTOR_INDUSTRY_OVERRIDES[s.symbol];
+          if (ov && (!raw || raw === 'Uncategorized' || raw === 'Unrecognized' || sectorRaw === 'Other' || sectorRaw === 'Unrecognized')) {
+            return ov.industry;
+          }
+          return raw;
+        })(),
         logoUrl: s.logoUrl || `/logos/${s.symbol.toLowerCase()}-32.webp`,
         currentPrice,
         closePrice: previousClose,

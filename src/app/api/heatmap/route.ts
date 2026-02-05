@@ -8,6 +8,7 @@ import { computeMarketCap, computeMarketCapDiff, computePercentChange, getPrevio
 import { getCacheKey } from '@/lib/redis/keys';
 import { getDateET, createETDate, toET } from '@/lib/utils/dateET';
 import { detectSession, nowET } from '@/lib/utils/timeUtils';
+import { SECTOR_INDUSTRY_OVERRIDES } from '@/data/sectorIndustryOverrides';
 
 const CACHE_KEY = 'heatmap-data';
 const CACHE_TTL = 900; // 15 minút (prekvitie s 10m cronom)
@@ -188,19 +189,36 @@ export async function GET(request: NextRequest) {
 
     const tickerSymbols = tickers.map(t => t.symbol);
     const tickerMap = new Map(
-      tickers.map(t => [t.symbol, {
-        name: t.name,
-        sector: (t.sector ?? '').trim() || 'Other',
-        industry: (t.industry ?? '').trim() || 'Uncategorized',
-        sharesOutstanding: t.sharesOutstanding,
-        lastPrice: t.lastPrice, // Denormalized current price
-        lastPriceUpdated: t.lastPriceUpdated,
-        latestPrevClose: t.latestPrevClose, // Denormalized previous close
-        latestPrevCloseDate: t.latestPrevCloseDate,
-        lastChangePct: t.lastChangePct,
-        lastMarketCap: t.lastMarketCap,
-        lastMarketCapDiff: t.lastMarketCapDiff,
-      }])
+      tickers.map(t => {
+        const symbol = t.symbol;
+        const ov = SECTOR_INDUSTRY_OVERRIDES[symbol];
+        const rawSector = (t.sector ?? '').trim();
+        const rawIndustry = (t.industry ?? '').trim();
+
+        const sector = ov && (!rawSector || rawSector === 'Other' || rawSector === 'Unrecognized')
+          ? ov.sector
+          : (rawSector || 'Other');
+
+        const industry = ov && (!rawIndustry || rawIndustry === 'Uncategorized' || rawIndustry === 'Unrecognized' || rawSector === 'Other' || rawSector === 'Unrecognized')
+          ? ov.industry
+          : (rawIndustry || 'Uncategorized');
+
+        const name = ov?.name && (!t.name || t.name.trim() === '') ? ov.name : t.name;
+
+        return [symbol, {
+          name,
+          sector,
+          industry,
+          sharesOutstanding: t.sharesOutstanding,
+          lastPrice: t.lastPrice, // Denormalized current price
+          lastPriceUpdated: t.lastPriceUpdated,
+          latestPrevClose: t.latestPrevClose, // Denormalized previous close
+          latestPrevCloseDate: t.latestPrevCloseDate,
+          lastChangePct: t.lastChangePct,
+          lastMarketCap: t.lastMarketCap,
+          lastMarketCapDiff: t.lastMarketCapDiff,
+        }];
+      })
     );
 
     // Načítaj SessionPrice (posledné ceny) - berieme najnovšie pre každý ticker
