@@ -31,8 +31,12 @@ export function PortfolioPerformanceTreemap({ data, metric = 'percent' }: Portfo
         return data.map(item => ({
             symbol: item.ticker,
             name: item.ticker,
-            sector: item.sector || 'Unknown',
-            industry: item.industry || 'Unknown',
+            // CRITICAL (mobile UX):
+            // MarketHeatmap uses a multi-sector vertical layout on mobile.
+            // For a portfolio treemap we want a single compact treemap, not stacked sector blocks.
+            // Group all holdings into one pseudo-sector to avoid "only 1-2 tiles visible" clipping.
+            sector: 'Portfolio',
+            industry: 'Portfolio',
 
             // Size = position value (quantity * price). Keep a small minimum so tiny positions still render.
             marketCap: Math.max(1, item.value || 0),
