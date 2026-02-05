@@ -161,18 +161,30 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
         .size([width, sectorHeight])
         .padding(0)
         .paddingInner(0) // 0px border/gap to prevent gaps/jagged edges
+        .round(true) // CRITICAL: snap to integer pixels to avoid subpixel gaps / jagged bottoms
         .tile(treemapSquarify);
 
       sectorTreemap(sectorHierarchyNode);
 
       // Extract leaves relative to this sector block
-      const sectorLeaves = sectorHierarchyNode.leaves().map((leaf: any) => ({
-        x0: leaf.x0,
-        y0: leaf.y0,
-        x1: leaf.x1,
-        y1: leaf.y1,
-        company: leaf.data.meta?.companyData || leaf.data,
-      }));
+      const clampInt = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
+      const sectorLeaves = sectorHierarchyNode.leaves().map((leaf: any) => {
+        // Pixel-snap + clamp to sector bounds to prevent 1px overflow/underflow (jagged bottom edge).
+        const x0 = clampInt(Math.floor(leaf.x0 ?? 0), 0, Math.max(0, width - 1));
+        const y0 = clampInt(Math.floor(leaf.y0 ?? 0), 0, Math.max(0, sectorHeight - 1));
+        const x1Raw = Math.ceil(leaf.x1 ?? 0);
+        const y1Raw = Math.ceil(leaf.y1 ?? 0);
+        const x1 = clampInt(Math.max(x0 + 1, x1Raw), 1, width);
+        const y1 = clampInt(Math.max(y0 + 1, y1Raw), 1, sectorHeight);
+
+        return {
+          x0,
+          y0,
+          x1,
+          y1,
+          company: leaf.data.meta?.companyData || leaf.data,
+        };
+      });
 
       return {
         name: sector.name,
@@ -236,6 +248,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                   position: 'relative',
                   width: '100%',
                   height: `${sector.height}px`,
+                  overflow: 'hidden', // CRITICAL: never allow tiles to bleed outside sector block
                 }}
               >
                 {/* Render Tiles for this Sector */}
