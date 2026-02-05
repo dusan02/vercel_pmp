@@ -325,8 +325,12 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                         width: `${width}px`,
                         height: `${height}px`,
                         background: color,
-                        border: '1px solid rgba(0, 0, 0, 0.2)',
-                        boxSizing: 'border-box', // CRITICAL: prevent border from expanding tile and overlapping neighbors
+                        // CRITICAL:
+                        // Use inset shadow instead of border. On iOS/Safari, borders on edge-aligned absolutely positioned
+                        // elements inside overflow-hidden containers can look "clipped" by 1px at sector boundaries.
+                        // Inset shadow is drawn fully inside the tile and avoids that rendering artifact.
+                        boxShadow: 'inset 0 0 0 1px rgba(0, 0, 0, 0.25)',
+                        boxSizing: 'border-box',
                         overflow: 'hidden',
                         display: 'flex',
                         flexDirection: 'column',
