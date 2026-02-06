@@ -23,10 +23,11 @@ interface PortfolioPerformanceTreemapProps {
 export function PortfolioPerformanceTreemap({ data, metric = 'percent' }: PortfolioPerformanceTreemapProps) {
     const { ref, size } = useElementResize();
     const width = size.width;
-    const height = size.height;
 
     // Transform portfolio data to CompanyNode format
-    // UX: Size should be position value (so all holdings are visible), while color/value reflect performance.
+    // UX:
+    // - Tile AREA should represent absolute daily P&L (big gain/loss = big tile)
+    // - Tile COLOR should represent % move magnitude (saturated for big moves, pale/gray for small moves)
     const heatmapData: CompanyNode[] = useMemo(() => {
         return data.map(item => ({
             symbol: item.ticker,
@@ -38,11 +39,15 @@ export function PortfolioPerformanceTreemap({ data, metric = 'percent' }: Portfo
             sector: 'Portfolio',
             industry: 'Portfolio',
 
-            // Size = position value (quantity * price). Keep a small minimum so tiny positions still render.
+            // Keep position value around for tooltip/context (even though area is driven by P&L).
             marketCap: Math.max(1, item.value || 0),
-            // Color/Change: always drive by % by default (stable scale across portfolios)
+
+            // Color/Change (sign + intensity): % move
             changePercent: item.dailyChangePercent || 0,
-            marketCapDiff: item.dailyChangeValue, // Tooltip value
+
+            // Layout sizing (area): absolute daily $ P&L (D3 requires > 0)
+            marketCapDiff: item.dailyChangeValue, // Tooltip value ($ P&L)
+            marketCapDiffAbs: Math.max(0.01, Math.abs(item.dailyChangeValue || 0)),
             // Provide formatted display value for custom rendering
             // User Request: Show both % change AND dollar value in the square
             displayValue: `${formatPercent(item.dailyChangePercent)}\n${formatCurrencyCompact(item.dailyChangeValue, true)}`,
@@ -51,14 +56,16 @@ export function PortfolioPerformanceTreemap({ data, metric = 'percent' }: Portfo
         }));
     }, [data, metric]);
 
-    // Dynamic height based on number of stocks to prevent giant empty squares
-    // Min 250px, Max 600px. Approx 100px per row/item logic?
-    // If 1 item, aspect ratio should be reasonable (e.g. 16:9 or 2:1), not 1:3 vertical.
-    // Let's use a base height and clamp it.
-    // Dynamic height based on number of stocks to prevent giant empty squares
-    // Min 250px, NO MAX cap - allow it to grow to fit all items (approx 120px per row)
-    // This allows the Mobile page to expand and scroll naturally.
-    const dynamicHeight = Math.max(250, heatmapData.length * 120);
+    // UX sizing: keep this treemap roughly the size of donut cards (not "infinite height").
+    // - Clamp height so desktop doesn't become gigantic
+    // - Still responsive: scale with available width, but capped
+    const dynamicHeight = useMemo(() => {
+        const w = width || 600; // fallback during first render
+        const isNarrow = w < 640;
+        const cap = isNarrow ? 320 : 360;
+        const target = Math.round(w * 0.6);
+        return Math.min(cap, Math.max(240, target));
+    }, [width]);
 
     return (
         <div className="w-full p-4 md:p-6 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
@@ -67,23 +74,29 @@ export function PortfolioPerformanceTreemap({ data, metric = 'percent' }: Portfo
             </h3>
 
             <div
-                ref={ref}
                 className="relative w-full overflow-hidden select-none"
                 style={{
                     width: '100%',
                     height: `${dynamicHeight}px`,
-                    minHeight: '250px',
+                    minHeight: '240px',
+                    maxWidth: '720px',
+                    margin: '0 auto',
                     backgroundColor: '#000000',
                     color: 'white' // ensure any text inside is visible against black
                 }}
             >
+                <div ref={ref} className="absolute inset-0" />
+
                 {width > 0 && dynamicHeight > 0 && (
                     <MarketHeatmap
                         data={heatmapData}
                         width={width}
                         height={dynamicHeight}
                         timeframe="day"
+                        // Color/labels by % move (intensity)
                         metric="percent"
+                        // Layout by abs daily $ P&L (tile area)
+                        layoutMetric="mcap"
                         sectorLabelVariant="compact"
                     />
                 )}

@@ -141,6 +141,12 @@ export type MarketHeatmapProps = {
   onTimeframeChange?: (timeframe: 'day' | 'week' | 'month') => void;
   /** Metrika pre výpočet veľkosti dlaždice */
   metric?: HeatmapMetric;
+  /**
+   * Optional: decouple treemap sizing from coloring/labels.
+   * - `metric` continues to drive color scale + label formatting.
+   * - `layoutMetric` drives which CompanyNode field is used to compute tile area (via buildHeatmapHierarchy).
+   */
+  layoutMetric?: HeatmapMetric;
   /** Variant sector labels: 'compact' for homepage, 'full' for heatmap page */
   sectorLabelVariant?: SectorLabelVariant;
   /** Controlled zoomed sector (optional) */
@@ -278,6 +284,7 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
   timeframe = 'day',
   onTimeframeChange,
   metric = 'percent',
+  layoutMetric,
   sectorLabelVariant = 'compact',
   zoomedSector: controlledZoomedSector,
   onZoomChange,
@@ -330,7 +337,10 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
   }, [timeframe]);
 
   // 1. Transformácia dát
-  const hierarchyRoot = useMemo(() => buildHeatmapHierarchy(data, metric), [data, metric]);
+  const hierarchyRoot = useMemo(
+    () => buildHeatmapHierarchy(data, layoutMetric ?? metric),
+    [data, layoutMetric, metric]
+  );
 
   // Detect mobile for vertical layout
   // CRITICAL: Initialize with proper value and STABILIZE during initial load
