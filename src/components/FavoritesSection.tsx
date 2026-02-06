@@ -55,7 +55,7 @@ export function FavoritesSection({
       header: 'Logo',
       align: 'left',
       className: 'hidden lg:table-cell',
-      width: '60px',
+      width: '72px',
       render: (stock) => (
         <div className="flex justify-start pl-2">
           <CompanyLogo ticker={stock.ticker} {...(stock.logoUrl ? { logoUrl: stock.logoUrl } : {})} size={32} />
@@ -144,7 +144,7 @@ export function FavoritesSection({
       key: 'favorites',
       header: 'Favorites',
       align: 'center',
-      width: '1%',
+      width: '88px',
       render: (stock) => {
         const fav = isFavorite(stock.ticker);
         return (

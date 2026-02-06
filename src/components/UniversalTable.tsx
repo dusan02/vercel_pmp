@@ -94,8 +94,10 @@ export function UniversalTable<T>({
                                 <th
                                     key={col.key}
                                     className={`
-                    py-3 px-2 font-semibold text-xs md:text-sm bg-[#1a1a1a] text-white border-b border-white/10 whitespace-nowrap
-                    ${col.sortable ? 'cursor-pointer hover:bg-white/5 hover:text-gray-900 dark:hover:text-white transition-colors select-none' : ''}
+                    py-3 px-3 first:pl-4 last:pr-4 font-semibold text-xs md:text-sm whitespace-nowrap
+                    bg-blue-100 text-slate-900 border-b border-blue-200/80
+                    dark:bg-blue-900/60 dark:text-white dark:border-white/10
+                    ${col.sortable ? 'cursor-pointer hover:bg-blue-200/70 dark:hover:bg-white/10 transition-colors select-none' : ''}
                     ${col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left'}
                     ${col.className || ''}
                     ${col.sortable && sortKey === col.key ? 'active-sort' : ''}
@@ -130,7 +132,7 @@ export function UniversalTable<T>({
                                             <td
                                                 key={`${keyExtractor(item)}-${col.key}`}
                                                 className={`
-                        py-3 px-2 text-sm text-[var(--clr-text)]
+                        py-3 px-3 first:pl-4 last:pr-4 text-sm text-[var(--clr-text)]
                         ${col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left'}
                         ${col.className || ''}
                       `.trim()}

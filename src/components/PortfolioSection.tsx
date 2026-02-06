@@ -111,7 +111,7 @@ export function PortfolioSection({
       header: 'Logo',
       align: 'center',
       className: 'hidden md:table-cell',
-      width: '60px',
+      width: '72px',
       render: (stock) => (
         <div className="flex justify-center">
           <CompanyLogo
@@ -205,6 +205,7 @@ export function PortfolioSection({
       key: 'actions',
       header: 'Actions',
       align: 'center',
+      width: '88px',
       render: (stock) => (
         <button
           className="flex items-center justify-center w-8 h-8 mx-auto rounded-lg text-gray-400 hover:text-red-500 hover:bg-gray-100 dark:hover:bg-red-900/20 transition-all duration-200"

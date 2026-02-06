@@ -326,8 +326,9 @@
   }
 
   th {
-    background: #1a1a1a;
-    color: #ffffff;
+    /* Desktop table header theme (light mode): soft blue with dark text */
+    background: #dbeafe; /* blue-100 */
+    color: #0f172a; /* slate-900 */
     border-bottom: 2px solid var(--clr-border);
     font-size: 0.875rem;
     text-transform: uppercase;
@@ -336,8 +337,9 @@
   }
 
   .dark th {
-    background: #1e293b;
-    /* Keep dark mode consistent */
+    /* Desktop table header theme (dark mode): deep blue with light text */
+    background: rgba(30, 58, 138, 0.6); /* blue-900/60 */
+    color: #f8fafc; /* slate-50 */
   }
 
   tr:not(:last-child) td {
@@ -365,6 +367,17 @@
   th:first-child,
   td:first-child {
     text-align: left !important;
+  }
+
+  /* Prevent "clipped" look on the outer edge columns */
+  th:first-child,
+  td:first-child {
+    padding-left: 0.95rem;
+  }
+
+  th:last-child,
+  td:last-child {
+    padding-right: 0.95rem;
   }
 
   /* Portfolio Table Column Widths */
