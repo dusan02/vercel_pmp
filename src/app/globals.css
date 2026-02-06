@@ -308,7 +308,7 @@
 @layer components {
 
   /* Tables */
-  table {
+  table:not(.pmp-universal-table) {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
@@ -319,13 +319,13 @@
     overflow: hidden;
   }
 
-  th,
-  td {
+  table:not(.pmp-universal-table) th,
+  table:not(.pmp-universal-table) td {
     padding: 0.75rem 0.5rem;
     text-align: left;
   }
 
-  th {
+  table:not(.pmp-universal-table) th {
     /* Desktop table header theme (light mode): soft blue with dark text */
     background: #dbeafe; /* blue-100 */
     color: #0f172a; /* slate-900 */
@@ -336,25 +336,25 @@
     font-weight: 600;
   }
 
-  .dark th {
+  .dark table:not(.pmp-universal-table) th {
     /* Desktop table header theme (dark mode): deep blue with light text */
     background: rgba(30, 58, 138, 0.6); /* blue-900/60 */
     color: #f8fafc; /* slate-50 */
   }
 
-  tr:not(:last-child) td {
+  table:not(.pmp-universal-table) tr:not(:last-child) td {
     border-bottom: 1px solid var(--clr-border);
   }
 
-  tr:hover {
+  table:not(.pmp-universal-table) tr:hover {
     background: var(--clr-bg);
   }
 
   /* Right-align numeric columns (from 5th column onwards) */
   /* Columns 1-4 are typically: Logo, Ticker, Company, Sector/Industry */
   /* Columns 5+ are typically: #, Price, %, Market Cap, Value */
-  th:nth-child(n+5):not(.text-left),
-  td:nth-child(n+5):not(.text-left) {
+  table:not(.pmp-universal-table) th:nth-child(n+5):not(.text-left),
+  table:not(.pmp-universal-table) td:nth-child(n+5):not(.text-left) {
     text-align: right !important;
   }
 
@@ -364,19 +364,19 @@
   }
 
   /* Logo column centered */
-  th:first-child,
-  td:first-child {
+  table:not(.pmp-universal-table) th:first-child,
+  table:not(.pmp-universal-table) td:first-child {
     text-align: left !important;
   }
 
   /* Prevent "clipped" look on the outer edge columns */
-  th:first-child,
-  td:first-child {
+  table:not(.pmp-universal-table) th:first-child,
+  table:not(.pmp-universal-table) td:first-child {
     padding-left: 0.95rem;
   }
 
-  th:last-child,
-  td:last-child {
+  table:not(.pmp-universal-table) th:last-child,
+  table:not(.pmp-universal-table) td:last-child {
     padding-right: 0.95rem;
   }
 

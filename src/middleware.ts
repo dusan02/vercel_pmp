@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 // Note: Cannot use Redis in edge runtime, using in-memory rate limiting instead
 // import { checkRateLimit, getClientIP } from './lib/redisRateLimiter';
 // Temporarily disable rateLimiter import to test if it causes Edge Runtime issues
-// import { rateLimit } from './lib/rateLimiter';
+import { rateLimit } from '@/lib/api/rateLimiter';
 
 // Simple IP extraction for edge runtime
 function getClientIP(request: NextRequest): string {
@@ -56,52 +56,61 @@ export async function middleware(request: NextRequest) {
   // Don't expose version info
   response.headers.delete('X-Powered-By');
 
-  // Rate limiting for API routes - temporarily disabled to test Edge Runtime compatibility
-  // TODO: Re-enable after fixing Edge Runtime compatibility issues
-  // if (request.nextUrl.pathname.startsWith('/api/')) {
-  //   try {
-  //     const ip = getClientIP(request);
-  //     const isLocalhost = ip === '127.0.0.1' || ip === '::1' || ip === 'unknown' || request.nextUrl.hostname === 'localhost';
-  //     
-  //     // Heatmap endpoint has higher limits (no fallback, only DB queries)
-  //     const isHeatmapEndpoint = request.nextUrl.pathname === '/api/heatmap';
-  //     
-  //     // Higher limits for localhost/development
-  //     // Heatmap endpoint: much higher limit (no external API calls, only DB)
-  //     // Other endpoints: standard limits
-  //     let maxRequests: number;
-  //     if (isHeatmapEndpoint) {
-  //       maxRequests = isLocalhost ? 1000 : 500; // Heatmap: 1000/min localhost, 500/min production
-  //     } else {
-  //       maxRequests = isLocalhost ? 300 : 100; // Other: 300/min localhost, 100/min production
-  //     }
-  //     const windowMs = 60000; // 1 minute
-  //     
-  //     const isAllowed = rateLimit(ip, { maxRequests, windowMs });
-  //     
-  //     if (!isAllowed) {
-  //       return NextResponse.json(
-  //         { 
-  //           success: false,
-  //           error: 'Rate limit exceeded',
-  //           message: `Too many requests. Limit: ${maxRequests} per minute.`
-  //         },
-  //         { 
-  //           status: 429, 
-  //           headers: { 
-  //             'Retry-After': '60',
-  //             'X-RateLimit-Limit': maxRequests.toString(),
-  //             'X-RateLimit-Remaining': '0'
-  //           } 
-  //         }
-  //       );
-  //     }
-  //   } catch (error) {
-  //     // If rate limiting fails, allow request but log error
-  //     console.error('Rate limiting error:', error);
-  //     // Continue with request
-  //   }
-  // }
+  // Rate limiting for API routes (Edge-safe, in-memory best effort).
+  // Exempt internal/sensitive operational endpoints that are already protected via CRON auth.
+  if (request.nextUrl.pathname.startsWith('/api/')) {
+    const path = request.nextUrl.pathname;
+
+    const exempt =
+      path.startsWith('/api/cron/') ||
+      path.startsWith('/api/health') ||
+      path.startsWith('/api/metrics') ||
+      path.startsWith('/api/websocket');
+
+    if (!exempt) {
+      try {
+        const ip = getClientIP(request);
+        const isLocalhost =
+          ip === '127.0.0.1' ||
+          ip === '::1' ||
+          ip === 'unknown' ||
+          request.nextUrl.hostname === 'localhost';
+
+        // Heatmap endpoint has higher limits (DB-heavy, but no external API calls)
+        const isHeatmapEndpoint = path === '/api/heatmap';
+
+        let maxRequests: number;
+        if (isHeatmapEndpoint) {
+          maxRequests = isLocalhost ? 1000 : 500; // per minute
+        } else {
+          maxRequests = isLocalhost ? 300 : 120; // per minute
+        }
+        const windowMs = 60_000;
+
+        const isAllowed = rateLimit(`${ip}:${path.split('/').slice(0, 3).join('/')}`, { maxRequests, windowMs });
+
+        if (!isAllowed) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: 'Rate limit exceeded',
+              message: `Too many requests. Limit: ${maxRequests} per minute.`
+            },
+            {
+              status: 429,
+              headers: {
+                'Retry-After': '60',
+                'X-RateLimit-Limit': maxRequests.toString(),
+                'X-RateLimit-Remaining': '0'
+              }
+            }
+          );
+        }
+      } catch {
+        // If rate limiting fails, allow request (best-effort).
+      }
+    }
+  }
 
   return response;
 }
