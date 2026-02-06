@@ -7,28 +7,7 @@
             "maxDuration": 300
         }
     },
-    "crons": [
-        {
-            "path": "/api/cron/verify-sector-industry",
-            "schedule": "0 2 * * *"
-        },
-        {
-            "path": "/api/cron/update-static-data",
-            "schedule": "5 5 * * *"
-        },
-        {
-            "path": "/api/cron/verify-prevclose",
-            "schedule": "0 8,14,20 * * *"
-        },
-        {
-            "path": "/api/cron/check-premarket-movements",
-            "schedule": "0 8 * * *"
-        },
-        {
-            "path": "/api/cron/heatmap-keep-warm",
-            "schedule": "*/10 * * * *"
-        }
-    ],
+    "crons": [],
     "env": {
         "NODE_ENV": "production"
     }

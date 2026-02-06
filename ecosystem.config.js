@@ -59,6 +59,8 @@ module.exports = {
         // NextAuth
         AUTH_SECRET: envVars.AUTH_SECRET || envVars.NEXTAUTH_SECRET || process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
         NEXTAUTH_URL: envVars.NEXTAUTH_URL || process.env.NEXTAUTH_URL || "https://premarketprice.com",
+        // Single source of truth: scheduled jobs run via PM2 cron processes (below).
+        ENABLE_INTERNAL_SECTOR_INDUSTRY_SCHEDULER: "false",
       },
       error_file: "/var/log/pm2/premarketprice-error.log",
       out_file: "/var/log/pm2/premarketprice-out.log",
@@ -168,6 +170,47 @@ module.exports = {
       log_date_format: "YYYY-MM-DD HH:mm:ss Z",
       // 09:00 UTC ~= 04:00 ET (winter) / 05:00 ET (summer)
       cron_restart: "0 9 * * *",
+      autorestart: false,
+    },
+    {
+      // Verify/fix prevClose values vs Polygon (lightweight, safe)
+      name: "cron-verify-prevclose",
+      script: "scripts/trigger-verify-prevclose.ts",
+      interpreter: "npx",
+      interpreter_args: "tsx",
+      cwd: "/var/www/premarketprice",
+      instances: 1,
+      exec_mode: "fork",
+      env_production: {
+        NODE_ENV: "production",
+        BASE_URL: "http://127.0.0.1:3000",
+        CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || process.env.CRON_SECRET_KEY,
+      },
+      error_file: "/var/log/pm2/cron-verify-prevclose-error.log",
+      out_file: "/var/log/pm2/cron-verify-prevclose-out.log",
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      // Matches previous Vercel schedule: 08:00, 14:00, 20:00 UTC
+      cron_restart: "0 8,14,20 * * *",
+      autorestart: false,
+    },
+    {
+      // Verify/fix sector/industry taxonomy once daily
+      name: "cron-verify-sector-industry",
+      script: "scripts/trigger-verify-sector-industry.ts",
+      interpreter: "npx",
+      interpreter_args: "tsx",
+      cwd: "/var/www/premarketprice",
+      instances: 1,
+      exec_mode: "fork",
+      env_production: {
+        NODE_ENV: "production",
+        BASE_URL: "http://127.0.0.1:3000",
+        CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || process.env.CRON_SECRET_KEY,
+      },
+      error_file: "/var/log/pm2/cron-verify-sector-industry-error.log",
+      out_file: "/var/log/pm2/cron-verify-sector-industry-out.log",
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      cron_restart: "0 2 * * *",
       autorestart: false,
     },
   ],

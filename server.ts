@@ -55,10 +55,21 @@ app.prepare().then(() => {
     });
   }
 
-  // Initialize sector/industry scheduler (runs daily at 02:00 UTC)
-  initializeSectorIndustryScheduler();
-  // Store scheduler instance in global for API route access
-  (global as any).sectorIndustrySchedulerInitialized = true;
+  // INTERNAL SCHEDULERS (optional)
+  // Production runs scheduled jobs via PM2 (single source of truth) to avoid duplicates with Vercel/other cron systems.
+  // Enable internal scheduler only for local/dev or if explicitly requested.
+  const enableInternalSectorIndustryScheduler =
+    (process.env.ENABLE_INTERNAL_SECTOR_INDUSTRY_SCHEDULER === 'true') ||
+    (process.env.NODE_ENV !== 'production' && process.env.ENABLE_INTERNAL_SECTOR_INDUSTRY_SCHEDULER !== 'false');
+
+  if (enableInternalSectorIndustryScheduler) {
+    // Runs daily at 02:00 UTC
+    initializeSectorIndustryScheduler();
+    (global as any).sectorIndustrySchedulerInitialized = true;
+  } else {
+    (global as any).sectorIndustrySchedulerInitialized = false;
+    console.log('⏭️ Internal sector/industry scheduler: DISABLED (PM2 cron is the source of truth)');
+  }
 
   // Start the server
   server.listen(port, () => {
