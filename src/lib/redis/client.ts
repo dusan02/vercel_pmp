@@ -97,6 +97,8 @@ export async function checkRedisHealth(): Promise<{ status: 'healthy' | 'unhealt
  */
 let redisSub: any = null;
 let redisSubConnecting = false;
+let lastRedisSubErrorLogTs = 0;
+let suppressedRedisSubErrors = 0;
 
 // Promise queue for connection attempts
 let connectionPromise: Promise<any> | null = null;
@@ -135,11 +137,48 @@ export async function getRedisSubscriber(): Promise<any> {
         }
 
         if (redisUrl) {
-            redisSub = createClient({ url: redisUrl });
+            // Prefer duplicating the main client (shares config, avoids url parsing edge cases)
+            // Fallback to a dedicated client if duplicate() is not available.
+            if (redisClient && redisClient.isOpen && typeof redisClient.duplicate === 'function') {
+                redisSub = redisClient.duplicate();
+            } else {
+                redisSub = createClient({ url: redisUrl });
+            }
             redisSub.on('error', (err: any) => {
-                console.error('Redis Sub Error:', err);
-                redisSub = null;
-                redisSubConnecting = false;
+                // Throttle noisy subscriber errors to avoid log spam.
+                const now = Date.now();
+                const shouldLog = (now - lastRedisSubErrorLogTs) > 5000; // max 1 log / 5s
+                if (!shouldLog) {
+                    suppressedRedisSubErrors++;
+                    return;
+                }
+
+                const suppressed = suppressedRedisSubErrors;
+                suppressedRedisSubErrors = 0;
+                lastRedisSubErrorLogTs = now;
+
+                const code = err?.code ? String(err.code) : '';
+                const msg = err?.message ? String(err.message) : String(err);
+                const stack = err?.stack ? String(err.stack) : '';
+
+                console.error('Redis Sub Error:', { code, message: msg, suppressed, stack: stack || undefined });
+
+                // Only reset the subscriber on likely connection-level errors.
+                const isConnError =
+                    code === 'ECONNREFUSED' ||
+                    code === 'ECONNRESET' ||
+                    code === 'ETIMEDOUT' ||
+                    msg.includes('ECONNREFUSED') ||
+                    msg.includes('ECONNRESET') ||
+                    msg.includes('Socket') ||
+                    msg.includes('socket') ||
+                    msg.includes('Connection') ||
+                    msg.includes('connection');
+
+                if (isConnError) {
+                    redisSub = null;
+                    redisSubConnecting = false;
+                }
             });
 
             redisSub.on('connect', () => {
