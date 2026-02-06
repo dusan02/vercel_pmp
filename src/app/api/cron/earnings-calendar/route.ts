@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { checkEarningsForOurTickers } from '@/lib/clients/yahooFinanceScraper';
 import { prisma } from '@/lib/db/prisma';
 import { DEFAULT_TICKERS } from '@/data/defaultTickers';
+import { verifyCronAuth } from '@/lib/utils/cronAuth';
 
 // Move Prisma Client inside functions to avoid build-time issues
 // let prisma: any = null;
@@ -173,11 +174,8 @@ async function fetchEarningsFromYahoo(date: string): Promise<EarningsData[]> {
 
 export async function POST(request: NextRequest) {
   try {
-    // Overenie autorizácie (cron job security)
-    const authHeader = request.headers.get('authorization');
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET_KEY}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const authError = verifyCronAuth(request);
+    if (authError) return authError;
 
     const today = new Date().toISOString().split('T')[0];
     console.log(`🚀 Starting daily earnings calendar update for ${today}`);

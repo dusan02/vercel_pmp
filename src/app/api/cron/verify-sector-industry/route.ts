@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { validateSectorIndustry, normalizeIndustry } from '@/lib/utils/sectorIndustryValidator';
+import { verifyCronAuth } from '@/lib/utils/cronAuth';
 
 // Known correct mappings for major pharmaceutical and healthcare companies
 const knownCorrectMappings: { [key: string]: { sector: string; industry: string } } = {
@@ -272,11 +273,8 @@ async function verifyAndFixSectorIndustry() {
  */
 export async function POST(request: NextRequest) {
   try {
-    // Overenie autorizácie (cron job security)
-    const authHeader = request.headers.get('authorization');
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET_KEY}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const authError = verifyCronAuth(request);
+    if (authError) return authError;
 
     console.log(`🚀 Starting daily sector/industry verification...`);
 

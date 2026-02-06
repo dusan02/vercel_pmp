@@ -20,6 +20,7 @@ import { getPreviousClose } from '@/lib/utils/marketCapUtils';
 import { getLastTradingDay, detectSession } from '@/lib/utils/timeUtils';
 import { getDateET, createETDate, nowET } from '@/lib/utils/dateET';
 import { setPrevClose } from '@/lib/redis/operations';
+import { verifyCronAuth } from '@/lib/utils/cronAuth';
 
 const MAX_CONCURRENT = 3; // Conservative to avoid rate limiting
 // Note: By default checks ALL tickers (no limit)
@@ -112,11 +113,8 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now();
 
   try {
-    // Verify authorization
-    const authHeader = request.headers.get('authorization');
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET_KEY}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const authError = verifyCronAuth(request);
+    if (authError) return authError;
 
     const url = new URL(request.url);
     const limitParam = url.searchParams.get('limit');

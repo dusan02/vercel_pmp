@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { runDailyIntegrityCheck } from '@/lib/jobs/dailyIntegrityCheck';
+import { verifyCronAuth } from '@/lib/utils/cronAuth';
 
 /**
  * POST: secured cron trigger (requires CRON_SECRET_KEY)
@@ -22,10 +23,8 @@ async function run(fix: boolean) {
 
 export async function POST(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET_KEY}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const authError = verifyCronAuth(request);
+    if (authError) return authError;
 
     const url = new URL(request.url);
     const fix = url.searchParams.get('fix') === 'true';
