@@ -5,9 +5,20 @@ export function getLogoCandidates(ticker: string, size: number = 32): string[] {
   const color = companyColors[ticker] || '0066CC';
   const avatarUrl = `https://ui-avatars.com/api/?name=${ticker}&background=${color}&size=${size}&color=fff&font-size=0.4&bold=true&format=png`;
 
-  // If no domain mapping exists, return only ui-avatars
+  // If no domain mapping exists, try a few "best effort" icon sources first.
+  // This reduces the chance of ending up with a text-avatar (ui-avatars).
   if (!domain) {
-    return [avatarUrl];
+    const guessedDomain = `${ticker.toLowerCase()}.com`;
+    return [
+      // Clearbit sometimes works even with a naive domain guess
+      `https://logo.clearbit.com/${guessedDomain}?size=${size}`,
+      // Google favicon is extremely reliable (even if it ends up being a generic icon)
+      `https://www.google.com/s2/favicons?domain=${guessedDomain}&sz=${size}`,
+      // DuckDuckGo icon proxy
+      `https://icons.duckduckgo.com/ip3/${guessedDomain}.ico`,
+      // Last resort: text-avatar (still better than a broken image)
+      avatarUrl
+    ];
   }
 
   // Return priority list of sources

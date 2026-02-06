@@ -45,18 +45,25 @@ const DEFAULT_SOURCE = 'clearbit';
  * Generate SVG placeholder
  */
 function generatePlaceholderSVG(symbol: string, size: number): string {
-  const initial = symbol.charAt(0).toUpperCase();
   const colors = [
     '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
     '#EC4899', '#06B6D4', '#84CC16', '#F97316', '#6366F1'
   ];
   const color = colors[symbol.charCodeAt(0) % colors.length];
-  const fontSize = Math.max(8, size * 0.4);
+  const pad = Math.max(2, Math.round(size * 0.12));
+  const stroke = Math.max(1.5, Math.round(size * 0.07));
+  const radius = Math.max(3, Math.round(size * 0.18));
 
   return `<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
-    <rect width="${size}" height="${size}" fill="${color}" rx="4"/>
-    <text x="50%" y="50%" font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="bold" 
-          fill="white" text-anchor="middle" dominant-baseline="central">${initial}</text>
+    <rect width="${size}" height="${size}" fill="${color}" rx="${radius}"/>
+    <!-- simple "building" glyph to avoid text-based placeholders -->
+    <g opacity="0.95" fill="none" stroke="white" stroke-width="${stroke}" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M ${pad} ${size - pad} H ${size - pad}" />
+      <path d="M ${Math.round(size * 0.25)} ${size - pad} V ${Math.round(size * 0.32)}" />
+      <path d="M ${Math.round(size * 0.25)} ${Math.round(size * 0.32)} H ${Math.round(size * 0.72)} V ${size - pad}" />
+      <path d="M ${Math.round(size * 0.40)} ${Math.round(size * 0.46)} V ${Math.round(size * 0.86)}" />
+      <path d="M ${Math.round(size * 0.56)} ${Math.round(size * 0.46)} V ${Math.round(size * 0.86)}" />
+    </g>
   </svg>`;
 }
 
