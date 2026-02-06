@@ -1438,6 +1438,47 @@ async function main() {
       const etNow = nowET();
       const session = detectSession(etNow);
 
+      // --- Regular close + next-day prevClose (CRITICAL) ---
+      // In production we run the worker in MODE=snapshot (see PM2 ecosystem).
+      // Previously, regular close saving (and preparing nextTradingDay prevClose) only ran in MODE=refs,
+      // which meant "previous close available shortly after market close" was not guaranteed.
+      //
+      // Goal: have regularClose/prevClose available ASAP after 16:00 ET (target: ~5 minutes).
+      // Strategy: attempt at 16:05 ET and retry every 5 minutes until 17:00 ET, with Redis throttling + DB idempotency.
+      try {
+        const et = toET(etNow);
+        const hours = et.hour;
+        const minutes = et.minute;
+
+        // Window 16:05 - 16:59 ET (retry every 5 minutes)
+        const inCloseWindow = hours === 16 && minutes >= 5;
+        const isRetryMinute = (minutes % 5) === 0;
+
+        if (inCloseWindow && isRetryMinute) {
+          const today = getDateET(etNow);
+          const { redisClient } = await import('@/lib/redis');
+          const throttleKey = `regular_close:last_save:${today}`;
+          const nowMs = Date.now();
+
+          // Throttle: don't run more often than every ~4 minutes even if loop timing jitters
+          const lastStr = (redisClient && redisClient.isOpen) ? await redisClient.get(throttleKey) : null;
+          const lastMs = lastStr ? parseInt(lastStr, 10) : 0;
+          const tooSoon = lastMs && (nowMs - lastMs) < (4 * 60 * 1000);
+
+          if (!tooSoon) {
+            const runId = nowMs.toString(36);
+            console.log(`🔔 [runId:${runId}] Snapshot worker: attempting saveRegularClose (ET ${hours}:${String(minutes).padStart(2, '0')})...`);
+            await saveRegularClose(apiKey, today, runId);
+            if (redisClient && redisClient.isOpen) {
+              await redisClient.setEx(throttleKey, 3600, nowMs.toString());
+            }
+          }
+        }
+      } catch (e) {
+        // Non-fatal: regular close save failures should not stop ingest loop
+        console.warn('⚠️ Snapshot worker: saveRegularClose attempt failed:', e);
+      }
+
       // Schedule bulk preload (DST-safe, with lock)
       await scheduleBulkPreload();
 
