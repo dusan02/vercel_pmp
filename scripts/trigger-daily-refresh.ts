@@ -7,6 +7,7 @@
  */
 
 import { loadEnvFromFiles } from './_utils/loadEnv';
+import { fetchWithRetry } from './_utils/fetchWithRetry';
 
 // Load environment variables (no `dotenv` dependency; works even if devDeps are omitted)
 loadEnvFromFiles();
@@ -18,7 +19,7 @@ async function main() {
   const baseUrl =
     process.env.BASE_URL ||
     process.env.NEXT_PUBLIC_BASE_URL ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://127.0.0.1:3000');
 
   if (!cronSecretKey) {
     console.error('❌ CRON_SECRET_KEY/CRON_SECRET not configured');
@@ -31,13 +32,13 @@ async function main() {
   console.log(`📍 URL: ${url}`);
 
   try {
-    const response = await fetch(url, {
+    const response = await fetchWithRetry(url, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${cronSecretKey}`,
         'Content-Type': 'application/json'
       }
-    });
+    }, { retries: 8, retryDelayMs: 500 });
 
     if (!response.ok) {
       const errorText = await response.text();
