@@ -49,8 +49,18 @@ export default function CompanyLogo({
   // Generate lightweight placeholder immediately
   const placeholderSrc = useMemo(() => generateLQPlaceholder(ticker, w, h), [ticker, w, h]);
 
-  // Unified strategy: Prioritize passed logoUrl, otherwise use API endpoint
-  const logoSrc = logoUrl || `/api/logo/${encodeURIComponent(ticker)}?s=${size}`;
+  // Unified strategy:
+  // - Prefer *real* provided logoUrl if present
+  // - But ignore "text avatar" sources (ui-avatars), because they look like letter-logos in tables
+  // - Otherwise use our API endpoint (which prefers local `public/logos/*-32.webp`)
+  const sanitizedLogoUrl = useMemo(() => {
+    const raw = (logoUrl ?? '').trim();
+    if (!raw) return '';
+    if (/ui-avatars\.com\/api/i.test(raw)) return '';
+    return raw;
+  }, [logoUrl]);
+
+  const logoSrc = sanitizedLogoUrl || `/api/logo/${encodeURIComponent(ticker)}?s=${size}`;
 
   // Fallback placeholder component
   const LogoPlaceholder = () => (
