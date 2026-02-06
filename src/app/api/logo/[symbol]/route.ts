@@ -111,9 +111,11 @@ export async function GET(
     const url = new URL(req.url);
     const sizeParam = parseInt(url.searchParams.get('s') || '32', 10);
     const size = Math.max(16, Math.min(64, sizeParam));
+    const prefer = (url.searchParams.get('prefer') || '').toLowerCase();
+    const preferIcon = prefer === 'icon' || prefer === 'icons';
 
     // Create cache key for deduplication
-    const cacheKey = `logo:${symbol}:${size}`;
+    const cacheKey = `logo:${symbol}:${size}:${preferIcon ? 'icon' : 'default'}`;
 
     // Check if request is already in-flight
     if (inFlightRequests.has(cacheKey)) {
@@ -299,24 +301,40 @@ export async function GET(
         // 6. Resolve logo URLs (candidates)
         const domainCandidates = derivedDomain
           ? [
-            `https://logo.clearbit.com/${derivedDomain}?size=${size}`,
             `https://www.google.com/s2/favicons?domain=${derivedDomain}&sz=${size}`,
             `https://icons.duckduckgo.com/ip3/${derivedDomain}.ico`,
+            `https://logo.clearbit.com/${derivedDomain}?size=${size}`,
           ]
           : [];
 
-        const logoCandidates = Array.from(
-          new Set(
-            [
-              ...(cachedPreferredUrl ? [cachedPreferredUrl] : []),
-              ...(finnhubLogoUrl ? [finnhubLogoUrl] : []),
-              ...(dbLogoUrl ? [dbLogoUrl] : []),
-              ...(polygonLogoUrl ? [polygonLogoUrl] : []),
-              ...domainCandidates,
-              ...getLogoCandidates(symbol, size),
-            ].filter(Boolean)
-          )
-        );
+        // If dbLogoUrl is a "text avatar" source, ignore it (looks bad in tables).
+        const dbLogoUrlSanitized = dbLogoUrl && /ui-avatars\.com\/api/i.test(dbLogoUrl) ? null : dbLogoUrl;
+
+        const iconFirstCandidates = [
+          ...(polygonLogoUrl ? [polygonLogoUrl] : []),
+          ...domainCandidates,
+        ];
+
+        // Cache is helpful, but can also lock in wordmark-y sources. When preferIcon=true,
+        // we still include it, but after icon-first sources.
+        const baseCandidates = preferIcon
+          ? [
+            ...iconFirstCandidates,
+            ...(finnhubLogoUrl ? [finnhubLogoUrl] : []),
+            ...(cachedPreferredUrl ? [cachedPreferredUrl] : []),
+            ...(dbLogoUrlSanitized ? [dbLogoUrlSanitized] : []),
+            ...getLogoCandidates(symbol, size),
+          ]
+          : [
+            ...(cachedPreferredUrl ? [cachedPreferredUrl] : []),
+            ...(finnhubLogoUrl ? [finnhubLogoUrl] : []),
+            ...(dbLogoUrlSanitized ? [dbLogoUrlSanitized] : []),
+            ...(polygonLogoUrl ? [polygonLogoUrl] : []),
+            ...domainCandidates,
+            ...getLogoCandidates(symbol, size),
+          ];
+
+        const logoCandidates = Array.from(new Set(baseCandidates.filter(Boolean)));
 
         // 7. Try each candidate URL until one works
         try {

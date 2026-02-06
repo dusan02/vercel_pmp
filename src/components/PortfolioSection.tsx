@@ -116,8 +116,8 @@ export function PortfolioSection({
         <div className="flex justify-center">
           <CompanyLogo
             ticker={stock.ticker}
-            logoUrl={stock.logoUrl || `/logos/${stock.ticker.toLowerCase()}-32.webp`}
-            size={32}
+            {...(stock.logoUrl ? { logoUrl: stock.logoUrl } : {})}
+            size={44}
             priority={true}
           />
         </div>

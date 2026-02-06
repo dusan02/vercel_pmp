@@ -117,8 +117,8 @@ export const AllStocksSection = React.memo(function AllStocksSection({
       className: 'hidden lg:table-cell',
       width: '72px',
       render: (stock) => (
-        <div className="flex justify-start pl-2">
-          <CompanyLogo ticker={stock.ticker} {...(stock.logoUrl ? { logoUrl: stock.logoUrl } : {})} size={32} />
+        <div className="flex justify-center items-center w-full">
+          <CompanyLogo ticker={stock.ticker} {...(stock.logoUrl ? { logoUrl: stock.logoUrl } : {})} size={44} className="rounded-sm" />
         </div>
       )
     },

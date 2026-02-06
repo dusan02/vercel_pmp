@@ -60,7 +60,12 @@ export default function CompanyLogo({
     return raw;
   }, [logoUrl]);
 
-  const logoSrc = sanitizedLogoUrl || `/api/logo/${encodeURIComponent(ticker)}?s=${size}`;
+  // Request a larger source when we're rendering at >= ~40px to avoid blurry / tiny wordmarks.
+  // We only store static files at 32px + 64px, so stick to those.
+  const requestSize = Math.min(64, Math.max(16, Math.min(64, (Math.max(w, h) >= 40 ? 64 : 32))));
+
+  // Prefer icon-like sources (polygon icon_url / favicons) for small UI logos
+  const logoSrc = sanitizedLogoUrl || `/api/logo/${encodeURIComponent(ticker)}?s=${requestSize}&prefer=icon`;
 
   // Fallback placeholder component
   const LogoPlaceholder = () => (
@@ -110,7 +115,7 @@ export default function CompanyLogo({
         flexShrink: 0,
         borderRadius: 2, // Sharper corners (was 8)
         overflow: 'hidden',
-        background: 'var(--clr-surface)',
+        background: 'transparent',
       }}
       className={className}
     >

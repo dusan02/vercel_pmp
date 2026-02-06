@@ -40,7 +40,7 @@ export const PortfolioCardMobile = memo(({
         {/* 1. Logo (Larger ~40px) */}
         <CompanyLogo
           ticker={stock.ticker}
-          logoUrl={stock.logoUrl || `/logos/${stock.ticker.toLowerCase()}-32.webp`}
+          {...(stock.logoUrl ? { logoUrl: stock.logoUrl } : {})}
           size={42}
           className="shrink-0 rounded-md"
         />
