@@ -38,10 +38,10 @@ export function LoginButton() {
                         setIsDropdownOpen(false);
                         signOut({ callbackUrl: '/' });
                     }}
-                    className="flex items-center justify-center gap-2 w-[44px] h-[44px] lg:w-auto lg:h-auto lg:px-4 lg:py-2 text-sm font-medium text-white rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                    className="flex items-center justify-center gap-2 w-[44px] h-[44px] lg:w-auto lg:h-auto lg:px-4 lg:py-2 text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2
+                               bg-gray-100 text-gray-900 border border-gray-200 hover:bg-gray-200
+                               dark:bg-white/10 dark:text-white dark:border-white/15 dark:hover:bg-white/15"
                     style={{
-                        background: '#1a1a1a',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
                         WebkitTapHighlightColor: 'transparent',
                         touchAction: 'manipulation',
                     }}
@@ -85,7 +85,9 @@ export function LoginButton() {
                                     setIsDropdownOpen(false);
                                     signOut({ callbackUrl: '/' });
                                 }}
-                                className="w-full px-3 py-2.5 text-sm font-medium text-white bg-gray-600 hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-md transition-colors flex items-center justify-center gap-2.5 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1 shadow-sm"
+                                className="w-full px-3 py-2.5 text-sm font-medium rounded-md transition-colors flex items-center justify-center gap-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-1 shadow-sm
+                                           bg-gray-100 text-gray-900 border border-gray-200 hover:bg-gray-200
+                                           dark:bg-white/10 dark:text-white dark:border-white/15 dark:hover:bg-white/15"
                                 aria-label="Sign out"
                             >
                                 <svg
