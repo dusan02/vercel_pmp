@@ -2,16 +2,10 @@
  * Trigger verify-sector-industry cron locally (VPS single source of truth)
  * Run: npx tsx scripts/trigger-verify-sector-industry.ts
  */
-try {
-  const { config } = require('dotenv');
-  const { resolve } = require('path');
-  // Server typically uses `.env`, local dev often uses `.env.local`.
-  // Load `.env` first, then `.env.local` to override if present.
-  config({ path: resolve(process.cwd(), '.env') });
-  config({ path: resolve(process.cwd(), '.env.local') });
-} catch {
-  // ignore
-}
+import { loadEnvFromFiles } from './_utils/loadEnv';
+
+// Load environment variables (no `dotenv` dependency; works even if devDeps are omitted)
+loadEnvFromFiles();
 
 async function main() {
   const cronSecretKey = process.env.CRON_SECRET_KEY || process.env.CRON_SECRET;

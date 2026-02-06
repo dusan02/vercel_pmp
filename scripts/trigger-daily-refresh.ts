@@ -6,17 +6,10 @@
  * with optional hard reset flag
  */
 
-// Load environment variables
-try {
-  const { config } = require('dotenv');
-  const { resolve } = require('path');
-  // Server typically uses `.env`, local dev often uses `.env.local`.
-  // Load `.env` first, then `.env.local` to override if present.
-  config({ path: resolve(process.cwd(), '.env') });
-  config({ path: resolve(process.cwd(), '.env.local') });
-} catch (e) {
-  // dotenv not available, continue without it
-}
+import { loadEnvFromFiles } from './_utils/loadEnv';
+
+// Load environment variables (no `dotenv` dependency; works even if devDeps are omitted)
+loadEnvFromFiles();
 
 async function main() {
   const hardReset = process.argv.includes('--hard-reset');
