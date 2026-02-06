@@ -38,7 +38,7 @@ async function main() {
       'Authorization': `Bearer ${cronSecretKey}`,
       'Content-Type': 'application/json'
     }
-  }, { retries: 8, retryDelayMs: 500 });
+  });
 
   if (!response.ok) {
     const text = await response.text();

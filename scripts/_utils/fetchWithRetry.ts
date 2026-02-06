@@ -26,8 +26,10 @@ export async function fetchWithRetry(
   init: Parameters<typeof fetch>[1],
   opts: FetchWithRetryOptions = {}
 ): Promise<Response> {
-  const retries = opts.retries ?? 6;
-  const retryDelayMs = opts.retryDelayMs ?? 500;
+  // After `pm2 reload`, Next.js custom server may take >5s to become reachable.
+  // Use a longer default window so cron triggers don’t flake on restarts.
+  const retries = opts.retries ?? 60; // ~60s with default delay
+  const retryDelayMs = opts.retryDelayMs ?? 1000;
 
   let lastErr: unknown;
   for (let attempt = 1; attempt <= retries; attempt++) {
