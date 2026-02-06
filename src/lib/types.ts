@@ -173,7 +173,8 @@ export type RedisClient = {
   del(key: string): Promise<number>;
   mGet(keys: string[]): Promise<(string | null)[]>;
   multi(): RedisMulti;
-  subscribe(channel: string): Promise<void>;
+  // node-redis v4: subscribe(channel, listener?) where listener receives (message, channel)
+  subscribe(channel: string, listener?: (message: string, channel: string) => void): Promise<void>;
   unsubscribe(channel: string): Promise<void>;
   publish(channel: string, message: string): Promise<number>;
   on(event: string, callback: (...args: unknown[]) => void): void;

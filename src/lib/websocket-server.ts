@@ -93,20 +93,20 @@ export class WebSocketPriceServer {
       try {
         WebSocketPriceServer.sharedSubscriber = await getRedisSubscriber();
         if (WebSocketPriceServer.sharedSubscriber) {
-          await WebSocketPriceServer.sharedSubscriber.subscribe('pmp:tick');
-
-          WebSocketPriceServer.sharedSubscriber.on(
-            'message',
-            (channel: unknown, message: unknown) => {
-              if (typeof channel !== 'string' || typeof message !== 'string') return;
-              if (channel === 'pmp:tick') {
-                try {
-                  const data: TickData = JSON.parse(message);
-                  // Queue pre debounce
-                  WebSocketPriceServer.messageQueue.set(`${data.symbol}:${data.session}`, data);
-                } catch (e) {
-                  console.error('Error parsing Redis message:', e);
-                }
+          // node-redis v4 requires passing a listener to subscribe(); there is no `message` event like ioredis.
+          // Not passing a listener can cause runtime errors and the subscriber will not process messages.
+          await WebSocketPriceServer.sharedSubscriber.subscribe(
+            'pmp:tick',
+            (message: string, channel?: string) => {
+              const effectiveChannel = channel ?? 'pmp:tick';
+              if (effectiveChannel !== 'pmp:tick') return;
+              if (typeof message !== 'string') return;
+              try {
+                const data: TickData = JSON.parse(message);
+                // Queue pre debounce
+                WebSocketPriceServer.messageQueue.set(`${data.symbol}:${data.session}`, data);
+              } catch (e) {
+                console.error('Error parsing Redis message:', e);
               }
             }
           );
