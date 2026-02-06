@@ -163,7 +163,7 @@ module.exports = {
         NODE_ENV: "production",
         // Call the local Next.js server directly (avoids external DNS/SSL issues)
         BASE_URL: "http://127.0.0.1:3000",
-        CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || process.env.CRON_SECRET_KEY,
+        CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || envVars.CRON_SECRET || process.env.CRON_SECRET_KEY || process.env.CRON_SECRET,
       },
       error_file: "/var/log/pm2/daily-static-data-refresh-error.log",
       out_file: "/var/log/pm2/daily-static-data-refresh-out.log",
@@ -184,7 +184,7 @@ module.exports = {
       env_production: {
         NODE_ENV: "production",
         BASE_URL: "http://127.0.0.1:3000",
-        CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || process.env.CRON_SECRET_KEY,
+        CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || envVars.CRON_SECRET || process.env.CRON_SECRET_KEY || process.env.CRON_SECRET,
       },
       error_file: "/var/log/pm2/cron-verify-prevclose-error.log",
       out_file: "/var/log/pm2/cron-verify-prevclose-out.log",
@@ -205,7 +205,7 @@ module.exports = {
       env_production: {
         NODE_ENV: "production",
         BASE_URL: "http://127.0.0.1:3000",
-        CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || process.env.CRON_SECRET_KEY,
+        CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || envVars.CRON_SECRET || process.env.CRON_SECRET_KEY || process.env.CRON_SECRET,
       },
       error_file: "/var/log/pm2/cron-verify-sector-industry-error.log",
       out_file: "/var/log/pm2/cron-verify-sector-industry-out.log",

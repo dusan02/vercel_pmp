@@ -20,7 +20,7 @@ try {
 
 async function main() {
   const hardReset = process.argv.includes('--hard-reset');
-  const cronSecretKey = process.env.CRON_SECRET_KEY;
+  const cronSecretKey = process.env.CRON_SECRET_KEY || process.env.CRON_SECRET;
   // IMPORTANT: avoid `a || b ? c : d` precedence bugs; explicitly handle VERCEL_URL.
   const baseUrl =
     process.env.BASE_URL ||
@@ -28,7 +28,7 @@ async function main() {
     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
 
   if (!cronSecretKey) {
-    console.error('❌ CRON_SECRET_KEY not configured');
+    console.error('❌ CRON_SECRET_KEY/CRON_SECRET not configured');
     process.exit(1);
   }
 

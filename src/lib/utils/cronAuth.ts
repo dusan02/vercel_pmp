@@ -11,7 +11,11 @@ import { NextRequest, NextResponse } from 'next/server';
  */
 export function verifyCronAuth(request: NextRequest): NextResponse | null {
   const authHeader = request.headers.get('authorization');
-  const expectedAuth = `Bearer ${process.env.CRON_SECRET_KEY}`;
+  // Support both env var names:
+  // - CRON_SECRET_KEY (preferred)
+  // - CRON_SECRET (legacy / used by some routes)
+  const secret = process.env.CRON_SECRET_KEY || process.env.CRON_SECRET;
+  const expectedAuth = `Bearer ${secret}`;
   
   if (authHeader !== expectedAuth) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -30,7 +34,8 @@ export function verifyCronAuthOptional(
 ): NextResponse | null {
   const isProduction = process.env.NODE_ENV === 'production';
   const authHeader = request.headers.get('authorization');
-  const expectedAuth = `Bearer ${process.env.CRON_SECRET_KEY}`;
+  const secret = process.env.CRON_SECRET_KEY || process.env.CRON_SECRET;
+  const expectedAuth = `Bearer ${secret}`;
   
   // In production, always require auth
   if (isProduction) {
