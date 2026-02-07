@@ -3,7 +3,7 @@
 
 import React from 'react';
 import { event } from '@/lib/ga';
-import type { HeatmapMetric } from './MarketHeatmap';
+import type { HeatmapMetric } from '@/lib/heatmap/types';
 
 interface HeatmapToggleMinimalProps {
     metric: HeatmapMetric;

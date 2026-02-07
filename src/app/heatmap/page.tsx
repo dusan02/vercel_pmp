@@ -3,7 +3,8 @@
 import React, { useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import ResponsiveMarketHeatmap from '@/components/ResponsiveMarketHeatmap';
-import { CompanyNode, HeatmapLegend } from '@/components/MarketHeatmap';
+import type { CompanyNode } from '@/lib/heatmap/types';
+import { HeatmapLegend } from '@/components/MarketHeatmap';
 import { useHeatmapMetric } from '@/hooks/useHeatmapMetric';
 import { HeatmapMetricButtons } from '@/components/HeatmapMetricButtons';
 import { logger } from '@/lib/utils/logger';

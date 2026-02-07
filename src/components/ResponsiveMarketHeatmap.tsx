@@ -2,7 +2,9 @@
 
 import React, { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { MarketHeatmap, CompanyNode, useElementResize, HeatmapMetric } from './MarketHeatmap';
+import { MarketHeatmap } from './MarketHeatmap';
+import type { CompanyNode, HeatmapMetric } from '@/lib/heatmap/types';
+import { useElementResize } from '@/hooks/useElementResize';
 import { useHeatmapData } from '@/hooks/useHeatmapData';
 import { useHeatmapMetric } from '@/hooks/useHeatmapMetric';
 import { HeatmapMetricButtons } from './HeatmapMetricButtons';

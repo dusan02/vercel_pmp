@@ -6,7 +6,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import type { HeatmapMetric } from './MarketHeatmap';
+import type { HeatmapMetric } from '@/lib/heatmap/types';
 import { event } from '@/lib/ga';
 
 interface HeatmapMetricButtonsProps {

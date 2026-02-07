@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import type { CompanyNode } from '@/components/MarketHeatmap';
+import type { CompanyNode } from '@/lib/heatmap/types';
 import { safeGetItem, safeSetItem, safeRemoveItem } from '@/lib/utils/safeStorage';
 
 const LOCALSTORAGE_KEY = 'heatmap-cache';

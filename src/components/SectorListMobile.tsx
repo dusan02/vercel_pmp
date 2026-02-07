@@ -6,7 +6,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { CompanyNode } from './MarketHeatmap';
+import type { CompanyNode } from '@/lib/heatmap/types';
 import { formatBillions, formatSectorName } from '@/lib/utils/format';
 
 interface SectorListMobileProps {

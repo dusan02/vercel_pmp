@@ -6,7 +6,7 @@
 'use client';
 
 import React from 'react';
-import type { CompanyNode, TreemapLeaf } from './MarketHeatmap';
+import type { CompanyNode, TreemapLeaf } from '@/lib/heatmap/types';
 import { formatPercent, formatMarketCapDiff } from '@/lib/utils/heatmapFormat';
 import styles from '@/styles/heatmap.module.css';
 

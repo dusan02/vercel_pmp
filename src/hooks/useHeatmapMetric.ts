@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import type { HeatmapMetric } from '@/components/MarketHeatmap';
+import type { HeatmapMetric } from '@/lib/heatmap/types';
 import { safeGetItem, safeSetItem } from '@/lib/utils/safeStorage';
 
 const METRIC_STORAGE_KEY = 'heatmap-metric-preference';

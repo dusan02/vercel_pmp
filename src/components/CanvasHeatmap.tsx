@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { TreemapLeaf, CompanyNode } from './MarketHeatmap';
+import type { TreemapLeaf, CompanyNode } from '@/lib/heatmap/types';
 import { formatMarketCapDiff, formatPercent } from '@/lib/utils/heatmapFormat';
 import { createHeatmapColorScale } from '@/lib/utils/heatmapColors';
 import { TILE_SIZE_THRESHOLDS, FONT_SIZE_CONFIG } from '@/lib/utils/heatmapConfig';

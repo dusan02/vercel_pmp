@@ -2,10 +2,10 @@
 
 import React, { useMemo } from 'react';
 import dynamic from 'next/dynamic';
-import { CompanyNode } from './MarketHeatmap';
+import type { CompanyNode } from '@/lib/heatmap/types';
 import styles from '@/styles/heatmap.module.css';
 import { MarketHeatmap } from './MarketHeatmap';
-import { useElementResize } from './MarketHeatmap';
+import { useElementResize } from '@/hooks/useElementResize';
 import { formatCurrencyCompact, formatPercent } from '@/lib/utils/format';
 
 interface PortfolioPerformanceTreemapProps {

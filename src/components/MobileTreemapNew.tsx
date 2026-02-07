@@ -1,14 +1,14 @@
 'use client';
 
 import React, { useMemo, useCallback, useLayoutEffect, useRef, useState } from 'react';
-import { CompanyNode } from './MarketHeatmap';
+import type { CompanyNode } from '@/lib/heatmap/types';
 import { formatPrice, formatPercent, formatMarketCap, formatMarketCapDiff } from '@/lib/utils/format';
 import { createHeatmapColorScale } from '@/lib/utils/heatmapColors';
 import CompanyLogo from './CompanyLogo';
 import { BrandLogo } from './BrandLogo';
 import { LoginButton } from './LoginButton';
-import { hierarchy, treemap, treemapSquarify } from 'd3-hierarchy';
-import { buildHeatmapHierarchy } from '@/lib/utils/heatmapLayout';
+import { computeMobileTreemapSectors, prepareMobileTreemapData } from '@/lib/heatmap/mobileTreemap';
+import { getMobileTileLabel, getMobileTileOpticalOffsetPx } from '@/lib/heatmap/mobileLabels';
 
 interface MobileTreemapNewProps {
   data: CompanyNode[];
@@ -20,9 +20,6 @@ interface MobileTreemapNewProps {
   isFavorite?: (ticker: string) => boolean;
   activeView?: string | undefined;
 }
-
-const MAX_MOBILE_TILES = 500; // Target: S&P 500
-const MIN_TILE_VALUE_B = 1e-6; // 0.000001B = $1k (prevents D3 from dropping 0-valued tiles)
 
 // Mobile sector label sizing.
 // IMPORTANT UX: tiles should get priority; the sector label should be minimal and not "eat" the heatmap.
@@ -51,27 +48,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
 
   // Sort data
   const sortedData = useMemo(() => {
-    if (!data || data.length === 0) return [];
-
-    const seen = new Set<string>();
-    const uniqueData = data.filter(c => {
-      const symbol = c.symbol?.toUpperCase();
-      if (!symbol || seen.has(symbol)) return false;
-      seen.add(symbol);
-      return true;
-    });
-
-    // Keep a stable ticker set (top 500 by market cap), but allow layout sizing to change by metric later.
-    // We enrich marketCapDiffAbs so $ sizing can work reliably even if the API didn't send it.
-    const top = uniqueData
-      .filter(c => (c.marketCap ?? 0) > 0)
-      .sort((a, b) => (b.marketCap ?? 0) - (a.marketCap ?? 0))
-      .slice(0, MAX_MOBILE_TILES);
-
-    return top.map((c) => ({
-      ...c,
-      marketCapDiffAbs: c.marketCapDiffAbs ?? Math.max(MIN_TILE_VALUE_B, Math.abs(c.marketCapDiff ?? 0)),
-    }));
+    return prepareMobileTreemapData(data);
   }, [data]);
 
   // For easy verification (prod too): how many unique tickers are shown
@@ -88,32 +65,8 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
     return colorScale(value);
   }, [metric, colorScale]);
 
-  // Tile label rules: center text, responsive sizing, hide on tiny tiles
   const getTileLabel = useCallback((company: CompanyNode, w: number, h: number) => {
-    const minDim = Math.min(w, h);
-
-    // Too small → no text at all
-    if (minDim < 18) {
-      return { showSymbol: false, showValue: false, symbol: '', value: '', symbolFontPx: 0, valueFontPx: 0 };
-    }
-
-    const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
-    const symbolFontPx = Math.round(clamp(minDim * 0.28, 9, 16));
-    const showValue = minDim >= 34; // value line needs more room
-    const valueFontPx = Math.round(clamp(symbolFontPx - 4, 8, 12));
-
-    const valueText = metric === 'percent'
-      ? formatPercent(company.changePercent ?? 0)
-      : (company.marketCapDiff == null ? '' : formatMarketCapDiff(company.marketCapDiff));
-
-    return {
-      showSymbol: true,
-      showValue: showValue && valueText.length > 0,
-      symbol: company.symbol,
-      value: valueText,
-      symbolFontPx,
-      valueFontPx,
-    };
+    return getMobileTileLabel(company, w, h, metric);
   }, [metric]);
 
 
@@ -140,122 +93,11 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
     };
   }, []);
 
-  // Build treemap hierarchy using buildHeatmapHierarchy (same as original)
+  // Build mobile treemap sector blocks (pure helper; no React logic inside)
   const treemapResult = useMemo(() => {
-    if (sortedData.length === 0 || containerSize.width <= 0 || containerSize.height <= 0) return { sectors: [] };
-
-    // Compute treemap areas based on selected metric:
-    // - % view: size by market cap (classic S&P 500 heatmap)
-    // - $ view: size by absolute market cap change (mcap diff)
-    const layoutMetric = metric === 'mcap' ? 'mcap' : 'percent';
-    const sectorHierarchy = buildHeatmapHierarchy(sortedData, layoutMetric);
-    const sectors = sectorHierarchy.children ?? [];
-
-    if (sectors.length === 0) return { sectors: [] };
-
-    // IMPORTANT: sector children are typically industries, not companies, so `.value` may be missing at that level.
-    // We must sum recursively, otherwise most sector sums collapse to ~0 and sector heights become distorted.
-    const sumNode = (node: any): number => {
-      if (!node) return 0;
-      if (typeof node.value === 'number' && !Number.isNaN(node.value)) return node.value;
-      const children = node.children ?? [];
-      if (!Array.isArray(children) || children.length === 0) return 0;
-      return children.reduce((sum: number, c: any) => sum + sumNode(c), 0);
-    };
-    const sumSector = (sector: any) => sumNode(sector);
-
-    const sectorSums = sectors.map(sumSector);
-    const totalSum = sectorSums.reduce((a, b) => a + b, 0) || 1;
-
-    // --- REFRACTORED LOGIC FOR SEGMENTED BLOCKS ---
-
-    // 1. Calculate sector heights based on total available scroll area
-    // Use a multiplier to ensure the heatmap is tall enough to be readable
-    // Min 800px or screen height * 1.5
-    const totalContentHeight = Math.max(containerSize.height * 1.2, 900);
-    const baseHeight = totalContentHeight;
-    const MIN_TILES_H = 56; // Minimum usable tile area inside a small sector block
-    const MIN_SECTOR_HEIGHT = SECTOR_CHROME_H + MIN_TILES_H;
-
-    const sectorHeights: number[] = [];
-    let allocatedHeight = 0;
-
-    for (let i = 0; i < sectors.length; i++) {
-      if (i === sectors.length - 1) {
-        // Last sector takes exactly what's left
-        const h = Math.max(MIN_SECTOR_HEIGHT, baseHeight - allocatedHeight);
-        sectorHeights.push(Math.round(h));
-      } else {
-        const raw = Math.round(baseHeight * ((sectorSums[i] || 0) / totalSum));
-        // Ensure integer height
-        const finalH = Math.round(Math.max(MIN_SECTOR_HEIGHT, raw));
-        sectorHeights.push(finalH);
-        allocatedHeight += finalH;
-      }
-    }
-
-    // 2. Build Sector Blocks with their own independent Treemaps
-    const sectorBlocks = sectors.map((sector: any, sectorIdx: number) => {
-      if (!sector.children || sector.children.length === 0) return null;
-
-      const sectorHeight = sectorHeights[sectorIdx] ?? 0;
-      if (sectorHeight <= 0) return null;
-
-      const width = containerSize.width;
-      if (width <= 0) return null;
-
-      // Reserve space for the sector header/divider so it never overlaps/clips tiles.
-      const tilesHeight = Math.max(1, sectorHeight - SECTOR_CHROME_H);
-
-      // Create hierarchy for JUST this sector
-      const sectorHierarchyNode = hierarchy(sector)
-        .sum((d: any) => d.value || 0)
-        .sort((a: any, b: any) => (b.value || 0) - (a.value || 0));
-
-      // Calculate Treemap layout for this sector block (0,0 is top-left of the block)
-      const sectorTreemap = treemap()
-        .size([width, tilesHeight])
-        .padding(0)
-        .paddingInner(0) // 0px border/gap to prevent gaps/jagged edges
-        .round(true) // CRITICAL: snap to integer pixels to avoid subpixel gaps / jagged bottoms
-        .tile(treemapSquarify);
-
-      sectorTreemap(sectorHierarchyNode);
-
-      // Extract leaves relative to this sector block
-      const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
-      const sectorLeaves = sectorHierarchyNode.leaves().map((leaf: any) => {
-        // IMPORTANT:
-        // D3 treemap with `.round(true)` already produces a non-overlapping integer tiling.
-        // Avoid floor/ceil expansion here, which can create 1px overlaps between neighbors.
-        const x0 = clamp(leaf.x0 ?? 0, 0, width);
-        const y0 = clamp(leaf.y0 ?? 0, 0, tilesHeight);
-        const x1 = clamp(leaf.x1 ?? 0, 0, width);
-        const y1 = clamp(leaf.y1 ?? 0, 0, tilesHeight);
-
-        return {
-          x0,
-          y0,
-          x1,
-          y1,
-          company: leaf.data.meta?.companyData || leaf.data,
-        };
-      }).filter((leaf: any) => {
-        // Drop degenerate tiles (can happen for extremely small values after rounding)
-        const w = (leaf.x1 - leaf.x0);
-        const h = (leaf.y1 - leaf.y0);
-        return w > 0 && h > 0;
-      });
-
-      return {
-        name: sector.name,
-        height: sectorHeight,
-        tilesHeight,
-        children: sectorLeaves
-      };
-    }).filter(Boolean); // Filter out nulls
-
-    return { sectors: sectorBlocks }; // No more flat 'tiles' array needed
+    return computeMobileTreemapSectors(sortedData, containerSize, metric, {
+      sectorChromeHeightPx: SECTOR_CHROME_H,
+    });
   }, [sortedData, metric, containerSize]);
 
   // Direct use of treemapResult.sectors in JSX.
@@ -302,18 +144,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                   if (width <= 0 || height <= 0) return null;
 
                   const label = getTileLabel(company, width, height);
-                  // Optical centering: geometric 50/50 tends to look slightly low for all-caps text (and for 2-line labels).
-                  // We nudge the label block up a tiny amount based on font sizes / line count.
-                  const opticalOffsetPx = Math.min(
-                    4,
-                    Math.max(
-                      1,
-                      Math.round(
-                        (label.symbolFontPx || 0) * (label.showValue ? 0.14 : 0.1) +
-                        (label.showValue ? (label.valueFontPx || 0) * 0.22 : 0)
-                      )
-                    )
-                  );
+                  const opticalOffsetPx = getMobileTileOpticalOffsetPx(label);
 
                   return (
                     <div

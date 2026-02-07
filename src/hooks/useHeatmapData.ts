@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { StockData, PriceUpdate } from '@/lib/types';
-import { CompanyNode, HeatmapMetric } from '@/components/MarketHeatmap';
+import type { CompanyNode, HeatmapMetric } from '@/lib/heatmap/types';
 import { useHeatmapCache } from './useHeatmapCache';
 
 interface UseHeatmapDataProps {

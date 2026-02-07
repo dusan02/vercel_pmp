@@ -5,19 +5,20 @@ import {
   hierarchy,
   treemap,
   treemapSquarify,
-  HierarchyNode,
 } from 'd3-hierarchy';
 import { scaleLinear } from 'd3-scale';
 
 import { CanvasHeatmap } from './CanvasHeatmap';
 import { HeatmapTile } from './HeatmapTile';
 import { HeatmapTooltip } from './HeatmapTooltip';
+import type { CompanyNode, HeatmapMetric, SectorLabelVariant, HierarchyData, TreemapLeaf, TreemapNode } from '@/lib/heatmap/types';
 import { buildHeatmapHierarchy } from '@/lib/utils/heatmapLayout';
 import { createHeatmapColorScale } from '@/lib/utils/heatmapColors';
 import { formatPercent, formatMarketCapDiff, formatPrice, formatMarketCap } from '@/lib/utils/heatmapFormat';
 import { formatSectorName } from '@/lib/utils/format';
 import { LAYOUT_CONFIG } from '@/lib/utils/heatmapConfig';
 import { getTileLabelConfig } from '@/lib/utils/heatmapLabelUtils';
+import { calculateMaxCharsForWidth, calculateSectorSummary, truncateSectorName } from '@/lib/heatmap/sectorLabels';
 import { usePanZoom } from '@/hooks/usePanZoom';
 import styles from '@/styles/heatmap.module.css';
 
@@ -26,107 +27,11 @@ import styles from '@/styles/heatmap.module.css';
 
 // --- HELPER FUNCTIONS ---
 
-/**
- * Calculate sector summary (weighted avg % change or total mcap delta)
- * Now uses pre-calculated weighted average from sector meta
- */
-function calculateSectorSummary(
-  sectorNode: TreemapNode,
-  metric: HeatmapMetric
-): string | null {
-  const sectorMeta = sectorNode.data.meta;
+// Sector label helpers moved to `@/lib/heatmap/sectorLabels`.
 
-  if (metric === 'percent') {
-    // Use pre-calculated weighted average from sector meta
-    if (sectorMeta?.weightedAvgPercent !== undefined && !isNaN(sectorMeta.weightedAvgPercent)) {
-      return formatPercent(sectorMeta.weightedAvgPercent);
-    }
-    return null;
-  } else {
-    // Calculate total market cap delta for sector
-    // Get all companies in this sector
-    const sectorCompanies = sectorNode.leaves()
-      .map((leaf: any) => leaf.data.meta?.companyData)
-      .filter((c): c is CompanyNode => c !== undefined && c !== null);
-
-    if (sectorCompanies.length === 0) return null;
-
-    const totalDelta = sectorCompanies.reduce((sum, c) => {
-      // Defensive check: ensure c exists and has marketCapDiff
-      if (!c || typeof c.marketCapDiff !== 'number') return sum;
-      return sum + c.marketCapDiff;
-    }, 0);
-
-    if (Math.abs(totalDelta) < 0.01) return null; // Too small to display
-
-    return formatMarketCapDiff(totalDelta);
-  }
-}
-
-/**
- * Truncate long sector names for display
- * First formats the sector name to short version, then truncates if still too long
- */
-function truncateSectorName(name: string, maxLength: number = 20): string {
-  // First format to short version
-  const formatted = formatSectorName(name);
-  if (formatted.length <= maxLength) return formatted;
-  // Try to truncate at word boundary
-  const truncated = formatted.substring(0, maxLength - 3);
-  const lastSpace = truncated.lastIndexOf(' ');
-  if (lastSpace > maxLength * 0.6) {
-    return truncated.substring(0, lastSpace) + '...';
-  }
-  return truncated + '...';
-}
-
-/**
- * Calculate maximum characters that fit in available width
- */
-function calculateMaxCharsForWidth(
-  sectorWidth: number,
-  fontSize: number,
-  padding: number = 12
-): number {
-  // Estimate: uppercase letters are ~0.6em wide, add some margin
-  const availableWidth = sectorWidth - padding;
-  const charWidth = fontSize * 0.6;
-  const maxChars = Math.floor(availableWidth / charWidth);
-  return Math.max(4, maxChars); // Minimum 4 chars
-}
-
-// --- TYPY ---
-
-/**
- * Typ pre vstupné dáta jednej spoločnosti.
- */
-export type CompanyNode = {
-  symbol: string;
-  name: string;
-  sector: string;
-  industry: string;
-  marketCap: number;
-  changePercent: number;
-  marketCapDiff?: number; // Denný rozdiel v market cap (nominálna hodnota v $)
-  marketCapDiffAbs?: number; // Absolútna hodnota marketCapDiff pre veľkosť dlaždice
-  currentPrice?: number; // Aktuálna cena akcie
-  /** Whether the price used to compute change is stale (session-aware). */
-  isStale?: boolean;
-  /** ISO timestamp for the price used to compute change (best-effort). */
-  lastUpdated?: string;
-  /** Custom formatted value to display (overrides default formatting) */
-  displayValue?: string;
-};
-
-/**
- * Typ pre metriku heatmapy - podľa čoho sa počíta veľkosť dlaždice
- */
-export type HeatmapMetric = 'percent' | 'mcap';
-
-/**
- * Props pre hlavný komponent heatmapy.
- */
-export type SectorLabelVariant = 'compact' | 'full';
+// --- TYPES ---
+// Keep types in `src/lib` so hooks/utils don't depend on this large component file.
+export type { CompanyNode, HeatmapMetric, SectorLabelVariant, HierarchyData, TreemapLeaf, TreemapNode } from '@/lib/heatmap/types';
 
 export type MarketHeatmapProps = {
   data: CompanyNode[];
@@ -158,47 +63,6 @@ export type MarketHeatmapProps = {
 /**
  * Interná štruktúra pre budovanie hierarchie, ktorú D3 očakáva.
  */
-export interface HierarchyData {
-  name: string;
-  children?: HierarchyData[];
-  value?: number; // MarketCap pre listy
-  meta?: {
-    type: 'root' | 'sector' | 'industry' | 'company';
-    companyData?: CompanyNode; // Plné dáta pre listy
-    // Agregované hodnoty pre sektory/priemysly
-    totalMarketCap?: number;
-    weightedPercentSum?: number;
-    weightedAvgPercent?: number;
-    companyCount?: number;
-  };
-}
-
-/**
- * Typ pre list (firmu) po spracovaní D3 layoutom.
- */
-export type TreemapLeaf = HierarchyNode<HierarchyData> & {
-  x0: number;
-  y0: number;
-  x1: number;
-  y1: number;
-  data: HierarchyData & {
-    meta: {
-      type: 'company';
-      companyData: CompanyNode;
-    };
-  };
-};
-
-/**
- * Typ pre uzol (sektor/industry) po spracovaní D3 layoutom.
- */
-export type TreemapNode = HierarchyNode<HierarchyData> & {
-  x0: number;
-  y0: number;
-  x1: number;
-  y1: number;
-};
-
 // --- POMOCNÉ FUNKCIE ---
 
 // buildHierarchy moved to @/lib/utils/heatmapLayout.ts
@@ -1280,53 +1144,6 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
   );
 };
 
-// --- Hook na sledovanie veľkosti rodičovského elementu ---
-
-/**
- * Custom hook, ktorý používa ResizeObserver na sledovanie veľkosti elementu.
- * @returns Ref, ktorý sa má pripojiť na element, a jeho aktuálna veľkosť.
- */
-export function useElementResize() {
-  const ref = useRef<HTMLDivElement>(null);
-  const [size, setSize] = useState({ width: 0, height: 0 });
-
-  useEffect(() => {
-    const element = ref.current;
-    if (!element) return;
-
-    // Initial measurement - get dimensions immediately
-    const measure = () => {
-      const rect = element.getBoundingClientRect();
-      if (rect.width > 0 || rect.height > 0) {
-        setSize({ width: rect.width, height: rect.height });
-      }
-    };
-
-    // Measure immediately
-    measure();
-
-    // Also use ResizeObserver for dynamic changes
-    const resizeObserver = new ResizeObserver((entries) => {
-      if (!entries || entries.length === 0) return;
-      const entry = entries[0];
-      if (!entry) return;
-      const { width, height } = entry.contentRect;
-      if (width > 0 && height > 0) {
-        setSize({ width, height });
-      }
-    });
-
-    resizeObserver.observe(element);
-
-    // Fallback: measure again after a short delay (in case parent container isn't ready)
-    const timeoutId = setTimeout(measure, 100);
-
-    return () => {
-      resizeObserver.disconnect();
-      clearTimeout(timeoutId);
-    };
-  }, []);
-
-  return { ref, size };
-}
+// Re-export from shared hook (keeps backwards compatibility for old imports).
+export { useElementResize } from '@/hooks/useElementResize';
 

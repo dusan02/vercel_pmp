@@ -3,7 +3,7 @@
  * D3 treemap layout calculations and hierarchy building
  */
 
-import type { CompanyNode, HeatmapMetric, HierarchyData } from '@/components/MarketHeatmap';
+import type { CompanyNode, HeatmapMetric, HierarchyData } from '@/lib/heatmap/types';
 
 /**
  * Transformuje plochý zoznam firiem na hierarchickú štruktúru pre D3
