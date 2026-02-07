@@ -338,12 +338,13 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                       {(label.showSymbol || label.showValue) && (
                         <div
                           style={{
-                            width: '100%',
-                            height: '100%',
+                            position: 'absolute',
+                            left: '50%',
+                            top: '50%',
+                            transform: 'translate(-50%, -50%)',
                             display: 'flex',
                             flexDirection: 'column',
                             alignItems: 'center',
-                            justifyContent: 'center',
                             pointerEvents: 'none',
                             textAlign: 'center',
                             lineHeight: 1.05,
@@ -358,6 +359,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                                 color: '#ffffff',
                                 textShadow: '0 1px 2px rgba(0,0,0,0.55)',
                                 letterSpacing: '0.01em',
+                                whiteSpace: 'nowrap',
                               }}
                             >
                               {label.symbol}
@@ -370,6 +372,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                                 fontWeight: 600,
                                 color: 'rgba(255, 255, 255, 0.92)',
                                 textShadow: '0 1px 2px rgba(0,0,0,0.45)',
+                                whiteSpace: 'nowrap',
                               }}
                             >
                               {label.value}
