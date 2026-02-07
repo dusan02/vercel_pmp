@@ -24,11 +24,13 @@ interface MobileTreemapNewProps {
 const MAX_MOBILE_TILES = 500; // Target: S&P 500
 const MIN_TILE_VALUE_B = 1e-6; // 0.000001B = $1k (prevents D3 from dropping 0-valued tiles)
 
-// Mobile sector header "chrome" sizing (kept small so it doesn't visually/physically eat the heatmap)
-const SECTOR_HEADER_H = 14; // px
-const SECTOR_DIVIDER_H = 1; // px
-const SECTOR_DIVIDER_GAP = 4; // px (space below divider)
-const SECTOR_CHROME_H = SECTOR_HEADER_H + SECTOR_DIVIDER_H + SECTOR_DIVIDER_GAP;
+// Mobile sector label sizing.
+// IMPORTANT UX: tiles should get priority; the sector label should be minimal and not "eat" the heatmap.
+// We render the sector label as a small footer under tiles (not above).
+const SECTOR_LABEL_H = 12; // px
+const SECTOR_LABEL_TOP_DIVIDER_H = 1; // px
+const SECTOR_LABEL_TOP_GAP = 2; // px (space between tiles and divider)
+const SECTOR_CHROME_H = SECTOR_LABEL_TOP_GAP + SECTOR_LABEL_TOP_DIVIDER_H + SECTOR_LABEL_H;
 
 export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   data,
@@ -259,7 +261,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   // Direct use of treemapResult.sectors in JSX.
   const { sectors: sectorBlocks } = treemapResult;
 
-  // Render treemap tiles and headers
+  // Render treemap tiles + sector labels
   const renderHeatmapContent = () => {
     if (!sectorBlocks || !Array.isArray(sectorBlocks)) return null;
 
@@ -277,39 +279,12 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                 // Gap handled by parent container
               }}
             >
-              {/* Static Sector Header */}
-              <div
-                style={{
-                  height: `${SECTOR_HEADER_H}px`,
-                  padding: '0 8px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  fontSize: '10px',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  color: 'rgba(255, 255, 255, 0.85)',
-                  lineHeight: 1,
-                }}
-              >
-                {sector.name}
-              </div>
-
-              {/* Sector Divider */}
-              <div
-                style={{
-                  height: `${SECTOR_DIVIDER_H}px`,
-                  background: 'rgba(255, 255, 255, 0.06)',
-                  margin: `0 8px ${SECTOR_DIVIDER_GAP}px 8px`,
-                }}
-              />
-
-              {/* Relative Container for D3 Tiles */}
+              {/* Relative Container for D3 Tiles (tiles first = priority) */}
               <div
                 style={{
                   position: 'relative',
                   width: '100%',
-                  // Keep the overall sector block height stable and reserve header space above.
+                  // Keep the overall sector block height stable and reserve label space BELOW tiles.
                   height: `${(sector as any).tilesHeight ?? sector.height}px`,
                   overflow: 'hidden', // CRITICAL: never allow tiles to bleed outside sector block
                 }}
@@ -357,7 +332,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                         justifyContent: 'center',
                         alignItems: 'center',
                         cursor: 'pointer',
-                        zIndex: 1, // Tile z-index
+                        zIndex: 1, // Tiles should stay above any sector label chrome
                       }}
                     >
                       {(label.showSymbol || label.showValue) && (
@@ -405,6 +380,32 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                     </div>
                   );
                 })}
+              </div>
+
+              {/* Sector Label Footer (minimal; doesn't steal prime tile space) */}
+              <div style={{ height: `${SECTOR_LABEL_TOP_GAP}px` }} />
+              <div
+                style={{
+                  height: `${SECTOR_LABEL_TOP_DIVIDER_H}px`,
+                  background: 'rgba(255, 255, 255, 0.06)',
+                  margin: '0 8px',
+                }}
+              />
+              <div
+                style={{
+                  height: `${SECTOR_LABEL_H}px`,
+                  padding: '0 8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  fontSize: '10px',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  color: 'rgba(255, 255, 255, 0.75)',
+                  lineHeight: 1,
+                }}
+              >
+                {sector.name}
               </div>
             </div>
           );
