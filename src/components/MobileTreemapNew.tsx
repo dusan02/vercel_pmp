@@ -9,6 +9,8 @@ import { BrandLogo } from './BrandLogo';
 import { LoginButton } from './LoginButton';
 import { computeMobileTreemapSectors, prepareMobileTreemapData } from '@/lib/heatmap/mobileTreemap';
 import { getMobileTileLabel, getMobileTileOpticalOffsetPx } from '@/lib/heatmap/mobileLabels';
+import { pickCompanyWithHitSlop } from '@/lib/heatmap/mobileHitSlop';
+import type { MobileTreemapSectorBlock } from '@/lib/heatmap/mobileTreemap';
 
 interface MobileTreemapNewProps {
   data: CompanyNode[];
@@ -109,44 +111,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
 
     return (
       <>
-        {sectorBlocks.map((sector) => {
-          if (!sector) return null; // Safety check
-
-          // Mobile UX: hit-slop for tiny tiles.
-          // If user taps a very small tile (or near it), select the nearest tile center within a small radius.
-          const pickNearestCompany = (px: number, py: number) => {
-            const children = (sector as any).children ?? [];
-            if (!Array.isArray(children) || children.length === 0) return null;
-
-            // 1) If inside a tile, prefer that tile.
-            for (const leaf of children) {
-              if (!leaf) continue;
-              if (px >= leaf.x0 && px <= leaf.x1 && py >= leaf.y0 && py <= leaf.y1) {
-                return leaf.company ?? null;
-              }
-            }
-
-            // 2) Otherwise pick nearest center (hit-slop).
-            let best: any = null;
-            let bestDist = Number.POSITIVE_INFINITY;
-            for (const leaf of children) {
-              if (!leaf) continue;
-              const cx = (leaf.x0 + leaf.x1) / 2;
-              const cy = (leaf.y0 + leaf.y1) / 2;
-              const dx = px - cx;
-              const dy = py - cy;
-              const d2 = dx * dx + dy * dy;
-              if (d2 < bestDist) {
-                bestDist = d2;
-                best = leaf;
-              }
-            }
-
-            // Only accept if within ~20px radius (prevents weird far selections)
-            const maxR = 20;
-            return best && bestDist <= maxR * maxR ? (best.company ?? null) : null;
-          };
-
+        {(sectorBlocks as MobileTreemapSectorBlock[]).map((sector) => {
           return (
             <div
               key={sector.name}
@@ -173,7 +138,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                   const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
                   const px = e.clientX - rect.left;
                   const py = e.clientY - rect.top;
-                  const picked = pickNearestCompany(px, py);
+                  const picked = pickCompanyWithHitSlop(sector.children, px, py, { radiusPx: 20 });
                   if (!picked) return;
 
                   e.preventDefault();
@@ -185,12 +150,12 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                   position: 'relative',
                   width: '100%',
                   // Keep the overall sector block height stable and reserve label space BELOW tiles.
-                  height: `${(sector as any).tilesHeight ?? sector.height}px`,
+                  height: `${sector.tilesHeight}px`,
                   overflow: 'hidden', // CRITICAL: never allow tiles to bleed outside sector block
                 }}
               >
                 {/* Render Tiles for this Sector */}
-                {sector.children.map((leaf: any, i: number) => {
+                {sector.children.map((leaf, i: number) => {
                   const company = leaf.company;
                   const color = getColor(company);
                   // Coordinates are now relative to the SECTOR block, not global
