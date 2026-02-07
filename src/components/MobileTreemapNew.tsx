@@ -24,6 +24,12 @@ interface MobileTreemapNewProps {
 const MAX_MOBILE_TILES = 500; // Target: S&P 500
 const MIN_TILE_VALUE_B = 1e-6; // 0.000001B = $1k (prevents D3 from dropping 0-valued tiles)
 
+// Mobile sector header "chrome" sizing (kept small so it doesn't visually/physically eat the heatmap)
+const SECTOR_HEADER_H = 14; // px
+const SECTOR_DIVIDER_H = 1; // px
+const SECTOR_DIVIDER_GAP = 4; // px (space below divider)
+const SECTOR_CHROME_H = SECTOR_HEADER_H + SECTOR_DIVIDER_H + SECTOR_DIVIDER_GAP;
+
 export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   data,
   timeframe = 'day',
@@ -145,10 +151,16 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
 
     if (sectors.length === 0) return { sectors: [] };
 
-    const sumSector = (sector: any) => {
-      const children = sector?.children ?? [];
-      return children.reduce((sum: number, c: any) => sum + (c?.value || 0), 0);
+    // IMPORTANT: sector children are typically industries, not companies, so `.value` may be missing at that level.
+    // We must sum recursively, otherwise most sector sums collapse to ~0 and sector heights become distorted.
+    const sumNode = (node: any): number => {
+      if (!node) return 0;
+      if (typeof node.value === 'number' && !Number.isNaN(node.value)) return node.value;
+      const children = node.children ?? [];
+      if (!Array.isArray(children) || children.length === 0) return 0;
+      return children.reduce((sum: number, c: any) => sum + sumNode(c), 0);
     };
+    const sumSector = (sector: any) => sumNode(sector);
 
     const sectorSums = sectors.map(sumSector);
     const totalSum = sectorSums.reduce((a, b) => a + b, 0) || 1;
@@ -160,7 +172,8 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
     // Min 800px or screen height * 1.5
     const totalContentHeight = Math.max(containerSize.height * 1.2, 900);
     const baseHeight = totalContentHeight;
-    const MIN_SECTOR_HEIGHT = 96; // Minimum usable height for a small sector
+    const MIN_TILES_H = 56; // Minimum usable tile area inside a small sector block
+    const MIN_SECTOR_HEIGHT = SECTOR_CHROME_H + MIN_TILES_H;
 
     const sectorHeights: number[] = [];
     let allocatedHeight = 0;
@@ -189,6 +202,9 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
       const width = containerSize.width;
       if (width <= 0) return null;
 
+      // Reserve space for the sector header/divider so it never overlaps/clips tiles.
+      const tilesHeight = Math.max(1, sectorHeight - SECTOR_CHROME_H);
+
       // Create hierarchy for JUST this sector
       const sectorHierarchyNode = hierarchy(sector)
         .sum((d: any) => d.value || 0)
@@ -196,7 +212,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
 
       // Calculate Treemap layout for this sector block (0,0 is top-left of the block)
       const sectorTreemap = treemap()
-        .size([width, sectorHeight])
+        .size([width, tilesHeight])
         .padding(0)
         .paddingInner(0) // 0px border/gap to prevent gaps/jagged edges
         .round(true) // CRITICAL: snap to integer pixels to avoid subpixel gaps / jagged bottoms
@@ -211,9 +227,9 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
         // D3 treemap with `.round(true)` already produces a non-overlapping integer tiling.
         // Avoid floor/ceil expansion here, which can create 1px overlaps between neighbors.
         const x0 = clamp(leaf.x0 ?? 0, 0, width);
-        const y0 = clamp(leaf.y0 ?? 0, 0, sectorHeight);
+        const y0 = clamp(leaf.y0 ?? 0, 0, tilesHeight);
         const x1 = clamp(leaf.x1 ?? 0, 0, width);
-        const y1 = clamp(leaf.y1 ?? 0, 0, sectorHeight);
+        const y1 = clamp(leaf.y1 ?? 0, 0, tilesHeight);
 
         return {
           x0,
@@ -232,6 +248,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
       return {
         name: sector.name,
         height: sectorHeight,
+        tilesHeight,
         children: sectorLeaves
       };
     }).filter(Boolean); // Filter out nulls
@@ -263,12 +280,16 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
               {/* Static Sector Header */}
               <div
                 style={{
-                  padding: '6px 8px',
-                  fontSize: '11px',
+                  height: `${SECTOR_HEADER_H}px`,
+                  padding: '0 8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  fontSize: '10px',
                   fontWeight: 700,
                   textTransform: 'uppercase',
                   letterSpacing: '0.06em',
                   color: 'rgba(255, 255, 255, 0.85)',
+                  lineHeight: 1,
                 }}
               >
                 {sector.name}
@@ -277,11 +298,9 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
               {/* Sector Divider */}
               <div
                 style={{
-                  height: '1px',
+                  height: `${SECTOR_DIVIDER_H}px`,
                   background: 'rgba(255, 255, 255, 0.06)',
-                  marginBottom: '6px',
-                  marginLeft: '8px',
-                  marginRight: '8px',
+                  margin: `0 8px ${SECTOR_DIVIDER_GAP}px 8px`,
                 }}
               />
 
@@ -290,7 +309,8 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                 style={{
                   position: 'relative',
                   width: '100%',
-                  height: `${sector.height}px`,
+                  // Keep the overall sector block height stable and reserve header space above.
+                  height: `${(sector as any).tilesHeight ?? sector.height}px`,
                   overflow: 'hidden', // CRITICAL: never allow tiles to bleed outside sector block
                 }}
               >
