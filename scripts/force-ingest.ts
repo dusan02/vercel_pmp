@@ -1,7 +1,8 @@
 
-import { ingestBatch } from '../src/workers/polygonWorker';
-import { getAllTrackedTickers } from '../src/lib/utils/universeHelpers';
-import { logger } from '../src/lib/utils/logger';
+import { loadEnvFromFiles } from './_utils/loadEnv';
+
+// Load env BEFORE importing modules that may read env at import-time (Prisma, Redis clients, etc.)
+loadEnvFromFiles();
 
 async function main() {
   const apiKey = process.env.POLYGON_API_KEY;
@@ -11,6 +12,11 @@ async function main() {
   }
 
   console.log("🚀 Starting FORCE ingest (bypassing timestamp checks)...");
+
+  const [{ ingestBatch }, { getAllTrackedTickers }] = await Promise.all([
+    import('../src/workers/polygonWorker'),
+    import('../src/lib/utils/universeHelpers'),
+  ]);
 
   // Get all tickers
   const tickers = await getAllTrackedTickers();

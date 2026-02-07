@@ -9,22 +9,10 @@
  * 4. Optionally runs manual ingest (if --ingest flag is provided)
  */
 
-// Load environment variables
-try {
-  const { config } = require('dotenv');
-  const { resolve } = require('path');
-  config({ path: resolve(process.cwd(), '.env.local') });
-} catch (e) {
-  // dotenv not available, continue without it
-}
+import { loadEnvFromFiles } from './_utils/loadEnv';
 
-import { prisma } from '../src/lib/db/prisma';
-import { getUniverse } from '@/lib/redis/operations';
-import { bootstrapPreviousCloses } from '@/workers/polygonWorker';
-import { ingestBatch } from '@/workers/polygonWorker';
-import { getDateET } from '@/lib/utils/dateET';
-import { clearRedisPrevCloseCache } from '@/lib/utils/redisCacheUtils';
-import { refreshClosingPricesInDB } from '@/lib/utils/closingPricesUtils';
+// Load env BEFORE importing modules that read env at import-time (e.g. Prisma client)
+loadEnvFromFiles();
 
 function requireEnv(key: string): string {
   const value = process.env[key];
@@ -42,6 +30,17 @@ async function main() {
   console.log(`📊 Mode: ${shouldIngest ? 'Reset + Bootstrap + Ingest' : 'Reset + Bootstrap only'}`);
   
   const apiKey = requireEnv('POLYGON_API_KEY');
+
+  // Lazy-load modules after env is loaded (Prisma reads DATABASE_URL during import/initialization).
+  const [{ prisma }, { getUniverse }, worker, { getDateET }, { clearRedisPrevCloseCache }, { refreshClosingPricesInDB }] = await Promise.all([
+    import('../src/lib/db/prisma'),
+    import('@/lib/redis/operations'),
+    import('@/workers/polygonWorker'),
+    import('@/lib/utils/dateET'),
+    import('@/lib/utils/redisCacheUtils'),
+    import('@/lib/utils/closingPricesUtils'),
+  ]);
+  const { bootstrapPreviousCloses, ingestBatch } = worker;
   
   try {
     // Step 1: Clear Redis cache

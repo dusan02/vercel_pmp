@@ -3,19 +3,10 @@
  * Run: npx tsx scripts/manual-ingest.ts
  */
 
-// Load .env.local (using require to avoid TypeScript errors)
-try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { config } = require('dotenv');
-  const { resolve } = require('path');
-  config({ path: resolve(process.cwd(), '.env.local') });
-} catch (e) {
-  // dotenv not installed, assume env vars are already loaded
-  console.warn('⚠️ dotenv not found, using existing environment variables');
-}
+import { loadEnvFromFiles } from './_utils/loadEnv';
 
-import { getUniverse } from '@/lib/redis/operations';
-import { ingestBatch } from '@/workers/polygonWorker';
+// Load env BEFORE importing modules that may read env at import-time
+loadEnvFromFiles();
 
 async function main() {
   console.log('🔄 Starting manual ingest...');
@@ -25,6 +16,11 @@ async function main() {
     console.error('❌ POLYGON_API_KEY not configured');
     process.exit(1);
   }
+
+  const [{ getUniverse }, { ingestBatch }] = await Promise.all([
+    import('@/lib/redis/operations'),
+    import('@/workers/polygonWorker'),
+  ]);
   
   // Get universe (fallback to getAllProjectTickers if empty)
   let tickers = await getUniverse('sp500');

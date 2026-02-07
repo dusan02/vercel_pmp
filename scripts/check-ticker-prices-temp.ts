@@ -3,20 +3,10 @@
  * Run: npx tsx scripts/check-ticker-prices-temp.ts
  */
 
-// Load environment variables
-try {
-  const { config } = require('dotenv');
-  const { resolve } = require('path');
-  config({ path: resolve(process.cwd(), '.env.local') });
-} catch (e) {
-  // dotenv not available, continue without it
-}
+import { loadEnvFromFiles } from './_utils/loadEnv';
 
-import { prisma } from '../src/lib/db/prisma';
-import { getPrevClose } from '@/lib/redis/operations';
-import { getDateET, createETDate } from '@/lib/utils/dateET';
-import { getLastTradingDay } from '@/lib/utils/timeUtils';
-import { withRetry } from '@/lib/api/rateLimiter';
+// Load env BEFORE importing modules that may read env at import-time (e.g. Prisma client)
+loadEnvFromFiles();
 
 // Tickers from the images
 const TICKERS_TO_CHECK = [
@@ -51,205 +41,193 @@ interface PriceCheckResult {
   issues: string[];
 }
 
-async function fetchPolygonSnapshot(ticker: string, apiKey: string): Promise<any> {
-  try {
-    // Use single ticker endpoint (not batch endpoint)
-    const url = `https://api.polygon.io/v2/snapshot/locale/us/markets/stocks/tickers/${ticker}?apikey=${apiKey}`;
-    const response = await withRetry(async () => fetch(url));
-    
-    if (!response.ok) {
-      console.warn(`⚠️  Polygon snapshot API returned ${response.status} for ${ticker}`);
-      return null;
-    }
-    
-    const data = await response.json();
-    
-    // Debug: log if no ticker data
-    if (!data.ticker && !data.tickers) {
-      console.warn(`⚠️  No ticker data in Polygon response for ${ticker}:`, JSON.stringify(data).substring(0, 200));
-    }
-    
-    // Single ticker endpoint returns { ticker: {...} }, not { tickers: [...] }
-    // But also handle batch format as fallback
-    const tickerData = data.ticker || data.tickers?.[0] || null;
-    
-    // Debug: log if no price data
-    if (tickerData && !tickerData.lastTrade?.p && !tickerData.min?.c && !tickerData.day?.c && !tickerData.prevDay?.c) {
-      console.warn(`⚠️  No price data in Polygon snapshot for ${ticker} (lastTrade, min, day, prevDay all missing)`);
-    }
-    
-    return tickerData;
-  } catch (error) {
-    console.error(`❌ Error fetching Polygon snapshot for ${ticker}:`, error);
-    return null;
-  }
-}
-
-async function fetchPolygonPreviousClose(ticker: string, apiKey: string, date: string): Promise<{ close: number | null; timestamp: number | null; tradingDay: string | null }> {
-  try {
-    const url = `https://api.polygon.io/v2/aggs/ticker/${ticker}/range/1/day/${date}/${date}?adjusted=true&apiKey=${apiKey}`;
-    const response = await withRetry(async () => fetch(url));
-    
-    if (!response.ok) {
-      return { close: null, timestamp: null, tradingDay: null };
-    }
-    
-    const data = await response.json();
-    const result = data?.results?.[0];
-    
-    if (result && result.c && result.c > 0) {
-      const timestamp = result.t;
-      const timestampDate = timestamp ? new Date(timestamp) : null;
-      const tradingDay = timestampDate ? getDateET(timestampDate) : null;
-      
-      return {
-        close: result.c,
-        timestamp: timestamp || null,
-        tradingDay: tradingDay || null
-      };
-    }
-    
-    return { close: null, timestamp: null, tradingDay: null };
-  } catch (error) {
-    console.error(`Error fetching Polygon previous close for ${ticker}:`, error);
-    return { close: null, timestamp: null, tradingDay: null };
-  }
-}
-
-async function checkTicker(ticker: string, apiKey: string, todayTradingDateStr: string): Promise<PriceCheckResult> {
-  const issues: string[] = [];
-  
-  // 1. Get data from DB
-  const dbTicker = await prisma.ticker.findUnique({
-    where: { symbol: ticker },
-    select: {
-      lastPrice: true,
-      latestPrevClose: true,
-      latestPrevCloseDate: true,
-      lastChangePct: true
-    }
-  });
-  
-  const dbPrice = dbTicker?.lastPrice || null;
-  const dbPreviousClose = dbTicker?.latestPrevClose || null;
-  const dbLatestPrevCloseDate = dbTicker?.latestPrevCloseDate || null;
-  const dbPercentChange = dbTicker?.lastChangePct || null;
-  
-  // 2. Get data from Redis
-  const redisPrevCloseMap = await getPrevClose(todayTradingDateStr, [ticker]);
-  const redisPreviousClose = redisPrevCloseMap.get(ticker) || null;
-  
-  // 3. Get data from Polygon API
-  const polygonSnapshot = await fetchPolygonSnapshot(ticker, apiKey);
-  // Polygon snapshot structure: { lastTrade: { p }, min: { c }, day: { c }, prevDay: { c } }
-  // Note: single ticker endpoint returns { ticker: {...} }, but fetchPolygonSnapshot already extracts tickerData
-  const polygonCurrentPrice = polygonSnapshot?.lastTrade?.p || 
-                               polygonSnapshot?.min?.c || 
-                               polygonSnapshot?.day?.c || 
-                               polygonSnapshot?.prevDay?.c ||
-                               null;
-  
-  // Debug: log if snapshot exists but no price
-  if (polygonSnapshot && !polygonCurrentPrice) {
-    console.warn(`⚠️  [${ticker}] Polygon snapshot exists but no price found. Available fields:`, {
-      hasLastTrade: !!polygonSnapshot.lastTrade,
-      lastTradeP: polygonSnapshot.lastTrade?.p,
-      hasMin: !!polygonSnapshot.min,
-      minC: polygonSnapshot.min?.c,
-      hasDay: !!polygonSnapshot.day,
-      dayC: polygonSnapshot.day?.c,
-      hasPrevDay: !!polygonSnapshot.prevDay,
-      prevDayC: polygonSnapshot.prevDay?.c
-    });
-  }
-  
-  // 4. Get previous close from Polygon
-  const yesterdayTradingDay = getLastTradingDay(createETDate(todayTradingDateStr));
-  const yesterdayDateStr = getDateET(yesterdayTradingDay);
-  const polygonPrevCloseData = await fetchPolygonPreviousClose(ticker, apiKey, yesterdayDateStr);
-  const polygonPreviousClose = polygonPrevCloseData.close;
-  const polygonTimestamp = polygonPrevCloseData.timestamp;
-  const polygonTradingDay = polygonPrevCloseData.tradingDay;
-  
-  // 5. Calculate percent change
-  let calculatedPercentChange: number | null = null;
-  if (polygonCurrentPrice && polygonPreviousClose && polygonPreviousClose > 0) {
-    calculatedPercentChange = ((polygonCurrentPrice / polygonPreviousClose) - 1) * 100;
-  }
-  
-  // 6. Check for issues
-  if (!dbPrice || dbPrice <= 0) {
-    issues.push('❌ DB price missing or zero');
-  }
-  
-  if (!dbPreviousClose || dbPreviousClose <= 0) {
-    issues.push('❌ DB previousClose missing or zero');
-  }
-  
-  if (!redisPreviousClose || redisPreviousClose <= 0) {
-    issues.push('⚠️ Redis previousClose missing or zero');
-  }
-  
-  if (!polygonCurrentPrice || polygonCurrentPrice <= 0) {
-    issues.push('❌ Polygon current price missing or zero');
-  }
-  
-  if (!polygonPreviousClose || polygonPreviousClose <= 0) {
-    issues.push('❌ Polygon previousClose missing or zero');
-  }
-  
-  // Check if prices match (within 0.1% tolerance)
-  const priceMatch = dbPrice && polygonCurrentPrice && 
-    Math.abs(dbPrice - polygonCurrentPrice) / polygonCurrentPrice < 0.001;
-  
-  const prevCloseMatch = dbPreviousClose && polygonPreviousClose && 
-    Math.abs(dbPreviousClose - polygonPreviousClose) / polygonPreviousClose < 0.001;
-  
-  if (!priceMatch) {
-    issues.push(`⚠️ Price mismatch: DB=${dbPrice}, Polygon=${polygonCurrentPrice}`);
-  }
-  
-  if (!prevCloseMatch) {
-    issues.push(`⚠️ PreviousClose mismatch: DB=${dbPreviousClose}, Polygon=${polygonPreviousClose}`);
-  }
-  
-  // Check if percent change matches (within 0.01% tolerance)
-  if (calculatedPercentChange !== null && dbPercentChange !== null) {
-    const pctDiff = Math.abs(calculatedPercentChange - dbPercentChange);
-    if (pctDiff > 0.01) {
-      issues.push(`⚠️ % Change mismatch: DB=${dbPercentChange?.toFixed(2)}%, Calculated=${calculatedPercentChange.toFixed(2)}%`);
-    }
-  }
-  
-  // Check if trading day matches
-  if (dbLatestPrevCloseDate && polygonTradingDay) {
-    const dbTradingDayStr = getDateET(dbLatestPrevCloseDate);
-    if (dbTradingDayStr !== polygonTradingDay) {
-      issues.push(`⚠️ Trading day mismatch: DB=${dbTradingDayStr}, Polygon=${polygonTradingDay}`);
-    }
-  }
-  
-  return {
-    ticker,
-    dbPrice,
-    dbPreviousClose,
-    dbLatestPrevCloseDate,
-    redisPreviousClose,
-    polygonCurrentPrice,
-    polygonPreviousClose,
-    polygonTimestamp,
-    polygonTradingDay,
-    calculatedPercentChange,
-    dbPercentChange,
-    match: issues.length === 0,
-    issues
-  };
-}
-
 async function main() {
   console.log('🔍 Checking prices for tickers from images...\n');
   
   const apiKey = requireEnv('POLYGON_API_KEY');
+  const [{ prisma }, { getPrevClose }, dateET, timeUtils, { withRetry }] = await Promise.all([
+    import('../src/lib/db/prisma'),
+    import('@/lib/redis/operations'),
+    import('@/lib/utils/dateET'),
+    import('@/lib/utils/timeUtils'),
+    import('@/lib/api/rateLimiter'),
+  ]);
+
+  const { getDateET, createETDate } = dateET;
+  const { getLastTradingDay } = timeUtils;
+
+  const fetchPolygonSnapshot = async (ticker: string, apiKeyInner: string): Promise<any> => {
+    try {
+      // Use single ticker endpoint (not batch endpoint)
+      const url = `https://api.polygon.io/v2/snapshot/locale/us/markets/stocks/tickers/${ticker}?apikey=${apiKeyInner}`;
+      const response = await withRetry(async () => fetch(url));
+
+      if (!response.ok) {
+        console.warn(`⚠️  Polygon snapshot API returned ${response.status} for ${ticker}`);
+        return null;
+      }
+
+      const data = await response.json();
+
+      // Debug: log if no ticker data
+      if (!data.ticker && !data.tickers) {
+        console.warn(`⚠️  No ticker data in Polygon response for ${ticker}:`, JSON.stringify(data).substring(0, 200));
+      }
+
+      // Single ticker endpoint returns { ticker: {...} }, not { tickers: [...] }
+      // But also handle batch format as fallback
+      const tickerData = data.ticker || data.tickers?.[0] || null;
+
+      // Debug: log if no price data
+      if (tickerData && !tickerData.lastTrade?.p && !tickerData.min?.c && !tickerData.day?.c && !tickerData.prevDay?.c) {
+        console.warn(`⚠️  No price data in Polygon snapshot for ${ticker} (lastTrade, min, day, prevDay all missing)`);
+      }
+
+      return tickerData;
+    } catch (error) {
+      console.error(`❌ Error fetching Polygon snapshot for ${ticker}:`, error);
+      return null;
+    }
+  };
+
+  const fetchPolygonPreviousClose = async (
+    ticker: string,
+    apiKeyInner: string,
+    date: string
+  ): Promise<{ close: number | null; timestamp: number | null; tradingDay: string | null }> => {
+    try {
+      const url = `https://api.polygon.io/v2/aggs/ticker/${ticker}/range/1/day/${date}/${date}?adjusted=true&apiKey=${apiKeyInner}`;
+      const response = await withRetry(async () => fetch(url));
+
+      if (!response.ok) {
+        return { close: null, timestamp: null, tradingDay: null };
+      }
+
+      const data = await response.json();
+      const result = data?.results?.[0];
+
+      if (result && result.c && result.c > 0) {
+        const timestamp = result.t;
+        const timestampDate = timestamp ? new Date(timestamp) : null;
+        const tradingDay = timestampDate ? getDateET(timestampDate) : null;
+
+        return {
+          close: result.c,
+          timestamp: timestamp || null,
+          tradingDay: tradingDay || null
+        };
+      }
+
+      return { close: null, timestamp: null, tradingDay: null };
+    } catch (error) {
+      console.error(`Error fetching Polygon previous close for ${ticker}:`, error);
+      return { close: null, timestamp: null, tradingDay: null };
+    }
+  };
+
+  const checkTicker = async (ticker: string, apiKeyInner: string, todayTradingDateStr: string): Promise<PriceCheckResult> => {
+    const issues: string[] = [];
+
+    // 1. Get data from DB
+    const dbTicker = await prisma.ticker.findUnique({
+      where: { symbol: ticker },
+      select: {
+        lastPrice: true,
+        latestPrevClose: true,
+        latestPrevCloseDate: true,
+        lastChangePct: true
+      }
+    });
+
+    const dbPrice = dbTicker?.lastPrice || null;
+    const dbPreviousClose = dbTicker?.latestPrevClose || null;
+    const dbLatestPrevCloseDate = dbTicker?.latestPrevCloseDate || null;
+    const dbPercentChange = dbTicker?.lastChangePct || null;
+
+    // 2. Get data from Redis
+    const redisPrevCloseMap = await getPrevClose(todayTradingDateStr, [ticker]);
+    const redisPreviousClose = redisPrevCloseMap.get(ticker) || null;
+
+    // 3. Get data from Polygon API
+    const polygonSnapshot = await fetchPolygonSnapshot(ticker, apiKeyInner);
+    const polygonCurrentPrice = polygonSnapshot?.lastTrade?.p ||
+      polygonSnapshot?.min?.c ||
+      polygonSnapshot?.day?.c ||
+      polygonSnapshot?.prevDay?.c ||
+      null;
+
+    if (polygonSnapshot && !polygonCurrentPrice) {
+      console.warn(`⚠️  [${ticker}] Polygon snapshot exists but no price found. Available fields:`, {
+        hasLastTrade: !!polygonSnapshot.lastTrade,
+        lastTradeP: polygonSnapshot.lastTrade?.p,
+        hasMin: !!polygonSnapshot.min,
+        minC: polygonSnapshot.min?.c,
+        hasDay: !!polygonSnapshot.day,
+        dayC: polygonSnapshot.day?.c,
+        hasPrevDay: !!polygonSnapshot.prevDay,
+        prevDayC: polygonSnapshot.prevDay?.c
+      });
+    }
+
+    // 4. Get previous close from Polygon
+    const yesterdayTradingDay = getLastTradingDay(createETDate(todayTradingDateStr));
+    const yesterdayDateStr = getDateET(yesterdayTradingDay);
+    const polygonPrevCloseData = await fetchPolygonPreviousClose(ticker, apiKeyInner, yesterdayDateStr);
+    const polygonPreviousClose = polygonPrevCloseData.close;
+    const polygonTimestamp = polygonPrevCloseData.timestamp;
+    const polygonTradingDay = polygonPrevCloseData.tradingDay;
+
+    // 5. Calculate percent change
+    let calculatedPercentChange: number | null = null;
+    if (polygonCurrentPrice && polygonPreviousClose && polygonPreviousClose > 0) {
+      calculatedPercentChange = ((polygonCurrentPrice / polygonPreviousClose) - 1) * 100;
+    }
+
+    // 6. Check for issues
+    if (!dbPrice || dbPrice <= 0) issues.push('❌ DB price missing or zero');
+    if (!dbPreviousClose || dbPreviousClose <= 0) issues.push('❌ DB previousClose missing or zero');
+    if (!redisPreviousClose || redisPreviousClose <= 0) issues.push('⚠️ Redis previousClose missing or zero');
+    if (!polygonCurrentPrice || polygonCurrentPrice <= 0) issues.push('❌ Polygon current price missing or zero');
+    if (!polygonPreviousClose || polygonPreviousClose <= 0) issues.push('❌ Polygon previousClose missing or zero');
+
+    const priceMatch = dbPrice && polygonCurrentPrice &&
+      Math.abs(dbPrice - polygonCurrentPrice) / polygonCurrentPrice < 0.001;
+    const prevCloseMatch = dbPreviousClose && polygonPreviousClose &&
+      Math.abs(dbPreviousClose - polygonPreviousClose) / polygonPreviousClose < 0.001;
+    if (!priceMatch) issues.push(`⚠️ Price mismatch: DB=${dbPrice}, Polygon=${polygonCurrentPrice}`);
+    if (!prevCloseMatch) issues.push(`⚠️ PreviousClose mismatch: DB=${dbPreviousClose}, Polygon=${polygonPreviousClose}`);
+
+    if (calculatedPercentChange !== null && dbPercentChange !== null) {
+      const pctDiff = Math.abs(calculatedPercentChange - dbPercentChange);
+      if (pctDiff > 0.01) {
+        issues.push(`⚠️ % Change mismatch: DB=${dbPercentChange?.toFixed(2)}%, Calculated=${calculatedPercentChange.toFixed(2)}%`);
+      }
+    }
+
+    if (dbLatestPrevCloseDate && polygonTradingDay) {
+      const dbTradingDayStr = getDateET(dbLatestPrevCloseDate);
+      if (dbTradingDayStr !== polygonTradingDay) {
+        issues.push(`⚠️ Trading day mismatch: DB=${dbTradingDayStr}, Polygon=${polygonTradingDay}`);
+      }
+    }
+
+    return {
+      ticker,
+      dbPrice,
+      dbPreviousClose,
+      dbLatestPrevCloseDate,
+      redisPreviousClose,
+      polygonCurrentPrice,
+      polygonPreviousClose,
+      polygonTimestamp,
+      polygonTradingDay,
+      calculatedPercentChange,
+      dbPercentChange,
+      match: issues.length === 0,
+      issues
+    };
+  };
+
   const today = getDateET();
   const todayTradingDay = getLastTradingDay(createETDate(today));
   const todayTradingDateStr = getDateET(todayTradingDay);

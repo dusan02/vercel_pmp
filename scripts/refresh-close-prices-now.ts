@@ -10,22 +10,10 @@
  * Safe to run on production - only fills missing data
  */
 
-// Load environment variables
-try {
-  const { config } = require('dotenv');
-  const { resolve } = require('path');
-  config({ path: resolve(process.cwd(), '.env.local') });
-} catch (e) {
-  // dotenv not available, continue without it
-}
+import { loadEnvFromFiles } from './_utils/loadEnv';
 
-import { prisma } from '../src/lib/db/prisma';
-import { getUniverse } from '@/lib/redis/operations';
-import { bootstrapPreviousCloses } from '@/workers/polygonWorker';
-import { getDateET, createETDate } from '@/lib/utils/dateET';
-import { getLastTradingDay, getTradingDay } from '@/lib/utils/timeUtils';
-import { setPrevClose } from '@/lib/redis/operations';
-import { withRetry } from '@/lib/api/rateLimiter';
+// Load env BEFORE importing modules that may read env at import-time (e.g. Prisma client)
+loadEnvFromFiles();
 
 function requireEnv(key: string): string {
   const value = process.env[key];
@@ -39,43 +27,65 @@ function requireEnv(key: string): string {
 /**
  * Fetch regular close for a specific date from Polygon API
  */
-async function fetchRegularCloseForDate(
-  ticker: string,
-  date: string, // YYYY-MM-DD
-  apiKey: string
-): Promise<number | null> {
-  try {
-    const rangeUrl = `https://api.polygon.io/v2/aggs/ticker/${ticker}/range/1/day/${date}/${date}?adjusted=true&apiKey=${apiKey}`;
-    const response = await withRetry(async () => {
-      const res = await fetch(rangeUrl);
-      if (!res.ok && res.status === 429) {
-        throw new Error(`Rate limited: ${res.status}`);
-      }
-      return res;
-    });
-
-    if (!response.ok) {
-      return null;
-    }
-
-    const data = await response.json();
-    const close = data?.results?.[0]?.c;
-    
-    if (typeof close === 'number' && close > 0) {
-      return close;
-    }
-    
-    return null;
-  } catch (error) {
-    console.warn(`⚠️ Failed to fetch regular close for ${ticker} on ${date}:`, error);
-    return null;
-  }
-}
-
 async function main() {
   console.log('🔄 Starting refresh of close prices (fill missing only)...');
   
   const apiKey = requireEnv('POLYGON_API_KEY');
+
+  // Lazy-load modules after env is loaded (Prisma reads DATABASE_URL during import/initialization).
+  const [
+    { prisma },
+    redisOps,
+    worker,
+    dateET,
+    timeUtils,
+    { withRetry },
+  ] = await Promise.all([
+    import('../src/lib/db/prisma'),
+    import('@/lib/redis/operations'),
+    import('@/workers/polygonWorker'),
+    import('@/lib/utils/dateET'),
+    import('@/lib/utils/timeUtils'),
+    import('@/lib/api/rateLimiter'),
+  ]);
+
+  const { getUniverse, setPrevClose } = redisOps;
+  const { bootstrapPreviousCloses } = worker;
+  const { getDateET, createETDate } = dateET;
+  const { getLastTradingDay, getTradingDay } = timeUtils;
+
+  const fetchRegularCloseForDate = async (
+    ticker: string,
+    date: string, // YYYY-MM-DD
+    apiKeyInner: string
+  ): Promise<number | null> => {
+    try {
+      const rangeUrl = `https://api.polygon.io/v2/aggs/ticker/${ticker}/range/1/day/${date}/${date}?adjusted=true&apiKey=${apiKeyInner}`;
+      const response = await withRetry(async () => {
+        const res = await fetch(rangeUrl);
+        if (!res.ok && res.status === 429) {
+          throw new Error(`Rate limited: ${res.status}`);
+        }
+        return res;
+      });
+
+      if (!response.ok) {
+        return null;
+      }
+
+      const data = await response.json();
+      const close = data?.results?.[0]?.c;
+
+      if (typeof close === 'number' && close > 0) {
+        return close;
+      }
+
+      return null;
+    } catch (error) {
+      console.warn(`⚠️ Failed to fetch regular close for ${ticker} on ${date}:`, error);
+      return null;
+    }
+  };
   
   // Get trading days
   const today = getDateET();
