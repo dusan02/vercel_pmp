@@ -93,16 +93,20 @@ async function fetchPolygonSnapshot(
 
   const batchSize = 60; // Polygon allows up to 100, but we use 60 for safety
   const results: PolygonSnapshot[] = [];
+  const totalBatches = Math.ceil(tickers.length / batchSize);
 
   for (let i = 0; i < tickers.length; i += batchSize) {
     const batch = tickers.slice(i, i + batchSize);
     const tickersParam = batch.join(',');
+    const batchNum = Math.floor(i / batchSize) + 1;
 
     try {
       const url = `https://api.polygon.io/v2/snapshot/locale/us/markets/stocks/tickers?tickers=${tickersParam}&apiKey=${apiKey}`;
+      console.log(`📥 Polygon snapshot batch ${batchNum}/${totalBatches} (${batch.length} tickers)...`);
 
       const response = await withRetry(async () => {
-        const res = await fetch(url);
+        // IMPORTANT: add a hard timeout so scripts don't appear "frozen" on network stalls.
+        const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
         if (!res.ok && res.status === 429) {
           throw new Error(`Rate limited: ${res.status}`);
         }
