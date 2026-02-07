@@ -88,76 +88,28 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
     return colorScale(value);
   }, [metric, colorScale]);
 
-  // Tile label rules: adaptive fitting for mobile
+  // Tile label rules: center text, responsive sizing, hide on tiny tiles
   const getTileLabel = useCallback((company: CompanyNode, w: number, h: number) => {
     const minDim = Math.min(w, h);
-    const maxDim = Math.max(w, h);
-    const aspect = h > 0 ? (w / h) : 1;
-    const area = w * h;
-
-    const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
 
     // Too small → no text at all
-    if (minDim < 16 || area < 18 * 18) {
-      return { showSymbol: false, showValue: false, layout: 'none' as const, symbol: '', value: '', symbolFontPx: 0, valueFontPx: 0 };
+    if (minDim < 18) {
+      return { showSymbol: false, showValue: false, symbol: '', value: '', symbolFontPx: 0, valueFontPx: 0 };
     }
 
-    // Base font sizing (ticker is priority, percent is optional)
-    // Use minDim but allow slightly smaller fonts in very thin rectangles.
-    const symbolFontPx = Math.round(clamp(minDim * 0.3, 8, 16));
-    const valueFontPx = Math.round(clamp(symbolFontPx - 4, 7, 12));
+    const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
+    const symbolFontPx = Math.round(clamp(minDim * 0.28, 9, 16));
+    const showValue = minDim >= 34; // value line needs more room
+    const valueFontPx = Math.round(clamp(symbolFontPx - 4, 8, 12));
 
     const valueText = metric === 'percent'
       ? formatPercent(company.changePercent ?? 0)
       : (company.marketCapDiff == null ? '' : formatMarketCapDiff(company.marketCapDiff));
 
-    const symbolText = (company.symbol ?? '').toUpperCase();
-
-    // Rough text width approximation (fast + good enough for fitting decisions)
-    // Uppercase tickers are usually compact; % strings are slightly wider.
-    const estTextWidth = (text: string, fontPx: number, factor: number) => text.length * fontPx * factor;
-    const symbolW = estTextWidth(symbolText, symbolFontPx, 0.62);
-    const valueW = estTextWidth(valueText, valueFontPx, 0.56);
-
-    // Inner padding budget (keeps text away from edges)
-    const padX = clamp(Math.round(minDim * 0.08), 2, 6);
-    const padY = clamp(Math.round(minDim * 0.06), 2, 6);
-    const availW = Math.max(0, w - padX * 2);
-    const availH = Math.max(0, h - padY * 2);
-
-    const hasValue = valueText.length > 0;
-
-    // Candidate: stacked (ticker above %)
-    const stackedGap = 2;
-    const stackedNeededH = symbolFontPx + (hasValue ? (stackedGap + valueFontPx) : 0);
-    const stackedNeededW = Math.max(symbolW, hasValue ? valueW : 0);
-    const stackedFits = availH >= stackedNeededH && availW >= stackedNeededW;
-
-    // Candidate: inline (ticker + % side-by-side)
-    const inlineGap = 4;
-    const inlineNeededH = Math.max(symbolFontPx, valueFontPx);
-    const inlineNeededW = symbolW + (hasValue ? (inlineGap + valueW) : 0);
-    const inlineFits = hasValue && aspect >= 1.35 && availH >= inlineNeededH && availW >= inlineNeededW;
-
-    // Candidate: ticker-only
-    const tickerOnlyFits = availH >= symbolFontPx && availW >= symbolW;
-
-    // Pick best layout:
-    // - If the tile is wide, inline looks best and saves vertical space.
-    // - Otherwise use stacked if it fits.
-    // - Otherwise ticker only.
-    // - Otherwise nothing.
-    let layout: 'inline' | 'stacked' | 'ticker' | 'none' = 'none';
-    if (inlineFits) layout = 'inline';
-    else if (stackedFits && hasValue && maxDim >= 26) layout = 'stacked';
-    else if (tickerOnlyFits) layout = 'ticker';
-    else layout = 'none';
-
     return {
-      showSymbol: layout !== 'none',
-      showValue: layout === 'inline' || layout === 'stacked',
-      layout,
-      symbol: symbolText,
+      showSymbol: true,
+      showValue: showValue && valueText.length > 0,
+      symbol: company.symbol,
       value: valueText,
       symbolFontPx,
       valueFontPx,
@@ -350,24 +302,18 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                   if (width <= 0 || height <= 0) return null;
 
                   const label = getTileLabel(company, width, height);
-                  // Optical centering: geometric 50/50 tends to look slightly low for all-caps text.
-                  // For stacked labels it’s more noticeable; for inline/ticker-only keep it smaller.
-                  const opticalOffsetPx = (() => {
-                    if (label.layout === 'none') return 0;
-                    if (label.layout === 'inline') return 1;
-                    if (label.layout === 'ticker') return 1;
-                    // stacked
-                    return Math.min(
-                      4,
-                      Math.max(
-                        1,
-                        Math.round(
-                          (label.symbolFontPx || 0) * 0.12 +
-                          (label.showValue ? (label.valueFontPx || 0) * 0.2 : 0)
-                        )
+                  // Optical centering: geometric 50/50 tends to look slightly low for all-caps text (and for 2-line labels).
+                  // We nudge the label block up a tiny amount based on font sizes / line count.
+                  const opticalOffsetPx = Math.min(
+                    4,
+                    Math.max(
+                      1,
+                      Math.round(
+                        (label.symbolFontPx || 0) * (label.showValue ? 0.14 : 0.1) +
+                        (label.showValue ? (label.valueFontPx || 0) * 0.22 : 0)
                       )
-                    );
-                  })();
+                    )
+                  );
 
                   return (
                     <div
@@ -401,7 +347,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                         zIndex: 1, // Tiles should stay above any sector label chrome
                       }}
                     >
-                      {label.layout !== 'none' && (
+                      {(label.showSymbol || label.showValue) && (
                         <div
                           style={{
                             position: 'absolute',
@@ -409,13 +355,12 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                             top: `calc(50% - ${opticalOffsetPx}px)`,
                             transform: 'translate(-50%, -50%)',
                             display: 'flex',
-                            flexDirection: label.layout === 'inline' ? 'row' : 'column',
+                            flexDirection: 'column',
                             alignItems: 'center',
-                            justifyContent: 'center',
                             pointerEvents: 'none',
                             textAlign: 'center',
                             lineHeight: 1.05,
-                            gap: label.layout === 'inline' ? 4 : (label.showValue ? 2 : 0),
+                            gap: label.showValue ? 2 : 0,
                           }}
                         >
                           {label.showSymbol && (
