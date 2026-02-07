@@ -453,6 +453,15 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
         const sectorValue = sumValues(sectorNode.data);
         if (sectorValue <= 0) return;
 
+        // Mobile: reserve space for the sector label so it doesn't overlap the top row of tiles.
+        // Desktop reserves this via D3 paddingTop in the main treemap generator; mobile vertical layout
+        // uses per-sector treemaps so we must do it here too.
+        const baseSectorLabelConfig = sectorLabelVariant === 'full'
+          ? LAYOUT_CONFIG.SECTOR_LABEL_FULL
+          : LAYOUT_CONFIG.SECTOR_LABEL_COMPACT;
+        // Slightly smaller header on mobile to reduce visual intrusion while keeping readability.
+        const reservedSectorLabelHeight = sectorLabelVariant === 'full' ? 18 : baseSectorLabelConfig.HEIGHT;
+
         // Calculate proportional height for this sector
         const sectorHeight = (sectorValue / totalValue) * estimatedTotalHeight;
         // Minimum height should be reasonable - 60% of viewport to prevent too much empty space
@@ -475,7 +484,7 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
         const sectorTreemap = treemap<HierarchyData>()
           .size([width, finalSectorHeight])
           .padding(0)
-          .paddingTop(0)
+          .paddingTop(reservedSectorLabelHeight)
           .paddingLeft(0)
           .paddingRight(0)
           .paddingBottom(0)
@@ -1000,7 +1009,10 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
                   ? LAYOUT_CONFIG.SECTOR_LABEL_FULL
                   : LAYOUT_CONFIG.SECTOR_LABEL_COMPACT;
 
-                const labelHeight = labelConfig.HEIGHT;
+                const labelHeight = isMobile
+                  ? (sectorLabelVariant === 'full' ? 18 : labelConfig.HEIGHT)
+                  : labelConfig.HEIGHT;
+                const labelLeft = isMobile ? Math.min(labelConfig.LEFT, 6) : labelConfig.LEFT;
 
                 // Check if sector is large enough (both width and height)
                 // Increased minimum size to prevent overlapping on small sectors
@@ -1023,7 +1035,7 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
                 const fontSizeValue = parseFloat(responsiveFontSize.match(/\d+\.?\d*/)?.[0] || String(minFont));
 
                 // Calculate sector summary for full variant
-                const sectorSummary = sectorLabelVariant === 'full' && LAYOUT_CONFIG.SECTOR_LABEL_FULL.SHOW_SUMMARY
+                const sectorSummary = !isMobile && sectorLabelVariant === 'full' && LAYOUT_CONFIG.SECTOR_LABEL_FULL.SHOW_SUMMARY
                   ? calculateSectorSummary(node as TreemapNode, metric)
                   : null;
 
@@ -1046,12 +1058,23 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
                       width: nodeWidth * scale,
                       maxWidth: nodeWidth * scale, // Prevent overflow
                       height: labelHeight,
-                      paddingLeft: labelConfig.LEFT,
+                      paddingLeft: labelLeft,
                       overflow: 'hidden', // Ensure text doesn't overflow
                     }}
                   >
                     {sectorLabelVariant === 'full' ? (
-                      <div className={styles.sectorLabelStripFull} style={{ fontSize: responsiveFontSize }}>
+                      <div
+                        className={styles.sectorLabelStripFull}
+                        style={{
+                          fontSize: responsiveFontSize,
+                          ...(isMobile ? {
+                            width: 'fit-content',
+                            maxWidth: '100%',
+                            padding: '2px 8px',
+                            borderRadius: '6px',
+                          } : {}),
+                        }}
+                      >
                         <span>{displayName}</span>
                         {sectorSummary && (
                           <span className={styles.sectorLabelSummary}>{sectorSummary}</span>
@@ -1155,7 +1178,10 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
                   ? LAYOUT_CONFIG.SECTOR_LABEL_FULL
                   : LAYOUT_CONFIG.SECTOR_LABEL_COMPACT;
 
-                const labelHeight = labelConfig.HEIGHT;
+                const labelHeight = isMobile
+                  ? (sectorLabelVariant === 'full' ? 18 : labelConfig.HEIGHT)
+                  : labelConfig.HEIGHT;
+                const labelLeft = isMobile ? Math.min(labelConfig.LEFT, 6) : labelConfig.LEFT;
 
                 // Check if sector is large enough (both width and height)
                 const minSizeForLabel = 80;
@@ -1177,7 +1203,7 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
                 const fontSizeValue = parseFloat(responsiveFontSize.match(/\d+\.?\d*/)?.[0] || String(minFont));
 
                 // Calculate sector summary for full variant
-                const sectorSummary = sectorLabelVariant === 'full' && LAYOUT_CONFIG.SECTOR_LABEL_FULL.SHOW_SUMMARY
+                const sectorSummary = !isMobile && sectorLabelVariant === 'full' && LAYOUT_CONFIG.SECTOR_LABEL_FULL.SHOW_SUMMARY
                   ? calculateSectorSummary(node as TreemapNode, metric)
                   : null;
 
@@ -1200,7 +1226,7 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
                       width: nodeWidth * scale,
                       maxWidth: nodeWidth * scale, // Prevent overflow
                       height: labelHeight,
-                      paddingLeft: labelConfig.LEFT,
+                      paddingLeft: labelLeft,
                       overflow: 'hidden', // Ensure text doesn't overflow
                       pointerEvents: 'auto' // Ensure hover events work
                     }}
@@ -1209,7 +1235,18 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
                     onClick={() => handleSectorClick(data.name)}
                   >
                     {sectorLabelVariant === 'full' ? (
-                      <div className={styles.sectorLabelStripFull} style={{ fontSize: responsiveFontSize }}>
+                      <div
+                        className={styles.sectorLabelStripFull}
+                        style={{
+                          fontSize: responsiveFontSize,
+                          ...(isMobile ? {
+                            width: 'fit-content',
+                            maxWidth: '100%',
+                            padding: '2px 8px',
+                            borderRadius: '6px',
+                          } : {}),
+                        }}
+                      >
                         <span>{displayName}</span>
                         {sectorSummary && (
                           <span className={styles.sectorLabelSummary}>{sectorSummary}</span>

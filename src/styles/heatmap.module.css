@@ -179,7 +179,9 @@
 
 /* Tooltip */
 .heatmapTooltip {
-  @apply fixed z-50 bg-gray-900/95 backdrop-blur-md text-white text-xs rounded-lg shadow-2xl pointer-events-none overflow-hidden border border-gray-700;
+  @apply fixed bg-gray-900/95 backdrop-blur-md text-white text-xs rounded-lg shadow-2xl pointer-events-none overflow-hidden border border-gray-700;
+  /* Must be above sector labels (which use z-index: 100). */
+  z-index: 1000;
   max-width: 250px;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
 }
