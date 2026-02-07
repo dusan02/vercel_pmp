@@ -1002,6 +1002,7 @@ export async function bootstrapPreviousCloses(
   const todayTradingDay = getTradingDay(calendarDateET);
   const prevTradingDay = getLastTradingDay(todayTradingDay);
   const expectedPrevYMD = getDateET(prevTradingDay);
+  const isNonTradingCalendarDay = getDateET(todayTradingDay) !== date;
 
   // 1. Fetch snapshots in large batches
   console.log('📥 Fetching snapshots for batch previous day reference...');
@@ -1056,6 +1057,22 @@ export async function bootstrapPreviousCloses(
       // Save to DB and Redis
       if (prevClose > 0 && actualPrevTradingDay) {
         await setPrevClose(date, symbol, prevClose);
+
+        // If `date` is a non-trading calendar day (weekend/holiday), ensure we also persist the LAST trading day's
+        // regular close (snapshot.day.c). This is needed so APIs can show 0% vs Friday close on Saturday/Sunday
+        // instead of showing "Friday move vs Thursday close".
+        // NOTE: On trading days at 04:00 ET, snapshot.day.c is not the current day's regular close, so we skip.
+        if (isNonTradingCalendarDay && snapshot?.day?.c && snapshot.day.c > 0) {
+          const lastTradingDay = todayTradingDay; // collapsed trading day (e.g. Saturday -> Friday)
+          await dbWriteRetry(
+            () => prisma.dailyRef.upsert({
+              where: { symbol_date: { symbol, date: lastTradingDay } },
+              update: { regularClose: snapshot.day!.c, previousClose: prevClose, updatedAt: new Date() },
+              create: { symbol, date: lastTradingDay, regularClose: snapshot.day!.c, previousClose: prevClose }
+            }),
+            `dailyRef.upsert(lastTradingDayClose):${symbol}`
+          );
+        }
 
         await dbWriteRetry(
           () => prisma.dailyRef.upsert({
