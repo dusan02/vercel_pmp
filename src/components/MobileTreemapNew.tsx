@@ -509,8 +509,10 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
           alignItems: 'stretch',
           gap: '8px', // Distinct gap between sector blocks
           // CRITICAL: ensure the last sector/tiles are not hidden behind the fixed mobile tab bar.
-          // `--tabbar-real-h` is set dynamically (includes safe-area); fallback to --tabbar-h (72px).
-          paddingBottom: 'calc(var(--tabbar-real-h, var(--tabbar-h, 72px)) + env(safe-area-inset-bottom, 0px) + 16px)',
+          // `--tabbar-real-h` is set dynamically (and already includes safe-area from tabbar padding).
+          // IMPORTANT: don't add `env(safe-area-inset-bottom)` again, otherwise you get a big empty "black strip".
+          paddingBottom:
+            'calc(var(--tabbar-real-h, calc(var(--tabbar-h, 72px) + env(safe-area-inset-bottom, 0px))) + 8px)',
         }}
       >
         {treemapResult.sectors && treemapResult.sectors.length > 0 && containerSize.width > 0 ? (

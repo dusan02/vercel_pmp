@@ -118,7 +118,7 @@ export function MobileLayout({ activeTab, onTabChange, screens }: MobileLayoutPr
             </main>
 
             {/* Navigation Tab Bar */}
-            <div className="flex-shrink-0 z-20 bg-[#0f0f0f] border-t border-white/10 pb-[env(safe-area-inset-bottom)]">
+            <div className="flex-shrink-0 z-20 bg-[#0f0f0f] border-t border-white/10">
                 <MobileTabBar activeTab={activeTab} onTabChange={onTabChange} />
             </div>
         </div>
