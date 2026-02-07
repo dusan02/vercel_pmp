@@ -112,6 +112,41 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
         {sectorBlocks.map((sector) => {
           if (!sector) return null; // Safety check
 
+          // Mobile UX: hit-slop for tiny tiles.
+          // If user taps a very small tile (or near it), select the nearest tile center within a small radius.
+          const pickNearestCompany = (px: number, py: number) => {
+            const children = (sector as any).children ?? [];
+            if (!Array.isArray(children) || children.length === 0) return null;
+
+            // 1) If inside a tile, prefer that tile.
+            for (const leaf of children) {
+              if (!leaf) continue;
+              if (px >= leaf.x0 && px <= leaf.x1 && py >= leaf.y0 && py <= leaf.y1) {
+                return leaf.company ?? null;
+              }
+            }
+
+            // 2) Otherwise pick nearest center (hit-slop).
+            let best: any = null;
+            let bestDist = Number.POSITIVE_INFINITY;
+            for (const leaf of children) {
+              if (!leaf) continue;
+              const cx = (leaf.x0 + leaf.x1) / 2;
+              const cy = (leaf.y0 + leaf.y1) / 2;
+              const dx = px - cx;
+              const dy = py - cy;
+              const d2 = dx * dx + dy * dy;
+              if (d2 < bestDist) {
+                bestDist = d2;
+                best = leaf;
+              }
+            }
+
+            // Only accept if within ~20px radius (prevents weird far selections)
+            const maxR = 20;
+            return best && bestDist <= maxR * maxR ? (best.company ?? null) : null;
+          };
+
           return (
             <div
               key={sector.name}
@@ -123,6 +158,29 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
             >
               {/* Relative Container for D3 Tiles (tiles first = priority) */}
               <div
+                onClickCapture={(e) => {
+                  // If a normal-size tile was tapped, let the tile handler run.
+                  const target = e.target as HTMLElement | null;
+                  const isTile = !!target?.closest?.('[data-heatmap-tile="1"]');
+                  if (isTile) {
+                    // For very tiny tiles, still apply hit-slop to reduce mis-taps.
+                    const tileEl = target!.closest('[data-heatmap-tile="1"]') as HTMLElement | null;
+                    const minDimAttr = tileEl?.getAttribute('data-min-dim');
+                    const minDim = minDimAttr ? Number(minDimAttr) : NaN;
+                    if (!Number.isFinite(minDim) || minDim >= 22) return;
+                  }
+
+                  const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+                  const px = e.clientX - rect.left;
+                  const py = e.clientY - rect.top;
+                  const picked = pickNearestCompany(px, py);
+                  if (!picked) return;
+
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setSelectedCompany(picked);
+                  onTileClick?.(picked);
+                }}
                 style={{
                   position: 'relative',
                   width: '100%',
@@ -151,6 +209,8 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                       key={`${company.symbol}-${i}`}
                       role="button"
                       tabIndex={0}
+                      data-heatmap-tile="1"
+                      data-min-dim={Math.min(width, height)}
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedCompany(company);
