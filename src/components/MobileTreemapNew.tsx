@@ -302,6 +302,18 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                   if (width <= 0 || height <= 0) return null;
 
                   const label = getTileLabel(company, width, height);
+                  // Optical centering: geometric 50/50 tends to look slightly low for all-caps text (and for 2-line labels).
+                  // We nudge the label block up a tiny amount based on font sizes / line count.
+                  const opticalOffsetPx = Math.min(
+                    4,
+                    Math.max(
+                      1,
+                      Math.round(
+                        (label.symbolFontPx || 0) * (label.showValue ? 0.14 : 0.1) +
+                        (label.showValue ? (label.valueFontPx || 0) * 0.22 : 0)
+                      )
+                    )
+                  );
 
                   return (
                     <div
@@ -340,7 +352,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                           style={{
                             position: 'absolute',
                             left: '50%',
-                            top: '50%',
+                            top: `calc(50% - ${opticalOffsetPx}px)`,
                             transform: 'translate(-50%, -50%)',
                             display: 'flex',
                             flexDirection: 'column',
@@ -360,6 +372,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                                 textShadow: '0 1px 2px rgba(0,0,0,0.55)',
                                 letterSpacing: '0.01em',
                                 whiteSpace: 'nowrap',
+                                lineHeight: 1,
                               }}
                             >
                               {label.symbol}
@@ -373,6 +386,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                                 color: 'rgba(255, 255, 255, 0.92)',
                                 textShadow: '0 1px 2px rgba(0,0,0,0.45)',
                                 whiteSpace: 'nowrap',
+                                lineHeight: 1,
                               }}
                             >
                               {label.value}
