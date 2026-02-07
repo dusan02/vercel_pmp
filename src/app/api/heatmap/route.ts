@@ -384,7 +384,6 @@ export async function GET(request: NextRequest) {
     // not "Friday change vs Thursday close". We'll adjust reference precedence accordingly below.
     const calendarYMD = getDateET(etNow);
     const calendarDateET = createETDate(calendarYMD);
-    const todayTradingDay = getTradingDay(calendarDateET);
     const isNonTradingClosedDay =
       session === 'closed' && (isWeekendET(etNow) || isMarketHoliday(etNow));
 
