@@ -7,8 +7,9 @@ import { formatMarketCapDiff } from '@/lib/utils/format';
 import { computeMarketCap, computeMarketCapDiff, computePercentChange, getPreviousClose } from '@/lib/utils/marketCapUtils';
 import { getCacheKey } from '@/lib/redis/keys';
 import { getDateET, createETDate, toET } from '@/lib/utils/dateET';
-import { detectSession, nowET } from '@/lib/utils/timeUtils';
+import { detectSession, nowET, isMarketHoliday, getTradingDay } from '@/lib/utils/timeUtils';
 import { SECTOR_INDUSTRY_OVERRIDES } from '@/data/sectorIndustryOverrides';
+import { isWeekendET } from '@/lib/utils/dateET';
 
 const CACHE_KEY = 'heatmap-data';
 const CACHE_TTL = 900; // 15 minút (prekvitie s 10m cronom)
@@ -379,6 +380,24 @@ export async function GET(request: NextRequest) {
     const etNow = nowET();
     const session = detectSession(etNow);
 
+    // On weekend/holiday (session=closed), users expect % to be vs LAST trading day's close (e.g. Saturday -> 0% vs Friday close),
+    // not "Friday change vs Thursday close". We'll adjust reference precedence accordingly below.
+    const calendarYMD = getDateET(etNow);
+    const calendarDateET = createETDate(calendarYMD);
+    const todayTradingDay = getTradingDay(calendarDateET);
+    const isNonTradingClosedDay =
+      session === 'closed' && (isWeekendET(etNow) || isMarketHoliday(etNow));
+
+    // On weekends/holidays we still want "% change" to be computed as:
+    // currentPrice / (last trading day's regular close) - 1
+    // (i.e. not Friday vs Thursday when viewed on Saturday/Sunday).
+    const isClosedWeekendOrHoliday =
+      session === 'closed' && (isWeekendET(etNow) || isMarketHoliday(etNow));
+    const lastTradingDayForReference = isClosedWeekendOrHoliday ? getTradingDay(etNow) : null;
+    const regularCloseReferenceDayStr = isClosedWeekendOrHoliday && lastTradingDayForReference
+      ? getDateET(lastTradingDayForReference)
+      : null;
+
     // Use denormalized latestPrevClose from Ticker (fastest)
     const previousCloseMap = new Map<string, number>();
     const regularCloseMap = new Map<string, number>();
@@ -387,8 +406,8 @@ export async function GET(request: NextRequest) {
     // CRITICAL: Logic update for "Monday Problem"
     // 1. If DailyRef is from TODAY, use its previousClose (which is Yesterday's Close).
     // 2. If DailyRef is from OLDER (e.g. Friday), use its regularClose (e.g. Friday's Close).
-    const todayDateStr = getDateET(etNow);
-    const todayDateObj = createETDate(todayDateStr);
+    const todayDateStr = calendarYMD;
+    const todayDateObj = calendarDateET;
     const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][etNow.getDay()];
 
     // Debug stats container
@@ -418,10 +437,14 @@ export async function GET(request: NextRequest) {
       const drDateStr = getDateET(drDate);
       const isToday = drDateStr === todayDateStr;
 
-      // Also collect regularClose for after-hours sessions
-      // ONLY use regularClose from TODAY - prevent using yesterday's regularClose
+    // Also collect regularClose for after-hours/closed sessions.
+    // - Normal after-hours (weekday): use regularClose from TODAY.
+    // - Weekend/holiday "closed": use regularClose from the LAST TRADING DAY (usually Friday).
       if (dr.regularClose && dr.regularClose > 0) {
-        if (isToday) {
+        const isRegularCloseReferenceDay = regularCloseReferenceDayStr
+          ? (drDateStr === regularCloseReferenceDayStr)
+          : isToday;
+        if (isRegularCloseReferenceDay) {
           regularCloseMap.set(dr.symbol, dr.regularClose);
         }
       }
@@ -556,11 +579,23 @@ export async function GET(request: NextRequest) {
       if (cachedStockData && cachedStockData.currentPrice && cachedStockData.closePrice) {
         // Použij cache dáta z stocks endpointu (najaktuálnejšie)
         currentPrice = cachedStockData.currentPrice;
-        previousClose = cachedStockData.closePrice;
+
+        // cachedStockData.closePrice can reflect the prior session reference (e.g. Thursday close used during Friday session).
+        // On closed non-trading days, override it with the last trading day's close (DailyRef-derived map).
+        const refFromDaily = previousCloseMap.get(ticker) || 0;
+        previousClose = isNonTradingClosedDay ? (refFromDaily || cachedStockData.closePrice) : cachedStockData.closePrice;
+
         const regularClose = regularCloseMap.get(ticker) || null;
-        changePercent = cachedStockData.percentChange || computePercentChange(currentPrice, previousClose, session, regularClose);
+        changePercent = computePercentChange(currentPrice, previousClose, session, regularClose);
+
         marketCap = cachedStockData.marketCap || 0;
-        marketCapDiff = cachedStockData.marketCapDiff || 0;
+
+        // Recompute marketCapDiff when possible so it's consistent with the overridden reference.
+        const sharesOutstanding = tickerInfo?.sharesOutstanding || 0;
+        const referencePrice = (regularClose && regularClose > 0) ? regularClose : previousClose;
+        marketCapDiff = (sharesOutstanding > 0 && referencePrice > 0)
+          ? computeMarketCapDiff(currentPrice, referencePrice, sharesOutstanding)
+          : (cachedStockData.marketCapDiff || 0);
         // NOTE: cache payload may not include per-ticker timestamps in a reliable way
         // (and Redis can be disabled). We'll still label source for debugging.
         priceSource = 'cache';
@@ -572,9 +607,14 @@ export async function GET(request: NextRequest) {
         priceTsMs = priceInfo?.tsMs || 0;
         priceSource = priceInfo?.source || 'unknown';
 
-        // Prefer denormalized prev close (fast), fallback to DailyRef-derived map
+        // Prefer denormalized prev close (fast), fallback to DailyRef-derived map.
+        // On closed non-trading days, prefer DailyRef-derived "last trading day close" to show 0% vs Friday close on weekend.
         const tickerInfoFromMap = tickerMap.get(ticker);
-        previousClose = (tickerInfoFromMap?.latestPrevClose || 0) || (previousCloseMap.get(ticker) || 0);
+        const prevFromTicker = tickerInfoFromMap?.latestPrevClose || 0;
+        const prevFromDaily = previousCloseMap.get(ticker) || 0;
+        previousClose = isNonTradingClosedDay
+          ? (prevFromDaily || prevFromTicker)
+          : (prevFromTicker || prevFromDaily);
 
         dbHits++;
 
