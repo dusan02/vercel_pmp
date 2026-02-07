@@ -9,7 +9,7 @@ Postup nasadenia:
 4. npm ci
 5. npx prisma generate
 6. npm run build
-7. pm2 restart all --update-env
+7. pm2 restart premarketprice --update-env
 
 Vytvor mi:
 - Bash script (deploy.sh) s týmito príkazmi, ktorý sa spustí na serveri
@@ -21,13 +21,13 @@ Vytvor mi:
 
 📋 RÝCHLY ONE-LINER (skopíruj a spusti):
 
-ssh root@89.185.250.213 "cd /var/www/premarketprice && git pull origin main && npm ci && npx prisma generate && npm run build && pm2 restart all --update-env"
+ssh root@89.185.250.213 "cd /var/www/premarketprice && git pull origin main && npm ci && npx prisma generate && npm run build && pm2 restart premarketprice --update-env"
 
 ---
 
 🔐 S HESLOM (ak máš sshpass):
 
-sshpass -p 'nahodné_heslo123' ssh root@89.185.250.213 "cd /var/www/premarketprice && git pull origin main && npm ci && npx prisma generate && npm run build && pm2 restart all --update-env"
+sshpass -p 'nahodné_heslo123' ssh root@89.185.250.213 "cd /var/www/premarketprice && git pull origin main && npm ci && npx prisma generate && npm run build && pm2 restart premarketprice --update-env"
 
 ---
 
@@ -41,4 +41,4 @@ git pull origin main
 npm ci
 npx prisma generate
 npm run build
-pm2 restart all --update-env
+pm2 restart premarketprice --update-env

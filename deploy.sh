@@ -29,7 +29,7 @@ npm run build
 
 # 6. Reštartovať PM2 procesy
 echo "🔄 Reštartujem PM2 procesy..."
-pm2 restart all --update-env
+pm2 restart premarketprice --update-env
 
 # 7. Zobraziť status
 echo ""

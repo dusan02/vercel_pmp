@@ -37,7 +37,7 @@ if (-not $hasSshpass -and -not $hasPlink) {
     Write-Host ""
     Write-Host "Alebo použite tento jednoduchý príkaz:" -ForegroundColor Cyan
     Write-Host ""
-    Write-Host "ssh $Server `"cd $RemotePath; git pull origin main; npm ci; npx prisma generate; npm run build; pm2 restart all --update-env`"" -ForegroundColor Yellow
+    Write-Host "ssh $Server `"cd $RemotePath; git pull origin main; npm ci; npx prisma generate; npm run build; pm2 restart premarketprice --update-env`"" -ForegroundColor Yellow
     Write-Host ""
     
     exit 1

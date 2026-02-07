@@ -5,12 +5,12 @@
 ### Metóda 1: Jednoduchý SSH príkaz (najrýchlejšie)
 
 ```bash
-ssh root@89.185.250.213 "cd /var/www/premarketprice && git pull origin main && npm ci && npx prisma generate && npm run build && pm2 restart all --update-env"
+ssh root@89.185.250.213 "cd /var/www/premarketprice && git pull origin main && npm ci && npx prisma generate && npm run build && pm2 restart premarketprice --update-env"
 ```
 
 **Alebo s heslom cez sshpass:**
 ```bash
-sshpass -p 'nahodné_heslo123' ssh root@89.185.250.213 "cd /var/www/premarketprice && git pull origin main && npm ci && npx prisma generate && npm run build && pm2 restart all --update-env"
+sshpass -p 'nahodné_heslo123' ssh root@89.185.250.213 "cd /var/www/premarketprice && git pull origin main && npm ci && npx prisma generate && npm run build && pm2 restart premarketprice --update-env"
 ```
 
 ### Metóda 2: Použitie deployment scriptu na serveri
@@ -60,8 +60,8 @@ npx prisma generate
 # 6. Build aplikácie
 npm run build
 
-# 7. Reštartovať PM2 procesy
-pm2 restart all --update-env
+# 7. Reštartovať iba web app (minimalizuje 502 počas deployu)
+pm2 restart premarketprice --update-env
 
 # 8. Skontrolovať status
 pm2 status
