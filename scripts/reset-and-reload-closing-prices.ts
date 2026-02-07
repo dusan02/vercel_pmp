@@ -32,13 +32,14 @@ async function main() {
   const apiKey = requireEnv('POLYGON_API_KEY');
 
   // Lazy-load modules after env is loaded (Prisma reads DATABASE_URL during import/initialization).
-  const [{ prisma }, { getUniverse }, worker, { getDateET }, { clearRedisPrevCloseCache }, { refreshClosingPricesInDB }] = await Promise.all([
+  const [{ prisma }, { getUniverse, deleteCachedData, deleteCachedDataByPattern }, worker, { getDateET }, { clearRedisPrevCloseCache }, { refreshClosingPricesInDB }, { getProjectCacheKeys }] = await Promise.all([
     import('../src/lib/db/prisma'),
     import('@/lib/redis/operations'),
     import('@/workers/polygonWorker'),
     import('@/lib/utils/dateET'),
     import('@/lib/utils/redisCacheUtils'),
     import('@/lib/utils/closingPricesUtils'),
+    import('@/lib/redis/keys'),
   ]);
   const { bootstrapPreviousCloses, ingestBatch } = worker;
   
@@ -46,6 +47,18 @@ async function main() {
     // Step 1: Clear Redis cache
     console.log('\n📝 Step 1: Clearing Redis cache...');
     await clearRedisPrevCloseCache();
+
+    // Also clear heatmap + per-stock caches so UI doesn't keep serving old closePrice/percentChange.
+    // - heatmap-data: whole payload cache
+    // - stock:pmp:* : per-ticker stock cache (if used)
+    try {
+      await deleteCachedData('heatmap-data');
+      const stockPattern = getProjectCacheKeys('pmp', 'stock'); // "stock:pmp:*"
+      const n = await deleteCachedDataByPattern(stockPattern);
+      console.log(`🧹 Cleared caches: heatmap-data + ${n} keys matching ${stockPattern}`);
+    } catch (e) {
+      console.warn('⚠️ Failed to clear heatmap/stock caches (non-fatal):', e);
+    }
     
     // Step 2: Reset closing prices in database (hard reset)
     console.log('\n📝 Step 2: Resetting closing prices in database...');

@@ -475,3 +475,51 @@ export async function deleteCachedData(key: string) {
         return false;
     }
 }
+
+/**
+ * Delete cached keys by pattern (Redis SCAN-based; safe for large keyspaces).
+ * Useful for manual maintenance scripts (e.g. clearing stock cache after a prevClose reset).
+ */
+export async function deleteCachedDataByPattern(pattern: string, batchSize: number = 500): Promise<number> {
+    let deleted = 0;
+
+    // Redis path
+    if (redisClient && redisClient.isOpen) {
+        try {
+            // node-redis supports async scanIterator
+            // https://github.com/redis/node-redis
+            for await (const key of redisClient.scanIterator({ MATCH: pattern, COUNT: batchSize })) {
+                if (!key) continue;
+                try {
+                    await redisClient.del(key as any);
+                    deleted++;
+                } catch (e) {
+                    // continue
+                }
+            }
+            return deleted;
+        } catch (error) {
+            console.error(`Cache delete-by-pattern error (pattern=${pattern}):`, error);
+            return deleted;
+        }
+    }
+
+    // In-memory fallback path (best-effort)
+    try {
+        // Convert a simple Redis glob pattern to a RegExp (supports * only; enough for our use).
+        const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp('^' + escaped.replace(/\*/g, '.*') + '$');
+
+        for (const key of Array.from(inMemoryCache.keys())) {
+            if (regex.test(key)) {
+                inMemoryCache.delete(key);
+                cacheTimestamps.delete(key);
+                deleted++;
+            }
+        }
+    } catch (error) {
+        console.error(`In-memory cache delete-by-pattern error (pattern=${pattern}):`, error);
+    }
+
+    return deleted;
+}
