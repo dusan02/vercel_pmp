@@ -107,6 +107,19 @@ netstat -tlnp | grep -E '3000|443|80'
 curl http://localhost:3000/api/health
 ```
 
+## Health monitor (stability)
+
+V PM2 je pridaný ľahký cron proces `pmp-health-monitor`, ktorý každých 5 minút kontroluje:
+- `/api/health`
+- `/api/health/worker`
+- `/api/health/redis`
+
+Ak nájde `degraded/unhealthy`, zaloguje incident a (voliteľne) pošle webhook.
+
+### Voliteľné ENV
+- `ALERT_WEBHOOK_URL`: Slack/Discord webhook URL (ak nie je nastavené, len loguje)
+- `HEALTH_ALERT_COOLDOWN_MIN`: default `10` (aby to nespamovalo)
+
 ## Riešenie problémov
 
 ### Ak build zlyhá:

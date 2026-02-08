@@ -213,5 +213,26 @@ module.exports = {
       cron_restart: "0 2 * * *",
       autorestart: false,
     },
+    {
+      // Lightweight health/staleness monitor (alerts via optional webhook)
+      name: "pmp-health-monitor",
+      script: "scripts/health-monitor.ts",
+      interpreter: "npx",
+      interpreter_args: "tsx",
+      cwd: "/var/www/premarketprice",
+      instances: 1,
+      exec_mode: "fork",
+      env_production: {
+        NODE_ENV: "production",
+        BASE_URL: "http://127.0.0.1:3000",
+        ALERT_WEBHOOK_URL: envVars.ALERT_WEBHOOK_URL || process.env.ALERT_WEBHOOK_URL,
+        HEALTH_ALERT_COOLDOWN_MIN: envVars.HEALTH_ALERT_COOLDOWN_MIN || process.env.HEALTH_ALERT_COOLDOWN_MIN || "10",
+      },
+      error_file: "/var/log/pm2/pmp-health-monitor-error.log",
+      out_file: "/var/log/pm2/pmp-health-monitor-out.log",
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      cron_restart: "*/5 * * * *", // every 5 minutes
+      autorestart: false,
+    },
   ],
 };
