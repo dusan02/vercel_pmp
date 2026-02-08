@@ -1,5 +1,3 @@
-'use client';
-
 import { StockData } from '@/lib/types';
 import { getCompanyName } from '@/lib/companyNames';
 

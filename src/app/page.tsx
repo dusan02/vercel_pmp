@@ -4,6 +4,7 @@ import { getEarningsForDate } from '@/lib/server/earningsService';
 import { getProjectTickers } from '@/data/defaultTickers';
 import { logger } from '@/lib/utils/logger';
 import { getDateET, createETDate } from '@/lib/utils/dateET';
+import Link from 'next/link';
 
 // Enable ISR (Incremental Static Regeneration) for better performance
 // Page is cached and regenerated every 10 seconds
@@ -49,6 +50,20 @@ export default async function Page() {
     // Continue with empty initialData - client side will handle fallback
   }
 
-  return <HomePage initialData={initialData} initialEarningsData={initialEarningsData} />;
+  return (
+    <>
+      {/* Server-rendered internal links (helps crawl/discovery even if the main UI is client-heavy) */}
+      <nav className="sr-only" aria-label="Primary">
+        <Link href="/premarket-movers">Premarket Movers</Link>
+        <Link href="/gainers">Top Gainers</Link>
+        <Link href="/losers">Top Losers</Link>
+        <Link href="/sectors">Sectors</Link>
+        <Link href="/stocks">All Stocks</Link>
+        <Link href="/heatmap">Heatmap</Link>
+        <Link href="/earnings">Earnings Calendar</Link>
+      </nav>
+      <HomePage initialData={initialData} initialEarningsData={initialEarningsData} />
+    </>
+  );
 }
 

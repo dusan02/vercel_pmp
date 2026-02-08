@@ -7,6 +7,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import StocksClient from '@/components/StocksClient';
 import { generatePageMetadata } from '@/lib/seo/metadata';
+import { prisma } from '@/lib/db/prisma';
 
 export const revalidate = 60; // Revalidate every 60 seconds
 
@@ -31,30 +32,30 @@ export const metadata: Metadata = generatePageMetadata({
 
 async function getInitialData(): Promise<ApiResp> {
   try {
-    // IMPORTANT: Avoid operator precedence bugs (a || b ? x : y) and prefer explicit selection.
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-    const vercelUrl = process.env.VERCEL_URL;
-    const baseUrl = appUrl
-      ? appUrl
-      : (vercelUrl ? `https://${vercelUrl}` : 'http://localhost:3000');
-    
-    const url = `${baseUrl}/api/stocks/optimized?sort=mcap&dir=desc&limit=50`;
-    
-    const response = await fetch(url, {
-      next: { revalidate: 60 },
-      headers: {
-        'x-internal': '1', // Internal request marker
-        'Accept': 'application/json'
-      }
+    // Avoid internal HTTP fetches during build/ISR. Read directly from DB cache columns.
+    const tickers = await prisma.ticker.findMany({
+      where: { lastPrice: { gt: 0 } },
+      orderBy: { lastMarketCap: 'desc' },
+      take: 50,
+      select: {
+        symbol: true,
+        lastPrice: true,
+        lastChangePct: true,
+        lastMarketCap: true,
+        lastMarketCapDiff: true,
+      },
     });
 
-    if (!response.ok) {
-      console.warn(`Initial data fetch failed: ${response.status}`);
-      return { rows: [], nextCursor: null };
-    }
-
-    const data = await response.json();
-    return data;
+    return {
+      rows: tickers.map((t) => ({
+        t: t.symbol,
+        p: t.lastPrice ?? 0,
+        c: t.lastChangePct ?? 0,
+        m: t.lastMarketCap ?? 0,
+        d: t.lastMarketCapDiff ?? 0,
+      })),
+      nextCursor: null,
+    };
   } catch (error) {
     console.error('Error fetching initial data:', error);
     return { rows: [], nextCursor: null };
