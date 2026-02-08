@@ -48,6 +48,8 @@ module.exports = {
       env_production: {
         NODE_ENV: "production",
         PORT: 3000,
+        // Ensure the custom server binds on IPv4 loopback (matches nginx + monitors)
+        LISTEN_HOST: "127.0.0.1",
         ENABLE_WEBSOCKET: "true",
         DATABASE_URL: envVars.DATABASE_URL || process.env.DATABASE_URL,
         // Redis - use local Redis if Upstash not configured

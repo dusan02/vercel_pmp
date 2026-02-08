@@ -6,19 +6,26 @@ import { WebSocketPriceServer } from './src/lib/websocket-server';
 import { initializeSectorIndustryScheduler } from './src/lib/jobs/sectorIndustryScheduler';
 
 const dev = process.env.NODE_ENV !== 'production';
-const hostname = 'localhost';
 // Force port to 3000 if not explicitly set, or use environment variable
 const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+// Explicit listen host (avoid IPv4/IPv6 localhost ambiguity on some servers)
+// Behind nginx we want loopback-only by default.
+const listenHost = (process.env.LISTEN_HOST || '127.0.0.1').trim();
 
 // Debug: Log the actual port being used
 console.log(`🔍 DEBUG: process.env.PORT = ${process.env.PORT || 'undefined'}`);
 console.log(`🔍 DEBUG: Using port = ${port}`);
+console.log(`🔍 DEBUG: LISTEN_HOST = ${listenHost}`);
 
 // Prepare the Next.js app
-const app = next({ dev, hostname, port });
+// Note: we intentionally do not pass hostname/port into Next here.
+// The custom HTTP server owns binding and we avoid hostname quirks in production.
+const app = next({ dev });
 const handle = app.getRequestHandler();
 
-app.prepare().then(() => {
+app
+  .prepare()
+  .then(() => {
   // Create HTTP server
   const server = createServer(async (req, res) => {
     try {
@@ -72,9 +79,9 @@ app.prepare().then(() => {
   }
 
   // Start the server
-  server.listen(port, () => {
-    console.log(`🚀 Next.js server ready on http://${hostname}:${port}`);
-    console.log(`🔌 WebSocket server ready on ws://${hostname}:${port}`);
+  server.listen(port, listenHost, () => {
+    console.log(`🚀 Next.js server ready on http://${listenHost}:${port}`);
+    console.log(`🔌 WebSocket server ready on ws://${listenHost}:${port}`);
 
     if (process.env.NODE_ENV === 'production' || process.env.ENABLE_WEBSOCKET === 'true') {
       console.log('📡 WebSocket real-time updates: ENABLED');
@@ -101,4 +108,8 @@ app.prepare().then(() => {
       process.exit(0);
     });
   });
-}); 
+})
+.catch((err) => {
+  console.error('❌ Fatal: Next.js app.prepare() failed. Did you run `npm run build`?', err);
+  process.exit(1);
+});
