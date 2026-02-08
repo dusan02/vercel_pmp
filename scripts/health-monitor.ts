@@ -48,8 +48,17 @@ function writeLastAlertTs(ts: number) {
   }
 }
 
-async function fetchJson(url: string): Promise<{ ok: boolean; status: number; json: any | null }> {
-  const res = await fetch(url, { headers: { 'Cache-Control': 'no-cache' } });
+async function fetchJson(
+  url: string,
+  opts?: { timeoutMs?: number }
+): Promise<{ ok: boolean; status: number; json: any | null }> {
+  const timeoutMs = opts?.timeoutMs ?? 2500;
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), timeoutMs);
+  const res = await fetch(url, {
+    headers: { 'Cache-Control': 'no-cache' },
+    signal: ctrl.signal,
+  }).finally(() => clearTimeout(t));
   let j: any = null;
   try {
     j = await res.json();
@@ -73,7 +82,12 @@ async function sendWebhook(message: string) {
 async function main() {
   const started = nowMs();
 
-  const healthUrl = `${BASE_URL}/api/health`;
+  // IMPORTANT:
+  // - /api/health is a strict "canary" and can return 503 for degraded subsystems.
+  // - /api/healthz is a simpler uptime check (200 when DB is OK).
+  // For uptime monitoring/alerting we use /api/healthz to avoid false incidents.
+  const healthUrl = `${BASE_URL}/api/healthz`;
+  const canaryUrl = `${BASE_URL}/api/health`;
   const workerUrl = `${BASE_URL}/api/health/worker`;
   const redisUrl = `${BASE_URL}/api/health/redis`;
 
@@ -81,21 +95,24 @@ async function main() {
   let details: string[] = [];
 
   try {
-    const [health, worker, redis] = await Promise.all([
-      fetchJson(healthUrl),
-      fetchJson(workerUrl),
-      fetchJson(redisUrl),
+    const [health, worker, redis, canary] = await Promise.all([
+      fetchJson(healthUrl, { timeoutMs: 2500 }),
+      fetchJson(workerUrl, { timeoutMs: 2500 }),
+      fetchJson(redisUrl, { timeoutMs: 2500 }),
+      fetchJson(canaryUrl, { timeoutMs: 2500 }),
     ]);
 
     const healthStatus = (health.json as HealthResponse | null)?.status;
     const workerStatus = (worker.json as HealthResponse | null)?.status;
     const redisStatus = (redis.json as HealthResponse | null)?.status;
+    const canaryStatus =
+      (canary.json as any)?.canary?.status ?? (canary.json as HealthResponse | null)?.status;
 
     const statuses = [healthStatus, workerStatus, redisStatus].filter(Boolean) as Array<'healthy' | 'degraded' | 'unhealthy'>;
 
     if (health.ok === false) {
       status = 'unhealthy';
-      details.push(`health:${health.status}`);
+      details.push(`healthz:${health.status}`);
     }
     if (worker.ok === false) {
       status = status === 'unhealthy' ? 'unhealthy' : 'degraded';
@@ -109,6 +126,15 @@ async function main() {
     // If endpoints responded but report degraded/unhealthy, treat as incident.
     if (statuses.includes('unhealthy')) status = 'unhealthy';
     else if (statuses.includes('degraded')) status = status === 'unhealthy' ? 'unhealthy' : 'degraded';
+
+    // Canary health is informative only (do not mark unhealthy based on it alone).
+    if (canary.ok === false) {
+      details.push(`canary:${canary.status}`);
+      status = status === 'healthy' ? 'degraded' : status;
+    } else if (typeof canaryStatus === 'string' && canaryStatus !== 'healthy') {
+      details.push(`canary:${canaryStatus}`);
+      status = status === 'healthy' ? 'degraded' : status;
+    }
 
     // Add quick human hints
     const workerAge = worker.json?.worker?.ageMinutes;
