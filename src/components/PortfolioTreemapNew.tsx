@@ -4,9 +4,14 @@ import React, { useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import type { CompanyNode } from '@/lib/heatmap/types';
 import styles from '@/styles/heatmap.module.css';
-import { MarketHeatmap } from './MarketHeatmap';
 import { useElementResize } from '@/hooks/useElementResize';
 import { formatCurrencyCompact, formatPercent } from '@/lib/utils/format';
+
+// Keep D3-heavy heatmap code out of the default bundle.
+const MarketHeatmap = dynamic(
+    () => import('./MarketHeatmap').then((m) => ({ default: m.MarketHeatmap })),
+    { ssr: false }
+);
 
 interface PortfolioPerformanceTreemapProps {
     data: Array<{

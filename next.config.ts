@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 import path from "path";
 
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+});
+
 const nextConfig: NextConfig = {
   // Environment configuration
   env: {
@@ -169,4 +173,4 @@ const nextConfig: NextConfig = {
   skipTrailingSlashRedirect: true,
 };
 
-export default nextConfig; 
+export default withBundleAnalyzer(nextConfig);

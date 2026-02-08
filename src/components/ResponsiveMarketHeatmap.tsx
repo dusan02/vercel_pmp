@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { MarketHeatmap } from './MarketHeatmap';
 import type { CompanyNode, HeatmapMetric } from '@/lib/heatmap/types';
 import { useElementResize } from '@/hooks/useElementResize';
 import { useHeatmapData } from '@/hooks/useHeatmapData';
@@ -13,6 +12,19 @@ import { HeatmapMetricButtons } from './HeatmapMetricButtons';
 const MobileTreemapNew = dynamic(
   () => import('@/components/MobileTreemapNew').then(mod => ({ default: mod.MobileTreemapNew })),
   { ssr: false }
+);
+
+// Desktop heatmap is heavy (D3, tooltip, canvas). Load it only when needed so mobile bundle stays lean.
+const DesktopMarketHeatmap = dynamic(
+  () => import('@/components/MarketHeatmap').then((mod) => ({ default: mod.MarketHeatmap })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="absolute inset-0 flex items-center justify-center bg-black text-white text-sm">
+        Loading heatmap...
+      </div>
+    ),
+  }
 );
 
 export type ResponsiveMarketHeatmapProps = {
@@ -284,7 +296,7 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
         )}
 
         {/* Heatmap */}
-        <MarketHeatmap
+        <DesktopMarketHeatmap
           data={data}
           width={width}
           height={height}

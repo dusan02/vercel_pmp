@@ -2,9 +2,15 @@
 
 import React, { useMemo } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { StockData } from '@/lib/types';
-import { MarketHeatmap } from './MarketHeatmap';
 import { transformStockDataToCompanyNode } from '@/hooks/useHeatmapData';
+
+// Keep D3-heavy heatmap code out of the default bundle.
+const MarketHeatmap = dynamic(
+  () => import('./MarketHeatmap').then((m) => ({ default: m.MarketHeatmap })),
+  { ssr: false }
+);
 
 interface MiniHeatmapProps {
   data: StockData[];
