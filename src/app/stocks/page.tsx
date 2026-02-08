@@ -3,8 +3,10 @@
  * Uses ISR (Incremental Static Regeneration) with 60s revalidate
  */
 
+import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import StocksClient from '@/components/StocksClient';
+import { generatePageMetadata } from '@/lib/seo/metadata';
 
 export const revalidate = 60; // Revalidate every 60 seconds
 export const dynamic = 'force-dynamic'; // Allow dynamic rendering for now
@@ -15,11 +17,27 @@ type ApiResp = {
   error?: string;
 };
 
+export const metadata: Metadata = generatePageMetadata({
+  title: 'All Stocks',
+  description: 'Browse real-time pre-market stock data for US equities. Sort by price, % change, market cap and market cap change. Fast, searchable, and optimized for mobile and desktop.',
+  path: '/stocks',
+  keywords: [
+    'stocks',
+    'stock list',
+    'pre-market stocks',
+    'market movers',
+    'stock screener',
+  ],
+});
+
 async function getInitialData(): Promise<ApiResp> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}` 
-      : 'http://localhost:3000';
+    // IMPORTANT: Avoid operator precedence bugs (a || b ? x : y) and prefer explicit selection.
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+    const vercelUrl = process.env.VERCEL_URL;
+    const baseUrl = appUrl
+      ? appUrl
+      : (vercelUrl ? `https://${vercelUrl}` : 'http://localhost:3000');
     
     const url = `${baseUrl}/api/stocks/optimized?sort=mcap&dir=desc&limit=50`;
     
