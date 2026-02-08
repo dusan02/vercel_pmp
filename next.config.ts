@@ -92,6 +92,27 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      // CRITICAL: Service worker script must NOT be cached long-term.
+      // If /sw.js is cached as immutable, clients can keep an old SW after deploy and hit "Failed to load chunk" on navigation.
+      {
+        source: '/sw.js',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=0, must-revalidate',
+          },
+        ],
+      },
+      // PWA manifest should also revalidate quickly.
+      {
+        source: '/manifest.json',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=0, must-revalidate',
+          },
+        ],
+      },
       {
         source: '/api/(.*)',
         headers: [
