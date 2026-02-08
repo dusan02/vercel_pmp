@@ -9,7 +9,6 @@ import StocksClient from '@/components/StocksClient';
 import { generatePageMetadata } from '@/lib/seo/metadata';
 
 export const revalidate = 60; // Revalidate every 60 seconds
-export const dynamic = 'force-dynamic'; // Allow dynamic rendering for now
 
 type ApiResp = {
   rows: Array<{ t: string; p: number; c: number; m: number; d?: number }>;
