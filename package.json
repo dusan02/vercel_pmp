@@ -2,6 +2,9 @@
     "name": "premarketprice",
     "version": "0.1.0",
     "private": true,
+    "engines": {
+        "node": ">=20 <21"
+    },
     "scripts": {
         "pretest": "prisma generate",
         "dev": "cross-env ENABLE_WEBSOCKET=true next dev -H 127.0.0.1 -p 3000",

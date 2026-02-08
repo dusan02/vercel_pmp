@@ -4,6 +4,9 @@
 
 ### Metóda 1: Jednoduchý SSH príkaz (najrýchlejšie)
 
+> **Požiadavka**: používaj **Node.js 20.x** (kvôli stabilným prebuildom pre natívne balíky ako `better-sqlite3`).
+> Ak si na serveri na inej verzii, môže `npm ci`/build občas padnúť.
+
 ```bash
 ssh root@89.185.250.213 "cd /var/www/premarketprice && git pull origin main && npm ci && npx prisma generate && npm run build && pm2 restart premarketprice --update-env"
 ```
