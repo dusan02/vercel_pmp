@@ -10,7 +10,6 @@
         "dev:next:no-turbopack": "cross-env ENABLE_WEBSOCKET=true next dev -H 127.0.0.1 -p 3000",
         "dev:no-websocket": "next dev --turbopack -H 127.0.0.1 -p 3000",
         "build": "prisma generate && next build",
-        "analyze": "cross-env ANALYZE=true npm run build",
         "start": "cross-env ENABLE_WEBSOCKET=true tsx server.ts",
         "start:no-websocket": "next start",
         "lint": "next lint",
@@ -95,7 +94,6 @@
         "zod": "^4.1.12"
     },
     "devDependencies": {
-        "@next/bundle-analyzer": "^0.6.0",
         "@eslint/eslintrc": "^3",
         "@playwright/test": "^1.54.2",
         "@svgr/webpack": "^8.1.0",
