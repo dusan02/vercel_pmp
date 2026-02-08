@@ -48,24 +48,65 @@ function writeLastAlertTs(ts: number) {
   }
 }
 
+type FetchJsonResult = {
+  ok: boolean;
+  status: number;
+  json: any | null;
+  error?: string;
+};
+
 async function fetchJson(
   url: string,
   opts?: { timeoutMs?: number }
-): Promise<{ ok: boolean; status: number; json: any | null }> {
+): Promise<FetchJsonResult> {
   const timeoutMs = opts?.timeoutMs ?? 2500;
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), timeoutMs);
-  const res = await fetch(url, {
-    headers: { 'Cache-Control': 'no-cache' },
-    signal: ctrl.signal,
-  }).finally(() => clearTimeout(t));
-  let j: any = null;
   try {
-    j = await res.json();
-  } catch {
-    // ignore
+    const res = await fetch(url, {
+      headers: { 'Cache-Control': 'no-cache' },
+      signal: ctrl.signal,
+    });
+
+    let j: any = null;
+    try {
+      j = await res.json();
+    } catch {
+      // ignore
+    }
+
+    return { ok: res.ok, status: res.status, json: j };
+  } catch (e) {
+    const err = e instanceof Error ? e : new Error(String(e));
+    const cause = (err as any)?.cause;
+    const causeStr =
+      cause && typeof cause === 'object'
+        ? JSON.stringify(
+            {
+              // common undici fields
+              code: (cause as any).code,
+              errno: (cause as any).errno,
+              syscall: (cause as any).syscall,
+              address: (cause as any).address,
+              port: (cause as any).port,
+              message: (cause as any).message,
+            },
+            null,
+            0
+          )
+        : cause
+          ? String(cause)
+          : '';
+
+    return {
+      ok: false,
+      status: 0,
+      json: null,
+      error: causeStr ? `${err.message} | cause=${causeStr}` : err.message,
+    };
+  } finally {
+    clearTimeout(t);
   }
-  return { ok: res.ok, status: res.status, json: j };
 }
 
 async function sendWebhook(message: string) {
@@ -110,14 +151,17 @@ async function main() {
 
     const statuses = [healthStatus, workerStatus, redisStatus].filter(Boolean) as Array<'healthy' | 'degraded' | 'unhealthy'>;
 
+    if (health.error) details.push(`healthzErr:${health.error}`);
     if (health.ok === false) {
       status = 'unhealthy';
       details.push(`healthz:${health.status}`);
     }
+    if (worker.error) details.push(`workerErr:${worker.error}`);
     if (worker.ok === false) {
       status = status === 'unhealthy' ? 'unhealthy' : 'degraded';
       details.push(`worker:${worker.status}`);
     }
+    if (redis.error) details.push(`redisErr:${redis.error}`);
     if (redis.ok === false) {
       status = status === 'unhealthy' ? 'unhealthy' : 'degraded';
       details.push(`redis:${redis.status}`);
@@ -128,6 +172,7 @@ async function main() {
     else if (statuses.includes('degraded')) status = status === 'unhealthy' ? 'unhealthy' : 'degraded';
 
     // Canary health is informative only (do not mark unhealthy based on it alone).
+    if (canary.error) details.push(`canaryErr:${canary.error}`);
     if (canary.ok === false) {
       details.push(`canary:${canary.status}`);
       status = status === 'healthy' ? 'degraded' : status;
