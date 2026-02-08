@@ -61,7 +61,6 @@ export const EarningsCardMobile = memo(({ earning, priority = false }: EarningsC
                 <div className="min-w-0 flex items-center gap-2 text-left">
                     <CompanyLogo
                         ticker={earning.ticker}
-                        {...(earning.logoUrl ? { logoUrl: earning.logoUrl } : {})}
                         size={28}
                         className="rounded-sm shrink-0"
                         priority={priority}

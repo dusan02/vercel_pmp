@@ -1,0 +1,28 @@
+# Build outputs / local caches
+.next
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local env files
+.env
+.env.*
+!.env.example
+!.env.production.example
+
+# Logs / reports / artifacts (not needed for build)
+logs
+mobile-test-reports
+performance-reports
+playwright-report
+test-results
+coverage
+
+# Local SSL / dev-only
+ssl
+
+# Misc
+*.log
+*.tsbuildinfo

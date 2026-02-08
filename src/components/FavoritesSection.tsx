@@ -58,7 +58,7 @@ export function FavoritesSection({
       width: '72px',
       render: (stock) => (
         <div className="flex justify-center items-center w-full">
-          <CompanyLogo ticker={stock.ticker} {...(stock.logoUrl ? { logoUrl: stock.logoUrl } : {})} size={44} className="rounded-sm" />
+          <CompanyLogo ticker={stock.ticker} size={44} />
         </div>
       )
     },

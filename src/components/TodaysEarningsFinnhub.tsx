@@ -57,8 +57,7 @@ const mergeStockDataWithEarnings = (
         ...earning,
         marketCap: stock.marketCap,
         percentChange: stock.percentChange,
-        marketCapDiff: stock.marketCapDiff,
-        ...(stock.logoUrl ? { logoUrl: stock.logoUrl } : {})
+        marketCapDiff: stock.marketCapDiff
       };
     }
     return earning;
@@ -503,7 +502,6 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
                         <div className="flex justify-center items-center w-full">
                           <CompanyLogo
                             ticker={earning.ticker.trim().toUpperCase()}
-                            {...(earning.logoUrl ? { logoUrl: earning.logoUrl } : {})}
                             size={32}
                             priority={index < 15}
                           />

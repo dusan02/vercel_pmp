@@ -52,7 +52,6 @@ export const StockCardMobile = memo(({
         <div className="min-w-0 flex flex-col items-start justify-center gap-1 pl-1">
           <CompanyLogo
             ticker={stock.ticker}
-            {...(stock.logoUrl ? { logoUrl: stock.logoUrl } : {})}
             size={40}
             className="rounded-sm"
             priority={priority}

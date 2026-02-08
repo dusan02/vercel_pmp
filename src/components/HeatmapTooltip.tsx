@@ -10,6 +10,7 @@ import type { CompanyNode } from '@/lib/heatmap/types';
 import { formatPrice, formatMarketCap, formatPercent, formatMarketCapDiff } from '@/lib/utils/heatmapFormat';
 import { formatSectorName } from '@/lib/utils/format';
 import styles from '@/styles/heatmap.module.css';
+import CompanyLogo from './CompanyLogo';
 
 interface HeatmapTooltipProps {
   company: CompanyNode;
@@ -86,17 +87,23 @@ export function HeatmapTooltip({ company, position, timeframe, metric }: Heatmap
 
       <div className={styles.heatmapTooltipContent}>
         <div className={styles.heatmapTooltipTitle}>
-          <span className="text-white text-lg">{company.symbol}</span>
+          <div className="flex items-center gap-2 min-w-0">
+            <CompanyLogo ticker={company.symbol} size={28} />
+            <div className="min-w-0">
+              <div className="text-white text-sm font-bold leading-tight truncate max-w-[160px]">
+                {company.symbol}
+              </div>
+              {company.name && company.name.trim() !== company.symbol && (
+                <div className="text-gray-400 text-[10px] leading-tight truncate max-w-[160px]">
+                  {company.name}
+                </div>
+              )}
+            </div>
+          </div>
           <span style={{ color: sentimentColor, fontSize: '0.9em' }}>
             {metric === 'percent' ? formatPercent(company.changePercent) : formatMarketCapDiff(company.marketCapDiff)}
           </span>
         </div>
-
-        {company.name && company.name.trim() !== company.symbol && (
-          <div className="text-gray-400 text-xs mb-3 truncate max-w-[200px]">
-            {company.name}
-          </div>
-        )}
 
         {displayValue ? (
           // Special display for Dollar/Portfolio modes if displayValue is present
