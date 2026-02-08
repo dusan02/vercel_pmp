@@ -93,7 +93,9 @@ export function useHeatmapData({
     const minInterval = force ? 0 : 1000;
 
     if (isLoadingRef.current && !force) {
-      console.log('⏳ Heatmap: Load already in progress, skipping...');
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('⏳ Heatmap: Load already in progress, skipping...');
+      }
       return;
     }
 
@@ -155,7 +157,9 @@ export function useHeatmapData({
         headers['If-None-Match'] = etagToUse;
       }
 
-      console.log(`🔄 Heatmap: Fetching data...`, { timeframe, metric, hasEtag: !!etagToUse });
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`🔄 Heatmap: Fetching data...`, { timeframe, metric, hasEtag: !!etagToUse });
+      }
 
       // CRITICAL: Prioritize heatmap API on mobile (first screen)
       const priority: RequestPriority = isMobile && isInitialLoadRef.current ? 'high' : 'auto';
@@ -171,7 +175,9 @@ export function useHeatmapData({
 
       // Handle 304 Not Modified
       if (response.status === 304) {
-        console.log('📊 Heatmap: 304 Not Modified - data unchanged');
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('📊 Heatmap: 304 Not Modified - data unchanged');
+        }
         setLoading(false);
         isLoadingRef.current = false;
         isInitialLoadRef.current = false;
@@ -222,7 +228,9 @@ export function useHeatmapData({
         .filter((node): node is CompanyNode => node !== null);
 
       if (companies.length > 0) {
-        console.log(`✅ Heatmap: Loaded ${companies.length} companies`);
+        if (process.env.NODE_ENV !== 'production') {
+          console.log(`✅ Heatmap: Loaded ${companies.length} companies`);
+        }
         setData(companies);
         const updatedAt = result.lastUpdatedAt || new Date().toISOString();
         setLastUpdated(updatedAt);
@@ -232,14 +240,18 @@ export function useHeatmapData({
         // Save to cache for instant loading next time
         saveCache(companies, updatedAt, newEtag);
       } else {
-        console.warn('⚠️ Heatmap: No valid company data found');
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn('⚠️ Heatmap: No valid company data found');
+        }
         if (!hasData) setError('No data available');
       }
 
     } catch (err: any) {
       // Handle abort errors silently
       if (err.name === 'AbortError' || err.message?.includes('aborted')) {
-        console.log('🔄 Heatmap: Request aborted');
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('🔄 Heatmap: Request aborted');
+        }
         return;
       }
       
@@ -250,14 +262,18 @@ export function useHeatmapData({
                             !err.message;
       
       if (isNetworkError) {
-        console.warn('⚠️ Heatmap: Network error - server may be unavailable');
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn('⚠️ Heatmap: Network error - server may be unavailable');
+        }
         // Don't set error if we have cached data
         if (!hasData) {
           setError('Unable to connect to server. Please check your connection.');
         }
       } else {
         // Other errors (API errors, etc.)
-        console.error('❌ Heatmap load error:', err);
+        if (process.env.NODE_ENV !== 'production') {
+          console.error('❌ Heatmap load error:', err);
+        }
         
         // Track API error
         if (typeof window !== 'undefined') {

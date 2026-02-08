@@ -143,7 +143,9 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
   }, []);
 
   useEffect(() => {
-    console.log('📏 Heatmap Dimensions:', { width, height, isMounted, loading, hasData: !!data });
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('📏 Heatmap Dimensions:', { width, height, isMounted, loading, hasData: !!data });
+    }
   }, [width, height, isMounted, loading, data]);
 
   // Vypočítaj vek dát pre zobrazenie
@@ -173,7 +175,9 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
     // NOTE: On desktop, allow smaller minimum (50px) since container might be measured before fully rendered
     const minDimension = isMobile ? 100 : 50;
     if (!width || !height || width < minDimension || height < minDimension) {
-      console.log('⚠️ Heatmap: Dimensions too small or not ready', { width, height, isMounted, isMobile, minDimension });
+      if (process.env.NODE_ENV !== 'production' && typeof window !== 'undefined') {
+        console.log('⚠️ Heatmap: Dimensions too small or not ready', { width, height, isMounted, isMobile, minDimension });
+      }
       return (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 z-40 bg-white dark:bg-transparent">
           <div className="animate-pulse text-sm text-gray-400">
@@ -321,10 +325,12 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
       if (parent) {
         const parentRect = parent.getBoundingClientRect();
         if (parentRect.width > 0 && parentRect.height > 0) {
-          console.log('📐 Heatmap: Using parent dimensions as fallback', {
-            parentWidth: parentRect.width,
-            parentHeight: parentRect.height
-          });
+          if (process.env.NODE_ENV !== 'production') {
+            console.log('📐 Heatmap: Using parent dimensions as fallback', {
+              parentWidth: parentRect.width,
+              parentHeight: parentRect.height
+            });
+          }
           // Force a re-measure by triggering a resize
           window.dispatchEvent(new Event('resize'));
         }
