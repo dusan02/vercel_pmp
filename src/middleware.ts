@@ -36,6 +36,17 @@ const ALLOWED_ORIGINS = [
 ];
 
 export async function middleware(request: NextRequest) {
+  // Avoid running middleware logic for Next.js internals and static assets.
+  // (This replaces the old `config.matcher` which is now deprecated in Next 16 "middleware → proxy" migration.)
+  const pathname = request.nextUrl.pathname;
+  if (
+    pathname.startsWith('/_next/static') ||
+    pathname.startsWith('/_next/image') ||
+    pathname === '/favicon.ico'
+  ) {
+    return NextResponse.next();
+  }
+
   const response = NextResponse.next();
 
   // CORS headers
@@ -114,11 +125,4 @@ export async function middleware(request: NextRequest) {
 
   return response;
 }
-
-export const config = {
-  matcher: [
-    '/api/:path*',
-    '/((?!_next/static|_next/image|favicon.ico).*)',
-  ],
-};
 

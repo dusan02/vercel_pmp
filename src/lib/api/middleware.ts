@@ -141,15 +141,6 @@ export function middleware(request: NextRequest) {
   return response;
 }
 
-export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     */
-    '/((?!_next/static|_next/image|favicon.ico|public/).*)',
-  ],
-}; 
+// NOTE: This file is not a Next.js `middleware.ts` entrypoint (it's not located at `src/middleware.ts`).
+// Keeping a `config` export here can confuse newer Next.js builds that validate "segment configuration exports".
+// If this module is ever reused, prefer exporting plain helpers instead of Next special exports.
