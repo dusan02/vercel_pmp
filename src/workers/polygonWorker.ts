@@ -249,6 +249,7 @@ async function upsertToDB(
     // However, if previousClose is provided, we might still want to update that?
     // Generally, snapshots usually come in order, but forceful ingest or racing workers can cause out-of-order.
     let skipPriceUpdate = false;
+
     if (existingTicker?.lastPriceUpdated && normalized.timestamp < existingTicker.lastPriceUpdated) {
       if (!isStaticUpdateLocked) {
         // Only log if not locked (during lock we might be reprocessing old data intentionally?)
@@ -257,6 +258,7 @@ async function upsertToDB(
       }
       skipPriceUpdate = true;
     }
+
 
     // 3. Resolve Change Pct to Use
     // If we have a valid reference, use the calculated changePct.
