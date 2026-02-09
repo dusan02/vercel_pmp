@@ -14,7 +14,6 @@ interface PageProps {
 }
 
 // Force dynamic to ensure fresh data
-export const dynamic = 'force-dynamic';
 export const revalidate = 60;
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {

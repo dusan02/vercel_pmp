@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getEarningsForDate } from '@/lib/server/earningsService';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 60; // Cache for 60 seconds at edge
+// Cache for 60 seconds (ISR / route handler caching).
+// NOTE: Do not combine `dynamic = 'force-dynamic'` with `revalidate`,
+// as newer Next.js versions treat that as an invalid segment configuration.
+export const revalidate = 60;
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
