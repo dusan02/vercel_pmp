@@ -6,7 +6,8 @@ import { generatePageMetadata } from '@/lib/seo/metadata';
 import { formatMarketCapDiff, formatPercent, formatPrice } from '@/lib/utils/heatmapFormat';
 import { formatSectorName } from '@/lib/utils/format';
 
-export const revalidate = 10 * 60; // 10 minutes
+// Keep this as a plain number literal so Next can statically analyze segment config.
+export const revalidate = 600; // 10 minutes
 
 type PageProps = { params: Promise<{ sector: string }> };
 

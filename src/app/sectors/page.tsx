@@ -4,7 +4,8 @@ import { prisma } from '@/lib/db/prisma';
 import { generatePageMetadata } from '@/lib/seo/metadata';
 import { formatSectorName } from '@/lib/utils/format';
 
-export const revalidate = 6 * 60 * 60; // 6 hours
+// Keep this as a plain number literal so Next can statically analyze segment config.
+export const revalidate = 21600; // 6 hours
 
 export const metadata: Metadata = generatePageMetadata({
   title: 'Stock Sectors',
