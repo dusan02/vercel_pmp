@@ -28,8 +28,8 @@ module.exports = {
     {
       name: "premarketprice",
       script: "server.ts",
-      interpreter: "npx",
-      interpreter_args: "tsx",
+      // Use the locally installed tsx binary (more reliable than npx in production).
+      interpreter: "./node_modules/.bin/tsx",
       cwd: "/var/www/premarketprice",
       
       // Fork mode - cluster mode causes crashes with Next.js custom server
@@ -72,8 +72,7 @@ module.exports = {
     {
       name: "pmp-polygon-worker",
       script: "src/workers/polygonWorker.ts",
-      interpreter: "npx",
-      interpreter_args: "tsx",
+      interpreter: "./node_modules/.bin/tsx",
       cwd: "/var/www/premarketprice",
       instances: 1,
       exec_mode: "fork",
@@ -97,8 +96,7 @@ module.exports = {
     {
       name: "pmp-bulk-preloader",
       script: "src/workers/backgroundPreloader.ts",
-      interpreter: "npx",
-      interpreter_args: "tsx",
+      interpreter: "./node_modules/.bin/tsx",
       cwd: "/var/www/premarketprice",
       instances: 1,
       exec_mode: "fork",
@@ -116,8 +114,7 @@ module.exports = {
     {
       name: "daily-ticker-validator",
       script: "scripts/daily-ticker-validator.ts",
-      interpreter: "npx",
-      interpreter_args: "tsx",
+      interpreter: "./node_modules/.bin/tsx",
       cwd: "/var/www/premarketprice",
       instances: 1,
       exec_mode: "fork",
@@ -134,8 +131,7 @@ module.exports = {
     {
       name: "daily-integrity-check",
       script: "scripts/daily-integrity-check.ts",
-      interpreter: "npx",
-      interpreter_args: "tsx",
+      interpreter: "./node_modules/.bin/tsx",
       cwd: "/var/www/premarketprice",
       instances: 1,
       exec_mode: "fork",
@@ -156,8 +152,7 @@ module.exports = {
       // Runs the same logic as Vercel cron (/api/cron/update-static-data) but on the VPS via PM2.
       name: "daily-static-data-refresh",
       script: "scripts/trigger-daily-refresh.ts",
-      interpreter: "npx",
-      interpreter_args: "tsx",
+      interpreter: "./node_modules/.bin/tsx",
       cwd: "/var/www/premarketprice",
       instances: 1,
       exec_mode: "fork",
@@ -178,8 +173,7 @@ module.exports = {
       // Verify/fix prevClose values vs Polygon (lightweight, safe)
       name: "cron-verify-prevclose",
       script: "scripts/trigger-verify-prevclose.ts",
-      interpreter: "npx",
-      interpreter_args: "tsx",
+      interpreter: "./node_modules/.bin/tsx",
       cwd: "/var/www/premarketprice",
       instances: 1,
       exec_mode: "fork",
@@ -199,8 +193,7 @@ module.exports = {
       // Verify/fix sector/industry taxonomy once daily
       name: "cron-verify-sector-industry",
       script: "scripts/trigger-verify-sector-industry.ts",
-      interpreter: "npx",
-      interpreter_args: "tsx",
+      interpreter: "./node_modules/.bin/tsx",
       cwd: "/var/www/premarketprice",
       instances: 1,
       exec_mode: "fork",
@@ -219,8 +212,7 @@ module.exports = {
       // Lightweight health/staleness monitor (alerts via optional webhook)
       name: "pmp-health-monitor",
       script: "scripts/health-monitor.ts",
-      interpreter: "npx",
-      interpreter_args: "tsx",
+      interpreter: "./node_modules/.bin/tsx",
       cwd: "/var/www/premarketprice",
       instances: 1,
       exec_mode: "fork",
