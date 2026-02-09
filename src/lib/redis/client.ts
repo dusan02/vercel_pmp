@@ -11,20 +11,20 @@ const isServerless = process.env.VERCEL === '1';
 // Initialize Redis client for both serverless and non-serverless environments
 try {
     let redisUrl: string | null = null;
-    
+
     // Priority 1: Use Upstash Redis if available (for Vercel/serverless)
     if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
         redisUrl = `redis://default:${process.env.UPSTASH_REDIS_REST_TOKEN}@${process.env.UPSTASH_REDIS_REST_URL.replace('https://', '')}:6379`;
         console.log('🔍 Using Upstash Redis');
     }
     // Priority 2: Use REDIS_URL if set (for local/server deployments)
-    else if (process.env.REDIS_URL) {
+    else if (process.env.REDIS_URL && process.env.USE_LOCAL_REDIS !== 'false') {
         redisUrl = process.env.REDIS_URL;
         console.log('🔍 Using Redis from REDIS_URL');
     }
     // Priority 3: Use local Redis (default for server deployments, not Vercel)
-    else if (!isServerless || process.env.USE_LOCAL_REDIS === 'true') {
-        redisUrl = process.env.REDIS_HOST 
+    else if ((!isServerless && process.env.USE_LOCAL_REDIS !== 'false') || process.env.USE_LOCAL_REDIS === 'true') {
+        redisUrl = process.env.REDIS_HOST
             ? `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT || 6379}`
             : 'redis://127.0.0.1:6379';
         console.log('🔍 Using local Redis:', redisUrl);
@@ -120,7 +120,7 @@ export async function getRedisSubscriber(): Promise<any> {
 
     try {
         let redisUrl: string | null = null;
-        
+
         // Priority 1: Use Upstash Redis if available
         if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
             redisUrl = `redis://default:${process.env.UPSTASH_REDIS_REST_TOKEN}@${process.env.UPSTASH_REDIS_REST_URL.replace('https://', '')}:6379`;
@@ -131,7 +131,7 @@ export async function getRedisSubscriber(): Promise<any> {
         }
         // Priority 3: Use local Redis (default for server deployments, not Vercel)
         else if (!isServerless || process.env.USE_LOCAL_REDIS === 'true') {
-            redisUrl = process.env.REDIS_HOST 
+            redisUrl = process.env.REDIS_HOST
                 ? `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT || 6379}`
                 : 'redis://127.0.0.1:6379';
         }
