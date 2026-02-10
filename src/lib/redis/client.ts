@@ -17,17 +17,22 @@ try {
         redisUrl = `redis://default:${process.env.UPSTASH_REDIS_REST_TOKEN}@${process.env.UPSTASH_REDIS_REST_URL.replace('https://', '')}:6379`;
         console.log('🔍 Using Upstash Redis');
     }
-    // Priority 2: Use REDIS_URL if set (for local/server deployments)
+    // Priority 2: Force use of local Redis if explicitly requested (fixes PM2/VPS issues)
+    else if (process.env.USE_LOCAL_REDIS === 'true') {
+        redisUrl = process.env.REDIS_HOST
+            ? `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT || 6379}`
+            : 'redis://127.0.0.1:6379';
+        console.log('🔍 Using local Redis (forced by USE_LOCAL_REDIS):', redisUrl);
+    }
+    // Priority 3: Use REDIS_URL if set
     else if (process.env.REDIS_URL && process.env.USE_LOCAL_REDIS !== 'false') {
         redisUrl = process.env.REDIS_URL;
         console.log('🔍 Using Redis from REDIS_URL');
     }
-    // Priority 3: Use local Redis (default for server deployments, not Vercel)
-    else if ((!isServerless && process.env.USE_LOCAL_REDIS !== 'false') || process.env.USE_LOCAL_REDIS === 'true') {
-        redisUrl = process.env.REDIS_HOST
-            ? `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT || 6379}`
-            : 'redis://127.0.0.1:6379';
-        console.log('🔍 Using local Redis:', redisUrl);
+    // Priority 4: Default to local Redis for non-serverless environments
+    else if (!isServerless && process.env.USE_LOCAL_REDIS !== 'false') {
+        redisUrl = 'redis://127.0.0.1:6379';
+        console.log('🔍 Using local Redis (default):', redisUrl);
     }
 
     if (redisUrl) {
