@@ -25,10 +25,12 @@ export async function acquireStaticUpdateLock(): Promise<{ acquired: boolean; ow
     const lockValue = JSON.stringify({ ownerId, createdAt });
 
     // Try to set lock (SET NX EX - only if not exists, with expiration)
+    console.log(`🔒 Attempting to acquire lock: ${lockKey} (TTL: ${lockTTL})`);
     const result = await redisClient.set(lockKey, lockValue, {
       EX: lockTTL,
       NX: true
     });
+    console.log(`🔒 Lock acquire result for ${lockKey}: ${result}`);
 
     return { acquired: result === 'OK', ownerId };
   } catch (error) {
