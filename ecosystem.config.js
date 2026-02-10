@@ -51,9 +51,9 @@ module.exports = {
         LISTEN_HOST: "127.0.0.1",
         ENABLE_WEBSOCKET: "true",
         DATABASE_URL: envVars.DATABASE_URL || process.env.DATABASE_URL,
-        // Redis - DISABLED for local dev without Redis. explicit empty string to override system env
-        REDIS_URL: "",
-        USE_LOCAL_REDIS: "false",
+        // Redis - ENABLED for production
+        // REDIS_URL: "", // Removed override to allow .env or default fallback
+        USE_LOCAL_REDIS: "true",
         // Google OAuth
         GOOGLE_CLIENT_ID: envVars.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID,
         GOOGLE_CLIENT_SECRET: envVars.GOOGLE_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET,
