@@ -27,22 +27,17 @@ try {
     // Priority 3: Use REDIS_URL if set
     else if (process.env.REDIS_URL && process.env.USE_LOCAL_REDIS !== 'false') {
         redisUrl = process.env.REDIS_URL;
-        console.log('🔍 Using Redis from REDIS_URL');
     }
     // Priority 4: Default to local Redis for non-serverless environments
     else if (!isServerless && process.env.USE_LOCAL_REDIS !== 'false') {
         redisUrl = 'redis://127.0.0.1:6379';
-        console.log('🔍 Using local Redis (default):', redisUrl);
     }
-
-    console.log('🔍 FINAL DEBUG: Selected Redis URL:', redisUrl);
 
     if (redisUrl) {
         redisClient = createClient({
             url: redisUrl,
             socket: {
                 reconnectStrategy: (retries) => {
-                    console.log(`🔍 Redis reconnect attempt ${retries}`);
                     if (retries > 10) {
                         console.error('Redis connection failed after 10 retries');
                         return false;
@@ -67,23 +62,19 @@ try {
 
         // Initialize connection with timeout
         if (!redisClient.isOpen) {
-            console.log('🔍 Initiating Redis connection...');
             const connectPromise = redisClient.connect();
             const timeoutPromise = new Promise((_, reject) =>
                 setTimeout(() => reject(new Error('Redis connection timeout')), 3000)
             );
 
             Promise.race([connectPromise, timeoutPromise]).catch((err: any) => {
-                console.log('⚠️ Redis not available, using in-memory cache:', err.message);
                 redisClient = null;
             });
         }
     } else {
-        console.log('⚠️ Redis not configured, using in-memory cache');
         redisClient = null;
     }
 } catch (error) {
-    console.log('⚠️ Redis not available, using in-memory cache', error);
     redisClient = null;
 }
 
