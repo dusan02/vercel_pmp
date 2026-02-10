@@ -35,11 +35,14 @@ try {
         console.log('🔍 Using local Redis (default):', redisUrl);
     }
 
+    console.log('🔍 FINAL DEBUG: Selected Redis URL:', redisUrl);
+
     if (redisUrl) {
         redisClient = createClient({
             url: redisUrl,
             socket: {
                 reconnectStrategy: (retries) => {
+                    console.log(`🔍 Redis reconnect attempt ${retries}`);
                     if (retries > 10) {
                         console.error('Redis connection failed after 10 retries');
                         return false;
@@ -64,6 +67,7 @@ try {
 
         // Initialize connection with timeout
         if (!redisClient.isOpen) {
+            console.log('🔍 Initiating Redis connection...');
             const connectPromise = redisClient.connect();
             const timeoutPromise = new Promise((_, reject) =>
                 setTimeout(() => reject(new Error('Redis connection timeout')), 3000)
@@ -79,7 +83,7 @@ try {
         redisClient = null;
     }
 } catch (error) {
-    console.log('⚠️ Redis not available, using in-memory cache');
+    console.log('⚠️ Redis not available, using in-memory cache', error);
     redisClient = null;
 }
 
