@@ -29,12 +29,25 @@ export class ErrorBoundary extends Component<Props, State> {
       errorMessage: error.message,
       errorStack: error.stack,
     });
-    
-    // If it's a webpack require error, try to reload after a delay
-    if (error.message.includes('__webpack_require__') || error.message.includes('webpack')) {
+
+    // If it's a webpack require error or chunk load error, try to reload after a delay
+    if (
+      error.message.includes('__webpack_require__') ||
+      error.message.includes('webpack') ||
+      error.message.includes('ChunkLoadError') ||
+      error.message.includes('Loading chunk')
+    ) {
       setTimeout(() => {
         if (typeof window !== 'undefined') {
-          window.location.reload();
+          // Add simple loop prevention for ErrorBoundary as well, though it's less critical here due to delay
+          const key = 'error_boundary_reload';
+          const now = Date.now();
+          const lastReload = parseInt(sessionStorage.getItem(key) || '0', 10);
+
+          if (now - lastReload > 5000) {
+            sessionStorage.setItem(key, now.toString());
+            window.location.reload();
+          }
         }
       }, 1000);
     }
