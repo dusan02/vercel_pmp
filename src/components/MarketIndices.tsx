@@ -4,7 +4,9 @@ import React, { useEffect, useState } from 'react';
 import { StockData } from '@/lib/types';
 import { formatPrice, formatPercent } from '@/lib/utils/format';
 import { logger } from '@/lib/utils/logger';
-import CompanyLogo from './CompanyLogo';
+// Duplicate imports removed
+import { TrendingUp } from 'lucide-react';
+
 
 const INDICES = [
     { ticker: 'SPY', name: 'S&P 500' },
@@ -92,7 +94,9 @@ export function MarketIndices() {
                             {/* Header: Logo + Ticker */}
                             <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
-                                    <CompanyLogo ticker={ticker} size={20} className="rounded-md" />
+                                    <div className="p-1.5 rounded-md bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
+                                        <TrendingUp size={16} />
+                                    </div>
                                     <span className="text-sm font-bold text-[var(--clr-text)] tracking-tight">{ticker}</span>
                                 </div>
                                 {/* Placeholder for sparkline or mini-indicator */}

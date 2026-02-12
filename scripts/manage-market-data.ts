@@ -104,9 +104,9 @@ Flags:
 
     try {
         // Shared: Get Tickers
-        // We use SP500 universe or DB fallback
+        // We use PMP universe (all tiers) or DB fallback
         console.log('\n📊 getting ticker universe...');
-        let tickers = await getUniverse('sp500');
+        let tickers = await getUniverse('pmp');
         if (tickers.length === 0) {
             console.log('⚠️  Universe is empty, using tickers from database...');
             const dbTickers = await prisma.ticker.findMany({ select: { symbol: true } });

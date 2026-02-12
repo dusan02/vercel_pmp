@@ -439,40 +439,55 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
 
           {/* Desktop: Table layout */}
           <div className="hidden lg:block overflow-x-auto">
-            <table>
+            <table className="pmp-universal-table w-full border-collapse">
               <thead>
-                <tr>
-                  <th className="hidden lg:table-cell">Logo</th>
-                  <th onClick={() => handleSort('ticker')} className={`sortable ${sortKey === 'ticker' ? 'active-sort' : ''}`}>
-                    Ticker
+                <tr className="border-b border-gray-100 dark:border-gray-800">
+                  <th className="py-3 px-3 first:pl-4 last:pr-4 font-semibold text-xs md:text-sm whitespace-nowrap bg-blue-100 text-slate-900 border-b border-blue-200/80 dark:bg-blue-900/60 dark:text-white dark:border-white/10 text-left hidden lg:table-cell">Logo</th>
+                  <th onClick={() => handleSort('ticker')} className={`py-3 px-3 first:pl-4 last:pr-4 font-semibold text-xs md:text-sm whitespace-nowrap bg-blue-100 text-slate-900 border-b border-blue-200/80 dark:bg-blue-900/60 dark:text-white dark:border-white/10 text-left cursor-pointer hover:bg-blue-200/70 dark:hover:bg-white/10 transition-colors select-none ${sortKey === 'ticker' ? 'active-sort' : ''}`}>
+                    <div className="flex items-center gap-1">
+                      Ticker
+                      {sortKey === 'ticker' && <span className="text-[10px] opacity-70">{ascending ? '▲' : '▼'}</span>}
+                    </div>
                   </th>
-                  <th onClick={() => handleSort('companyName')} className={`hidden lg:table-cell sortable ${sortKey === 'companyName' ? 'active-sort' : ''}`}>
-                    Company Name
+                  <th onClick={() => handleSort('companyName')} className={`py-3 px-3 first:pl-4 last:pr-4 font-semibold text-xs md:text-sm whitespace-nowrap bg-blue-100 text-slate-900 border-b border-blue-200/80 dark:bg-blue-900/60 dark:text-white dark:border-white/10 text-left hidden lg:table-cell cursor-pointer hover:bg-blue-200/70 dark:hover:bg-white/10 transition-colors select-none ${sortKey === 'companyName' ? 'active-sort' : ''}`}>
+                    <div className="flex items-center gap-1">
+                      Company Name
+                      {sortKey === 'companyName' && <span className="text-[10px] opacity-70">{ascending ? '▲' : '▼'}</span>}
+                    </div>
                   </th>
-                  <th onClick={() => handleSort('marketCap')} className={`hidden lg:table-cell sortable whitespace-nowrap text-right ${sortKey === 'marketCap' ? 'active-sort' : ''}`}>
-                    Market Cap
+                  <th onClick={() => handleSort('marketCap')} className={`py-3 px-3 first:pl-4 last:pr-4 font-semibold text-xs md:text-sm whitespace-nowrap bg-blue-100 text-slate-900 border-b border-blue-200/80 dark:bg-blue-900/60 dark:text-white dark:border-white/10 text-right hidden lg:table-cell cursor-pointer hover:bg-blue-200/70 dark:hover:bg-white/10 transition-colors select-none ${sortKey === 'marketCap' ? 'active-sort' : ''}`}>
+                    <div className="flex items-center gap-1 justify-end">
+                      Market Cap
+                      {sortKey === 'marketCap' && <span className="text-[10px] opacity-70">{ascending ? '▲' : '▼'}</span>}
+                    </div>
                   </th>
-                  <th className="grouped-header">
+                  <th className="py-3 px-3 first:pl-4 last:pr-4 font-semibold text-xs md:text-sm whitespace-nowrap bg-blue-100 text-slate-900 border-b border-blue-200/80 dark:bg-blue-900/60 dark:text-white dark:border-white/10 text-center">
                     <div>EPS</div>
-                    <div className="sub-header">
-                      <span onClick={() => handleSort('epsEstimate')} className="sortable sub-sortable">Est</span>
-                      <span className="separator">/</span>
-                      <span onClick={() => handleSort('epsActual')} className="sortable sub-sortable">Rep</span>
+                    <div className="flex items-center justify-center gap-2 text-[10px] opacity-80 font-normal">
+                      <span onClick={() => handleSort('epsEstimate')} className="cursor-pointer hover:text-blue-600 dark:hover:text-blue-300">Est</span>
+                      <span className="opacity-50">/</span>
+                      <span onClick={() => handleSort('epsActual')} className="cursor-pointer hover:text-blue-600 dark:hover:text-blue-300">Rep</span>
                     </div>
                   </th>
-                  <th className="grouped-header">
+                  <th className="py-3 px-3 first:pl-4 last:pr-4 font-semibold text-xs md:text-sm whitespace-nowrap bg-blue-100 text-slate-900 border-b border-blue-200/80 dark:bg-blue-900/60 dark:text-white dark:border-white/10 text-center">
                     <div>Revenue</div>
-                    <div className="sub-header">
-                      <span onClick={() => handleSort('revenueEstimate')} className="sortable sub-sortable">Est</span>
-                      <span className="separator">/</span>
-                      <span onClick={() => handleSort('revenueActual')} className="sortable sub-sortable">Rep</span>
+                    <div className="flex items-center justify-center gap-2 text-[10px] opacity-80 font-normal">
+                      <span onClick={() => handleSort('revenueEstimate')} className="cursor-pointer hover:text-blue-600 dark:hover:text-blue-300">Est</span>
+                      <span className="opacity-50">/</span>
+                      <span onClick={() => handleSort('revenueActual')} className="cursor-pointer hover:text-blue-600 dark:hover:text-blue-300">Rep</span>
                     </div>
                   </th>
-                  <th onClick={() => handleSort('percentChange')} className={`sortable whitespace-nowrap ${sortKey === 'percentChange' ? 'active-sort' : ''}`}>
-                    % Change
+                  <th onClick={() => handleSort('percentChange')} className={`py-3 px-3 first:pl-4 last:pr-4 font-semibold text-xs md:text-sm whitespace-nowrap bg-blue-100 text-slate-900 border-b border-blue-200/80 dark:bg-blue-900/60 dark:text-white dark:border-white/10 text-right cursor-pointer hover:bg-blue-200/70 dark:hover:bg-white/10 transition-colors select-none ${sortKey === 'percentChange' ? 'active-sort' : ''}`}>
+                    <div className="flex items-center gap-1 justify-end">
+                      % Change
+                      {sortKey === 'percentChange' && <span className="text-[10px] opacity-70">{ascending ? '▲' : '▼'}</span>}
+                    </div>
                   </th>
-                  <th onClick={() => handleSort('marketCapDiff')} className={`hidden lg:table-cell sortable ${sortKey === 'marketCapDiff' ? 'active-sort' : ''}`}>
-                    Cap Diff
+                  <th onClick={() => handleSort('marketCapDiff')} className={`py-3 px-3 first:pl-4 last:pr-4 font-semibold text-xs md:text-sm whitespace-nowrap bg-blue-100 text-slate-900 border-b border-blue-200/80 dark:bg-blue-900/60 dark:text-white dark:border-white/10 text-right hidden lg:table-cell cursor-pointer hover:bg-blue-200/70 dark:hover:bg-white/10 transition-colors select-none ${sortKey === 'marketCapDiff' ? 'active-sort' : ''}`}>
+                    <div className="flex items-center gap-1 justify-end">
+                      Cap Diff
+                      {sortKey === 'marketCapDiff' && <span className="text-[10px] opacity-70">{ascending ? '▲' : '▼'}</span>}
+                    </div>
                   </th>
                 </tr>
               </thead>
@@ -497,8 +512,8 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
                   };
 
                   return (
-                    <tr key={`${earning.ticker}-${index}-desktop`}>
-                      <td className="hidden lg:table-cell">
+                    <tr key={`${earning.ticker}-${index}-desktop`} className="group hover:bg-gray-50 dark:hover:bg-white/5 transition-colors border-b border-gray-100 dark:border-gray-800">
+                      <td className="py-3 px-3 first:pl-4 last:pr-4 text-sm text-[var(--clr-text)] hidden lg:table-cell text-center">
                         <div className="flex justify-center items-center w-full">
                           <CompanyLogo
                             ticker={earning.ticker.trim().toUpperCase()}
@@ -507,25 +522,31 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
                           />
                         </div>
                       </td>
-                      <td><strong>{earning.ticker}</strong></td>
-                      <td className="company-name hidden lg:table-cell">{getCompanyName(earning.ticker)}</td>
-                      <td className="hidden lg:table-cell text-right">{earning.marketCap !== null ? formatBillions(earning.marketCap) : '-'}</td>
-                      <td className="grouped-cell">
-                        <div className="cell-value">{formatEarningsValue(earning.epsEstimate, false, true)}</div>
-                        <div className={`cell-value ${earning.epsActual !== null && earning.epsEstimate !== null ? (earning.epsActual >= earning.epsEstimate ? 'positive' : 'negative') : ''}`}>
-                          {formatEarningsValue(earning.epsActual, false, true)}
+                      <td className="py-3 px-3 first:pl-4 last:pr-4 text-sm text-[var(--clr-text)]"><strong>{earning.ticker}</strong></td>
+                      <td className="py-3 px-3 first:pl-4 last:pr-4 text-sm text-[var(--clr-text)] hidden lg:table-cell">{getCompanyName(earning.ticker)}</td>
+                      <td className="py-3 px-3 first:pl-4 last:pr-4 text-sm text-[var(--clr-text)] hidden lg:table-cell text-right tabular-nums">{earning.marketCap !== null ? formatBillions(earning.marketCap) : '-'}</td>
+                      <td className="py-3 px-3 first:pl-4 last:pr-4 text-sm text-[var(--clr-text)] text-center">
+                        <div className="flex items-center justify-center gap-2 tabular-nums">
+                          <span className="text-gray-500 dark:text-gray-400">{formatEarningsValue(earning.epsEstimate, false, true)}</span>
+                          <span className="opacity-30">/</span>
+                          <span className={`${earning.epsActual !== null && earning.epsEstimate !== null ? (earning.epsActual >= earning.epsEstimate ? 'text-green-500 font-medium' : 'text-red-500 font-medium') : ''}`}>
+                            {formatEarningsValue(earning.epsActual, false, true)}
+                          </span>
                         </div>
                       </td>
-                      <td className="grouped-cell">
-                        <div className="cell-value">{formatEarningsValue(earning.revenueEstimate ? earning.revenueEstimate / 1000000 : null)}</div>
-                        <div className={`cell-value ${earning.revenueActual !== null && earning.revenueEstimate !== null ? (earning.revenueActual >= earning.revenueEstimate ? 'positive' : 'negative') : ''}`}>
-                          {formatEarningsValue(earning.revenueActual ? earning.revenueActual / 1000000 : null)}
+                      <td className="py-3 px-3 first:pl-4 last:pr-4 text-sm text-[var(--clr-text)] text-center">
+                        <div className="flex items-center justify-center gap-2 tabular-nums">
+                          <span className="text-gray-500 dark:text-gray-400">{formatEarningsValue(earning.revenueEstimate ? earning.revenueEstimate / 1000000 : null)}</span>
+                          <span className="opacity-30">/</span>
+                          <span className={`${earning.revenueActual !== null && earning.revenueEstimate !== null ? (earning.revenueActual >= earning.revenueEstimate ? 'text-green-500 font-medium' : 'text-red-500 font-medium') : ''}`}>
+                            {formatEarningsValue(earning.revenueActual ? earning.revenueActual / 1000000 : null)}
+                          </span>
                         </div>
                       </td>
-                      <td className={getValueClass(earning.percentChange, earning.percentChange !== null && earning.percentChange >= 0)}>
+                      <td className={`py-3 px-3 first:pl-4 last:pr-4 text-sm text-right tabular-nums ${earning.percentChange !== null && earning.percentChange >= 0 ? 'text-green-500 font-medium' : 'text-red-500 font-medium'}`}>
                         {formatPercentChange(earning.percentChange)}
                       </td>
-                      <td className={getValueClass(earning.marketCapDiff, earning.marketCapDiff !== null && earning.marketCapDiff >= 0) + " hidden lg:table-cell"}>
+                      <td className={`py-3 px-3 first:pl-4 last:pr-4 text-sm hidden lg:table-cell text-right tabular-nums ${earning.marketCapDiff !== null && earning.marketCapDiff >= 0 ? 'text-green-500 font-medium' : 'text-red-500 font-medium'}`}>
                         {formatMarketCapDiff(earning.marketCapDiff)}
                       </td>
                     </tr>
