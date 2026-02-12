@@ -35,7 +35,8 @@ export class ErrorBoundary extends Component<Props, State> {
       error.message.includes('__webpack_require__') ||
       error.message.includes('webpack') ||
       error.message.includes('ChunkLoadError') ||
-      error.message.includes('Loading chunk')
+      error.message.includes('Loading chunk') ||
+      error.message.includes('Failed to load chunk')
     ) {
       setTimeout(() => {
         if (typeof window !== 'undefined') {

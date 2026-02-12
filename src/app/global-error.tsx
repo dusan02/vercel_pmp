@@ -12,7 +12,7 @@ export default function GlobalError({
   useEffect(() => {
     console.error('Global Error:', error);
 
-    const isChunkLoadError = error.message.includes('ChunkLoadError') || error.message.includes('Loading chunk');
+    const isChunkLoadError = error.message.includes('ChunkLoadError') || error.message.includes('Loading chunk') || error.message.includes('Failed to load chunk');
 
     if (isChunkLoadError) {
       if (typeof window !== 'undefined') {

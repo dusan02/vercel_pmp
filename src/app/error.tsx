@@ -13,7 +13,7 @@ export default function Error({
     // Log the error to an error reporting service
     console.error('App Error:', error);
 
-    const isChunkLoadError = error.message.includes('ChunkLoadError') || error.message.includes('Loading chunk');
+    const isChunkLoadError = error.message.includes('ChunkLoadError') || error.message.includes('Loading chunk') || error.message.includes('Failed to load chunk');
 
     if (isChunkLoadError) {
       if (typeof window !== 'undefined') {
