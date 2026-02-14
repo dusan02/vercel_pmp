@@ -403,7 +403,7 @@ async function upsertToDB(
  * CRITICAL: regularClose must be adjusted (same as previousClose)
  * Polygon snapshot day.c is already adjusted, so we use it directly
  */
-async function saveRegularClose(apiKey: string, date: string, runId?: string): Promise<void> {
+export async function saveRegularClose(apiKey: string, date: string, runId?: string): Promise<void> {
   const correlationId = runId || Date.now().toString(36);
   try {
     console.log(`💾 [runId:${correlationId}] Starting regular close save...`);
