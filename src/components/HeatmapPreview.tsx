@@ -58,7 +58,7 @@ export function HeatmapPreview({ activeView, wrapperClass }: { activeView?: stri
     <section className={`heatmap-preview ${wrapperClass || ''} ${!isDesktop ? 'h-full flex flex-col' : ''}`}>
       {/* Header - hide on mobile (MobileTreemap has its own) */}
       {isDesktop && (
-        <div className="flex items-center justify-between mb-4 px-4">
+        <div className="flex items-center justify-between mb-4 px-4 border-none outline-none">
           <div className="flex items-center">
             <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--clr-text)] m-0 relative -top-1.5">
               <SectionIcon type="heatmap" size={24} className="text-[var(--clr-text)]" />
@@ -80,9 +80,9 @@ export function HeatmapPreview({ activeView, wrapperClass }: { activeView?: stri
 
       {/* Content Wrapper - simplified: removed unnecessary inner div */}
       <div
-        className={`relative w-full bg-black overflow-hidden group heatmap-preview-container ${isDesktop ? 'heatmap-preview-desktop h-[600px]' : 'flex-1'
+        className={`relative w-full bg-black overflow-hidden group heatmap-preview-container border-none outline-none ${isDesktop ? 'heatmap-preview-desktop h-[600px]' : 'flex-1'
           }`}
-        style={isDesktop ? { cursor: 'pointer' } : { cursor: 'pointer' }}
+        style={isDesktop ? { cursor: 'pointer', border: 'none', outline: 'none' } : { cursor: 'pointer', border: 'none', outline: 'none' }}
         onClick={handleBackgroundClick}
       >
         <ResponsiveMarketHeatmap

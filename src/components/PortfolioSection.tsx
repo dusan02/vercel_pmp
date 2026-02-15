@@ -316,52 +316,9 @@ export function PortfolioSection({
 
 
 
-      {/* Visualizations: Order -> Donuts -> Treemap */}
-      <div className="mb-8 space-y-8 px-4">
-        {portfolioStocks.length === 0 ? (
-          /* Empty State - Guide user to add stocks */
-          <div className="flex flex-col items-center justify-center py-16 px-4">
-            <div className="max-w-md text-center space-y-4">
-              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-blue-600/10 flex items-center justify-center">
-                <SectionIcon type="pie" size={40} className="text-blue-600" />
-              </div>
-              <h3 className="text-2xl font-bold text-[var(--clr-text)]">
-                Start Building Your Portfolio
-              </h3>
-              <p className="text-[var(--clr-subtext)] text-lg">
-                Add stocks using the search bar above to track your investments and visualize your portfolio performance.
-              </p>
-              <div className="mt-6 p-4 bg-blue-600/5 border border-blue-600/20 rounded-lg">
-                <p className="text-sm text-[var(--clr-text)] mb-2">
-                  <strong>What you'll see:</strong>
-                </p>
-                <ul className="text-sm text-[var(--clr-subtext)] text-left space-y-1">
-                  <li>📊 Sector & stock distribution charts</li>
-                  <li>🗺️ Interactive performance heatmap</li>
-                  <li>📈 Real-time portfolio value tracking</li>
-                  <li>💰 Daily P&L and percentage changes</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        ) : (
-          /* Charts - Only show when portfolio has stocks */
-          <>
-            {/* 1. Donut Charts */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <PortfolioSectorDistributionChart data={chartData} />
-              <PortfolioStockDistributionChart data={chartData} />
-            </div>
-
-            {/* 2. Heatmap */}
-            <PortfolioPerformanceTreemap data={chartData} />
-          </>
-        )}
-      </div>
-
       {/* 3. Search Bar - Above Table */}
-      <div className="px-4 mb-6 relative">
-        <div className="relative">
+      <div className="px-4 mb-4 relative mt-2">
+        <div className="relative group">
           <input
             ref={searchInputRef}
             type="search"
@@ -370,28 +327,43 @@ export function PortfolioSection({
             onChange={(e) => setPortfolioSearchTerm(e.target.value)}
             onFocus={() => setShowPortfolioSearch(true)}
             onBlur={() => setTimeout(() => setShowPortfolioSearch(false), 200)}
-            className="w-full px-4 py-2 border rounded-md bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500/50 outline-none transition-all"
+            className="w-full px-4 py-4 h-14 text-lg border-2 rounded-xl bg-white dark:bg-gray-800 border-blue-500/20 md:border-gray-200 md:dark:border-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all shadow-sm md:shadow-md"
           />
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          </div>
+
           {showPortfolioSearch && portfolioSearchResults.length > 0 && (
-            <div className="absolute top-full left-0 right-0 z-[60] bg-white dark:bg-gray-800 shadow-xl border rounded-lg mt-1 max-h-60 overflow-y-auto ring-1 ring-black/5">
+            <div className="absolute top-full left-0 right-0 z-[60] bg-white dark:bg-gray-800 shadow-xl border rounded-lg mt-2 max-h-60 overflow-y-auto ring-1 ring-black/5">
               {portfolioSearchResults.map((stock) => (
                 <button
                   key={stock.ticker}
-                  className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/5 border-b last:border-0 border-gray-100 dark:border-gray-700/50 transition-colors"
+                  className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/5 border-b last:border-0 border-gray-100 dark:border-gray-700/50 transition-colors flex items-center"
                   onClick={() => {
                     onAddStock(stock.ticker);
                     setPortfolioSearchTerm('');
                   }}
                 >
-                  <span className="font-bold text-blue-600 dark:text-blue-400">{stock.ticker}</span>
-                  <span className="mx-2 text-gray-300">|</span>
-                  <span className="text-sm font-medium">{getCompanyName(stock.ticker)}</span>
+                  <span className="font-bold text-blue-600 dark:text-blue-400 w-16">{stock.ticker}</span>
+                  <span className="text-gray-300 mx-2">|</span>
+                  <span className="text-sm font-medium truncate flex-1">{getCompanyName(stock.ticker)}</span>
+                  <Plus size={18} className="text-gray-400 ml-2" />
                 </button>
               ))}
             </div>
           )}
         </div>
       </div>
+      {/* Visualizations: Only show when portfolio has stocks */}
+      {portfolioStocks.length > 0 && (
+        <div className="mb-8 space-y-8 px-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <PortfolioSectorDistributionChart data={chartData} />
+            <PortfolioStockDistributionChart data={chartData} />
+          </div>
+          <PortfolioPerformanceTreemap data={chartData} />
+        </div>
+      )}
 
       {/* 4. Table */}
       <UniversalTable
