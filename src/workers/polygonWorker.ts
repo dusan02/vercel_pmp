@@ -1023,19 +1023,25 @@ export async function bootstrapPreviousCloses(
 
   for (const symbol of tickers) {
     try {
-      let prevClose = 0;
+      let prevClose = 0; // The effective previous close for 'date' (Target Date)
+      let backfillPrevClose = 0; // The previous close for 'todayTradingDay' (Backfill Date) if needed
       let actualPrevTradingDay: Date | null = null;
+      let rawDayClose = 0; // Close of 'todayTradingDay' (e.g. Friday)
 
-      // PRIORITY 1: Use Snapshot data if available (prevDay.c)
+      // PRIORITY 1: Use Snapshot data
       const snapshot = snapshotMap.get(symbol);
+
+      // Get raw values from snapshot
+      let rawPrevDayClose = 0;
       if (snapshot?.prevDay?.c && snapshot.prevDay.c > 0) {
-        prevClose = snapshot.prevDay.c;
-        actualPrevTradingDay = prevTradingDay;
-        snapshotHits++;
+        rawPrevDayClose = snapshot.prevDay.c;
+      }
+      if (snapshot?.day?.c && snapshot.day.c > 0) {
+        rawDayClose = snapshot.day.c;
       }
 
-      // PRIORITY 2: Fallback to slow Range API if snapshot missing or invalid
-      if (!prevClose || prevClose <= 0) {
+      // PRIORITY 2: Fallback to slow Range API if standard prevClose missing
+      if (rawPrevDayClose <= 0) {
         try {
           const rangeUrl = `https://api.polygon.io/v2/aggs/ticker/${symbol}/range/1/day/${expectedPrevYMD}/${expectedPrevYMD}?adjusted=true&apiKey=${apiKey}`;
           const rangeResp = await withRetry(async () => fetch(rangeUrl));
@@ -1044,51 +1050,115 @@ export async function bootstrapPreviousCloses(
             const result = rangeData?.results?.[0];
             const c = result?.c;
             if (typeof c === 'number' && c > 0) {
-              prevClose = c;
+              rawPrevDayClose = c;
+
+              // Ensure we have correct timestamp for fallback
+              // (used in original code logic, but main thing is the value)
               const timestamp = result?.t;
-              if (timestamp) {
-                const timestampDate = new Date(timestamp);
-                actualPrevTradingDay = createETDate(getDateET(timestampDate));
-              } else {
-                actualPrevTradingDay = prevTradingDay;
-              }
+              /* 
+                 Original logic had 'actualPrevTradingDay' side-effect here.
+                 We will reconstruct that below. 
+              */
               fallbackHits++;
             }
           }
         } catch (rangeError) {
           // ignore
         }
+      } else {
+        snapshotHits++;
+      }
+
+      // DETERMINE EFFECTIVE PREV CLOSES based on day type
+      if (isNonTradingCalendarDay) {
+        // Weekend/Holiday (e.g. Sunday)
+        // Target (Sunday) Previous Close = Friday Close (rawDayClose)
+        // Backfill (Friday) Previous Close = Thursday Close (rawPrevDayClose)
+
+        if (rawDayClose > 0) {
+          prevClose = rawDayClose;
+          actualPrevTradingDay = todayTradingDay; // Close happened on Friday (todayTradingDay)
+        } else {
+          // Fallback: if we don't have Friday close, revert to standard behavior
+          prevClose = rawPrevDayClose;
+          actualPrevTradingDay = prevTradingDay;
+        }
+
+        backfillPrevClose = rawPrevDayClose; // Backfill always uses Thursday close
+      } else {
+        // Normal Trading Day (e.g. Monday)
+        // Target (Monday) Previous Close = Friday Close (rawPrevDayClose) in Polygon terms (prev session)
+        // Note: For Monday, prevDay is Friday. For Sunday, prevDay is Thursday.
+        // Polygon snapshot logic is "relative to current session".
+
+        prevClose = rawPrevDayClose;
+        actualPrevTradingDay = prevTradingDay;
+        // backfillPrevClose not relevant for normal days usually, 
+        // as we don't backfill unless isNonTradingCalendarDay logic triggers
       }
 
       // Save to DB and Redis
       if (prevClose > 0 && actualPrevTradingDay) {
-        await setPrevClose(date, symbol, prevClose);
+        try {
+          await setPrevClose(date, symbol, prevClose);
+        } catch (redisErr) {
+          // Non-fatal, verify script or local env might not have Redis
+          console.warn(`⚠️ Redis setPrevClose failed for ${symbol} (continuing to DB updates)`);
+        }
 
         // If `date` is a non-trading calendar day (weekend/holiday), ensure we also persist the LAST trading day's
-        // regular close (snapshot.day.c). This is needed so APIs can show 0% vs Friday close on Saturday/Sunday
-        // instead of showing "Friday move vs Thursday close".
-        // NOTE: On trading days at 04:00 ET, snapshot.day.c is not the current day's regular close, so we skip.
-        if (isNonTradingCalendarDay && snapshot?.day?.c && snapshot.day.c > 0) {
+        // regular close (rawDayClose).
+        // NOTE: We use 'backfillPrevClose' (Thursday) as the PreviousClose for the Friday record.
+        if (isNonTradingCalendarDay && rawDayClose > 0) {
           const lastTradingDay = todayTradingDay; // collapsed trading day (e.g. Saturday -> Friday)
+          const prevForBackfill = backfillPrevClose > 0 ? backfillPrevClose : prevClose; // Safety fallback
+
           await dbWriteRetry(
             () => prisma.dailyRef.upsert({
               where: { symbol_date: { symbol, date: lastTradingDay } },
-              update: { regularClose: snapshot.day!.c, previousClose: prevClose, updatedAt: new Date() },
-              create: { symbol, date: lastTradingDay, regularClose: snapshot.day!.c, previousClose: prevClose }
+              update: { regularClose: rawDayClose, previousClose: prevForBackfill, updatedAt: new Date() },
+              create: { symbol, date: lastTradingDay, regularClose: rawDayClose, previousClose: prevForBackfill }
             }),
             `dailyRef.upsert(lastTradingDayClose):${symbol}`
           );
         }
 
-        await dbWriteRetry(
-          () => prisma.dailyRef.upsert({
-            where: { symbol_date: { symbol, date: actualPrevTradingDay! } },
-            update: { previousClose: prevClose, regularClose: prevClose, updatedAt: new Date() },
-            create: { symbol, date: actualPrevTradingDay!, previousClose: prevClose, regularClose: prevClose }
-          }),
-          `dailyRef.upsert:${symbol}`
-        );
+        // Just in case we didn't backfill (or as secondary check), ensure ACTUAL prev trading day record exists
+        // This corresponds to Thursday record (if prevClose came from there)
+        // Note: If prevClose is Friday Close (on Sunday), actualPrevTradingDay is Friday.
+        // So this upsert below updates Friday Record with Friday Close as "PreviousClose"? 
+        // WAIT.
 
+        // original:
+        // upsert(actualPrevTradingDay) -> update { previousClose: prevClose, regularClose: prevClose }
+
+        // If actualPrevTradingDay is Friday:
+        // We set Friday.PreviousClose = Friday.Close.
+        // This effectively says "Friday had 0% move". BAD. 
+
+        // FIX: Only upsert "Previous Day Record" if it matches the SOURCE of the data.
+        // If we switched to using Friday Close as reference, we shouldn't overwrite Friday's "Previous Close" with it.
+
+        // We only want to ensure the SOURCE record exists.
+        // If isNonTradingCalendarDay && used Friday Close -> Source is Friday Record.
+        // We already handled Friday Record in the backfill block above (with correct Thursday PrevClose).
+
+        // So we should SKIP this block if we already handled it or if it implies zero-ing out change.
+
+        const shouldUpsertSourceRecord = !isNonTradingCalendarDay || (isNonTradingCalendarDay && prevClose === rawPrevDayClose);
+
+        if (shouldUpsertSourceRecord) {
+          await dbWriteRetry(
+            () => prisma.dailyRef.upsert({
+              where: { symbol_date: { symbol, date: actualPrevTradingDay! } },
+              update: { previousClose: prevClose, regularClose: prevClose, updatedAt: new Date() },
+              create: { symbol, date: actualPrevTradingDay!, previousClose: prevClose, regularClose: prevClose }
+            }),
+            `dailyRef.upsert:${symbol}`
+          );
+        }
+
+        // Upsert TARGET DATE (Today/Sunday)
         await dbWriteRetry(
           () => prisma.dailyRef.upsert({
             where: { symbol_date: { symbol, date: calendarDateET } },
@@ -1098,6 +1168,7 @@ export async function bootstrapPreviousCloses(
           `dailyRef.upsert(todayPrevClose):${symbol}`
         );
 
+        // Update Ticker Denormalized Fields
         await dbWriteRetry(
           () => prisma.ticker.update({
             where: { symbol },
