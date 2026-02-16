@@ -78,12 +78,12 @@ module.exports = {
       env_production: {
         NODE_ENV: "production",
         MODE: "snapshot",
-        ENABLE_WEBSOCKET: "false", // Websocket needs Redis
+        ENABLE_WEBSOCKET: "true", // Websocket needs Redis
         DATABASE_URL: envVars.DATABASE_URL || process.env.DATABASE_URL,
         POLYGON_API_KEY: envVars.POLYGON_API_KEY || process.env.POLYGON_API_KEY,
         // Redis - DISABLED
         REDIS_URL: "",
-        USE_LOCAL_REDIS: "false",
+        USE_LOCAL_REDIS: "true",
       },
       error_file: path.join(__dirname, "logs", "pm2", "polygon-worker-error.log"),
       out_file: path.join(__dirname, "logs", "pm2", "polygon-worker-out.log"),

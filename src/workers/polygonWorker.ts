@@ -17,6 +17,7 @@ import {
   addToUniverse,
   atomicUpdatePrice
 } from '@/lib/redis/operations';
+import { redisClient } from '@/lib/redis';
 import { PriceData } from '@/lib/types';
 import { detectSession, isMarketOpen, isMarketHoliday, mapToRedisSession, getLastTradingDay, getTradingDay } from '@/lib/utils/timeUtils';
 import { nowET, getDateET, createETDate, isWeekendET, toET } from '@/lib/utils/dateET';
@@ -1550,7 +1551,7 @@ async function main() {
 
         if (inCloseWindow && isRetryMinute) {
           const today = getDateET(etNow);
-          const { redisClient } = await import('@/lib/redis');
+
           const throttleKey = `regular_close:last_save:${today}`;
           const nowMs = Date.now();
 
@@ -1600,6 +1601,18 @@ async function main() {
         } else {
           console.log(`⏸️ Weekend/Holiday (session: ${session}), skipping ingest`);
         }
+
+        // CRITICAL FIX: Update worker status (heartbeat) even if skipping ingest!
+        // Otherwise health check will think worker is dead/stale.
+
+        // CRITICAL FIX: Update worker status (heartbeat) even if skipping ingest!
+        // Otherwise health check will think worker is dead/stale.
+        // Use the shared redisClient instance from the outer scope
+        if (redisClient && redisClient.isOpen) {
+          await redisClient.set('worker:last_success_ts', Date.now().toString());
+        }
+
+
         return;
       }
 
@@ -1617,11 +1630,11 @@ async function main() {
       // Prioritize tickers: top 200 get frequent updates (60s), rest less frequent (5min)
       // For pre-market/after-hours, use longer intervals (5min for all)
       const { getAllProjectTickers } = await import('@/data/defaultTickers');
+      // Load last update times from Redis (persistent across restarts)
+      const lastUpdateMap = new Map<string, number>();
       const premiumTickers = getAllProjectTickers('pmp').slice(0, 200); // Top 200
 
-      // Load last update times from Redis (persistent across restarts)
-      const { redisClient } = await import('@/lib/redis');
-      const lastUpdateMap = new Map<string, number>();
+
 
       // Adjust intervals based on session
       // Goal: keep major tickers highly fresh even in pre-market, while keeping overall API load reasonable.
