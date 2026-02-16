@@ -1,6 +1,23 @@
 
 import { createClient } from 'redis';
-// Removed: import { RESTClient } from '@polygon.io/client-js';
+import fs from 'fs';
+import path from 'path';
+
+// Load .env manually
+const envPath = path.join(process.cwd(), '.env');
+if (fs.existsSync(envPath)) {
+    const envContent = fs.readFileSync(envPath, 'utf8');
+    envContent.split('\n').forEach(line => {
+        const parts = line.split('=');
+        if (parts.length >= 2) {
+            const key = parts[0].trim();
+            const value = parts.slice(1).join('=').trim().replace(/^["']|["']$/g, '');
+            if (key && !process.env[key]) {
+                process.env[key] = value;
+            }
+        }
+    });
+}
 
 const REDIS_URL = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
 const POLYGON_API_KEY = process.env.POLYGON_API_KEY;
