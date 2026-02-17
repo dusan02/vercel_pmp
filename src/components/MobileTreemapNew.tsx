@@ -218,7 +218,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                     position: 'relative',
                     width: '100%',
                     flex: 1, // fill remaining height
-                    overflow: 'hidden',
+                    // overflow: 'hidden', // REMOVED per user request to prevent double-clipping
                   }}
                 >
                   {/* Render Tiles */}
@@ -278,17 +278,19 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                         {(label.showSymbol || label.showValue) && (
                           <div
                             style={{
-                              position: 'absolute',
-                              left: '50%',
-                              top: `calc(50% - ${opticalOffsetPx}px)`,
-                              transform: 'translate(-50%, -50%)',
+                              // Refactored to Flexbox centering per user recommendation (Fix #1)
+                              position: 'relative',
+                              // No absolute/left/top/transform needed - parent is already flex center
                               display: 'flex',
                               flexDirection: 'column',
                               alignItems: 'center',
+                              justifyContent: 'center',
                               pointerEvents: 'none',
                               textAlign: 'center',
-                              lineHeight: 1.05,
+                              lineHeight: '1', // Fixed line-height
                               gap: label.showValue ? 2 : 0,
+                              // Apply optical offset via small translation (safer than 50% transform)
+                              transform: opticalOffsetPx > 0 ? `translateY(-${opticalOffsetPx}px)` : 'none',
                             }}
                           >
                             {label.showSymbol && (

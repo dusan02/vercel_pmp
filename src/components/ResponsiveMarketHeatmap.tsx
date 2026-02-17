@@ -173,8 +173,13 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
     // OPTIMIZATION: Require minimum dimensions to prevent flickering
     // DEBUG: Log dimensions for troubleshooting
     // NOTE: On desktop, allow smaller minimum (50px) since container might be measured before fully rendered
-    const minDimension = isMobile ? 100 : 50;
-    if (!width || !height || width < minDimension || height < minDimension) {
+    // NOTE: On desktop, allow smaller minimum (50px) since container might be measured before fully rendered
+    const minDimension = 50;
+
+    // CRITICAL FIX: On mobile, we MUST render MobileTreemapNew even if dimensions are 0 (e.g. hidden tab).
+    // If we unmount it when width=0 (tab switch), we lose state and cause a heavy re-mount on return.
+    // MobileTreemapNew handles its own measuring and 0-size state gracefully.
+    if (!isMobile && (!width || !height || width < minDimension || height < minDimension)) {
       if (process.env.NODE_ENV !== 'production' && typeof window !== 'undefined') {
         console.log('⚠️ Heatmap: Dimensions too small or not ready', { width, height, isMounted, isMobile, minDimension });
       }

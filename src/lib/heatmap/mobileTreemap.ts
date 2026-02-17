@@ -221,8 +221,10 @@ export function computeMobileTreemapSectors(
       // Height is same as row height
       const sectorHeight = finalH;
 
-      // Tiles height
-      const tilesHeight = Math.max(1, sectorHeight - sectorChromeHeightPx);
+      // Tiles height - subtract buffer (2px) to prevent sub-pixel clipping
+      // User request: "const tilesHeight = Math.max(0, rowHeight - chromeHeight - 2);"
+      // We keep Math.max(1, ...) to avoid D3 errors with 0 height if that happens
+      const tilesHeight = Math.max(1, sectorHeight - sectorChromeHeightPx - 2);
 
       // Generate D3 treemap
       const hierarchyNode = hierarchy(sectorItem.node)
@@ -232,8 +234,9 @@ export function computeMobileTreemapSectors(
       // Note: D3 treemap squarify works best with aspect ratios close to 1.
       // Narrow columns might produce thin tiles. d3.treemapResquarify or others might be better, 
       // but default squarify is standard.
+      // Use Math.floor for dimensions as requested to fit perfectly in pixel grid
       const treeLayout = treemap()
-        .size([sectorWidth, tilesHeight])
+        .size([Math.floor(sectorWidth), Math.floor(tilesHeight)])
         .padding(0)
         .paddingInner(0)
         .round(true)
