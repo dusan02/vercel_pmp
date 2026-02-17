@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { BrandLogo } from '../BrandLogo';
 import { LoginButton } from '../LoginButton';
+import { ThemeToggle } from '../ThemeToggle';
 
 /**
  * MobileHeader - Moderný minimalistický header
@@ -45,7 +46,8 @@ export function MobileHeader({ onLogoClick }: MobileHeaderProps) {
             </span>
           </div>
         </button>
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 flex items-center gap-2">
+          <ThemeToggle className="text-white hover:bg-white/10" />
           <LoginButton />
         </div>
       </div>

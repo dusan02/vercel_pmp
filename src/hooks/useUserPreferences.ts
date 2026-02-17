@@ -22,7 +22,7 @@ export interface UserPreferences {
 
 const DEFAULT_PREFERENCES: UserPreferences = {
   favorites: [],
-  theme: 'auto',
+  theme: 'light', // Defaulting to light for consistency across Desktop/Mobile
   defaultTab: 'all',
   autoRefresh: true,
   refreshInterval: 30,
@@ -49,38 +49,38 @@ const LAYOUT_VERSION_KEY = 'pmp-layout-version';
 
 // Migrate preferences if version changed
 function migratePreferences(prefs: any, storedVersion: string | null, storedLayoutVersion: string | null): UserPreferences {
-    let migratedPrefs = { ...prefs };
+  let migratedPrefs = { ...prefs };
 
-    // Check if preferences version is outdated
-    if (!storedVersion || storedVersion !== PREFERENCES_VERSION) {
-      // Reset preferences structure if version mismatch
-      if (storedVersion && storedVersion < PREFERENCES_VERSION) {
-        console.log(`🔄 Migrating preferences from ${storedVersion} to ${PREFERENCES_VERSION}`);
-        // Keep only valid preferences, reset others to defaults
-        migratedPrefs = {
-          ...DEFAULT_PREFERENCES,
-          favorites: Array.isArray(prefs.favorites) ? prefs.favorites : DEFAULT_PREFERENCES.favorites,
-          theme: prefs.theme || DEFAULT_PREFERENCES.theme,
-        };
-      }
-      // Update version
-      safeSetItem(VERSION_KEY, PREFERENCES_VERSION);
-    }
-
-    // Check if layout version changed (critical for layout consistency)
-    if (!storedLayoutVersion || storedLayoutVersion !== LAYOUT_VERSION) {
-      console.log(`🔄 Layout version changed from ${storedLayoutVersion || 'unknown'} to ${LAYOUT_VERSION} - resetting layout preferences`);
-      // Reset layout-related preferences to ensure consistent layout
-      // Keep functional preferences (favorites, theme) but reset layout
+  // Check if preferences version is outdated
+  if (!storedVersion || storedVersion !== PREFERENCES_VERSION) {
+    // Reset preferences structure if version mismatch
+    if (storedVersion && storedVersion < PREFERENCES_VERSION) {
+      console.log(`🔄 Migrating preferences from ${storedVersion} to ${PREFERENCES_VERSION}`);
+      // Keep only valid preferences, reset others to defaults
       migratedPrefs = {
-        ...migratedPrefs,
-        // Section visibility stays, but layout position is reset
+        ...DEFAULT_PREFERENCES,
+        favorites: Array.isArray(prefs.favorites) ? prefs.favorites : DEFAULT_PREFERENCES.favorites,
+        theme: prefs.theme || DEFAULT_PREFERENCES.theme,
       };
-      // Update layout version
-      safeSetItem(LAYOUT_VERSION_KEY, LAYOUT_VERSION);
     }
+    // Update version
+    safeSetItem(VERSION_KEY, PREFERENCES_VERSION);
+  }
 
-    return migratedPrefs;
+  // Check if layout version changed (critical for layout consistency)
+  if (!storedLayoutVersion || storedLayoutVersion !== LAYOUT_VERSION) {
+    console.log(`🔄 Layout version changed from ${storedLayoutVersion || 'unknown'} to ${LAYOUT_VERSION} - resetting layout preferences`);
+    // Reset layout-related preferences to ensure consistent layout
+    // Keep functional preferences (favorites, theme) but reset layout
+    migratedPrefs = {
+      ...migratedPrefs,
+      // Section visibility stays, but layout position is reset
+    };
+    // Update layout version
+    safeSetItem(LAYOUT_VERSION_KEY, LAYOUT_VERSION);
+  }
+
+  return migratedPrefs;
 }
 
 export function useUserPreferences() {
@@ -116,7 +116,7 @@ export function useUserPreferences() {
           // Migrate preferences if needed
           const migratedPrefs = migratePreferences(parsedPrefs, storedVersion, storedLayoutVersion);
           setPreferences({ ...DEFAULT_PREFERENCES, ...migratedPrefs });
-          
+
           // Save migrated preferences if they changed
           if (JSON.stringify(migratedPrefs) !== JSON.stringify(parsedPrefs)) {
             safeSetItem(STORAGE_KEY, JSON.stringify({ ...DEFAULT_PREFERENCES, ...migratedPrefs }));
@@ -152,7 +152,7 @@ export function useUserPreferences() {
         safeRemoveItem(FAVORITES_KEY);
       }
     }
-    
+
     setIsLoaded(true);
   }, []);
 
@@ -162,14 +162,14 @@ export function useUserPreferences() {
     try {
       setPreferences(prevPrefs => {
         const updatedPrefs = { ...prevPrefs, ...newPreferences };
-        
+
         safeSetItem(STORAGE_KEY, JSON.stringify(updatedPrefs));
-        
+
         // Also save favorites separately for backward compatibility
         if (newPreferences.favorites !== undefined) {
           safeSetItem(FAVORITES_KEY, JSON.stringify(newPreferences.favorites));
         }
-        
+
         return updatedPrefs;
       });
     } catch (error) {
@@ -183,12 +183,12 @@ export function useUserPreferences() {
       const newFavorites = [...prevPrefs.favorites];
       if (!newFavorites.includes(symbol)) {
         newFavorites.push(symbol);
-        
+
         // Save to localStorage
         const updatedPrefs = { ...prevPrefs, favorites: newFavorites };
         safeSetItem(STORAGE_KEY, JSON.stringify(updatedPrefs));
         safeSetItem(FAVORITES_KEY, JSON.stringify(newFavorites));
-        
+
         return updatedPrefs;
       }
       return prevPrefs;
@@ -199,12 +199,12 @@ export function useUserPreferences() {
   const removeFavorite = useCallback((symbol: string) => {
     setPreferences(prevPrefs => {
       const newFavorites = prevPrefs.favorites.filter(fav => fav !== symbol);
-      
+
       // Save to localStorage
       const updatedPrefs = { ...prevPrefs, favorites: newFavorites };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedPrefs));
       localStorage.setItem(FAVORITES_KEY, JSON.stringify(newFavorites));
-      
+
       return updatedPrefs;
     });
   }, []);
@@ -213,15 +213,15 @@ export function useUserPreferences() {
   const toggleFavorite = useCallback((symbol: string) => {
     setPreferences(prevPrefs => {
       const isCurrentlyFavorite = prevPrefs.favorites.includes(symbol);
-      const newFavorites = isCurrentlyFavorite 
+      const newFavorites = isCurrentlyFavorite
         ? prevPrefs.favorites.filter(fav => fav !== symbol)
         : [...prevPrefs.favorites, symbol];
-      
+
       // Save to localStorage
       const updatedPrefs = { ...prevPrefs, favorites: newFavorites };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedPrefs));
       localStorage.setItem(FAVORITES_KEY, JSON.stringify(newFavorites));
-      
+
       return updatedPrefs;
     });
   }, []);

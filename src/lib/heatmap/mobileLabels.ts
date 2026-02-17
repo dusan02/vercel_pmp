@@ -22,8 +22,8 @@ export function getMobileTileLabel(
 ): MobileTileLabel {
   const minDim = Math.min(w, h);
 
-  // Too small → no text at all
-  if (minDim < 18) {
+  // Too small → no text at all (unless zoomed, but caller passes effective size)
+  if (minDim < 12) {
     return { showSymbol: false, showValue: false, symbol: '', value: '', symbolFontPx: 0, valueFontPx: 0 };
   }
 

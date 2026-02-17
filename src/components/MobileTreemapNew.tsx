@@ -46,6 +46,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   const theme = preferences.theme;
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [containerSize, setContainerSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
+  const [zoomScale, setZoomScale] = useState(1);
 
   // Detail panel state
   const [selectedCompany, setSelectedCompany] = useState<CompanyNode | null>(null);
@@ -75,7 +76,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   }, [metric]);
 
 
-  // Update container size
+  // Update container size & zoom
   useLayoutEffect(() => {
     const updateSize = () => {
       if (containerRef.current) {
@@ -86,15 +87,21 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
           height: Math.floor(rect.height)
         });
       }
+      // Update Scale
+      if (window.visualViewport) {
+        setZoomScale(window.visualViewport.scale);
+      }
     };
 
     updateSize();
     window.addEventListener('resize', updateSize);
     window.visualViewport?.addEventListener('resize', updateSize);
+    window.visualViewport?.addEventListener('scroll', updateSize);
 
     return () => {
       window.removeEventListener('resize', updateSize);
       window.visualViewport?.removeEventListener('resize', updateSize);
+      window.visualViewport?.removeEventListener('scroll', updateSize);
     };
   }, []);
 
@@ -211,8 +218,16 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
 
                     if (width <= 0 || height <= 0) return null;
 
-                    const label = getTileLabel(company, width, height);
-                    const opticalOffsetPx = getMobileTileOpticalOffsetPx(label);
+                    // Semantic Zoom: Use effective (zoomed) size for visibility checks
+                    // We cap the scale effect slightly so you don't need to zoom in infinitely to see stuff
+                    const effectiveScale = Math.max(1, zoomScale);
+                    const label = getTileLabel(company, width * effectiveScale, height * effectiveScale);
+
+                    // Center text: remove optical offset for small tiles/fonts to ensure it looks vertically centered
+                    // Only use optical offset if we have ample space
+                    const labelHeight = (label.symbolFontPx || 0) + (label.showValue ? (label.valueFontPx || 0) : 0);
+                    const useOpticalOffset = height > 60 && labelHeight > 20;
+                    const opticalOffsetPx = useOpticalOffset ? getMobileTileOpticalOffsetPx(label) : 0;
 
                     return (
                       <div
@@ -385,7 +400,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'stretch',
-          gap: '8px', // Distinct gap between sector blocks
+          gap: '24px', // Distinct gap between sector blocks to avoid label overlap
           // CRITICAL: ensure the last sector/tiles are not hidden behind the fixed mobile tab bar.
           // `--tabbar-real-h` is set dynamically (and already includes safe-area from tabbar padding).
           // IMPORTANT: don't add `env(safe-area-inset-bottom)` again, otherwise you get a big empty "black strip".

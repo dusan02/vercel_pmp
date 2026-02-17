@@ -92,7 +92,7 @@ const DEFAULT_COMPUTE_OPTIONS: Required<Omit<ComputeMobileTreemapOptions, 'secto
   minTotalContentHeightPx: 900,
   minTilesHeightPx: 56,
   smallSectorThreshold: 0.15, // 15%
-  maxColumns: 2,
+  maxColumns: 3,
 };
 
 /**

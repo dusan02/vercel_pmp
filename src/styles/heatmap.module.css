@@ -5,7 +5,9 @@
 
 /* Container */
 .heatmapContainer {
-  @apply relative w-full h-full bg-black text-white;
+  @apply relative w-full h-full;
+  background-color: var(--clr-bg);
+  color: var(--clr-text);
 }
 
 .heatmapLoading {
@@ -87,11 +89,11 @@
 
 .sectorLabelPillCompact {
   font-weight: 700;
-  color: #FFFFFF;
+  color: var(--clr-text-primary, #FFFFFF);
   padding: 2px 8px;
   border-radius: 4px;
   /* Sharper corners */
-  background: rgba(0, 0, 0, 0.85);
+  background: var(--clr-surface, rgba(0, 0, 0, 0.85));
   /* High opacity for better readability */
   backdrop-filter: blur(4px);
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -125,11 +127,11 @@
 
 .sectorLabelStripFull {
   font-weight: 700;
-  color: #FFFFFF;
+  color: var(--clr-text-primary, #FFFFFF);
   padding: 3px 8px;
   border-radius: 2px;
   /* Very sharp corners for header look */
-  background: rgba(0, 0, 0, 0.85);
+  background: var(--clr-surface, rgba(0, 0, 0, 0.85));
   /* Solid dark background */
   backdrop-filter: blur(4px);
   border: 1px solid rgba(255, 255, 255, 0.2);

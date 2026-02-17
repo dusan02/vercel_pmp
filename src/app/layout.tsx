@@ -11,6 +11,7 @@ import { GAListener } from '@/components/GAListener'
 import { ChunkLoadRecovery } from '@/components/ChunkLoadRecovery'
 import { WebVitalsReporter } from '@/components/WebVitalsReporter'
 import { GA_ID } from '@/lib/ga'
+import { ThemeEffect } from '@/components/ThemeEffect'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -272,6 +273,7 @@ export default function RootLayout({
         <GAListener />
         <Providers>
           <AuthProvider>
+            <ThemeEffect />
             {/* Structured Data - Organization */}
             <script
               type="application/ld+json"

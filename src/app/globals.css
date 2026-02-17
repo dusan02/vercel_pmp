@@ -5,63 +5,49 @@
 /* ============================================
    ESSENTIAL CSS VARIABLES
    ============================================ */
-:root {
-  /* App layout heights */
-  --app-height: 100vh;
-  --header-h: 64px;
-  --tabbar-h: 72px;
+/* App layout heights */
+--app-height: 100vh;
+--header-h: 64px;
+--tabbar-h: 72px;
 
-  /* Color system - Dark theme focused */
-  --color-bg-primary: #000000;
-  --color-bg-secondary: #0f0f0f;
-  --color-bg-tertiary: #1a1a1a;
-  --color-border: rgba(255, 255, 255, 0.1);
-  --color-border-subtle: rgba(255, 255, 255, 0.05);
-  --color-text-primary: #ffffff;
-  --color-text-secondary: rgba(255, 255, 255, 0.7);
-  --color-text-tertiary: rgba(255, 255, 255, 0.5);
+/* Color system - Default Light Theme */
+--color-bg-primary: #f7f8fa;
+--color-bg-secondary: #ffffff;
+--color-bg-tertiary: #eff6ff;
+/* slightly blueish tint for hover */
+--color-border: #e5e7eb;
+--color-border-subtle: #f3f4f6;
+--color-text-primary: #111827;
+--color-text-secondary: #4b5563;
+--color-text-tertiary: #9ca3af;
 
-  /* Semantic colors */
-  --color-positive: #22c55e;
-  --color-negative: #ef4444;
-  --color-accent: #3b82f6;
+/* Semantic colors */
+--color-positive: #16a34a;
+--color-negative: #dc2626;
+--color-accent: #2563eb;
 
-  /* ========================================================================
+/* ========================================================================
      LEGACY VARIABLE MAPPINGS (Restored from style.css)
      ======================================================================== */
-  /* Default (Light Mode) */
-  --clr-bg: #f7f8fa;
-  --clr-surface: #ffffff;
-  --clr-border: #e5e7eb;
-  --clr-text: #111827;
-  --clr-subtext: #4b5563;
-  --clr-primary: #2563eb;
-  --clr-primary-hover: #1d4ed8;
-  --clr-positive: #16a34a;
-  --clr-negative: #dc2626;
-  --clr-error: #dc2626;
-  --clr-error-bg: #fef2f2;
-  --radius: 0.5rem;
-  --shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+/* Default (Light Mode) */
+--clr-bg: #f7f8fa;
+--clr-surface: #ffffff;
+--clr-border: #e5e7eb;
+--clr-text: #111827;
+--clr-subtext: #4b5563;
+--clr-primary: #2563eb;
+--clr-primary-hover: #1d4ed8;
+--clr-positive: #16a34a;
+--clr-negative: #dc2626;
+--clr-error: #dc2626;
+--clr-error-bg: #fef2f2;
+--radius: 0.5rem;
+--shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-/* Dark Mode Overrides for Legacy Variables */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --clr-bg: #0f172a;
-    --clr-surface: #1e293b;
-    --clr-border: #334155;
-    --clr-text: #f1f5f9;
-    --clr-subtext: #94a3b8;
-    --clr-primary: #3b82f6;
-    --clr-primary-hover: #60a5fa;
-    --clr-error-bg: #450a0a;
-    --shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-  }
-}
-
-/* Ensure these apply if .dark class is used manually */
+/* Dark Mode Overrides */
 .dark {
+  /* Legacy Vars */
   --clr-bg: #0f172a;
   --clr-surface: #1e293b;
   --clr-border: #334155;
@@ -71,6 +57,20 @@
   --clr-primary-hover: #60a5fa;
   --clr-error-bg: #450a0a;
   --shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+
+  /* New System Vars */
+  --color-bg-primary: #000000;
+  --color-bg-secondary: #0f0f0f;
+  --color-bg-tertiary: #1a1a1a;
+  --color-border: rgba(255, 255, 255, 0.1);
+  --color-border-subtle: rgba(255, 255, 255, 0.05);
+  --color-text-primary: #ffffff;
+  --color-text-secondary: rgba(255, 255, 255, 0.7);
+  --color-text-tertiary: rgba(255, 255, 255, 0.5);
+
+  --color-positive: #22c55e;
+  --color-negative: #ef4444;
+  --color-accent: #3b82f6;
 }
 
 /* ============================================
@@ -135,7 +135,9 @@
       flex-direction: column;
       height: 100vh;
       min-height: 100vh;
-      background: #0f0f0f;
+      background: var(--clr-bg);
+      /* Use theme variable */
+      color: var(--clr-text);
       position: relative;
       overflow: hidden;
     }
@@ -327,8 +329,10 @@
 
   table:not(.pmp-universal-table) th {
     /* Desktop table header theme (light mode): soft blue with dark text */
-    background: #dbeafe; /* blue-100 */
-    color: #0f172a; /* slate-900 */
+    background: #dbeafe;
+    /* blue-100 */
+    color: #0f172a;
+    /* slate-900 */
     border-bottom: 2px solid var(--clr-border);
     font-size: 0.875rem;
     text-transform: uppercase;
@@ -338,8 +342,10 @@
 
   .dark table:not(.pmp-universal-table) th {
     /* Desktop table header theme (dark mode): deep blue with light text */
-    background: rgba(30, 58, 138, 0.6); /* blue-900/60 */
-    color: #f8fafc; /* slate-50 */
+    background: rgba(30, 58, 138, 0.6);
+    /* blue-900/60 */
+    color: #f8fafc;
+    /* slate-50 */
   }
 
   table:not(.pmp-universal-table) tr:not(:last-child) td {

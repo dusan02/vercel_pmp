@@ -67,7 +67,7 @@ export default function CompanyLogo({
   // Prefer icon-like sources (polygon icon_url / favicons) for small UI logos
   const logoSrc = sanitizedLogoUrl || `/api/logo/${encodeURIComponent(ticker)}?s=${requestSize}&prefer=icon`;
 
-  // Fallback placeholder component
+  // Fallback placeholder component using the generated LQ placeholder (Initials)
   const LogoPlaceholder = () => (
     <div
       className={`flex items-center justify-center ${className}`}
@@ -77,27 +77,21 @@ export default function CompanyLogo({
         minWidth: w,
         minHeight: h,
         borderRadius: 2,
-        background: 'linear-gradient(135deg, #2563eb, #1e40af)',
-        boxSizing: 'border-box',
+        overflow: 'hidden',
+        background: 'transparent',
       }}
-      title={`${ticker} - Logo not available`}
+      title={`${ticker}`}
     >
-      {/* icon placeholder (avoid text-y look in tables/cards) */}
-      <svg
-        width={Math.max(12, Math.round(Math.min(w, h) * 0.62))}
-        height={Math.max(12, Math.round(Math.min(w, h) * 0.62))}
-        viewBox="0 0 24 24"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
+      <img
+        src={placeholderSrc}
+        alt={`${ticker} placeholder`}
+        style={{
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+        }}
         aria-hidden="true"
-        focusable="false"
-        style={{ opacity: 0.95 }}
-      >
-        <path d="M3 21h18" stroke="white" strokeWidth="2" strokeLinecap="round" />
-        <path d="M6 21V7l6-4 6 4v14" stroke="white" strokeWidth="2" strokeLinejoin="round" />
-        <path d="M10 11v6" stroke="white" strokeWidth="2" strokeLinecap="round" />
-        <path d="M14 11v6" stroke="white" strokeWidth="2" strokeLinecap="round" />
-      </svg>
+      />
     </div>
   );
 

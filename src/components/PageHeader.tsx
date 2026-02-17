@@ -7,6 +7,7 @@
 import { BrandLogo } from './BrandLogo';
 import { MarketIndices } from './MarketIndices';
 import { LoginButton } from './LoginButton';
+import { ThemeToggle } from './ThemeToggle';
 
 interface PageHeaderProps {
   navigation?: React.ReactNode;
@@ -31,7 +32,8 @@ export function PageHeader({ navigation, onLogoClick }: PageHeaderProps) {
               </span>
             </h1>
           </div>
-          <div className="flex items-center">
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
             <LoginButton />
           </div>
         </div>
@@ -66,8 +68,9 @@ export function PageHeader({ navigation, onLogoClick }: PageHeaderProps) {
               <MarketIndices />
             </div>
 
-            {/* Login */}
-            <div className="flex-none flex items-center justify-end">
+            {/* Login & Theme */}
+            <div className="flex-none flex items-center justify-end gap-2">
+              <ThemeToggle />
               <LoginButton />
             </div>
           </div>

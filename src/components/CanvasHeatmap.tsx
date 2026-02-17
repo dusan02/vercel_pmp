@@ -161,20 +161,17 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
                 ctx.textBaseline = 'middle';
 
                 // Settings for outline
-                // Use semi-transparent background color for outline to separate text from colored background
-                ctx.strokeStyle = theme === 'dark' ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.5)';
-                // Smaller outline for tiny fonts; larger for big fonts.
-                const outline = clampNumber(labelConfig.symbolFontPx / 6, 1, 2.5);
+                // Black, thin outline for sharp readability
+                ctx.strokeStyle = 'rgba(0,0,0,0.8)';
+                // Thinner outline: min 2px, max 3px based on font size
+                const outline = clampNumber(labelConfig.symbolFontPx / 12, 1.5, 3);
                 ctx.lineWidth = outline;
                 ctx.lineJoin = 'round';
 
                 const centerX = tileX + tileW / 2;
                 const centerY = tileY + tileH / 2;
 
-                // For white text on colored tiles, we typically want white text
-                // But if the tile color is very light (in light mode), we might want dark text?
-                // Standard heatmap usage usually keeps white text on colored tiles as they are saturated.
-                // Keeping white text for now as standard heatmap style.
+                // Keep white text
                 const tileTextColor = '#ffffff';
 
                 if (labelConfig.showSymbol && !labelConfig.showPercent) {
@@ -184,12 +181,12 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
                         labelConfig.symbolFontPx,
                         tileW,
                         tileH,
-                        'bold',
+                        '600', // Semi-bold instead of bold
                         MIN_TICKER_FONT_PX
                     );
                     if (!fitted) return;
 
-                    ctx.font = `bold ${fitted}px ${fontFamily}`;
+                    ctx.font = `600 ${fitted}px ${fontFamily}`;
                     // Outline first
                     ctx.strokeText(company.symbol, centerX, centerY);
                     // Then fill
@@ -207,7 +204,7 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
                         desiredSymbol,
                         tileW,
                         tileH * 0.55,
-                        'bold',
+                        '600', // Semi-bold
                         MIN_TICKER_FONT_PX
                     );
                     if (!fittedSymbol) return;
@@ -222,13 +219,13 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
                         desiredValue,
                         tileW,
                         tileH * 0.45,
-                        '500',
+                        '500', // Medium
                         MIN_VALUE_FONT_PX
                     );
 
                     if (!fittedValue) {
                         // Not enough space for two lines -> show just ticker in center.
-                        ctx.font = `bold ${fittedSymbol}px ${fontFamily}`;
+                        ctx.font = `600 ${fittedSymbol}px ${fontFamily}`;
                         ctx.strokeText(company.symbol, centerX, centerY);
                         ctx.fillStyle = tileTextColor;
                         ctx.fillText(company.symbol, centerX, centerY);
@@ -236,7 +233,7 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
                     }
 
                     const symbolY = centerY - (fittedValue / 2) - 2;
-                    ctx.font = `bold ${fittedSymbol}px ${fontFamily}`;
+                    ctx.font = `600 ${fittedSymbol}px ${fontFamily}`;
 
                     // Outline
                     ctx.strokeText(company.symbol, centerX, symbolY);

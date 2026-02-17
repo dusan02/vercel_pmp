@@ -5,6 +5,7 @@ import { BottomNavigation } from './BottomNavigation';
 import { MarketIndices } from './MarketIndices';
 import { LoginButton } from './LoginButton';
 import { BrandLogo } from './BrandLogo';
+import { ThemeToggle } from './ThemeToggle';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 
 export type MobileView = 'heatmap' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks';
@@ -51,7 +52,8 @@ export const MobileShell: React.FC<MobileShellProps> = ({
               </span>
             </h1>
           </div>
-          <div className="flex items-center">
+          <div className="flex items-center gap-2">
+            <ThemeToggle className="text-white hover:bg-white/10" />
             <LoginButton />
           </div>
         </div>
@@ -64,7 +66,7 @@ export const MobileShell: React.FC<MobileShellProps> = ({
 
       {/* Main Content - Single View */}
       {/* Add 'has-fab' class for views that show FAB (allStocks, portfolio, favorites) */}
-      <main 
+      <main
         ref={scrollContainerRef}
         className={`mobile-main-content ${activeView === 'allStocks' || activeView === 'portfolio' || activeView === 'favorites' ? 'has-fab' : ''}`}
       >
