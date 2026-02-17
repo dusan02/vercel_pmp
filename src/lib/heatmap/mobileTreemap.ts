@@ -125,7 +125,9 @@ export function computeMobileTreemapSectors(
   };
 
   // Compute treemap areas based on selected metric:
-  const layoutMetric: HeatmapMetric = metric === 'mcap' ? 'mcap' : 'percent';
+  // USER FIX: Always use 'mcap' for layout/weight so tiles stay stable. 
+  // Switching metric (% vs USD) should only change color/labels, not area.
+  const layoutMetric: HeatmapMetric = 'mcap';
   const sectorHierarchy = buildHeatmapHierarchy(sortedData, layoutMetric);
   const rawSectors = sectorHierarchy.children ?? [];
   if (rawSectors.length === 0) return { rows: [] };

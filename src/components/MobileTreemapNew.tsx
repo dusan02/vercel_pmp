@@ -280,13 +280,14 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                         {(label.showSymbol || label.showValue) && (
                           <div
                             style={{
-                              // Refactored to Flexbox centering per user recommendation (Fix #1)
+                              // Refactored to Grid centering per user recommendation (Fix #3)
+                              // Grid handles sub-pixel all-caps centering better than flex baseline.
+                              display: 'grid',
+                              placeItems: 'center',
+                              alignContent: 'center',
+                              height: '100%',
+                              width: '100%',
                               position: 'relative',
-                              // No absolute/left/top/transform needed - parent is already flex center
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'center',
-                              justifyContent: 'center',
                               pointerEvents: 'none',
                               textAlign: 'center',
                               lineHeight: '1', // Fixed line-height
