@@ -179,7 +179,7 @@
       overflow-x: hidden;
       -webkit-overflow-scrolling: touch;
       /* Consolidated padding from bottom of file */
-      padding-bottom: calc(var(--tabbar-h, 72px) + env(safe-area-inset-bottom, 0px) + 1rem);
+      padding-bottom: calc(var(--tabbar-h, 72px) + env(safe-area-inset-bottom, 0px));
     }
 
     /* Heatmap needs full space (no padding) because it handles its own layout */

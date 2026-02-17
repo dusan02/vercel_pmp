@@ -8,9 +8,9 @@ export const TILE_SIZE_THRESHOLDS = {
     MIN_WIDTH: 16,
     MIN_HEIGHT: 10,
     MIN_AREA: 160, // allow ticker on smaller tiles (final fit logic may still hide)
-    SMALL_AREA: 2500, // Menšia plocha - len ticker (menší font)
-    MEDIUM_AREA: 5000, // Malá plocha - len ticker (väčší font)
-    LARGE_AREA: 10000, // Stredná plocha - ticker + % change
+    SMALL_AREA: 3000, // Was 2500 - Increased threshold
+    MEDIUM_AREA: 6000, // Was 5000 - Increased threshold
+    LARGE_AREA: 12000, // Was 10000 - Increased threshold
     MIN_INDUSTRY_WIDTH: 140,
     MIN_INDUSTRY_HEIGHT: 50,
 } as const;
@@ -25,8 +25,8 @@ export const FONT_SIZE_CONFIG = {
     MIN_PERCENT_SIZE: 7,
 
     // Maximálna veľkosť písma
-    MAX_SYMBOL_SIZE: 64,
-    MAX_PERCENT_SIZE: 20,
+    MAX_SYMBOL_SIZE: 40, // Was 64 - reduced to prevent huge text on zoom
+    MAX_PERCENT_SIZE: 16, // Was 20 - reduced for better proportion
 
     // Multiplikátory pre výpočet veľkosti písma z plochy
     // Použijeme logaritmickú škálu pre plynulejší prechod

@@ -30,7 +30,19 @@ interface MobileTreemapNewProps {
 const SECTOR_LABEL_H = 12; // px
 const SECTOR_LABEL_TOP_DIVIDER_H = 1; // px
 const SECTOR_LABEL_TOP_GAP = 2; // px (space between tiles and divider)
-const SECTOR_CHROME_H = SECTOR_LABEL_TOP_GAP + SECTOR_LABEL_TOP_DIVIDER_H + SECTOR_LABEL_H;
+const SECTOR_LABEL_BOTTOM_MARGIN = 2; // px (margin below divider/label container)
+// We need to account for specific bottom margins/padding in the rendered DOM vs the math here.
+// The rendered structure is: Label (12) + Margin(2) + Divider(1) + Margin(2) ... wait, let's match the render.
+// Render: Label (12) + Margin-Bottom (2) + Divider (1) + Margin-Bottom (2) -> Tiles.
+// Actually checking render below:
+// Label (12px)
+// mb = 2px (SECTOR_LABEL_TOP_GAP in my constant naming was slightly off, it's gap between label and divider)
+// Divider (1px)
+// mb = 2px (space between divider and tiles? No, in render it says `marginBottom: '2px'` on divider)
+// So total vertical chrome = 12 + 2 + 1 + 2 = 17px.
+const SECTOR_CHROME_H = SECTOR_LABEL_H + SECTOR_LABEL_TOP_GAP + SECTOR_LABEL_TOP_DIVIDER_H + SECTOR_LABEL_BOTTOM_MARGIN;
+
+const SECTOR_COL_GAP = 4; // px
 
 export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   data,
@@ -109,6 +121,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   const treemapResult = useMemo(() => {
     return computeMobileTreemapSectors(sortedData, containerSize, metric, {
       sectorChromeHeightPx: SECTOR_CHROME_H,
+      columnGapPx: SECTOR_COL_GAP,
     });
   }, [sortedData, metric, containerSize]);
 
@@ -403,7 +416,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'stretch',
-          gap: '24px', // Distinct gap between sector blocks to avoid label overlap
+          gap: '4px', // Reduced gap to avoid "white strip" effect
           // CRITICAL: ensure the last sector/tiles are not hidden behind the fixed mobile tab bar.
           // `--tabbar-real-h` is set dynamically (and already includes safe-area from tabbar padding).
           // IMPORTANT: don't add `env(safe-area-inset-bottom)` again, otherwise you get a big empty "black strip".

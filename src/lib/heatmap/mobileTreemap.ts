@@ -85,6 +85,8 @@ export type ComputeMobileTreemapOptions = {
   smallSectorThreshold?: number;
   /** Maximum number of columns for small sectors. */
   maxColumns?: number;
+  /** Gap between columns (px). Defaults to 0. */
+  columnGapPx?: number;
 };
 
 const DEFAULT_COMPUTE_OPTIONS: Required<Omit<ComputeMobileTreemapOptions, 'sectorChromeHeightPx'>> = {
@@ -93,6 +95,7 @@ const DEFAULT_COMPUTE_OPTIONS: Required<Omit<ComputeMobileTreemapOptions, 'secto
   minTilesHeightPx: 56,
   smallSectorThreshold: 0.15, // 15%
   maxColumns: 3,
+  columnGapPx: 0,
 };
 
 /**
@@ -115,6 +118,7 @@ export function computeMobileTreemapSectors(
     minTilesHeightPx,
     smallSectorThreshold,
     maxColumns,
+    columnGapPx,
   } = {
     ...DEFAULT_COMPUTE_OPTIONS,
     ...options,
@@ -207,8 +211,12 @@ export function computeMobileTreemapSectors(
     // Now calculate sectors within this row
     const rowSectors: MobileTreemapSectorBlock[] = row.sectors.map(sectorItem => {
       // Width share inside the row
+      // Account for gaps: available width = totalWidth - (numberOfSectorsInRow - 1) * gap
+      const totalGaps = Math.max(0, row.sectors.length - 1) * columnGapPx;
+      const availableWidth = Math.max(0, width - totalGaps);
+
       const widthShare = sectorItem.weight / row.rowWeight;
-      const sectorWidth = Math.floor(width * widthShare);
+      const sectorWidth = Math.floor(availableWidth * widthShare);
 
       // Height is same as row height
       const sectorHeight = finalH;
