@@ -6,6 +6,7 @@ import { formatMarketCapDiff, formatPercent } from '@/lib/utils/heatmapFormat';
 import { createHeatmapColorScale } from '@/lib/utils/heatmapColors';
 import { TILE_SIZE_THRESHOLDS, FONT_SIZE_CONFIG } from '@/lib/utils/heatmapConfig';
 import { getTileLabelConfig, calculateFontSizeFromArea, TileLabelConfig, clampNumber } from '@/lib/utils/heatmapLabelUtils';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
 
 // --- CONSTANTS & HELPERS ---
 // Moved to shared utilities (@/lib/utils/heatmap*) to avoid duplication with MarketHeatmap.tsx
@@ -37,6 +38,8 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [hoveredLeaf, setHoveredLeaf] = useState<TreemapLeaf | null>(null);
+    const { preferences } = useUserPreferences();
+    const theme = preferences.theme;
 
     // Hover/tooltip throttling to avoid excessive state updates on continuous mouse events
     const leavesRef = useRef<TreemapLeaf[]>(leaves);
@@ -106,6 +109,13 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
         const ctx = canvas.getContext('2d', { alpha: false }); // Alpha false for performance
         if (!ctx) return;
 
+        // Get theme colors from CSS variables
+        const computedStyle = getComputedStyle(document.documentElement);
+        const bgPrimary = computedStyle.getPropertyValue('--clr-bg').trim() || '#ffffff';
+        const textPrimary = computedStyle.getPropertyValue('--clr-text').trim() || '#000000';
+        const borderColor = computedStyle.getPropertyValue('--clr-border').trim() || 'rgba(0, 0, 0, 0.25)';
+        const textInverse = theme === 'dark' ? '#000000' : '#ffffff'; // Best contrast for colored tiles usually white, but customizable
+
         // Handle High DPI
         const dpr = window.devicePixelRatio || 1;
         canvas.width = width * dpr;
@@ -114,8 +124,8 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
         canvas.style.height = `${height}px`;
         ctx.scale(dpr, dpr);
 
-        // Clear
-        ctx.fillStyle = '#000000';
+        // Clear with theme background
+        ctx.fillStyle = bgPrimary;
         ctx.fillRect(0, 0, width, height);
 
         const colorScale = createHeatmapColorScale(timeframe, metric === 'mcap' ? 'mcap' : 'percent');
@@ -140,7 +150,7 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
             ctx.fillRect(tileX, tileY, tileW, tileH);
 
             // Border - thinner border between companies within sectors
-            ctx.strokeStyle = 'rgba(0, 0, 0, 0.25)';
+            ctx.strokeStyle = borderColor;
             ctx.lineWidth = 1;
             ctx.strokeRect(tileX, tileY, tileW, tileH);
 
@@ -151,7 +161,8 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
                 ctx.textBaseline = 'middle';
 
                 // Settings for outline
-                ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
+                // Use semi-transparent background color for outline to separate text from colored background
+                ctx.strokeStyle = theme === 'dark' ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.5)';
                 // Smaller outline for tiny fonts; larger for big fonts.
                 const outline = clampNumber(labelConfig.symbolFontPx / 6, 1, 2.5);
                 ctx.lineWidth = outline;
@@ -159,6 +170,12 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
 
                 const centerX = tileX + tileW / 2;
                 const centerY = tileY + tileH / 2;
+
+                // For white text on colored tiles, we typically want white text
+                // But if the tile color is very light (in light mode), we might want dark text?
+                // Standard heatmap usage usually keeps white text on colored tiles as they are saturated.
+                // Keeping white text for now as standard heatmap style.
+                const tileTextColor = '#ffffff';
 
                 if (labelConfig.showSymbol && !labelConfig.showPercent) {
                     const fitted = fitFontPxToBox(
@@ -176,7 +193,7 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
                     // Outline first
                     ctx.strokeText(company.symbol, centerX, centerY);
                     // Then fill
-                    ctx.fillStyle = '#ffffff';
+                    ctx.fillStyle = tileTextColor;
                     ctx.fillText(company.symbol, centerX, centerY);
                 } else if (labelConfig.showSymbol && labelConfig.showPercent) {
                     // Draw Symbol
@@ -213,7 +230,7 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
                         // Not enough space for two lines -> show just ticker in center.
                         ctx.font = `bold ${fittedSymbol}px ${fontFamily}`;
                         ctx.strokeText(company.symbol, centerX, centerY);
-                        ctx.fillStyle = '#ffffff';
+                        ctx.fillStyle = tileTextColor;
                         ctx.fillText(company.symbol, centerX, centerY);
                         return;
                     }
@@ -224,7 +241,7 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
                     // Outline
                     ctx.strokeText(company.symbol, centerX, symbolY);
                     // Fill
-                    ctx.fillStyle = '#ffffff';
+                    ctx.fillStyle = tileTextColor;
                     ctx.fillText(company.symbol, centerX, symbolY);
 
                     // Draw Percent/Value
@@ -241,7 +258,7 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
             }
         });
 
-    }, [leaves, width, height, scale, offset, metric, timeframe]);
+    }, [leaves, width, height, scale, offset, metric, timeframe, theme]);
 
     // Interaction Handler (throttled via rAF; updates hover state only when tile changes)
     const handleMouseMove = useCallback((e: React.MouseEvent) => {

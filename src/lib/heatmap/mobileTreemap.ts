@@ -10,17 +10,25 @@ export type MobileTreemapLeaf = {
   company: CompanyNode;
 };
 
+// A sector block now exists within a row.
+// It has a specific pixel width and height.
 export type MobileTreemapSectorBlock = {
   name: string;
-  /** Total block height (including chrome reserved for the sector label/footer). */
+  width: number;
   height: number;
   /** Height used for the tile layout area (excludes chrome). */
   tilesHeight: number;
   children: MobileTreemapLeaf[];
 };
 
-export type MobileTreemapResult = {
+export type MobileTreemapRow = {
+  id: string;
+  height: number;
   sectors: MobileTreemapSectorBlock[];
+};
+
+export type MobileTreemapResult = {
+  rows: MobileTreemapRow[];
 };
 
 export type PrepareMobileTreemapDataOptions = {
@@ -73,12 +81,18 @@ export type ComputeMobileTreemapOptions = {
   minTotalContentHeightPx?: number;
   /** Minimum usable tile area inside a small sector block (px). */
   minTilesHeightPx?: number;
+  /** Threshold (0-1) of total weight below which a sector is considered "small" and candidate for grouping. */
+  smallSectorThreshold?: number;
+  /** Maximum number of columns for small sectors. */
+  maxColumns?: number;
 };
 
 const DEFAULT_COMPUTE_OPTIONS: Required<Omit<ComputeMobileTreemapOptions, 'sectorChromeHeightPx'>> = {
   contentHeightMultiplier: 1.2,
   minTotalContentHeightPx: 900,
   minTilesHeightPx: 56,
+  smallSectorThreshold: 0.15, // 15%
+  maxColumns: 2,
 };
 
 /**
@@ -92,28 +106,27 @@ export function computeMobileTreemapSectors(
   options: ComputeMobileTreemapOptions
 ): MobileTreemapResult {
   const { width, height } = container;
-  if (sortedData.length === 0 || width <= 0 || height <= 0) return { sectors: [] };
+  if (sortedData.length === 0 || width <= 0 || height <= 0) return { rows: [] };
 
   const {
     sectorChromeHeightPx,
     contentHeightMultiplier,
     minTotalContentHeightPx,
     minTilesHeightPx,
+    smallSectorThreshold,
+    maxColumns,
   } = {
     ...DEFAULT_COMPUTE_OPTIONS,
     ...options,
   };
 
   // Compute treemap areas based on selected metric:
-  // - % view: size by market cap (classic S&P 500 heatmap)
-  // - $ view: size by absolute market cap change (mcap diff)
   const layoutMetric: HeatmapMetric = metric === 'mcap' ? 'mcap' : 'percent';
   const sectorHierarchy = buildHeatmapHierarchy(sortedData, layoutMetric);
-  const sectors = sectorHierarchy.children ?? [];
-  if (sectors.length === 0) return { sectors: [] };
+  const rawSectors = sectorHierarchy.children ?? [];
+  if (rawSectors.length === 0) return { rows: [] };
 
-  // IMPORTANT: sector children are often not direct company nodes in some hierarchies.
-  // Sum recursively to avoid collapsing sector sizes to ~0.
+  // Helper to sum node values
   const sumNode = (node: any): number => {
     if (!node) return 0;
     if (typeof node.value === 'number' && !Number.isNaN(node.value)) return node.value;
@@ -122,83 +135,138 @@ export function computeMobileTreemapSectors(
     return children.reduce((sum: number, c: any) => sum + sumNode(c), 0);
   };
 
-  const sectorSums = sectors.map((s: any) => sumNode(s));
-  const totalSum = sectorSums.reduce((a: number, b: number) => a + b, 0) || 1;
+  const sectorsWithWeight = rawSectors.map((s: any) => ({
+    node: s,
+    weight: sumNode(s),
+  }));
 
-  // 1) Calculate sector heights based on total available scroll area
-  const totalContentHeight = Math.max(height * contentHeightMultiplier, minTotalContentHeightPx);
-  const baseHeight = totalContentHeight;
-  const minSectorHeight = sectorChromeHeightPx + minTilesHeightPx;
+  const totalSum = sectorsWithWeight.reduce((a, b) => a + b.weight, 0) || 1;
 
-  const sectorHeights: number[] = [];
-  let allocatedHeight = 0;
-  for (let i = 0; i < sectors.length; i++) {
-    if (i === sectors.length - 1) {
-      const h = Math.max(minSectorHeight, baseHeight - allocatedHeight);
-      sectorHeights.push(Math.round(h));
+  // 1) Group sectors into rows
+  type RowDef = {
+    sectors: typeof sectorsWithWeight;
+    rowWeight: number;
+    isGrouped: boolean;
+  };
+
+  const rows: RowDef[] = [];
+  let buffer: typeof sectorsWithWeight = [];
+  let bufferWeight = 0;
+
+  sectorsWithWeight.forEach((sectorItem, idx) => {
+    const ratio = sectorItem.weight / totalSum;
+    const isSmall = ratio < smallSectorThreshold;
+
+    // Logic:
+    // If it's big, it takes a full row.
+    // If it's small, we try to add it to buffer.
+    // If buffer is full (maxColumns), we push row.
+    // NOTE: Keep top 3 always full width for emphasis? Maybe just rely on threshold.
+    // User asked specifically for "bottom small sectors". Sorted by size implies bottom ones are small.
+
+    if (!isSmall) {
+      // Flush buffer if exists
+      if (buffer.length > 0) {
+        rows.push({ sectors: buffer, rowWeight: bufferWeight, isGrouped: true });
+        buffer = [];
+        bufferWeight = 0;
+      }
+      // Add big sector as single row
+      rows.push({ sectors: [sectorItem], rowWeight: sectorItem.weight, isGrouped: false });
     } else {
-      const raw = Math.round(baseHeight * ((sectorSums[i] || 0) / totalSum));
-      const finalH = Math.round(Math.max(minSectorHeight, raw));
-      sectorHeights.push(finalH);
-      allocatedHeight += finalH;
+      // Add to buffer
+      buffer.push(sectorItem);
+      bufferWeight += sectorItem.weight;
+
+      if (buffer.length >= maxColumns) {
+        rows.push({ sectors: buffer, rowWeight: bufferWeight, isGrouped: true });
+        buffer = [];
+        bufferWeight = 0;
+      }
     }
+  });
+
+  // Flush remaining buffer
+  if (buffer.length > 0) {
+    rows.push({ sectors: buffer, rowWeight: bufferWeight, isGrouped: true });
   }
 
-  // 2) Build sector blocks with their own independent treemaps
-  const sectorBlocks: MobileTreemapSectorBlock[] = sectors
-    .map((sector: any, sectorIdx: number) => {
-      if (!sector.children || sector.children.length === 0) return null;
+  // 2) Calculate row and sector dimensions
+  const totalContentHeight = Math.max(height * contentHeightMultiplier, minTotalContentHeightPx);
+  const minSectorBlocksHeight = sectorChromeHeightPx + minTilesHeightPx; // Minimum height for any sector block
 
-      const sectorHeight = sectorHeights[sectorIdx] ?? 0;
-      if (sectorHeight <= 0) return null;
+  // We distribute `totalContentHeight` proportional to `rowWeight`.
+  // However, we must ensure every row has at least enough height for its minimal sector requirements.
 
-      // Reserve space for sector chrome so it never overlaps/clips tiles.
+  const rowResults: MobileTreemapRow[] = rows.map((row, rowIdx) => {
+    // Raw height share
+    const rawH = Math.round(totalContentHeight * (row.rowWeight / totalSum));
+    // Enforce minimum height
+    const finalH = Math.max(minSectorBlocksHeight, rawH);
+
+    // Now calculate sectors within this row
+    const rowSectors: MobileTreemapSectorBlock[] = row.sectors.map(sectorItem => {
+      // Width share inside the row
+      const widthShare = sectorItem.weight / row.rowWeight;
+      const sectorWidth = Math.floor(width * widthShare);
+
+      // Height is same as row height
+      const sectorHeight = finalH;
+
+      // Tiles height
       const tilesHeight = Math.max(1, sectorHeight - sectorChromeHeightPx);
 
-      const sectorHierarchyNode = hierarchy(sector)
+      // Generate D3 treemap
+      const hierarchyNode = hierarchy(sectorItem.node)
         .sum((d: any) => d.value || 0)
         .sort((a: any, b: any) => (b.value || 0) - (a.value || 0));
 
-      const sectorTreemap = treemap()
-        .size([width, tilesHeight])
+      // Note: D3 treemap squarify works best with aspect ratios close to 1.
+      // Narrow columns might produce thin tiles. d3.treemapResquarify or others might be better, 
+      // but default squarify is standard.
+      const treeLayout = treemap()
+        .size([sectorWidth, tilesHeight])
         .padding(0)
         .paddingInner(0)
         .round(true)
         .tile(treemapSquarify);
 
-      sectorTreemap(sectorHierarchyNode);
+      treeLayout(hierarchyNode);
 
       const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
-      const sectorLeaves: MobileTreemapLeaf[] = sectorHierarchyNode
-        .leaves()
+      const leaves = hierarchyNode.leaves()
         .map((leaf: any) => {
-          const x0 = clamp(leaf.x0 ?? 0, 0, width);
-          const y0 = clamp(leaf.y0 ?? 0, 0, tilesHeight);
-          const x1 = clamp(leaf.x1 ?? 0, 0, width);
-          const y1 = clamp(leaf.y1 ?? 0, 0, tilesHeight);
+          const x0 = clamp(leaf.x0, 0, sectorWidth);
+          const y0 = clamp(leaf.y0, 0, tilesHeight);
+          const x1 = clamp(leaf.x1, 0, sectorWidth);
+          const y1 = clamp(leaf.y1, 0, tilesHeight);
           return {
-            x0,
-            y0,
-            x1,
-            y1,
-            company: leaf.data.meta?.companyData || leaf.data,
+            x0, y0, x1, y1,
+            company: leaf.data.meta?.companyData || leaf.data
           };
         })
-        .filter((leaf: any) => {
-          const w = leaf.x1 - leaf.x0;
-          const h = leaf.y1 - leaf.y0;
-          return w > 0 && h > 0;
-        });
+        .filter(l => (l.x1 - l.x0) > 0 && (l.y1 - l.y0) > 0);
 
       return {
-        name: sector.name,
+        name: sectorItem.node.name,
+        width: sectorWidth,
         height: sectorHeight,
         tilesHeight,
-        children: sectorLeaves,
+        children: leaves
       } satisfies MobileTreemapSectorBlock;
-    })
-    .filter((x): x is MobileTreemapSectorBlock => Boolean(x));
+    });
 
-  return { sectors: sectorBlocks };
+    // Fix slight pixel rounding errors in width?
+    // For now, floor is safe, might leave 1px gap on right. Flex justify-between can handle or just ignore.
+
+    return {
+      id: `row-${rowIdx}`,
+      height: finalH,
+      sectors: rowSectors
+    };
+  });
+
+  return { rows: rowResults };
 }
+
 

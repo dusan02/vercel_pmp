@@ -25,7 +25,7 @@ export const FONT_SIZE_CONFIG = {
     MIN_PERCENT_SIZE: 7,
 
     // Maximálna veľkosť písma
-    MAX_SYMBOL_SIZE: 28,
+    MAX_SYMBOL_SIZE: 64,
     MAX_PERCENT_SIZE: 20,
 
     // Multiplikátory pre výpočet veľkosti písma z plochy

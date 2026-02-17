@@ -812,9 +812,17 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
           Object.entries(gestureBindProps).filter(([_, value]) => typeof value === 'function')
         ) : {})}
         style={{
-          transform: shouldApplyTransform ? panZoom.transform : 'none',
-          transformOrigin: shouldApplyTransform ? panZoom.transformOrigin : '0 0',
-          willChange: shouldApplyTransform ? 'transform' : 'auto',
+          // Semantic Zoom Implementation:
+          // We do NOT apply CSS transform scale here.
+          // Instead, we pass the zoom level to the Canvas rendering logic.
+          // This ensures the canvas draws at high resolution with proper LOD.
+          // However, we MUST apply translation for PAN if we are not handling pan in canvas?
+          // Actually, we will handle BOTH zoom and pan in the canvas offset/scale props.
+          // So no CSS transform at all.
+
+          transform: 'none',
+          transformOrigin: '0 0',
+          willChange: 'auto', // CSS transform disabled, we rely on canvas redraw
           touchAction: zoomedSector ? 'none' : 'auto', // Allow natural scrolling on mobile when not zoomed
         }}
         onDoubleClick={zoomedSector ? handleDoubleTap : undefined}
@@ -822,136 +830,157 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
       >
         {renderMode === 'canvas' ? (
           <>
-            {/* Sector borders for canvas mode - rendered as overlay divs */}
-            {filteredNodes
-              .filter((node) => node.depth === 1) // Only Sectors
-              .map((node) => {
-                const { x0, y0, x1, y1 } = node as TreemapNode;
-                const nodeWidth = x1 - x0;
-                const nodeHeight = y1 - y0;
+            {/* Effective Scale Calculation */}
+            {(() => {
+              // Calculate effective scale and offset combining layout + zoom
+              const effectiveScale = scale * panZoom.zoom;
 
-                return (
-                  <div
-                    key={`sector-border-${node.data.name}-${x0}-${y0}`}
-                    className="absolute pointer-events-none"
-                    style={{
-                      left: x0 * scale + offset.x,
-                      top: y0 * scale + offset.y,
-                      width: nodeWidth * scale,
-                      height: nodeHeight * scale,
-                      // Thicker black border to separate sectors visually (1.5px solid black - half of original 3px)
-                      // Using box-shadow inset to create border effect that renders above canvas
-                      boxShadow: 'inset 0 0 0 1.5px #000000',
-                      zIndex: 10, // Above canvas to ensure border is visible
-                    }}
+              // Effective offset must account for:
+              // 1. original layout offset (screen space)
+              // 2. zoom scaling (around 0,0?) usePanZoom logic is translate(pan) scale(zoom) from 0,0.
+              // Formula: FinalX = (LayoutX * scale + OffsetX) * zoom + panX
+              //                 = LayoutX * (scale * zoom) + (OffsetX * zoom + panX)
+
+              const effectiveOffset = {
+                x: offset.x * panZoom.zoom + panZoom.panX,
+                y: offset.y * panZoom.zoom + panZoom.panY
+              };
+
+              return (
+                <>
+                  {/* Sector borders for canvas mode - rendered as overlay divs */}
+                  {filteredNodes
+                    .filter((node) => node.depth === 1) // Only Sectors
+                    .map((node) => {
+                      const { x0, y0, x1, y1 } = node as TreemapNode;
+                      const nodeWidth = x1 - x0;
+                      const nodeHeight = y1 - y0;
+
+                      return (
+                        <div
+                          key={`sector-border-${node.data.name}-${x0}-${y0}`}
+                          className="absolute pointer-events-none"
+                          style={{
+                            left: x0 * effectiveScale + effectiveOffset.x,
+                            top: y0 * effectiveScale + effectiveOffset.y,
+                            width: nodeWidth * effectiveScale,
+                            height: nodeHeight * effectiveScale,
+                            // Thicker black border to separate sectors visually (1.5px solid black - half of original 3px)
+                            // Using box-shadow inset to create border effect that renders above canvas
+                            boxShadow: 'inset 0 0 0 1.5px #000000',
+                            zIndex: 10, // Above canvas to ensure border is visible
+                          }}
+                        />
+                      );
+                    })}
+                  <CanvasHeatmap
+                    leaves={filteredLeaves}
+                    width={width}
+                    height={height}
+                    scale={effectiveScale}
+                    offset={effectiveOffset}
+                    onTileClick={(company: CompanyNode) => onTileClick && onTileClick(company)}
+                    onHover={handleCanvasHover}
+                    metric={metric}
+                    timeframe={timeframe}
                   />
-                );
-              })}
-            <CanvasHeatmap
-              leaves={filteredLeaves}
-              width={width}
-              height={height}
-              scale={scale}
-              offset={offset}
-              onTileClick={(company: CompanyNode) => onTileClick && onTileClick(company)}
-              onHover={handleCanvasHover}
-              metric={metric}
-              timeframe={timeframe}
-            />
-            {/* Sector labels for canvas mode - rendered AFTER canvas to ensure they're on top */}
-            {filteredNodes
-              .filter((node) => node.depth === 1) // Only Sectors
-              .map((node) => {
-                const { x0, y0, x1, y1 } = node as TreemapNode;
-                const data = node.data as HierarchyData;
-                const nodeWidth = x1 - x0;
-                const nodeHeight = y1 - y0;
-                const scaledWidth = nodeWidth * scale;
-                const scaledHeight = nodeHeight * scale;
+                  {/* Sector labels for canvas mode - rendered AFTER canvas to ensure they're on top */}
+                  {filteredNodes
+                    .filter((node) => node.depth === 1) // Only Sectors
+                    .map((node) => {
+                      const { x0, y0, x1, y1 } = node as TreemapNode;
+                      const data = node.data as HierarchyData;
+                      const nodeWidth = x1 - x0;
+                      const nodeHeight = y1 - y0;
+                      const scaledWidth = nodeWidth * effectiveScale;
+                      const scaledHeight = nodeHeight * effectiveScale;
 
-                const labelConfig = sectorLabelVariant === 'full'
-                  ? LAYOUT_CONFIG.SECTOR_LABEL_FULL
-                  : LAYOUT_CONFIG.SECTOR_LABEL_COMPACT;
+                      const labelConfig = sectorLabelVariant === 'full'
+                        ? LAYOUT_CONFIG.SECTOR_LABEL_FULL
+                        : LAYOUT_CONFIG.SECTOR_LABEL_COMPACT;
 
-                const labelHeight = isMobile
-                  ? (sectorLabelVariant === 'full' ? 18 : labelConfig.HEIGHT)
-                  : labelConfig.HEIGHT;
-                const labelLeft = isMobile ? Math.min(labelConfig.LEFT, 6) : labelConfig.LEFT;
+                      const labelHeight = isMobile
+                        ? (sectorLabelVariant === 'full' ? 18 : labelConfig.HEIGHT)
+                        : labelConfig.HEIGHT;
+                      const labelLeft = isMobile ? Math.min(labelConfig.LEFT, 6) : labelConfig.LEFT;
 
-                // Check if sector is large enough (both width and height)
-                // Increased minimum size to prevent overlapping on small sectors
-                const minSizeForLabel = 80; // Increased from 50 to prevent overlap
-                const minHeightForLabel = labelHeight + 8;
-                const showLabel = scaledWidth > minSizeForLabel
-                  && scaledHeight > minHeightForLabel
-                  && scale > 0
-                  && treemapBounds !== null;
+                      // Check if sector is large enough (both width and height)
+                      // Increased minimum size to prevent overlapping on small sectors
+                      const minSizeForLabel = 80; // Increased from 50 to prevent overlap
+                      const minHeightForLabel = labelHeight + 8;
+                      const showLabel = scaledWidth > minSizeForLabel
+                        && scaledHeight > minHeightForLabel
+                        && effectiveScale > 0
+                        && treemapBounds !== null;
 
-                if (!showLabel) return null;
+                      if (!showLabel) return null;
 
-                // Calculate responsive font size using clamp, adjusted for sector width
-                const minFont = labelConfig.FONT_SIZE_MIN;
-                const maxFont = labelConfig.FONT_SIZE_MAX;
-                // Scale font size based on available width (max 90% of sector width)
-                const maxLabelWidth = scaledWidth * 0.9;
-                const widthBasedFont = Math.min(maxFont, Math.max(minFont, maxLabelWidth / 8));
-                const responsiveFontSize = `clamp(${minFont}px, ${widthBasedFont}px, ${maxFont}px)`;
-                const fontSizeValue = parseFloat(responsiveFontSize.match(/\d+\.?\d*/)?.[0] || String(minFont));
+                      // Calculate responsive font size using clamp, adjusted for sector width
+                      const minFont = labelConfig.FONT_SIZE_MIN;
+                      const maxFont = labelConfig.FONT_SIZE_MAX;
+                      // Scale font size based on available width (max 90% of sector width)
+                      const maxLabelWidth = scaledWidth * 0.9;
+                      const widthBasedFont = Math.min(maxFont, Math.max(minFont, maxLabelWidth / 8));
+                      const responsiveFontSize = `clamp(${minFont}px, ${widthBasedFont}px, ${maxFont}px)`;
+                      const fontSizeValue = parseFloat(responsiveFontSize.match(/\d+\.?\d*/)?.[0] || String(minFont));
 
-                // Calculate sector summary for full variant
-                const sectorSummary = !isMobile && sectorLabelVariant === 'full' && LAYOUT_CONFIG.SECTOR_LABEL_FULL.SHOW_SUMMARY
-                  ? calculateSectorSummary(node as TreemapNode, metric)
-                  : null;
+                      // Calculate sector summary for full variant
+                      const sectorSummary = !isMobile && sectorLabelVariant === 'full' && LAYOUT_CONFIG.SECTOR_LABEL_FULL.SHOW_SUMMARY
+                        ? calculateSectorSummary(node as TreemapNode, metric)
+                        : null;
 
-                // Dynamically truncate sector name based on available width
-                const maxChars = calculateMaxCharsForWidth(scaledWidth, fontSizeValue, labelConfig.LEFT + 20);
-                const defaultMaxLength = sectorLabelVariant === 'full' ? 25 : 20;
-                const maxLength = Math.max(4, Math.min(maxChars, defaultMaxLength));
-                const displayName = truncateSectorName(data.name, maxLength);
+                      // Dynamically truncate sector name based on available width
+                      const maxChars = calculateMaxCharsForWidth(scaledWidth, fontSizeValue, labelConfig.LEFT + 20);
+                      const defaultMaxLength = sectorLabelVariant === 'full' ? 25 : 20;
+                      const maxLength = Math.max(4, Math.min(maxChars, defaultMaxLength));
+                      const displayName = truncateSectorName(data.name, maxLength);
 
-                return (
-                  <div
-                    key={`sector-label-${data.name}-${x0}-${y0}`}
-                    className={`${styles.sectorLabelWrap} ${sectorLabelVariant === 'full'
-                      ? styles.sectorLabelWrapFull
-                      : styles.sectorLabelWrapCompact
-                      }`}
-                    style={{
-                      left: x0 * scale + offset.x,
-                      top: y0 * scale + offset.y,
-                      width: nodeWidth * scale,
-                      maxWidth: nodeWidth * scale, // Prevent overflow
-                      height: labelHeight,
-                      paddingLeft: labelLeft,
-                      overflow: 'hidden', // Ensure text doesn't overflow
-                    }}
-                  >
-                    {sectorLabelVariant === 'full' ? (
-                      <div
-                        className={styles.sectorLabelStripFull}
-                        style={{
-                          fontSize: responsiveFontSize,
-                          ...(isMobile ? {
-                            width: 'fit-content',
-                            maxWidth: '100%',
-                            padding: '2px 8px',
-                            borderRadius: '6px',
-                          } : {}),
-                        }}
-                      >
-                        <span>{displayName}</span>
-                        {sectorSummary && (
-                          <span className={styles.sectorLabelSummary}>{sectorSummary}</span>
-                        )}
-                      </div>
-                    ) : (
-                      <div className={styles.sectorLabelPillCompact} style={{ fontSize: responsiveFontSize }}>
-                        {displayName}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+                      return (
+                        <div
+                          key={`sector-label-${data.name}-${x0}-${y0}`}
+                          className={`${styles.sectorLabelWrap} ${sectorLabelVariant === 'full'
+                            ? styles.sectorLabelWrapFull
+                            : styles.sectorLabelWrapCompact
+                            }`}
+                          style={{
+                            left: x0 * effectiveScale + effectiveOffset.x,
+                            top: y0 * effectiveScale + effectiveOffset.y,
+                            width: nodeWidth * effectiveScale,
+                            maxWidth: nodeWidth * effectiveScale, // Prevent overflow
+                            height: labelHeight,
+                            paddingLeft: labelLeft,
+                            overflow: 'hidden', // Ensure text doesn't overflow
+                          }}
+                        >
+                          {sectorLabelVariant === 'full' ? (
+                            <div
+                              className={styles.sectorLabelStripFull}
+                              style={{
+                                fontSize: responsiveFontSize,
+                                ...(isMobile ? {
+                                  width: 'fit-content',
+                                  maxWidth: '100%',
+                                  padding: '2px 8px',
+                                  borderRadius: '6px',
+                                } : {}),
+                              }}
+                            >
+                              <span>{displayName}</span>
+                              {sectorSummary && (
+                                <span className={styles.sectorLabelSummary}>{sectorSummary}</span>
+                              )}
+                            </div>
+                          ) : (
+                            <div className={styles.sectorLabelPillCompact} style={{ fontSize: responsiveFontSize }}>
+                              {displayName}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                </>
+              );
+            })()}
           </>
         ) : (
           <>
@@ -1132,15 +1161,17 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
       {/* Legenda je teraz v page.tsx headeri */}
 
       {/* 4. Tooltip (renderuje sa mimo) - skrytý na mobile */}
-      {hoveredNode && !isMobile && (
-        <HeatmapTooltip
-          company={hoveredNode}
-          position={mousePosition}
-          timeframe={timeframe}
-          metric={metric}
-        />
-      )}
-    </div>
+      {
+        hoveredNode && !isMobile && (
+          <HeatmapTooltip
+            company={hoveredNode}
+            position={mousePosition}
+            timeframe={timeframe}
+            metric={metric}
+          />
+        )
+      }
+    </div >
   );
 };
 

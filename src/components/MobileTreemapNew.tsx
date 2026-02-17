@@ -11,6 +11,7 @@ import { computeMobileTreemapSectors, prepareMobileTreemapData } from '@/lib/hea
 import { getMobileTileLabel, getMobileTileOpticalOffsetPx } from '@/lib/heatmap/mobileLabels';
 import { pickCompanyWithHitSlop } from '@/lib/heatmap/mobileHitSlop';
 import type { MobileTreemapSectorBlock } from '@/lib/heatmap/mobileTreemap';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
 
 interface MobileTreemapNewProps {
   data: CompanyNode[];
@@ -41,6 +42,8 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   isFavorite,
   activeView,
 }) => {
+  const { preferences } = useUserPreferences();
+  const theme = preferences.theme;
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [containerSize, setContainerSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
 
@@ -102,194 +105,207 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
     });
   }, [sortedData, metric, containerSize]);
 
-  // Direct use of treemapResult.sectors in JSX.
-  const { sectors: sectorBlocks } = treemapResult;
+  // Direct use of treemapResult.rows.
+  const { rows } = treemapResult;
 
   // Render treemap tiles + sector labels
   const renderHeatmapContent = () => {
-    if (!sectorBlocks || !Array.isArray(sectorBlocks)) return null;
+    if (!rows || !Array.isArray(rows)) return null;
 
     return (
       <>
-        {(sectorBlocks as MobileTreemapSectorBlock[]).map((sector) => {
-          return (
-            <div
-              key={sector.name}
-              style={{
-                display: 'block',
-                width: '100%',
-                // Gap handled by parent container
-              }}
-            >
-              {/* Relative Container for D3 Tiles (tiles first = priority) */}
+        {rows.map((row) => (
+          <div
+            key={row.id}
+            style={{
+              display: 'flex',
+              width: '100%',
+              height: `${row.height}px`,
+              gap: '4px', // Gap between columns
+            }}
+          >
+            {row.sectors.map((sector) => (
               <div
-                onClickCapture={(e) => {
-                  // If a normal-size tile was tapped, let the tile handler run.
-                  const target = e.target as HTMLElement | null;
-                  const isTile = !!target?.closest?.('[data-heatmap-tile="1"]');
-                  if (isTile) {
-                    // For very tiny tiles, still apply hit-slop to reduce mis-taps.
-                    const tileEl = target!.closest('[data-heatmap-tile="1"]') as HTMLElement | null;
-                    const minDimAttr = tileEl?.getAttribute('data-min-dim');
-                    const minDim = minDimAttr ? Number(minDimAttr) : NaN;
-                    if (!Number.isFinite(minDim) || minDim >= 22) return;
-                  }
-
-                  const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
-                  const px = e.clientX - rect.left;
-                  const py = e.clientY - rect.top;
-                  const picked = pickCompanyWithHitSlop(sector.children, px, py, { radiusPx: 20 });
-                  if (!picked) return;
-
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setSelectedCompany(picked);
-                  onTileClick?.(picked);
-                }}
+                key={sector.name}
                 style={{
-                  position: 'relative',
-                  width: '100%',
-                  // Keep the overall sector block height stable and reserve label space BELOW tiles.
-                  height: `${sector.tilesHeight}px`,
-                  overflow: 'hidden', // CRITICAL: never allow tiles to bleed outside sector block
-                }}
-              >
-                {/* Render Tiles for this Sector */}
-                {sector.children.map((leaf, i: number) => {
-                  const company = leaf.company;
-                  const color = getColor(company);
-                  // Coordinates are now relative to the SECTOR block, not global
-                  const x = leaf.x0;
-                  const y = leaf.y0;
-                  const width = leaf.x1 - leaf.x0;
-                  const height = leaf.y1 - leaf.y0;
-
-                  if (width <= 0 || height <= 0) return null;
-
-                  const label = getTileLabel(company, width, height);
-                  const opticalOffsetPx = getMobileTileOpticalOffsetPx(label);
-
-                  return (
-                    <div
-                      key={`${company.symbol}-${i}`}
-                      role="button"
-                      tabIndex={0}
-                      data-heatmap-tile="1"
-                      data-min-dim={Math.min(width, height)}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedCompany(company);
-                        onTileClick?.(company);
-                      }}
-                      style={{
-                        position: 'absolute',
-                        left: `${x}px`,
-                        top: `${y}px`,
-                        width: `${width}px`,
-                        height: `${height}px`,
-                        background: color,
-                        // CRITICAL:
-                        // Use inset shadow instead of border. On iOS/Safari, borders on edge-aligned absolutely positioned
-                        // elements inside overflow-hidden containers can look "clipped" by 1px at sector boundaries.
-                        // Inset shadow is drawn fully inside the tile and avoids that rendering artifact.
-                        boxShadow: 'inset 0 0 0 1px rgba(0, 0, 0, 0.25)',
-                        boxSizing: 'border-box',
-                        overflow: 'hidden',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        cursor: 'pointer',
-                        zIndex: 1, // Tiles should stay above any sector label chrome
-                      }}
-                    >
-                      {(label.showSymbol || label.showValue) && (
-                        <div
-                          style={{
-                            position: 'absolute',
-                            left: '50%',
-                            top: `calc(50% - ${opticalOffsetPx}px)`,
-                            transform: 'translate(-50%, -50%)',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            pointerEvents: 'none',
-                            textAlign: 'center',
-                            lineHeight: 1.05,
-                            gap: label.showValue ? 2 : 0,
-                          }}
-                        >
-                          {label.showSymbol && (
-                            <div
-                              style={{
-                                fontSize: `${label.symbolFontPx}px`,
-                                fontWeight: 800,
-                                color: '#ffffff',
-                                textShadow: '0 1px 2px rgba(0,0,0,0.55)',
-                                letterSpacing: '0.01em',
-                                whiteSpace: 'nowrap',
-                                lineHeight: 1,
-                              }}
-                            >
-                              {label.symbol}
-                            </div>
-                          )}
-                          {label.showValue && (
-                            <div
-                              style={{
-                                fontSize: `${label.valueFontPx}px`,
-                                fontWeight: 600,
-                                color: 'rgba(255, 255, 255, 0.92)',
-                                textShadow: '0 1px 2px rgba(0,0,0,0.45)',
-                                whiteSpace: 'nowrap',
-                                lineHeight: 1,
-                              }}
-                            >
-                              {label.value}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Sector Label Footer (minimal; doesn't steal prime tile space) */}
-              <div style={{ height: `${SECTOR_LABEL_TOP_GAP}px` }} />
-              <div
-                style={{
-                  height: `${SECTOR_LABEL_TOP_DIVIDER_H}px`,
-                  background: 'rgba(255, 255, 255, 0.06)',
-                  margin: '0 8px',
-                }}
-              />
-              <div
-                style={{
-                  height: `${SECTOR_LABEL_H}px`,
-                  padding: '0 8px',
                   display: 'flex',
-                  alignItems: 'center',
-                  fontSize: '10px',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  color: 'rgba(255, 255, 255, 0.75)',
-                  lineHeight: 1,
+                  flexDirection: 'column',
+                  width: `${sector.width}px`,
+                  height: '100%',
+                  // For grouped columns, we want them to fill the space. 
+                  // If it's a single column, width is full.
+                  flexGrow: 1,
+                  overflow: 'hidden'
                 }}
               >
-                {sector.name}
+                {/* Sector Label Header (Top) */}
+                <div
+                  style={{
+                    height: `${SECTOR_LABEL_H}px`,
+                    padding: '0 4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'flex-start',
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                    color: 'rgba(255, 255, 255, 0.75)',
+                    lineHeight: 1,
+                    marginBottom: `${SECTOR_LABEL_TOP_GAP}px`,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}
+                >
+                  {sector.name}
+                </div>
+
+                <div
+                  style={{
+                    height: `${SECTOR_LABEL_TOP_DIVIDER_H}px`,
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    marginBottom: '2px',
+                    borderRadius: '1px'
+                  }}
+                />
+
+                {/* Relative Container for D3 Tiles */}
+                <div
+                  onClickCapture={(e) => {
+                    const target = e.target as HTMLElement | null;
+                    const isTile = !!target?.closest?.('[data-heatmap-tile="1"]');
+                    if (isTile) {
+                      const tileEl = target!.closest('[data-heatmap-tile="1"]') as HTMLElement | null;
+                      const minDimAttr = tileEl?.getAttribute('data-min-dim');
+                      const minDim = minDimAttr ? Number(minDimAttr) : NaN;
+                      if (!Number.isFinite(minDim) || minDim >= 22) return;
+                    }
+
+                    const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+                    const px = e.clientX - rect.left;
+                    const py = e.clientY - rect.top;
+                    const picked = pickCompanyWithHitSlop(sector.children, px, py, { radiusPx: 20 });
+                    if (!picked) return;
+
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setSelectedCompany(picked);
+                    onTileClick?.(picked);
+                  }}
+                  style={{
+                    position: 'relative',
+                    width: '100%',
+                    flex: 1, // fill remaining height
+                    overflow: 'hidden',
+                  }}
+                >
+                  {/* Render Tiles */}
+                  {sector.children.map((leaf, i: number) => {
+                    const company = leaf.company;
+                    const color = getColor(company);
+                    const x = leaf.x0;
+                    const y = leaf.y0;
+                    const width = leaf.x1 - leaf.x0;
+                    const height = leaf.y1 - leaf.y0;
+
+                    if (width <= 0 || height <= 0) return null;
+
+                    const label = getTileLabel(company, width, height);
+                    const opticalOffsetPx = getMobileTileOpticalOffsetPx(label);
+
+                    return (
+                      <div
+                        key={`${company.symbol}-${i}`}
+                        role="button"
+                        tabIndex={0}
+                        data-heatmap-tile="1"
+                        data-min-dim={Math.min(width, height)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedCompany(company);
+                          onTileClick?.(company);
+                        }}
+                        style={{
+                          position: 'absolute',
+                          left: `${x}px`,
+                          top: `${y}px`,
+                          width: `${width}px`,
+                          height: `${height}px`,
+                          background: color,
+                          boxShadow: 'inset 0 0 0 1px rgba(0, 0, 0, 0.25)',
+                          boxSizing: 'border-box',
+                          overflow: 'hidden',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          cursor: 'pointer',
+                          zIndex: 1,
+                        }}
+                      >
+                        {(label.showSymbol || label.showValue) && (
+                          <div
+                            style={{
+                              position: 'absolute',
+                              left: '50%',
+                              top: `calc(50% - ${opticalOffsetPx}px)`,
+                              transform: 'translate(-50%, -50%)',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              pointerEvents: 'none',
+                              textAlign: 'center',
+                              lineHeight: 1.05,
+                              gap: label.showValue ? 2 : 0,
+                            }}
+                          >
+                            {label.showSymbol && (
+                              <div
+                                style={{
+                                  fontSize: `${label.symbolFontPx}px`,
+                                  fontWeight: 800,
+                                  color: '#ffffff',
+                                  textShadow: '0 1px 2px rgba(0,0,0,0.55)',
+                                  letterSpacing: '0.01em',
+                                  whiteSpace: 'nowrap',
+                                  lineHeight: 1,
+                                }}
+                              >
+                                {label.symbol}
+                              </div>
+                            )}
+                            {label.showValue && (
+                              <div
+                                style={{
+                                  fontSize: `${label.valueFontPx}px`,
+                                  fontWeight: 600,
+                                  color: 'rgba(255, 255, 255, 0.92)',
+                                  textShadow: '0 1px 2px rgba(0,0,0,0.45)',
+                                  whiteSpace: 'nowrap',
+                                  lineHeight: 1,
+                                }}
+                              >
+                                {label.value}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            ))}
+          </div>
+        ))}
       </>
     );
   };
 
   return (
     <div
-      className="flex flex-col w-full bg-black overflow-hidden"
+      className="flex flex-col w-full bg-[var(--clr-bg)] overflow-hidden"
       style={{
         position: 'relative',
         height: '100%',
@@ -302,8 +318,8 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
         style={{
           position: 'relative',
           zIndex: 100,
-          background: 'rgba(0,0,0,0.92)',
-          borderBottom: '1px solid rgba(255,255,255,0.08)',
+          background: 'var(--clr-surface)',
+          borderBottom: '1px solid var(--clr-border)',
           padding: '8px 12px',
           paddingTop: 'calc(8px + env(safe-area-inset-top, 0px))',
           display: 'flex',
@@ -314,20 +330,8 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
       >
         <div className="flex items-center gap-2 flex-shrink-0">
           <BrandLogo size={24} />
-          <span className="text-white font-bold text-sm tracking-tight">PreMarketPrice</span>
-          <span
-            style={{
-              fontSize: 11,
-              fontWeight: 600,
-              color: 'rgba(255,255,255,0.55)',
-              marginLeft: 6,
-              letterSpacing: '0.02em',
-            }}
-            aria-label={`Heatmap tickers shown: ${tileCount}`}
-            title={`Tickers shown: ${tileCount}`}
-          >
-            {tileCount}
-          </span>
+          <span className="text-[var(--clr-text)] font-bold text-sm tracking-tight">PreMarketPrice</span>
+
         </div>
         <div className="flex-1" />
         {onMetricChange && (
@@ -374,7 +378,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
           minHeight: 0,
           width: '100%',
           position: 'relative',
-          background: '#000',
+          background: 'var(--clr-bg)',
           overflowY: 'auto',
           overflowX: 'hidden',
           WebkitOverflowScrolling: 'touch',
@@ -389,7 +393,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
             'calc(var(--tabbar-real-h, calc(var(--tabbar-h, 72px) + env(safe-area-inset-bottom, 0px))) + 8px)',
         }}
       >
-        {treemapResult.sectors && treemapResult.sectors.length > 0 && containerSize.width > 0 ? (
+        {treemapResult.rows && treemapResult.rows.length > 0 && containerSize.width > 0 ? (
           renderHeatmapContent()
         ) : (
 
@@ -402,17 +406,17 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
             gap: '12px',
             height: '100%',
             minHeight: '300px',
-            background: '#000',
+            background: 'var(--clr-bg)',
           }}>
             <div
-              className="animate-spin rounded-full border-b-2 border-white"
+              className="animate-spin rounded-full border-b-2 border-[var(--clr-text)]"
               style={{
                 width: '32px',
                 height: '32px',
               }}
             />
             <span style={{
-              color: 'rgba(255, 255, 255, 0.7)',
+              color: 'var(--clr-text-secondary)',
               fontSize: '14px',
             }}>
               Loading heatmap...
@@ -442,8 +446,8 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
               className="fixed inset-x-0"
               style={{
                 zIndex: 10000,
-                background: '#0f0f0f',
-                color: '#ffffff',
+                background: 'var(--clr-surface)',
+                color: 'var(--clr-text)',
                 borderTopLeftRadius: 20,
                 borderTopRightRadius: 20,
                 boxShadow: '0 -8px 32px rgba(0,0,0,0.5)',
@@ -490,8 +494,8 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                     onClick={closeSheet}
                     className="w-10 h-10 rounded-lg flex items-center justify-center text-lg font-semibold transition-colors"
                     style={{
-                      background: 'rgba(255,255,255,0.1)',
-                      color: '#ffffff',
+                      background: 'var(--clr-background-muted)',
+                      color: 'var(--clr-text)',
                       WebkitTapHighlightColor: 'transparent'
                     }}
                     aria-label="Close"
