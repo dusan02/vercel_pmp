@@ -2,47 +2,48 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ============================================
+:root {
+  /* ============================================
    ESSENTIAL CSS VARIABLES
    ============================================ */
-/* App layout heights */
---app-height: 100vh;
---header-h: 64px;
---tabbar-h: 72px;
+  /* App layout heights */
+  --app-height: 100vh;
+  --header-h: 64px;
+  --tabbar-h: 72px;
 
-/* Color system - Default Light Theme */
---color-bg-primary: #f7f8fa;
---color-bg-secondary: #ffffff;
---color-bg-tertiary: #eff6ff;
-/* slightly blueish tint for hover */
---color-border: #e5e7eb;
---color-border-subtle: #f3f4f6;
---color-text-primary: #111827;
---color-text-secondary: #4b5563;
---color-text-tertiary: #9ca3af;
+  /* Color system - Default Light Theme */
+  --color-bg-primary: #f7f8fa;
+  --color-bg-secondary: #ffffff;
+  --color-bg-tertiary: #eff6ff;
+  /* slightly blueish tint for hover */
+  --color-border: #e5e7eb;
+  --color-border-subtle: #f3f4f6;
+  --color-text-primary: #111827;
+  --color-text-secondary: #4b5563;
+  --color-text-tertiary: #9ca3af;
 
-/* Semantic colors */
---color-positive: #16a34a;
---color-negative: #dc2626;
---color-accent: #2563eb;
+  /* Semantic colors */
+  --color-positive: #16a34a;
+  --color-negative: #dc2626;
+  --color-accent: #2563eb;
 
-/* ========================================================================
+  /* ========================================================================
      LEGACY VARIABLE MAPPINGS (Restored from style.css)
      ======================================================================== */
-/* Default (Light Mode) */
---clr-bg: #f7f8fa;
---clr-surface: #ffffff;
---clr-border: #e5e7eb;
---clr-text: #111827;
---clr-subtext: #4b5563;
---clr-primary: #2563eb;
---clr-primary-hover: #1d4ed8;
---clr-positive: #16a34a;
---clr-negative: #dc2626;
---clr-error: #dc2626;
---clr-error-bg: #fef2f2;
---radius: 0.5rem;
---shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  /* Default (Light Mode) */
+  --clr-bg: #f7f8fa;
+  --clr-surface: #ffffff;
+  --clr-border: #e5e7eb;
+  --clr-text: #111827;
+  --clr-subtext: #4b5563;
+  --clr-primary: #2563eb;
+  --clr-primary-hover: #1d4ed8;
+  --clr-positive: #16a34a;
+  --clr-negative: #dc2626;
+  --clr-error: #dc2626;
+  --clr-error-bg: #fef2f2;
+  --radius: 0.5rem;
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 /* Dark Mode Overrides */
