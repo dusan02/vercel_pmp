@@ -157,7 +157,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                     fontWeight: 700,
                     textTransform: 'uppercase',
                     letterSpacing: '0.06em',
-                    color: 'rgba(255, 255, 255, 0.75)',
+                    color: 'var(--clr-text-secondary)', // Use theme variable instead of hardcoded white
                     lineHeight: 1,
                     marginBottom: `${SECTOR_LABEL_TOP_GAP}px`,
                     whiteSpace: 'nowrap',
@@ -171,9 +171,10 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                 <div
                   style={{
                     height: `${SECTOR_LABEL_TOP_DIVIDER_H}px`,
-                    background: 'rgba(255, 255, 255, 0.1)',
+                    background: 'var(--clr-border)', // Use theme variable
                     marginBottom: '2px',
-                    borderRadius: '1px'
+                    borderRadius: '1px',
+                    opacity: 0.5
                   }}
                 />
 
@@ -245,8 +246,8 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                           position: 'absolute',
                           left: `${x}px`,
                           top: `${y}px`,
-                          width: `${width}px`,
-                          height: `${height}px`,
+                          width: `${width - 1}px`, // Add 1px gap
+                          height: `${height - 1}px`, // Add 1px gap
                           background: color,
                           boxShadow: 'inset 0 0 0 1px rgba(0, 0, 0, 0.25)',
                           boxSizing: 'border-box',
@@ -257,6 +258,8 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                           alignItems: 'center',
                           cursor: 'pointer',
                           zIndex: 1,
+                          touchAction: 'pan-y', // Allow vertical scrolling on tiles
+                          borderRadius: '1px', // Slight rounding
                         }}
                       >
                         {(label.showSymbol || label.showValue) && (

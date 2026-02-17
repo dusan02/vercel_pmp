@@ -30,7 +30,7 @@ export const StockCardMobile = memo(({
 
   return (
     <div
-      className="px-3 py-2 active:bg-gray-50 dark:active:bg-gray-800 transition-colors"
+      className="px-3 py-1.5 active:bg-gray-50 dark:active:bg-gray-800 transition-colors border-b border-[var(--clr-border-subtle)] last:border-b-0"
       role="row"
       aria-label={`Stock ${stock.ticker}`}
       style={{
@@ -48,15 +48,15 @@ export const StockCardMobile = memo(({
         role="grid"
       >
 
-        {/* Ticker */}
-        <div className="min-w-0 flex flex-col items-start justify-center gap-1 pl-1">
+        {/* Ticker & Logo - Side by Side */}
+        <div className="min-w-0 flex flex-row items-center justify-start gap-2 pl-1">
           <CompanyLogo
             ticker={stock.ticker}
-            size={40}
-            className="rounded-sm"
+            size={32}
+            className="rounded-sm flex-shrink-0"
             priority={priority}
           />
-          <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100 tracking-tight truncate w-full text-left">
+          <h3 className="font-bold text-sm text-gray-900 dark:text-gray-100 tracking-tight truncate">
             {stock.ticker}
           </h3>
         </div>
