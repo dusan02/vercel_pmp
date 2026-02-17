@@ -6,8 +6,10 @@
 /* Container */
 .heatmapContainer {
   @apply relative w-full h-full;
-  background-color: var(--clr-bg);
-  color: var(--clr-text);
+  background-color: #111827;
+  /* Force dark background */
+  color: #ffffff;
+  /* Force white text */
 }
 
 .heatmapLoading {
@@ -32,7 +34,7 @@
 .heatmapTile {
   @apply absolute flex flex-col items-center justify-center box-border transition-all duration-300 ease-out cursor-pointer;
   /* Thinner border between companies within sectors */
-  border: 1px solid rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(0, 0, 0, 0.4);
 }
 
 .heatmapTile:hover {
@@ -89,11 +91,13 @@
 
 .sectorLabelPillCompact {
   font-weight: 700;
-  color: var(--clr-text-primary, #FFFFFF);
+  color: #FFFFFF !important;
+  /* Force white text */
   padding: 2px 8px;
   border-radius: 4px;
   /* Sharper corners */
-  background: var(--clr-surface, rgba(0, 0, 0, 0.85));
+  background: rgba(0, 0, 0, 0.85) !important;
+  /* Force dark background */
   /* High opacity for better readability */
   backdrop-filter: blur(4px);
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -113,7 +117,7 @@
 }
 
 .sectorLabelPillCompact:hover {
-  background: rgba(0, 0, 0, 0.95);
+  background: rgba(0, 0, 0, 0.95) !important;
   border-color: rgba(255, 255, 255, 0.6);
 }
 
@@ -127,11 +131,13 @@
 
 .sectorLabelStripFull {
   font-weight: 700;
-  color: var(--clr-text-primary, #FFFFFF);
+  color: #FFFFFF !important;
+  /* Force white text */
   padding: 3px 8px;
   border-radius: 2px;
   /* Very sharp corners for header look */
-  background: var(--clr-surface, rgba(0, 0, 0, 0.85));
+  background: rgba(0, 0, 0, 0.85) !important;
+  /* Force dark background */
   /* Solid dark background */
   backdrop-filter: blur(4px);
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -156,7 +162,7 @@
 }
 
 .sectorLabelStripFull:hover {
-  background: #000000;
+  background: #000000 !important;
   border-color: rgba(255, 255, 255, 0.6);
 }
 

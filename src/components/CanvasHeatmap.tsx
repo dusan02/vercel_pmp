@@ -109,12 +109,10 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
         const ctx = canvas.getContext('2d', { alpha: false }); // Alpha false for performance
         if (!ctx) return;
 
-        // Get theme colors from CSS variables
-        const computedStyle = getComputedStyle(document.documentElement);
-        const bgPrimary = computedStyle.getPropertyValue('--clr-bg').trim() || '#ffffff';
-        const textPrimary = computedStyle.getPropertyValue('--clr-text').trim() || '#000000';
-        const borderColor = computedStyle.getPropertyValue('--clr-border').trim() || 'rgba(0, 0, 0, 0.25)';
-        const textInverse = theme === 'dark' ? '#000000' : '#ffffff'; // Best contrast for colored tiles usually white, but customizable
+        // Force dark theme colors for heatmap regardless of app theme
+        const bgPrimary = '#111827'; // Dark gray/black
+        const textPrimary = '#ffffff'; // Always white
+        const borderColor = 'rgba(0, 0, 0, 0.4)'; // Darker border
 
         // Handle High DPI
         const dpr = window.devicePixelRatio || 1;
@@ -124,9 +122,10 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
         canvas.style.height = `${height}px`;
         ctx.scale(dpr, dpr);
 
-        // Clear with theme background
+        // Clear with dark background
         ctx.fillStyle = bgPrimary;
         ctx.fillRect(0, 0, width, height);
+
 
         const colorScale = createHeatmapColorScale(timeframe, metric === 'mcap' ? 'mcap' : 'percent');
 
