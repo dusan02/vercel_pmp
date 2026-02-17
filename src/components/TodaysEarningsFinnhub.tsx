@@ -265,8 +265,8 @@ const EarningsHeader = () => (
 const EarningsLoader = () => (
   <section className="todays-earnings">
     <EarningsHeader />
-    <div className="flex items-center justify-center p-8">
-      <span className="text-gray-600">Loading today&apos;s earnings...</span>
+    <div className="flex items-center justify-center p-8 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800">
+      <span className="text-gray-600 dark:text-gray-400">Loading today&apos;s earnings...</span>
     </div>
   </section>
 );
@@ -275,7 +275,7 @@ const EarningsLoader = () => (
 const EarningsError = ({ error, onRetry }: { error: string; onRetry: () => void }) => (
   <section className="todays-earnings">
     <EarningsHeader />
-    <div className="flex flex-col items-center justify-center gap-3 py-16 px-4 text-center bg-white dark:bg-transparent rounded-xl border border-gray-100 dark:border-gray-800">
+    <div className="flex flex-col items-center justify-center gap-3 py-16 px-4 text-center bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800">
       <div className="text-6xl mb-2 opacity-50 grayscale">
         ⚠️
       </div>
@@ -299,7 +299,7 @@ const EarningsError = ({ error, onRetry }: { error: string; onRetry: () => void 
 const EarningsEmpty = () => (
   <section className="todays-earnings">
     <EarningsHeader />
-    <div className="flex flex-col items-center justify-center gap-3 py-16 px-4 text-center bg-white dark:bg-transparent rounded-xl border border-gray-100 dark:border-gray-800">
+    <div className="flex flex-col items-center justify-center gap-3 py-16 px-4 text-center bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800">
       <div className="text-6xl mb-2 opacity-50 grayscale">
         📅
       </div>
