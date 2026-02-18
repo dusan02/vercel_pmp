@@ -32,7 +32,7 @@ export const SectorListMobile: React.FC<SectorListMobileProps> = ({
 
     data.forEach((company) => {
       const sectorName = company.sector || 'Other';
-      
+
       if (!sectorMap.has(sectorName)) {
         sectorMap.set(sectorName, {
           name: sectorName,
@@ -63,16 +63,16 @@ export const SectorListMobile: React.FC<SectorListMobileProps> = ({
     // Convert to array and sort by total market cap (descending)
     // Technology should be first, then others by market cap
     const sectorsArray = Array.from(sectorMap.values());
-    
+
     sectorsArray.sort((a, b) => {
       // Technology is always first
       if (a.name === 'Technology' && b.name !== 'Technology') return -1;
       if (a.name !== 'Technology' && b.name === 'Technology') return 1;
-      
+
       // Other is always last
       if (a.name === 'Other' && b.name !== 'Other') return 1;
       if (a.name !== 'Other' && b.name === 'Other') return -1;
-      
+
       // Others sorted by total market cap (descending)
       return b.totalMarketCap - a.totalMarketCap;
     });
@@ -81,9 +81,9 @@ export const SectorListMobile: React.FC<SectorListMobileProps> = ({
   }, [data]);
 
   const getChangeColor = (changePercent: number) => {
-    if (changePercent > 0) return 'text-green-400';
-    if (changePercent < 0) return 'text-red-400';
-    return 'text-gray-400';
+    if (changePercent > 0) return 'text-green-600 dark:text-green-400';
+    if (changePercent < 0) return 'text-red-600 dark:text-red-400';
+    return 'text-gray-500 dark:text-gray-400';
   };
 
   const getChangeIcon = (changePercent: number) => {
@@ -93,39 +93,39 @@ export const SectorListMobile: React.FC<SectorListMobileProps> = ({
   };
 
   return (
-    <div className="w-full h-full overflow-y-auto bg-black">
+    <div className="w-full h-full overflow-y-auto bg-gray-50 dark:bg-black">
       <div className="p-4 space-y-3">
         {sectors.map((sector) => (
           <button
             key={sector.name}
             onClick={() => onSectorClick(sector.name)}
-            className="w-full bg-gray-900 hover:bg-gray-800 border border-gray-700 rounded-lg p-4 text-left transition-colors"
+            className="w-full bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 text-left transition-colors shadow-sm"
           >
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-white font-semibold text-lg">
+              <h3 className="text-gray-900 dark:text-white font-semibold text-lg">
                 {formatSectorName(sector.name)}
               </h3>
               <span className="text-2xl">
                 {getChangeIcon(sector.avgChangePercent)}
               </span>
             </div>
-            
+
             <div className="space-y-1 text-sm">
-              <div className="text-gray-400">
+              <div className="text-gray-500 dark:text-gray-400">
                 {sector.companyCount} {sector.companyCount === 1 ? 'company' : 'companies'}
               </div>
-              
-              <div className="text-gray-300">
+
+              <div className="text-gray-600 dark:text-gray-300">
                 {formatBillions(sector.totalMarketCap)} market cap
               </div>
-              
+
               <div className={`font-medium ${getChangeColor(sector.avgChangePercent)}`}>
                 {sector.avgChangePercent >= 0 ? '+' : ''}
                 {sector.avgChangePercent.toFixed(2)}% avg change
               </div>
             </div>
-            
-            <div className="mt-3 flex items-center justify-end text-blue-400 text-sm">
+
+            <div className="mt-3 flex items-center justify-end text-blue-600 dark:text-blue-400 text-sm">
               View heatmap →
             </div>
           </button>

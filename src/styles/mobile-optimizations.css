@@ -647,9 +647,14 @@
     justify-content: space-around;
     align-items: center;
     height: var(--tabbar-h, 72px);
+    background: #ffffff;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .dark .mobile-app-tabbar {
     background: #0f0f0f;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
-    padding-bottom: env(safe-area-inset-bottom);
   }
 
   .mobile-app-tab {
@@ -662,14 +667,22 @@
     height: 100%;
     background: transparent;
     border: none;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(0, 0, 0, 0.45);
     cursor: pointer;
     transition: color 0.2s ease;
     padding: 0.5rem;
     -webkit-tap-highlight-color: transparent;
   }
 
+  .dark .mobile-app-tab {
+    color: rgba(255, 255, 255, 0.5);
+  }
+
   .mobile-app-tab:active {
+    background: rgba(0, 0, 0, 0.05);
+  }
+
+  .dark .mobile-app-tab:active {
     background: rgba(255, 255, 255, 0.05);
   }
 

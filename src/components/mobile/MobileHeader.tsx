@@ -7,7 +7,7 @@ import { ThemeToggle } from '../ThemeToggle';
 
 /**
  * MobileHeader - Moderný minimalistický header
- * Len logo + brand + sign in
+ * Theme-aware: white text on dark bg in dark mode, dark text on white bg in light mode
  */
 interface MobileHeaderProps {
   onLogoClick?: () => void;
@@ -41,13 +41,13 @@ export function MobileHeader({ onLogoClick }: MobileHeaderProps) {
         >
           <div className={`transition-opacity ${isNavigating ? 'opacity-50' : ''}`}>
             <BrandLogo size={24} />
-            <span className="font-bold text-sm tracking-tight text-white ml-2">
+            <span className="font-bold text-sm tracking-tight text-gray-900 dark:text-white ml-2">
               PreMarketPrice
             </span>
           </div>
         </button>
         <div className="flex-shrink-0 flex items-center gap-2">
-          <ThemeToggle className="text-white hover:bg-white/10" />
+          <ThemeToggle className="text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-white/10" />
           <LoginButton />
         </div>
       </div>

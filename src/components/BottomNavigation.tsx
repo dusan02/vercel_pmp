@@ -53,8 +53,6 @@ export function BottomNavigation({ activeSection, onSectionChange }: BottomNavig
 
   const handleNavigation = (item: typeof navItems[0]) => {
     if (onSectionChange) {
-      // Convert id to expected section name if needed (e.g. all-stocks -> allStocks)
-      // MobileShell expects: 'heatmap' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks'
       const sectionName = item.id === 'all-stocks' ? 'allStocks' : item.id;
       onSectionChange(sectionName);
     } else {
@@ -66,9 +64,9 @@ export function BottomNavigation({ activeSection, onSectionChange }: BottomNavig
     <nav
       role="navigation"
       aria-label="Main navigation"
-      className="lg:hidden fixed bottom-0 left-0 w-full border-t border-gray-800 z-[110]"
+      className="lg:hidden fixed bottom-0 left-0 w-full border-t border-gray-200 dark:border-gray-800 z-[110]
+        bg-white dark:bg-[#0f0f0f]"
       style={{
-        backgroundColor: '#0f0f0f',
         paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 0.5rem)',
         paddingLeft: 'env(safe-area-inset-left, 0px)',
         paddingRight: 'env(safe-area-inset-right, 0px)'
@@ -86,7 +84,7 @@ export function BottomNavigation({ activeSection, onSectionChange }: BottomNavig
               className={`flex flex-col items-center justify-center w-full h-full transition-all rounded-lg gap-0.5
                 ${active
                   ? 'text-blue-600 bg-blue-600/10'
-                  : 'text-[var(--clr-subtext)] active:bg-gray-800'
+                  : 'text-gray-500 dark:text-gray-400 active:bg-gray-100 dark:active:bg-gray-800'
                 }`}
               aria-label={item.label}
               aria-current={active ? 'page' : undefined}

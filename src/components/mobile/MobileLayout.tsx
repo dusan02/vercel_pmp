@@ -80,7 +80,7 @@ export function MobileLayout({ activeTab, onTabChange, screens }: MobileLayoutPr
     };
 
     return (
-        <div className="fixed inset-0 flex flex-col bg-black overflow-hidden font-sans text-white select-none"
+        <div className="fixed inset-0 flex flex-col bg-white dark:bg-black overflow-hidden font-sans text-gray-900 dark:text-white select-none"
             style={{ height: 'var(--app-height, 100vh)' }}>
 
             {/* Dynamic Header */}
@@ -118,7 +118,7 @@ export function MobileLayout({ activeTab, onTabChange, screens }: MobileLayoutPr
             </main>
 
             {/* Navigation Tab Bar */}
-            <div className="flex-shrink-0 z-20 bg-[#0f0f0f] border-t border-white/10">
+            <div className="flex-shrink-0 z-20 bg-white dark:bg-[#0f0f0f] border-t border-gray-200 dark:border-white/10">
                 <MobileTabBar activeTab={activeTab} onTabChange={onTabChange} />
             </div>
         </div>
