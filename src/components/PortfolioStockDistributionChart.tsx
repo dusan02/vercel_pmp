@@ -97,7 +97,7 @@ export function PortfolioStockDistributionChart({ data, size = 300 }: PortfolioS
     const labelRadius = outerRadius + 20;  // Radius where the line break starts
 
     // Increase viewBox to accommodate labels
-    const padding = 120;
+    const padding = 140;
     const viewBoxSize = size + padding * 2;
     const center = viewBoxSize / 2;
 
@@ -155,7 +155,7 @@ export function PortfolioStockDistributionChart({ data, size = 300 }: PortfolioS
                                     ? [
                                         createArc(slice.startAngle, slice.startAngle + 180, outer, innerRadius),
                                         createArc(slice.startAngle + 180, slice.startAngle + 360, outer, innerRadius),
-                                      ]
+                                    ]
                                     : [createArc(slice.startAngle, slice.endAngle, outer, innerRadius)];
 
                                 return paths.map((d, idx) => (
@@ -213,7 +213,7 @@ export function PortfolioStockDistributionChart({ data, size = 300 }: PortfolioS
                                             x={textX}
                                             y={textY - 4} // Ticker above line
                                             textAnchor={textAnchor}
-                                            className="text-xs font-bold fill-gray-900 dark:fill-gray-100"
+                                            className="text-sm font-bold fill-gray-900 dark:fill-gray-100"
                                         >
                                             {slice.ticker}
                                         </text>
@@ -221,7 +221,7 @@ export function PortfolioStockDistributionChart({ data, size = 300 }: PortfolioS
                                             x={textX}
                                             y={textY + 10} // Percent below line
                                             textAnchor={textAnchor}
-                                            className="text-[10px] fill-gray-500 dark:fill-gray-400"
+                                            className="text-xs fill-gray-500 dark:fill-gray-400"
                                         >
                                             {slice.percentage.toFixed(1)}%
                                         </text>

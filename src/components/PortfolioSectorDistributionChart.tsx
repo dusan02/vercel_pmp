@@ -238,7 +238,7 @@ export function PortfolioSectorDistributionChart({ data, size = 300 }: Portfolio
     }
 
     // Dimensions
-    const padding = 140; // Space for labels
+    const padding = 160; // Space for labels
     const viewBoxSize = size + padding * 2;
     const center = viewBoxSize / 2;
     const radius = size / 2;
@@ -283,7 +283,7 @@ export function PortfolioSectorDistributionChart({ data, size = 300 }: Portfolio
                                     ? [
                                         createArcPath(node.x0, node.x0 + Math.PI, inner, displayOuter),
                                         createArcPath(node.x0 + Math.PI, node.x1, inner, displayOuter),
-                                      ]
+                                    ]
                                     : [createArcPath(node.x0, node.x1, inner, displayOuter)];
 
                                 return paths.map((d, idx) => (
@@ -329,7 +329,7 @@ export function PortfolioSectorDistributionChart({ data, size = 300 }: Portfolio
                                             x={elbowEnd.x + (isRight ? 5 : -5)}
                                             y={elbowEnd.y + 4}
                                             textAnchor={isRight ? 'start' : 'end'}
-                                            className="text-xs font-bold fill-gray-900 dark:fill-gray-100"
+                                            className="text-sm font-bold fill-gray-900 dark:fill-gray-100"
                                         >
                                             {node.name}
                                         </text>
@@ -337,7 +337,7 @@ export function PortfolioSectorDistributionChart({ data, size = 300 }: Portfolio
                                             x={elbowEnd.x + (isRight ? 5 : -5)}
                                             y={elbowEnd.y + 16}
                                             textAnchor={isRight ? 'start' : 'end'}
-                                            className="text-[10px] fill-gray-500 dark:fill-gray-400"
+                                            className="text-xs fill-gray-500 dark:fill-gray-400"
                                         >
                                             {node.percentage.toFixed(1)}%
                                         </text>
