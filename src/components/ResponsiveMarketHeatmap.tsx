@@ -168,28 +168,17 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
 
   // Render content logic
   const renderContent = () => {
-    // CRITICAL: Don't render heatmap until we have valid dimensions
-    // This prevents "empty background" bug on mobile
-    // OPTIMIZATION: Require minimum dimensions to prevent flickering
-    // DEBUG: Log dimensions for troubleshooting
-    // NOTE: On desktop, allow smaller minimum (50px) since container might be measured before fully rendered
-    // NOTE: On desktop, allow smaller minimum (50px) since container might be measured before fully rendered
+    // DESKTOP ONLY: Don't render until we have valid dimensions.
+    // On mobile, skip this gate entirely — MobileTreemapNew handles its own
+    // dimension measurement. When the mobile-app-screen is hidden (display:none),
+    // useElementResize returns 0x0 which would block rendering indefinitely.
     const minDimension = 50;
 
-    // CRITICAL FIX: On mobile, we MUST render MobileTreemapNew even if dimensions are 0 (e.g. hidden tab).
-    // If we unmount it when width=0 (tab switch), we lose state and cause a heavy re-mount on return.
-    // MobileTreemapNew handles its own measuring and 0-size state gracefully.
     if (!isMobile && (!width || !height || width < minDimension || height < minDimension)) {
-      if (process.env.NODE_ENV !== 'production' && typeof window !== 'undefined') {
-        console.log('⚠️ Heatmap: Dimensions too small or not ready', { width, height, isMounted, isMobile, minDimension });
-      }
       return (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 z-40 bg-white dark:bg-transparent">
           <div className="animate-pulse text-sm text-gray-400">
-            Measuring container... ({width}x{height})
-          </div>
-          <div className="text-xs text-gray-300">
-            Min required: {minDimension}px
+            Measuring container...
           </div>
         </div>
       );

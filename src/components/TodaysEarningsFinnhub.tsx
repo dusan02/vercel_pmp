@@ -7,6 +7,7 @@ import { SectionIcon } from './SectionIcon';
 import { StockData } from '@/lib/types';
 import CompanyLogo from './CompanyLogo';
 import { EarningsCardMobile } from './EarningsCardMobile';
+import { MobileSortHeader } from './mobile/MobileSortHeader';
 
 interface EarningsData {
   ticker: string;
@@ -426,15 +427,28 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
 
 
 
-          {/* Mobile: Card Layout */}
-          <div className="lg:hidden flex flex-col divide-y divide-gray-100 dark:divide-gray-800">
-            {allEarnings.map((earning, index) => (
-              <EarningsCardMobile
-                key={`${earning.ticker}-mobile-${index}`}
-                earning={earning}
-                priority={index < 10}
-              />
-            ))}
+          {/* Mobile: Card Layout with Sort Header */}
+          <div className="lg:hidden flex flex-col">
+            <MobileSortHeader
+              columns={[
+                { key: 'ticker', label: 'Ticker', sortable: true, width: 'flex-1', align: 'left' },
+                { key: 'epsEstimate', label: 'EPS', sortable: true, width: 'w-16', align: 'center' },
+                { key: 'revenueEstimate', label: 'Revenue', sortable: true, width: 'w-16', align: 'center' },
+                { key: 'percentChange', label: '% Chg', sortable: true, width: 'w-14', align: 'right' },
+              ]}
+              sortKey={sortKey}
+              ascending={ascending}
+              onSort={(key) => handleSort(key as keyof EarningsData)}
+            />
+            <div className="divide-y divide-gray-100 dark:divide-gray-800">
+              {allEarnings.map((earning, index) => (
+                <EarningsCardMobile
+                  key={`${earning.ticker}-mobile-${index}`}
+                  earning={earning}
+                  priority={index < 10}
+                />
+              ))}
+            </div>
           </div>
 
           {/* Desktop: Table layout */}

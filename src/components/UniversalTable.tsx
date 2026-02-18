@@ -4,6 +4,7 @@ import React from 'react';
 import { SortKey } from '@/hooks/useSortableData';
 import { SectionLoader } from './SectionLoader';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { MobileSortHeader } from './mobile/MobileSortHeader';
 
 export interface ColumnDef<T> {
     key: string;
@@ -144,6 +145,21 @@ export function UniversalTable<T>({
             {/* Mobile Card View (lg:hidden) — virtualized for large lists */}
             {showMobileCards && (
                 <div className="lg:hidden">
+                    {/* Sort header for mobile cards */}
+                    {onSort && sortKey !== undefined && (
+                        <MobileSortHeader
+                            columns={columns.filter(c => c.sortable !== false).map(col => ({
+                                key: col.key,
+                                label: typeof col.header === 'string' ? col.header : col.key,
+                                sortable: col.sortable !== false,
+                                align: col.align || 'left',
+                                ...(col.width ? { width: col.width } : {}),
+                            }))}
+                            sortKey={sortKey as string}
+                            ascending={ascending ?? false}
+                            onSort={handleSort}
+                        />
+                    )}
                     {data.length === 0 ? (
                         <div className="p-8 text-center text-[var(--clr-subtext)]">
                             {emptyMessage}
