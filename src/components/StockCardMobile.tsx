@@ -23,6 +23,7 @@ export const StockCardMobile = memo(({
 }: StockCardMobileProps) => {
   const formattedPrice = useMemo(() => formatPrice(stock.currentPrice), [stock.currentPrice]);
   const formattedPercentChange = useMemo(() => formatPercent(stock.percentChange), [stock.percentChange]);
+  const companyName = useMemo(() => getCompanyName(stock.ticker), [stock.ticker]);
   const isPositive = stock.percentChange >= 0;
   const hasValidPrice = stock.currentPrice > 0;
   const capDiffIsPositive = (stock.marketCapDiff ?? 0) >= 0;
@@ -62,7 +63,7 @@ export const StockCardMobile = memo(({
               {stock.ticker}
             </h3>
             <div className="text-[10px] text-gray-500 truncate">
-              {getCompanyName(stock.ticker)}
+              {companyName}
             </div>
           </div>
         </div>

@@ -83,7 +83,7 @@ export function BottomNavigation({ activeSection, onSectionChange }: BottomNavig
             <button
               key={item.id}
               onClick={() => handleNavigation(item)}
-              className={`flex flex-col items-center justify-center w-full h-full transition-all rounded-lg
+              className={`flex flex-col items-center justify-center w-full h-full transition-all rounded-lg gap-0.5
                 ${active
                   ? 'text-blue-600 bg-blue-600/10'
                   : 'text-[var(--clr-subtext)] active:bg-gray-800'
@@ -92,7 +92,10 @@ export function BottomNavigation({ activeSection, onSectionChange }: BottomNavig
               aria-current={active ? 'page' : undefined}
               style={{ minWidth: '44px', minHeight: '44px' }}
             >
-              <Icon size={24} strokeWidth={active ? 2.5 : 2} />
+              <Icon size={22} strokeWidth={active ? 2.5 : 2} />
+              <span className={`text-[9px] leading-none ${active ? 'font-semibold' : 'font-normal'}`}>
+                {item.label}
+              </span>
             </button>
           );
         })}

@@ -18,6 +18,7 @@ import {
   atomicUpdatePrice
 } from '@/lib/redis/operations';
 import { redisClient } from '@/lib/redis';
+import { recordSuccess, recordFailure } from './healthMonitor';
 import { PriceData } from '@/lib/types';
 import { detectSession, isMarketOpen, isMarketHoliday, mapToRedisSession, getLastTradingDay, getTradingDay } from '@/lib/utils/timeUtils';
 import { nowET, getDateET, createETDate, isWeekendET, toET } from '@/lib/utils/dateET';
@@ -558,8 +559,12 @@ export async function saveRegularClose(apiKey: string, date: string, runId?: str
 
     console.log(`✅ [runId:${correlationId}] Saved regular close for ${saved}/${snapshots.length} tickers`);
     console.log(`✅ [runId:${correlationId}] Updated previousClose for ${prevCloseUpdated} tickers (nextTradingDay: ${nextTradingDateStr}, todayTradingDay: ${getDateET(todayTradingDay)})`);
+    // Health monitoring: record success
+    await recordSuccess('saveRegularClose', saved);
   } catch (error) {
     console.error(`❌ [runId:${correlationId}] Error in saveRegularClose:`, error);
+    // Health monitoring: record failure
+    await recordFailure('saveRegularClose', error instanceof Error ? error.message : String(error));
   }
 }
 
@@ -1206,6 +1211,8 @@ export async function bootstrapPreviousCloses(
   }
 
   console.log(`✅ Bootstrap complete: ${snapshotHits} from snapshot, ${fallbackHits} from fallback, ${failedCount} failed`);
+  // Health monitoring: record bootstrap result
+  await recordSuccess('bootstrapPreviousCloses', snapshotHits + fallbackHits);
 }
 
 /**

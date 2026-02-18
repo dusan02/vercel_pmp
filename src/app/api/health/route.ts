@@ -196,7 +196,7 @@ export async function GET(request: NextRequest) {
   let workerHealth: any = null;
   let redisHealth: any = null;
   let freshnessMetrics: any = null;
-  
+
   try {
     // Fetch worker health (internal call)
     const workerResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/health/worker`, {
@@ -208,7 +208,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.warn('Failed to fetch worker health:', error);
   }
-  
+
   try {
     // Fetch Redis health (internal call)
     const redisResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/health/redis`, {
@@ -220,7 +220,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.warn('Failed to fetch Redis health:', error);
   }
-  
+
   try {
     // Fetch freshness metrics (internal call)
     const freshnessResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/metrics/freshness`, {
@@ -232,7 +232,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.warn('Failed to fetch freshness metrics:', error);
   }
-  
+
   // Determine overall canary status
   const canaryStatus = (
     healthStatus.status === 'healthy' &&
@@ -240,6 +240,25 @@ export async function GET(request: NextRequest) {
     redisHealth?.status === 'healthy' &&
     freshnessMetrics?.success === true
   ) ? 'healthy' : 'degraded';
+
+  // 6. Check worker operations health (saveRegularClose, bootstrapPreviousCloses)
+  let operationsHealth: any = null;
+  try {
+    const { getAllHealthStatuses } = await import('@/workers/healthMonitor');
+    const statuses = await getAllHealthStatuses();
+    operationsHealth = statuses.reduce((acc: any, s: any) => {
+      acc[s.operation] = {
+        isHealthy: s.isHealthy,
+        lastSuccessAt: s.lastSuccessAt,
+        lastSuccessCount: s.lastSuccessCount,
+        lastError: s.lastError,
+        hoursSinceLastSuccess: s.hoursSinceLastSuccess,
+      };
+      return acc;
+    }, {});
+  } catch (error) {
+    console.warn('Failed to fetch operations health:', error);
+  }
 
   const totalResponseTime = Date.now() - startTime;
   const statusCode = canaryStatus === 'healthy' ? 200 : 503;
@@ -255,6 +274,7 @@ export async function GET(request: NextRequest) {
           freshness: freshnessMetrics
         }
       },
+      operations: operationsHealth,
       responseTime: totalResponseTime,
     },
     {

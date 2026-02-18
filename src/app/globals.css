@@ -95,6 +95,7 @@
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
 
   /* iOS viewport height fix */
@@ -571,6 +572,7 @@
 
   /* Mobile: tighter section spacing */
   @media (max-width: 1023px) {
+
     .portfolio,
     .favorites,
     .todays-earnings,
