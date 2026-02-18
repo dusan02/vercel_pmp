@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutGrid, PieChart, Star, Calendar, List } from 'lucide-react';
+import { LayoutGrid, PieChart, Star, Calendar, Globe } from 'lucide-react';
 
 interface BottomNavigationProps {
   activeSection?: string;
@@ -45,7 +45,7 @@ export function BottomNavigation({ activeSection, onSectionChange }: BottomNavig
     {
       id: 'all-stocks',
       label: 'All Stocks',
-      icon: List,
+      icon: Globe,
       path: '/#all-stocks',
       isActive: (section?: string) => section === 'allStocks' || section === 'all-stocks'
     }

@@ -563,11 +563,22 @@
 /* Better spacing on mobile */
 @media (max-width: 768px) {
   section {
-    padding: 1rem 0.5rem;
+    padding: 0.5rem 0.25rem;
   }
 
   .section-content {
-    padding: 0.75rem 0;
+    padding: 0.5rem 0;
+  }
+}
+
+/* Smoother scrolling - prevent overscroll lock */
+@media (max-width: 1023px) {
+
+  .mobile-app-screen,
+  .mobile-main-content,
+  .mobile-scroll-container {
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
   }
 }
 

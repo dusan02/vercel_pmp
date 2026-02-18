@@ -240,6 +240,7 @@ async function upsertToDB(
         lastPriceUpdated: true,
         lastChangePct: true,
         latestPrevClose: true,
+        latestPrevCloseDate: true,
         // Fetch other fields if we need to merge? (Usually not needed for this logic)
       }
     });
@@ -302,7 +303,11 @@ async function upsertToDB(
       // So here existingTicker is NOT null.
 
       // Maybe just update Reference info if provided?
-      if (previousClose && existingTicker && (!existingTicker.latestPrevClose || previousClose !== existingTicker.latestPrevClose)) {
+      // CRITICAL FIX: Same guard as below — don't overwrite if saveRegularClose already set a newer date.
+      const skipPrevCloseIsNewer = existingTicker?.latestPrevCloseDate
+        && lastTradingDay.getTime() < existingTicker.latestPrevCloseDate.getTime();
+      if (previousClose && existingTicker && !skipPrevCloseIsNewer
+        && (!existingTicker.latestPrevClose || previousClose !== existingTicker.latestPrevClose)) {
         await prisma.ticker.update({
           where: { symbol },
           data: {
@@ -317,6 +322,17 @@ async function upsertToDB(
       return { success: true, effectiveChangePct: changePctToUse };
     }
 
+    // CRITICAL FIX: Guard latestPrevClose from being overwritten with stale data.
+    // saveRegularClose (runs at ~16:05 ET) sets latestPrevClose = today's close for NEXT trading day.
+    // But upsertToDB (runs continuously) passes previousClose = LAST trading day's close (for TODAY's % calc).
+    // Without this guard, ingest after 16:05 ET overwrites the newer reference with the older one,
+    // causing the heatmap to show cumulative multi-day % change after midnight date flip.
+    const shouldUpdatePrevClose = previousClose && (() => {
+      if (!existingTicker?.latestPrevCloseDate) return true; // No existing date = safe to write
+      // Only update if our lastTradingDay is >= existing date (i.e., we're not going backwards)
+      return lastTradingDay.getTime() >= existingTicker.latestPrevCloseDate.getTime();
+    })();
+
     // Standard Upsert (New Data or Create)
     await prisma.ticker.upsert({
       where: { symbol },
@@ -327,7 +343,7 @@ async function upsertToDB(
         lastMarketCap: marketCap,
         lastMarketCapDiff: marketCapDiff,
         lastPriceUpdated: normalized.timestamp,
-        ...(previousClose ? {
+        ...(shouldUpdatePrevClose ? {
           latestPrevClose: previousClose,
           latestPrevCloseDate: lastTradingDay
         } : {})

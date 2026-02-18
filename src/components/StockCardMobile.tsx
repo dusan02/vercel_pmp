@@ -4,6 +4,7 @@ import React, { memo, useMemo } from 'react';
 import { StockData } from '@/lib/types';
 import { formatPrice, formatPercent, formatMarketCap, formatMarketCapDiff } from '@/lib/utils/format';
 import CompanyLogo from './CompanyLogo';
+import { getCompanyName } from '@/lib/companyNames';
 
 interface StockCardMobileProps {
   stock: StockData;
@@ -30,7 +31,7 @@ export const StockCardMobile = memo(({
 
   return (
     <div
-      className="px-3 py-1.5 active:bg-gray-50 dark:active:bg-gray-800 transition-colors border-b border-[var(--clr-border-subtle)] last:border-b-0"
+      className="px-3 py-2 active:bg-gray-50 dark:active:bg-gray-800 transition-colors border-b border-gray-100 dark:border-gray-800 last:border-b-0"
       role="row"
       aria-label={`Stock ${stock.ticker}`}
       style={{
@@ -48,7 +49,7 @@ export const StockCardMobile = memo(({
         role="grid"
       >
 
-        {/* Ticker & Logo - Side by Side */}
+        {/* Logo + Ticker & Company Name */}
         <div className="min-w-0 flex flex-row items-center justify-start gap-2 pl-1">
           <CompanyLogo
             ticker={stock.ticker}
@@ -56,9 +57,14 @@ export const StockCardMobile = memo(({
             className="rounded-sm flex-shrink-0"
             priority={priority}
           />
-          <h3 className="font-bold text-sm text-gray-900 dark:text-gray-100 tracking-tight truncate">
-            {stock.ticker}
-          </h3>
+          <div className="min-w-0 overflow-hidden">
+            <h3 className="font-bold text-sm text-gray-900 dark:text-gray-100 tracking-tight truncate">
+              {stock.ticker}
+            </h3>
+            <div className="text-[10px] text-gray-500 truncate">
+              {getCompanyName(stock.ticker)}
+            </div>
+          </div>
         </div>
 
         {displayMode === 'capDiff' ? (

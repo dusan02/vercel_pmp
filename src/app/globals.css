@@ -569,6 +569,16 @@
     margin-bottom: 3rem;
   }
 
+  /* Mobile: tighter section spacing */
+  @media (max-width: 1023px) {
+    .portfolio,
+    .favorites,
+    .todays-earnings,
+    .all-stocks {
+      margin-bottom: 0.5rem;
+    }
+  }
+
   /* --- Custom Dropdown Menu --- */
   .custom-dropdown-menu {
     background: var(--clr-surface);

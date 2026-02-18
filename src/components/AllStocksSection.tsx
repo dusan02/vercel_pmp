@@ -331,24 +331,28 @@ export const AllStocksSection = React.memo(function AllStocksSection({
             />
           </div>
 
-          {/* Dropdowns - always visible */}
-          <div className="mobile-filters-row mb-2">
-            <CustomDropdown
-              value={selectedSector}
-              onChange={handleSectorChange}
-              options={sectorOptions}
-              className="sector-filter"
-              ariaLabel="Filter by sector"
-              placeholder="All Sectors"
-            />
-            <CustomDropdown
-              value={selectedIndustry}
-              onChange={onIndustryChange}
-              options={industryOptions}
-              className="industry-filter"
-              ariaLabel="Filter by industry"
-              placeholder="All Industries"
-            />
+          {/* Dropdowns - side by side */}
+          <div className="mobile-filters-row mb-2 flex gap-2">
+            <div className="flex-1 min-w-0">
+              <CustomDropdown
+                value={selectedSector}
+                onChange={handleSectorChange}
+                options={sectorOptions}
+                className="sector-filter w-full"
+                ariaLabel="Filter by sector"
+                placeholder="All Sectors"
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <CustomDropdown
+                value={selectedIndustry}
+                onChange={onIndustryChange}
+                options={industryOptions}
+                className="industry-filter w-full"
+                ariaLabel="Filter by industry"
+                placeholder="All Industries"
+              />
+            </div>
           </div>
 
           {/* Active filters chips */}
