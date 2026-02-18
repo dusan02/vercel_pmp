@@ -28,7 +28,8 @@ export interface HealthStatus {
  */
 export async function recordSuccess(operation: string, count: number = 0): Promise<void> {
     try {
-        const redis = await redisClient();
+        const redis = redisClient;
+        if (!redis) throw new Error("Redis client not initialized");
         const key = `${HEALTH_PREFIX}${operation}`;
         const now = new Date().toISOString();
 
@@ -49,7 +50,8 @@ export async function recordSuccess(operation: string, count: number = 0): Promi
  */
 export async function recordFailure(operation: string, error: string): Promise<void> {
     try {
-        const redis = await redisClient();
+        const redis = redisClient;
+        if (!redis) throw new Error("Redis client not initialized");
         const key = `${HEALTH_PREFIX}${operation}`;
         const now = new Date().toISOString();
 
@@ -68,7 +70,8 @@ export async function recordFailure(operation: string, error: string): Promise<v
  */
 export async function getHealthStatus(operation: string): Promise<HealthStatus> {
     try {
-        const redis = await redisClient();
+        const redis = redisClient;
+        if (!redis) throw new Error("Redis client not initialized");
         const key = `${HEALTH_PREFIX}${operation}`;
         const data = await redis.hGetAll(key);
 
