@@ -38,7 +38,7 @@ const coreSectors: { [key: string]: { sector: string; industry: string } } = {
   'PANW': { sector: 'Technology', industry: 'Software' },
   'PLTR': { sector: 'Technology', industry: 'Software' },
   'NOW': { sector: 'Technology', industry: 'Software' }, // ServiceNow - cloud software platform
-  
+
   // Consumer Cyclical
   'AMZN': { sector: 'Consumer Cyclical', industry: 'Internet Retail' },
   'TSLA': { sector: 'Consumer Cyclical', industry: 'Auto Manufacturers' },
@@ -56,7 +56,7 @@ const coreSectors: { [key: string]: { sector: string; industry: string } } = {
   'COST': { sector: 'Consumer Cyclical', industry: 'Discount Stores' },
   'WMT': { sector: 'Consumer Cyclical', industry: 'Discount Stores' },
   'ABNB': { sector: 'Consumer Cyclical', industry: 'Travel Services' },
-  
+
   // Financial Services
   'BRK.B': { sector: 'Financial Services', industry: 'Insurance' },
   'BRK-E': { sector: 'Financial Services', industry: 'Insurance' },
@@ -77,7 +77,7 @@ const coreSectors: { [key: string]: { sector: string; industry: string } } = {
   'MA': { sector: 'Financial Services', industry: 'Credit Services' },
   'SPGI': { sector: 'Financial Services', industry: 'Capital Markets' },
   'BX': { sector: 'Financial Services', industry: 'Asset Management' },
-  
+
   // Healthcare
   'LLY': { sector: 'Healthcare', industry: 'Drug Manufacturers' },
   'JNJ': { sector: 'Healthcare', industry: 'Drug Manufacturers' },
@@ -99,14 +99,14 @@ const coreSectors: { [key: string]: { sector: string; industry: string } } = {
   'BIIB': { sector: 'Healthcare', industry: 'Biotechnology' },
   'ELV': { sector: 'Healthcare', industry: 'Healthcare Plans' },
   'BSX': { sector: 'Healthcare', industry: 'Medical Devices' },
-  
+
   // Communication Services
   'VZ': { sector: 'Communication Services', industry: 'Telecom Services' },
   'T': { sector: 'Communication Services', industry: 'Telecom Services' },
   'CMCSA': { sector: 'Communication Services', industry: 'Entertainment' },
   'CHTR': { sector: 'Communication Services', industry: 'Entertainment' },
   'TMUS': { sector: 'Communication Services', industry: 'Telecom Services' },
-  
+
   // Industrials
   'BA': { sector: 'Industrials', industry: 'Aerospace & Defense' },
   'CAT': { sector: 'Industrials', industry: 'Farm & Heavy Construction Machinery' },
@@ -121,41 +121,42 @@ const coreSectors: { [key: string]: { sector: string; industry: string } } = {
   'GD': { sector: 'Industrials', industry: 'Aerospace & Defense' },
   'UNP': { sector: 'Industrials', industry: 'Railroads' },
   'DE': { sector: 'Industrials', industry: 'Farm & Heavy Construction Machinery' },
-  
+
   // Energy
   'XOM': { sector: 'Energy', industry: 'Oil & Gas Integrated' },
   'CVX': { sector: 'Energy', industry: 'Oil & Gas Integrated' },
   'COP': { sector: 'Energy', industry: 'Oil & Gas Integrated' },
-  
+
   // Basic Materials
   'LIN': { sector: 'Basic Materials', industry: 'Chemicals' },
   'ECL': { sector: 'Basic Materials', industry: 'Chemicals' },
   'FCX': { sector: 'Basic Materials', industry: 'Other Industrial Metals & Mining' },
   'APD': { sector: 'Basic Materials', industry: 'Chemicals' },
-  
+
   // Real Estate
   'PLD': { sector: 'Real Estate', industry: 'REIT - Industrial' },
   'AMT': { sector: 'Real Estate', industry: 'REIT - Specialty' },
   'EQIX': { sector: 'Real Estate', industry: 'REIT - Specialty' },
   'TPL': { sector: 'Real Estate', industry: 'REIT - Specialty' }, // Texas Pacific Land Corporation - land management and royalties
-  
+
   // Utilities
   'NEE': { sector: 'Utilities', industry: 'Utilities - Regulated Electric' },
   'SO': { sector: 'Utilities', industry: 'Utilities - Regulated Electric' },
   'DUK': { sector: 'Utilities', industry: 'Utilities - Regulated Electric' },
   'AEP': { sector: 'Utilities', industry: 'Utilities - Regulated Electric' },
-  
+
   // Consumer Defensive
   'PG': { sector: 'Consumer Defensive', industry: 'Household & Personal Products' },
   'KO': { sector: 'Consumer Defensive', industry: 'Beverages - Non-Alcoholic' },
   'PEP': { sector: 'Consumer Defensive', industry: 'Beverages - Non-Alcoholic' },
   'PM': { sector: 'Consumer Defensive', industry: 'Tobacco' },
   'STZ': { sector: 'Consumer Defensive', industry: 'Beverages - Alcoholic' }, // Constellation Brands - beer, wine, spirits
+};
 
 // Pattern-based generation (from stocks/route.ts)
 function generateSectorFromTicker(ticker: string): { sector: string; industry: string } | null {
   const upperTicker = ticker.toUpperCase();
-  
+
   // Technology patterns
   if (['AI', 'ML', 'SAAS', 'CLOUD', 'DATA', 'CYBER', 'SEC', 'NET', 'WEB', 'APP', 'SOFT', 'TECH', 'IT', 'COMP', 'PLTR', 'SNOW', 'TEAM', 'WDAY', 'TTD', 'ZS', 'CRWD', 'PANW', 'FTNT', 'VEEV', 'TTWO', 'EA', 'SPOT', 'SHOP', 'MELI', 'NTES', 'PDD', 'BABA', 'TCEHY'].some(pattern => upperTicker.includes(pattern))) {
     return { sector: 'Technology', industry: 'Software' };
@@ -166,7 +167,7 @@ function generateSectorFromTicker(ticker: string): { sector: string; industry: s
   if (['PHONE', 'MOBILE', 'TEL', 'COMM', 'WIFI', '5G', '6G', 'TMUS', 'VZ', 'T', 'TM'].some(pattern => upperTicker.includes(pattern))) {
     return { sector: 'Technology', industry: 'Communication Equipment' };
   }
-  
+
   // Financial patterns
   if (['BANK', 'FIN', 'INS', 'CREDIT', 'LOAN', 'MORT', 'INVEST', 'CAP', 'TRUST', 'FUND', 'ASSET', 'WEALTH', 'JPM', 'BAC', 'WFC', 'C', 'USB', 'PNC', 'TFC', 'BK', 'BNS', 'BCS', 'HSBC', 'HDB', 'RY', 'UBS', 'SMFG', 'BBVA', 'MUFG', 'ITUB', 'BMO', 'LYG', 'NWG', 'TD'].some(pattern => upperTicker.includes(pattern))) {
     return { sector: 'Financial Services', industry: 'Banks' };
@@ -180,7 +181,7 @@ function generateSectorFromTicker(ticker: string): { sector: string; industry: s
   if (['CREDIT', 'CARD', 'PAYMENT', 'VISA', 'MASTERCARD', 'AMEX', 'AXP', 'COF', 'SYF', 'DFS'].some(pattern => upperTicker.includes(pattern))) {
     return { sector: 'Financial Services', industry: 'Credit Services' };
   }
-  
+
   // Healthcare patterns
   if (['PHARMA', 'DRUG', 'BIO', 'MED', 'HEALTH', 'CARE', 'HOSP', 'CLINIC', 'LLY', 'JNJ', 'PFE', 'ABBV', 'MRK', 'BMY', 'AMGN', 'GILD', 'REGN', 'VRTX', 'BIIB'].some(pattern => upperTicker.includes(pattern))) {
     return { sector: 'Healthcare', industry: 'Drug Manufacturers' };
@@ -191,7 +192,7 @@ function generateSectorFromTicker(ticker: string): { sector: string; industry: s
   if (['HEALTH', 'PLAN', 'HMO', 'UNH', 'CVS', 'CI', 'HUM', 'ANTM', 'ELV', 'CNC', 'MOH', 'OSCR'].some(pattern => upperTicker.includes(pattern))) {
     return { sector: 'Healthcare', industry: 'Healthcare Plans' };
   }
-  
+
   // Consumer patterns
   if (['RETAIL', 'STORE', 'SHOP', 'MARKET', 'SUPER', 'GROCERY', 'WMT', 'TGT', 'COST', 'KR', 'SFM', 'WFM'].some(pattern => upperTicker.includes(pattern))) {
     return { sector: 'Consumer Cyclical', industry: 'Discount Stores' };
@@ -202,12 +203,12 @@ function generateSectorFromTicker(ticker: string): { sector: string; industry: s
   if (['FOOD', 'BEVERAGE', 'DRINK', 'SNACK', 'PG', 'KO', 'PEP', 'MDLZ', 'GIS', 'K', 'CPB', 'SJM'].some(pattern => upperTicker.includes(pattern))) {
     return { sector: 'Consumer Defensive', industry: 'Packaged Foods' };
   }
-  
+
   // Energy patterns
   if (['OIL', 'GAS', 'PETRO', 'ENERGY', 'XOM', 'CVX', 'COP', 'SLB', 'HAL', 'OXY', 'MPC', 'VLO', 'PSX'].some(pattern => upperTicker.includes(pattern))) {
     return { sector: 'Energy', industry: 'Oil & Gas Integrated' };
   }
-  
+
   // Industrial patterns
   if (['AERO', 'DEFENSE', 'SPACE', 'BA', 'RTX', 'LMT', 'NOC', 'GD', 'TXT', 'HWM'].some(pattern => upperTicker.includes(pattern))) {
     return { sector: 'Industrials', industry: 'Aerospace & Defense' };
@@ -215,17 +216,17 @@ function generateSectorFromTicker(ticker: string): { sector: string; industry: s
   if (['MACHINERY', 'EQUIPMENT', 'TOOL', 'CAT', 'DE', 'CNH', 'AGCO'].some(pattern => upperTicker.includes(pattern))) {
     return { sector: 'Industrials', industry: 'Farm & Heavy Construction Machinery' };
   }
-  
+
   // Real Estate patterns
   if (['REIT', 'REALTY', 'PROPERTY', 'ESTATE', 'PLD', 'AMT', 'EQIX', 'PSA', 'SPG', 'WELL', 'VICI', 'O'].some(pattern => upperTicker.includes(pattern))) {
     return { sector: 'Real Estate', industry: 'REIT - Specialty' };
   }
-  
+
   // Utilities patterns
   if (['UTIL', 'POWER', 'ELECTRIC', 'ENERGY', 'NEE', 'SO', 'DUK', 'AEP', 'EXC', 'XEL', 'ES', 'ED'].some(pattern => upperTicker.includes(pattern))) {
     return { sector: 'Utilities', industry: 'Utilities - Regulated Electric' };
   }
-  
+
   return null;
 }
 
@@ -287,7 +288,7 @@ async function updateSectorIndustry() {
     const batchSize = 10;
     for (let i = 0; i < tickersToUpdate.length; i += batchSize) {
       const batch = tickersToUpdate.slice(i, i + batchSize);
-      
+
       console.log(`Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(tickersToUpdate.length / batchSize)} (${batch.length} tickers)...`);
 
       for (const ticker of batch) {
@@ -296,9 +297,10 @@ async function updateSectorIndustry() {
           let industry: string | null = ticker.industry;
 
           // Strategy 1: Check hardcoded mapping
-          if ((!sector || !industry) && coreSectors[ticker.symbol]) {
-            sector = coreSectors[ticker.symbol].sector;
-            industry = coreSectors[ticker.symbol].industry;
+          const coreData = coreSectors[ticker.symbol];
+          if ((!sector || !industry) && coreData) {
+            sector = coreData.sector;
+            industry = coreData.industry;
           }
 
           // Strategy 2: Pattern-based generation
@@ -315,7 +317,7 @@ async function updateSectorIndustry() {
             const polygonData = await fetchSectorDataFromPolygon(ticker.symbol);
             if (polygonData.sector) sector = sector || polygonData.sector;
             if (polygonData.industry) industry = industry || polygonData.industry;
-            
+
             // Small delay to avoid rate limits
             await new Promise(resolve => setTimeout(resolve, 200));
           }
