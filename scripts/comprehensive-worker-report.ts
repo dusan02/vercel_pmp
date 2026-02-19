@@ -99,8 +99,8 @@ function parseBatchFromLogs(logs: string[]): BatchMetrics[] {
   logs.forEach((log, idx) => {
     const match = log.match(batchRegex);
     if (match) {
-      const batchNum = parseInt(match[1], 10);
-      const tickerCount = parseInt(match[3], 10);
+      const batchNum = parseInt(match[1]!, 10);
+      const tickerCount = parseInt(match[3]!, 10);
       
       // Find if batch already exists
       let batch = batches.find(b => b.batchNumber === batchNum);

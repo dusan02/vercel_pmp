@@ -146,7 +146,7 @@ async function diagnoseTicker(ticker: string) {
 
   // Check if SessionPrice is newer than Ticker.lastPrice
   if (dbTicker && sessionPrices.length > 0) {
-    const latestSp = sessionPrices[0];
+    const latestSp = sessionPrices[0]!;
     if (dbTicker.lastPriceUpdated && latestSp.lastTs > dbTicker.lastPriceUpdated) {
       console.log(`   ⚠️  SessionPrice (${latestSp.lastTs.toISOString()}) is NEWER than Ticker.lastPriceUpdated (${dbTicker.lastPriceUpdated.toISOString()})`);
       console.log(`   ⚠️  This means stockService will use SessionPrice: $${latestSp.lastPrice} instead of Ticker.lastPrice: $${dbTicker.lastPrice}`);
@@ -178,7 +178,7 @@ async function diagnoseTicker(ticker: string) {
   }
 
   if (sessionPrices.length > 0 && dbTicker?.lastPriceUpdated) {
-    const latestSp = sessionPrices[0];
+    const latestSp = sessionPrices[0]!;
     if (latestSp.lastTs > dbTicker.lastPriceUpdated && latestSp.lastPrice !== dbTicker.lastPrice) {
       console.log(`   3. SessionPrice is newer but different. Consider syncing Ticker.lastPrice with SessionPrice`);
     }

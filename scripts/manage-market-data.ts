@@ -45,7 +45,7 @@ async function main() {
     // Parse batch size
     const batchSizeIdx = args.indexOf('--batch-size');
     const batchSize = batchSizeIdx !== -1 && args[batchSizeIdx + 1]
-        ? parseInt(args[batchSizeIdx + 1], 10)
+        ? parseInt(args[batchSizeIdx + 1]!, 10)
         : 60;
 
     if (!['reset', 'fill', 'ingest', 'full-reset'].includes(command)) {
@@ -138,9 +138,10 @@ Flags:
                 // For now, clearRedisPrevCloseCache handles the main daily refs.
                 // Also allow clearing stock specific data?
                 // Assuming 'stock:pmp:*' based on previous script analysis
-                const keys = await redisOps.redis.keys('stock:pmp:*');
+                const { redisClient: redisC } = await import('../src/lib/redis/client');
+                const keys = redisC ? await redisC.keys('stock:pmp:*') : [];
                 if (keys.length > 0) {
-                    await redisOps.redis.del(keys);
+                    if (redisC) await redisC.del(keys);
                     console.log(`🧹 Deleted ${keys.length} stock:pmp:* keys`);
                 }
             } catch (e) {

@@ -238,7 +238,7 @@ async function main() {
   const results: PriceCheckResult[] = [];
   
   for (let i = 0; i < TICKERS_TO_CHECK.length; i++) {
-    const ticker = TICKERS_TO_CHECK[i];
+    const ticker = TICKERS_TO_CHECK[i]!;
     console.log(`[${i + 1}/${TICKERS_TO_CHECK.length}] Checking ${ticker}...`);
     
     const result = await checkTicker(ticker, apiKey, todayTradingDateStr);

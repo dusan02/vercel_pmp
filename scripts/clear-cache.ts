@@ -13,8 +13,10 @@ try {
 }
 
 import { redisClient } from '../src/lib/redis/client';
-import { UnifiedCache } from '@/lib/unifiedCache';
-import { clearAllCaches } from '@/lib/marketCapUtils';
+// @ts-ignore - module may not exist in all configurations
+import { UnifiedCache } from '../src/lib/unifiedCache';
+// @ts-ignore - module may not exist in all configurations
+import { clearAllCaches } from '../src/lib/marketCapUtils';
 
 async function main() {
   console.log('🧹 Starting cache cleanup...');

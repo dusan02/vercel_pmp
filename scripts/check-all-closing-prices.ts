@@ -127,7 +127,7 @@ async function checkAllTickers() {
     console.log(`📦 Processing batch ${batchNum}/${totalBatches} (${batch.length} tickers)...`);
 
     const batchPromises = batch.map(ticker =>
-      checkTicker(ticker.symbol, ticker.latestPrevClose)
+      checkTicker(ticker.symbol, ticker.latestPrevClose ?? 0)
     );
 
     const batchResults = await Promise.all(batchPromises);
@@ -167,10 +167,10 @@ async function checkAllTickers() {
     console.log('='.repeat(80));
     console.log('Ticker | DB Value | API Value | Difference | Difference %');
     console.log('-'.repeat(80));
-    
+
     // Sort by difference percent (largest first)
     problematic.sort((a, b) => b.differencePercent - a.differencePercent);
-    
+
     problematic.forEach(result => {
       console.log(
         `${result.ticker.padEnd(6)} | $${result.dbValue.toFixed(2).padStart(8)} | $${result.apiValue!.toFixed(2).padStart(9)} | $${result.difference.toFixed(2).padStart(10)} | ${result.differencePercent.toFixed(2)}%`

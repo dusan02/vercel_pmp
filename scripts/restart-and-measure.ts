@@ -50,7 +50,7 @@ async function killProcessesOnPort(port: number): Promise<void> {
     for (const line of lines) {
       const match = line.match(/\s+(\d+)$/);
       if (match) {
-        pids.add(match[1]);
+        pids.add(match[1]!);
       }
     }
     
@@ -186,7 +186,7 @@ function startWorker(name: string, script: string, mode: string): WorkerProcess 
   return worker;
 }
 
-async function monitorWorkers(): Promise<void> {
+async function monitorWorkers(): Promise<{ monitoringStart: number; lastStatus: { refsDone: boolean; snapshotDone: boolean; snapshotProgress: number } }> {
   console.log('\n📊 Monitoring workers...');
   const monitoringStart = Date.now();
   let lastStatus = { refsDone: false, snapshotDone: false, snapshotProgress: 0 };

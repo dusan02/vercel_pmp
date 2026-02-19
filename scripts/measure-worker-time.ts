@@ -104,13 +104,13 @@ function startWorker(name: string, script: string, mode: string): WorkerProcess 
   workerProcess.stdout?.on('data', (data) => {
     const output = data.toString();
     worker.logs.push(output);
-    workerProcess.stdout?.write(data); // Also show in console
+    process.stdout.write(data); // Also show in console
   });
 
   workerProcess.stderr?.on('data', (data) => {
     const output = data.toString();
     worker.logs.push(output);
-    workerProcess.stderr?.write(data);
+    process.stderr.write(data);
   });
 
   workerProcess.on('exit', (code) => {

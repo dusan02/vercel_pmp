@@ -12,7 +12,7 @@ async function main() {
     const symbol = process.argv[2] || 'AAPL';
     const ticker = await prisma.ticker.findUnique({
         where: { symbol },
-        select: { symbol: true, lastPrice: true, latestPrevClose: true, lastPriceUpdated: true, percentChange: true, marketCap: true }
+        select: { symbol: true, lastPrice: true, latestPrevClose: true, lastPriceUpdated: true, lastChangePct: true, lastMarketCap: true }
     });
     console.log(`${symbol}:`, ticker);
 }

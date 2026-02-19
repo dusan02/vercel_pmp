@@ -177,14 +177,18 @@ export function usePortfolio(props?: UsePortfolioProps) {
     return currentPrice * quantity;
   }, [portfolioHoldings]);
 
-  // Calculate daily change for a stock (current value - previous value)
+  // Calculate daily change for a stock
+  // Derives P&L from percentChange (always fresh, computed server-side)
+  // instead of closePrice (which may be stale if latestPrevClose wasn't reset)
+  // Math: if pct = ((current - ref) / ref) * 100, then P&L = currentValue * pct / (100 + pct)
   const calculateDailyChange = useCallback((stock: StockData): number => {
     const quantity = portfolioHoldings[stock.ticker] || 0;
     if (quantity === 0) return 0;
     const currentPrice = stock.currentPrice || stock.closePrice;
+    const pct = stock.percentChange || 0;
+    if (pct === 0) return 0;
     const currentValue = currentPrice * quantity;
-    const previousValue = stock.closePrice * quantity;
-    return currentValue - previousValue;
+    return currentValue * (pct / (100 + pct));
   }, [portfolioHoldings]);
 
   // DEPRECATED: Use calculateDailyChange instead

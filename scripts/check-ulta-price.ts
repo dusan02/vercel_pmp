@@ -113,7 +113,7 @@ async function checkULTA() {
   const result = await getStocksList({ tickers: [ticker] });
   
   if (result.data.length > 0) {
-    const stock = result.data[0];
+    const stock = result.data[0]!;
     console.log(`   currentPrice: $${stock.currentPrice?.toFixed(2) || 'N/A'}`);
     console.log(`   closePrice: $${stock.closePrice?.toFixed(2) || 'N/A'}`);
     console.log(`   percentChange: ${stock.percentChange?.toFixed(2) || 'N/A'}%`);

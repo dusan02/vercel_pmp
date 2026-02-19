@@ -350,33 +350,11 @@ const CORRECT_MAPPINGS: Record<string, { sector: string; industry: string }> = {
   'SONY': { sector: 'Communication Services', industry: 'Entertainment' },
   'IBM': { sector: 'Technology', industry: 'Information Technology Services' },
   'SAP': { sector: 'Technology', industry: 'Software' },
-  'HSBC': { sector: 'Financial Services', industry: 'Banks' },
-  'SPGI': { sector: 'Financial Services', industry: 'Capital Markets' },
-  'MELI': { sector: 'Consumer Cyclical', industry: 'Internet Retail' },
-  'RY': { sector: 'Financial Services', industry: 'Banks' },
-  'MU': { sector: 'Technology', industry: 'Semiconductors' },
   'MCK': { sector: 'Healthcare', industry: 'Medical Distribution' },
-  'CME': { sector: 'Financial Services', industry: 'Capital Markets' },
-  'MMM': { sector: 'Industrials', industry: 'Specialty Industrial Machinery' },
   'DHI': { sector: 'Consumer Cyclical', industry: 'Residential Construction' },
   'HMC': { sector: 'Consumer Cyclical', industry: 'Auto Manufacturers' },
   'TRP': { sector: 'Energy', industry: 'Oil & Gas Midstream' },
-  'PSX': { sector: 'Energy', industry: 'Oil & Gas Refining & Marketing' },
-  'ALNY': { sector: 'Healthcare', industry: 'Biotechnology' },
-  'VLO': { sector: 'Energy', industry: 'Oil & Gas Refining & Marketing' },
-  'DHI': { sector: 'Consumer Cyclical', industry: 'Residential Construction' },
   'CPRT': { sector: 'Consumer Cyclical', industry: 'Auto & Truck Dealerships' },
-  'HCA': { sector: 'Healthcare', industry: 'Medical Care Facilities' },
-  'BP': { sector: 'Energy', industry: 'Oil & Gas Integrated' },
-  'ITUB': { sector: 'Financial Services', industry: 'Banks' },
-  'UPS': { sector: 'Industrials', industry: 'Integrated Freight & Logistics' },
-  'ITUB': { sector: 'Financial Services', industry: 'Banks' },
-  'BBVA': { sector: 'Financial Services', industry: 'Banks' },
-  'BMO': { sector: 'Financial Services', industry: 'Banks' },
-  'SPOT': { sector: 'Communication Services', industry: 'Entertainment' },
-  'ACN': { sector: 'Technology', industry: 'Information Technology Services' },
-  'SONY': { sector: 'Communication Services', industry: 'Entertainment' },
-  'BBVA': { sector: 'Financial Services', industry: 'Banks' },
 };
 
 // Valid sectors (from HEATMAP_DATA_STRUCTURE.md)
@@ -512,7 +490,7 @@ async function fetchSectorDataFromPolygon(ticker: string): Promise<{ sector?: st
     // Validate industry (if sector is valid)
     if (sector && industry && VALID_INDUSTRIES[sector]) {
       // Check if industry matches any valid industry for this sector
-      const isValidIndustry = VALID_INDUSTRIES[sector].some(validIndustry => 
+      const isValidIndustry = VALID_INDUSTRIES[sector]!.some(validIndustry => 
         industry.toLowerCase().includes(validIndustry.toLowerCase()) ||
         validIndustry.toLowerCase().includes(industry.toLowerCase())
       );
@@ -596,7 +574,7 @@ async function fixAllSectorIndustry() {
 
           // Strategy 1: Check known correct mappings
           if (CORRECT_MAPPINGS[ticker.symbol]) {
-            const correct = CORRECT_MAPPINGS[ticker.symbol];
+            const correct = CORRECT_MAPPINGS[ticker.symbol]!;
             if (sector !== correct.sector || industry !== correct.industry) {
               sector = correct.sector;
               industry = correct.industry;

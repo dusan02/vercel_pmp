@@ -80,7 +80,7 @@ async function verifyDataConsistency() {
     });
 
     if (sessionPrices.length > 0) {
-      const sp = sessionPrices[0];
+      const sp = sessionPrices[0]!;
       console.log(`  ✅ Found SessionPrice record`);
       console.log(`  Price: $${sp.lastPrice}`);
       console.log(`  % Change: ${sp.changePct >= 0 ? '+' : ''}${sp.changePct.toFixed(2)}%`);
@@ -102,7 +102,7 @@ async function verifyDataConsistency() {
     });
 
     if (dailyRefs.length > 0) {
-      const dr = dailyRefs[0];
+      const dr = dailyRefs[0]!;
       console.log(`  ✅ Found DailyRef record`);
       console.log(`  Previous Close: $${dr.previousClose}`);
       console.log(`  Date: ${dr.date.toISOString()}`);

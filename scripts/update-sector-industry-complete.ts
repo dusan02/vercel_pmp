@@ -81,7 +81,6 @@ const coreSectors: { [key: string]: { sector: string; industry: string } } = {
   'STX': { sector: 'Technology', industry: 'Communication Equipment' },
   'WDC': { sector: 'Technology', industry: 'Communication Equipment' },
   'EQT': { sector: 'Technology', industry: 'Communication Equipment' },
-  'VRT': { sector: 'Technology', industry: 'Communication Equipment' },
   'TRGP': { sector: 'Technology', industry: 'Communication Equipment' },
   'VTR': { sector: 'Technology', industry: 'Communication Equipment' },
   'CTSH': { sector: 'Technology', industry: 'Communication Equipment' },
@@ -245,7 +244,6 @@ const coreSectors: { [key: string]: { sector: string; industry: string } } = {
   'RACE': { sector: 'Financial Services', industry: 'Banks' },
   'GSK': { sector: 'Financial Services', industry: 'Capital Markets' },
   'JCI': { sector: 'Financial Services', industry: 'Banks' },
-  'WDC': { sector: 'Financial Services', industry: 'Banks' },
   'FICO': { sector: 'Financial Services', industry: 'Banks' },
   'VMC': { sector: 'Financial Services', industry: 'Banks' },
   'GEHC': { sector: 'Financial Services', industry: 'Banks' },
@@ -341,7 +339,6 @@ const coreSectors: { [key: string]: { sector: string; industry: string } } = {
   'UNP': { sector: 'Industrials', industry: 'Railroads' },
   'DE': { sector: 'Industrials', industry: 'Farm & Heavy Construction Machinery' },
   'HWM': { sector: 'Industrials', industry: 'Aerospace & Defense' },
-  'TDG': { sector: 'Industrials', industry: 'Aerospace & Defense' },
   'DELL': { sector: 'Industrials', industry: 'Farm & Heavy Construction Machinery' },
   'DEO': { sector: 'Industrials', industry: 'Farm & Heavy Construction Machinery' },
   'EBAY': { sector: 'Industrials', industry: 'Aerospace & Defense' },
@@ -425,7 +422,6 @@ const coreSectors: { [key: string]: { sector: string; industry: string } } = {
   'K': { sector: 'Consumer Defensive', industry: 'Packaged Foods' },
   'AWK': { sector: 'Consumer Defensive', industry: 'Packaged Foods' },
   'GIS': { sector: 'Consumer Defensive', industry: 'Packaged Foods' },
-  'ULTA': { sector: 'Consumer Defensive', industry: 'Packaged Foods' },
   'PPG': { sector: 'Consumer Defensive', industry: 'Packaged Foods' },
   'PSKY': { sector: 'Consumer Defensive', industry: 'Packaged Foods' },
   'PKG': { sector: 'Consumer Defensive', industry: 'Packaged Foods' },
@@ -626,8 +622,8 @@ async function updateSectorIndustryComplete() {
 
           // Strategy 1: Check hardcoded mapping
           if ((!sector || !industry) && coreSectors[ticker.symbol]) {
-            sector = coreSectors[ticker.symbol].sector;
-            industry = coreSectors[ticker.symbol].industry;
+            sector = coreSectors[ticker.symbol]!.sector;
+            industry = coreSectors[ticker.symbol]!.industry;
           }
 
           // Strategy 2: Pattern-based generation

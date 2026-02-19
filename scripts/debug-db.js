@@ -14,8 +14,8 @@ async function main() {
                 lastPrice: true, 
                 latestPrevClose: true, 
                 lastPriceUpdated: true, 
-                percentChange: true, 
-                marketCap: true 
+                lastChangePct: true, 
+                lastMarketCap: true 
             }
         });
         console.log(`${symbol}:`, ticker);

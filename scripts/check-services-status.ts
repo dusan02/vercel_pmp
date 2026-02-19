@@ -34,7 +34,7 @@ async function checkService(name: string, url: string): Promise<{ name: string; 
   }
 }
 
-async function main() {
+async function checkServicesMain() {
   console.log('='.repeat(70));
   console.log('📊 SERVICES STATUS CHECK');
   console.log('='.repeat(70));
@@ -66,5 +66,5 @@ async function main() {
   console.log('\n' + '='.repeat(70));
 }
 
-main().catch(console.error);
+checkServicesMain().catch(console.error);
 

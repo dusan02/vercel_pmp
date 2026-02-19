@@ -91,7 +91,7 @@ async function fixClosingPrice(ticker: string) {
   console.log(`   Polygon API value: $${correctPrevClose}`);
 
   // 3. Compare and fix if different
-  const diff = Math.abs(tickerRecord.latestPrevClose - correctPrevClose);
+  const diff = Math.abs((tickerRecord.latestPrevClose ?? 0) - correctPrevClose);
   const diffPercent = (diff / correctPrevClose) * 100;
 
   if (diff > 0.01) { // More than 1 cent difference

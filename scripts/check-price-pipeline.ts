@@ -170,12 +170,12 @@ async function checkTicker(ticker: string, apiKey: string, todayTradingDateStr: 
   try {
     const { data } = await getStocksData([ticker], 'pmp');
     if (data && data.length > 0) {
-      const stock = data[0];
-      apiPrice = stock.currentPrice || stock.price || null;
+      const stock = data[0]!;
+      apiPrice = (stock as any).currentPrice || (stock as any).price || null;
       // API returns 'closePrice' not 'previousClose' - this is the previous close value
-      apiPreviousClose = stock.closePrice || stock.previousClose || stock.prevClose || null;
-      apiPercentChange = stock.percentChange || stock.changePct || null;
-      apiMarketCap = stock.marketCap || null;
+      apiPreviousClose = (stock as any).closePrice || (stock as any).previousClose || (stock as any).prevClose || null;
+      apiPercentChange = (stock as any).percentChange || (stock as any).changePct || null;
+      apiMarketCap = (stock as any).marketCap || null;
     }
   } catch (error) {
     issues.push(`❌ API endpoint error: ${error instanceof Error ? error.message : 'Unknown'}`);
@@ -290,7 +290,7 @@ async function main() {
   const results: PricePipelineCheck[] = [];
   
   for (let i = 0; i < tickers.length; i++) {
-    const ticker = tickers[i];
+    const ticker = tickers[i]!;
     console.log(`[${i + 1}/${tickers.length}] Checking ${ticker}...`);
     
     const result = await checkTicker(ticker, apiKey, todayTradingDateStr);

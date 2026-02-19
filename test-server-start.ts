@@ -60,7 +60,7 @@ async function testNext() {
   }
 }
 
-async function main() {
+async function testServerMain() {
   const results = {
     prisma: await testPrisma(),
     redis: await testRedis(),
@@ -80,5 +80,5 @@ async function main() {
   }
 }
 
-main().catch(console.error);
+testServerMain().catch(console.error);
 

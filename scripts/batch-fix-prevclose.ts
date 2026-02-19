@@ -142,7 +142,7 @@ async function main() {
   const args = process.argv.slice(2);
   const dryRun = args.includes('--dry-run');
   const limitArg = args.find(arg => arg.startsWith('--limit='));
-  const limit = limitArg ? parseInt(limitArg.split('=')[1]) : undefined;
+  const limit = limitArg ? parseInt(limitArg.split('=')[1] ?? '0') : undefined;
 
   console.log('🔍 Batch fixing previousClose values...');
   if (dryRun) {
@@ -180,11 +180,11 @@ async function main() {
   const batchSize = 10;
   for (let i = 0; i < tickers.length; i += batchSize) {
     const batch = tickers.slice(i, i + batchSize);
-    
+
     const batchPromises = batch.map(async (t) => {
       const result = await fixTicker(t.symbol, dryRun);
       results.checked++;
-      
+
       if (result.error) {
         results.errors++;
       } else if (result.diff > 0.01) {
@@ -194,16 +194,16 @@ async function main() {
           results.fixed++;
         }
       }
-      
+
       return { ticker: t.symbol, ...result };
     });
 
     const batchResults = await Promise.all(batchPromises);
-    
+
     // Log progress
     const fixedInBatch = batchResults.filter(r => r.fixed).length;
     const needsFixInBatch = batchResults.filter(r => r.diff > 0.01 && !r.fixed).length;
-    
+
     if (fixedInBatch > 0 || needsFixInBatch > 0) {
       console.log(`\n📦 Batch ${Math.floor(i / batchSize) + 1}:`);
       batchResults.forEach(r => {

@@ -288,7 +288,6 @@ const CRITICAL_FIXES: Record<string, { sector: string; industry: string }> = {
   'MOS': { sector: 'Basic Materials', industry: 'Agricultural Inputs' }, // Mosaic Company
   
   // Utilities / Utilities - Regulated Electric incorrectly in Energy / Oil & Gas Integrated
-  'ARES': { sector: 'Financial Services', industry: 'Asset Management' }, // Ares Management (duplicate, but correct)
   
   // Utilities / Utilities - Regulated Electric incorrectly in Technology / Communication Equipment
   'BUD': { sector: 'Consumer Defensive', industry: 'Beverages - Alcoholic' }, // Anheuser-Busch InBev
@@ -310,19 +309,12 @@ const CRITICAL_FIXES: Record<string, { sector: string; industry: string }> = {
   
   // Consumer Cyclical / Discount Stores - corrections
   'KR': { sector: 'Consumer Cyclical', industry: 'Discount Stores' }, // Kroger (correct)
-  'UAL': { sector: 'Industrials', industry: 'Airlines' }, // United Airlines
   
   // Consumer Cyclical / Lodging - corrections
   'DAL': { sector: 'Industrials', industry: 'Airlines' }, // Delta Air Lines
-  'EXPE': { sector: 'Consumer Cyclical', industry: 'Travel Services' }, // Expedia Group
   
   // Energy / Oil & Gas Integrated - corrections
   'APA': { sector: 'Energy', industry: 'Oil & Gas E&P' }, // APA Corporation
-  'ARE': { sector: 'Real Estate', industry: 'REIT - Specialty' }, // Alexandria Real Estate (duplicate)
-  'ARM': { sector: 'Technology', industry: 'Semiconductors' }, // ARM Holdings (duplicate)
-  'BEN': { sector: 'Financial Services', industry: 'Asset Management' }, // Franklin Resources (duplicate)
-  'BHP': { sector: 'Basic Materials', industry: 'Other Industrial Metals & Mining' }, // BHP Group (duplicate)
-  'UBER': { sector: 'Technology', industry: 'Software' }, // Uber Technologies (duplicate)
   
   // Industrials / Aerospace & Defense - corrections
   'BA': { sector: 'Industrials', industry: 'Aerospace & Defense' }, // Boeing (correct)
@@ -341,7 +333,6 @@ const CRITICAL_FIXES: Record<string, { sector: string; industry: string }> = {
   // Financial Services / Capital Markets - corrections
   'GS': { sector: 'Financial Services', industry: 'Capital Markets' }, // Goldman Sachs (correct)
   'MS': { sector: 'Financial Services', industry: 'Capital Markets' }, // Morgan Stanley (correct)
-  'MSI': { sector: 'Technology', industry: 'Information Technology Services' }, // Motorola Solutions (duplicate)
   'SCHW': { sector: 'Financial Services', industry: 'Capital Markets' }, // Charles Schwab (correct)
   'SPGI': { sector: 'Financial Services', industry: 'Capital Markets' }, // S&P Global (correct)
   
@@ -349,14 +340,10 @@ const CRITICAL_FIXES: Record<string, { sector: string; industry: string }> = {
   'AEE': { sector: 'Utilities', industry: 'Utilities - Regulated Electric' }, // Ameren (correct)
   'AEP': { sector: 'Utilities', industry: 'Utilities - Regulated Electric' }, // American Electric Power (correct)
   'AES': { sector: 'Utilities', industry: 'Utilities - Regulated Electric' }, // AES Corporation (correct)
-  'ARES': { sector: 'Financial Services', industry: 'Asset Management' }, // Ares Management (duplicate)
-  'BUD': { sector: 'Consumer Defensive', industry: 'Beverages - Alcoholic' }, // Anheuser-Busch (duplicate)
-  'DB': { sector: 'Financial Services', industry: 'Banks' }, // Deutsche Bank (duplicate)
   'D': { sector: 'Utilities', industry: 'Utilities - Regulated Electric' }, // Dominion Energy (correct)
   'DG': { sector: 'Utilities', industry: 'Utilities - Regulated Electric' }, // Dominion Energy (duplicate?)
   'DUK': { sector: 'Utilities', industry: 'Utilities - Regulated Electric' }, // Duke Energy (correct)
   'ED': { sector: 'Utilities', industry: 'Utilities - Regulated Electric' }, // Consolidated Edison (correct)
-  'EPD': { sector: 'Energy', industry: 'Oil & Gas Midstream' }, // Enterprise Products (duplicate)
   'ES': { sector: 'Utilities', industry: 'Utilities - Regulated Electric' }, // Eversource Energy (correct)
   'ESS': { sector: 'Utilities', industry: 'Utilities - Regulated Electric' }, // Essex Property Trust (actually REIT)
   'EXC': { sector: 'Utilities', industry: 'Utilities - Regulated Electric' }, // Exelon (correct)
@@ -368,7 +355,6 @@ const CRITICAL_FIXES: Record<string, { sector: string; industry: string }> = {
   'PNW': { sector: 'Utilities', industry: 'Utilities - Regulated Electric' }, // Pinnacle West Capital (correct)
   'PPL': { sector: 'Utilities', industry: 'Utilities - Regulated Electric' }, // PPL Corporation (correct)
   'SO': { sector: 'Utilities', industry: 'Utilities - Regulated Electric' }, // Southern Company (correct)
-  'WBD': { sector: 'Communication Services', industry: 'Entertainment' }, // Warner Bros Discovery (duplicate)
   'XEL': { sector: 'Utilities', industry: 'Utilities - Regulated Electric' }, // Xcel Energy (correct)
 };
 

@@ -105,7 +105,7 @@ export async function getStocksList(options: {
     // This fixes cases where Portfolio shows very wrong intraday prices (URI/PRU etc).
     const bestPriceBySymbol = new Map<string, { price: number; ts: Date; source: 'ticker' | 'session' }>();
     for (const s of stocks) {
-      const baseTs = s.lastPriceUpdated || s.updatedAt;
+      const baseTs = s.lastPriceUpdated ?? s.updatedAt;
       bestPriceBySymbol.set(s.symbol, { price: s.lastPrice || 0, ts: baseTs, source: 'ticker' });
     }
 

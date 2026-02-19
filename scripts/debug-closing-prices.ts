@@ -86,7 +86,7 @@ async function main() {
                     console.log(`No keys found for stock:pmp:${ticker}`);
                 }
             } catch (e) {
-                console.log(`Error checking keys for ${ticker}:`, e.message);
+                console.log(`Error checking keys for ${ticker}:`, e instanceof Error ? e.message : e);
             }
         }
         await redis.disconnect();

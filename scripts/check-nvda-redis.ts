@@ -10,7 +10,7 @@ if (fs.existsSync(envPath)) {
     envContent.split('\n').forEach(line => {
         const parts = line.split('=');
         if (parts.length >= 2) {
-            const key = parts[0].trim();
+            const key = parts[0]!.trim();
             const value = parts.slice(1).join('=').trim().replace(/^["']|["']$/g, '');
             if (key && !process.env[key]) {
                 process.env[key] = value;
@@ -61,7 +61,7 @@ async function check() {
             } else {
                 console.log('Snapshot: No data', snapshot);
             }
-        } catch (e) {
+        } catch (e: any) {
             console.log('Polygon API Error:', e.message);
         }
 
@@ -70,7 +70,7 @@ async function check() {
             const statusRes = await fetch(statusUrl);
             const status = await statusRes.json();
             console.log('Market Status:', status);
-        } catch (e) {
+        } catch (e: any) {
             console.log('Market Status Error:', e.message);
         }
     } else {

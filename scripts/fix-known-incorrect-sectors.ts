@@ -281,7 +281,6 @@ const CORRECTIONS: Record<string, { sector: string; industry: string }> = {
   'LYV': { sector: 'Communication Services', industry: 'Entertainment' },
   
   // Healthcare / Healthcare Plans incorrectly in Technology / Communication Equipment
-  'DHI': { sector: 'Consumer Cyclical', industry: 'Residential Construction' },
   
   // Industrials / Specialty Industrial Machinery incorrectly in Financial Services / Banks
   'AMP': { sector: 'Financial Services', industry: 'Asset Management' },
@@ -367,30 +366,14 @@ const CORRECTIONS: Record<string, { sector: string; industry: string }> = {
   'MOS': { sector: 'Basic Materials', industry: 'Agricultural Inputs' },
   
   // Technology / Communication Equipment incorrectly in Consumer Cyclical / Auto Manufacturers
-  'EFX': { sector: 'Financial Services', industry: 'Capital Markets' },
-  'FDS': { sector: 'Financial Services', industry: 'Capital Markets' },
-  'FE': { sector: 'Utilities', industry: 'Utilities - Regulated Electric' },
-  'FIG': { sector: 'Financial Services', industry: 'Banks' },
-  'FIS': { sector: 'Technology', industry: 'Information Technology Services' },
-  'FOX': { sector: 'Communication Services', industry: 'Entertainment' },
-  'FOXA': { sector: 'Communication Services', industry: 'Entertainment' },
-  'RF': { sector: 'Financial Services', industry: 'Banks' },
-  'RJF': { sector: 'Financial Services', industry: 'Capital Markets' },
   
   // Technology / Communication Equipment incorrectly in Consumer Cyclical / Discount Stores
-  'UAL': { sector: 'Industrials', industry: 'Airlines' },
   
   // Technology / Communication Equipment incorrectly in Consumer Cyclical / Lodging
-  'EXPE': { sector: 'Consumer Cyclical', industry: 'Travel Services' },
   
   // Technology / Communication Equipment incorrectly in Consumer Defensive / Packaged Foods
-  'KEYS': { sector: 'Technology', industry: 'Software' },
   
   // Technology / Communication Equipment incorrectly in Energy / Oil & Gas Integrated
-  'ET': { sector: 'Energy', industry: 'Oil & Gas Midstream' },
-  'ETN': { sector: 'Industrials', industry: 'Specialty Industrial Machinery' },
-  'ETR': { sector: 'Utilities', industry: 'Utilities - Regulated Electric' },
-  'TTE': { sector: 'Energy', industry: 'Oil & Gas Integrated' },
   
   // Technology / Communication Equipment incorrectly in Financial Services / Banks
   'COIN': { sector: 'Financial Services', industry: 'Capital Markets' },
@@ -399,18 +382,10 @@ const CORRECTIONS: Record<string, { sector: string; industry: string }> = {
   'DXCM': { sector: 'Healthcare', industry: 'Medical Devices' },
   
   // Technology / Communication Equipment incorrectly in Financial Services / Insurance
-  'GLW': { sector: 'Technology', industry: 'Electronic Components' },
   
   // Technology / Communication Equipment incorrectly in Healthcare / Healthcare Plans
-  'DHI': { sector: 'Consumer Cyclical', industry: 'Residential Construction' },
   
   // Technology / Communication Equipment incorrectly in Industrials / Specialty Industrial Machinery
-  'CPRT': { sector: 'Consumer Cyclical', industry: 'Auto & Truck Dealerships' },
-  'CTAS': { sector: 'Industrials', industry: 'Specialty Business Services' },
-  'FAST': { sector: 'Industrials', industry: 'Industrial Distribution' },
-  'FTV': { sector: 'Industrials', industry: 'Specialty Industrial Machinery' },
-  'HPE': { sector: 'Technology', industry: 'Information Technology Services' },
-  'JBHT': { sector: 'Industrials', industry: 'Trucking' },
   'LNT': { sector: 'Utilities', industry: 'Utilities - Regulated Electric' },
   'MET': { sector: 'Financial Services', industry: 'Insurance' },
   'MNST': { sector: 'Consumer Defensive', industry: 'Beverages - Non-Alcoholic' },
@@ -420,45 +395,9 @@ const CORRECTIONS: Record<string, { sector: string; industry: string }> = {
   'MTD': { sector: 'Technology', industry: 'Information Technology Services' },
   'NTAP': { sector: 'Technology', industry: 'Information Technology Services' },
   'NTRS': { sector: 'Financial Services', industry: 'Asset Management' },
-  'OTIS': { sector: 'Industrials', industry: 'Specialty Industrial Machinery' },
-  'PTC': { sector: 'Technology', industry: 'Software' },
-  'ROST': { sector: 'Consumer Cyclical', industry: 'Apparel Retail' },
   'RVTY': { sector: 'Technology', industry: 'Software' },
-  'STE': { sector: 'Technology', industry: 'Information Technology Services' },
-  'STLD': { sector: 'Basic Materials', industry: 'Steel' },
-  'STT': { sector: 'Financial Services', industry: 'Asset Management' },
-  'STX': { sector: 'Technology', industry: 'Information Technology Services' },
-  'STZ': { sector: 'Consumer Defensive', industry: 'Beverages - Alcoholic' },
-  'TAP': { sector: 'Consumer Defensive', industry: 'Beverages - Alcoholic' },
-  'TCOM': { sector: 'Consumer Cyclical', industry: 'Travel Services' },
-  'TD': { sector: 'Financial Services', industry: 'Banks' },
-  'TDY': { sector: 'Technology', industry: 'Electronic Components' },
-  'TEL': { sector: 'Technology', industry: 'Electronic Components' },
-  'TER': { sector: 'Technology', industry: 'Semiconductor Equipment' },
-  'TPL': { sector: 'Energy', industry: 'Oil & Gas E&P' },
-  'TPR': { sector: 'Consumer Cyclical', industry: 'Specialty Retail' },
-  'TRGP': { sector: 'Energy', industry: 'Oil & Gas Midstream' },
-  'TRI': { sector: 'Financial Services', industry: 'Insurance' },
-  'TRMB': { sector: 'Technology', industry: 'Software' },
-  'TROW': { sector: 'Financial Services', industry: 'Asset Management' },
-  'TRP': { sector: 'Energy', industry: 'Oil & Gas Midstream' },
-  'TRV': { sector: 'Financial Services', industry: 'Insurance' },
-  'TSCO': { sector: 'Consumer Cyclical', industry: 'Specialty Retail' },
-  'TSN': { sector: 'Consumer Defensive', industry: 'Packaged Foods' },
-  'TT': { sector: 'Industrials', industry: 'Specialty Industrial Machinery' },
-  'TXT': { sector: 'Industrials', industry: 'Aerospace & Defense' },
-  'TYL': { sector: 'Technology', industry: 'Software' },
-  'VLTO': { sector: 'Technology', industry: 'Software' },
-  'VRT': { sector: 'Technology', industry: 'Information Technology Services' },
-  'VST': { sector: 'Utilities', industry: 'Utilities - Regulated Electric' },
-  'VTR': { sector: 'Real Estate', industry: 'REIT - Specialty' },
-  'VTRS': { sector: 'Healthcare', industry: 'Drug Manufacturers - General' },
-  'WAT': { sector: 'Technology', industry: 'Information Technology Services' },
-  'WST': { sector: 'Healthcare', industry: 'Medical Devices' },
-  'WTW': { sector: 'Financial Services', industry: 'Insurance' },
   
   // Utilities / Utilities - Regulated Electric incorrectly in Energy / Oil & Gas Integrated
-  'ARES': { sector: 'Financial Services', industry: 'Asset Management' },
   
   // Utilities / Utilities - Regulated Electric incorrectly in Technology / Communication Equipment
   'BUD': { sector: 'Consumer Defensive', industry: 'Beverages - Alcoholic' },
@@ -479,24 +418,13 @@ const CORRECTIONS: Record<string, { sector: string; industry: string }> = {
   'ODFL': { sector: 'Industrials', industry: 'Trucking' },
   
   // Consumer Cyclical / Discount Stores - some are correct
-  'KKR': { sector: 'Financial Services', industry: 'Asset Management' },
   'KR': { sector: 'Consumer Cyclical', industry: 'Discount Stores' },
-  'LULU': { sector: 'Consumer Cyclical', industry: 'Apparel Retail' },
-  'SLB': { sector: 'Energy', industry: 'Oil & Gas Equipment & Services' },
-  'UAL': { sector: 'Industrials', industry: 'Airlines' },
   
   // Consumer Cyclical / Lodging - some are correct
   'DAL': { sector: 'Industrials', industry: 'Airlines' },
-  'EXPE': { sector: 'Consumer Cyclical', industry: 'Travel Services' },
-  'HAS': { sector: 'Consumer Cyclical', industry: 'Leisure' },
   
   // Energy / Oil & Gas Integrated - most are correct, but some need fixing
   'APA': { sector: 'Energy', industry: 'Oil & Gas E&P' },
-  'ARE': { sector: 'Real Estate', industry: 'REIT - Specialty' },
-  'ARM': { sector: 'Technology', industry: 'Semiconductors' },
-  'BEN': { sector: 'Financial Services', industry: 'Asset Management' },
-  'BHP': { sector: 'Basic Materials', industry: 'Other Industrial Metals & Mining' },
-  'UBER': { sector: 'Technology', industry: 'Software' },
   
   // Industrials / Aerospace & Defense - some are incorrectly flagged
   'BA': { sector: 'Industrials', industry: 'Aerospace & Defense' },
@@ -515,7 +443,6 @@ const CORRECTIONS: Record<string, { sector: string; industry: string }> = {
   // Financial Services / Capital Markets - some are incorrectly flagged
   'GS': { sector: 'Financial Services', industry: 'Capital Markets' },
   'MS': { sector: 'Financial Services', industry: 'Capital Markets' },
-  'MSI': { sector: 'Technology', industry: 'Information Technology Services' },
   'SCHW': { sector: 'Financial Services', industry: 'Capital Markets' },
   'SPGI': { sector: 'Financial Services', industry: 'Capital Markets' },
   
@@ -523,14 +450,10 @@ const CORRECTIONS: Record<string, { sector: string; industry: string }> = {
   'AEE': { sector: 'Utilities', industry: 'Utilities - Regulated Electric' },
   'AEP': { sector: 'Utilities', industry: 'Utilities - Regulated Electric' },
   'AES': { sector: 'Utilities', industry: 'Utilities - Regulated Electric' },
-  'ARES': { sector: 'Financial Services', industry: 'Asset Management' },
-  'BUD': { sector: 'Consumer Defensive', industry: 'Beverages - Alcoholic' },
-  'DB': { sector: 'Financial Services', industry: 'Banks' },
   'D': { sector: 'Utilities', industry: 'Utilities - Regulated Electric' },
   'DG': { sector: 'Utilities', industry: 'Utilities - Regulated Electric' },
   'DUK': { sector: 'Utilities', industry: 'Utilities - Regulated Electric' },
   'ED': { sector: 'Utilities', industry: 'Utilities - Regulated Electric' },
-  'EPD': { sector: 'Energy', industry: 'Oil & Gas Midstream' },
   'ES': { sector: 'Utilities', industry: 'Utilities - Regulated Electric' },
   'ESS': { sector: 'Utilities', industry: 'Utilities - Regulated Electric' },
   'EXC': { sector: 'Utilities', industry: 'Utilities - Regulated Electric' },
@@ -542,7 +465,6 @@ const CORRECTIONS: Record<string, { sector: string; industry: string }> = {
   'PNW': { sector: 'Utilities', industry: 'Utilities - Regulated Electric' },
   'PPL': { sector: 'Utilities', industry: 'Utilities - Regulated Electric' },
   'SO': { sector: 'Utilities', industry: 'Utilities - Regulated Electric' },
-  'WBD': { sector: 'Communication Services', industry: 'Entertainment' },
   'XEL': { sector: 'Utilities', industry: 'Utilities - Regulated Electric' },
 };
 

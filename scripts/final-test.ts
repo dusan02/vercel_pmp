@@ -11,6 +11,7 @@
  */
 
 import { getAllTrackedTickers, getUniverseCount, UNIVERSE_TYPES } from '../src/lib/utils/universeHelpers';
+// @ts-ignore - module may not exist
 import { getRankCount, getDateET } from '../src/lib/rankIndexes';
 import { detectSession, nowET } from '../src/lib/utils/timeUtils';
 

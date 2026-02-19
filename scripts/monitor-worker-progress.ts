@@ -9,6 +9,7 @@
  * Usage: tsx scripts/monitor-worker-progress.ts
  */
 
+// @ts-ignore - module may not exist
 import { getRankCount, getDateET } from '../src/lib/rankIndexes';
 import { detectSession, nowET } from '../src/lib/utils/timeUtils';
 import { getAllTrackedTickers } from '../src/lib/utils/universeHelpers';

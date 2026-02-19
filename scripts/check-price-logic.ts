@@ -25,7 +25,7 @@ const testCases = [
 
 console.log('\n📊 Test Case 1: Pre-market session');
 console.log('-'.repeat(70));
-const test1 = testCases[0];
+const test1 = testCases[0]!;
 const result1 = calculatePercentChange(test1.currentPrice, test1.session, test1.previousClose, test1.regularClose);
 const compute1 = computePercentChange(test1.currentPrice, test1.previousClose);
 console.log(`Current Price: $${test1.currentPrice}`);
@@ -38,7 +38,7 @@ console.log(`Match: ${Math.abs(result1.changePct - compute1) < 0.01 ? '✅' : '�
 
 console.log('\n📊 Test Case 2: Live session');
 console.log('-'.repeat(70));
-const test2 = testCases[1];
+const test2 = testCases[1]!;
 const result2 = calculatePercentChange(test2.currentPrice, test2.session, test2.previousClose, test2.regularClose);
 const compute2 = computePercentChange(test2.currentPrice, test2.previousClose);
 console.log(`Current Price: $${test2.currentPrice}`);
@@ -49,7 +49,7 @@ console.log(`Match: ${Math.abs(result2.changePct - compute2) < 0.01 ? '✅' : '�
 
 console.log('\n📊 Test Case 3: After-hours session (with regularClose)');
 console.log('-'.repeat(70));
-const test3 = testCases[2];
+const test3 = testCases[2]!;
 const result3 = calculatePercentChange(test3.currentPrice, test3.session, test3.previousClose, test3.regularClose);
 const compute3Old = computePercentChange(test3.currentPrice, test3.previousClose); // Old way (without session)
 const compute3New = computePercentChange(test3.currentPrice, test3.previousClose, test3.session, test3.regularClose); // New way (with session)
@@ -64,7 +64,7 @@ console.log(`Match (NEW): ${Math.abs(result3.changePct - compute3New) < 0.01 ? '
 
 console.log('\n📊 Test Case 4: After-hours session (without regularClose)');
 console.log('-'.repeat(70));
-const test4 = testCases[4];
+const test4 = testCases[4]!;
 const result4 = calculatePercentChange(test4.currentPrice, test4.session, test4.previousClose, test4.regularClose);
 const compute4 = computePercentChange(test4.currentPrice, test4.previousClose);
 console.log(`Current Price: $${test4.currentPrice}`);

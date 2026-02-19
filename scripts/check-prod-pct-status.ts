@@ -69,8 +69,8 @@ async function checkProductionStatus() {
   console.log(`\n📈 Percent Change Statistics (${validChanges.length} stocks with valid data):`);
   
   if (sortedByChange.length > 0) {
-    const maxGain = sortedByChange[0];
-    const maxLoss = sortedByChange[sortedByChange.length - 1];
+    const maxGain = sortedByChange[0]!;
+    const maxLoss = sortedByChange[sortedByChange.length - 1]!;
     const avgChange = sortedByChange.reduce((sum, s) => sum + s.percentChange, 0) / sortedByChange.length;
     
     console.log(`   🟢 Max Gain: ${maxGain.symbol} +${maxGain.percentChange.toFixed(2)}% ($${maxGain.currentPrice.toFixed(2)})`);
