@@ -1,0 +1,1262 @@
+node.exe : [baseline-browser-mapping] The data in this module i
+s over two months old.  To ensure accurate Baseline data, pleas
+e update: `npm i baseline-browser-mapping@latest -D`
+At C:\Users\dusan\AppData\Roaming\npm\npx.ps1:24 char:5
++     & "node$exe"  "$basedir/node_modules/npm/bin/npx-cli.js" 
+$args
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~
+    + CategoryInfo          : NotSpecified: ([baseline-brows.. 
+   .ping@latest -D`:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+   ??? Next.js 16.0.10 (Turbopack)
+   - Environments: .env.local, .env
+   - Experiments (use with caution):
+     ?? optimizePackageImports
+
+ ??? The "middleware" file convention is deprecated. Please use
+ "proxy" instead. Learn more: https://nextjs.org/docs/messages/
+middleware-to-proxy
+   Creating an optimized production build ...
+[baseline-browser-mapping] The data in this module is over two 
+months old.  To ensure accurate Baseline data, please update: `
+npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two 
+months old.  To ensure accurate Baseline data, please update: `
+npm i baseline-browser-mapping@latest -D`
+ ??? Compiled successfully in 5.3s
+   Running TypeScript ...
+   Collecting page data using 15 workers ...
+[baseline-browser-mapping] The data in this module is over two 
+months old.  To ensure accurate Baseline data, please update: `
+npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two 
+months old.  To ensure accurate Baseline data, please update: `
+npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two 
+months old.  To ensure accurate Baseline data, please update: `
+npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two 
+months old.  To ensure accurate Baseline data, please update: `
+npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two 
+months old.  To ensure accurate Baseline data, please update: `
+npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two 
+months old.  To ensure accurate Baseline data, please update: `
+npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two 
+months old.  To ensure accurate Baseline data, please update: `
+npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two 
+months old.  To ensure accurate Baseline data, please update: `
+npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two 
+months old.  To ensure accurate Baseline data, please update: `
+npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two 
+months old.  To ensure accurate Baseline data, please update: `
+npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two 
+months old.  To ensure accurate Baseline data, please update: `
+npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two 
+months old.  To ensure accurate Baseline data, please update: `
+npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two 
+months old.  To ensure accurate Baseline data, please update: `
+npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two 
+months old.  To ensure accurate Baseline data, please update: `
+npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two 
+months old.  To ensure accurate Baseline data, please update: `
+npm i baseline-browser-mapping@latest -D`
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+   Generating static pages using 15 workers (0/65) ...
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+[baseline-browser-mapping] The data in this module is over two 
+months old.  To ensure accurate Baseline data, please update: `
+npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two 
+months old.  To ensure accurate Baseline data, please update: `
+npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two 
+months old.  To ensure accurate Baseline data, please update: `
+npm i baseline-browser-mapping@latest -D`
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+   Generating static pages using 15 workers (16/65) 
+   Generating static pages using 15 workers (32/65) 
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+   Generating static pages using 15 workers (48/65) 
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+???? getStocksData CALLED with tickers=NVDA,MSFT,AAPL,GOOG,GOOGL,AMZN,META,AVGO,BRK.B,TSLA,TSM,JPM,WMT,ORCL,LLY,V,MA,NFLX,XOM,COST, project=pmp
+???? getStocksList CALLED with tickers=NVDA,MSFT,AAPL,GOOG,GOOGL,AMZN,META,AVGO,BRK.B,TSLA,TSM,JPM,WMT,ORCL,LLY,V,MA,NFLX,XOM,COST, limit=50, offset=0, sort=marketCapDiff
+???? Explicit tickers mode: ignoring offset=0 and limit=50, returning all 20 requested tickers
+???? [Service] Fetching earnings for date: 2026-02-18
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+???? getStocksList: Found 20 stocks, tickers=NVDA,MSFT,AAPL,GOOG,GOOGL,AMZN,META,AVGO,BRK.B,TSLA,TSM,JPM,WMT,ORCL,LLY,V,MA,NFLX,XOM,COST
+???? DB VALUES for GOOG: lastMarketCap=3701.92, lastPrice=306.02, latestPrevClose=306.02, sharesOutstanding=12067000000 (type: number)
+???? DB VALUES for MSFT: lastMarketCap=2980.05, lastPrice=401.32, latestPrevClose=401.32, sharesOutstanding=7432377655 (type: number)
+???? DB VALUES for NVDA: lastMarketCap=4443.2, lastPrice=182.81, latestPrevClose=182.81, sharesOutstanding=24305000000 (type: number)
+???? About to map 20 stocks
+???? AAPL: PRE-CALC - marketCap=3759.44B (from DB: 3755.14B), price=255.78, prevClose=255.78, shares=14697926000 (type: number), pct.changePct=0, pct.ref.price=255.78, pct.ref.used=previousClose
+??? AAPL: Method A (shares) - marketCapDiff=0B [sharesSource=db, refPrice=255.78, refUsed=previousClose]
+???? AMZN: PRE-CALC - marketCap=2125.11B (from DB: 2133.99B), price=198.79, prevClose=198.79, shares=10690216011 (type: number), pct.changePct=0, pct.ref.price=198.79, pct.ref.used=previousClose
+??? AMZN: Method A (shares) - marketCapDiff=0B [sharesSource=db, refPrice=198.79, refUsed=previousClose]
+???? AVGO: PRE-CALC - marketCap=1541.72B (from DB: 1541.72B), price=325.17, prevClose=325.17, shares=4741273799 (type: number), pct.changePct=0, pct.ref.price=325.17, pct.ref.used=previousClose
+??? AVGO: Method A (shares) - marketCapDiff=0B [sharesSource=db, refPrice=325.17, refUsed=previousClose]
+???? BRK.B: PRE-CALC - marketCap=1073.38B (from DB: 1073.38B), price=497.55, prevClose=497.55, shares=2157334746 (type: number), pct.changePct=0, pct.ref.price=497.55, pct.ref.used=previousClose
+??? BRK.B: Method A (shares) - marketCapDiff=0B [sharesSource=db, refPrice=497.55, refUsed=previousClose]
+???? GOOG: PRE-CALC - marketCap=3692.74B (from DB: 3701.92B), price=306.02, prevClose=306.02, shares=12067000000 (type: number), pct.changePct=0, pct.ref.price=306.02, pct.ref.used=previousClose
+??? GOOG: Method A (shares) - marketCapDiff=0B [sharesSource=db, refPrice=306.02, refUsed=previousClose]
+???? GOOGL: PRE-CALC - marketCap=3689.12B (from DB: 3698.29B), price=305.72, prevClose=305.72, shares=12067000000 (type: number), pct.changePct=0, pct.ref.price=305.72, pct.ref.used=previousClose
+??? GOOGL: Method A (shares) - marketCapDiff=0B [sharesSource=db, refPrice=305.72, refUsed=previousClose]
+???? META: PRE-CALC - marketCap=1612.56B (from DB: 1618.33B), price=639.77, prevClose=639.77, shares=2520527597 (type: number), pct.changePct=0, pct.ref.price=639.77, pct.ref.used=previousClose
+??? META: Method A (shares) - marketCapDiff=0B [sharesSource=db, refPrice=639.77, refUsed=previousClose]
+???? MSFT: PRE-CALC - marketCap=2982.76B (from DB: 2980.05B), price=401.32, prevClose=401.32, shares=7432377655 (type: number), pct.changePct=0, pct.ref.price=401.32, pct.ref.used=previousClose
+??? MSFT: Method A (shares) - marketCapDiff=0B [sharesSource=db, refPrice=401.32, refUsed=previousClose]
+???? NVDA: PRE-CALC - marketCap=4443.2B (from DB: 4443.2B), price=182.81, prevClose=182.81, shares=24305000000 (type: number), pct.changePct=0, pct.ref.price=182.81, pct.ref.used=previousClose
+??? NVDA: Method A (shares) - marketCapDiff=0B [sharesSource=db, refPrice=182.81, refUsed=previousClose]
+???? TSLA: PRE-CALC - marketCap=1388.33B (from DB: 1566.42B), price=417.44, prevClose=417.44, shares=3325819167 (type: number), pct.changePct=0, pct.ref.price=417.44, pct.ref.used=previousClose
+??? TSLA: Method A (shares) - marketCapDiff=0B [sharesSource=db, refPrice=417.44, refUsed=previousClose]
+???? TSM: PRE-CALC - marketCap=1900.13B (from DB: 1900.13B), price=366.36, prevClose=366.36, shares=5186504904 (type: number), pct.changePct=0, pct.ref.price=366.36, pct.ref.used=previousClose
+??? TSM: Method A (shares) - marketCapDiff=0B [sharesSource=db, refPrice=366.36, refUsed=previousClose]
+???? WMT: PRE-CALC - marketCap=1067.13B (from DB: 1067.13B), price=133.89, prevClose=133.89, shares=7970166964 (type: number), pct.changePct=0, pct.ref.price=133.89, pct.ref.used=previousClose
+??? WMT: Method A (shares) - marketCapDiff=0B [sharesSource=db, refPrice=133.89, refUsed=previousClose]
+???? getStocksData RETURNING 20 stocks, 0 errors
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+???? [Service] Raw earnings count: 133
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+??? Fetched shares for OXY: 985??210??434
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+???? Using cached shares for OXY: 985??210??434
+??? Fetched shares for VRSK: 139??372??570
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+???? Using cached shares for VRSK: 139??372??570
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+??? Fetched shares for DASH: 430??998??519
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+???? Using cached shares for DASH: 430??998??519
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+??? Fetched shares for FIG: 495??591??718
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+???? Using cached shares for FIG: 495??591??718
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+??? Fetched shares for MCO: 178??400??000
+???? Using cached shares for MCO: 178??400??000
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+??? Fetched shares for BKNG: 32??233??815
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+???? Using cached shares for BKNG: 32??233??815
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+??? Fetched shares for ADI: 488??628??595
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+???? Using cached shares for ADI: 488??628??595
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+??? Fetched shares for CRH: 668??043??318
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+???? Using cached shares for CRH: 668??043??318
+??? Fetched shares for CVNA: 141??423??193
+???? Using cached shares for CVNA: 141??423??193
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+??? Fetched shares for GRMN: 192??334??806
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+???? Using cached shares for GRMN: 192??334??806
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis connection failed after 10 retries
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis connection failed after 10 retries
+Redis connection failed after 10 retries
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis connection failed after 10 retries
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis connection failed after 10 retries
+Redis connection failed after 10 retries
+Redis connection failed after 10 retries
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis connection failed after 10 retries
+Redis connection failed after 10 retries
+Redis connection failed after 10 retries
+Redis connection failed after 10 retries
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis connection failed after 10 retries
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis connection failed after 10 retries
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis connection failed after 10 retries
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis connection failed after 10 retries
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis connection failed after 10 retries
+Redis connection failed after 10 retries
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis connection failed after 10 retries
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis connection failed after 10 retries
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis connection failed after 10 retries
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Redis connection failed after 10 retries
+Redis Client Error: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Error getting ranked symbols: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+Error getting ranked symbols: AggregateError: 
+    at ignore-listed frames {
+  code: 'ECONNREFUSED'
+}
+ ??? Generating static pages using 15 workers (65/65) in 6.8s
+   Finalizing page optimization ...
+
+Route (app)                              Revalidate  Expire
+??? ??? /                                           10s      1y
+??? ??? /_not-found
+??? ??? /admin/cache
+??? ?? /api/admin/cache/invalidate
+??? ?? /api/admin/cache/keys
+??? ?? /api/admin/dlq
+??? ?? /api/admin/ingest
+??? ?? /api/analytics
+??? ?? /api/auth/[...nextauth]
+??? ?? /api/background/status
+??? ?? /api/blog/ai-insights
+??? ?? /api/blog/daily-report
+??? ?? /api/blog/generate
+??? ?? /api/cache/status
+??? ?? /api/config-check
+??? ?? /api/cron/blog
+??? ?? /api/cron/daily-integrity
+??? ?? /api/cron/earnings-calendar
+??? ?? /api/cron/heatmap-keep-warm
+??? ?? /api/cron/check-premarket-movements
+??? ?? /api/cron/status
+??? ?? /api/cron/update-static-data
+??? ?? /api/cron/verify-prevclose
+??? ?? /api/cron/verify-sector-industry
+??? ?? /api/debug-polygon
+??? ?? /api/earnings-calendar
+??? ?? /api/earnings-finnhub
+??? ?? /api/earnings/monitor
+??? ?? /api/earnings/today
+??? ?? /api/earnings/yahoo
+??? ?? /api/favorites
+??? ?? /api/fix-other-sectors
+??? ?? /api/fix-sector-industry
+??? ?? /api/fix-tsm
+??? ?? /api/health
+??? ?? /api/health/redis
+??? ?? /api/health/worker
+??? ?? /api/healthz
+??? ?? /api/heatmap
+??? ?? /api/history
+??? ?? /api/logo/[symbol]
+??? ?? /api/market
+??? ?? /api/metrics
+??? ?? /api/metrics/freshness
+??? ?? /api/performance
+??? ?? /api/prices
+??? ?? /api/prices/cached
+??? ?? /api/prices/refresh
+??? ?? /api/security/events
+??? ?? /api/simple
+??? ?? /api/stats/sectors
+??? ?? /api/stocks
+??? ?? /api/stocks/bulk
+??? ?? /api/stocks/optimized
+??? ?? /api/test
+??? ?? /api/test-cache
+??? ?? /api/tickers/default
+??? ?? /api/user/favorites
+??? ?? /api/user/portfolio
+??? ?? /api/websocket
+??? ?? /company/[ticker]
+??? ??? /earnings
+??? ??? /gainers                                     1m      1y
+??? ??? /heatmap
+??? ??? /losers                                      1m      1y
+??? ??? /premarket-movers                            1m      1y
+??? ??? /robots.txt
+??? ?? /sector/[sector]
+??? ??? /sectors                                     6h      1y
+??? ??? /sitemap.xml
+??? ??? /stocks                                      1m      1y
+
+
+?? Proxy (Middleware)
+
+???  (Static)   prerendered as static content
+??  (Dynamic)  server-rendered on demand
+

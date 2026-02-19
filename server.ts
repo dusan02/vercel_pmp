@@ -26,90 +26,100 @@ const handle = app.getRequestHandler();
 app
   .prepare()
   .then(() => {
-  // Create HTTP server
-  const server = createServer(async (req, res) => {
-    try {
-      const parsedUrl = parse(req.url!, true);
-      await handle(req, res, parsedUrl);
-    } catch (err) {
-      console.error('Error occurred handling request:', err);
-      res.statusCode = 500;
-      res.end('Internal Server Error');
-    }
-  });
+    // Create HTTP server
+    const server = createServer(async (req, res) => {
+      try {
+        const parsedUrl = parse(req.url!, true);
+        const start = Date.now();
+        await handle(req, res, parsedUrl);
 
-  // Create Socket.io server
-  const io = new SocketIOServer(server, {
-    cors: {
-      origin: process.env.NODE_ENV === 'production'
-        ? ['https://premarketprice.com', 'https://www.premarketprice.com']
-        : ['http://localhost:3000', 'http://localhost:3001'],
-      methods: ['GET', 'POST'],
-      credentials: true
-    },
-    transports: ['websocket', 'polling']
-  });
-
-  // Initialize WebSocket price server
-  const websocketServer = new WebSocketPriceServer(io);
-  // Type assertion for global assignment
-  (global as any).websocketServer = websocketServer;
-
-  // Start WebSocket real-time updates (only in production or when explicitly enabled)
-  if (process.env.NODE_ENV === 'production' || process.env.ENABLE_WEBSOCKET === 'true') {
-    websocketServer.startRealTimeUpdates().catch(error => {
-      console.error('Failed to start WebSocket updates:', error);
+        // Log request duration after response is finished
+        res.on('finish', () => {
+          const duration = Date.now() - start;
+          // Log only if duration > 500ms or if it was an error
+          if (duration > 500 || res.statusCode >= 400) {
+            console.log(`[HTTP] ${req.method} ${req.url} ${res.statusCode} ${duration}ms`);
+          }
+        });
+      } catch (err) {
+        console.error('Error occurred handling request:', err);
+        res.statusCode = 500;
+        res.end('Internal Server Error');
+      }
     });
-  }
 
-  // INTERNAL SCHEDULERS (optional)
-  // Production runs scheduled jobs via PM2 (single source of truth) to avoid duplicates with Vercel/other cron systems.
-  // Enable internal scheduler only for local/dev or if explicitly requested.
-  const enableInternalSectorIndustryScheduler =
-    (process.env.ENABLE_INTERNAL_SECTOR_INDUSTRY_SCHEDULER === 'true') ||
-    (process.env.NODE_ENV !== 'production' && process.env.ENABLE_INTERNAL_SECTOR_INDUSTRY_SCHEDULER !== 'false');
+    // Create Socket.io server
+    const io = new SocketIOServer(server, {
+      cors: {
+        origin: process.env.NODE_ENV === 'production'
+          ? ['https://premarketprice.com', 'https://www.premarketprice.com']
+          : ['http://localhost:3000', 'http://localhost:3001'],
+        methods: ['GET', 'POST'],
+        credentials: true
+      },
+      transports: ['websocket', 'polling']
+    });
 
-  if (enableInternalSectorIndustryScheduler) {
-    // Runs daily at 02:00 UTC
-    initializeSectorIndustryScheduler();
-    (global as any).sectorIndustrySchedulerInitialized = true;
-  } else {
-    (global as any).sectorIndustrySchedulerInitialized = false;
-    console.log('⏭️ Internal sector/industry scheduler: DISABLED (PM2 cron is the source of truth)');
-  }
+    // Initialize WebSocket price server
+    const websocketServer = new WebSocketPriceServer(io);
+    // Type assertion for global assignment
+    (global as any).websocketServer = websocketServer;
 
-  // Start the server
-  server.listen(port, listenHost, () => {
-    console.log(`🚀 Next.js server ready on http://${listenHost}:${port}`);
-    console.log(`🔌 WebSocket server ready on ws://${listenHost}:${port}`);
-
+    // Start WebSocket real-time updates (only in production or when explicitly enabled)
     if (process.env.NODE_ENV === 'production' || process.env.ENABLE_WEBSOCKET === 'true') {
-      console.log('📡 WebSocket real-time updates: ENABLED');
-    } else {
-      console.log('📡 WebSocket real-time updates: DISABLED (set ENABLE_WEBSOCKET=true to enable)');
+      websocketServer.startRealTimeUpdates().catch(error => {
+        console.error('Failed to start WebSocket updates:', error);
+      });
     }
-  });
 
-  // Graceful shutdown
-  process.on('SIGTERM', () => {
-    console.log('🛑 SIGTERM received, shutting down gracefully...');
-    websocketServer.stopRealTimeUpdates();
-    server.close(() => {
-      console.log('✅ Server closed');
-      process.exit(0);
-    });
-  });
+    // INTERNAL SCHEDULERS (optional)
+    // Production runs scheduled jobs via PM2 (single source of truth) to avoid duplicates with Vercel/other cron systems.
+    // Enable internal scheduler only for local/dev or if explicitly requested.
+    const enableInternalSectorIndustryScheduler =
+      (process.env.ENABLE_INTERNAL_SECTOR_INDUSTRY_SCHEDULER === 'true') ||
+      (process.env.NODE_ENV !== 'production' && process.env.ENABLE_INTERNAL_SECTOR_INDUSTRY_SCHEDULER !== 'false');
 
-  process.on('SIGINT', () => {
-    console.log('🛑 SIGINT received, shutting down gracefully...');
-    websocketServer.stopRealTimeUpdates();
-    server.close(() => {
-      console.log('✅ Server closed');
-      process.exit(0);
+    if (enableInternalSectorIndustryScheduler) {
+      // Runs daily at 02:00 UTC
+      initializeSectorIndustryScheduler();
+      (global as any).sectorIndustrySchedulerInitialized = true;
+    } else {
+      (global as any).sectorIndustrySchedulerInitialized = false;
+      console.log('⏭️ Internal sector/industry scheduler: DISABLED (PM2 cron is the source of truth)');
+    }
+
+    // Start the server
+    server.listen(port, listenHost, () => {
+      console.log(`🚀 Next.js server ready on http://${listenHost}:${port}`);
+      console.log(`🔌 WebSocket server ready on ws://${listenHost}:${port}`);
+
+      if (process.env.NODE_ENV === 'production' || process.env.ENABLE_WEBSOCKET === 'true') {
+        console.log('📡 WebSocket real-time updates: ENABLED');
+      } else {
+        console.log('📡 WebSocket real-time updates: DISABLED (set ENABLE_WEBSOCKET=true to enable)');
+      }
     });
+
+    // Graceful shutdown
+    process.on('SIGTERM', () => {
+      console.log('🛑 SIGTERM received, shutting down gracefully...');
+      websocketServer.stopRealTimeUpdates();
+      server.close(() => {
+        console.log('✅ Server closed');
+        process.exit(0);
+      });
+    });
+
+    process.on('SIGINT', () => {
+      console.log('🛑 SIGINT received, shutting down gracefully...');
+      websocketServer.stopRealTimeUpdates();
+      server.close(() => {
+        console.log('✅ Server closed');
+        process.exit(0);
+      });
+    });
+  })
+  .catch((err) => {
+    console.error('❌ Fatal: Next.js app.prepare() failed. Did you run `npm run build`?', err);
+    process.exit(1);
   });
-})
-.catch((err) => {
-  console.error('❌ Fatal: Next.js app.prepare() failed. Did you run `npm run build`?', err);
-  process.exit(1);
-});
