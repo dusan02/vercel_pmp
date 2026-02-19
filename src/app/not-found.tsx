@@ -1,7 +1,7 @@
 'use client';
- 
+
 import Link from 'next/link';
- 
+
 export default function NotFound() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
@@ -13,4 +13,3 @@ export default function NotFound() {
     </div>
   );
 }
-

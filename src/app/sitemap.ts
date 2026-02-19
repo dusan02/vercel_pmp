@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 import { getProjectTickers } from '@/data/defaultTickers';
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://premarketprice.com';
   const currentDate = new Date().toISOString().split('T')[0];
 
@@ -57,8 +57,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ];
 
-  // Company pages for top 200 stocks
-  const topTickers = getProjectTickers('pmp', 200);
+  // Company pages for all project stocks
+  const topTickers = getProjectTickers('pmp');
   const companyPages: MetadataRoute.Sitemap = topTickers.map((ticker) => ({
     url: `${baseUrl}/company/${ticker}`,
     lastModified: currentDate,
@@ -66,7 +66,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.8,
   }));
 
-  return [...mainPages, ...companyPages];
+  // Sector pages
+  // Fallback sectors if API fails during build or we want a static list
+  const sectors = ['Technology', 'Healthcare', 'Financial', 'Consumer Cyclical', 'Industrials', 'Communication Services', 'Consumer Defensive', 'Energy', 'Utilities', 'Real Estate', 'Basic Materials'];
+
+  const sectorPages: MetadataRoute.Sitemap = sectors.map((sector) => ({
+    url: `${baseUrl}/sectors/${encodeURIComponent(sector)}`,
+    lastModified: currentDate,
+    changeFrequency: 'weekly',
+    priority: 0.7,
+  }));
+
+  return [...mainPages, ...sectorPages, ...companyPages];
 }
-
-
