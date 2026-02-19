@@ -35,7 +35,8 @@ const formatEps = (value: number | null): string => {
 
 const formatRevenue = (value: number | null): string => {
     if (value === null || value === undefined) return '—';
-    return formatBillions(value);
+    // Value is raw number (e.g. 192,000,000,000), formatBillions expects Billions (e.g. 192)
+    return formatBillions(value / 1_000_000_000);
 };
 
 const getBeatMissClass = (actual: number | null, estimate: number | null): string => {
@@ -57,65 +58,50 @@ export const EarningsCardMobile = memo(({ earning, priority = false }: EarningsC
                 touchAction: 'manipulation'
             }}
         >
-            {/* Row 1: Logo + Ticker + Company Name | % Change badge */}
-            <div className="flex items-center justify-between gap-2 mb-2">
-                <div className="flex items-center gap-2 min-w-0 flex-1">
+            <div className="flex items-center w-full">
+                {/* 1. Ticker Column (Flex-1) */}
+                <div className="flex-1 min-w-0 pr-2 flex items-center gap-2">
                     <CompanyLogo
                         ticker={earning.ticker}
-                        size={28}
+                        size={32}
                         className="rounded-sm shrink-0"
                         priority={priority}
                     />
                     <div className="min-w-0 overflow-hidden">
-                        <div className="flex items-baseline gap-1.5">
-                            <span className="font-bold text-sm text-gray-900 dark:text-gray-100 tracking-tight">
-                                {earning.ticker}
-                            </span>
-                            <span className="text-[10px] text-gray-400 truncate">
-                                {getCompanyName(earning.ticker)}
-                            </span>
+                        <div className="font-bold text-sm text-gray-900 dark:text-gray-100 tracking-tight leading-tight">
+                            {earning.ticker}
+                        </div>
+                        <div className="text-[10px] text-gray-400 truncate leading-tight">
+                            {getCompanyName(earning.ticker)}
                         </div>
                     </div>
                 </div>
-                {/* % Change badge */}
-                <div className={`shrink-0 px-2 py-0.5 rounded-md text-xs font-bold tabular-nums
-                    ${isPositive
-                        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                        : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-                    }`}
-                >
-                    {formatPercent(earning.percentChange)}
-                </div>
-            </div>
 
-            {/* Row 2: EPS and Revenue side by side */}
-            <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[11px] tabular-nums">
-                {/* EPS column */}
-                <div>
-                    <div className="text-[9px] font-semibold uppercase tracking-wider text-gray-400 mb-0.5">EPS</div>
-                    <div className="flex items-center gap-1">
-                        <span className="text-gray-500 dark:text-gray-400">Est</span>
-                        <span className="text-gray-700 dark:text-gray-200">{formatEps(earning.epsEstimate)}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                        <span className="text-gray-500 dark:text-gray-400">Rep</span>
-                        <span className={getBeatMissClass(earning.epsActual, earning.epsEstimate)}>
-                            {formatEps(earning.epsActual)}
-                        </span>
-                    </div>
+                {/* 2. EPS Column (Fixed Width 64px = w-16) */}
+                <div className="w-16 shrink-0 flex flex-col items-center justify-center text-[10px] tabular-nums leading-tight">
+                    <span className="text-gray-500 dark:text-gray-400">{formatEps(earning.epsEstimate)}</span>
+                    <span className={getBeatMissClass(earning.epsActual, earning.epsEstimate)}>
+                        {formatEps(earning.epsActual)}
+                    </span>
                 </div>
-                {/* Revenue column */}
-                <div>
-                    <div className="text-[9px] font-semibold uppercase tracking-wider text-gray-400 mb-0.5">Revenue</div>
-                    <div className="flex items-center gap-1">
-                        <span className="text-gray-500 dark:text-gray-400">Est</span>
-                        <span className="text-gray-700 dark:text-gray-200">{formatRevenue(earning.revenueEstimate)}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                        <span className="text-gray-500 dark:text-gray-400">Rep</span>
-                        <span className={getBeatMissClass(earning.revenueActual, earning.revenueEstimate)}>
-                            {formatRevenue(earning.revenueActual)}
-                        </span>
+
+                {/* 3. Revenue Column (Fixed Width 64px = w-16) */}
+                <div className="w-16 shrink-0 flex flex-col items-center justify-center text-[10px] tabular-nums leading-tight">
+                    <span className="text-gray-500 dark:text-gray-400">{formatRevenue(earning.revenueEstimate)}</span>
+                    <span className={getBeatMissClass(earning.revenueActual, earning.revenueEstimate)}>
+                        {formatRevenue(earning.revenueActual)}
+                    </span>
+                </div>
+
+                {/* 4. % Change Column (Fixed Width 56px = w-14) */}
+                <div className="w-14 shrink-0 flex justify-end">
+                    <div className={`px-1.5 py-0.5 rounded text-[11px] font-bold tabular-nums text-right
+                        ${isPositive
+                            ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                            : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                        }`}
+                    >
+                        {formatPercent(earning.percentChange)}
                     </div>
                 </div>
             </div>
