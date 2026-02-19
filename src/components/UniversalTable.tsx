@@ -144,7 +144,7 @@ export function UniversalTable<T>({
         <div className="universal-table-container">
             {/* Mobile Card View (lg:hidden) — virtualized for large lists */}
             {showMobileCards && (
-                <div className="lg:hidden">
+                <div className="lg:hidden w-full overflow-hidden">
                     {/* Sort header for mobile cards */}
                     {onSort && sortKey !== undefined && (
                         <MobileSortHeader

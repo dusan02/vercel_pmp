@@ -432,9 +432,9 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
             <MobileSortHeader
               columns={[
                 { key: 'ticker', label: 'Ticker', sortable: true, width: 'flex-1', align: 'left' },
-                { key: 'epsEstimate', label: 'EPS', sortable: true, width: 'w-16', align: 'center' },
-                { key: 'revenueEstimate', label: 'Revenue', sortable: true, width: 'w-20', align: 'center' },
-                { key: 'percentChange', label: '% Chg', sortable: true, width: 'w-16', align: 'right' },
+                { key: 'epsEstimate', label: 'EPS', sortable: true, width: 'w-14', align: 'center' },
+                { key: 'revenueEstimate', label: 'Rev', sortable: true, width: 'w-16', align: 'center' },
+                { key: 'percentChange', label: '%', sortable: true, width: 'w-14', align: 'right' },
               ]}
               sortKey={sortKey}
               ascending={ascending}

@@ -77,24 +77,24 @@ export const EarningsCardMobile = memo(({ earning, priority = false }: EarningsC
                     </div>
                 </div>
 
-                {/* 2. EPS Column (Fixed Width 64px = w-16) */}
-                <div className="w-16 shrink-0 flex flex-col items-center justify-center text-[10px] tabular-nums leading-tight">
+                {/* 2. EPS Column (Fixed Width 56px = w-14) */}
+                <div className="w-14 shrink-0 flex flex-col items-center justify-center text-[10px] tabular-nums leading-tight">
                     <span className="text-gray-500 dark:text-gray-400">{formatEps(earning.epsEstimate)}</span>
                     <span className={getBeatMissClass(earning.epsActual, earning.epsEstimate)}>
                         {formatEps(earning.epsActual)}
                     </span>
                 </div>
 
-                {/* 3. Revenue Column (Fixed Width 80px = w-20) */}
-                <div className="w-20 shrink-0 flex flex-col items-center justify-center text-[10px] tabular-nums leading-tight">
+                {/* 3. Revenue Column (Fixed Width 64px = w-16) */}
+                <div className="w-16 shrink-0 flex flex-col items-center justify-center text-[10px] tabular-nums leading-tight">
                     <span className="text-gray-500 dark:text-gray-400">{formatRevenue(earning.revenueEstimate)}</span>
                     <span className={getBeatMissClass(earning.revenueActual, earning.revenueEstimate)}>
                         {formatRevenue(earning.revenueActual)}
                     </span>
                 </div>
 
-                {/* 4. % Change Column (Fixed Width 64px = w-16) */}
-                <div className="w-16 shrink-0 flex justify-end">
+                {/* 4. % Change Column (Fixed Width 56px = w-14) */}
+                <div className="w-14 shrink-0 flex justify-end">
                     <div className={`px-1.5 py-0.5 rounded text-[11px] font-bold tabular-nums text-right
                         ${isPositive
                             ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
