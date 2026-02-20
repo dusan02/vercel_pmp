@@ -313,9 +313,9 @@ export const AllStocksSection = React.memo(function AllStocksSection({
       )}
 
       {/* Mobile: Section Title */}
-      <div className="lg:hidden px-3 py-2">
-        <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
-          <SectionIcon type="globe" size={20} className="section-icon" />
+      <div className="lg:hidden px-4 mb-4">
+        <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--clr-text)] m-0 relative -top-1.5">
+          <SectionIcon type="globe" size={24} className="text-[var(--clr-text)]" />
           <span>All Stocks</span>
         </h2>
       </div>
@@ -400,25 +400,22 @@ export const AllStocksSection = React.memo(function AllStocksSection({
             </div>
           )}
 
-          {/* Results count */}
-          <div className="mobile-results-row">
-            <span className="mobile-results-text">
-              Showing {displayedStocks.length}{typeof totalCount === 'number' ? ` / ${totalCount}` : ''}
-            </span>
-            {(selectedSector !== 'all' || selectedIndustry !== 'all' || searchTerm.trim().length > 0) && (
+          {/* Results count removed as requested */}
+          {(selectedSector !== 'all' || selectedIndustry !== 'all' || searchTerm.trim().length > 0) && (
+            <div className="mobile-results-row">
               <button
                 type="button"
-                className="mobile-clear-btn"
+                className="mobile-clear-btn ml-auto"
                 onClick={() => {
                   onSearchChange('');
                   handleSectorChange('all');
                   onIndustryChange('all');
                 }}
               >
-                Clear all
+                Clear all filters
               </button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 

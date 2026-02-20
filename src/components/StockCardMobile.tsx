@@ -60,40 +60,35 @@ export const StockCardMobile = memo(({
         </div>
 
         {/* Right: Data + Favorite */}
-        <div className="flex items-center gap-3 shrink-0">
-          <div className="flex flex-col items-end">
-            {displayMode === 'capDiff' ? (
-              <>
-                <span className="font-mono font-medium text-sm text-gray-900 dark:text-gray-100 tabular-nums">
-                  {stock.marketCap ? formattedCap : '—'}
-                </span>
-                <span className={`text-xs font-semibold tabular-nums ${capDiffIsPositive ? 'text-green-600' : 'text-red-600'}`}>
-                  {stock.marketCapDiff ? formattedCapDiff : '—'}
-                </span>
-              </>
-            ) : displayMode === 'cap' ? (
-              <>
-                <span className="font-mono font-medium text-sm text-gray-900 dark:text-gray-100 tabular-nums">
-                  {stock.marketCap ? formattedCap : '—'}
-                </span>
-                <span className={`text-xs font-semibold tabular-nums ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                  {formattedPercentChange}
-                </span>
-              </>
-            ) : (
-              <>
-                <span className="font-mono font-medium text-sm text-gray-900 dark:text-gray-100 tabular-nums">
-                  {hasValidPrice ? `$${formattedPrice}` : '—'}
-                </span>
-                <div className={`px-1.5 py-0.5 rounded text-[11px] font-bold mt-0.5 tabular-nums
-                  ${isPositive
-                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                    : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'}`}
-                >
-                  {formattedPercentChange}
-                </div>
-              </>
-            )}
+        <div className="flex items-center gap-4 shrink-0">
+          <div className="flex items-center gap-4">
+            {/* Market Cap Column */}
+            <div className="flex flex-col items-end min-w-[70px]">
+              <span className="font-mono font-medium text-sm text-gray-900 dark:text-gray-100 tabular-nums">
+                {stock.marketCap ? formattedCap : '—'}
+              </span>
+              <div className={`px-1.5 py-0.5 rounded text-[11px] font-bold mt-0.5 tabular-nums
+                ${capDiffIsPositive
+                  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                  : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'}`}
+              >
+                {stock.marketCapDiff != null ? formattedCapDiff : '—'}
+              </div>
+            </div>
+
+            {/* Price Column */}
+            <div className="flex flex-col items-end min-w-[70px]">
+              <span className="font-mono font-medium text-sm text-gray-900 dark:text-gray-100 tabular-nums">
+                {hasValidPrice ? `$${formattedPrice}` : '—'}
+              </span>
+              <div className={`px-1.5 py-0.5 rounded text-[11px] font-bold mt-0.5 tabular-nums
+                ${isPositive
+                  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                  : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'}`}
+              >
+                {formattedPercentChange}
+              </div>
+            </div>
           </div>
 
           {/* Favorite Button */}

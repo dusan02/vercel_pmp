@@ -129,7 +129,7 @@ export default function CompanyLogo({
           blurDataURL: placeholderSrc
         } : {})}
         onError={() => setHasError(true)}
-        unoptimized={true} // Enable extensive optimization - FALSE, disable to prevent 400 errors with API SVGs
+        unoptimized={logoSrc.toLowerCase().endsWith('.svg') || logoSrc.includes('svg')}
       />
     </div>
   );
