@@ -153,7 +153,7 @@ export function FavoritesSection({
     {
       key: 'favorites',
       header: <Star size={18} />,
-      align: 'right',
+      align: 'center',
       width: '88px',
       showInMobileSort: true,
       mobileWidth: 'w-10',
@@ -161,7 +161,7 @@ export function FavoritesSection({
         const fav = isFavorite(stock.ticker);
         return (
           <button
-            className={`favorite-btn ${fav ? 'favorited' : ''} inline-flex justify-end pr-3 w-full`}
+            className={`favorite-btn ${fav ? 'favorited' : ''} flex justify-center w-full`}
             onClick={(e) => {
               e.stopPropagation();
               onToggleFavorite(stock.ticker); // Changed from toggleFavorite to onToggleFavorite to match prop

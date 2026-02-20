@@ -211,7 +211,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
     {
       key: 'favorites',
       header: <Star size={18} />,
-      align: 'right',
+      align: 'center',
       width: '88px',
       showInMobileSort: true,
       mobileWidth: 'w-10', // Slightly smaller for the icon
@@ -219,7 +219,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
         const fav = isFavorite(stock.ticker);
         return (
           <button
-            className={`favorite-btn ${fav ? 'favorited' : ''} inline-flex justify-end pr-3 w-full`} // Increased padding for alignment
+            className={`favorite-btn ${fav ? 'favorited' : ''} flex justify-center w-full`}
             onClick={(e) => {
               e.stopPropagation();
               onToggleFavorite(stock.ticker);
