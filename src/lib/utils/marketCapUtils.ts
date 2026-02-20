@@ -89,7 +89,27 @@ export async function getSharesOutstanding(ticker: string, currentPrice?: number
     }
 
     if (!shares || shares <= 0) {
-      console.warn(`⚠️ No shares outstanding found for ${ticker} (shares+market_cap fallback failed), using 0`);
+      console.warn(`⚠️ No shares outstanding found for ${ticker} in Polygon API results.`);
+
+      // Fallback to DB
+      try {
+        const { prisma } = await import('@/lib/db/prisma');
+        const dbTicker = await prisma.ticker.findUnique({
+          where: { symbol: ticker },
+          select: { sharesOutstanding: true }
+        });
+
+        if (dbTicker?.sharesOutstanding && dbTicker.sharesOutstanding > 0) {
+          shares = dbTicker.sharesOutstanding;
+          console.log(`🧮 Using DB fallback shares for ${ticker}: ${shares.toLocaleString()}`);
+        }
+      } catch (dbError) {
+        console.warn(`⚠️ Failed to fetch DB fallback shares for ${ticker}:`, dbError);
+      }
+    }
+
+    if (!shares || shares <= 0) {
+      console.warn(`⚠️ All fallbacks failed for ${ticker} shares, using 0`);
       return 0;
     }
 

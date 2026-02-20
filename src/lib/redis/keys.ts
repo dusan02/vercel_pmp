@@ -13,6 +13,8 @@ export const REDIS_KEYS = {
     stats: (date: string, session: string) => `stats:${date}:${session}`,
     prevclose: (date: string) => `prevclose:${date}`, // YYYY-MM-DD
     universe: (type: string) => `universe:${type}`, // sp500, adrs:top200
+    // Hot stock cache (unified between worker and API)
+    stockData: (symbol: string) => `stock:pmp:${symbol}`,
 } as const;
 
 // TTL configuration
@@ -53,6 +55,10 @@ function simpleHash(str: string): string {
 
 // Helper function to generate cache keys with project prefix and simple hash
 export function getCacheKey(project: string, ticker: string, type: string = 'price'): string {
+    // UNIFIED: Use same pattern as REDIS_KEYS.stockData for hot stock data
+    if (type === 'stock') {
+        return REDIS_KEYS.stockData(ticker);
+    }
     const key = `${type}:${project}:${ticker}`;
     const hash = simpleHash(key).substring(0, 8);
     return `${type}:${project}:${hash}:${ticker}`;

@@ -19,6 +19,7 @@ export async function atomicUpdatePrice(
         }
 
         const key = REDIS_KEYS.last(session, symbol);
+        const stockDataKey = REDIS_KEYS.stockData(symbol);
         const heatmapKey = REDIS_KEYS.heatmap(session);
         const ttl = session === 'live' ? REDIS_TTL.LIVE : REDIS_TTL.PRE_AFTER;
         const score = Math.round(changePct * 10000);
@@ -26,6 +27,7 @@ export async function atomicUpdatePrice(
         // Use MULTI/EXEC for atomicity
         const multi = redisClient.multi();
         multi.setEx(key, ttl, JSON.stringify(data));
+        multi.setEx(stockDataKey, ttl, JSON.stringify(data)); // Unified key for API
         multi.zAdd(heatmapKey, { score, value: symbol });
 
         await multi.exec();
@@ -52,10 +54,12 @@ export async function setLast(
         }
 
         const key = REDIS_KEYS.last(session, symbol);
+        const stockDataKey = REDIS_KEYS.stockData(symbol);
         const ttl = session === 'live' ? REDIS_TTL.LIVE : REDIS_TTL.PRE_AFTER;
         const value = JSON.stringify(data);
 
         await redisClient.setEx(key, ttl, value);
+        await redisClient.setEx(stockDataKey, ttl, value); // Unified key for API
         return true;
     } catch (error) {
         console.error(`Error setting last price for ${symbol}:`, error);
@@ -223,7 +227,7 @@ export async function setPrevClose(
 
         const key = REDIS_KEYS.prevclose(date);
         await redisClient.hSet(key, symbol, price.toString());
-        
+
         // Use trading-day based TTL (minimum 7 days, up to next trading day + buffer)
         const { getPreviousCloseTTL } = await import('../utils/pricingStateMachine');
         const ttl = getPreviousCloseTTL();
