@@ -2,11 +2,11 @@ import { prisma } from '../src/lib/db/prisma';
 import { redisClient } from '../src/lib/redis/client';
 import { getPolygonClient } from '../src/lib/clients/polygonClient';
 import { getDateET, nowET } from '../src/lib/utils/dateET';
-import { REDIS_KEYS } from '../src/lib/redis/keys';
+import { REDIS_KEYS, getCacheKey } from '../src/lib/redis/keys';
 
 async function diagnose() {
     console.log('🔍 ŠTART PODROBNEJ DIAGNOSTIKY...');
-    const tickers = ['NVDA', 'AAPL', 'TSLA', 'MSFT', 'GOOG'];
+    const tickers = ['NVDA', 'AAPL', 'TSLA', 'MSFT', 'GOOGL'];
     const today = getDateET();
     const now = nowET();
 
@@ -14,20 +14,45 @@ async function diagnose() {
     console.log(`🕒 Aktuálny čas (ET): ${now.toISOString()}`);
     console.log(`📅 Dnešný trading day: ${today}`);
 
-    // 1. Kontrola Redis PrevClose
+    // 1. Kontrola Redis
     if (redisClient && redisClient.isOpen) {
-        const key = REDIS_KEYS.prevclose(today);
-        console.log(`✅ Redis pripojený. Kontrolujem kľúč: ${key}`);
-        const values = await redisClient.hmGet(key, tickers);
+        console.log('✅ Redis pripojený.');
 
-        tickers.forEach((t, i) => {
-            console.log(`📡 Redis [${t}] PrevClose: ${values[i] || '❌ CHÝBA'}`);
-        });
+        // API Heatmap Cache
+        const heatmapData = await redisClient.get('heatmap-data');
+        if (heatmapData) {
+            console.log(`✅ Cache 'heatmap-data' EXISTUJE (veľkosť: ${heatmapData.length} bajtov)`);
+            try {
+                const parsed = JSON.parse(heatmapData);
+                const nvda = parsed.find((s: any) => s.ticker === 'NVDA');
+                if (nvda) {
+                    console.log(`🔥 [NVDA] v 'heatmap-data' cache: Cena=${nvda.currentPrice}, %=${nvda.percentChange}%`);
+                } else {
+                    console.log(`⚠️ [NVDA] NENÁJDENÝ v 'heatmap-data' cache`);
+                }
+            } catch (e) {
+                console.log('❌ Chyba pri parsovaní heatmap-data');
+            }
+        } else {
+            console.log(`❌ Cache 'heatmap-data' CHÝBA`);
+        }
 
-        // Kontrola Heatmap
+        // Individual Stock Cache (used by API)
+        for (const t of tickers) {
+            const key = getCacheKey('pmp', t, 'stock');
+            const data = await redisClient.get(key);
+            if (data) {
+                const p = JSON.parse(data);
+                console.log(`📦 Redis Cache [${t}] (${key}): Cena=${p.currentPrice}, Prev=${p.closePrice}, %=${p.percentChange}%`);
+            } else {
+                console.log(`❌ Redis Cache [${t}] (${key}) CHÝBA`);
+            }
+        }
+
+        // Worker Heatmap (ZSET)
         const heatmapKey = REDIS_KEYS.heatmap('pre');
         const score = await redisClient.zScore(heatmapKey, 'NVDA');
-        console.log(`🔥 Heatmap (pre) score pre NVDA: ${score !== null ? (score / 100).toFixed(2) + '%' : '❌ CHÝBA'}`);
+        console.log(`🔥 Worker Heatmap (pre) score pre NVDA: ${score !== null ? (score / 100).toFixed(2) + '%' : '❌ CHÝBA'}`);
     }
 
     // 2. Podrobný stav DB
@@ -37,28 +62,7 @@ async function diagnose() {
     });
 
     for (const db of dbStocks) {
-        console.log(`[${db.symbol}]:`);
-        console.log(`   Cena: $${db.lastPrice}`);
-        console.log(`   Change %: ${db.lastChangePct}%`);
-        console.log(`   Update Čas: ${db.lastPriceUpdated?.toISOString() || 'Mýli sa'}`);
-        console.log(`   PrevClose: ${db.latestPrevClose}`);
-        console.log(`   PrevClose Date: ${db.latestPrevCloseDate?.toISOString()}`);
-    }
-
-    // 3. Polygon Snapshot Porovnanie
-    const polygon = getPolygonClient();
-    console.log('\n📥 POLYGON SNAPSHOT (LIVE):');
-    const snap = await polygon.fetchBatchSnapshot(tickers);
-
-    for (const s of snap) {
-        const polyPrice = s.day?.c || s.min?.c || s.lastTrade?.p || 0;
-        const polyTs = s.min?.t || s.lastTrade?.t || s.lastQuote?.t || 0;
-        const polyTsDate = new Date(polyTs > 1e12 ? polyTs : polyTs / 1e6); // handle ns vs ms
-
-        console.log(`[${s.ticker}]:`);
-        console.log(`   Polygon Cena: $${polyPrice}`);
-        console.log(`   Polygon Čas: ${polyTsDate.toISOString()}`);
-        console.log(`   PrevDay.C: ${s.prevDay?.c}`);
+        console.log(`[${db.symbol}]: Cena=$${db.lastPrice}, %= ${db.lastChangePct}%, Prev=${db.latestPrevClose}, Updated=${db.lastPriceUpdated?.toISOString()}`);
     }
 
     process.exit(0);
