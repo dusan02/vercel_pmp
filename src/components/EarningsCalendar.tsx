@@ -50,27 +50,27 @@ export default function EarningsCalendar() {
     try {
       setLoading(true);
       setError(null);
-      
+
       if (!currentDate) {
         console.log('⚠️ No date set, skipping earnings fetch');
         setLoading(false);
         return;
       }
-      
+
       console.log('🔍 Fetching earnings for date:', currentDate);
       console.log('🔍 API URL:', `/api/earnings-calendar?date=${currentDate}`);
-      
+
       // 🚀 OPTIMIZATION: Use new database-backed API endpoint
       const response = await fetch(`/api/earnings/today?date=${currentDate}`, {
         signal: AbortSignal.timeout(5000) // Increased timeout for better reliability
       });
-      
+
       console.log('🔍 Earnings API response status:', response.status);
       console.log('🔍 Earnings API response headers:', response.headers);
-      
+
       if (!response.ok) {
         console.error('❌ Earnings API error:', response.status, response.statusText);
-        
+
         // Handle specific error cases
         if (response.status === 401) {
           throw new Error('API key invalid or expired');
@@ -87,7 +87,7 @@ export default function EarningsCalendar() {
         if (response.status === 404) {
           throw new Error('Earnings API endpoint not found - please check server configuration');
         }
-        
+
         // Try to get error details from response
         try {
           const errorData = await response.json();
@@ -96,22 +96,22 @@ export default function EarningsCalendar() {
           throw new Error(`Failed to fetch earnings data (${response.status})`);
         }
       }
-      
+
       const data: EarningsResponse = await response.json();
       console.log('🔍 Earnings API response data:', data);
-      
+
       // Validate response structure
       if (!data || !data.success || !data.data) {
         throw new Error('Invalid response format from API');
       }
-      
+
       // Combine pre-market and after-market earnings
       const allEarnings = [...data.data.preMarket, ...data.data.afterMarket];
       setEarnings(allEarnings);
-      
+
     } catch (err) {
       console.error('❌ Earnings fetch error:', err);
-      
+
       // Track API error
       if (typeof window !== 'undefined') {
         import('@/lib/ga-api-errors').then(({ trackApiError }) => {
@@ -164,7 +164,7 @@ export default function EarningsCalendar() {
     return (
       <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4 mb-6">
         <div className="flex items-center mb-4">
-          <h2 className="section-title dark:text-gray-100" data-icon="📅">Today&apos;s Earnings</h2>
+          <h2 className="section-title dark:text-gray-100" data-icon="📅">Earnings</h2>
         </div>
         <div>
           <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded mb-2"></div>
@@ -179,7 +179,7 @@ export default function EarningsCalendar() {
     return (
       <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4 mb-6">
         <div className="flex items-center mb-4">
-          <h2 className="section-title dark:text-gray-100" data-icon="📅">Today&apos;s Earnings</h2>
+          <h2 className="section-title dark:text-gray-100" data-icon="📅">Earnings</h2>
         </div>
       </div>
     );
@@ -189,7 +189,7 @@ export default function EarningsCalendar() {
     return (
       <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4 mb-6">
         <div className="flex items-center mb-4">
-          <h2 className="section-title dark:text-gray-100" data-icon="📅">Today&apos;s Earnings</h2>
+          <h2 className="section-title dark:text-gray-100" data-icon="📅">Earnings</h2>
         </div>
       </div>
     );
@@ -198,9 +198,9 @@ export default function EarningsCalendar() {
   return (
     <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4 mb-6">
       <div className="flex items-center mb-4">
-        <h2 className="section-title dark:text-gray-100" data-icon="📅">Today's Earnings</h2>
+        <h2 className="section-title dark:text-gray-100" data-icon="📅">Earnings</h2>
       </div>
-      
+
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -244,7 +244,7 @@ export default function EarningsCalendar() {
           </tbody>
         </table>
       </div>
-      
+
       <div className="mt-3 text-xs text-gray-500 dark:text-gray-400 text-center">
         Top {earnings.length} earnings by market cap • Updates daily at market open
       </div>

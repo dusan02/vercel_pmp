@@ -362,8 +362,11 @@ export async function checkEarningsForOurTickers(date: string, project: string =
     // Skús Yahoo Finance najprv
     try {
       const yahooResult = await checkYahooFinanceEarningsForOurTickers(date, project);
-      console.log(`✅ Yahoo Finance found ${yahooResult.totalFound} earnings`);
-      return yahooResult;
+      if (yahooResult.totalFound > 0) {
+        console.log(`✅ Yahoo Finance found ${yahooResult.totalFound} earnings`);
+        return yahooResult;
+      }
+      console.log(`⚠️ Yahoo Finance found 0 earnings, trying Finnhub fallback...`);
     } catch (error) {
       console.log(`⚠️ Yahoo Finance failed, trying Finnhub...`);
     }

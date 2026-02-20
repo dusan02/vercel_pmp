@@ -208,9 +208,11 @@ export const AllStocksSection = React.memo(function AllStocksSection({
     },
     {
       key: 'favorites',
-      header: 'Favorites',
+      header: 'Fav',
       align: 'center',
       width: '88px',
+      showInMobileSort: true,
+      mobileWidth: 'w-12',
       render: (stock) => {
         const fav = isFavorite(stock.ticker);
         return (

@@ -133,6 +133,33 @@ export function PortfolioSection({
       render: (stock) => <strong>{stock.ticker}</strong>
     },
     {
+      key: isDesktop ? 'currentPrice' : 'value',
+      header: 'Price',
+      sortable: true,
+      align: 'right',
+      className: 'text-right',
+      showInMobileSort: true,
+      mobileWidth: 'w-24',
+      render: (stock) => {
+        const price = stock.currentPrice ?? 0;
+        return <span className="tabular-nums">${isFinite(price) ? Math.round(price).toLocaleString('en-US') : '0'}</span>;
+      }
+    },
+    {
+      key: 'quantity',
+      header: '#',
+      align: 'center',
+      showInMobileSort: true,
+      mobileWidth: 'w-16',
+      render: (stock) => (
+        <PortfolioQuantityInput
+          value={portfolioHoldings[stock.ticker] || 0}
+          onChange={(newQuantity) => onUpdateQuantity(stock.ticker, newQuantity)}
+          className="min-w-[80px] w-20 mx-auto"
+        />
+      )
+    },
+    {
       key: 'companyName',
       header: 'Company',
       className: 'hidden md:table-cell',
@@ -151,31 +178,6 @@ export function PortfolioSection({
       sortable: true,
       className: 'hidden md:table-cell',
       render: (stock) => stock.industry || 'N/A'
-    },
-    {
-      key: 'quantity',
-      header: '#',
-      align: 'center',
-      render: (stock) => (
-        <PortfolioQuantityInput
-          value={portfolioHoldings[stock.ticker] || 0}
-          onChange={(newQuantity) => onUpdateQuantity(stock.ticker, newQuantity)}
-          className="min-w-[80px] w-20 mx-auto"
-        />
-      )
-    },
-    {
-      key: isDesktop ? 'currentPrice' : 'value',
-      header: 'Price',
-      sortable: true,
-      align: 'right',
-      className: 'text-right',
-      showInMobileSort: true,
-      mobileWidth: 'w-24',
-      render: (stock) => {
-        const price = stock.currentPrice ?? 0;
-        return <span className="tabular-nums">${isFinite(price) ? Math.round(price).toLocaleString('en-US') : '0'}</span>;
-      }
     },
     {
       key: 'percentChange',
@@ -211,6 +213,7 @@ export function PortfolioSection({
       header: 'Actions',
       align: 'center',
       width: '88px',
+      showInMobileSort: false, // Hide label in mobile sort header
       render: (stock) => (
         <button
           className="flex items-center justify-center w-8 h-8 mx-auto rounded-lg text-gray-400 hover:text-red-500 hover:bg-gray-100 dark:hover:bg-red-900/20 transition-all duration-200"
