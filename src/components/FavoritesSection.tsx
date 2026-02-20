@@ -152,7 +152,7 @@ export function FavoritesSection({
     },
     {
       key: 'favorites',
-      header: '★',
+      header: <Star size={18} />,
       align: 'right',
       width: '88px',
       showInMobileSort: true,

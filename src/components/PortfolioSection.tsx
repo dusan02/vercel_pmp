@@ -211,7 +211,7 @@ export function PortfolioSection({
     },
     {
       key: 'actions',
-      header: 'Actions',
+      header: '',
       align: 'center',
       width: '88px',
       showInMobileSort: false, // Hide label in mobile sort header

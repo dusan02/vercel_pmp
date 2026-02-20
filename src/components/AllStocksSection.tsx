@@ -210,7 +210,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
     },
     {
       key: 'favorites',
-      header: '★',
+      header: <Star size={18} />,
       align: 'right',
       width: '88px',
       showInMobileSort: true,
@@ -450,12 +450,6 @@ export const AllStocksSection = React.memo(function AllStocksSection({
       // forceTable={true} // REMOVED to enable mobile cards
       />
 
-      {/* End of list indicator */}
-      {!hasMore && displayedStocks.length > 0 && (
-        <div className="end-of-list">
-          <span>All stocks are displayed</span>
-        </div>
-      )}
 
       {/* Mobile: infinite loading sentinel + fallback button */}
       <div className="lg:hidden">
