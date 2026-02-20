@@ -86,8 +86,8 @@ export function PortfolioPerformanceTreemap({ data, metric = 'percent' }: Portfo
                     minHeight: '240px',
                     maxWidth: '720px',
                     margin: '0 auto',
-                    backgroundColor: '#000000',
-                    color: 'white' // ensure any text inside is visible against black
+                    backgroundColor: 'transparent',
+                    color: 'inherit'
                 }}
             >
                 <div ref={ref} className="absolute inset-0" />

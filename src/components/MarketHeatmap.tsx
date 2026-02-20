@@ -289,11 +289,14 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
       .sum((d) => d.value || 0) // Sčítame 'value' (marketCap)
       .sort((a, b) => (b.value || 0) - (a.value || 0)); // Zoradíme
 
-    // Mobile: Vertical layout - sectors stacked vertically, no gaps
+    // Mobile: Vertical layout - process each sector separately and stack vertically
     // Desktop: Horizontal layout - original behavior
     const SECTOR_GAP = isMobile ? 0 : LAYOUT_CONFIG.SECTOR_GAP; // No gap on mobile
 
-    if (isMobile && d3Root.children && d3Root.children.length > 0) {
+    // CRITICAL FIX: Only use vertical stacked layout if there is MORE than one sector.
+    // This allows single-sector treemaps (like the Portfolio heatmap) to use the full width and height
+    // provided by the parent without being squashed/leaving a black bar.
+    if (isMobile && d3Root.children && d3Root.children.length > 1) {
       if (process.env.NODE_ENV !== 'production') {
         console.log('📱 Mobile vertical layout:', {
           sectors: d3Root.children.length,
@@ -541,24 +544,28 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
   const scale = useMemo(() => {
     if (!treemapBounds) return 1;
 
-    if (isMobile) {
-      // Mobile: Scale only by width to allow vertical scrolling
+    const hasMultipleSectors = (hierarchyRoot.children?.length ?? 0) > 1;
+
+    if (isMobile && hasMultipleSectors) {
+      // Mobile with multiple sectors: Scale only by width to allow vertical scrolling
       // Sectors will stack vertically, width fills screen
       return width / treemapBounds.treemapWidth;
     }
 
-    // Desktop: Original behavior - fit to both dimensions
+    // Desktop or mobile single-sector: Original behavior - fit to both dimensions
     const scaleX = width / treemapBounds.treemapWidth;
     const scaleY = height / treemapBounds.treemapHeight;
     return Math.min(scaleX, scaleY); // Použijeme menšiu škálu, aby sa mapa zmestila
-  }, [treemapBounds, width, height, isMobile]);
+  }, [treemapBounds, width, height, isMobile, hierarchyRoot.children?.length]);
 
   // Offset pre roztiahnutie na celú plochu (bez centrovania)
   const offset = useMemo(() => {
     if (!treemapBounds || scale === 0) return { x: 0, y: 0 };
 
-    if (isMobile) {
-      // Mobile: Align to left, start from top (y: 0)
+    const hasMultipleSectors = (hierarchyRoot.children?.length ?? 0) > 1;
+
+    if (isMobile && hasMultipleSectors) {
+      // Mobile with multiple sectors: Align to left, start from top (y: 0)
       // Allow vertical scrolling - no vertical scaling/centering
       return {
         x: -treemapBounds.minX * scale,
@@ -566,16 +573,12 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
       };
     }
 
-    // Desktop: Original behavior
-    const treemapWidth = treemapBounds.treemapWidth * scale;
-    const treemapHeight = treemapBounds.treemapHeight * scale;
-
-    // Roztiahnuť na celú plochu - začať od (0,0) a roztiahnuť do (width, height)
+    // Desktop or mobile single-sector: Original behavior
     return {
       x: -treemapBounds.minX * scale,
       y: -treemapBounds.minY * scale,
     };
-  }, [treemapBounds, scale, isMobile]);
+  }, [treemapBounds, scale, isMobile, hierarchyRoot.children?.length]);
 
   // Progressive loading state
   // On mobile, use DOM mode for better progressive loading and performance
@@ -620,8 +623,10 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
     // Mobile: Use actual treemap height (sectors stacked vertically)
     // Use precise height calculation - no arbitrary multipliers
     const calculatedHeight = treemapBounds.treemapHeight * scale;
-    // Add small padding (50px) to ensure last sector is fully visible, but don't multiply by 2
-    const finalHeight = calculatedHeight + 50;
+    // Add small padding (50px) to ensure last sector is fully visible if we have multiple sectors
+    // If we have only 1 sector and aren't using vertical layout, just use the viewport height.
+    const hasMultipleSectors = (hierarchyRoot.children?.length ?? 0) > 1;
+    const finalHeight = hasMultipleSectors ? (calculatedHeight + 50) : height;
     if (process.env.NODE_ENV !== 'production') {
       console.log('📱 Content height calculation:', {
         treemapHeight: treemapBounds.treemapHeight,
