@@ -148,13 +148,15 @@ export function UniversalTable<T>({
                     {/* Sort header for mobile cards */}
                     {onSort && sortKey !== undefined && (
                         <MobileSortHeader
-                            columns={columns.filter(c => c.sortable !== false).map(col => ({
-                                key: col.key,
-                                label: typeof col.header === 'string' ? col.header : col.key,
-                                sortable: col.sortable !== false,
-                                align: col.align || 'left',
-                                ...(col.width ? { width: col.width } : {}),
-                            }))}
+                            columns={columns
+                                .filter(c => c.sortable !== false && !c.className?.includes('hidden'))
+                                .map(col => ({
+                                    key: col.key,
+                                    label: typeof col.header === 'string' ? col.header : col.key,
+                                    sortable: col.sortable !== false,
+                                    align: col.align || 'left',
+                                    ...(col.width ? { width: col.width } : {}),
+                                }))}
                             sortKey={sortKey as string}
                             ascending={ascending ?? false}
                             onSort={handleSort}

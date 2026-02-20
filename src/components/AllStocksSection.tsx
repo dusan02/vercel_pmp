@@ -149,8 +149,8 @@ export const AllStocksSection = React.memo(function AllStocksSection({
       render: (stock) => stock.industry || 'N/A'
     },
     {
-      key: 'marketCap',
-      header: 'Market Cap',
+      key: isDesktop ? 'marketCap' : 'marketCapDiff',
+      header: isDesktop ? 'Market Cap' : 'Cap',
       sortable: true,
       align: 'center',
       className: 'whitespace-nowrap hidden lg:table-cell',
@@ -159,7 +159,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
     {
       key: 'marketCapDiff',
       header: 'Cap Diff',
-      sortable: true,
+      sortable: isDesktop, // Only sortable on desktop, on mobile we use merged Cap column
       align: 'center',
       className: 'hidden lg:table-cell',
       render: (stock) => {
@@ -172,7 +172,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
       }
     },
     {
-      key: 'currentPrice',
+      key: isDesktop ? 'currentPrice' : 'percentChange',
       header: 'Price',
       sortable: true,
       align: 'center',
@@ -188,7 +188,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
     {
       key: 'percentChange',
       header: '% Change',
-      sortable: true,
+      sortable: isDesktop, // Only sortable on desktop, on mobile we use merged Price column
       align: 'center',
       width: '100px',
       render: (stock) => {

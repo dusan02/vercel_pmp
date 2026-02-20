@@ -13,6 +13,7 @@ import { StockData } from '@/lib/types';
 import { formatSectorName, formatBillions, formatMarketCapDiff, formatPrice, formatPercent } from '@/lib/utils/format';
 import CompanyLogo from './CompanyLogo';
 import { getCompanyName } from '@/lib/companyNames';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 interface FavoritesSectionProps {
   favoriteStocks: StockData[];
@@ -34,6 +35,7 @@ export function FavoritesSection({
   isFavorite
 }: FavoritesSectionProps) {
   const router = useRouter();
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
 
   const handleBrowseStocks = () => {
     // On mobile: trigger tab change via custom event
@@ -89,8 +91,8 @@ export function FavoritesSection({
       render: (stock) => stock.industry || 'N/A'
     },
     {
-      key: 'marketCap',
-      header: 'Market Cap',
+      key: isDesktop ? 'marketCap' : 'marketCapDiff',
+      header: isDesktop ? 'Market Cap' : 'Cap',
       sortable: true,
       align: 'center',
       className: 'whitespace-nowrap hidden lg:table-cell',
@@ -99,7 +101,7 @@ export function FavoritesSection({
     {
       key: 'marketCapDiff',
       header: 'Cap Diff',
-      sortable: true,
+      sortable: isDesktop,
       align: 'center',
       className: 'hidden lg:table-cell',
       render: (stock) => {
@@ -112,7 +114,7 @@ export function FavoritesSection({
       }
     },
     {
-      key: 'currentPrice',
+      key: isDesktop ? 'currentPrice' : 'percentChange',
       header: 'Price',
       sortable: true,
       align: 'center',
@@ -128,7 +130,7 @@ export function FavoritesSection({
     {
       key: 'percentChange',
       header: '% Change',
-      sortable: true,
+      sortable: isDesktop,
       align: 'center',
       width: '100px',
       render: (stock) => {

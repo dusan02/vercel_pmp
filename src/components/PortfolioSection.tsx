@@ -22,6 +22,7 @@ import {
   BUTTON_ICON_DANGER,
   BUTTON_SECONDARY
 } from '@/lib/utils/buttonStyles';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 interface PortfolioSectionProps {
   portfolioStocks: StockData[];
@@ -48,6 +49,7 @@ export function PortfolioSection({
   calculateTotalValue,
   totalPortfolioValue
 }: PortfolioSectionProps) {
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
   const [portfolioSearchTerm, setPortfolioSearchTerm] = useState('');
   const [portfolioSearchResults, setPortfolioSearchResults] = useState<StockData[]>([]);
   const [showPortfolioSearch, setShowPortfolioSearch] = useState(false);
@@ -161,7 +163,7 @@ export function PortfolioSection({
       )
     },
     {
-      key: 'currentPrice',
+      key: isDesktop ? 'currentPrice' : 'value',
       header: 'Price',
       sortable: true,
       align: 'right',
@@ -174,7 +176,7 @@ export function PortfolioSection({
     {
       key: 'percentChange',
       header: '% Change',
-      sortable: true,
+      sortable: isDesktop,
       align: 'right',
       className: 'text-right hidden md:table-cell',
       render: (stock) => {
@@ -189,7 +191,7 @@ export function PortfolioSection({
     {
       key: 'value',
       header: 'Daily P&L',
-      sortable: true,
+      sortable: isDesktop,
       align: 'right',
       render: (stock) => {
         const value = calculatePortfolioValue(stock);
