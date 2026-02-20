@@ -322,24 +322,24 @@ export const AllStocksSection = React.memo(function AllStocksSection({
         </div>
       )}
 
-      {/* Mobile: Section Title */}
-      <div className="lg:hidden px-4 mb-4">
-        <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--clr-text)] m-0 relative -top-1.5">
-          <SectionIcon type="globe" size={24} className="text-[var(--clr-text)]" />
+      {/* Mobile Header: Title + Search Row */}
+      <div className="lg:hidden px-4 mb-3 flex items-center justify-between gap-3">
+        <h2 className="flex items-center gap-2 text-lg font-bold text-[var(--clr-text)] m-0 relative -top-0.5 whitespace-nowrap">
+          <SectionIcon type="globe" size={20} className="text-[var(--clr-text)]" />
           <span>All Stocks</span>
         </h2>
+        <div className="flex-1 min-w-0">
+          <StockSearchBar
+            searchTerm={searchTerm}
+            onSearchChange={onSearchChange}
+            placeholder="Search..."
+          />
+        </div>
       </div>
 
       {/* Mobile: Sticky Filter Bar */}
       <div className="lg:hidden mobile-filters">
         <div className="mobile-filters-container">
-          {/* Search bar - always visible */}
-          <div className="mobile-search-row mb-3">
-            <StockSearchBar
-              searchTerm={searchTerm}
-              onSearchChange={onSearchChange}
-            />
-          </div>
 
           {/* Dropdowns - side by side */}
           <div className="mobile-filters-row mb-2 flex gap-2">
