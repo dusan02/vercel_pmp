@@ -154,10 +154,11 @@ export function UniversalTable<T>({
                                 .filter(c => c.sortable !== false && (c.showInMobileSort || !c.className?.includes('hidden')))
                                 .map(col => ({
                                     key: col.key,
-                                    label: typeof col.header === 'string' ? col.header : col.key,
+                                    label: col.header,
                                     sortable: col.sortable !== false,
                                     align: col.align || 'left',
-                                    width: col.mobileWidth || col.width
+                                    width: col.mobileWidth || col.width,
+                                    ariaLabel: typeof col.header === 'string' ? col.header : col.key
                                 }))}
                             sortKey={sortKey as string}
                             ascending={ascending ?? false}

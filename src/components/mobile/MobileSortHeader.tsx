@@ -4,11 +4,13 @@ import React from 'react';
 
 export interface MobileSortColumn {
     key: string;
-    label: string;
+    label: React.ReactNode;
     sortable?: boolean;
     align?: 'left' | 'center' | 'right';
     /** Width hint (Tailwind class like 'w-16' or 'flex-1') */
     width?: string | undefined;
+    /** Accessibility label if label is a component */
+    ariaLabel?: string;
 }
 
 interface MobileSortHeaderProps {
@@ -58,7 +60,7 @@ export function MobileSortHeader({
               ${isActive ? 'text-blue-600 dark:text-blue-400' : ''}
               transition-colors`}
                         style={{ WebkitTapHighlightColor: 'transparent' }}
-                        aria-label={isSortable ? `Sort by ${col.label}` : col.label}
+                        aria-label={isSortable ? `Sort by ${col.ariaLabel || col.key}` : (col.ariaLabel || col.key)}
                     >
                         <span className="truncate">{col.label}</span>
                         {isSortable && isActive && (
