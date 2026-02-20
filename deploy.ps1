@@ -3,7 +3,7 @@
 
 param(
     [string]$Server = "root@89.185.250.213",
-    [string]$Password = "nahodné_heslo123",
+    [string]$Password = "CcO15gcCwu",
     [string]$RemotePath = "/var/www/premarketprice"
 )
 
@@ -50,18 +50,19 @@ $deployScript = Get-Content "deploy.sh" -Raw
 # Spustenie deploymentu
 if ($hasSshpass) {
     Write-Host "🔐 Používam sshpass pre automatizáciu..." -ForegroundColor Green
-    echo $deployScript | sshpass -p $Password ssh -o StrictHostKeyChecking=no $Server "cat > $RemotePath/deploy.sh && chmod +x $RemotePath/deploy.sh && bash $RemotePath/deploy.sh"
-} elseif ($hasPlink) {
+    # Use Invoke-Expression or direct call with careful quoting
+    # Note: potential issues with pipe in PowerShell. Using simple command structure.
+    sshpass -p $Password ssh -o StrictHostKeyChecking=no $Server "cd $RemotePath && git pull origin main && npm ci && npx prisma generate && npm run build && pm2 restart premarketprice --update-env"
+}
+elseif ($hasPlink) {
     Write-Host "🔐 Používam plink (PuTTY)..." -ForegroundColor Green
-    echo y | echo $Password | plink -ssh $Server -pw $Password "cd $RemotePath && bash deploy.sh"
-} else {
+    echo y | plink -ssh $Server -pw $Password "cd $RemotePath && git pull origin main && npm ci && npx prisma generate && npm run build && pm2 restart premarketprice --update-env"
+}
+else {
     # Fallback: jednoduchý SSH príkaz
-    Write-Host "📋 Spustite tento príkaz manuálne:" -ForegroundColor Yellow
+    Write-Host "📋 Spustite tento príkaz manuálne (vyžaduje heslo):" -ForegroundColor Yellow
     Write-Host ""
-    Write-Host "ssh $Server" -ForegroundColor Cyan
-    Write-Host "Potom na serveri:" -ForegroundColor Cyan
-    Write-Host "cd $RemotePath" -ForegroundColor White
-    Write-Host "bash deploy.sh" -ForegroundColor White
+    Write-Host "ssh $Server 'cd $RemotePath && git pull origin main && npm ci && npx prisma generate && npm run build && pm2 restart premarketprice --update-env'" -ForegroundColor Cyan
     Write-Host ""
 }
 

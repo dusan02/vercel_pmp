@@ -243,53 +243,52 @@ export async function getStocksList(options: {
 
     const onDemandSharesMap = new Map<string, number>();
     if (tickersNeedingShares.length > 0) {
+      const startTime = Date.now();
+      const timeoutBudget = 1000; // 1 second max for shares fetching in SSR
+
       try {
-        // Fetch shares in parallel (with limit to avoid rate limits)
         const maxConcurrent = 5;
 
         for (let i = 0; i < tickersNeedingShares.length; i += maxConcurrent) {
+          // Check timeout budget
+          if (Date.now() - startTime >= timeoutBudget) {
+            console.warn(`⚠️ On-demand shares fetch timeout budget exceeded, stopping early`);
+            break;
+          }
+
           const batch = tickersNeedingShares.slice(i, i + maxConcurrent);
           const batchPromises = batch.map(async (ticker) => {
-            // Request-scoped memoization: reuse in-flight promise if already fetching
             if (!sharesFetchPromises.has(ticker)) {
               sharesFetchPromises.set(ticker, (async () => {
                 try {
-                  // Provide current price so we can estimate shares from Polygon market_cap when shares are missing.
                   const currentPrice = priceBySymbol.get(ticker) || 0;
                   const shares = await getSharesOutstanding(ticker, currentPrice);
                   if (shares > 0) {
                     sharesSourceMap.set(ticker, 'polygon');
                     onDemandSharesMap.set(ticker, shares);
-                    // Persist to DB for future use (async, don't wait)
                     prisma.ticker.update({
                       where: { symbol: ticker },
                       data: { sharesOutstanding: shares }
-                    }).catch(err => {
-                      console.warn(`⚠️ Failed to persist sharesOutstanding for ${ticker}:`, err);
-                    });
+                    }).catch(() => { }); // Silent persist
                     return shares;
-                  } else {
-                    sharesSourceMap.set(ticker, 'missing');
-                    return 0;
                   }
+                  sharesSourceMap.set(ticker, 'missing');
+                  return 0;
                 } catch (error) {
-                  console.warn(`⚠️ Failed to fetch sharesOutstanding for ${ticker}:`, error);
                   sharesSourceMap.set(ticker, 'fallback');
                   return 0;
                 }
               })());
             }
-            // Wait for existing promise (prevents duplicate API calls)
-            const shares = await sharesFetchPromises.get(ticker)!;
-            return shares;
+            return await sharesFetchPromises.get(ticker)!;
           });
-          // Wait for batch to complete before starting next batch
+
           await Promise.all(batchPromises);
         }
 
-        console.log(`✅ On-demand fetched ${onDemandSharesMap.size} sharesOutstanding for /api/stocks (sources: ${Array.from(sharesSourceMap.values()).filter(s => s !== 'db').join(', ') || 'none'})`);
+        console.log(`✅ On-demand fetched ${onDemandSharesMap.size} shares for /api/stocks`);
       } catch (error) {
-        console.warn(`⚠️ On-demand sharesOutstanding fetch failed in stockService:`, error);
+        console.warn(`⚠️ On-demand shares fetch failed:`, error);
       }
     }
 

@@ -212,37 +212,6 @@ async function fetchCurrentPrice(ticker: string): Promise<{ currentPrice: number
     }
 }
 
-async function fetchPolygonCompanyData(ticker: string): Promise<{ companyName: string; marketCap: number } | null> {
-    const apiKey = process.env.POLYGON_API_KEY || 'Vi_pMLcusE8RA_SUvkPAmiyziVzlmOoX';
-
-    try {
-        const referenceUrl = `https://api.polygon.io/v3/reference/tickers/${ticker}?apiKey=${apiKey}`;
-        const referenceResponse = await fetch(referenceUrl, {
-            signal: AbortSignal.timeout(5000)
-        });
-
-        if (!referenceResponse.ok) return null;
-
-        const referenceData = await referenceResponse.json();
-        const companyName = referenceData.results?.name || ticker;
-
-        const [shares, priceData] = await Promise.all([
-            getSharesOutstanding(ticker),
-            fetchCurrentPrice(ticker)
-        ]);
-
-        if (!priceData || !shares) return null;
-
-        const marketCap = computeMarketCap(priceData.currentPrice, shares);
-
-        return {
-            companyName,
-            marketCap
-        };
-    } catch (error) {
-        return null;
-    }
-}
 
 function processAllEarningsData(
     earningsData: FinnhubEarningsResponse
@@ -282,8 +251,6 @@ function processAllEarningsData(
 }
 
 async function enrichEarningsData(earnings: EarningsData[]): Promise<EarningsData[]> {
-    const enriched: EarningsData[] = [];
-
     const etNow = nowET();
     const session = detectSession(etNow);
 
@@ -310,55 +277,80 @@ async function enrichEarningsData(earnings: EarningsData[]): Promise<EarningsDat
         }
     }
 
-    for (const earning of earnings) {
-        try {
-            const [companyData, priceData, updatedEarnings] = await Promise.all([
-                fetchPolygonCompanyData(earning.ticker),
-                fetchCurrentPrice(earning.ticker),
-                fetchUpdatedEarningsData(earning.ticker, earning.date)
-            ]);
+    const CONCURRENCY_LIMIT = 5;
+    const enriched: EarningsData[] = [];
 
-            let percentChange = null;
-            let marketCapDiff = null;
+    for (let i = 0; i < earnings.length; i += CONCURRENCY_LIMIT) {
+        const batch = earnings.slice(i, i + CONCURRENCY_LIMIT);
+        const batchPromises = batch.map(async (earning) => {
+            try {
+                const [priceData, updatedEarnings] = await Promise.all([
+                    fetchCurrentPrice(earning.ticker),
+                    fetchUpdatedEarningsData(earning.ticker, earning.date)
+                ]);
 
-            if (priceData && priceData.previousClose > 0) {
-                try {
-                    const regularClose = regularCloseMap.get(earning.ticker) || null;
-                    percentChange = computePercentChange(priceData.currentPrice, priceData.previousClose, session, regularClose);
+                const shares = await getSharesOutstanding(earning.ticker, priceData?.currentPrice);
 
-                    if (companyData) {
-                        const shares = await getSharesOutstanding(earning.ticker);
-                        marketCapDiff = computeMarketCapDiff(priceData.currentPrice, priceData.previousClose, shares);
-                    }
-                } catch (calcError) {
-                    console.error(`Error calculating price data for ${earning.ticker}:`, calcError);
+                let companyName = earning.companyName;
+                let marketCap = null;
+
+                if (priceData && shares > 0) {
+                    marketCap = computeMarketCap(priceData.currentPrice, shares);
                 }
+
+                if (companyName === earning.ticker) {
+                    try {
+                        const apiKey = process.env.POLYGON_API_KEY || 'Vi_pMLcusE8RA_SUvkPAmiyziVzlmOoX';
+                        const referenceUrl = `https://api.polygon.io/v3/reference/tickers/${earning.ticker}?apiKey=${apiKey}`;
+                        const refResponse = await fetch(referenceUrl, { signal: AbortSignal.timeout(3000) });
+                        if (refResponse.ok) {
+                            const refData = await refResponse.json();
+                            companyName = refData.results?.name || companyName;
+                        }
+                    } catch (e) { }
+                }
+
+                let percentChange = null;
+                let marketCapDiff = null;
+
+                if (priceData && priceData.previousClose > 0) {
+                    try {
+                        const regularClose = regularCloseMap.get(earning.ticker) || null;
+                        percentChange = computePercentChange(priceData.currentPrice, priceData.previousClose, session, regularClose);
+
+                        if (shares > 0) {
+                            marketCapDiff = computeMarketCapDiff(priceData.currentPrice, priceData.previousClose, shares);
+                        }
+                    } catch (calcError) {
+                        console.error(`Error calculating price data for ${earning.ticker}:`, calcError);
+                    }
+                }
+
+                const finalEpsActual = updatedEarnings && updatedEarnings.epsActual !== null ? updatedEarnings.epsActual : earning.epsActual;
+                const finalRevenueActual = updatedEarnings && updatedEarnings.revenueActual !== null ? updatedEarnings.revenueActual : earning.revenueActual;
+
+                return {
+                    ...earning,
+                    companyName,
+                    marketCap,
+                    epsActual: finalEpsActual,
+                    revenueActual: finalRevenueActual,
+                    percentChange,
+                    marketCapDiff
+                };
+            } catch (error) {
+                console.error(`Error enriching data for ${earning.ticker}:`, error);
+                return {
+                    ...earning,
+                    marketCap: null,
+                    percentChange: null,
+                    marketCapDiff: null
+                };
             }
+        });
 
-            const finalEpsActual = updatedEarnings && updatedEarnings.epsActual !== null ? updatedEarnings.epsActual : earning.epsActual;
-            const finalRevenueActual = updatedEarnings && updatedEarnings.revenueActual !== null ? updatedEarnings.revenueActual : earning.revenueActual;
-
-            const enrichedEarning = {
-                ...earning,
-                companyName: companyData?.companyName || earning.companyName,
-                marketCap: companyData?.marketCap || null,
-                epsActual: finalEpsActual,
-                revenueActual: finalRevenueActual,
-                percentChange,
-                marketCapDiff
-            };
-
-            enriched.push(enrichedEarning);
-        } catch (error) {
-            console.error(`Error enriching data for ${earning.ticker}:`, error);
-            const fallbackEarning = {
-                ...earning,
-                marketCap: null,
-                percentChange: null,
-                marketCapDiff: null
-            };
-            enriched.push(fallbackEarning);
-        }
+        const batchResults = await Promise.all(batchPromises);
+        enriched.push(...batchResults);
     }
 
     return enriched;
