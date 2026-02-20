@@ -64,7 +64,8 @@ export async function getSharesOutstanding(ticker: string, currentPrice?: number
     });
 
     if (!response.ok) {
-      throw new Error(`Polygon API error: ${response.status} ${response.statusText}`);
+      console.warn(`⚠️ Polygon API error for ${ticker} shares: ${response.status} ${response.statusText}`);
+      return 0;
     }
 
     const data = await response.json();
@@ -250,7 +251,7 @@ export function computeMarketCapDiff(currentPrice: number, prevClose: number, sh
  * Otherwise, uses simple calculation vs previousClose (backward compatibility)
  */
 export function computePercentChange(
-  currentPrice: number, 
+  currentPrice: number,
   prevClose: number,
   session?: 'pre' | 'live' | 'after' | 'closed',
   regularClose?: number | null
@@ -266,13 +267,13 @@ export function computePercentChange(
       // Fallback to simple calculation
     }
   }
-  
+
   // Simple calculation (backward compatibility)
   try {
     if (!prevClose || prevClose <= 0) {
       return 0;
     }
-    
+
     const result = new Decimal(currentPrice)
       .minus(prevClose)
       .div(prevClose)
