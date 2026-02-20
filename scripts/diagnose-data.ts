@@ -1,6 +1,5 @@
 import { prisma } from '../src/lib/db/prisma';
 import { redisClient } from '../src/lib/redis/client';
-import { getPolygonClient } from '../src/lib/clients/polygonClient';
 import { getDateET, nowET } from '../src/lib/utils/dateET';
 import { REDIS_KEYS, getCacheKey } from '../src/lib/redis/keys';
 
@@ -15,48 +14,29 @@ async function diagnose() {
     console.log(`📅 Dnešný trading day: ${today}`);
 
     // 1. Kontrola Redis
-    if (redisClient && redisClient.isOpen) {
-        console.log('✅ Redis pripojený.');
+    if (redisClient) {
+        if (!redisClient.isOpen) {
+            await redisClient.connect().catch(() => { });
+        }
+        if (redisClient.isOpen) {
+            console.log('✅ Redis pripojený.');
 
-        // API Heatmap Cache
-        const heatmapData = await redisClient.get('heatmap-data');
-        if (heatmapData) {
-            console.log(`✅ Cache 'heatmap-data' EXISTUJE (veľkosť: ${heatmapData.length} bajtov)`);
-            try {
-                const parsed = JSON.parse(heatmapData);
-                const nvda = parsed.find((s: any) => s.ticker === 'NVDA');
-                if (nvda) {
-                    console.log(`🔥 [NVDA] v 'heatmap-data' cache: Cena=${nvda.currentPrice}, %=${nvda.percentChange}%`);
+            // Individual Stock Cache (used by API)
+            for (const t of tickers) {
+                const key = getCacheKey('pmp', t, 'stock');
+                const data = await redisClient.get(key);
+                if (data) {
+                    const p = JSON.parse(data);
+                    console.log(`📦 Redis Stock Cache [${t}]: Cena=${p.currentPrice}, Prev=${p.closePrice}, %=${p.percentChange}%`);
                 } else {
-                    console.log(`⚠️ [NVDA] NENÁJDENÝ v 'heatmap-data' cache`);
+                    console.log(`❌ Redis Stock Cache [${t}] CHÝBA`);
                 }
-            } catch (e) {
-                console.log('❌ Chyba pri parsovaní heatmap-data');
-            }
-        } else {
-            console.log(`❌ Cache 'heatmap-data' CHÝBA`);
-        }
-
-        // Individual Stock Cache (used by API)
-        for (const t of tickers) {
-            const key = getCacheKey('pmp', t, 'stock');
-            const data = await redisClient.get(key);
-            if (data) {
-                const p = JSON.parse(data);
-                console.log(`📦 Redis Cache [${t}] (${key}): Cena=${p.currentPrice}, Prev=${p.closePrice}, %=${p.percentChange}%`);
-            } else {
-                console.log(`❌ Redis Cache [${t}] (${key}) CHÝBA`);
             }
         }
-
-        // Worker Heatmap (ZSET)
-        const heatmapKey = REDIS_KEYS.heatmap('pre');
-        const score = await redisClient.zScore(heatmapKey, 'NVDA');
-        console.log(`🔥 Worker Heatmap (pre) score pre NVDA: ${score !== null ? (score / 100).toFixed(2) + '%' : '❌ CHÝBA'}`);
     }
 
     // 2. Podrobný stav DB
-    console.log('\n📊 STAV V DATABÁZE:');
+    console.log('\n📊 STAV V DATABÁZE (Ticker table):');
     const dbStocks = await prisma.ticker.findMany({
         where: { symbol: { in: tickers } },
     });
@@ -65,7 +45,36 @@ async function diagnose() {
         console.log(`[${db.symbol}]: Cena=$${db.lastPrice}, %= ${db.lastChangePct}%, Prev=${db.latestPrevClose}, Updated=${db.lastPriceUpdated?.toISOString()}`);
     }
 
+    console.log('\n📅 STAV V DATABÁZE (DailyRef table):');
+    const dailyRefs = await prisma.dailyRef.findMany({
+        where: {
+            symbol: { in: tickers },
+            date: { gte: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) }
+        },
+        orderBy: { date: 'desc' }
+    });
+
+    for (const dr of dailyRefs) {
+        console.log(`[${dr.symbol}] ${dr.date.toISOString().slice(0, 10)}: Prev=${dr.previousClose}, Regular=${dr.regularClose}`);
+    }
+
+    console.log('\n💰 STAV V DATABÁZE (SessionPrice table):');
+    const sessionPrices = await prisma.sessionPrice.findMany({
+        where: {
+            symbol: { in: tickers },
+            date: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
+        },
+        orderBy: { lastTs: 'desc' }
+    });
+
+    for (const sp of sessionPrices) {
+        console.log(`[${sp.symbol}] ${sp.session}: Cena=${sp.lastPrice}, %= ${sp.changePct}%, Ts=${sp.lastTs?.toISOString()}`);
+    }
+
     process.exit(0);
 }
 
-diagnose();
+diagnose().catch(err => {
+    console.error('DIAGNOSTIKA ZLYHALA:', err);
+    process.exit(1);
+});
