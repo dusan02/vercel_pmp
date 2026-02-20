@@ -126,10 +126,11 @@ export function PortfolioSection({
     },
     {
       key: 'ticker',
-      header: 'Ticker',
+      header: 'Stock',
       sortable: true,
+      align: 'left',
       showInMobileSort: true,
-      mobileWidth: 'w-16',
+      mobileWidth: 'w-28',
       render: (stock) => <strong>{stock.ticker}</strong>
     },
     {
@@ -142,7 +143,7 @@ export function PortfolioSection({
       mobileWidth: 'w-24',
       render: (stock) => {
         const price = stock.currentPrice ?? 0;
-        return <span className="tabular-nums">${isFinite(price) ? Math.round(price).toLocaleString('en-US') : '0'}</span>;
+        return <span className="tabular-nums block w-full text-right">${isFinite(price) ? Math.round(price).toLocaleString('en-US') : '0'}</span>;
       }
     },
     {

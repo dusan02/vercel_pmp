@@ -14,6 +14,7 @@ import { formatSectorName, formatBillions, formatMarketCapDiff, formatPrice, for
 import CompanyLogo from './CompanyLogo';
 import { getCompanyName } from '@/lib/companyNames';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { Star } from 'lucide-react';
 
 interface FavoritesSectionProps {
   favoriteStocks: StockData[];
@@ -66,10 +67,11 @@ export function FavoritesSection({
     },
     {
       key: 'ticker',
-      header: 'Ticker',
+      header: 'Stock', // Renamed from 'Ticker'
       sortable: true,
+      align: 'left',
       showInMobileSort: true,
-      mobileWidth: 'w-16',
+      mobileWidth: 'w-28',
       render: (stock) => <strong>{stock.ticker}</strong>
     },
     {
@@ -96,7 +98,7 @@ export function FavoritesSection({
       key: isDesktop ? 'marketCap' : 'marketCapDiff',
       header: isDesktop ? 'Market Cap' : 'M Cap',
       sortable: true,
-      align: 'center',
+      align: 'right',
       className: 'whitespace-nowrap hidden lg:table-cell',
       showInMobileSort: true,
       mobileWidth: 'flex-1',
@@ -121,7 +123,7 @@ export function FavoritesSection({
       key: isDesktop ? 'currentPrice' : 'percentChange',
       header: 'Price',
       sortable: true,
-      align: 'center',
+      align: 'right',
       showInMobileSort: true,
       mobileWidth: 'w-20',
       render: (stock) => {
@@ -150,23 +152,23 @@ export function FavoritesSection({
     },
     {
       key: 'favorites',
-      header: 'Fav',
-      align: 'center',
+      header: '★',
+      align: 'right',
       width: '88px',
       showInMobileSort: true,
-      mobileWidth: 'w-12',
+      mobileWidth: 'w-10',
       render: (stock) => {
         const fav = isFavorite(stock.ticker);
         return (
           <button
-            className={`favorite-btn ${fav ? 'favorited' : ''} inline-flex justify-center w-full`}
+            className={`favorite-btn ${fav ? 'favorited' : ''} inline-flex justify-end pr-3 w-full`}
             onClick={(e) => {
               e.stopPropagation();
-              onToggleFavorite(stock.ticker);
+              onToggleFavorite(stock.ticker); // Changed from toggleFavorite to onToggleFavorite to match prop
             }}
-            title={fav ? 'Remove from favorites' : 'Add to favorites'}
+            aria-label={fav ? `Remove ${stock.ticker} from favorites` : `Add ${stock.ticker} to favorites`}
           >
-            {fav ? '★' : '☆'}
+            <Star size={20} fill={fav ? "currentColor" : "none"} strokeWidth={2} />
           </button>
         );
       }

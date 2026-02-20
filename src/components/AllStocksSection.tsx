@@ -15,6 +15,7 @@ import { StockData } from '@/lib/types';
 import { formatSectorName, formatBillions, formatMarketCapDiff, formatPrice, formatPercent } from '@/lib/utils/format';
 import CompanyLogo from './CompanyLogo';
 import { getCompanyName } from '@/lib/companyNames';
+import { Star } from 'lucide-react';
 
 interface AllStocksSectionProps {
   displayedStocks: StockData[];
@@ -124,10 +125,11 @@ export const AllStocksSection = React.memo(function AllStocksSection({
     },
     {
       key: 'ticker',
-      header: 'Ticker',
+      header: 'Stock', // Renamed from 'Ticker' to unify Stock/Name space
       sortable: true,
+      align: 'left',
       showInMobileSort: true,
-      mobileWidth: 'w-16',
+      mobileWidth: 'w-28', // Increased to cover logo + ticker space
       render: (stock) => <strong>{stock.ticker}</strong>
     },
     {
@@ -154,7 +156,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
       key: isDesktop ? 'marketCap' : 'marketCapDiff',
       header: isDesktop ? 'Market Cap' : 'M Cap',
       sortable: true,
-      align: 'center',
+      align: 'right',
       className: 'whitespace-nowrap hidden lg:table-cell',
       showInMobileSort: true,
       mobileWidth: 'flex-1',
@@ -179,7 +181,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
       key: isDesktop ? 'currentPrice' : 'percentChange',
       header: 'Price',
       sortable: true,
-      align: 'center',
+      align: 'right',
       showInMobileSort: true,
       mobileWidth: 'w-20',
       render: (stock) => {
@@ -208,23 +210,23 @@ export const AllStocksSection = React.memo(function AllStocksSection({
     },
     {
       key: 'favorites',
-      header: 'Fav',
-      align: 'center',
+      header: '★',
+      align: 'right',
       width: '88px',
       showInMobileSort: true,
-      mobileWidth: 'w-12',
+      mobileWidth: 'w-10', // Slightly smaller for the icon
       render: (stock) => {
         const fav = isFavorite(stock.ticker);
         return (
           <button
-            className={`favorite-btn ${fav ? 'favorited' : ''} inline-flex justify-center w-full`}
+            className={`favorite-btn ${fav ? 'favorited' : ''} inline-flex justify-end pr-3 w-full`} // Increased padding for alignment
             onClick={(e) => {
               e.stopPropagation();
               onToggleFavorite(stock.ticker);
             }}
-            title={fav ? 'Remove from favorites' : 'Add to favorites'}
+            aria-label={fav ? `Remove ${stock.ticker} from favorites` : `Add ${stock.ticker} to favorites`}
           >
-            {fav ? '★' : '☆'}
+            <Star size={20} fill={fav ? "currentColor" : "none"} strokeWidth={2} />
           </button>
         );
       }
