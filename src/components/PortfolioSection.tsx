@@ -128,6 +128,8 @@ export function PortfolioSection({
       key: 'ticker',
       header: 'Ticker',
       sortable: true,
+      showInMobileSort: true,
+      mobileWidth: 'w-16',
       render: (stock) => <strong>{stock.ticker}</strong>
     },
     {
@@ -168,6 +170,8 @@ export function PortfolioSection({
       sortable: true,
       align: 'right',
       className: 'text-right',
+      showInMobileSort: true,
+      mobileWidth: 'w-24',
       render: (stock) => {
         const price = stock.currentPrice ?? 0;
         return <span className="tabular-nums">${isFinite(price) ? Math.round(price).toLocaleString('en-US') : '0'}</span>;

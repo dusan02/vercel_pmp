@@ -8,7 +8,7 @@ export interface MobileSortColumn {
     sortable?: boolean;
     align?: 'left' | 'center' | 'right';
     /** Width hint (Tailwind class like 'w-16' or 'flex-1') */
-    width?: string;
+    width?: string | undefined;
 }
 
 interface MobileSortHeaderProps {
@@ -32,10 +32,11 @@ export function MobileSortHeader({
 }: MobileSortHeaderProps) {
     return (
         <div
-            className={`sticky top-0 z-10 flex items-center gap-x-2 px-3 py-2
-        bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700
-        text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400
-        select-none ${className}`}
+            className={`sticky top-0 z-10 flex items-center gap-x-2 px-3 py-3
+        bg-blue-100/80 dark:bg-blue-900/60 border-b border-blue-200 dark:border-white/10
+        backdrop-blur-md
+        text-[11px] font-bold uppercase tracking-wider text-slate-800 dark:text-blue-100
+        select-none shadow-sm ${className}`}
         >
             {columns.map((col) => {
                 const isActive = sortKey === col.key;

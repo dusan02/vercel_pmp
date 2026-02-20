@@ -68,6 +68,8 @@ export function FavoritesSection({
       key: 'ticker',
       header: 'Ticker',
       sortable: true,
+      showInMobileSort: true,
+      mobileWidth: 'w-16',
       render: (stock) => <strong>{stock.ticker}</strong>
     },
     {
@@ -92,10 +94,12 @@ export function FavoritesSection({
     },
     {
       key: isDesktop ? 'marketCap' : 'marketCapDiff',
-      header: isDesktop ? 'Market Cap' : 'Cap',
+      header: isDesktop ? 'Market Cap' : 'M Cap',
       sortable: true,
       align: 'center',
       className: 'whitespace-nowrap hidden lg:table-cell',
+      showInMobileSort: true,
+      mobileWidth: 'flex-1',
       render: (stock) => <span className="tabular-nums block w-full text-right">{formatBillions(stock.marketCap)}</span>
     },
     {
@@ -118,6 +122,8 @@ export function FavoritesSection({
       header: 'Price',
       sortable: true,
       align: 'center',
+      showInMobileSort: true,
+      mobileWidth: 'w-20',
       render: (stock) => {
         const price = stock.currentPrice ?? 0;
         return (

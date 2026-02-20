@@ -20,6 +20,8 @@ export interface ColumnDef<T> {
     className?: string;
     /* Inline style width (optional) */
     width?: string;
+    showInMobileSort?: boolean; // NEW: Force show in mobile sort header
+    mobileWidth?: string; // NEW: Specific width for mobile sort header
 }
 
 interface UniversalTableProps<T> {
@@ -149,13 +151,13 @@ export function UniversalTable<T>({
                     {onSort && sortKey !== undefined && (
                         <MobileSortHeader
                             columns={columns
-                                .filter(c => c.sortable !== false && !c.className?.includes('hidden'))
+                                .filter(c => c.sortable !== false && (c.showInMobileSort || !c.className?.includes('hidden')))
                                 .map(col => ({
                                     key: col.key,
                                     label: typeof col.header === 'string' ? col.header : col.key,
                                     sortable: col.sortable !== false,
                                     align: col.align || 'left',
-                                    ...(col.width ? { width: col.width } : {}),
+                                    width: col.mobileWidth || col.width
                                 }))}
                             sortKey={sortKey as string}
                             ascending={ascending ?? false}
