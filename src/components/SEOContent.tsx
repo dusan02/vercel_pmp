@@ -6,7 +6,7 @@ export function SEOContent() {
     return (
         <section className="bg-[var(--clr-surface)] border-t border-[var(--clr-border)] py-12 mt-8 overflow-hidden">
             <div className="container mx-auto px-4 max-w-4xl">
-                <div className="prose prose-invert prose-blue max-w-none">
+                <div className="prose dark:prose-invert prose-blue max-w-none">
                     <h2 className="text-2xl md:text-3xl font-bold text-[var(--clr-text)] mb-6 font-['Space_Grotesk'] tracking-tight">
                         Comprehensive Pre-Market Stock Analysis & Real-Time Data
                     </h2>
@@ -35,7 +35,7 @@ export function SEOContent() {
 
                         <h3 className="text-xl font-semibold text-[var(--clr-text)] mt-8">Maximize Your Trading Edge</h3>
                         <p>
-                            Whether you are monitoring your personal portfolio or scouting for the next big market mover, our platform is built to deliver. From <strong className="text-white">Altman Z-Scores</strong> (coming soon) to historical valuation percentiles, we are committed to providing deep, actionable insights that were previously reserved for professional terminals.
+                            Whether you are monitoring your personal portfolio or scouting for the next big market mover, our platform is built to deliver. From <strong className="text-blue-600 dark:text-blue-400">Altman Z-Scores</strong> (coming soon) to historical valuation percentiles, we are committed to providing deep, actionable insights that were previously reserved for professional terminals.
                         </p>
 
                         <div className="flex flex-wrap gap-4 pt-8 border-t border-[var(--clr-border-subtle)]">
