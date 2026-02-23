@@ -65,9 +65,10 @@ async function main() {
   const missingTickers = [];
   for (const t of allTickersRaw) {
     const ticker = t.symbol;
-    const localPath = path.join(LOGOS_DIR, `${ticker.toLowerCase()}-32.webp`);
+    const localPath32 = path.join(LOGOS_DIR, `${ticker.toLowerCase()}-32.webp`);
+    const localPath64 = path.join(LOGOS_DIR, `${ticker.toLowerCase()}-64.webp`);
     try {
-      await fs.access(localPath);
+      await Promise.all([fs.access(localPath32), fs.access(localPath64)]);
       // If locally exists, check if DB needs update
       const currentUrl = dbTickerMap.get(ticker);
       if (!currentUrl || !currentUrl.startsWith('/logos/')) {
