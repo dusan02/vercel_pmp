@@ -440,18 +440,15 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
       sortable: true,
       align: 'left',
       showInMobileSort: true,
-      mobileWidth: 'w-24', // Reduced width for ticker column
-      render: (e) => <strong>{e.ticker}</strong>
-    },
-    {
-      key: 'spacer',
-      header: '',
-      sortable: false,
-      align: 'left',
-      showInMobileSort: true,
-      mobileWidth: 'flex-1', // Spacer to push values to the right
-      className: 'hidden lg:table-cell', // Only needed for spacing in headers on mobile
-      render: () => null
+      mobileWidth: 'flex-1', // Ticker takes primary space on mobile
+      render: (e) => (
+        <div className="flex flex-col min-w-0">
+          <strong className="truncate">{e.ticker}</strong>
+          <span className="text-[10px] text-gray-400 lg:hidden truncate">
+            {e.companyName || getCompanyName(e.ticker)}
+          </span>
+        </div>
+      )
     },
     {
       key: 'companyName',
@@ -472,7 +469,7 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
       key: 'epsEstimate',
       header: 'EPS',
       align: 'right', // Align right to match data
-      mobileWidth: 'w-12',
+      mobileWidth: 'w-16', // Slightly wider for better spacing
       showInMobileSort: true,
       render: (e) => (
         <div className="flex flex-col items-end justify-center tabular-nums">
@@ -487,7 +484,7 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
       key: 'revenueEstimate',
       header: 'Rev', // Shortened label
       align: 'right', // Align right to match data
-      mobileWidth: 'w-14',
+      mobileWidth: 'w-16', // Slightly wider for better spacing
       showInMobileSort: true,
       render: (e) => (
         <div className="flex flex-col items-end justify-center tabular-nums">
@@ -505,7 +502,7 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
       align: 'right',
       width: '100px',
       showInMobileSort: true,
-      mobileWidth: 'w-14',
+      mobileWidth: 'w-20', // Wider for % change badge
       render: (e) => {
         const value = e.percentChange;
         return (

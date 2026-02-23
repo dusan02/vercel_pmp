@@ -58,9 +58,9 @@ export const EarningsCardMobile = memo(({ earning, priority = false }: EarningsC
                 touchAction: 'manipulation'
             }}
         >
-            <div className="flex items-center w-full">
-                {/* 1. Ticker Column (w-24) - Matching header width */}
-                <div className="w-24 shrink-0 pr-2 flex items-center gap-2">
+            <div className="flex items-center w-full gap-2">
+                {/* 1. Ticker & Company Column - Balanced proportion */}
+                <div className="flex-1 min-w-0 flex items-center gap-2">
                     <CompanyLogo
                         ticker={earning.ticker}
                         size={32}
@@ -77,28 +77,25 @@ export const EarningsCardMobile = memo(({ earning, priority = false }: EarningsC
                     </div>
                 </div>
 
-                {/* Empty Spacer to push values to the right */}
-                <div className="flex-1" />
-
-                {/* 2. EPS Column (Fixed Width 48px = w-12) */}
-                <div className="w-12 shrink-0 flex flex-col items-end justify-center text-[10px] tabular-nums leading-tight">
+                {/* 2. EPS Column (w-16 to match header) */}
+                <div className="w-16 shrink-0 flex flex-col items-end justify-center text-[10px] tabular-nums leading-tight">
                     <span className="text-gray-500 dark:text-gray-400">{formatEps(earning.epsEstimate)}</span>
                     <span className={getBeatMissClass(earning.epsActual, earning.epsEstimate)}>
                         {formatEps(earning.epsActual)}
                     </span>
                 </div>
 
-                {/* 3. Revenue Column (Fixed Width 56px = w-14) */}
-                <div className="w-14 shrink-0 flex flex-col items-end justify-center text-[10px] tabular-nums leading-tight">
+                {/* 3. Revenue Column (w-16 to match header) */}
+                <div className="w-16 shrink-0 flex flex-col items-end justify-center text-[10px] tabular-nums leading-tight">
                     <span className="text-gray-500 dark:text-gray-400">{formatRevenue(earning.revenueEstimate)}</span>
                     <span className={getBeatMissClass(earning.revenueActual, earning.revenueEstimate)}>
                         {formatRevenue(earning.revenueActual)}
                     </span>
                 </div>
 
-                {/* 4. % Change Column (Fixed Width 56px = w-14) */}
-                <div className="w-14 shrink-0 flex justify-end">
-                    <div className={`px-1.5 py-0.5 rounded text-[11px] font-bold tabular-nums text-right
+                {/* 4. % Change Column (w-20 to match header) */}
+                <div className="w-20 shrink-0 flex justify-end">
+                    <div className={`px-2 py-1 rounded text-[11px] font-bold tabular-nums text-right min-w-[56px]
                         ${isPositive
                             ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
                             : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
