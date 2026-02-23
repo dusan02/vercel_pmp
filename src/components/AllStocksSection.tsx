@@ -16,6 +16,7 @@ import { formatSectorName, formatBillions, formatMarketCapDiff, formatPrice, for
 import CompanyLogo from './CompanyLogo';
 import { getCompanyName } from '@/lib/companyNames';
 import { Star } from 'lucide-react';
+import { SEOContent } from './SEOContent';
 
 interface AllStocksSectionProps {
   displayedStocks: StockData[];
@@ -447,7 +448,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
             onToggleFavorite={() => onToggleFavorite(stock.ticker)}
           />
         )}
-      // forceTable={true} // REMOVED to enable mobile cards
+        footer={<SEOContent />}
       />
 
 
