@@ -69,7 +69,7 @@ export function UniversalTable<T>({
                     {onSort && sortKey !== undefined && (
                         <MobileSortHeader
                             columns={columns
-                                .filter(c => c.sortable !== false && (c.showInMobileSort || !c.className?.includes('hidden')))
+                                .filter(c => (c.sortable !== false || c.showInMobileSort) && (c.showInMobileSort || !c.className?.includes('hidden')))
                                 .map(col => ({
                                     key: col.key,
                                     label: col.header,
@@ -83,6 +83,7 @@ export function UniversalTable<T>({
                             onSort={handleSort}
                         />
                     )}
+
                     {data.length === 0 ? (
                         <div className="p-8 text-center text-[var(--clr-subtext)]">
                             {emptyMessage}
@@ -96,7 +97,8 @@ export function UniversalTable<T>({
                             ))}
                         </div>
                     )}
-                    {/* Mobile Footer (e.g. SEO text) */}
+
+                    {/* Mobile Footer (e.g. SEO text) - ALWAYS SHOW */}
                     {footer && (
                         <div className="mobile-table-footer">
                             {footer}
@@ -167,14 +169,14 @@ export function UniversalTable<T>({
                                         ))}
                                     </tr>
                                 ))}
-                                {footer && (
-                                    <tr>
-                                        <td colSpan={columns.length} className="p-0 border-none">
-                                            {footer}
-                                        </td>
-                                    </tr>
-                                )}
                             </>
+                        )}
+                        {footer && (
+                            <tr>
+                                <td colSpan={columns.length} className="p-0 border-none">
+                                    {footer}
+                                </td>
+                            </tr>
                         )}
                     </tbody>
                 </table>

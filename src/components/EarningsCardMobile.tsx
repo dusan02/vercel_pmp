@@ -59,8 +59,8 @@ export const EarningsCardMobile = memo(({ earning, priority = false }: EarningsC
             }}
         >
             <div className="flex items-center w-full">
-                {/* 1. Ticker Column (w-32) - Reduced from flex-1 to fixed width */}
-                <div className="w-28 shrink-0 pr-2 flex items-center gap-2">
+                {/* 1. Ticker Column (w-24) - Matching header width */}
+                <div className="w-24 shrink-0 pr-2 flex items-center gap-2">
                     <CompanyLogo
                         ticker={earning.ticker}
                         size={32}
@@ -72,7 +72,7 @@ export const EarningsCardMobile = memo(({ earning, priority = false }: EarningsC
                             {earning.ticker}
                         </div>
                         <div className="text-[10px] text-gray-400 truncate leading-tight">
-                            {getCompanyName(earning.ticker)}
+                            {earning.companyName || getCompanyName(earning.ticker)}
                         </div>
                     </div>
                 </div>

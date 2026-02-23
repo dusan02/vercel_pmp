@@ -15,6 +15,7 @@ import CompanyLogo from './CompanyLogo';
 import { getCompanyName } from '@/lib/companyNames';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { Star } from 'lucide-react';
+import { SEOContent } from './SEOContent';
 
 interface FavoritesSectionProps {
   favoriteStocks: StockData[];
@@ -230,7 +231,7 @@ export function FavoritesSection({
             onToggleFavorite={() => onToggleFavorite(stock.ticker)}
           />
         )}
-      // forceTable={true} // REMOVED to enable mobile cards
+        footer={<SEOContent />}
       />
     </section>
   );

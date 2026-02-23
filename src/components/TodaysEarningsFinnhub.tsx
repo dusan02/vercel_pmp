@@ -9,6 +9,7 @@ import { StockData } from '@/lib/types';
 import CompanyLogo from './CompanyLogo';
 import { UniversalTable, ColumnDef } from './UniversalTable';
 import { EarningsCardMobile } from './EarningsCardMobile';
+import { SEOContent } from './SEOContent';
 
 interface EarningsData {
   ticker: string;
@@ -439,15 +440,25 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
       sortable: true,
       align: 'left',
       showInMobileSort: true,
-      mobileWidth: 'w-28',
+      mobileWidth: 'w-24', // Reduced width for ticker column
       render: (e) => <strong>{e.ticker}</strong>
+    },
+    {
+      key: 'spacer',
+      header: '',
+      sortable: false,
+      align: 'left',
+      showInMobileSort: true,
+      mobileWidth: 'flex-1', // Spacer to push values to the right
+      className: 'hidden lg:table-cell', // Only needed for spacing in headers on mobile
+      render: () => null
     },
     {
       key: 'companyName',
       header: 'Company Name',
       sortable: true,
       className: 'hidden lg:table-cell',
-      render: (e) => <span className="block truncate max-w-[200px]">{getCompanyName(e.ticker)}</span>
+      render: (e) => <span className="block truncate max-w-[200px]">{e.companyName || getCompanyName(e.ticker)}</span>
     },
     {
       key: 'marketCap',
@@ -460,13 +471,12 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
     {
       key: 'epsEstimate',
       header: 'EPS',
-      align: 'center',
+      align: 'right', // Align right to match data
       mobileWidth: 'w-12',
       showInMobileSort: true,
       render: (e) => (
-        <div className="flex items-center justify-center gap-2 tabular-nums">
+        <div className="flex flex-col items-end justify-center tabular-nums">
           <span className="text-gray-500 dark:text-gray-400 text-xs lg:text-sm">{formatEarningsValue(e.epsEstimate, false, true)}</span>
-          <span className="opacity-30">/</span>
           <span className={`${e.epsActual !== null && e.epsEstimate !== null ? (e.epsActual >= e.epsEstimate ? 'text-green-500 font-medium' : 'text-red-500 font-medium') : ''}`}>
             {formatEarningsValue(e.epsActual, false, true)}
           </span>
@@ -475,14 +485,13 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
     },
     {
       key: 'revenueEstimate',
-      header: 'Revenue',
-      align: 'center',
+      header: 'Rev', // Shortened label
+      align: 'right', // Align right to match data
       mobileWidth: 'w-14',
       showInMobileSort: true,
       render: (e) => (
-        <div className="flex items-center justify-center gap-2 tabular-nums">
+        <div className="flex flex-col items-end justify-center tabular-nums">
           <span className="text-gray-500 dark:text-gray-400 text-xs lg:text-sm">{formatEarningsValue(e.revenueEstimate ? e.revenueEstimate / 1000000 : null)}</span>
-          <span className="opacity-30">/</span>
           <span className={`${e.revenueActual !== null && e.revenueEstimate !== null ? (e.revenueActual >= e.revenueEstimate ? 'text-green-500 font-medium' : 'text-red-500 font-medium') : ''}`}>
             {formatEarningsValue(e.revenueActual ? e.revenueActual / 1000000 : null)}
           </span>
@@ -491,7 +500,7 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
     },
     {
       key: 'percentChange',
-      header: '% Change',
+      header: '%', // Shortened label
       sortable: true,
       align: 'right',
       width: '100px',
@@ -540,6 +549,7 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
             earning={earning}
           />
         )}
+        footer={<SEOContent />}
       />
 
     </section>

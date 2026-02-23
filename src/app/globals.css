@@ -186,8 +186,7 @@
     /* Heatmap needs full space (no padding) because it handles its own layout */
     .mobile-app-screen.screen-heatmap {
       padding-bottom: 0;
-      overflow: hidden !important;
-      /* CRITICAL: Disable parent scroll, let heatmap handle it */
+      /* overflow: hidden !important; -> REMOVED: allow scroll to SEO text */
     }
 
     /* Container for heatmap content must fill the screen */
