@@ -62,7 +62,7 @@ export function MobileSortHeader({
                         style={{ WebkitTapHighlightColor: 'transparent' }}
                         aria-label={isSortable ? `Sort by ${col.ariaLabel || col.key}` : (col.ariaLabel || col.key)}
                     >
-                        <span className="truncate">{col.label}</span>
+                        <span className="flex items-center">{col.label}</span>
                         {isSortable && isActive && (
                             <span className="text-[8px] ml-0.5 opacity-80">{ascending ? '▲' : '▼'}</span>
                         )}

@@ -12,6 +12,7 @@ import { getMobileTileLabel, getMobileTileOpticalOffsetPx } from '@/lib/heatmap/
 import { pickCompanyWithHitSlop } from '@/lib/heatmap/mobileHitSlop';
 import type { MobileTreemapSectorBlock } from '@/lib/heatmap/mobileTreemap';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
+import { ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 
 interface MobileTreemapNewProps {
   data: CompanyNode[];
@@ -59,6 +60,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [containerSize, setContainerSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
   const [zoomScale, setZoomScale] = useState(1);
+  const [zoomLevel, setZoomLevel] = useState(1); // Internal app zoom
 
   // Detail panel state
   const [selectedCompany, setSelectedCompany] = useState<CompanyNode | null>(null);
@@ -119,11 +121,15 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
 
   // Build mobile treemap sector blocks (pure helper; no React logic inside)
   const treemapResult = useMemo(() => {
-    return computeMobileTreemapSectors(sortedData, containerSize, metric, {
+    const virtualSize = {
+      width: containerSize.width * zoomLevel,
+      height: containerSize.height
+    };
+    return computeMobileTreemapSectors(sortedData, virtualSize, metric, {
       sectorChromeHeightPx: SECTOR_CHROME_H,
       columnGapPx: SECTOR_COL_GAP,
     });
-  }, [sortedData, metric, containerSize]);
+  }, [sortedData, metric, containerSize, zoomLevel]);
 
   // Direct use of treemapResult.rows.
   const { rows } = treemapResult;
@@ -415,51 +421,95 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
           width: '100%',
           position: 'relative',
           background: 'var(--clr-bg)',
-          overflowY: 'auto',
-          overflowX: 'hidden',
-          WebkitOverflowScrolling: 'touch',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'stretch',
-          gap: '4px', // Reduced gap to avoid "white strip" effect
-          // CRITICAL: ensure the last sector/tiles are not hidden behind the fixed mobile tab bar.
-          // `--tabbar-real-h` is set dynamically (and already includes safe-area from tabbar padding).
-          // IMPORTANT: don't add `env(safe-area-inset-bottom)` again, otherwise you get a big empty "black strip".
           paddingBottom:
             'calc(var(--tabbar-real-h, calc(var(--tabbar-h, 72px) + env(safe-area-inset-bottom, 0px))) + 8px)',
+          overflowX: zoomLevel > 1 ? 'auto' : 'hidden',
+          WebkitOverflowScrolling: 'touch',
         }}
       >
-        {treemapResult.rows && treemapResult.rows.length > 0 && containerSize.width > 0 ? (
-          renderHeatmapContent()
-        ) : (
-
-
-          <div style={{
+        <div
+          style={{
+            minWidth: `${100 * zoomLevel}%`,
+            width: `${100 * zoomLevel}%`,
             display: 'flex',
             flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '12px',
-            height: '100%',
-            minHeight: '300px',
-            background: 'var(--clr-bg)',
-          }}>
-            <div
-              className="animate-spin rounded-full border-b-2 border-[var(--clr-text)]"
-              style={{
-                width: '32px',
-                height: '32px',
-              }}
-            />
-            <span style={{
-              color: 'var(--clr-text-secondary)',
-              fontSize: '14px',
+            gap: '4px',
+          }}
+        >
+          {treemapResult.rows && treemapResult.rows.length > 0 && containerSize.width > 0 ? (
+            renderHeatmapContent()
+          ) : (
+
+
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '12px',
+              height: '100%',
+              minHeight: '300px',
+              background: 'var(--clr-bg)',
             }}>
-              Loading heatmap...
-            </span>
-          </div>
-        )}
+              <div
+                className="animate-spin rounded-full border-b-2 border-[var(--clr-text)]"
+                style={{
+                  width: '32px',
+                  height: '32px',
+                }}
+              />
+              <span style={{
+                color: 'var(--clr-text-secondary)',
+                fontSize: '14px',
+              }}>
+                Loading heatmap...
+              </span>
+            </div>
+          )}
+        </div>
       </div >
+
+      {/* Floating Zoom Controls */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 'calc(var(--tabbar-real-h, 72px) + 24px)',
+          right: '16px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px',
+          zIndex: 1000,
+          pointerEvents: 'none',
+        }}
+      >
+        <div
+          className="flex flex-col gap-1 p-1 bg-white/10 dark:bg-black/40 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl pointer-events-auto"
+        >
+          <button
+            onClick={() => setZoomLevel(prev => Math.min(prev + 0.5, 4))}
+            className="w-12 h-12 flex items-center justify-center rounded-xl hover:bg-white/10 active:scale-95 transition-all text-white"
+            aria-label="Zoom In"
+          >
+            <ZoomIn size={22} />
+          </button>
+          {zoomLevel > 1 && (
+            <button
+              onClick={() => setZoomLevel(1)}
+              className="w-12 h-12 flex items-center justify-center rounded-xl hover:bg-white/10 active:scale-95 transition-all text-white border-t border-white/10"
+              aria-label="Reset Zoom"
+            >
+              <RotateCcw size={20} />
+            </button>
+          )}
+          <button
+            onClick={() => setZoomLevel(prev => Math.max(prev - 0.5, 1))}
+            className="w-12 h-12 flex items-center justify-center rounded-xl hover:bg-white/10 active:scale-95 transition-all text-white border-t border-white/10"
+            aria-label="Zoom Out"
+          >
+            <ZoomOut size={22} />
+          </button>
+        </div>
+      </div>
 
       {/* Detail Panel - Bottom Sheet (tap on tile) */}
       {

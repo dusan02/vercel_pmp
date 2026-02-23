@@ -303,8 +303,8 @@ export function PortfolioSectorDistributionChart({ data, size = 300 }: Portfolio
                                 ));
                             })}
 
-                            {/* Labels for Outer Layer (Industries) */}
-                            {nodes.filter(n => n.depth === 2 && n.percentage > 2).map((node, i) => {
+                            {/* Labels for Outer Layer (Industries) - Improved threshold for mobile visibility */}
+                            {nodes.filter(n => n.depth === 2 && n.percentage > 4).map((node, i) => {
                                 // Calculate position
                                 const midAngle = (node.x0 + node.x1) / 2;
                                 const { outer } = getRadii(node.depth);
@@ -329,7 +329,7 @@ export function PortfolioSectorDistributionChart({ data, size = 300 }: Portfolio
                                             x={elbowEnd.x + (isRight ? 5 : -5)}
                                             y={elbowEnd.y + 4}
                                             textAnchor={isRight ? 'start' : 'end'}
-                                            className="text-sm font-bold fill-gray-900 dark:fill-gray-100"
+                                            className="text-[13px] font-bold fill-gray-900 dark:fill-gray-100"
                                         >
                                             {node.name}
                                         </text>
@@ -337,7 +337,7 @@ export function PortfolioSectorDistributionChart({ data, size = 300 }: Portfolio
                                             x={elbowEnd.x + (isRight ? 5 : -5)}
                                             y={elbowEnd.y + 16}
                                             textAnchor={isRight ? 'start' : 'end'}
-                                            className="text-xs fill-gray-500 dark:fill-gray-400"
+                                            className="text-[11px] fill-gray-500 dark:fill-gray-400"
                                         >
                                             {node.percentage.toFixed(1)}%
                                         </text>

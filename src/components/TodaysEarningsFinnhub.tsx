@@ -256,7 +256,7 @@ const EarningsHeader = () => (
     <div className="flex items-center">
       <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--clr-text)] m-0 relative -top-1.5">
         <SectionIcon type="calendar" size={24} className="text-[var(--clr-text)]" />
-        <span>Today&apos;s Earnings</span>
+        <span>Earnings</span>
       </h2>
     </div>
   </div>
@@ -432,8 +432,8 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
             <MobileSortHeader
               columns={[
                 { key: 'ticker', label: 'Ticker', sortable: true, width: 'flex-1', align: 'left' },
-                { key: 'epsEstimate', label: 'EPS', sortable: true, width: 'w-14', align: 'center' },
-                { key: 'revenueEstimate', label: 'Rev', sortable: true, width: 'w-16', align: 'center' },
+                { key: 'epsEstimate', label: 'EPS', sortable: true, width: 'w-12', align: 'right' },
+                { key: 'revenueEstimate', label: 'Rev', sortable: true, width: 'w-14', align: 'right' },
                 { key: 'percentChange', label: '%', sortable: true, width: 'w-14', align: 'right' },
               ]}
               sortKey={sortKey}

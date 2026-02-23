@@ -177,8 +177,8 @@ export function PortfolioStockDistributionChart({ data, size = 300 }: PortfolioS
 
                             {/* 2. Labels & Lines */}
                             {slices.map((slice) => {
-                                // Only show label if slice is > 1% to avoid clutter, or if there are few items
-                                if (slice.percentage < 2 && slices.length > 10) return null;
+                                // Only show label if slice is > 4% to avoid clutter, or if there are few items
+                                if (slice.percentage < 4 && slices.length > 8) return null;
 
                                 const startPt = polarToCartesian(0, 0, outerRadius, slice.middleAngle);
                                 const elbowPt = polarToCartesian(0, 0, labelRadius, slice.middleAngle);
@@ -213,15 +213,15 @@ export function PortfolioStockDistributionChart({ data, size = 300 }: PortfolioS
                                             x={textX}
                                             y={textY - 4} // Ticker above line
                                             textAnchor={textAnchor}
-                                            className="text-sm font-bold fill-gray-900 dark:fill-gray-100"
+                                            className="text-[13px] font-bold fill-gray-900 dark:fill-gray-100"
                                         >
                                             {slice.ticker}
                                         </text>
                                         <text
                                             x={textX}
-                                            y={textY + 10} // Percent below line
+                                            y={textY + 12} // Percent below line - added more spacing
                                             textAnchor={textAnchor}
-                                            className="text-xs fill-gray-500 dark:fill-gray-400"
+                                            className="text-[11px] fill-gray-500 dark:fill-gray-400"
                                         >
                                             {slice.percentage.toFixed(1)}%
                                         </text>

@@ -77,16 +77,16 @@ export const EarningsCardMobile = memo(({ earning, priority = false }: EarningsC
                     </div>
                 </div>
 
-                {/* 2. EPS Column (Fixed Width 56px = w-14) */}
-                <div className="w-14 shrink-0 flex flex-col items-center justify-center text-[10px] tabular-nums leading-tight">
+                {/* 2. EPS Column (Fixed Width 48px = w-12) */}
+                <div className="w-12 shrink-0 flex flex-col items-end justify-center text-[10px] tabular-nums leading-tight">
                     <span className="text-gray-500 dark:text-gray-400">{formatEps(earning.epsEstimate)}</span>
                     <span className={getBeatMissClass(earning.epsActual, earning.epsEstimate)}>
                         {formatEps(earning.epsActual)}
                     </span>
                 </div>
 
-                {/* 3. Revenue Column (Fixed Width 64px = w-16) */}
-                <div className="w-16 shrink-0 flex flex-col items-center justify-center text-[10px] tabular-nums leading-tight">
+                {/* 3. Revenue Column (Fixed Width 56px = w-14) */}
+                <div className="w-14 shrink-0 flex flex-col items-end justify-center text-[10px] tabular-nums leading-tight">
                     <span className="text-gray-500 dark:text-gray-400">{formatRevenue(earning.revenueEstimate)}</span>
                     <span className={getBeatMissClass(earning.revenueActual, earning.revenueEstimate)}>
                         {formatRevenue(earning.revenueActual)}
