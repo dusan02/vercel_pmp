@@ -59,8 +59,8 @@ export const EarningsCardMobile = memo(({ earning, priority = false }: EarningsC
             }}
         >
             <div className="flex items-center w-full">
-                {/* 1. Ticker Column (Flex-1) */}
-                <div className="flex-1 min-w-0 pr-2 flex items-center gap-2">
+                {/* 1. Ticker Column (w-32) - Reduced from flex-1 to fixed width */}
+                <div className="w-28 shrink-0 pr-2 flex items-center gap-2">
                     <CompanyLogo
                         ticker={earning.ticker}
                         size={32}
@@ -76,6 +76,9 @@ export const EarningsCardMobile = memo(({ earning, priority = false }: EarningsC
                         </div>
                     </div>
                 </div>
+
+                {/* Empty Spacer to push values to the right */}
+                <div className="flex-1" />
 
                 {/* 2. EPS Column (Fixed Width 48px = w-12) */}
                 <div className="w-12 shrink-0 flex flex-col items-end justify-center text-[10px] tabular-nums leading-tight">

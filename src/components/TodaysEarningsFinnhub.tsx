@@ -431,7 +431,8 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
           <div className="lg:hidden flex flex-col">
             <MobileSortHeader
               columns={[
-                { key: 'ticker', label: 'Ticker', sortable: true, width: 'flex-1', align: 'left' },
+                { key: 'ticker', label: 'Ticker', sortable: true, width: 'w-28', align: 'left' },
+                { key: 'spacer', label: '', sortable: false, width: 'flex-1', align: 'left' }, // Spacer
                 { key: 'epsEstimate', label: 'EPS', sortable: true, width: 'w-12', align: 'right' },
                 { key: 'revenueEstimate', label: 'Rev', sortable: true, width: 'w-14', align: 'right' },
                 { key: 'percentChange', label: '%', sortable: true, width: 'w-14', align: 'right' },
