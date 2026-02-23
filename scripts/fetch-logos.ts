@@ -69,11 +69,13 @@ async function main() {
     try {
       await fs.access(localPath);
       // If locally exists, check if DB needs update
-      if (!dbTickerMap.get(ticker)) {
+      const currentUrl = dbTickerMap.get(ticker);
+      if (!currentUrl || !currentUrl.startsWith('/logos/')) {
         await prisma.ticker.update({
           where: { symbol: ticker },
           data: { logoUrl: `/logos/${ticker.toLowerCase()}-32.webp` }
         });
+        console.log(`✅ Updated ${ticker} to local logo path`);
       }
     } catch {
       missingTickers.push(ticker);
