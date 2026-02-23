@@ -63,6 +63,10 @@ const StructuredData = dynamic(
   () => import('@/components/StructuredData').then((mod) => mod.StructuredData),
   { ssr: true }
 );
+const SEOContent = dynamic(
+  () => import('@/components/SEOContent').then((mod) => mod.SEOContent),
+  { ssr: true }
+);
 
 // Modern Mobile Components
 const MobileApp = dynamic(
@@ -460,6 +464,7 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
                   />
                 )}
               </MobileScreen>
+              <SEOContent />
             </div>
           </PullToRefresh>
           {/* Floating Search Button Removed */}
@@ -594,6 +599,7 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
                           </div>
                         )}
                       </div>
+                      <SEOContent />
                     </div>
 
                     <footer className="footer hidden lg:block" aria-label="Site footer">
