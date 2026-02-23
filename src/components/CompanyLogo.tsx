@@ -129,7 +129,7 @@ export default function CompanyLogo({
           blurDataURL: placeholderSrc
         } : {})}
         onError={() => setHasError(true)}
-        unoptimized={logoSrc.toLowerCase().endsWith('.svg') || logoSrc.includes('svg')}
+        unoptimized={logoSrc.toLowerCase().endsWith('.svg') || logoSrc.includes('svg') || logoSrc.startsWith('/api/logo')}
       />
     </div>
   );

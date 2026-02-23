@@ -177,8 +177,6 @@ export class LogoFetcher {
             'ADP': 'adp.com',
             'ADI': 'analog.com',
             'GILD': 'gilead.com',
-            'PANW': 'paloaltonetworks.com',
-            'SNPS': 'synopsys.com',
             'CDNS': 'cadence.com',
             'MELI': 'mercadolibre.com',
             'KLAC': 'kla.com',
@@ -273,7 +271,12 @@ export class LogoFetcher {
             'ORCL': 'oracle.com',
             'CSCO': 'cisco.com',
             'INTU': 'intuit.com',
-            'NOW': 'servicenow.com'
+            'NOW': 'servicenow.com',
+            'D': 'dominionenergy.com',
+            'OKE': 'oneok.com',
+            'FANG': 'diamondbackenergy.com',
+            'PANW': 'paloaltonetworks.com',
+            'SNPS': 'synopsys.com'
         };
 
         // Naive domain guess
