@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db/prisma';
 import { generatePageMetadata } from '@/lib/seo/metadata';
 import { formatSectorName } from '@/lib/utils/format';
 import { StructuredData } from '@/components/StructuredData';
+import { sectorDescriptions, defaultSectorDescription } from '@/lib/seo/sectorDescriptions';
 
 // Revalidate every hour
 export const revalidate = 3600;
@@ -160,6 +161,21 @@ export default async function SectorPage({ params }: PageProps) {
                                 })}
                             </tbody>
                         </table>
+                    </div>
+                </div>
+
+                {/* SEO Description Section */}
+                <div className="mt-12 p-8 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                        About {formattedSector} Pre-market & Live Data
+                    </h2>
+                    <div className="prose prose-blue dark:prose-invert max-w-none text-gray-600 dark:text-gray-400 leading-relaxed">
+                        <p>
+                            {sectorDescriptions[sectorName] || defaultSectorDescription}
+                        </p>
+                        <p className="mt-4 text-sm italic border-t border-gray-100 dark:border-gray-700 pt-4">
+                            Data provided by Polygon.io and Finnhub. Pre-market sessions are critical for identifying early momentum and institutional positioning before the 9:30 AM ET opening bell.
+                        </p>
                     </div>
                 </div>
             </main>
