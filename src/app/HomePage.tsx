@@ -441,30 +441,32 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
                 skeleton={<MobileSkeleton type="list" count={2} />}
               >
                 {(preferences.showAllStocksSection ?? true) && (
-                  <HomeAllStocks
-                    displayedStocks={displayedStocks}
-                    loading={loadingStates.top50Stocks}
-                    sortKey={allSortKey}
-                    ascending={allAscending}
-                    onSort={requestAllSort}
-                    onToggleFavorite={toggleFavorite}
-                    isFavorite={isFavorite}
-                    searchTerm={searchTerm}
-                    onSearchChange={setSearchTerm}
-                    hasMore={hasMore}
-                    onLoadMore={loadMore}
-                    isLoadingMore={isLoadingMore}
-                    totalCount={optimizedAllStocks.length}
-                    selectedSector={selectedSector}
-                    selectedIndustry={selectedIndustry}
-                    onSectorChange={setSelectedSector}
-                    onIndustryChange={setSelectedIndustry}
-                    uniqueSectors={uniqueSectors}
-                    availableIndustries={availableIndustries}
-                  />
+                  <>
+                    <HomeAllStocks
+                      displayedStocks={displayedStocks}
+                      loading={loadingStates.top50Stocks}
+                      sortKey={allSortKey}
+                      ascending={allAscending}
+                      onSort={requestAllSort}
+                      onToggleFavorite={toggleFavorite}
+                      isFavorite={isFavorite}
+                      searchTerm={searchTerm}
+                      onSearchChange={setSearchTerm}
+                      hasMore={hasMore}
+                      onLoadMore={loadMore}
+                      isLoadingMore={isLoadingMore}
+                      totalCount={optimizedAllStocks.length}
+                      selectedSector={selectedSector}
+                      selectedIndustry={selectedIndustry}
+                      onSectorChange={setSelectedSector}
+                      onIndustryChange={setSelectedIndustry}
+                      uniqueSectors={uniqueSectors}
+                      availableIndustries={availableIndustries}
+                    />
+                    <SEOContent />
+                  </>
                 )}
               </MobileScreen>
-              <SEOContent />
             </div>
           </PullToRefresh>
           {/* Floating Search Button Removed */}
