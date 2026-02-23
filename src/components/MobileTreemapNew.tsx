@@ -12,7 +12,7 @@ import { getMobileTileLabel, getMobileTileOpticalOffsetPx } from '@/lib/heatmap/
 import { pickCompanyWithHitSlop } from '@/lib/heatmap/mobileHitSlop';
 import type { MobileTreemapSectorBlock } from '@/lib/heatmap/mobileTreemap';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
-import { ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
 
 interface MobileTreemapNewProps {
   data: CompanyNode[];
@@ -60,9 +60,6 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [containerSize, setContainerSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
   const [zoomScale, setZoomScale] = useState(1);
-  const [zoomLevel, setZoomLevel] = useState(1); // Internal app zoom
-  const touchStartDist = useRef<number | null>(null);
-  const touchStartZoom = useRef<number>(1);
 
   // Detail panel state
   const [selectedCompany, setSelectedCompany] = useState<CompanyNode | null>(null);
@@ -92,7 +89,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   }, [metric]);
 
 
-  // Handle container resizing and initial dimensions via ResizeObserver (more robust for tab switches)
+  // Handle container resizing via ResizeObserver
   useLayoutEffect(() => {
     if (!containerRef.current) return;
 
@@ -109,45 +106,13 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
     return () => observer.disconnect();
   }, []);
 
-  // Pinch-to-zoom logic
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length === 2 && e.touches[0] && e.touches[1]) {
-      const dist = Math.hypot(
-        e.touches[0].pageX - e.touches[1].pageX,
-        e.touches[0].pageY - e.touches[1].pageY
-      );
-      touchStartDist.current = dist;
-      touchStartZoom.current = zoomLevel;
-    }
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (e.touches.length === 2 && touchStartDist.current !== null && e.touches[0] && e.touches[1]) {
-      const dist = Math.hypot(
-        e.touches[0].pageX - e.touches[1].pageX,
-        e.touches[0].pageY - e.touches[1].pageY
-      );
-      const delta = dist / touchStartDist.current;
-      const newZoom = Math.min(Math.max(touchStartZoom.current * delta, 1), 4);
-      setZoomLevel(newZoom);
-    }
-  };
-
-  const handleTouchEnd = () => {
-    touchStartDist.current = null;
-  };
-
   // Build mobile treemap sector blocks (pure helper; no React logic inside)
   const treemapResult = useMemo(() => {
-    const virtualSize = {
-      width: containerSize.width * zoomLevel,
-      height: containerSize.height
-    };
-    return computeMobileTreemapSectors(sortedData, virtualSize, metric, {
+    return computeMobileTreemapSectors(sortedData, containerSize, metric, {
       sectorChromeHeightPx: SECTOR_CHROME_H,
       columnGapPx: SECTOR_COL_GAP,
     });
-  }, [sortedData, metric, containerSize, zoomLevel]);
+  }, [sortedData, metric, containerSize]);
 
   // Direct use of treemapResult.rows.
   const { rows } = treemapResult;
@@ -258,9 +223,8 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
 
                     if (width <= 0 || height <= 0) return null;
 
-                    // Semantic Zoom: Use effective (zoomed) size for visibility checks
-                    // We cap the scale effect slightly so you don't need to zoom in infinitely to see stuff
-                    const effectiveScale = Math.max(1, zoomLevel); // Changed from zoomScale to zoomLevel
+                    // Semantic Zoom: Use effective size for visibility checks
+                    const effectiveScale = Math.max(1, zoomScale);
                     const label = getTileLabel(company, width * effectiveScale, height * effectiveScale);
 
                     // Center text: remove optical offset for small tiles/fonts to ensure it looks vertically centered
@@ -441,18 +405,13 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
           background: 'var(--clr-bg)',
           paddingBottom:
             'calc(var(--tabbar-real-h, calc(var(--tabbar-h, 72px) + env(safe-area-inset-bottom, 0px))) + 8px)',
-          overflowX: zoomLevel > 1 ? 'auto' : 'hidden',
+          overflowX: 'hidden',
           WebkitOverflowScrolling: 'touch',
-          touchAction: 'none', // Prevent default pinch-zoom behavior to handle it custom
         }}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
       >
         <div
           style={{
-            minWidth: `${100 * zoomLevel}%`,
-            width: `${100 * zoomLevel}%`,
+            width: '100%',
             display: 'flex',
             flexDirection: 'column',
             gap: '4px',
@@ -490,26 +449,6 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
           )}
         </div>
       </div >
-
-      {/* Floating Zoom Info (Only show reset if zoomed) */}
-      {zoomLevel > 1 && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 'calc(var(--tabbar-real-h, 72px) + 24px)',
-            right: '16px',
-            zIndex: 1000,
-          }}
-        >
-          <button
-            onClick={() => setZoomLevel(1)}
-            className="w-12 h-12 flex items-center justify-center rounded-2xl bg-black/60 backdrop-blur-xl border border-white/20 shadow-2xl text-white active:scale-90 transition-all"
-            aria-label="Reset Zoom"
-          >
-            <RotateCcw size={20} />
-          </button>
-        </div>
-      )}
 
       {/* Detail Panel - Bottom Sheet (tap on tile) */}
       {

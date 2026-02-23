@@ -1,13 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { SortKey } from '@/hooks/useSortableData';
 import { formatBillions } from '@/lib/utils/format';
 import { getCompanyName } from '@/lib/companyNames';
 import { SectionIcon } from './SectionIcon';
 import { StockData } from '@/lib/types';
 import CompanyLogo from './CompanyLogo';
+import { UniversalTable, ColumnDef } from './UniversalTable';
 import { EarningsCardMobile } from './EarningsCardMobile';
-import { MobileSortHeader } from './mobile/MobileSortHeader';
 
 interface EarningsData {
   ticker: string;
@@ -324,7 +325,7 @@ const EarningsEmpty = () => (
 
 export default function TodaysEarningsFinnhub({ initialData }: { initialData?: any }) {
   const [currentDate, setCurrentDate] = useState('');
-  const [sortKey, setSortKey] = useState<keyof EarningsData>('marketCap');
+  const [sortKey, setSortKey] = useState<SortKey>('marketCap');
   const [ascending, setAscending] = useState(false);
 
   // Set current date in Eastern Time
@@ -368,7 +369,7 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
 
   const { data, isLoading, error, refetch } = useEarningsData(currentDate, initialData);
 
-  const handleSort = (key: keyof EarningsData) => {
+  const handleSort = (key: SortKey) => {
     if (sortKey === key) {
       setAscending(!ascending);
     } else {
@@ -379,8 +380,8 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
 
   const sortData = (data: EarningsData[]) => {
     return [...data].sort((a, b) => {
-      const aVal = a[sortKey];
-      const bVal = b[sortKey];
+      const aVal = a[sortKey as keyof EarningsData];
+      const bVal = b[sortKey as keyof EarningsData];
 
       if (aVal === null || aVal === undefined) return 1;
       if (bVal === null || bVal === undefined) return -1;
@@ -418,164 +419,128 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
   // Combine pre-market and after-market into one table
   const allEarnings = [...sortedPreMarket, ...sortedAfterMarket];
 
+  // Column Definitions for UniversalTable
+  const columns: ColumnDef<EarningsData>[] = React.useMemo(() => [
+    {
+      key: 'logo',
+      header: 'Logo',
+      align: 'left',
+      className: 'hidden lg:table-cell',
+      width: '72px',
+      render: (e) => (
+        <div className="flex justify-center items-center w-full">
+          <CompanyLogo ticker={e.ticker} size={32} />
+        </div>
+      )
+    },
+    {
+      key: 'ticker',
+      header: 'Ticker',
+      sortable: true,
+      align: 'left',
+      showInMobileSort: true,
+      mobileWidth: 'w-28',
+      render: (e) => <strong>{e.ticker}</strong>
+    },
+    {
+      key: 'companyName',
+      header: 'Company Name',
+      sortable: true,
+      className: 'hidden lg:table-cell',
+      render: (e) => <span className="block truncate max-w-[200px]">{getCompanyName(e.ticker)}</span>
+    },
+    {
+      key: 'marketCap',
+      header: 'Market Cap',
+      sortable: true,
+      align: 'right',
+      className: 'hidden lg:table-cell tabular-nums',
+      render: (e) => e.marketCap !== null ? formatBillions(e.marketCap) : '-'
+    },
+    {
+      key: 'epsEstimate',
+      header: 'EPS',
+      align: 'center',
+      mobileWidth: 'w-12',
+      showInMobileSort: true,
+      render: (e) => (
+        <div className="flex items-center justify-center gap-2 tabular-nums">
+          <span className="text-gray-500 dark:text-gray-400 text-xs lg:text-sm">{formatEarningsValue(e.epsEstimate, false, true)}</span>
+          <span className="opacity-30">/</span>
+          <span className={`${e.epsActual !== null && e.epsEstimate !== null ? (e.epsActual >= e.epsEstimate ? 'text-green-500 font-medium' : 'text-red-500 font-medium') : ''}`}>
+            {formatEarningsValue(e.epsActual, false, true)}
+          </span>
+        </div>
+      )
+    },
+    {
+      key: 'revenueEstimate',
+      header: 'Revenue',
+      align: 'center',
+      mobileWidth: 'w-14',
+      showInMobileSort: true,
+      render: (e) => (
+        <div className="flex items-center justify-center gap-2 tabular-nums">
+          <span className="text-gray-500 dark:text-gray-400 text-xs lg:text-sm">{formatEarningsValue(e.revenueEstimate ? e.revenueEstimate / 1000000 : null)}</span>
+          <span className="opacity-30">/</span>
+          <span className={`${e.revenueActual !== null && e.revenueEstimate !== null ? (e.revenueActual >= e.revenueEstimate ? 'text-green-500 font-medium' : 'text-red-500 font-medium') : ''}`}>
+            {formatEarningsValue(e.revenueActual ? e.revenueActual / 1000000 : null)}
+          </span>
+        </div>
+      )
+    },
+    {
+      key: 'percentChange',
+      header: '% Change',
+      sortable: true,
+      align: 'right',
+      width: '100px',
+      showInMobileSort: true,
+      mobileWidth: 'w-14',
+      render: (e) => {
+        const value = e.percentChange;
+        return (
+          <span className={`tabular-nums block w-full text-right ${value !== null && value >= 0 ? 'text-green-500 font-medium' : 'text-red-500 font-medium'}`}>
+            {value !== null ? `${value >= 0 ? '+' : ''}${value.toFixed(2)}%` : '-'}
+          </span>
+        );
+      }
+    },
+    {
+      key: 'marketCapDiff',
+      header: 'Cap Diff',
+      sortable: true,
+      align: 'right',
+      className: 'hidden lg:table-cell tabular-nums',
+      render: (e) => {
+        const value = e.marketCapDiff;
+        return (
+          <span className={`tabular-nums block w-full text-right ${value !== null && value >= 0 ? 'text-green-500 font-medium' : 'text-red-500 font-medium'}`}>
+            {value !== null ? `${value >= 0 ? '+' : ''}${value.toFixed(2)}` : '-'}
+          </span>
+        );
+      }
+    }
+  ], []);
+
   return (
     <section className="todays-earnings border-none outline-none ring-0">
       <EarningsHeader />
 
-      {allEarnings.length > 0 ? (
-        <>
-
-
-
-          {/* Mobile: Card Layout with Sort Header */}
-          <div className="lg:hidden flex flex-col">
-            <MobileSortHeader
-              columns={[
-                { key: 'ticker', label: 'Ticker', sortable: true, width: 'w-28', align: 'left' },
-                { key: 'spacer', label: '', sortable: false, width: 'flex-1', align: 'left' }, // Spacer
-                { key: 'epsEstimate', label: 'EPS', sortable: true, width: 'w-12', align: 'right' },
-                { key: 'revenueEstimate', label: 'Rev', sortable: true, width: 'w-14', align: 'right' },
-                { key: 'percentChange', label: '%', sortable: true, width: 'w-14', align: 'right' },
-              ]}
-              sortKey={sortKey}
-              ascending={ascending}
-              onSort={(key) => handleSort(key as keyof EarningsData)}
-            />
-            <div className="divide-y divide-gray-100 dark:divide-gray-800">
-              {allEarnings.map((earning, index) => (
-                <EarningsCardMobile
-                  key={`${earning.ticker}-mobile-${index}`}
-                  earning={earning}
-                  priority={index < 10}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Desktop: Table layout */}
-          <div className="hidden lg:block overflow-x-auto">
-            <table className="pmp-universal-table w-full border-collapse">
-              <thead>
-                <tr className="border-b border-gray-100 dark:border-gray-800">
-                  <th className="py-3 px-3 first:pl-4 last:pr-4 font-semibold text-xs md:text-sm whitespace-nowrap bg-blue-100 text-slate-900 border-b border-blue-200/80 dark:bg-blue-900/60 dark:text-white dark:border-white/10 text-left hidden lg:table-cell">Logo</th>
-                  <th onClick={() => handleSort('ticker')} className={`py-3 px-3 first:pl-4 last:pr-4 font-semibold text-xs md:text-sm whitespace-nowrap bg-blue-100 text-slate-900 border-b border-blue-200/80 dark:bg-blue-900/60 dark:text-white dark:border-white/10 text-left cursor-pointer hover:bg-blue-200/70 dark:hover:bg-white/10 transition-colors select-none ${sortKey === 'ticker' ? 'active-sort' : ''}`}>
-                    <div className="flex items-center gap-1">
-                      Ticker
-                      {sortKey === 'ticker' && <span className="text-[10px] opacity-70">{ascending ? '▲' : '▼'}</span>}
-                    </div>
-                  </th>
-                  <th onClick={() => handleSort('companyName')} className={`py-3 px-3 first:pl-4 last:pr-4 font-semibold text-xs md:text-sm whitespace-nowrap bg-blue-100 text-slate-900 border-b border-blue-200/80 dark:bg-blue-900/60 dark:text-white dark:border-white/10 text-left hidden lg:table-cell cursor-pointer hover:bg-blue-200/70 dark:hover:bg-white/10 transition-colors select-none ${sortKey === 'companyName' ? 'active-sort' : ''}`}>
-                    <div className="flex items-center gap-1">
-                      Company Name
-                      {sortKey === 'companyName' && <span className="text-[10px] opacity-70">{ascending ? '▲' : '▼'}</span>}
-                    </div>
-                  </th>
-                  <th onClick={() => handleSort('marketCap')} className={`py-3 px-3 first:pl-4 last:pr-4 font-semibold text-xs md:text-sm whitespace-nowrap bg-blue-100 text-slate-900 border-b border-blue-200/80 dark:bg-blue-900/60 dark:text-white dark:border-white/10 text-right hidden lg:table-cell cursor-pointer hover:bg-blue-200/70 dark:hover:bg-white/10 transition-colors select-none ${sortKey === 'marketCap' ? 'active-sort' : ''}`}>
-                    <div className="flex items-center gap-1 justify-end">
-                      Market Cap
-                      {sortKey === 'marketCap' && <span className="text-[10px] opacity-70">{ascending ? '▲' : '▼'}</span>}
-                    </div>
-                  </th>
-                  <th className="py-3 px-3 first:pl-4 last:pr-4 font-semibold text-xs md:text-sm whitespace-nowrap bg-blue-100 text-slate-900 border-b border-blue-200/80 dark:bg-blue-900/60 dark:text-white dark:border-white/10 text-center">
-                    <div>EPS</div>
-                    <div className="flex items-center justify-center gap-2 text-[10px] opacity-80 font-normal">
-                      <span onClick={() => handleSort('epsEstimate')} className="cursor-pointer hover:text-blue-600 dark:hover:text-blue-300">Est</span>
-                      <span className="opacity-50">/</span>
-                      <span onClick={() => handleSort('epsActual')} className="cursor-pointer hover:text-blue-600 dark:hover:text-blue-300">Rep</span>
-                    </div>
-                  </th>
-                  <th className="py-3 px-3 first:pl-4 last:pr-4 font-semibold text-xs md:text-sm whitespace-nowrap bg-blue-100 text-slate-900 border-b border-blue-200/80 dark:bg-blue-900/60 dark:text-white dark:border-white/10 text-center">
-                    <div>Revenue</div>
-                    <div className="flex items-center justify-center gap-2 text-[10px] opacity-80 font-normal">
-                      <span onClick={() => handleSort('revenueEstimate')} className="cursor-pointer hover:text-blue-600 dark:hover:text-blue-300">Est</span>
-                      <span className="opacity-50">/</span>
-                      <span onClick={() => handleSort('revenueActual')} className="cursor-pointer hover:text-blue-600 dark:hover:text-blue-300">Rep</span>
-                    </div>
-                  </th>
-                  <th onClick={() => handleSort('percentChange')} className={`py-3 px-3 first:pl-4 last:pr-4 font-semibold text-xs md:text-sm whitespace-nowrap bg-blue-100 text-slate-900 border-b border-blue-200/80 dark:bg-blue-900/60 dark:text-white dark:border-white/10 text-right cursor-pointer hover:bg-blue-200/70 dark:hover:bg-white/10 transition-colors select-none ${sortKey === 'percentChange' ? 'active-sort' : ''}`}>
-                    <div className="flex items-center gap-1 justify-end">
-                      % Change
-                      {sortKey === 'percentChange' && <span className="text-[10px] opacity-70">{ascending ? '▲' : '▼'}</span>}
-                    </div>
-                  </th>
-                  <th onClick={() => handleSort('marketCapDiff')} className={`py-3 px-3 first:pl-4 last:pr-4 font-semibold text-xs md:text-sm whitespace-nowrap bg-blue-100 text-slate-900 border-b border-blue-200/80 dark:bg-blue-900/60 dark:text-white dark:border-white/10 text-right hidden lg:table-cell cursor-pointer hover:bg-blue-200/70 dark:hover:bg-white/10 transition-colors select-none ${sortKey === 'marketCapDiff' ? 'active-sort' : ''}`}>
-                    <div className="flex items-center gap-1 justify-end">
-                      Cap Diff
-                      {sortKey === 'marketCapDiff' && <span className="text-[10px] opacity-70">{ascending ? '▲' : '▼'}</span>}
-                    </div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {allEarnings.map((earning, index) => {
-                  // Helper pre získanie CSS triedy pre pozitívne/negatívne hodnoty
-                  const getValueClass = (value: number | null, isPositive: boolean): string => {
-                    if (value === null) return '';
-                    return isPositive ? 'positive' : 'negative';
-                  };
-
-                  // Helper pre formátovanie percent change
-                  const formatPercentChange = (value: number | null): string => {
-                    if (value === null) return '-';
-                    return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
-                  };
-
-                  // Helper pre formátovanie market cap diff
-                  const formatMarketCapDiff = (value: number | null): string => {
-                    if (value === null) return '-';
-                    return `${value >= 0 ? '+' : ''}${value.toFixed(2)}`;
-                  };
-
-                  return (
-                    <tr key={`${earning.ticker}-${index}-desktop`} className="group hover:bg-gray-50 dark:hover:bg-white/5 transition-colors border-b border-gray-100 dark:border-gray-800">
-                      <td className="py-3 px-3 first:pl-4 last:pr-4 text-sm text-[var(--clr-text)] hidden lg:table-cell text-center">
-                        <div className="flex justify-center items-center w-full">
-                          <CompanyLogo
-                            ticker={earning.ticker.trim().toUpperCase()}
-                            size={32}
-                            priority={index < 15}
-                          />
-                        </div>
-                      </td>
-                      <td className="py-3 px-3 first:pl-4 last:pr-4 text-sm text-[var(--clr-text)]"><strong>{earning.ticker}</strong></td>
-                      <td className="py-3 px-3 first:pl-4 last:pr-4 text-sm text-[var(--clr-text)] hidden lg:table-cell">{getCompanyName(earning.ticker)}</td>
-                      <td className="py-3 px-3 first:pl-4 last:pr-4 text-sm text-[var(--clr-text)] hidden lg:table-cell text-right tabular-nums">{earning.marketCap !== null ? formatBillions(earning.marketCap) : '-'}</td>
-                      <td className="py-3 px-3 first:pl-4 last:pr-4 text-sm text-[var(--clr-text)] text-center">
-                        <div className="flex items-center justify-center gap-2 tabular-nums">
-                          <span className="text-gray-500 dark:text-gray-400">{formatEarningsValue(earning.epsEstimate, false, true)}</span>
-                          <span className="opacity-30">/</span>
-                          <span className={`${earning.epsActual !== null && earning.epsEstimate !== null ? (earning.epsActual >= earning.epsEstimate ? 'text-green-500 font-medium' : 'text-red-500 font-medium') : ''}`}>
-                            {formatEarningsValue(earning.epsActual, false, true)}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-3 first:pl-4 last:pr-4 text-sm text-[var(--clr-text)] text-center">
-                        <div className="flex items-center justify-center gap-2 tabular-nums">
-                          <span className="text-gray-500 dark:text-gray-400">{formatEarningsValue(earning.revenueEstimate ? earning.revenueEstimate / 1000000 : null)}</span>
-                          <span className="opacity-30">/</span>
-                          <span className={`${earning.revenueActual !== null && earning.revenueEstimate !== null ? (earning.revenueActual >= earning.revenueEstimate ? 'text-green-500 font-medium' : 'text-red-500 font-medium') : ''}`}>
-                            {formatEarningsValue(earning.revenueActual ? earning.revenueActual / 1000000 : null)}
-                          </span>
-                        </div>
-                      </td>
-                      <td className={`py-3 px-3 first:pl-4 last:pr-4 text-sm text-right tabular-nums ${earning.percentChange !== null && earning.percentChange >= 0 ? 'text-green-500 font-medium' : 'text-red-500 font-medium'}`}>
-                        {formatPercentChange(earning.percentChange)}
-                      </td>
-                      <td className={`py-3 px-3 first:pl-4 last:pr-4 text-sm hidden lg:table-cell text-right tabular-nums ${earning.marketCapDiff !== null && earning.marketCapDiff >= 0 ? 'text-green-500 font-medium' : 'text-red-500 font-medium'}`}>
-                        {formatMarketCapDiff(earning.marketCapDiff)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </>
-      ) : (
-        <div className="text-center p-8 text-gray-500">
-          <p className="whitespace-nowrap">No earnings reports today from tracked companies</p>
-        </div>
-      )}
+      <UniversalTable
+        data={allEarnings}
+        columns={columns}
+        keyExtractor={(item) => `${item.ticker}-${item.date}`}
+        isLoading={false}
+        sortKey={sortKey}
+        ascending={ascending}
+        onSort={handleSort}
+        renderMobileCard={(earning) => (
+          <EarningsCardMobile
+            earning={earning}
+          />
+        )}
+      />
 
     </section>
   );
