@@ -13,7 +13,7 @@ export function SEOContent() {
 
                     <div className="space-y-6 text-[var(--clr-subtext)] leading-relaxed">
                         <p>
-                            In the world of modern finance, the ability to track <strong className="text-blue-500">pre-market prices</strong> is no longer just a luxury for institutional traders; it is a necessity for every serious investor. PreMarketPrice provides a state-of-the-art platform designed to bring transparency to the early hours of trading on major US exchanges, including the New York Stock Exchange (NYSE) and NASDAQ.
+                            In the world of modern finance, the ability to track <strong className="text-[var(--clr-text)]">pre-market prices</strong> is no longer just a luxury for institutional traders; it is a necessity for every serious investor. PreMarketPrice provides a state-of-the-art platform designed to bring transparency to the early hours of trading on major US exchanges, including the New York Stock Exchange (NYSE) and NASDAQ.
                         </p>
 
                         <h3 className="text-xl font-semibold text-[var(--clr-text)] mt-8">What is Pre-Market Trading?</h3>
@@ -35,7 +35,7 @@ export function SEOContent() {
 
                         <h3 className="text-xl font-semibold text-[var(--clr-text)] mt-8">Maximize Your Trading Edge</h3>
                         <p>
-                            Whether you are monitoring your personal portfolio or scouting for the next big market mover, our platform is built to deliver. From <strong className="text-blue-600 dark:text-blue-400">Altman Z-Scores</strong> (coming soon) to historical valuation percentiles, we are committed to providing deep, actionable insights that were previously reserved for professional terminals.
+                            Whether you are monitoring your personal portfolio or scouting for the next big market mover, our platform is built to deliver. From <strong className="text-[var(--clr-text)]">Altman Z-Scores</strong> (coming soon) to historical valuation percentiles, we are committed to providing deep, actionable insights that were previously reserved for professional terminals.
                         </p>
 
                         <div className="flex flex-wrap gap-4 pt-8 border-t border-[var(--clr-border-subtle)]">
