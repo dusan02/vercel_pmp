@@ -36,7 +36,7 @@ module.exports = {
       exec_mode: "fork",
       
       // Resource management - prevent memory leaks and ensure restarts
-      max_memory_restart: "1G",
+      max_memory_restart: "2G",
       kill_timeout: 5000,
       
       // Restart strategy
