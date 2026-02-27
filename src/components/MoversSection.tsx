@@ -263,13 +263,13 @@ export function MoversSection() {
         <div className="movers-container space-y-4">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
                 <div>
-                    <h2 className="text-2xl font-black text-white flex items-center gap-2">
+                    <h2 className="text-2xl font-black text-slate-900 flex items-center gap-2">
                         <Zap className="text-yellow-400" fill="currentColor" />
                         Market Movers
                     </h2>
-                    <p className="text-xs text-gray-500 flex items-center gap-1.5">
+                    <p className="text-xs text-slate-500 flex items-center gap-1.5">
                         <Info size={12} />
-                        Stocks with significant statistical deviations (Z-Score & RVVOL)
+                        Stocks with significant statistical deviations (Z-Score &amp; RVOL)
                     </p>
                 </div>
 
@@ -293,7 +293,7 @@ export function MoversSection() {
                     <button
                         onClick={() => mutate()}
                         disabled={isLoading}
-                        className="p-2 hover:bg-white/5 rounded-full transition-all text-gray-400 hover:text-white disabled:opacity-50"
+                        className="p-2 hover:bg-slate-100 rounded-full transition-all text-slate-400 hover:text-slate-900 disabled:opacity-50"
                         title="Refresh Movers"
                     >
                         <RefreshCw className={`${isLoading ? 'animate-spin' : ''}`} size={20} />
@@ -306,7 +306,7 @@ export function MoversSection() {
                 <div>
                     <h3 className="text-lg font-bold text-green-500 mb-3 flex items-center gap-2 px-2">
                         <TrendingUp size={20} />
-                        Gainers <span className="text-sm font-normal text-slate-500 bg-white/10 px-2 py-0.5 rounded-full ml-1">{gainers.length}</span>
+                        Gainers <span className="text-sm font-normal text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full ml-1">{gainers.length}</span>
                     </h3>
                     <div className="grid gap-3">
                         <AnimatePresence mode="popLayout">
@@ -314,7 +314,7 @@ export function MoversSection() {
                         </AnimatePresence>
                     </div>
                     {gainers.length === 0 && !isLoading && (
-                        <div className="text-center p-8 text-slate-400 bg-white/5 border border-dashed border-white/10 rounded-2xl mt-3">
+                        <div className="text-center p-8 text-slate-400 bg-slate-50 border border-dashed border-slate-200 rounded-2xl mt-3">
                             No significant gainers.
                         </div>
                     )}
@@ -324,7 +324,7 @@ export function MoversSection() {
                 <div>
                     <h3 className="text-lg font-bold text-red-500 mb-3 flex items-center gap-2 px-2">
                         <TrendingDown size={20} />
-                        Losers <span className="text-sm font-normal text-slate-500 bg-white/10 px-2 py-0.5 rounded-full ml-1">{losers.length}</span>
+                        Losers <span className="text-sm font-normal text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full ml-1">{losers.length}</span>
                     </h3>
                     <div className="grid gap-3">
                         <AnimatePresence mode="popLayout">
@@ -332,7 +332,7 @@ export function MoversSection() {
                         </AnimatePresence>
                     </div>
                     {losers.length === 0 && !isLoading && (
-                        <div className="text-center p-8 text-slate-400 bg-white/5 border border-dashed border-white/10 rounded-2xl mt-3">
+                        <div className="text-center p-8 text-slate-400 bg-slate-50 border border-dashed border-slate-200 rounded-2xl mt-3">
                             No significant losers.
                         </div>
                     )}
@@ -340,31 +340,31 @@ export function MoversSection() {
             </div>
 
             {/* Methodology Section */}
-            <div className="mt-8 pt-6 border-t border-white/5">
-                <div className="bg-slate-900/50 rounded-2xl p-6 border border-white/5">
-                    <h4 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
-                        <Info size={16} className="text-blue-400" />
+            <div className="mt-8 pt-6 border-t border-slate-200">
+                <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
+                    <h4 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+                        <Info size={16} className="text-blue-500" />
                         How are Market Movers selected?
                     </h4>
-                    <p className="text-xs text-gray-400 mb-4 leading-relaxed">
+                    <p className="text-xs text-slate-500 mb-4 leading-relaxed">
                         To cut through market noise and highlight truly significant price action, a stock must meet <strong>at least one</strong> of the following criteria to appear on this list:
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="bg-white/5 rounded-xl p-4 border border-white/5">
-                            <div className="text-green-400 font-bold text-sm mb-1">1. Absolute Move</div>
-                            <p className="text-[11px] text-gray-400">
+                        <div className="bg-white rounded-xl p-4 border border-slate-200">
+                            <div className="text-green-600 font-bold text-sm mb-1">1. Absolute Move</div>
+                            <p className="text-[11px] text-slate-500">
                                 Stock price changed by <strong>&ge; &plusmn;5.0%</strong> during the current session. Captures major absolute price swings.
                             </p>
                         </div>
-                        <div className="bg-white/5 rounded-xl p-4 border border-white/5">
-                            <div className="text-blue-400 font-bold text-sm mb-1">2. Volume Surge (RVOL)</div>
-                            <p className="text-[11px] text-gray-400">
+                        <div className="bg-white rounded-xl p-4 border border-slate-200">
+                            <div className="text-blue-600 font-bold text-sm mb-1">2. Volume Surge (RVOL)</div>
+                            <p className="text-[11px] text-slate-500">
                                 Relative Volume is <strong>&ge; 3.0x</strong> the 20-day average. Highlights massive institutional buying or selling pressure.
                             </p>
                         </div>
-                        <div className="bg-white/5 rounded-xl p-4 border border-white/5">
-                            <div className="text-purple-400 font-bold text-sm mb-1">3. Statistical Outlier</div>
-                            <p className="text-[11px] text-gray-400">
+                        <div className="bg-white rounded-xl p-4 border border-slate-200">
+                            <div className="text-purple-600 font-bold text-sm mb-1">3. Statistical Outlier</div>
+                            <p className="text-[11px] text-slate-500">
                                 Price movement Z-Score is <strong>&ge; &plusmn;2.0</strong>. Flags highly unusual deviation based on the stock's own historical volatility.
                             </p>
                         </div>
