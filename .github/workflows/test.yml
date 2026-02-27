@@ -27,9 +27,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Apply database migrations
+        env:
+          DATABASE_URL: "file:./test.db"
+        run: npx prisma migrate deploy
+
       - name: Run tests (TZ=${{ matrix.timezone }})
         env:
           TZ: ${{ matrix.timezone }}
+          DATABASE_URL: "file:./test.db"
         run: npm test
 
       - name: Run coverage
@@ -68,7 +74,14 @@ jobs:
       - name: Run critical unit tests (second pass - non-flaky check)
         run: npm test -- --testPathPatterns="priceResolver|pricingStateMachine"
 
+      - name: Apply database migrations
+        env:
+          DATABASE_URL: "file:./test.db"
+        run: npx prisma migrate deploy
+
       - name: Run integration tests
+        env:
+          DATABASE_URL: "file:./test.db"
         run: npm test -- --testPathPatterns="polygonWorker.integration"
 
       # Coverage check disabled - thresholds are managed in jest.config.js
