@@ -129,9 +129,25 @@ model Ticker {
   lastMarketCapDiff Float?
   lastPriceUpdated  DateTime?
 
+  // Movers Section Stats (calculated daily)
+  avgVolume20d     Float?
+  stdDevReturn20d  Float?
+  avgReturn20d     Float?
+  
+  // Real-time Movers Metrics
+  latestMoversZScore Float?
+  latestMoversRVOL   Float?
+  moversReason       String?
+  moversCategory     String? // e.g., 'Earnings', 'Guidance', 'M&A', 'Macro', 'Technical'
+  socialCopy         String? // Catchy 160-char summary for social media
+  isSbcAlert         Boolean   @default(false)
+  aiConfidence       Int?      // 1-100 scale
+
   updatedAt     DateTime       @updatedAt
   dailyRefs     DailyRef[]
   sessionPrices SessionPrice[]
+  moverEvents   MoverEvent[]
+  volumeBuckets VolumeBucket[]
   userFavorites UserFavorite[]
   portfolio     PortfolioItem[]
 
@@ -144,6 +160,35 @@ model Ticker {
   @@index([lastMarketCapDiff])
   @@index([sector, lastMarketCap])
   @@index([industry, lastMarketCap])
+}
+
+model MoverEvent {
+  id              String   @id @default(cuid())
+  symbol          String
+  timestamp       DateTime @default(now())
+  date            DateTime // Trading day (for filtering)
+  
+  // Snapshot at detection
+  priceAtEvent    Float
+  zScore          Float
+  rvol            Float
+  changePct       Float
+  
+  // AI Analysis (Link to Ticker or copy)
+  category        String?  // 'Earnings', 'Guidance', etc.
+  reason          String?
+  sentiment       Float?
+  
+  // Follow-through (Performance Tracking)
+  impact1h        Float?   // % change after 1 hour
+  impactEndDay    Float?   // % change at market close
+  impactNextDay   Float?   // % change at next day close
+  
+  ticker          Ticker   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+
+  @@index([date])
+  @@index([category])
+  @@index([symbol])
 }
 
 model DailyRef {
@@ -172,6 +217,11 @@ model SessionPrice {
   changePct Float
   source    String
   quality   String
+  
+  // Movers data
+  zScore    Float?
+  rvol      Float?
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   ticker    Ticker   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
@@ -194,4 +244,17 @@ model UserFavorite {
   @@unique([userId, ticker])
   @@index([userId])
   @@index([ticker])
+}
+
+model VolumeBucket {
+  id        String   @id @default(cuid())
+  symbol    String
+  bucket    String   // e.g., "09:30", "09:45"
+  avgVolume Float    // Average cumulative volume at this time
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ticker    Ticker   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+
+  @@unique([symbol, bucket])
+  @@index([symbol])
 }

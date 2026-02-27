@@ -136,6 +136,24 @@ export class PolygonClient {
   }
 
   /**
+   * Fetch news for a ticker
+   */
+  async fetchNews(
+    ticker: string,
+    limit: number = 5
+  ): Promise<any[]> {
+    const url = `https://api.polygon.io/v2/reference/news?ticker=${ticker}&limit=${limit}&apiKey=${this.apiKey}`;
+
+    try {
+      const data = await this.fetchWithRetry<{ results?: any[] }>(url, this.timeout);
+      return data?.results || [];
+    } catch (error) {
+      console.error(`Error fetching news for ${ticker}:`, error);
+      return [];
+    }
+  }
+
+  /**
    * Generic fetch with retry logic
    */
   private async fetchWithRetry<T>(

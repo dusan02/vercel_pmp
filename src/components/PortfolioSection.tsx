@@ -402,7 +402,7 @@ export function PortfolioSection({
           />
         )}
         // forceTable={true} // REMOVED to enable mobile cards
-        footer={footerRow}
+        tfootRows={footerRow}
       />
       <SEOContent />
     </section>

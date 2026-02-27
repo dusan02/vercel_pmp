@@ -62,12 +62,17 @@ try {
 
         // Initialize connection with timeout
         if (!redisClient.isOpen) {
-            const connectPromise = redisClient.connect();
+            const connectPromise = redisClient.connect().catch((err: any) => {
+                console.error('Redis connection failed during connect:', err.message || err);
+                redisClient = null;
+            });
+
             const timeoutPromise = new Promise((_, reject) =>
                 setTimeout(() => reject(new Error('Redis connection timeout')), 3000)
             );
 
             Promise.race([connectPromise, timeoutPromise]).catch((err: any) => {
+                console.error('Redis connection initialization error/timeout:', err.message || err);
                 redisClient = null;
             });
         }

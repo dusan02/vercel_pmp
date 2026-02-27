@@ -45,6 +45,10 @@ const HomeEarnings = dynamic(
   () => import('@/components/home/HomeEarnings').then((mod) => mod.HomeEarnings),
   { ssr: false, loading: () => null }
 );
+const HomeMovers = dynamic(
+  () => import('@/components/home/HomeMovers').then((mod) => mod.HomeMovers),
+  { ssr: false, loading: () => null }
+);
 // OPTIMIZATION: Enable SSR for desktop (faster initial load), keep ssr: false for mobile
 // Desktop heatmap can be server-rendered, mobile uses different components
 const HomeHeatmap = dynamic(
@@ -148,12 +152,12 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
   }, []);
 
   // Navigation state (unified for mobile and desktop)
-  const [activeSection, setActiveSection] = useState<'heatmap' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks'>('heatmap');
+  const [activeSection, setActiveSection] = useState<'heatmap' | 'movers' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks'>('heatmap');
 
   // Helper function to validate and set tab
   const setActiveTab = useCallback((tab: string) => {
-    if (tab === 'heatmap' || tab === 'portfolio' || tab === 'favorites' || tab === 'earnings' || tab === 'allStocks') {
-      setActiveSection(tab as 'heatmap' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks');
+    if (tab === 'heatmap' || tab === 'movers' || tab === 'portfolio' || tab === 'favorites' || tab === 'earnings' || tab === 'allStocks') {
+      setActiveSection(tab as 'heatmap' | 'movers' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks');
       return true;
     }
     return false;
@@ -211,7 +215,7 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
   }, [isMounted, setActiveTab]);
 
   // Handle mobile bottom navigation change - VIEW-BASED (tabs, not scroll)
-  const handleMobileNavChange = useCallback((tab: 'heatmap' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks') => {
+  const handleMobileNavChange = useCallback((tab: 'heatmap' | 'movers' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks') => {
     setActiveSection(tab);
     // Update URL to keep it in sync
     const url = new URL(window.location.href);
@@ -382,6 +386,17 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
                 )}
               </MobileScreen>
               <MobileScreen
+                active={activeSection === 'movers'}
+                className="screen-movers"
+                prefetch={activeSection === 'heatmap'}
+                screenName="Movers"
+                skeleton={<MobileSkeleton type="list" count={1} />}
+              >
+                {(preferences.showMoversSection ?? true) && (
+                  <HomeMovers />
+                )}
+              </MobileScreen>
+              <MobileScreen
                 active={activeSection === 'portfolio'}
                 className="screen-portfolio"
                 prefetch={activeSection === 'heatmap'} // Prefetch keď je heatmap aktívny (najpravdepodobnejší ďalší tab)
@@ -532,6 +547,12 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
                         {activeSection === 'heatmap' && (
                           <div className="tab-content relative fade-in">
                             <HomeHeatmap wrapperClass="desktop-heatmap-wrapper" />
+                          </div>
+                        )}
+
+                        {activeSection === 'movers' && (
+                          <div className="tab-content fade-in">
+                            <HomeMovers />
                           </div>
                         )}
 

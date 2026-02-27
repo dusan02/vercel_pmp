@@ -95,6 +95,7 @@
         "sqlite3": "^5.1.7",
         "swr": "^2.3.6",
         "tsx": "^4.21.0",
+        "twitter-api-v2": "^1.29.0",
         "zod": "^4.1.12"
     },
     "devDependencies": {

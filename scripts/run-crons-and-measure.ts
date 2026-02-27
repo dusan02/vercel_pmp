@@ -51,6 +51,12 @@ const CRON_JOBS = [
     endpoint: '/api/cron/blog',
     method: 'GET' as const,
     requiresAuth: false
+  },
+  {
+    name: 'Movers Impact Tracker',
+    endpoint: '/api/cron/mover-impact',
+    method: 'GET' as const,
+    requiresAuth: false
   }
 ];
 

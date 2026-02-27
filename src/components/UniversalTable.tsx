@@ -28,6 +28,8 @@ interface UniversalTableProps<T> {
     renderMobileCard?: (item: T) => React.ReactNode;
     forceTable?: boolean;
     footer?: React.ReactNode;
+    /** Raw <tr> elements to append directly into tbody (avoids td-wrapping a tr) */
+    tfootRows?: React.ReactNode;
 }
 
 export function UniversalTable<T>({
@@ -41,7 +43,8 @@ export function UniversalTable<T>({
     onSort,
     renderMobileCard,
     forceTable = false,
-    footer
+    footer,
+    tfootRows
 }: UniversalTableProps<T>) {
 
     if (isLoading) {
@@ -178,6 +181,7 @@ export function UniversalTable<T>({
                                 </td>
                             </tr>
                         )}
+                        {tfootRows}
                     </tbody>
                 </table>
             </div>

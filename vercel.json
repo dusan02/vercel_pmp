@@ -7,7 +7,12 @@
             "maxDuration": 300
         }
     },
-    "crons": [],
+    "crons": [
+        {
+            "path": "/api/cron/reset-movers",
+            "schedule": "5 5 * * *"
+        }
+    ],
     "env": {
         "NODE_ENV": "production"
     }

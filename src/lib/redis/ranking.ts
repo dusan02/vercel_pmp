@@ -7,7 +7,7 @@ import { redisClient } from './client';
 import { REDIS_KEYS, REDIS_TTL } from './keys';
 import { getDateET as getDateETFromUtils } from '@/lib/utils/dateET';
 
-export type RankField = 'price' | 'cap' | 'capdiff' | 'chg';
+export type RankField = 'price' | 'cap' | 'capdiff' | 'chg' | 'zscore' | 'rvol';
 
 export interface RankIndexData {
   symbol: string;
@@ -15,6 +15,8 @@ export interface RankIndexData {
   marketCap: number;
   marketCapDiff: number;
   changePct: number;
+  zscore?: number;
+  rvol?: number;
   name?: string | undefined;
   sector?: string | undefined;
   industry?: string | undefined;
@@ -42,6 +44,10 @@ function getRankKey(field: RankField, date: string, session: string): string {
       return REDIS_KEYS.rankCapDiff(date, session);
     case 'chg':
       return REDIS_KEYS.rankChg(date, session);
+    case 'zscore':
+      return REDIS_KEYS.rankZScore(date, session);
+    case 'rvol':
+      return REDIS_KEYS.rankRVOL(date, session);
     default:
       throw new Error(`Unknown rank field: ${field}`);
   }
@@ -63,13 +69,15 @@ export async function updateRankIndexes(
       return false;
     }
 
-    const { symbol, price, marketCap, marketCapDiff, changePct } = data;
+    const { symbol, price, marketCap, marketCapDiff, changePct, zscore, rvol } = data;
 
     // Calculate scores
     const scoreChg = Math.round(changePct * 10000); // int(change_pct * 10000)
     const scorePrice = price;
     const scoreCap = marketCap;
     const scoreCapDiff = marketCapDiff;
+    const scoreZScore = zscore ? Math.round(zscore * 10000) : 0;
+    const scoreRVOL = rvol ? Math.round(rvol * 10000) : 0;
 
     // TTL based on session (same for all keys)
     const ttl = session === 'live' ? REDIS_TTL.LIVE : REDIS_TTL.PRE_AFTER;
@@ -86,7 +94,9 @@ export async function updateRankIndexes(
       cap_diff: marketCapDiff,
       name: data.name || undefined,
       sector: data.sector || undefined,
-      industry: data.industry || undefined
+      industry: data.industry || undefined,
+      z: zscore,
+      v: rvol
       // Only essential fields - no extra data
     });
     multi.setEx(lastKey, ttl, lastData);
@@ -97,7 +107,9 @@ export async function updateRankIndexes(
       p: String(price),
       c: String(changePct),
       m: String(marketCap),
-      d: String(marketCapDiff)
+      d: String(marketCapDiff),
+      z: String(zscore || 0),
+      v: String(rvol || 0)
     });
     multi.expire(stockHashKey, ttl);
 

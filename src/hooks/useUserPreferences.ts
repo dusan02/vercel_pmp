@@ -18,6 +18,7 @@ export interface UserPreferences {
   showEarningsSection?: boolean;
   showAllStocksSection?: boolean;
   showHeatmapSection?: boolean;
+  showMoversSection?: boolean;
 }
 
 const DEFAULT_PREFERENCES: UserPreferences = {
@@ -34,7 +35,8 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   showFavoritesSection: true,
   showEarningsSection: true,
   showAllStocksSection: true,
-  showHeatmapSection: true
+  showHeatmapSection: true,
+  showMoversSection: true
 };
 
 const STORAGE_KEY = 'pmp-user-preferences';

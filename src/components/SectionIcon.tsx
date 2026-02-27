@@ -5,7 +5,7 @@
 
 import React from 'react';
 
-export type SectionIconType = 'star' | 'pie' | 'globe' | 'calendar' | 'grid' | 'heatmap';
+export type SectionIconType = 'star' | 'pie' | 'globe' | 'calendar' | 'grid' | 'heatmap' | 'zap';
 
 interface SectionIconProps {
   type: SectionIconType;
@@ -126,6 +126,22 @@ export function SectionIcon({ type, size = 20, className = '' }: SectionIconProp
         <line x1="12" y1="3" x2="12" y2="21" />
         <line x1="3" y1="12" x2="12" y2="12" />
         <line x1="12" y1="14" x2="21" y2="14" />
+      </svg>
+    ),
+    zap: (
+      <svg
+        width={iconSize}
+        height={iconSize}
+        viewBox="0 0 24 24"
+        fill={fill}
+        stroke={stroke}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+        aria-hidden="true"
+      >
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
       </svg>
     )
   };

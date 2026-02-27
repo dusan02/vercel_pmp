@@ -24,6 +24,10 @@ type MoverRow = {
   price?: number;
   changePct?: number;
   marketCapDiff?: number;
+  zscore?: number;
+  rvol?: number;
+  reason?: string;
+  category?: string;
 };
 
 async function getTopMovers(order: 'asc' | 'desc', limit: number): Promise<MoverRow[]> {
@@ -46,6 +50,10 @@ async function getTopMovers(order: 'asc' | 'desc', limit: number): Promise<Mover
       price: d.p,
       changePct: d.change_pct,
       marketCapDiff: d.cap_diff,
+      zscore: d.z,
+      rvol: d.v,
+      reason: d.reason,
+      category: d.cat
     };
   });
 }
@@ -66,7 +74,8 @@ function MoversTable({ title, rows }: { title: string; rows: MoverRow[] }) {
               <th className="px-4 py-2">Sector</th>
               <th className="px-4 py-2">Price</th>
               <th className="px-4 py-2">% Change</th>
-              <th className="px-4 py-2">MCap Δ</th>
+              <th className="px-4 py-2 text-center">Score (Z)</th>
+              <th className="px-4 py-2">Insight</th>
             </tr>
           </thead>
           <tbody>
@@ -109,8 +118,20 @@ function MoversTable({ title, rows }: { title: string; rows: MoverRow[] }) {
                   <td className={`px-4 py-2 tabular-nums font-semibold ${color}`}>
                     {formatPercent(pct)}
                   </td>
-                  <td className="px-4 py-2 tabular-nums text-slate-700 dark:text-slate-300">
-                    {formatMarketCapDiff(r.marketCapDiff)}
+                  <td className="px-4 py-2 text-center">
+                    <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${Math.abs(r.zscore || 0) > 2.5 ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : 'text-slate-500'}`}>
+                      {r.zscore?.toFixed(1) || '0.0'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2 text-xs">
+                    {r.reason ? (
+                      <div className="max-w-[200px] truncate" title={r.reason}>
+                        <span className="font-bold opacity-50 mr-1">{r.category}:</span>
+                        {r.reason}
+                      </div>
+                    ) : (
+                      <span className="text-slate-500 italic">Analyzing...</span>
+                    )}
                   </td>
                 </tr>
               );

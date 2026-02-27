@@ -230,7 +230,7 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
             📈
           </div>
           <span className="text-base font-semibold text-gray-900 dark:text-white">
-            No data available
+            Data are loading
           </span>
           <span className="text-sm text-gray-500 dark:text-gray-400">
             Heatmap data is loading...

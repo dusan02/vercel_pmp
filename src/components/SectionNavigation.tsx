@@ -10,11 +10,12 @@ export interface SectionNavigationProps {
 interface SectionConfig {
   id: string;
   label: string;
-  icon: 'heatmap' | 'pie' | 'star' | 'calendar' | 'globe';
+  icon: 'heatmap' | 'pie' | 'star' | 'calendar' | 'globe' | 'zap';
 }
 
 const sections: SectionConfig[] = [
   { id: 'heatmap', label: 'Heatmap', icon: 'heatmap' },
+  { id: 'movers', label: 'Movers', icon: 'zap' },
   { id: 'portfolio', label: 'Portfolio', icon: 'pie' },
   { id: 'favorites', label: 'Favorites', icon: 'star' },
   { id: 'earnings', label: 'Earnings', icon: 'calendar' },

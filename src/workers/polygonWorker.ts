@@ -145,6 +145,90 @@ async function fetchPolygonSnapshot(
 }
 
 /**
+ * Helper: Calculate expected cumulative volume at current time using linear interpolation
+ * @param symbol 
+ * @param timeStr "HH:MM"
+ * @param fullDayAvg20d Total day average volume
+ */
+async function calculateExpectedVolume(symbol: string, timeStr: string, fullDayAvg20d: number): Promise<number | null> {
+  try {
+    const profileKey = `volume_profile:${symbol}`;
+    const profile = await redisClient.hGetAll(profileKey);
+
+    if (!profile || Object.keys(profile).length === 0) {
+      // IPO/New Stock Fallback: Linear growth assumption or simple percentage
+      // e.g. 0.1% of day avg per minute
+      const timeParts = timeStr.split(':');
+      const h = Number(timeParts[0]);
+      const m = Number(timeParts[1]);
+      const minsSinceOpen = Math.max(0, (h * 60 + m) - (9 * 60 + 30));
+      if (minsSinceOpen <= 0) return fullDayAvg20d * 0.01; // Pre-market 1% floor
+      const linearWeight = Math.min(1, minsSinceOpen / 390); // 390 mins in regular session
+      return fullDayAvg20d * linearWeight;
+    }
+
+    const buckets = Object.keys(profile).sort(); // ["09:30", "09:45", ...]
+    const currentMins = timeStr.split(':').reduce((acc, v, i) => acc + Number(v) * (i === 0 ? 60 : 1), 0);
+
+    // Find surrounding buckets
+    let prevBucketIdx = -1;
+    let nextBucketIdx = -1;
+
+    for (let i = 0; i < buckets.length; i++) {
+      const bucketStr = buckets[i];
+      if (!bucketStr) continue;
+      const bucketParts = bucketStr.split(':');
+      const bh = Number(bucketParts[0]);
+      const bm = Number(bucketParts[1]);
+      const bMins = bh * 60 + bm;
+      if (bMins <= currentMins) prevBucketIdx = i;
+      if (bMins > currentMins && nextBucketIdx === -1) {
+        nextBucketIdx = i;
+        break;
+      }
+    }
+
+    if (prevBucketIdx === -1) {
+      const firstKey = buckets[0];
+      return firstKey !== undefined ? Number(profile[firstKey]) || null : null;
+    }
+    if (nextBucketIdx === -1) {
+      const lastKey = buckets[buckets.length - 1];
+      return lastKey !== undefined ? Number(profile[lastKey]) || null : null;
+    }
+
+    // Linear Interpolation
+    const b1 = buckets[prevBucketIdx];
+    const b2 = buckets[nextBucketIdx];
+    if (!b1 || !b2) return null;
+
+    const v1Val = profile[b1];
+    const v2Val = profile[b2];
+    if (v1Val === undefined || v2Val === undefined) return null;
+
+    const v1 = Number(v1Val);
+    const v2 = Number(v2Val);
+
+    const m1Parts = b1.split(':');
+    const m1Hour = Number(m1Parts[0]);
+    const m1Min = Number(m1Parts[1]);
+    if (isNaN(m1Hour) || isNaN(m1Min)) return null;
+    const m1 = m1Hour * 60 + m1Min;
+
+    const m2Parts = b2.split(':');
+    const m2Hour = Number(m2Parts[0]);
+    const m2Min = Number(m2Parts[1]);
+    if (isNaN(m2Hour) || isNaN(m2Min)) return null;
+    const m2 = m2Hour * 60 + m2Min;
+
+    const ratio = (currentMins - m1) / (m2 - m1);
+    return v1 + ratio * (v2 - v1);
+  } catch (error) {
+    return null;
+  }
+}
+
+/**
  * Normalize Polygon snapshot to our data structure
  * 
  * CRITICAL: Now uses session-aware price resolver to prevent stale data overwrites
@@ -169,6 +253,7 @@ function normalizeSnapshot(
   source: string;
   isStale: boolean;
   reference: { used: 'previousClose' | 'regularClose' | null; price: number | null };
+  volume: number;
 } | null {
   // Use session-aware price resolver (SINGLE SOURCE OF TRUTH)
   const effectivePrice = resolveEffectivePrice(
@@ -185,10 +270,13 @@ function normalizeSnapshot(
   }
 
   // Calculate change percentage based on session rules (returns reference info)
+  // CRITICAL: Ensure we use the snapshot's prevDay close if external DB closes are missing
+  const effectivePreviousClose = previousClose || snapshot.prevDay?.c || null;
+
   const percentResult = calculatePercentChange(
     effectivePrice.price,
     session,
-    previousClose,
+    effectivePreviousClose,
     regularClose
   );
 
@@ -200,15 +288,23 @@ function normalizeSnapshot(
     quality = 'delayed_15m';
   }
 
-  return {
+  const result = {
     price: effectivePrice.price,
     changePct: percentResult.changePct,
     timestamp: effectivePrice.timestamp,
     quality,
     source: effectivePrice.source,
     isStale: effectivePrice.isStale,
-    reference: percentResult.reference
+    reference: percentResult.reference,
+    volume: snapshot.day?.v || snapshot.min?.v || 0
   };
+
+  // Temporary debug log
+  if (['AXON', 'CRCL', 'COIN'].includes(snapshot.ticker)) {
+    console.log(`[normalizeSnapshot] ${snapshot.ticker} raw min.c=${snapshot.min?.c} day.c=${snapshot.day?.c} prevClose=${previousClose} -> effective: ${result.price} changePct: ${result.changePct} (ref: ${result.reference.price})`);
+  }
+
+  return result;
 }
 
 /**
@@ -222,9 +318,11 @@ async function upsertToDB(
   marketCap: number,
   marketCapDiff: number,
   isStaticUpdateLocked: boolean = false,
-  lastChangePctFromCache: number | null | undefined = undefined
-): Promise<{ success: boolean; effectiveChangePct: number }> {
-  if (!normalized) return { success: false, effectiveChangePct: 0 };
+  lastChangePctFromCache: number | null | undefined = undefined,
+  stats?: { avgVolume20d: number | null; avgReturn20d: number | null; stdDevReturn20d: number | null },
+  force: boolean = false
+): Promise<{ success: boolean; effectiveChangePct: number; zScore: number; rvol: number }> {
+  if (!normalized) return { success: false, effectiveChangePct: 0, zScore: 0, rvol: 0 };
 
   try {
     // CRITICAL: Use getDateET() for date, not UTC midnight!
@@ -242,18 +340,90 @@ async function upsertToDB(
         lastChangePct: true,
         latestPrevClose: true,
         latestPrevCloseDate: true,
-        // Fetch other fields if we need to merge? (Usually not needed for this logic)
+        avgVolume20d: true,
+        avgReturn20d: true,
+        stdDevReturn20d: true,
+        moversCategory: true,
+        moversReason: true,
       }
     });
 
-    // 2. Staleness Check
+    // 2. Calculate Z-score and RVOL
+    let zScore = 0;
+    let rvol = 0;
+
+    // Use passed stats or fallback to DB stats
+    const avgVolume = stats?.avgVolume20d ?? existingTicker?.avgVolume20d;
+    const avgReturn = stats?.avgReturn20d ?? existingTicker?.avgReturn20d;
+    const stdDev = stats?.stdDevReturn20d ?? existingTicker?.stdDevReturn20d;
+
+    if (avgVolume && avgVolume > 0 && normalized.volume > 0) {
+      // Priority 1: Time-weighted RVOL (The "interpolation" masterstroke)
+      // If we are during Market Open/Pre-market, we must use time-weighted buckets.
+      const now = nowET();
+      const timeStr = `${String(toET(now).hour).padStart(2, '0')}:${String(toET(now).minute).padStart(2, '0')}`;
+
+      try {
+        const expectedVolume = await calculateExpectedVolume(symbol, timeStr, avgVolume);
+        rvol = normalized.volume / (expectedVolume || avgVolume);
+
+        // Market Halt Detection: if price/volume hasn't moved for > 5 mins
+        const stalenessLimitMs = 5 * 60 * 1000;
+        const isHalted = (now.getTime() - normalized.timestamp.getTime()) > stalenessLimitMs;
+        if (isHalted) {
+          console.log(`⚠️  [HaltDetection] ${symbol} might be halted (Staleness: ${Math.round((now.getTime() - normalized.timestamp.getTime()) / 60000)}m)`);
+        }
+      } catch (err) {
+        rvol = normalized.volume / avgVolume;
+      }
+    }
+
+    if (stdDev && stdDev > 0) {
+      // Use LOGARITHMIC RETURNS for Z-score calculation (Fat Tails & Symmetry)
+      // CRITICAL: Use the effective changePct – normalized.changePct can be 0 when prevClose
+      // is missing from Polygon snapshot. In that case, fall back to the cached DB value
+      // so stocks like MELI (-9.8%) still get a correct Z-score.
+      const effectiveChangePctForZ =
+        (normalized.changePct !== 0)
+          ? normalized.changePct
+          : (lastChangePctFromCache ?? existingTicker?.lastChangePct ?? 0);
+
+      const priceRatio = (effectiveChangePctForZ / 100) + 1;
+
+      if (priceRatio > 0) {
+        const logReturn = Math.log(priceRatio);
+        const avgLogReturn = avgReturn ? Math.log((avgReturn / 100) + 1) : 0;
+        zScore = (logReturn - avgLogReturn) / (stdDev / 100);
+      }
+    } else {
+      // Fallback Z-score when no historical stats available (new ticker or missing data):
+      // Use raw changePct / typical S&P500 daily stdDev (≈1.5%) as a conservative approximation.
+      // This ensures large obvious movers (|move| >= 3%) are not silently ignored.
+      const effectiveChangePct =
+        (normalized.changePct !== 0)
+          ? normalized.changePct
+          : (lastChangePctFromCache ?? existingTicker?.lastChangePct ?? 0);
+
+      // Only apply fallback if move is large enough to matter (avoids noise)
+      if (Math.abs(effectiveChangePct) >= 3.0) {
+        const TYPICAL_DAILY_STDDEV = 1.5; // percent – conservative assumption for large caps
+        zScore = effectiveChangePct / TYPICAL_DAILY_STDDEV;
+        // Log for observability
+        console.log(`📐 [Z-fallback] ${symbol}: no stdDev, approximating Z=${zScore.toFixed(2)} from changePct=${effectiveChangePct.toFixed(2)}%`);
+      }
+    }
+
+    // 3. Staleness Check
     // If we have an existing price update that is NEWER than the incoming snapshot,
     // we should NOT overwrite the price/change/diff.
     // However, if previousClose is provided, we might still want to update that?
     // Generally, snapshots usually come in order, but forceful ingest or racing workers can cause out-of-order.
     let skipPriceUpdate = false;
 
-    if (existingTicker?.lastPriceUpdated && normalized.timestamp < existingTicker.lastPriceUpdated) {
+    // Use `forceSync` from the higher scope of `ingestBatch` if `force` was renamed, wait, the parameter in ingestBatch is `force: boolean = false`. Oh I see, `fetchPolygonSnapshot` doesn't have force. Let's refer back to ingestBatch signature.
+    // The signature: `export async function ingestBatch(tickers: string[], apiKey: string, force: boolean = false)`.
+    // It's a standard variable. If node says `force is not defined` it must be somewhere else. Let's just use `force`? Wait, is there a closure problem?
+    if (!force && existingTicker?.lastPriceUpdated && normalized.timestamp < existingTicker.lastPriceUpdated) {
       if (!isStaticUpdateLocked) {
         // Only log if not locked (during lock we might be reprocessing old data intentionally?)
         // Actually, even in lock, we shouldn't overwrite new data with old data.
@@ -320,7 +490,7 @@ async function upsertToDB(
       }
 
       // Return existing change pct as the "effective" one
-      return { success: true, effectiveChangePct: changePctToUse };
+      return { success: true, effectiveChangePct: changePctToUse, zScore, rvol };
     }
 
     // CRITICAL FIX: Guard latestPrevClose from being overwritten with stale data.
@@ -347,7 +517,9 @@ async function upsertToDB(
         ...(shouldUpdatePrevClose ? {
           latestPrevClose: previousClose,
           latestPrevCloseDate: lastTradingDay
-        } : {})
+        } : {}),
+        latestMoversZScore: zScore,
+        latestMoversRVOL: rvol
       },
       create: {
         symbol,
@@ -358,7 +530,9 @@ async function upsertToDB(
         lastMarketCapDiff: marketCapDiff,
         lastPriceUpdated: normalized.timestamp,
         latestPrevClose: previousClose || 0,
-        latestPrevCloseDate: previousClose ? lastTradingDay : null
+        latestPrevCloseDate: previousClose ? lastTradingDay : null,
+        latestMoversZScore: zScore,
+        latestMoversRVOL: rvol
       }
     });
 
@@ -386,6 +560,8 @@ async function upsertToDB(
           changePct: changePctToUse, // Use the resolved pct
           source: normalized.quality,
           quality: normalized.quality,
+          zScore,
+          rvol,
           updatedAt: new Date()
         },
         create: {
@@ -394,7 +570,9 @@ async function upsertToDB(
           lastTs: normalized.timestamp,
           changePct: changePctToUse, // Use the resolved pct
           source: normalized.quality,
-          quality: normalized.quality
+          quality: normalized.quality,
+          zScore,
+          rvol
         }
       });
     }
@@ -408,10 +586,49 @@ async function upsertToDB(
       });
     }
 
-    return { success: true, effectiveChangePct: changePctToUse };
+    // 5. Movers Archive Logic (Archive significant moves for historical analysis)
+    // NOTE: Use Math.abs(zScore) to capture BOTH gainers AND losers (e.g. -40% premarket)
+    const archiveThresholdZ = 2.0;
+    const archiveThresholdRVOL = 1.5;
+
+    if (Math.abs(zScore) >= archiveThresholdZ && rvol >= archiveThresholdRVOL) {
+      try {
+        // Cooldown: check if we already archived this symbol today
+        const existingEvent = await prisma.moverEvent.findFirst({
+          where: { symbol, date: today }
+        });
+
+        if (!existingEvent) {
+          // Fetch current AI category/reason from Ticker to persist in the event if available
+          const tickerData = await prisma.ticker.findUnique({
+            where: { symbol },
+            select: { moversCategory: true, moversReason: true }
+          });
+
+          await prisma.moverEvent.create({
+            data: {
+              symbol,
+              date: today,
+              priceAtEvent: normalized.price,
+              zScore,
+              rvol,
+              changePct: changePctToUse,
+              category: tickerData?.moversCategory ?? null,
+              reason: tickerData?.moversReason ?? null,
+              timestamp: normalized.timestamp
+            }
+          });
+          console.log(`📜 [MoversArchive] Archived event for ${symbol} (zScore: ${zScore.toFixed(2)}, rvol: ${rvol.toFixed(2)})`);
+        }
+      } catch (archiveError) {
+        console.warn(`⚠️ Failed to archive MoverEvent for ${symbol}:`, archiveError);
+      }
+    }
+
+    return { success: true, effectiveChangePct: changePctToUse, zScore, rvol };
   } catch (error) {
     console.error(`Error upserting ${symbol} to DB:`, error);
-    return { success: false, effectiveChangePct: normalized ? normalized.changePct : 0 };
+    return { success: false, effectiveChangePct: normalized ? normalized.changePct : 0, zScore: 0, rvol: 0 };
   }
 }
 
@@ -830,6 +1047,23 @@ export async function ingestBatch(
     }
   }
 
+  // OPTIMIZATION: Batch fetch statistical baselines for Movers
+  const statsMap = new Map<string, { avgVolume20d: number | null; avgReturn20d: number | null; stdDevReturn20d: number | null }>();
+  try {
+    const tickerStats = await prisma.ticker.findMany({
+      where: { symbol: { in: tickers } },
+      select: {
+        symbol: true,
+        avgVolume20d: true,
+        avgReturn20d: true,
+        stdDevReturn20d: true,
+      }
+    });
+    tickerStats.forEach(s => statsMap.set(s.symbol, s));
+  } catch (error) {
+    console.warn('⚠️  Failed to batch load statistical baselines:', error);
+  }
+
   // Process each snapshot
   for (const snapshot of snapshots) {
     const symbol = snapshot.ticker;
@@ -894,8 +1128,9 @@ export async function ingestBatch(
       // Pass isStaticUpdateLocked to preserve lastChangePct during lock
       // Pass cached lastChangePct to avoid per-ticker query during lock
       const cachedLastChangePct = lastChangePctMap.get(symbol);
-      const { success: dbSuccess, effectiveChangePct } = await upsertToDB(
-        symbol, session, normalized, previousClose, marketCap, marketCapDiff, isStaticUpdateLocked, cachedLastChangePct
+      const stats = statsMap.get(symbol);
+      const { success: dbSuccess, effectiveChangePct, zScore, rvol } = await upsertToDB(
+        symbol, session, normalized, previousClose, marketCap, marketCapDiff, isStaticUpdateLocked, cachedLastChangePct, stats, force
       );
 
       // Write to Redis (atomic operation)
@@ -929,7 +1164,9 @@ export async function ingestBatch(
         changePct: effectiveChangePct, // Use effective pct
         name: ticker?.name ?? undefined,
         sector: ticker?.sector ?? undefined,
-        industry: ticker?.industry ?? undefined
+        industry: ticker?.industry ?? undefined,
+        zscore: zScore,
+        rvol: rvol
       }, false); // Don't update stats here, we'll do it separately after checking min/max
 
       // Check and update stats cache (min/max) - only if this is a new min/max
@@ -1113,7 +1350,7 @@ export async function bootstrapPreviousCloses(
         // Note: For Monday, prevDay is Friday. For Sunday, prevDay is Thursday.
         // Polygon snapshot logic is "relative to current session".
 
-        prevClose = rawPrevDayClose;
+        prevClose = rawPrevDayClose > 0 ? rawPrevDayClose : (snapshot?.prevDay?.c || 0); // Failsafe
         actualPrevTradingDay = prevTradingDay;
         // backfillPrevClose not relevant for normal days usually, 
         // as we don't backfill unless isNonTradingCalendarDay logic triggers
