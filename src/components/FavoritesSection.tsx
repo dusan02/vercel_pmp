@@ -16,6 +16,7 @@ import { getCompanyName } from '@/lib/companyNames';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { Star } from 'lucide-react';
 import { SEOContent } from './SEOContent';
+import { AddFavoriteSearch } from './AddFavoriteSearch';
 
 interface FavoritesSectionProps {
   favoriteStocks: StockData[];
@@ -212,6 +213,12 @@ export function FavoritesSection({
             <SectionIcon type="star" size={24} className="text-[var(--clr-text)]" />
             <span>Favorites</span>
           </h2>
+        </div>
+        <div className="flex-1 max-w-sm ml-auto">
+          <AddFavoriteSearch
+            onToggleFavorite={onToggleFavorite}
+            isFavorite={isFavorite}
+          />
         </div>
       </div>
 
