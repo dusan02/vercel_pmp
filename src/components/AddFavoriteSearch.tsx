@@ -5,6 +5,8 @@ import { Search, Star, Loader2 } from 'lucide-react';
 import CompanyLogo from './CompanyLogo';
 import { getCompanyName } from '@/lib/companyNames';
 
+import { StockData } from '@/lib/types';
+
 interface MinimalRow {
     t: string;  // ticker
     p: number;  // price
@@ -12,20 +14,15 @@ interface MinimalRow {
     m: number;  // marketCap
 }
 
-interface ApiResp {
-    rows: MinimalRow[];
-    error?: string;
-}
-
 interface AddFavoriteSearchProps {
     onToggleFavorite: (ticker: string) => void;
     isFavorite: (ticker: string) => boolean;
+    allStocks: StockData[];
 }
 
-export function AddFavoriteSearch({ onToggleFavorite, isFavorite }: AddFavoriteSearchProps) {
+export function AddFavoriteSearch({ onToggleFavorite, isFavorite, allStocks }: AddFavoriteSearchProps) {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<MinimalRow[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState(-1);
 
@@ -42,34 +39,30 @@ export function AddFavoriteSearch({ onToggleFavorite, isFavorite }: AddFavoriteS
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Debounced search
+    // Local search functionality (debounced visually, but runs locally)
     useEffect(() => {
-        const searchTimer = setTimeout(async () => {
-            const q = query.trim().toUpperCase();
-            if (q.length === 0) {
-                setResults([]);
-                setIsLoading(false);
-                return;
-            }
+        const q = query.trim().toLowerCase();
+        if (q.length === 0) {
+            setResults([]);
+            return;
+        }
 
-            setIsLoading(true);
-            try {
-                const res = await fetch(`/api/stocks/optimized?q=${q}&limit=6`);
-                if (res.ok) {
-                    const data: ApiResp = await res.json();
-                    setResults(data.rows || []);
-                    setSelectedIndex(-1);
-                    setIsOpen(true);
-                }
-            } catch (e) {
-                console.error('Failed to search stocks:', e);
-            } finally {
-                setIsLoading(false);
-            }
-        }, 300);
+        const filtered = allStocks.filter(stock =>
+            stock.ticker.toLowerCase().includes(q) ||
+            getCompanyName(stock.ticker).toLowerCase().includes(q)
+        ).slice(0, 6);
 
-        return () => clearTimeout(searchTimer);
-    }, [query]);
+        const mappedResults: MinimalRow[] = filtered.map(stock => ({
+            t: stock.ticker,
+            p: stock.currentPrice || 0,
+            c: stock.percentChange || 0,
+            m: stock.marketCap || 0,
+        }));
+
+        setResults(mappedResults);
+        setSelectedIndex(-1);
+        setIsOpen(true);
+    }, [query, allStocks]);
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (!isOpen || results.length === 0) return;
@@ -115,11 +108,6 @@ export function AddFavoriteSearch({ onToggleFavorite, isFavorite }: AddFavoriteS
                     }}
                     className="pmp-input pl-9 pr-10"
                 />
-                {isLoading && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <Loader2 className="animate-spin text-slate-400" size={16} />
-                    </div>
-                )}
             </div>
 
             {isOpen && query.trim().length > 0 && (
@@ -173,13 +161,9 @@ export function AddFavoriteSearch({ onToggleFavorite, isFavorite }: AddFavoriteS
                                 </button>
                             );
                         })
-                    ) : !isLoading ? (
-                        <div className="px-4 py-6 text-center">
-                            <div className="text-sm text-slate-500 dark:text-slate-400">No stocks found for "{query}"</div>
-                        </div>
                     ) : (
                         <div className="px-4 py-6 text-center">
-                            <div className="text-sm text-slate-500 dark:text-slate-400">Searching...</div>
+                            <div className="text-sm text-slate-500 dark:text-slate-400">No stocks found for "{query}"</div>
                         </div>
                     )}
                 </div>

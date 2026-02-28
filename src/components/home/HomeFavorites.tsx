@@ -12,6 +12,7 @@ interface HomeFavoritesProps {
     onSort: (key: SortKey) => void;
     onToggleFavorite: (ticker: string) => void;
     isFavorite: (ticker: string) => boolean;
+    allStocks: StockData[];
 }
 
 export function HomeFavorites({
@@ -21,7 +22,8 @@ export function HomeFavorites({
     ascending,
     onSort,
     onToggleFavorite,
-    isFavorite
+    isFavorite,
+    allStocks
 }: HomeFavoritesProps) {
     return (
         <SectionErrorBoundary sectionName="Favorites">
@@ -33,6 +35,7 @@ export function HomeFavorites({
                 onSort={onSort}
                 onToggleFavorite={onToggleFavorite}
                 isFavorite={isFavorite}
+                allStocks={allStocks}
             />
         </SectionErrorBoundary>
     );

@@ -434,6 +434,7 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
                     onSort={requestFavSort}
                     onToggleFavorite={toggleFavorite}
                     isFavorite={isFavorite}
+                    allStocks={stockData}
                   />
                 )}
               </MobileScreen>
@@ -583,6 +584,7 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
                               onSort={requestFavSort}
                               onToggleFavorite={toggleFavorite}
                               isFavorite={isFavorite}
+                              allStocks={stockData}
                             />
                           </div>
                         )}

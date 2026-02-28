@@ -26,6 +26,7 @@ interface FavoritesSectionProps {
   onSort: (key: SortKey) => void;
   onToggleFavorite: (ticker: string) => void;
   isFavorite: (ticker: string) => boolean;
+  allStocks: StockData[];
 }
 
 export function FavoritesSection({
@@ -35,7 +36,8 @@ export function FavoritesSection({
   ascending,
   onSort,
   onToggleFavorite,
-  isFavorite
+  isFavorite,
+  allStocks
 }: FavoritesSectionProps) {
   const router = useRouter();
   const isDesktop = useMediaQuery('(min-width: 1024px)');
@@ -218,6 +220,7 @@ export function FavoritesSection({
           <AddFavoriteSearch
             onToggleFavorite={onToggleFavorite}
             isFavorite={isFavorite}
+            allStocks={allStocks}
           />
         </div>
       </div>
