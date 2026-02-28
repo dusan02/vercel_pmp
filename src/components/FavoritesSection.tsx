@@ -207,14 +207,14 @@ export function FavoritesSection({
 
   return (
     <section className="favorites">
-      <div className="flex items-center justify-between mb-4 px-4">
+      <div className="flex items-center justify-between mb-4 px-4 relative z-50">
         <div className="flex items-center">
           <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--clr-text)] m-0 relative -top-1.5">
             <SectionIcon type="star" size={24} className="text-[var(--clr-text)]" />
             <span>Favorites</span>
           </h2>
         </div>
-        <div className="flex-1 max-w-sm ml-auto">
+        <div className="flex-1 max-w-sm ml-auto relative">
           <AddFavoriteSearch
             onToggleFavorite={onToggleFavorite}
             isFavorite={isFavorite}
