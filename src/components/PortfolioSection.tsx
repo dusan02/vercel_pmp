@@ -338,18 +338,18 @@ export function PortfolioSection({
             onChange={(e) => setPortfolioSearchTerm(e.target.value)}
             onFocus={() => setShowPortfolioSearch(true)}
             onBlur={() => setTimeout(() => setShowPortfolioSearch(false), 200)}
-            className="w-full px-4 py-4 h-14 text-lg border-2 rounded-xl bg-white dark:bg-gray-800 border-blue-500/20 md:border-gray-200 md:dark:border-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all shadow-sm md:shadow-md"
+            className="pmp-input pmp-input-lg pl-5 pr-12"
           />
           <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
           </div>
 
           {showPortfolioSearch && portfolioSearchResults.length > 0 && (
-            <div className="absolute top-full left-0 right-0 z-[60] bg-white dark:bg-gray-800 shadow-xl border rounded-lg mt-2 max-h-60 overflow-y-auto ring-1 ring-black/5">
+            <div className="absolute top-full left-0 right-0 pmp-dropdown-menu mt-2">
               {portfolioSearchResults.map((stock) => (
                 <button
                   key={stock.ticker}
-                  className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/5 border-b last:border-0 border-gray-100 dark:border-gray-700/50 transition-colors flex items-center"
+                  className="pmp-dropdown-option border-b last:border-0 border-gray-100 dark:border-gray-700/50"
                   onClick={() => {
                     onAddStock(stock.ticker);
                     setPortfolioSearchTerm('');

@@ -113,7 +113,7 @@ export function AddFavoriteSearch({ onToggleFavorite, isFavorite }: AddFavoriteS
                     onFocus={() => {
                         if (query.trim().length > 0) setIsOpen(true);
                     }}
-                    className="w-full pl-9 pr-10 py-2 bg-slate-100/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none transition-all placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                    className="pmp-input pl-9 pr-10"
                 />
                 {isLoading && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -123,7 +123,7 @@ export function AddFavoriteSearch({ onToggleFavorite, isFavorite }: AddFavoriteS
             </div>
 
             {isOpen && query.trim().length > 0 && (
-                <div className="absolute z-50 w-full mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden py-1">
+                <div className="absolute z-50 w-full mt-2 pmp-dropdown-menu">
                     {results.length > 0 ? (
                         results.map((r, i) => {
                             const favorited = isFavorite(r.t);
@@ -136,10 +136,7 @@ export function AddFavoriteSearch({ onToggleFavorite, isFavorite }: AddFavoriteS
                                     onClick={() => handleSelect(r.t)}
                                     // Make sure mouse enter updates selectedIndex so keyboard/mouse mix perfectly:
                                     onMouseEnter={() => setSelectedIndex(i)}
-                                    className={`w-full flex items-center justify-between px-4 py-2.5 text-left transition-colors ${isSelected
-                                        ? 'bg-blue-50 dark:bg-blue-900/20'
-                                        : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
-                                        }`}
+                                    className={`pmp-dropdown-option ${isSelected ? 'selected' : ''}`}
                                 >
                                     <div className="flex items-center gap-3 overflow-hidden">
                                         <div className="flex-shrink-0">

@@ -131,7 +131,7 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
   const menuEl = isOpen && portalStyle ? (
     <div
       ref={menuRef}
-      className={`custom-dropdown-menu custom-dropdown-menu--portal`}
+      className={`pmp-dropdown-menu custom-dropdown-menu--portal`}
       role="listbox"
       style={{
         ...portalStyle,
@@ -143,7 +143,7 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
         <button
           key={option.value}
           type="button"
-          className={`custom-dropdown-option ${value === option.value ? 'selected' : ''}`}
+          className={`pmp-dropdown-option ${value === option.value ? 'selected' : ''}`}
           onClick={() => handleSelect(option.value)}
           role="option"
           aria-selected={value === option.value}
@@ -164,7 +164,7 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
     >
       <button
         type="button"
-        className="custom-dropdown-trigger w-full flex items-center justify-between px-3 py-2 bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 rounded-md"
+        className="pmp-input !pr-3 flex items-center justify-between"
         ref={triggerRef}
         onClick={() => setIsOpen((v) => !v)}
         aria-haspopup="listbox"

@@ -624,7 +624,33 @@
     background: #334155;
   }
 
-  /* --- Portfolio Search Results --- */
+  /* --- Shared UI Components --- */
+  
+  /* Standard Input Box (Search, Text Inputs) */
+  .pmp-input {
+    @apply w-full px-4 py-2 bg-slate-100/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none transition-all text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20;
+  }
+
+  /* Large variant for prominent search (Portfolio) */
+  .pmp-input-lg {
+    @apply h-14 text-lg py-4;
+  }
+
+  /* Dropdown Menu Wrapper */
+  .pmp-dropdown-menu {
+    @apply bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden py-1 z-[100];
+  }
+
+  /* Dropdown Option Item */
+  .pmp-dropdown-option {
+    @apply w-full flex items-center justify-between px-4 py-2.5 text-left transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50 text-sm text-slate-900 dark:text-slate-100;
+  }
+
+  .pmp-dropdown-option.selected {
+    @apply bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 font-medium;
+  }
+
+  /* --- Portfolio Search Results (Legacy mappings) --- */
   .portfolio-search-wrapper {
     position: relative;
     z-index: 20;

@@ -115,30 +115,30 @@ export default function UserPreferencesManager({ isOpen, onClose }: UserPreferen
               Viditeľnosť sekcií
             </h3>
             <div className="bg-slate-50 dark:bg-slate-800/30 rounded-xl p-2 space-y-1">
-              <ToggleRow 
-                label="Market Heatmap" 
-                checked={localPrefs.showHeatmapSection ?? true} 
-                onChange={(val) => setLocalPrefs(prev => ({ ...prev, showHeatmapSection: val }))} 
+              <ToggleRow
+                label="Market Heatmap"
+                checked={localPrefs.showHeatmapSection ?? true}
+                onChange={(val) => setLocalPrefs(prev => ({ ...prev, showHeatmapSection: val }))}
               />
-              <ToggleRow 
-                label="Portfolio" 
-                checked={localPrefs.showPortfolioSection ?? true} 
-                onChange={(val) => setLocalPrefs(prev => ({ ...prev, showPortfolioSection: val }))} 
+              <ToggleRow
+                label="Portfolio"
+                checked={localPrefs.showPortfolioSection ?? true}
+                onChange={(val) => setLocalPrefs(prev => ({ ...prev, showPortfolioSection: val }))}
               />
-              <ToggleRow 
-                label="Obľúbené akcie (Favorites)" 
-                checked={localPrefs.showFavoritesSection ?? true} 
-                onChange={(val) => setLocalPrefs(prev => ({ ...prev, showFavoritesSection: val }))} 
+              <ToggleRow
+                label="Obľúbené akcie (Favorites)"
+                checked={localPrefs.showFavoritesSection ?? true}
+                onChange={(val) => setLocalPrefs(prev => ({ ...prev, showFavoritesSection: val }))}
               />
-              <ToggleRow 
-                label="Earnings Kalendár" 
-                checked={localPrefs.showEarningsSection ?? true} 
-                onChange={(val) => setLocalPrefs(prev => ({ ...prev, showEarningsSection: val }))} 
+              <ToggleRow
+                label="Earnings Kalendár"
+                checked={localPrefs.showEarningsSection ?? true}
+                onChange={(val) => setLocalPrefs(prev => ({ ...prev, showEarningsSection: val }))}
               />
-              <ToggleRow 
-                label="Všetky akcie (All Stocks)" 
-                checked={localPrefs.showAllStocksSection ?? true} 
-                onChange={(val) => setLocalPrefs(prev => ({ ...prev, showAllStocksSection: val }))} 
+              <ToggleRow
+                label="Všetky akcie (All Stocks)"
+                checked={localPrefs.showAllStocksSection ?? true}
+                onChange={(val) => setLocalPrefs(prev => ({ ...prev, showAllStocksSection: val }))}
               />
             </div>
           </div>
@@ -157,8 +157,8 @@ export default function UserPreferencesManager({ isOpen, onClose }: UserPreferen
               ].map((themeOption) => (
                 <label key={themeOption.value} className={`
                   flex flex-col items-center justify-center p-3 rounded-xl border cursor-pointer transition-all
-                  ${localPrefs.theme === themeOption.value 
-                    ? 'bg-blue-50 border-blue-500 text-blue-700 dark:bg-blue-900/20 dark:border-blue-400 dark:text-blue-300 ring-1 ring-blue-500' 
+                  ${localPrefs.theme === themeOption.value
+                    ? 'bg-blue-50 border-blue-500 text-blue-700 dark:bg-blue-900/20 dark:border-blue-400 dark:text-blue-300 ring-1 ring-blue-500'
                     : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'}
                 `}>
                   <input

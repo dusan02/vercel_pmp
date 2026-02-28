@@ -29,7 +29,7 @@ const fetcher = async (url: string): Promise<ApiResp> => {
       'Accept': 'application/json'
     }
   });
-  
+
   if (!response.ok) {
     if (response.status === 304) {
       // Not Modified - return cached data
@@ -37,7 +37,7 @@ const fetcher = async (url: string): Promise<ApiResp> => {
     }
     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
   }
-  
+
   return response.json();
 };
 
@@ -111,25 +111,25 @@ export default function StocksClient({ initial }: StocksClientProps) {
       {/* Search and Controls */}
       <div className="mb-4 flex gap-2 items-center flex-wrap">
         <input
-          className="border border-gray-300 dark:border-slate-600 px-3 py-2 rounded w-64 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
+          className="pmp-input w-64"
           placeholder="Search ticker…"
           value={qInput}
           onChange={(e) => setQInput(e.target.value)}
           type="text"
         />
-        
+
         <select
           value={sort}
           onChange={(e) => handleSortChange(e.target.value as 'mcap' | 'chgPct' | 'price')}
-          className="border border-gray-300 dark:border-slate-600 px-2 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
+          className="pmp-input w-40"
         >
           <option value="mcap">Market Cap</option>
           <option value="chgPct">% Change</option>
           <option value="price">Price</option>
         </select>
-        
+
         <button
-          className="border border-gray-300 dark:border-slate-600 px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
+          className="pmp-input w-24 text-center font-medium"
           onClick={handleDirToggle}
           type="button"
         >
@@ -187,13 +187,12 @@ export default function StocksClient({ initial }: StocksClientProps) {
                       {r.p > 0 ? r.p.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}
                     </td>
                     <td
-                      className={`py-2 px-3 text-right font-medium ${
-                        r.c > 0
+                      className={`py-2 px-3 text-right font-medium ${r.c > 0
                           ? 'text-green-600 dark:text-green-400'
                           : r.c < 0
-                          ? 'text-red-600 dark:text-red-400'
-                          : 'text-gray-600 dark:text-gray-400'
-                      }`}
+                            ? 'text-red-600 dark:text-red-400'
+                            : 'text-gray-600 dark:text-gray-400'
+                        }`}
                     >
                       {r.c !== 0 ? `${r.c > 0 ? '+' : ''}${r.c.toFixed(2)}%` : '0.00%'}
                     </td>
