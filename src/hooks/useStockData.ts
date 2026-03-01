@@ -226,7 +226,7 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
         const project = getProjectName();
 
         const response = await fetchWithRetry(
-          `/api/stocks?getAll=true&project=${project}&sort=marketCapDiff&order=desc&limit=10000&t=${Date.now()}`,
+          `/api/stocks?getAll=true&project=${project}&sort=marketCapDiff&order=desc&limit=3000&t=${Date.now()}`,
           3,
           2000
         );

@@ -109,46 +109,50 @@ export async function getStocksList(options: {
       bestPriceBySymbol.set(s.symbol, { price: s.lastPrice || 0, ts: baseTs, source: 'ticker' });
     }
 
+    const isLargeQuery = stocks.length > 500;
+
     try {
       const dateET = getDateET(etNow);
       const today = createETDate(dateET);
       const lookback = new Date(today.getTime() - 2 * 24 * 60 * 60 * 1000); // last ~48h (DST-safe enough for our use)
 
-      const sessionPrices = await prisma.sessionPrice.findMany({
-        where: {
-          symbol: { in: symbols },
-          date: { gte: lookback, lte: today }
-        },
-        orderBy: { lastTs: 'desc' },
-        select: { symbol: true, lastPrice: true, lastTs: true }
-      });
+      if (!isLargeQuery) {
+        const sessionPrices = await prisma.sessionPrice.findMany({
+          where: {
+            symbol: { in: symbols },
+            date: { gte: lookback, lte: today }
+          },
+          orderBy: { lastTs: 'desc' },
+          select: { symbol: true, lastPrice: true, lastTs: true }
+        });
 
-      // Keep newest SessionPrice per symbol
-      const latestSpBySymbol = new Map<string, { price: number; ts: Date }>();
-      for (const sp of sessionPrices) {
-        if (!latestSpBySymbol.has(sp.symbol)) {
-          latestSpBySymbol.set(sp.symbol, { price: sp.lastPrice, ts: sp.lastTs });
+        // Keep newest SessionPrice per symbol
+        const latestSpBySymbol = new Map<string, { price: number; ts: Date }>();
+        for (const sp of sessionPrices) {
+          if (!latestSpBySymbol.has(sp.symbol)) {
+            latestSpBySymbol.set(sp.symbol, { price: sp.lastPrice, ts: sp.lastTs });
+          }
         }
-      }
 
-      // Apply tie-break: Prefer SessionPrice only if it's significantly newer (at least 1 minute)
-      // This prevents using stale SessionPrice that has same timestamp but older price
-      // If SessionPrice is older or same age, prefer Ticker.lastPrice (which is updated more frequently)
-      const STALE_THRESHOLD_MS = 60 * 1000; // 1 minute
-      for (const [symbol, sp] of latestSpBySymbol.entries()) {
-        const existing = bestPriceBySymbol.get(symbol);
-        if (existing) {
-          const spIsNewer = sp.ts.getTime() > existing.ts.getTime() + STALE_THRESHOLD_MS;
+        // Apply tie-break: Prefer SessionPrice only if it's significantly newer (at least 1 minute)
+        // This prevents using stale SessionPrice that has same timestamp but older price
+        // If SessionPrice is older or same age, prefer Ticker.lastPrice (which is updated more frequently)
+        const STALE_THRESHOLD_MS = 60 * 1000; // 1 minute
+        for (const [symbol, sp] of latestSpBySymbol.entries()) {
+          const existing = bestPriceBySymbol.get(symbol);
+          if (existing) {
+            const spIsNewer = sp.ts.getTime() > existing.ts.getTime() + STALE_THRESHOLD_MS;
 
-          // Only use SessionPrice if it's significantly newer (at least 1 minute)
-          // Otherwise prefer Ticker.lastPrice (more reliable, updated by worker)
-          if (spIsNewer) {
+            // Only use SessionPrice if it's significantly newer (at least 1 minute)
+            // Otherwise prefer Ticker.lastPrice (more reliable, updated by worker)
+            if (spIsNewer) {
+              bestPriceBySymbol.set(symbol, { price: sp.price, ts: sp.ts, source: 'session' });
+            }
+            // If SessionPrice is same age or older, keep Ticker.lastPrice (existing)
+          } else {
+            // No existing price, use SessionPrice
             bestPriceBySymbol.set(symbol, { price: sp.price, ts: sp.ts, source: 'session' });
           }
-          // If SessionPrice is same age or older, keep Ticker.lastPrice (existing)
-        } else {
-          // No existing price, use SessionPrice
-          bestPriceBySymbol.set(symbol, { price: sp.price, ts: sp.ts, source: 'session' });
         }
       }
     } catch (e) {
@@ -176,24 +180,27 @@ export async function getStocksList(options: {
     const regularCloseBySymbol = new Map<string, number>();
     const dateET = getDateET(etNow);
     const todayDateObj = createETDate(dateET);
-    const dailyRefs = await prisma.dailyRef.findMany({
-      where: {
-        symbol: { in: stocks.map(s => s.symbol) },
-        date: todayDateObj // Only today's regularClose
-      },
-      select: { symbol: true, regularClose: true, date: true }
-    });
-    dailyRefs.forEach(r => {
-      // CRITICAL: Only use regularClose from TODAY (not previous day)
-      // This prevents using stale regularClose from yesterday which causes incorrect % changes
-      if (r.regularClose && r.regularClose > 0) {
-        const drDate = new Date(r.date);
-        const isToday = drDate.getTime() === todayDateObj.getTime();
-        if (isToday) {
-          regularCloseBySymbol.set(r.symbol, r.regularClose);
+
+    if (!isLargeQuery) {
+      const dailyRefs = await prisma.dailyRef.findMany({
+        where: {
+          symbol: { in: stocks.map(s => s.symbol) },
+          date: todayDateObj // Only today's regularClose
+        },
+        select: { symbol: true, regularClose: true, date: true }
+      });
+      dailyRefs.forEach(r => {
+        // CRITICAL: Only use regularClose from TODAY (not previous day)
+        // This prevents using stale regularClose from yesterday which causes incorrect % changes
+        if (r.regularClose && r.regularClose > 0) {
+          const drDate = new Date(r.date);
+          const isToday = drDate.getTime() === todayDateObj.getTime();
+          if (isToday) {
+            regularCloseBySymbol.set(r.symbol, r.regularClose);
+          }
         }
-      }
-    });
+      });
+    }
 
     // On-demand prevClose fetch for tickers missing previousClose (API-safe for /api/stocks)
     const tickersNeedingPrevClose = stocks
@@ -201,7 +208,8 @@ export async function getStocksList(options: {
       .map(s => s.symbol);
 
     const onDemandPrevCloseMap = new Map<string, number>();
-    if (tickersNeedingPrevClose.length > 0) {
+
+    if (!isLargeQuery && tickersNeedingPrevClose.length > 0) {
       try {
         const { fetchPreviousClosesBatchAndPersist } = await import('@/lib/utils/onDemandPrevClose');
         const today = getDateET();
@@ -242,7 +250,8 @@ export async function getStocksList(options: {
       .map(s => s.symbol);
 
     const onDemandSharesMap = new Map<string, number>();
-    if (tickersNeedingShares.length > 0) {
+
+    if (!isLargeQuery && tickersNeedingShares.length > 0) {
       const startTime = Date.now();
       const timeoutBudget = 1000; // 1 second max for shares fetching in SSR
 

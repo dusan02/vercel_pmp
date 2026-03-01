@@ -183,11 +183,8 @@
       padding-bottom: calc(var(--tabbar-h, 72px) + env(safe-area-inset-bottom, 0px));
     }
 
-    /* Heatmap needs full space (no padding) because it handles its own layout */
-    .mobile-app-screen.screen-heatmap {
-      padding-bottom: 0;
-      /* overflow: hidden !important; -> REMOVED: allow scroll to SEO text */
-    }
+    /* Heatmap gets standard padding so it doesn't hide behind tab bar */
+    /* Previous padding-bottom: 0 override was removed to fix overlapping issues */
 
     /* Container for heatmap content must fill the screen */
     .screen-heatmap-content {
@@ -625,7 +622,7 @@
   }
 
   /* --- Shared UI Components --- */
-  
+
   /* Standard Input Box (Search, Text Inputs) */
   .pmp-input {
     @apply w-full px-4 py-2 bg-slate-100/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none transition-all text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20;

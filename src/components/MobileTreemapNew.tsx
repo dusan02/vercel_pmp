@@ -130,6 +130,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
               display: 'flex',
               width: '100%',
               height: `${row.height}px`,
+              flexShrink: 0, // Prevent row from shrinking and clipping the contained tiles
               gap: '4px', // Gap between columns
             }}
           >
@@ -403,9 +404,9 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
           width: '100%',
           position: 'relative',
           background: 'var(--clr-bg)',
-          paddingBottom:
-            'calc(var(--tabbar-real-h, calc(var(--tabbar-h, 72px) + env(safe-area-inset-bottom, 0px))) + 8px)',
+          paddingBottom: '4px', // Standard small padding instead of 80px space
           overflowX: 'hidden',
+          overflowY: 'auto', // Enable vertical scrolling
           WebkitOverflowScrolling: 'touch',
         }}
       >
