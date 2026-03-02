@@ -28,22 +28,15 @@ interface MobileTreemapNewProps {
 // Mobile sector label sizing.
 // IMPORTANT UX: tiles should get priority; the sector label should be minimal and not "eat" the heatmap.
 // We render the sector label as a small footer under tiles (not above).
-const SECTOR_LABEL_H = 12; // px
+const SECTOR_LABEL_H = 14; // px
 const SECTOR_LABEL_TOP_DIVIDER_H = 1; // px
-const SECTOR_LABEL_TOP_GAP = 2; // px (space between tiles and divider)
-const SECTOR_LABEL_BOTTOM_MARGIN = 2; // px (margin below divider/label container)
+const SECTOR_LABEL_TOP_GAP = 4; // px (space between tiles and divider)
+const SECTOR_LABEL_BOTTOM_MARGIN = 4; // px (margin below divider/label container)
 // We need to account for specific bottom margins/padding in the rendered DOM vs the math here.
-// The rendered structure is: Label (12) + Margin(2) + Divider(1) + Margin(2) ... wait, let's match the render.
-// Render: Label (12) + Margin-Bottom (2) + Divider (1) + Margin-Bottom (2) -> Tiles.
-// Actually checking render below:
-// Label (12px)
-// mb = 2px (SECTOR_LABEL_TOP_GAP in my constant naming was slightly off, it's gap between label and divider)
-// Divider (1px)
-// mb = 2px (space between divider and tiles? No, in render it says `marginBottom: '2px'` on divider)
-// So total vertical chrome = 12 + 2 + 1 + 2 = 17px.
+// The rendered structure is: Label (14) + Margin-Bottom (4) + Divider (1) + Margin-Bottom (4) -> Tiles.
 const SECTOR_CHROME_H = SECTOR_LABEL_H + SECTOR_LABEL_TOP_GAP + SECTOR_LABEL_TOP_DIVIDER_H + SECTOR_LABEL_BOTTOM_MARGIN;
 
-const SECTOR_COL_GAP = 4; // px
+const SECTOR_COL_GAP = 8; // px
 
 export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   data,
@@ -175,7 +168,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                   style={{
                     height: `${SECTOR_LABEL_TOP_DIVIDER_H}px`,
                     background: 'var(--clr-border)', // Use theme variable
-                    marginBottom: '2px',
+                    marginBottom: `${SECTOR_LABEL_BOTTOM_MARGIN}px`,
                     borderRadius: '1px',
                     opacity: 0.5
                   }}
@@ -415,7 +408,8 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
             width: '100%',
             display: 'flex',
             flexDirection: 'column',
-            gap: '4px',
+            gap: '12px',
+            paddingTop: '8px', // Space between header and first category
           }}
         >
           {treemapResult.rows && treemapResult.rows.length > 0 && containerSize.width > 0 ? (
