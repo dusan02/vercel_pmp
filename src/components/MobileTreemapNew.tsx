@@ -89,8 +89,18 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
-        if (width > 0 && height > 0) {
-          setContainerSize({ width, height });
+        // CRITICAL BUG FIX (Infinite Resize Loop): 
+        // We only care about width changes to recalculate the D3 Treemap columns. 
+        // Since this container scrolls vertically, observing its own height while D3 dynamically 
+        // injects tall tiles into it causes an infinite layout thrashing loop.
+        if (width > 0) {
+          setContainerSize(prev => {
+            // Only update if width actually changed (ignore height changes to prevent loop)
+            if (prev.width !== width) {
+              return { width, height }; // keep new height for metrics but trigger is width
+            }
+            return prev;
+          });
         }
       }
     });
