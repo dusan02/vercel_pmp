@@ -147,10 +147,10 @@ module.exports = {
       autorestart: false,
     },
     {
-      // Daily early-morning refresh (prevClose + sharesOutstanding + consistency checks)
-      // Runs the same logic as Vercel cron (/api/cron/update-static-data) but on the VPS via PM2.
-      name: "daily-static-data-refresh",
-      script: "scripts/trigger-daily-refresh.ts",
+      // Post-market daily reset (saves regular close, updates shares, clears AI text)
+      // Replaces the old morning data refresh. Runs once after market closes.
+      name: "post-market-daily-reset",
+      script: "scripts/post-market-reset.ts",
       interpreter: "node_modules/.bin/tsx",
       cwd: __dirname,
       instances: 1,
@@ -161,11 +161,11 @@ module.exports = {
         BASE_URL: "http://127.0.0.1:3000",
         CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || envVars.CRON_SECRET || process.env.CRON_SECRET_KEY || process.env.CRON_SECRET,
       },
-      error_file: path.join(__dirname, "logs", "pm2", "daily-static-data-refresh-error.log"),
-      out_file: path.join(__dirname, "logs", "pm2", "daily-static-data-refresh-out.log"),
+      error_file: path.join(__dirname, "logs", "pm2", "post-market-daily-reset-error.log"),
+      out_file: path.join(__dirname, "logs", "pm2", "post-market-daily-reset-out.log"),
       log_date_format: "YYYY-MM-DD HH:mm:ss Z",
-      // 09:00 UTC ~= 04:00 ET (winter) / 05:00 ET (summer)
-      cron_restart: "0 9 * * *",
+      // 21:30 UTC = 16:30 ET (winter) / 17:30 ET (summer) -> Shortly after market close
+      cron_restart: "30 21 * * *",
       autorestart: false,
     },
     {
@@ -184,8 +184,8 @@ module.exports = {
       error_file: path.join(__dirname, "logs", "pm2", "cron-verify-prevclose-error.log"),
       out_file: path.join(__dirname, "logs", "pm2", "cron-verify-prevclose-out.log"),
       log_date_format: "YYYY-MM-DD HH:mm:ss Z",
-      // Matches previous Vercel schedule: 08:00, 14:00, 20:00 UTC
-      cron_restart: "0 8,14,20 * * *",
+      // 22:00 UTC = 17:00 / 18:00 ET (safely post-market to catch mismatches)
+      cron_restart: "0 22 * * *",
       autorestart: false,
     },
     {

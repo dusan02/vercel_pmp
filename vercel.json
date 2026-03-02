@@ -9,8 +9,8 @@
     },
     "crons": [
         {
-            "path": "/api/cron/reset-movers",
-            "schedule": "5 5 * * *"
+            "path": "/api/cron/post-market-reset",
+            "schedule": "30 21 * * *"
         }
     ],
     "env": {
