@@ -90,8 +90,8 @@ export type ComputeMobileTreemapOptions = {
 };
 
 const DEFAULT_COMPUTE_OPTIONS: Required<Omit<ComputeMobileTreemapOptions, 'sectorChromeHeightPx'>> = {
-  contentHeightMultiplier: 1.2,
-  minTotalContentHeightPx: 900,
+  contentHeightMultiplier: 1.05, // Reduced from 1.2 to eliminate excessive empty space at the bottom
+  minTotalContentHeightPx: 600, // Reduced from 900 to prevent unnecessary scrolling on small screens
   minTilesHeightPx: 56,
   smallSectorThreshold: 0.15, // 15%
   maxColumns: 3,

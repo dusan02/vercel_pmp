@@ -3,7 +3,7 @@ import dynamic from 'next/dynamic';
 import { SectionErrorBoundary } from '../SectionErrorBoundary';
 import { HeatmapSkeleton } from '../SectionSkeleton';
 
-import { SEOContent } from '../SEOContent';
+
 
 // CRITICAL: Heatmap je prvá obrazovka na mobile - prioritizuj načítanie
 // Note: Dynamic import sa načíta okamžite keď je komponent renderovaný
@@ -27,15 +27,12 @@ export function HomeHeatmap({ wrapperClass, activeView }: HomeHeatmapProps) {
     // This ensures containerRef gets correct height from position: fixed parent
     return (
         <SectionErrorBoundary sectionName="Heatmap">
-            <div className="screen-heatmap-content flex flex-col h-full overflow-y-auto">
-                <div className="flex-shrink-0" style={{ height: 'calc(var(--app-height) - var(--header-h) - var(--tabbar-h))' }}>
+            <div className="screen-heatmap-content flex flex-col h-full w-full">
+                <div className="flex-1 w-full relative">
                     <HeatmapPreview
                         {...(activeView !== undefined ? { activeView } : {})}
                         {...(wrapperClass !== undefined ? { wrapperClass } : {})}
                     />
-                </div>
-                <div className="flex-shrink-0 mt-auto">
-                    <SEOContent />
                 </div>
             </div>
         </SectionErrorBoundary>
