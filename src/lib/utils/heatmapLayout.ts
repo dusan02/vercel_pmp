@@ -61,9 +61,41 @@ export function buildHeatmapHierarchy(
       root.children!.push(sectorNode);
     }
 
-    // 2. Pridaj list (Firmu) priamo pod sektor.
-    // Požiadavka: Heatmap musí byť zoskupená najprv podľa sektorov,
-    // a v rámci sektorov podľa veľkosti spoločnosti (tileValue).
+    // 2. Nájdi alebo vytvor Industry (iba pre veľké sektory)
+    const LARGE_SECTORS = ['Technology', 'Financial Services', 'Consumer Cyclical', 'Healthcare'];
+    const isLargeSector = LARGE_SECTORS.includes(company.sector);
+
+    let parentNodeForCompany = sectorNode;
+
+    if (isLargeSector && company.industry) {
+      // Potrebujeme medzivrstvu pre Industry
+      let industryNode = sectorNode.children!.find(c => c.meta?.type === 'industry' && c.name === company.industry);
+
+      if (!industryNode) {
+        industryNode = {
+          name: company.industry,
+          children: [],
+          meta: {
+            type: 'industry',
+            totalMarketCap: 0,
+            weightedPercentSum: 0,
+            companyCount: 0
+          }
+        };
+        sectorNode.children!.push(industryNode);
+      }
+
+      // Aktualizuj agregácie pre Industry
+      if (industryNode.meta && company.marketCap && company.changePercent !== undefined && !isNaN(company.changePercent)) {
+        industryNode.meta.totalMarketCap! += company.marketCap;
+        industryNode.meta.weightedPercentSum! += company.changePercent * company.marketCap;
+        industryNode.meta.companyCount!++;
+      }
+
+      parentNodeForCompany = industryNode;
+    }
+
+    // 3. Pridaj list (Firmu) pod správneho rodiča (Sektor alebo Industry)
     const companyLeaf: HierarchyData = {
       name: company.symbol,
       value: tileValue,
@@ -72,7 +104,7 @@ export function buildHeatmapHierarchy(
         companyData: company,
       },
     };
-    sectorNode.children!.push(companyLeaf);
+    parentNodeForCompany.children!.push(companyLeaf);
 
     // Aktualizuj agregácie pre sektor (vážený priemer)
     if (sectorNode.meta && company.marketCap && company.changePercent !== undefined && !isNaN(company.changePercent)) {
@@ -95,6 +127,20 @@ export function buildHeatmapHierarchy(
     // Zoraď firmy v každom sektore podľa veľkosti (value) desc
     for (const sector of root.children) {
       if (sector.children) {
+        // Industry sub-nodes sorting logic inside sector
+        for (const child of sector.children) {
+          if (child.meta?.type === 'industry' && child.children) {
+            // Sort companies within industry
+            child.children.sort((a, b) => (sumValues(b) - sumValues(a)));
+
+            // Calc industry aggregates
+            if (child.meta.totalMarketCap && child.meta.totalMarketCap > 0) {
+              child.meta.weightedAvgPercent = child.meta.weightedPercentSum! / child.meta.totalMarketCap;
+            }
+          }
+        }
+
+        // Sort the sector's immediate children (which could be either industries or companies)
         sector.children.sort((a, b) => (sumValues(b) - sumValues(a)));
       }
 

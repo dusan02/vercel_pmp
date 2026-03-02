@@ -350,8 +350,22 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
 
         const sectorTreemap = treemap<HierarchyData>()
           .size([width, finalSectorHeight])
-          .padding(0)
-          .paddingTop(reservedSectorLabelHeight)
+          .padding(function (node) {
+            if (node.data.meta?.type === 'industry') {
+              return 1;
+            }
+            return 0;
+          })
+          .paddingTop(function (node) {
+            if (node.depth === 0) {
+              // Koreň tohto pod-treemapu je priamo sektor
+              return reservedSectorLabelHeight;
+            }
+            if (node.data.meta?.type === 'industry') {
+              return 14;
+            }
+            return 0;
+          })
           .paddingLeft(0)
           .paddingRight(0)
           .paddingBottom(0)
@@ -410,20 +424,28 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
     const treemapGenerator = treemap<HierarchyData>()
       .size([width, height])
       .padding(function (node) {
-        if (node.depth === 1) {
+        if (node.data.meta?.type === 'sector') {
           // Sektor → medzera + priestor pre label
           return SECTOR_GAP;
         }
-        // Industry + Firmy → 0px (žiadne medzery)
+        if (node.data.meta?.type === 'industry') {
+          // Industry box → jemná oddeľovacia hranica
+          return 1;
+        }
+        // Firmy → 0px (žiadne medzery)
         return 0;
       })
       .paddingTop(function (node) {
-        if (node.depth === 1) {
+        if (node.data.meta?.type === 'sector') {
           // Sektor → pridaj priestor pre label (podľa variantu)
           const labelConfig = sectorLabelVariant === 'full'
             ? LAYOUT_CONFIG.SECTOR_LABEL_FULL
             : LAYOUT_CONFIG.SECTOR_LABEL_COMPACT;
           return labelConfig.HEIGHT;
+        }
+        if (node.data.meta?.type === 'industry') {
+          // Pridaj 14px pre industry nadpis nad firmami v rovnakom odvetví
+          return 14;
         }
         return 0;
       })
@@ -878,6 +900,33 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
                         />
                       );
                     })}
+                  {/* Industry borders for canvas mode */}
+                  {filteredNodes
+                    .filter((node) => node.data.meta?.type === 'industry')
+                    .map((node) => {
+                      const { x0, y0, x1, y1 } = node as TreemapNode;
+                      const nodeWidth = x1 - x0;
+                      const nodeHeight = y1 - y0;
+
+                      // Skip too small block
+                      if (nodeWidth * effectiveScale < 5 || nodeHeight * effectiveScale < 5) return null;
+
+                      return (
+                        <div
+                          key={`industry-border-${node.data.name}-${x0}-${y0}`}
+                          className="absolute pointer-events-none"
+                          style={{
+                            left: x0 * effectiveScale + effectiveOffset.x,
+                            top: y0 * effectiveScale + effectiveOffset.y,
+                            width: nodeWidth * effectiveScale,
+                            height: nodeHeight * effectiveScale,
+                            // Thinner, more subtle border for industries inside sectors
+                            boxShadow: 'inset 0 0 0 1px rgba(0, 0, 0, 0.6)',
+                            zIndex: 8,
+                          }}
+                        />
+                      );
+                    })}
                   <CanvasHeatmap
                     leaves={filteredLeaves}
                     width={width}
@@ -980,6 +1029,57 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
                               {displayName}
                             </div>
                           )}
+                        </div>
+                      );
+                    })}
+                  {/* Industry labels for canvas mode */}
+                  {filteredNodes
+                    .filter((node) => node.data.meta?.type === 'industry')
+                    .map((node) => {
+                      const { x0, y0, x1, y1 } = node as TreemapNode;
+                      const data = node.data as HierarchyData;
+                      const nodeWidth = x1 - x0;
+                      const nodeHeight = y1 - y0;
+                      const scaledWidth = nodeWidth * effectiveScale;
+                      const scaledHeight = nodeHeight * effectiveScale;
+
+                      const labelHeight = 14; // Same as padding added in treemapGenerator
+                      const labelLeft = 4;
+
+                      // Only show label if the industry box is wide/high enough to be readable
+                      const showLabel = scaledWidth > 40 && scaledHeight > 20 && effectiveScale > 0;
+                      if (!showLabel) return null;
+
+                      // Very simple truncation
+                      const displayName = data.name.length > 15 && scaledWidth < 80
+                        ? data.name.substring(0, 12) + '...'
+                        : data.name;
+
+                      return (
+                        <div
+                          key={`industry-label-${data.name}-${x0}-${y0}`}
+                          className="absolute pointer-events-none flex items-center overflow-hidden"
+                          style={{
+                            left: x0 * effectiveScale + effectiveOffset.x,
+                            top: y0 * effectiveScale + effectiveOffset.y,
+                            width: nodeWidth * effectiveScale,
+                            height: labelHeight,
+                            paddingLeft: labelLeft,
+                            zIndex: 8,
+                          }}
+                        >
+                          <span
+                            style={{
+                              color: 'rgba(255, 255, 255, 0.4)',
+                              fontSize: '9px',
+                              fontWeight: 600,
+                              letterSpacing: '0.05em',
+                              textTransform: 'uppercase',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            {displayName}
+                          </span>
                         </div>
                       );
                     })}
