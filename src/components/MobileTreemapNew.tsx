@@ -83,22 +83,26 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
 
 
   // Handle container resizing via ResizeObserver
+  // IMPORTANT: We only track WIDTH changes. Height must NEVER be updated from observer
+  // because this scrollable container grows vertically when D3 inserts tiles, which
+  // re-triggers the observer → infinite layout thrashing loop.
+  // Initial height is captured once via getBoundingClientRect on mount.
   useLayoutEffect(() => {
     if (!containerRef.current) return;
 
+    // One-time: grab the real available height before D3 mutates the container
+    const initialH = containerRef.current.getBoundingClientRect().height;
+    setContainerSize(prev =>
+      prev.height > 0 ? prev : { width: prev.width, height: initialH }
+    );
+
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        const { width, height } = entry.contentRect;
+        const { width } = entry.contentRect;
         if (width > 0) {
           setContainerSize(prev => {
-            // Update if width changed OR if height changed significantly
-            // A significant height change (> 40px) usually means the mobile browser address bar 
-            // has appeared/disappeared, so we SHOULD resize the container to fill the new space.
-            // Small height changes are ignored to prevent infinite D3 layout thrashing loops.
-            const heightChangedSignificantly = Math.abs(prev.height - height) > 40;
-
-            if (prev.width !== width || heightChangedSignificantly) {
-              return { width, height };
+            if (prev.width !== width) {
+              return { width, height: prev.height }; // height stays frozen — DO NOT update
             }
             return prev;
           });
@@ -109,6 +113,8 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
     observer.observe(containerRef.current);
     return () => observer.disconnect();
   }, []);
+
+
 
   // Build mobile treemap sector blocks (pure helper; no React logic inside)
   const treemapResult = useMemo(() => {
