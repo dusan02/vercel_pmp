@@ -3,7 +3,7 @@
 import React, { useMemo } from 'react';
 import useSWR from 'swr';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Zap, TrendingUp, TrendingDown, RefreshCw, Info, AlertCircle, Share2, Camera } from 'lucide-react';
+import { Zap, TrendingUp, TrendingDown, RefreshCw, Info, AlertCircle } from 'lucide-react';
 import { SectionSkeleton } from './SectionSkeleton';
 import CompanyLogo from './CompanyLogo';
 import { CustomDropdown } from './CustomDropdown';
@@ -152,22 +152,7 @@ export function MoversSection() {
         );
     };
 
-    const handleShareAsImage = (mover: MoverData) => {
-        const params = new URLSearchParams({
-            symbol: mover.symbol,
-            name: mover.name || '',
-            price: (mover.lastPrice || 0).toFixed(2),
-            changePct: (mover.lastChangePct || 0).toFixed(2),
-            zScore: (mover.latestMoversZScore || 0).toFixed(2),
-            rvol: (mover.latestMoversRVOL || 0).toFixed(1),
-            category: mover.moversCategory || 'Technical',
-            reason: mover.moversReason || '',
-            // We fetch these from the mover object if available or default
-            sbc: '0',
-            confidence: '80'
-        });
-        window.open(`/api/og?${params.toString()}`, '_blank');
-    };
+
 
     if (isLoading && movers.length === 0) {
         return <SectionSkeleton rows={10} />;
@@ -244,14 +229,6 @@ export function MoversSection() {
                         <div className="flex flex-wrap gap-2 items-center">
                             {renderZScoreBadge(mover.latestMoversZScore)}
                             {renderRVOLBadge(mover.latestMoversRVOL)}
-                            <button
-                                onClick={() => handleShareAsImage(mover)}
-                                className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-colors"
-                                title="Share as Bloomberg-style Image"
-                            >
-                                <Share2 size={10} />
-                                SHARE
-                            </button>
                         </div>
                     </div>
                 </div>

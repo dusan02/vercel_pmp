@@ -112,7 +112,7 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
         // Force dark theme colors for heatmap regardless of app theme
         const bgPrimary = '#111827'; // Dark gray/black
         const textPrimary = '#ffffff'; // Always white
-        const borderColor = 'rgba(0, 0, 0, 0.4)'; // Darker border
+        const borderColor = 'rgba(255, 255, 255, 0.6)'; // Thin white border between tiles
 
         // Handle High DPI
         const dpr = window.devicePixelRatio || 1;
@@ -148,10 +148,10 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
             ctx.fillStyle = colorScale(v);
             ctx.fillRect(tileX, tileY, tileW, tileH);
 
-            // Border - thinner border between companies within sectors
+            // Border - inset 0.5px so adjacent tile borders don't overlap each other
             ctx.strokeStyle = borderColor;
             ctx.lineWidth = 1;
-            ctx.strokeRect(tileX, tileY, tileW, tileH);
+            ctx.strokeRect(tileX + 0.5, tileY + 0.5, tileW - 1, tileH - 1);
 
             // Text
             const labelConfig = getTileLabelConfig(tileW, tileH);

@@ -260,10 +260,11 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                           position: 'absolute',
                           left: `${x}px`,
                           top: `${y}px`,
-                          width: `${width - 1}px`, // Add 1px gap
-                          height: `${height - 1}px`, // Add 1px gap
+                          width: `${width - 1}px`, // 1px gap creates visual border between tiles
+                          height: `${height - 1}px`, // 1px gap creates visual border between tiles
                           background: color,
-                          boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.25)',
+                          outline: '1px solid rgba(255, 255, 255, 0.55)', // Thin white border, non-overlapping
+                          outlineOffset: '-1px',
                           boxSizing: 'border-box',
                           overflow: 'hidden',
                           display: 'flex',
