@@ -89,15 +89,16 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
-        // CRITICAL BUG FIX (Infinite Resize Loop): 
-        // We only care about width changes to recalculate the D3 Treemap columns. 
-        // Since this container scrolls vertically, observing its own height while D3 dynamically 
-        // injects tall tiles into it causes an infinite layout thrashing loop.
         if (width > 0) {
           setContainerSize(prev => {
-            // Only update if width actually changed (ignore height changes to prevent loop)
-            if (prev.width !== width) {
-              return { width, height }; // keep new height for metrics but trigger is width
+            // Update if width changed OR if height changed significantly
+            // A significant height change (> 40px) usually means the mobile browser address bar 
+            // has appeared/disappeared, so we SHOULD resize the container to fill the new space.
+            // Small height changes are ignored to prevent infinite D3 layout thrashing loops.
+            const heightChangedSignificantly = Math.abs(prev.height - height) > 40;
+
+            if (prev.width !== width || heightChangedSignificantly) {
+              return { width, height };
             }
             return prev;
           });
@@ -134,7 +135,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
               width: '100%',
               height: `${row.height}px`,
               flexShrink: 0, // Prevent row from shrinking and clipping the contained tiles
-              gap: '4px', // Gap between columns
+              gap: `${SECTOR_COL_GAP}px`, // Match D3 calculation instead of hardcoded 4px
             }}
           >
             {row.sectors.map((sector) => (
@@ -143,11 +144,13 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                 style={{
                   display: 'flex',
                   flexDirection: 'column',
-                  width: `${sector.width}px`,
+                  // Use flexBasis + flexShrink:0 so D3's exact pixel widths are honoured.
+                  // flexGrow was previously causing flexbox to override D3 calculations and
+                  // unevenly inflate one of the columns.
+                  flexBasis: `${sector.width}px`,
+                  flexShrink: 0,
+                  flexGrow: 0,
                   height: '100%',
-                  // For grouped columns, we want them to fill the space. 
-                  // If it's a single column, width is full.
-                  flexGrow: 1,
                   overflow: 'hidden'
                 }}
               >

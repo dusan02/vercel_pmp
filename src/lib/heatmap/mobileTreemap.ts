@@ -209,22 +209,31 @@ export function computeMobileTreemapSectors(
     const finalH = Math.max(minSectorBlocksHeight, rawH);
 
     // Now calculate sectors within this row
-    const rowSectors: MobileTreemapSectorBlock[] = row.sectors.map(sectorItem => {
-      // Width share inside the row
-      // Account for gaps: available width = totalWidth - (numberOfSectorsInRow - 1) * gap
-      const totalGaps = Math.max(0, row.sectors.length - 1) * columnGapPx;
-      const availableWidth = Math.max(0, width - totalGaps);
+    // Account for gaps: available width = totalWidth - (numberOfSectorsInRow - 1) * gap
+    const totalGaps = Math.max(0, row.sectors.length - 1) * columnGapPx;
+    const availableWidth = Math.max(0, width - totalGaps);
 
+    let remainingWidth = availableWidth;
+
+    const rowSectors: MobileTreemapSectorBlock[] = row.sectors.map((sectorItem, sIdx) => {
+      // Width share inside the row
       const widthShare = sectorItem.weight / row.rowWeight;
-      const sectorWidth = Math.floor(availableWidth * widthShare);
+
+      let sectorWidth: number;
+      if (sIdx === row.sectors.length - 1) {
+        // Last sector gets all remaining width exactly
+        sectorWidth = remainingWidth;
+      } else {
+        // Other sectors calculate normally (rounded to prevent subpixels)
+        sectorWidth = Math.floor(availableWidth * widthShare);
+        remainingWidth -= sectorWidth;
+      }
 
       // Height is same as row height
       const sectorHeight = finalH;
 
-      // Tiles height - subtract buffer (2px) to prevent sub-pixel clipping
-      // User request: "const tilesHeight = Math.max(0, rowHeight - chromeHeight - 2);"
-      // We keep Math.max(1, ...) to avoid D3 errors with 0 height if that happens
-      const tilesHeight = Math.max(1, sectorHeight - sectorChromeHeightPx - 2);
+      // Tiles height - subtract buffer (1px) to prevent sub-pixel clipping, used to be 2px which was too large
+      const tilesHeight = Math.max(1, sectorHeight - sectorChromeHeightPx - 1);
 
       // Generate D3 treemap
       const hierarchyNode = hierarchy(sectorItem.node)
@@ -268,7 +277,7 @@ export function computeMobileTreemapSectors(
     });
 
     // Fix slight pixel rounding errors in width?
-    // For now, floor is safe, might leave 1px gap on right. Flex justify-between can handle or just ignore.
+    // Resolved: We now distribute remaining width exacty to the last column to prevent 1px gaps.
 
     return {
       id: `row-${rowIdx}`,
