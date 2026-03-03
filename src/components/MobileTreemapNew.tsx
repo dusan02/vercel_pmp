@@ -219,10 +219,8 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                   style={{
                     position: 'relative',
                     width: '100%',
-                    // FLEXBOX FIX: Explicit height prevents "white strip" or "jagged edges"
-                    // caused by flexbox/D3 mismatch. We force the container to match D3 exactly.
+                    // Explicit height matches D3 exactly — prevents white strips / jagged edges.
                     height: `${sector.tilesHeight}px`,
-                    // flex: 1, // REMOVED: conflicting with explicit height
                   }}
                 >
                   {/* Render Tiles */}

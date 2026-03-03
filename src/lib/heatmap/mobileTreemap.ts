@@ -90,10 +90,10 @@ export type ComputeMobileTreemapOptions = {
 };
 
 const DEFAULT_COMPUTE_OPTIONS: Required<Omit<ComputeMobileTreemapOptions, 'sectorChromeHeightPx'>> = {
-  contentHeightMultiplier: 1.05, // Reduced from 1.2 to eliminate excessive empty space at the bottom
-  minTotalContentHeightPx: 600, // Reduced from 900 to prevent unnecessary scrolling on small screens
+  contentHeightMultiplier: 2.2, // 2× taller than viewport → tiles are large and text is readable
+  minTotalContentHeightPx: 1400, // Minimum tall enough for small phones
   minTilesHeightPx: 56,
-  smallSectorThreshold: 0.15, // 15%
+  smallSectorThreshold: 0.15,
   maxColumns: 3,
   columnGapPx: 0,
 };
@@ -232,7 +232,7 @@ export function computeMobileTreemapSectors(
       // Height is same as row height
       const sectorHeight = finalH;
 
-      // Tiles height - subtract buffer (1px) to prevent sub-pixel clipping, used to be 2px which was too large
+      // Tiles height - subtract 1px buffer to prevent sub-pixel clipping
       const tilesHeight = Math.max(1, sectorHeight - sectorChromeHeightPx - 1);
 
       // Generate D3 treemap
@@ -276,9 +276,6 @@ export function computeMobileTreemapSectors(
       } satisfies MobileTreemapSectorBlock;
     });
 
-    // Fix slight pixel rounding errors in width?
-    // Resolved: We now distribute remaining width exacty to the last column to prevent 1px gaps.
-
     return {
       id: `row-${rowIdx}`,
       height: finalH,
@@ -288,5 +285,3 @@ export function computeMobileTreemapSectors(
 
   return { rows: rowResults };
 }
-
-

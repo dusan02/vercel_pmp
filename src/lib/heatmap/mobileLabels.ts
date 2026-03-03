@@ -35,8 +35,8 @@ export function getMobileTileLabel(
     return { showSymbol: false, showValue: false, symbol: '', value: '', symbolFontPx: 0, valueFontPx: 0 };
   }
 
-  const baseSymbolFontPx = Math.round(clamp(minDim * 0.28, 9, 16));
-  const baseValueFontPx = Math.round(clamp(baseSymbolFontPx - 4, 8, 12));
+  const baseSymbolFontPx = Math.round(clamp(minDim * 0.28, 9, 20));
+  const baseValueFontPx = Math.round(clamp(baseSymbolFontPx - 4, 8, 14));
 
   const valueText = metric === 'percent'
     ? formatPercent(company.changePercent ?? 0)
@@ -54,7 +54,7 @@ export function getMobileTileLabel(
 
   // Decide if we can show value as a second line.
   // Keep existing behavior gate (needs room), then further degrade if it won't fit.
-  const wantsValue = minDim >= 34 && valueText.length > 0;
+  const wantsValue = minDim >= 28 && valueText.length > 0;
   let showValue = wantsValue;
   let fittedValueFontPx = baseValueFontPx;
 
