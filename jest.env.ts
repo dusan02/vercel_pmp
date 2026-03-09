@@ -22,14 +22,28 @@ const seedCandidates = [
   path.join(process.cwd(), 'prisma', 'prisma', 'dev.db'),
   path.join(process.cwd(), 'prisma', 'dev.db'),
 ];
+
+// If a specific DATABASE_URL is provided (e.g. from CI), prioritize it as the seed
+if (process.env.DATABASE_URL && process.env.DATABASE_URL.startsWith('file:')) {
+  // Prisma SQLite files are relative to the schema directory by default
+  const dbFileName = process.env.DATABASE_URL.replace('file:', '').replace(/^\.\//, '');
+  const customSeedPath = path.resolve(process.cwd(), 'prisma', dbFileName);
+  console.log(`[jest.env.ts] Identified custom seed DB path from DATABASE_URL: ${customSeedPath}`);
+  seedCandidates.unshift(customSeedPath);
+}
+
 try {
+  console.log(`[jest.env.ts] Checking seed candidates:`, seedCandidates);
   const seedDb = seedCandidates.find(p => fs.existsSync(p));
   if (seedDb) {
+    console.log(`[jest.env.ts] Using seed DB: ${seedDb}`);
     fs.copyFileSync(seedDb, dbPath);
   } else {
+    console.log(`[jest.env.ts] No seed DB found. Creating empty DB at: ${dbPath}`);
     fs.closeSync(fs.openSync(dbPath, 'w'));
   }
-} catch {
+} catch (err: any) {
+  console.error(`[jest.env.ts] Error setting up test DB:`, err.message);
   // Fallback: ensure file exists
   try {
     fs.closeSync(fs.openSync(dbPath, 'w'));
