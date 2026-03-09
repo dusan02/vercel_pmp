@@ -41,6 +41,7 @@ jobs:
       - name: Run coverage
         env:
           TZ: ${{ matrix.timezone }}
+          DATABASE_URL: "file:./test.db"
         run: npm run test:coverage
 
       - name: Upload coverage
