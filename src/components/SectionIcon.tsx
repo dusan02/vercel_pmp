@@ -5,7 +5,7 @@
 
 import React from 'react';
 
-export type SectionIconType = 'star' | 'pie' | 'globe' | 'calendar' | 'grid' | 'heatmap' | 'zap';
+export type SectionIconType = 'star' | 'pie' | 'globe' | 'calendar' | 'grid' | 'heatmap' | 'zap' | 'analysis' | 'screener';
 
 interface SectionIconProps {
   type: SectionIconType;
@@ -142,6 +142,40 @@ export function SectionIcon({ type, size = 20, className = '' }: SectionIconProp
         aria-hidden="true"
       >
         <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+      </svg>
+    ),
+    analysis: (
+      <svg
+        width={iconSize}
+        height={iconSize}
+        viewBox="0 0 24 24"
+        fill={fill}
+        stroke={stroke}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+        aria-hidden="true"
+      >
+        <line x1="18" y1="20" x2="18" y2="10" />
+        <line x1="12" y1="20" x2="12" y2="4" />
+        <line x1="6" y1="20" x2="6" y2="14" />
+      </svg>
+    ),
+    screener: (
+      <svg
+        width={iconSize}
+        height={iconSize}
+        viewBox="0 0 24 24"
+        fill={fill}
+        stroke={stroke}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+        aria-hidden="true"
+      >
+        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
       </svg>
     )
   };

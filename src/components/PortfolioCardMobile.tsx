@@ -15,6 +15,7 @@ interface PortfolioCardMobileProps {
   onRemove: (ticker: string) => void;
   calculateValue: (stock: StockData) => number;
   onOpenDetails?: (ticker: string) => void;
+  onClick?: () => void;
 }
 
 export const PortfolioCardMobile = memo(({
@@ -23,7 +24,8 @@ export const PortfolioCardMobile = memo(({
   onUpdateQuantity,
   onRemove,
   calculateValue,
-  onOpenDetails
+  onOpenDetails,
+  onClick
 }: PortfolioCardMobileProps) => {
   const formattedPrice = formatPrice(stock.currentPrice);
   const formattedPercentChange = formatPercent(stock.percentChange);
@@ -35,7 +37,10 @@ export const PortfolioCardMobile = memo(({
   const formattedValue = formatCurrencyCompact(value, true);
 
   return (
-    <div className="px-3 py-3 bg-white dark:bg-white/5 border-b border-gray-100 dark:border-gray-800 last:border-0">
+    <div
+      className={`px-3 py-3 bg-white dark:bg-white/5 border-b border-gray-100 dark:border-gray-800 last:border-0 ${onClick ? 'cursor-pointer' : ''}`}
+      onClick={onClick}
+    >
       <div className="flex items-center gap-3">
         {/* 1. Logo (Larger ~40px) */}
         <CompanyLogo

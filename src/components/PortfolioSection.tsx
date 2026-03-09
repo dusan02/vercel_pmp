@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { X, Plus } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { SectionIcon } from './SectionIcon';
 import { SectionLoader } from './SectionLoader';
 import CompanyLogo from './CompanyLogo';
@@ -56,6 +57,15 @@ export function PortfolioSection({
   const [showPortfolioSearch, setShowPortfolioSearch] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
+
+  const handleRowClick = useCallback((stock: StockData) => {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('mobile-nav-change', {
+        detail: { tab: 'analysis', ticker: stock.ticker }
+      }));
+    }
+  }, []);
 
   // Pre-calculate value (Daily P&L) for sorting
   const enhancedPortfolioStocks = useMemo(() => {
@@ -253,8 +263,8 @@ export function PortfolioSection({
       <section className="portfolio">
         <div className="flex items-center justify-between mb-4 px-4">
           <div className="flex items-center">
-            <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--clr-text)] m-0 relative -top-1.5">
-              <SectionIcon type="pie" size={24} className="text-[var(--clr-text)]" />
+            <h2 className="flex items-center gap-3 text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white m-0 relative -top-1.5">
+              <SectionIcon type="pie" size={28} className="text-gray-900 dark:text-white shrink-0" />
               <span>Portfolio</span>
             </h2>
           </div>
@@ -284,8 +294,8 @@ export function PortfolioSection({
     <section className="portfolio">
       <div className="flex items-center justify-between mb-4 px-4">
         <div className="flex items-center">
-          <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--clr-text)] m-0 relative -top-1.5">
-            <SectionIcon type="pie" size={24} className="text-[var(--clr-text)]" />
+          <h2 className="flex items-center gap-3 text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white m-0 relative -top-1.5">
+            <SectionIcon type="pie" size={28} className="text-gray-900 dark:text-white shrink-0" />
             <span>Portfolio</span>
           </h2>
         </div>
@@ -385,6 +395,7 @@ export function PortfolioSection({
         sortKey={sortKey}
         ascending={ascending}
         onSort={requestSort}
+        onRowClick={handleRowClick}
         emptyMessage={
           <div className="empty-portfolio text-center py-12">
             <div className="text-4xl mb-4 opacity-50">💼</div>

@@ -28,7 +28,7 @@ const ResponsiveMarketHeatmap = dynamic(
  * Zobrazuje zmenšenú verziu heatmapy, ktorá pri kliknutí presmeruje na plnú stránku
  * Prepínacie buttony (% Change / Mcap Change) sú vedľa nadpisu
  */
-export function HeatmapPreview({ activeView, wrapperClass }: { activeView?: string | undefined; wrapperClass?: string }) {
+export function HeatmapPreview({ activeView, wrapperClass, onTileClick }: { activeView?: string | undefined; wrapperClass?: string; onTileClick?: (ticker: string) => void }) {
   const router = useRouter();
   // Centralized metric state with localStorage persistence
   const { metric, setMetric } = useHeatmapMetric('percent');
@@ -60,9 +60,9 @@ export function HeatmapPreview({ activeView, wrapperClass }: { activeView?: stri
       {isDesktop && (
         <div className="flex items-center justify-between mb-4 px-4 border-none outline-none">
           <div className="flex items-center">
-            <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--clr-text)] m-0 relative -top-1.5">
-              <SectionIcon type="heatmap" size={24} className="text-[var(--clr-text)]" />
-              <span>Market Heatmap</span>
+            <h2 className="flex items-center gap-3 text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white m-0 relative -top-1.5">
+              <SectionIcon type="heatmap" size={28} className="text-gray-900 dark:text-white shrink-0" />
+              <span>Heatmap</span>
             </h2>
           </div>
           <div className="flex items-center gap-3">
@@ -74,9 +74,6 @@ export function HeatmapPreview({ activeView, wrapperClass }: { activeView?: stri
           </div>
         </div>
       )}
-
-      {/* Mobile Header with Toggles */}
-
 
       {/* Content Wrapper - simplified: removed unnecessary inner div */}
       <div
@@ -95,6 +92,11 @@ export function HeatmapPreview({ activeView, wrapperClass }: { activeView?: stri
           hideMetricButtons={true}
           sectorLabelVariant="compact"
           activeView={activeView}
+          onTileClick={(company) => {
+            if (onTileClick) {
+              onTileClick(company.symbol);
+            }
+          }}
         />
       </div>
     </section>

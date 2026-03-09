@@ -7,6 +7,7 @@ import { Zap, TrendingUp, TrendingDown, RefreshCw, Info, AlertCircle } from 'luc
 import { SectionSkeleton } from './SectionSkeleton';
 import CompanyLogo from './CompanyLogo';
 import { CustomDropdown } from './CustomDropdown';
+import { SectionIcon } from './SectionIcon';
 
 /**
  * Mover data structure from API
@@ -26,7 +27,7 @@ interface MoverData {
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-export function MoversSection() {
+export function MoversSection({ onTileClick }: { onTileClick?: (ticker: string) => void }) {
     const [selectedSector, setSelectedSector] = React.useState<string | null>(null);
     const { data, error, isLoading, mutate } = useSWR('/api/stocks/movers?limit=30', fetcher, {
         refreshInterval: 60000, // Refresh every minute
@@ -184,14 +185,14 @@ export function MoversSection() {
 
                 <div className="flex items-start gap-4">
                     {/* Logo & Symbol */}
-                    <div className="flex-shrink-0">
+                    <div className="flex-shrink-0 cursor-pointer" onClick={() => onTileClick?.(mover.symbol)}>
                         <CompanyLogo ticker={mover.symbol} logoUrl={mover.logoUrl} size={48} className="rounded-xl shadow-sm border border-slate-100" />
                     </div>
 
                     <div className="flex-1 min-w-0">
                         {/* Row 1: Symbol + Name + Category + Price */}
                         <div className="flex items-start justify-between gap-2 mb-1.5">
-                            <div className="min-w-0">
+                            <div className="min-w-0 cursor-pointer" onClick={() => onTileClick?.(mover.symbol)}>
                                 <div className="flex items-center gap-2 flex-wrap">
                                     <span className="text-lg font-black text-slate-900 leading-none">{mover.symbol}</span>
                                     <span className="text-xs text-slate-400 truncate hidden sm:inline">{mover.name}</span>
@@ -240,9 +241,9 @@ export function MoversSection() {
         <div className="movers-container space-y-4">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
                 <div>
-                    <h2 className="text-2xl font-black text-slate-900 flex items-center gap-2">
-                        <Zap className="text-yellow-400" fill="currentColor" />
-                        Market Movers
+                    <h2 className="flex items-center gap-3 text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white m-0 relative -top-1.5">
+                        <SectionIcon type="zap" size={28} className="text-gray-900 dark:text-white shrink-0" />
+                        <span>Movers</span>
                     </h2>
                     <p className="text-xs text-slate-500 flex items-center gap-1.5">
                         <Info size={12} />

@@ -12,6 +12,7 @@ interface StockCardMobileProps {
   onToggleFavorite: () => void;
   priority?: boolean;
   displayMode?: 'default' | 'capDiff' | 'cap';
+  onClick?: () => void;
 }
 
 export const StockCardMobile = memo(({
@@ -19,7 +20,8 @@ export const StockCardMobile = memo(({
   isFavorite,
   onToggleFavorite,
   priority = false,
-  displayMode = 'default'
+  displayMode = 'default',
+  onClick
 }: StockCardMobileProps) => {
   const formattedPrice = useMemo(() => formatPrice(stock.currentPrice), [stock.currentPrice]);
   const formattedPercentChange = useMemo(() => formatPercent(stock.percentChange), [stock.percentChange]);
@@ -39,6 +41,7 @@ export const StockCardMobile = memo(({
         WebkitTapHighlightColor: 'transparent',
         touchAction: 'manipulation'
       }}
+      onClick={onClick}
     >
       <div className="flex items-center justify-between gap-3 w-full">
         {/* Left: Logo + Ticker + Name */}

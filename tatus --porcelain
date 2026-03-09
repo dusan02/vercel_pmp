@@ -1,5 +1,0 @@
-[33mf495f9d[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m buttony odstranene 01.08.2025
-[33ma83d1c9[m ADVANCED ANALYTICS completed
-[33m502d106[m Add Prometheus/Grafana monitoring and Advanced error tracking to PMP4 codebase
-[33m570c651[m Fix: Obnovenie .env.local, čistá inštalácia balíčkov, aplikácia plne funkčná na porte 3002
-[33ma190606[m Fix: Update port to 3002 in package.json and restore API functionality

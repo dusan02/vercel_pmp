@@ -3,8 +3,6 @@ import dynamic from 'next/dynamic';
 import { SectionErrorBoundary } from '../SectionErrorBoundary';
 import { HeatmapSkeleton } from '../SectionSkeleton';
 
-
-
 // CRITICAL: Heatmap je prvá obrazovka na mobile - prioritizuj načítanie
 // Note: Dynamic import sa načíta okamžite keď je komponent renderovaný
 const HeatmapPreview = dynamic(
@@ -18,11 +16,10 @@ const HeatmapPreview = dynamic(
 interface HomeHeatmapProps {
     wrapperClass?: string;
     activeView?: string | undefined; // Signalizuje, či je heatmap aktívny view
+    onTileClick?: (ticker: string) => void;
 }
 
-export function HomeHeatmap({ wrapperClass, activeView }: HomeHeatmapProps) {
-
-
+export function HomeHeatmap({ wrapperClass, activeView, onTileClick }: HomeHeatmapProps) {
     // CRITICAL: Add explicit content wrapper for proper flex chain
     // This ensures containerRef gets correct height from position: fixed parent
     return (
@@ -32,6 +29,7 @@ export function HomeHeatmap({ wrapperClass, activeView }: HomeHeatmapProps) {
                     <HeatmapPreview
                         {...(activeView !== undefined ? { activeView } : {})}
                         {...(wrapperClass !== undefined ? { wrapperClass } : {})}
+                        {...(onTileClick !== undefined ? { onTileClick } : {})}
                     />
                 </div>
             </div>

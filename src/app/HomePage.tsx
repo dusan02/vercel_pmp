@@ -58,6 +58,17 @@ const HomeHeatmap = dynamic(
     loading: () => null // Custom loading handled inside if needed, or skeleton
   }
 );
+const HomeAnalysis = dynamic(
+  () => import('@/components/home/HomeAnalysis').then((mod) => mod.HomeAnalysis),
+  { ssr: false, loading: () => null }
+);
+const GlobalScreener = dynamic(
+  () => import('@/components/analysis/GlobalScreener').then((mod) => {
+    // If it's a named export, we use mod.GlobalScreener
+    return mod.GlobalScreener;
+  }),
+  { ssr: false, loading: () => null }
+);
 
 const CookieConsent = dynamic(
   () => import('@/components/CookieConsent'),
@@ -120,6 +131,8 @@ interface HomePageProps {
   initialEarningsData?: any;
 }
 
+type ActiveSection = 'heatmap' | 'analysis' | 'movers' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks' | 'screener';
+
 export default function HomePage({ initialData = [], initialEarningsData }: HomePageProps) {
   // Auto-repair localStorage on mount (fixes corrupted cache issues)
   useEffect(() => {
@@ -152,23 +165,29 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
   }, []);
 
   // Navigation state (unified for mobile and desktop)
-  const [activeSection, setActiveSection] = useState<'heatmap' | 'movers' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks'>('heatmap');
+  const [activeSection, setActiveSection] = useState<ActiveSection>('heatmap');
+  const [analysisTicker, setAnalysisTicker] = useState<string>('NVDA');
 
   // Helper function to validate and set tab
   const setActiveTab = useCallback((tab: string) => {
-    if (tab === 'heatmap' || tab === 'movers' || tab === 'portfolio' || tab === 'favorites' || tab === 'earnings' || tab === 'allStocks') {
-      setActiveSection(tab as 'heatmap' | 'movers' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks');
+    if (tab === 'heatmap' || tab === 'analysis' || tab === 'movers' || tab === 'portfolio' || tab === 'favorites' || tab === 'earnings' || tab === 'allStocks' || tab === 'screener') {
+      setActiveSection(tab as ActiveSection);
       return true;
     }
     return false;
   }, []);
 
-  // Allow deep-linking to a specific mobile tab (e.g. "/?tab=allStocks")
+  // Allow deep-linking to a specific mobile tab (e.g. "/?tab=allStocks" or "/?tab=analysis&ticker=MSFT")
   useEffect(() => {
     if (!isMounted) return;
     try {
-      const tab = new URLSearchParams(window.location.search).get('tab');
-      console.log('🔍 Deep-link tab detection:', { tab, currentActiveSection: activeSection });
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get('tab');
+      const ticker = params.get('ticker');
+      console.log('🔍 Deep-link tab detection:', { tab, ticker, currentActiveSection: activeSection });
+      if (ticker) {
+        setAnalysisTicker(ticker.toUpperCase());
+      }
       if (tab) {
         const success = setActiveTab(tab);
         console.log('🔍 setActiveTab result:', { tab, success, newActiveSection: activeSection });
@@ -183,7 +202,12 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
     if (!isMounted) return;
     const handlePopState = () => {
       try {
-        const tab = new URLSearchParams(window.location.search).get('tab');
+        const params = new URLSearchParams(window.location.search);
+        const tab = params.get('tab');
+        const ticker = params.get('ticker');
+        if (ticker) {
+          setAnalysisTicker(ticker.toUpperCase());
+        }
         if (tab) {
           setActiveTab(tab);
         } else {
@@ -198,15 +222,26 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
     return () => window.removeEventListener('popstate', handlePopState);
   }, [isMounted, setActiveTab]);
 
-  // Listen for custom navigation events (e.g., from FavoritesSection)
+  // Listen for custom navigation events (e.g., from FavoritesSection, AllStocksSection, etc.)
   useEffect(() => {
     if (!isMounted) return;
-    const handleNavChange = (e: CustomEvent<string>) => {
-      const tab = e.detail;
+    const handleNavChange = (e: CustomEvent<string | { tab: string; ticker?: string }>) => {
+      const detail = e.detail;
+      const tab = typeof detail === 'string' ? detail : detail.tab;
+      const ticker = typeof detail === 'object' ? detail.ticker : undefined;
+
       if (setActiveTab(tab)) {
+        if (ticker) {
+          setAnalysisTicker(ticker.toUpperCase());
+        }
         // Update URL without page reload
         const url = new URL(window.location.href);
         url.searchParams.set('tab', tab);
+        if (ticker && tab === 'analysis') {
+          url.searchParams.set('ticker', ticker.toUpperCase());
+        } else if (tab !== 'analysis') {
+          url.searchParams.delete('ticker');
+        }
         window.history.pushState({}, '', url.toString());
       }
     };
@@ -215,12 +250,19 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
   }, [isMounted, setActiveTab]);
 
   // Handle mobile bottom navigation change - VIEW-BASED (tabs, not scroll)
-  const handleMobileNavChange = useCallback((tab: 'heatmap' | 'movers' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks') => {
-    setActiveSection(tab);
-    // Update URL to keep it in sync
-    const url = new URL(window.location.href);
+  const handleMobileNavChange = useCallback((section: ActiveSection, ticker?: string) => {
+    setActiveSection(section);
+    if (ticker) {
+      setAnalysisTicker(ticker.toUpperCase());
+    }
+    // Update URL to keep it in sync (also write ticker when switching to analysis)
     const navUrl = new URL(window.location.href);
-    navUrl.searchParams.set('tab', tab);
+    navUrl.searchParams.set('tab', section);
+    if (ticker && section === 'analysis') {
+      navUrl.searchParams.set('ticker', ticker.toUpperCase());
+    } else if (section !== 'analysis') {
+      navUrl.searchParams.delete('ticker');
+    }
     window.history.pushState({}, '', navUrl.toString());
   }, []);
 
@@ -382,8 +424,21 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
                   <HomeHeatmap
                     wrapperClass="mobile-heatmap-wrapper"
                     activeView={activeSection === 'heatmap' ? 'heatmap' : undefined}
+                    onTileClick={(ticker) => handleMobileNavChange('analysis', ticker)}
                   />
                 )}
+              </MobileScreen>
+              <MobileScreen
+                active={activeSection === 'analysis'}
+                className="screen-analysis"
+                prefetch={activeSection === 'heatmap'}
+                screenName="Analysis"
+                skeleton={<MobileSkeleton type="list" count={1} />}
+              >
+                <HomeAnalysis
+                  activeTicker={analysisTicker}
+                  onTickerChange={setAnalysisTicker}
+                />
               </MobileScreen>
               <MobileScreen
                 active={activeSection === 'movers'}
@@ -393,7 +448,7 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
                 skeleton={<MobileSkeleton type="list" count={1} />}
               >
                 {(preferences.showMoversSection ?? true) && (
-                  <HomeMovers />
+                  <HomeMovers onTileClick={(ticker) => handleMobileNavChange('analysis', ticker)} />
                 )}
               </MobileScreen>
               <MobileScreen
@@ -547,13 +602,25 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
                       <div className="desktop-layout-wrapper">
                         {activeSection === 'heatmap' && (
                           <div className="tab-content relative fade-in">
-                            <HomeHeatmap wrapperClass="desktop-heatmap-wrapper" />
+                            <HomeHeatmap
+                              wrapperClass="desktop-heatmap-wrapper"
+                              onTileClick={(ticker) => handleMobileNavChange('analysis', ticker)}
+                            />
+                          </div>
+                        )}
+
+                        {activeSection === 'analysis' && (
+                          <div className="tab-content fade-in">
+                            <HomeAnalysis
+                              activeTicker={analysisTicker}
+                              onTickerChange={setAnalysisTicker}
+                            />
                           </div>
                         )}
 
                         {activeSection === 'movers' && (
                           <div className="tab-content fade-in">
-                            <HomeMovers />
+                            <HomeMovers onTileClick={(ticker) => handleMobileNavChange('analysis', ticker)} />
                           </div>
                         )}
 
@@ -618,6 +685,12 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
                               uniqueSectors={uniqueSectors}
                               availableIndustries={availableIndustries}
                             />
+                          </div>
+                        )}
+
+                        {activeSection === 'screener' && (
+                          <div className="tab-content fade-in container mx-auto py-8">
+                            <GlobalScreener />
                           </div>
                         )}
                       </div>

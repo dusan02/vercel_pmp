@@ -10,15 +10,17 @@ export interface SectionNavigationProps {
 interface SectionConfig {
   id: string;
   label: string;
-  icon: 'heatmap' | 'pie' | 'star' | 'calendar' | 'globe' | 'zap';
+  icon: 'heatmap' | 'pie' | 'star' | 'calendar' | 'globe' | 'zap' | 'analysis' | 'screener';
 }
 
 const sections: SectionConfig[] = [
   { id: 'heatmap', label: 'Heatmap', icon: 'heatmap' },
+  { id: 'analysis', label: 'Analysis', icon: 'analysis' },
   { id: 'movers', label: 'Movers', icon: 'zap' },
   { id: 'portfolio', label: 'Portfolio', icon: 'pie' },
   { id: 'favorites', label: 'Favorites', icon: 'star' },
   { id: 'earnings', label: 'Earnings', icon: 'calendar' },
+  { id: 'screener', label: 'Intelligence', icon: 'screener' },
   { id: 'allStocks', label: 'All Stocks', icon: 'globe' },
 ];
 

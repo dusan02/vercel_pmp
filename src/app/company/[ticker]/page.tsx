@@ -6,6 +6,7 @@ import { generateCompanyMetadata } from '@/lib/seo/metadata';
 import { StructuredData } from '@/components/StructuredData';
 import { formatSectorName } from '@/lib/utils/format';
 import Link from 'next/link';
+import CompanyTabs from '@/components/company/CompanyTabs';
 
 const baseUrl = 'https://premarketprice.com';
 
@@ -78,15 +79,15 @@ export default async function CompanyPage({ params }: PageProps) {
       <nav className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center space-x-2 text-sm">
-            <Link 
-              href="/" 
+            <Link
+              href="/"
               className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
             >
               Home
             </Link>
             <span className="text-gray-400">/</span>
-            <Link 
-              href="/stocks" 
+            <Link
+              href="/stocks"
               className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
             >
               Stocks
@@ -157,6 +158,9 @@ export default async function CompanyPage({ params }: PageProps) {
               </div>
             </div>
           )}
+
+          {/* Tabs Container */}
+          <CompanyTabs ticker={tickerUpper} />
 
           {/* Back Link */}
           <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">

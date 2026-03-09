@@ -30,6 +30,8 @@ interface UniversalTableProps<T> {
     footer?: React.ReactNode;
     /** Raw <tr> elements to append directly into tbody (avoids td-wrapping a tr) */
     tfootRows?: React.ReactNode;
+    /** Callback for when a row is clicked */
+    onRowClick?: (item: T) => void;
 }
 
 export function UniversalTable<T>({
@@ -44,7 +46,8 @@ export function UniversalTable<T>({
     renderMobileCard,
     forceTable = false,
     footer,
-    tfootRows
+    tfootRows,
+    onRowClick
 }: UniversalTableProps<T>) {
 
     if (isLoading) {
@@ -157,7 +160,11 @@ export function UniversalTable<T>({
                         ) : (
                             <>
                                 {data.map((item) => (
-                                    <tr key={keyExtractor(item)} className="group hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                                    <tr
+                                        key={keyExtractor(item)}
+                                        className={`group hover:bg-gray-50 dark:hover:bg-white/5 transition-colors ${onRowClick ? 'cursor-pointer' : ''}`}
+                                        onClick={() => onRowClick && onRowClick(item)}
+                                    >
                                         {columns.map((col) => (
                                             <td
                                                 key={`${keyExtractor(item)}-${col.key}`}

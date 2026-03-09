@@ -17,6 +17,7 @@ import CompanyLogo from './CompanyLogo';
 import { getCompanyName } from '@/lib/companyNames';
 import { Star } from 'lucide-react';
 import { SEOContent } from './SEOContent';
+import { useRouter } from 'next/navigation';
 
 interface AllStocksSectionProps {
   displayedStocks: StockData[];
@@ -80,6 +81,15 @@ export const AllStocksSection = React.memo(function AllStocksSection({
 }: AllStocksSectionProps) {
   const isDesktop = useMediaQuery('(min-width: 1024px)');
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const router = useRouter();
+
+  const handleRowClick = useCallback((stock: StockData) => {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('mobile-nav-change', {
+        detail: { tab: 'analysis', ticker: stock.ticker }
+      }));
+    }
+  }, []);
 
   // Reset industry when sector changes
   const handleSectorChange = useCallback((value: string) => {
@@ -289,8 +299,8 @@ export const AllStocksSection = React.memo(function AllStocksSection({
       {isDesktop && (
         <div className="flex items-center justify-between mb-4 px-4">
           <div className="flex items-center mr-4">
-            <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--clr-text)] m-0 relative -top-1.5">
-              <SectionIcon type="globe" size={24} className="text-[var(--clr-text)]" />
+            <h2 className="flex items-center gap-3 text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white m-0 relative -top-1.5">
+              <SectionIcon type="globe" size={28} className="text-gray-900 dark:text-white shrink-0" />
               <span>All Stocks</span>
             </h2>
           </div>
@@ -325,8 +335,8 @@ export const AllStocksSection = React.memo(function AllStocksSection({
 
       {/* Mobile Header: Title + Search Row */}
       <div className="lg:hidden px-4 mb-3 flex items-center justify-between gap-3">
-        <h2 className="flex items-center gap-2 text-lg font-bold text-[var(--clr-text)] m-0 relative -top-0.5 whitespace-nowrap">
-          <SectionIcon type="globe" size={20} className="text-[var(--clr-text)]" />
+        <h2 className="flex items-center gap-3 text-xl lg:text-3xl font-bold text-gray-900 dark:text-white m-0 relative -top-0.5 whitespace-nowrap">
+          <SectionIcon type="globe" size={28} className="text-gray-900 dark:text-white shrink-0" />
           <span>All Stocks</span>
         </h2>
         <div className="flex-1 min-w-0">
@@ -438,6 +448,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
         sortKey={sortKey}
         ascending={ascending}
         onSort={onSort}
+        onRowClick={handleRowClick}
         emptyMessage={(selectedSector !== 'all' || selectedIndustry !== 'all' || searchTerm.trim().length > 0)
           ? 'No results for the selected filters.'
           : 'No stocks to display.'}
@@ -446,6 +457,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
             stock={stock}
             isFavorite={isFavorite(stock.ticker)}
             onToggleFavorite={() => onToggleFavorite(stock.ticker)}
+            onClick={() => handleRowClick(stock)}
           />
         )}
         footer={<SEOContent />}

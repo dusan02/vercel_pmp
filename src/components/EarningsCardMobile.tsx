@@ -26,6 +26,7 @@ interface EarningsData {
 interface EarningsCardMobileProps {
     earning: EarningsData;
     priority?: boolean;
+    onClick?: () => void;
 }
 
 const formatEps = (value: number | null): string => {
@@ -46,17 +47,18 @@ const getBeatMissClass = (actual: number | null, estimate: number | null): strin
         : 'text-red-600 dark:text-red-400 font-semibold';
 };
 
-export const EarningsCardMobile = memo(({ earning, priority = false }: EarningsCardMobileProps) => {
+export const EarningsCardMobile = memo(({ earning, priority = false, onClick }: EarningsCardMobileProps) => {
     const isPositive = (earning.percentChange ?? 0) >= 0;
 
     return (
         <div
-            className="px-3 py-3 active:bg-gray-50 dark:active:bg-gray-800 transition-colors border-b border-gray-100 dark:border-gray-800 last:border-0"
+            className={`px-3 py-3 active:bg-gray-50 dark:active:bg-gray-800 transition-colors border-b border-gray-100 dark:border-gray-800 last:border-0 ${onClick ? 'cursor-pointer' : ''}`}
             role="row"
             style={{
                 WebkitTapHighlightColor: 'transparent',
                 touchAction: 'manipulation'
             }}
+            onClick={onClick}
         >
             <div className="flex items-center w-full">
                 {/* 1. Ticker & Company Column - 42% */}

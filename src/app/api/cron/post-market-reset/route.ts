@@ -10,6 +10,7 @@ import { getDateET, createETDate } from '@/lib/utils/dateET';
 import { getTradingDay } from '@/lib/utils/timeUtils';
 import { prisma } from '@/lib/db/prisma';
 import { redisClient } from '@/lib/redis';
+import { AnalysisService } from '@/services/analysisService';
 
 const BATCH_SIZE = 50;
 const CONCURRENCY_LIMIT = 10;
@@ -99,8 +100,30 @@ export async function POST(request: NextRequest) {
         );
         console.log(`✅ SharesOutstanding: ${sharesResults.success} updated, ${sharesResults.failed} failed`);
 
-        // We no longer clear Redis cache during the day, maintaining state seamlessly.
-        // The UI handles transitions between Pre-Market -> Live -> After-Hours naturally using priceResolver.ts.
+        // 4. RECOMPUTE ANALYSIS FOR ALL TRACKED TICKERS
+        console.log('\n📝 Step 4: Recomputing analysis for all tracked tickers...');
+        const trackedTickers = await getAllTrackedTickers();
+        const analysisResults = { success: 0, failed: 0 };
+
+        for (const symbol of trackedTickers) {
+            try {
+                // Sync and analyze sequentially to respect Polygon API rate limits
+                const success = await AnalysisService.syncAndAnalyze(symbol);
+                if (success) {
+                    analysisResults.success++;
+                } else {
+                    analysisResults.failed++;
+                }
+
+                // Add a small delay between tickers (e.g. 500ms) to prevent burst errors
+                // For free tier users, this should be increased to ~12000ms
+                await new Promise(resolve => setTimeout(resolve, process.env.NODE_ENV === 'production' ? 1000 : 100));
+            } catch (err: any) {
+                console.error(`❌ Fatal error in analysis for ${symbol}:`, err.message);
+                analysisResults.failed++;
+            }
+        }
+        console.log(`✅ Analysis Sync Complete: ${analysisResults.success} updated, ${analysisResults.failed} failed`);
 
         await updateCronStatus('post_market_reset');
 

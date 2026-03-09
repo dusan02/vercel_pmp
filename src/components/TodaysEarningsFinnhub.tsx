@@ -10,6 +10,7 @@ import CompanyLogo from './CompanyLogo';
 import { UniversalTable, ColumnDef } from './UniversalTable';
 import { EarningsCardMobile } from './EarningsCardMobile';
 import { SEOContent } from './SEOContent';
+import { useRouter } from 'next/navigation';
 
 interface EarningsData {
   ticker: string;
@@ -256,8 +257,8 @@ function useEarningsData(date: string, initialData?: EarningsResponse | null) {
 const EarningsHeader = () => (
   <div className="flex items-center justify-between mb-4 px-4">
     <div className="flex items-center">
-      <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--clr-text)] m-0 relative -top-1.5">
-        <SectionIcon type="calendar" size={24} className="text-[var(--clr-text)]" />
+      <h2 className="flex items-center gap-3 text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white m-0 relative -top-1.5">
+        <SectionIcon type="calendar" size={28} className="text-gray-900 dark:text-white shrink-0" />
         <span>Earnings</span>
       </h2>
     </div>
@@ -328,6 +329,15 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
   const [currentDate, setCurrentDate] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('marketCap');
   const [ascending, setAscending] = useState(false);
+  const router = useRouter();
+
+  const handleRowClick = (earning: EarningsData) => {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('mobile-nav-change', {
+        detail: { tab: 'analysis', ticker: earning.ticker }
+      }));
+    }
+  };
 
   // Set current date in Eastern Time
   useEffect(() => {
@@ -542,6 +552,7 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
         sortKey={sortKey}
         ascending={ascending}
         onSort={handleSort}
+        onRowClick={handleRowClick}
         renderMobileCard={(earning) => (
           <EarningsCardMobile
             earning={earning}

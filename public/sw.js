@@ -1,6 +1,6 @@
 // Version management - increment on layout/structure changes
 // Bump this whenever we ship caching changes to ensure clients drop stale caches
-const CACHE_VERSION = "2.0.1";
+const CACHE_VERSION = "2.0.3";
 const CACHE_NAME = `premarketprice-v${CACHE_VERSION}`;
 const STATIC_CACHE = `premarketprice-static-v${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `premarketprice-dynamic-v${CACHE_VERSION}`;
@@ -84,16 +84,37 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // CRITICAL: Never cache Next.js build assets.
-  // Safari is especially prone to serving stale HTML + missing chunks after deploy.
+  // Handle Next.js build assets with Stale-While-Revalidate
+  // This is required for the offline mode to actually work
   if (url.origin === location.origin && url.pathname.startsWith("/_next/")) {
-    event.respondWith(fetch(request));
+    event.respondWith(
+      caches.match(request).then((cachedResponse) => {
+        const fetchPromise = fetch(request).then((networkResponse) => {
+          if (networkResponse.ok) {
+            const responseToCache = networkResponse.clone();
+            caches.open(STATIC_CACHE).then((cache) => {
+              cache.put(request, responseToCache);
+            });
+          }
+          return networkResponse;
+        }).catch(() => {});
+        return cachedResponse || fetchPromise;
+      })
+    );
     return;
   }
 
   // CRITICAL: For navigations (HTML documents), always go network-first and don't cache.
   // This avoids returning old HTML that references removed chunks after deploy.
   if (request.mode === "navigate" || request.destination === "document") {
+    // If the user explicitly chose to continue offline, serve the cached index
+    if (url.searchParams.get("offline") === "true") {
+      event.respondWith(
+        caches.match("/").then((response) => response || caches.match("/offline.html"))
+      );
+      return;
+    }
+
     event.respondWith(
       fetch(request, { cache: "no-store" }).catch(() => caches.match("/offline.html"))
     );
@@ -261,31 +282,49 @@ async function performBackgroundSync() {
 self.addEventListener("push", (event) => {
   console.log("Service Worker: Push notification received");
 
+  let data = {
+    title: "New market data available!",
+    body: "PreMarketPrice Update",
+    url: "/"
+  };
+
+  if (event.data) {
+    try {
+      const payload = event.data.json();
+      data = {
+        title: payload.title || data.title,
+        body: payload.body || data.body,
+        url: payload.url || (payload.ticker ? `/?tab=analysis&ticker=${payload.ticker}` : "/")
+      };
+    } catch (e) {
+      data.body = event.data.text();
+    }
+  }
+
   const options = {
-    body: event.data ? event.data.text() : "New market data available!",
+    body: data.body,
     icon: "/icon-192.png",
     badge: "/icon-192.png",
-    vibrate: [100, 50, 100],
+    vibrate: [200, 100, 200],
     data: {
-      dateOfArrival: Date.now(),
-      primaryKey: 1,
+      url: data.url,
+      dateOfArrival: Date.now()
     },
     actions: [
       {
         action: "explore",
-        title: "View Data",
+        title: "Analyze Now",
         icon: "/icon-192.png",
       },
       {
         action: "close",
-        title: "Close",
-        icon: "/icon-192.png",
+        title: "Dismiss",
       },
     ],
   };
 
   event.waitUntil(
-    self.registration.showNotification("PreMarketPrice", options)
+    self.registration.showNotification(data.title, options)
   );
 });
 
@@ -295,9 +334,23 @@ self.addEventListener("notificationclick", (event) => {
 
   event.notification.close();
 
-  if (event.action === "explore") {
-    event.waitUntil(clients.openWindow("/"));
-  }
+  const urlToOpen = event.notification.data?.url || "/";
+
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((windowClients) => {
+      // Check if there is already a window open with this URL
+      for (let i = 0; i < windowClients.length; i++) {
+        const client = windowClients[i];
+        if (client.url === urlToOpen && "focus" in client) {
+          return client.focus();
+        }
+      }
+      // If no window is open, open a new one
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
+      }
+    })
+  );
 });
 
 // Message handling for communication with main thread

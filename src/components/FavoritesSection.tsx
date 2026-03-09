@@ -55,6 +55,15 @@ export function FavoritesSection({
     }
   };
 
+  const handleRowClick = (stock: StockData) => {
+    if (typeof window !== 'undefined') {
+      // Dispatch unified event with both tab and ticker
+      window.dispatchEvent(new CustomEvent('mobile-nav-change', {
+        detail: { tab: 'analysis', ticker: stock.ticker }
+      }));
+    }
+  };
+
   // Column Definitions for UniversalTable (Identical to AllStocksSection for consistency)
   const columns: ColumnDef<StockData>[] = React.useMemo(() => [
     {
@@ -211,8 +220,8 @@ export function FavoritesSection({
     <section className="favorites">
       <div className="flex items-center justify-between mb-4 px-4 relative z-50">
         <div className="flex items-center">
-          <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--clr-text)] m-0 relative -top-1.5">
-            <SectionIcon type="star" size={24} className="text-[var(--clr-text)]" />
+          <h2 className="flex items-center gap-3 text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white m-0 relative -top-1.5">
+            <SectionIcon type="star" size={28} className="text-gray-900 dark:text-white shrink-0" />
             <span>Favorites</span>
           </h2>
         </div>
@@ -234,11 +243,13 @@ export function FavoritesSection({
         ascending={ascending}
         onSort={onSort}
         emptyMessage={emptyState}
+        onRowClick={handleRowClick}
         renderMobileCard={(stock) => (
           <StockCardMobile
             stock={stock}
             isFavorite={isFavorite(stock.ticker)}
             onToggleFavorite={() => onToggleFavorite(stock.ticker)}
+            onClick={() => handleRowClick(stock)}
           />
         )}
         footer={<SEOContent />}
