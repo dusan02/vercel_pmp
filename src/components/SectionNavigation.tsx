@@ -20,7 +20,6 @@ const sections: SectionConfig[] = [
   { id: 'portfolio', label: 'Portfolio', icon: 'pie' },
   { id: 'favorites', label: 'Favorites', icon: 'star' },
   { id: 'earnings', label: 'Earnings', icon: 'calendar' },
-  { id: 'screener', label: 'Intelligence', icon: 'screener' },
   { id: 'allStocks', label: 'All Stocks', icon: 'globe' },
 ];
 
