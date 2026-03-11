@@ -28,7 +28,7 @@ module.exports = {
     {
       name: "premarketprice",
       script: "server.ts",
-      interpreter: "node_modules/.bin/tsx",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
       cwd: __dirname,
       
       // Fork mode - cluster mode causes crashes with Next.js custom server
@@ -71,7 +71,7 @@ module.exports = {
     {
       name: "pmp-polygon-worker",
       script: "src/workers/polygonWorker.ts",
-      interpreter: "node_modules/.bin/tsx",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
       cwd: __dirname,
       instances: 1,
       exec_mode: "fork",
@@ -95,7 +95,7 @@ module.exports = {
     {
       name: "pmp-bulk-preloader",
       script: "src/workers/backgroundPreloader.ts",
-      interpreter: "node_modules/.bin/tsx",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
       cwd: __dirname,
       instances: 1,
       exec_mode: "fork",
@@ -113,7 +113,7 @@ module.exports = {
     {
       name: "daily-ticker-validator",
       script: "scripts/daily-ticker-validator.ts",
-      interpreter: "node_modules/.bin/tsx",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
       cwd: __dirname,
       instances: 1,
       exec_mode: "fork",
@@ -130,7 +130,7 @@ module.exports = {
     {
       name: "daily-integrity-check",
       script: "scripts/daily-integrity-check.ts",
-      interpreter: "node_modules/.bin/tsx",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
       cwd: __dirname,
       instances: 1,
       exec_mode: "fork",
@@ -151,7 +151,7 @@ module.exports = {
       // Replaces the old morning data refresh. Runs once after market closes.
       name: "post-market-daily-reset",
       script: "scripts/post-market-reset.ts",
-      interpreter: "node_modules/.bin/tsx",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
       cwd: __dirname,
       instances: 1,
       exec_mode: "fork",
@@ -172,7 +172,7 @@ module.exports = {
       // Verify/fix prevClose values vs Polygon (lightweight, safe)
       name: "cron-verify-prevclose",
       script: "scripts/trigger-verify-prevclose.ts",
-      interpreter: "node_modules/.bin/tsx",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
       cwd: __dirname,
       instances: 1,
       exec_mode: "fork",
@@ -192,7 +192,7 @@ module.exports = {
       // Verify/fix sector/industry taxonomy once daily
       name: "cron-verify-sector-industry",
       script: "scripts/trigger-verify-sector-industry.ts",
-      interpreter: "node_modules/.bin/tsx",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
       cwd: __dirname,
       instances: 1,
       exec_mode: "fork",
@@ -211,7 +211,7 @@ module.exports = {
       // Lightweight health/staleness monitor (alerts via optional webhook)
       name: "pmp-health-monitor",
       script: "scripts/health-monitor.ts",
-      interpreter: "node_modules/.bin/tsx",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
       cwd: __dirname,
       instances: 1,
       exec_mode: "fork",
