@@ -46,9 +46,11 @@ export function HomeAnalysis({ activeTicker: propTicker, onTickerChange }: HomeA
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 px-6 py-4">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                     {/* Title */}
-                    <div className="flex items-center gap-2 shrink-0">
-                        <SectionIcon type="analysis" size={22} className="text-gray-900 dark:text-white shrink-0" />
-                        <h2 className="text-xl font-bold text-gray-900 dark:text-white m-0 leading-none">Analysis</h2>
+                    <div className="flex items-center shrink-0">
+                        <h2 className="flex items-center gap-3 text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white m-0 relative -top-1.5">
+                            <SectionIcon type="analysis" size={28} className="text-gray-900 dark:text-white shrink-0" />
+                            <span>Analysis</span>
+                        </h2>
                     </div>
 
                     {/* Inline Search */}

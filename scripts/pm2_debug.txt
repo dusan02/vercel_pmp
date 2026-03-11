@@ -1,0 +1,2 @@
+Command failed: pm2 env premarketprice
+[PM2][ERROR] Modules with id premarketprice not found

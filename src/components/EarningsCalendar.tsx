@@ -183,7 +183,10 @@ export default function EarningsCalendar() {
     return (
       <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4 mb-6">
         <div className="flex items-center mb-4">
-          <h2 className="section-title dark:text-gray-100" data-icon="📅">Earnings</h2>
+          <h2 className="flex items-center gap-3 text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white m-0 relative -top-1.5">
+            <SectionIcon type="calendar" size={28} className="text-gray-900 dark:text-white shrink-0" />
+            <span>Earnings</span>
+          </h2>
         </div>
       </div>
     );
@@ -193,7 +196,10 @@ export default function EarningsCalendar() {
     return (
       <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4 mb-6">
         <div className="flex items-center mb-4">
-          <h2 className="section-title dark:text-gray-100" data-icon="📅">Earnings</h2>
+          <h2 className="flex items-center gap-3 text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white m-0 relative -top-1.5">
+            <SectionIcon type="calendar" size={28} className="text-gray-900 dark:text-white shrink-0" />
+            <span>Earnings</span>
+          </h2>
         </div>
       </div>
     );
@@ -202,7 +208,10 @@ export default function EarningsCalendar() {
   return (
     <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4 mb-6">
       <div className="flex items-center mb-4">
-        <h2 className="section-title dark:text-gray-100" data-icon="📅">Earnings</h2>
+        <h2 className="flex items-center gap-3 text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white m-0 relative -top-1.5">
+          <SectionIcon type="calendar" size={28} className="text-gray-900 dark:text-white shrink-0" />
+          <span>Earnings</span>
+        </h2>
       </div>
 
       <div className="overflow-x-auto">

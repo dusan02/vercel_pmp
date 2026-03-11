@@ -1,0 +1,294 @@
+=== PM2 INFO ===
+ Describing process with id 0 - name premarketprice 
+┌───────────────────┬───────────────────────────────────────────────────────────┐
+│ status            │ online                                                    │
+│ name              │ premarketprice                                            │
+│ namespace         │ default                                                   │
+│ version           │ 0.1.0                                                     │
+│ restarts          │ 6862                                                      │
+│ uptime            │ 3m                                                        │
+│ script path       │ /var/www/premarketprice/server.ts                         │
+│ script args       │ N/A                                                       │
+│ error log path    │ /var/www/premarketprice/logs/pm2/premarketprice-error.log │
+│ out log path      │ /var/www/premarketprice/logs/pm2/premarketprice-out.log   │
+│ pid path          │ /root/.pm2/pids/premarketprice-0.pid                      │
+│ interpreter       │ node_modules/.bin/tsx                                     │
+│ interpreter args  │ N/A                                                       │
+│ script id         │ 0                                                         │
+│ exec cwd          │ /var/www/premarketprice                                   │
+│ exec mode         │ fork_mode                                                 │
+│ node.js version   │ N/A                                                       │
+│ node env          │ production                                                │
+│ watch & reload    │ ✘                                                         │
+│ unstable restarts │ 0                                                         │
+│ created at        │ 2026-03-11T08:45:02.213Z                                  │
+└───────────────────┴───────────────────────────────────────────────────────────┘
+ Divergent env variables from local env 
+┌────────────────┬───────────────────────────────────────┐
+│ SSH_CLIENT     │ 95.102.215.56 59623 22                │
+│ _              │ /usr/bin/pm2                          │
+│ XDG_SESSION_ID │ 240883                                │
+│ PWD            │ /var/www/premarketprice               │
+│ SSH_CONNECTION │ 95.102.215.56 59623 89.185.250.213 22 │
+└────────────────┴───────────────────────────────────────┘
+
+ Add your own code metrics: http://bit.ly/code-metrics
+ Use `pm2 logs premarketprice [--lines 1000]` to display logs
+ Use `pm2 env 0` to display environment variables
+ Use `pm2 monit` to monitor CPU and Memory usage premarketprice
+
+
+=== PM2 LOGS ===
+2026-03-11 04:55:11 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 04:55:58 +01:00: ❌ Error fetching previous close for LRCX: Error [TimeoutError]: The operation was aborted due to timeout
+2026-03-11 04:55:58 +01:00:     at async eL (src/lib/utils/marketCapUtils.ts:156:22)
+2026-03-11 04:55:58 +01:00:     at async $ (src/app/api/cron/verify-prevclose/route.ts:46:30)
+2026-03-11 04:55:58 +01:00:     at async D (src/app/api/cron/verify-prevclose/route.ts:210:28)
+2026-03-11 04:55:58 +01:00:   154 |     // Use /v2/aggs/prev?adjusted=true as single source of truth
+2026-03-11 04:55:58 +01:00:   155 |     const url = `https://api.polygon.io/v2/aggs/ticker/${ticker}/prev?adjusted=true&apiKey=${apiKey}`;
+2026-03-11 04:55:58 +01:00: > 156 |     const response = await fetch(url, {
+2026-03-11 04:55:58 +01:00:       |                      ^
+2026-03-11 04:55:58 +01:00:   157 |       signal: AbortSignal.timeout(10000) // 10 second timeout
+2026-03-11 04:55:58 +01:00:   158 |     });
+2026-03-11 04:55:58 +01:00:   159 | {
+2026-03-11 04:55:58 +01:00:   code: 23,
+2026-03-11 04:55:58 +01:00:   INDEX_SIZE_ERR: 1,
+2026-03-11 04:55:58 +01:00:   DOMSTRING_SIZE_ERR: 2,
+2026-03-11 04:55:58 +01:00:   HIERARCHY_REQUEST_ERR: 3,
+2026-03-11 04:55:58 +01:00:   WRONG_DOCUMENT_ERR: 4,
+2026-03-11 04:55:58 +01:00:   INVALID_CHARACTER_ERR: 5,
+2026-03-11 04:55:58 +01:00:   NO_DATA_ALLOWED_ERR: 6,
+2026-03-11 04:55:58 +01:00:   NO_MODIFICATION_ALLOWED_ERR: 7,
+2026-03-11 04:55:58 +01:00:   NOT_FOUND_ERR: 8,
+2026-03-11 04:55:58 +01:00:   NOT_SUPPORTED_ERR: 9,
+2026-03-11 04:55:58 +01:00:   INUSE_ATTRIBUTE_ERR: 10,
+2026-03-11 04:55:58 +01:00:   INVALID_STATE_ERR: 11,
+2026-03-11 04:55:58 +01:00:   SYNTAX_ERR: 12,
+2026-03-11 04:55:58 +01:00:   INVALID_MODIFICATION_ERR: 13,
+2026-03-11 04:55:58 +01:00:   NAMESPACE_ERR: 14,
+2026-03-11 04:55:58 +01:00:   INVALID_ACCESS_ERR: 15,
+2026-03-11 04:55:58 +01:00:   VALIDATION_ERR: 16,
+2026-03-11 04:55:58 +01:00:   TYPE_MISMATCH_ERR: 17,
+2026-03-11 04:55:58 +01:00:   SECURITY_ERR: 18,
+2026-03-11 04:55:58 +01:00:   NETWORK_ERR: 19,
+2026-03-11 04:55:58 +01:00:   ABORT_ERR: 20,
+2026-03-11 04:55:58 +01:00:   URL_MISMATCH_ERR: 21,
+2026-03-11 04:55:58 +01:00:   QUOTA_EXCEEDED_ERR: 22,
+2026-03-11 04:55:58 +01:00:   TIMEOUT_ERR: 23,
+2026-03-11 04:55:58 +01:00:   INVALID_NODE_TYPE_ERR: 24,
+2026-03-11 04:55:58 +01:00:   DATA_CLONE_ERR: 25
+2026-03-11 04:55:58 +01:00: }
+2026-03-11 05:00:11 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 05:05:12 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 05:10:11 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 05:15:12 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 05:20:10 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 05:25:12 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 05:30:11 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 05:35:12 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 05:40:11 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 05:45:12 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 05:50:11 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 05:55:12 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 05:55:29 +01:00: ❌ Error fetching previous close for AMP: Error [TimeoutError]: The operation was aborted due to timeout
+2026-03-11 05:55:29 +01:00:     at async eL (src/lib/utils/marketCapUtils.ts:156:22)
+2026-03-11 05:55:29 +01:00:     at async $ (src/app/api/cron/verify-prevclose/route.ts:46:30)
+2026-03-11 05:55:29 +01:00:     at async D (src/app/api/cron/verify-prevclose/route.ts:210:28)
+2026-03-11 05:55:29 +01:00:   154 |     // Use /v2/aggs/prev?adjusted=true as single source of truth
+2026-03-11 05:55:29 +01:00:   155 |     const url = `https://api.polygon.io/v2/aggs/ticker/${ticker}/prev?adjusted=true&apiKey=${apiKey}`;
+2026-03-11 05:55:29 +01:00: > 156 |     const response = await fetch(url, {
+2026-03-11 05:55:29 +01:00:       |                      ^
+2026-03-11 05:55:29 +01:00:   157 |       signal: AbortSignal.timeout(10000) // 10 second timeout
+2026-03-11 05:55:29 +01:00:   158 |     });
+2026-03-11 05:55:29 +01:00:   159 | {
+2026-03-11 05:55:29 +01:00:   code: 23,
+2026-03-11 05:55:29 +01:00:   INDEX_SIZE_ERR: 1,
+2026-03-11 05:55:29 +01:00:   DOMSTRING_SIZE_ERR: 2,
+2026-03-11 05:55:29 +01:00:   HIERARCHY_REQUEST_ERR: 3,
+2026-03-11 05:55:29 +01:00:   WRONG_DOCUMENT_ERR: 4,
+2026-03-11 05:55:29 +01:00:   INVALID_CHARACTER_ERR: 5,
+2026-03-11 05:55:29 +01:00:   NO_DATA_ALLOWED_ERR: 6,
+2026-03-11 05:55:29 +01:00:   NO_MODIFICATION_ALLOWED_ERR: 7,
+2026-03-11 05:55:29 +01:00:   NOT_FOUND_ERR: 8,
+2026-03-11 05:55:29 +01:00:   NOT_SUPPORTED_ERR: 9,
+2026-03-11 05:55:29 +01:00:   INUSE_ATTRIBUTE_ERR: 10,
+2026-03-11 05:55:29 +01:00:   INVALID_STATE_ERR: 11,
+2026-03-11 05:55:29 +01:00:   SYNTAX_ERR: 12,
+2026-03-11 05:55:29 +01:00:   INVALID_MODIFICATION_ERR: 13,
+2026-03-11 05:55:29 +01:00:   NAMESPACE_ERR: 14,
+2026-03-11 05:55:29 +01:00:   INVALID_ACCESS_ERR: 15,
+2026-03-11 05:55:29 +01:00:   VALIDATION_ERR: 16,
+2026-03-11 05:55:29 +01:00:   TYPE_MISMATCH_ERR: 17,
+2026-03-11 05:55:29 +01:00:   SECURITY_ERR: 18,
+2026-03-11 05:55:29 +01:00:   NETWORK_ERR: 19,
+2026-03-11 05:55:29 +01:00:   ABORT_ERR: 20,
+2026-03-11 05:55:29 +01:00:   URL_MISMATCH_ERR: 21,
+2026-03-11 05:55:29 +01:00:   QUOTA_EXCEEDED_ERR: 22,
+2026-03-11 05:55:29 +01:00:   TIMEOUT_ERR: 23,
+2026-03-11 05:55:29 +01:00:   INVALID_NODE_TYPE_ERR: 24,
+2026-03-11 05:55:29 +01:00:   DATA_CLONE_ERR: 25
+2026-03-11 05:55:29 +01:00: }
+2026-03-11 05:55:59 +01:00: ❌ Error fetching previous close for GE: Error [TimeoutError]: The operation was aborted due to timeout
+2026-03-11 05:55:59 +01:00:     at async eL (src/lib/utils/marketCapUtils.ts:156:22)
+2026-03-11 05:55:59 +01:00:     at async $ (src/app/api/cron/verify-prevclose/route.ts:46:30)
+2026-03-11 05:55:59 +01:00:     at async D (src/app/api/cron/verify-prevclose/route.ts:210:28)
+2026-03-11 05:55:59 +01:00:   154 |     // Use /v2/aggs/prev?adjusted=true as single source of truth
+2026-03-11 05:55:59 +01:00:   155 |     const url = `https://api.polygon.io/v2/aggs/ticker/${ticker}/prev?adjusted=true&apiKey=${apiKey}`;
+2026-03-11 05:55:59 +01:00: > 156 |     const response = await fetch(url, {
+2026-03-11 05:55:59 +01:00:       |                      ^
+2026-03-11 05:55:59 +01:00:   157 |       signal: AbortSignal.timeout(10000) // 10 second timeout
+2026-03-11 05:55:59 +01:00:   158 |     });
+2026-03-11 05:55:59 +01:00:   159 | {
+2026-03-11 05:55:59 +01:00:   code: 23,
+2026-03-11 05:55:59 +01:00:   INDEX_SIZE_ERR: 1,
+2026-03-11 05:55:59 +01:00:   DOMSTRING_SIZE_ERR: 2,
+2026-03-11 05:55:59 +01:00:   HIERARCHY_REQUEST_ERR: 3,
+2026-03-11 05:55:59 +01:00:   WRONG_DOCUMENT_ERR: 4,
+2026-03-11 05:55:59 +01:00:   INVALID_CHARACTER_ERR: 5,
+2026-03-11 05:55:59 +01:00:   NO_DATA_ALLOWED_ERR: 6,
+2026-03-11 05:55:59 +01:00:   NO_MODIFICATION_ALLOWED_ERR: 7,
+2026-03-11 05:55:59 +01:00:   NOT_FOUND_ERR: 8,
+2026-03-11 05:55:59 +01:00:   NOT_SUPPORTED_ERR: 9,
+2026-03-11 05:55:59 +01:00:   INUSE_ATTRIBUTE_ERR: 10,
+2026-03-11 05:55:59 +01:00:   INVALID_STATE_ERR: 11,
+2026-03-11 05:55:59 +01:00:   SYNTAX_ERR: 12,
+2026-03-11 05:55:59 +01:00:   INVALID_MODIFICATION_ERR: 13,
+2026-03-11 05:55:59 +01:00:   NAMESPACE_ERR: 14,
+2026-03-11 05:55:59 +01:00:   INVALID_ACCESS_ERR: 15,
+2026-03-11 05:55:59 +01:00:   VALIDATION_ERR: 16,
+2026-03-11 05:55:59 +01:00:   TYPE_MISMATCH_ERR: 17,
+2026-03-11 05:55:59 +01:00:   SECURITY_ERR: 18,
+2026-03-11 05:55:59 +01:00:   NETWORK_ERR: 19,
+2026-03-11 05:55:59 +01:00:   ABORT_ERR: 20,
+2026-03-11 05:55:59 +01:00:   URL_MISMATCH_ERR: 21,
+2026-03-11 05:55:59 +01:00:   QUOTA_EXCEEDED_ERR: 22,
+2026-03-11 05:55:59 +01:00:   TIMEOUT_ERR: 23,
+2026-03-11 05:55:59 +01:00:   INVALID_NODE_TYPE_ERR: 24,
+2026-03-11 05:55:59 +01:00:   DATA_CLONE_ERR: 25
+2026-03-11 05:55:59 +01:00: }
+2026-03-11 06:00:12 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 06:05:12 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 06:10:10 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 06:15:12 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 06:20:11 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 06:25:12 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 06:30:11 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 06:35:12 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 06:40:11 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 06:45:12 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 06:50:10 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 06:55:12 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 07:00:09 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 07:05:12 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 07:10:11 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 07:15:11 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 07:20:11 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 07:25:12 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 07:30:11 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 07:35:12 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 07:36:17 +01:00: ❌ Error fetching previous close for TECH: Error [TimeoutError]: The operation was aborted due to timeout
+2026-03-11 07:36:17 +01:00:     at async eL (src/lib/utils/marketCapUtils.ts:156:22)
+2026-03-11 07:36:17 +01:00:     at async $ (src/app/api/cron/verify-prevclose/route.ts:46:30)
+2026-03-11 07:36:17 +01:00:     at async D (src/app/api/cron/verify-prevclose/route.ts:210:28)
+2026-03-11 07:36:17 +01:00:   154 |     // Use /v2/aggs/prev?adjusted=true as single source of truth
+2026-03-11 07:36:17 +01:00:   155 |     const url = `https://api.polygon.io/v2/aggs/ticker/${ticker}/prev?adjusted=true&apiKey=${apiKey}`;
+2026-03-11 07:36:17 +01:00: > 156 |     const response = await fetch(url, {
+2026-03-11 07:36:17 +01:00:       |                      ^
+2026-03-11 07:36:17 +01:00:   157 |       signal: AbortSignal.timeout(10000) // 10 second timeout
+2026-03-11 07:36:17 +01:00:   158 |     });
+2026-03-11 07:36:17 +01:00:   159 | {
+2026-03-11 07:36:17 +01:00:   code: 23,
+2026-03-11 07:36:17 +01:00:   INDEX_SIZE_ERR: 1,
+2026-03-11 07:36:17 +01:00:   DOMSTRING_SIZE_ERR: 2,
+2026-03-11 07:36:17 +01:00:   HIERARCHY_REQUEST_ERR: 3,
+2026-03-11 07:36:17 +01:00:   WRONG_DOCUMENT_ERR: 4,
+2026-03-11 07:36:17 +01:00:   INVALID_CHARACTER_ERR: 5,
+2026-03-11 07:36:17 +01:00:   NO_DATA_ALLOWED_ERR: 6,
+2026-03-11 07:36:17 +01:00:   NO_MODIFICATION_ALLOWED_ERR: 7,
+2026-03-11 07:36:17 +01:00:   NOT_FOUND_ERR: 8,
+2026-03-11 07:36:17 +01:00:   NOT_SUPPORTED_ERR: 9,
+2026-03-11 07:36:17 +01:00:   INUSE_ATTRIBUTE_ERR: 10,
+2026-03-11 07:36:17 +01:00:   INVALID_STATE_ERR: 11,
+2026-03-11 07:36:17 +01:00:   SYNTAX_ERR: 12,
+2026-03-11 07:36:17 +01:00:   INVALID_MODIFICATION_ERR: 13,
+2026-03-11 07:36:17 +01:00:   NAMESPACE_ERR: 14,
+2026-03-11 07:36:17 +01:00:   INVALID_ACCESS_ERR: 15,
+2026-03-11 07:36:17 +01:00:   VALIDATION_ERR: 16,
+2026-03-11 07:36:17 +01:00:   TYPE_MISMATCH_ERR: 17,
+2026-03-11 07:36:17 +01:00:   SECURITY_ERR: 18,
+2026-03-11 07:36:17 +01:00:   NETWORK_ERR: 19,
+2026-03-11 07:36:17 +01:00:   ABORT_ERR: 20,
+2026-03-11 07:36:17 +01:00:   URL_MISMATCH_ERR: 21,
+2026-03-11 07:36:17 +01:00:   QUOTA_EXCEEDED_ERR: 22,
+2026-03-11 07:36:17 +01:00:   TIMEOUT_ERR: 23,
+2026-03-11 07:36:17 +01:00:   INVALID_NODE_TYPE_ERR: 24,
+2026-03-11 07:36:17 +01:00:   DATA_CLONE_ERR: 25
+2026-03-11 07:36:17 +01:00: }
+2026-03-11 07:40:10 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 07:45:12 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 07:50:11 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 07:55:11 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 08:00:10 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 08:05:09 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 08:10:10 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 08:15:12 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 08:20:10 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 08:20:35 +01:00: ❌ Error fetching previous close for CME: Error [TimeoutError]: The operation was aborted due to timeout
+2026-03-11 08:20:35 +01:00:     at async eL (src/lib/utils/marketCapUtils.ts:156:22)
+2026-03-11 08:20:35 +01:00:     at async $ (src/app/api/cron/verify-prevclose/route.ts:46:30)
+2026-03-11 08:20:35 +01:00:     at async D (src/app/api/cron/verify-prevclose/route.ts:210:28)
+2026-03-11 08:20:35 +01:00:   154 |     // Use /v2/aggs/prev?adjusted=true as single source of truth
+2026-03-11 08:20:35 +01:00:   155 |     const url = `https://api.polygon.io/v2/aggs/ticker/${ticker}/prev?adjusted=true&apiKey=${apiKey}`;
+2026-03-11 08:20:35 +01:00: > 156 |     const response = await fetch(url, {
+2026-03-11 08:20:35 +01:00:       |                      ^
+2026-03-11 08:20:35 +01:00:   157 |       signal: AbortSignal.timeout(10000) // 10 second timeout
+2026-03-11 08:20:35 +01:00:   158 |     });
+2026-03-11 08:20:35 +01:00:   159 | {
+2026-03-11 08:20:35 +01:00:   code: 23,
+2026-03-11 08:20:35 +01:00:   INDEX_SIZE_ERR: 1,
+2026-03-11 08:20:35 +01:00:   DOMSTRING_SIZE_ERR: 2,
+2026-03-11 08:20:35 +01:00:   HIERARCHY_REQUEST_ERR: 3,
+2026-03-11 08:20:35 +01:00:   WRONG_DOCUMENT_ERR: 4,
+2026-03-11 08:20:35 +01:00:   INVALID_CHARACTER_ERR: 5,
+2026-03-11 08:20:35 +01:00:   NO_DATA_ALLOWED_ERR: 6,
+2026-03-11 08:20:35 +01:00:   NO_MODIFICATION_ALLOWED_ERR: 7,
+2026-03-11 08:20:35 +01:00:   NOT_FOUND_ERR: 8,
+2026-03-11 08:20:35 +01:00:   NOT_SUPPORTED_ERR: 9,
+2026-03-11 08:20:35 +01:00:   INUSE_ATTRIBUTE_ERR: 10,
+2026-03-11 08:20:35 +01:00:   INVALID_STATE_ERR: 11,
+2026-03-11 08:20:35 +01:00:   SYNTAX_ERR: 12,
+2026-03-11 08:20:35 +01:00:   INVALID_MODIFICATION_ERR: 13,
+2026-03-11 08:20:35 +01:00:   NAMESPACE_ERR: 14,
+2026-03-11 08:20:35 +01:00:   INVALID_ACCESS_ERR: 15,
+2026-03-11 08:20:35 +01:00:   VALIDATION_ERR: 16,
+2026-03-11 08:20:35 +01:00:   TYPE_MISMATCH_ERR: 17,
+2026-03-11 08:20:35 +01:00:   SECURITY_ERR: 18,
+2026-03-11 08:20:35 +01:00:   NETWORK_ERR: 19,
+2026-03-11 08:20:35 +01:00:   ABORT_ERR: 20,
+2026-03-11 08:20:35 +01:00:   URL_MISMATCH_ERR: 21,
+2026-03-11 08:20:35 +01:00:   QUOTA_EXCEEDED_ERR: 22,
+2026-03-11 08:20:35 +01:00:   TIMEOUT_ERR: 23,
+2026-03-11 08:20:35 +01:00:   INVALID_NODE_TYPE_ERR: 24,
+2026-03-11 08:20:35 +01:00:   DATA_CLONE_ERR: 25
+2026-03-11 08:20:35 +01:00: }
+2026-03-11 08:25:11 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 08:30:11 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 08:35:11 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 08:40:10 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 08:45:11 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 08:50:11 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 08:55:12 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 09:00:12 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 09:05:12 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 09:10:11 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 09:15:12 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 09:20:11 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 09:25:13 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 09:27:51 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 09:30:11 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 09:35:12 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 09:40:11 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-11 09:45:13 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+
+
+=== OOMS ===

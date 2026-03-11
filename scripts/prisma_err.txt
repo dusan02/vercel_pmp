@@ -1,0 +1,106 @@
+ async $ (src/app/api/cron/verify-prevclose/route.ts:46:30)
+2026-03-10 07:06:26 +01:00:     at async D (src/app/api/cron/verify-prevclose/route.ts:210:28)
+2026-03-10 07:06:26 +01:00:   154 |     // Use /v2/aggs/prev?adjusted=true as single source of truth
+2026-03-10 07:06:26 +01:00:   155 |     const url = `https://api.polygon.io/v2/aggs/ticker/${ticker}/prev?adjusted=true&apiKey=${apiKey}`;
+2026-03-10 07:06:26 +01:00: > 156 |     const response = await fetch(url, {
+2026-03-10 07:06:26 +01:00:       |                      ^
+2026-03-10 07:06:26 +01:00:   157 |       signal: AbortSignal.timeout(10000) // 10 second timeout
+2026-03-10 07:06:26 +01:00:   158 |     });
+2026-03-10 07:06:26 +01:00:   159 | {
+2026-03-10 07:06:26 +01:00:   code: 23,
+2026-03-10 07:06:26 +01:00:   INDEX_SIZE_ERR: 1,
+2026-03-10 07:06:26 +01:00:   DOMSTRING_SIZE_ERR: 2,
+2026-03-10 07:06:26 +01:00:   HIERARCHY_REQUEST_ERR: 3,
+2026-03-10 07:06:26 +01:00:   WRONG_DOCUMENT_ERR: 4,
+2026-03-10 07:06:26 +01:00:   INVALID_CHARACTER_ERR: 5,
+2026-03-10 07:06:26 +01:00:   NO_DATA_ALLOWED_ERR: 6,
+2026-03-10 07:06:26 +01:00:   NO_MODIFICATION_ALLOWED_ERR: 7,
+2026-03-10 07:06:26 +01:00:   NOT_FOUND_ERR: 8,
+2026-03-10 07:06:26 +01:00:   NOT_SUPPORTED_ERR: 9,
+2026-03-10 07:06:26 +01:00:   INUSE_ATTRIBUTE_ERR: 10,
+2026-03-10 07:06:26 +01:00:   INVALID_STATE_ERR: 11,
+2026-03-10 07:06:26 +01:00:   SYNTAX_ERR: 12,
+2026-03-10 07:06:26 +01:00:   INVALID_MODIFICATION_ERR: 13,
+2026-03-10 07:06:26 +01:00:   NAMESPACE_ERR: 14,
+2026-03-10 07:06:26 +01:00:   INVALID_ACCESS_ERR: 15,
+2026-03-10 07:06:26 +01:00:   VALIDATION_ERR: 16,
+2026-03-10 07:06:26 +01:00:   TYPE_MISMATCH_ERR: 17,
+2026-03-10 07:06:26 +01:00:   SECURITY_ERR: 18,
+2026-03-10 07:06:26 +01:00:   NETWORK_ERR: 19,
+2026-03-10 07:06:26 +01:00:   ABORT_ERR: 20,
+2026-03-10 07:06:26 +01:00:   URL_MISMATCH_ERR: 21,
+2026-03-10 07:06:26 +01:00:   QUOTA_EXCEEDED_ERR: 22,
+2026-03-10 07:06:26 +01:00:   TIMEOUT_ERR: 23,
+2026-03-10 07:06:26 +01:00:   INVALID_NODE_TYPE_ERR: 24,
+2026-03-10 07:06:26 +01:00:   DATA_CLONE_ERR: 25
+2026-03-10 07:06:26 +01:00: }
+2026-03-10 07:10:11 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-10 07:15:13 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-10 07:20:12 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-10 07:25:12 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-10 07:30:11 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-10 07:35:12 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-10 07:40:11 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-10 07:45:13 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-10 07:50:11 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-10 07:55:13 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-10 08:00:10 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-10 08:05:10 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-10 08:10:11 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-10 08:15:12 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-10 08:20:10 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-10 08:25:12 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-10 08:30:11 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-10 08:35:13 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-10 08:39:53 +01:00: ⚠️ AiService: No LLM API key configured
+2026-03-10 08:39:53 +01:00: [Analysis API] Score calculation failed for NVDA: 
+2026-03-10 08:39:53 +01:00: Invalid `prisma.analysisCache.upsert()` invocation:
+2026-03-10 08:39:53 +01:00: 
+2026-03-10 08:39:53 +01:00: 
+2026-03-10 08:39:53 +01:00: The column `altmanZ` does not exist in the current database.
+2026-03-10 08:39:54 +01:00: Error generating analysis for NVDA: Error [PrismaClientKnownRequestError]: 
+2026-03-10 08:39:54 +01:00: Invalid `prisma.analysisCache.upsert()` invocation:
+2026-03-10 08:39:54 +01:00: 
+2026-03-10 08:39:54 +01:00: 
+2026-03-10 08:39:54 +01:00: The column `altmanZ` does not exist in the current database.
+2026-03-10 08:39:54 +01:00:     at async p.calculateScores (src/services/analysisService.ts:547:9)
+2026-03-10 08:39:54 +01:00:     at async C (src/app/api/analysis/[ticker]/route.ts:133:13)
+2026-03-10 08:39:54 +01:00:   545 |         }
+2026-03-10 08:39:54 +01:00:   546 |
+2026-03-10 08:39:54 +01:00: > 547 |         await (prisma.analysisCache as any).upsert({
+2026-03-10 08:39:54 +01:00:       |         ^
+2026-03-10 08:39:54 +01:00:   548 |             where: { symbol },
+2026-03-10 08:39:54 +01:00:   549 |             update: {
+2026-03-10 08:39:54 +01:00:   550 |                 healthScore, profitabilityScore, valuationScore, verdictText, {
+2026-03-10 08:39:54 +01:00:   code: 'P2022',
+2026-03-10 08:39:54 +01:00:   clientVersion: '5.22.0',
+2026-03-10 08:39:54 +01:00:   meta: [Object]
+2026-03-10 08:39:54 +01:00: }
+2026-03-10 08:40:11 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-10 08:41:13 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-10 08:45:11 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-10 08:50:10 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-10 08:54:07 +01:00: ⚠️ No valid timestamps found in SessionPrice records
+2026-03-10 08:54:11 +01:00: ⚠️ No valid timestamps found in SessionPrice records
+2026-03-10 08:55:11 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-10 08:57:29 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2026-03-10 08:59:14 +01:00: ⚠️ No valid timestamps found in SessionPrice records
+2026-03-10 08:59:42 +01:00: Error fetching analysis for TSLA: Error [PrismaClientKnownRequestError]: 
+2026-03-10 08:59:42 +01:00: Invalid `prisma.analysisCache.findUnique()` invocation:
+2026-03-10 08:59:42 +01:00: 
+2026-03-10 08:59:42 +01:00: 
+2026-03-10 08:59:42 +01:00: The column `main.AnalysisCache.altmanZ` does not exist in the current database.
+2026-03-10 08:59:42 +01:00:     at async A (src/app/api/analysis/[ticker]/route.ts:7:22)
+2026-03-10 08:59:42 +01:00:     at async E (src/app/api/analysis/[ticker]/route.ts:61:25)
+2026-03-10 08:59:42 +01:00:    5 | // Helper: compute metrics for a single symbol
+2026-03-10 08:59:42 +01:00:    6 | async function computeMetrics(symbol: string) {
+2026-03-10 08:59:42 +01:00: >  7 |     const analysis = await prisma.analysisCache.findUnique({ where: { symbol } });
+2026-03-10 08:59:42 +01:00:      |                      ^
+2026-03-10 08:59:42 +01:00:    8 |     if (!analysis) return null;
+2026-03-10 08:59:42 +01:00:    9 |
+2026-03-10 08:59:42 +01:00:   10 |     const stmts = await prisma.financialStatement.findMany({ {
+2026-03-10 08:59:42 +01:00:   code: 'P2022',
+2026-03-10 08:59:42 +01:00:   clientVersion: '5.22.0',
+2026-03-10 08:59:42 +01:00:   meta: [Object]
+2026-03-10 08:59:42 +01:00: }
+2026-03-10 09:00:13 +01:00: [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
