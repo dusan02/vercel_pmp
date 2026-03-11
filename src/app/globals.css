@@ -512,12 +512,7 @@
   .all-stocks h2,
   .portfolio h2,
   .todays-earnings h2 {
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin: 2rem 0 0.75rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    /* Legacy header font-sizes removed to allow Tailwind utilities to work */
   }
 
   /* Footer */
