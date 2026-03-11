@@ -137,12 +137,26 @@ export async function POST(
             throw e;
         }
 
-        const analysis = await prisma.analysisCache.findUnique({
+        const primary = await computeMetrics(symbol);
+
+        const tickerRecord = await prisma.ticker.findUnique({
             where: { symbol },
+            select: { sector: true, industry: true, description: true, websiteUrl: true, name: true, logoUrl: true, employees: true, lastPrice: true, lastMarketCap: true }
         });
 
+        let peers: string[] = [];
+        if (tickerRecord?.sector) {
+            const peerTickers = await prisma.ticker.findMany({
+                where: { sector: tickerRecord.sector, symbol: { not: symbol } },
+                select: { symbol: true },
+                take: 4,
+                orderBy: { lastPrice: 'desc' },
+            });
+            peers = peerTickers.map(t => t.symbol);
+        }
+
         console.log(`[Analysis API] Deep analysis complete for ${symbol}`);
-        return NextResponse.json(analysis);
+        return NextResponse.json({ ...primary, ticker: tickerRecord, peers });
     } catch (error: any) {
         console.error(`Error generating analysis for ${symbol}:`, error);
         return NextResponse.json({
