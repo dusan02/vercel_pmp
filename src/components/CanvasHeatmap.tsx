@@ -132,7 +132,8 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
         // Draw leaves
         leaves.forEach(leaf => {
             const { x0, y0, x1, y1 } = leaf;
-            const company = leaf.data.meta.companyData;
+            const company = leaf.data.meta?.companyData;
+            if (!company) return;
 
             const tileX = x0 * scale + offset.x;
             const tileY = y0 * scale + offset.y;
@@ -144,7 +145,7 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
 
             // Fill
             // marketCapDiff is represented in B$ in our data model
-            const v = metric === 'mcap' ? (company.marketCapDiff ?? 0) : company.changePercent;
+            const v = metric === 'mcap' ? (company.marketCapDiff ?? 0) : (company.changePercent ?? 0);
             ctx.fillStyle = colorScale(v);
             ctx.fillRect(tileX, tileY, tileW, tileH);
 

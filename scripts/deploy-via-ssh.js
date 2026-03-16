@@ -4,6 +4,9 @@ const conn = new Client();
 conn.on('ready', () => {
     const cmds = [
         'cd /var/www/premarketprice',
+        'git add .',
+        'git stash',
+        'git clean -fd',
         'git pull origin main',
         'npm run build',
         'pm2 start ecosystem.config.js --env production --update-env'

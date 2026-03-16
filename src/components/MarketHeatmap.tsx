@@ -267,7 +267,7 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
   const sumValues = useCallback((node: HierarchyData): number => {
     if (typeof node.value === 'number') return node.value;
     if (!node.children) return 0;
-    return node.children.reduce((acc, c) => acc + sumValues(c), 0);
+    return (node.children as HierarchyData[]).reduce((acc: number, c: HierarchyData) => acc + sumValues(c), 0);
   }, []);
 
   // 2. Výpočet D3 Treemap layoutu
@@ -515,6 +515,8 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
     // Filter out tiny tiles that are barely visible
     // These tiles are too small to show text anyway and just add rendering overhead
     const visibleLeaves = leaves.filter(leaf => {
+      const isCompany = leaf.data.meta?.type === 'company' && !!leaf.data.meta.companyData;
+      if (!isCompany) return false;
       const area = (leaf.x1 - leaf.x0) * (leaf.y1 - leaf.y0);
       return area >= MIN_VISIBLE_AREA;
     });

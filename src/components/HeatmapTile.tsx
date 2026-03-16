@@ -47,7 +47,8 @@ export const HeatmapTile = React.memo<HeatmapTileProps>(({
   const { x0, y0, x1, y1 } = leaf;
   const tileWidth = x1 - x0;
   const tileHeight = y1 - y0;
-  const company = leaf.data.meta.companyData;
+  const company = leaf.data.meta?.companyData;
+  if (!company) return null;
 
   const scaledWidth = tileWidth * scale;
   const scaledHeight = tileHeight * scale;
