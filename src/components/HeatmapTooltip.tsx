@@ -20,6 +20,7 @@ interface HeatmapTooltipProps {
 }
 
 export function HeatmapTooltip({ company, position, timeframe, metric }: HeatmapTooltipProps) {
+  if (!company) return null;
   // Determine position based on viewport width and height
   // Tooltip should be close to cursor but not cover the block
   const HORIZONTAL_OFFSET = 15; // Distance from cursor horizontally

@@ -70,10 +70,10 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   const colorScale = useMemo(() => createHeatmapColorScale(timeframe, metric === 'mcap' ? 'mcap' : 'percent'), [timeframe, metric]);
 
   const getColor = useCallback((company: CompanyNode): string => {
+    if (!company) return '#1a1a1a';
     const value = metric === 'percent'
-      ? company.changePercent
+      ? (company.changePercent ?? 0)
       : (company.marketCapDiff ?? 0);
-    if (value === null || value === undefined) return '#1a1a1a';
     return colorScale(value);
   }, [metric, colorScale]);
 
