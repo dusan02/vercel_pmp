@@ -10,7 +10,7 @@ async function computeMetrics(symbol: string) {
     const stmts = await prisma.financialStatement.findMany({
         where: { symbol },
         orderBy: { endDate: 'desc' },
-        take: 1
+        take: 40
     });
     const latestStmt = stmts[0] || null;
 
@@ -34,6 +34,7 @@ async function computeMetrics(symbol: string) {
 
     return {
         ...analysis,
+        statements: stmts,
         metrics: {
             zScore: altmanZ,
             altmanZ,

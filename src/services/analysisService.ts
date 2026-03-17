@@ -11,17 +11,20 @@ export class AnalysisService {
     static async syncFinancials(symbol: string): Promise<void> {
         if (!this.POLYGON_API_KEY) throw new Error('Chýba Polygon API Key');
 
-        const url = `https://api.polygon.io/vX/reference/financials?ticker=${symbol}&timeframe=quarterly&limit=100&apiKey=${this.POLYGON_API_KEY}`;
+        const timeframes = ['quarterly', 'annual'];
 
         try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error(`Polygon API chyba: ${response.status} ${response.statusText}`);
+            for (const timeframe of timeframes) {
+                const url = `https://api.polygon.io/vX/reference/financials?ticker=${symbol}&timeframe=${timeframe}&limit=100&apiKey=${this.POLYGON_API_KEY}`;
+                
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`Polygon API chyba: ${response.status} ${response.statusText}`);
 
-            const data = await response.json();
-            const results = data.results || [];
+                const data = await response.json();
+                const results = data.results || [];
 
-            // Helper function to extract value robustly since polygon can omit fields
-            const getValue = (source: any, key: string): number | null => source?.[key]?.value ?? null;
+                // Helper function to extract value robustly since polygon can omit fields
+                const getValue = (source: any, key: string): number | null => source?.[key]?.value ?? null;
 
             for (const item of results) {
                 const { start_date, end_date, fiscal_period, fiscal_year, financials } = item;
@@ -34,12 +37,15 @@ export class AnalysisService {
                 const parsedFiscalYear = parseInt(fiscal_year, 10);
                 if (isNaN(parsedFiscalYear)) continue;
 
+                // Determine final period string (e.g. if the API returns timeframe=annual it's 'FY' or 'TTM' sometimes)
+                const finalPeriod = timeframe === 'annual' ? 'FY' : fiscal_period;
+
                 await prisma.financialStatement.upsert({
                     where: {
                         symbol_fiscalYear_fiscalPeriod: {
                             symbol,
                             fiscalYear: parsedFiscalYear,
-                            fiscalPeriod: fiscal_period,
+                            fiscalPeriod: finalPeriod,
                         }
                     },
                     update: {
@@ -65,10 +71,10 @@ export class AnalysisService {
                     } as any, // Temporary cast to bypass stale client types
                     create: {
                         symbol,
-                        period: fiscal_period,
+                        period: finalPeriod,
                         endDate: new Date(end_date),
                         fiscalYear: parsedFiscalYear,
-                        fiscalPeriod: fiscal_period,
+                        fiscalPeriod: finalPeriod,
                         revenue: getValue(inc, 'revenues'),
                         netIncome: getValue(inc, 'net_income_loss'),
                         ebit: getValue(inc, 'operating_income_loss') ?? getValue(inc, 'operating_income'),
@@ -90,6 +96,7 @@ export class AnalysisService {
                     } as any
                 });
             }
+        }
         } catch (error) {
             console.error(`Error syncing financials for ${symbol}:`, error);
             throw error;

@@ -118,17 +118,9 @@ export async function getSharesOutstanding(ticker: string, currentPrice?: number
 
     console.log(`✅ Fetched shares for ${ticker}: ${shares.toLocaleString()}`);
     return shares;
-
   } catch (error) {
     console.error(`❌ Error fetching shares for ${ticker}:`, error);
-
-    // Return cached value even if expired as fallback
-    if (cached) {
-      console.warn(`⚠️ Using expired cached shares for ${ticker}: ${cached.shares.toLocaleString()}`);
-      return cached.shares;
-    }
-
-    throw error;
+    return 0;
   }
 }
 
@@ -177,17 +169,9 @@ export async function getPreviousClose(ticker: string): Promise<number> {
       console.log(`✅ Fetched prevClose for ${ticker}: $${prevClose}`);
     }
     return prevClose;
-
   } catch (error) {
     console.error(`❌ Error fetching previous close for ${ticker}:`, error);
-
-    // Return cached value even if expired as fallback
-    if (cached) {
-      console.warn(`⚠️ Using expired cached prevClose for ${ticker}: $${cached.prevClose}`);
-      return cached.prevClose;
-    }
-
-    throw error;
+    return 0;
   }
 }
 

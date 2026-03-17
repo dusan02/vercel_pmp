@@ -100,12 +100,8 @@ async function fetchEarningsData(date: string): Promise<FinnhubEarningsResponse>
         });
 
         if (!response.ok) {
-            if (response.status === 500) {
-                console.warn(`⚠️ Finnhub API returned 500 for date ${date} - returning empty earnings`);
-                return { earningsCalendar: [] };
-            }
-            const errorText = await response.text().catch(() => response.statusText);
-            throw new Error(`Finnhub API error: ${response.status} - ${errorText}`);
+            console.warn(`⚠️ Finnhub API returned ${response.status} for date ${date} - returning empty earnings`);
+            return { earningsCalendar: [] };
         }
 
         const data = await response.json();
