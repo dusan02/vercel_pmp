@@ -68,7 +68,7 @@ export const PortfolioCardMobile = memo(({
         </div>
 
         {/* 4. Quantity Input */}
-        <div className="shrink-0">
+        <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
           <PortfolioQuantityInput
             value={quantity}
             onChange={(qty) => onUpdateQuantity(stock.ticker, qty)}
@@ -78,7 +78,10 @@ export const PortfolioCardMobile = memo(({
 
         {/* 5. Remove X (Small, unobtrusive) */}
         <button
-          onClick={() => onRemove(stock.ticker)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove(stock.ticker);
+          }}
           className="p-2 text-gray-300 hover:text-red-500 transition-colors -mr-2 shrink-0"
           aria-label="Remove"
         >

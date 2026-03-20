@@ -152,6 +152,7 @@ export function PortfolioSection({
       className: 'text-right',
       showInMobileSort: true,
       mobileWidth: 'w-24',
+      disableRowClick: true,
       render: (stock) => {
         const price = stock.currentPrice ?? 0;
         return <span className="tabular-nums block w-full text-right">${isFinite(price) ? Math.round(price).toLocaleString('en-US') : '0'}</span>;
@@ -163,6 +164,7 @@ export function PortfolioSection({
       align: 'center',
       showInMobileSort: true,
       mobileWidth: 'w-16',
+      disableRowClick: true,
       render: (stock) => (
         <PortfolioQuantityInput
           value={portfolioHoldings[stock.ticker] || 0}
@@ -182,6 +184,7 @@ export function PortfolioSection({
       header: 'Sector',
       sortable: true,
       className: 'hidden md:table-cell',
+      disableRowClick: true,
       render: (stock) => formatSectorName(stock.sector)
     },
     {
@@ -189,6 +192,7 @@ export function PortfolioSection({
       header: 'Industry',
       sortable: true,
       className: 'hidden md:table-cell',
+      disableRowClick: true,
       render: (stock) => stock.industry || 'N/A'
     },
     {
@@ -197,6 +201,7 @@ export function PortfolioSection({
       sortable: isDesktop,
       align: 'right',
       className: 'text-right hidden md:table-cell',
+      disableRowClick: true,
       render: (stock) => {
         const pct = stock.percentChange ?? 0;
         return (
@@ -211,6 +216,7 @@ export function PortfolioSection({
       header: 'Daily P&L',
       sortable: isDesktop,
       align: 'right',
+      disableRowClick: true,
       render: (stock) => {
         const value = calculatePortfolioValue(stock);
         return (
@@ -226,6 +232,7 @@ export function PortfolioSection({
       align: 'center',
       width: '88px',
       showInMobileSort: false, // Hide label in mobile sort header
+      disableRowClick: true,
       render: (stock) => (
         <button
           className="flex items-center justify-center w-8 h-8 mx-auto rounded-lg text-gray-400 hover:text-red-500 hover:bg-gray-100 dark:hover:bg-red-900/20 transition-all duration-200"

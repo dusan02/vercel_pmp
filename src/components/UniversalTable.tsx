@@ -14,6 +14,8 @@ export interface ColumnDef<T> {
     width?: string;
     showInMobileSort?: boolean;
     mobileWidth?: string;
+    /** If true, clicking this cell won't trigger the row's onRowClick */
+    disableRowClick?: boolean;
 }
 
 interface UniversalTableProps<T> {
@@ -173,6 +175,11 @@ export function UniversalTable<T>({
                                                     ${col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left'}
                                                     ${col.className || ''}
                                                 `.trim()}
+                                                onClick={(e) => {
+                                                    if (col.disableRowClick) {
+                                                        e.stopPropagation();
+                                                    }
+                                                }}
                                             >
                                                 {col.render(item)}
                                             </td>

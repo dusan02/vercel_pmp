@@ -81,6 +81,8 @@ module.exports = {
         ENABLE_WEBSOCKET: "true", // Websocket needs Redis
         DATABASE_URL: envVars.DATABASE_URL || process.env.DATABASE_URL,
         POLYGON_API_KEY: envVars.POLYGON_API_KEY || process.env.POLYGON_API_KEY,
+        POLYGON_MAX_BATCH_SIZE: "100",
+        POLYGON_BATCH_DELAY_MS: envVars.POLYGON_BATCH_DELAY_MS || "1000",
         // Redis - DISABLED
         REDIS_URL: "",
         USE_LOCAL_REDIS: "true",

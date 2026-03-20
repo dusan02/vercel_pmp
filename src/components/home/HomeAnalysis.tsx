@@ -94,7 +94,7 @@ export function HomeAnalysis({ activeTicker: propTicker, onTickerChange }: HomeA
             <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-4 flex items-center gap-3 mt-[-8px]">
                 <AlertTriangle className="text-yellow-600 dark:text-yellow-500 shrink-0" size={20} />
                 <p className="text-sm font-medium text-yellow-800 dark:text-yellow-400 m-0">
-                    Site under construction - non correct data yet
+                    Analysis site under construction - non correct data yet
                 </p>
             </div>
 

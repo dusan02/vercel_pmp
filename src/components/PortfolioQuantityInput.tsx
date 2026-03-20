@@ -153,6 +153,8 @@ export function PortfolioQuantityInput({ value, onChange, className = '', minVal
       onChange={handleChange}
       onBlur={handleBlur}
       onKeyDown={handleKeyDown}
+      onClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
       // Default sizing: allow up to 4 digits (9999) comfortably on mobile
       className={`pmp-input min-w-[56px] w-16 px-2 py-1 text-center font-medium tabular-nums font-mono ${className}`}
       placeholder="0"

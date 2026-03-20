@@ -694,6 +694,8 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
                           </div>
                         )}
                       </div>
+
+                      <SEOContent />
                     </div>
 
                     <footer className="footer hidden lg:block" aria-label="Site footer">
