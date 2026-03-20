@@ -59,7 +59,6 @@ export default function HeatmapPage() {
   }, []);
 
   const handleTileClick = (company: CompanyNode) => {
-    // Jednoklik - nič nerobíme (iba tooltip)
     logger.debug('Heatmap tile clicked', { symbol: company.symbol });
     
     // Track ticker click event
@@ -67,6 +66,10 @@ export default function HeatmapPage() {
       ticker: company.symbol,
       source: 'heatmap'
     });
+
+    // Redirect to home page with Analysis tab and the clicked ticker
+    // Format: /?tab=analysis&ticker=SYMBOL
+    router.push(`/?tab=analysis&ticker=${company.symbol.toUpperCase()}`);
   };
 
   return (
