@@ -96,8 +96,8 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
                             )}
                         </div>
 
-                        {/* Stats Stack (Vertical, Left-aligned, No cells) */}
-                        <div className="flex flex-col gap-4 mt-2">
+                        {/* Stats Stack (Inline label & value) */}
+                        <div className="flex flex-col gap-2.5 mt-2">
                             {[
                                 { label: 'Sector', value: data.ticker.sector },
                                 { label: 'Industry', value: data.ticker.industry?.replace('SIC: ', '') },
@@ -105,11 +105,11 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
                                 { label: 'Price', value: data.ticker.lastPrice ? `$${data.ticker.lastPrice.toFixed(2)}` : null },
                                 { label: 'Employees', value: data.ticker.employees ? data.ticker.employees.toLocaleString() : null },
                             ].map(({ label, value }) => (
-                                <div key={label} className="text-left flex flex-col items-start min-w-0">
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold leading-none mb-1">{label}</p>
+                                <div key={label} className="text-left flex flex-row items-baseline gap-2 min-w-0">
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold w-28 shrink-0">{label}</p>
                                     {value
-                                        ? <p className="text-base font-bold text-gray-900 dark:text-white truncate max-w-full leading-tight" title={value}>{value}</p>
-                                        : <span className="inline-block animate-pulse bg-gray-200 dark:bg-gray-700 rounded h-5 w-24 mt-0.5" aria-label="Loading" />
+                                        ? <p className="text-sm font-bold text-gray-900 dark:text-white truncate max-w-full" title={value}>{value}</p>
+                                        : <span className="inline-block animate-pulse bg-gray-200 dark:bg-gray-700 rounded h-4 w-24" aria-label="Loading" />
                                     }
                                 </div>
                             ))}
