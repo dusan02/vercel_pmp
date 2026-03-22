@@ -56,7 +56,7 @@ async function main() {
 
   for (const ticker of tickers) {
     const url = ticker.websiteUrl;
-    if (!url) continue;
+    if (typeof url !== 'string' || !url) continue;
 
     // Clean domain for Clearbit
     const domain = url
