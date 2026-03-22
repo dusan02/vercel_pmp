@@ -7,6 +7,7 @@
  * 3. Split day adjusted consistency
  */
 
+import { jest } from '@jest/globals';
 import { prisma } from '@/lib/db/prisma';
 import { createETDate, getDateET } from '@/lib/utils/dateET';
 import { ingestBatch } from '../polygonWorker';
