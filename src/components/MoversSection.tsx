@@ -8,6 +8,7 @@ import { SectionSkeleton } from './SectionSkeleton';
 import CompanyLogo from './CompanyLogo';
 import { CustomDropdown } from './CustomDropdown';
 import { SectionIcon } from './SectionIcon';
+import { getCompanyName } from '@/lib/companyNames';
 
 /**
  * Mover data structure from API
@@ -195,7 +196,7 @@ export function MoversSection({ onTileClick }: { onTileClick?: (ticker: string) 
                             <div className="min-w-0 cursor-pointer" onClick={() => onTileClick?.(mover.symbol)}>
                                 <div className="flex items-center gap-2 flex-wrap">
                                     <span className="font-bold text-base text-gray-900 dark:text-gray-100 leading-tight">{mover.symbol}</span>
-                                    <span className="text-xs text-gray-500 dark:text-gray-400 truncate hidden sm:inline leading-tight">{mover.name}</span>
+                                    <span className="text-xs text-gray-500 dark:text-gray-400 truncate hidden sm:inline leading-tight">{getCompanyName(mover.symbol)}</span>
                                     {renderCategoryBadge(mover.moversCategory)}
                                 </div>
 
