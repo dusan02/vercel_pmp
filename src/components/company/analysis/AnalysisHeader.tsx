@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import CompanyLogo from '@/components/CompanyLogo';
+import type { AnalysisData } from '@/components/company/AnalysisTab';
 
 /** Format large numbers as $3.2T / $245.8B / $12.3M */
 export function formatMarketCap(val: number | null | undefined): string | null {
@@ -45,7 +46,7 @@ export function SearchTickerBar({ currentTicker }: { currentTicker: string }) {
 interface AnalysisHeaderProps {
     ticker: string;
     hideSearch: boolean;
-    data: any;
+    data: AnalysisData;
 }
 
 export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps) {
