@@ -4,6 +4,7 @@
  * Tests session-aware price resolution and percent change calculation
  */
 
+import { jest } from '@jest/globals';
 import { resolveEffectivePrice, calculatePercentChange } from '../priceResolver';
 import { PriceState, getPricingState } from '../pricingStateMachine';
 import { nowET } from '../dateET';

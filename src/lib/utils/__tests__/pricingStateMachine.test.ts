@@ -4,6 +4,7 @@
  * Tests pricing state detection and overwrite protection
  */
 
+import { jest } from '@jest/globals';
 import { getPricingState, canOverwritePrice, PriceState, getPreviousCloseTTL } from '../pricingStateMachine';
 import { nowET } from '../dateET';
 import * as timeUtils from '../timeUtils';
