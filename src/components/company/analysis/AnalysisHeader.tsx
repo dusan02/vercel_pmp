@@ -71,12 +71,11 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
                                     src={data.ticker.logoUrl?.startsWith('/') 
                                         ? data.ticker.logoUrl 
                                         : (data.ticker.websiteUrl 
-                                            ? `https://logo.clearbit.com/${data.ticker.websiteUrl.replace(/^https?:\/\/(www\.)?/, '').split('/')[0]}?size=512` 
+                                            ? `https://logo.clearbit.com/${data.ticker.websiteUrl.replace(/^https?:\/\/(www\.)?/, '').split('/')[0]}?format=svg` 
                                             : data.ticker.logoUrl)
                                     }
                                     alt={data.ticker.name || ticker}
                                     className="w-full h-full object-contain"
-                                    style={{ imageRendering: '-webkit-optimize-contrast' }}
                                         onError={(e) => {
                                             if (e.currentTarget.src.includes('clearbit') && data.ticker.logoUrl) {
                                                 e.currentTarget.src = data.ticker.logoUrl;
