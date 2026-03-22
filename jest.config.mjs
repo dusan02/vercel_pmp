@@ -4,7 +4,16 @@ export default {
   roots: ["<rootDir>/src"],
   testMatch: ["**/__tests__/**/*.test.ts"],
   transform: {
-    "^.+\\.ts$": "ts-jest",
+    "^.+\\.ts$": [
+      "ts-jest",
+      {
+        useESM: true,
+        tsconfig: {
+          module: "ESNext",
+          target: "ES2022",
+        },
+      },
+    ],
   },
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
@@ -54,8 +63,12 @@ export default {
   detectOpenHandles: false,
   extensionsToTreatAsEsm: [".ts"],
   globals: {
-    'ts-jest': {
+    "ts-jest": {
       useESM: true,
+      tsconfig: {
+        module: "ESNext",
+        target: "ES2022",
+      },
     },
   },
 };
