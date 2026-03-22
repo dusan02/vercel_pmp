@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 
 import { PrismaClient } from '@prisma/client';
-import { ValuationService } from '../src/services/valuationService.js';
+import { GuruFocusService } from '../src/services/guruFocusService.js';
 
 const prisma = new PrismaClient();
 
-async function initializeValuationData() {
+async function initializeGuruFocusData() {
   try {
-    console.log('🚀 Initializing valuation data for all tickers...');
+    console.log('🚀 Initializing GuruFocus data for all tickers...');
     
-    // Získanie všetkých tickerov
+    // Získanie všetkých tickerov s cenovými dátami
     const tickers = await prisma.ticker.findMany({
       where: { 
         lastPrice: { not: null },
@@ -24,11 +24,8 @@ async function initializeValuationData() {
       try {
         console.log(`🔄 Processing ${symbol}...`);
         
-        // Zber 10-ročných historických dát
-        await ValuationService.collectHistoricalData(symbol, 10);
-        
-        // Výpočet percentilov
-        await ValuationService.calculatePercentiles(symbol);
+        // Aktualizácia GuruFocus metrík pre dnešok
+        await GuruFocusService.updateGuruFocusMetrics(symbol, new Date());
         
         console.log(`✅ ${symbol} completed`);
       } catch (error) {
@@ -36,7 +33,7 @@ async function initializeValuationData() {
       }
     }
     
-    console.log('🎉 Valuation data initialization completed!');
+    console.log('🎉 GuruFocus data initialization completed!');
     
   } catch (error) {
     console.error('❌ Initialization failed:', error);
@@ -46,6 +43,4 @@ async function initializeValuationData() {
 }
 
 // Spustenie inicializácie
-if (import.meta.url === `file://${process.argv[1]}`) {
-  initializeValuationData();
-}
+initializeGuruFocusData();

@@ -324,10 +324,26 @@ model DailyValuationHistory {
   closePrice Float?
   marketCap  Float?
 
+  // Basic valuation ratios
   peRatio  Float?
   psRatio  Float?
+  pbRatio  Float?        // NEW: Price/Book Value
   evEbitda Float?
   fcfYield Float?
+
+  // GuruFocus style ratios
+  evRevenue    Float?    // NEW: EV/Revenue
+  evFcf        Float?    // NEW: EV/Free Cash Flow
+  priceTangibleBook Float? // NEW: Price/Tangible Book
+  pegRatio     Float?    // NEW: PEG Ratio (P/E / Growth)
+  dividendYield Float?   // NEW: Dividend Yield
+
+  // Additional metrics for GuruFocus
+  roic         Float?    // NEW: Return on Invested Capital
+  roe          Float?    // NEW: Return on Equity
+  debtToEquity Float?    // NEW: Debt/Equity Ratio
+  currentRatio  Float?   // NEW: Current Ratio
+  quickRatio    Float?   // NEW: Quick Ratio
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -339,6 +355,8 @@ model DailyValuationHistory {
   // Allow efficient lookup by date or by symbol separately
   @@index([symbol])
   @@index([date])
+  @@index([symbol, date, peRatio])
+  @@index([symbol, date, pbRatio])
 }
 
 model AnalysisCache {

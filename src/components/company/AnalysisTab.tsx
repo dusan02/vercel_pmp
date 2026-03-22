@@ -3,6 +3,7 @@
 import { lazy, Suspense } from 'react';
 import FinancialChart, { FinancialStatement } from './FinancialChart';
 import ValuationChart from './ValuationChart';
+import GuruFocusChart from './GuruFocusChart';
 import { AnalysisHeader } from './analysis/AnalysisHeader';
 import { AnalysisControls } from './analysis/AnalysisControls';
 import { VerdictBanner } from './analysis/VerdictBanner';
@@ -267,6 +268,9 @@ export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabP
                 </div>
                 <ValuationChart symbol={ticker} height={400} />
             </div>
+
+            {/* GuruFocus Style Charts */}
+            <GuruFocusChart symbol={ticker} height={450} />
 
             {/* Financial Health Table */}
             <FinancialHealthTable
