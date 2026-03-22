@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Image from 'next/image';
 
 /** Format large numbers as $3.2T / $245.8B / $12.3M */
 export function formatMarketCap(val: number | null | undefined): string | null {
@@ -7,6 +8,47 @@ export function formatMarketCap(val: number | null | undefined): string | null {
     if (val >= 1e9) return `$${(val / 1e9).toFixed(2)}B`;
     if (val >= 1e6) return `$${(val / 1e6).toFixed(2)}M`;
     return `$${val.toFixed(2)}`;
+}
+
+/** CompanyLogo: next/image wrapper with 3-level fallback */
+function CompanyLogo({ logoUrl, websiteUrl, name, ticker }: {
+    logoUrl?: string | null;
+    websiteUrl?: string | null;
+    name?: string | null;
+    ticker: string;
+}) {
+    const clearbitUrl = websiteUrl
+        ? `https://logo.clearbit.com/${websiteUrl.replace(/^https?:\/\/(www\.)?/, '').split('/')[0]}?format=svg`
+        : null;
+
+    // Priority order: local archived → Clearbit SVG → Polygon URL
+    const initialSrc = logoUrl?.startsWith('/') ? logoUrl : (clearbitUrl ?? logoUrl ?? null);
+    const [src, setSrc] = useState<string | null>(initialSrc ?? null);
+    const [failed, setFailed] = useState(false);
+
+    if (failed || !src) {
+        return <span className="text-gray-400 dark:text-gray-500 font-black text-4xl">{ticker}</span>;
+    }
+
+    return (
+        <Image
+            src={src}
+            alt={`${name || ticker} logo`}
+            fill
+            className="object-contain"
+            sizes="160px"
+            priority
+            unoptimized={src.endsWith('.svg') || src.includes('format=svg')}
+            onError={() => {
+                // Fallback: Clearbit → Polygon logoUrl → text
+                if (src === clearbitUrl && logoUrl && !logoUrl.startsWith('/')) {
+                    setSrc(logoUrl);
+                } else {
+                    setFailed(true);
+                }
+            }}
+        />
+    );
 }
 
 export function SearchTickerBar({ currentTicker }: { currentTicker: string }) {
@@ -65,32 +107,13 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
                     <div className="lg:col-span-7 xl:col-span-8 flex flex-col md:flex-row gap-8 items-start">
                         {/* Logo & Basic Info */}
                         <div className="flex flex-col items-center gap-4 w-full md:w-48 flex-shrink-0">
-                            <div className="w-32 h-32 md:w-40 md:h-40 bg-white dark:bg-gray-800 rounded-[2.5rem] flex items-center justify-center p-6 shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                            {data.ticker.logoUrl || data.ticker.websiteUrl ? (
-                                <img
-                                    src={data.ticker.logoUrl?.startsWith('/') 
-                                        ? data.ticker.logoUrl 
-                                        : (data.ticker.websiteUrl 
-                                            ? `https://logo.clearbit.com/${data.ticker.websiteUrl.replace(/^https?:\/\/(www\.)?/, '').split('/')[0]}?format=svg` 
-                                            : data.ticker.logoUrl)
-                                    }
-                                    alt={data.ticker.name || ticker}
-                                    className="w-full h-full object-contain"
-                                        onError={(e) => {
-                                            if (e.currentTarget.src.includes('clearbit') && data.ticker.logoUrl) {
-                                                e.currentTarget.src = data.ticker.logoUrl;
-                                            } else {
-                                                e.currentTarget.style.display = 'none';
-                                                const span = document.createElement('span');
-                                                span.className = 'text-gray-400 font-black text-4xl';
-                                                span.innerText = ticker;
-                                                e.currentTarget.parentElement?.appendChild(span);
-                                            }
-                                        }}
-                                    />
-                                ) : (
-                                    <span className="text-gray-400 dark:text-gray-500 font-black text-4xl lg:text-5xl">{ticker}</span>
-                                )}
+                            <div className="relative w-32 h-32 md:w-40 md:h-40 bg-white dark:bg-gray-800 rounded-[2.5rem] flex items-center justify-center p-5 shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                                <CompanyLogo
+                                    logoUrl={data.ticker.logoUrl}
+                                    websiteUrl={data.ticker.websiteUrl}
+                                    name={data.ticker.name}
+                                    ticker={ticker}
+                                />
                             </div>
                             <div className="text-center">
                                 <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-tight mb-2">
