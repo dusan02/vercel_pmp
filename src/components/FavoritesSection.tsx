@@ -70,7 +70,7 @@ export function FavoritesSection({
       key: 'logo',
       header: 'Logo',
       align: 'left',
-      className: 'hidden lg:table-cell',
+      className: 'hidden md:table-cell', // Changed from lg to md for better responsive behavior
       width: '72px',
       render: (stock) => (
         <div className="flex justify-center items-center w-full">
@@ -90,21 +90,21 @@ export function FavoritesSection({
     {
       key: 'companyName',
       header: 'Company',
-      className: 'hidden lg:table-cell',
+      className: 'hidden md:table-cell', // Consistent with logo visibility
       render: (stock) => <span className="block truncate max-w-[180px]">{getCompanyName(stock.ticker)}</span>
     },
     {
       key: 'sector',
       header: 'Sector',
       sortable: true,
-      className: 'hidden lg:table-cell',
+      className: 'hidden md:table-cell', // Consistent responsive behavior
       render: (stock) => formatSectorName(stock.sector)
     },
     {
       key: 'industry',
       header: 'Industry',
       sortable: true,
-      className: 'hidden lg:table-cell',
+      className: 'hidden md:table-cell', // Consistent responsive behavior
       render: (stock) => stock.industry || 'N/A'
     },
     {
@@ -112,7 +112,7 @@ export function FavoritesSection({
       header: isDesktop ? 'Market Cap' : 'M Cap',
       sortable: true,
       align: 'right',
-      className: 'whitespace-nowrap hidden lg:table-cell',
+      className: 'whitespace-nowrap hidden md:table-cell', // Consistent responsive behavior
       showInMobileSort: true,
       mobileWidth: 'flex-1',
       render: (stock) => <span className="tabular-nums block w-full text-right">{formatBillions(stock.marketCap)}</span>
@@ -122,7 +122,7 @@ export function FavoritesSection({
       header: 'Cap Diff',
       sortable: isDesktop,
       align: 'center',
-      className: 'hidden lg:table-cell',
+      className: 'hidden md:table-cell', // Consistent responsive behavior
       render: (stock) => {
         const diff = stock.marketCapDiff ?? 0;
         return (

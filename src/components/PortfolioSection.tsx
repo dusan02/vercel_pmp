@@ -112,7 +112,7 @@ export function PortfolioSection({
       (stock) =>
         stock.ticker.toLowerCase().includes(term) ||
         getCompanyName(stock.ticker).toLowerCase().includes(term)
-    ).slice(0, 5);
+    ).slice(0, 10); // Increased from 5 to 10 for better user experience
     setPortfolioSearchResults(results);
     setSelectedIndex(-1);
   }, [portfolioSearchTerm, allStocks]);
@@ -145,8 +145,8 @@ export function PortfolioSection({
       render: (stock) => <strong>{stock.ticker}</strong>
     },
     {
-      key: isDesktop ? 'currentPrice' : 'value',
-      header: 'Price',
+      key: 'value', // Consistent key for both desktop and mobile
+      header: 'Value',
       sortable: true,
       align: 'right',
       className: 'text-right',

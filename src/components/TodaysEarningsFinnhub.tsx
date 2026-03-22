@@ -110,7 +110,7 @@ function useEarningsData(date: string, initialData?: EarningsResponse | null) {
 
       // Use AbortController for better timeout handling
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 20000); // Increased to 20s timeout to handle cold starts
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // Reduced to 10s for better UX
 
       let earningsResponse: Response;
       try {
@@ -121,11 +121,8 @@ function useEarningsData(date: string, initialData?: EarningsResponse | null) {
       } catch (fetchError) {
         clearTimeout(timeoutId);
         if (fetchError instanceof Error && fetchError.name === 'AbortError') {
-          // Timeout - handle gracefully without throwing error
-          setData({
-            success: true,
-            data: { preMarket: [], afterMarket: [] }
-          });
+          // Timeout - show proper error message
+          setError('Request timeout - please check your connection and try again');
           setIsLoading(false);
           return;
         }

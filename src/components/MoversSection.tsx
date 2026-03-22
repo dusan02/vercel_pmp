@@ -9,6 +9,7 @@ import CompanyLogo from './CompanyLogo';
 import { CustomDropdown } from './CustomDropdown';
 import { SectionIcon } from './SectionIcon';
 import { getCompanyName } from '@/lib/companyNames';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 /**
  * Mover data structure from API
@@ -30,8 +31,9 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export function MoversSection({ onTileClick }: { onTileClick?: (ticker: string) => void }) {
     const [selectedSector, setSelectedSector] = React.useState<string | null>(null);
-    const { data, error, isLoading, mutate } = useSWR('/api/stocks/movers?limit=30', fetcher, {
-        refreshInterval: 60000, // Refresh every minute
+    const isDesktop = useMediaQuery('(min-width: 1024px)');
+    const { data, error, isLoading, mutate } = useSWR('/api/stocks/movers?limit=50', fetcher, {
+        refreshInterval: 30000, // Refresh every 30 seconds for better real-time experience
         revalidateOnFocus: true
     });
 
@@ -114,7 +116,7 @@ export function MoversSection({ onTileClick }: { onTileClick?: (ticker: string) 
     };
 
     const renderRVOLBadge = (rvol: number | null) => {
-        if (rvol === null || rvol < 1.1) return null;
+        if (rvol === null || rvol < 1.5) return null; // Increased threshold for better relevance
         // High RVOL highlighting
         const colorClass = rvol > 5
             ? 'bg-blue-600/30 text-blue-300 border-blue-500/50 animate-pulse'
@@ -179,7 +181,7 @@ export function MoversSection({ onTileClick }: { onTileClick?: (ticker: string) 
                 <div className={`absolute left-0 top-4 bottom-4 w-1 rounded-r-full transition-colors ${mover.lastChangePct && mover.lastChangePct >= 0 ? 'bg-green-500' : 'bg-red-500'
                     }`} />
                 {isIdiosyncratic && (
-                    <div className="absolute -top-2 -right-2 bg-yellow-500 text-black text-[8px] font-black px-2 py-0.5 rounded-full shadow-lg z-10 animate-bounce">
+                    <div className="absolute -top-2 -right-2 bg-yellow-500 text-black text-[8px] font-black px-2 py-0.5 rounded-full shadow-lg z-10">
                         IDIOSYNCRATIC MOVE
                     </div>
                 )}

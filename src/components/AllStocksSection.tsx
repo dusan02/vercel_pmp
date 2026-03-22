@@ -44,13 +44,13 @@ interface AllStocksSectionProps {
 
 // Table header configuration - Desktop (full)
 const TABLE_HEADERS_DESKTOP: { key?: SortKey; label: string; sortable: boolean; className?: string }[] = [
-  { label: 'Logo', sortable: false, className: 'hidden lg:table-cell text-center' },
+  { label: 'Logo', sortable: false, className: 'hidden md:table-cell text-center' }, // Changed from lg to md
   { key: 'ticker', label: 'Ticker', sortable: true },
-  { label: 'Company', sortable: false, className: 'hidden lg:table-cell' },
-  { key: 'sector', label: 'Sector', sortable: true, className: 'hidden lg:table-cell' },
-  { key: 'industry', label: 'Industry', sortable: true, className: '!text-left hidden lg:table-cell' },
-  { key: 'marketCap', label: 'Market Cap', sortable: true, className: 'whitespace-nowrap hidden lg:table-cell text-center' },
-  { key: 'marketCapDiff', label: 'Cap Diff', sortable: true, className: 'hidden lg:table-cell text-center' },
+  { label: 'Company', sortable: false, className: 'hidden md:table-cell' }, // Changed from lg to md
+  { key: 'sector', label: 'Sector', sortable: true, className: 'hidden md:table-cell' }, // Changed from lg to md
+  { key: 'industry', label: 'Industry', sortable: true, className: '!text-left hidden md:table-cell' }, // Changed from lg to md
+  { key: 'marketCap', label: 'Market Cap', sortable: true, className: 'whitespace-nowrap hidden md:table-cell text-center' }, // Changed from lg to md
+  { key: 'marketCapDiff', label: 'Cap Diff', sortable: true, className: 'hidden md:table-cell text-center' }, // Changed from lg to md
   { key: 'currentPrice', label: 'Price', sortable: true, className: 'text-center' },
   { key: 'percentChange', label: '% Change', sortable: true, className: 'whitespace-nowrap text-center' },
   { label: 'Favorites', sortable: false, className: 'text-center' },
