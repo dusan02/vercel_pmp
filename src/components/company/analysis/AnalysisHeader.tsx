@@ -74,7 +74,7 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
                 <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-start w-full">
 
                     {/* Left block: Identity + Info */}
-                    <div className="flex flex-col gap-5 lg:w-72 xl:w-80 flex-shrink-0">
+                    <div className="flex flex-col gap-5 lg:w-[380px] xl:w-[420px] flex-shrink-0">
 
                         {/* Identity row — same look as All Stocks table row */}
                         <div className="flex items-center gap-4">
@@ -100,7 +100,7 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
                                         </a>
                                     )}
                                 </div>
-                                <h2 className="text-xl font-black text-gray-900 dark:text-white leading-tight mt-1 truncate">
+                                <h2 className="text-xl font-black text-gray-900 dark:text-white leading-tight mt-1">
                                     {t.name || ticker}
                                 </h2>
                             </div>
@@ -129,12 +129,9 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
                                 </svg>
                                 Company Description
                             </p>
-                            <p className="text-[13px] text-gray-900 dark:text-gray-100 leading-relaxed text-justify line-clamp-4 md:not-italic">
+                            <p className="text-[13px] text-gray-900 dark:text-gray-100 leading-relaxed text-justify md:not-italic">
                                 {t.description}
                             </p>
-                            <button className="mt-3 text-[11px] font-bold text-blue-600 hover:text-blue-700 transition-colors uppercase tracking-wider">
-                                Read full bio ▾
-                            </button>
                         </div>
                     )}
                 </div>
