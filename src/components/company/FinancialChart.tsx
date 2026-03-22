@@ -126,8 +126,8 @@ export default function FinancialChart({ statements }: FinancialChartProps) {
                 </div>
             </div>
 
-            <div className="flex-1 w-full min-h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
+            <div className="w-full" style={{ minHeight: 320 }}>
+                <ResponsiveContainer width="100%" height={320}>
                     <BarChart
                         data={chartData}
                         margin={{ top: 10, right: 10, left: 10, bottom: 20 }}
