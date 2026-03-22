@@ -6,12 +6,20 @@ import type { CompanyNode, HeatmapMetric } from '@/lib/heatmap/types';
 import { useElementResize } from '@/hooks/useElementResize';
 import { useHeatmapData } from '@/hooks/useHeatmapData';
 import { useHeatmapMetric } from '@/hooks/useHeatmapMetric';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { HeatmapMetricButtons } from './HeatmapMetricButtons';
 
 // Dynamic import for new mobile treemap (client-side only)
 const MobileTreemapNew = dynamic(
   () => import('@/components/MobileTreemapNew').then(mod => ({ default: mod.MobileTreemapNew })),
-  { ssr: false }
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="h-full w-full bg-black flex items-center justify-center">
+        <div className="text-white text-sm">Loading mobile heatmap...</div>
+      </div>
+    )
+  }
 );
 
 // Desktop heatmap is heavy (D3, tooltip, canvas). Load it only when needed so mobile bundle stays lean.
@@ -21,7 +29,7 @@ const DesktopMarketHeatmap = dynamic(
     ssr: false,
     loading: () => (
       <div className="absolute inset-0 flex items-center justify-center bg-black text-white text-sm">
-        Loading heatmap...
+        Loading desktop heatmap...
       </div>
     ),
   }
@@ -76,19 +84,8 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
 
   const [isMounted, setIsMounted] = useState(false);
 
-  // Mobile detection (for wrapper styling only, MarketHeatmap handles its own mobile detection)
-  const [isMobile, setIsMobile] = useState(false);
-
-  // Detect mobile on mount and resize
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  // Use hook for reliable desktop/mobile detection (consistent with other components)
+  const isMobile = useMediaQuery('(max-width: 767px)');
 
   // Centralized metric state management
   // Use controlledMetric if provided (for external control), otherwise use hook
@@ -97,8 +94,8 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
   );
 
   // Data fetching hook
-  // OPTIMIZATION: On mobile, reduce refresh interval to save battery/data
-  const mobileRefreshInterval = isMobile ? Math.max(refreshInterval, 60000) : refreshInterval; // Min 60s on mobile
+  // OPTIMIZATION: On mobile, use same refresh interval but ensure minimum 30s for battery
+  const mobileRefreshInterval = isMobile ? Math.max(refreshInterval, 30000) : refreshInterval; // Min 30s on mobile
 
   const {
     data,

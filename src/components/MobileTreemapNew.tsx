@@ -52,7 +52,6 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   const theme = preferences.theme;
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [containerSize, setContainerSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
-  const [zoomScale, setZoomScale] = useState(1);
 
   // Detail panel state
   const [selectedCompany, setSelectedCompany] = useState<CompanyNode | null>(null);

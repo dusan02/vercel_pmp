@@ -47,7 +47,8 @@ export function HeatmapPreview({ activeView, wrapperClass, onTileClick }: { acti
     const target = e.target as HTMLElement;
     const isInteractive = target.closest('button') ||
       target.closest('a') ||
-      target.closest('[role="button"]');
+      target.closest('[role="button"]') ||
+      target.closest('.no-redirect');
 
     if (!isInteractive) {
       router.push('/heatmap');
