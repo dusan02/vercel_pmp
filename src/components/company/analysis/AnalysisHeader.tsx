@@ -60,16 +60,28 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
 
             {/* Company Profile */}
             {data.ticker ? (
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8 items-start w-full">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 items-start w-full">
                     {/* Column 1: Logo & Title */}
-                    <div className="md:col-span-4 lg:col-span-3 flex flex-col items-center gap-4 w-full text-center">
-                        {/* Logo Box */}
-                        <div className="w-32 h-32 md:w-40 md:h-40 xl:w-48 xl:h-48 mx-auto bg-white dark:bg-gray-800 rounded-3xl flex items-center justify-center p-4 lg:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
-                            {data.ticker.logoUrl ? (
+                    <div className="md:col-span-4 lg:col-span-3 flex flex-col items-center gap-5 w-full text-center">
+                        {/* Logo Box - Clearbit integration for high-res logo */}
+                        <div className="w-32 h-32 md:w-40 md:h-40 xl:w-48 xl:h-48 mx-auto bg-white dark:bg-gray-800 rounded-[2rem] flex items-center justify-center p-5 lg:p-7 shadow-sm border border-gray-100 dark:border-gray-700">
+                            {data.ticker.websiteUrl || data.ticker.logoUrl ? (
                                 <img
-                                    src={data.ticker.logoUrl}
+                                    src={data.ticker.websiteUrl ? `https://logo.clearbit.com/${data.ticker.websiteUrl.replace(/^https?:\/\/(www\.)?/, '').split('/')[0]}` : data.ticker.logoUrl}
                                     alt={data.ticker.name || ticker}
                                     className="w-full h-full object-contain"
+                                    onError={(e) => {
+                                        // Fallback to Polygon logo if Clearbit fails
+                                        if (e.currentTarget.src.includes('clearbit') && data.ticker.logoUrl) {
+                                            e.currentTarget.src = data.ticker.logoUrl;
+                                        } else {
+                                            e.currentTarget.style.display = 'none';
+                                            const span = document.createElement('span');
+                                            span.className = 'text-gray-400 font-black text-4xl';
+                                            span.innerText = ticker;
+                                            e.currentTarget.parentElement?.appendChild(span);
+                                        }
+                                    }}
                                 />
                             ) : (
                                 <span className="text-gray-400 dark:text-gray-500 font-black text-4xl lg:text-5xl">{ticker}</span>
@@ -81,7 +93,7 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
                             <h2 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white leading-tight break-words px-2">
                                 {data.ticker.name || ticker}
                             </h2>
-                            <div className="flex flex-wrap items-center justify-center gap-2">
+                            <div className="flex flex-wrap items-center justify-center gap-2 mt-1">
                                 <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 text-sm font-bold rounded-full">
                                     {ticker}
                                 </span>
@@ -101,8 +113,8 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
                     </div>
 
                     {/* Column 2: Info (Stats) */}
-                    <div className="md:col-span-8 lg:col-span-5 min-w-0 mt-2 md:mt-0 md:border-l border-gray-100 dark:border-gray-800 md:pl-8 lg:pl-10">
-                        {/* Stats Justified List */}
+                    <div className="md:col-span-8 lg:col-span-4 min-w-0 mt-2 md:mt-0 md:border-l border-gray-100 dark:border-gray-800 md:pl-8 lg:pl-10">
+                        {/* Stats - Tighter gap */}
                         <div className="flex flex-col">
                             {[
                                 { label: 'Sector', value: data.ticker.sector },
@@ -111,10 +123,10 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
                                 { label: 'Price', value: data.ticker.lastPrice ? `$${data.ticker.lastPrice.toFixed(2)}` : null },
                                 { label: 'Employees', value: data.ticker.employees ? data.ticker.employees.toLocaleString() : null },
                             ].map(({ label, value }) => (
-                                <div key={label} className="flex flex-row justify-between items-center py-2.5 border-b border-gray-50 dark:border-gray-800/60 last:border-0 hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors rounded-lg px-2 -mx-2">
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold flex-shrink-0">{label}</p>
+                                <div key={label} className="flex flex-row items-center py-2.5 border-b border-gray-50 dark:border-gray-800/60 last:border-0 hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold w-28 md:w-32 flex-shrink-0">{label}</p>
                                     {value
-                                        ? <p className="text-sm font-bold text-gray-900 dark:text-white text-right truncate pl-4" title={value}>{value}</p>
+                                        ? <p className="text-sm font-bold text-gray-900 dark:text-white truncate" title={value}>{value}</p>
                                         : <span className="inline-block animate-pulse bg-gray-200 dark:bg-gray-700 rounded h-4 w-24" aria-label="Loading" />
                                     }
                                 </div>
@@ -122,20 +134,16 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
                         </div>
                     </div>
 
-                    {/* About Section (Third Column) */}
+                    {/* Column 3: Company Description */}
                     {data.ticker.description && (
-                        <div className="md:col-span-12 lg:col-span-4 mt-6 lg:mt-0 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700 rounded-2xl px-6 py-5 min-w-0 shadow-sm relative overflow-hidden group">
-                            <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3 font-semibold flex items-center gap-2">
+                        <div className="md:col-span-12 lg:col-span-5 mt-6 lg:mt-0 min-w-0 lg:pl-4">
+                            <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-4 font-semibold flex items-center gap-2">
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                About
+                                Company Description
                             </p>
-                            <div className="relative">
-                                <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed text-justify overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 9, WebkitBoxOrient: 'vertical' }}>
-                                    {data.ticker.description}
-                                </p>
-                                {/* Subtle fade out bottom */}
-                                <div className="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-t from-gray-50 dark:from-gray-900/50 to-transparent pointer-events-none opacity-100 group-hover:opacity-0 transition-opacity duration-300"></div>
-                            </div>
+                            <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed text-justify">
+                                {data.ticker.description}
+                            </p>
                         </div>
                     )}
                 </div>
