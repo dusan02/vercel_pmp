@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { StockData, PriceUpdate } from '@/lib/types';
 import type { CompanyNode, HeatmapMetric } from '@/lib/heatmap/types';
 import { useHeatmapCache } from './useHeatmapCache';
+import { useMediaQuery } from './useMediaQuery';
 
 interface UseHeatmapDataProps {
   apiEndpoint?: string;
@@ -55,6 +56,9 @@ export function useHeatmapData({
 
   // Cache hook
   const { cachedData, isLoading: cacheLoading, saveCache } = useHeatmapCache();
+  
+  // Use hook for consistent mobile detection
+  const isMobile = useMediaQuery('(max-width: 767px)');
 
   // Refs
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -141,7 +145,6 @@ export function useHeatmapData({
       }
 
       // OPTIMIZATION (mobile): Request fewer items for MobileTreemap (we only render a small subset anyway)
-      const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
       if (isMobile) {
         // Big enough to cover top market cap + a bit of tail, but much smaller than 3000
         url.searchParams.set('limit', '250');
@@ -290,7 +293,7 @@ export function useHeatmapData({
       setLoading(false);
       isLoadingRef.current = false;
     }
-  }, [apiEndpoint, timeframe, metric, lastEtag, saveCache]);
+  }, [apiEndpoint, timeframe, metric, lastEtag, saveCache, isMobile]);
 
   // Initial load and auto-refresh
   useEffect(() => {

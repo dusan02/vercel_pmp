@@ -65,9 +65,6 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
   const [error, setError] = useState<string | null>(null);
   const [backgroundStatus, setBackgroundStatus] = useState<string | null>(null);
 
-  // Mock stocks for fallback
-  const mockStocks: StockData[] = [];
-
   // Track if initial load happened
   const initialDataLoaded = useRef(initialData.length > 0);
 
@@ -99,9 +96,13 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
 
   const getProjectName = () => {
     if (typeof window !== 'undefined') {
-      return window.location.hostname.includes('premarketprice.com') ? 'pmp' : 'pmp';
+      const hostname = window.location.hostname;
+      if (hostname.includes('premarketprice.com')) return 'pmp';
+      if (hostname.includes('capmovers.com')) return 'cm';
+      if (hostname.includes('gainerslosers.com')) return 'gl';
+      if (hostname.includes('stockcv.com')) return 'cv';
     }
-    return 'pmp';
+    return 'pmp'; // Default fallback
   };
 
   // Helper for fetching and updating stock data - REDUCES DUPLICATION
@@ -242,7 +243,11 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
                 const newStocks = result.data.filter((s: StockData) => !existingTickers.has(s.ticker));
                 const combined = [...prev, ...newStocks];
                 // Sort by marketCapDiff DESC to maintain order
-                combined.sort((a, b) => (b.marketCapDiff || 0) - (a.marketCapDiff || 0));
+                combined.sort((a, b) => {
+                  const aDiff = a.marketCapDiff ?? 0;
+                  const bDiff = b.marketCapDiff ?? 0;
+                  return bDiff - aDiff;
+                });
                 return combined;
               });
 
@@ -259,10 +264,10 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
     };
 
     if ('requestIdleCallback' in window) {
-      const idleCallback = window.requestIdleCallback || ((cb: () => void) => setTimeout(cb, 1));
-      idleCallback(loadInBackground, { timeout: 1000 });
+      window.requestIdleCallback(loadInBackground, { timeout: 1000 });
     } else {
-      setTimeout(loadInBackground, 0);
+      // Fallback: Use setTimeout with longer delay to avoid blocking
+      setTimeout(loadInBackground, 100);
     }
   }, []);
 

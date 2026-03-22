@@ -17,6 +17,24 @@ interface CircuitBreakerState {
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
 const circuitBreakers = new Map<string, CircuitBreakerState>();
 
+// Cleanup expired entries every 5 minutes
+const CLEANUP_INTERVAL = 5 * 60 * 1000;
+let cleanupTimer: NodeJS.Timeout | null = null;
+
+function cleanupExpiredEntries() {
+  const now = Date.now();
+  for (const [key, entry] of rateLimitStore.entries()) {
+    if (now > entry.resetTime) {
+      rateLimitStore.delete(key);
+    }
+  }
+}
+
+// Start cleanup timer
+if (typeof window === 'undefined') {
+  cleanupTimer = setInterval(cleanupExpiredEntries, CLEANUP_INTERVAL);
+}
+
 /**
  * Rate limiter middleware
  */
@@ -111,7 +129,7 @@ export async function withRetry<T>(
 
       // Check for 429 (rate limit) with Retry-After header
       if (error.response?.status === 429) {
-        const retryAfter = error.response.headers['retry-after'];
+        const retryAfter = error.response.headers.get('retry-after');
         if (retryAfter) {
           const delay = parseInt(retryAfter) * 1000;
           await new Promise(resolve => setTimeout(resolve, delay));
