@@ -158,6 +158,10 @@ model Ticker {
   financialStatements FinancialStatement[]
   dailyValuations     DailyValuationHistory[]
   analysisCache       AnalysisCache?
+  
+  // Valuation charts relations
+  valuationHistories   ValuationHistory[]
+  valuationPercentiles ValuationPercentiles[]
 
   @@index([sector])
   @@index([sharesOutstanding])
@@ -386,4 +390,43 @@ model Subscription {
   email     String?  // Optional: e-mail subscription
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model ValuationHistory {
+  id          String   @id @default(cuid())
+  symbol      String
+  date        DateTime
+  metric      String   // 'pe_ratio', 'pb_ratio', 'ps_ratio', 'ev_ebitda'
+  value       Float
+  percentile  Float?   // Vypočítaný percentil v kontexte obdobia
+  period      String   // 'monthly', 'daily'
+  createdAt   DateTime @default(now())
+  
+  ticker Ticker @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+  
+  @@unique([symbol, date, metric, period])
+  @@index([symbol, date])
+  @@index([date])
+  @@index([symbol, metric])
+}
+
+model ValuationPercentiles {
+  id          String   @id @default(cuid())
+  symbol      String
+  metric      String
+  period      String   // '10y', '5y', '1y', '6m', '3m', '1m'
+  p10         Float    // 10th percentile
+  p25         Float    // 25th percentile
+  p50         Float    // 50th percentile (median)
+  p75         Float    // 75th percentile
+  p90         Float    // 90th percentile
+  mean        Float
+  stdDev      Float
+  sampleSize  Int
+  lastUpdated DateTime @default(now())
+  
+  ticker Ticker @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+  
+  @@unique([symbol, metric, period])
+  @@index([symbol, metric])
 }
