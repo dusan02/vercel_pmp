@@ -57,11 +57,6 @@ describe('polygonWorker integration tests', () => {
     await prisma.$disconnect();
   });
 
-  // Force exit after tests to prevent hanging
-  afterAll(() => {
-    process.exit(0);
-  });
-
   beforeEach(async () => {
     // Clean database before each test
     await prisma.sessionPrice.deleteMany();

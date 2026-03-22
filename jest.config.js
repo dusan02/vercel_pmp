@@ -48,4 +48,8 @@ module.exports = {
   setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
   testPathIgnorePatterns: ["/node_modules/", "/.next/"],
   testTimeout: 10000,
+  // Force exit to prevent hanging from open handles
+  forceExit: true,
+  // Detect open handles for debugging
+  detectOpenHandles: false,
 };
