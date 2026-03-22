@@ -234,7 +234,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                     if (width <= 0 || height <= 0) return null;
 
                     // Semantic Zoom: Use effective size for visibility checks
-                    const effectiveScale = Math.max(1, zoomScale);
+                    const effectiveScale = Math.max(1, 1); // Fixed zoomScale reference - zoomScale was removed
                     const label = getTileLabel(company, width * effectiveScale, height * effectiveScale);
 
                     // Center text: remove optical offset for small tiles/fonts to ensure it looks vertically centered
