@@ -22,7 +22,7 @@ export function QualityStabilityStats({
                 </svg>
                 Quality & Stability Stats
             </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4 border border-gray-100 dark:border-gray-700">
                     <div className="text-xs text-gray-500 mb-1">Margin Volatility (σ)</div>
                     <div className="flex justify-between items-end">
@@ -44,6 +44,7 @@ export function QualityStabilityStats({
                         )}
                     </div>
                 </div>
+
                 <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4 border border-gray-100 dark:border-gray-700">
                     <div className="text-xs text-gray-500 mb-1">Negative NI Years (10Y)</div>
                     <div className="flex justify-between items-end">
@@ -60,6 +61,50 @@ export function QualityStabilityStats({
                                 <div className={`text-lg font-bold ${(secondaryData?.negativeNiYears || 0) < (data.negativeNiYears || 0) ? 'text-green-600' : 'text-gray-900 dark:text-white'}`}>
                                     {secondaryData?.negativeNiYears ?? '0'}y
                                     {(secondaryData?.negativeNiYears || 0) < (data.negativeNiYears || 0) && ' 🏆'}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Dilution 5Y */}
+                <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4 border border-gray-100 dark:border-gray-700">
+                    <div className="text-xs text-gray-500 mb-1">Dilution (5Y Change)</div>
+                    <div className="flex justify-between items-end">
+                        <div>
+                            <div className="text-[10px] text-gray-400">{ticker}</div>
+                            <div className={`text-lg font-bold ${data.balanceSheet?.dilution5y && data.balanceSheet.dilution5y < 0 ? 'text-green-600' : data.balanceSheet?.dilution5y && data.balanceSheet.dilution5y > 5 ? 'text-red-500' : 'text-gray-900 dark:text-white'}`}>
+                                {data.balanceSheet?.dilution5y !== null && data.balanceSheet?.dilution5y !== undefined ? (data.balanceSheet.dilution5y > 0 ? '+' : '') + data.balanceSheet.dilution5y.toFixed(1) + '%' : 'N/A'}
+                                {data.balanceSheet?.dilution5y && data.balanceSheet.dilution5y < -2 && ' 🔥'}
+                            </div>
+                        </div>
+                        {compareWith && (
+                            <div className="text-right">
+                                <div className="text-[10px] text-gray-400">{compareWith}</div>
+                                <div className="text-lg font-bold text-gray-900 dark:text-white">
+                                    {secondaryData?.balanceSheet?.dilution5y !== null && secondaryData?.balanceSheet?.dilution5y !== undefined ? (secondaryData.balanceSheet.dilution5y > 0 ? '+' : '') + secondaryData.balanceSheet.dilution5y.toFixed(1) + '%' : 'N/A'}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* SBC % of Net Income */}
+                <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4 border border-gray-100 dark:border-gray-700">
+                    <div className="text-xs text-gray-500 mb-1">SBC (% of Net Income)</div>
+                    <div className="flex justify-between items-end">
+                        <div>
+                            <div className="text-[10px] text-gray-400">{ticker}</div>
+                            <div className={`text-lg font-bold ${data.balanceSheet?.sbcRatio && data.balanceSheet.sbcRatio > 20 ? 'text-red-500' : 'text-gray-900 dark:text-white'}`}>
+                                {data.balanceSheet?.sbcRatio !== null && data.balanceSheet?.sbcRatio !== undefined ? data.balanceSheet.sbcRatio.toFixed(1) + '%' : 'N/A'}
+                                {data.balanceSheet?.sbcRatio && data.balanceSheet.sbcRatio > 20 && ' ⚠️'}
+                            </div>
+                        </div>
+                        {compareWith && (
+                            <div className="text-right">
+                                <div className="text-[10px] text-gray-400">{compareWith}</div>
+                                <div className="text-lg font-bold text-gray-900 dark:text-white">
+                                    {secondaryData?.balanceSheet?.sbcRatio !== null && secondaryData?.balanceSheet?.sbcRatio !== undefined ? secondaryData.balanceSheet.sbcRatio.toFixed(1) + '%' : 'N/A'}
                                 </div>
                             </div>
                         )}

@@ -32,9 +32,65 @@ async function computeMetrics(symbol: string) {
         }
     }
 
+    // Balance Sheet from latest annual statement
+    const latestAnnual = stmts.find(s => s.fiscalPeriod === 'FY') || latestStmt;
+    const totalDebt = latestAnnual?.totalDebt ?? null;
+    const cash = latestAnnual?.cashAndEquivalents ?? null;
+    const netDebt = (totalDebt !== null && cash !== null) ? totalDebt - cash : null;
+    const totalEquity = latestAnnual?.totalEquity ?? null;
+    const totalAssets = latestAnnual?.totalAssets ?? null;
+    const totalLiabilities = latestAnnual?.totalLiabilities ?? null;
+    const currentAssets = latestAnnual?.currentAssets ?? null;
+    const currentLiabilities = latestAnnual?.currentLiabilities ?? null;
+    const sbc = latestAnnual?.sbc ?? null;
+    const sharesOutstanding = latestAnnual?.sharesOutstanding ?? null;
+    const ebit = latestAnnual?.ebit ?? null;
+    const debtToEquity = (totalDebt !== null && totalEquity !== null && totalEquity !== 0)
+        ? totalDebt / totalEquity : null;
+    const currentRatio = (currentAssets !== null && currentLiabilities !== null && currentLiabilities !== 0)
+        ? currentAssets / currentLiabilities : null;
+    const assetToLiability = (totalAssets !== null && totalLiabilities !== null && totalLiabilities !== 0)
+        ? totalAssets / totalLiabilities : null;
+    // Net Debt / EBITDA (using EBIT as proxy)
+    const netDebtToEbitda = (netDebt !== null && ebit !== null && ebit !== 0)
+        ? netDebt / ebit : null;
+
+    // Calculate Dilution (Share Count change)
+    // stmts is already sorted by date desc
+    const currentShares = latestStmt?.sharesOutstanding ?? null;
+    const stmt1y = stmts.find(s => s.endDate < new Date(Date.now() - 365 * 24 * 60 * 60 * 1000));
+    const stmt5y = stmts.find(s => s.endDate < new Date(Date.now() - 5 * 365 * 24 * 60 * 60 * 1000));
+    
+    const dilution1y = (currentShares && stmt1y?.sharesOutstanding) 
+        ? (currentShares / stmt1y.sharesOutstanding - 1) * 100 : null;
+    const dilution5y = (currentShares && stmt5y?.sharesOutstanding)
+        ? (currentShares / stmt5y.sharesOutstanding - 1) * 100 : null;
+
+    const netIncome = latestStmt?.netIncome ?? 0;
+    const sbcRatio = (sbc !== null && netIncome > 0) ? (sbc / netIncome) * 100 : null;
+
     return {
         ...analysis,
         statements: stmts,
+        balanceSheet: {
+            totalDebt,
+            cash,
+            netDebt,
+            totalEquity,
+            totalAssets,
+            totalLiabilities,
+            currentAssets,
+            currentLiabilities,
+            debtToEquity,
+            currentRatio,
+            assetToLiability,
+            netDebtToEbitda,
+            sbc,
+            sbcRatio,
+            sharesOutstanding,
+            dilution1y,
+            dilution5y
+        },
         metrics: {
             zScore: altmanZ,
             altmanZ,

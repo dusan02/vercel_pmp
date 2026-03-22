@@ -14,6 +14,7 @@ import { ScenarioLab } from './analysis/ScenarioLab';
 import { usePDFExport } from '../../hooks/usePDFExport';
 import { useAnalysis } from '../../hooks/useAnalysis';
 import { LoadingSkeleton } from './analysis/LoadingSkeleton';
+import { BalanceSheetTable } from './analysis/BalanceSheetTable';
 
 const ValuationCharts = lazy(() => import('./ValuationCharts'));
 
@@ -63,6 +64,25 @@ export interface AnalysisData {
         employees: number | null;
         lastPrice: number | null;
         lastMarketCap: number | null;
+    } | null;
+    balanceSheet?: {
+        totalDebt: number | null;
+        cash: number | null;
+        netDebt: number | null;
+        totalEquity: number | null;
+        totalAssets: number | null;
+        totalLiabilities: number | null;
+        currentAssets: number | null;
+        currentLiabilities: number | null;
+        debtToEquity: number | null;
+        currentRatio: number | null;
+        assetToLiability: number | null;
+        netDebtToEbitda: number | null;
+        sbc: number | null;
+        sbcRatio: number | null;
+        sharesOutstanding: number | null;
+        dilution1y: number | null;
+        dilution5y: number | null;
     } | null;
 }
 
@@ -233,6 +253,14 @@ export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabP
 
             {/* Financial Health Table */}
             <FinancialHealthTable
+                ticker={ticker}
+                data={data}
+                compareWith={compareWith}
+                secondaryData={secondaryData}
+            />
+
+            {/* Balance Sheet Insights */}
+            <BalanceSheetTable
                 ticker={ticker}
                 data={data}
                 compareWith={compareWith}
