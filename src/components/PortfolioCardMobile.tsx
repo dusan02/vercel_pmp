@@ -38,31 +38,31 @@ export const PortfolioCardMobile = memo(({
 
   return (
     <div
-      className={`px-3 py-3 bg-white dark:bg-white/5 border-b border-gray-100 dark:border-gray-800 last:border-0 ${onClick ? 'cursor-pointer' : ''}`}
+      className={`px-4 py-3 active:bg-gray-50 dark:active:bg-gray-800 transition-colors border-b border-gray-100 dark:border-gray-800 last:border-b-0 ${onClick ? 'cursor-pointer' : ''}`}
       onClick={onClick}
     >
-      <div className="flex items-center gap-3">
-        {/* 1. Logo (Larger ~40px) */}
+      <div className="flex items-center gap-3 w-full">
+        {/* 1. Logo */}
         <CompanyLogo
           ticker={stock.ticker}
-          size={42}
-          className="shrink-0"
+          size={40}
+          className="rounded-md shrink-0 bg-gray-100 dark:bg-gray-800"
         />
 
         {/* 2. Ticker & Name */}
         <div className="flex-1 min-w-0 flex flex-col justify-center">
-          <div className="font-bold text-base leading-tight truncate">{stock.ticker}</div>
-          <div className="text-[11px] text-gray-500 truncate leading-tight mt-0.5">
+          <div className="font-bold text-base text-gray-900 dark:text-gray-100 leading-tight truncate">{stock.ticker}</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400 truncate leading-tight mt-0.5">
             {getCompanyName(stock.ticker)}
           </div>
         </div>
 
         {/* 3. Price & P&L (Vertical Stack) */}
-        <div className="flex flex-col items-end justify-center shrink-0 min-w-[60px]">
-          <div className="font-mono text-sm font-semibold leading-tight">
+        <div className="flex flex-col items-end justify-center shrink-0 min-w-[70px]">
+          <div className="font-mono font-medium text-sm text-gray-900 dark:text-gray-100 tabular-nums">
             ${formattedPrice}
           </div>
-          <div className={`text-[11px] font-mono leading-tight mt-0.5 ${value >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+          <div className={`px-1.5 py-0.5 rounded text-[11px] font-bold mt-0.5 tabular-nums ${value >= 0 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'}`}>
             {formattedValue}
           </div>
         </div>

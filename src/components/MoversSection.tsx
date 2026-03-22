@@ -183,10 +183,10 @@ export function MoversSection({ onTileClick }: { onTileClick?: (ticker: string) 
                     </div>
                 )}
 
-                <div className="flex items-start gap-4">
+                <div className="flex items-start gap-3">
                     {/* Logo & Symbol */}
-                    <div className="flex-shrink-0 cursor-pointer" onClick={() => onTileClick?.(mover.symbol)}>
-                        <CompanyLogo ticker={mover.symbol} logoUrl={mover.logoUrl} size={48} className="rounded-xl shadow-sm border border-slate-100" />
+                    <div className="flex-shrink-0 cursor-pointer mt-1" onClick={() => onTileClick?.(mover.symbol)}>
+                        <CompanyLogo ticker={mover.symbol} logoUrl={mover.logoUrl} size={40} className="rounded-md shadow-sm border border-gray-100 dark:border-gray-800 bg-gray-100 dark:bg-gray-800" />
                     </div>
 
                     <div className="flex-1 min-w-0">
@@ -194,8 +194,8 @@ export function MoversSection({ onTileClick }: { onTileClick?: (ticker: string) 
                         <div className="flex items-start justify-between gap-2 mb-1.5">
                             <div className="min-w-0 cursor-pointer" onClick={() => onTileClick?.(mover.symbol)}>
                                 <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="text-lg font-black text-slate-900 leading-none">{mover.symbol}</span>
-                                    <span className="text-xs text-slate-400 truncate hidden sm:inline">{mover.name}</span>
+                                    <span className="font-bold text-base text-gray-900 dark:text-gray-100 leading-tight">{mover.symbol}</span>
+                                    <span className="text-xs text-gray-500 dark:text-gray-400 truncate hidden sm:inline leading-tight">{mover.name}</span>
                                     {renderCategoryBadge(mover.moversCategory)}
                                 </div>
 
@@ -214,14 +214,14 @@ export function MoversSection({ onTileClick }: { onTileClick?: (ticker: string) 
                                 </div>
                             </div>
 
-                            <div className="text-right flex-shrink-0">
-                                <div className={`text-lg font-black flex items-center justify-end gap-1 ${mover.lastChangePct && mover.lastChangePct >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            <div className="flex flex-col items-end min-w-[70px] shrink-0">
+                                <span className="font-mono font-medium text-sm text-gray-900 dark:text-gray-100 tabular-nums">
+                                    ${mover.lastPrice?.toFixed(2) || '---'}
+                                </span>
+                                <div className={`px-1.5 py-0.5 rounded text-[11px] font-bold mt-0.5 tabular-nums ${mover.lastChangePct && mover.lastChangePct >= 0 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'}`}>
                                     {mover.lastChangePct != null
                                         ? `${mover.lastChangePct >= 0 ? '+' : ''}${mover.lastChangePct.toFixed(2)}%`
                                         : '0.00%'}
-                                </div>
-                                <div className="text-[10px] text-slate-400 font-medium font-mono">
-                                    ${mover.lastPrice?.toFixed(2) || '---'}
                                 </div>
                             </div>
                         </div>
