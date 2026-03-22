@@ -67,7 +67,7 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
                             <img
                                 src={data.ticker.logoUrl}
                                 alt={data.ticker.name || ticker}
-                                className="max-w-full max-h-full object-contain"
+                                className="w-full h-full object-contain"
                             />
                         ) : (
                             <span className="text-gray-400 dark:text-gray-500 font-black text-4xl lg:text-5xl">{ticker}</span>
@@ -115,16 +115,17 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
                             ))}
                         </div>
 
-                        {/* Description */}
-                        {data.ticker.description && (
-                            <div className="mt-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700 rounded-xl px-4 py-3">
-                                <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 font-medium">About</p>
-                                <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-3">
-                                    {data.ticker.description}
-                                </p>
-                            </div>
-                        )}
                     </div>
+
+                    {/* About Section (Third Column) */}
+                    {data.ticker.description && (
+                        <div className="w-full md:w-1/3 xl:w-[30%] flex-shrink-0 mt-4 md:mt-0 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700 rounded-xl px-5 py-4">
+                            <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 font-medium">About</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-6">
+                                {data.ticker.description}
+                            </p>
+                        </div>
+                    )}
                 </div>
             ) : (
                 <div className="flex items-center gap-4">
