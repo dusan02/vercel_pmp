@@ -54,14 +54,19 @@ export class AnalysisService {
                         netIncome: getValue(inc, 'net_income_loss'),
                         ebit: getValue(inc, 'operating_income_loss') ?? getValue(inc, 'operating_income'),
                         operatingCashFlow: getValue(cf, 'net_cash_flow_from_operating_activities'),
-                        capex: getValue(cf, 'net_cash_flow_from_investing_activities_property_plant_and_equipment') ?? getValue(cf, 'capital_expenditure_and_intangible_assets'),
+                        capex: getValue(cf, 'net_cash_flow_from_investing_activities_property_plant_and_equipment') ?? 
+                               getValue(cf, 'capital_expenditure_and_intangible_assets') ??
+                               getValue(cf, 'capital_expenditures') ??
+                               getValue(cf, 'payments_for_acquisition_of_property_plant_and_equipment'),
                         totalAssets: getValue(bs, 'assets'),
                         totalLiabilities: getValue(bs, 'liabilities'),
                         currentAssets: getValue(bs, 'current_assets'),
                         currentLiabilities: getValue(bs, 'current_liabilities'),
                         retainedEarnings: getValue(bs, 'retained_earnings'),
                         totalEquity: getValue(bs, 'equity') ?? getValue(bs, 'stockholders_equity'),
-                        sharesOutstanding: getValue(inc, 'basic_average_shares') ?? getValue(inc, 'diluted_average_shares'),
+                        sharesOutstanding: getValue(inc, 'basic_average_shares') ?? 
+                                     getValue(inc, 'diluted_average_shares') ??
+                                     getValue(inc, 'weighted_average_shares_outstanding'),
                         sbc: getValue(cf, 'share_based_compensation'),
                         interestExpense: getValue(inc, 'interest_expense_operating') ?? getValue(inc, 'interest_expense'),
                         totalDebt: getValue(bs, 'long_term_debt') ?? getValue(bs, 'debt') ?? getValue(bs, 'current_and_non_current_debt'),
@@ -79,14 +84,19 @@ export class AnalysisService {
                         netIncome: getValue(inc, 'net_income_loss'),
                         ebit: getValue(inc, 'operating_income_loss') ?? getValue(inc, 'operating_income'),
                         operatingCashFlow: getValue(cf, 'net_cash_flow_from_operating_activities'),
-                        capex: getValue(cf, 'net_cash_flow_from_investing_activities_property_plant_and_equipment') ?? getValue(cf, 'capital_expenditure_and_intangible_assets'),
+                        capex: getValue(cf, 'net_cash_flow_from_investing_activities_property_plant_and_equipment') ?? 
+                               getValue(cf, 'capital_expenditure_and_intangible_assets') ??
+                               getValue(cf, 'capital_expenditures') ??
+                               getValue(cf, 'payments_for_acquisition_of_property_plant_and_equipment'),
                         totalAssets: getValue(bs, 'assets'),
                         totalLiabilities: getValue(bs, 'liabilities'),
                         currentAssets: getValue(bs, 'current_assets'),
                         currentLiabilities: getValue(bs, 'current_liabilities'),
                         retainedEarnings: getValue(bs, 'retained_earnings'),
                         totalEquity: getValue(bs, 'equity') ?? getValue(bs, 'stockholders_equity'),
-                        sharesOutstanding: getValue(inc, 'basic_average_shares') ?? getValue(inc, 'diluted_average_shares'),
+                        sharesOutstanding: getValue(inc, 'basic_average_shares') ?? 
+                                     getValue(inc, 'diluted_average_shares') ??
+                                     getValue(inc, 'weighted_average_shares_outstanding'),
                         sbc: getValue(cf, 'share_based_compensation'),
                         interestExpense: getValue(inc, 'interest_expense_operating') ?? getValue(inc, 'interest_expense'),
                         totalDebt: getValue(bs, 'long_term_debt') ?? getValue(bs, 'debt') ?? getValue(bs, 'current_and_non_current_debt'),
@@ -341,10 +351,19 @@ export class AnalysisService {
         // --- NEW METRICS ---
         let altmanZ: number | null = null;
         if (latestStmt.totalAssets && latestStmt.totalAssets > 0) {
+            // Správny výpočet Market Value of Equity = Shares Outstanding × Current Price
+            // Prioritizuj sharesOutstanding z financial statement (presnejšie)
+            const sharesOutstanding = latestStmt.sharesOutstanding || tickerData?.sharesOutstanding;
+            const marketValueOfEquity = sharesOutstanding && sharesOutstanding > 0 && currentPrice > 0
+                ? sharesOutstanding * currentPrice
+                : marketCap; // Fallback na marketCap z tickeru
+            
             const A = ((latestStmt.currentAssets || 0) - (latestStmt.currentLiabilities || 0)) / latestStmt.totalAssets;
             const B = (latestStmt.retainedEarnings || 0) / latestStmt.totalAssets;
             const C = (latestStmt.ebit || 0) / latestStmt.totalAssets;
-            const D = latestStmt.totalLiabilities && latestStmt.totalLiabilities > 0 && marketCap > 0 ? marketCap / latestStmt.totalLiabilities : 0;
+            const D = latestStmt.totalLiabilities && latestStmt.totalLiabilities > 0 && marketValueOfEquity > 0 
+                ? marketValueOfEquity / latestStmt.totalLiabilities 
+                : 0;
             const E = (latestStmt.revenue || 0) / latestStmt.totalAssets;
             altmanZ = 1.2 * A + 1.4 * B + 3.3 * C + 0.6 * D + 1.0 * E;
         }
