@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Image from 'next/image';
+import CompanyLogo from '@/components/CompanyLogo';
 
 /** Format large numbers as $3.2T / $245.8B / $12.3M */
 export function formatMarketCap(val: number | null | undefined): string | null {
@@ -8,47 +8,6 @@ export function formatMarketCap(val: number | null | undefined): string | null {
     if (val >= 1e9) return `$${(val / 1e9).toFixed(2)}B`;
     if (val >= 1e6) return `$${(val / 1e6).toFixed(2)}M`;
     return `$${val.toFixed(2)}`;
-}
-
-/** CompanyLogo: next/image wrapper with 3-level fallback */
-function CompanyLogo({ logoUrl, websiteUrl, name, ticker }: {
-    logoUrl?: string | null;
-    websiteUrl?: string | null;
-    name?: string | null;
-    ticker: string;
-}) {
-    const clearbitUrl = websiteUrl
-        ? `https://logo.clearbit.com/${websiteUrl.replace(/^https?:\/\/(www\.)?/, '').split('/')[0]}?format=svg`
-        : null;
-
-    // Priority order: local archived → Clearbit SVG → Polygon URL
-    const initialSrc = logoUrl?.startsWith('/') ? logoUrl : (clearbitUrl ?? logoUrl ?? null);
-    const [src, setSrc] = useState<string | null>(initialSrc ?? null);
-    const [failed, setFailed] = useState(false);
-
-    if (failed || !src) {
-        return <span className="text-gray-400 dark:text-gray-500 font-black text-4xl">{ticker}</span>;
-    }
-
-    return (
-        <Image
-            src={src}
-            alt={`${name || ticker} logo`}
-            fill
-            className="object-contain"
-            sizes="160px"
-            priority
-            unoptimized={src.endsWith('.svg') || src.includes('format=svg')}
-            onError={() => {
-                // Fallback: Clearbit → Polygon logoUrl → text
-                if (src === clearbitUrl && logoUrl && !logoUrl.startsWith('/')) {
-                    setSrc(logoUrl);
-                } else {
-                    setFailed(true);
-                }
-            }}
-        />
-    );
 }
 
 export function SearchTickerBar({ currentTicker }: { currentTicker: string }) {
@@ -90,42 +49,48 @@ interface AnalysisHeaderProps {
 }
 
 export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps) {
+    const t = data.ticker;
+
+    const stats = t ? [
+        { label: 'Sector',      value: t.sector },
+        { label: 'Industry',    value: t.industry?.replace('SIC: ', '') },
+        { label: 'Market Cap',  value: formatMarketCap(t.lastMarketCap) },
+        { label: 'Price',       value: t.lastPrice ? `$${t.lastPrice.toFixed(2)}` : null },
+        { label: 'Employees',   value: t.employees ? t.employees.toLocaleString() : null },
+    ] : [];
+
     return (
         <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-6 lg:p-8">
 
-            {/* Quick Search — hidden when a parent (HomeAnalysis) already provides one */}
+            {/* Quick Search */}
             {!hideSearch && (
                 <div data-html2canvas-ignore="true" className="mb-6">
                     <SearchTickerBar currentTicker={ticker} />
                 </div>
             )}
 
-            {/* Company Profile */}
-            {data.ticker ? (
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start w-full">
-                    {/* Column 1: Identity (Logo + Name + Stats) */}
-                    <div className="lg:col-span-7 xl:col-span-8 flex flex-col md:flex-row gap-8 items-start">
-                        {/* Logo & Basic Info */}
-                        <div className="flex flex-col items-center gap-4 w-full md:w-48 flex-shrink-0">
-                            <div className="relative w-32 h-32 md:w-40 md:h-40 bg-white dark:bg-gray-800 rounded-[2.5rem] flex items-center justify-center p-5 shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                                <CompanyLogo
-                                    logoUrl={data.ticker.logoUrl}
-                                    websiteUrl={data.ticker.websiteUrl}
-                                    name={data.ticker.name}
-                                    ticker={ticker}
-                                />
-                            </div>
-                            <div className="text-center">
-                                <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-tight mb-2">
-                                    {data.ticker.name || ticker}
-                                </h2>
-                                <div className="flex items-center justify-center gap-2">
-                                    <span className="px-3 py-0.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 text-blue-600 dark:text-blue-400 text-xs font-bold rounded-full">
+            {t ? (
+                <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-start w-full">
+
+                    {/* Left block: Identity + Info */}
+                    <div className="flex flex-col gap-5 lg:w-72 xl:w-80 flex-shrink-0">
+
+                        {/* Identity row — same look as All Stocks table row */}
+                        <div className="flex items-center gap-4">
+                            <CompanyLogo
+                                ticker={ticker}
+                                logoUrl={t.logoUrl}
+                                size={52}
+                                priority
+                            />
+                            <div className="min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="px-2.5 py-0.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 text-blue-600 dark:text-blue-400 text-xs font-bold rounded-full">
                                         {ticker}
                                     </span>
-                                    {data.ticker.websiteUrl && (
+                                    {t.websiteUrl && (
                                         <a
-                                            href={data.ticker.websiteUrl}
+                                            href={t.websiteUrl}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="text-[10px] text-gray-400 hover:text-blue-500 transition-colors uppercase font-bold tracking-widest"
@@ -134,40 +99,37 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
                                         </a>
                                     )}
                                 </div>
+                                <h2 className="text-xl font-black text-gray-900 dark:text-white leading-tight mt-1 truncate">
+                                    {t.name || ticker}
+                                </h2>
                             </div>
                         </div>
 
-                        {/* Stats Section - Tighter & More space */}
-                        <div className="flex-1 w-full md:border-l border-gray-100 dark:border-gray-800 md:pl-8">
-                            <div className="flex flex-col">
-                                {[
-                                    { label: 'Sector', value: data.ticker.sector },
-                                    { label: 'Industry', value: data.ticker.industry?.replace('SIC: ', '') },
-                                    { label: 'Market Cap', value: formatMarketCap(data.ticker.lastMarketCap) },
-                                    { label: 'Price', value: data.ticker.lastPrice ? `$${data.ticker.lastPrice.toFixed(2)}` : null },
-                                    { label: 'Employees', value: data.ticker.employees ? data.ticker.employees.toLocaleString() : null },
-                                ].map(({ label, value }) => (
-                                    <div key={label} className="flex flex-row items-baseline py-3 border-b border-gray-50 dark:border-gray-800/60 last:border-0">
-                                        <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-[0.15em] font-bold w-24 md:w-28 flex-shrink-0">{label}</p>
-                                        {value
-                                            ? <p className="text-sm font-bold text-gray-900 dark:text-white whitespace-normal line-clamp-2" title={value}>{value}</p>
-                                            : <span className="inline-block animate-pulse bg-gray-200 dark:bg-gray-700 rounded h-4 w-24" aria-label="Loading" />
-                                        }
-                                    </div>
-                                ))}
-                            </div>
+                        {/* Info rows */}
+                        <div className="flex flex-col divide-y divide-gray-50 dark:divide-gray-800/60">
+                            {stats.map(({ label, value }) => (
+                                <div key={label} className="flex items-baseline py-2.5">
+                                    <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-[0.15em] font-bold w-24 flex-shrink-0">{label}</p>
+                                    {value
+                                        ? <p className="text-sm font-bold text-gray-900 dark:text-white">{value}</p>
+                                        : <span className="inline-block animate-pulse bg-gray-200 dark:bg-gray-700 rounded h-4 w-24" />
+                                    }
+                                </div>
+                            ))}
                         </div>
                     </div>
 
-                    {/* Column 2: Company Description - Shortened */}
-                    {data.ticker.description && (
-                        <div className="lg:col-span-5 xl:col-span-4 min-w-0">
+                    {/* Right block: Company Description — wider now */}
+                    {t.description && (
+                        <div className="flex-1 min-w-0">
                             <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-[0.15em] font-bold mb-4 flex items-center gap-2">
-                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
                                 Company Description
                             </p>
-                            <p className="text-[13px] text-gray-900 dark:text-gray-100 leading-relaxed text-justify line-clamp-4 italic md:not-italic">
-                                {data.ticker.description}
+                            <p className="text-[13px] text-gray-900 dark:text-gray-100 leading-relaxed text-justify line-clamp-4 md:not-italic">
+                                {t.description}
                             </p>
                             <button className="mt-3 text-[11px] font-bold text-blue-600 hover:text-blue-700 transition-colors uppercase tracking-wider">
                                 Read full bio ▾
@@ -177,8 +139,8 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
                 </div>
             ) : (
                 <div className="flex items-center gap-4">
-                    <div className="w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-2xl flex items-center justify-center border border-gray-200 dark:border-gray-600">
-                        <span className="text-gray-600 dark:text-gray-300 font-black text-2xl">{ticker}</span>
+                    <div className="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center border border-gray-200 dark:border-gray-600">
+                        <span className="text-gray-600 dark:text-gray-300 font-black text-sm">{ticker}</span>
                     </div>
                     <h2 className="text-3xl font-black text-gray-900 dark:text-white">{ticker}</h2>
                 </div>
