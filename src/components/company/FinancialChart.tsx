@@ -236,10 +236,6 @@ export default function FinancialChart({ statements }: FinancialChartProps) {
                             width={50}
                         />
                         <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(107, 114, 128, 0.05)' }} />
-                        <Legend 
-                            wrapperStyle={{ paddingTop: '20px', fontSize: '13px' }}
-                            iconType="circle"
-                        />
                         <ReferenceLine y={0} stroke="#9CA3AF" />
                         
                         {/* Dynamické renderovanie vybraných metrík */}

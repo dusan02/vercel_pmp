@@ -1,14 +1,13 @@
 #!/usr/bin/env node
 
-// Importujeme AnalysisService pomocí require, pretože je to TypeScript
-const { AnalysisService } = require("../src/services/analysisService.ts");
+import { AnalysisService } from '../src/services/analysisService.js';
 
 async function recalculateFullScores() {
   try {
-    console.log(" Prepočítavam úplné skóre pre všetky tickery...");
-
-    const tickers = ["AAPL", "MSFT", "GOOGL", "NVDA", "AMZN", "TSLA"];
-
+    console.log('🔄 Prepočítavam úplné skóre pre všetky tickery...');
+    
+    const tickers = ['AAPL', 'MSFT', 'GOOGL', 'NVDA', 'AMZN', 'TSLA'];
+    
     for (const symbol of tickers) {
       try {
         console.log(`🔍 Spracujem ${symbol}...`);
@@ -18,10 +17,11 @@ async function recalculateFullScores() {
         console.log(`❌ ${symbol} - Error: ${error.message}`);
       }
     }
-
-    console.log("\n🎉 Všetky skóre prepočítané!");
+    
+    console.log('\n🎉 Všetky skóre prepočítané!');
+    
   } catch (error) {
-    console.error("❌ Fatal error:", error);
+    console.error('❌ Fatal error:', error);
   }
 }
 
