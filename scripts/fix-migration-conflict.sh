@@ -1,25 +1,27 @@
 #!/bin/bash
 
-# Script to fix migration conflict on production server
-# Run this on the production server to resolve altmanZ column conflict
+# Script to fix all migration conflicts on production server
+# Run this on the production server to resolve all column conflicts
 
-echo "🔧 Fixing Prisma migration conflict..."
+echo "🔧 Fixing all Prisma migration conflicts..."
 
-# Step 1: Mark the failed migration as applied
-echo "📝 Marking failed migration as applied..."
+# Step 1: Mark all failed migrations as applied
+echo "📝 Marking all failed migrations as applied..."
 npx prisma migrate resolve --applied 20260322202039_add_valuation_charts
+npx prisma migrate resolve --applied 20260322210000_resolve_altmanz_conflict
+npx prisma migrate resolve --applied 20260322210001_resolve_all_column_conflicts
 
-# Step 2: Create and apply the resolution migration
-echo "🔄 Creating resolution migration..."
-npx prisma migrate dev --name resolve_altmanz_conflict --skip-seed
+# Step 2: Check database status
+echo "� Checking database status..."
+npx prisma migrate status
 
 # Step 3: Generate Prisma client
 echo "⚙️ Generating Prisma client..."
 npx prisma generate
 
-# Step 4: Verify database status
-echo "🔍 Checking database status..."
-npx prisma migrate status
+# Step 4: Try to deploy remaining migrations
+echo "� Attempting to deploy remaining migrations..."
+npx prisma migrate deploy
 
-echo "✅ Migration conflict resolved!"
+echo "✅ Migration conflicts resolved!"
 echo "Now you can run: npm run build"
