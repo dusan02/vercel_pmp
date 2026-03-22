@@ -66,12 +66,17 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
                         {/* Logo & Basic Info */}
                         <div className="flex flex-col items-center gap-4 w-full md:w-48 flex-shrink-0">
                             <div className="w-32 h-32 md:w-40 md:h-40 bg-white dark:bg-gray-800 rounded-[2.5rem] flex items-center justify-center p-6 shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                                {data.ticker.websiteUrl || data.ticker.logoUrl ? (
-                                    <img
-                                        src={data.ticker.websiteUrl ? `https://logo.clearbit.com/${data.ticker.websiteUrl.replace(/^https?:\/\/(www\.)?/, '').split('/')[0]}?size=512` : data.ticker.logoUrl}
-                                        alt={data.ticker.name || ticker}
-                                        className="w-full h-full object-contain"
-                                        style={{ imageRendering: '-webkit-optimize-contrast' }}
+                            {data.ticker.logoUrl || data.ticker.websiteUrl ? (
+                                <img
+                                    src={data.ticker.logoUrl?.startsWith('/') 
+                                        ? data.ticker.logoUrl 
+                                        : (data.ticker.websiteUrl 
+                                            ? `https://logo.clearbit.com/${data.ticker.websiteUrl.replace(/^https?:\/\/(www\.)?/, '').split('/')[0]}?size=512` 
+                                            : data.ticker.logoUrl)
+                                    }
+                                    alt={data.ticker.name || ticker}
+                                    className="w-full h-full object-contain"
+                                    style={{ imageRendering: '-webkit-optimize-contrast' }}
                                         onError={(e) => {
                                             if (e.currentTarget.src.includes('clearbit') && data.ticker.logoUrl) {
                                                 e.currentTarget.src = data.ticker.logoUrl;
