@@ -61,40 +61,46 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
             {/* Company Profile */}
             {data.ticker ? (
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8 items-start w-full">
-                    {/* Logo */}
-                    <div className="md:col-span-4 lg:col-span-3 flex-shrink-0 w-32 h-32 md:w-full md:aspect-square bg-white dark:bg-gray-800 rounded-3xl flex items-center justify-center p-4 lg:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
-                        {data.ticker.logoUrl ? (
-                            <img
-                                src={data.ticker.logoUrl}
-                                alt={data.ticker.name || ticker}
-                                className="w-full h-full object-contain"
-                            />
-                        ) : (
-                            <span className="text-gray-400 dark:text-gray-500 font-black text-4xl lg:text-5xl">{ticker}</span>
-                        )}
-                    </div>
+                    {/* Column 1: Logo & Title */}
+                    <div className="md:col-span-4 lg:col-span-3 flex flex-col items-center md:items-start gap-4 w-full">
+                        {/* Logo Box */}
+                        <div className="w-32 h-32 md:w-full md:aspect-square bg-white dark:bg-gray-800 rounded-3xl flex items-center justify-center p-4 lg:p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+                            {data.ticker.logoUrl ? (
+                                <img
+                                    src={data.ticker.logoUrl}
+                                    alt={data.ticker.name || ticker}
+                                    className="w-full h-full object-contain"
+                                />
+                            ) : (
+                                <span className="text-gray-400 dark:text-gray-500 font-black text-4xl lg:text-5xl">{ticker}</span>
+                            )}
+                        </div>
 
-                    {/* Info */}
-                    <div className="md:col-span-8 lg:col-span-5 min-w-0">
                         {/* Name + Ticker badge + Website */}
-                        <div className="flex flex-wrap items-center gap-3 mb-4">
+                        <div className="text-center md:text-left flex flex-col gap-2">
                             <h2 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white leading-tight break-words">
                                 {data.ticker.name || ticker}
                             </h2>
-                            <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 text-sm font-bold rounded-full">
-                                {ticker}
-                            </span>
-                            {data.ticker.websiteUrl && (
-                                <a
-                                    href={data.ticker.websiteUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors border border-blue-200 dark:border-blue-700 rounded-full px-3 py-1 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                                >
-                                    Website ↗
-                                </a>
-                            )}
+                            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
+                                <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 text-sm font-bold rounded-full">
+                                    {ticker}
+                                </span>
+                                {data.ticker.websiteUrl && (
+                                    <a
+                                        href={data.ticker.websiteUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors border border-blue-200 dark:border-blue-700 rounded-full px-3 py-1 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                                    >
+                                        Website ↗
+                                    </a>
+                                )}
+                            </div>
                         </div>
+                    </div>
+
+                    {/* Column 2: Info (Stats) */}
+                    <div className="md:col-span-8 lg:col-span-5 min-w-0 mt-4 md:mt-0">
 
                         {/* Stats Stack (Inline label & value) */}
                         <div className="flex flex-col gap-2.5 mt-2">
