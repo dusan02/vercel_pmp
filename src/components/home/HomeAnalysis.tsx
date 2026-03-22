@@ -90,13 +90,14 @@ export function HomeAnalysis({ activeTicker: propTicker, onTickerChange }: HomeA
                 </div>
             </div>
 
-            {/* Under Construction Warning */}
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-4 flex items-center gap-3 mt-[-8px]">
+            {/* Under Construction Warning - Remove when ready */}
+            {/* TODO: Remove this section when analysis is fully functional */}
+            {/* <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-4 flex items-center gap-3 mt-[-8px]">
                 <AlertTriangle className="text-yellow-600 dark:text-yellow-500 shrink-0" size={20} />
                 <p className="text-sm font-medium text-yellow-800 dark:text-yellow-400 m-0">
                     Analysis site under construction - non correct data yet
                 </p>
-            </div>
+            </div> */}
 
             {/* Analysis Tab Content */}
             <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl min-h-[600px]">

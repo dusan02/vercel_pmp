@@ -299,15 +299,15 @@ export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabP
                     </div>
                 </div>
 
-                {data.metrics?.currentEps === null || data.metrics?.currentPe === null || data.metrics?.currentEps === undefined || data.metrics?.currentPe === undefined ? (
+                {(!data.metrics?.currentEps || !data.metrics?.currentPe) ? (
                     <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-lg text-center border border-gray-100 dark:border-gray-700/50">
                         <p className="text-gray-500 dark:text-gray-400">Not enough data available to run scenarios. Missing valid EPS or P/E Ratio.</p>
                     </div>
                 ) : (
                     <ScenarioLab
-                        currentEps={data.metrics.currentEps}
-                        currentPe={data.metrics.currentPe}
-                        currentPrice={data.metrics.currentEps * data.metrics.currentPe}
+                        currentEps={data.metrics.currentEps || 0}
+                        currentPe={data.metrics.currentPe || 0}
+                        currentPrice={(data.metrics.currentEps || 0) * (data.metrics.currentPe || 0)}
                     />
                 )}
             </div>
@@ -326,7 +326,9 @@ export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabP
                     </div>
                 </div>
                 <Suspense fallback={<div className="flex justify-center items-center h-48"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-500" /></div>}>
-                    <ValuationCharts ticker={ticker} />
+                    <div className="error-boundary">
+                        <ValuationCharts ticker={ticker} />
+                    </div>
                 </Suspense>
             </div>
         </div>
