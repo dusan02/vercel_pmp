@@ -60,7 +60,7 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
 
             {/* Company Profile */}
             {data.ticker ? (
-                <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start">
+                <div className="flex flex-col md:flex-row md:flex-wrap lg:flex-nowrap gap-6 md:gap-8 items-start w-full">
                     {/* Logo - Substantially larger */}
                     <div className="flex-shrink-0 w-32 h-32 md:w-48 md:h-48 lg:w-56 lg:h-56 bg-gray-50 dark:bg-gray-900 rounded-3xl flex items-center justify-center p-4 shadow-sm border border-gray-100 dark:border-gray-700">
                         {data.ticker.logoUrl ? (
@@ -75,7 +75,7 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
                     </div>
 
                     {/* Info */}
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-[200px] md:min-w-[280px]">
                         {/* Name + Ticker badge + Website */}
                         <div className="flex flex-wrap items-center gap-3 mb-4">
                             <h2 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white leading-tight">
@@ -119,7 +119,7 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
 
                     {/* About Section (Third Column) */}
                     {data.ticker.description && (
-                        <div className="w-full md:w-1/3 xl:w-[30%] flex-shrink-0 mt-4 md:mt-0 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700 rounded-xl px-5 py-4">
+                        <div className="w-full lg:w-72 xl:w-96 flex-shrink-0 mt-4 lg:mt-0 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700 rounded-xl px-5 py-4 min-w-0 overflow-hidden">
                             <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 font-medium">About</p>
                             <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-6">
                                 {data.ticker.description}
