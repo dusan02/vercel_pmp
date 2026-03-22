@@ -61,8 +61,8 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
             {/* Company Profile */}
             {data.ticker ? (
                 <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start">
-                    {/* Logo */}
-                    <div className="flex-shrink-0 w-24 h-24 md:w-32 md:h-32 bg-gray-50 dark:bg-gray-900 rounded-2xl flex items-center justify-center p-3 shadow-sm border border-gray-100 dark:border-gray-700">
+                    {/* Logo - Substantially larger */}
+                    <div className="flex-shrink-0 w-32 h-32 md:w-48 md:h-48 lg:w-56 lg:h-56 bg-gray-50 dark:bg-gray-900 rounded-3xl flex items-center justify-center p-4 shadow-sm border border-gray-100 dark:border-gray-700">
                         {data.ticker.logoUrl ? (
                             <img
                                 src={data.ticker.logoUrl}
@@ -70,7 +70,7 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
                                 className="max-w-full max-h-full object-contain"
                             />
                         ) : (
-                            <span className="text-gray-600 dark:text-gray-400 font-black text-2xl">{ticker}</span>
+                            <span className="text-gray-400 dark:text-gray-500 font-black text-4xl lg:text-5xl">{ticker}</span>
                         )}
                     </div>
 
@@ -96,8 +96,8 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
                             )}
                         </div>
 
-                        {/* Stats Grid */}
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {/* Stats Stack (Vertical, Left-aligned, No cells) */}
+                        <div className="flex flex-col gap-4 mt-2">
                             {[
                                 { label: 'Sector', value: data.ticker.sector },
                                 { label: 'Industry', value: data.ticker.industry?.replace('SIC: ', '') },
@@ -105,11 +105,11 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
                                 { label: 'Price', value: data.ticker.lastPrice ? `$${data.ticker.lastPrice.toFixed(2)}` : null },
                                 { label: 'Employees', value: data.ticker.employees ? data.ticker.employees.toLocaleString() : null },
                             ].map(({ label, value }) => (
-                                <div key={label} className="bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700 rounded-xl px-4 py-3">
-                                    <p className="text-xs text-gray-400 uppercase tracking-wider mb-1 font-medium">{label}</p>
+                                <div key={label} className="text-left flex flex-col items-start min-w-0">
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold leading-none mb-1">{label}</p>
                                     {value
-                                        ? <p className="text-sm font-bold text-gray-900 dark:text-white truncate" title={value}>{value}</p>
-                                        : <span className="inline-block animate-pulse bg-gray-200 dark:bg-gray-700 rounded h-4 w-16" aria-label="Loading" />
+                                        ? <p className="text-base font-bold text-gray-900 dark:text-white truncate max-w-full leading-tight" title={value}>{value}</p>
+                                        : <span className="inline-block animate-pulse bg-gray-200 dark:bg-gray-700 rounded h-5 w-24 mt-0.5" aria-label="Loading" />
                                     }
                                 </div>
                             ))}
