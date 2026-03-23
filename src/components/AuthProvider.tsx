@@ -20,7 +20,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 // Silently ignore Auth.js parsing errors
                 return;
             }
-            originalError.apply(console, args);
+            if (typeof originalError === 'function') {
+                originalError(...args);
+            } else {
+                // Fallback if somehow originalError is not a function
+                console.log(...args);
+            }
         };
 
         return () => {
