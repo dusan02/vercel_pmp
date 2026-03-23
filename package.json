@@ -13,7 +13,7 @@
         "dev:turbopack": "cross-env ENABLE_WEBSOCKET=true next dev --turbopack -H 127.0.0.1 -p 3000",
         "dev:next:no-turbopack": "cross-env ENABLE_WEBSOCKET=true next dev -H 127.0.0.1 -p 3000",
         "dev:no-websocket": "next dev --turbopack -H 127.0.0.1 -p 3000",
-        "build": "prisma generate && prisma migrate deploy && next build",
+        "build": "echo 'DATABASE_URL=file:./dev.db' > .env.local && export DATABASE_URL=file:./dev.db && prisma generate && prisma migrate deploy && next build",
         "start": "cross-env ENABLE_WEBSOCKET=true tsx server.ts",
         "start:no-websocket": "next start",
         "lint": "next lint",
