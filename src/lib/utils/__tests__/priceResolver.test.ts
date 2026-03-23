@@ -17,8 +17,9 @@ jest.mock('../timeUtils', () => ({
 }));
 
 // Mock pricingStateMachine
+const mockGetPricingState = jest.fn();
 jest.mock('../pricingStateMachine', () => ({
-  getPricingState: jest.fn(),
+  getPricingState: mockGetPricingState,
   PriceState: {
     PRE_MARKET_LIVE: 'pre_market_live',
     LIVE: 'live',
@@ -33,7 +34,7 @@ describe('priceResolver', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (getPricingState as jest.Mock).mockReturnValue({
+    mockGetPricingState.mockReturnValue({
       state: PriceState.LIVE,
       canIngest: true,
       canOverwrite: true,

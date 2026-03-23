@@ -5,17 +5,10 @@ import { GET } from '../tickers/default/route';
 import * as defaultTickers from '@/data/defaultTickers';
 
 // Mock defaultTickers to return stable data for tests
+const mockGetAllProjectTickers = jest.fn();
 jest.mock('@/data/defaultTickers', () => ({
   __esModule: true,
-  getAllProjectTickers: jest.fn((project: string) => {
-    if (project === 'pmp' || project === 'cm') {
-      return ['AAPL', 'MSFT', 'GOOGL', 'NVDA', 'TSLA', 'META', 'AMZN', 'NFLX'];
-    }
-    if (project === 'nonexistent') {
-      return ['DEFAULT', 'MOCK'];
-    }
-    return ['AAPL', 'MSFT', 'GOOGL']; // Default fallback
-  }),
+  getAllProjectTickers: mockGetAllProjectTickers,
   DEFAULT_TICKERS: {
     pmp: ['AAPL', 'MSFT', 'GOOGL', 'NVDA', 'TSLA', 'META', 'AMZN', 'NFLX'],
     cm: ['AAPL', 'MSFT', 'GOOGL', 'NVDA', 'TSLA', 'META', 'AMZN', 'NFLX']
@@ -28,7 +21,7 @@ describe('/api/tickers/default', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     // Reset default implementation for successful response
-    (defaultTickers.getAllProjectTickers as jest.Mock).mockImplementation((project: string) => {
+    mockGetAllProjectTickers.mockImplementation((project: string) => {
       if (project === 'pmp' || project === 'cm' || project === 'standard' || project === 'extended') {
         return ['AAPL', 'MSFT', 'GOOGL', 'NVDA', 'TSLA', 'META', 'AMZN', 'NFLX'];
       }

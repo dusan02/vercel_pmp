@@ -181,13 +181,13 @@ describe('/api/stocks', () => {
     });
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // 4. Toto sú dva najdôležitejšie príkazy pre izoláciu testov:
     jest.resetModules(); // Zmaže module cache
     
     // RE-IMPORT MOCKS after resetModules to ensure we are configuring the NEW mocks that stockService will use
-    const marketCapUtils = require('@/lib/utils/marketCapUtils');
-    const redisMock = require('@/lib/redis');
+    const marketCapUtils = await import('@/lib/utils/marketCapUtils');
+    const redisMock = await import('@/lib/redis');
     
     // Update local references to the new mocks
     setupMocksWithDeps(marketCapUtils);
