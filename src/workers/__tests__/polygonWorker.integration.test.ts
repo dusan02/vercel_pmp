@@ -14,29 +14,38 @@ import { ingestBatch } from '../polygonWorker';
 
 // Mock session + pricing state to make ingest deterministic
 jest.mock('@/lib/utils/timeUtils', () => {
-  const actual = jest.requireActual('@/lib/utils/timeUtils');
+  const actual = jest.requireActual('@/lib/utils/timeUtils') as typeof import('@/lib/utils/timeUtils');
   return {
-    ...actual,
+    nowET: actual.nowET,
     detectSession: jest.fn(),
     isMarketHoliday: jest.fn().mockReturnValue(false),
+    isMarketOpen: actual.isMarketOpen,
+    mapToRedisSession: actual.mapToRedisSession,
+    getNextMarketOpen: actual.getNextMarketOpen,
+    getLastTradingDay: actual.getLastTradingDay,
+    getTradingDay: actual.getTradingDay,
+    getLastTradingDayString: actual.getLastTradingDayString,
   };
 });
 
 jest.mock('@/lib/utils/pricingStateMachine', () => {
-  const actual = jest.requireActual('@/lib/utils/pricingStateMachine');
+  const actual = jest.requireActual('@/lib/utils/pricingStateMachine') as typeof import('@/lib/utils/pricingStateMachine');
   return {
-    ...actual,
+    PriceState: actual.PriceState,
     getPricingState: jest.fn(),
+    canOverwritePrice: actual.canOverwritePrice,
+    getNextTradingDay: actual.getNextTradingDay,
+    getPreviousCloseTTL: actual.getPreviousCloseTTL
   };
 });
 
 // Mock Redis
 jest.mock('@/lib/redis/operations', () => ({
-  setPrevClose: jest.fn().mockResolvedValue(true),
-  getPrevClose: jest.fn().mockResolvedValue(new Map()),
-  publishTick: jest.fn().mockResolvedValue(true),
-  getUniverse: jest.fn().mockResolvedValue(['AAPL', 'MSFT']),
-  atomicUpdatePrice: jest.fn().mockResolvedValue(true)
+  setPrevClose: jest.fn(() => Promise.resolve(true)),
+  getPrevClose: jest.fn(() => Promise.resolve(new Map())),
+  publishTick: jest.fn(() => Promise.resolve(true)),
+  getUniverse: jest.fn(() => Promise.resolve(['AAPL', 'MSFT'])),
+  atomicUpdatePrice: jest.fn(() => Promise.resolve(true))
 }));
 
 // Mock Polygon API functions directly
@@ -331,7 +340,8 @@ describe('polygonWorker integration tests', () => {
       });
 
       // Mock Polygon snapshot endpoint response
-      (global.fetch as unknown as jest.Mock).mockImplementation(async (url: string) => {
+      (global.fetch as unknown as jest.Mock).mockImplementation(async (...args: unknown[]) => {
+        const url = args[0] as string;
         // 15:00 ET today (timestamp in ms)
         const lastTradeTs = dateObj.getTime() + 15 * 60 * 60 * 1000;
         if (typeof url === 'string' && url.includes('/v2/snapshot/')) {
@@ -395,7 +405,7 @@ describe('polygonWorker integration tests', () => {
           const symbol = snapshot.ticker;
           
           // Get adjusted previous close from Redis
-          const prevCloseMap = await getPrevClose();
+          const prevCloseMap = await getPrevClose(dateET, [symbol]);
           const adjustedPrevClose = prevCloseMap.get(symbol) || 75.00;
           
           // Use snapshot price and calculate changePct manually
