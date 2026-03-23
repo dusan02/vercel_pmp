@@ -155,12 +155,19 @@ describe('polygonWorker integration tests', () => {
     // Ensure test database has latest schema
     const { execSync } = require('child_process');
     try {
-      // First try to create schema
+      // Generate Prisma client first
       execSync('npx prisma generate', { stdio: 'inherit' });
-      execSync('npx prisma db push --force-reset', { stdio: 'inherit' });
+      // Apply migrations to create schema
+      execSync('npx prisma migrate deploy --skip-seed', { stdio: 'inherit' });
       console.log('Database schema created successfully');
     } catch (error: any) {
       console.warn('Schema creation failed:', error.message);
+      // Fallback: try to create basic schema
+      try {
+        execSync('npx prisma db push', { stdio: 'inherit' });
+      } catch (fallbackError: any) {
+        console.warn('Fallback schema creation also failed:', fallbackError.message);
+      }
     }
     
     // Setup test database
