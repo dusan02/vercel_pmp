@@ -72,13 +72,22 @@ export async function POST(req: NextRequest) {
 
             // Bulk sync
             if (action === 'sync' && holdings) {
+                const MAX_QUANTITY = 1_000_000;
+                const MIN_QUANTITY = 0;
+                
                 for (const [t, q] of Object.entries(holdings)) {
                     if (typeof q === 'number') {
+                        const safeQuantity = Math.max(MIN_QUANTITY, Math.min(q, MAX_QUANTITY));
+                        
+                        if (safeQuantity !== q) {
+                            console.warn(`⚠️ Quantity adjusted in sync for ${t}: ${q} -> ${safeQuantity}`);
+                        }
+                        
                         try {
                             await prisma.portfolioItem.upsert({
                                 where: { userId_ticker: { userId: session.user.id, ticker: t } },
-                                update: { quantity: q },
-                                create: { userId: session.user.id, ticker: t, quantity: q }
+                                update: { quantity: safeQuantity },
+                                create: { userId: session.user.id, ticker: t, quantity: safeQuantity }
                             });
                         } catch (itemError) {
                             console.warn(`⚠️ Failed to upsert portfolio item ${t}:`, itemError);
@@ -98,10 +107,19 @@ export async function POST(req: NextRequest) {
                     return NextResponse.json({ error: 'Quantity required' }, { status: 400 });
                 }
 
+                // Validate quantity bounds
+                const MAX_QUANTITY = 1_000_000;
+                const MIN_QUANTITY = 0;
+                const safeQuantity = Math.max(MIN_QUANTITY, Math.min(quantity, MAX_QUANTITY));
+
+                if (safeQuantity !== quantity) {
+                    console.warn(`⚠️ Quantity adjusted for ${ticker}: ${quantity} -> ${safeQuantity}`);
+                }
+
                 await prisma.portfolioItem.upsert({
                     where: { userId_ticker: { userId: session.user.id, ticker } },
-                    update: { quantity },
-                    create: { userId: session.user.id, ticker, quantity }
+                    update: { quantity: safeQuantity },
+                    create: { userId: session.user.id, ticker, quantity: safeQuantity }
                 });
             } else if (action === 'remove') {
                 await prisma.portfolioItem.deleteMany({

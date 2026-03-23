@@ -1,16 +1,29 @@
 /**
  * Formátuje číslo na miliardy s "B" alebo bilióny s "T" suffixom
- * Vstup je v miliardách.
- * Príklad: 3.5 → "3.50 B", 1200 → "1.20 T"
+ * Vstup môže byť v akýchkoľvek jednotkách (raw hodnota z API/DB)
+ * Automaticky detekuje či sú to miliardy alebo bilióny
+ * Príklad: 3.5 → "3.50B", 1200 → "1.20T", 693105633.78 → "693.11B"
  */
 export const formatMarketCap = (value: number | null | undefined): string => {
   if (value === null || value === undefined || !isFinite(value) || value === 0) {
     return '0.00';
   }
 
+  // Ak je hodnota > 100,000, pravdepodobne je to v miliardách (raw z API)
+  if (value > 100_000) {
+    const billions = value / 1_000_000_000; // Konvertuj na bilióny
+    if (billions >= 1000) {
+      return `${(billions / 1000).toFixed(2)}T`;
+    }
+    return `${billions.toFixed(2)}B`;
+  }
+
+  // Ak je hodnota >= 1000, pravdepodobne už sú to bilióny
   if (Math.abs(value) >= 1000) {
     return `${(value / 1000).toFixed(2)}T`;
   }
+
+  // Inak sú to miliardy
   return `${value.toFixed(2)}B`;
 };
 

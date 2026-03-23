@@ -519,8 +519,23 @@ export function calculatePercentChange(
     };
   }
 
+  const changePct = ((currentPrice / referencePrice) - 1) * 100;
+
+  // Validate for extreme changes (possible data errors or splits)
+  if (Math.abs(changePct) > 1000) {
+    console.warn(`⚠️ Extreme percent change detected: ${changePct.toFixed(2)}% - possible data error or stock split`);
+    // Cap at reasonable bounds to prevent UI issues
+    return {
+      changePct: Math.max(-999.99, Math.min(999.99, changePct)),
+      reference: {
+        used: referenceUsed,
+        price: referencePrice
+      }
+    };
+  }
+
   return {
-    changePct: ((currentPrice / referencePrice) - 1) * 100,
+    changePct,
     reference: {
       used: referenceUsed,
       price: referencePrice

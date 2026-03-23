@@ -6,11 +6,22 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const tickersParam = searchParams.get('tickers');
     const project = searchParams.get('project') || 'pmp';
-    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : null;
+    const limitParam = searchParams.get('limit');
     const sort = searchParams.get('sort') || 'marketCapDiff';
     const order = (searchParams.get('order') || 'desc') as 'asc' | 'desc';
-    const offset = searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : 0;
-    const getAll = searchParams.get('getAll') === 'true'; // New parameter to get all stocks from DB
+    const offsetParam = searchParams.get('offset');
+    const getAll = searchParams.get('getAll') === 'true';
+
+    // Validate and parse numeric parameters
+    const limit = limitParam ? Math.max(1, Math.min(1000, parseInt(limitParam))) : null;
+    const offset = offsetParam ? Math.max(0, parseInt(offsetParam)) : 0;
+
+    // Validate sort parameter
+    const validSorts = ['marketCapDiff', 'marketCap', 'changePct', 'name', 'symbol'];
+    const validatedSort = validSorts.includes(sort) ? sort : 'marketCapDiff';
+
+    // Validate order parameter
+    const validatedOrder = ['asc', 'desc'].includes(order) ? order : 'desc';
 
     // If getAll is true, fetch all stocks from database with sorting
     if (getAll) {
@@ -18,8 +29,8 @@ export async function GET(request: NextRequest) {
       const { data, errors } = await getStocksList({
         ...(limit ? { limit } : {}),
         offset,
-        sort,
-        order
+        sort: validatedSort,
+        order: validatedOrder
       });
 
       return NextResponse.json({
@@ -28,8 +39,8 @@ export async function GET(request: NextRequest) {
         source: 'database',
         project,
         count: data.length,
-        sort,
-        order,
+        sort: validatedSort,
+        order: validatedOrder,
         timestamp: new Date().toISOString(),
         ...(errors.length > 0 && { warnings: errors })
       }, {

@@ -6,11 +6,13 @@ import { logger } from '@/lib/utils/logger';
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
+  onError?: (error: Error, errorInfo: ErrorInfo) => void;
 }
 
 interface State {
   hasError: boolean;
   error: Error | null;
+  errorInfo?: ErrorInfo;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
@@ -24,11 +26,18 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    this.setState({ errorInfo });
+    
     logger.error('ErrorBoundary caught an error', error, {
       componentStack: errorInfo.componentStack,
       errorMessage: error.message,
       errorStack: error.stack,
     });
+
+    // Call custom error handler if provided
+    if (this.props.onError) {
+      this.props.onError(error, errorInfo);
+    }
 
     // If it's a webpack require error or chunk load error, try to reload after a delay
     if (

@@ -127,9 +127,9 @@ model Ticker {
 
   // Cached values for efficient sorting (SQL-first architecture)
   lastPrice         Float?
-  lastChangePct     Float?
-  lastMarketCap     Float?
-  lastMarketCapDiff Float?
+  lastChangePct     Float?     // Should be bounded between -999.99 and 999.99
+  lastMarketCap     Float?     // Should be in billions, bounded between 0 and 10000
+  lastMarketCapDiff Float?     // Should be in billions, bounded between -10000 and 10000
   lastPriceUpdated  DateTime?
 
   // Movers Section Stats (calculated daily)

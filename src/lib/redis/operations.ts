@@ -15,6 +15,7 @@ export async function atomicUpdatePrice(
 ): Promise<boolean> {
     try {
         if (!redisClient || !redisClient.isOpen) {
+            console.warn(`⚠️ Redis not available for atomic update ${symbol}`);
             return false;
         }
 
@@ -24,16 +25,29 @@ export async function atomicUpdatePrice(
         const ttl = session === 'live' ? REDIS_TTL.LIVE : REDIS_TTL.PRE_AFTER;
         const score = Math.round(changePct * 10000);
 
-        // Use MULTI/EXEC for atomicity
+        // Validate inputs
+        if (!symbol || !data || typeof changePct !== 'number' || !isFinite(changePct)) {
+            console.error(`❌ Invalid inputs for atomic update ${symbol}:`, { symbol, data, changePct });
+            return false;
+        }
+
+        // Use MULTI/EXEC for atomicity with error handling
         const multi = redisClient.multi();
         multi.setEx(key, ttl, JSON.stringify(data));
         multi.setEx(stockDataKey, ttl, JSON.stringify(data)); // Unified key for API
         multi.zAdd(heatmapKey, { score, value: symbol });
 
-        await multi.exec();
+        const results = await multi.exec();
+        
+        // Check if all commands succeeded
+        if (!results || results.some((result: any) => result !== 'OK' && !result)) {
+            console.error(`❌ Redis atomic update failed for ${symbol}:`, results);
+            return false;
+        }
+
         return true;
     } catch (error) {
-        console.error(`Error in atomic update for ${symbol}:`, error);
+        console.error(`❌ Error in atomic update for ${symbol}:`, error);
         return false;
     }
 }

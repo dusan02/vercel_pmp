@@ -5,6 +5,11 @@ import { SortKey } from '@/hooks/useSortableData';
 import { MobileSortHeader } from '../mobile/MobileSortHeader';
 import { cn } from '@/lib/utils/utils';
 
+// Helper function for safe nested property access
+function getNestedValue(obj: any, path: string): any {
+  return path.split('.').reduce((current, key) => current?.[key], obj);
+}
+
 export interface ColumnDef<T> {
   key: string;
   header: React.ReactNode;
@@ -261,7 +266,7 @@ export function EnhancedTable<T>({
                           }
                         }}
                       >
-                        {col.cell ? col.cell(item) : (col.render ? col.render(item) : null)}
+                        {col.cell ? col.cell(item) : (col.render ? col.render(item) : String(getNestedValue(item, col.key) ?? ''))}
                       </td>
                     ))}
                   </tr>
