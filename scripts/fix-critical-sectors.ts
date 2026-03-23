@@ -10,7 +10,30 @@
  * --dry-run: Show what would be fixed without making changes
  */
 
-import { prisma } from '../src/lib/db/prisma.js';
+import { PrismaClient } from '@prisma/client';
+
+// Ensure DATABASE_URL is set (fallback for local development)
+if (!process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = 'file:./prisma/dev.db';
+}
+
+function normalizeDatabaseUrl(url: string): string {
+  // Prisma + SQLite can easily hit lock/timeouts under concurrent writers.
+  // The single most impactful mitigation is limiting each process to a single connection.
+  return `${url}?connection_limit=1`;
+}
+
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined
+}
+
+export const prisma =
+  globalForPrisma.prisma ??
+  new PrismaClient({
+    datasources: { db: { url: normalizeDatabaseUrl(process.env.DATABASE_URL) } }
+  })
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 import { normalizeIndustry } from '../src/lib/utils/sectorIndustryValidator.js';
 
 // CRITICAL fixes - only the most obvious errors
@@ -21,7 +44,7 @@ const CRITICAL_FIXES: Record<string, { sector: string; industry: string }> = {
   'KEYS': { sector: 'Technology', industry: 'Software' }, // Keysight Technologies
   'VRSK': { sector: 'Technology', industry: 'Software' }, // Verisk Analytics
   
-  // Technology companies incorrectly in Financial Services / Banks
+  // Financial Services / Banks incorrectly in Technology / Software
   'ACN': { sector: 'Technology', industry: 'Information Technology Services' }, // Accenture
   'MCHP': { sector: 'Technology', industry: 'Semiconductors' }, // Microchip Technology
   'CDW': { sector: 'Technology', industry: 'Information Technology Services' }, // CDW Corporation
@@ -32,6 +55,11 @@ const CRITICAL_FIXES: Record<string, { sector: string; industry: string }> = {
   'PAYC': { sector: 'Technology', industry: 'Software' }, // Paycom Software
   'SMCI': { sector: 'Technology', industry: 'Information Technology Services' }, // Super Micro Computer
   'WDC': { sector: 'Technology', industry: 'Information Technology Services' }, // Western Digital
+  
+  // Technology companies incorrectly in Financial Services / Banks
+  'EQNR': { sector: 'Energy', industry: 'Oil & Gas E&P' }, // Equinor
+  'UBS': { sector: 'Financial Services', industry: 'Banks' }, // UBS Group
+  'BBVA': { sector: 'Financial Services', industry: 'Banks' }, // Banco Bilbao Vizcaya Argentaria
   
   // Financial Services / Insurance companies incorrectly in Technology / Software
   'AIG': { sector: 'Financial Services', industry: 'Insurance' }, // American International Group

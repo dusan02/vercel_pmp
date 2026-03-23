@@ -521,7 +521,7 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
       }
     },
     {
-      key: 'marketCapDiff',
+      key: 'marketCapDiffDesktop',
       header: 'Cap Diff',
       sortable: true,
       align: 'right',

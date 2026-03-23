@@ -12,6 +12,7 @@ import { ChunkLoadRecovery } from '@/components/ChunkLoadRecovery'
 import { WebVitalsReporter } from '@/components/WebVitalsReporter'
 import { GA_ID } from '@/lib/ga'
 import { ThemeEffect } from '@/components/ThemeEffect'
+import { DevCacheClear } from '@/components/DevCacheClear'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -185,73 +186,14 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="/api" />
         {/* Prefetch heatmap API for faster desktop loading */}
         <link rel="prefetch" href="/api/heatmap?timeframe=day&metric=percent" as="fetch" crossOrigin="anonymous" />
-
-        {/* Cache Clear Utility - Development Only */}
-        {process.env.NODE_ENV === 'development' && (
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `
-                // Make cache clear utility available in console
-                window.clearAllCaches = async function() {
-                  // NOTE: We cannot dynamic-import TS source files in the browser under Next/Turbopack.
-                  // Do the clear directly here (Cache Storage + SW + storage), then reload.
-                  const keep = [];
-                  try {
-                    // Clear Cache Storage
-                    if (typeof caches !== 'undefined' && caches.keys) {
-                      const keys = await caches.keys();
-                      await Promise.all(keys.map((k) => caches.delete(k)));
-                    }
-                  } catch (e) {
-                    console.warn('clearAllCaches: caches API failed', e);
-                  }
-
-                  try {
-                    // Unregister Service Workers
-                    if ('serviceWorker' in navigator) {
-                      const regs = await navigator.serviceWorker.getRegistrations();
-                      await Promise.all(regs.map((r) => r.unregister()));
-                    }
-                  } catch (e) {
-                    console.warn('clearAllCaches: serviceWorker unregister failed', e);
-                  }
-
-                  try {
-                    // Clear storage (keep allowlist)
-                    if (keep.length === 0) {
-                      localStorage.clear();
-                    } else {
-                      const preserved = {};
-                      keep.forEach((k) => {
-                        const v = localStorage.getItem(k);
-                        if (v !== null) preserved[k] = v;
-                      });
-                      localStorage.clear();
-                      Object.keys(preserved).forEach((k) => localStorage.setItem(k, preserved[k]));
-                    }
-                    sessionStorage.clear();
-                  } catch (e) {
-                    console.warn('clearAllCaches: storage clear failed', e);
-                  }
-
-                  // Reload
-                  try {
-                    location.reload();
-                  } catch {
-                    location.href = location.href;
-                  }
-                };
-                console.log('%c🧹 Cache Clear', 'color: #3b82f6; font-weight: bold;', 'Available: window.clearAllCaches()');
-              `,
-            }}
-          />
-        )}
       </head>
       <body className={`${inter.variable} ${spaceGrotesk.variable} ${inter.className} lg:mb-0 mb-16`}>
         {/* Global recovery for deploy-time chunk 404s (stale cached HTML/SW) */}
         <ChunkLoadRecovery />
         {/* RUM: Core Web Vitals reporting (sampled) */}
         <WebVitalsReporter />
+        {/* Development cache clear utility */}
+        <DevCacheClear />
         {/* Google Analytics 4 */}
         <Script
           src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}

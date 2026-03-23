@@ -460,16 +460,15 @@ export async function getStocksList(options: {
         sector: (() => {
           const raw = (s.sector || '').trim();
           const ov = SECTOR_INDUSTRY_OVERRIDES[s.symbol];
-          if (ov && (!raw || raw === 'Other' || raw === 'Unrecognized')) return ov.sector;
+          // Always apply override for specific tickers, regardless of current sector
+          if (ov) return ov.sector;
           return raw;
         })(),
         industry: (() => {
           const raw = (s.industry || '').trim();
-          const sectorRaw = (s.sector || '').trim();
           const ov = SECTOR_INDUSTRY_OVERRIDES[s.symbol];
-          if (ov && (!raw || raw === 'Uncategorized' || raw === 'Unrecognized' || sectorRaw === 'Other' || sectorRaw === 'Unrecognized')) {
-            return ov.industry;
-          }
+          // Always apply override for specific tickers, regardless of current industry
+          if (ov) return ov.industry;
           return raw;
         })(),
         logoUrl: s.logoUrl || `/logos/${s.symbol.toLowerCase()}-32.webp`,

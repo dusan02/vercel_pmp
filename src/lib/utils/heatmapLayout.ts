@@ -62,7 +62,7 @@ export function buildHeatmapHierarchy(
     }
 
     // 2. Nájdi alebo vytvor Industry (iba pre veľké sektory)
-    const LARGE_SECTORS = ['Technology', 'Financial Services', 'Consumer Cyclical', 'Healthcare'];
+    const LARGE_SECTORS = ['Technology', 'Finance', 'Consumer', 'Healthcare'];
     const isLargeSector = LARGE_SECTORS.includes(company.sector);
 
     let parentNodeForCompany = sectorNode;

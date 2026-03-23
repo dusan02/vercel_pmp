@@ -108,7 +108,7 @@ export function FavoritesSection({
       render: (stock) => stock.industry || 'N/A'
     },
     {
-      key: isDesktop ? 'marketCap' : 'marketCapDiff',
+      key: isDesktop ? 'marketCap' : 'marketCapDiffMobile',
       header: isDesktop ? 'Market Cap' : 'M Cap',
       sortable: true,
       align: 'right',
@@ -118,7 +118,7 @@ export function FavoritesSection({
       render: (stock) => <span className="tabular-nums block w-full text-right">{formatBillions(stock.marketCap)}</span>
     },
     {
-      key: 'marketCapDiff',
+      key: 'marketCapDiffDesktop',
       header: 'Cap Diff',
       sortable: isDesktop,
       align: 'center',

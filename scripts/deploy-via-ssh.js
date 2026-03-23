@@ -1,4 +1,4 @@
-const { Client } = require('ssh2');
+import { Client } from 'ssh2';
 
 const conn = new Client();
 conn.on('ready', () => {
@@ -8,8 +8,9 @@ conn.on('ready', () => {
         'git stash',
         'git clean -fd',
         'git pull origin main',
+        'cp ecosystem.config.cjs ecosystem.config.cjs.backup 2>/dev/null || true',
         'npm run build',
-        'pm2 start ecosystem.config.js --env production --update-env'
+        'pm2 start ecosystem.config.cjs --env production --update-env'
     ];
     
     console.log('Running: ' + cmds.join(' && '));
