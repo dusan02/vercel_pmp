@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { MarketSignals } from './MarketSignals';
 import { NotificationToggle } from '../notifications/NotificationToggle';
+import { formatMarketCap } from '@/lib/utils/format';
 
 interface ScreenerResult {
     symbol: string;
@@ -213,7 +214,7 @@ export function GlobalScreener() {
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-right font-mono text-gray-600 dark:text-gray-400">
-                                        ${((item.ticker?.lastMarketCap || 0) / 1e12).toFixed(2)}T
+                                        {formatMarketCap(item.ticker?.lastMarketCap)}
                                     </td>
                                 </tr>
                             ))}

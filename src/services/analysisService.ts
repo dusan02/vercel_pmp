@@ -186,8 +186,8 @@ export class AnalysisService {
                                 (res.weighted_shares_outstanding || res.share_class_shares_outstanding || null);
 
                             const computedMarketCap = sharesOutstanding && sharesOutstanding > 0
-                                ? prevClose * sharesOutstanding
-                                : null;
+                ? (prevClose * sharesOutstanding) / 1_000_000_000 // Convert to Billions
+                : null;
 
                             const priceUpdate: Record<string, any> = {};
                             if (needsPrice) priceUpdate.lastPrice = prevClose;
