@@ -1440,7 +1440,7 @@ async function main() {
           console.log(`📊 Adding ${tickers.length} tickers to universe:sp500...`);
 
           for (const ticker of tickers) {
-            await addToUniverse('sp500', ticker);
+            await addToUniverse('sp500', [ticker]);
           }
 
           console.log(`✅ Universe refreshed: ${tickers.length} tickers added to universe:sp500`);

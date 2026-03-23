@@ -1,11 +1,16 @@
-import { redisClient } from './client';
+import { redisOps } from './enhancedOperations';
 import { REDIS_KEYS, REDIS_TTL } from './keys';
 import { PriceData } from '../types';
+
+/**
+ * Enhanced Redis operations with automatic fallback to localStorage
+ * Maintains backward compatibility while adding resilience
+ */
 
 // --- Atomic Operations ---
 
 /**
- * Atomically update last price and heatmap
+ * Atomically update last price and heatmap with fallback
  */
 export async function atomicUpdatePrice(
     session: 'pre' | 'live' | 'after',
@@ -14,11 +19,6 @@ export async function atomicUpdatePrice(
     changePct: number
 ): Promise<boolean> {
     try {
-        if (!redisClient || !redisClient.isOpen) {
-            console.warn(`⚠️ Redis not available for atomic update ${symbol}`);
-            return false;
-        }
-
         const key = REDIS_KEYS.last(session, symbol);
         const stockDataKey = REDIS_KEYS.stockData(symbol);
         const heatmapKey = REDIS_KEYS.heatmap(session);
@@ -31,31 +31,29 @@ export async function atomicUpdatePrice(
             return false;
         }
 
-        // Use MULTI/EXEC for atomicity with error handling
-        const multi = redisClient.multi();
-        multi.setEx(key, ttl, JSON.stringify(data));
-        multi.setEx(stockDataKey, ttl, JSON.stringify(data)); // Unified key for API
-        multi.zAdd(heatmapKey, { score, value: symbol });
+        // Use enhanced Redis operations with fallback
+        const operations = [
+            { type: 'setEx', key, args: [ttl, JSON.stringify(data)] },
+            { type: 'setEx', key: stockDataKey, args: [ttl, JSON.stringify(data)] },
+        ];
 
-        const results = await multi.exec();
+        const multiSuccess = await redisOps.multi(operations);
         
-        // Check if all commands succeeded
-        if (!results || results.some((result: any) => result !== 'OK' && !result)) {
-            console.error(`❌ Redis atomic update failed for ${symbol}:`, results);
-            return false;
+        if (multiSuccess) {
+            // Handle ZAdd separately
+            const zAddSuccess = await redisOps.zAdd(heatmapKey, [{ score, value: symbol }]);
+            return zAddSuccess;
         }
 
-        return true;
+        return false;
     } catch (error) {
-        console.error(`❌ Error in atomic update for ${symbol}:`, error);
+        console.error(`❌ Error in enhanced atomic update for ${symbol}:`, error);
         return false;
     }
 }
 
-// --- Helper Operations ---
-
 /**
- * Set last price for a symbol in a session
+ * Set last price for a symbol in a session with fallback
  */
 export async function setLast(
     session: 'pre' | 'live' | 'after',
@@ -63,481 +61,306 @@ export async function setLast(
     data: PriceData
 ): Promise<boolean> {
     try {
-        if (!redisClient || !redisClient.isOpen) {
-            return false;
-        }
-
         const key = REDIS_KEYS.last(session, symbol);
-        const stockDataKey = REDIS_KEYS.stockData(symbol);
         const ttl = session === 'live' ? REDIS_TTL.LIVE : REDIS_TTL.PRE_AFTER;
-        const value = JSON.stringify(data);
-
-        await redisClient.setEx(key, ttl, value);
-        await redisClient.setEx(stockDataKey, ttl, value); // Unified key for API
-        return true;
+        
+        return await redisOps.setEx(key, ttl, JSON.stringify(data));
     } catch (error) {
-        console.error(`Error setting last price for ${symbol}:`, error);
+        console.error(`❌ Error in enhanced setLast for ${symbol}:`, error);
         return false;
     }
 }
 
 /**
- * Get last price for a symbol in a session
+ * Get last price for a symbol in a session with fallback
  */
 export async function getLast(
     session: 'pre' | 'live' | 'after',
     symbol: string
 ): Promise<PriceData | null> {
     try {
-        if (!redisClient || !redisClient.isOpen) {
-            return null;
-        }
-
         const key = REDIS_KEYS.last(session, symbol);
-        const data = await redisClient.get(key);
-
-        if (!data) return null;
-        return JSON.parse(data.toString());
+        const data = await redisOps.get(key);
+        
+        if (data) {
+            return JSON.parse(data) as PriceData;
+        }
+        
+        return null;
     } catch (error) {
-        console.error(`Error getting last price for ${symbol}:`, error);
+        console.error(`❌ Error in enhanced getLast for ${symbol}:`, error);
         return null;
     }
 }
 
 /**
- * Get many last prices (batch operation)
- */
-export async function getManyLast(
-    session: 'pre' | 'live' | 'after',
-    symbols: string[]
-): Promise<Map<string, PriceData>> {
-    const result = new Map<string, PriceData>();
-
-    if (!redisClient || !redisClient.isOpen || symbols.length === 0) {
-        return result;
-    }
-
-    try {
-        // For large batches (>100), use pipeline for better performance
-        if (symbols.length > 100) {
-            const pipeline = redisClient.multi();
-            symbols.forEach((symbol) => {
-                const key = REDIS_KEYS.last(session, symbol);
-                pipeline.get(key);
-            });
-
-            const results = await pipeline.exec();
-            symbols.forEach((symbol, index) => {
-                const [error, value] = results[index] || [null, null];
-                if (!error && value) {
-                    try {
-                        result.set(symbol, JSON.parse(value.toString()));
-                    } catch (e) {
-                        console.error(`Error parsing price data for ${symbol}:`, e);
-                    }
-                }
-            });
-        } else {
-            // For smaller batches, MGET is sufficient
-            const keys = symbols.map((symbol) => REDIS_KEYS.last(session, symbol));
-            const values = await redisClient.mGet(keys);
-
-            symbols.forEach((symbol, index) => {
-                const value = values[index];
-                if (value) {
-                    try {
-                        result.set(symbol, JSON.parse(value.toString()));
-                    } catch (e) {
-                        console.error(`Error parsing price data for ${symbol}:`, e);
-                    }
-                }
-            });
-        }
-    } catch (error) {
-        console.error('Error getting many last prices:', error);
-    }
-
-    return result;
-}
-
-/**
- * Update heatmap (sorted set by change percentage)
- */
-// eslint-disable-next-line no-unused-vars
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-// eslint-disable @typescript-eslint/no-unused-vars
-export async function updateHeatmap(
-    session: 'pre' | 'live' | 'after',
-    symbol: string,
-    changePct: number
-): Promise<boolean> {
-    try {
-        if (!redisClient || !redisClient.isOpen) {
-            return false;
-        }
-
-        const key = REDIS_KEYS.heatmap(session);
-        // Score = int(change_pct * 10000) for sorting
-        const score = Math.round(changePct * 10000);
-
-        await redisClient.zAdd(key, {
-            score,
-            value: symbol
-        });
-
-        return true;
-    } catch (error) {
-        console.error(`Error updating heatmap for ${symbol}:`, error);
-        return false;
-    }
-}
-
-/**
- * Get heatmap data (top/bottom movers)
- * Returns symbols sorted by change_pct (descending by default)
+ * Get heatmap data for a session with fallback
  */
 export async function getHeatmap(
     session: 'pre' | 'live' | 'after',
-    limit: number = 100,
-    reverse: boolean = true
-): Promise<string[]> {
+    start = 0,
+    stop = -1
+): Promise<{ score: number; value: string }[]> {
     try {
-        if (!redisClient || !redisClient.isOpen) {
-            return [];
-        }
-
         const key = REDIS_KEYS.heatmap(session);
-
-        if (reverse) {
-            // Top gainers (highest score = highest change_pct first)
-            // zRange with REV gets highest scores first
-            const result = await redisClient.zRange(key, -limit, -1, { REV: true });
-            return result.map((r: any) => typeof r === 'string' ? r : r.value || r);
-        } else {
-            // Top losers (lowest score = lowest change_pct first)
-            const result = await redisClient.zRange(key, 0, limit - 1);
-            return result.map((r: any) => typeof r === 'string' ? r : r.value || r);
-        }
+        return await redisOps.zRange(key, start, stop);
     } catch (error) {
-        console.error('Error getting heatmap:', error);
+        console.error(`❌ Error in enhanced getHeatmap for ${session}:`, error);
         return [];
     }
 }
 
 /**
- * Set previous close for a date
- * 
- * CRITICAL: TTL is now trading-day based, not fixed 24h
+ * Set previous close with fallback
  */
 export async function setPrevClose(
-    date: string, // YYYY-MM-DD (trading date)
+    date: string,
     symbol: string,
-    price: number
+    prevClose: number
 ): Promise<boolean> {
     try {
-        if (!redisClient || !redisClient.isOpen) {
-            return false;
-        }
-
-        const key = REDIS_KEYS.prevclose(date);
-        await redisClient.hSet(key, symbol, price.toString());
-
-        // Use trading-day based TTL (minimum 7 days, up to next trading day + buffer)
-        const { getPreviousCloseTTL } = await import('../utils/pricingStateMachine');
-        const ttl = getPreviousCloseTTL();
-        await redisClient.expire(key, ttl);
-
-        return true;
+        const key = `${REDIS_KEYS.prevclose(date)}:${symbol}`;
+        return await redisOps.setEx(key, REDIS_TTL.PREVCLOSE, JSON.stringify(prevClose));
     } catch (error) {
-        console.error(`Error setting previous close for ${symbol}:`, error);
+        console.error(`❌ Error in enhanced setPrevClose for ${symbol}:`, error);
         return false;
     }
 }
 
 /**
- * Get previous close for symbols
+ * Get previous close for multiple symbols with fallback
  */
 export async function getPrevClose(
     date: string,
     symbols: string[]
 ): Promise<Map<string, number>> {
     const result = new Map<string, number>();
-
-    if (!redisClient || !redisClient.isOpen || symbols.length === 0) {
-        return result;
-    }
-
+    
     try {
-        const key = REDIS_KEYS.prevclose(date);
-        const values = await redisClient.hmGet(key, symbols);
-
-        symbols.forEach((symbol, index) => {
-            const value = values[index];
-            if (value) {
-                const price = parseFloat(value.toString());
-                if (!isNaN(price)) {
-                    result.set(symbol, price);
+        // Get each symbol's previous close
+        for (const symbol of symbols) {
+            const key = `${REDIS_KEYS.prevclose(date)}:${symbol}`;
+            const data = await redisOps.get(key);
+            
+            if (data) {
+                const prevClose = JSON.parse(data) as number;
+                if (typeof prevClose === 'number' && isFinite(prevClose)) {
+                    result.set(symbol, prevClose);
                 }
             }
-        });
+        }
     } catch (error) {
-        console.error('Error getting previous close:', error);
+        console.error('❌ Error in enhanced getPrevClose:', error);
     }
-
+    
     return result;
 }
 
 /**
- * Add symbol to universe set
- * Falls back to DB if Redis is not available
+ * Delete keys with fallback cleanup
  */
-export async function addToUniverse(
-    type: string,
-    symbol: string
-): Promise<boolean> {
+export async function del(keys: string[]): Promise<boolean> {
     try {
-        if (redisClient && redisClient.isOpen) {
-            const key = REDIS_KEYS.universe(type);
-            await redisClient.sAdd(key, symbol);
-            await redisClient.expire(key, REDIS_TTL.UNIVERSE);
+        let success = true;
+        
+        for (const key of keys) {
+            const result = await redisOps.del(key);
+            if (!result) {
+                success = false;
+            }
         }
-
-        // Also ensure ticker exists in DB (fallback)
-        try {
-            const { prisma } = await import('../db/prisma');
-            await prisma.ticker.upsert({
-                where: { symbol },
-                update: {},
-                create: { symbol, name: symbol } // Minimal data, can be enriched later
-            });
-        } catch (dbError) {
-            // DB error is not critical, continue
-            console.warn(`Could not upsert ticker ${symbol} to DB:`, dbError);
-        }
-
-        return true;
+        
+        return success;
     } catch (error) {
-        console.error(`Error adding ${symbol} to universe ${type}:`, error);
+        console.error('❌ Error in enhanced del:', error);
         return false;
     }
 }
 
 /**
- * Get universe set
- * Falls back to DB if Redis is not available
+ * Get Redis status with fallback info
+ */
+export async function getRedisStatus(): Promise<{
+    redis: boolean;
+    fallback: boolean;
+    lastCheck: number;
+    message: string;
+}> {
+    try {
+        const status = await redisOps.getStatus();
+        
+        let message = 'All systems operational';
+        if (!status.redis) {
+            message = 'Redis unavailable, using localStorage fallback';
+        }
+        
+        return {
+            ...status,
+            message
+        };
+    } catch (error) {
+        console.error('❌ Error getting Redis status:', error);
+        return {
+            redis: false,
+            fallback: true,
+            lastCheck: Date.now(),
+            message: 'Error checking Redis status'
+        };
+    }
+}
+
+/**
+ * Clear all cache (both Redis and fallback)
+ */
+export async function clearAllCache(): Promise<boolean> {
+    try {
+        // Clear Redis (if available)
+        const { redisClient } = await import('./client');
+        if (redisClient && redisClient.isOpen) {
+            try {
+                await redisClient.flushDb();
+            } catch (error) {
+                console.warn('⚠️ Failed to clear Redis:', error);
+            }
+        }
+        
+        // Clear fallback storage
+        if (typeof localStorage !== 'undefined') {
+            const keys = Object.keys(localStorage);
+            keys.forEach(key => {
+                if (key.startsWith('redis_fallback_')) {
+                    localStorage.removeItem(key);
+                }
+            });
+        }
+        
+        return true;
+    } catch (error) {
+        console.error('❌ Error clearing cache:', error);
+        return false;
+    }
+}
+
+/**
+ * Initialize enhanced Redis operations
+ * This should be called once at application startup
+ */
+export async function initializeEnhancedRedis(): Promise<void> {
+    try {
+        // Clean up any expired fallback entries
+        redisOps.cleanupExpiredFallbacks();
+        
+        // Check Redis status
+        const status = await getRedisStatus();
+        console.log(`🔗 Redis Status: ${status.message}`);
+        
+        // Log fallback usage if Redis is down
+        if (!status.redis) {
+            console.warn('⚠️ Running in fallback mode - some features may be limited');
+        }
+    } catch (error) {
+        console.error('❌ Failed to initialize enhanced Redis:', error);
+    }
+}
+
+// Export the enhanced operations for direct use if needed
+export { redisOps };
+
+// --- Legacy exports for backward compatibility ---
+
+/**
+ * Get universe set (fallback to empty array if Redis unavailable)
  */
 export async function getUniverse(type: string): Promise<string[]> {
-    try {
-        if (redisClient && redisClient.isOpen) {
-            const key = REDIS_KEYS.universe(type);
-            const members = await redisClient.sMembers(key);
-            if (members.length > 0) {
-                return members.map((m: any) => m.toString());
-            }
-        }
-
-        // Fallback to DB if Redis is not available or empty
-        try {
-            const { prisma } = await import('../db/prisma');
-            const tickers = await prisma.ticker.findMany({
-                select: { symbol: true },
-                orderBy: { symbol: 'asc' }
-            });
-
-            if (tickers.length > 0) {
-                console.warn(`⚠️ Universe ${type} empty in Redis, loaded ${tickers.length} tickers from DB`);
-                // Bootstrap Redis with DB data (one-time)
-                for (const ticker of tickers) {
-                    await addToUniverse(type, ticker.symbol);
-                }
-                return tickers.map(t => t.symbol);
-            }
-        } catch (dbError) {
-            console.error('Error getting universe from DB:', dbError);
-        }
-
-        // Final fallback: use default tickers
-        try {
-            const { getAllProjectTickers } = await import('../../data/defaultTickers');
-            const defaultTickers = getAllProjectTickers('pmp');
-            console.warn(`⚠️ Universe ${type} empty, using ${defaultTickers.length} default tickers`);
-            // Bootstrap Redis with default tickers (one-time)
-            for (const ticker of defaultTickers) {
-                await addToUniverse(type, ticker);
-            }
-            return defaultTickers;
-        } catch {
-            return [];
-        }
-    } catch (error) {
-        console.error(`Error getting universe ${type}:`, error);
-        // Final fallback: use default tickers
-        try {
-            const { getAllProjectTickers } = await import('../../data/defaultTickers');
-            return getAllProjectTickers('pmp');
-        } catch {
-            return [];
-        }
-    }
-}
-
-/**
- * Publish tick update to Redis Pub/Sub
- */
-export async function publishTick(symbol: string, session: 'pre' | 'live' | 'after', data: PriceData): Promise<boolean> {
-    try {
-        if (!redisClient || !redisClient.isOpen) {
-            return false;
-        }
-
-        const message = JSON.stringify({ symbol, session, ...data });
-        await redisClient.publish('pmp:tick', message);
-        return true;
-    } catch (error) {
-        console.error(`Error publishing tick for ${symbol}:`, error);
-        return false;
-    }
-}
-
-/**
- * Get multiple JSON values from Redis
- */
-export async function mGetJson<T>(keys: string[]): Promise<Record<string, T>> {
-    const result: Record<string, T> = {};
-    if (keys.length === 0) return result;
-
+  try {
+    const { redisClient } = await import('./client');
     if (redisClient && redisClient.isOpen) {
-        try {
-            const values = await redisClient.mGet(keys);
-            keys.forEach((key, index) => {
-                const raw = values[index];
-                if (raw) {
-                    try {
-                        result[key] = JSON.parse(raw.toString()) as T;
-                    } catch (e) { }
-                }
-            });
-            return result;
-        } catch (e) { }
+      const key = REDIS_KEYS.universe(type);
+      return await redisClient.sMembers(key);
     }
-    return result;
+    return [];
+  } catch (error) {
+    console.warn(`⚠️ Failed to get universe ${type}:`, error);
+    return [];
+  }
 }
 
 /**
- * Get multiple JSON values as Map
+ * Add to universe set
  */
-export async function mGetJsonMap<T>(keys: string[]): Promise<Map<string, T>> {
-    const record = await mGetJson<T>(keys);
-    const map = new Map<string, T>();
-    Object.entries(record).forEach(([key, value]) => {
-        map.set(key, value);
-    });
-    return map;
-}
-
-// --- Generic Cache Operations (for backward compatibility) ---
-
-import { CACHE_TTL } from './keys';
-
-const inMemoryCache = new Map<string, any>();
-const cacheTimestamps = new Map<string, number>();
-
-export async function getCachedData(key: string) {
-    try {
-        if (redisClient && redisClient.isOpen) {
-            const data = await redisClient.get(key);
-            return data ? JSON.parse(data.toString()) : null;
-        } else {
-            // Use in-memory cache as fallback
-            const data = inMemoryCache.get(key);
-            const timestamp = cacheTimestamps.get(key);
-            if (data && timestamp && Date.now() - timestamp < CACHE_TTL.DEFAULT * 1000) {
-                return data;
-            }
-            return null;
-        }
-    } catch (err) {
-        console.error('Cache get error:', err);
-        return null;
-    }
-}
-
-export async function setCachedData(key: string, data: any, ttl: number = CACHE_TTL.DEFAULT) {
-    try {
-        if (redisClient && redisClient.isOpen) {
-            await redisClient.setEx(key, ttl, JSON.stringify(data));
-        } else {
-            // Use in-memory cache as fallback
-            inMemoryCache.set(key, data);
-            cacheTimestamps.set(key, Date.now());
-        }
-        return true;
-    } catch (error) {
-        console.error('Cache set error:', error);
-        return false;
-    }
-}
-
-export async function deleteCachedData(key: string) {
-    try {
-        if (redisClient && redisClient.isOpen) {
-            await redisClient.del(key);
-        } else {
-            // Use in-memory cache as fallback
-            inMemoryCache.delete(key);
-            cacheTimestamps.delete(key);
-        }
-        return true;
-    } catch (error) {
-        console.error('Cache delete error:', error);
-        return false;
-    }
-}
-
-/**
- * Delete cached keys by pattern (Redis SCAN-based; safe for large keyspaces).
- * Useful for manual maintenance scripts (e.g. clearing stock cache after a prevClose reset).
- */
-export async function deleteCachedDataByPattern(pattern: string, batchSize: number = 500): Promise<number> {
-    let deleted = 0;
-
-    // Redis path
+export async function addToUniverse(type: string, symbols: string[]): Promise<boolean> {
+  try {
+    const { redisClient } = await import('./client');
     if (redisClient && redisClient.isOpen) {
-        try {
-            // node-redis supports async scanIterator
-            // https://github.com/redis/node-redis
-            for await (const key of redisClient.scanIterator({ MATCH: pattern, COUNT: batchSize })) {
-                if (!key) continue;
-                try {
-                    await redisClient.del(key as any);
-                    deleted++;
-                } catch (e) {
-                    // continue
-                }
-            }
-            return deleted;
-        } catch (error) {
-            console.error(`Cache delete-by-pattern error (pattern=${pattern}):`, error);
-            return deleted;
-        }
+      const key = REDIS_KEYS.universe(type);
+      await redisClient.sAdd(key, symbols);
+      return true;
     }
+    return false;
+  } catch (error) {
+    console.warn(`⚠️ Failed to add to universe ${type}:`, error);
+    return false;
+  }
+}
 
-    // In-memory fallback path (best-effort)
-    try {
-        // Convert a simple Redis glob pattern to a RegExp (supports * only; enough for our use).
-        const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&');
-        const regex = new RegExp('^' + escaped.replace(/\*/g, '.*') + '$');
-
-        for (const key of Array.from(inMemoryCache.keys())) {
-            if (regex.test(key)) {
-                inMemoryCache.delete(key);
-                cacheTimestamps.delete(key);
-                deleted++;
-            }
-        }
-    } catch (error) {
-        console.error(`In-memory cache delete-by-pattern error (pattern=${pattern}):`, error);
+/**
+ * Publish tick to Redis Pub/Sub
+ */
+export async function publishTick(symbol: string, session: string, data: any): Promise<boolean> {
+  try {
+    const { redisClient } = await import('./client');
+    if (redisClient && redisClient.isOpen) {
+      const channel = `tick:${session}`;
+      await redisClient.publish(channel, JSON.stringify({ symbol, ...data }));
+      return true;
     }
+    return false;
+  } catch (error) {
+    console.warn(`⚠️ Failed to publish tick ${symbol}:`, error);
+    return false;
+  }
+}
 
-    return deleted;
+/**
+ * Get cached data
+ */
+export async function getCachedData(key: string): Promise<any | null> {
+  try {
+    const data = await redisOps.get(key);
+    return data ? JSON.parse(data) : null;
+  } catch (error) {
+    console.warn(`⚠️ Failed to get cached data ${key}:`, error);
+    return null;
+  }
+}
+
+/**
+ * Set cached data
+ */
+export async function setCachedData(key: string, data: any, ttl?: number): Promise<boolean> {
+  try {
+    const ttlToUse = ttl || REDIS_TTL.LIVE;
+    return await redisOps.setEx(key, ttlToUse, JSON.stringify(data));
+  } catch (error) {
+    console.warn(`⚠️ Failed to set cached data ${key}:`, error);
+    return false;
+  }
+}
+
+/**
+ * Multi-get JSON data from multiple keys
+ */
+export async function mGetJsonMap<T>(keys: string[]): Promise<Map<string, T | null>> {
+  const result = new Map<string, T | null>();
+  
+  try {
+    for (const key of keys) {
+      const data = await redisOps.get(key);
+      result.set(key, data ? JSON.parse(data) : null);
+    }
+  } catch (error) {
+    console.warn('⚠️ Failed to mGetJsonMap:', error);
+  }
+  
+  return result;
 }

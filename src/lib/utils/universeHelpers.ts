@@ -106,7 +106,7 @@ export async function addTickersToUniverse(
   let failed = 0;
 
   for (const ticker of tickers) {
-    const result = await addToUniverse(type, ticker);
+    const result = await addToUniverse(type, [ticker]);
     if (result) {
       success++;
     } else {
