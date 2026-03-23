@@ -595,6 +595,18 @@ export async function GET(request: NextRequest) {
         // (and Redis can be disabled). We'll still label source for debugging.
         priceSource = 'cache';
         cacheHits++;
+        
+        // Validate and filter out extreme values for cache path
+        const { validateMarketCap, validatePercentChange } = await import('@/lib/utils/marketCapUtils');
+        if (!validateMarketCap(marketCap, ticker)) {
+          skippedNoMarketCap++;
+          continue;
+        }
+
+        if (!validatePercentChange(changePercent, ticker)) {
+          skippedNoPrice++; // Count as skipped due to invalid data
+          continue;
+        }
       } else {
         // Prefer timestamp-aware "best available" price (SessionPrice if newer than Ticker.lastPriceUpdated)
         const priceInfo = priceMap.get(ticker);
@@ -672,6 +684,18 @@ export async function GET(request: NextRequest) {
       // Preskoč tickery bez market cap (ak sme použili DB a nemá market cap)
       if (marketCap <= 0) {
         skippedNoMarketCap++;
+        continue;
+      }
+
+      // Validate and filter out extreme values
+      const { validateMarketCap, validatePercentChange } = await import('@/lib/utils/marketCapUtils');
+      if (!validateMarketCap(marketCap, ticker)) {
+        skippedNoMarketCap++;
+        continue;
+      }
+
+      if (!validatePercentChange(changePercent, ticker)) {
+        skippedNoPrice++; // Count as skipped due to invalid data
         continue;
       }
 

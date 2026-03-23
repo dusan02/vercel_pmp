@@ -332,15 +332,54 @@ export function computePercentChange(
  * Validate price data for extreme changes (possible splits)
  */
 export function validatePriceChange(currentPrice: number, prevClose: number): void {
+  // Check for zero or negative values
+  if (currentPrice <= 0 || prevClose <= 0) {
+    console.warn(`⚠️ Invalid price data detected - current: $${currentPrice}, prev: $${prevClose}`);
+    return;
+  }
+
   const percentChange = Math.abs((currentPrice - prevClose) / prevClose) * 100;
 
-  if (percentChange > 40) {
+  // Check for extreme changes (possible splits or data errors)
+  if (percentChange > 100) {
     console.warn(`⚠️ Extreme price change detected: ${percentChange.toFixed(2)}% - possible stock split or data error`);
   }
 
   if (currentPrice < 0.01 || prevClose < 0.01) {
     throw new Error('Suspiciously low price detected - possible data error');
   }
+}
+
+/**
+ * Validate market cap values and filter out invalid data
+ */
+export function validateMarketCap(marketCap: number, ticker: string): boolean {
+  // Filter out zero or negative market caps
+  if (marketCap <= 0) {
+    console.warn(`⚠️ Zero or negative market cap detected for ${ticker}: ${marketCap}B - filtering out`);
+    return false;
+  }
+
+  // Filter out extremely high market caps (possible data errors)
+  if (marketCap > 10000) { // > $10 trillion
+    console.warn(`⚠️ Extremely high market cap detected for ${ticker}: ${marketCap}B - possible data error`);
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Validate percent change and filter out extreme values
+ */
+export function validatePercentChange(percentChange: number, ticker: string): boolean {
+  // Filter out extreme percent changes (possible splits or data errors)
+  if (Math.abs(percentChange) > 100) {
+    console.warn(`⚠️ Extreme percent change detected for ${ticker}: ${percentChange.toFixed(2)}% - filtering out`);
+    return false;
+  }
+
+  return true;
 }
 
 /**
