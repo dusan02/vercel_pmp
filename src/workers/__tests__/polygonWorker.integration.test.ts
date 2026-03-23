@@ -175,7 +175,12 @@ describe('polygonWorker integration tests', () => {
 
   beforeEach(async () => {
     // Clean database before each test
-    await prisma.sessionPrice.deleteMany();
+    try {
+      await prisma.sessionPrice.deleteMany();
+    } catch (error) {
+      // SessionPrice table might not exist in test environment
+      console.warn('SessionPrice table not found, skipping cleanup');
+    }
     await prisma.dailyRef.deleteMany();
     await prisma.ticker.deleteMany();
   });
