@@ -48,6 +48,30 @@ Aplikácia poskytuje live dáta v reálnom čase s nasledujúcimi časovými okn
 
 ## Trading Hours & Data Availability
 
+### 📊 **Market Cap Výpočty**
+
+Aplikácia používa presné výpočty trhovej kapitalizácie s validáciou dát:
+
+#### Základné vzorce
+```
+Market Cap (B) = (Cena × Počet akcií) ÷ 1,000,000,000
+% Change = (Aktuálna Cena - Referenčná Cena) ÷ Referenčná Cena × 100
+```
+
+#### Dátové zdroje (podľa priority)
+1. **Cache** (Redis) - Najrýchlejšie, 15-minútový TTL
+2. **SessionPrice** (DB) - Aktuálne session dáta
+3. **Ticker** (DB) - Fallback denormalizované dáta
+
+#### Validácia a filtrovanie
+- ✅ **Market Cap > 0** (filteruje nulové hodnoty)
+- ✅ **Market Cap < $10T** (filteruje extrémne hodnoty)  
+- ✅ **|% Change| ≤ 100%** (filteruje chybné dáta)
+- ⚠️ **Varovania** o možných stock splits a chybách
+
+**Detailná dokumentácia:** [docs/market-cap-calculations.md](docs/market-cap-calculations.md)
+**Technická dokumentácia:** [docs/technical-calculations.md](docs/technical-calculations.md)
+
 The application provides live data in real-time with the following trading windows:
 
 ### 🌅 **Pre-market Trading** (4:00-9:30 AM EST)
