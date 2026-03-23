@@ -2,8 +2,7 @@
 
 import { lazy, Suspense } from 'react';
 import FinancialChart, { FinancialStatement } from './FinancialChart';
-import ValuationChart from './ValuationChart';
-import GuruFocusChart from './GuruFocusChart';
+ // Removed redundant imports: ValuationChart, GuruFocusChart
 import { AnalysisHeader } from './analysis/AnalysisHeader';
 import { AnalysisControls } from './analysis/AnalysisControls';
 import { VerdictBanner } from './analysis/VerdictBanner';
@@ -253,7 +252,7 @@ export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabP
                 </div>
             )}
 
-            {/* Valuation Charts */}
+            {/* Valuation Analysis (GuruFocus Style) */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 overflow-hidden">
                 <div className="flex items-center gap-4 mb-6">
                     <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
@@ -262,15 +261,14 @@ export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabP
                         </svg>
                     </div>
                     <div>
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">Valuation Analysis</h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Historical valuation metrics with percentile bands</p>
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">Historical Valuation Charts</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">P/E Bands, P/S Bands & Revenue History (GuruFocus Style)</p>
                     </div>
                 </div>
-                <ValuationChart symbol={ticker} height={400} />
+                <Suspense fallback={<div className="flex justify-center items-center h-48"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500" /></div>}>
+                    <ValuationCharts ticker={ticker} />
+                </Suspense>
             </div>
-
-            {/* GuruFocus Style Charts */}
-            <GuruFocusChart symbol={ticker} height={450} />
 
             {/* Financial Health Table */}
             <FinancialHealthTable
@@ -331,26 +329,6 @@ export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabP
                         currentPrice={(data.metrics.currentEps || 0) * (data.metrics.currentPe || 0)}
                     />
                 )}
-            </div>
-
-            {/* ── Historical Valuation Charts ── */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
-                <div className="flex items-center gap-3 mb-6">
-                    <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-lg">
-                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
-                        </svg>
-                    </div>
-                    <div>
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">Historical Valuation Charts</h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">10-Year P/E Bands &amp; Revenue Trend</p>
-                    </div>
-                </div>
-                <Suspense fallback={<div className="flex justify-center items-center h-48"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-500" /></div>}>
-                    <div className="error-boundary">
-                        <ValuationCharts ticker={ticker} />
-                    </div>
-                </Suspense>
             </div>
         </div>
     );
