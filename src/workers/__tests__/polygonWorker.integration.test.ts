@@ -152,6 +152,19 @@ jest.mock('../polygonWorker', () => ({
 
 describe('polygonWorker integration tests', () => {
   beforeAll(async () => {
+    // Ensure test database has latest schema
+    const { execSync } = require('child_process');
+    try {
+      execSync('npx prisma migrate deploy --skip-seed', { stdio: 'inherit' });
+    } catch (error: any) {
+      console.warn('Migration deploy failed, trying db push...');
+      try {
+        execSync('npx prisma db push', { stdio: 'inherit' });
+      } catch (pushError: any) {
+        console.warn('DB push also failed:', pushError.message);
+      }
+    }
+    
     // Setup test database
     await prisma.$connect();
   });
