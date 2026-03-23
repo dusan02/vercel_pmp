@@ -15,24 +15,74 @@ import { getSharesOutstanding, getPreviousClose, getCurrentPrice } from '@/lib/u
 import * as redis from '@/lib/redis';
 import { prisma } from '@/lib/db/prisma';
 
+jest.mock('@/lib/db/prisma', () => ({
+  prisma: {
+    ticker: {
+      findMany: jest.fn((query: any) => {
+        const allTickers = [
+          { 
+            symbol: 'NVDA', 
+            name: 'NVIDIA Corp', 
+            sector: 'Technology', 
+            industry: 'Semiconductors', 
+            logoUrl: '/logos/nvda-32.webp',
+            sharesOutstanding: 1_000_000_000,
+            latestPrevClose: 780.0,
+            lastPrice: 800.0,
+            lastChangePct: 2.56,
+            lastMarketCap: 800_000_000_000,
+            lastMarketCapDiff: 20_000_000_000,
+            updatedAt: new Date()
+          },
+          { 
+            symbol: 'MCD', 
+            name: 'McDonalds', 
+            sector: 'Consumer Discretionary', 
+            industry: 'Restaurants',
+            logoUrl: '/logos/mcd-32.webp',
+            sharesOutstanding: 500_000_000,
+            latestPrevClose: 315.0,
+            lastPrice: 320.0,
+            lastChangePct: 1.58,
+            lastMarketCap: 160_000_000_000,
+            lastMarketCapDiff: 2_500_000_000,
+            updatedAt: new Date()
+          }
+        ];
+        
+        if (query?.where?.symbol?.in) {
+          const requestedTickers = query.where.symbol.in;
+          return Promise.resolve(allTickers.filter((t: any) => requestedTickers.includes(t.symbol)));
+        }
+        return Promise.resolve(allTickers);
+      }),
+      update: jest.fn().mockResolvedValue({}),
+    },
+    dailyRef: {
+      findMany: jest.fn().mockResolvedValue([]),
+    },
+    sessionPrice: {
+      findMany: jest.fn().mockResolvedValue([]),
+    }
+  },
+}));
+
 describe('/api/stocks - Robust Tests', () => {
 
   // Až tu, vnútri describe, importujeme naše mocky a typy, ktoré budeme potrebovať.
   // const { getSharesOutstanding, getPreviousClose, getCurrentPrice } = require('@/lib/marketCapUtils');
   // const { __resetCache } = require('@/lib/redis');
 
-  // Helper funkcia pre dynamické nastavenie mockov pred každým testom
-  const setupMocks = () => {
-    // 2. Nastavíme implementácie pre každý test znova.
-    // Toto je kľúčové, pretože `resetModules` ich vymaže.
-    (getSharesOutstanding as jest.Mock).mockResolvedValue(1_000_000_000 as any);
-    (getPreviousClose as jest.Mock).mockImplementation((ticker: any) => {
+  // Updated setup function that accepts mocked dependencies
+  const setupMocksWithDeps = (marketCapUtils: any) => {
+    marketCapUtils.getSharesOutstanding.mockResolvedValue(1_000_000_000);
+    marketCapUtils.getPreviousClose.mockImplementation((ticker: any) => {
         const prices: { [key: string]: number } = { NVDA: 780, MCD: 315 };
         return Promise.resolve(prices[ticker as string] || 145);
     });
-    (getCurrentPrice as jest.Mock).mockImplementation((snapshotData: any) => snapshotData?.lastTrade?.p || null);
+    marketCapUtils.getCurrentPrice.mockImplementation((snapshotData: any) => snapshotData?.lastTrade?.p || null);
 
-    // 3. Nastavíme mock pre fetch
+    // Nastavíme mock pre fetch
     (global.fetch as jest.Mock).mockImplementation((url: any) => {
         const ticker = url.split('tickers/')[1]?.split('?')[0] || 'UNKNOWN';
         const prices: { [key: string]: number } = { NVDA: 800, MCD: 320 };
@@ -72,10 +122,15 @@ describe('/api/stocks - Robust Tests', () => {
   beforeEach(() => {
     // 4. Toto sú dva najdôležitejšie príkazy pre izoláciu testov:
     jest.resetModules(); // Zmaže module cache
-    setupMocks(); // Znovu nastaví všetky implementácie mockov
+    
+    const marketCapUtils = require('@/lib/utils/marketCapUtils');
+    const redisMock = require('@/lib/redis');
+    
+    setupMocksWithDeps(marketCapUtils);
+    
     // Clear redis mocks instead of resetCache
-    (redis.getCachedData as jest.Mock).mockClear();
-    (redis.setCachedData as jest.Mock).mockClear();
+    (redisMock.getCachedData as jest.Mock).mockClear();
+    (redisMock.setCachedData as jest.Mock).mockClear();
   });
 
   it('should return correct data for NVDA', async () => {

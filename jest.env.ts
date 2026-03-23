@@ -27,7 +27,8 @@ const seedCandidates = [
 if (process.env.DATABASE_URL && process.env.DATABASE_URL.startsWith('file:')) {
   // Prisma SQLite files are relative to the schema directory by default
   const dbFileName = process.env.DATABASE_URL.replace('file:', '').replace(/^\.\//, '');
-  const customSeedPath = path.resolve(process.cwd(), 'prisma', dbFileName);
+  // Fix: Resolve using project root; Prisma URL may already include 'prisma/'
+  const customSeedPath = path.resolve(process.cwd(), dbFileName);
   console.log(`[jest.env.ts] Identified custom seed DB path from DATABASE_URL: ${customSeedPath}`);
   seedCandidates.unshift(customSeedPath);
 }

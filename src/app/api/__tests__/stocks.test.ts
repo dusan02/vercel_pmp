@@ -118,22 +118,21 @@ describe('/api/stocks', () => {
   // const { getSharesOutstanding, getPreviousClose, getCurrentPrice } = require('@/lib/marketCapUtils');
   // const { __resetCache } = require('@/lib/redis');
 
-  // Helper funkcia pre dynamické nastavenie mockov pred každým testom
-  const setupMocks = () => {
-    // 2. Nastavíme implementácie pre každý test znova.
-    (getSharesOutstanding as jest.Mock).mockResolvedValue(1_000_000_000 as any);
-    (getPreviousClose as jest.Mock).mockImplementation((ticker: any) => {
+  // Updated setup function that accepts mocked dependencies
+  const setupMocksWithDeps = (marketCapUtils: any) => {
+    marketCapUtils.getSharesOutstanding.mockResolvedValue(1_000_000_000);
+    marketCapUtils.getPreviousClose.mockImplementation((ticker: any) => {
         const prices: { [key: string]: number } = { NVDA: 780, MCD: 315, AAPL: 195, MSFT: 395 };
         return Promise.resolve(prices[ticker as string] || 145);
     });
-    (getCurrentPrice as jest.Mock).mockImplementation((snapshotData: any) => snapshotData?.lastTrade?.p || null);
+    marketCapUtils.getCurrentPrice.mockImplementation((snapshotData: any) => snapshotData?.lastTrade?.p || null);
     
     // Mock computation functions
-    (computeMarketCap as jest.Mock).mockImplementation((price, shares) => price * shares);
-    (computeMarketCapDiff as jest.Mock).mockImplementation((price, prev, shares) => (price - prev) * shares);
-    (computePercentChange as jest.Mock).mockImplementation((price, prev) => ((price - prev) / prev) * 100);
+    marketCapUtils.computeMarketCap.mockImplementation((price: number, shares: number) => price * shares / 1_000_000_000); // billions
+    marketCapUtils.computeMarketCapDiff.mockImplementation((price: number, prev: number, shares: number) => (price - prev) * shares / 1_000_000_000); // billions
+    marketCapUtils.computePercentChange.mockImplementation((price: number, prev: number) => ((price - prev) / prev) * 100);
 
-    // 3. Nastavíme mock pre fetch
+    // Nastavíme mock pre fetch
     (global.fetch as jest.Mock).mockImplementation((url: string) => {
         const ticker = url.split('tickers/')[1]?.split('?')[0] || 'UNKNOWN';
         const prices: { [key: string]: number } = { NVDA: 800, MCD: 320, AAPL: 200, MSFT: 400 };
@@ -185,11 +184,19 @@ describe('/api/stocks', () => {
   beforeEach(() => {
     // 4. Toto sú dva najdôležitejšie príkazy pre izoláciu testov:
     jest.resetModules(); // Zmaže module cache
-    setupMocks(); // Znovu nastaví všetky implementácie mockov
+    
+    // RE-IMPORT MOCKS after resetModules to ensure we are configuring the NEW mocks that stockService will use
+    const marketCapUtils = require('@/lib/utils/marketCapUtils');
+    const redisMock = require('@/lib/redis');
+    
+    // Update local references to the new mocks
+    setupMocksWithDeps(marketCapUtils);
+    
     // Clear redis mocks instead of resetCache
-    (redis.getCachedData as jest.Mock).mockClear();
-    (redis.setCachedData as jest.Mock).mockClear();
+    (redisMock.getCachedData as jest.Mock).mockClear();
+    (redisMock.setCachedData as jest.Mock).mockClear();
   });
+
 
   it('should return stock data for valid tickers', async () => {
     const { GET } = await import('../stocks/route');
