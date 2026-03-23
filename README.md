@@ -71,6 +71,8 @@ Market Cap (B) = (Cena × Počet akcií) ÷ 1,000,000,000
 
 **Detailná dokumentácia:** [docs/market-cap-calculations.md](docs/market-cap-calculations.md)
 **Technická dokumentácia:** [docs/technical-calculations.md](docs/technical-calculations.md)
+**Pre vývojárov:** [docs/developer-guide.md](docs/developer-guide.md)
+**Architektúra:** [docs/technical-architecture.md](docs/technical-architecture.md)
 
 The application provides live data in real-time with the following trading windows:
 
