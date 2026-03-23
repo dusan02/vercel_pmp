@@ -23,7 +23,7 @@
         "pretest:coverage": "prisma generate",
         "test:coverage": "npx jest --config jest.config.mjs --coverage",
         "pretest:ci": "prisma generate",
-        "test:ci": "node --experimental-vm-modules node_modules/.bin/jest --config jest.config.mjs --ci --coverage --watchAll=false",
+        "test:ci": "node --experimental-vm-modules node_modules/.bin/jest --config jest.config.mjs --ci --coverage",
         "db:generate": "prisma generate",
         "db:push": "prisma db push",
         "db:migrate": "prisma migrate dev",

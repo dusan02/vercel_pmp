@@ -8,7 +8,7 @@ jest.mock('@/lib/redis', () => ({
     __resetCache: jest.fn(),
     getCachedData: jest.fn().mockResolvedValue(null),
     setCachedData: jest.fn().mockResolvedValue(undefined),
-    getCacheKey: jest.fn((project: any, ticker: any, type: any) => `test-cache-${project}-${ticker}-${type}`)
+    getCacheKey: jest.fn((project: string, ticker: string, type: string) => `test-cache-${project}-${ticker}-${type}`)
 }));
 import { NextRequest } from 'next/server';
 import { getSharesOutstanding, getPreviousClose, getCurrentPrice } from '@/lib/utils/marketCapUtils';
@@ -74,7 +74,7 @@ describe('/api/stocks - Robust Tests', () => {
   // const { __resetCache } = require('@/lib/redis');
 
   // Updated setup function that accepts mocked dependencies
-  const setupMocksWithDeps = (marketCapUtils: any) => {
+  const setupMocksWithDeps = async (marketCapUtils: any) => {
     marketCapUtils.getSharesOutstanding.mockResolvedValue(1_000_000_000);
     marketCapUtils.getPreviousClose.mockImplementation((ticker: any) => {
         const prices: { [key: string]: number } = { NVDA: 780, MCD: 315 };
@@ -107,26 +107,30 @@ describe('/api/stocks - Robust Tests', () => {
                 ok: true,
                 json: async () => ({ 
                     results: { 
-                        sector: 'Technology', 
-                        industry: 'Semiconductors' 
-                    } 
+                        [ticker]: {
+                            t: prices[ticker] || 150,
+                            v: {
+                                vw: prices[ticker] || 150
+                            }
+                        }
+                    }
                 }),
             });
         }
         
         // Všetky ostatné volania
         return Promise.resolve({ ok: true, json: async () => ({}) });
-    });
+    }) as jest.Mock;
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // 4. Toto sú dva najdôležitejšie príkazy pre izoláciu testov:
     jest.resetModules(); // Zmaže module cache
     
-    const marketCapUtils = require('@/lib/utils/marketCapUtils');
-    const redisMock = require('@/lib/redis');
+    const marketCapUtils = await import('@/lib/utils/marketCapUtils');
+    const redisMock = await import('@/lib/redis');
     
-    setupMocksWithDeps(marketCapUtils);
+    await setupMocksWithDeps(marketCapUtils);
     
     // Clear redis mocks instead of resetCache
     (redisMock.getCachedData as jest.Mock).mockClear();
