@@ -1,0 +1,44 @@
+﻿node.exe : ts-jest[ts-jest-transformer] (WARN) Define `ts-jest` config
+ under `globals` is deprecated. Please do
+At C:\Users\dusan\AppData\Roaming\npm\npx.ps1:24 char:5
++     & "node$exe"  "$basedir/node_modules/npm/bin/npx-cli.js" $args
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (ts-jest[ts-jest...ated.  
+   Please do:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+transform: {
+    <transform_regex>: ['ts-jest', { /* ts-jest config goes here in Je
+st */ }],
+},
+See more at https://kulshekhar.github.io/ts-jest/docs/getting-started/
+presets#advanced
+  console.log
+    [jest.env.ts] Checking seed candidates: [
+      'D:\\Projects\\Vercel_PMP\\pmp_prod\\prisma\\prisma\\dev.db',
+      'D:\\Projects\\Vercel_PMP\\pmp_prod\\prisma\\dev.db'
+    ]
+
+      at jest.env.ts:30:13
+
+  console.log
+    [jest.env.ts] Using seed DB: D:\Projects\Vercel_PMP\pmp_prod\prisma\dev.db
+
+      at jest.env.ts:33:17
+
+FAIL src/app/api/__tests__/stocks.test.ts
+  ÔŚĆ Test suite failed to run
+
+    SyntaxError: The requested module '@/lib/redis' does not provide a
+n export named '__resetCache'
+
+      at Runtime.linkAndEvaluateModule (node_modules/jest-runtime/buil
+d/index.js:684:5)
+
+Test Suites: 1 failed, 1 total
+Tests:       0 total
+Snapshots:   0 total
+Time:        0.872 s
+Ran all test suites matching src/app/api/__tests__/stocks.test.ts.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to
+ detect async operations that kept running after all tests finished?

@@ -1,9 +1,10 @@
+import { jest } from '@jest/globals';
 import { NextRequest } from 'next/server';
 import { GET } from '../earnings-calendar/route';
 import { DEFAULT_TICKERS } from '@/data/defaultTickers';
 
 // Mock fetch globally
-global.fetch = jest.fn();
+global.fetch = jest.fn() as any;
 
 describe('Earnings Calendar API', () => {
   beforeEach(() => {

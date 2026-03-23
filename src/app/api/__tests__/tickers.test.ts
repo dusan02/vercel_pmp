@@ -1,3 +1,4 @@
+import { jest } from '@jest/globals';
 import { NextRequest } from 'next/server';
 import { GET } from '../tickers/default/route';
 // Import the mocked module to spy on it if needed, though we defined the mock above
@@ -20,6 +21,8 @@ jest.mock('@/data/defaultTickers', () => ({
     cm: ['AAPL', 'MSFT', 'GOOGL', 'NVDA', 'TSLA', 'META', 'AMZN', 'NFLX']
   }
 }));
+
+const { getAllProjectTickers } = defaultTickers;
 
 describe('/api/tickers/default', () => {
   beforeEach(() => {

@@ -1,98 +1,19 @@
+import { jest } from '@jest/globals';
+
 // 1. Mockujeme závislosti na najvyššej úrovni.
 // Tieto mocky sa aktivujú pre všetky testy v tomto súbore.
 jest.mock('@/lib/utils/marketCapUtils');
-jest.mock('@/lib/redis', () => {
-  return {
+jest.mock('@/lib/redis', () => ({
     __esModule: true,
     __resetCache: jest.fn(),
     getCachedData: jest.fn().mockResolvedValue(null),
     setCachedData: jest.fn().mockResolvedValue(undefined),
-    getCacheKey: jest.fn((project, ticker, type) => `test-cache-${project}-${ticker}-${type}`)
-  };
-});
-jest.mock('@/lib/db/prisma', () => ({
-  prisma: {
-    ticker: {
-      findMany: jest.fn((query: any) => {
-        const allTickers = [
-          { 
-            symbol: 'NVDA', 
-            name: 'NVIDIA Corp', 
-            sector: 'Technology', 
-            industry: 'Semiconductors',
-            logoUrl: '/logos/nvda-32.webp',
-            sharesOutstanding: 1_000_000_000,
-            latestPrevClose: 780.0,
-            lastPrice: 800.0,
-            lastChangePct: 2.56,
-            lastMarketCap: 800_000_000_000,
-            lastMarketCapDiff: 20_000_000_000,
-            updatedAt: new Date()
-          },
-          { 
-            symbol: 'MCD', 
-            name: 'McDonalds', 
-            sector: 'Consumer Cyclical', 
-            industry: 'Restaurants',
-            logoUrl: '/logos/mcd-32.webp',
-            sharesOutstanding: 500_000_000,
-            latestPrevClose: 315.0,
-            lastPrice: 320.0,
-            lastChangePct: 1.58,
-            lastMarketCap: 160_000_000_000,
-            lastMarketCapDiff: 2_500_000_000,
-            updatedAt: new Date()
-          },
-        ];
-        
-        // Filter by tickers if specified in where clause
-        if (query?.where?.symbol?.in) {
-          const requestedTickers = query.where.symbol.in;
-          const filtered = allTickers.filter((t: any) => requestedTickers.includes(t.symbol));
-          // Apply limit if specified
-          if (query.take) {
-            return Promise.resolve(filtered.slice(0, query.take));
-          }
-          return Promise.resolve(filtered);
-        }
-        
-        // Apply limit if specified
-        if (query?.take) {
-          return Promise.resolve(allTickers.slice(0, query.take));
-        }
-        
-        return Promise.resolve(allTickers);
-      }),
-      update: jest.fn().mockResolvedValue({}),
-    },
-    dailyRef: {
-      findMany: jest.fn().mockResolvedValue([]),
-      upsert: jest.fn().mockResolvedValue({}),
-    },
-    sessionPrice: {
-      findMany: jest.fn().mockResolvedValue([
-        { symbol: 'NVDA', lastPrice: 800.0, changePct: 2.56, lastTs: new Date() },
-        { symbol: 'MCD', lastPrice: 320.0, changePct: 1.58, lastTs: new Date() },
-      ]),
-    },
-  },
+    getCacheKey: jest.fn((project: any, ticker: any, type: any) => `test-cache-${project}-${ticker}-${type}`)
 }));
-
 import { NextRequest } from 'next/server';
 import { getSharesOutstanding, getPreviousClose, getCurrentPrice } from '@/lib/utils/marketCapUtils';
-// Mock redis module for testing
-jest.mock('@/lib/redis', () => {
-  const actual = jest.requireActual('@/lib/redis');
-  return {
-    ...actual,
-    __resetCache: jest.fn(() => {
-      // Reset cache implementation for tests
-    })
-  };
-});
-
-// Import after mock
-const { __resetCache } = require('@/lib/redis');
+import * as redis from '@/lib/redis';
+import { prisma } from '@/lib/db/prisma';
 
 describe('/api/stocks - Robust Tests', () => {
 
@@ -104,15 +25,15 @@ describe('/api/stocks - Robust Tests', () => {
   const setupMocks = () => {
     // 2. Nastavíme implementácie pre každý test znova.
     // Toto je kľúčové, pretože `resetModules` ich vymaže.
-    (getSharesOutstanding as jest.Mock).mockResolvedValue(1_000_000_000);
-    (getPreviousClose as jest.Mock).mockImplementation((ticker: string) => {
+    (getSharesOutstanding as jest.Mock).mockResolvedValue(1_000_000_000 as any);
+    (getPreviousClose as jest.Mock).mockImplementation((ticker: any) => {
         const prices: { [key: string]: number } = { NVDA: 780, MCD: 315 };
-        return Promise.resolve(prices[ticker] || 145);
+        return Promise.resolve(prices[ticker as string] || 145);
     });
     (getCurrentPrice as jest.Mock).mockImplementation((snapshotData: any) => snapshotData?.lastTrade?.p || null);
 
     // 3. Nastavíme mock pre fetch
-    (global.fetch as jest.Mock).mockImplementation((url: string) => {
+    (global.fetch as jest.Mock).mockImplementation((url: any) => {
         const ticker = url.split('tickers/')[1]?.split('?')[0] || 'UNKNOWN';
         const prices: { [key: string]: number } = { NVDA: 800, MCD: 320 };
         
@@ -152,7 +73,9 @@ describe('/api/stocks - Robust Tests', () => {
     // 4. Toto sú dva najdôležitejšie príkazy pre izoláciu testov:
     jest.resetModules(); // Zmaže module cache
     setupMocks(); // Znovu nastaví všetky implementácie mockov
-    __resetCache(); // Vyčistí našu vlastnú Redis cache
+    // Clear redis mocks instead of resetCache
+    (redis.getCachedData as jest.Mock).mockClear();
+    (redis.setCachedData as jest.Mock).mockClear();
   });
 
   it('should return correct data for NVDA', async () => {

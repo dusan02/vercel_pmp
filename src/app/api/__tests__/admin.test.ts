@@ -1,3 +1,5 @@
+import { jest } from '@jest/globals';
+
 // Mock the redis module first
 jest.mock('@/lib/redis', () => ({
   redisClient: {

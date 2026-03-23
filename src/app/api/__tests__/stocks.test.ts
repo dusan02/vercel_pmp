@@ -1,15 +1,15 @@
+import { jest } from '@jest/globals';
+
 // 1. Mockujeme závislosti na najvyššej úrovni.
 // Tieto mocky sa aktivujú pre všetky testy v tomto súbore.
 jest.mock('@/lib/utils/marketCapUtils');
-jest.mock('@/lib/redis', () => {
-  return {
+jest.mock('@/lib/redis', () => ({
     __esModule: true,
     __resetCache: jest.fn(),
     getCachedData: jest.fn().mockResolvedValue(null),
     setCachedData: jest.fn().mockResolvedValue(undefined),
     getCacheKey: jest.fn((project, ticker, type) => `test-cache-${project}-${ticker}-${type}`)
-  };
-});
+}));
 jest.mock('@/lib/db/prisma', () => ({
   prisma: {
     ticker: {
@@ -94,22 +94,23 @@ jest.mock('@/lib/db/prisma', () => ({
 }));
 
 import { NextRequest } from 'next/server';
-import { getSharesOutstanding, getPreviousClose, getCurrentPrice } from '@/lib/utils/marketCapUtils';
+import { 
+    getSharesOutstanding, 
+    getPreviousClose, 
+    getCurrentPrice,
+    computeMarketCap,
+    computeMarketCapDiff,
+    computePercentChange
+} from '@/lib/utils/marketCapUtils';
 import { prisma } from '@/lib/db/prisma';
+import * as redis from '@/lib/redis';
 
-// Mock redis module for testing
-jest.mock('@/lib/redis', () => {
-  const actual = jest.requireActual('@/lib/redis');
-  return {
-    ...actual,
-    __resetCache: jest.fn(() => {
-      // Reset cache implementation for tests
-    })
-  };
-});
-
-// Import after mock
-const { __resetCache } = require('@/lib/redis');
+jest.mock('@/lib/redis', () => ({
+    __esModule: true,
+    getCachedData: jest.fn().mockResolvedValue(null),
+    setCachedData: jest.fn().mockResolvedValue(undefined),
+    getCacheKey: jest.fn((project: any, ticker: any, type: any) => `test-cache-${project}-${ticker}-${type}`)
+}));
 
 describe('/api/stocks', () => {
 
@@ -120,15 +121,14 @@ describe('/api/stocks', () => {
   // Helper funkcia pre dynamické nastavenie mockov pred každým testom
   const setupMocks = () => {
     // 2. Nastavíme implementácie pre každý test znova.
-    (getSharesOutstanding as jest.Mock).mockResolvedValue(1_000_000_000);
-    (getPreviousClose as jest.Mock).mockImplementation((ticker: string) => {
+    (getSharesOutstanding as jest.Mock).mockResolvedValue(1_000_000_000 as any);
+    (getPreviousClose as jest.Mock).mockImplementation((ticker: any) => {
         const prices: { [key: string]: number } = { NVDA: 780, MCD: 315, AAPL: 195, MSFT: 395 };
-        return Promise.resolve(prices[ticker] || 145);
+        return Promise.resolve(prices[ticker as string] || 145);
     });
     (getCurrentPrice as jest.Mock).mockImplementation((snapshotData: any) => snapshotData?.lastTrade?.p || null);
     
     // Mock computation functions
-    const { computeMarketCap, computeMarketCapDiff, computePercentChange } = require('@/lib/utils/marketCapUtils');
     (computeMarketCap as jest.Mock).mockImplementation((price, shares) => price * shares);
     (computeMarketCapDiff as jest.Mock).mockImplementation((price, prev, shares) => (price - prev) * shares);
     (computePercentChange as jest.Mock).mockImplementation((price, prev) => ((price - prev) / prev) * 100);
@@ -186,7 +186,9 @@ describe('/api/stocks', () => {
     // 4. Toto sú dva najdôležitejšie príkazy pre izoláciu testov:
     jest.resetModules(); // Zmaže module cache
     setupMocks(); // Znovu nastaví všetky implementácie mockov
-    __resetCache(); // Vyčistí našu vlastnú Redis cache
+    // Clear redis mocks instead of resetCache
+    (redis.getCachedData as jest.Mock).mockClear();
+    (redis.setCachedData as jest.Mock).mockClear();
   });
 
   it('should return stock data for valid tickers', async () => {

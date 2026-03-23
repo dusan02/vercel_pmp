@@ -1,4 +1,4 @@
-// Mockovanie na najvyššej úrovni súboru
+import { jest } from '@jest/globals';
 jest.mock('@/lib/clients/yahooFinanceScraper');
 jest.mock('@/lib/utils/marketCapUtils'); // Mock marketCapUtils pre tento test
 jest.mock('@/data/defaultTickers', () => ({
