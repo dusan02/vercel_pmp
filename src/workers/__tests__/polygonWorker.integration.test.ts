@@ -174,15 +174,22 @@ describe('polygonWorker integration tests', () => {
   });
 
   beforeEach(async () => {
-    // Clean database before each test
-    try {
-      await prisma.sessionPrice.deleteMany();
-    } catch (error) {
-      // SessionPrice table might not exist in test environment
-      console.warn('SessionPrice table not found, skipping cleanup');
+    // Clean database before each test - handle missing tables gracefully
+    const tables = ['sessionPrice', 'dailyRef', 'ticker'];
+    
+    for (const table of tables) {
+      try {
+        if (table === 'sessionPrice') {
+          await prisma.sessionPrice.deleteMany();
+        } else if (table === 'dailyRef') {
+          await prisma.dailyRef.deleteMany();
+        } else if (table === 'ticker') {
+          await prisma.ticker.deleteMany();
+        }
+      } catch (error: any) {
+        console.warn(`${table} table not found, skipping cleanup`);
+      }
     }
-    await prisma.dailyRef.deleteMany();
-    await prisma.ticker.deleteMany();
   });
 
   describe('20:05 ET freeze protection', () => {
