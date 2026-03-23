@@ -29,7 +29,8 @@ jest.mock('../pricingStateMachine', () => ({
 }));
 
 // Get the mock
-const { getPricingState } = require('../pricingStateMachine');
+const pricingStateMachine = require('../pricingStateMachine');
+const { getPricingState } = pricingStateMachine;
 
 describe('priceResolver', () => {
   const mockETNow = new Date('2025-01-15T10:00:00-05:00'); // 10:00 ET (live session)

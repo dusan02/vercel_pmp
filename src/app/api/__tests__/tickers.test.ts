@@ -22,7 +22,8 @@ jest.mock('@/data/defaultTickers', () => ({
   }
 }));
 
-const { getAllProjectTickers } = require('@/data/defaultTickers');
+const defaultTickers = require('@/data/defaultTickers');
+const { getAllProjectTickers } = defaultTickers;
 
 describe('/api/tickers/default', () => {
   beforeEach(() => {

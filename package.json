@@ -21,7 +21,7 @@
         "pretest:watch": "prisma generate",
         "test:watch": "node --experimental-vm-modules node_modules/.bin/jest --config jest.config.mjs --watch",
         "pretest:coverage": "prisma generate",
-        "test:coverage": "node --experimental-vm-modules node_modules/.bin/jest --config jest.config.mjs --coverage",
+        "test:coverage": "npx jest --config jest.config.mjs --coverage",
         "pretest:ci": "prisma generate",
         "test:ci": "node --experimental-vm-modules node_modules/.bin/jest --config jest.config.mjs --ci --coverage --watchAll=false",
         "db:generate": "prisma generate",
