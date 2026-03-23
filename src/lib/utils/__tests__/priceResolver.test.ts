@@ -6,7 +6,7 @@
 
 import { jest } from '@jest/globals';
 import { resolveEffectivePrice, calculatePercentChange } from '../priceResolver';
-import { PriceState, getPricingState } from '../pricingStateMachine';
+import { PriceState } from '../pricingStateMachine';
 import { nowET } from '../dateET';
 import type { PolygonSnapshot } from '../priceResolver';
 
@@ -17,9 +17,8 @@ jest.mock('../timeUtils', () => ({
 }));
 
 // Mock pricingStateMachine
-const mockGetPricingState = jest.fn();
 jest.mock('../pricingStateMachine', () => ({
-  getPricingState: mockGetPricingState,
+  getPricingState: jest.fn(),
   PriceState: {
     PRE_MARKET_LIVE: 'pre_market_live',
     LIVE: 'live',
@@ -29,12 +28,15 @@ jest.mock('../pricingStateMachine', () => ({
   }
 }));
 
+// Get the mock
+const { getPricingState } = require('../pricingStateMachine');
+
 describe('priceResolver', () => {
   const mockETNow = new Date('2025-01-15T10:00:00-05:00'); // 10:00 ET (live session)
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockGetPricingState.mockReturnValue({
+    getPricingState.mockReturnValue({
       state: PriceState.LIVE,
       canIngest: true,
       canOverwrite: true,
