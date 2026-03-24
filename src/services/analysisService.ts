@@ -141,6 +141,8 @@ export class AnalysisService {
                 select: { sector: true, lastPrice: true, lastMarketCap: true, sharesOutstanding: true }
             });
 
+            const sharesOutstanding = res.weighted_shares_outstanding || res.share_class_shares_outstanding || null;
+
             const updateData: Record<string, any> = {
                 description: res.description || null,
                 // Polygon V3 uses total_employees, NOT employees
@@ -149,6 +151,7 @@ export class AnalysisService {
                 // sic_description is the human-readable industry name (e.g. "Semiconductors and Related Devices")
                 industry: res.sic_description || (res.sic_code ? `SIC: ${res.sic_code}` : null),
                 name: res.name || undefined,
+                sharesOutstanding: sharesOutstanding && sharesOutstanding > 0 ? sharesOutstanding : undefined
             };
 
             // Only write sector if the DB value is blank / null (avoid clobbering bootstrap data)
@@ -161,7 +164,8 @@ export class AnalysisService {
                 create: {
                     symbol,
                     ...updateData,
-                    sector: res.sic_description || null
+                    sector: res.sic_description || null,
+                    sharesOutstanding: sharesOutstanding && sharesOutstanding > 0 ? sharesOutstanding : 0
                 },
                 update: updateData
             });
