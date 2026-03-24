@@ -55,6 +55,8 @@ jobs:
   test-critical:
     runs-on: ubuntu-latest
     name: Critical Pricing Logic Tests
+    env:
+      DATABASE_URL: "file:./test.db"
 
     steps:
       - name: Checkout code
