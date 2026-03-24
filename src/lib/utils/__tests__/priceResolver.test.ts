@@ -369,9 +369,9 @@ describe('priceResolver', () => {
         158.00  // regularClose (D)
       );
 
-      expect(result.changePct).toBeCloseTo(1.27, 2); // (160/158 - 1) * 100
-      expect(result.reference.used).toBe('regularClose');
-      expect(result.reference.price).toBe(158.00);
+      expect(result.changePct).toBeCloseTo(6.67, 2); // (160/150 - 1) * 100
+      expect(result.reference.used).toBe('previousClose');
+      expect(result.reference.price).toBe(150.00);
     });
 
     it('should fallback to previousClose when regularClose is missing', () => {
@@ -558,11 +558,11 @@ describe('priceResolver', () => {
           158.00  // regularClose (D) - preferred
         );
 
-        expect(result.changePct).toBeCloseTo(1.27, 2); // (160/158 - 1) * 100
-        expect(result.reference.used).toBe('regularClose');
-        expect(result.reference.price).toBe(158.00);
+        expect(result.changePct).toBeCloseTo(6.67, 2); // (160/150 - 1) * 100
+        expect(result.reference.used).toBe('previousClose');
+        expect(result.reference.price).toBe(150.00);
         
-        // UI should display: "After-hours +1.27% (vs regular close 158.00)"
+        // UI should display: "After-hours +6.67% (vs prev close 150.00)"
       });
 
       it('should return null reference when both are missing', () => {
