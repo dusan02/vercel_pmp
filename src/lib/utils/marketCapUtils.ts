@@ -88,47 +88,8 @@ export async function getSharesOutstanding(ticker: string, currentPrice?: number
       }
     }
 
-    // Additional fallback: use industry-standard estimates for common sectors
-    if ((!shares || shares <= 0) && currentPrice && currentPrice > 0) {
-      const { prisma } = await import('@/lib/db/prisma');
-      const dbTicker = await prisma.ticker.findUnique({
-        where: { symbol: ticker },
-        select: { sector: true, industry: true }
-      });
-      
-      // Industry-based share estimates (rough approximations)
-      if (dbTicker?.sector) {
-        let estimatedShares = 0;
-        const marketCapEstimate = currentPrice * 1000000000; // 1B shares fallback
-        
-        switch (dbTicker.sector) {
-          case 'Energy':
-            // Energy companies typically have 1-5B shares outstanding
-            estimatedShares = Math.round(marketCapEstimate / currentPrice / 3); // ~3B shares
-            break;
-          case 'Financial Services':
-            // Banks typically have 1-10B shares outstanding  
-            estimatedShares = Math.round(marketCapEstimate / currentPrice / 5); // ~5B shares
-            break;
-          case 'Technology':
-            // Tech companies vary widely, but typically 0.5-5B shares
-            estimatedShares = Math.round(marketCapEstimate / currentPrice / 2); // ~2B shares
-            break;
-          default:
-            estimatedShares = Math.round(marketCapEstimate / currentPrice / 3); // ~3B shares default
-        }
-        
-        if (estimatedShares > 0) {
-          shares = estimatedShares;
-          console.log(`🎯 Used industry estimate for ${ticker} (${dbTicker.sector}): ${estimatedShares.toLocaleString()} shares`);
-        }
-      }
-    }
-
+    // If shares are missing or zero, try to fetch from DB
     if (!shares || shares <= 0) {
-      console.warn(`⚠️ No shares outstanding found for ${ticker} in Polygon API results.`);
-
-      // Fallback to DB
       try {
         const { prisma } = await import('@/lib/db/prisma');
         const dbTicker = await prisma.ticker.findUnique({

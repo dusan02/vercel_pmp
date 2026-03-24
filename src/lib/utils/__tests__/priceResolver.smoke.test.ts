@@ -133,10 +133,10 @@ describe('priceResolver smoke test - full flow', () => {
       regularClose
     );
 
-    // Then: Should use regularClose, not previousClose
-    expect(percentResult.changePct).toBeCloseTo(1.27, 2); // (160/158 - 1) * 100
-    expect(percentResult.reference.used).toBe('regularClose');
-    expect(percentResult.reference.price).toBe(158.00);
+    // Then: Should use previousClose (D-1) to show Total Daily Move, even in after-hours
+    expect(percentResult.changePct).toBeCloseTo(6.67, 2); // (160/150 - 1) * 100
+    expect(percentResult.reference.used).toBe('previousClose');
+    expect(percentResult.reference.price).toBe(150.00);
   });
 
   it('should never return price <= 0 (zero guard)', () => {

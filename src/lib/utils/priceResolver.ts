@@ -314,13 +314,18 @@ export function resolveEffectivePrice(
     // Priority 2: day.c (regular trading day close)
     // For force ingest on weekend, accept day.c even if it's from previous trading day
     if (snapshot.day?.c && snapshot.day.c > 0) {
-      // day.c doesn't have timestamp, use current time
-      return {
-        price: snapshot.day.c,
-        source: 'day',
-        timestamp: now,
-        isStale: false
-      };
+      // If lastTrade exists but is NOT from today, and day.c exists, day.c is likely better
+      const lastTradeT = snapshot.lastTrade?.t;
+      const isLastTradeFromToday = lastTradeT && isTimestampInSession(lastTradeT, 'live', now);
+      
+      if (!isLastTradeFromToday || !snapshot.lastTrade?.p) {
+        return {
+          price: snapshot.day.c,
+          source: 'day',
+          timestamp: now,
+          isStale: false
+        };
+      }
     }
 
     // Priority 3: min.c (fallback)
@@ -497,13 +502,15 @@ export function calculatePercentChange(
 
     case 'after':
     case 'closed':
-      // Prefer regularClose (D), fallback to previousClose (D-1)
-      if (regularClose && regularClose > 0) {
-        referencePrice = regularClose;
-        referenceUsed = 'regularClose';
-      } else if (previousClose && previousClose > 0) {
+      // FIX: To show Total Daily Move even in after-hours/closed sessions,
+      // we must use previousClose (D-1) as the reference.
+      // Using regularClose (D) would show only the move SINCE market close.
+      if (previousClose && previousClose > 0) {
         referencePrice = previousClose;
         referenceUsed = 'previousClose';
+      } else if (regularClose && regularClose > 0) {
+        referencePrice = regularClose;
+        referenceUsed = 'regularClose';
       }
       break;
 

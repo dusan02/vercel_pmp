@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/db/prisma';
 import { computeMarketCap, computeMarketCapDiff, computePercentChange, getSharesOutstanding } from '@/lib/utils/marketCapUtils';
-import { detectSession } from '@/lib/utils/timeUtils';
+import { detectSession, getLastTradingDay } from '@/lib/utils/timeUtils';
 import { nowET, getDateET, createETDate } from '@/lib/utils/dateET';
 import { getPricingState } from '@/lib/utils/pricingStateMachine';
 import { calculatePercentChange } from '@/lib/utils/priceResolver';
@@ -178,6 +178,7 @@ export async function getStocksList(options: {
     // CRITICAL: Always fetch regularClose for all sessions (needed for correct % change calculation)
     // Only use regularClose from TODAY (not previous day) - same logic as heatmap API
     const regularCloseBySymbol = new Map<string, number>();
+    const prevCloseBySymbol = new Map<string, number>();
     const dateET = getDateET(etNow);
     const todayDateObj = createETDate(dateET);
 
@@ -185,18 +186,19 @@ export async function getStocksList(options: {
       const dailyRefs = await prisma.dailyRef.findMany({
         where: {
           symbol: { in: stocks.map(s => s.symbol) },
-          date: todayDateObj // Only today's regularClose
+          date: todayDateObj // Only today's refs
         },
-        select: { symbol: true, regularClose: true, date: true }
+        select: { symbol: true, regularClose: true, previousClose: true, date: true }
       });
       dailyRefs.forEach(r => {
-        // CRITICAL: Only use regularClose from TODAY (not previous day)
-        // This prevents using stale regularClose from yesterday which causes incorrect % changes
-        if (r.regularClose && r.regularClose > 0) {
-          const drDate = new Date(r.date);
-          const isToday = drDate.getTime() === todayDateObj.getTime();
-          if (isToday) {
+        const drDate = new Date(r.date);
+        const isToday = drDate.getTime() === todayDateObj.getTime();
+        if (isToday) {
+          if (r.regularClose && r.regularClose > 0) {
             regularCloseBySymbol.set(r.symbol, r.regularClose);
+          }
+          if (r.previousClose && r.previousClose > 0) {
+            prevCloseBySymbol.set(r.symbol, r.previousClose);
           }
         }
       });
@@ -316,11 +318,13 @@ export async function getStocksList(options: {
     const results: StockData[] = stocks.map(s => {
       const best = bestPriceBySymbol.get(s.symbol);
       const currentPrice = best?.price || 0;
-      // Use on-demand prevClose if available, otherwise fallback to DB value
-      const previousClose = onDemandPrevCloseMap.get(s.symbol) || (s.latestPrevClose || 0);
-      // Use on-demand sharesOutstanding if available, otherwise fallback to DB value
+      // Get true previous close (D-1) for daily move calculation
+      // HIGHEST PRIORITY: On-demand fresh fetch
+      // SECOND PRIORITY: Today's DailyRef.previousClose (which worker sets to precisely D-1 close)
+      // FALLBACK: Ticker.latestPrevClose (DB cache)
+      let previousClose = onDemandPrevCloseMap.get(s.symbol) || prevCloseBySymbol.get(s.symbol) || (s.latestPrevClose || 0);
+
       const sharesOutstanding = onDemandSharesMap.get(s.symbol) || (s.sharesOutstanding || 0);
-      // Get regularClose from today's DailyRef (same logic as heatmap API)
       const regularClose = regularCloseBySymbol.get(s.symbol) || 0;
 
       const lastTs = best?.ts || (s.lastPriceUpdated || s.updatedAt);
