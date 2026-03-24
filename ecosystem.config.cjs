@@ -191,6 +191,46 @@ module.exports = {
       autorestart: false,
     },
     {
+      // SP500 Data Validation Test (runs daily at 03:00 UTC = 22:00 ET)
+      name: "sp500-validation-test",
+      script: "scripts/test-sp500-validation.cjs",
+      interpreter: "/var/www/premarketprice/node_modules/bin/node",
+      cwd: __dirname,
+      instances: 1,
+      exec_mode: "fork",
+      env_production: {
+        NODE_ENV: "production",
+        BASE_URL: "http://127.0.0.1:3000",
+        CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || envVars.CRON_SECRET || process.env.CRON_SECRET_KEY || process.env.CRON_SECRET,
+      },
+      error_file: path.join(__dirname, "logs", "pm2", "sp500-validation-test-error.log"),
+      out_file: path.join(__dirname, "logs", "pm2", "sp500-validation-test-out.log"),
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      // 03:00 UTC = 22:00 ET (winter) / 23:00 ET (summer) -> After market close, before next day
+      cron_restart: "0 3 * * *",
+      autorestart: false,
+    },
+    {
+      // Database Integrity Check (runs daily at 04:00 UTC = 23:00 ET)
+      name: "database-integrity-check",
+      script: "scripts/trigger-database-integrity-check.cjs",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
+      cwd: __dirname,
+      instances: 1,
+      exec_mode: "fork",
+      env_production: {
+        NODE_ENV: "production",
+        BASE_URL: "http://127.0.0.1:3000",
+        CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || envVars.CRON_SECRET || process.env.CRON_SECRET_KEY || process.env.CRON_SECRET,
+      },
+      error_file: path.join(__dirname, "logs", "pm2", "database-integrity-check-error.log"),
+      out_file: path.join(__dirname, "logs", "pm2", "database-integrity-check-out.log"),
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      // 04:00 UTC = 23:00 ET (winter) / 00:00 ET (summer) -> After market close, before next day
+      cron_restart: "0 4 * * *",
+      autorestart: false,
+    },
+    {
       // Verify/fix sector/industry taxonomy once daily
       name: "cron-verify-sector-industry",
       script: "scripts/trigger-verify-sector-industry.ts",
