@@ -192,6 +192,10 @@ export function useHeatmapData({
         if (response.status === 503) {
           throw new Error('Service temporarily unavailable (503)');
         }
+        // If 502 (Bad Gateway), throw specific error to trigger retry
+        if (response.status === 502) {
+          throw new Error('Service temporarily unavailable (502)');
+        }
         throw new Error(`API error: ${response.status}`);
       }
 

@@ -1,0 +1,7 @@
+// This is a fix for production PostgreSQL schema
+// Replace the datasource block in prisma/schema.prisma
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
