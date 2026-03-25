@@ -9,8 +9,12 @@ async function repairMissing() {
             OR: [
                 { sector: null },
                 { sector: '' },
+                { sector: 'Unknown' },
+                { sector: 'unknown' },
                 { industry: null },
                 { industry: '' },
+                { industry: 'Unknown' },
+                { industry: 'unknown' },
                 { lastMarketCap: { equals: 0 } },
                 { lastMarketCap: null }
             ]
