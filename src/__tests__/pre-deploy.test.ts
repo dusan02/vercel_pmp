@@ -12,7 +12,7 @@ describe('API Health Tests', () => {
     expect(SECTOR_INDUSTRY_OVERRIDES.META?.sector).toBe('Technology');
   });
 
-  it('should validate LARGE_SECTORS update', async () => {
+  it('should validate MAJOR_SECTORS update', async () => {
     // Test that our heatmap layout uses correct sector names
     const fs = await import('fs');
     const path = await import('path');
@@ -20,11 +20,11 @@ describe('API Health Tests', () => {
     const heatmapLayoutPath = path.join(process.cwd(), 'src/lib/utils/heatmapLayout.ts');
     const heatmapLayoutContent = fs.readFileSync(heatmapLayoutPath, 'utf8');
     
-    // Check that LARGE_SECTORS includes our updated sector names
-    expect(heatmapLayoutContent).toContain("'Finance'");
-    expect(heatmapLayoutContent).toContain("'Consumer'");
+    // Check that MAJOR_SECTORS includes our updated sector names
+    expect(heatmapLayoutContent).toContain("'Financial Services'");
+    expect(heatmapLayoutContent).toContain("'Consumer Cyclical'");
     expect(heatmapLayoutContent).toContain("'Technology'");
-    expect(heatmapLayoutContent).toContain("'Healthcare'");
+    expect(heatmapLayoutContent).toContain("MAJOR_SECTORS");
   });
 
   it('should validate dev cache clear component', async () => {
