@@ -136,6 +136,7 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
       style={{
         ...portalStyle,
         WebkitOverflowScrolling: 'touch',
+        overflowY: 'auto',
         overscrollBehavior: 'contain',
       }}
     >

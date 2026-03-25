@@ -170,7 +170,7 @@ export class AnalysisService {
                 create: {
                     symbol,
                     ...updateData,
-                    sector: res.sic_description || null,
+                    sector: updateData.sector || res.sic_description || null,
                     sharesOutstanding: sharesOutstanding && sharesOutstanding > 0 ? sharesOutstanding : 0
                 },
                 update: updateData

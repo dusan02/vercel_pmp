@@ -161,12 +161,12 @@ export const SECTOR_INDUSTRY_OVERRIDES: Record<string, SectorIndustryOverride> =
     industry: 'Banks',
     name: 'The PNC Financial Services Group, Inc.',
   },
-  BRK_A: {
+  'BRK.A': {
     sector: 'Financial Services',
     industry: 'Insurance',
     name: 'Berkshire Hathaway Inc. Class A',
   },
-  BRK_B: {
+  'BRK.B': {
     sector: 'Financial Services',
     industry: 'Insurance',
     name: 'Berkshire Hathaway Inc. Class B',

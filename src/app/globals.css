@@ -630,7 +630,7 @@
 
   /* Dropdown Menu Wrapper */
   .pmp-dropdown-menu {
-    @apply bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden py-1 z-[100];
+    @apply bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-y-auto py-1 z-[100];
   }
 
   /* Dropdown Option Item */
