@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db/prisma';
 import { aiService } from './aiService';
 import { NotificationService } from './notificationService';
+import { getSectorFromSic } from '@/lib/utils/sectorMapping';
 
 export class AnalysisService {
     private static readonly POLYGON_API_KEY = process.env.POLYGON_API_KEY;
@@ -154,9 +155,14 @@ export class AnalysisService {
                 sharesOutstanding: sharesOutstanding && sharesOutstanding > 0 ? sharesOutstanding : undefined
             };
 
-            // Only write sector if the DB value is blank / null (avoid clobbering bootstrap data)
-            if (!existing?.sector && res.sic_description) {
-                updateData.sector = res.sic_description;
+            const sectorFromSic = getSectorFromSic(res.sic_code);
+
+            // Update sector if it's missing, 'Other', or redundant with sic_description
+            const isWeakSector = !existing?.sector || existing.sector === 'Other' || existing.sector === 'N/A';
+            const isRedundantSector = existing?.sector === res.sic_description;
+            
+            if (isWeakSector || isRedundantSector) {
+                updateData.sector = sectorFromSic || res.sic_description || 'Other';
             }
 
             await prisma.ticker.upsert({

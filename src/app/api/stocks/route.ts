@@ -51,7 +51,37 @@ export async function GET(request: NextRequest) {
     }
 
     // Original logic for specific tickers
+    if (!tickersParam && !getAll) {
+      // If neither tickers nor getAll is provided, default to getAll=true behavior
+      // to avoid 400 errors from health checks or empty calls
+      const { getStocksList } = await import('@/lib/server/stockService');
+      const { data, errors } = await getStocksList({
+        ...(limit ? { limit } : {}),
+        offset,
+        sort: validatedSort,
+        order: validatedOrder
+      });
+
+      return NextResponse.json({
+        success: true,
+        data,
+        source: 'database',
+        project,
+        count: data.length,
+        sort: validatedSort,
+        order: validatedOrder,
+        timestamp: new Date().toISOString(),
+        ...(errors.length > 0 && { warnings: errors })
+      }, {
+        headers: {
+          'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=30'
+        }
+      });
+    }
+
     if (!tickersParam) {
+      // This case is actually handled by the block above if !getAll,
+      // but keeping it for completeness if the logic flow changes.
       return NextResponse.json(
         { error: 'Tickers parameter is required when getAll is not true' },
         { status: 400 }

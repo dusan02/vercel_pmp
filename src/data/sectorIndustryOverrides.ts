@@ -39,6 +39,60 @@ export const SECTOR_INDUSTRY_OVERRIDES: Record<string, SectorIndustryOverride> =
     name: 'Unilever PLC',
   },
   
+  // ADRs/Foreign Tickers missing metadata in Polygon v3
+  ARM: {
+    sector: 'Technology',
+    industry: 'Semiconductors',
+    name: 'Arm Holdings plc',
+  },
+  BABA: {
+    sector: 'Consumer Cyclical',
+    industry: 'Internet Retail',
+    name: 'Alibaba Group Holding Limited',
+  },
+  AEM: {
+    sector: 'Basic Materials',
+    industry: 'Gold',
+    name: 'Agnico Eagle Mines Limited',
+  },
+  BCS: {
+    sector: 'Financial Services',
+    industry: 'Banks',
+    name: 'Barclays PLC',
+  },
+  ABEV: {
+    sector: 'Consumer Defensive',
+    industry: 'Beverages - Brewers',
+    name: 'Ambev S.A.',
+  },
+  BHP: {
+    sector: 'Basic Materials',
+    industry: 'Other Industrial Metals & Mining',
+    name: 'BHP Group Limited',
+  },
+  B: {
+    sector: 'Basic Materials',
+    industry: 'Gold',
+    name: 'Barrick Gold Corporation',
+  },
+  
+  // Sector/Industry corrections
+  CCL: {
+    sector: 'Consumer Cyclical',
+    industry: 'Travel Services',
+    name: 'Carnival Corporation & plc',
+  },
+  ALB: {
+    sector: 'Basic Materials',
+    industry: 'Specialty Chemicals',
+    name: 'Albemarle Corporation',
+  },
+  AMCR: {
+    sector: 'Consumer Cyclical',
+    industry: 'Packaging & Containers',
+    name: 'Amcor plc',
+  },
+  
   // Critical sector fixes for heatmap
   EQNR: {
     sector: 'Energy',

@@ -20,8 +20,7 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -41,22 +40,22 @@ model User {
   emailVerified DateTime?
   image         String?
   accounts      Account[]
+  portfolio     PortfolioItem[]
   sessions      Session[]
   favorites     UserFavorite[]
-  portfolio     PortfolioItem[]
   preferences   UserPreferences?
 }
 
 model PortfolioItem {
   id        String   @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   ticker    String
   quantity  Float
   avgPrice  Float?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   tickerRef Ticker   @relation(fields: [ticker], references: [symbol], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, ticker])
   @@index([userId])
@@ -74,7 +73,6 @@ model VerificationToken {
 model UserPreferences {
   id              String   @id @default(cuid())
   userId          String   @unique
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   favorites       String
   theme           String   @default("auto")
   defaultTab      String   @default("all")
@@ -85,6 +83,7 @@ model UserPreferences {
   tableColumns    String
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model EarningsCalendar {
@@ -111,57 +110,46 @@ model EarningsCalendar {
 }
 
 model Ticker {
-  symbol              String    @id
-  name                String?
-  sector              String?
-  industry            String?
-  description         String?
-  employees           Int?
-  websiteUrl          String?
-  logoUrl             String?
-  sharesOutstanding   Float?
-  adrRatio            Float?
-  isAdr               Boolean   @default(false)
-  latestPrevClose     Float?
-  latestPrevCloseDate DateTime?
-
-  // Cached values for efficient sorting (SQL-first architecture)
-  lastPrice         Float?
-  lastChangePct     Float?     // Should be bounded between -999.99 and 999.99
-  lastMarketCap     Float?     // Should be in billions, bounded between 0 and 10000
-  lastMarketCapDiff Float?     // Should be in billions, bounded between -10000 and 10000
-  lastPriceUpdated  DateTime?
-
-  // Movers Section Stats (calculated daily)
-  avgVolume20d    Float?
-  stdDevReturn20d Float?
-  avgReturn20d    Float?
-
-  // Real-time Movers Metrics
-  latestMoversZScore Float?
-  latestMoversRVOL   Float?
-  moversReason       String?
-  moversCategory     String? // e.g., 'Earnings', 'Guidance', 'M&A', 'Macro', 'Technical'
-  socialCopy         String? // Catchy 160-char summary for social media
-  isSbcAlert         Boolean @default(false)
-  aiConfidence       Int? // 1-100 scale
-
-  updatedAt     DateTime        @updatedAt
-  dailyRefs     DailyRef[]
-  sessionPrices SessionPrice[]
-  moverEvents   MoverEvent[]
-  volumeBuckets VolumeBucket[]
-  userFavorites UserFavorite[]
-  portfolio     PortfolioItem[]
-
-  // Analysis module relations
-  financialStatements FinancialStatement[]
-  dailyValuations     DailyValuationHistory[]
-  analysisCache       AnalysisCache?
-  
-  // Valuation charts relations
+  symbol               String                  @id
+  name                 String?
+  sector               String?
+  industry             String?
+  sharesOutstanding    Float?
+  adrRatio             Float?
+  isAdr                Boolean                 @default(false)
+  updatedAt            DateTime                @updatedAt
+  latestPrevClose      Float?
+  latestPrevCloseDate  DateTime?
+  lastChangePct        Float?
+  lastMarketCap        Float?
+  lastMarketCapDiff    Float?
+  lastPrice            Float?
+  lastPriceUpdated     DateTime?
+  logoUrl              String?
+  avgVolume20d         Float?
+  stdDevReturn20d      Float?
+  avgReturn20d         Float?
+  latestMoversZScore   Float?
+  latestMoversRVOL     Float?
+  moversReason         String?
+  moversCategory       String?
+  socialCopy           String?
+  isSbcAlert           Boolean                 @default(false)
+  aiConfidence         Int?
+  description          String?
+  employees            Int?
+  websiteUrl           String?
+  analysisCache        AnalysisCache?
+  dailyRefs            DailyRef[]
+  dailyValuations      DailyValuationHistory[]
+  financialStatements  FinancialStatement[]
+  moverEvents          MoverEvent[]
+  portfolio            PortfolioItem[]
+  sessionPrices        SessionPrice[]
+  userFavorites        UserFavorite[]
   valuationHistories   ValuationHistory[]
   valuationPercentiles ValuationPercentiles[]
+  volumeBuckets        VolumeBucket[]
 
   @@index([sector])
   @@index([sharesOutstanding])
@@ -175,28 +163,21 @@ model Ticker {
 }
 
 model MoverEvent {
-  id        String   @id @default(cuid())
-  symbol    String
-  timestamp DateTime @default(now())
-  date      DateTime // Trading day (for filtering)
-
-  // Snapshot at detection
-  priceAtEvent Float
-  zScore       Float
-  rvol         Float
-  changePct    Float
-
-  // AI Analysis (Link to Ticker or copy)
-  category  String? // 'Earnings', 'Guidance', etc.
-  reason    String?
-  sentiment Float?
-
-  // Follow-through (Performance Tracking)
-  impact1h      Float? // % change after 1 hour
-  impactEndDay  Float? // % change at market close
-  impactNextDay Float? // % change at next day close
-
-  ticker Ticker @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+  id            String   @id @default(cuid())
+  symbol        String
+  timestamp     DateTime @default(now())
+  date          DateTime
+  priceAtEvent  Float
+  zScore        Float
+  rvol          Float
+  changePct     Float
+  category      String?
+  reason        String?
+  sentiment     Float?
+  impact1h      Float?
+  impactEndDay  Float?
+  impactNextDay Float?
+  ticker        Ticker   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
 
   @@index([date])
   @@index([category])
@@ -229,13 +210,10 @@ model SessionPrice {
   changePct Float
   source    String
   quality   String
-
-  // Movers data
-  zScore Float?
-  rvol   Float?
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  zScore    Float?
+  rvol      Float?
   ticker    Ticker   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
 
   @@unique([symbol, date, session])
@@ -248,10 +226,10 @@ model SessionPrice {
 model UserFavorite {
   id        String   @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   ticker    String
   createdAt DateTime @default(now())
   tickerRef Ticker   @relation(fields: [ticker], references: [symbol], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, ticker])
   @@index([userId])
@@ -261,8 +239,8 @@ model UserFavorite {
 model VolumeBucket {
   id        String   @id @default(cuid())
   symbol    String
-  bucket    String // e.g., "09:30", "09:45"
-  avgVolume Float // Average cumulative volume at this time
+  bucket    String
+  avgVolume Float
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   ticker    Ticker   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
@@ -272,43 +250,33 @@ model VolumeBucket {
 }
 
 model FinancialStatement {
-  id           String   @id @default(cuid())
-  symbol       String
-  period       String // e.g., 'FY', 'Q1', 'Q2', etc. (Polygon calendar)
-  endDate      DateTime
-  fiscalYear   Int
-  fiscalPeriod String // e.g., 'FY', 'Q1'
-
-  // Income Statement
-  revenue      Float?
-  netIncome    Float?
-  ebit         Float?
-  grossProfit  Float?
-
-  // Cash Flow
-  operatingCashFlow Float?
-  capex             Float?
-
-  // Balance Sheet
+  id                 String   @id @default(cuid())
+  symbol             String
+  period             String
+  endDate            DateTime
+  fiscalYear         Int
+  fiscalPeriod       String
+  revenue            Float?
+  netIncome          Float?
+  ebit               Float?
+  grossProfit        Float?
+  operatingCashFlow  Float?
+  capex              Float?
   totalAssets        Float?
   totalLiabilities   Float?
   currentAssets      Float?
   currentLiabilities Float?
   retainedEarnings   Float?
   totalEquity        Float?
-
-  // Other standard fields
   sharesOutstanding  Float?
-  sbc                Float? // Stock-based compensation
+  sbc                Float?
   interestExpense    Float?
   totalDebt          Float?
   cashAndEquivalents Float?
-  netPPE             Float? // Net Property, Plant & Equipment
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  ticker Ticker @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+  netPPE             Float?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  ticker             Ticker   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
 
   @@unique([symbol, fiscalYear, fiscalPeriod])
   @@index([symbol])
@@ -317,42 +285,31 @@ model FinancialStatement {
 }
 
 model DailyValuationHistory {
-  id     String   @id @default(cuid())
-  symbol String
-  date   DateTime
+  id                String   @id @default(cuid())
+  symbol            String
+  date              DateTime
+  closePrice        Float?
+  marketCap         Float?
+  peRatio           Float?
+  psRatio           Float?
+  evEbitda          Float?
+  fcfYield          Float?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  currentRatio      Float?
+  debtToEquity      Float?
+  dividendYield     Float?
+  evFcf             Float?
+  evRevenue         Float?
+  pbRatio           Float?
+  pegRatio          Float?
+  priceTangibleBook Float?
+  quickRatio        Float?
+  roe               Float?
+  roic              Float?
+  ticker            Ticker   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
 
-  closePrice Float?
-  marketCap  Float?
-
-  // Basic valuation ratios
-  peRatio  Float?
-  psRatio  Float?
-  pbRatio  Float?        // NEW: Price/Book Value
-  evEbitda Float?
-  fcfYield Float?
-
-  // GuruFocus style ratios
-  evRevenue    Float?    // NEW: EV/Revenue
-  evFcf        Float?    // NEW: EV/Free Cash Flow
-  priceTangibleBook Float? // NEW: Price/Tangible Book
-  pegRatio     Float?    // NEW: PEG Ratio (P/E / Growth)
-  dividendYield Float?   // NEW: Dividend Yield
-
-  // Additional metrics for GuruFocus
-  roic         Float?    // NEW: Return on Invested Capital
-  roe          Float?    // NEW: Return on Equity
-  debtToEquity Float?    // NEW: Debt/Equity Ratio
-  currentRatio  Float?   // NEW: Current Ratio
-  quickRatio    Float?   // NEW: Quick Ratio
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  ticker Ticker @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
-
-  // Combined index for huge table
   @@unique([symbol, date])
-  // Allow efficient lookup by date or by symbol separately
   @@index([symbol])
   @@index([date])
   @@index([symbol, date, peRatio])
@@ -360,40 +317,28 @@ model DailyValuationHistory {
 }
 
 model AnalysisCache {
-  id     String @id @default(cuid())
-  symbol String @unique
-
-  healthScore        Float? // 0-100
-  profitabilityScore Float? // 0-100
-  valuationScore     Float? // 0-100
-  verdictText        String? // AI Verdict
-
-  // Deep-Dive Metrics
-  piotroskiScore    Int?    // 0-9
-  beneishScore      Float?  // < -1.78 = no manipulation
-  interestCoverage  Float?  // EBIT / Interest Expense
-  revenueCagr       Float?  // 5Y Revenue CAGR (%)
-  netIncomeCagr     Float?  // 5Y Net Income CAGR (%)
-
-  // NEW: Advanced Metrics
-  altmanZ           Float?
-  debtRepaymentYears Float? // Net Debt / FCF
-  fcfMargin         Float?
-  fcfConversion     Float? // FCF / Net Income
-  
-  // NEW: Interpretations
-  humanDebtInfo     String? // e.g. "Firma potrebuje 4.2 roka na splatenie dlhu."
-  humanPeInfo       String? // e.g. "Aktuálne PE je v horných 15% poslednej dekády."
-  
-  // NEW: Quality Stats
-  marginStability   Float? 
-  negativeNiYears   Int?   
-
-  lastQualitySignalAt DateTime? // NEW: Track when it hits Safe Zone + High Health
-
-  updatedAt DateTime @updatedAt
-
-  ticker Ticker @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+  id                  String    @id @default(cuid())
+  symbol              String    @unique
+  healthScore         Float?
+  profitabilityScore  Float?
+  valuationScore      Float?
+  verdictText         String?
+  piotroskiScore      Int?
+  beneishScore        Float?
+  interestCoverage    Float?
+  revenueCagr         Float?
+  netIncomeCagr       Float?
+  updatedAt           DateTime  @updatedAt
+  altmanZ             Float?
+  debtRepaymentYears  Float?
+  fcfConversion       Float?
+  fcfMargin           Float?
+  humanDebtInfo       String?
+  humanPeInfo         String?
+  lastQualitySignalAt DateTime?
+  marginStability     Float?
+  negativeNiYears     Int?
+  ticker              Ticker    @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
 
   @@index([healthScore])
   @@index([valuationScore])
@@ -401,27 +346,26 @@ model AnalysisCache {
 
 model Subscription {
   id        String   @id @default(cuid())
-  symbol    String?  // Optional: subscribe to specific ticker
+  symbol    String?
   endpoint  String   @unique
   p256dh    String
   auth      String
-  email     String?  // Optional: e-mail subscription
+  email     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model ValuationHistory {
-  id          String   @id @default(cuid())
-  symbol      String
-  date        DateTime
-  metric      String   // 'pe_ratio', 'pb_ratio', 'ps_ratio', 'ev_ebitda'
-  value       Float
-  percentile  Float?   // Vypočítaný percentil v kontexte obdobia
-  period      String   // 'monthly', 'daily'
-  createdAt   DateTime @default(now())
-  
-  ticker Ticker @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
-  
+  id         String   @id @default(cuid())
+  symbol     String
+  date       DateTime
+  metric     String
+  value      Float
+  percentile Float?
+  period     String
+  createdAt  DateTime @default(now())
+  ticker     Ticker   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+
   @@unique([symbol, date, metric, period])
   @@index([symbol, date])
   @@index([date])
@@ -432,19 +376,18 @@ model ValuationPercentiles {
   id          String   @id @default(cuid())
   symbol      String
   metric      String
-  period      String   // '10y', '5y', '1y', '6m', '3m', '1m'
-  p10         Float    // 10th percentile
-  p25         Float    // 25th percentile
-  p50         Float    // 50th percentile (median)
-  p75         Float    // 75th percentile
-  p90         Float    // 90th percentile
+  period      String
+  p10         Float
+  p25         Float
+  p50         Float
+  p75         Float
+  p90         Float
   mean        Float
   stdDev      Float
   sampleSize  Int
   lastUpdated DateTime @default(now())
-  
-  ticker Ticker @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
-  
+  ticker      Ticker   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+
   @@unique([symbol, metric, period])
   @@index([symbol, metric])
 }

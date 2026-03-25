@@ -106,7 +106,7 @@ Flags:
         // Shared: Get Tickers
         // We use PMP universe (all tiers) or DB fallback
         console.log('\n📊 getting ticker universe...');
-        let tickers = await getUniverse('pmp');
+        let tickers = []; try { tickers = await getUniverse('pmp'); } catch (e) { console.warn(' Redis universe fetch failed, falling back to DB...'); }
         if (tickers.length === 0) {
             console.log('⚠️  Universe is empty, using tickers from database...');
             const dbTickers = await prisma.ticker.findMany({ select: { symbol: true } });

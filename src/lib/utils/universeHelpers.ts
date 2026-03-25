@@ -54,13 +54,27 @@ export async function getAllTrackedTickers(): Promise<string[]> {
       totalCount: tickersArray.length
     });
 
-    // Limit to 600 tickers (SP500: 500 + International: 100)
-    return tickersArray.slice(0, 600);
+    // Limit to 1000 tickers (increased from 600)
+    return tickersArray.slice(0, 1000);
   } catch (error) {
-    logger.error('Error getting tracked tickers', error);
+    logger.warn('Redis unavailable, falling back to Database + Defaults for tracked tickers');
 
-    // Fallback to default tickers only
-    return getAllProjectTickers('pmp');
+    // Fallback: Combine default tickers with whatever is in the Ticker table
+    try {
+      const { prisma } = await import('../db/prisma');
+      const dbTickers = await prisma.ticker.findMany({
+        select: { symbol: true },
+        take: 1000
+      });
+      
+      const allTickers = new Set<string>(getAllProjectTickers('pmp'));
+      dbTickers.forEach(t => allTickers.add(t.symbol));
+      
+      return Array.from(allTickers);
+    } catch (dbError) {
+      logger.error('Database fallback also failed', dbError);
+      return getAllProjectTickers('pmp');
+    }
   }
 }
 
