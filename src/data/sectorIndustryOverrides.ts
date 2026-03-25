@@ -146,6 +146,20 @@ export const SECTOR_INDUSTRY_OVERRIDES: Record<string, SectorIndustryOverride> =
     industry: 'Credit Services',
     name: 'American Express Company',
   },
+  
+  // Consumer Staples companies
+  PM: {
+    sector: 'Consumer Staples',
+    industry: 'Tobacco',
+    name: 'Philip Morris International Inc.',
+  },
+  
+  // Technology companies
+  TSM: {
+    sector: 'Technology',
+    industry: 'Semiconductors',
+    name: 'Taiwan Semiconductor Manufacturing Company Limited',
+  },
   COF: {
     sector: 'Financial Services',
     industry: 'Banks',

@@ -359,9 +359,15 @@ export async function getStocksList(options: {
         : 0; // Return 0 instead of stale lastChangePct
 
       // Vypočítaj market cap z aktuálnych hodnôt
-      const marketCap = (currentPrice > 0 && sharesOutstanding > 0)
+      let marketCap = (currentPrice > 0 && sharesOutstanding > 0)
         ? computeMarketCap(currentPrice, sharesOutstanding)
         : (s.lastMarketCap || 0);
+
+      // Normalization guard: If marketCap > 100,000, it's likely raw USD (e.g. 500,000,000,000). 
+      // Convert to billions for UI and sorting consistency.
+      if (marketCap > 100_000) {
+        marketCap = marketCap / 1_000_000_000;
+      }
 
       // DEBUG: Log pre veľké spoločnosti PRED výpočtom marketCapDiff
       if (s.lastMarketCap && s.lastMarketCap > 1000) {
@@ -466,14 +472,14 @@ export async function getStocksList(options: {
           const ov = SECTOR_INDUSTRY_OVERRIDES[s.symbol];
           // Always apply override for specific tickers, regardless of current sector
           if (ov) return ov.sector;
-          return raw;
+          return raw || 'Unknown';  // ← Pridaný fallback
         })(),
         industry: (() => {
           const raw = (s.industry || '').trim();
           const ov = SECTOR_INDUSTRY_OVERRIDES[s.symbol];
           // Always apply override for specific tickers, regardless of current industry
           if (ov) return ov.industry;
-          return raw;
+          return raw || 'Unknown';  // ← Pridaný fallback
         })(),
         logoUrl: s.logoUrl || `/logos/${s.symbol.toLowerCase()}-32.webp`,
         currentPrice,

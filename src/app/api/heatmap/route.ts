@@ -197,8 +197,8 @@ export async function GET(request: NextRequest) {
         const rawIndustry = (t.industry ?? '').trim();
 
         // Apply overrides only, no normalization
-        const sector = ov ? ov.sector : (rawSector || 'Other');
-        const industry = ov ? ov.industry : (rawIndustry || 'Uncategorized');
+        const sector = ov ? ov.sector : (rawSector || 'Unknown');
+        const industry = ov ? ov.industry : (rawIndustry || 'Unknown');
 
         const name = ov?.name && (!t.name || t.name.trim() === '') ? ov.name : t.name;
 
