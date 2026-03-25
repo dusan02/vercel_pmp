@@ -1,18 +1,21 @@
-name: Test
+name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [ main, develop ]
   pull_request:
-    branches: [main, develop]
+    branches: [ main, develop ]
 
 jobs:
   test:
+    name: Unit & Integration Tests (TZ=${{ matrix.timezone }})
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
         timezone: ["UTC", "America/New_York", "Europe/Prague"]
+    env:
+      DATABASE_URL: "file:./test.db"
+      TZ: ${{ matrix.timezone }}
 
     steps:
       - name: Checkout code
@@ -28,23 +31,17 @@ jobs:
         run: npm ci
 
       - name: Apply database migrations
-        env:
-          DATABASE_URL: "file:./test.db"
         run: npx prisma migrate deploy
 
-      - name: Run tests (TZ=${{ matrix.timezone }})
-        env:
-          TZ: ${{ matrix.timezone }}
-          DATABASE_URL: "file:./test.db"
+      - name: Run tests
         run: npm test
 
       - name: Run coverage
-        env:
-          TZ: ${{ matrix.timezone }}
-          DATABASE_URL: "file:./test.db"
+        if: matrix.timezone == 'UTC'
         run: npm run test:coverage
 
       - name: Upload coverage
+        if: matrix.timezone == 'UTC'
         uses: codecov/codecov-action@v3
         with:
           file: ./coverage/coverage-final.json
@@ -52,9 +49,45 @@ jobs:
           name: codecov-umbrella
           fail_ci_if_error: false
 
-  test-critical:
+  smoke-test:
+    name: Build & Smoke Test
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: "file:./prisma/data/dev.db"
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build application
+        run: npm run build
+      
+      - name: Run pre-deploy specific tests
+        run: npm test -- src/__tests__/pre-deploy.test.ts
+      
+      - name: Start app & verify endpoints
+        run: |
+          npm run dev &
+          sleep 30
+          curl -f http://localhost:3000/api/stocks || exit 1
+          curl -f http://localhost:3000/api/health || exit 1
+      
+      - name: Verify Redis fallback
+        run: |
+          REDIS_URL=invalid npm run build
+
+  test-critical:
     name: Critical Pricing Logic Tests
+    runs-on: ubuntu-latest
     env:
       DATABASE_URL: "file:./test.db"
 
@@ -78,13 +111,7 @@ jobs:
         run: npm test -- --testPathPatterns="priceResolver|pricingStateMachine"
 
       - name: Apply database migrations
-        env:
-          DATABASE_URL: "file:./test.db"
         run: npx prisma migrate deploy
 
       - name: Run integration tests
-        env:
-          DATABASE_URL: "file:./test.db"
         run: npm test -- --testPathPatterns="polygonWorker.integration"
-
-      # Coverage check disabled - thresholds are managed in jest.config.js
