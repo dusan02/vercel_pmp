@@ -155,10 +155,21 @@ export class AnalysisService {
                 sharesOutstanding: sharesOutstanding && sharesOutstanding > 0 ? sharesOutstanding : undefined
             };
 
+            const standardSectors = [
+                'Technology', 'Financial Services', 'Healthcare', 'Consumer Cyclical',
+                'Consumer Defensive', 'Energy', 'Utilities', 'Industrials',
+                'Basic Materials', 'Real Estate', 'Communication Services'
+            ];
+
             const sectorFromSic = getSectorFromSic(res.sic_code);
 
-            // Update sector if it's missing, 'Other', or redundant with sic_description
-            const isWeakSector = !existing?.sector || existing.sector === 'Other' || existing.sector === 'N/A';
+            // Update sector if it's missing, 'Other', 'Unknown', or not in the standard list
+            const isWeakSector = !existing?.sector || 
+                                existing.sector === 'Other' || 
+                                existing.sector === 'N/A' || 
+                                existing.sector === 'Unknown' ||
+                                !standardSectors.includes(existing.sector);
+            
             const isRedundantSector = existing?.sector === res.sic_description;
             
             if (isWeakSector || isRedundantSector) {

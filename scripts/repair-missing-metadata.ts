@@ -4,6 +4,12 @@ import { AnalysisService } from '../src/services/analysisService';
 async function repairMissing() {
     console.log('🔍 Identifying tickers with missing sector, industry, or market cap...');
     
+    const standardSectors = [
+        'Technology', 'Financial Services', 'Healthcare', 'Consumer Cyclical',
+        'Consumer Defensive', 'Energy', 'Utilities', 'Industrials',
+        'Basic Materials', 'Real Estate', 'Communication Services'
+    ];
+
     const missingTickers = await prisma.ticker.findMany({
         where: {
             OR: [
@@ -11,6 +17,7 @@ async function repairMissing() {
                 { sector: '' },
                 { sector: 'Unknown' },
                 { sector: 'unknown' },
+                { sector: { notIn: standardSectors } }, // Detect fine-grained industry names incorrectly set as sectors
                 { industry: null },
                 { industry: '' },
                 { industry: 'Unknown' },
