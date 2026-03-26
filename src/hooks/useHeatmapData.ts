@@ -212,27 +212,32 @@ export function useHeatmapData({
       }
 
       // Process data
-      let stocks: StockData[] = [];
-      if (result.data && Array.isArray(result.data)) {
-        stocks = result.data;
-      } else if (result.rows && Array.isArray(result.rows)) {
-        // Fallback for optimized format
-        stocks = result.rows.map((row: any) => ({
-          ticker: row.t,
-          currentPrice: row.p,
-          percentChange: row.c,
-          marketCap: row.m,
-          marketCapDiff: row.d,
-          companyName: row.n,
-          sector: row.s || 'Other',
-          industry: row.i || 'Uncategorized',
-        }));
+      let companies: CompanyNode[] = [];
+      
+      if (result.rows && Array.isArray(result.rows)) {
+        // FAST PATH: Optimized format from API
+        for (const row of result.rows) {
+          if (!row.t || !row.s || !row.i) continue;
+          
+          const marketCapDiff = row.d || 0;
+          companies.push({
+            symbol: row.t,
+            name: row.n || row.t,
+            sector: row.s,
+            industry: row.i,
+            marketCap: row.m || 0,
+            changePercent: row.c || 0,
+            marketCapDiff: marketCapDiff,
+            marketCapDiffAbs: Math.abs(marketCapDiff),
+            currentPrice: row.p,
+          });
+        }
+      } else if (result.data && Array.isArray(result.data)) {
+        // SLOW PATH: Legacy format
+        companies = result.data
+          .map(transformStockDataToCompanyNode)
+          .filter((node: CompanyNode | null): node is CompanyNode => node !== null);
       }
-
-      // Transform to CompanyNode
-      const companies = stocks
-        .map(transformStockDataToCompanyNode)
-        .filter((node): node is CompanyNode => node !== null);
 
       if (companies.length > 0) {
         if (process.env.NODE_ENV !== 'production') {

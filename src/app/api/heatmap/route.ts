@@ -47,6 +47,9 @@ export async function GET(request: NextRequest) {
     // We still compute the full set if needed, but we can cut down response size significantly.
     const limitParam = request.nextUrl.searchParams.get('limit');
     const requestedLimit = limitParam ? Math.max(1, Math.min(3000, Number(limitParam))) : null;
+    
+    const timeframe = request.nextUrl.searchParams.get('timeframe') || 'day';
+    const isCompact = request.nextUrl.searchParams.get('compact') === 'true' || true; // Default to true for new optimization
 
     // Skontroluj, či chceme force refresh (bypass cache)
     const forceRefresh = request.nextUrl.searchParams.get('force') === 'true';
@@ -236,7 +239,14 @@ export async function GET(request: NextRequest) {
     const today = createETDate(todayYMD);       // ET midnight (UTC instant)
     const tomorrow = createETDate(tomorrowYMD); // next ET midnight
 
-    // 24h okno: od teraz späť 7 dní (na pokrytie víkendov/sviatkov)
+    // 24h okno pre heatmap.today
+    // OPTIMIZATION: Check if we can use "Fast Path" (skip SessionPrice/DailyRef for 'day' timeframe if Ticker is fresh)
+    const canUseFastPath = timeframe === 'day' && !forceRefresh && tickers.some(t => {
+      if (!t.lastPriceUpdated) return false;
+      const ageMs = Date.now() - new Date(t.lastPriceUpdated).getTime();
+      return ageMs < 30 * 60 * 1000; // If some top tickers were updated in last 30 mins
+    });
+
     const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
@@ -246,41 +256,44 @@ export async function GET(request: NextRequest) {
     let allSessionPrices: SessionPrice[] = [];
     let allDailyRefs: DailyRef[] = [];
 
-    try {
-      // Execute both queries in parallel using Promise.all()
-      // 24h okno pre heatmap.today
-      const [sessionPricesResult, dailyRefsResult] = await Promise.all([
-        prisma.sessionPrice.findMany({
-          where: {
-            symbol: { in: tickerSymbols },
-            date: { gte: dayAgo, lt: tomorrow },
-          },
-          orderBy: [
-            { lastTs: 'desc' },
-            { session: 'asc' }, // live < pre < after (alphabetically)
-          ],
-        }),
-        prisma.dailyRef.findMany({
-          where: {
-            symbol: { in: tickerSymbols },
-            date: { gte: oneWeekAgo, lte: today }, // <= today to get last trading day
-          },
-          orderBy: {
-            date: 'desc',
-          },
-        }),
-      ]);
+    if (!canUseFastPath || timeframe !== 'day') {
+      try {
+        // Execute both queries in parallel using Promise.all()
+        const [sessionPricesResult, dailyRefsResult] = await Promise.all([
+          prisma.sessionPrice.findMany({
+            where: {
+              symbol: { in: tickerSymbols },
+              date: { gte: dayAgo, lt: tomorrow },
+            },
+            orderBy: [
+              { lastTs: 'desc' },
+              { session: 'asc' }, // live < pre < after (alphabetically)
+            ],
+          }),
+          prisma.dailyRef.findMany({
+            where: {
+              symbol: { in: tickerSymbols },
+              date: { gte: oneWeekAgo, lte: today }, // <= today to get last trading day
+            },
+            orderBy: {
+              date: 'desc',
+            },
+          }),
+        ]);
 
-      allSessionPrices = sessionPricesResult;
-      allDailyRefs = dailyRefsResult;
+        allSessionPrices = sessionPricesResult;
+        allDailyRefs = dailyRefsResult;
 
-      console.log(`💰 Found ${allSessionPrices.length} SessionPrice records`);
-      console.log(`📊 Found ${allDailyRefs.length} DailyRef records (last 7 days state)`);
-    } catch (dbError) {
-      console.error('❌ Error fetching SessionPrice or DailyRef:', dbError);
-      // Fallback to empty arrays
-      allSessionPrices = [];
-      allDailyRefs = [];
+        console.log(`💰 Found ${allSessionPrices.length} SessionPrice records`);
+        console.log(`📊 Found ${allDailyRefs.length} DailyRef records (last 7 days state)`);
+      } catch (dbError) {
+        console.error('❌ Error fetching SessionPrice or DailyRef:', dbError);
+        // Fallback to empty arrays
+        allSessionPrices = [];
+        allDailyRefs = [];
+      }
+    } else {
+      console.log('🚀 Fast Path: Using denormalized Ticker data (skipping SessionPrice/DailyRef)');
     }
 
     // Helper funkcia pre získanie najnovších záznamov pre každý ticker (manuálne distinct)
@@ -805,6 +818,18 @@ export async function GET(request: NextRequest) {
       _timestamp: dataTimestamp, // Timestamp z dát (nie aktuálny čas!)
     }));
 
+    // Compact version for even smaller payload
+    const rows = limitedResults.map((s) => ({
+      t: s.ticker,
+      n: s.companyName,
+      s: s.sector,
+      i: s.industry,
+      m: s.marketCap,
+      c: s.percentChange,
+      d: s.marketCapDiff,
+      p: s.currentPrice,
+    }));
+
     console.log(`✅ Filtered to ${payload.length} companies with valid data`);
 
     // maxUpdatedAt už máme vypočítané vyššie (použité pre _timestamp)
@@ -851,6 +876,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
           success: true,
           data: payload,
+          rows: rows, // New compact format
           cached: false,
           count: payload.length,
           timestamp: new Date().toISOString(),
