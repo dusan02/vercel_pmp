@@ -702,6 +702,17 @@ export async function GET(request: NextRequest) {
       // "isStale" is used for UX/diagnostics ("is this price reasonably fresh for this session?").
       // The previous thresholds (live=1min, pre/after=5min) were too strict and caused most tickers
       // to appear stale even though they were updated recently.
+      // Filter out 'Unknown' or null sectors - these are usually de-listed or broken tickers
+      if (!tickerInfo.sector || tickerInfo.sector === 'Unknown' || tickerInfo.sector === 'Other') {
+        continue; 
+      }
+
+      // Filter out anomalous percent changes (> 999% is often a data error or missing reference)
+      if (Math.abs(changePercent) > 999) {
+        console.warn(`⚠️ [Heatmap] Filtering out ${ticker} due to extreme change: ${changePercent.toFixed(2)}%`);
+        continue;
+      }
+
       const thresholdMin =
         session === 'live' ? 5 :
           session === 'pre' ? 30 :

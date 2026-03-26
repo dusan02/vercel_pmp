@@ -29,6 +29,7 @@ import { withRetry, circuitBreaker } from '@/lib/api/rateLimiter';
 // import { addToDLQ } from '@/lib/dlq';
 import { updateRankIndexes, updateStatsCache, getRankMinMax } from '@/lib/redis/ranking';
 import { computeMarketCap, computeMarketCapDiff, getSharesOutstanding } from '@/lib/utils/marketCapUtils';
+import { getPolygonClient } from '@/lib/clients/polygonClient';
 import { prisma } from '@/lib/db/prisma';
 import type { MarketSession } from '@/lib/types';
 
@@ -348,8 +349,56 @@ async function upsertToDB(
         stdDevReturn20d: true,
         moversCategory: true,
         moversReason: true,
+        sector: true,
+        industry: true,
+        sharesOutstanding: true
       }
     });
+
+    // 1.5. Metadata Enrichment & De-listing Check
+    // If ticker is new OR missing metadata OR has placeholder shares (1B), fetch official details.
+    const needsMetadata = !existingTicker 
+      || existingTicker.sector === 'Unknown' 
+      || existingTicker.sector === 'Other' 
+      || !existingTicker.sector 
+      || existingTicker.sharesOutstanding === 1000000000;
+
+    let metadataUpdate: any = {};
+    if (needsMetadata) {
+      try {
+        const polygon = getPolygonClient();
+        if (polygon) {
+          const details = await polygon.fetchTickerDetails(symbol);
+          if (details) {
+            if (details.active === false) {
+              console.warn(`🗑️  [Enrichment] ${symbol} is INACTIVE. Skipping/Cleaning up.`);
+              // We don't delete immediately here to avoid side effects during ingestion, 
+              // but we can mark it as Other/Uncategorized or skip the update.
+              return { success: false, effectiveChangePct: 0, zScore: 0, rvol: 0 };
+            }
+
+            metadataUpdate = {
+              name: details.name || undefined,
+              sector: details.sic_description || undefined,
+              industry: details.sic_description || undefined,
+              sharesOutstanding: details.weighted_shares_outstanding || details.share_class_shares_outstanding || undefined,
+            };
+            
+            // If we got new shares, update marketCap
+            if (metadataUpdate.sharesOutstanding && metadataUpdate.sharesOutstanding > 0) {
+              const newShares = metadataUpdate.sharesOutstanding;
+              marketCap = (normalized.price * newShares) / 1000000000;
+              if (previousClose) {
+                marketCapDiff = ((normalized.price - previousClose) * newShares) / 1000000000;
+              }
+              console.log(`✨ [Enrichment] ${symbol}: Updated metadata & MarketCap (${marketCap.toFixed(2)}B)`);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn(`⚠️  [Enrichment] Failed for ${symbol}:`, err);
+      }
+    }
 
     // 2. Calculate Z-score and RVOL
     let zScore = 0;
@@ -522,7 +571,8 @@ async function upsertToDB(
           latestPrevCloseDate: lastTradingDay
         } : {}),
         latestMoversZScore: zScore,
-        latestMoversRVOL: rvol
+        latestMoversRVOL: rvol,
+        ...metadataUpdate
       },
       create: {
         symbol,
@@ -535,7 +585,10 @@ async function upsertToDB(
         latestPrevClose: previousClose || 0,
         latestPrevCloseDate: previousClose ? lastTradingDay : null,
         latestMoversZScore: zScore,
-        latestMoversRVOL: rvol
+        latestMoversRVOL: rvol,
+        sector: 'Unknown', // Default if metadata fetch failed
+        industry: 'Unknown',
+        ...metadataUpdate
       }
     });
 

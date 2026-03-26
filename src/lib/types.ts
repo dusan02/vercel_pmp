@@ -91,6 +91,40 @@ export interface PolygonSnapshot {
   };
 }
 
+export interface PolygonTickerDetails {
+  active: boolean;
+  address?: {
+    address1?: string;
+    city?: string;
+    state?: string;
+    postal_code?: string;
+  };
+  branding?: {
+    icon_url?: string;
+    logo_url?: string;
+  };
+  description?: string;
+  homepage_url?: string;
+  list_date?: string;
+  market_cap?: number;
+  name: string;
+  phoneNumber?: string;
+  primary_exchange?: string;
+  round_lot?: number;
+  share_class_shares_outstanding?: number;
+  sic_code?: string;
+  sic_description?: string;
+  ticker: string;
+  total_employees?: number;
+  weighted_shares_outstanding?: number;
+}
+
+export interface PolygonV3TickerDetailsResponse {
+  results?: PolygonTickerDetails;
+  status: string;
+  request_id: string;
+}
+
 export interface PolygonV2Response {
   status: string;
   ticker?: PolygonSnapshot;

@@ -35,7 +35,9 @@ async function run() {
     let failed = 0;
 
     for (let i = 0; i < tickers.length; i++) {
-        const symbol = tickers[i].symbol;
+        const ticker = tickers[i];
+        if (!ticker) continue;
+        const symbol = ticker.symbol;
         process.stdout.write(`[${i + 1}/${tickers.length}] Repairing ${symbol}... `);
         
         try {

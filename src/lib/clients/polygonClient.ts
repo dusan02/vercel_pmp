@@ -3,7 +3,12 @@
  * Provides unified interface for all Polygon API calls
  */
 
-import { PolygonSnapshot, PolygonV2Response } from '../types';
+import { 
+  PolygonSnapshot, 
+  PolygonV2Response, 
+  PolygonTickerDetails, 
+  PolygonV3TickerDetailsResponse 
+} from '../types';
 import { getCurrentPrice } from '../utils/marketCapUtils';
 
 export interface PolygonClientConfig {
@@ -50,6 +55,30 @@ export class PolygonClient {
       options.signal,
       options.cache
     );
+  }
+
+  /**
+   * Fetch ticker details (v3)
+   */
+  async fetchTickerDetails(
+    ticker: string,
+    options: FetchSnapshotOptions = {}
+  ): Promise<PolygonTickerDetails | null> {
+    const url = `https://api.polygon.io/v3/reference/tickers/${ticker}?apiKey=${this.apiKey}`;
+
+    try {
+      const data = await this.fetchWithRetry<PolygonV3TickerDetailsResponse>(
+        url,
+        options.timeout || this.timeout,
+        options.signal,
+        options.cache
+      );
+
+      return data?.results || null;
+    } catch (error) {
+      console.error(`Error fetching ticker details for ${ticker}:`, error);
+      return null;
+    }
   }
 
   /**

@@ -16,10 +16,10 @@ async function repairMetadata() {
     const tickersArg = args.find(a => a.startsWith('--tickers='));
     const topArg = args.find(a => a.startsWith('--top='));
 
-    if (tickersArg) {
-        tickersToRepair = tickersArg.split('=')[1].split(',').map(t => t.trim().toUpperCase());
+    if (tickersArg && tickersArg.includes('=')) {
+        tickersToRepair = (tickersArg.split('=')[1] ?? '').split(',').map(t => t.trim().toUpperCase()).filter(Boolean);
     } else if (topArg) {
-        const count = parseInt(topArg.split('=')[1], 10) || 50;
+        const count = parseInt(topArg.split('=')[1] || '50', 10) || 50;
         console.log(`🔍 Fetching top ${count} tickers from DB...`);
         const topTickers = await prisma.ticker.findMany({
             orderBy: { lastMarketCap: 'desc' },
@@ -37,9 +37,8 @@ async function repairMetadata() {
     let success = 0;
     let failed = 0;
 
-    for (let i = 0; i < tickersToRepair.length; i++) {
-        const symbol = tickersToRepair[i];
-        process.stdout.write(`[${i + 1}/${tickersToRepair.length}] Repairing ${symbol}... `);
+    for (const [index, symbol] of tickersToRepair.entries()) {
+        process.stdout.write(`[${index + 1}/${tickersToRepair.length}] Repairing ${symbol}... `);
         
         try {
             await AnalysisService.syncTickerDetails(symbol);

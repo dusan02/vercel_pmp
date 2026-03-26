@@ -178,7 +178,7 @@ async function main() {
   const totalStartTime = performance.now();
 
   // Run all cron jobs sequentially
-  for (const job of CRON_JOBS) {
+  for (const [index, job] of CRON_JOBS.entries()) {
     const result = await runCronJob(
       job.name,
       job.endpoint,
@@ -186,9 +186,9 @@ async function main() {
       job.requiresAuth
     );
     results.push(result);
-
+  
     // Small delay between jobs to avoid overwhelming the server
-    if (job !== CRON_JOBS[CRON_JOBS.length - 1]) {
+    if (index < CRON_JOBS.length - 1) {
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
   }

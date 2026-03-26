@@ -27,9 +27,9 @@ async function repairMissing() {
     let success = 0;
     let failed = 0;
 
-    for (let i = 0; i < missingTickers.length; i++) {
-        const symbol = missingTickers[i].symbol;
-        process.stdout.write(`[${i + 1}/${missingTickers.length}] Repairing ${symbol}... `);
+    for (const [index, ticker] of missingTickers.entries()) {
+        const symbol = ticker.symbol;
+        process.stdout.write(`[${index + 1}/${missingTickers.length}] Repairing ${symbol}... `);
         
         try {
             await AnalysisService.syncTickerDetails(symbol);
