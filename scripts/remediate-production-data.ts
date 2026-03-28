@@ -35,7 +35,7 @@ async function remediate() {
         { sector: null },
         { industry: null },
         { sharesOutstanding: 1000000000 }, // Common placeholder
-        { symbol: { in: ['MNDT', 'SRNE', 'SJI', 'ATVI'] } }
+        { symbol: { in: ['MNDT', 'SRNE', 'SJI', 'ATVI', 'JWN', 'GPS', 'PEAK', 'WRK', 'ANSS', 'COHR'] } }
       ]
     }
   });
