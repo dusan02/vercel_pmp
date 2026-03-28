@@ -56,4 +56,8 @@ try {
 // Prisma expects file:... URL, with forward slashes
 process.env.DATABASE_URL = `file:${dbPath.replace(/\\/g, '/')}`;
 
+// Set NODE_ENV to test to prevent weekend check from activating
+// Use type assertion to bypass readonly constraint
+(process.env as any).NODE_ENV = 'test';
+
 
