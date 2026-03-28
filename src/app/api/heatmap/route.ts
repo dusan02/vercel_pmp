@@ -671,7 +671,7 @@ export async function GET(request: NextRequest) {
         const sharesOutstanding = tickerInfo.sharesOutstanding || 0;
         marketCap = sharesOutstanding > 0
           ? computeMarketCap(currentPrice, sharesOutstanding)
-          : (tickerInfo.lastMarketCap || 0);
+          : (tickerInfo.lastMarketCap ? tickerInfo.lastMarketCap / 1_000_000_000 : 0);
 
         // Preskoč tickery bez market cap
         if (marketCap <= 0) {
@@ -685,7 +685,7 @@ export async function GET(request: NextRequest) {
         const referencePrice = regularClose && regularClose > 0 ? regularClose : previousClose;
         marketCapDiff = (sharesOutstanding > 0 && referencePrice > 0)
           ? computeMarketCapDiff(currentPrice, referencePrice, sharesOutstanding)
-          : (tickerInfo.lastMarketCapDiff || 0);
+          : (tickerInfo.lastMarketCapDiff ? tickerInfo.lastMarketCapDiff / 1_000_000_000 : 0);
       }
 
       // Preskoč tickery bez ceny (ak sme použili cache a nemá dáta)

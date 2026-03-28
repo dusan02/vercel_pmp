@@ -9,11 +9,11 @@ import { getDateET, getManyLastWithDate, getRankedSymbols } from '@/lib/redis/ra
 export const revalidate = 60;
 
 export const metadata: Metadata = generatePageMetadata({
-  title: 'Top Gainers',
+  title: 'Top Pre-market Gainers',
   description:
-    'Top gaining US stocks by percentage change. Browse real-time gainers and click through to company pages for full details.',
+    'Real-time list of top gaining US stocks in the pre-market session. Track daily price changes, market cap moves, and growth leaders before the opening bell.',
   path: '/gainers',
-  keywords: ['top gainers', 'stock gainers', 'premarket gainers', 'market movers'],
+  keywords: ['top gainers', 'stock gainers', 'premarket gainers', 'market movers', 'biggest stock gainers today'],
 });
 
 type Row = {
@@ -89,7 +89,7 @@ export default async function GainersPage() {
                       className="border-t border-slate-100 dark:border-slate-800 hover:bg-slate-50/60 dark:hover:bg-slate-950/60"
                     >
                       <td className="px-4 py-2 font-semibold">
-                        <Link className="hover:underline" href={`/company/${r.symbol}`}>
+                        <Link className="hover:underline" href={`/stock/${r.symbol}`}>
                           {r.symbol}
                         </Link>
                       </td>

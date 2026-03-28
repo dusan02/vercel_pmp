@@ -125,6 +125,7 @@ model Ticker {
   lastMarketCapDiff    Float?
   lastPrice            Float?
   lastPriceUpdated     DateTime?
+  lastVolume           Float?
   logoUrl              String?
   avgVolume20d         Float?
   stdDevReturn20d      Float?

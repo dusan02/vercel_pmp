@@ -212,7 +212,7 @@ export function PortfolioSection({
       }
     },
     {
-      key: 'value',
+      key: 'dailyPnl',
       header: 'Daily P&L',
       sortable: isDesktop,
       align: 'right',

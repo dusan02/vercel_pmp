@@ -9,11 +9,11 @@ import { getDateET, getManyLastWithDate, getRankedSymbols } from '@/lib/redis/ra
 export const revalidate = 60;
 
 export const metadata: Metadata = generatePageMetadata({
-  title: 'Top Losers',
+  title: 'Top Pre-market Losers',
   description:
-    'Top losing US stocks by percentage change. Browse real-time losers and click through to company pages for full details.',
+    'Real-time list of top losing US stocks in the pre-market session. Track daily price drops, market cap erasures, and biggest movers before the opening bell.',
   path: '/losers',
-  keywords: ['top losers', 'stock losers', 'premarket losers', 'market movers'],
+  keywords: ['top losers', 'stock losers', 'premarket losers', 'market movers', 'biggest stock losers today'],
 });
 
 type Row = {
@@ -89,7 +89,7 @@ export default async function LosersPage() {
                       className="border-t border-slate-100 dark:border-slate-800 hover:bg-slate-50/60 dark:hover:bg-slate-950/60"
                     >
                       <td className="px-4 py-2 font-semibold">
-                        <Link className="hover:underline" href={`/company/${r.symbol}`}>
+                        <Link className="hover:underline" href={`/stock/${r.symbol}`}>
                           {r.symbol}
                         </Link>
                       </td>

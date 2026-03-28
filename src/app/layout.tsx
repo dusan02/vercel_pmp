@@ -13,6 +13,7 @@ import { WebVitalsReporter } from '@/components/WebVitalsReporter'
 import { GA_ID } from '@/lib/ga'
 import { ThemeEffect } from '@/components/ThemeEffect'
 import { DevCacheClear } from '@/components/DevCacheClear'
+import { Footer } from '@/components/layout/Footer'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -263,6 +264,7 @@ export default function RootLayout({
             <ErrorBoundaryWrapper>
               {children}
             </ErrorBoundaryWrapper>
+            <Footer />
             <ScrollToTopButton />
           </AuthProvider>
         </Providers>

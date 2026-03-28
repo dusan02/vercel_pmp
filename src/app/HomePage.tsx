@@ -698,17 +698,6 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
                       <SEOContent />
                     </div>
 
-                    <footer className="footer hidden lg:block" aria-label="Site footer">
-                      <p className="disclaimer">
-                        Data is for informational purposes only. We are not responsible for its accuracy.
-                      </p>
-                      <p>
-                        Need help? Contact us:
-                        <a href="mailto:support@premarketprice.com" className="support-email">
-                          support@premarketprice.com
-                        </a>
-                      </p>
-                    </footer>
                   </main>
                 </PullToRefresh>
               </MobileTester>

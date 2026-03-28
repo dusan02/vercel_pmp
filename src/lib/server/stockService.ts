@@ -95,6 +95,7 @@ export async function getStocksList(options: {
         latestPrevClose: true,
         updatedAt: true,
         lastPriceUpdated: true,
+        lastVolume: true,
         sharesOutstanding: true // Required for dynamic marketCapDiff calculation
       }
     });
@@ -505,6 +506,7 @@ export async function getStocksList(options: {
         marketCap,
         marketCapDiff,
         lastUpdated,
+        volume: s.lastVolume || 0,
         referenceUsed: pct.reference.used,
         referencePrice: pct.reference.price,
         isFrozen,

@@ -137,7 +137,7 @@ export default async function SectorPage({ params }: PageProps) {
                                     return (
                                         <tr key={ticker.symbol} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <Link href={`/company/${ticker.symbol}`} className="flex flex-col">
+                                                <Link href={`/stock/${ticker.symbol}`} className="flex flex-col">
                                                     <span className="font-medium text-gray-900 dark:text-white">{ticker.symbol}</span>
                                                     <span className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[150px]">
                                                         {ticker.name}

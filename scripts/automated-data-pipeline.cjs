@@ -17,10 +17,10 @@ const CRON_SECRET = process.env.CRON_SECRET_KEY || process.env.CRON_SECRET || 't
 /**
  * Make HTTP request to API endpoint
  */
-async function makeRequest(url, data = '') {
+async function makeRequest(url, data = '', method = 'POST') {
     return new Promise((resolve, reject) => {
         const options = {
-            method: 'POST',
+            method: method,
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${CRON_SECRET}`,
@@ -63,7 +63,7 @@ async function getTickersByTier() {
     console.log('📊 Getting all tickers and organizing by tiers...');
     
     try {
-        const response = await makeRequest(`${BASE_URL}/api/tickers/default`);
+        const response = await makeRequest(`${BASE_URL}/api/tickers/default`, '', 'GET');
         if (response.status === 200) {
             const tickers = response.data.tickers || [];
             
@@ -218,7 +218,7 @@ async function triggerBulkRefresh(tiers) {
  */
 async function checkServer() {
     try {
-        const response = await makeRequest(`${BASE_URL}/api/health`);
+        const response = await makeRequest(`${BASE_URL}/api/health`, '', 'GET');
         return response.status >= 200 && response.status < 500;
     } catch (error) {
         console.log('⚠️  Health check failed, but continuing anyway...');

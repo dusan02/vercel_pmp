@@ -369,31 +369,30 @@ async function upsertToDB(
         const polygon = getPolygonClient();
         if (polygon) {
           const details = await polygon.fetchTickerDetails(symbol);
-          if (details) {
-            if (details.active === false) {
-              console.warn(`🗑️  [Enrichment] ${symbol} is INACTIVE. Skipping/Cleaning up.`);
-              // We don't delete immediately here to avoid side effects during ingestion, 
-              // but we can mark it as Other/Uncategorized or skip the update.
-              return { success: false, effectiveChangePct: 0, zScore: 0, rvol: 0 };
-            }
-
-            metadataUpdate = {
-              name: details.name || undefined,
-              sector: details.sic_description || undefined,
-              industry: details.sic_description || undefined,
-              sharesOutstanding: details.weighted_shares_outstanding || details.share_class_shares_outstanding || undefined,
-            };
-            
-            // If we got new shares, update marketCap
-            if (metadataUpdate.sharesOutstanding && metadataUpdate.sharesOutstanding > 0) {
-              const newShares = metadataUpdate.sharesOutstanding;
-              marketCap = (normalized.price * newShares) / 1000000000;
-              if (previousClose) {
-                marketCapDiff = ((normalized.price - previousClose) * newShares) / 1000000000;
+            if (details) {
+              if (details.active === false) {
+                console.warn(`🗑️  [Enrichment] ${symbol} is INACTIVE. Cleaning up universe.`);
+                // Clean up from Redis universes
+                const { redisClient } = await import('@/lib/redis');
+                if (redisClient && redisClient.isOpen) {
+                  await redisClient.sRem('universe:sp500', symbol);
+                  await redisClient.sRem('universe:pmp', symbol);
+                }
+                return { success: false, effectiveChangePct: 0, zScore: 0, rvol: 0 };
               }
-              console.log(`✨ [Enrichment] ${symbol}: Updated metadata & MarketCap (${marketCap.toFixed(2)}B)`);
+
+              metadataUpdate = {
+                name: details.name || undefined,
+                sector: details.sic_description || undefined,
+                industry: details.sic_description || undefined,
+                sharesOutstanding: details.weighted_shares_outstanding || details.share_class_shares_outstanding || undefined,
+              };
+            } else {
+              // Details is null (likely 404)
+              console.warn(`⚠️ [Enrichment] ${symbol} details not found (404). Possible de-listing.`);
+              // Optional: count consecutive 404s before removal? 
+              // For now, let's be cautious but log it.
             }
-          }
         }
       } catch (err) {
         console.warn(`⚠️  [Enrichment] Failed for ${symbol}:`, err);
@@ -566,6 +565,7 @@ async function upsertToDB(
         lastMarketCap: marketCap,
         lastMarketCapDiff: marketCapDiff,
         lastPriceUpdated: normalized.timestamp,
+        lastVolume: normalized.volume,
         ...(shouldUpdatePrevClose ? {
           latestPrevClose: previousClose,
           latestPrevCloseDate: lastTradingDay
@@ -582,6 +582,7 @@ async function upsertToDB(
         lastMarketCap: marketCap,
         lastMarketCapDiff: marketCapDiff,
         lastPriceUpdated: normalized.timestamp,
+        lastVolume: normalized.volume,
         latestPrevClose: previousClose || 0,
         latestPrevCloseDate: previousClose ? lastTradingDay : null,
         latestMoversZScore: zScore,

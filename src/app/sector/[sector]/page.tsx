@@ -106,7 +106,7 @@ export default async function SectorPage({ params }: PageProps) {
                       className="border-t border-slate-100 dark:border-slate-800 hover:bg-slate-50/60 dark:hover:bg-slate-950/60"
                     >
                       <td className="px-4 py-2 font-semibold">
-                        <Link className="hover:underline" href={`/company/${t.symbol}`}>
+                        <Link className="hover:underline" href={`/stock/${t.symbol}`}>
                           {t.symbol}
                         </Link>
                       </td>

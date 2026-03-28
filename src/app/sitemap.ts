@@ -55,12 +55,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'weekly',
       priority: 0.7,
     },
+    {
+      url: `${baseUrl}/about`,
+      lastModified: currentDate,
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    },
+    {
+      url: `${baseUrl}/contact`,
+      lastModified: currentDate,
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    },
+    {
+      url: `${baseUrl}/disclaimer`,
+      lastModified: currentDate,
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    },
   ];
 
   // Company pages for all project stocks
   const topTickers = getProjectTickers('pmp');
   const companyPages: MetadataRoute.Sitemap = topTickers.map((ticker) => ({
-    url: `${baseUrl}/company/${ticker}`,
+    url: `${baseUrl}/stock/${ticker}`,
     lastModified: currentDate,
     changeFrequency: 'daily',
     priority: 0.8,

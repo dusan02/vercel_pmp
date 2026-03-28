@@ -47,7 +47,18 @@ export function StructuredData({
       marketCap: companyData.marketCap,
       ...(companyData.sector && { sector: companyData.sector }),
       ...(companyData.industry && { industry: companyData.industry }),
-      url: `${baseUrl}/company/${companyData.ticker}`,
+      url: `${baseUrl}/stock/${companyData.ticker}`,
+    };
+    
+    const financialQuoteSchema = {
+      '@context': 'https://schema.org',
+      '@type': 'FinancialQuote',
+      name: companyData.name,
+      tickerSymbol: companyData.ticker,
+      price: companyData.price,
+      priceCurrency: 'USD',
+      marketCap: companyData.marketCap,
+      url: `${baseUrl}/stock/${companyData.ticker}`,
     };
 
     return (
@@ -56,6 +67,12 @@ export function StructuredData({
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify(companySchema),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(financialQuoteSchema),
           }}
         />
         {breadcrumbSchema && (
