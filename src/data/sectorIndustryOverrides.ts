@@ -50,11 +50,6 @@ export const SECTOR_INDUSTRY_OVERRIDES: Record<string, SectorIndustryOverride> =
     industry: 'Internet Retail',
     name: 'Alibaba Group Holding Limited',
   },
-  AEM: {
-    sector: 'Basic Materials',
-    industry: 'Gold',
-    name: 'Agnico Eagle Mines Limited',
-  },
   BCS: {
     sector: 'Financial Services',
     industry: 'Banks',
@@ -358,5 +353,391 @@ export const SECTOR_INDUSTRY_OVERRIDES: Record<string, SectorIndustryOverride> =
     industry: 'Telecom Services',
     name: 'AT&T Inc.',
   },
-};
 
+  // International companies with "International" sector - need proper sector mapping
+  PUK: {
+    sector: 'Consumer Defensive',
+    industry: 'Beverages - Alcoholic',
+    name: 'Prudential plc',
+  },
+  NTR: {
+    sector: 'Basic Materials',
+    industry: 'Other Industrial Metals & Mining',
+    name: 'Nutrien Ltd.',
+  },
+  GFI: {
+    sector: 'Basic Materials',
+    industry: 'Gold',
+    name: 'Gold Fields Limited',
+  },
+  JD: {
+    sector: 'Consumer Cyclical',
+    industry: 'Internet Retail',
+    name: 'JD.com Inc.',
+  },
+  MT: {
+    sector: 'Basic Materials',
+    industry: 'Other Industrial Metals & Mining',
+    name: 'ArcelorMittal S.A.',
+  },
+  TRI: {
+    sector: 'Industrials',
+    industry: 'Specialty Industrial Machinery',
+    name: 'Thomson Reuters Corporation',
+  },
+  DEO: {
+    sector: 'Consumer Defensive',
+    industry: 'Beverages - Alcoholic',
+    name: 'Diageo plc',
+  },
+  WCN: {
+    sector: 'Industrials',
+    industry: 'Waste Management',
+    name: 'Waste Connections Inc.',
+  },
+  ESLT: {
+    sector: 'Industrials',
+    industry: 'Aerospace & Defense',
+    name: 'Elbit Systems Ltd.',
+  },
+  ARGX: {
+    sector: 'Healthcare',
+    industry: 'Biotechnology',
+    name: 'Argenx SE',
+  },
+  CCEP: {
+    sector: 'Consumer Defensive',
+    industry: 'Beverages - Non-Alcoholic',
+    name: 'Coca-Cola Europacific Partners plc',
+  },
+  AU: {
+    sector: 'Basic Materials',
+    industry: 'Gold',
+    name: 'AngloGold Ashanti Limited',
+  },
+  HLN: {
+    sector: 'Healthcare',
+    industry: 'Drug Manufacturers - General',
+    name: 'Haleon plc',
+  },
+  NOK: {
+    sector: 'Technology',
+    industry: 'Communication Equipment',
+    name: 'Nokia Corporation',
+  },
+  CCJ: {
+    sector: 'Basic Materials',
+    industry: 'Other Industrial Metals & Mining',
+    name: 'Cameco Corporation',
+  },
+  WDS: {
+    sector: 'Energy',
+    industry: 'Oil & Gas Equipment & Services',
+    name: 'Schlumberger Limited',
+  },
+  ASX: {
+    sector: 'Basic Materials',
+    industry: 'Other Industrial Metals & Mining',
+    name: 'Aperam S.A.',
+  },
+  CVE: {
+    sector: 'Energy',
+    industry: 'Oil & Gas Integrated',
+    name: 'Cenovus Energy Inc.',
+  },
+  INFY: {
+    sector: 'Technology',
+    industry: 'Information Technology Services',
+    name: 'Infosys Limited',
+  },
+  WPM: {
+    sector: 'Basic Materials',
+    industry: 'Gold',
+    name: 'Wheaton Precious Metals Corp.',
+  },
+  DB: {
+    sector: 'Financial Services',
+    industry: 'Banks',
+    name: 'Deutsche Bank AG',
+  },
+  NWG: {
+    sector: 'Financial Services',
+    industry: 'Banks',
+    name: 'NatWest Group plc',
+  },
+  RACE: {
+    sector: 'Consumer Cyclical',
+    industry: 'Apparel Manufacturing',
+    name: 'Ferrari N.V.',
+  },
+  RELX: {
+    sector: 'Industrials',
+    industry: 'Specialty Industrial Machinery',
+    name: 'RELX PLC',
+  },
+  IMO: {
+    sector: 'Energy',
+    industry: 'Oil & Gas Integrated',
+    name: 'Imperial Oil Limited',
+  },
+  BNS: {
+    sector: 'Industrials',
+    industry: 'Railroads',
+    name: 'Canadian National Railway Company',
+  },
+  CP: {
+    sector: 'Industrials',
+    industry: 'Railroads',
+    name: 'Canadian Pacific Railway Limited',
+  },
+  MFG: {
+    sector: 'Financial Services',
+    industry: 'Banks',
+    name: 'Mizuho Financial Group Inc.',
+  },
+  ENB: {
+    sector: 'Energy',
+    industry: 'Oil & Gas Midstream',
+    name: 'Enbridge Inc.',
+  },
+  BTI: {
+    sector: 'Consumer Defensive',
+    industry: 'Tobacco',
+    name: 'British American Tobacco p.l.c.',
+  },
+  IBN: {
+    sector: 'Financial Services',
+    industry: 'Banks',
+    name: 'ICICI Bank Limited',
+  },
+  CRH: {
+    sector: 'Basic Materials',
+    industry: 'Construction Materials',
+    name: 'CRH plc',
+  },
+  AEM: {
+    sector: 'Basic Materials',
+    industry: 'Gold',
+    name: 'Agnico Eagle Mines Limited',
+  },
+  APD: {
+    sector: 'Basic Materials',
+    industry: 'Chemicals',
+    name: 'Air Products and Chemicals Inc.',
+  },
+  KMI: {
+    sector: 'Energy',
+    industry: 'Oil & Gas Midstream',
+    name: 'Kinder Morgan Inc.',
+  },
+  ELV: {
+    sector: 'Healthcare',
+    industry: 'Healthcare Plans',
+    name: 'Elevance Health Inc.',
+  },
+  NSC: {
+    sector: 'Industrials',
+    industry: 'Railroads',
+    name: 'Norfolk Southern Corporation',
+  },
+  GBTC: {
+    sector: 'Financial Services',
+    industry: 'Asset Management',
+    name: 'Grayscale Bitcoin Trust',
+  },
+  HLT: {
+    sector: 'Consumer Cyclical',
+    industry: 'Travel Services',
+    name: 'Hilton Worldwide Holdings Inc.',
+  },
+  ET: {
+    sector: 'Energy',
+    industry: 'Oil & Gas Integrated',
+    name: 'Energy Transfer LP',
+  },
+  AEP: {
+    sector: 'Utilities',
+    industry: 'Utilities - Regulated Electric',
+    name: 'American Electric Power Company Inc.',
+  },
+  SPG: {
+    sector: 'Real Estate',
+    industry: 'REIT - Retail',
+    name: 'Simon Property Group Inc.',
+  },
+  REGN: {
+    sector: 'Healthcare',
+    industry: 'Biotechnology',
+    name: 'Regeneron Pharmaceuticals Inc.',
+  },
+  ARES: {
+    sector: 'Financial Services',
+    industry: 'Asset Management',
+    name: 'Ares Management Corporation',
+  },
+  DLR: {
+    sector: 'Real Estate',
+    industry: 'REIT - Industrial',
+    name: 'Digital Realty Trust Inc.',
+  },
+  TEL: {
+    sector: 'Industrials',
+    industry: 'Electrical Equipment & Parts',
+    name: 'TE Connectivity Ltd.',
+  },
+  FIG: {
+    sector: 'Financial Services',
+    industry: 'Investment Services',
+    name: 'Figs Inc.',
+  },
+  WDAY: {
+    sector: 'Technology',
+    industry: 'Software—Application',
+    name: 'Workday Inc.',
+  },
+  PWR: {
+    sector: 'Industrials',
+    industry: 'Construction Services',
+    name: 'Quanta Services Inc.',
+  },
+  ROP: {
+    sector: 'Industrials',
+    industry: 'Specialty Industrial Machinery',
+    name: 'Roper Technologies Inc.',
+  },
+  TRV: {
+    sector: 'Financial Services',
+    industry: 'Insurance',
+    name: 'The Travelers Companies Inc.',
+  },
+  NU: {
+    sector: 'Financial Services',
+    industry: 'Banks',
+    name: 'Nu Holdings Ltd.',
+  },
+  CNI: {
+    sector: 'Industrials',
+    industry: 'Railroads',
+    name: 'Canadian National Railway Company',
+  },
+  AXON: {
+    sector: 'Technology',
+    industry: 'Software—Application',
+    name: 'Axon Enterprise Inc.',
+  },
+  MNST: {
+    sector: 'Consumer Cyclical',
+    industry: 'Beverages - Non-Alcoholic',
+    name: 'Monster Beverage Corporation',
+  },
+  CMG: {
+    sector: 'Consumer Cyclical',
+    industry: 'Restaurants',
+    name: 'Chipotle Mexican Grill Inc.',
+  },
+  CARR: {
+    sector: 'Industrials',
+    industry: 'Aerospace & Defense',
+    name: 'Carrier Global Corporation',
+  },
+  FCX: {
+    sector: 'Basic Materials',
+    industry: 'Other Industrial Metals & Mining',
+    name: 'Freeport-McMoRan Inc.',
+  },
+  TCEHY: {
+    sector: 'Technology',
+    industry: 'Internet Content & Information',
+    name: 'Tencent Holdings Limited',
+  },
+  EXPGF: {
+    sector: 'Energy',
+    industry: 'Oil & Gas Integrated',
+    name: 'Exxon Mobil Corporation',
+  },
+  GLCNF: {
+    sector: 'Basic Materials',
+    industry: 'Other Industrial Metals & Mining',
+    name: 'Glencore plc',
+  },
+  NPSNY: {
+    sector: 'Consumer Cyclical',
+    industry: 'Internet Retail',
+    name: 'Nike Inc.',
+  },
+  GMBXF: {
+    sector: 'Basic Materials',
+    industry: 'Other Industrial Metals & Mining',
+    name: 'Glencore plc',
+  },
+  NGG: {
+    sector: 'Utilities',
+    industry: 'Utilities - Regulated Electric',
+    name: 'National Grid plc',
+  },
+  BMO: {
+    sector: 'Financial Services',
+    industry: 'Banks',
+    name: 'Bank of Montreal',
+  },
+  RY: {
+    sector: 'Financial Services',
+    industry: 'Banks',
+    name: 'Royal Bank of Canada',
+  },
+  HSBC: {
+    sector: 'Financial Services',
+    industry: 'Banks',
+    name: 'HSBC Holdings plc',
+  },
+  TM: {
+    sector: 'Consumer Cyclical',
+    industry: 'Auto Manufacturers',
+    name: 'Toyota Motor Corporation',
+  },
+  MUFG: {
+    sector: 'Financial Services',
+    industry: 'Banks',
+    name: 'Mitsubishi UFJ Financial Group Inc.',
+  },
+  PDD: {
+    sector: 'Consumer Cyclical',
+    industry: 'Internet Retail',
+    name: 'PDD Holdings Inc.',
+  },
+  SAP: {
+    sector: 'Technology',
+    industry: 'Software—Application',
+    name: 'SAP SE',
+  },
+  JCI: {
+    sector: 'Industrials',
+    industry: 'Specialty Industrial Machinery',
+    name: 'Johnson Controls International plc',
+  },
+  MELI: {
+    sector: 'Consumer Cyclical',
+    industry: 'Internet Retail',
+    name: 'MercadoLibre Inc.',
+  },
+  BAM: {
+    sector: 'Financial Services',
+    industry: 'Asset Management',
+    name: 'Brookfield Asset Management Ltd.',
+  },
+  SPOT: {
+    sector: 'Technology',
+    industry: 'Internet Content & Information',
+    name: 'Spotify Technology S.A.',
+  },
+  SONY: {
+    sector: 'Technology',
+    industry: 'Consumer Electronics',
+    name: 'Sony Group Corporation',
+  },
+  TCOM: {
+    sector: 'Consumer Cyclical',
+    industry: 'Travel Services',
+    name: 'Trip.com Group Limited',
+  },
+  };
