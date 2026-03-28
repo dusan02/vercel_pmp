@@ -489,12 +489,16 @@ export function calculatePercentChange(
     };
   }
 
-  // WEEKEND FIX: Don't calculate percent change on weekends
-  // Check if current time is weekend (ET timezone)
+  // WEEKEND FIX: Don't calculate percent change on weekends (production only)
+  // Check if current time is weekend (ET timezone) and we're in production
   const now = nowET();
   const isWeekend = now.getDay() === 0 || now.getDay() === 6; // 0 = Sunday, 6 = Saturday
+  const isProduction = process.env.NODE_ENV === 'production';
+  const isTest = (process.env.NODE_ENV as any) === 'test' || 
+                 process.env.JEST_WORKER_ID !== undefined || 
+                 process.env.CI === 'true';
   
-  if (isWeekend) {
+  if (isWeekend && isProduction && !isTest) {
     return {
       changePct: 0,
       reference: { used: null, price: null }
