@@ -730,6 +730,36 @@ export const SECTOR_INDUSTRY_OVERRIDES: Record<string, SectorIndustryOverride> =
     industry: 'Internet Content & Information',
     name: 'Spotify Technology S.A.',
   },
+  NXP: {
+    sector: 'Technology',
+    industry: 'Semiconductors',
+    name: 'NXP Semiconductors N.V.',
+  },
+  CM: {
+    sector: 'Financial Services',
+    industry: 'Banks',
+    name: 'Canadian Imperial Bank of Commerce',
+  },
+  ALC: {
+    sector: 'Healthcare',
+    industry: 'Medical Devices',
+    name: 'Alcon Inc.',
+  },
+  HMC: {
+    sector: 'Consumer Cyclical',
+    industry: 'Auto Manufacturers',
+    name: 'Honda Motor Co., Ltd.',
+  },
+  CRCL: {
+    sector: 'Financial Services',
+    industry: 'Asset Management',
+    name: 'Circle Internet Group, Inc.',
+  },
+  FERG: {
+    sector: 'Industrials',
+    industry: 'Specialty Industrial Machinery',
+    name: 'Ferguson Enterprises Inc.',
+  },
   SONY: {
     sector: 'Technology',
     industry: 'Consumer Electronics',
