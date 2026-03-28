@@ -489,6 +489,18 @@ export function calculatePercentChange(
     };
   }
 
+  // WEEKEND FIX: Don't calculate percent change on weekends
+  // Check if current time is weekend (ET timezone)
+  const now = nowET();
+  const isWeekend = now.getDay() === 0 || now.getDay() === 6; // 0 = Sunday, 6 = Saturday
+  
+  if (isWeekend) {
+    return {
+      changePct: 0,
+      reference: { used: null, price: null }
+    };
+  }
+
   let referencePrice: number | null = null;
   let referenceUsed: 'previousClose' | 'regularClose' | null = null;
 
