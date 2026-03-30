@@ -82,14 +82,17 @@ if redis-cli ping 2>/dev/null | grep -q "PONG"; then
     fail "Universe: EMPTY! Run: ./node_modules/.bin/tsx scripts/populate-universe.ts"
   fi
 
-  # Check recent price keys in Redis
-  PRICE_KEYS=$(redis-cli KEYS "price:*:live" 2>/dev/null | wc -l)
-  if [ "$PRICE_KEYS" -gt 50 ]; then
-    ok "Redis price keys: ${PRICE_KEYS} live prices cached"
-  elif [ "$PRICE_KEYS" -gt 0 ]; then
-    warn "Redis price keys: only ${PRICE_KEYS} live prices (low)"
+  # Check recent price keys in Redis (all sessions: pre/live/after)
+  PRE_KEYS=$(redis-cli KEYS "price:*:pre" 2>/dev/null | wc -l | tr -d ' ')
+  LIVE_KEYS=$(redis-cli KEYS "price:*:live" 2>/dev/null | wc -l | tr -d ' ')
+  AFTER_KEYS=$(redis-cli KEYS "price:*:after" 2>/dev/null | wc -l | tr -d ' ')
+  TOTAL_PRICE_KEYS=$((PRE_KEYS + LIVE_KEYS + AFTER_KEYS))
+  if [ "$TOTAL_PRICE_KEYS" -gt 50 ]; then
+    ok "Redis price keys: ${TOTAL_PRICE_KEYS} total (pre:${PRE_KEYS} live:${LIVE_KEYS} after:${AFTER_KEYS})"
+  elif [ "$TOTAL_PRICE_KEYS" -gt 0 ]; then
+    warn "Redis price keys: only ${TOTAL_PRICE_KEYS} total (pre:${PRE_KEYS} live:${LIVE_KEYS} after:${AFTER_KEYS}) - building up"
   else
-    info "Redis price keys: 0 live prices (normal outside trading hours)"
+    info "Redis price keys: 0 (normal if market just opened or off-hours)"
   fi
 else
   fail "Redis is NOT responding!"
@@ -140,21 +143,24 @@ echo -e "${BOLD}⚙️  WORKER ACTIVITY (last 5 min)${NC}"
 LOG_FILE="/var/www/premarketprice/logs/pm2/polygon-worker-out-1.log"
 if [ -f "$LOG_FILE" ]; then
   LAST_LOG=$(tail -n 1 "$LOG_FILE" | awk '{print $1, $2}')
-  INGEST_COUNT=$(tail -n 50 "$LOG_FILE" | grep -c "snapshot batch\|Ingesting\|tickers processed" 2>/dev/null || echo 0)
-  SKIP_COUNT=$(tail -n 10 "$LOG_FILE" | grep -c "skipping ingest\|Weekend/Holiday" 2>/dev/null || echo 0)
-  ERROR_COUNT=$(tail -n 50 "$LOG_FILE" | grep -c "ERROR\|error\|failed" 2>/dev/null || echo 0)
+  INGEST_COUNT=$(tail -n 50 "$LOG_FILE" | grep -c "snapshot batch\|Ingesting\|tickers processed\|Fetched shares" 2>/dev/null; true)
+  INGEST_COUNT=${INGEST_COUNT:-0}
+  SKIP_COUNT=$(tail -n 10 "$LOG_FILE" | grep -c "skipping ingest\|Weekend/Holiday" 2>/dev/null; true)
+  SKIP_COUNT=${SKIP_COUNT:-0}
+  ERROR_COUNT=$(tail -n 50 "$LOG_FILE" | grep -c "ERROR\|error\|failed" 2>/dev/null; true)
+  ERROR_COUNT=${ERROR_COUNT:-0}
   
   info "Last log entry: $LAST_LOG"
   
-  if [ "$SKIP_COUNT" -gt 0 ]; then
+  if [ "$SKIP_COUNT" -gt 0 ] 2>/dev/null; then
     warn "Worker is skipping ingest (market closed / off-hours)"
-  elif [ "$INGEST_COUNT" -gt 0 ]; then
+  elif [ "$INGEST_COUNT" -gt 0 ] 2>/dev/null; then
     ok "Worker actively ingesting data (${INGEST_COUNT} events in last 50 lines)"
   else
     warn "No recent ingest activity detected"
   fi
 
-  if [ "$ERROR_COUNT" -gt 5 ]; then
+  if [ "$ERROR_COUNT" -gt 5 ] 2>/dev/null; then
     fail "High error count in recent logs: ${ERROR_COUNT} errors"
     info "Run: pm2 logs pmp-polygon-worker --lines 30 --err"
   fi
@@ -165,10 +171,13 @@ fi
 # Recent error log
 ERR_FILE="/var/www/premarketprice/logs/pm2/polygon-worker-error-1.log"
 if [ -f "$ERR_FILE" ]; then
-  RECENT_ERRORS=$(tail -n 20 "$ERR_FILE" | grep -c "Error\|error\|P2025\|ECONNREFUSED" 2>/dev/null || echo 0)
-  if [ "$RECENT_ERRORS" -gt 0 ]; then
-    warn "Recent errors in error log (${RECENT_ERRORS} lines) - check: pm2 logs pmp-polygon-worker --err"
-  else  
+  RECENT_ERRORS=$(tail -n 20 "$ERR_FILE" | grep -c "Error\|error\|P2025\|ECONNREFUSED" 2>/dev/null; true)
+  RECENT_ERRORS=${RECENT_ERRORS:-0}
+  # Only warn if errors are NEW (last 10 min)
+  RECENT_TS=$(tail -n 5 "$ERR_FILE" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}' | tail -1)
+  if [ "$RECENT_ERRORS" -gt 0 ] 2>/dev/null; then
+    warn "Errors in error log (${RECENT_ERRORS} lines, last: ${RECENT_TS:-unknown})"
+  else
     ok "No critical errors in recent error log"
   fi
 fi
