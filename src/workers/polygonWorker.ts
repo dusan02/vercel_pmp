@@ -530,12 +530,25 @@ async function upsertToDB(
         && lastTradingDay.getTime() < existingTicker.latestPrevCloseDate.getTime();
       if (previousClose && existingTicker && !skipPrevCloseIsNewer
         && (!existingTicker.latestPrevClose || previousClose !== existingTicker.latestPrevClose)) {
-        await prisma.ticker.update({
+        await prisma.ticker.upsert({
           where: { symbol },
-          data: {
+          update: {
             latestPrevClose: previousClose,
             latestPrevCloseDate: lastTradingDay,
             updatedAt: new Date()
+          },
+          create: {
+            symbol,
+            latestPrevClose: previousClose,
+            latestPrevCloseDate: lastTradingDay,
+            updatedAt: new Date(),
+            lastPrice: 0,
+            lastChangePct: 0,
+            lastMarketCap: 0,
+            lastMarketCapDiff: 0,
+            lastVolume: 0,
+            sector: 'Unknown',
+            industry: 'Unknown'
           }
         });
       }
@@ -1422,6 +1435,27 @@ export async function bootstrapPreviousCloses(
             );
           }
 
+          // Ensure Ticker exists before writing DailyRef (FK constraint: DailyRef -> Ticker)
+          await dbWriteRetry(
+            () => prisma.ticker.upsert({
+              where: { symbol },
+              update: { latestPrevClose: prevClose, latestPrevCloseDate: actualPrevTradingDay },
+              create: {
+                symbol,
+                latestPrevClose: prevClose,
+                latestPrevCloseDate: actualPrevTradingDay,
+                lastPrice: 0,
+                lastChangePct: 0,
+                lastMarketCap: 0,
+                lastMarketCapDiff: 0,
+                lastVolume: 0,
+                sector: 'Unknown',
+                industry: 'Unknown',
+              }
+            }),
+            `ticker.upsert(prevClose):${symbol}`
+          );
+
           await dbWriteRetry(
             () => prisma.dailyRef.upsert({
               where: { symbol_date: { symbol, date: calendarDateET } },
@@ -1429,14 +1463,6 @@ export async function bootstrapPreviousCloses(
               create: { symbol, date: calendarDateET, previousClose: prevClose }
             }),
             `dailyRef.upsert(todayPrevClose):${symbol}`
-          );
-
-          await dbWriteRetry(
-            () => prisma.ticker.update({
-              where: { symbol },
-              data: { latestPrevClose: prevClose, latestPrevCloseDate: actualPrevTradingDay }
-            }),
-            `ticker.update(prevClose):${symbol}`
           );
         } else {
           failedCount++;
