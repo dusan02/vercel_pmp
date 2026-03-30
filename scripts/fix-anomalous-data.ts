@@ -101,35 +101,53 @@ async function fixAll() {
     unknownFixed++;
   }
 
-  // ── 4. Reset +999.99% anomalous percentChange ──────────────────────────
-  console.log('\n📌 Step 4: Resetting anomalous percent changes (>200%)...');
-  const anomalous = await prisma.ticker.findMany({
-    where: {
-      OR: [
-        { percentChange: { gt: 200 } },
-        { percentChange: { lt: -90 } },
-      ]
-    },
-    select: { symbol: true, percentChange: true, prevClose: true, currentPrice: true },
+  // ── 4. Reset anomalous lastChangePct ─────────────────────────────────
+  // Schema fields: lastChangePct (Float?), latestPrevClose (Float?), lastPrice (Float?)
+  console.log('\n📌 Step 4: Resetting anomalous lastChangePct (>200% or <-90%)...');
+
+  const allForPrice = await prisma.ticker.findMany({
+    select: { symbol: true, lastChangePct: true, latestPrevClose: true, lastPrice: true },
   });
-  console.log(`  Found ${anomalous.length} tickers with anomalous % change`);
+
+  const anomalous = allForPrice.filter(t =>
+    t.lastChangePct !== null &&
+    (t.lastChangePct > 200 || t.lastChangePct < -90)
+  );
+  console.log(`  Found ${anomalous.length} tickers with anomalous lastChangePct`);
 
   let priceFixed = 0;
   for (const t of anomalous) {
-    // If prevClose is missing/zero: percent change is invalid → reset to 0
-    const prevClose = t.prevClose ?? 0;
-    const shouldReset = prevClose === 0 || prevClose === null;
-    if (shouldReset) {
+    const prevClose = t.latestPrevClose ?? 0;
+    if (prevClose === 0) {
+      // No valid prevClose → percent change is meaningless → reset to 0
       await prisma.ticker.update({
         where: { symbol: t.symbol },
-        data: { percentChange: 0, updatedAt: new Date() },
+        data: { lastChangePct: 0, updatedAt: new Date() },
       });
-      console.log(`  🔧 ${t.symbol.padEnd(8)} percentChange=${t.percentChange?.toFixed(2)}% reset to 0 (prevClose=${prevClose})`);
+      console.log(`  🔧 ${t.symbol.padEnd(8)} ${t.lastChangePct?.toFixed(2)}% → 0 (no prevClose, price=${t.lastPrice})`);
       priceFixed++;
     } else {
-      // prevClose exists but change is still >200% – suspicious price data
-      console.log(`  ⚠️  ${t.symbol.padEnd(8)} percentChange=${t.percentChange?.toFixed(2)}% (price=${t.currentPrice}, prevClose=${prevClose}) - investigate`);
+      // Has prevClose but still >200% – suspicious, log only
+      console.log(`  ⚠️  ${t.symbol.padEnd(8)} ${t.lastChangePct?.toFixed(2)}% (price=${t.lastPrice}, prevClose=${prevClose}) - leaving as-is`);
     }
+  }
+
+  // Also reset anomalous SessionPrice.changePct values
+  console.log('\n📌 Step 4b: Resetting anomalous SessionPrice.changePct...');
+  const anomalousSession = await prisma.sessionPrice.findMany({
+    where: { date: { gte: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) } },
+    select: { id: true, symbol: true, changePct: true, session: true },
+  });
+  const badSessions = anomalousSession.filter(s => s.changePct > 200 || s.changePct < -90);
+  console.log(`  Found ${badSessions.length} SessionPrice rows with anomalous changePct`);
+  let sessionFixed = 0;
+  for (const s of badSessions) {
+    await prisma.sessionPrice.update({
+      where: { id: s.id },
+      data: { changePct: 0 },
+    });
+    console.log(`  🔧 ${s.symbol.padEnd(8)} [${s.session}] ${s.changePct.toFixed(2)}% → 0`);
+    sessionFixed++;
   }
 
   // ── 5. Remove truly de-listed tickers from Redis universe ─────────────
