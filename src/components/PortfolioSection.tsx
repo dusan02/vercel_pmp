@@ -24,7 +24,6 @@ import {
   BUTTON_SECONDARY
 } from '@/lib/utils/buttonStyles';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
-import { SEOContent } from './SEOContent';
 
 interface PortfolioSectionProps {
   portfolioStocks: StockData[];
@@ -422,7 +421,6 @@ export function PortfolioSection({
         // forceTable={true} // REMOVED to enable mobile cards
         tfootRows={footerRow}
       />
-      <SEOContent />
     </section>
   );
 }

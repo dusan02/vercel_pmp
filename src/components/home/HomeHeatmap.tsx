@@ -4,7 +4,6 @@ import { SectionErrorBoundary } from '../SectionErrorBoundary';
 import { HeatmapSkeleton } from '../SectionSkeleton';
 
 // CRITICAL: Heatmap je prvá obrazovka na mobile - prioritizuj načítanie
-// Note: Dynamic import sa načíta okamžite keď je komponent renderovaný
 const HeatmapPreview = dynamic(
     () => import('../HeatmapPreview').then((mod) => mod.HeatmapPreview),
     {
@@ -13,20 +12,13 @@ const HeatmapPreview = dynamic(
     }
 );
 
-const SEOContent = dynamic(
-    () => import('../SEOContent').then((mod) => mod.SEOContent),
-    { ssr: true }
-);
-
 interface HomeHeatmapProps {
     wrapperClass?: string;
-    activeView?: string | undefined; // Signalizuje, či je heatmap aktívny view
+    activeView?: string | undefined;
     onTileClick?: (ticker: string) => void;
 }
 
 export function HomeHeatmap({ wrapperClass, activeView, onTileClick }: HomeHeatmapProps) {
-    // CRITICAL: Add explicit content wrapper for proper flex chain
-    // This ensures containerRef gets correct height from position: fixed parent
     return (
         <SectionErrorBoundary sectionName="Heatmap">
             <div className="screen-heatmap-content flex flex-col h-full w-full">
@@ -36,10 +28,6 @@ export function HomeHeatmap({ wrapperClass, activeView, onTileClick }: HomeHeatm
                         {...(wrapperClass !== undefined ? { wrapperClass } : {})}
                         {...(onTileClick !== undefined ? { onTileClick } : {})}
                     />
-                </div>
-                {/* SEO Content at the bottom of the screen to avoid interfering with heatmap height calculations */}
-                <div className="mt-4 pb-8">
-                    <SEOContent />
                 </div>
             </div>
         </SectionErrorBoundary>

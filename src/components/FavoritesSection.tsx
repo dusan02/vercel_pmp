@@ -15,7 +15,6 @@ import CompanyLogo from './CompanyLogo';
 import { getCompanyName } from '@/lib/companyNames';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { Star } from 'lucide-react';
-import { SEOContent } from './SEOContent';
 import { AddFavoriteSearch } from './AddFavoriteSearch';
 
 interface FavoritesSectionProps {
@@ -252,7 +251,6 @@ export function FavoritesSection({
             onClick={() => handleRowClick(stock)}
           />
         )}
-        footer={<SEOContent />}
       />
     </section>
   );

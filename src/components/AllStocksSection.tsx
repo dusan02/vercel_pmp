@@ -16,7 +16,6 @@ import { formatSectorName, formatBillions, formatMarketCapDiff, formatPrice, for
 import CompanyLogo from './CompanyLogo';
 import { getCompanyName } from '@/lib/companyNames';
 import { Star } from 'lucide-react';
-import { SEOContent } from './SEOContent';
 import { useRouter } from 'next/navigation';
 
 interface AllStocksSectionProps {
@@ -460,7 +459,6 @@ export const AllStocksSection = React.memo(function AllStocksSection({
             onClick={() => handleRowClick(stock)}
           />
         )}
-        footer={<SEOContent />}
       />
 
 
