@@ -55,13 +55,24 @@ async function remediate() {
     try {
       const details = await polygon.fetchTickerDetails(t.symbol);
       
+      let is404 = false;
       if (!details) {
-        console.warn(`  ⚠️ Could not fetch details for ${t.symbol}. Skipping.`);
-        continue;
+        // Double check if it's a 404 Not Found
+        try {
+           const res = await fetch(`https://api.polygon.io/v3/reference/tickers/${t.symbol}?apiKey=${process.env.POLYGON_API_KEY}`);
+           if (res.status === 404) {
+               is404 = true;
+           }
+        } catch(e) {}
+
+        if (!is404) {
+           console.warn(`  ⚠️ Could not fetch details for ${t.symbol}. Skipping.`);
+           continue;
+        }
       }
 
-      // 2. Handle De-listed / Inactive tickers
-      if (details.active === false) {
+      // 2. Handle De-listed / Inactive tickers (including 404s)
+      if (is404 || (details && details.active === false)) {
         console.log(`  🗑️ ${t.symbol} is INACTIVE. Deleting...`);
         if (!isDryRun) {
           await prisma.ticker.delete({ where: { symbol: t.symbol } });
@@ -71,23 +82,23 @@ async function remediate() {
       }
 
       // 3. Update Metadata
-      let sector = details.sic_description || t.sector;
-      let industry = details.sic_description || t.industry;
+      let sector = details?.sic_description || t.sector;
+      let industry = details?.sic_description || t.industry;
       
       // Attempt to map SIC to our Sector system if we have a mapper (future enhancement)
       // For now, let's use the SIC description as a high-quality fallback
       
       if (sector === 'Unknown' || sector === 'Other' || !sector) {
         // Fallback to existing logic if SIC is generic
-        if (details.sic_description) {
+        if (details?.sic_description) {
            sector = details.sic_description;
            industry = details.sic_description;
         }
       }
 
       // Check for better names
-      const name = details.name || t.name;
-      const shares = details.weighted_shares_outstanding || details.share_class_shares_outstanding || t.sharesOutstanding;
+      const name = details?.name || t.name;
+      const shares = details?.weighted_shares_outstanding || details?.share_class_shares_outstanding || t.sharesOutstanding;
 
       // Normalize if possible
       const normalizedSector = sector; // Future: SIC to Sector Map
