@@ -24,8 +24,15 @@ export function detectSession(etNow?: Date): 'pre' | 'live' | 'after' | 'closed'
   const dayOfWeek = toET(now).weekday; // 0 = Sunday, 6 = Saturday (ET)
 
   // Check if weekend
-  if (dayOfWeek === 0 || dayOfWeek === 6) {
+  if (dayOfWeek === 6) { // Saturday in ET
     return 'closed';
+  }
+  
+  if (dayOfWeek === 0) { // Sunday in ET
+    // Futures and some international stocks start moving at 18:00 ET on Sunday
+    if (currentTimeInMinutes < 18 * 60) {
+      return 'closed';
+    }
   }
 
   // Check if market holiday

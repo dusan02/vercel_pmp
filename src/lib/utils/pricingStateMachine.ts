@@ -33,11 +33,13 @@ export function getPricingState(etNow?: Date): PricingStateContext {
   const session = detectSession(now);
   const et = toET(now);
   const dayOfWeek = et.weekday;
-  const isWeekendOrHoliday = dayOfWeek === 0 || dayOfWeek === 6 || isMarketHoliday(now);
-
   const hours = et.hour;
   const minutes = et.minute;
   const timeInMinutes = hours * 60 + minutes;
+
+  const isSaturday = dayOfWeek === 6;
+  const isSundayBeforeOpening = dayOfWeek === 0 && (timeInMinutes < 18 * 60);
+  const isWeekendOrHoliday = isSaturday || isSundayBeforeOpening || isMarketHoliday(now);
 
   // WEEKEND/HOLIDAY: Frozen, no updates
   if (isWeekendOrHoliday) {

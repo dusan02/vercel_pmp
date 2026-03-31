@@ -9,6 +9,7 @@ conn.on('ready', () => {
         'git clean -fd',
         'git pull origin main',
         'cp ecosystem.config.cjs ecosystem.config.cjs.backup 2>/dev/null || true',
+        'rm -rf .next',
         'npm run build',
         'pm2 start ecosystem.config.cjs --env production --update-env'
     ];
