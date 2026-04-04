@@ -489,21 +489,10 @@ export function calculatePercentChange(
     };
   }
 
-  // WEEKEND FIX: Don't calculate percent change on weekends (production only)
-  // Check if current time is weekend (ET timezone) and we're in production
-  const now = nowET();
-  const isWeekend = now.getDay() === 0 || now.getDay() === 6; // 0 = Sunday, 6 = Saturday
-  const isProduction = process.env.NODE_ENV === 'production';
-  const isTest = (process.env.NODE_ENV as any) === 'test' || 
-                 process.env.JEST_WORKER_ID !== undefined || 
-                 process.env.CI === 'true';
-  
-  if (isWeekend && isProduction && !isTest) {
-    return {
-      changePct: 0,
-      reference: { used: null, price: null }
-    };
-  }
+  // Weekend % change is now handled by Solution B:
+  // - pricingStateMachine: WEEKEND_FROZEN has canIngest:true, canOverwrite:false
+  // - upsertToDB: skips DB write on WEEKEND_FROZEN, returns changePct for Redis
+  // No guard needed here — calculate normally for all sessions.
 
   let referencePrice: number | null = null;
   let referenceUsed: 'previousClose' | 'regularClose' | null = null;
