@@ -119,13 +119,13 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
 
                         {/* Left: Stats — label + value inline */}
                         <div className="w-72 lg:w-80 shrink-0 px-6 lg:px-8 py-5 border-r border-gray-100 dark:border-gray-700/60">
-                            <dl className="space-y-2">
+                            <dl className="space-y-3">
                                 {stats.map(({ label, value }) => (
-                                    <div key={label} className="flex items-baseline gap-3">
-                                        <dt className="text-[10px] uppercase tracking-widest font-semibold text-gray-400 dark:text-gray-500 shrink-0 w-[88px]">
+                                    <div key={label}>
+                                        <dt className="text-[10px] uppercase tracking-widest font-semibold text-gray-400 dark:text-gray-500 leading-none mb-0.5">
                                             {label}
                                         </dt>
-                                        <dd className={`text-sm font-semibold leading-snug min-w-0 text-left ${value ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-gray-600'}`}>
+                                        <dd className={`text-sm font-semibold leading-snug ${value ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-gray-600'}`}>
                                             {value || 'N/A'}
                                         </dd>
                                     </div>
