@@ -82,9 +82,9 @@ describe('pricingStateMachine', () => {
       const state = getPricingState(etNow);
 
       expect(state.state).toBe(PriceState.WEEKEND_FROZEN);
-      expect(state.canIngest).toBe(false);
+      expect(state.canIngest).toBe(true);   // Solution B: fetch → Redis, skip DB
       expect(state.canOverwrite).toBe(false);
-      expect(state.useFrozenPrice).toBe(true);
+      expect(state.useFrozenPrice).toBe(false);
     });
 
     it('should return WEEKEND_FROZEN for holiday', () => {
@@ -95,7 +95,7 @@ describe('pricingStateMachine', () => {
       const state = getPricingState(etNow);
 
       expect(state.state).toBe(PriceState.WEEKEND_FROZEN);
-      expect(state.canIngest).toBe(false);
+      expect(state.canIngest).toBe(true);   // Solution B: fetch → Redis, skip DB
       expect(state.canOverwrite).toBe(false);
     });
   });
