@@ -89,7 +89,10 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
                             priority
                         />
                         <div className="min-w-0">
-                            <div className="flex items-center gap-2.5 mb-1 flex-wrap">
+                            <h1 className="text-xl lg:text-2xl font-bold text-gray-900 dark:text-white leading-tight tracking-tight">
+                                {companyName}
+                            </h1>
+                            <div className="flex items-center gap-2.5 mt-1 flex-wrap">
                                 <span className="px-2 py-0.5 bg-blue-600 text-white text-[10px] font-bold rounded tracking-widest uppercase">
                                     {ticker}
                                 </span>
@@ -104,9 +107,6 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
                                     </a>
                                 )}
                             </div>
-                            <h1 className="text-xl lg:text-2xl font-bold text-gray-900 dark:text-white leading-tight tracking-tight">
-                                {companyName}
-                            </h1>
                         </div>
                     </div>
 
