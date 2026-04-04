@@ -86,7 +86,7 @@ export default function FinancialChart({ statements }: FinancialChartProps) {
         // Format data for Recharts
         return sorted.map(s => {
             // Vypočítaj EBITDA ak nie je priamo dostupné (EBITDA ≈ EBIT + D&A, ale D&A nemáme)
-            const ebitdaValue = s.ebit ? s.ebit * 1.1 : 0; // Jednoduchý odhad EBITDA ≈ EBIT * 1.1
+            const ebitdaValue = (s.ebit && s.ebit > 0) ? s.ebit * 1.1 : 0; // EBITDA ≈ EBIT*1.1 only when positive (impairments excluded)
             
             const qMatch = s.fiscalPeriod?.match(/Q(\d)/);
             const label = qMatch
