@@ -88,9 +88,13 @@ export default function FinancialChart({ statements }: FinancialChartProps) {
             // Vypočítaj EBITDA ak nie je priamo dostupné (EBITDA ≈ EBIT + D&A, ale D&A nemáme)
             const ebitdaValue = s.ebit ? s.ebit * 1.1 : 0; // Jednoduchý odhad EBITDA ≈ EBIT * 1.1
             
+            const qMatch = s.fiscalPeriod?.match(/Q(\d)/);
+            const label = qMatch
+                ? `Q${qMatch[1]}'${String(s.fiscalYear).slice(2)}`
+                : String(s.fiscalYear);
             return {
-                name: `${s.fiscalYear} ${s.fiscalPeriod}`,
-                date: new Date(s.endDate).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }),
+                name: label,
+                date: label,
                 revenue: s.revenue ? s.revenue / 1e6 : 0, // Convert to millions for readability
                 netIncome: s.netIncome ? s.netIncome / 1e6 : 0,
                 ebitda: ebitdaValue / 1e6,
@@ -217,16 +221,20 @@ export default function FinancialChart({ statements }: FinancialChartProps) {
                 <ResponsiveContainer width="100%" height={320}>
                     <BarChart
                         data={chartData}
-                        margin={{ top: 10, right: 10, left: 10, bottom: 20 }}
+                        margin={{ top: 10, right: 10, left: 10, bottom: 36 }}
                         barGap={2}
                     >
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" className="dark:stroke-gray-700" />
                         <XAxis 
-                            dataKey="date" 
-                            tick={{ fontSize: 12, fill: '#6B7280' }} 
+                            dataKey="date"
+                            tick={{ fontSize: 12, fill: '#6B7280', fontWeight: 500 }}
                             axisLine={false}
                             tickLine={false}
-                            dy={10}
+                            interval={0}
+                            angle={-35}
+                            textAnchor="end"
+                            dy={4}
+                            dx={-4}
                         />
                         <YAxis 
                             tickFormatter={formatYAxis} 
