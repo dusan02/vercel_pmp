@@ -133,30 +133,21 @@ export default function FinancialChart({ statements }: FinancialChartProps) {
         );
     }
 
-    // Pre-compute which data indices should show the year label (first occurrence of each year)
-    const yearLabelIndices = React.useMemo(() => {
-        const indices = new Set<number>();
-        let lastYear = '';
-        chartData.forEach((d, i) => {
-            const m = (d.date as string)?.match(/Q\d'(\d{2})/);
-            const yr = m ? `20${m[1]}` : '';
-            if (yr && yr !== lastYear) { indices.add(i); lastYear = yr; }
-        });
-        return indices;
-    }, [chartData]);
-
-    // Custom tick for quarterly mode: Q label top, year below at first occurrence of each year
+    // Custom tick for quarterly mode: Q label top, year below when year changes
     const CustomQuarterTick = ({ x, y, payload, index }: any) => {
         const val: string = payload?.value ?? '';
         const m = val.match(/Q(\d)'(\d{2})/);
         if (!m) return <text x={x} y={y + 12} textAnchor="middle" fill="#6B7280" fontSize={11}>{val}</text>;
         const q = `Q${m[1]}`;
         const year = `20${m[2]}`;
+        const prevDate = index > 0 ? (chartData[index - 1]?.date as string) : '';
+        const prevYear = prevDate?.match(/Q\d'(\d{2})/)?.[1];
+        const showYear = index === 0 || prevYear !== m[2];
         return (
             <g transform={`translate(${x},${y})`}>
                 <text x={0} y={14} textAnchor="middle" fill="#6B7280" fontSize={11} fontWeight={500}>{q}</text>
-                {yearLabelIndices.has(index) && (
-                    <text x={0} y={28} textAnchor="middle" fill="#9CA3AF" fontSize={10}>{year}</text>
+                {showYear && (
+                    <text x={0} y={30} textAnchor="middle" fill="#9CA3AF" fontSize={10} fontWeight={500}>{year}</text>
                 )}
             </g>
         );
