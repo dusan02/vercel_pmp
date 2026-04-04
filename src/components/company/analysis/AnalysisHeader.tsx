@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import CompanyLogo from '@/components/CompanyLogo';
 import type { AnalysisData } from '@/components/company/AnalysisTab';
+import { formatMarketCap as fmtMcap } from '@/lib/utils/format';
 
-/** Format market cap stored in billions (e.g. 3735.92 → $3.74T, 245.8 → $245.8B) */
+/** Wraps shared formatMarketCap — adds $ prefix, returns null for empty */
 export function formatMarketCap(val: number | null | undefined): string | null {
     if (!val || val <= 0) return null;
-    if (val >= 1000) return `$${(val / 1000).toFixed(2)}T`;
-    return `$${val.toFixed(1)}B`;
+    const raw = fmtMcap(val);
+    return raw && raw !== '0.00' ? `$${raw}` : null;
 }
 
 export function SearchTickerBar({ currentTicker }: { currentTicker: string }) {
@@ -124,7 +125,7 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
                                         <dt className="text-[10px] uppercase tracking-widest font-semibold text-gray-400 dark:text-gray-500 shrink-0 w-[88px]">
                                             {label}
                                         </dt>
-                                        <dd className={`text-sm font-semibold leading-snug min-w-0 ${value ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-gray-600'}`}>
+                                        <dd className={`text-sm font-semibold leading-snug min-w-0 text-left ${value ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-gray-600'}`}>
                                             {value || 'N/A'}
                                         </dd>
                                     </div>
