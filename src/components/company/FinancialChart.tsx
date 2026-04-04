@@ -221,7 +221,7 @@ export default function FinancialChart({ statements }: FinancialChartProps) {
                 <ResponsiveContainer width="100%" height={320}>
                     <BarChart
                         data={chartData}
-                        margin={{ top: 10, right: 10, left: 10, bottom: 36 }}
+                        margin={{ top: 10, right: 10, left: 10, bottom: 20 }}
                         barGap={2}
                     >
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" className="dark:stroke-gray-700" />
@@ -231,10 +231,7 @@ export default function FinancialChart({ statements }: FinancialChartProps) {
                             axisLine={false}
                             tickLine={false}
                             interval={0}
-                            angle={-35}
-                            textAnchor="end"
-                            dy={4}
-                            dx={-4}
+                            dy={6}
                         />
                         <YAxis 
                             tickFormatter={formatYAxis} 
