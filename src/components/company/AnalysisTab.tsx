@@ -115,23 +115,21 @@ export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabP
 
     if (loading) return <LoadingSkeleton />;
 
-    if (!data) return (
-        <div className="flex flex-col items-center justify-center p-12 text-center bg-gray-50 dark:bg-gray-900/50 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-800">
-            <div className="text-4xl mb-4">🔍</div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No Analysis Yet</h3>
-            <p className="text-gray-500 dark:text-gray-400 max-w-sm mb-6">
-                We haven&apos;t performed a deep fundamental analysis for {ticker} yet.
-            </p>
-            <button
-                onClick={runDeepAnalysis}
-                disabled={analyzing}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-xl transition-all disabled:opacity-50"
-            >
-                {analyzing ? 'Starting Analysis...' : 'Run Deep Analysis'}
-            </button>
-            {error && <p className="text-red-500 mt-4 text-sm font-medium">{error}</p>}
-        </div>
-    );
+    if (!data) {
+        if (analyzing) return <LoadingSkeleton />;
+        if (error) return (
+            <div className="flex flex-col items-center justify-center p-12 text-center bg-red-50 dark:bg-red-900/10 rounded-2xl border border-red-200 dark:border-red-800">
+                <p className="text-red-600 dark:text-red-400 font-medium mb-3">{error}</p>
+                <button
+                    onClick={runDeepAnalysis}
+                    className="text-sm bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-5 rounded-lg transition-colors"
+                >
+                    Retry
+                </button>
+            </div>
+        );
+        return <LoadingSkeleton />;
+    }
 
     const isTrap = (data.healthScore !== null && data.healthScore < 40) ||
         (data.piotroskiScore !== null && data.piotroskiScore !== undefined && data.piotroskiScore <= 2) ||

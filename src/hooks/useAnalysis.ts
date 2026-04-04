@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { AnalysisData } from '../components/company/AnalysisTab';
 
 export function useAnalysis(ticker: string) {
@@ -15,6 +15,7 @@ export function useAnalysis(ticker: string) {
     const [openPanel, setOpenPanel] = useState<'health' | 'profitability' | 'valuation' | null>(null);
     
     const [analysisStep, setAnalysisStep] = useState<string>('');
+    const autoTriggered = useRef(false);
 
     const togglePanel = (p: 'health' | 'profitability' | 'valuation') => setOpenPanel(prev => prev === p ? null : p);
 
@@ -74,8 +75,17 @@ export function useAnalysis(ticker: string) {
     };
 
     useEffect(() => {
+        autoTriggered.current = false;
         fetchAnalysis();
     }, [ticker]);
+
+    // Auto-run deep analysis when no cached data exists for this ticker
+    useEffect(() => {
+        if (!loading && data === null && !analyzing && !error && !autoTriggered.current) {
+            autoTriggered.current = true;
+            runDeepAnalysis();
+        }
+    }, [loading, data, analyzing, error]);
 
     const handleAddComparison = async (symbol?: string) => {
         const target = (symbol || compareInput).toUpperCase().trim();
