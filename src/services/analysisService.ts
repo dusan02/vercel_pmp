@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/db/prisma';
 import { aiService } from './aiService';
 import { NotificationService } from './notificationService';
-import { getSectorFromSic } from '@/lib/utils/sectorMapping';
+import { getSectorFromSic, toTitleCase } from '@/lib/utils/sectorMapping';
 
 export class AnalysisService {
     private static readonly POLYGON_API_KEY = process.env.POLYGON_API_KEY;
@@ -150,7 +150,8 @@ export class AnalysisService {
                 employees: res.total_employees || null,
                 websiteUrl: res.homepage_url || null,
                 // sic_description is the human-readable industry name (e.g. "Semiconductors and Related Devices")
-                industry: res.sic_description || (res.sic_code ? `SIC: ${res.sic_code}` : null),
+                // Convert ALL CAPS SIC description to Title Case (e.g. "AIR COURIER SERVICES" → "Air Courier Services")
+                industry: res.sic_description ? toTitleCase(res.sic_description) : (res.sic_code ? `SIC: ${res.sic_code}` : null),
                 name: res.name || undefined,
                 sharesOutstanding: sharesOutstanding && sharesOutstanding > 0 ? sharesOutstanding : undefined
             };
@@ -170,10 +171,16 @@ export class AnalysisService {
                                 existing.sector === 'Unknown' ||
                                 !standardSectors.includes(existing.sector);
             
-            const isRedundantSector = existing?.sector === res.sic_description;
+            // Detect sector that was previously incorrectly set to raw sic_description (ALL CAPS or Title Case)
+            const sicDescTitleCase = res.sic_description ? toTitleCase(res.sic_description) : null;
+            const isRedundantSector = !!(res.sic_description && (
+                existing?.sector === res.sic_description ||
+                (sicDescTitleCase && existing?.sector === sicDescTitleCase)
+            ));
             
             if (isWeakSector || isRedundantSector) {
-                updateData.sector = sectorFromSic || res.sic_description || 'Other';
+                // Never use sic_description as a sector — it's an industry description, not a sector
+                updateData.sector = sectorFromSic || 'Other';
             }
 
             await prisma.ticker.upsert({
@@ -181,7 +188,7 @@ export class AnalysisService {
                 create: {
                     symbol,
                     ...updateData,
-                    sector: updateData.sector || res.sic_description || null,
+                    sector: updateData.sector || sectorFromSic || null,
                     sharesOutstanding: sharesOutstanding && sharesOutstanding > 0 ? sharesOutstanding : 0
                 },
                 update: updateData

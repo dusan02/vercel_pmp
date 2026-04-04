@@ -142,9 +142,8 @@ export const SECTOR_INDUSTRY_OVERRIDES: Record<string, SectorIndustryOverride> =
     name: 'American Express Company',
   },
   
-  // Consumer Staples companies
   PM: {
-    sector: 'Consumer Staples',
+    sector: 'Consumer Defensive',
     industry: 'Tobacco',
     name: 'Philip Morris International Inc.',
   },

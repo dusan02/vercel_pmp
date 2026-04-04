@@ -3,6 +3,15 @@
  * Maps standard Industrial Classification (SIC) codes to broad market sectors.
  */
 
+/**
+ * Converts an ALL CAPS SIC description (e.g. "AIR COURIER SERVICES") to
+ * proper Title Case (e.g. "Air Courier Services") for display in the UI.
+ */
+export function toTitleCase(str: string): string {
+  if (!str) return str;
+  return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+}
+
 export function getSectorFromSic(sicCode: string | number | undefined | null): string | null {
   if (!sicCode) return null;
   

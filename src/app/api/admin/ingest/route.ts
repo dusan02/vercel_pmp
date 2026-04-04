@@ -12,12 +12,14 @@ export async function POST(request: NextRequest) {
 
     // Check if specific tickers are provided in request body
     let tickers: string[] = [];
+    let force = false;
     try {
       const body = await request.json();
       if (body.tickers && Array.isArray(body.tickers) && body.tickers.length > 0) {
         tickers = body.tickers.map((t: string) => t.toUpperCase().trim()).filter((t: string) => t.length > 0);
         console.log(`📊 Ingesting specific tickers: ${tickers.join(', ')}`);
       }
+      if (body.force) force = true;
     } catch (e) {
       // No body or invalid JSON, use default behavior
     }
@@ -33,7 +35,7 @@ export async function POST(request: NextRequest) {
     // For small batches (<= 10), await the result
     if (tickers.length <= 10) {
       try {
-        const results = await ingestBatch(tickers, apiKey);
+        const results = await ingestBatch(tickers, apiKey, force);
         const successCount = results.filter(r => r.success).length;
         return NextResponse.json({ 
           message: 'Ingestion completed', 
@@ -51,7 +53,7 @@ export async function POST(request: NextRequest) {
     }
 
     // For larger batches, run in background
-    ingestAll(tickers, apiKey).catch(err => console.error('Ingest error:', err));
+    ingestAll(tickers, apiKey, force).catch(err => console.error('Ingest error:', err));
 
     return NextResponse.json({ 
       message: 'Ingestion started in background', 
@@ -62,12 +64,12 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function ingestAll(tickers: string[], apiKey: string) {
+async function ingestAll(tickers: string[], apiKey: string, force = false) {
   const batchSize = 60;
   for (let i = 0; i < tickers.length; i += batchSize) {
     const batch = tickers.slice(i, i + batchSize);
     console.log(`Processing batch ${i / batchSize + 1}...`);
-    await ingestBatch(batch, apiKey);
+    await ingestBatch(batch, apiKey, force);
     // Small delay to be nice
     await new Promise(r => setTimeout(r, 1000));
   }
