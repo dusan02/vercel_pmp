@@ -89,25 +89,23 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
                             size={64}
                             priority
                         />
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex items-center gap-3 flex-wrap">
                             <h1 className="text-xl lg:text-2xl font-bold text-gray-900 dark:text-white leading-tight tracking-tight">
                                 {companyName}
                             </h1>
-                            <div className="flex items-center gap-2.5 mt-1 flex-wrap">
-                                <span className="px-2 py-0.5 bg-blue-600 text-white text-[10px] font-bold rounded tracking-widest uppercase">
-                                    {ticker}
-                                </span>
-                                {t.websiteUrl && (
-                                    <a
-                                        href={t.websiteUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-[10px] uppercase tracking-widest font-semibold text-gray-400 hover:text-blue-500 dark:text-gray-500 dark:hover:text-blue-400 transition-colors"
-                                    >
-                                        Website ↗
-                                    </a>
-                                )}
-                            </div>
+                            <span className="px-2 py-0.5 bg-blue-600 text-white text-[10px] font-bold rounded tracking-widest uppercase shrink-0">
+                                {ticker}
+                            </span>
+                            {t.websiteUrl && (
+                                <a
+                                    href={t.websiteUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-[10px] uppercase tracking-widest font-semibold text-gray-400 hover:text-blue-500 dark:text-gray-500 dark:hover:text-blue-400 transition-colors shrink-0"
+                                >
+                                    Website ↗
+                                </a>
+                            )}
                         </div>
                     </div>
 
