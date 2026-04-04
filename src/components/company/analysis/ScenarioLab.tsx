@@ -8,21 +8,31 @@ interface ScenarioCalculatorProps {
 
 export function ScenarioLab({ currentEps, currentPe, currentPrice }: ScenarioCalculatorProps) {
     const [epsGrowth, setEpsGrowth] = useState<number>(10);
-    const [exitPe, setExitPe] = useState<number>(currentPe);
+    // Clamp initial exitPe to [5, 100] — negative/zero PE (loss-making company) breaks projection
+    const [exitPe, setExitPe] = useState<number>(Math.max(5, Math.min(100, currentPe || 20)));
 
-    // Vzorec pre Target Price (o 5 rokov): TargetPrice = EPS_current * (1 + Growth)^5 * P/E_target
+    const isNegativePe = !currentPe || currentPe <= 0;
+
+    // Target Price in 5 years: EPS_current * (1 + Growth)^5 * P/E_target
     const projectedEps = currentEps * Math.pow(1 + epsGrowth / 100, 5);
     const targetPrice = projectedEps * exitPe;
 
-    // Vzorec pre CAGR (Ročný výnos): CAGR = (TargetPrice / CurrentPrice)^(1/5) - 1
+    // CAGR: (TargetPrice / CurrentPrice)^(1/5) - 1
+    // Guard: targetPrice and currentPrice must both be positive
     let cagr = 0;
-    if (currentPrice > 0) {
+    if (currentPrice > 0 && targetPrice > 0) {
         cagr = (Math.pow(targetPrice / currentPrice, 1 / 5) - 1) * 100;
     }
 
     const isMarketBeating = cagr > 15;
 
     return (
+        <div className="space-y-4">
+            {isNegativePe && (
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg px-4 py-3 text-sm text-yellow-800 dark:text-yellow-400">
+                    ⚠️ Company has negative or no P/E (loss-making). Projection uses assumed exit P/E — treat results as speculative.
+                </div>
+            )}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Inputs */}
             <div className="space-y-6">
@@ -108,6 +118,7 @@ export function ScenarioLab({ currentEps, currentPe, currentPrice }: ScenarioCal
                     </div>
                 </div>
             </div>
+        </div>
         </div>
     );
 }

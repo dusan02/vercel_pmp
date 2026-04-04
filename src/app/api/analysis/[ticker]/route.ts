@@ -22,7 +22,7 @@ async function computeMetrics(symbol: string) {
     const cached = analysis as any;
     const altmanZ = cached.altmanZ;
     const debtRepaymentYears = cached.debtRepaymentYears;
-    const fcfYield = analysis.valuationScore ? (latestValuation?.fcfYield || null) : null;
+    const fcfYield = latestValuation?.fcfYield ?? null;
     let currentEps = null;
     let currentPe = latestValuation?.peRatio || null;
 
@@ -51,7 +51,7 @@ async function computeMetrics(symbol: string) {
         ? currentAssets / currentLiabilities : null;
     const assetToLiability = (totalAssets !== null && totalLiabilities !== null && totalLiabilities !== 0)
         ? totalAssets / totalLiabilities : null;
-    // Net Debt / EBITDA (using EBIT as proxy)
+    // Net Debt / EBIT (schema has no depreciation field, so EBITDA cannot be computed)
     const netDebtToEbitda = (netDebt !== null && ebit !== null && ebit !== 0)
         ? netDebt / ebit : null;
 
@@ -130,7 +130,7 @@ export async function GET(
                 where: { sector: tickerRecord.sector, symbol: { not: symbol } },
                 select: { symbol: true },
                 take: 4,
-                orderBy: { lastPrice: 'desc' },
+                orderBy: { lastMarketCap: 'desc' },
             });
             peers = peerTickers.map((t: { symbol: string }) => t.symbol);
         }
@@ -207,7 +207,7 @@ export async function POST(
                 where: { sector: tickerRecord.sector, symbol: { not: symbol } },
                 select: { symbol: true },
                 take: 4,
-                orderBy: { lastPrice: 'desc' },
+                orderBy: { lastMarketCap: 'desc' },
             });
             peers = peerTickers.map(t => t.symbol);
         }

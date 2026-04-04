@@ -80,8 +80,8 @@ export function BalanceSheetTable({ ticker, data, compareWith, secondaryData }: 
             statusLabel: !compareWith ? (bs.debtToEquity !== null ? (bs.debtToEquity <= 0.5 ? 'Conservative' : bs.debtToEquity <= 2 ? 'Moderate' : 'High Leverage') : 'N/A') : undefined,
         },
         {
-            label: 'Net Debt / EBITDA',
-            hint: 'Net Debt / EBIT (EBITDA proxy). < 2x healthy, > 4x risky.',
+            label: 'Net Debt / EBIT',
+            hint: 'Net Debt divided by EBIT. < 2x is healthy, > 4x is risky. Note: excludes D&A (EBITDA not available).',
             primary: fmt(bs.netDebtToEbitda, '', 'x'),
             secondary: compareWith ? fmt(sbs?.netDebtToEbitda, '', 'x') : undefined,
             primaryStatus: ndEbStatus(bs.netDebtToEbitda),
