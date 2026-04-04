@@ -6,7 +6,6 @@ import {
     YAxis,
     CartesianGrid,
     Tooltip,
-    Legend,
     ResponsiveContainer,
     ReferenceLine
 } from 'recharts';
@@ -31,12 +30,39 @@ interface FinancialChartProps {
     statements: FinancialStatement[];
 }
 
-// Dostupné metriky pre graf
 const AVAILABLE_METRICS = [
     { key: 'revenue', label: 'Revenue', color: '#3B82F6' },
     { key: 'netIncome', label: 'Net Income', color: '#10B981' },
-    { key: 'ebitda', label: 'EBITDA', color: '#F59E0B' }
-];
+    { key: 'ebitda', label: 'EBITDA', color: '#F59E0B' },
+] as const;
+
+function formatYAxis(value: number): string {
+    if (value === 0) return '0';
+    const abs = Math.abs(value);
+    if (abs >= 1000) return `$${(value / 1000).toFixed(1)}B`;
+    return `$${value}M`;
+}
+
+function CustomTooltip({ active, payload, label }: any) {
+    if (!active || !payload?.length) return null;
+    return (
+        <div className="bg-white dark:bg-gray-800 p-3 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg text-sm">
+            <p className="font-bold text-gray-900 dark:text-gray-100 mb-2">{label}</p>
+            {payload.map((entry: any, i: number) => {
+                const metric = AVAILABLE_METRICS.find(m => m.key === entry.dataKey);
+                return (
+                    <div key={i} className="flex items-center gap-2 mb-1">
+                        <span className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
+                        <span className="text-gray-600 dark:text-gray-300">{metric?.label ?? entry.name}:</span>
+                        <span className="font-semibold text-gray-900 dark:text-gray-100">
+                            ${new Intl.NumberFormat('en-US', { notation: 'compact', compactDisplay: 'short' }).format(entry.value * 1e6)}
+                        </span>
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
 
 export default function FinancialChart({ statements }: FinancialChartProps) {
     const [viewMode, setViewMode] = useState<'annual' | 'quarterly'>('annual');
@@ -86,8 +112,7 @@ export default function FinancialChart({ statements }: FinancialChartProps) {
         // Format data for Recharts
         return sorted.map(s => {
             // Vypočítaj EBITDA ak nie je priamo dostupné (EBITDA ≈ EBIT + D&A, ale D&A nemáme)
-            const ebitdaValue = (s.ebit && s.ebit > 0) ? s.ebit * 1.1 : 0; // EBITDA ≈ EBIT*1.1 only when positive (impairments excluded)
-            
+            const ebitdaValue = (s.ebit && s.ebit > 0) ? s.ebit * 1.1 : 0;
             const qMatch = s.fiscalPeriod?.match(/Q(\d)/);
             const label = qMatch
                 ? `Q${qMatch[1]}'${String(s.fiscalYear).slice(2)}`
@@ -95,13 +120,9 @@ export default function FinancialChart({ statements }: FinancialChartProps) {
             return {
                 name: label,
                 date: label,
-                revenue: s.revenue ? s.revenue / 1e6 : 0, // Convert to millions for readability
+                revenue: s.revenue ? s.revenue / 1e6 : 0,
                 netIncome: s.netIncome ? s.netIncome / 1e6 : 0,
                 ebitda: ebitdaValue / 1e6,
-                // Ponecháme aj pôvodné hodnoty pre presnos
-                _originalRevenue: s.revenue,
-                _originalNetIncome: s.netIncome,
-                _originalEbit: s.ebit,
             };
         });
     }, [statements, viewMode]);
@@ -153,45 +174,11 @@ export default function FinancialChart({ statements }: FinancialChartProps) {
         );
     };
 
-    // Compute exact Y-axis minimum from raw data (only netIncome can be negative)
-    const yMin = React.useMemo(() => {
+    const yMin = useMemo(() => {
         if (!selectedMetrics.includes('netIncome')) return 0;
         const min = Math.min(0, ...chartData.map(d => d.netIncome as number));
         return min < 0 ? Math.floor(min * 1.1) : 0;
     }, [chartData, selectedMetrics]);
-
-    // Format YAxis ticks (e.g., $1.5B, or $500M)
-    const formatYAxis = (tickItem: number) => {
-        if (tickItem === 0) return "0";
-        const absValue = Math.abs(tickItem);
-        if (absValue >= 1000) {
-            return `$${(tickItem / 1000).toFixed(1)}B`;
-        }
-        return `$${tickItem}M`;
-    };
-
-    const CustomTooltip = ({ active, payload, label }: any) => {
-        if (active && payload && payload.length) {
-            return (
-                <div className="bg-white dark:bg-gray-800 p-3 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg text-sm">
-                    <p className="font-bold text-gray-900 dark:text-gray-100 mb-2">{label}</p>
-                    {payload.map((entry: any, index: number) => {
-                        const metric = AVAILABLE_METRICS.find(m => m.key === entry.dataKey);
-                        return (
-                            <div key={index} className="flex items-center gap-2 mb-1">
-                                <span className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }}></span>
-                                <span className="text-gray-600 dark:text-gray-300">{metric?.label || entry.name}:</span>
-                                <span className="font-semibold text-gray-900 dark:text-gray-100">
-                                    ${new Intl.NumberFormat('en-US', { notation: "compact", compactDisplay: "short" }).format(entry.value * 1e6)}
-                                </span>
-                            </div>
-                        );
-                    })}
-                </div>
-            );
-        }
-        return null;
-    };
 
     return (
         <div className="w-full h-full flex flex-col">

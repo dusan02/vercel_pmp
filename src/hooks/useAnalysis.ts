@@ -1,42 +1,41 @@
 import { useState, useEffect, useRef } from 'react';
 import { AnalysisData } from '../components/company/AnalysisTab';
 
+const ANALYSIS_STEPS = [
+    'Connecting to Polygon API...',
+    'Syncing financial statements (V3)...',
+    'Fetching 1 year of daily aggregates...',
+    'Computing valuation multiples...',
+    'Calculating Altman Z-Score & Beneish M-Score...',
+    'Running Piotroski F-Score analysis...',
+    'Finalizing AI Verdict...',
+] as const;
+
 export function useAnalysis(ticker: string) {
     const [data, setData] = useState<AnalysisData | null>(null);
     const [loading, setLoading] = useState(true);
     const [analyzing, setAnalyzing] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    
-    // Comparison state
+
     const [compareWith, setCompareWith] = useState<string>('');
     const [compareInput, setCompareInput] = useState<string>('');
     const [secondaryData, setSecondaryData] = useState<AnalysisData | null>(null);
     const [loadingCompare, setLoadingCompare] = useState(false);
     const [openPanel, setOpenPanel] = useState<'health' | 'profitability' | 'valuation' | null>(null);
-    
+
     const [analysisStep, setAnalysisStep] = useState<string>('');
     const autoTriggered = useRef(false);
 
     const togglePanel = (p: 'health' | 'profitability' | 'valuation') => setOpenPanel(prev => prev === p ? null : p);
 
-    const analysisSteps = [
-        'Connecting to Polygon API...',
-        'Syncing financial statements (V3)...',
-        'Fetching 1 year of daily aggregates...',
-        'Computing valuation multiples...',
-        'Calculating Altman Z-Score & Beneish M-Score...',
-        'Running Piotroski F-Score analysis...',
-        'Finalizing AI Verdict...'
-    ];
-
     useEffect(() => {
         let timer: any;
         if (analyzing) {
             let step = 0;
-            setAnalysisStep(analysisSteps[0] || '');
+            setAnalysisStep(ANALYSIS_STEPS[0]);
             timer = setInterval(() => {
-                step = (step + 1) % analysisSteps.length;
-                setAnalysisStep(analysisSteps[step] || '');
+                step = (step + 1) % ANALYSIS_STEPS.length;
+                setAnalysisStep(ANALYSIS_STEPS[step] ?? ANALYSIS_STEPS[0]);
             }, 3000);
         } else {
             setAnalysisStep('');
