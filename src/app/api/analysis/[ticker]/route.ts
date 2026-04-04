@@ -170,12 +170,26 @@ export async function POST(
             throw e;
         }
 
-        try {
-            await AnalysisService.syncTickerDetails(symbol);
-            console.log(`[Analysis API] Ticker details synced for ${symbol}`);
-        } catch (e: any) {
-            console.error(`[Analysis API] Details sync failed for ${symbol}:`, e.message);
-            // Details are not critical, continue
+        // Skip syncTickerDetails if data was refreshed within 30 days and key fields are populated
+        // (description, employees, HQ change rarely — no need to re-fetch on every Refresh Analysis)
+        const existingTicker = await prisma.ticker.findUnique({
+            where: { symbol },
+            select: { updatedAt: true, description: true, employees: true, headquarters: true }
+        });
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        const isStale = !existingTicker || existingTicker.updatedAt < thirtyDaysAgo;
+        const isMissingData = !existingTicker?.description || !existingTicker?.employees;
+
+        if (isStale || isMissingData) {
+            try {
+                await AnalysisService.syncTickerDetails(symbol);
+                console.log(`[Analysis API] Ticker details synced for ${symbol}`);
+            } catch (e: any) {
+                console.error(`[Analysis API] Details sync failed for ${symbol}:`, e.message);
+                // Details are not critical, continue
+            }
+        } else {
+            console.log(`[Analysis API] Ticker details fresh (< 30d), skipping sync for ${symbol}`);
         }
 
         try {
