@@ -133,6 +133,24 @@ export default function FinancialChart({ statements }: FinancialChartProps) {
         );
     }
 
+    // Custom tick for quarterly mode: Q label top, year below only at Q1
+    const CustomQuarterTick = ({ x, y, payload }: any) => {
+        const val: string = payload?.value ?? '';
+        const m = val.match(/Q(\d)'(\d{2})/);
+        if (!m) return <text x={x} y={y + 12} textAnchor="middle" fill="#6B7280" fontSize={11}>{val}</text>;
+        const q = `Q${m[1]}`;
+        const year = `20${m[2]}`;
+        const isFirst = m[1] === '1';
+        return (
+            <g transform={`translate(${x},${y})`}>
+                <text x={0} y={14} textAnchor="middle" fill="#6B7280" fontSize={11} fontWeight={500}>{q}</text>
+                {isFirst && (
+                    <text x={0} y={28} textAnchor="middle" fill="#9CA3AF" fontSize={10}>{year}</text>
+                )}
+            </g>
+        );
+    };
+
     // Format YAxis ticks (e.g., $1.5B, or $500M)
     const formatYAxis = (tickItem: number) => {
         if (tickItem === 0) return "0";
@@ -221,17 +239,18 @@ export default function FinancialChart({ statements }: FinancialChartProps) {
                 <ResponsiveContainer width="100%" height={320}>
                     <BarChart
                         data={chartData}
-                        margin={{ top: 10, right: 10, left: 10, bottom: 40 }}
+                        margin={{ top: 10, right: 10, left: 10, bottom: viewMode === 'quarterly' ? 8 : 40 }}
                         barGap={2}
                     >
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" className="dark:stroke-gray-700" />
                         <XAxis 
                             dataKey="date"
-                            tick={{ fontSize: 12, fill: '#6B7280', fontWeight: 500 }}
+                            tick={viewMode === 'quarterly' ? <CustomQuarterTick /> : { fontSize: 12, fill: '#6B7280', fontWeight: 500 }}
                             axisLine={false}
                             tickLine={false}
                             interval={0}
-                            dy={6}
+                            dy={viewMode === 'annual' ? 6 : 0}
+                            height={viewMode === 'quarterly' ? 44 : 30}
                         />
                         <YAxis 
                             tickFormatter={formatYAxis} 
