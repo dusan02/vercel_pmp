@@ -3,6 +3,7 @@
 // Client component containing all page logic
 // This is imported by page.tsx (server component)
 import React, { useState, useEffect, Suspense, useMemo, useCallback, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 
 // All component imports moved to dynamic imports - fixed pattern for named exports
@@ -163,6 +164,8 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
   const [activeSection, setActiveSection] = useState<ActiveSection>('heatmap');
   const [analysisTicker, setAnalysisTicker] = useState<string>('NVDA');
 
+  const searchParams = useSearchParams();
+
   // Helper function to validate and set tab
   const setActiveTab = useCallback((tab: string) => {
     if (tab === 'heatmap' || tab === 'analysis' || tab === 'movers' || tab === 'portfolio' || tab === 'favorites' || tab === 'earnings' || tab === 'allStocks' || tab === 'screener') {
@@ -172,50 +175,58 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
     return false;
   }, []);
 
+  // Parse URL params (centralized)
+  const parseUrlParams = useCallback(() => {
+    const tab = searchParams.get('tab');
+    const ticker = searchParams.get('ticker');
+    return { tab, ticker };
+  }, [searchParams]);
+
   // Allow deep-linking to a specific mobile tab (e.g. "/?tab=allStocks" or "/?tab=analysis&ticker=MSFT")
   useEffect(() => {
     if (!isMounted) return;
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const tab = params.get('tab');
-      const ticker = params.get('ticker');
-      console.log('🔍 Deep-link tab detection:', { tab, ticker, currentActiveSection: activeSection });
+    const { tab, ticker } = parseUrlParams();
+    console.log('🔍 Deep-link tab detection:', { tab, ticker, currentActiveSection: activeSection });
+    if (ticker) {
+      setAnalysisTicker(ticker.toUpperCase());
+    }
+    if (tab) {
+      const success = setActiveTab(tab);
+      console.log('🔍 setActiveTab result:', { tab, success, newActiveSection: activeSection });
+    }
+  }, [isMounted, setActiveTab, parseUrlParams]);
+
+  // Sync activeSection with URL search params (for client-side navigation from footer links)
+  useEffect(() => {
+    if (!isMounted) return;
+    const { tab, ticker } = parseUrlParams();
+    if (ticker) {
+      setAnalysisTicker(ticker.toUpperCase());
+    }
+    if (tab) {
+      setActiveTab(tab);
+    } else {
+      setActiveTab('heatmap');
+    }
+  }, [isMounted, parseUrlParams]);
+
+  // Listen for browser back/forward navigation (popstate)
+  useEffect(() => {
+    if (!isMounted) return;
+    const handlePopState = () => {
+      const { tab, ticker } = parseUrlParams();
       if (ticker) {
         setAnalysisTicker(ticker.toUpperCase());
       }
       if (tab) {
-        const success = setActiveTab(tab);
-        console.log('🔍 setActiveTab result:', { tab, success, newActiveSection: activeSection });
-      }
-    } catch {
-      // ignore
-    }
-  }, [isMounted, setActiveTab]);
-
-  // Listen for browser back/forward navigation
-  useEffect(() => {
-    if (!isMounted) return;
-    const handlePopState = () => {
-      try {
-        const params = new URLSearchParams(window.location.search);
-        const tab = params.get('tab');
-        const ticker = params.get('ticker');
-        if (ticker) {
-          setAnalysisTicker(ticker.toUpperCase());
-        }
-        if (tab) {
-          setActiveTab(tab);
-        } else {
-          // If no tab in URL, default to heatmap
-          setActiveTab('heatmap');
-        }
-      } catch {
-        // ignore
+        setActiveTab(tab);
+      } else {
+        setActiveTab('heatmap');
       }
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [isMounted, setActiveTab]);
+  }, [isMounted, parseUrlParams]);
 
   // Listen for custom navigation events (e.g., from FavoritesSection, AllStocksSection, etc.)
   useEffect(() => {

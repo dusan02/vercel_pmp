@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import HomePage from './HomePage';
 import { getStocksData } from '@/lib/server/stockService';
 import { getEarningsForDate } from '@/lib/server/earningsService';
@@ -62,7 +63,9 @@ export default async function Page() {
         <Link href="/heatmap">Heatmap</Link>
         <Link href="/earnings">Earnings Calendar</Link>
       </nav>
-      <HomePage initialData={initialData} initialEarningsData={initialEarningsData} />
+      <Suspense fallback={<div className="min-h-screen bg-white dark:bg-gray-950"></div>}>
+        <HomePage initialData={initialData} initialEarningsData={initialEarningsData} />
+      </Suspense>
     </>
   );
 }
