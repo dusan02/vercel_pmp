@@ -153,6 +153,13 @@ export default function FinancialChart({ statements }: FinancialChartProps) {
         );
     };
 
+    // Compute exact Y-axis minimum from raw data (only netIncome can be negative)
+    const yMin = React.useMemo(() => {
+        if (!selectedMetrics.includes('netIncome')) return 0;
+        const min = Math.min(0, ...chartData.map(d => d.netIncome as number));
+        return min < 0 ? Math.floor(min * 1.1) : 0;
+    }, [chartData, selectedMetrics]);
+
     // Format YAxis ticks (e.g., $1.5B, or $500M)
     const formatYAxis = (tickItem: number) => {
         if (tickItem === 0) return "0";
@@ -260,7 +267,7 @@ export default function FinancialChart({ statements }: FinancialChartProps) {
                             axisLine={false}
                             tickLine={false}
                             width={50}
-                            domain={[(dataMin: number) => dataMin < 0 ? Math.floor(dataMin * 1.1) : 0, 'auto']}
+                            domain={[yMin, 'auto']}
                         />
                         <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(107, 114, 128, 0.05)' }} />
                         <ReferenceLine y={0} stroke="#9CA3AF" />
