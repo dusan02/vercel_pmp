@@ -41,14 +41,14 @@ export function getPricingState(etNow?: Date): PricingStateContext {
   const isSundayBeforeOpening = dayOfWeek === 0 && (timeInMinutes < 18 * 60);
   const isWeekendOrHoliday = isSaturday || isSundayBeforeOpening || isMarketHoliday(now);
 
-  // WEEKEND/HOLIDAY: Frozen, no updates
+  // WEEKEND/HOLIDAY: Allow Redis ingest for live % change display, but never overwrite DB
   if (isWeekendOrHoliday) {
     return {
       state: PriceState.WEEKEND_FROZEN,
-      canIngest: false,           // ❌ No new data ingestion
-      canOverwrite: false,        // ❌ Never overwrite frozen price
-      useFrozenPrice: true,       // ✅ Use last available price
-      referencePrice: 'regularClose' // Use last trading day's regular close
+      canIngest: true,            // ✅ Fetch from Polygon → write Redis (changePct/mcapDiff visible)
+      canOverwrite: false,        // ❌ Never overwrite DB prices
+      useFrozenPrice: false,      // Use fresh Polygon price for display
+      referencePrice: 'regularClose' // % change vs last trading day's regular close
     };
   }
 

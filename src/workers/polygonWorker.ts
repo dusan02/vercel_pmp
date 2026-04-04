@@ -23,7 +23,7 @@ import { PriceData } from '@/lib/types';
 import { detectSession, isMarketOpen, isMarketHoliday, mapToRedisSession, getLastTradingDay, getTradingDay } from '@/lib/utils/timeUtils';
 import { nowET, getDateET, createETDate, isWeekendET, toET } from '@/lib/utils/dateET';
 import { resolveEffectivePrice, calculatePercentChange } from '@/lib/utils/priceResolver';
-import { getPricingState, canOverwritePrice, getPreviousCloseTTL } from '@/lib/utils/pricingStateMachine';
+import { getPricingState, canOverwritePrice, getPreviousCloseTTL, PriceState } from '@/lib/utils/pricingStateMachine';
 import { withRetry, circuitBreaker } from '@/lib/api/rateLimiter';
 // DLQ import - commented out to avoid startup issues
 // import { addToDLQ } from '@/lib/dlq';
@@ -567,6 +567,12 @@ async function upsertToDB(
       // Only update if our lastTradingDay is >= existing date (i.e., we're not going backwards)
       return lastTradingDay.getTime() >= existingTicker.latestPrevCloseDate.getTime();
     })();
+
+    // WEEKEND_FROZEN: skip DB write — return calculated values for Redis
+    const pricingStateNow = getPricingState(nowET());
+    if (pricingStateNow.state === PriceState.WEEKEND_FROZEN && !force) {
+      return { success: true, effectiveChangePct: changePctToUse, zScore, rvol };
+    }
 
     // Standard Upsert (New Data or Create)
     await prisma.ticker.upsert({
@@ -1890,30 +1896,19 @@ async function main() {
       const isWeekendOrHoliday = isWeekendET(etNow) || isMarketHoliday(etNow);
 
       if (session === 'closed' && isWeekendOrHoliday) {
-        // True closed day (weekend/holiday) - only bootstrap previous closes if missing
+        // Weekend/holiday: bootstrap prevCloses if missing (needed for % change calculation),
+        // then fall through to normal ingest. State machine has canOverwrite:false so DB is safe.
         const today = getDateET(etNow);
         const { getPrevClose } = await import('@/lib/redis/operations');
         const samplePrevCloses = await getPrevClose(today, tickers.slice(0, 10));
 
         if (samplePrevCloses.size === 0) {
-          console.log(`⏸️ Weekend/Holiday (session: ${session}), bootstrapping previous closes...`);
+          console.log(`🔔 Weekend/Holiday: bootstrapping previous closes for % change...`);
           await bootstrapPreviousCloses(tickers, apiKey, today);
         } else {
-          console.log(`⏸️ Weekend/Holiday (session: ${session}), skipping ingest`);
+          console.log(`🔔 Weekend/Holiday: prevCloses ready, proceeding with Redis ingest (DB protected)`);
         }
-
-        // CRITICAL FIX: Update worker status (heartbeat) even if skipping ingest!
-        // Otherwise health check will think worker is dead/stale.
-
-        // CRITICAL FIX: Update worker status (heartbeat) even if skipping ingest!
-        // Otherwise health check will think worker is dead/stale.
-        // Use the shared redisClient instance from the outer scope
-        if (redisClient && redisClient.isOpen) {
-          await redisClient.set('worker:last_success_ts', Date.now().toString());
-        }
-
-
-        return;
+        // Fall through to normal ingest below — canOverwrite:false prevents DB overwrites
       }
 
       // For pre-market, after-hours, live, or closed (but not weekend/holiday) - INGEST DATA!
