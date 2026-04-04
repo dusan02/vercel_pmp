@@ -65,6 +65,7 @@ export interface AnalysisData {
         employees: number | null;
         lastPrice: number | null;
         lastMarketCap: number | null;
+        headquarters: string | null;
     } | null;
     balanceSheet?: {
         totalDebt: number | null;

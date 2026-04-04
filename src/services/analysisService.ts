@@ -144,11 +144,15 @@ export class AnalysisService {
 
             const sharesOutstanding = res.weighted_shares_outstanding || res.share_class_shares_outstanding || null;
 
+            const hqParts = [res.address?.city, res.address?.state].filter(Boolean);
+            const headquarters = hqParts.length > 0 ? hqParts.join(', ') : null;
+
             const updateData: Record<string, any> = {
                 description: res.description || null,
                 // Polygon V3 uses total_employees, NOT employees
                 employees: res.total_employees || null,
                 websiteUrl: res.homepage_url || null,
+                headquarters,
                 // sic_description is the human-readable industry name (e.g. "Semiconductors and Related Devices")
                 // Convert ALL CAPS SIC description to Title Case (e.g. "AIR COURIER SERVICES" → "Air Courier Services")
                 industry: res.sic_description ? toTitleCase(res.sic_description) : (res.sic_code ? `SIC: ${res.sic_code}` : null),

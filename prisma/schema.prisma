@@ -140,6 +140,7 @@ model Ticker {
   description          String?
   employees            Int?
   websiteUrl           String?
+  headquarters         String?
   analysisCache        AnalysisCache?
   dailyRefs            DailyRef[]
   dailyValuations      DailyValuationHistory[]
