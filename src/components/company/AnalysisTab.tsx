@@ -245,7 +245,7 @@ export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabP
                             <p className="text-sm text-gray-500 dark:text-gray-400">Revenue, Net Income & EBITDA Trends</p>
                         </div>
                     </div>
-                    <div className="h-80">
+                    <div>
                         <FinancialChart statements={data.statements} />
                     </div>
                 </div>
