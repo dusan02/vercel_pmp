@@ -82,7 +82,6 @@ Flags:
         timeUtils,
         closingPricesUtils,
         redisCacheUtils,
-        rateLimiter
     ] = await Promise.all([
         import('../src/lib/db/prisma'),
         import('@/lib/redis/operations'),
@@ -91,22 +90,20 @@ Flags:
         import('@/lib/utils/timeUtils'),
         import('@/lib/utils/closingPricesUtils'),
         import('@/lib/utils/redisCacheUtils'),
-        import('@/lib/api/rateLimiter'),
     ]);
 
-    const { getUniverse, deleteCachedData, deleteCachedDataByPattern, setPrevClose } = redisOps;
+    const { getUniverse } = redisOps;
     const { bootstrapPreviousCloses, ingestBatch } = worker;
     const { getDateET, createETDate } = dateET;
     const { getLastTradingDay, getTradingDay } = timeUtils;
     const { refreshClosingPricesInDB } = closingPricesUtils;
     const { clearRedisPrevCloseCache } = redisCacheUtils;
-    const { withRetry } = rateLimiter;
 
     try {
         // Shared: Get Tickers
         // We use PMP universe (all tiers) or DB fallback
         console.log('\n📊 getting ticker universe...');
-        let tickers = []; try { tickers = await getUniverse('pmp'); } catch (e) { console.warn(' Redis universe fetch failed, falling back to DB...'); }
+        let tickers: string[] = []; try { tickers = await getUniverse('pmp'); } catch (e) { console.warn(' Redis universe fetch failed, falling back to DB...'); }
         if (tickers.length === 0) {
             console.log('⚠️  Universe is empty, using tickers from database...');
             const dbTickers = await prisma.ticker.findMany({ select: { symbol: true } });
@@ -130,19 +127,37 @@ Flags:
             console.log('🧹 Clearing Redis cache...');
             await clearRedisPrevCloseCache();
 
-            // Clear specific caches
+            // Clear all relevant Redis key patterns using SCAN (never KEYS — blocks Redis)
             try {
-                await deleteCachedData('heatmap-data');
-                // If we have a pattern for stock:* we should clear it too, 
-                // but exact pattern logic might vary. Using a known pattern if strictly needed.
-                // For now, clearRedisPrevCloseCache handles the main daily refs.
-                // Also allow clearing stock specific data?
-                // Assuming 'stock:pmp:*' based on previous script analysis
                 const { redisClient: redisC } = await import('../src/lib/redis/client');
-                const keys = redisC ? await redisC.keys('stock:pmp:*') : [];
-                if (keys.length > 0) {
-                    if (redisC) await redisC.del(keys);
-                    console.log(`🧹 Deleted ${keys.length} stock:pmp:* keys`);
+                if (redisC && redisC.isOpen) {
+                    const scanAndDelete = async (pattern: string): Promise<number> => {
+                        const toDelete: string[] = [];
+                        for await (const key of (redisC as any).scanIterator({ MATCH: pattern, COUNT: 200 })) {
+                            toDelete.push(key);
+                        }
+                        if (toDelete.length > 0) await redisC.del(toDelete);
+                        return toDelete.length;
+                    };
+
+                    const patterns: [string, string][] = [
+                        ['stock:pmp:*',       'stock price cache'],
+                        ['rank:*',            'rank indexes'],
+                        ['stats:*',           'stats cache'],
+                        ['heatmap:*',         'heatmap cache'],
+                        ['last:*',            'live price cache'],
+                        ['freshness:*',       'freshness metrics'],
+                    ];
+
+                    for (const [pattern, label] of patterns) {
+                        const n = await scanAndDelete(pattern);
+                        if (n > 0) console.log(`🧹 Deleted ${n} ${label} (${pattern})`);
+                    }
+
+                    // Single key deletes
+                    await redisC.del('bulk:last_success_ts').catch(() => {});
+                } else {
+                    console.warn('⚠️ Redis not available — skipping key-pattern clearing');
                 }
             } catch (e) {
                 console.warn('⚠️ Non-fatal error clearing extra caches:', e);
@@ -159,45 +174,39 @@ Flags:
             console.log('✅ Bootstrap complete.');
         }
 
+
         if (command === 'fill') {
             console.log('\n--- 💉 STEP: FILL MISSING DATA ---');
-            // Logic adapted from refresh-close-prices-now.ts
 
             const today = getDateET();
             const todayDate = createETDate(today);
             const todayTradingDay = getTradingDay(todayDate);
             const yesterdayTradingDay = getLastTradingDay(todayTradingDay);
-            const yesterdayDateStr = getDateET(yesterdayTradingDay);
-            const todayDateStr = getDateET(todayTradingDay);
 
-            console.log(`📅 Today Trading Day: ${todayDateStr}`);
-            console.log(`📅 Prev Trading Day: ${yesterdayDateStr}`);
+            console.log(`📅 Today Trading Day:  ${getDateET(todayTradingDay)}`);
+            console.log(`📅 Prev Trading Day:   ${getDateET(yesterdayTradingDay)}`);
+            console.log('🔍 Scanning for missing data (batch query)...');
 
-            // Identify missing
-            const tickersNeedingRefresh: string[] = [];
-            console.log('🔍 Scanning for missing data...');
+            // Batch query instead of N+1 per-ticker queries
+            const [yesterdayRefs, todayRefs] = await Promise.all([
+                prisma.dailyRef.findMany({
+                    where: { date: yesterdayTradingDay, symbol: { in: tickers } },
+                    select: { symbol: true, regularClose: true }
+                }),
+                prisma.dailyRef.findMany({
+                    where: { date: todayTradingDay, symbol: { in: tickers } },
+                    select: { symbol: true, previousClose: true }
+                })
+            ]);
 
-            for (const ticker of tickers) {
-                // We could batch this DB query for performance, but for a script it's okay-ish 
-                // or we could select all DailyRefs and filter in memory if strict on perf.
-                // Keeping it simple/safe for now.
-                const [yesterdayRef, todayRef] = await Promise.all([
-                    prisma.dailyRef.findUnique({
-                        where: { symbol_date: { symbol: ticker, date: yesterdayTradingDay } },
-                        select: { regularClose: true }
-                    }),
-                    prisma.dailyRef.findUnique({
-                        where: { symbol_date: { symbol: ticker, date: todayTradingDay } },
-                        select: { previousClose: true }
-                    })
-                ]);
+            const prevCloseBySymbol = new Map(yesterdayRefs.map(r => [r.symbol, r.regularClose]));
+            const todayPrevBySymbol = new Map(todayRefs.map(r => [r.symbol, r.previousClose]));
 
-                if (!yesterdayRef?.regularClose || !todayRef?.previousClose) {
-                    tickersNeedingRefresh.push(ticker);
-                }
-            }
+            const tickersNeedingRefresh = tickers.filter(t =>
+                !prevCloseBySymbol.get(t) || !todayPrevBySymbol.get(t)
+            );
 
-            console.log(`⚠️  Found ${tickersNeedingRefresh.length} tickers with missing data.`);
+            console.log(`⚠️  Found ${tickersNeedingRefresh.length} / ${tickers.length} tickers with missing data.`);
 
             if (tickersNeedingRefresh.length > 0) {
                 console.log('🔄 Bootstrapping missing data...');
@@ -259,6 +268,12 @@ Flags:
         process.exit(1);
     } finally {
         await prisma.$disconnect();
+        // Disconnect Redis — without this the process hangs indefinitely
+        try {
+            const { redisClient: rc } = await import('../src/lib/redis/client');
+            if (rc && rc.isOpen) await rc.disconnect();
+        } catch (_) {}
+        process.exit(0);
     }
 }
 
