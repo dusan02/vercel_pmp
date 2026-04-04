@@ -15,6 +15,13 @@ export class AnalysisService {
         const timeframes = ['quarterly', 'annual'];
 
         try {
+            // Ensure Ticker row exists (FK requirement for FinancialStatement)
+            await prisma.ticker.upsert({
+                where: { symbol },
+                update: {},
+                create: { symbol, name: symbol },
+            });
+
             for (const timeframe of timeframes) {
                 const url = `https://api.polygon.io/vX/reference/financials?ticker=${symbol}&timeframe=${timeframe}&limit=100&apiKey=${this.POLYGON_API_KEY}`;
                 
