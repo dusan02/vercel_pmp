@@ -79,76 +79,75 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
             )}
 
             {t ? (
-                <>
-                    {/* ── Identity Section ── */}
-                    <div className="px-6 lg:px-8 pt-6 lg:pt-8 pb-5">
-                        <div className="flex items-center gap-5">
-                            <CompanyLogo
-                                ticker={ticker}
-                                logoUrl={t.logoUrl}
-                                size={96}
-                                priority
-                            />
-                            <div className="min-w-0">
-                                <h1 className="text-2xl lg:text-[1.75rem] font-bold text-gray-900 dark:text-white leading-tight tracking-tight">
-                                    {companyName}
-                                </h1>
-                                <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                                    <span className="px-2 py-0.5 bg-blue-600 text-white text-[11px] font-bold rounded tracking-widest">
-                                        {ticker}
-                                    </span>
-                                    {t.websiteUrl && (
-                                        <a
-                                            href={t.websiteUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-blue-500 dark:text-gray-500 dark:hover:text-blue-400 font-medium transition-colors"
-                                        >
-                                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                            </svg>
-                                            {t.websiteUrl.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}
-                                        </a>
-                                    )}
-                                </div>
+                <div className="flex gap-6 p-6 lg:p-8">
+
+                    {/* ── Left: Logo ── */}
+                    <div className="flex-shrink-0">
+                        <CompanyLogo
+                            ticker={ticker}
+                            logoUrl={t.logoUrl}
+                            size={96}
+                            priority
+                        />
+                    </div>
+
+                    {/* ── Right: All content ── */}
+                    <div className="flex-1 min-w-0 space-y-4">
+
+                        {/* Identity */}
+                        <div>
+                            <h1 className="text-2xl lg:text-[1.75rem] font-bold text-gray-900 dark:text-white leading-tight tracking-tight">
+                                {companyName}
+                            </h1>
+                            <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                                <span className="px-2 py-0.5 bg-blue-600 text-white text-[11px] font-bold rounded tracking-widest">
+                                    {ticker}
+                                </span>
+                                {t.websiteUrl && (
+                                    <a
+                                        href={t.websiteUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-blue-500 dark:text-gray-500 dark:hover:text-blue-400 font-medium transition-colors"
+                                    >
+                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                        </svg>
+                                        {t.websiteUrl.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}
+                                    </a>
+                                )}
                             </div>
                         </div>
-                    </div>
 
-                    {/* ── Divider ── */}
-                    <div className="border-t border-gray-100 dark:border-gray-700/60" />
+                        {/* Stats */}
+                        <div className="border-t border-gray-100 dark:border-gray-700/60 pt-3">
+                            <dl className="space-y-1.5">
+                                {stats.map(({ label, value }) => (
+                                    <div key={label} className="flex items-baseline gap-3">
+                                        <dt className="text-xs text-gray-400 dark:text-gray-500 font-medium w-24 shrink-0">
+                                            {label}
+                                        </dt>
+                                        <dd className={`text-sm font-semibold ${value ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-gray-600'}`}>
+                                            {value || 'N/A'}
+                                        </dd>
+                                    </div>
+                                ))}
+                            </dl>
+                        </div>
 
-                    {/* ── Compact Stats List ── */}
-                    <div className="px-6 lg:px-8 py-3">
-                        <dl className="space-y-1.5">
-                            {stats.map(({ label, value }) => (
-                                <div key={label} className="flex items-baseline gap-3">
-                                    <dt className="text-xs text-gray-400 dark:text-gray-500 font-medium w-24 shrink-0">
-                                        {label}
-                                    </dt>
-                                    <dd className={`text-sm font-semibold ${value ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-gray-600'}`}>
-                                        {value || 'N/A'}
-                                    </dd>
-                                </div>
-                            ))}
-                        </dl>
-                    </div>
-
-                    {/* ── About / Description ── */}
-                    {shortDesc && (
-                        <>
-                            <div className="border-t border-gray-100 dark:border-gray-700/60" />
-                            <div className="px-6 lg:px-8 py-5">
-                                <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-widest font-semibold mb-2">
+                        {/* About */}
+                        {shortDesc && (
+                            <div className="border-t border-gray-100 dark:border-gray-700/60 pt-3">
+                                <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-widest font-semibold mb-1.5">
                                     About
                                 </p>
                                 <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
                                     {shortDesc}
                                 </p>
                             </div>
-                        </>
-                    )}
-                </>
+                        )}
+                    </div>
+                </div>
             ) : (
                 <div className="p-6 lg:p-8 flex items-center gap-5">
                     <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-xl flex items-center justify-center border border-gray-200 dark:border-gray-600 flex-shrink-0">

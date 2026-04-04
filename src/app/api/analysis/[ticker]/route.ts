@@ -178,7 +178,7 @@ export async function POST(
         });
         const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
         const isStale = !existingTicker || existingTicker.updatedAt < thirtyDaysAgo;
-        const isMissingData = !existingTicker?.description || !existingTicker?.employees;
+        const isMissingData = !existingTicker?.description || !existingTicker?.employees || !existingTicker?.headquarters;
 
         if (isStale || isMissingData) {
             try {
