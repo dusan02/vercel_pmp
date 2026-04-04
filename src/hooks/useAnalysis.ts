@@ -108,12 +108,16 @@ export function useAnalysis(ticker: string) {
             setAnalyzing(true);
             setError(null);
             const res = await fetch(`/api/analysis/${ticker}`, { method: 'POST' });
-            if (!res.ok) throw new Error('Analysis failed');
+            if (!res.ok) {
+                const body = await res.json().catch(() => ({}));
+                const msg = body?.details || body?.error || `Analysis failed (${res.status})`;
+                throw new Error(msg);
+            }
             const json = await res.json();
             setData(json);
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
-            setError('An error occurred during deep analysis.');
+            setError(err?.message || 'An error occurred during deep analysis.');
         } finally {
             setAnalyzing(false);
         }
