@@ -271,7 +271,7 @@ export default function FinancialChart({ statements }: FinancialChartProps) {
                             axisLine={false}
                             tickLine={false}
                             width={50}
-                            domain={[yMin, 'auto']}
+                            domain={[yMin === 0 ? 0 : 'auto', 'auto']}
                         />
                         <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(107, 114, 128, 0.05)' }} />
                         <ReferenceLine y={0} stroke="#9CA3AF" />
