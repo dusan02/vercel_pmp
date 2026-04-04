@@ -2,13 +2,11 @@ import React, { useState } from 'react';
 import CompanyLogo from '@/components/CompanyLogo';
 import type { AnalysisData } from '@/components/company/AnalysisTab';
 
-/** Format large numbers as $3.2T / $245.8B / $12.3M */
+/** Format market cap stored in billions (e.g. 3735.92 → $3.74T, 245.8 → $245.8B) */
 export function formatMarketCap(val: number | null | undefined): string | null {
     if (!val || val <= 0) return null;
-    if (val >= 1e12) return `$${(val / 1e12).toFixed(2)}T`;
-    if (val >= 1e9) return `$${(val / 1e9).toFixed(2)}B`;
-    if (val >= 1e6) return `$${(val / 1e6).toFixed(2)}M`;
-    return `$${val.toFixed(2)}`;
+    if (val >= 1000) return `$${(val / 1000).toFixed(2)}T`;
+    return `$${val.toFixed(1)}B`;
 }
 
 export function SearchTickerBar({ currentTicker }: { currentTicker: string }) {
@@ -88,7 +86,7 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
                             <CompanyLogo
                                 ticker={ticker}
                                 logoUrl={t.logoUrl}
-                                size={72}
+                                size={96}
                                 priority
                             />
                             <div className="min-w-0">
@@ -121,8 +119,8 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
                     <div className="border-t border-gray-100 dark:border-gray-700/60" />
 
                     {/* ── Compact Stats List ── */}
-                    <div className="px-6 lg:px-8 py-4">
-                        <dl className="space-y-2">
+                    <div className="px-6 lg:px-8 py-3">
+                        <dl className="space-y-1.5">
                             {stats.map(({ label, value }) => (
                                 <div key={label} className="flex items-baseline gap-3">
                                     <dt className="text-xs text-gray-400 dark:text-gray-500 font-medium w-24 shrink-0">
