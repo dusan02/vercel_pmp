@@ -13,7 +13,6 @@ import { formatSectorName, formatBillions, formatMarketCapDiff, formatPrice, for
 import CompanyLogo from '../CompanyLogo';
 import { getCompanyName } from '@/lib/companyNames';
 import { Star, TrendingUp, TrendingDown, DollarSign, Building } from 'lucide-react';
-import { SEOContent } from '../SEOContent';
 
 interface StocksTableProps {
   data: StockData[];
@@ -430,7 +429,6 @@ export const StocksTable = React.memo(function StocksTable({
             </p>
           </div>
         }
-        footer={<SEOContent />}
       />
 
       {/* Load More Trigger for Mobile */}

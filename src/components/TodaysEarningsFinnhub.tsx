@@ -9,7 +9,6 @@ import { StockData } from '@/lib/types';
 import CompanyLogo from './CompanyLogo';
 import { UniversalTable, ColumnDef } from './UniversalTable';
 import { EarningsCardMobile } from './EarningsCardMobile';
-import { SEOContent } from './SEOContent';
 import { useRouter } from 'next/navigation';
 
 interface EarningsData {
@@ -555,7 +554,6 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
             earning={earning}
           />
         )}
-        footer={<SEOContent />}
       />
 
     </section>

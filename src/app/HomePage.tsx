@@ -78,11 +78,6 @@ const StructuredData = dynamic(
   () => import('@/components/StructuredData').then((mod) => mod.StructuredData),
   { ssr: true }
 );
-const SEOContent = dynamic(
-  () => import('@/components/SEOContent').then((mod) => mod.SEOContent),
-  { ssr: true }
-);
-
 // Modern Mobile Components
 const MobileApp = dynamic(
   () => import('@/components/mobile/MobileApp').then((mod) => mod.MobileApp),
@@ -695,7 +690,6 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
                         )}
                       </div>
 
-                      <SEOContent />
                     </div>
 
                   </main>
