@@ -232,24 +232,26 @@ export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabP
             )}
 
             {/* ── Income Statement Chart ── */}
-            {data.statements && data.statements.length > 0 && (
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 overflow-hidden">
-                    <div className="flex items-center gap-3 mb-6">
-                        <div className="p-2 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-lg">
-                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">Income Statement History</h3>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">Revenue, Net Income & EBITDA Trends</p>
-                        </div>
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 overflow-hidden">
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-lg">
+                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
                     </div>
                     <div>
-                        <FinancialChart statements={data.statements} />
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">Income Statement History</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Revenue, Net Income & EBITDA Trends</p>
                     </div>
                 </div>
-            )}
+                {data.statements && data.statements.length > 0 ? (
+                    <FinancialChart statements={data.statements} />
+                ) : (
+                    <div className="text-sm text-gray-400 dark:text-gray-500 italic py-8 text-center">
+                        No financial statement data available for this ticker. Click <strong>Refresh Analysis</strong> to fetch from Polygon.
+                    </div>
+                )}
+            </div>
 
             {/* Valuation Analysis (GuruFocus Style) */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 overflow-hidden">
