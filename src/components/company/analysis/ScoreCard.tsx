@@ -25,7 +25,7 @@ interface ScoreCardProps {
 export function ScoreCard({ title, score, colorClass, strokeColor, icon }: ScoreCardProps) {
     const radius = 38;
     const circumference = 2 * Math.PI * radius;
-    const displayScore = score !== null ? score : 0; // Default to 0 if score is null for calculation
+    const displayScore = (score != null && !isNaN(score)) ? score : 0;
     const strokeDashoffset = circumference - (displayScore / 100) * circumference;
 
     return (
