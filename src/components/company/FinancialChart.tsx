@@ -221,7 +221,7 @@ export default function FinancialChart({ statements }: FinancialChartProps) {
                 <ResponsiveContainer width="100%" height={320}>
                     <BarChart
                         data={chartData}
-                        margin={{ top: 10, right: 10, left: 10, bottom: 20 }}
+                        margin={{ top: 10, right: 10, left: 10, bottom: 40 }}
                         barGap={2}
                     >
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" className="dark:stroke-gray-700" />
