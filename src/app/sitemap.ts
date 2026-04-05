@@ -1,5 +1,7 @@
 import { MetadataRoute } from 'next';
 import { getProjectTickers } from '@/data/defaultTickers';
+import { getEarningsForDate } from '@/lib/server/earningsService';
+import { getDateET } from '@/lib/utils/dateET';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://premarketprice.com';
@@ -75,6 +77,52 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
+  // Tab-based dynamic pages (important for SEO)
+  const tabPages: MetadataRoute.Sitemap = [
+    {
+      url: `${baseUrl}/?tab=movers`,
+      lastModified: currentDate,
+      changeFrequency: 'hourly',
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/?tab=earnings`,
+      lastModified: currentDate,
+      changeFrequency: 'daily',
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/?tab=heatmap`,
+      lastModified: currentDate,
+      changeFrequency: 'hourly',
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/?tab=analysis`,
+      lastModified: currentDate,
+      changeFrequency: 'daily',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/?tab=portfolio`,
+      lastModified: currentDate,
+      changeFrequency: 'daily',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/?tab=favorites`,
+      lastModified: currentDate,
+      changeFrequency: 'daily',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/?tab=allStocks`,
+      lastModified: currentDate,
+      changeFrequency: 'hourly',
+      priority: 0.8,
+    },
+  ];
+
   // Company pages for all project stocks
   const topTickers = getProjectTickers('pmp');
   const companyPages: MetadataRoute.Sitemap = topTickers.map((ticker) => ({
@@ -84,9 +132,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
+  // Analysis pages for major tickers (SEO gold)
+  const analysisPages: MetadataRoute.Sitemap = topTickers.slice(0, 50).map((ticker) => ({
+    url: `${baseUrl}/?tab=analysis&ticker=${ticker}`,
+    lastModified: currentDate,
+    changeFrequency: 'daily',
+    priority: 0.8,
+  }));
+
   // Sector pages
-  // Fallback sectors if API fails during build or we want a static list
-  const sectors = ['Technology', 'Healthcare', 'Financial', 'Consumer Cyclical', 'Industrials', 'Communication Services', 'Consumer Defensive', 'Energy', 'Utilities', 'Real Estate', 'Basic Materials'];
+  const sectors = [
+    'Technology', 'Healthcare', 'Financial Services', 'Consumer Cyclical',
+    'Industrials', 'Communication Services', 'Consumer Defensive',
+    'Energy', 'Utilities', 'Real Estate', 'Basic Materials'
+  ];
 
   const sectorPages: MetadataRoute.Sitemap = sectors.map((sector) => ({
     url: `${baseUrl}/sectors/${encodeURIComponent(sector)}`,
@@ -95,5 +154,31 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...mainPages, ...sectorPages, ...companyPages];
+  // Earnings calendar pages (next 30 days)
+  const earningsPages: MetadataRoute.Sitemap = [];
+  try {
+    const todayET = getDateET(new Date());
+    for (let i = 0; i < 30; i++) {
+      const date = new Date(todayET);
+      date.setDate(date.getDate() + i);
+      const dateStr = date.toISOString().split('T')[0];
+      earningsPages.push({
+        url: `${baseUrl}/earnings/${dateStr}`,
+        lastModified: currentDate,
+        changeFrequency: 'daily',
+        priority: 0.6,
+      });
+    }
+  } catch (e) {
+    // Fallback: ignore earnings dates if API fails
+  }
+
+  return [
+    ...mainPages,
+    ...tabPages,
+    ...companyPages,
+    ...analysisPages,
+    ...sectorPages,
+    ...earningsPages,
+  ];
 }
