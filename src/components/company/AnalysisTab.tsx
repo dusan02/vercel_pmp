@@ -2,7 +2,7 @@
 
 import { lazy, Suspense } from 'react';
 import FinancialChart, { FinancialStatement } from './FinancialChart';
- // Removed redundant imports: ValuationChart, GuruFocusChart
+import DebtCashChart from './DebtCashChart';
 import { AnalysisHeader } from './analysis/AnalysisHeader';
 import { AnalysisControls } from './analysis/AnalysisControls';
 import { VerdictBanner } from './analysis/VerdictBanner';
@@ -249,6 +249,28 @@ export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabP
                 ) : (
                     <div className="text-sm text-gray-400 dark:text-gray-500 italic py-8 text-center">
                         No financial statement data available for this ticker. Click <strong>Refresh Analysis</strong> to fetch from Polygon.
+                    </div>
+                )}
+            </div>
+
+            {/* ── Debt vs Cash Chart ── */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 overflow-hidden">
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg">
+                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">Debt vs Cash</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Total Debt, Cash & Equivalents, Net Debt History</p>
+                    </div>
+                </div>
+                {data.statements && data.statements.length > 0 ? (
+                    <DebtCashChart statements={data.statements} />
+                ) : (
+                    <div className="text-sm text-gray-400 dark:text-gray-500 italic py-8 text-center">
+                        No balance sheet data available for this ticker. Click <strong>Refresh Analysis</strong> to fetch from Polygon.
                     </div>
                 )}
             </div>

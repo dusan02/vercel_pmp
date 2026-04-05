@@ -7,41 +7,26 @@ import {
     CartesianGrid,
     Tooltip,
     ResponsiveContainer,
-    ReferenceLine
+    Legend
 } from 'recharts';
+import { FinancialStatement } from './FinancialChart';
 
-export interface FinancialStatement {
-    id: string;
-    symbol: string;
-    period: string;
-    endDate: string;
-    fiscalYear: number;
-    fiscalPeriod: string;
-    revenue: number | null;
-    netIncome: number | null;
-    ebit: number | null;
-    grossProfit: number | null;
-    operatingCashFlow: number | null;
-    capex: number | null;
-    totalDebt: number | null;
-    cashAndEquivalents: number | null;
-}
-
-interface FinancialChartProps {
+interface DebtCashChartProps {
     statements: FinancialStatement[];
 }
 
-const AVAILABLE_METRICS = [
-    { key: 'revenue', label: 'Revenue', color: '#3B82F6' },
-    { key: 'netIncome', label: 'Net Income', color: '#10B981' },
-    { key: 'ebitda', label: 'EBITDA', color: '#F59E0B' },
+const METRICS = [
+    { key: 'cash', label: 'Cash & Equivalents', color: '#10B981' },
+    { key: 'totalDebt', label: 'Total Debt', color: '#EF4444' },
+    { key: 'netDebt', label: 'Net Debt', color: '#8B5CF6' },
 ] as const;
 
 function formatYAxis(value: number): string {
     if (value === 0) return '0';
     const abs = Math.abs(value);
     if (abs >= 1000) return `$${(value / 1000).toFixed(1)}B`;
-    return `$${value}M`;
+    if (abs >= 1) return `$${value.toFixed(0)}M`;
+    return `$${value.toFixed(1)}M`;
 }
 
 function CustomTooltip({ active, payload, label }: any) {
@@ -50,7 +35,7 @@ function CustomTooltip({ active, payload, label }: any) {
         <div className="bg-white dark:bg-gray-800 p-3 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg text-sm">
             <p className="font-bold text-gray-900 dark:text-gray-100 mb-2">{label}</p>
             {payload.map((entry: any, i: number) => {
-                const metric = AVAILABLE_METRICS.find(m => m.key === entry.dataKey);
+                const metric = METRICS.find(m => m.key === entry.dataKey);
                 return (
                     <div key={i} className="flex items-center gap-2 mb-1">
                         <span className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
@@ -65,25 +50,21 @@ function CustomTooltip({ active, payload, label }: any) {
     );
 }
 
-export default function FinancialChart({ statements }: FinancialChartProps) {
+export default function DebtCashChart({ statements }: DebtCashChartProps) {
     const [viewMode, setViewMode] = useState<'annual' | 'quarterly'>('annual');
-    const [selectedMetrics, setSelectedMetrics] = useState(['revenue', 'netIncome', 'ebitda']);
+    const [selectedMetrics, setSelectedMetrics] = useState(['cash', 'totalDebt']);
 
     const chartData = useMemo(() => {
         if (!statements || statements.length === 0) return [];
 
-        // Filter by mode - opravené pre lepšie detekciu annual data
         let filtered = statements;
         if (viewMode === 'annual') {
-            // Skús rôzne spôsoby ako sú uložené annual data
-            filtered = statements.filter(s => 
-                s.fiscalPeriod === 'FY' || 
+            filtered = statements.filter(s =>
+                s.fiscalPeriod === 'FY' ||
                 s.fiscalPeriod === 'TTM' ||
                 s.period === 'annual' ||
                 (s.fiscalPeriod && s.fiscalPeriod.startsWith('FY'))
             );
-            
-            // Ak náhodou nie sú annual data, použime posledný Q4 každého roka
             if (filtered.length === 0) {
                 const yearlyData = new Map();
                 statements.forEach(s => {
@@ -97,66 +78,61 @@ export default function FinancialChart({ statements }: FinancialChartProps) {
                 filtered = Array.from(yearlyData.values());
             }
         } else {
-            // Quarterly - všetko čo nie je annual
-            filtered = statements.filter(s => 
-                s.fiscalPeriod !== 'FY' && 
+            filtered = statements.filter(s =>
+                s.fiscalPeriod !== 'FY' &&
                 s.fiscalPeriod !== 'TTM' &&
                 s.period !== 'annual'
             );
         }
 
-        // Sort ascending by date for charting (statements from API are descending)
         const sorted = [...filtered].sort(
             (a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime()
         );
 
-        // Format data for Recharts
-        return sorted.map(s => {
-            // Vypočítaj EBITDA ak nie je priamo dostupné (EBITDA ≈ EBIT + D&A, ale D&A nemáme)
-            const ebitdaValue = (s.ebit && s.ebit > 0) ? s.ebit * 1.1 : 0;
-            const qMatch = s.fiscalPeriod?.match(/Q(\d)/);
-            const shortYear = `'${String(s.fiscalYear).slice(2)}`;
-            const label = qMatch
-                ? `Q${qMatch[1]}${shortYear}`
-                : shortYear;
-            return {
-                name: label,
-                date: label,
-                revenue: s.revenue ? s.revenue / 1e6 : 0,
-                netIncome: s.netIncome ? s.netIncome / 1e6 : 0,
-                ebitda: ebitdaValue / 1e6,
-            };
-        });
+        return sorted
+            .filter(s => s.totalDebt !== null || s.cashAndEquivalents !== null)
+            .map(s => {
+                const cashVal = (s.cashAndEquivalents ?? 0) / 1e6;
+                const debtVal = (s.totalDebt ?? 0) / 1e6;
+                const qMatch = s.fiscalPeriod?.match(/Q(\d)/);
+                const shortYear = `'${String(s.fiscalYear).slice(2)}`;
+                const label = qMatch
+                    ? `Q${qMatch[1]}${shortYear}`
+                    : shortYear;
+                return {
+                    name: label,
+                    date: label,
+                    cash: cashVal,
+                    totalDebt: debtVal,
+                    netDebt: debtVal - cashVal,
+                };
+            });
     }, [statements, viewMode]);
 
     const toggleMetric = (metricKey: string) => {
         setSelectedMetrics(prev => {
             if (prev.includes(metricKey)) {
-                // Neodstráň poslednú metriku
-                if (prev.length > 1) {
-                    return prev.filter(m => m !== metricKey);
-                }
+                if (prev.length > 1) return prev.filter(m => m !== metricKey);
                 return prev;
-            } else {
-                return [...prev, metricKey];
             }
+            return [...prev, metricKey];
         });
     };
 
     if (!statements || statements.length === 0) {
-        return <div className="text-gray-500 text-sm">No financial statement data available.</div>;
+        return <div className="text-gray-500 text-sm">No balance sheet data available.</div>;
     }
 
     if (chartData.length === 0) {
         return (
             <div className="text-gray-500 text-sm p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                <p className="font-medium">No {viewMode} data available</p>
-                <p className="text-xs mt-1">Try switching to {viewMode === 'annual' ? 'quarterly' : 'annual'} view or check data availability.</p>
+                <p className="font-medium">No {viewMode} debt/cash data available</p>
+                <p className="text-xs mt-1">Try switching to {viewMode === 'annual' ? 'quarterly' : 'annual'} view or click Refresh Analysis.</p>
             </div>
         );
     }
 
-    // Custom tick for quarterly mode: Q label top, year below when year changes
+    // Custom tick for quarterly mode
     const CustomQuarterTick = ({ x, y, payload, index }: any) => {
         const val: string = payload?.value ?? '';
         const m = val.match(/Q(\d)'(\d{2})/);
@@ -177,8 +153,8 @@ export default function FinancialChart({ statements }: FinancialChartProps) {
     };
 
     const yMin = useMemo(() => {
-        if (!selectedMetrics.includes('netIncome')) return 0;
-        const min = Math.min(0, ...chartData.map(d => d.netIncome as number));
+        if (!selectedMetrics.includes('netDebt')) return 0;
+        const min = Math.min(0, ...chartData.map(d => d.netDebt));
         return min < 0 ? Math.floor(min * 1.1) : 0;
     }, [chartData, selectedMetrics]);
 
@@ -208,9 +184,9 @@ export default function FinancialChart({ statements }: FinancialChartProps) {
                     </button>
                 </div>
 
-                {/* Metric Selection — flex-wrap ensures EBITDA is always visible */}
+                {/* Metric Selection */}
                 <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                    {AVAILABLE_METRICS.map(metric => (
+                    {METRICS.map(metric => (
                         <button
                             key={metric.key}
                             onClick={() => toggleMetric(metric.key)}
@@ -241,7 +217,7 @@ export default function FinancialChart({ statements }: FinancialChartProps) {
                         barGap={2}
                     >
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" className="dark:stroke-gray-700" />
-                        <XAxis 
+                        <XAxis
                             dataKey="date"
                             tick={viewMode === 'quarterly' ? <CustomQuarterTick /> : { fontSize: 11, fill: '#6B7280', fontWeight: 500 }}
                             axisLine={false}
@@ -250,42 +226,40 @@ export default function FinancialChart({ statements }: FinancialChartProps) {
                             dy={viewMode === 'annual' ? 6 : 0}
                             height={viewMode === 'quarterly' ? 44 : 24}
                         />
-                        <YAxis 
-                            tickFormatter={formatYAxis} 
-                            tick={{ fontSize: 12, fill: '#6B7280' }} 
+                        <YAxis
+                            tickFormatter={formatYAxis}
+                            tick={{ fontSize: 12, fill: '#6B7280' }}
                             axisLine={false}
                             tickLine={false}
-                            width={50}
+                            width={55}
                             domain={[yMin, 'auto']}
                         />
                         <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(107, 114, 128, 0.05)' }} />
-                        <ReferenceLine y={0} stroke="#9CA3AF" />
-                        
-                        {/* Dynamické renderovanie vybraných metrík */}
-                        {selectedMetrics.includes('revenue') && (
-                            <Bar 
-                                dataKey="revenue" 
-                                name="Revenue" 
-                                fill="#3B82F6" 
-                                radius={[2, 2, 0, 0]} 
+
+                        {selectedMetrics.includes('cash') && (
+                            <Bar
+                                dataKey="cash"
+                                name="Cash & Equivalents"
+                                fill="#10B981"
+                                radius={[2, 2, 0, 0]}
                                 maxBarSize={40}
                             />
                         )}
-                        {selectedMetrics.includes('netIncome') && (
-                            <Bar 
-                                dataKey="netIncome" 
-                                name="Net Income" 
-                                fill="#10B981" 
-                                radius={[2, 2, 0, 0]} 
+                        {selectedMetrics.includes('totalDebt') && (
+                            <Bar
+                                dataKey="totalDebt"
+                                name="Total Debt"
+                                fill="#EF4444"
+                                radius={[2, 2, 0, 0]}
                                 maxBarSize={40}
                             />
                         )}
-                        {selectedMetrics.includes('ebitda') && (
-                            <Bar 
-                                dataKey="ebitda" 
-                                name="EBITDA" 
-                                fill="#F59E0B" 
-                                radius={[2, 2, 0, 0]} 
+                        {selectedMetrics.includes('netDebt') && (
+                            <Bar
+                                dataKey="netDebt"
+                                name="Net Debt"
+                                fill="#8B5CF6"
+                                radius={[2, 2, 0, 0]}
                                 maxBarSize={40}
                             />
                         )}
@@ -296,7 +270,7 @@ export default function FinancialChart({ statements }: FinancialChartProps) {
             {/* Info Panel */}
             <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                 <p className="text-xs text-blue-700 dark:text-blue-300">
-                    <strong>Tip:</strong> Click metrics above to toggle them on/off. Annual data shows year-end figures, quarterly shows 3-month periods.
+                    <strong>Tip:</strong> Cash &amp; Equivalents includes short-term investments. Total Debt includes both long-term and current debt obligations. Net Debt = Total Debt − Cash.
                 </p>
             </div>
         </div>
