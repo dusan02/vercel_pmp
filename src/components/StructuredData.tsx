@@ -36,29 +36,34 @@ export function StructuredData({
   } : null;
 
   if (pageType === 'company' && companyData) {
-    // Company-specific structured data
+    // Company-specific structured data (valid Schema.org)
     const companySchema = {
       '@context': 'https://schema.org',
       '@type': 'Corporation',
       name: companyData.name,
       tickerSymbol: companyData.ticker,
-      price: companyData.price,
-      priceCurrency: 'USD',
-      marketCap: companyData.marketCap,
-      ...(companyData.sector && { sector: companyData.sector }),
-      ...(companyData.industry && { industry: companyData.industry }),
       url: `${baseUrl}/stock/${companyData.ticker}`,
+      ...(companyData.sector && { industry: companyData.sector }),
     };
-    
-    const financialQuoteSchema = {
+
+    // Financial product representation for the stock
+    const stockSchema = {
       '@context': 'https://schema.org',
-      '@type': 'FinancialQuote',
-      name: companyData.name,
-      tickerSymbol: companyData.ticker,
-      price: companyData.price,
-      priceCurrency: 'USD',
-      marketCap: companyData.marketCap,
+      '@type': 'FinancialProduct',
+      name: `${companyData.name} (${companyData.ticker}) Stock`,
+      description: `Pre-market stock data for ${companyData.name} (${companyData.ticker})${companyData.sector ? ` in the ${companyData.sector} sector` : ''}.`,
       url: `${baseUrl}/stock/${companyData.ticker}`,
+      provider: {
+        '@type': 'Organization',
+        name: 'PreMarketPrice',
+        url: baseUrl,
+      },
+      offers: {
+        '@type': 'Offer',
+        price: companyData.price,
+        priceCurrency: 'USD',
+        availability: 'https://schema.org/InStock',
+      },
     };
 
     return (
@@ -72,7 +77,7 @@ export function StructuredData({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(financialQuoteSchema),
+            __html: JSON.stringify(stockSchema),
           }}
         />
         {breadcrumbSchema && (

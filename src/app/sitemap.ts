@@ -154,10 +154,33 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  // Earnings calendar pages (next 30 days)
+  // Date-based archive pages (past 30 days) — programmatic SEO
+  const archivePages: MetadataRoute.Sitemap = [];
   const earningsPages: MetadataRoute.Sitemap = [];
   try {
     const todayET = getDateET(new Date());
+    // Past 30 days: premarket-gainers & premarket-losers archives
+    for (let i = 0; i < 30; i++) {
+      const date = new Date(todayET);
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      const isFresh = i === 0;
+      archivePages.push(
+        {
+          url: `${baseUrl}/premarket-gainers/${dateStr}`,
+          lastModified: currentDate,
+          changeFrequency: isFresh ? 'hourly' : 'monthly',
+          priority: isFresh ? 0.8 : 0.5,
+        },
+        {
+          url: `${baseUrl}/premarket-losers/${dateStr}`,
+          lastModified: currentDate,
+          changeFrequency: isFresh ? 'hourly' : 'monthly',
+          priority: isFresh ? 0.8 : 0.5,
+        },
+      );
+    }
+    // Future 30 days: earnings calendar
     for (let i = 0; i < 30; i++) {
       const date = new Date(todayET);
       date.setDate(date.getDate() + i);
@@ -170,7 +193,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       });
     }
   } catch (e) {
-    // Fallback: ignore earnings dates if API fails
+    // Fallback: ignore date pages if API fails
   }
 
   return [
@@ -179,6 +202,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...companyPages,
     ...analysisPages,
     ...sectorPages,
+    ...archivePages,
     ...earningsPages,
   ];
 }

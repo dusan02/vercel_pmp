@@ -8,13 +8,20 @@ import { getDateET, getManyLastWithDate, getRankedSymbols } from '@/lib/redis/ra
 
 export const revalidate = 60;
 
-export const metadata: Metadata = generatePageMetadata({
-  title: 'Premarket Movers',
-  description:
-    'Top pre-market movers in US stocks: gainers and losers by percentage change. Browse premarket momentum and jump into company pages for deeper analysis.',
-  path: '/premarket-movers',
-  keywords: ['premarket movers', 'pre-market movers', 'premarket gainers', 'premarket losers', 'stock movers'],
-});
+function getTodayFormatted(): string {
+  return new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const today = getTodayFormatted();
+  return generatePageMetadata({
+    title: `Stocks Moving in Premarket Today (${today})`,
+    description:
+      `Biggest pre-market stock movers for ${today} — top gainers and losers ranked by % change with Z-scores and momentum insights. Real-time data from NYSE & NASDAQ.`,
+    path: '/premarket-movers',
+    keywords: ['premarket movers', 'stocks moving today', 'premarket gainers and losers', 'stock movers today', 'biggest stock movers premarket', 'stocks moving premarket'],
+  });
+}
 
 type MoverRow = {
   symbol: string;
@@ -153,40 +160,57 @@ function MoversTable({ title, rows }: { title: string; rows: MoverRow[] }) {
 
 export default async function PremarketMoversPage() {
   const [gainers, losers] = await Promise.all([getTopMovers('desc', 50), getTopMovers('asc', 50)]);
+  const today = getTodayFormatted();
+  const topGainer = gainers[0];
+  const topLoser = losers[0];
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-900">
       <div className="container mx-auto py-8 px-4">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Premarket Movers</h1>
-          <p className="mt-2 text-slate-600 dark:text-slate-300 max-w-3xl">
-            Track the biggest movers by percentage change. Use this as a discovery page: jump into any
-            ticker to see detailed data, heatmap context, and earnings.
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+            Stocks Moving in Premarket Today ({today})
+          </h1>
+          <p className="mt-3 text-slate-600 dark:text-slate-300 max-w-3xl leading-relaxed">
+            The biggest pre-market movers ranked by percentage change.
+            {topGainer && ` Top gainer: ${topGainer.name ?? topGainer.symbol} (${topGainer.symbol}) at ${formatPercent(topGainer.changePct ?? 0)}.`}
+            {topLoser && ` Biggest decliner: ${topLoser.name ?? topLoser.symbol} (${topLoser.symbol}) at ${formatPercent(topLoser.changePct ?? 0)}.`}
           </p>
-          <div className="mt-3 text-sm text-slate-600 dark:text-slate-400">
-            Related:{' '}
-            <Link className="hover:underline" href="/gainers">
-              Gainers
-            </Link>
-            {' · '}
-            <Link className="hover:underline" href="/losers">
-              Losers
-            </Link>
-            {' · '}
-            <Link className="hover:underline" href="/sectors">
-              Sectors
-            </Link>
-            {' · '}
-            <Link className="hover:underline" href="/stocks">
-              All Stocks
-            </Link>
-          </div>
         </div>
+
+        {/* SEO Content: Understanding premarket movers */}
+        <section className="mb-8 max-w-4xl">
+          <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-3">Understanding Premarket Stock Movers</h2>
+          <div className="text-sm text-slate-600 dark:text-slate-400 space-y-3 leading-relaxed">
+            <p>
+              Pre-market trading occurs between 4:00 AM and 9:30 AM Eastern Time, before the regular US stock market session opens. During this window, stocks can move significantly in response to overnight news, earnings announcements, economic data releases, and global market developments. The movers listed below represent the most actively changing stocks across NYSE and NASDAQ.
+            </p>
+            <p>
+              The <strong>Z-Score</strong> column measures how unusual each stock's move is relative to its recent history — a Z-Score above 2.5 indicates a statistically significant deviation. The <strong>Insight</strong> column provides context on why each stock is moving, drawn from earnings reports, analyst actions, and news catalysts.
+            </p>
+            <p>
+              Use this page alongside the <Link className="text-blue-600 dark:text-blue-400 hover:underline" href="/heatmap">Market Heatmap</Link> for sector-level context, or dive into individual <Link className="text-blue-600 dark:text-blue-400 hover:underline" href="/stocks">stock pages</Link> for comprehensive analysis including valuation scores and financial health metrics. Check the <Link className="text-blue-600 dark:text-blue-400 hover:underline" href="/earnings">Earnings Calendar</Link> to see if today's movers are earnings-related.
+            </p>
+          </div>
+        </section>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <MoversTable title="Top Gainers" rows={gainers} />
           <MoversTable title="Top Losers" rows={losers} />
         </div>
+
+        {/* Internal linking */}
+        <nav className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">Explore More</h2>
+          <div className="flex flex-wrap gap-3 text-sm">
+            <Link className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" href="/gainers">Top Gainers</Link>
+            <Link className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" href="/losers">Top Losers</Link>
+            <Link className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" href="/heatmap">Market Heatmap</Link>
+            <Link className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" href="/sectors">Sectors</Link>
+            <Link className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" href="/earnings">Earnings Calendar</Link>
+            <Link className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" href="/stocks">All Stocks</Link>
+          </div>
+        </nav>
       </div>
     </div>
   );

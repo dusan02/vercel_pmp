@@ -8,13 +8,20 @@ import { getDateET, getManyLastWithDate, getRankedSymbols } from '@/lib/redis/ra
 
 export const revalidate = 60;
 
-export const metadata: Metadata = generatePageMetadata({
-  title: 'Top Pre-market Losers',
-  description:
-    'Real-time list of top losing US stocks in the pre-market session. Track daily price drops, market cap erasures, and biggest movers before the opening bell.',
-  path: '/losers',
-  keywords: ['top losers', 'stock losers', 'premarket losers', 'market movers', 'biggest stock losers today'],
-});
+function getTodayFormatted(): string {
+  return new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const today = getTodayFormatted();
+  return generatePageMetadata({
+    title: `Top Premarket Losers Today (${today})`,
+    description:
+      `Biggest pre-market losers for ${today}. See which US stocks are dropping before the bell — live prices, percentage declines, market cap losses, and sector breakdown.`,
+    path: '/losers',
+    keywords: ['top losers', 'premarket losers today', 'stocks down today', 'biggest stock losers today', 'premarket drops', 'stocks falling premarket'],
+  });
+}
 
 type Row = {
   symbol: string;
@@ -50,21 +57,41 @@ async function getRows(limit: number): Promise<Row[]> {
 
 export default async function LosersPage() {
   const rows = await getRows(100);
+  const today = getTodayFormatted();
+  const topLoser = rows[0];
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-900">
       <div className="container mx-auto py-8 px-4">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Top Losers</h1>
-          <p className="mt-2 text-slate-600 dark:text-slate-300 max-w-3xl">
-            The weakest movers by percentage change for the current market session. For the full
-            two-sided view, use{' '}
-            <Link className="hover:underline" href="/premarket-movers">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+            Top Premarket Losers Today ({today})
+          </h1>
+          <p className="mt-3 text-slate-600 dark:text-slate-300 max-w-3xl leading-relaxed">
+            The weakest movers by percentage change for the current market session.
+            {topLoser && ` The biggest decliner today is ${topLoser.name ?? topLoser.symbol} (${topLoser.symbol}), down ${formatPercent(topLoser.changePct ?? 0)} in pre-market trading.`}
+            {' '}For the full two-sided view including gainers, use{' '}
+            <Link className="text-blue-600 dark:text-blue-400 hover:underline" href="/premarket-movers">
               Premarket Movers
-            </Link>
-            .
+            </Link>.
           </p>
         </div>
+
+        {/* SEO Content: Why stocks drop premarket */}
+        <section className="mb-8 max-w-4xl">
+          <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-3">Why Do Stocks Drop in Premarket?</h2>
+          <div className="text-sm text-slate-600 dark:text-slate-400 space-y-3 leading-relaxed">
+            <p>
+              Premarket losers are stocks experiencing the sharpest declines during the pre-market session (4:00–9:30 AM ET). Drops often result from earnings misses, guidance cuts, analyst downgrades, macroeconomic data releases, or sector-wide sell-offs triggered by overnight developments.
+            </p>
+            <p>
+              While large pre-market declines can signal genuine fundamental deterioration, they can also present buying opportunities for contrarian investors — especially when the move is driven by low-volume overreaction. Always cross-reference with the stock’s <Link className="text-blue-600 dark:text-blue-400 hover:underline" href="/earnings">earnings calendar</Link> and relative volume before making decisions.
+            </p>
+            <p>
+              Data refreshes every 60 seconds. Click any ticker for detailed analysis including valuation scores, financial health metrics, and price history. See the <Link className="text-blue-600 dark:text-blue-400 hover:underline" href="/heatmap">Market Heatmap</Link> for a bird’s-eye view of which sectors are under pressure today.
+            </p>
+          </div>
+        </section>
 
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
@@ -127,20 +154,18 @@ export default async function LosersPage() {
           </div>
         </div>
 
-        <div className="mt-4 text-sm text-slate-600 dark:text-slate-400">
-          Related:{' '}
-          <Link className="hover:underline" href="/gainers">
-            Gainers
-          </Link>
-          {' · '}
-          <Link className="hover:underline" href="/sectors">
-            Sectors
-          </Link>
-          {' · '}
-          <Link className="hover:underline" href="/stocks">
-            All Stocks
-          </Link>
-        </div>
+        {/* Internal linking section */}
+        <nav className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">Explore More</h2>
+          <div className="flex flex-wrap gap-3 text-sm">
+            <Link className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" href="/gainers">Top Gainers</Link>
+            <Link className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" href="/premarket-movers">All Movers</Link>
+            <Link className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" href="/heatmap">Market Heatmap</Link>
+            <Link className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" href="/sectors">Sectors</Link>
+            <Link className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" href="/earnings">Earnings Calendar</Link>
+            <Link className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" href="/stocks">All Stocks</Link>
+          </div>
+        </nav>
       </div>
     </div>
   );
