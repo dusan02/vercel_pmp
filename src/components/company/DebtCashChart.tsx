@@ -18,7 +18,7 @@ interface DebtCashChartProps {
 const METRICS = [
     { key: 'cash', label: 'Cash & Equivalents', color: '#10B981' },
     { key: 'totalDebt', label: 'Total Debt', color: '#EF4444' },
-    { key: 'netDebt', label: 'Net Debt', color: '#3B82F6' },
+    { key: 'netDebt', label: 'Net Debt', color: '#F87171' },
 ] as const;
 
 function formatYAxis(value: number): string {
@@ -258,7 +258,7 @@ export default function DebtCashChart({ statements }: DebtCashChartProps) {
                             <Bar
                                 dataKey="netDebt"
                                 name="Net Debt"
-                                fill="#3B82F6"
+                                fill="#F87171"
                                 radius={[2, 2, 0, 0]}
                                 maxBarSize={40}
                             />
