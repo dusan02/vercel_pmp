@@ -132,7 +132,7 @@ export default async function StockPage({ params }: PageProps) {
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Market Cap</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                ${(marketCap / 1e9).toFixed(2)}B
+                {marketCap > 0 ? `$${(marketCap / 1e9).toFixed(2)}B` : 'N/A'}
               </p>
             </div>
             <div className="relative group">
@@ -178,8 +178,8 @@ export default async function StockPage({ params }: PageProps) {
           {/* Tabs Container */}
           <CompanyTabs ticker={tickerUpper} />
 
-          {/* Back Link */}
-          <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+          {/* Back Link — hidden from Google snippets */}
+          <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700" data-nosnippet>
             <Link
               href="/"
               className="inline-flex items-center text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"

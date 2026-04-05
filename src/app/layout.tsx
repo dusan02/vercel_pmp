@@ -161,7 +161,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="PreMarketPrice" />
-        <meta name="description" content="Real-time pre-market live stock prices for US stocks traded on NYSE, NASDAQ, and other US exchanges. Track pre-market movements and earnings calendar of 300+ US companies." />
+        {/* description meta tag is set by Next.js metadata API per page — do NOT hardcode here */}
         <meta name="format-detection" content="telephone=no" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="msapplication-config" content="/browserconfig.xml" />

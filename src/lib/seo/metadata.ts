@@ -44,8 +44,17 @@ export function generateCompanyMetadata({
     ? `Market Cap: $${(marketCap / 1e9).toFixed(2)}B`
     : '';
 
-  const title = `${displayName} (${ticker}) Stock Price & Analysis | ${siteName}`;
-  const description = `Real-time stock data for ${displayName} (${ticker}). ${priceText ? `Current price: ${priceText}` : ''} ${changeText ? `(${changeText})` : ''} ${marketCapText ? `- ${marketCapText}` : ''}. Track pre-market movements, earnings calendar, and comprehensive stock analysis.${sector ? ` Sector: ${sector}.` : ''}${industry ? ` Industry: ${industry}.` : ''}`;
+  const title = `${displayName} (${ticker}) Stock Price & Analysis`;
+  const parts = [
+    `Get real-time pre-market data for ${displayName} (${ticker}).`,
+    priceText ? `Price: ${priceText}` : '',
+    changeText ? `(${changeText})` : '',
+    marketCapText ? `${marketCapText}.` : '',
+    sector ? `Sector: ${sector}.` : '',
+    industry ? `Industry: ${industry}.` : '',
+    'Live quotes, earnings calendar, financial analysis & valuation scores.',
+  ].filter(Boolean);
+  const description = parts.join(' ').replace(/\s+/g, ' ').trim();
 
   const keywords = [
     ticker,
