@@ -56,10 +56,10 @@ export default function CashFlowChart({ statements }: CashFlowChartProps) {
 
     // Determine which metrics have data
     const availableMetrics = useMemo(() => {
-        const hasCapex = statements.some(s => s.capex !== null && s.capex !== 0);
+        const hasOperatingCF = statements.some(s => s.operatingCashFlow !== null);
         const hasSbc = statements.some(s => (s as any).sbc !== null && (s as any).sbc !== 0);
         const defaults = ['operatingCF', 'netIncome'];
-        if (hasCapex) defaults.push('freeCF');
+        if (hasOperatingCF) defaults.push('freeCF'); // Always show freeCF if we have operating CF
         if (hasSbc) defaults.push('sbc');
         return defaults;
     }, [statements]);
