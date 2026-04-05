@@ -114,9 +114,10 @@ export default function FinancialChart({ statements }: FinancialChartProps) {
             // Vypočítaj EBITDA ak nie je priamo dostupné (EBITDA ≈ EBIT + D&A, ale D&A nemáme)
             const ebitdaValue = (s.ebit && s.ebit > 0) ? s.ebit * 1.1 : 0;
             const qMatch = s.fiscalPeriod?.match(/Q(\d)/);
+            const shortYear = `'${String(s.fiscalYear).slice(2)}`;
             const label = qMatch
-                ? `Q${qMatch[1]}'${String(s.fiscalYear).slice(2)}`
-                : String(s.fiscalYear);
+                ? `Q${qMatch[1]}${shortYear}`
+                : shortYear;
             return {
                 name: label,
                 date: label,
@@ -182,8 +183,8 @@ export default function FinancialChart({ statements }: FinancialChartProps) {
 
     return (
         <div className="w-full h-full flex flex-col">
-            {/* Control Panel */}
-            <div className="flex justify-between items-center mb-4">
+            {/* Control Panel — wraps on mobile */}
+            <div className="flex flex-wrap gap-2 items-center justify-between mb-4">
                 {/* View Mode Toggle */}
                 <div className="bg-gray-100 dark:bg-gray-800 p-1 rounded-lg inline-flex">
                     <button
@@ -206,13 +207,13 @@ export default function FinancialChart({ statements }: FinancialChartProps) {
                     </button>
                 </div>
 
-                {/* Metric Selection */}
-                <div className="flex gap-2">
+                {/* Metric Selection — flex-wrap ensures EBITDA is always visible */}
+                <div className="flex flex-wrap gap-1.5 sm:gap-2">
                     {AVAILABLE_METRICS.map(metric => (
                         <button
                             key={metric.key}
                             onClick={() => toggleMetric(metric.key)}
-                            className={`text-xs px-3 py-1.5 rounded-md font-medium transition-all ${
+                            className={`text-[11px] sm:text-xs px-2.5 sm:px-3 py-1.5 rounded-md font-medium transition-all ${
                                 selectedMetrics.includes(metric.key)
                                     ? 'text-white shadow-sm'
                                     : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 bg-gray-200 dark:bg-gray-700'
@@ -235,18 +236,18 @@ export default function FinancialChart({ statements }: FinancialChartProps) {
                 <ResponsiveContainer width="100%" height={320}>
                     <BarChart
                         data={chartData}
-                        margin={{ top: 10, right: 10, left: 10, bottom: viewMode === 'quarterly' ? 8 : 40 }}
+                        margin={{ top: 10, right: 10, left: 10, bottom: viewMode === 'quarterly' ? 8 : 5 }}
                         barGap={2}
                     >
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" className="dark:stroke-gray-700" />
                         <XAxis 
                             dataKey="date"
-                            tick={viewMode === 'quarterly' ? <CustomQuarterTick /> : { fontSize: 12, fill: '#6B7280', fontWeight: 500 }}
+                            tick={viewMode === 'quarterly' ? <CustomQuarterTick /> : { fontSize: 11, fill: '#6B7280', fontWeight: 500 }}
                             axisLine={false}
                             tickLine={false}
                             interval={0}
                             dy={viewMode === 'annual' ? 6 : 0}
-                            height={viewMode === 'quarterly' ? 44 : 30}
+                            height={viewMode === 'quarterly' ? 44 : 24}
                         />
                         <YAxis 
                             tickFormatter={formatYAxis} 
