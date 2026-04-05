@@ -25,6 +25,8 @@ export interface FinancialStatement {
     capex: number | null;
     totalDebt: number | null;
     cashAndEquivalents: number | null;
+    sharesOutstanding: number | null;
+    sbc: number | null;
 }
 
 interface FinancialChartProps {
