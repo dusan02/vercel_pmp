@@ -235,8 +235,18 @@ export function computeMobileTreemapSectors(
       // Tiles height - subtract 1px buffer to prevent sub-pixel clipping
       const tilesHeight = Math.max(1, sectorHeight - sectorChromeHeightPx - 1);
 
+      // Flatten sector to 2-level hierarchy (sector → companies directly).
+      // buildHeatmapHierarchy creates a 3-level tree for major sectors (sector → industry → company).
+      // D3 treemapSquarify + round(true) on nested hierarchies can produce overlapping coordinates
+      // at industry group boundaries on mobile. Flattening avoids this entirely.
+      const flattenLeaves = (node: any): any[] => {
+        if (!node.children || node.children.length === 0) return [node];
+        return node.children.flatMap(flattenLeaves);
+      };
+      const flatSectorNode = { ...sectorItem.node, children: flattenLeaves(sectorItem.node) };
+
       // Generate D3 treemap
-      const hierarchyNode = hierarchy(sectorItem.node)
+      const hierarchyNode = hierarchy(flatSectorNode)
         .sum((d: any) => d.value || 0)
         .sort((a: any, b: any) => (b.value || 0) - (a.value || 0));
 
