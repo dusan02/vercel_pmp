@@ -10,6 +10,9 @@ import {
     Legend
 } from 'recharts';
 import { FinancialStatement } from './FinancialChart';
+import { filterStatementsByViewMode, formatChartYAxis, buildPeriodLabel } from '@/lib/utils/chartUtils';
+import { ChartViewToggle } from './shared/ChartViewToggle';
+import { ChartQuarterTick } from './shared/ChartQuarterTick';
 
 interface DebtCashChartProps {
     statements: FinancialStatement[];
@@ -20,14 +23,6 @@ const METRICS = [
     { key: 'totalDebt', label: 'Total Debt', color: '#EF4444' },
     { key: 'netDebt', label: 'Net Debt', color: '#F87171' },
 ] as const;
-
-function formatYAxis(value: number): string {
-    if (value === 0) return '0';
-    const abs = Math.abs(value);
-    if (abs >= 1000) return `$${(value / 1000).toFixed(1)}B`;
-    if (abs >= 1) return `$${value.toFixed(0)}M`;
-    return `$${value.toFixed(1)}M`;
-}
 
 function CustomTooltip({ active, payload, label }: any) {
     if (!active || !payload?.length) return null;
@@ -56,56 +51,15 @@ export default function DebtCashChart({ statements }: DebtCashChartProps) {
 
     const chartData = useMemo(() => {
         if (!statements || statements.length === 0) return [];
-
-        let filtered = statements;
-        if (viewMode === 'annual') {
-            filtered = statements.filter(s =>
-                s.fiscalPeriod === 'FY' ||
-                s.fiscalPeriod === 'TTM' ||
-                s.period === 'annual' ||
-                (s.fiscalPeriod && s.fiscalPeriod.startsWith('FY'))
-            );
-            if (filtered.length === 0) {
-                const yearlyData = new Map();
-                statements.forEach(s => {
-                    if (s.fiscalPeriod && s.fiscalPeriod.includes('Q4')) {
-                        const year = s.fiscalYear;
-                        if (!yearlyData.has(year) || new Date(s.endDate) > new Date(yearlyData.get(year).endDate)) {
-                            yearlyData.set(year, s);
-                        }
-                    }
-                });
-                filtered = Array.from(yearlyData.values());
-            }
-        } else {
-            filtered = statements.filter(s =>
-                s.fiscalPeriod !== 'FY' &&
-                s.fiscalPeriod !== 'TTM' &&
-                s.period !== 'annual'
-            );
-        }
-
-        const sorted = [...filtered].sort(
-            (a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime()
-        );
-
+        const filtered = filterStatementsByViewMode(statements, viewMode);
+        const sorted = [...filtered].sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime());
         return sorted
             .filter(s => s.totalDebt !== null || s.cashAndEquivalents !== null)
             .map(s => {
                 const cashVal = (s.cashAndEquivalents ?? 0) / 1e6;
                 const debtVal = (s.totalDebt ?? 0) / 1e6;
-                const qMatch = s.fiscalPeriod?.match(/Q(\d)/);
-                const shortYear = `'${String(s.fiscalYear).slice(2)}`;
-                const label = qMatch
-                    ? `Q${qMatch[1]}${shortYear}`
-                    : shortYear;
-                return {
-                    name: label,
-                    date: label,
-                    cash: cashVal,
-                    totalDebt: debtVal,
-                    netDebt: debtVal - cashVal,
-                };
+                const label = buildPeriodLabel(s.fiscalPeriod, s.fiscalYear);
+                return { name: label, date: label, cash: cashVal, totalDebt: debtVal, netDebt: debtVal - cashVal };
             });
     }, [statements, viewMode]);
 
@@ -132,26 +86,6 @@ export default function DebtCashChart({ statements }: DebtCashChartProps) {
         );
     }
 
-    // Custom tick for quarterly mode
-    const CustomQuarterTick = ({ x, y, payload, index }: any) => {
-        const val: string = payload?.value ?? '';
-        const m = val.match(/Q(\d)'(\d{2})/);
-        if (!m) return <text x={x} y={y + 12} textAnchor="middle" fill="#6B7280" fontSize={11}>{val}</text>;
-        const q = `Q${m[1]}`;
-        const year = `20${m[2]}`;
-        const prevDate = index > 0 ? (chartData[index - 1]?.date as string) : '';
-        const prevYear = prevDate?.match(/Q\d'(\d{2})/)?.[1];
-        const showYear = index === 0 || prevYear !== m[2];
-        return (
-            <g transform={`translate(${x},${y})`}>
-                <text x={0} y={14} textAnchor="middle" fill="#6B7280" fontSize={11} fontWeight={500}>{q}</text>
-                {showYear && (
-                    <text x={0} y={30} textAnchor="middle" fill="#9CA3AF" fontSize={10} fontWeight={500}>{year}</text>
-                )}
-            </g>
-        );
-    };
-
     const yMin = useMemo(() => {
         if (!selectedMetrics.includes('netDebt')) return 0;
         const min = Math.min(0, ...chartData.map(d => d.netDebt));
@@ -160,31 +94,8 @@ export default function DebtCashChart({ statements }: DebtCashChartProps) {
 
     return (
         <div className="w-full h-full flex flex-col">
-            {/* Control Panel — wraps on mobile */}
             <div className="flex flex-wrap gap-2 items-center justify-between mb-4">
-                {/* View Mode Toggle */}
-                <div className="bg-gray-100 dark:bg-gray-800 p-1 rounded-lg inline-flex">
-                    <button
-                        onClick={() => setViewMode('annual')}
-                        className={`text-xs px-3 py-1.5 rounded-md font-medium transition-all ${viewMode === 'annual'
-                            ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                            : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-                            }`}
-                    >
-                        Annual
-                    </button>
-                    <button
-                        onClick={() => setViewMode('quarterly')}
-                        className={`text-xs px-3 py-1.5 rounded-md font-medium transition-all ${viewMode === 'quarterly'
-                            ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                            : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-                            }`}
-                    >
-                        Quarterly
-                    </button>
-                </div>
-
-                {/* Metric Selection */}
+                <ChartViewToggle viewMode={viewMode} onChange={setViewMode} />
                 <div className="flex flex-wrap gap-1.5 sm:gap-2">
                     {METRICS.map(metric => (
                         <button
@@ -219,7 +130,7 @@ export default function DebtCashChart({ statements }: DebtCashChartProps) {
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" className="dark:stroke-gray-700" />
                         <XAxis
                             dataKey="date"
-                            tick={viewMode === 'quarterly' ? <CustomQuarterTick /> : { fontSize: 11, fill: '#6B7280', fontWeight: 500 }}
+                            tick={viewMode === 'quarterly' ? <ChartQuarterTick chartData={chartData} /> : { fontSize: 11, fill: '#6B7280', fontWeight: 500 }}
                             axisLine={false}
                             tickLine={false}
                             interval={0}
@@ -227,7 +138,7 @@ export default function DebtCashChart({ statements }: DebtCashChartProps) {
                             height={viewMode === 'quarterly' ? 44 : 24}
                         />
                         <YAxis
-                            tickFormatter={formatYAxis}
+                            tickFormatter={formatChartYAxis}
                             tick={{ fontSize: 12, fill: '#6B7280' }}
                             axisLine={false}
                             tickLine={false}

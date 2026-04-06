@@ -18,9 +18,10 @@ import { formatPercent, formatMarketCapDiff, formatPrice, formatMarketCap } from
 import { formatSectorName } from '@/lib/utils/format';
 import { LAYOUT_CONFIG } from '@/lib/utils/heatmapConfig';
 import { getTileLabelConfig } from '@/lib/utils/heatmapLabelUtils';
-import { calculateMaxCharsForWidth, calculateSectorSummary, truncateSectorName } from '@/lib/heatmap/sectorLabels';
 import { usePanZoom } from '@/hooks/usePanZoom';
 import styles from '@/styles/heatmap.module.css';
+import { HeatmapLegend } from './HeatmapLegend';
+import { SectorLabel } from './heatmap/SectorLabel';
 
 // --- CONSTANTS ---
 // Constants moved to @/lib/utils/heatmapConfig.ts
@@ -84,56 +85,7 @@ export type MarketHeatmapProps = {
  */
 
 
-/**
- * Komponent pre Legendu.
- * Exportovaný, aby sa mohol použiť aj v page komponente.
- */
-export const HeatmapLegend: React.FC<{ timeframe: 'day' | 'week' | 'month'; metric?: HeatmapMetric }> = ({ timeframe, metric = 'percent' }) => {
-  const colorScale = createHeatmapColorScale(timeframe, metric === 'mcap' ? 'mcap' : 'percent');
-  const scales = {
-    day: [-5, -3, -1, 0, 1, 3, 5],
-    week: [-10, -6, -3, 0, 3, 6, 10],
-    month: [-20, -12, -6, 0, 6, 12, 20],
-  };
-  const scalesB = {
-    day: [-100, -30, -10, 0, 10, 30, 100],
-    week: [-30, -10, -3, 0, 3, 10, 30],
-    month: [-60, -20, -6, 0, 6, 20, 60],
-  };
-  const points = metric === 'mcap' ? scalesB[timeframe] : scales[timeframe];
-  const unit = metric === 'mcap' ? 'B$' : '%';
-  const formatTick = (v: number) => `${v}${unit}`;
-  // Reduce label density for readability (keep swatches full-res).
-  const labelIndices = points.length >= 7 ? [0, 2, 3, 4, 6] : points.map((_, i) => i);
-
-  return (
-    <div className="bg-gray-900 bg-opacity-70 px-2.5 py-1.5 rounded-lg">
-      {/* Swatches (always full resolution) */}
-      <div className="flex items-stretch">
-        {points.map((p, idx) => (
-          <div
-            key={p}
-            className="h-3 w-5 border-y border-gray-700"
-            style={{
-              backgroundColor: colorScale(p),
-              borderLeft: idx === 0 ? '1px solid #4b5563' : 'none',
-              borderRight: idx === points.length - 1 ? '1px solid #4b5563' : 'none',
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Labels (sparser + readable) */}
-      <div className="mt-1 flex items-center justify-between text-white text-[10px] leading-none font-mono tabular-nums">
-        {labelIndices.map((i) => (
-          <span key={`${points[i]}-${i}`} className="opacity-90">
-            {formatTick(points[i] ?? 0)}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-};
+export { HeatmapLegend };
 
 // --- HLAVNÝ KOMPONENT ---
 
@@ -942,98 +894,19 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
                   />
                   {/* Sector labels for canvas mode - rendered AFTER canvas to ensure they're on top */}
                   {filteredNodes
-                    .filter((node) => node.depth === 1) // Only Sectors
-                    .map((node) => {
-                      const { x0, y0, x1, y1 } = node as TreemapNode;
-                      const data = node.data as HierarchyData;
-                      const nodeWidth = x1 - x0;
-                      const nodeHeight = y1 - y0;
-                      const scaledWidth = nodeWidth * effectiveScale;
-                      const scaledHeight = nodeHeight * effectiveScale;
-
-                      const labelConfig = sectorLabelVariant === 'full'
-                        ? LAYOUT_CONFIG.SECTOR_LABEL_FULL
-                        : LAYOUT_CONFIG.SECTOR_LABEL_COMPACT;
-
-                      const labelHeight = isMobile
-                        ? (sectorLabelVariant === 'full' ? 18 : labelConfig.HEIGHT)
-                        : labelConfig.HEIGHT;
-                      const labelLeft = isMobile ? Math.min(labelConfig.LEFT, 6) : labelConfig.LEFT;
-
-                      // Check if sector is large enough (both width and height)
-                      // Increased minimum size to prevent overlapping on small sectors
-                      const minSizeForLabel = 80; // Increased from 50 to prevent overlap
-                      const minHeightForLabel = labelHeight + 8;
-                      const showLabel = scaledWidth > minSizeForLabel
-                        && scaledHeight > minHeightForLabel
-                        && effectiveScale > 0
-                        && treemapBounds !== null;
-
-                      if (!showLabel) return null;
-
-                      // Calculate responsive font size using clamp, adjusted for sector width
-                      const minFont = labelConfig.FONT_SIZE_MIN;
-                      const maxFont = labelConfig.FONT_SIZE_MAX;
-                      // Scale font size based on available width (max 90% of sector width)
-                      const maxLabelWidth = scaledWidth * 0.9;
-                      const widthBasedFont = Math.min(maxFont, Math.max(minFont, maxLabelWidth / 8));
-                      const responsiveFontSize = `clamp(${minFont}px, ${widthBasedFont}px, ${maxFont}px)`;
-                      const fontSizeValue = parseFloat(responsiveFontSize.match(/\d+\.?\d*/)?.[0] || String(minFont));
-
-                      // Calculate sector summary for full variant
-                      const sectorSummary = !isMobile && sectorLabelVariant === 'full' && LAYOUT_CONFIG.SECTOR_LABEL_FULL.SHOW_SUMMARY
-                        ? calculateSectorSummary(node as TreemapNode, metric)
-                        : null;
-
-                      // Dynamically truncate sector name based on available width
-                      const maxChars = calculateMaxCharsForWidth(scaledWidth, fontSizeValue, labelConfig.LEFT + 20);
-                      const defaultMaxLength = sectorLabelVariant === 'full' ? 25 : 20;
-                      const maxLength = Math.max(4, Math.min(maxChars, defaultMaxLength));
-                      const displayName = truncateSectorName(data.name, maxLength);
-
-                      return (
-                        <div
-                          key={`sector-label-${data.name}-${x0}-${y0}`}
-                          className={`${styles.sectorLabelWrap} ${sectorLabelVariant === 'full'
-                            ? styles.sectorLabelWrapFull
-                            : styles.sectorLabelWrapCompact
-                            }`}
-                          style={{
-                            left: x0 * effectiveScale + effectiveOffset.x,
-                            top: y0 * effectiveScale + effectiveOffset.y,
-                            width: nodeWidth * effectiveScale,
-                            maxWidth: nodeWidth * effectiveScale, // Prevent overflow
-                            height: labelHeight,
-                            paddingLeft: labelLeft,
-                            overflow: 'hidden', // Ensure text doesn't overflow
-                          }}
-                        >
-                          {sectorLabelVariant === 'full' ? (
-                            <div
-                              className={styles.sectorLabelStripFull}
-                              style={{
-                                fontSize: responsiveFontSize,
-                                ...(isMobile ? {
-                                  width: 'fit-content',
-                                  maxWidth: '100%',
-                                  padding: '2px 8px',
-                                  borderRadius: '6px',
-                                } : {}),
-                              }}
-                            >
-                              <span>{displayName}</span>
-                              {sectorSummary && (
-                                <span className={styles.sectorLabelSummary}>{sectorSummary}</span>
-                              )}
-                            </div>
-                          ) : (
-                            <div className={styles.sectorLabelPillCompact} style={{ fontSize: responsiveFontSize }}>
-                              {displayName}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                    .filter((node) => node.depth === 1)
+                    .map((node) => (
+                      <SectorLabel
+                        key={`sector-label-${node.data.name}-${(node as TreemapNode).x0}-${(node as TreemapNode).y0}`}
+                        node={node as TreemapNode}
+                        scale={effectiveScale}
+                        offset={effectiveOffset}
+                        sectorLabelVariant={sectorLabelVariant}
+                        isMobile={isMobile}
+                        metric={metric}
+                        treemapBoundsNotNull={treemapBounds !== null}
+                      />
+                    ))}
                   {/* Industry labels for canvas mode */}
                   {filteredNodes
                     .filter((node) => node.data.meta?.type === 'industry')
@@ -1165,101 +1038,23 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
 
             {/* Sector labels for DOM mode - rendered AFTER sectors to ensure they're on top */}
             {filteredNodes
-              .filter((node) => node.depth === 1) // Iba Sektory
-              .map((node) => {
-                const { x0, y0, x1, y1 } = node as TreemapNode;
-                const data = node.data as HierarchyData;
-                const nodeWidth = x1 - x0;
-                const nodeHeight = y1 - y0;
-                const scaledWidth = nodeWidth * scale;
-                const scaledHeight = nodeHeight * scale;
-
-                const labelConfig = sectorLabelVariant === 'full'
-                  ? LAYOUT_CONFIG.SECTOR_LABEL_FULL
-                  : LAYOUT_CONFIG.SECTOR_LABEL_COMPACT;
-
-                const labelHeight = isMobile
-                  ? (sectorLabelVariant === 'full' ? 18 : labelConfig.HEIGHT)
-                  : labelConfig.HEIGHT;
-                const labelLeft = isMobile ? Math.min(labelConfig.LEFT, 6) : labelConfig.LEFT;
-
-                // Check if sector is large enough (both width and height)
-                const minSizeForLabel = 80;
-                const minHeightForLabel = labelHeight + 8;
-                const showLabel = scaledWidth > minSizeForLabel
-                  && scaledHeight > minHeightForLabel
-                  && scale > 0
-                  && treemapBounds !== null;
-
-                if (!showLabel) return null;
-
-                // Calculate responsive font size using clamp, adjusted for sector width
-                const minFont = labelConfig.FONT_SIZE_MIN;
-                const maxFont = labelConfig.FONT_SIZE_MAX;
-                // Scale font size based on available width (max 90% of sector width)
-                const maxLabelWidth = scaledWidth * 0.9;
-                const widthBasedFont = Math.min(maxFont, Math.max(minFont, maxLabelWidth / 8));
-                const responsiveFontSize = `clamp(${minFont}px, ${widthBasedFont}px, ${maxFont}px)`;
-                const fontSizeValue = parseFloat(responsiveFontSize.match(/\d+\.?\d*/)?.[0] || String(minFont));
-
-                // Calculate sector summary for full variant
-                const sectorSummary = !isMobile && sectorLabelVariant === 'full' && LAYOUT_CONFIG.SECTOR_LABEL_FULL.SHOW_SUMMARY
-                  ? calculateSectorSummary(node as TreemapNode, metric)
-                  : null;
-
-                // Dynamically truncate sector name based on available width
-                const maxChars = calculateMaxCharsForWidth(scaledWidth, fontSizeValue, labelConfig.LEFT + 20);
-                const defaultMaxLength = sectorLabelVariant === 'full' ? 25 : 20;
-                const maxLength = Math.max(4, Math.min(maxChars, defaultMaxLength));
-                const displayName = truncateSectorName(data.name, maxLength);
-
-                return (
-                  <div
-                    key={`sector-label-${data.name}-${x0}-${y0}`}
-                    className={`${styles.sectorLabelWrap} ${sectorLabelVariant === 'full'
-                      ? styles.sectorLabelWrapFull
-                      : styles.sectorLabelWrapCompact
-                      } ${zoomedSector ? styles.heatmapZoomEnter : ''}`} /* Add zoom entry animation */
-                    style={{
-                      left: x0 * scale + offset.x,
-                      top: y0 * scale + offset.y,
-                      width: nodeWidth * scale,
-                      maxWidth: nodeWidth * scale, // Prevent overflow
-                      height: labelHeight,
-                      paddingLeft: labelLeft,
-                      overflow: 'hidden', // Ensure text doesn't overflow
-                      pointerEvents: 'auto' // Ensure hover events work
-                    }}
-                    onMouseEnter={() => setHoveredSector(data.name)}
-                    onMouseLeave={() => setHoveredSector(null)}
-                    onClick={() => handleSectorClick(data.name)}
-                  >
-                    {sectorLabelVariant === 'full' ? (
-                      <div
-                        className={styles.sectorLabelStripFull}
-                        style={{
-                          fontSize: responsiveFontSize,
-                          ...(isMobile ? {
-                            width: 'fit-content',
-                            maxWidth: '100%',
-                            padding: '2px 8px',
-                            borderRadius: '6px',
-                          } : {}),
-                        }}
-                      >
-                        <span>{displayName}</span>
-                        {sectorSummary && (
-                          <span className={styles.sectorLabelSummary}>{sectorSummary}</span>
-                        )}
-                      </div>
-                    ) : (
-                      <div className={styles.sectorLabelPillCompact} style={{ fontSize: responsiveFontSize }}>
-                        {displayName}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              .filter((node) => node.depth === 1)
+              .map((node) => (
+                <SectorLabel
+                  key={`sector-label-${node.data.name}-${(node as TreemapNode).x0}-${(node as TreemapNode).y0}`}
+                  node={node as TreemapNode}
+                  scale={scale}
+                  offset={offset}
+                  sectorLabelVariant={sectorLabelVariant}
+                  isMobile={isMobile}
+                  metric={metric}
+                  treemapBoundsNotNull={treemapBounds !== null}
+                  zoomedSectorClass={!!zoomedSector}
+                  onMouseEnter={() => setHoveredSector(node.data.name)}
+                  onMouseLeave={() => setHoveredSector(null)}
+                  onClick={() => handleSectorClick(node.data.name)}
+                />
+              ))}
           </>
         )}
       </div>

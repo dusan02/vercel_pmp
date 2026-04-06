@@ -11,6 +11,9 @@ import {
     ReferenceLine
 } from 'recharts';
 import { FinancialStatement } from './FinancialChart';
+import { filterStatementsByViewMode, buildPeriodLabel } from '@/lib/utils/chartUtils';
+import { ChartViewToggle } from './shared/ChartViewToggle';
+import { ChartQuarterTick } from './shared/ChartQuarterTick';
 
 interface ShareDilutionChartProps {
     statements: FinancialStatement[];
@@ -52,30 +55,7 @@ export default function ShareDilutionChart({ statements }: ShareDilutionChartPro
     const chartData = useMemo(() => {
         if (!statements || statements.length === 0) return [];
 
-        let filtered = statements;
-        if (viewMode === 'annual') {
-            filtered = statements.filter(s =>
-                s.fiscalPeriod === 'FY' || s.fiscalPeriod === 'TTM' ||
-                s.period === 'annual' || (s.fiscalPeriod && s.fiscalPeriod.startsWith('FY'))
-            );
-            if (filtered.length === 0) {
-                const yearlyData = new Map();
-                statements.forEach(s => {
-                    if (s.fiscalPeriod && s.fiscalPeriod.includes('Q4')) {
-                        const year = s.fiscalYear;
-                        if (!yearlyData.has(year) || new Date(s.endDate) > new Date(yearlyData.get(year).endDate)) {
-                            yearlyData.set(year, s);
-                        }
-                    }
-                });
-                filtered = Array.from(yearlyData.values());
-            }
-        } else {
-            filtered = statements.filter(s =>
-                s.fiscalPeriod !== 'FY' && s.fiscalPeriod !== 'TTM' && s.period !== 'annual'
-            );
-        }
-
+        const filtered = filterStatementsByViewMode(statements, viewMode);
         const sorted = [...filtered]
             .filter(s => s.sharesOutstanding !== null && s.sharesOutstanding > 0)
             .sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime());
@@ -90,9 +70,7 @@ export default function ShareDilutionChart({ statements }: ShareDilutionChartPro
             const buybackRatio = prevShares && prevShares > 0
                 ? ((prevShares - shares) / prevShares) * 100
                 : 0;
-            const qMatch = s.fiscalPeriod?.match(/Q(\d)/);
-            const shortYear = `'${String(s.fiscalYear).slice(2)}`;
-            const label = qMatch ? `Q${qMatch[1]}${shortYear}` : shortYear;
+            const label = buildPeriodLabel(s.fiscalPeriod, s.fiscalYear);
             return { name: label, date: label, shares, buybackRatio };
         });
     }, [statements, viewMode]);
@@ -106,39 +84,13 @@ export default function ShareDilutionChart({ statements }: ShareDilutionChartPro
         );
     }
 
-    const CustomQuarterTick = ({ x, y, payload, index }: any) => {
-        const val: string = payload?.value ?? '';
-        const m = val.match(/Q(\d)'(\d{2})/);
-        if (!m) return <text x={x} y={y + 12} textAnchor="middle" fill="#6B7280" fontSize={11}>{val}</text>;
-        const q = `Q${m[1]}`;
-        const year = `20${m[2]}`;
-        const prevDate = index > 0 ? (chartData[index - 1]?.date as string) : '';
-        const prevYear = prevDate?.match(/Q\d'(\d{2})/)?.[1];
-        const showYear = index === 0 || prevYear !== m[2];
-        return (
-            <g transform={`translate(${x},${y})`}>
-                <text x={0} y={14} textAnchor="middle" fill="#6B7280" fontSize={11} fontWeight={500}>{q}</text>
-                {showYear && <text x={0} y={30} textAnchor="middle" fill="#9CA3AF" fontSize={10} fontWeight={500}>{year}</text>}
-            </g>
-        );
-    };
-
     const maxBuyback = Math.max(...chartData.map(d => Math.abs(d.buybackRatio)), 1);
     const buybackDomain = [-maxBuyback * 1.2, maxBuyback * 1.2];
 
     return (
         <div className="w-full h-full flex flex-col">
             <div className="flex flex-wrap gap-2 items-center justify-between mb-4">
-                <div className="bg-gray-100 dark:bg-gray-800 p-1 rounded-lg inline-flex">
-                    <button onClick={() => setViewMode('annual')}
-                        className={`text-xs px-3 py-1.5 rounded-md font-medium transition-all ${viewMode === 'annual' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}>
-                        Annual
-                    </button>
-                    <button onClick={() => setViewMode('quarterly')}
-                        className={`text-xs px-3 py-1.5 rounded-md font-medium transition-all ${viewMode === 'quarterly' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}>
-                        Quarterly
-                    </button>
-                </div>
+                <ChartViewToggle viewMode={viewMode} onChange={setViewMode} />
                 <div className="flex flex-wrap gap-1.5 sm:gap-2">
                     <button className="text-[11px] sm:text-xs px-2.5 sm:px-3 py-1.5 rounded-md font-medium text-white shadow-sm" style={{ backgroundColor: '#3B82F6' }}>
                         Shares Outstanding ✓
@@ -154,7 +106,8 @@ export default function ShareDilutionChart({ statements }: ShareDilutionChartPro
                 <ResponsiveContainer width="100%" height={320}>
                     <ComposedChart data={chartData} margin={{ top: 10, right: showBuyback ? 50 : 10, left: 10, bottom: viewMode === 'quarterly' ? 8 : 5 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" className="dark:stroke-gray-700" />
-                        <XAxis dataKey="date" tick={viewMode === 'quarterly' ? <CustomQuarterTick /> : { fontSize: 11, fill: '#6B7280', fontWeight: 500 }}
+                        <XAxis dataKey="date"
+                            tick={viewMode === 'quarterly' ? <ChartQuarterTick chartData={chartData} /> : { fontSize: 11, fill: '#6B7280', fontWeight: 500 }}
                             axisLine={false} tickLine={false} interval={0} dy={viewMode === 'annual' ? 6 : 0} height={viewMode === 'quarterly' ? 44 : 24} />
                         <YAxis yAxisId="left" tickFormatter={formatSharesAxis} tick={{ fontSize: 12, fill: '#6B7280' }} axisLine={false} tickLine={false} width={55} />
                         {showBuyback && (
