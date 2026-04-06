@@ -19,24 +19,28 @@ export function HeatmapViewButton({ className = '' }: HeatmapViewButtonProps) {
   const [isNavigating, setIsNavigating] = useState(false);
   const [hasPrefetched, setHasPrefetched] = useState(false);
 
-  // Prefetch route and API endpoint on mount (if component is visible)
+  // Prefetch route + warm HTTP cache on mount
   useEffect(() => {
-    // Prefetch immediately when component mounts
     router.prefetch('/heatmap');
+    // Real GET so the browser HTTP cache is populated for the heatmap page
+    fetch('/api/heatmap?timeframe=day&metric=percent', {
+      method: 'GET',
+      cache: 'default',
+      priority: 'low',
+    } as RequestInit).catch(() => {});
     setHasPrefetched(true);
   }, [router]);
 
-  // Prefetch route and API endpoint on hover (backup)
+  // Reset isNavigating if user returns to page without completing navigation
+  useEffect(() => {
+    const reset = () => setIsNavigating(false);
+    window.addEventListener('focus', reset);
+    return () => window.removeEventListener('focus', reset);
+  }, []);
+
   const handleMouseEnter = useCallback(() => {
     if (!hasPrefetched) {
-      // Prefetch the route
       router.prefetch('/heatmap');
-      // Prefetch the API endpoint to warm up connection
-      if (typeof window !== 'undefined') {
-        fetch('/api/heatmap', { method: 'HEAD' }).catch(() => {
-          // Ignore errors, we just want to warm up the connection
-        });
-      }
       setHasPrefetched(true);
     }
   }, [router, hasPrefetched]);

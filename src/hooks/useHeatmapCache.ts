@@ -24,45 +24,38 @@ interface CachedHeatmapData {
 }
 
 /**
+ * Read cache from localStorage synchronously (safe for both SSR and CSR)
+ */
+function readCacheSync(): CachedHeatmapData | null {
+  if (typeof window === 'undefined') return null;
+  const cached = safeGetItem(LOCALSTORAGE_KEY);
+  if (!cached) return null;
+  try {
+    const parsed: CachedHeatmapData = JSON.parse(cached);
+    if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.data) || !parsed.data.length) return null;
+    const age = Date.now() - (parsed.timestamp || 0);
+    if (age < 0 || age >= getMaxAge()) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Hook for managing heatmap data cache in localStorage
  */
 export function useHeatmapCache() {
-  const [cachedData, setCachedData] = useState<CachedHeatmapData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Synchronous read on client — data available on first render without waiting for useEffect
+  const [cachedData, setCachedData] = useState<CachedHeatmapData | null>(readCacheSync);
+  const [isLoading] = useState(false);
 
-  // Load from localStorage on mount
+  // On SSR hydration, re-check localStorage in case the synchronous read was skipped (server)
   useEffect(() => {
-    const cached = safeGetItem(LOCALSTORAGE_KEY);
-    if (cached) {
-      try {
-        const parsed: CachedHeatmapData = JSON.parse(cached);
-        
-        // Validate data structure
-        if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.data)) {
-          console.warn('⚠️ Heatmap: Invalid cache format, clearing');
-          safeRemoveItem(LOCALSTORAGE_KEY);
-          setIsLoading(false);
-          return;
-        }
-        
-        const age = Date.now() - (parsed.timestamp || 0);
-        const maxAge = getMaxAge(); // Dynamic max age based on device
-        
-        // Použi cache len ak je fresh a má validné dáta
-        // Mobile: 10 min, Desktop: 5 min (rýchlejšie načítanie na mobile)
-        if (age < maxAge && age >= 0 && parsed.data && parsed.data.length > 0) {
-          console.log(`📦 Heatmap: Loading from localStorage (${Math.floor(age / 1000)}s old, ${parsed.data.length} companies)`);
-          setCachedData(parsed);
-        } else {
-          console.log(`⚠️ Heatmap: localStorage cache expired or invalid (${Math.floor(age / 1000)}s old) - clearing`);
-          safeRemoveItem(LOCALSTORAGE_KEY);
-        }
-      } catch (parseError) {
-        console.error('⚠️ Heatmap: Error parsing cache, clearing corrupted data:', parseError);
-        safeRemoveItem(LOCALSTORAGE_KEY);
-      }
+    if (!cachedData) {
+      const fresh = readCacheSync();
+      if (fresh) setCachedData(fresh);
     }
-    setIsLoading(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Save to localStorage

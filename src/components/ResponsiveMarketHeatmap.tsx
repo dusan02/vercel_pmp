@@ -181,11 +181,10 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
       );
     }
 
-    // OPTIMIZATION: Only show loading state if we truly have no data
-    // Don't show loading if we have cached data or partial data
-    // This prevents flickering between loading and content states
+    // Show loading only when we genuinely have no data yet
+    // Cache is now read synchronously so data is usually available on first render
     const hasNoData = !data || data.length === 0;
-    const shouldShowLoading = !isMounted || (loading && hasNoData);
+    const shouldShowLoading = loading && hasNoData;
 
     if (shouldShowLoading) {
       return (

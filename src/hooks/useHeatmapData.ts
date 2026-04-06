@@ -45,42 +45,27 @@ export function useHeatmapData({
   initialMetric = 'percent',
   autoRefresh = true
 }: UseHeatmapDataProps = {}) {
-  // State
-  const [data, setData] = useState<CompanyNode[] | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  // Cache hook FIRST — so cachedData is available for synchronous state init below
+  const { cachedData, isLoading: cacheLoading, saveCache } = useHeatmapCache();
+
+  // State — initialized from cache synchronously (no useEffect needed for initial data)
+  const [data, setData] = useState<CompanyNode[] | null>(() => cachedData?.data ?? null);
+  const [loading, setLoading] = useState<boolean>(() => !cachedData);
   const [error, setError] = useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(() => cachedData?.lastUpdated ?? null);
   const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month'>(initialTimeframe);
   const [metric, setMetric] = useState<HeatmapMetric>(initialMetric);
-  const [lastEtag, setLastEtag] = useState<string | null>(null);
+  const [lastEtag, setLastEtag] = useState<string | null>(() => cachedData?.etag ?? null);
 
-  // Cache hook
-  const { cachedData, isLoading: cacheLoading, saveCache } = useHeatmapCache();
-  
   // Use hook for consistent mobile detection
   const isMobile = useMediaQuery('(max-width: 767px)');
 
   // Refs
   const abortControllerRef = useRef<AbortController | null>(null);
-  const isInitialLoadRef = useRef(true);
+  const isInitialLoadRef = useRef(!cachedData);
   const isLoadingRef = useRef(false);
   const lastLoadTimeRef = useRef<number>(0);
-  const currentDataRef = useRef<CompanyNode[]>([]);
-
-  // Load from cache on mount
-  useEffect(() => {
-    if (!cacheLoading && cachedData) {
-      setData(cachedData.data);
-      setLastUpdated(cachedData.lastUpdated || null);
-      setLastEtag(cachedData.etag || null);
-      setLoading(false);
-      isInitialLoadRef.current = false;
-      currentDataRef.current = cachedData.data;
-    } else if (!cacheLoading) {
-      // No cache available, will fetch
-      isInitialLoadRef.current = true;
-    }
-  }, [cachedData, cacheLoading]);
+  const currentDataRef = useRef<CompanyNode[]>(cachedData?.data ?? []);
 
   // Update ref when data changes
   useEffect(() => {
