@@ -23,10 +23,9 @@ interface HeatmapTileProps {
     align: 'center' | 'top-left';
   };
   metric: 'percent' | 'mcap';
-  colorTransition: boolean;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
-  onClick: () => void;
+  onClick: (e: React.MouseEvent) => void;
 }
 
 /**
@@ -39,7 +38,6 @@ export const HeatmapTile = React.memo<HeatmapTileProps>(({
   color,
   labelConfig,
   metric,
-  colorTransition,
   onMouseEnter,
   onMouseLeave,
   onClick,
@@ -80,14 +78,14 @@ export const HeatmapTile = React.memo<HeatmapTileProps>(({
         width: tileWidth * scale,
         height: tileHeight * scale,
         backgroundColor: color,
-        transitionProperty: colorTransition ? 'background-color' : 'all',
+        transition: 'background-color 0.4s ease',
         zIndex: 1, // Below sector borders (sectors have z-10)
       }}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       onClick={onClick}
     >
-      {(labelConfig.showSymbol || labelConfig.showPercent) && (
+      {(labelConfig.showSymbol || labelConfig.showPercent) ? (
         <div className={styles.heatmapTileContent}>
           {labelConfig.showSymbol && fittedSymbolFontPx > 0 && (
             <div
@@ -108,7 +106,17 @@ export const HeatmapTile = React.memo<HeatmapTileProps>(({
             </div>
           )}
         </div>
-      )}
+      ) : scaledWidth >= 5 && scaledHeight >= 5 ? (
+        <div style={{
+          position: 'absolute', top: '50%', left: '50%',
+          transform: 'translate(-50%,-50%)',
+          width: Math.min(4, scaledWidth * 0.25),
+          height: Math.min(4, scaledHeight * 0.25),
+          borderRadius: '50%',
+          backgroundColor: 'rgba(255,255,255,0.35)',
+          pointerEvents: 'none',
+        }} />
+      ) : null}
     </div>
   );
 }, (prevProps, nextProps) => {
@@ -121,7 +129,6 @@ export const HeatmapTile = React.memo<HeatmapTileProps>(({
     prevProps.offset.y === nextProps.offset.y &&
     prevProps.color === nextProps.color &&
     prevProps.metric === nextProps.metric &&
-    prevProps.colorTransition === nextProps.colorTransition &&
     prevProps.labelConfig.showSymbol === nextProps.labelConfig.showSymbol &&
     prevProps.labelConfig.showPercent === nextProps.labelConfig.showPercent &&
     prevProps.labelConfig.symbolFontPx === nextProps.labelConfig.symbolFontPx

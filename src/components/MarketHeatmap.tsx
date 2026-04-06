@@ -8,20 +8,16 @@ import {
 } from 'd3-hierarchy';
 import { scaleLinear } from 'd3-scale';
 
-import { CanvasHeatmap } from './CanvasHeatmap';
-import { HeatmapTile } from './HeatmapTile';
 import { HeatmapTooltip } from './HeatmapTooltip';
 import type { CompanyNode, HeatmapMetric, SectorLabelVariant, HierarchyData, TreemapLeaf, TreemapNode } from '@/lib/heatmap/types';
 import { buildHeatmapHierarchy } from '@/lib/utils/heatmapLayout';
 import { createHeatmapColorScale } from '@/lib/utils/heatmapColors';
-import { formatPercent, formatMarketCapDiff, formatPrice, formatMarketCap } from '@/lib/utils/heatmapFormat';
-import { formatSectorName } from '@/lib/utils/format';
 import { LAYOUT_CONFIG } from '@/lib/utils/heatmapConfig';
-import { getTileLabelConfig } from '@/lib/utils/heatmapLabelUtils';
 import { usePanZoom } from '@/hooks/usePanZoom';
 import styles from '@/styles/heatmap.module.css';
 import { HeatmapLegend } from './HeatmapLegend';
-import { SectorLabel } from './heatmap/SectorLabel';
+import { HeatmapCanvasView } from './heatmap/HeatmapCanvasView';
+import { HeatmapDomView } from './heatmap/HeatmapDomView';
 
 // --- CONSTANTS ---
 // Constants moved to @/lib/utils/heatmapConfig.ts
@@ -141,16 +137,17 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
   const [hoveredNode, setHoveredNode] = useState<CompanyNode | null>(null);
   const [hoveredSector, setHoveredSector] = useState<string | null>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [colorTransition, setColorTransition] = useState(false);
+  const [mobileTappedNode, setMobileTappedNode] = useState<CompanyNode | null>(null);
+  const mobileTapTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Animácia farieb pri zmene timeframe
-  useEffect(() => {
-    setColorTransition(true);
-    const timer = setTimeout(() => setColorTransition(false), 500);
-    return () => clearTimeout(timer);
-  }, [timeframe]);
+  const handleMobileTap = useCallback((company: CompanyNode, x: number, y: number) => {
+    clearTimeout(mobileTapTimerRef.current);
+    setMobileTappedNode(company);
+    setMousePosition({ x, y });
+    mobileTapTimerRef.current = setTimeout(() => setMobileTappedNode(null), 2000);
+  }, []);
 
   // 1. Transformácia dát
   const hierarchyRoot = useMemo(
@@ -556,34 +553,13 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
     };
   }, [treemapBounds, scale, isMobile, hierarchyRoot.children?.length]);
 
-  // Progressive loading state
-  // On mobile, use DOM mode for better progressive loading and performance
-  // On desktop, use Canvas for better performance with many tiles
+  // On mobile, use DOM mode; on desktop, Canvas for performance
   const [renderMode] = useState<'dom' | 'canvas'>(() => {
     if (typeof window !== 'undefined') {
       return window.innerWidth <= 768 ? 'dom' : 'canvas';
     }
     return 'canvas';
   });
-
-  // OPTIMIZATION: Render all items immediately to prevent progressive loading phases
-  // This eliminates the "flickering" effect of items appearing gradually
-  // On mobile (DOM mode), we can handle rendering all items at once
-  // On desktop (Canvas), we render all at once anyway
-  // Note: filteredLeaves is defined later, so we'll initialize with a large number
-  // and update it immediately when filteredLeaves is available
-  const [visibleCount, setVisibleCount] = useState(10000); // Large initial value to render all
-
-  // Reset visible count when data changes or zoom changes - but render ALL immediately
-  useEffect(() => {
-    // Always render all items immediately to prevent progressive loading phases
-    if (filteredLeaves.length > 0) {
-      setVisibleCount(filteredLeaves.length);
-    }
-  }, [filteredLeaves.length]); // Only depend on length to prevent unnecessary updates
-
-  // 2. Renderujeme Listy (Firmy) - Progressive Loading
-  const visibleLeaves = filteredLeaves.slice(0, visibleCount);
 
   // Handler pre hover z Canvasu
   const handleCanvasHover = useCallback((company: CompanyNode | null, x: number, y: number) => {
@@ -627,78 +603,39 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
 
   // Content wrapper ref for pan & zoom
   const contentWrapperRef = useRef<HTMLDivElement>(null);
-  const gestureBindPropsRef = useRef<Record<string, any>>({});
   const [gestureBindProps, setGestureBindProps] = useState<Record<string, any>>({});
 
   // Reset pan & zoom when zoomed sector changes
-  // Only reset if zoomedSector actually changed (not on every render)
   const prevZoomedSectorRef = useRef<string | null>(null);
   useEffect(() => {
     if (prevZoomedSectorRef.current !== zoomedSector) {
-      if (zoomedSector) {
-        // User zoomed to a sector - reset pan & zoom
-        panZoom.reset();
-      }
+      if (zoomedSector) panZoom.reset();
       prevZoomedSectorRef.current = zoomedSector;
     }
   }, [zoomedSector, panZoom]);
 
-  // Apply gesture bind when element is mounted or dependencies change
-  // IMPORTANT: Only enable pan & zoom when zoomed to sector, NOT on mobile initially
-  // Mobile should use natural scrolling, pan & zoom only when user explicitly zooms
+  // Bind gesture handlers when zoomed
   useEffect(() => {
     const element = contentWrapperRef.current;
     if (element && zoomedSector) {
       try {
         const bindProps = panZoom.bind(element);
-        // Filter out any non-function values to prevent errors
-        if (bindProps && typeof bindProps === 'object') {
-          const filteredProps: Record<string, any> = {};
-          Object.keys(bindProps).forEach((key) => {
-            const value = (bindProps as any)[key];
-            if (typeof value === 'function') {
-              filteredProps[key] = value;
-            }
-          });
-          // Only update if props actually changed
-          const prevKeys = Object.keys(gestureBindPropsRef.current).sort().join(',');
-          const newKeys = Object.keys(filteredProps).sort().join(',');
-          if (prevKeys !== newKeys) {
-            gestureBindPropsRef.current = filteredProps;
-            setGestureBindProps(filteredProps);
-          }
-        } else {
-          if (Object.keys(gestureBindPropsRef.current).length > 0) {
-            gestureBindPropsRef.current = {};
-            setGestureBindProps({});
-          }
-        }
+        const filtered = Object.fromEntries(
+          Object.entries(bindProps || {}).filter(([_, v]) => typeof v === 'function')
+        );
+        setGestureBindProps(filtered);
       } catch (error) {
         console.warn('Failed to bind pan & zoom gestures:', error);
-        if (Object.keys(gestureBindPropsRef.current).length > 0) {
-          gestureBindPropsRef.current = {};
-          setGestureBindProps({});
-        }
-      }
-    } else {
-      if (Object.keys(gestureBindPropsRef.current).length > 0) {
-        gestureBindPropsRef.current = {};
         setGestureBindProps({});
       }
+    } else {
+      setGestureBindProps({});
     }
   }, [panZoom, zoomedSector]);
 
-  // Simple callback ref - just set the ref, don't trigger state updates
   const contentWrapperCallbackRef = useCallback((element: HTMLDivElement | null) => {
     contentWrapperRef.current = element;
   }, []);
-
-  // Check if pan & zoom should be applied
-  // Only apply transform if pan & zoom is active (zoom !== 1 or pan !== 0) AND (mobile or zoomed sector)
-  // IMPORTANT: On mobile, don't apply transform initially - let natural scrolling work
-  // Only apply transform when user actively zooms/pans
-  const isPanZoomActive = panZoom.zoom !== 1 || panZoom.panX !== 0 || panZoom.panY !== 0;
-  const shouldApplyTransform = zoomedSector ? isPanZoomActive : false; // Disable pan & zoom on mobile initially
 
   // Double-tap handler
   const handleDoubleTap = useCallback((e: React.TouchEvent | React.MouseEvent) => {
@@ -754,11 +691,21 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
         </button>
       </div> */}
 
-      {/* Zoom back button */}
+      {/* Zoom back button - fixed so it stays visible while scrolling */}
       {zoomedSector && (
         <button
           onClick={() => handleZoomChange(null)}
           className={styles.heatmapZoomButton}
+          style={{
+            position: 'fixed',
+            top: isMobile ? '68px' : '12px',
+            left: '12px',
+            zIndex: 200,
+            minHeight: '44px',
+            minWidth: '44px',
+            padding: '10px 18px',
+            touchAction: 'manipulation',
+          }}
         >
           ← Back to All Sectors
         </button>
@@ -810,269 +757,57 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
         onTouchEnd={zoomedSector ? handleDoubleTap : undefined}
       >
         {renderMode === 'canvas' ? (
-          <>
-            {/* Effective Scale Calculation */}
-            {(() => {
-              // Calculate effective scale and offset combining layout + zoom
-              const effectiveScale = scale * panZoom.zoom;
-
-              // Effective offset must account for:
-              // 1. original layout offset (screen space)
-              // 2. zoom scaling (around 0,0?) usePanZoom logic is translate(pan) scale(zoom) from 0,0.
-              // Formula: FinalX = (LayoutX * scale + OffsetX) * zoom + panX
-              //                 = LayoutX * (scale * zoom) + (OffsetX * zoom + panX)
-
-              const effectiveOffset = {
-                x: offset.x * panZoom.zoom + panZoom.panX,
-                y: offset.y * panZoom.zoom + panZoom.panY
-              };
-
-              return (
-                <>
-                  {/* Sector borders for canvas mode - rendered as overlay divs */}
-                  {filteredNodes
-                    .filter((node) => node.depth === 1) // Only Sectors
-                    .map((node) => {
-                      const { x0, y0, x1, y1 } = node as TreemapNode;
-                      const nodeWidth = x1 - x0;
-                      const nodeHeight = y1 - y0;
-
-                      return (
-                        <div
-                          key={`sector-border-${node.data.name}-${x0}-${y0}`}
-                          className="absolute pointer-events-none"
-                          style={{
-                            left: x0 * effectiveScale + effectiveOffset.x,
-                            top: y0 * effectiveScale + effectiveOffset.y,
-                            width: nodeWidth * effectiveScale,
-                            height: nodeHeight * effectiveScale,
-                            // Thicker black border to separate sectors visually (1.5px solid black - half of original 3px)
-                            // Using box-shadow inset to create border effect that renders above canvas
-                            boxShadow: 'inset 0 0 0 1.5px #000000',
-                            zIndex: 10, // Above canvas to ensure border is visible
-                          }}
-                        />
-                      );
-                    })}
-                  {/* Industry borders for canvas mode */}
-                  {filteredNodes
-                    .filter((node) => node.data.meta?.type === 'industry')
-                    .map((node) => {
-                      const { x0, y0, x1, y1 } = node as TreemapNode;
-                      const nodeWidth = x1 - x0;
-                      const nodeHeight = y1 - y0;
-
-                      // Skip too small block
-                      if (nodeWidth * effectiveScale < 5 || nodeHeight * effectiveScale < 5) return null;
-
-                      return (
-                        <div
-                          key={`industry-border-${node.data.name}-${x0}-${y0}`}
-                          className="absolute pointer-events-none"
-                          style={{
-                            left: x0 * effectiveScale + effectiveOffset.x,
-                            top: y0 * effectiveScale + effectiveOffset.y,
-                            width: nodeWidth * effectiveScale,
-                            height: nodeHeight * effectiveScale,
-                            // Thinner, more subtle border for industries inside sectors
-                            boxShadow: 'inset 0 0 0 1px rgba(0, 0, 0, 0.6)',
-                            zIndex: 8,
-                          }}
-                        />
-                      );
-                    })}
-                  <CanvasHeatmap
-                    leaves={filteredLeaves}
-                    width={width}
-                    height={height}
-                    scale={effectiveScale}
-                    offset={effectiveOffset}
-                    onTileClick={(company: CompanyNode) => onTileClick && onTileClick(company)}
-                    onHover={handleCanvasHover}
-                    metric={metric}
-                    timeframe={timeframe}
-                  />
-                  {/* Sector labels for canvas mode - rendered AFTER canvas to ensure they're on top */}
-                  {filteredNodes
-                    .filter((node) => node.depth === 1)
-                    .map((node) => (
-                      <SectorLabel
-                        key={`sector-label-${node.data.name}-${(node as TreemapNode).x0}-${(node as TreemapNode).y0}`}
-                        node={node as TreemapNode}
-                        scale={effectiveScale}
-                        offset={effectiveOffset}
-                        sectorLabelVariant={sectorLabelVariant}
-                        isMobile={isMobile}
-                        metric={metric}
-                        treemapBoundsNotNull={treemapBounds !== null}
-                      />
-                    ))}
-                  {/* Industry labels for canvas mode */}
-                  {filteredNodes
-                    .filter((node) => node.data.meta?.type === 'industry')
-                    .map((node) => {
-                      const { x0, y0, x1, y1 } = node as TreemapNode;
-                      const data = node.data as HierarchyData;
-                      const nodeWidth = x1 - x0;
-                      const nodeHeight = y1 - y0;
-                      const scaledWidth = nodeWidth * effectiveScale;
-                      const scaledHeight = nodeHeight * effectiveScale;
-
-                      const labelHeight = 14; // Same as padding added in treemapGenerator
-                      const labelLeft = 4;
-
-                      // Only show label if the industry box is wide/high enough to be readable
-                      const showLabel = scaledWidth > 40 && scaledHeight > 20 && effectiveScale > 0;
-                      if (!showLabel) return null;
-
-                      // Very simple truncation
-                      const displayName = data.name.length > 15 && scaledWidth < 80
-                        ? data.name.substring(0, 12) + '...'
-                        : data.name;
-
-                      return (
-                        <div
-                          key={`industry-label-${data.name}-${x0}-${y0}`}
-                          className="absolute pointer-events-none flex items-center overflow-hidden"
-                          style={{
-                            left: x0 * effectiveScale + effectiveOffset.x,
-                            top: y0 * effectiveScale + effectiveOffset.y,
-                            width: nodeWidth * effectiveScale,
-                            height: labelHeight,
-                            paddingLeft: labelLeft,
-                            zIndex: 8,
-                          }}
-                        >
-                          <span
-                            style={{
-                              color: 'rgba(255, 255, 255, 0.4)',
-                              fontSize: '9px',
-                              fontWeight: 600,
-                              letterSpacing: '0.05em',
-                              textTransform: 'uppercase',
-                              whiteSpace: 'nowrap'
-                            }}
-                          >
-                            {displayName}
-                          </span>
-                        </div>
-                      );
-                    })}
-                </>
-              );
-            })()}
-          </>
+          <HeatmapCanvasView
+            filteredNodes={filteredNodes}
+            filteredLeaves={filteredLeaves}
+            width={width}
+            height={height}
+            scale={scale}
+            offset={offset}
+            panZoom={panZoom}
+            treemapBoundsNotNull={treemapBounds !== null}
+            sectorLabelVariant={sectorLabelVariant}
+            isMobile={isMobile}
+            metric={metric}
+            timeframe={timeframe}
+            onTileClick={onTileClick}
+            onHover={handleCanvasHover}
+          />
         ) : (
-          <>
-            {/* 2. Renderujeme Listy (Firmy) - Using memoized HeatmapTile component */}
-            {visibleLeaves.map((leaf) => {
-              const { x0, y0, x1, y1 } = leaf;
-              const tileWidth = x1 - x0;
-              const tileHeight = y1 - y0;
-              const company = leaf.data.meta.companyData;
-              // marketCapDiff is represented in B$ in our data model
-              const v = metric === 'mcap' ? (company.marketCapDiff ?? 0) : company.changePercent;
-              const tileColor = colorScale(v);
-
-              // Skutočné rozmery dlaždice v pixeloch
-              const scaledWidth = tileWidth * scale;
-              const scaledHeight = tileHeight * scale;
-
-              // Konfigurácia textu podľa veľkosti dlaždice
-              const labelConfig = getTileLabelConfig(scaledWidth, scaledHeight);
-
-              return (
-                <HeatmapTile
-                  key={`${company.symbol}-${x0}-${y0}`}
-                  leaf={leaf}
-                  scale={scale}
-                  offset={offset}
-                  color={tileColor}
-                  labelConfig={labelConfig}
-                  metric={metric}
-                  colorTransition={colorTransition}
-                  onMouseEnter={() => setHoveredNode(company)}
-                  onMouseLeave={() => setHoveredNode(null)}
-                  onClick={() => onTileClick && onTileClick(company)}
-                />
-              );
-            })}
-
-            {/* Sektorové border divy - renderované PO dlaždiciach, aby boli viditeľné */}
-            {filteredNodes
-              .filter((node) => node.depth === 1) // Iba Sektory
-              .map((node) => {
-                const { x0, y0, x1, y1 } = node as TreemapNode;
-                const data = node.data as HierarchyData;
-                const nodeWidth = x1 - x0;
-                const nodeHeight = y1 - y0;
-                const isHovered = hoveredSector === data.name;
-
-                return (
-                  <div
-                    key={`sector-border-${data.name}-${x0}-${y0}`}
-                    className="absolute cursor-pointer transition-all duration-200 ease-in-out"
-                    style={{
-                      left: x0 * scale + offset.x,
-                      top: y0 * scale + offset.y,
-                      width: nodeWidth * scale,
-                      height: nodeHeight * scale,
-                      pointerEvents: 'auto',
-                      // Reactive border based on hover state
-                      border: isHovered ? '2px solid rgba(255, 255, 255, 0.8)' : '1.5px solid #000000',
-                      boxShadow: isHovered ? 'inset 0 0 20px rgba(255, 255, 255, 0.1)' : 'none',
-                      boxSizing: 'border-box',
-                      zIndex: isHovered ? 20 : 10, // Bring forward on hover
-                    }}
-                    onMouseEnter={() => setHoveredSector(data.name)}
-                    onMouseLeave={() => setHoveredSector(null)}
-                    onClick={() => handleSectorClick(data.name)}
-                  >
-                    {/* Hover overlay pre sektor */}
-                    {isHovered && (
-                      <div className={styles.heatmapSectorHover} />
-                    )}
-                  </div>
-                );
-              })}
-
-            {/* Sector labels for DOM mode - rendered AFTER sectors to ensure they're on top */}
-            {filteredNodes
-              .filter((node) => node.depth === 1)
-              .map((node) => (
-                <SectorLabel
-                  key={`sector-label-${node.data.name}-${(node as TreemapNode).x0}-${(node as TreemapNode).y0}`}
-                  node={node as TreemapNode}
-                  scale={scale}
-                  offset={offset}
-                  sectorLabelVariant={sectorLabelVariant}
-                  isMobile={isMobile}
-                  metric={metric}
-                  treemapBoundsNotNull={treemapBounds !== null}
-                  zoomedSectorClass={!!zoomedSector}
-                  onMouseEnter={() => setHoveredSector(node.data.name)}
-                  onMouseLeave={() => setHoveredSector(null)}
-                  onClick={() => handleSectorClick(node.data.name)}
-                />
-              ))}
-          </>
+          <HeatmapDomView
+            filteredLeaves={filteredLeaves}
+            filteredNodes={filteredNodes}
+            scale={scale}
+            offset={offset}
+            colorScale={colorScale}
+            metric={metric}
+            hoveredSector={hoveredSector}
+            treemapBoundsNotNull={treemapBounds !== null}
+            sectorLabelVariant={sectorLabelVariant}
+            isMobile={isMobile}
+            zoomedSector={zoomedSector}
+            onTileClick={onTileClick}
+            onTileHover={setHoveredNode}
+            onMobileTap={handleMobileTap}
+            onSectorMouseEnter={setHoveredSector}
+            onSectorMouseLeave={() => setHoveredSector(null)}
+            onSectorClick={handleSectorClick}
+          />
         )}
       </div>
       {/* End of Pan & Zoom Content Wrapper */}
 
       {/* Legenda je teraz v page.tsx headeri */}
 
-      {/* 4. Tooltip (renderuje sa mimo) - skrytý na mobile */}
-      {
-        hoveredNode && !isMobile && (
-          <HeatmapTooltip
-            company={hoveredNode}
-            position={mousePosition}
-            timeframe={timeframe}
-            metric={metric}
-          />
-        )
-      }
+      {/* Tooltip - hover on desktop, tap (2s) on mobile */}
+      {(isMobile ? mobileTappedNode : hoveredNode) && (
+        <HeatmapTooltip
+          company={(isMobile ? mobileTappedNode : hoveredNode)!}
+          position={mousePosition}
+          timeframe={timeframe}
+          metric={metric}
+        />
+      )}
     </div >
   );
 };
