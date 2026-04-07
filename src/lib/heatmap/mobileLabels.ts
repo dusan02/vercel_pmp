@@ -45,10 +45,12 @@ export function getMobileTileLabel(
   const symbolText = (company.symbol ?? '').toUpperCase();
   const approxCharW = 0.62; // uppercase letter width in em-ish
 
-  // Fit ticker to box (width + height). If it can't fit at >=6px, hide it.
+  // Fit ticker to box (width + height).
+  // Mobile readability minimum: 9px — below this the text is visible but not readable on mobile.
+  const MIN_SYMBOL_PX = 9;
   const byWidthSymbol = Math.floor(maxW / Math.max(1, symbolText.length * approxCharW));
   const fittedSymbolFontPx = Math.min(baseSymbolFontPx, byWidthSymbol, Math.floor(maxH));
-  if (fittedSymbolFontPx < 6) {
+  if (fittedSymbolFontPx < MIN_SYMBOL_PX) {
     return { showSymbol: false, showValue: false, symbol: '', value: '', symbolFontPx: 0, valueFontPx: 0 };
   }
 
@@ -67,7 +69,7 @@ export function getMobileTileLabel(
     fittedValueFontPx = Math.min(baseValueFontPx, byWidthValue, valueBoxH);
 
     // If either line becomes unreadable, degrade to ticker-only.
-    if (fittedSymbolForTwoLines < 6 || fittedValueFontPx < 6) {
+    if (fittedSymbolForTwoLines < MIN_SYMBOL_PX || fittedValueFontPx < 8) {
       showValue = false;
       fittedValueFontPx = 0;
     }

@@ -276,6 +276,15 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                           borderRadius: '1px', // Slight rounding
                         }}
                       >
+                        {!(label.showSymbol || label.showValue) && width >= 10 && height >= 10 && (
+                          <div style={{
+                            width: Math.min(4, width * 0.2),
+                            height: Math.min(4, height * 0.2),
+                            borderRadius: '50%',
+                            backgroundColor: 'rgba(255,255,255,0.3)',
+                            pointerEvents: 'none',
+                          }} />
+                        )}
                         {(label.showSymbol || label.showValue) && (
                           <div
                             style={{
