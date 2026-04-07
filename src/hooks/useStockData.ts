@@ -218,9 +218,17 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
   }, [fetchAndMergeStocks]);
 
   // Phase 4: Remaining - Load ALL stocks from database
+  const isLoadingRemainingRef = useRef(false);
   const fetchRemainingStocksData = useCallback(async () => {
+    // Prevent duplicate calls
+    if (isLoadingRemainingRef.current) {
+      console.log('⏭️ fetchRemainingStocksData already in progress, skipping');
+      return;
+    }
+    
     // Use requestIdleCallback for non-blocking load
     const loadInBackground = async () => {
+      isLoadingRemainingRef.current = true;
       setLoadingStates(prev => ({ ...prev, remainingStocks: true }));
       try {
         console.log('🚀 Loading ALL remaining stocks from database (phase 4)');
@@ -253,13 +261,19 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
 
               requestAnimationFrame(() => {
                 setLoadingStates(prev => ({ ...prev, remainingStocks: false }));
+                isLoadingRemainingRef.current = false;
               });
             });
+          } else {
+            isLoadingRemainingRef.current = false;
           }
+        } else {
+          isLoadingRemainingRef.current = false;
         }
       } catch (error) {
         console.error('Error loading remaining stocks data:', error);
         setLoadingStates(prev => ({ ...prev, remainingStocks: false }));
+        isLoadingRemainingRef.current = false;
       }
     };
 

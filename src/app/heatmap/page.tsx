@@ -31,6 +31,7 @@ export default function HeatmapPage() {
 
   // Handler pre exit fullscreen (návrat na homepage)
   const handleExitFullscreen = useCallback(() => {
+    console.log('🔄 Exit fullscreen clicked');
     event('heatmap_fullscreen_toggle', { enabled: false });
     router.push('/');
   }, [router]);
@@ -78,7 +79,7 @@ export default function HeatmapPage() {
       style={{ overflow: 'hidden' }} 
       suppressHydrationWarning
     >
-      <div className="px-2 py-1 z-50 text-white flex-shrink-0 flex items-center justify-between bg-black border-b border-gray-800">
+      <div className="relative px-2 py-1 z-[100] text-white flex-shrink-0 flex items-center justify-between bg-black border-b border-gray-800" style={{ pointerEvents: 'auto' }}>
         <div className="flex items-center gap-4">
           <div>
             <h1 className="text-xl font-bold mb-0 leading-none">
@@ -108,7 +109,8 @@ export default function HeatmapPage() {
           {/* Exit fullscreen button - moved to top right */}
           <button
             onClick={handleExitFullscreen}
-            className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors duration-200 text-sm font-semibold shadow-md"
+            className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors duration-200 text-sm font-semibold shadow-md relative z-10"
+            style={{ pointerEvents: 'auto' }}
             title="Exit fullscreen (back to homepage)"
             aria-label="Exit fullscreen"
           >

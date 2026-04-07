@@ -31,6 +31,8 @@ export function PerformanceOptimizer({
   });
   const [isOptimized, setIsOptimized] = useState(false);
   const observerRef = useRef<PerformanceObserver | null>(null);
+  const clsRef = useRef(0);
+  const lastClsUpdateRef = useRef(0);
 
   // Performance monitoring
   useEffect(() => {
@@ -65,7 +67,14 @@ export function PerformanceOptimizer({
               case 'layout-shift':
                 const layoutShiftEntry = entry as any;
                 if (!layoutShiftEntry.hadRecentInput) {
-                  setMetrics(prev => ({ ...prev, cls: (prev.cls || 0) + layoutShiftEntry.value }));
+                  // Use ref to accumulate CLS and throttle setState to prevent infinite loop
+                  clsRef.current += layoutShiftEntry.value;
+                  const now = Date.now();
+                  // Only update state every 1000ms to prevent re-render loop
+                  if (now - lastClsUpdateRef.current > 1000) {
+                    lastClsUpdateRef.current = now;
+                    setMetrics(prev => ({ ...prev, cls: clsRef.current }));
+                  }
                 }
                 break;
             }

@@ -603,35 +603,40 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
 
   // Content wrapper ref for pan & zoom
   const contentWrapperRef = useRef<HTMLDivElement>(null);
-  const [gestureBindProps, setGestureBindProps] = useState<Record<string, any>>({});
+  // Use ref instead of state to avoid re-render loop (gestureBindProps creates new object)
+  const gestureBindPropsRef = useRef<Record<string, any>>({});
+  const panZoomRef = useRef(panZoom);
+  useEffect(() => {
+    panZoomRef.current = panZoom;
+  }, [panZoom]);
 
   // Reset pan & zoom when zoomed sector changes
   const prevZoomedSectorRef = useRef<string | null>(null);
   useEffect(() => {
     if (prevZoomedSectorRef.current !== zoomedSector) {
-      if (zoomedSector) panZoom.reset();
+      if (zoomedSector) panZoomRef.current.reset();
       prevZoomedSectorRef.current = zoomedSector;
     }
-  }, [zoomedSector, panZoom]);
+  }, [zoomedSector]); // panZoom stored in ref
 
   // Bind gesture handlers when zoomed
   useEffect(() => {
     const element = contentWrapperRef.current;
     if (element && zoomedSector) {
       try {
-        const bindProps = panZoom.bind(element);
+        const bindProps = panZoomRef.current.bind(element);
         const filtered = Object.fromEntries(
           Object.entries(bindProps || {}).filter(([_, v]) => typeof v === 'function')
         );
-        setGestureBindProps(filtered);
+        gestureBindPropsRef.current = filtered;
       } catch (error) {
         console.warn('Failed to bind pan & zoom gestures:', error);
-        setGestureBindProps({});
+        gestureBindPropsRef.current = {};
       }
     } else {
-      setGestureBindProps({});
+      gestureBindPropsRef.current = {};
     }
-  }, [panZoom, zoomedSector]);
+  }, [zoomedSector]); // panZoom stored in ref, gestureBindProps using ref to avoid re-render
 
   const contentWrapperCallbackRef = useCallback((element: HTMLDivElement | null) => {
     contentWrapperRef.current = element;
@@ -644,14 +649,14 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
       const now = Date.now();
       const lastTap = (handleDoubleTap as any).lastTap || 0;
       if (now - lastTap < 300) {
-        panZoom.reset();
+        panZoomRef.current.reset();
         e.preventDefault();
       }
       (handleDoubleTap as any).lastTap = now;
     } else if (e.type === 'dblclick') {
-      panZoom.reset();
+      panZoomRef.current.reset();
     }
-  }, [panZoom]);
+  }, []); // panZoom stored in ref
 
   // Show pan & zoom controls only when zoomed or on mobile
   // Only show pan & zoom controls when zoomed to sector
@@ -722,7 +727,7 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
           </span>
           {(panZoom.zoom > 1 || panZoom.panX !== 0 || panZoom.panY !== 0) && (
             <button
-              onClick={panZoom.reset}
+              onClick={() => panZoomRef.current.reset()}
               className="text-white hover:text-gray-300 transition-colors text-xs px-2 py-1 rounded bg-white/10 hover:bg-white/20"
               title="Reset zoom (double-tap)"
             >
@@ -737,7 +742,7 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
       <div
         ref={contentWrapperCallbackRef}
         {...(zoomedSector ? Object.fromEntries(
-          Object.entries(gestureBindProps).filter(([_, value]) => typeof value === 'function')
+          Object.entries(gestureBindPropsRef.current).filter(([_, value]) => typeof value === 'function')
         ) : {})}
         style={{
           // Semantic Zoom Implementation:

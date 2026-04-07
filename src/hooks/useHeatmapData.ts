@@ -289,24 +289,30 @@ export function useHeatmapData({
     }
   }, [apiEndpoint, timeframe, metric, lastEtag, saveCache, isMobile]);
 
+  // Store fetchData in ref to avoid infinite loop
+  const fetchDataRef = useRef(fetchData);
+  useEffect(() => {
+    fetchDataRef.current = fetchData;
+  }, [fetchData]);
+
   // Initial load and auto-refresh
   useEffect(() => {
     // Ak už máme dáta z localStorage, nevolaj fetchData hneď (už sa zobrazujú)
     // Ale spusti background refresh po 100ms
     if (currentDataRef.current.length > 0) {
       setTimeout(() => {
-        fetchData(false); // Background refresh
+        fetchDataRef.current(false); // Background refresh
       }, 100);
     } else {
       // Ak nemáme dáta, načítaj hneď
-      fetchData(false);
+      fetchDataRef.current(false);
     }
 
     if (autoRefresh && refreshInterval > 0) {
-      const interval = setInterval(() => fetchData(false), refreshInterval);
+      const interval = setInterval(() => fetchDataRef.current(false), refreshInterval);
       return () => clearInterval(interval);
     }
-  }, [fetchData, autoRefresh, refreshInterval]);
+  }, [autoRefresh, refreshInterval]); // Remove fetchData from deps
 
   // Sync internal state with props if props change
   useEffect(() => {
