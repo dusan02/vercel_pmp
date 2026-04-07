@@ -16,15 +16,15 @@ export function createHeatmapColorScale(timeframe: Timeframe = 'day', metric: He
   const percentScales = {
     day: {
       domain: [-5, -2, 0, 2, 5],
-      range: ['#ef4444', '#f87171', '#374151', '#4ade80', '#22c55e'],
+      range: ['#dc2626', '#f87171', '#1f2937', '#22c55e', '#16a34a'],
     },
     week: {
       domain: [-10, -5, 0, 5, 10],
-      range: ['#dc2626', '#ef4444', '#374151', '#22c55e', '#16a34a'],
+      range: ['#dc2626', '#ef4444', '#1f2937', '#16a34a', '#15803d'],
     },
     month: {
       domain: [-20, -10, 0, 10, 20],
-      range: ['#b91c1c', '#dc2626', '#374151', '#16a34a', '#15803d'],
+      range: ['#b91c1c', '#dc2626', '#1f2937', '#16a34a', '#15803d'],
     },
   };
 
@@ -34,15 +34,15 @@ export function createHeatmapColorScale(timeframe: Timeframe = 'day', metric: He
     day: {
       // Most names move within ~0–100B on a typical day; keep extremes clamped.
       domain: [-100, -30, 0, 30, 100],
-      range: ['#ef4444', '#f87171', '#374151', '#4ade80', '#22c55e'],
+      range: ['#dc2626', '#f87171', '#1f2937', '#22c55e', '#16a34a'],
     },
     week: {
       domain: [-30, -10, 0, 10, 30],
-      range: ['#dc2626', '#ef4444', '#374151', '#22c55e', '#16a34a'],
+      range: ['#dc2626', '#ef4444', '#1f2937', '#16a34a', '#15803d'],
     },
     month: {
       domain: [-60, -20, 0, 20, 60],
-      range: ['#b91c1c', '#dc2626', '#374151', '#16a34a', '#15803d'],
+      range: ['#b91c1c', '#dc2626', '#1f2937', '#16a34a', '#15803d'],
     },
   };
 

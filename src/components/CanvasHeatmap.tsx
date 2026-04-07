@@ -129,6 +129,26 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
 
         const colorScale = createHeatmapColorScale(timeframe, metric === 'mcap' ? 'mcap' : 'percent');
 
+        const TILE_RADIUS = 3;
+        const drawRoundedTile = (x: number, y: number, w: number, h: number) => {
+            const r = (w >= 8 && h >= 8) ? Math.min(TILE_RADIUS, w / 2, h / 2) : 0;
+            ctx.beginPath();
+            if (r === 0) {
+                ctx.rect(x, y, w, h);
+            } else {
+                ctx.moveTo(x + r, y);
+                ctx.lineTo(x + w - r, y);
+                ctx.arcTo(x + w, y, x + w, y + r, r);
+                ctx.lineTo(x + w, y + h - r);
+                ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+                ctx.lineTo(x + r, y + h);
+                ctx.arcTo(x, y + h, x, y + h - r, r);
+                ctx.lineTo(x, y + r);
+                ctx.arcTo(x, y, x + r, y, r);
+            }
+            ctx.closePath();
+        };
+
         // Draw leaves
         leaves.forEach(leaf => {
             const { x0, y0, x1, y1 } = leaf;
@@ -140,19 +160,20 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
             const tileW = (x1 - x0) * scale;
             const tileH = (y1 - y0) * scale;
 
-            // Skip if out of bounds (though leaves should be filtered by parent if needed, but canvas clips anyway)
+            // Skip if out of bounds
             if (tileX + tileW < 0 || tileX > width || tileY + tileH < 0 || tileY > height) return;
 
-            // Fill
-            // marketCapDiff is represented in B$ in our data model
+            // Fill with rounded corners
             const v = metric === 'mcap' ? (company.marketCapDiff ?? 0) : (company.changePercent ?? 0);
             ctx.fillStyle = colorScale(v);
-            ctx.fillRect(tileX, tileY, tileW, tileH);
+            drawRoundedTile(tileX, tileY, tileW, tileH);
+            ctx.fill();
 
             // Border - inset 0.5px so adjacent tile borders don't overlap each other
             ctx.strokeStyle = borderColor;
             ctx.lineWidth = 1;
-            ctx.strokeRect(tileX + 0.5, tileY + 0.5, tileW - 1, tileH - 1);
+            drawRoundedTile(tileX + 0.5, tileY + 0.5, tileW - 1, tileH - 1);
+            ctx.stroke();
 
             // Text
             const labelConfig = getTileLabelConfig(tileW, tileH);

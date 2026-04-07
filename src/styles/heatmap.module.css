@@ -32,17 +32,16 @@
 
 /* Tiles */
 .heatmapTile {
-  @apply absolute flex flex-col items-center justify-center box-border transition-all duration-300 ease-out cursor-pointer;
-  /* Thinner border between companies within sectors */
+  @apply absolute flex flex-col items-center justify-center box-border cursor-pointer;
   border: 1px solid rgba(0, 0, 0, 0.4);
+  border-radius: 3px;
+  transition: background-color 0.4s ease;
 }
 
 .heatmapTile:hover {
-  @apply opacity-100;
   z-index: 20;
-  /* Lift above siblings */
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
-  /* Highlight border */
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9), 0 0 14px rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
 }
 
 /* Zoom Entry Animation */
@@ -74,6 +73,7 @@
 .heatmapTilePercent {
   @apply font-medium text-white;
   text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 0 2px rgba(0, 0, 0, 0.8);
+  font-variant-numeric: tabular-nums;
 }
 
 /* Sector Labels - Compact variant (homepage) */
@@ -171,6 +171,7 @@
   font-size: 0.85em;
   opacity: 0.9;
   letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Sector Overlay */
@@ -230,7 +231,7 @@
 
 .heatmapLegendGradient {
   @apply h-4 w-32 rounded;
-  background: linear-gradient(to right, #ef4444, #f87171, #374151, #4ade80, #22c55e);
+  background: linear-gradient(to right, #dc2626, #f87171, #1f2937, #22c55e, #16a34a);
 }
 
 .heatmapLegendValues {
