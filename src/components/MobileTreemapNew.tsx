@@ -16,12 +16,16 @@ interface MobileTreemapNewProps {
   data: CompanyNode[];
   timeframe?: 'day' | 'week' | 'month';
   metric?: 'percent' | 'mcap';
+  /** Optional separate metric for sizing area (if area sizing differs from color mapping) */
+  layoutMetric?: 'percent' | 'mcap';
   onMetricChange?: (metric: 'percent' | 'mcap') => void;
   onTileClick?: (company: CompanyNode) => void;
   onToggleFavorite?: (ticker: string) => void;
   isFavorite?: (ticker: string) => boolean;
   /** Accepted for prop-compatibility; not used in rendering. */
   activeView?: string | undefined;
+  /** Explicit exact height override (disables default vertical scrolling expansion) */
+  height?: number;
 }
 
 // Mobile sector label sizing.
@@ -41,10 +45,12 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   data,
   timeframe = 'day',
   metric = 'percent',
+  layoutMetric,
   onMetricChange,
   onTileClick,
   onToggleFavorite,
   isFavorite,
+  height,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   activeView: _activeView,
 }) => {
@@ -114,11 +120,20 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
 
   // Build mobile treemap sector blocks (pure helper; no React logic inside)
   const treemapResult = useMemo(() => {
-    return computeMobileTreemapSectors(sortedData, containerSize, metric, {
+    // If strict height is provided, we disable the 2.2x multiplier and minHeight overrides
+    // We subtract bounded padding (top 4px + bottom 4px = 8px) or so, to avoid it overflowing its container.
+    const heightConfig = height !== undefined 
+      ? { contentHeightMultiplier: 1, minTotalContentHeightPx: height - 16 } // Subtract safe padding margin
+      : {};
+
+    const actualLayoutMetric = layoutMetric || metric;
+
+    return computeMobileTreemapSectors(sortedData, containerSize, actualLayoutMetric, {
       sectorChromeHeightPx: SECTOR_CHROME_H,
       columnGapPx: SECTOR_COL_GAP,
+      ...heightConfig
     });
-  }, [sortedData, metric, containerSize]);
+  }, [sortedData, metric, layoutMetric, containerSize, height]);
 
   // Direct use of treemapResult.rows.
   const { rows } = treemapResult;
@@ -478,14 +493,11 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
         ref={containerRef}
         className="mobile-heatmap-scroll"
         style={{
-          flex: 1,
-          minHeight: 0,
           width: '100%',
-          position: 'relative',
-          background: '#0a0a0a',
-          paddingBottom: '6px',
           overflowX: 'hidden',
-          overflowY: 'auto',
+          backgroundColor: '#0a0a0a',
+          padding: '4px',
+          ...(height !== undefined ? { height: `${height}px`, overflowY: 'hidden' } : { flex: 1, overflowY: 'auto' }),
           WebkitOverflowScrolling: 'touch',
         }}
       >
