@@ -10,9 +10,7 @@ import { LoginButton } from './LoginButton';
 import { computeMobileTreemapSectors, prepareMobileTreemapData } from '@/lib/heatmap/mobileTreemap';
 import { getMobileTileLabel, getMobileTileOpticalOffsetPx } from '@/lib/heatmap/mobileLabels';
 import { pickCompanyWithHitSlop } from '@/lib/heatmap/mobileHitSlop';
-import type { MobileTreemapSectorBlock } from '@/lib/heatmap/mobileTreemap';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
-import { RotateCcw } from 'lucide-react';
 
 interface MobileTreemapNewProps {
   data: CompanyNode[];
@@ -22,7 +20,8 @@ interface MobileTreemapNewProps {
   onTileClick?: (company: CompanyNode) => void;
   onToggleFavorite?: (ticker: string) => void;
   isFavorite?: (ticker: string) => boolean;
-  activeView?: string | undefined;
+  /** Accepted for prop-compatibility; not used in rendering. */
+  activeView?: string;
 }
 
 // Mobile sector label sizing.
@@ -46,10 +45,11 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   onTileClick,
   onToggleFavorite,
   isFavorite,
-  activeView,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  activeView: _activeView,
 }) => {
-  const { preferences } = useUserPreferences();
-  const theme = preferences.theme;
+  // Note: useUserPreferences kept for future theme-aware styling
+  useUserPreferences();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [containerSize, setContainerSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
 
@@ -61,9 +61,6 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   const sortedData = useMemo(() => {
     return prepareMobileTreemapData(data);
   }, [data]);
-
-  // For easy verification (prod too): how many unique tickers are shown
-  const tileCount = sortedData.length;
 
   // Color scale
   const colorScale = useMemo(() => createHeatmapColorScale(timeframe, metric === 'mcap' ? 'mcap' : 'percent'), [timeframe, metric]);
@@ -453,6 +450,10 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
       {/* Spacer REMOVED */}
 
       {/* ── Treemap Container ── */}
+      {/* IMPORTANT: No horizontal padding on containerRef — ResizeObserver.contentRect.width
+           always reports content-box width (padding excluded). Adding padding here would make
+           D3 calculate tile widths wider than the visible area, causing right-edge overflow.
+           Visual breathing room comes from row gaps and tile inset box-shadows. */}
       <div
         ref={containerRef}
         className="mobile-heatmap-scroll"
@@ -473,10 +474,10 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
             width: '100%',
             display: 'flex',
             flexDirection: 'column',
-            gap: '10px',         // Slightly tighter row gap
+            gap: '10px',
             paddingTop: '6px',
-            paddingLeft: '4px',
-            paddingRight: '4px',
+            // No horizontal padding here — it's on the outer containerRef div
+            // to ensure D3 width measurements stay accurate
           }}
         >
           {treemapResult.rows && treemapResult.rows.length > 0 && containerSize.width > 0 ? (
