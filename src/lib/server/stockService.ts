@@ -7,6 +7,7 @@ import { calculatePercentChange } from '@/lib/utils/priceResolver';
 
 import { StockData } from '@/lib/types';
 import { SECTOR_INDUSTRY_OVERRIDES } from '@/data/sectorIndustryOverrides';
+import { normalizeSectorIndustryPair } from '@/lib/utils/sectorIndustryValidator';
 
 interface StockServiceResult {
   data: StockData[];
@@ -486,18 +487,14 @@ export async function getStocksList(options: {
         ticker: s.symbol,
         companyName: s.name || '',
         sector: (() => {
-          const raw = (s.sector || '').trim();
           const ov = SECTOR_INDUSTRY_OVERRIDES[s.symbol];
-          // Always apply override for specific tickers, regardless of current sector
           if (ov) return ov.sector;
-          return raw || 'Unknown';  // ← Pridaný fallback
+          return normalizeSectorIndustryPair(s.sector, s.industry).sector;
         })(),
         industry: (() => {
-          const raw = (s.industry || '').trim();
           const ov = SECTOR_INDUSTRY_OVERRIDES[s.symbol];
-          // Always apply override for specific tickers, regardless of current industry
           if (ov) return ov.industry;
-          return raw || 'Unknown';  // ← Pridaný fallback
+          return normalizeSectorIndustryPair(s.sector, s.industry).industry;
         })(),
         logoUrl: s.logoUrl || `/logos/${s.symbol.toLowerCase()}-32.webp`,
         currentPrice,

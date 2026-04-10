@@ -9,6 +9,7 @@ import { getCacheKey } from '@/lib/redis/keys';
 import { getDateET, createETDate, toET } from '@/lib/utils/dateET';
 import { detectSession, nowET, isMarketHoliday, getTradingDay } from '@/lib/utils/timeUtils';
 import { SECTOR_INDUSTRY_OVERRIDES } from '@/data/sectorIndustryOverrides';
+import { normalizeSectorIndustryPair } from '@/lib/utils/sectorIndustryValidator';
 import { isWeekendET } from '@/lib/utils/dateET';
 
 const CACHE_KEY = 'heatmap-data';
@@ -199,9 +200,11 @@ export async function GET(request: NextRequest) {
         const rawSector = (t.sector ?? '').trim();
         const rawIndustry = (t.industry ?? '').trim();
 
-        // Apply overrides only, no normalization
-        const sector = ov ? ov.sector : (rawSector || 'Unknown');
-        const industry = ov ? ov.industry : (rawIndustry || 'Unknown');
+        // Apply overrides first; for the rest, normalize raw DB values
+        // (handles CAPS LOCK, garbage values like "K", underscore_case, etc.)
+        const normalized = normalizeSectorIndustryPair(t.sector, t.industry);
+        const sector = ov ? ov.sector : normalized.sector;
+        const industry = ov ? ov.industry : normalized.industry;
 
         const name = ov?.name && (!t.name || t.name.trim() === '') ? ov.name : t.name;
 
