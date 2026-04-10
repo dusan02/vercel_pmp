@@ -21,7 +21,7 @@ interface MobileTreemapNewProps {
   onToggleFavorite?: (ticker: string) => void;
   isFavorite?: (ticker: string) => boolean;
   /** Accepted for prop-compatibility; not used in rendering. */
-  activeView?: string;
+  activeView?: string | undefined;
 }
 
 // Mobile sector label sizing.
