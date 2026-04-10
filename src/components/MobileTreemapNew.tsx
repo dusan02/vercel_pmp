@@ -144,52 +144,68 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
               <div
                 key={sector.name}
                 style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  // Use flexBasis + flexShrink:0 so D3's exact pixel widths are honoured.
-                  // flexGrow was previously causing flexbox to override D3 calculations and
-                  // unevenly inflate one of the columns.
+                  // USE ABSOLUTE POSITIONING instead of flex-column to guarantee
+                  // zero overlap between label zone and tile zone regardless of
+                  // D3 sub-pixel rounding or CSS margin accumulation.
+                  position: 'relative',
                   flexBasis: `${sector.width}px`,
                   flexShrink: 0,
                   flexGrow: 0,
                   height: '100%',
-                  overflow: 'hidden'
+                  // Critical: clip anything that bleeds outside this block
+                  overflow: 'hidden',
+                  background: '#0a0a0a',
                 }}
               >
-                {/* ── Sector Label Header ── */}
+                {/* ── ZONE 1: Label Area (strictly top SECTOR_CHROME_H px) ── */}
+                {/* position:absolute + overflow:hidden = label can NEVER reach tiles zone */}
                 <div
                   style={{
-                    height: `${SECTOR_LABEL_H}px`,
-                    padding: '0 6px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'flex-start',
-                    fontSize: '9px',
-                    fontWeight: 800,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.08em',
-                    color: 'rgba(255,255,255,0.65)',
-                    lineHeight: 1,
-                    marginBottom: `${SECTOR_LABEL_TOP_GAP}px`,
-                    whiteSpace: 'nowrap',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: `${SECTOR_CHROME_H}px`,
                     overflow: 'hidden',
-                    textOverflow: 'ellipsis',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'flex-end',
+                    zIndex: 2,
+                    background: '#0a0a0a',
                   }}
                 >
-                  {sector.name}
+                  <div
+                    style={{
+                      padding: '0 6px',
+                      height: `${SECTOR_LABEL_H}px`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      fontSize: '9px',
+                      fontWeight: 800,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.08em',
+                      color: 'rgba(255,255,255,0.65)',
+                      lineHeight: 1,
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                  >
+                    {sector.name}
+                  </div>
+                  <div
+                    style={{
+                      height: `${SECTOR_LABEL_TOP_DIVIDER_H}px`,
+                      background: 'linear-gradient(90deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.05) 100%)',
+                      borderRadius: '1px',
+                      flexShrink: 0,
+                    }}
+                  />
                 </div>
 
-                {/* Thin accent divider */}
-                <div
-                  style={{
-                    height: `${SECTOR_LABEL_TOP_DIVIDER_H}px`,
-                    background: 'linear-gradient(90deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.05) 100%)',
-                    marginBottom: `${SECTOR_LABEL_BOTTOM_MARGIN}px`,
-                    borderRadius: '1px',
-                  }}
-                />
-
-                {/* Relative Container for D3 Tiles */}
+                {/* ── ZONE 2: Tiles Area (starts at SECTOR_CHROME_H) ── */}
+                {/* Hard boundary: tiles start AFTER label zone, overflow:hidden clips
+                    any D3 float-rounding excess so tiles can never invade label zone */}
                 <div
                   onClickCapture={(e) => {
                     const target = e.target as HTMLElement | null;
@@ -213,10 +229,14 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                     onTileClick?.(picked);
                   }}
                   style={{
-                    position: 'relative',
+                    position: 'absolute',
+                    top: `${SECTOR_CHROME_H}px`,
+                    left: 0,
                     width: '100%',
-                    // Explicit height matches D3 exactly — prevents white strips / jagged edges.
                     height: `${sector.tilesHeight}px`,
+                    // overflow:hidden clips any D3 tiles that exceed tilesHeight due to float rounding
+                    overflow: 'hidden',
+                    zIndex: 1,
                   }}
                 >
                   {/* Render Tiles */}
