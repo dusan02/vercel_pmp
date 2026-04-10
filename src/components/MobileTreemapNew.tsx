@@ -151,8 +151,9 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
               display: 'flex',
               width: '100%',
               height: `${row.height}px`,
-              flexShrink: 0, // Prevent row from shrinking and clipping the contained tiles
+              flexShrink: 0,
               gap: `${SECTOR_COL_GAP}px`, // Match D3 calculation instead of hardcoded 4px
+              marginBottom: '14px', // Explicit hardware margin instead of flex gap to prevent Safari overlapping
             }}
           >
             {row.sectors.map((sector) => (
@@ -170,6 +171,10 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                   // Critical: clip anything that bleeds outside this block
                   overflow: 'hidden',
                   background: '#0a0a0a',
+                  // Fix iOS Safari bug: absolute children with z-index escape overflow:hidden
+                  // unless the parent has explicit isolation/transform.
+                  zIndex: 0,
+                  transform: 'translateZ(0)',
                 }}
               >
                 {/* ── ZONE 1: Label Area (strictly top SECTOR_CHROME_H px) ── */}
@@ -200,10 +205,11 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                       textTransform: 'uppercase',
                       letterSpacing: '0.08em',
                       color: 'rgba(255,255,255,0.65)',
-                      lineHeight: 1,
+                      lineHeight: 1.1,
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
+                      WebkitTextSizeAdjust: '100%', // Prevent Safari from scaling sector text up
                     }}
                   >
                     {sector.name}
@@ -506,10 +512,9 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
             width: '100%',
             display: 'flex',
             flexDirection: 'column',
-            gap: '10px',
             paddingTop: '6px',
-            // No horizontal padding here — it's on the outer containerRef div
-            // to ensure D3 width measurements stay accurate
+            // Gap removed in favor of explicit marginBottom on rows
+            // to ensure mobile browsers don't ignore spacing
           }}
         >
           {treemapResult.rows && treemapResult.rows.length > 0 && containerSize.width > 0 ? (
