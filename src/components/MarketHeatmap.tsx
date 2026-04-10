@@ -318,7 +318,6 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
           .paddingLeft(0)
           .paddingRight(0)
           .paddingBottom(0)
-          .round(true) // Enable rounding to align to pixels
           .tile(treemapSquarify);
 
         sectorTreemap(sectorHierarchy);
