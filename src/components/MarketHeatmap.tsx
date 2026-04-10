@@ -373,8 +373,8 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
       .size([width, height])
       .padding(function (node) {
         if (node.data.meta?.type === 'sector') {
-          // Sektor → medzera + priestor pre label
-          return SECTOR_GAP;
+          // Sektor → minimálna deliaca čiara namiesto masívneho gapu
+          return 2;
         }
         if (node.data.meta?.type === 'industry') {
           // Industry box → jemná oddeľovacia hranica

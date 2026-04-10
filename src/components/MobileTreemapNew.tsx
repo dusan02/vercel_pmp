@@ -31,15 +31,13 @@ interface MobileTreemapNewProps {
 // Mobile sector label sizing.
 // ⚡ PREMIUM UX: Sector label is rendered ABOVE tiles with generous height to
 // prevent any text/tile overlap. Bigger chrome = no collision.
-const SECTOR_LABEL_H = 18; // px — taller for readability (was 14)
-const SECTOR_LABEL_TOP_DIVIDER_H = 1; // px — thin accent line
-const SECTOR_LABEL_TOP_GAP = 5; // px — breathing room between label and divider
-const SECTOR_LABEL_BOTTOM_MARGIN = 5; // px — margin below divider before first tile row
-// Total chrome reserved per sector block:
-// Label (18) + TopGap (5) + Divider (1) + BottomMargin (5) = 29px
-const SECTOR_CHROME_H = SECTOR_LABEL_H + SECTOR_LABEL_TOP_GAP + SECTOR_LABEL_TOP_DIVIDER_H + SECTOR_LABEL_BOTTOM_MARGIN;
+const SECTOR_LABEL_H = 16;
+const SECTOR_LABEL_TOP_DIVIDER_H = 1;
+const SECTOR_LABEL_TOP_GAP = 2; // Reduced gap for thinner header
+const SECTOR_LABEL_BOTTOM_MARGIN = 2; // Reduced gap for thinner header
+const SECTOR_CHROME_H = SECTOR_LABEL_H + SECTOR_LABEL_TOP_GAP + SECTOR_LABEL_TOP_DIVIDER_H + SECTOR_LABEL_BOTTOM_MARGIN; // Now 21px
 
-const SECTOR_COL_GAP = 6; // px — tighter columns = more tile space
+const SECTOR_COL_GAP = 4; // Gap between columns in standard mode tile space
 
 export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   data,
@@ -200,8 +198,8 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                       height: `${SECTOR_LABEL_H}px`,
                       display: 'flex',
                       alignItems: 'center',
-                      fontSize: '9px',
-                      fontWeight: 800,
+                      fontSize: '9.5px', // slightly increased for legibility but thinner total row
+                      fontWeight: 700, // Make it a bit sleeker
                       textTransform: 'uppercase',
                       letterSpacing: '0.08em',
                       color: 'rgba(255,255,255,0.65)',
