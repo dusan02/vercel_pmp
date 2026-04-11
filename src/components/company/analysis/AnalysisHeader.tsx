@@ -113,10 +113,10 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
                     <div className="border-t border-gray-100 dark:border-gray-700/60" />
 
                     {/* ── BOTTOM: Stats left | Description right ── */}
-                    <div className="flex min-h-0">
+                    <div className="flex flex-col md:flex-row min-h-0">
 
                         {/* Left: Stats — label + value inline */}
-                        <div className="w-72 lg:w-80 shrink-0 px-6 lg:px-8 py-5 border-r border-gray-100 dark:border-gray-700/60">
+                        <div className="w-full md:w-72 lg:w-80 shrink-0 px-6 lg:px-8 py-5 border-b md:border-b-0 md:border-r border-gray-100 dark:border-gray-700/60">
                             <dl className="space-y-2">
                                 {stats.map(({ label, value }) => (
                                     <div key={label} className="flex items-baseline gap-2">

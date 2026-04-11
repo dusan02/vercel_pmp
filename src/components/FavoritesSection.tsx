@@ -132,7 +132,7 @@ export function FavoritesSection({
       }
     },
     {
-      key: isDesktop ? 'currentPrice' : 'percentChange',
+      key: 'currentPrice',
       header: 'Price',
       sortable: true,
       align: 'right',

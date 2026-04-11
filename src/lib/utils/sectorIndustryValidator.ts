@@ -196,3 +196,81 @@ export function getValidIndustries(sector: string | null): string[] {
   return VALID_INDUSTRIES[sector as ValidSector] || [];
 }
 
+/**
+ * Normalize a raw sector string from DB to a valid sector name.
+ *
+ * Handles:
+ * - CAPS LOCK values: "TECHNOLOGY" → "Technology"
+ * - Partial matches: "tech" → "Technology"
+ * - Short garbage values: "K", "X" (< 3 chars) → "Other"
+ * - Already-valid values: pass through unchanged
+ *
+ * @param raw - Raw sector value from DB (may be CAPS, partial, garbage)
+ * @returns Valid sector name or "Other" as fallback
+ */
+export function normalizeSector(raw: string | null | undefined): string {
+  if (!raw) return 'Other';
+  const trimmed = raw.trim();
+  if (!trimmed) return 'Other';
+
+  // Too short to be a real sector name (garbage like "K", "X", "NA")
+  if (trimmed.length < 3) return 'Other';
+
+  // Exact match (already correct)
+  if (VALID_SECTORS.includes(trimmed as ValidSector)) return trimmed;
+
+  // Case-insensitive exact match (handles CAPS LOCK: "TECHNOLOGY" → "Technology")
+  const lower = trimmed.toLowerCase();
+  const exactCI = VALID_SECTORS.find(s => s.toLowerCase() === lower);
+  if (exactCI) return exactCI;
+
+  // Partial / fuzzy match (handles "tech", "financial", "consumer cyc" etc.)
+  const partial = VALID_SECTORS.find(s =>
+    s.toLowerCase().includes(lower) || lower.includes(s.toLowerCase())
+  );
+  if (partial) return partial;
+
+  // Unrecognized → "Other"
+  return 'Other';
+}
+
+/**
+ * Normalize a raw industry string. If the industry looks like a garbage value
+ * (too short, all caps with no spaces, etc.) returns 'Unknown'.
+ * Otherwise passes through the original value since industry names are not
+ * in a closed set — we rely on overrides for mis-classified tickers.
+ */
+export function normalizeRawIndustry(raw: string | null | undefined): string {
+  if (!raw) return 'Unknown';
+  const trimmed = raw.trim();
+  if (!trimmed) return 'Unknown';
+
+  // Too short to be a real industry name
+  if (trimmed.length < 3) return 'Unknown';
+
+  // All-uppercase with no spaces = likely a raw DB key/enum (e.g. "INTERNET_RETAIL")
+  // Convert to Title Case as a best-effort display fix
+  if (trimmed === trimmed.toUpperCase() && !/\s/.test(trimmed)) {
+    // e.g. "INTERNET_RETAIL" → "Internet Retail"
+    return trimmed
+      .toLowerCase()
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, c => c.toUpperCase());
+  }
+
+  return trimmed;
+}
+
+/**
+ * Apply sector/industry normalization for a ticker that has no override entry.
+ * Use this wherever raw DB values are mapped to UI output.
+ */
+export function normalizeSectorIndustryPair(
+  rawSector: string | null | undefined,
+  rawIndustry: string | null | undefined
+): { sector: string; industry: string } {
+  return {
+    sector: normalizeSector(rawSector),
+    industry: normalizeRawIndustry(rawIndustry),
+  };
+}

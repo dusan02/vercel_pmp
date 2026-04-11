@@ -255,10 +255,9 @@ export function computeMobileTreemapSectors(
       // but default squarify is standard.
       // Use Math.floor for dimensions as requested to fit perfectly in pixel grid
       const treeLayout = treemap()
-        .size([Math.floor(sectorWidth), Math.floor(tilesHeight)])
+        .size([sectorWidth, tilesHeight])
         .padding(0)
         .paddingInner(0)
-        .round(true)
         .tile(treemapSquarify);
 
       treeLayout(hierarchyNode);

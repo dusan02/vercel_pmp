@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import type { HeatmapMetric, SectorLabelVariant, TreemapNode, HierarchyData } from '@/lib/heatmap/types';
 import { LAYOUT_CONFIG } from '@/lib/utils/heatmapConfig';
 import { calculateMaxCharsForWidth, calculateSectorSummary, truncateSectorName } from '@/lib/heatmap/sectorLabels';
@@ -69,6 +69,22 @@ export function SectorLabel({
         ? calculateSectorSummary(node, metric)
         : null;
 
+    const accentColor = useMemo(() => {
+        const leaves = node.leaves?.() as Array<{ data: HierarchyData }> | undefined ?? [];
+        let totalMcap = 0;
+        let weightedChange = 0;
+        for (const leaf of leaves) {
+            const company = leaf.data?.meta?.companyData;
+            if (!company) continue;
+            const w = company.marketCap || 0;
+            const v = metric === 'mcap' ? (company.marketCapDiff ?? 0) : (company.changePercent || 0);
+            weightedChange += v * w;
+            totalMcap += w;
+        }
+        const perf = totalMcap > 0 ? weightedChange / totalMcap : 0;
+        return perf > 0 ? '#16a34a' : perf < 0 ? '#dc2626' : '#4b5563';
+    }, [node, metric]);
+
     const maxChars = calculateMaxCharsForWidth(scaledWidth, fontSizeValue, labelConfig.LEFT + 20);
     const defaultMaxLength = sectorLabelVariant === 'full' ? 25 : 20;
     const maxLength = Math.max(4, Math.min(maxChars, defaultMaxLength));
@@ -102,11 +118,14 @@ export function SectorLabel({
                     className={styles.sectorLabelStripFull}
                     style={{
                         fontSize: responsiveFontSize,
+                        borderLeft: `3px solid ${accentColor}`,
+                        paddingLeft: '6px',
                         ...(isMobile ? {
                             width: 'fit-content',
                             maxWidth: '100%',
                             padding: '2px 8px',
                             borderRadius: '6px',
+                            borderLeft: `3px solid ${accentColor}`,
                         } : {}),
                     }}
                 >
@@ -116,7 +135,14 @@ export function SectorLabel({
                     )}
                 </div>
             ) : (
-                <div className={styles.sectorLabelPillCompact} style={{ fontSize: responsiveFontSize }}>
+                <div
+                    className={styles.sectorLabelPillCompact}
+                    style={{
+                        fontSize: responsiveFontSize,
+                        borderLeft: `3px solid ${accentColor}`,
+                        paddingLeft: '5px',
+                    }}
+                >
                     {displayName}
                 </div>
             )}

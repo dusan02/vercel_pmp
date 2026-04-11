@@ -13,6 +13,13 @@ const MarketHeatmap = dynamic(
     { ssr: false }
 );
 
+const MobileTreemapNew = dynamic(
+    () => import('./MobileTreemapNew').then((m) => ({ default: m.MobileTreemapNew })),
+    { ssr: false }
+);
+
+import { useMediaQuery } from '@/hooks/useMediaQuery';
+
 interface PortfolioPerformanceTreemapProps {
     data: Array<{
         ticker: string;
@@ -28,6 +35,7 @@ interface PortfolioPerformanceTreemapProps {
 export function PortfolioPerformanceTreemap({ data, metric = 'percent' }: PortfolioPerformanceTreemapProps) {
     const { ref, size } = useElementResize();
     const width = size.width;
+    const isMobile = useMediaQuery('(max-width: 767px)');
 
     // Transform portfolio data to CompanyNode format
     // UX:
@@ -93,17 +101,27 @@ export function PortfolioPerformanceTreemap({ data, metric = 'percent' }: Portfo
                 <div ref={ref} className="absolute inset-0" />
 
                 {width > 0 && dynamicHeight > 0 && (
-                    <MarketHeatmap
-                        data={heatmapData}
-                        width={width}
-                        height={dynamicHeight}
-                        timeframe="day"
-                        // Color/labels by % move (intensity)
-                        metric="percent"
-                        // Layout by abs daily $ P&L (tile area)
-                        layoutMetric="mcap"
-                        sectorLabelVariant="compact"
-                    />
+                    isMobile ? (
+                        <MobileTreemapNew
+                            data={heatmapData}
+                            timeframe="day"
+                            metric="percent"
+                            layoutMetric="mcap"
+                            height={dynamicHeight}
+                        />
+                    ) : (
+                        <MarketHeatmap
+                            data={heatmapData}
+                            width={width}
+                            height={dynamicHeight}
+                            timeframe="day"
+                            // Color/labels by % move (intensity)
+                            metric="percent"
+                            // Layout by abs daily $ P&L (tile area)
+                            layoutMetric="mcap"
+                            sectorLabelVariant="compact"
+                        />
+                    )
                 )}
             </div>
         </div>
