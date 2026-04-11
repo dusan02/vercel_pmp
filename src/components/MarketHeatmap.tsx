@@ -368,43 +368,69 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
       return d3Root;
     }
 
-    // Desktop: Original behavior
+    // Desktop: Apply flatten hierarchy fix to prevent overlapping tiles
+    // D3 treemapSquarify + round(true) on nested hierarchies can produce overlapping coordinates
+    // at industry group boundaries. Flattening avoids this entirely.
+    const flattenHierarchy = (node: any): any => {
+      if (!node.children || node.children.length === 0) return node;
+      
+      // Check if this is a sector with industry subgroups
+      const hasIndustryGroups = node.children.some((child: any) => 
+        child.data?.meta?.type === 'industry' && child.children
+      );
+      
+      if (hasIndustryGroups) {
+        // Flatten: sector -> companies directly (remove industry level)
+        const allCompanies: any[] = [];
+        node.children.forEach((industry: any) => {
+          if (industry.children) {
+            allCompanies.push(...industry.children);
+          }
+        });
+        
+        return {
+          ...node,
+          children: allCompanies
+        };
+      }
+      
+      return node;
+    };
+
+    // Apply flattening to the root hierarchy
+    const flattenedRoot = flattenHierarchy(d3Root);
+    
+    // Desktop: Original behavior with flattened hierarchy
     // Add padding-top for sectors to make space for labels
     const treemapGenerator = treemap<HierarchyData>()
       .size([width, height])
       .padding(function (node) {
         if (node.data.meta?.type === 'sector') {
-          // Sektor → medzera + priestor pre label
+          // Sektor -> medzera + priestor pre label
           return SECTOR_GAP;
         }
-        if (node.data.meta?.type === 'industry') {
-          // Industry box → jemná oddeľovacia hranica
-          return 1;
-        }
-        // Firmy → 0px (žiadne medzery)
+        // No industry padding after flattening
         return 0;
       })
       .paddingTop(function (node) {
         if (node.data.meta?.type === 'sector') {
-          // Sektor → pridaj priestor pre label (podľa variantu)
+          // Sektor -> pridaj priestor pre label (podla variantu)
           const labelConfig = sectorLabelVariant === 'full'
             ? LAYOUT_CONFIG.SECTOR_LABEL_FULL
             : LAYOUT_CONFIG.SECTOR_LABEL_COMPACT;
           return labelConfig.HEIGHT;
         }
-        if (node.data.meta?.type === 'industry') {
-          // Pridaj 14px pre industry nadpis nad firmami v rovnakom odvetví
-          return 14;
-        }
+        // No industry padding after flattening
         return 0;
       })
-      .paddingLeft(0) // Žiadna rezerva vľavo - roztiahnuť doľava
-      .paddingRight(0) // Žiadna rezerva vpravo - roztiahnuť doprava
-      .paddingBottom(0) // Žiadna rezerva dole - roztiahnuť dole
-      .tile(treemapSquarify); // Algoritmus pre "štvorcovejší" layout
+      .paddingLeft(0) // iadna rezerva vavo - roztiahnu doava
+      .paddingRight(0) // iadna rezerva vpravo - roztiahnu doprava
+      .paddingBottom(0) // iadna rezerva dole - roztiahnu dole
+      .round(true) // Keep rounding for pixel alignment
+      .tile(treemapSquarify); // Algoritmus pre "tvorcovejí" layout
 
-    // Spustíme výpočet layoutu
-    treemapGenerator(d3Root);
+    // Spustíme výpoét layoutu
+    treemapGenerator(flattenedRoot);
     return d3Root;
   }, [
     hierarchyRoot,

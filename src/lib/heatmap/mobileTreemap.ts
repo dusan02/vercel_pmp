@@ -90,12 +90,12 @@ export type ComputeMobileTreemapOptions = {
 };
 
 const DEFAULT_COMPUTE_OPTIONS: Required<Omit<ComputeMobileTreemapOptions, 'sectorChromeHeightPx'>> = {
-  contentHeightMultiplier: 2.2, // 2× taller than viewport → tiles are large and text is readable
-  minTotalContentHeightPx: 1400, // Minimum tall enough for small phones
-  minTilesHeightPx: 56,
-  smallSectorThreshold: 0.15,
-  maxColumns: 3,
-  columnGapPx: 0,
+  contentHeightMultiplier: 1.0, // 1× viewport height - no excessive multiplier
+  minTotalContentHeightPx: 800, // More reasonable minimum height
+  minTilesHeightPx: 120, // Minimum height for readable tiles
+  smallSectorThreshold: 0.03,
+  maxColumns: 2,
+  columnGapPx: 8,
 };
 
 /**
