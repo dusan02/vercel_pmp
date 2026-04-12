@@ -57,6 +57,7 @@ export function HeatmapCanvasView({
                 .filter((node) => node.depth === 1)
                 .map((node) => {
                     const { x0, y0, x1, y1 } = node as TreemapNode;
+                    if (x0 == null || y0 == null || x1 == null || y1 == null) return null;
                     return (
                         <div
                             key={`sector-border-${node.data.name}-${x0}-${y0}`}
@@ -82,6 +83,7 @@ export function HeatmapCanvasView({
                 .filter((node) => node.data.meta?.type === 'industry')
                 .map((node) => {
                     const { x0, y0, x1, y1 } = node as TreemapNode;
+                    if (x0 == null || y0 == null || x1 == null || y1 == null) return null;
                     const w = (x1 - x0) * effectiveScale;
                     const h = (y1 - y0) * effectiveScale;
                     if (w < 5 || h < 5) return null;
@@ -115,7 +117,7 @@ export function HeatmapCanvasView({
 
             {/* Sector labels */}
             {filteredNodes
-                .filter((node) => node.depth === 1)
+                .filter((node) => node.depth === 1 && (node as TreemapNode).x0 != null)
                 .map((node) => (
                     <SectorLabel
                         key={`sector-label-${node.data.name}-${(node as TreemapNode).x0}-${(node as TreemapNode).y0}`}
@@ -134,6 +136,7 @@ export function HeatmapCanvasView({
                 .filter((node) => node.data.meta?.type === 'industry')
                 .map((node) => {
                     const { x0, y0, x1, y1 } = node as TreemapNode;
+                    if (x0 == null || y0 == null || x1 == null || y1 == null) return null;
                     const data = node.data as HierarchyData;
                     const scaledWidth = (x1 - x0) * effectiveScale;
                     const scaledHeight = (y1 - y0) * effectiveScale;
