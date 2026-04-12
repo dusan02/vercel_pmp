@@ -66,7 +66,11 @@ export function HeatmapCanvasView({
                                 top: y0 * effectiveScale + effectiveOffset.y,
                                 width: (x1 - x0) * effectiveScale,
                                 height: (y1 - y0) * effectiveScale,
-                                boxShadow: 'inset 0 0 0 1.5px #000000',
+                                borderTop: '1.5px solid #000000',
+                                borderLeft: '1.5px solid #000000',
+                                borderRight: '1.5px solid #000000',
+                                borderBottom: '1px solid rgba(0,0,0,0.4)',
+                                boxSizing: 'border-box',
                                 zIndex: 10,
                             }}
                         />

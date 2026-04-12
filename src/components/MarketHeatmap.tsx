@@ -315,9 +315,14 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
             }
             return 0;
           })
+          .paddingBottom(function (node) {
+            if (node.depth === 0) {
+              return 2; // Reserve 2px at bottom of sector for visible tile borders
+            }
+            return 0;
+          })
           .paddingLeft(0)
           .paddingRight(0)
-          .paddingBottom(0)
           .tile(treemapSquarify);
 
         sectorTreemap(sectorHierarchy);
@@ -367,69 +372,60 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
       return d3Root;
     }
 
-    // Desktop: Apply flatten hierarchy fix to prevent overlapping tiles
-    // D3 treemapSquarify + round(true) on nested hierarchies can produce overlapping coordinates
-    // at industry group boundaries. Flattening avoids this entirely.
-    const flattenHierarchy = (node: any): any => {
-      if (!node.children || node.children.length === 0) return node;
-      
-      // Check if this is a sector with industry subgroups
-      const hasIndustryGroups = node.children.some((child: any) => 
-        child.data?.meta?.type === 'industry' && child.children
-      );
-      
-      if (hasIndustryGroups) {
-        // Flatten: sector -> companies directly (remove industry level)
-        const allCompanies: any[] = [];
-        node.children.forEach((industry: any) => {
-          if (industry.children) {
-            allCompanies.push(...industry.children);
-          }
-        });
-        
-        return {
-          ...node,
-          children: allCompanies
-        };
-      }
-      
-      return node;
-    };
-
-    // Apply flattening to the root hierarchy
-    const flattenedRoot = flattenHierarchy(d3Root);
+    // Desktop: Flatten industry groups within each sector to prevent overlapping tiles.
+    // D3 treemapSquarify + round(true) on nested hierarchies can produce overlapping
+    // coordinates at industry group boundaries. Flattening avoids this entirely.
+    if (d3Root.children) {
+      d3Root.children.forEach((sectorNode: any) => {
+        if (!sectorNode.children) return;
+        const hasIndustryGroups = sectorNode.children.some((child: any) =>
+          child.data?.meta?.type === 'industry' && child.children
+        );
+        if (hasIndustryGroups) {
+          const allCompanyNodes: any[] = [];
+          sectorNode.children.forEach((child: any) => {
+            if (child.data?.meta?.type === 'industry' && child.children) {
+              allCompanyNodes.push(...child.children);
+            } else {
+              allCompanyNodes.push(child);
+            }
+          });
+          sectorNode.children = allCompanyNodes;
+        }
+      });
+    }
     
-    // Desktop: Original behavior with flattened hierarchy
-    // Add padding-top for sectors to make space for labels
+    // Desktop: Flattened hierarchy (industry groups removed above)
+    // Add padding for sectors to make space for labels and ensure visible borders
     const treemapGenerator = treemap<HierarchyData>()
       .size([width, height])
       .padding(function (node) {
         if (node.data.meta?.type === 'sector') {
-          // Sektor -> medzera + priestor pre label
           return SECTOR_GAP;
         }
-        // No industry padding after flattening
         return 0;
       })
       .paddingTop(function (node) {
         if (node.data.meta?.type === 'sector') {
-          // Sektor -> pridaj priestor pre label (podla variantu)
           const labelConfig = sectorLabelVariant === 'full'
             ? LAYOUT_CONFIG.SECTOR_LABEL_FULL
             : LAYOUT_CONFIG.SECTOR_LABEL_COMPACT;
           return labelConfig.HEIGHT;
         }
-        // No industry padding after flattening
         return 0;
       })
-      .paddingLeft(0) // iadna rezerva vavo - roztiahnu doava
-      .paddingRight(0) // iadna rezerva vpravo - roztiahnu doprava
-      .paddingBottom(0) // iadna rezerva dole - roztiahnu dole
-      .round(true) // Keep rounding for pixel alignment
-      .tile(treemapSquarify); // Algoritmus pre "tvorcovejí" layout
+      .paddingBottom(function (node) {
+        if (node.data.meta?.type === 'sector') {
+          return 2; // Reserve 2px at bottom so tile borders are not covered by sector border overlay
+        }
+        return 0;
+      })
+      .paddingLeft(0)
+      .paddingRight(0)
+      .round(true)
+      .tile(treemapSquarify);
 
-    // Spustíme výpoét layoutu
-    treemapGenerator(flattenedRoot);
+    treemapGenerator(d3Root);
     return d3Root;
   }, [
     hierarchyRoot,
