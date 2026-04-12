@@ -105,6 +105,16 @@ function sectorLabelHeight(variant: SectorLabelVariant, mobile: boolean): number
 // Mobile layout (per-sector stacking)
 // ---------------------------------------------------------------------------
 
+/**
+ * Collect all company leaf data from a HierarchyData subtree,
+ * skipping intermediate industry nodes.
+ */
+function collectLeaves(node: HierarchyData): HierarchyData[] {
+  if (node.meta?.type === 'company') return [node];
+  if (!node.children) return [];
+  return node.children.flatMap(collectLeaves);
+}
+
 function computeMobileLayout(
   d3Root: HierarchyNode<HierarchyData>,
   width: number,
@@ -127,10 +137,16 @@ function computeMobileLayout(
     const proportional = (sectorValue / totalValue) * estimatedTotalHeight;
     const sectorH = Math.round(Math.max(proportional, minSectorHeight));
 
-    // Build an independent treemap for this sector
+    // FLATTEN: collect all company leaves, removing the industry layer.
+    // Mobile does NOT render industry labels, so the nested hierarchy only
+    // wastes padding space (14px per industry) and causes D3 treemapSquarify
+    // to produce overlapping coordinates at industry group boundaries.
+    const flatLeaves = collectLeaves(sectorNode.data);
+    if (flatLeaves.length === 0) return;
+
     const sectorData: HierarchyData = {
       name: sectorNode.data.name,
-      children: sectorNode.data.children,
+      children: flatLeaves,
       meta: sectorNode.data.meta,
     };
 
@@ -138,17 +154,16 @@ function computeMobileLayout(
       .sum((d) => d.value || 0)
       .sort((a, b) => (b.value || 0) - (a.value || 0));
 
+    // Flat hierarchy (sector → company) with round(true) for pixel-perfect
+    // coordinates. No industry padding needed.
     treemap<HierarchyData>()
       .size([width, sectorH])
-      .padding((n) => (n.data.meta?.type === 'industry' ? 1 : 0))
-      .paddingTop((n) => {
-        if (n.depth === 0) return labelH;
-        if (n.data.meta?.type === 'industry') return 14;
-        return 0;
-      })
-      .paddingBottom((n) => (n.depth === 0 ? 2 : 0))
+      .padding(0)
+      .paddingTop(labelH)
+      .paddingBottom(2)
       .paddingLeft(0)
       .paddingRight(0)
+      .round(true)
       .tile(treemapSquarify)(sectorHier);
 
     // Set sector bounds on the original d3Root node
@@ -157,18 +172,30 @@ function computeMobileLayout(
     sectorNode.y0 = currentY;
     sectorNode.y1 = currentY + sectorH;
 
-    // Map coordinates back via shared data-object references
+    // Map coordinates back to the original d3Root company nodes.
+    // Build lookup from data reference → d3Root node (covers all depths).
     const dataToNode = new Map<any, any>();
     sectorNode.descendants().forEach((n: any) => dataToNode.set(n.data, n));
 
-    sectorHier.descendants().forEach((hNode: any) => {
-      if (hNode.x0 == null || hNode.depth === 0) return;
-      const target = dataToNode.get(hNode.data);
+    sectorHier.leaves().forEach((hLeaf: any) => {
+      if (hLeaf.x0 == null) return;
+      const target = dataToNode.get(hLeaf.data);
       if (target) {
-        target.x0 = hNode.x0;
-        target.x1 = hNode.x1;
-        target.y0 = hNode.y0 + currentY;
-        target.y1 = hNode.y1 + currentY;
+        target.x0 = hLeaf.x0;
+        target.x1 = hLeaf.x1;
+        target.y0 = hLeaf.y0 + currentY;
+        target.y1 = hLeaf.y1 + currentY;
+      }
+    });
+
+    // Also update industry nodes bounds to match their sector
+    // (they're not rendered on mobile but prevent NaN in any code that reads them)
+    sectorNode.descendants().forEach((n: any) => {
+      if (n.data.meta?.type === 'industry') {
+        n.x0 = sectorNode.x0;
+        n.x1 = sectorNode.x1;
+        n.y0 = sectorNode.y0;
+        n.y1 = sectorNode.y1;
       }
     });
 
