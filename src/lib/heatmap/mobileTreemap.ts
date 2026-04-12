@@ -258,6 +258,7 @@ export function computeMobileTreemapSectors(
         .size([sectorWidth, tilesHeight])
         .padding(0)
         .paddingInner(0)
+        .round(true)
         .tile(treemapSquarify);
 
       treeLayout(hierarchyNode);

@@ -148,7 +148,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                   height: `${row.height}px`,
                   flexShrink: 0,
                   gap: `${SECTOR_COL_GAP}px`,
-                  marginBottom: '14px',
+                  marginBottom: '2px',
                 }}
               >
                 {row.sectors.map((sector) => (
