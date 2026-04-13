@@ -78,7 +78,7 @@ export class AnalysisService {
                         sbc: getValue(cf, 'share_based_compensation'),
                         interestExpense: getValue(inc, 'interest_expense_operating') ?? getValue(inc, 'interest_expense'),
                         totalDebt: getValue(bs, 'current_and_non_current_debt') ?? getValue(bs, 'debt') ?? getValue(bs, 'long_term_debt'),
-                        cashAndEquivalents: getValue(bs, 'cash_and_cash_equivalents') ?? getValue(bs, 'cash'),
+                        cashAndEquivalents: getValue(bs, 'cash_and_cash_equivalents') ?? getValue(bs, 'cash_and_cash_equivalents_and_short_term_investments') ?? getValue(bs, 'cash'),
                         grossProfit: getValue(inc, 'gross_profit'),
                         netPPE: getValue(bs, 'property_plant_and_equipment_net')
                     } as any, // Temporary cast to bypass stale client types
@@ -108,7 +108,7 @@ export class AnalysisService {
                         sbc: getValue(cf, 'share_based_compensation'),
                         interestExpense: getValue(inc, 'interest_expense_operating') ?? getValue(inc, 'interest_expense'),
                         totalDebt: getValue(bs, 'current_and_non_current_debt') ?? getValue(bs, 'debt') ?? getValue(bs, 'long_term_debt'),
-                        cashAndEquivalents: getValue(bs, 'cash_and_cash_equivalents') ?? getValue(bs, 'cash'),
+                        cashAndEquivalents: getValue(bs, 'cash_and_cash_equivalents') ?? getValue(bs, 'cash_and_cash_equivalents_and_short_term_investments') ?? getValue(bs, 'cash'),
                         grossProfit: getValue(inc, 'gross_profit'),
                         netPPE: getValue(bs, 'property_plant_and_equipment_net')
                     } as any
