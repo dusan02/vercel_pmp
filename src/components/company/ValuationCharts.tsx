@@ -99,8 +99,8 @@ export default function ValuationCharts({ ticker }: ValuationChartsProps) {
         return raw.filter(d => d.date >= cutoffStr);
     }, [data, metric, period]);
 
-    const stats   = metric === 'pe' ? data?.stats.pe  : data?.stats.ps;
-    const current = metric === 'pe' ? data?.current.pe : data?.current.ps;
+    const stats   = metric === 'pe' ? (data?.stats?.pe  ?? null) : (data?.stats?.ps  ?? null);
+    const current = metric === 'pe' ? (data?.current?.pe ?? null) : (data?.current?.ps ?? null);
     const cfg     = METRICS.find(m => m.id === metric)!;
 
     // Determine if current is cheap / expensive vs percentiles
@@ -110,7 +110,7 @@ export default function ValuationCharts({ ticker }: ValuationChartsProps) {
         : { label: 'Fair Value Zone', color: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400' }
         : null;
 
-    const yDomain: [number | 'auto', number | 'auto'] = stats
+    const yDomain: [number | 'auto', number | 'auto'] = (stats && stats.p90 && stats.max)
         ? [0, Math.min(stats.p90 * 1.3, stats.max)]
         : [0, 'auto'];
 
