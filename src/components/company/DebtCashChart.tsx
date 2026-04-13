@@ -21,7 +21,6 @@ interface DebtCashChartProps {
 const METRICS = [
     { key: 'cash', label: 'Cash & Equivalents', color: '#10B981' },
     { key: 'totalDebt', label: 'Total Debt', color: '#EF4444' },
-    { key: 'netDebt', label: 'Net Debt', color: '#F87171' },
 ] as const;
 
 function CustomTooltip({ active, payload, label }: any) {
@@ -47,7 +46,7 @@ function CustomTooltip({ active, payload, label }: any) {
 
 export default function DebtCashChart({ statements }: DebtCashChartProps) {
     const [viewMode, setViewMode] = useState<'annual' | 'quarterly'>('annual');
-    const [selectedMetrics, setSelectedMetrics] = useState(['cash', 'totalDebt']);
+    const [selectedMetrics, setSelectedMetrics] = useState<string[]>(['cash', 'totalDebt']);
 
     const chartData = useMemo(() => {
         if (!statements || statements.length === 0) return [];
@@ -59,7 +58,7 @@ export default function DebtCashChart({ statements }: DebtCashChartProps) {
                 const cashVal = (s.cashAndEquivalents ?? 0) / 1e6;
                 const debtVal = (s.totalDebt ?? 0) / 1e6;
                 const label = buildPeriodLabel(s.fiscalPeriod, s.fiscalYear);
-                return { name: label, date: label, cash: cashVal, totalDebt: debtVal, netDebt: debtVal - cashVal };
+                return { name: label, date: label, cash: cashVal, totalDebt: debtVal };
             });
     }, [statements, viewMode]);
 
@@ -86,11 +85,7 @@ export default function DebtCashChart({ statements }: DebtCashChartProps) {
         );
     }
 
-    const yMin = useMemo(() => {
-        if (!selectedMetrics.includes('netDebt')) return 0;
-        const min = Math.min(0, ...chartData.map(d => d.netDebt));
-        return min < 0 ? Math.floor(min * 1.1) : 0;
-    }, [chartData, selectedMetrics]);
+    const yMin = 0;
 
     return (
         <div className="w-full h-full flex flex-col">
@@ -165,15 +160,6 @@ export default function DebtCashChart({ statements }: DebtCashChartProps) {
                                 maxBarSize={40}
                             />
                         )}
-                        {selectedMetrics.includes('netDebt') && (
-                            <Bar
-                                dataKey="netDebt"
-                                name="Net Debt"
-                                fill="#F87171"
-                                radius={[2, 2, 0, 0]}
-                                maxBarSize={40}
-                            />
-                        )}
                     </BarChart>
                 </ResponsiveContainer>
             </div>
@@ -181,7 +167,7 @@ export default function DebtCashChart({ statements }: DebtCashChartProps) {
             {/* Info Panel */}
             <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                 <p className="text-xs text-blue-700 dark:text-blue-300">
-                    <strong>Tip:</strong> Cash &amp; Equivalents includes short-term investments. Total Debt includes both long-term and current debt obligations. Net Debt = Total Debt − Cash.
+                    <strong>Tip:</strong> Cash &amp; Equivalents = cash_and_cash_equivalents from balance sheet. Total Debt = current + non-current debt obligations combined.
                 </p>
             </div>
         </div>
