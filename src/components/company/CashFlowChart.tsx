@@ -119,7 +119,7 @@ export default function CashFlowChart({ statements }: CashFlowChartProps) {
                 <div className="flex flex-wrap gap-1.5 sm:gap-2">
                     {visibleMetrics.map(metric => (
                         <button key={metric.key} onClick={() => toggleMetric(metric.key)}
-                            className={`text-[11px] sm:text-xs px-2.5 sm:px-3 py-1.5 rounded-md font-medium transition-all ${selectedMetrics.includes(metric.key) ? 'text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 bg-gray-200 dark:bg-gray-700'}`}
+                            className={`text-[10px] px-2 py-1 rounded font-medium transition-all ${selectedMetrics.includes(metric.key) ? 'text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 bg-gray-200 dark:bg-gray-700'}`}
                             style={{ backgroundColor: selectedMetrics.includes(metric.key) ? metric.color : undefined }}>
                             {metric.label}{selectedMetrics.includes(metric.key) && <span className="ml-1">✓</span>}
                         </button>

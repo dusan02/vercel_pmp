@@ -39,7 +39,7 @@ interface FinancialChartProps {
 const AVAILABLE_METRICS = [
     { key: 'revenue', label: 'Revenue', color: '#3B82F6' },
     { key: 'netIncome', label: 'Net Income', color: '#10B981' },
-    { key: 'ebitda', label: 'EBITDA', color: '#F59E0B' },
+    { key: 'ebitda', label: 'Op. Income', color: '#F59E0B' },
 ] as const;
 
 function CustomTooltip({ active, payload, label }: any) {
@@ -72,7 +72,7 @@ export default function FinancialChart({ statements }: FinancialChartProps) {
         const filtered = filterStatementsByViewMode(statements, viewMode);
         const sorted = [...filtered].sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime());
         return sorted.map(s => {
-            const ebitdaValue = (s.ebit && s.ebit > 0) ? s.ebit * 1.1 : 0;
+            const ebitdaValue = s.ebit ?? 0;
             const label = buildPeriodLabel(s.fiscalPeriod, s.fiscalYear);
             return {
                 name: label,
@@ -126,7 +126,7 @@ export default function FinancialChart({ statements }: FinancialChartProps) {
                         <button
                             key={metric.key}
                             onClick={() => toggleMetric(metric.key)}
-                            className={`text-[11px] sm:text-xs px-2.5 sm:px-3 py-1.5 rounded-md font-medium transition-all ${
+                            className={`text-[10px] px-2 py-1 rounded font-medium transition-all ${
                                 selectedMetrics.includes(metric.key)
                                     ? 'text-white shadow-sm'
                                     : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 bg-gray-200 dark:bg-gray-700'

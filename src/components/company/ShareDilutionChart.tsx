@@ -92,11 +92,11 @@ export default function ShareDilutionChart({ statements }: ShareDilutionChartPro
             <div className="flex flex-wrap gap-2 items-center justify-between mb-4">
                 <ChartViewToggle viewMode={viewMode} onChange={setViewMode} />
                 <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                    <button className="text-[11px] sm:text-xs px-2.5 sm:px-3 py-1.5 rounded-md font-medium text-white shadow-sm" style={{ backgroundColor: '#3B82F6' }}>
+                    <button className="text-[10px] px-2 py-1 rounded font-medium text-white shadow-sm" style={{ backgroundColor: '#3B82F6' }}>
                         Shares Outstanding ✓
                     </button>
                     <button onClick={() => setShowBuyback(!showBuyback)}
-                        className={`text-[11px] sm:text-xs px-2.5 sm:px-3 py-1.5 rounded-md font-medium transition-all ${showBuyback ? 'text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 bg-gray-200 dark:bg-gray-700'}`}
+                        className={`text-[10px] px-2 py-1 rounded font-medium transition-all ${showBuyback ? 'text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 bg-gray-200 dark:bg-gray-700'}`}
                         style={{ backgroundColor: showBuyback ? '#10B981' : undefined }}>
                         Buyback Ratio %{showBuyback && <span className="ml-1">✓</span>}
                     </button>

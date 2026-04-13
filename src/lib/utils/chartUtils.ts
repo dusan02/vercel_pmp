@@ -7,10 +7,9 @@ export function filterStatementsByViewMode(
     if (viewMode === 'annual') {
         let filtered = statements.filter(s =>
             s.fiscalPeriod === 'FY' ||
-            s.fiscalPeriod === 'TTM' ||
             s.period === 'annual' ||
             (s.fiscalPeriod && s.fiscalPeriod.startsWith('FY'))
-        );
+        ); // TTM excluded: it's rolling 12M, not a fiscal year-end — would create a duplicate inflated bar
         if (filtered.length === 0) {
             const yearlyData = new Map<number, FinancialStatement>();
             statements.forEach(s => {
