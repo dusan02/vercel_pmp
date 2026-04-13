@@ -50,6 +50,7 @@ function CustomTooltip({ active, payload, label }: any) {
 
 export default function ShareDilutionChart({ statements }: ShareDilutionChartProps) {
     const [viewMode, setViewMode] = useState<'annual' | 'quarterly'>('annual');
+    const [showShares, setShowShares]   = useState(true);
     const [showBuyback, setShowBuyback] = useState(true);
 
     const chartData = useMemo(() => {
@@ -92,8 +93,10 @@ export default function ShareDilutionChart({ statements }: ShareDilutionChartPro
             <div className="flex flex-wrap gap-2 items-center justify-between mb-4">
                 <ChartViewToggle viewMode={viewMode} onChange={setViewMode} />
                 <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                    <button className="text-[10px] px-2 py-1 rounded font-medium text-white shadow-sm" style={{ backgroundColor: '#3B82F6' }}>
-                        Shares Outstanding ✓
+                    <button onClick={() => setShowShares(!showShares)}
+                        className={`text-[10px] px-2 py-1 rounded font-medium transition-all ${showShares ? 'text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 bg-gray-200 dark:bg-gray-700'}`}
+                        style={{ backgroundColor: showShares ? '#3B82F6' : undefined }}>
+                        Shares Outstanding{showShares && <span className="ml-1">✓</span>}
                     </button>
                     <button onClick={() => setShowBuyback(!showBuyback)}
                         className={`text-[10px] px-2 py-1 rounded font-medium transition-all ${showBuyback ? 'text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 bg-gray-200 dark:bg-gray-700'}`}
@@ -109,14 +112,14 @@ export default function ShareDilutionChart({ statements }: ShareDilutionChartPro
                         <XAxis dataKey="date"
                             tick={viewMode === 'quarterly' ? <ChartQuarterTick chartData={chartData} /> : { fontSize: 11, fill: '#6B7280', fontWeight: 500 }}
                             axisLine={false} tickLine={false} interval={0} dy={viewMode === 'annual' ? 6 : 0} height={viewMode === 'quarterly' ? 44 : 24} />
-                        <YAxis yAxisId="left" tickFormatter={formatSharesAxis} tick={{ fontSize: 12, fill: '#6B7280' }} axisLine={false} tickLine={false} width={55} />
+                        {showShares && <YAxis yAxisId="left" tickFormatter={formatSharesAxis} tick={{ fontSize: 12, fill: '#6B7280' }} axisLine={false} tickLine={false} width={55} />}
                         {showBuyback && (
                             <YAxis yAxisId="right" orientation="right" tickFormatter={(v: number) => `${v.toFixed(1)}%`}
                                 tick={{ fontSize: 11, fill: '#10B981' }} axisLine={false} tickLine={false} width={45} domain={buybackDomain} />
                         )}
                         <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(107, 114, 128, 0.05)' }} />
-                        <ReferenceLine yAxisId="left" y={0} stroke="#9CA3AF" />
-                        <Bar yAxisId="left" dataKey="shares" name="Shares Outstanding" fill="#3B82F6" radius={[2, 2, 0, 0]} maxBarSize={40} />
+                        {showShares && <ReferenceLine yAxisId="left" y={0} stroke="#9CA3AF" />}
+                        {showShares && <Bar yAxisId="left" dataKey="shares" name="Shares Outstanding" fill="#3B82F6" radius={[2, 2, 0, 0]} maxBarSize={40} />}
                         {showBuyback && (
                             <Line yAxisId="right" type="monotone" dataKey="buybackRatio" name="Buyback Ratio %"
                                 stroke="#10B981" strokeWidth={2} dot={{ r: 3, fill: '#10B981' }} activeDot={{ r: 5 }} />
