@@ -91,7 +91,7 @@ export default function ValuationCharts({ ticker }: ValuationChartsProps) {
     // Filter history to selected period (client-side)
     const filteredHistory = useMemo(() => {
         if (!data) return [];
-        const raw = metric === 'pe' ? data.peHistory : data.psHistory;
+        const raw = metric === 'pe' ? (data.peHistory ?? []) : (data.psHistory ?? []);
         const periodYears = PERIODS.find(p => p.id === period)?.years ?? 5;
         const cutoff = new Date();
         cutoff.setFullYear(cutoff.getFullYear() - periodYears);
