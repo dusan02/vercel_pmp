@@ -1,5 +1,3 @@
-'use client';
-
 import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react';
 
 import { HeatmapTooltip } from './HeatmapTooltip';
