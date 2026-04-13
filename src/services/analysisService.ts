@@ -458,37 +458,107 @@ export class AnalysisService {
             marginStability = Math.sqrt(variance);
         }
 
-        // Health Score
+        // ─── Interest Coverage (needed by Health Score below) ─────────────────
+        let interestCoverage: number | null = null;
+        if (latestStmt.ebit !== null && latestStmt.interestExpense !== null && latestStmt.interestExpense !== 0) {
+            interestCoverage = latestStmt.ebit / Math.abs(latestStmt.interestExpense);
+        }
+
+        // ─── HEALTH SCORE (additive, 0-100) ────────────────────────────────
+        // 4 components × 25 pts each: Altman-Z | Current Ratio | Interest Coverage | Net Debt
+        healthScore = 0;
+
+        // 1. Altman-Z — graduated (original binary -30/+30 was too harsh for tech)
         if (altmanZ !== null) {
-            if (altmanZ > 3.0) healthScore += 30;
-            else if (altmanZ < 1.8) healthScore -= 30;
+            if (altmanZ > 3.0) healthScore += 25;
+            else if (altmanZ >= 2.0) healthScore += 18;
+            else if (altmanZ >= 1.5) healthScore += 10;
+            else healthScore += 3; // distress zone but still contributes slightly
         }
-        if (debtRepaymentYears !== null) {
-            if (debtRepaymentYears < 3) healthScore += 20;
-            if (debtRepaymentYears > 10) healthScore -= 20;
+
+        // 2. Current Ratio (Liquidity: currentAssets / currentLiabilities)
+        if (latestStmt.currentAssets && latestStmt.currentLiabilities && latestStmt.currentLiabilities > 0) {
+            const cr = latestStmt.currentAssets / latestStmt.currentLiabilities;
+            if (cr >= 2.0) healthScore += 25;
+            else if (cr >= 1.5) healthScore += 18;
+            else if (cr >= 1.0) healthScore += 12;
+            else if (cr >= 0.7) healthScore += 6;
+            // < 0.7: 0 pts
         }
-        healthScore = Math.max(0, Math.min(100, healthScore));
 
-        // Profitability
-        if (latestStmt.revenue && latestStmt.revenue > 0) {
-            let pScore = 50;
-            const netMargin = (latestStmt.netIncome || 0) / latestStmt.revenue;
-            if (netMargin > 0.15) pScore += 15;
-            else if (netMargin < 0) pScore -= 15;
+        // 3. Interest Coverage (EBIT / |interest expense|)
+        if (interestCoverage !== null) {
+            if (interestCoverage > 10) healthScore += 25;
+            else if (interestCoverage > 5)  healthScore += 18;
+            else if (interestCoverage > 2)  healthScore += 10;
+            else if (interestCoverage > 0)  healthScore += 3;
+        } else {
+            // No interest expense = zero debt burden = bonus
+            healthScore += 25;
+        }
 
-            if (latestStmt.ebit && prevStmt?.revenue && prevStmt.ebit) {
-                const currentOpMargin = latestStmt.ebit / latestStmt.revenue;
-                const prevOpMargin = prevStmt.ebit / prevStmt.revenue;
-                if (currentOpMargin > prevOpMargin) pScore += 10;
-                else pScore -= 10;
+        // 4. Net Debt position (totalDebt - cash vs totalAssets)
+        const currentNetDebt = (latestStmt.totalDebt || 0) - (latestStmt.cashAndEquivalents || 0);
+        if (latestStmt.totalDebt !== null || latestStmt.cashAndEquivalents !== null) {
+            if (currentNetDebt <= 0) {
+                healthScore += 25; // Net cash position
+            } else if (latestStmt.totalAssets && latestStmt.totalAssets > 0) {
+                const debtRatio = currentNetDebt / latestStmt.totalAssets;
+                if (debtRatio < 0.10) healthScore += 20;
+                else if (debtRatio < 0.30) healthScore += 12;
+                else if (debtRatio < 0.50) healthScore += 5;
+                // >= 0.50: 0 pts
             }
+        }
+
+        healthScore = Math.max(0, Math.min(100, Math.round(healthScore)));
+
+        // ─── PROFITABILITY SCORE (additive, 0-100) ─────────────────────────
+        // 4 components × 25 pts each: Net Margin | Gross Margin | ROE | Revenue Growth YoY
+        profitabilityScore = 0;
+
+        if (latestStmt.revenue && latestStmt.revenue > 0) {
+            // 1. Net Margin
+            const netMargin = (latestStmt.netIncome || 0) / latestStmt.revenue;
+            if (netMargin > 0.20)       profitabilityScore += 25;
+            else if (netMargin > 0.10)  profitabilityScore += 20;
+            else if (netMargin > 0.05)  profitabilityScore += 13;
+            else if (netMargin > 0)     profitabilityScore += 6;
+            // negative: 0
+
+            // 2. Gross Margin
+            if (latestStmt.grossProfit !== null) {
+                const grossMargin = latestStmt.grossProfit / latestStmt.revenue;
+                if (grossMargin > 0.60)      profitabilityScore += 25;
+                else if (grossMargin > 0.40) profitabilityScore += 20;
+                else if (grossMargin > 0.25) profitabilityScore += 12;
+                else if (grossMargin > 0.10) profitabilityScore += 5;
+            }
+
+            // 3. ROE (Return on Equity)
             if (latestStmt.totalEquity && latestStmt.totalEquity > 0) {
                 const roe = (latestStmt.netIncome || 0) / latestStmt.totalEquity;
-                if (roe > 0.15) pScore += 15;
-                else if (roe < 0.05) pScore -= 10;
+                if (roe > 0.25)      profitabilityScore += 25;
+                else if (roe > 0.15) profitabilityScore += 20;
+                else if (roe > 0.08) profitabilityScore += 12;
+                else if (roe > 0)    profitabilityScore += 5;
             }
-            profitabilityScore = Math.max(0, Math.min(100, Math.round(pScore)));
+
+            // 4. Revenue Growth YoY (compare latest stmt to ~4 quarters ago)
+            const prevYearStmt = stmts[4] || null;
+            if (prevYearStmt?.revenue && prevYearStmt.revenue > 0) {
+                const revenueGrowth = (latestStmt.revenue - prevYearStmt.revenue) / prevYearStmt.revenue;
+                if (revenueGrowth > 0.25)       profitabilityScore += 25;
+                else if (revenueGrowth > 0.10)  profitabilityScore += 20;
+                else if (revenueGrowth > 0)     profitabilityScore += 12;
+                else if (revenueGrowth > -0.10) profitabilityScore += 4;
+                // < -10%: 0
+            } else {
+                profitabilityScore += 10; // No prior year data — neutral
+            }
         }
+
+        profitabilityScore = Math.max(0, Math.min(100, Math.round(profitabilityScore)));
 
         // Valuation & PE Percentile
         let humanPeInfo: string | null = null;
@@ -520,12 +590,7 @@ export class AnalysisService {
             valuationScore = Math.max(0, Math.min(100, Math.round(vScore)));
         }
 
-        // Deep-Dive
-        let interestCoverage: number | null = null;
-        if (latestStmt.ebit !== null && latestStmt.interestExpense !== null && latestStmt.interestExpense !== 0) {
-            interestCoverage = latestStmt.ebit / Math.abs(latestStmt.interestExpense);
-        }
-
+        // Deep-Dive (interestCoverage already computed above before healthScore)
         let revenueCagr: number | null = null;
         let netIncomeCagr: number | null = null;
         const yearsBack = stmts.length >= 20 ? 5 : (stmts.length - 1) / 4;
