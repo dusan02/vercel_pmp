@@ -10,7 +10,7 @@ async function computeMetrics(symbol: string) {
     const stmts = await prisma.financialStatement.findMany({
         where: { symbol },
         orderBy: { endDate: 'desc' },
-        take: 40
+        take: 120 // 10Y annual (10) + 10Y quarterly (40) + buffer = enough for full history charts
     });
     const latestStmt = stmts[0] || null;
 

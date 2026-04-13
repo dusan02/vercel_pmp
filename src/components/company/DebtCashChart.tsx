@@ -141,24 +141,24 @@ export default function DebtCashChart({ statements }: DebtCashChartProps) {
                         />
                         <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(107, 114, 128, 0.05)' }} />
 
-                        {selectedMetrics.includes('cash') && (
-                            <Bar
-                                dataKey="cash"
-                                name="Cash & Equivalents"
-                                fill="#10B981"
-                                radius={[2, 2, 0, 0]}
-                                maxBarSize={40}
-                            />
-                        )}
-                        {selectedMetrics.includes('totalDebt') && (
-                            <Bar
-                                dataKey="totalDebt"
-                                name="Total Debt"
-                                fill="#EF4444"
-                                radius={[2, 2, 0, 0]}
-                                maxBarSize={40}
-                            />
-                        )}
+                        <Bar
+                            dataKey="cash"
+                            name="Cash & Equivalents"
+                            fill="#10B981"
+                            radius={[2, 2, 0, 0]}
+                            maxBarSize={40}
+                            hide={!selectedMetrics.includes('cash')}
+                            isAnimationActive={false}
+                        />
+                        <Bar
+                            dataKey="totalDebt"
+                            name="Total Debt"
+                            fill="#EF4444"
+                            radius={[2, 2, 0, 0]}
+                            maxBarSize={40}
+                            hide={!selectedMetrics.includes('totalDebt')}
+                            isAnimationActive={false}
+                        />
                     </BarChart>
                 </ResponsiveContainer>
             </div>

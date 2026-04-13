@@ -23,13 +23,19 @@ export class AnalysisService {
             });
 
             for (const timeframe of timeframes) {
-                const url = `https://api.polygon.io/vX/reference/financials?ticker=${symbol}&timeframe=${timeframe}&limit=100&apiKey=${this.POLYGON_API_KEY}`;
-                
-                const response = await fetch(url);
-                if (!response.ok) throw new Error(`Polygon API chyba: ${response.status} ${response.statusText}`);
+                // Fetch ALL pages (Polygon paginates via next_url)
+                let nextUrl: string | null =
+                    `https://api.polygon.io/vX/reference/financials?ticker=${symbol}&timeframe=${timeframe}&limit=100&apiKey=${this.POLYGON_API_KEY}`;
+                const results: any[] = [];
 
-                const data = await response.json();
-                const results = data.results || [];
+                while (nextUrl) {
+                    const res: Response = await fetch(nextUrl);
+                    if (!res.ok) throw new Error(`Polygon API chyba: ${res.status} ${res.statusText}`);
+                    const pageData: any = await res.json();
+                    results.push(...(pageData.results || []));
+                    // next_url already contains all params except apiKey
+                    nextUrl = pageData.next_url ? `${pageData.next_url}&apiKey=${this.POLYGON_API_KEY}` : null;
+                }
 
                 // Helper function to extract value robustly since polygon can omit fields
                 const getValue = (source: any, key: string): number | null => source?.[key]?.value ?? null;
