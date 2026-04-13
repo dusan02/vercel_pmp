@@ -253,11 +253,29 @@ export class AnalysisService {
 
         // 10 years ago to today
         const toDate = new Date();
-        const fromDate = new Date();
-        fromDate.setFullYear(toDate.getFullYear() - 10);
+        const tenYearsAgo = new Date();
+        tenYearsAgo.setFullYear(toDate.getFullYear() - 10);
 
-        const fromStr = fromDate.toISOString().split('T')[0];
-        const toStr = toDate.toISOString().split('T')[0];
+        // Incremental sync: only fetch data since last stored record (delta).
+        // Falls back to full 10Y history when no records exist yet.
+        const lastRecord = await prisma.dailyValuationHistory.findFirst({
+            where: { symbol },
+            orderBy: { date: 'desc' },
+            select: { date: true },
+        });
+        const fromDate = lastRecord
+            ? new Date(lastRecord.date.getTime() + 86_400_000) // day after last record
+            : tenYearsAgo;
+
+        // Nothing new to fetch — already up to date
+        if (fromDate > toDate) {
+            console.log(`[syncValuationHistory] ${symbol}: already up to date, skipping fetch.`);
+            return;
+        }
+
+        const fromStr = fromDate.toISOString().slice(0, 10);
+        const toStr   = toDate.toISOString().slice(0, 10);
+        console.log(`[syncValuationHistory] ${symbol}: fetching ${fromStr} → ${toStr} (${lastRecord ? 'incremental' : 'full 10Y'})`);
 
         // Aggs API for daily prices
         const url = `https://api.polygon.io/v2/aggs/ticker/${symbol}/range/1/day/${fromStr}/${toStr}?apiKey=${this.POLYGON_API_KEY}`;

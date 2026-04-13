@@ -145,6 +145,19 @@ export async function GET(
             });
         }
 
+        // Background revalidation: if cache is stale (> 7 days), trigger async refresh
+        // without blocking the response — next load will see fresh data
+        const cacheAge = await prisma.analysisCache.findUnique({
+            where: { symbol },
+            select: { updatedAt: true },
+        });
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        if (cacheAge && cacheAge.updatedAt < sevenDaysAgo) {
+            // Fire-and-forget background refresh (non-blocking)
+            fetch(`${new URL(request.url).origin}/api/analysis/${symbol}`, { method: 'POST' })
+                .catch(() => {/* silent — background job */});
+        }
+
         return NextResponse.json({ ...primary, ticker: tickerRecord, peers });
     } catch (error) {
         console.error(`Error fetching analysis for ${symbol}:`, error);
@@ -192,12 +205,27 @@ export async function POST(
             console.log(`[Analysis API] Ticker details fresh (< 30d), skipping sync for ${symbol}`);
         }
 
-        try {
-            await AnalysisService.syncValuationHistory(symbol);
-            console.log(`[Analysis API] Valuation history synced for ${symbol}`);
-        } catch (e: any) {
-            console.error(`[Analysis API] Valuation history sync failed for ${symbol}:`, e.message);
-            throw e;
+        // Skip full valuation history re-sync if last price record is < 7 days old.
+        // syncValuationHistory is now incremental anyway, but the Polygon API call
+        // still costs time even for small deltas — skip entirely when very fresh.
+        const lastPrice = await prisma.dailyValuationHistory.findFirst({
+            where: { symbol },
+            orderBy: { date: 'desc' },
+            select: { date: true },
+        });
+        const sevenDaysAgoPost = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        const valuationFresh = lastPrice && lastPrice.date > sevenDaysAgoPost;
+
+        if (!valuationFresh) {
+            try {
+                await AnalysisService.syncValuationHistory(symbol);
+                console.log(`[Analysis API] Valuation history synced for ${symbol}`);
+            } catch (e: any) {
+                console.error(`[Analysis API] Valuation history sync failed for ${symbol}:`, e.message);
+                throw e;
+            }
+        } else {
+            console.log(`[Analysis API] Valuation history fresh (< 7d), skipping sync for ${symbol}`);
         }
 
         try {
