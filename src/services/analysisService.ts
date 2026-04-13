@@ -72,9 +72,7 @@ export class AnalysisService {
                         currentLiabilities: getValue(bs, 'current_liabilities'),
                         retainedEarnings: getValue(bs, 'retained_earnings'),
                         totalEquity: getValue(bs, 'equity') ?? getValue(bs, 'stockholders_equity'),
-                        sharesOutstanding: getValue(inc, 'basic_average_shares') ?? 
-                                     getValue(inc, 'diluted_average_shares') ??
-                                     getValue(inc, 'weighted_average_shares_outstanding'),
+                        sharesOutstanding: (() => { const v = getValue(inc, 'basic_average_shares') ?? getValue(inc, 'diluted_average_shares') ?? getValue(inc, 'weighted_average_shares_outstanding'); return (v !== null && v > 1_000_000) ? v : null; })(),
                         sbc: getValue(cf, 'share_based_compensation'),
                         interestExpense: getValue(inc, 'interest_expense_operating') ?? getValue(inc, 'interest_expense'),
                         totalDebt: getValue(bs, 'current_and_non_current_debt') ?? getValue(bs, 'debt') ?? getValue(bs, 'long_term_debt'),
@@ -102,9 +100,7 @@ export class AnalysisService {
                         currentLiabilities: getValue(bs, 'current_liabilities'),
                         retainedEarnings: getValue(bs, 'retained_earnings'),
                         totalEquity: getValue(bs, 'equity') ?? getValue(bs, 'stockholders_equity'),
-                        sharesOutstanding: getValue(inc, 'basic_average_shares') ?? 
-                                     getValue(inc, 'diluted_average_shares') ??
-                                     getValue(inc, 'weighted_average_shares_outstanding'),
+                        sharesOutstanding: (() => { const v = getValue(inc, 'basic_average_shares') ?? getValue(inc, 'diluted_average_shares') ?? getValue(inc, 'weighted_average_shares_outstanding'); return (v !== null && v > 1_000_000) ? v : null; })(),
                         sbc: getValue(cf, 'share_based_compensation'),
                         interestExpense: getValue(inc, 'interest_expense_operating') ?? getValue(inc, 'interest_expense'),
                         totalDebt: getValue(bs, 'current_and_non_current_debt') ?? getValue(bs, 'debt') ?? getValue(bs, 'long_term_debt'),
@@ -300,8 +296,15 @@ export class AnalysisService {
                 let evEbitda = null;
                 let fcfYield = null;
 
-                // Najdi najbližší posledný kvartál pred (alebo v deň) tohto dátumu
-                const stmt = statements.find(s => s.endDate.getTime() <= date.getTime()) || statements[statements.length - 1];
+                // Prefer FY/annual statement for consistent annualized P/E & P/S.
+                // Q4 data from Polygon often has wrong sharesOutstanding (delta vs cumulative).
+                const annualStmt = statements.find(s =>
+                    s.endDate.getTime() <= date.getTime() &&
+                    (s.fiscalPeriod === 'FY' || s.period === 'annual')
+                );
+                const stmt = annualStmt ||
+                    statements.find(s => s.endDate.getTime() <= date.getTime()) ||
+                    statements[statements.length - 1];
 
                 if (stmt && stmt.sharesOutstanding) {
                     marketCap = closePrice * stmt.sharesOutstanding;
