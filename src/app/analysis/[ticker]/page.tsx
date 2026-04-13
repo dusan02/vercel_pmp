@@ -167,7 +167,7 @@ export default async function AnalysisTickerPage({ params }: PageProps) {
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Market Cap</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  ${(marketCap / 1e9).toFixed(2)}B
+                  ${marketCap.toFixed(1)}B
                 </p>
               </div>
             )}

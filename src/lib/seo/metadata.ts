@@ -40,8 +40,8 @@ export function generateCompanyMetadata({
   const changeText = percentChange !== undefined 
     ? `${percentChange >= 0 ? '+' : ''}${percentChange.toFixed(2)}%`
     : '';
-  const marketCapText = marketCap 
-    ? `Market Cap: $${(marketCap / 1e9).toFixed(2)}B`
+  const marketCapText = marketCap && marketCap > 0.01
+    ? `Market Cap: $${marketCap.toFixed(1)}B`
     : '';
 
   const title = `${displayName} (${ticker}) Stock Price & Analysis`;

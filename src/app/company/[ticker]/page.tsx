@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation';
+import { permanentRedirect } from 'next/navigation';
 
 interface PageProps {
   params: Promise<{ ticker: string }>;
@@ -6,5 +6,5 @@ interface PageProps {
 
 export default async function CompanyRedirectPage({ params }: PageProps) {
   const { ticker } = await params;
-  redirect(`/stock/${ticker.toUpperCase()}`);
+  permanentRedirect(`/stock/${ticker.toUpperCase()}`);
 }

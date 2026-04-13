@@ -15,8 +15,7 @@ interface PageProps {
   params: Promise<{ ticker: string }>;
 }
 
-// Force dynamic to ensure fresh data
-export const revalidate = 60;
+export const revalidate = 300; // 5 min — balance freshness vs build load
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { ticker } = await params;
@@ -132,7 +131,7 @@ export default async function StockPage({ params }: PageProps) {
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Market Cap</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {marketCap > 0 ? `$${(marketCap / 1e9).toFixed(2)}B` : 'N/A'}
+                {marketCap > 0.01 ? `$${marketCap.toFixed(1)}B` : 'N/A'}
               </p>
             </div>
             <div className="relative group">
