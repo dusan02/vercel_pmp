@@ -38,6 +38,11 @@ const TAB_META: Record<string, { title: string; description: string; canonical: 
     description: 'Deep-dive stock analysis including pre-market price, technical indicators, earnings history, valuation scores, and financial health metrics.',
     canonical: `${baseUrl}/analysis`,
   },
+  portfolio: {
+    title: 'My Portfolio — Track Your Pre-Market Holdings | PreMarketPrice',
+    description: 'Track your personalized portfolio with real-time pre-market prices, % change, and market cap data for your favorite US stocks.',
+    canonical: `${baseUrl}/?tab=portfolio`,
+  },
 };
 
 interface PageProps {
@@ -75,6 +80,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   // Other tabs
   if (tab && TAB_META[tab]) {
     const { title, description, canonical } = TAB_META[tab];
+    const isNoIndex = tab === 'portfolio'; // User-specific content — don't index
     return {
       title,
       description,
@@ -89,7 +95,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
         type: 'website',
       },
       twitter: { card: 'summary_large_image', title, description, images: [`${baseUrl}/og-image.png`] },
-      robots: { index: true, follow: true },
+      robots: isNoIndex ? { index: false, follow: true } : { index: true, follow: true },
     };
   }
 
@@ -161,8 +167,8 @@ export default async function Page() {
     // Continue with empty initialData - client side will handle fallback
   }
 
-  // Top tickers for crawlable internal links
-  const topTickersForNav = getProjectTickers('pmp', 20);
+  // All tickers for crawlable internal links (SEO discovery)
+  const allTickersForNav = getProjectTickers('pmp');
 
   return (
     <>
@@ -175,11 +181,16 @@ export default async function Page() {
         <Link href="/stocks">All Stocks</Link>
         <Link href="/heatmap">Market Heatmap</Link>
         <Link href="/earnings">Earnings Calendar</Link>
-        {/* Analysis pages — help Googlebot discover /analysis/[ticker] */}
-        {topTickersForNav.map((ticker) => (
-          <Link key={ticker} href={`/analysis/${ticker}`}>
-            {getCompanyName(ticker)} ({ticker}) Analysis
-          </Link>
+        {/* All analysis + stock pages — help Googlebot discover every ticker */}
+        {allTickersForNav.map((ticker) => (
+          <span key={ticker}>
+            <Link href={`/analysis/${ticker}`}>
+              {getCompanyName(ticker)} ({ticker}) Analysis
+            </Link>
+            <Link href={`/stock/${ticker}`}>
+              {getCompanyName(ticker)} ({ticker}) Stock
+            </Link>
+          </span>
         ))}
       </nav>
       <Suspense fallback={<div className="min-h-screen bg-white dark:bg-gray-950"></div>}>

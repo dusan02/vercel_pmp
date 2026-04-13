@@ -182,14 +182,9 @@ export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabP
                 onRemoveComparison={handleRemoveComparison}
             />
 
-            {/* Scorecards */}
-            {!compareWith ? (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <ScoreCard title="Health" score={data.healthScore} colorClass={getColorClass(data.healthScore)} strokeColor={getStrokeColor(data.healthScore)} icon="health" />
-                    <ScoreCard title="Profitability" score={data.profitabilityScore} colorClass={getColorClass(data.profitabilityScore)} strokeColor={getStrokeColor(data.profitabilityScore)} icon="profitability" />
-                    <ScoreCard title="Valuation" score={data.valuationScore} colorClass={getColorClass(data.valuationScore)} strokeColor={getStrokeColor(data.valuationScore)} icon="valuation" />
-                </div>
-            ) : (
+            {/* Scorecards — shown in AnalysisHeader (compact, top-right).
+                Show comparison bars only when comparing two tickers. */}
+            {compareWith && (
                 <div className="space-y-3">
                     {[{ label: 'Health', p: data.healthScore, s: secondaryData?.healthScore ?? null }, { label: 'Profitability', p: data.profitabilityScore, s: secondaryData?.profitabilityScore ?? null }, { label: 'Valuation', p: data.valuationScore, s: secondaryData?.valuationScore ?? null }].map(({ label, p, s }) => (
                         <div key={label} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-4">

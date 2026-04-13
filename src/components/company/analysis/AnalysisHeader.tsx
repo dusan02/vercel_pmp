@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import CompanyLogo from '@/components/CompanyLogo';
 import type { AnalysisData } from '@/components/company/AnalysisTab';
 import { formatMarketCap as fmtMcap } from '@/lib/utils/format';
+import { getColorClass, getStrokeColor } from './ScoreCard';
 
 /** Wraps shared formatMarketCap — adds $ prefix, returns null for empty */
 export function formatMarketCap(val: number | null | undefined): string | null {
@@ -48,6 +49,30 @@ interface AnalysisHeaderProps {
     data: AnalysisData;
 }
 
+function MiniScoreCircle({ label, score }: { label: string; score: number | null }) {
+    const radius = 38;
+    const circumference = 2 * Math.PI * radius;
+    const displayScore = (score != null && !isNaN(score)) ? score : 0;
+    const strokeDashoffset = circumference - (displayScore / 100) * circumference;
+    const color = getColorClass(score);
+    const stroke = getStrokeColor(score);
+    return (
+        <div className="flex flex-col items-center gap-1">
+            <p className="text-[9px] uppercase tracking-widest font-semibold text-gray-400 dark:text-gray-500 text-center">{label}</p>
+            <div className="relative w-[60px] h-[60px]">
+                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r={radius} fill="transparent" stroke="currentColor" strokeWidth="10" className="text-gray-100 dark:text-gray-700" />
+                    <circle cx="50" cy="50" r={radius} fill="transparent" stroke={stroke} strokeWidth="10" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} className="transition-all duration-700 ease-out" />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className={`text-base font-bold leading-none ${color}`}>{score ?? '—'}</span>
+                    <span className="text-[8px] text-gray-400 mt-0.5">/100</span>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 /** Truncate description to first N sentences */
 function truncateToSentences(text: string, n: number): string {
     const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
@@ -81,7 +106,7 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
 
             {t ? (
                 <>
-                    {/* ── TOP: Logo + Identity (full width) ── */}
+                    {/* ── TOP: Logo + Identity + Scores ── */}
                     <div className="flex items-center gap-4 px-6 lg:px-8 pt-6 lg:pt-7 pb-5">
                         <CompanyLogo
                             ticker={ticker}
@@ -106,6 +131,12 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
                                     Website ↗
                                 </a>
                             )}
+                        </div>
+                        {/* ── Score circles (compact, top-right) ── */}
+                        <div className="ml-auto flex items-center gap-4 shrink-0 pl-4">
+                            <MiniScoreCircle label="Health" score={data.healthScore} />
+                            <MiniScoreCircle label="Profitability" score={data.profitabilityScore} />
+                            <MiniScoreCircle label="Valuation" score={data.valuationScore} />
                         </div>
                     </div>
 
