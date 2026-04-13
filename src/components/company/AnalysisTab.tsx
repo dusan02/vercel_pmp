@@ -22,7 +22,6 @@ import { ChartSection } from './shared/ChartSection';
 
 const ValuationCharts = lazy(() => import('./ValuationCharts'));
 
- 
 export interface AnalysisTabProps {
     ticker: string;
     hideSearch?: boolean;
@@ -332,7 +331,7 @@ export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabP
                     <ScenarioLab
                         currentEps={data.metrics.currentEps || 0}
                         currentPe={data.metrics.currentPe || 0}
-                        currentPrice={(data.metrics.currentEps || 0) * (data.metrics.currentPe || 0)}
+                        currentPrice={data.ticker?.lastPrice ?? (data.metrics.currentEps || 0) * (data.metrics.currentPe || 0)}
                     />
                 )}
             </ChartSection>

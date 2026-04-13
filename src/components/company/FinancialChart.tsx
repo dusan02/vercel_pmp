@@ -39,7 +39,7 @@ interface FinancialChartProps {
 const AVAILABLE_METRICS = [
     { key: 'revenue', label: 'Revenue', color: '#3B82F6' },
     { key: 'netIncome', label: 'Net Income', color: '#10B981' },
-    { key: 'ebitda', label: 'Op. Income', color: '#F59E0B' },
+    { key: 'ebit', label: 'EBIT', color: '#F59E0B' },
 ] as const;
 
 function CustomTooltip({ active, payload, label }: any) {
@@ -65,21 +65,21 @@ function CustomTooltip({ active, payload, label }: any) {
 
 export default function FinancialChart({ statements }: FinancialChartProps) {
     const [viewMode, setViewMode] = useState<'annual' | 'quarterly'>('annual');
-    const [selectedMetrics, setSelectedMetrics] = useState(['revenue', 'netIncome', 'ebitda']);
+    const [selectedMetrics, setSelectedMetrics] = useState(['revenue', 'netIncome', 'ebit']);
 
     const chartData = useMemo(() => {
         if (!statements || statements.length === 0) return [];
         const filtered = filterStatementsByViewMode(statements, viewMode);
         const sorted = [...filtered].sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime());
         return sorted.map(s => {
-            const ebitdaValue = s.ebit ?? 0;
+            const ebitValue = s.ebit ?? 0;
             const label = buildPeriodLabel(s.fiscalPeriod, s.fiscalYear);
             return {
                 name: label,
                 date: label,
                 revenue: s.revenue ? s.revenue / 1e6 : 0,
                 netIncome: s.netIncome ? s.netIncome / 1e6 : 0,
-                ebitda: ebitdaValue / 1e6,
+                ebit: ebitValue / 1e6,
             };
         });
     }, [statements, viewMode]);
@@ -192,10 +192,10 @@ export default function FinancialChart({ statements }: FinancialChartProps) {
                                 maxBarSize={40}
                             />
                         )}
-                        {selectedMetrics.includes('ebitda') && (
+                        {selectedMetrics.includes('ebit') && (
                             <Bar 
-                                dataKey="ebitda" 
-                                name="EBITDA" 
+                                dataKey="ebit" 
+                                name="EBIT" 
                                 fill="#F59E0B" 
                                 radius={[2, 2, 0, 0]} 
                                 maxBarSize={40}

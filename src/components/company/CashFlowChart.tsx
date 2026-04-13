@@ -52,7 +52,7 @@ export default function CashFlowChart({ statements }: CashFlowChartProps) {
     // Determine which metrics have data
     const availableMetrics = useMemo(() => {
         const hasOperatingCF = statements.some(s => s.operatingCashFlow !== null);
-        const hasSbc = statements.some(s => (s as any).sbc !== null && (s as any).sbc !== 0);
+        const hasSbc = statements.some(s => s.sbc !== null && s.sbc !== 0);
         const defaults = ['operatingCF', 'netIncome'];
         if (hasOperatingCF) defaults.push('freeCF'); // Always show freeCF if we have operating CF
         if (hasSbc) defaults.push('sbc');
@@ -72,7 +72,7 @@ export default function CashFlowChart({ statements }: CashFlowChartProps) {
                 const capex = s.capex ? Math.abs(s.capex) / 1e6 : 0;
                 const fcf = s.capex !== null ? ocf - capex : ocf;
                 const ni = (s.netIncome ?? 0) / 1e6;
-                const sbc = ((s as any).sbc ?? 0) / 1e6;
+                const sbc = (s.sbc ?? 0) / 1e6;
                 const label = buildPeriodLabel(s.fiscalPeriod, s.fiscalYear);
                 return { name: label, date: label, operatingCF: ocf, freeCF: fcf, netIncome: ni, sbc };
             });

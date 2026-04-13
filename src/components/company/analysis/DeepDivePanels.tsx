@@ -63,7 +63,7 @@ export function DeepDivePanels({
                         <div className="flex justify-between items-start py-2 border-t border-gray-100 dark:border-gray-700">
                             <div>
                                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300" title="Model to detect earnings manipulation. < -2.22 is Unlikely, > -1.78 is High Risk.">Beneish M-Score ⓘ</p>
-                                <p className="text-xs text-gray-400">Below -1.78 = No manipulation</p>
+                                <p className="text-xs text-gray-400">Below -2.22 = Safe · Above -1.78 = Risk</p>
                             </div>
                             <div className="flex gap-4">
                                 <div className="text-right">
