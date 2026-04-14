@@ -205,27 +205,13 @@ export async function POST(
             console.log(`[Analysis API] Ticker details fresh (< 30d), skipping sync for ${symbol}`);
         }
 
-        // Skip full valuation history re-sync if last price record is < 7 days old.
-        // syncValuationHistory is now incremental anyway, but the Polygon API call
-        // still costs time even for small deltas — skip entirely when very fresh.
-        const lastPrice = await prisma.dailyValuationHistory.findFirst({
-            where: { symbol },
-            orderBy: { date: 'desc' },
-            select: { date: true },
-        });
-        const sevenDaysAgoPost = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-        const valuationFresh = lastPrice && lastPrice.date > sevenDaysAgoPost;
-
-        if (!valuationFresh) {
-            try {
-                await AnalysisService.syncValuationHistory(symbol);
-                console.log(`[Analysis API] Valuation history synced for ${symbol}`);
-            } catch (e: any) {
-                console.error(`[Analysis API] Valuation history sync failed for ${symbol}:`, e.message);
-                throw e;
-            }
-        } else {
-            console.log(`[Analysis API] Valuation history fresh (< 7d), skipping sync for ${symbol}`);
+        // Always sync valuation history on manual POST to ensure new EPS from Finnhub recalculates P/E ratios correctly
+        try {
+            await AnalysisService.syncValuationHistory(symbol);
+            console.log(`[Analysis API] Valuation history synced for ${symbol}`);
+        } catch (e: any) {
+            console.error(`[Analysis API] Valuation history sync failed for ${symbol}:`, e.message);
+            throw e;
         }
 
         try {
