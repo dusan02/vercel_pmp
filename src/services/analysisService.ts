@@ -10,9 +10,10 @@ export class AnalysisService {
      * 1. Sťahovanie a mapovanie Financials vX z Polygon.io (nástupca v3)
      */
     static async syncFinancials(symbol: string): Promise<void> {
-        if (!this.POLYGON_API_KEY) throw new Error('Chýba Polygon API Key');
+        const FINNHUB_API_KEY = process.env.FINNHUB_API_KEY;
+        if (!FINNHUB_API_KEY) throw new Error('Chýba Finnhub API Key pre Financials');
 
-        const timeframes = ['quarterly', 'annual'];
+        const timeframes = ['annual', 'quarterly'];
 
         try {
             // Ensure Ticker row exists (FK requirement for FinancialStatement)
@@ -23,102 +24,124 @@ export class AnalysisService {
             });
 
             for (const timeframe of timeframes) {
-                // Fetch ALL pages (Polygon paginates via next_url)
-                let nextUrl: string | null =
-                    `https://api.polygon.io/vX/reference/financials?ticker=${symbol}&timeframe=${timeframe}&limit=100&apiKey=${this.POLYGON_API_KEY}`;
-                const results: any[] = [];
+                const url = `https://finnhub.io/api/v1/stock/financials-reported?symbol=${symbol}&freq=${timeframe}&token=${FINNHUB_API_KEY}`;
+                
+                const res: Response = await fetch(url);
+                if (!res.ok) throw new Error(`Finnhub API chyba: ${res.status} ${res.statusText}`);
+                const data: any = await res.json();
+                
+                const results = data.data || [];
 
-                while (nextUrl) {
-                    const res: Response = await fetch(nextUrl);
-                    if (!res.ok) throw new Error(`Polygon API chyba: ${res.status} ${res.statusText}`);
-                    const pageData: any = await res.json();
-                    results.push(...(pageData.results || []));
-                    // next_url already contains all params except apiKey
-                    nextUrl = pageData.next_url ? `${pageData.next_url}&apiKey=${this.POLYGON_API_KEY}` : null;
-                }
+                // Helper to extract value from Finnhub XBRL concepts
+                const extract = (report: any, section: string, concepts: string[]): number | null => {
+                    const list = report[section] || [];
+                    for (const concept of concepts) {
+                        const found = list.find((item: any) => item.concept === concept);
+                        if (found && found.value !== undefined) return found.value;
+                    }
+                    return null;
+                };
 
-                // Helper function to extract value robustly since polygon can omit fields
-                const getValue = (source: any, key: string): number | null => source?.[key]?.value ?? null;
+                for (const item of results) {
+                    const { year, quarter, endDate, report } = item;
+                    if (!year || !endDate || !report) continue;
 
-            for (const item of results) {
-                const { start_date, end_date, fiscal_period, fiscal_year, financials } = item;
-                const inc = financials?.income_statement || {};
-                const bs = financials?.balance_sheet || {};
-                const cf = financials?.cash_flow_statement || {};
+                    // Určenie obdobia
+                    const fiscalYear = year;
+                    const fiscalPeriod = timeframe === 'annual' ? 'FY' : `Q${quarter}`;
+                    if (timeframe === 'quarterly' && !quarter) continue; // Skip invalid quarterly
 
-                if (!end_date || !fiscal_period || !fiscal_year) continue;
+                    const revenue = extract(report, 'ic', [
+                        'us-gaap_Revenues', 'us-gaap_SalesRevenueNet', 'us-gaap_RevenuesNetOfInterestExpense', 
+                        'us-gaap_RevenueFromContractWithCustomerExcludingAssessedTax', 'us-gaap_HealthCareOrganizationRevenue'
+                    ]);
+                    const netIncome = extract(report, 'ic', [
+                        'us-gaap_NetIncomeLoss', 'us-gaap_NetIncomeLossAvailableToCommonStockholdersBasic', 'us-gaap_ProfitLoss'
+                    ]);
+                    const grossProfit = extract(report, 'ic', ['us-gaap_GrossProfit']);
+                    
+                    let ebit = extract(report, 'ic', [
+                        'us-gaap_OperatingIncomeLoss', 'us-gaap_IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest'
+                    ]);
+                    if (ebit === null && grossProfit !== null) {
+                        const rnde = extract(report, 'ic', ['us-gaap_ResearchAndDevelopmentExpense']) || 0;
+                        const sgae = extract(report, 'ic', ['us-gaap_SellingGeneralAndAdministrativeExpense']) || 0;
+                        ebit = grossProfit - rnde - sgae;
+                    }
 
-                const parsedFiscalYear = parseInt(fiscal_year, 10);
-                if (isNaN(parsedFiscalYear)) continue;
+                    const operatingCashFlow = extract(report, 'cf', [
+                        'us-gaap_NetCashProvidedByUsedInOperatingActivities', 'us-gaap_NetCashProvidedByUsedInOperatingActivitiesContinuing'
+                    ]);
+                    const capex = extract(report, 'cf', [
+                        'us-gaap_PaymentsToAcquirePropertyPlantAndEquipment', 'us-gaap_PaymentsToAcquireOtherPropertyPlantAndEquipment', 
+                        'us-gaap_PaymentsToAcquireProductiveAssets'
+                    ]);
+                    
+                    const totalAssets = extract(report, 'bs', ['us-gaap_Assets']);
+                    const totalLiabilities = extract(report, 'bs', ['us-gaap_Liabilities']);
+                    const currentAssets = extract(report, 'bs', ['us-gaap_AssetsCurrent']);
+                    const currentLiabilities = extract(report, 'bs', ['us-gaap_LiabilitiesCurrent']);
+                    const retainedEarnings = extract(report, 'bs', ['us-gaap_RetainedEarningsAccumulatedDeficit']);
+                    const totalEquity = extract(report, 'bs', [
+                        'us-gaap_StockholdersEquity', 'us-gaap_StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest', 'us-gaap_PartnerCapital'
+                    ]);
 
-                // Determine final period string (e.g. if the API returns timeframe=annual it's 'FY' or 'TTM' sometimes)
-                const finalPeriod = timeframe === 'annual' ? 'FY' : fiscal_period;
+                    const sharesOutstandingRaw = extract(report, 'ic', [
+                        'us-gaap_WeightedAverageNumberOfDilutedSharesOutstanding', 'us-gaap_WeightedAverageNumberOfSharesOutstandingBasic'
+                    ]) ?? extract(report, 'bs', ['dei_EntityCommonStockSharesOutstanding']);
+                    const sharesOutstanding = (sharesOutstandingRaw !== null && sharesOutstandingRaw > 1000000) ? sharesOutstandingRaw : null;
 
-                await prisma.financialStatement.upsert({
-                    where: {
-                        symbol_fiscalYear_fiscalPeriod: {
-                            symbol,
-                            fiscalYear: parsedFiscalYear,
-                            fiscalPeriod: finalPeriod,
+                    const sbc = extract(report, 'cf', [
+                        'us-gaap_ShareBasedCompensation', 'us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsGrantsInPeriodGross'
+                    ]) ?? extract(report, 'ic', ['us-gaap_ShareBasedCompensation']);
+
+                    const interestExpense = extract(report, 'ic', ['us-gaap_InterestExpense', 'us-gaap_InterestExpenseDebt']);
+                    
+                    const longTermDebt = extract(report, 'bs', [
+                        'us-gaap_LongTermDebtNoncurrent', 'us-gaap_LongTermDebtAndCapitalLeaseObligations', 'us-gaap_LongTermDebt'
+                    ]);
+                    const shortTermDebt = extract(report, 'bs', [
+                        'us-gaap_DebtCurrent', 'us-gaap_ShortTermBorrowings', 'us-gaap_LongTermDebtAndCapitalLeaseObligationsCurrent'
+                    ]);
+                    let totalDebt = null;
+                    if (longTermDebt !== null || shortTermDebt !== null) {
+                        totalDebt = (longTermDebt || 0) + (shortTermDebt || 0);
+                    }
+
+                    const cashAndEquivalents = extract(report, 'bs', [
+                        'us-gaap_CashAndCashEquivalentsAtCarryingValue', 'us-gaap_Cash', 'us-gaap_CashAndShortTermInvestments', 'us-gaap_CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents'
+                    ]);
+
+                    const netPPE = extract(report, 'bs', ['us-gaap_PropertyPlantAndEquipmentNet']);
+
+                    await prisma.financialStatement.upsert({
+                        where: {
+                            symbol_fiscalYear_fiscalPeriod: {
+                                symbol,
+                                fiscalYear,
+                                fiscalPeriod,
+                            }
+                        },
+                        update: {
+                            endDate: new Date(endDate),
+                            revenue, netIncome, ebit, operatingCashFlow, capex,
+                            totalAssets, totalLiabilities, currentAssets, currentLiabilities,
+                            retainedEarnings, totalEquity, sharesOutstanding,
+                            sbc, interestExpense, totalDebt, cashAndEquivalents, grossProfit, netPPE
+                        },
+                        create: {
+                            symbol, period: fiscalPeriod, endDate: new Date(endDate),
+                            fiscalYear, fiscalPeriod,
+                            revenue, netIncome, ebit, operatingCashFlow, capex,
+                            totalAssets, totalLiabilities, currentAssets, currentLiabilities,
+                            retainedEarnings, totalEquity, sharesOutstanding,
+                            sbc, interestExpense, totalDebt, cashAndEquivalents, grossProfit, netPPE
                         }
-                    },
-                    update: {
-                        endDate: new Date(end_date),
-                        revenue: getValue(inc, 'revenues'),
-                        netIncome: getValue(inc, 'net_income_loss'),
-                        ebit: getValue(inc, 'operating_income_loss') ?? getValue(inc, 'operating_income'),
-                        operatingCashFlow: getValue(cf, 'net_cash_flow_from_operating_activities'),
-                        capex: getValue(cf, 'net_cash_flow_from_investing_activities_property_plant_and_equipment') ?? 
-                               getValue(cf, 'capital_expenditure_and_intangible_assets') ??
-                               getValue(cf, 'capital_expenditures') ??
-                               getValue(cf, 'payments_for_acquisition_of_property_plant_and_equipment'),
-                        totalAssets: getValue(bs, 'assets'),
-                        totalLiabilities: getValue(bs, 'liabilities'),
-                        currentAssets: getValue(bs, 'current_assets'),
-                        currentLiabilities: getValue(bs, 'current_liabilities'),
-                        retainedEarnings: getValue(bs, 'retained_earnings'),
-                        totalEquity: getValue(bs, 'equity') ?? getValue(bs, 'stockholders_equity'),
-                        sharesOutstanding: (() => { const v = getValue(inc, 'basic_average_shares') ?? getValue(inc, 'diluted_average_shares') ?? getValue(inc, 'weighted_average_shares_outstanding'); return (v !== null && v > 1_000_000) ? v : null; })(),
-                        sbc: getValue(cf, 'share_based_compensation'),
-                        interestExpense: getValue(inc, 'interest_expense_operating') ?? getValue(inc, 'interest_expense'),
-                        totalDebt: getValue(bs, 'current_and_non_current_debt') ?? getValue(bs, 'debt') ?? getValue(bs, 'long_term_debt'),
-                        cashAndEquivalents: getValue(bs, 'cash_and_cash_equivalents') ?? getValue(bs, 'cash_and_cash_equivalents_and_short_term_investments') ?? getValue(bs, 'cash'),
-                        grossProfit: getValue(inc, 'gross_profit'),
-                        netPPE: getValue(bs, 'property_plant_and_equipment_net')
-                    } as any, // Temporary cast to bypass stale client types
-                    create: {
-                        symbol,
-                        period: finalPeriod,
-                        endDate: new Date(end_date),
-                        fiscalYear: parsedFiscalYear,
-                        fiscalPeriod: finalPeriod,
-                        revenue: getValue(inc, 'revenues'),
-                        netIncome: getValue(inc, 'net_income_loss'),
-                        ebit: getValue(inc, 'operating_income_loss') ?? getValue(inc, 'operating_income'),
-                        operatingCashFlow: getValue(cf, 'net_cash_flow_from_operating_activities'),
-                        capex: getValue(cf, 'net_cash_flow_from_investing_activities_property_plant_and_equipment') ?? 
-                               getValue(cf, 'capital_expenditure_and_intangible_assets') ??
-                               getValue(cf, 'capital_expenditures') ??
-                               getValue(cf, 'payments_for_acquisition_of_property_plant_and_equipment'),
-                        totalAssets: getValue(bs, 'assets'),
-                        totalLiabilities: getValue(bs, 'liabilities'),
-                        currentAssets: getValue(bs, 'current_assets'),
-                        currentLiabilities: getValue(bs, 'current_liabilities'),
-                        retainedEarnings: getValue(bs, 'retained_earnings'),
-                        totalEquity: getValue(bs, 'equity') ?? getValue(bs, 'stockholders_equity'),
-                        sharesOutstanding: (() => { const v = getValue(inc, 'basic_average_shares') ?? getValue(inc, 'diluted_average_shares') ?? getValue(inc, 'weighted_average_shares_outstanding'); return (v !== null && v > 1_000_000) ? v : null; })(),
-                        sbc: getValue(cf, 'share_based_compensation'),
-                        interestExpense: getValue(inc, 'interest_expense_operating') ?? getValue(inc, 'interest_expense'),
-                        totalDebt: getValue(bs, 'current_and_non_current_debt') ?? getValue(bs, 'debt') ?? getValue(bs, 'long_term_debt'),
-                        cashAndEquivalents: getValue(bs, 'cash_and_cash_equivalents') ?? getValue(bs, 'cash_and_cash_equivalents_and_short_term_investments') ?? getValue(bs, 'cash'),
-                        grossProfit: getValue(inc, 'gross_profit'),
-                        netPPE: getValue(bs, 'property_plant_and_equipment_net')
-                    } as any
-                });
+                    });
+                }
             }
-        }
         } catch (error) {
-            console.error(`Error syncing financials for ${symbol}:`, error);
+            console.error(`Error syncing financials mapping via Finnhub for ${symbol}:`, error);
             throw error;
         }
     }
@@ -388,7 +411,7 @@ export class AnalysisService {
         const stmts = await prisma.financialStatement.findMany({
             where: { symbol },
             orderBy: { endDate: 'desc' },
-            take: 40 // Up to 10 years of quarterly data
+            take: 120 // 10Y annual + quarterly buffer
         });
 
         const latestStmt = stmts[0];
