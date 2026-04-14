@@ -6,15 +6,10 @@ import DebtCashChart from './DebtCashChart';
 import CashFlowChart from './CashFlowChart';
 import ShareDilutionChart from './ShareDilutionChart';
 import { AnalysisHeader } from './analysis/AnalysisHeader';
-import { AnalysisControls } from './analysis/AnalysisControls';
-import { VerdictBanner } from './analysis/VerdictBanner';
-import { CompareToolbar } from './analysis/CompareToolbar';
 import { FinancialHealthTable } from './analysis/FinancialHealthTable';
 import { DeepDivePanels } from './analysis/DeepDivePanels';
 import { QualityStabilityStats } from './analysis/QualityStabilityStats';
-import { ScoreCard, getColorClass, getStrokeColor } from './analysis/ScoreCard';
 import { ScenarioLab } from './analysis/ScenarioLab';
-import { usePDFExport } from '../../hooks/usePDFExport';
 import { useAnalysis } from '../../hooks/useAnalysis';
 import { LoadingSkeleton } from './analysis/LoadingSkeleton';
 import { BalanceSheetTable } from './analysis/BalanceSheetTable';
@@ -97,23 +92,11 @@ export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabP
         analyzing,
         error,
         compareWith,
-        compareInput,
         secondaryData,
-        loadingCompare,
-        analysisStep,
         openPanel,
         togglePanel,
-        setCompareInput,
         runDeepAnalysis,
-        handleAddComparison,
-        handleRemoveComparison
     } = useAnalysis(ticker);
-
-    const { isExporting, exportToPDF } = usePDFExport('analysis-pdf-content', 'PMP_Analysis');
-
-    const handleDownloadPDF = () => exportToPDF(ticker);
-
-    
 
     if (loading) return <LoadingSkeleton />;
 
@@ -133,100 +116,11 @@ export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabP
         return <LoadingSkeleton />;
     }
 
-    const isTrap = (data.healthScore !== null && data.healthScore < 40) ||
-        (data.piotroskiScore !== null && data.piotroskiScore !== undefined && data.piotroskiScore <= 2) ||
-        (data.beneishScore !== null && data.beneishScore !== undefined && data.beneishScore > -1.78);
-
     return (
-        <div id="analysis-pdf-content" className={`space-y-6 p-4 bg-transparent dark:bg-gray-900 rounded-xl transition-all ${isExporting ? 'animate-none' : 'animate-fade-in'}`}>
+        <div className="space-y-6 p-4 bg-transparent dark:bg-gray-900 rounded-xl transition-all animate-fade-in">
 
             {/* ── Hero Section: Company Profile + Quick Search ── */}
             <AnalysisHeader ticker={ticker} hideSearch={hideSearch} data={data} />
-
-            {/* Run Update / PDF buttons */}
-            <AnalysisControls
-                updatedAt={data.updatedAt}
-                analyzing={analyzing}
-                isExporting={isExporting}
-                handleDownloadPDF={handleDownloadPDF}
-                runDeepAnalysis={runDeepAnalysis}
-            />
-
-            {error && (
-                <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 rounded-xl flex items-center gap-2 text-sm border border-red-100 dark:border-red-900/50">
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    {error}
-                </div>
-            )}
-
-            {/* Warning / Verdict Box */}
-            <VerdictBanner 
-                isTrap={isTrap || false}
-                analyzing={analyzing}
-                analysisStep={analysisStep}
-                verdictText={data.verdictText}
-            />
-
-            {/* Compare-with Search Bar */}
-            <CompareToolbar
-                ticker={ticker}
-                compareWith={compareWith}
-                compareInput={compareInput}
-                loadingCompare={loadingCompare}
-                peers={data.peers}
-                onCompareInput={setCompareInput}
-                onAddComparison={handleAddComparison}
-                onRemoveComparison={handleRemoveComparison}
-            />
-
-            {/* Scorecards — shown in AnalysisHeader (compact, top-right).
-                Show comparison bars only when comparing two tickers. */}
-            {compareWith && (
-                <div className="space-y-3">
-                    {[{ label: 'Health', p: data.healthScore, s: secondaryData?.healthScore ?? null }, { label: 'Profitability', p: data.profitabilityScore, s: secondaryData?.profitabilityScore ?? null }, { label: 'Valuation', p: data.valuationScore, s: secondaryData?.valuationScore ?? null }].map(({ label, p, s }) => (
-                        <div key={label} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-4">
-                            <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">{label} Score</div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <div className="text-xs text-gray-500 mb-1">{ticker}</div>
-                                    <div className="flex items-center gap-2">
-                                        <div className="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full h-2">
-                                            <div className={`h-2 rounded-full ${(p || 0) > 70 ? 'bg-green-500' : (p || 0) > 40 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${p || 0}%` }} />
-                                        </div>
-                                        <span className={`text-lg font-bold ${getColorClass(p)} ${p !== null && s !== null && p >= s ? 'text-green-500' : ''}`}>
-                                            {p ?? 'N/A'}{p !== null && s !== null && p > s ? ' 🏆' : ''}
-                                        </span>
-                                    </div>
-                                </div>
-                                <div>
-                                    <div className="text-xs text-gray-500 mb-1">{compareWith}</div>
-                                    <div className="flex items-center gap-2">
-                                        <div className="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full h-2">
-                                            <div className={`h-2 rounded-full ${(s || 0) > 70 ? 'bg-green-500' : (s || 0) > 40 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${s || 0}%` }} />
-                                        </div>
-                                        <span className={`text-lg font-bold ${getColorClass(s)} ${s !== null && p !== null && s >= p ? 'text-green-500' : ''}`}>
-                                            {s ?? 'N/A'}{s !== null && p !== null && s > p ? ' 🏆' : ''}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                    {/* Relative Value insight */}
-                    {data.valuationScore !== null && secondaryData?.valuationScore !== null && secondaryData?.valuationScore !== undefined && (
-                        <div className="text-sm text-center text-gray-500 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900/30 rounded-lg px-4 py-3">
-                            <span className="font-medium text-blue-700 dark:text-blue-400">{ticker}</span> has a valuation score of {data.valuationScore} vs {' '}
-                            <span className="font-medium text-blue-700 dark:text-blue-400">{compareWith}</span>&apos;s {secondaryData.valuationScore}.{' '}
-                            {data.valuationScore > secondaryData.valuationScore
-                                ? `${ticker} appears relatively cheaper on our scoring model.`
-                                : `${compareWith} appears relatively cheaper on our scoring model.`
-                            }
-                        </div>
-                    )}
-                </div>
-            )}
 
             <ChartSection
                 iconBgClass="bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400"
