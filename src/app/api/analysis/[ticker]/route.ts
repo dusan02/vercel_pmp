@@ -58,10 +58,15 @@ async function computeMetrics(symbol: string, finnhubData?: any) {
     const sbc = latestAnnual?.sbc ?? null;
     const sharesOutstanding = latestAnnual?.sharesOutstanding ?? null;
     const ebit = latestAnnual?.ebit ?? null;
-    const debtToEquity = (totalDebt !== null && totalEquity !== null && totalEquity !== 0)
-        ? totalDebt / totalEquity : null;
-    const currentRatio = (currentAssets !== null && currentLiabilities !== null && currentLiabilities !== 0)
-        ? currentAssets / currentLiabilities : null;
+    const debtToEquity = fhMetrics?.totalDebtToEquityAnnual 
+        ? fhMetrics.totalDebtToEquityAnnual / 100 // Finnhub returns percentage e.g. 35.5
+        : (totalDebt !== null && totalEquity !== null && totalEquity !== 0)
+            ? totalDebt / totalEquity : null;
+            
+    const currentRatio = fhMetrics?.currentRatioAnnual
+        ?? ((currentAssets !== null && currentLiabilities !== null && currentLiabilities !== 0)
+            ? currentAssets / currentLiabilities : null);
+            
     const assetToLiability = (totalAssets !== null && totalLiabilities !== null && totalLiabilities !== 0)
         ? totalAssets / totalLiabilities : null;
     // Net Debt / EBIT (schema has no depreciation field, so EBITDA cannot be computed)
