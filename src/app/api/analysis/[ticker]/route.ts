@@ -4,21 +4,22 @@ import { AnalysisService } from '@/services/analysisService';
 import { FinnhubService } from '@/services/finnhubService';
 
 // Helper: compute metrics for a single symbol
-async function computeMetrics(symbol: string) {
-    const analysis = await prisma.analysisCache.findUnique({ where: { symbol } });
+async function computeMetrics(symbol: string, finnhubData?: any) {
+    const [analysis, stmts, latestValuation] = await Promise.all([
+        prisma.analysisCache.findUnique({ where: { symbol } }),
+        prisma.financialStatement.findMany({
+            where: { symbol },
+            orderBy: { endDate: 'desc' },
+            take: 120 
+        }),
+        prisma.dailyValuationHistory.findFirst({
+            where: { symbol },
+            orderBy: { date: 'desc' }
+        })
+    ]);
+
     if (!analysis) return null;
-
-    const stmts = await prisma.financialStatement.findMany({
-        where: { symbol },
-        orderBy: { endDate: 'desc' },
-        take: 120 // 10Y annual (10) + 10Y quarterly (40) + buffer = enough for full history charts
-    });
     const latestStmt = stmts[0] || null;
-
-    const latestValuation = await prisma.dailyValuationHistory.findFirst({
-        where: { symbol },
-        orderBy: { date: 'desc' }
-    });
 
     const cached = analysis as any;
     const altmanZ = cached.altmanZ;
@@ -36,7 +37,18 @@ async function computeMetrics(symbol: string) {
     // Balance Sheet from latest annual statement
     const latestAnnual = stmts.find(s => s.fiscalPeriod === 'FY') || latestStmt;
     const totalDebt = latestAnnual?.totalDebt ?? null;
-    const cash = latestAnnual?.cashAndEquivalents ?? null;
+    
+    // Primary source: Reported Financials from DB. 
+    // Fallback: Finnhub pre-computed metrics if available.
+    // If not passed from parent, fetch internally (with cache)
+    const fh = finnhubData || await FinnhubService.getAnalysisData(symbol);
+    const fhMetrics = fh?.metrics;
+    
+    let cash = latestAnnual?.cashAndEquivalents ?? null;
+    if (cash === null && fhMetrics?.cashPerShare && fh?.profile?.shareOutstanding) {
+        cash = fhMetrics.cashPerShare * fh.profile.shareOutstanding;
+    }
+
     const netDebt = (totalDebt !== null && cash !== null) ? totalDebt - cash : null;
     const totalEquity = latestAnnual?.totalEquity ?? null;
     const totalAssets = latestAnnual?.totalAssets ?? null;
@@ -117,18 +129,19 @@ export async function GET(
     const compareSymbol = searchParams.get('compare')?.toUpperCase() || null;
 
     try {
-        // Fetch analysis data + Finnhub metrics in parallel for maximum speed
-        const [primary, finnhubData] = await Promise.all([
-            computeMetrics(symbol),
-            FinnhubService.getAnalysisData(symbol),
+        // Fetch Finnhub metrics first so computeMetrics can use them without re-fetching
+        const finnhubData = await FinnhubService.getAnalysisData(symbol);
+        
+        // Parallelize primary analysis and ticker details
+        const [primary, tickerRecord] = await Promise.all([
+            computeMetrics(symbol, finnhubData),
+            prisma.ticker.findUnique({
+                where: { symbol },
+                select: { sector: true, industry: true, description: true, websiteUrl: true, name: true, logoUrl: true, employees: true, lastPrice: true, lastMarketCap: true, headquarters: true }
+            })
         ]);
-        if (!primary) return NextResponse.json(null);
 
-        // Also fetch sector peers and ticker details (logo, sector, description)
-        const tickerRecord = await prisma.ticker.findUnique({
-            where: { symbol },
-            select: { sector: true, industry: true, description: true, websiteUrl: true, name: true, logoUrl: true, employees: true, lastPrice: true, lastMarketCap: true, headquarters: true }
-        });
+        if (!primary) return NextResponse.json(null);
 
         let peers: string[] = [];
         if (tickerRecord?.sector) {
@@ -230,15 +243,15 @@ export async function POST(
         }
 
         // Fetch fresh Finnhub metrics (forceRefresh after manual POST)
-        const [primary, finnhubData] = await Promise.all([
-            computeMetrics(symbol),
-            FinnhubService.getAnalysisData(symbol),
+        const finnhubData = await FinnhubService.getAnalysisData(symbol);
+        
+        const [primary, tickerRecord] = await Promise.all([
+            computeMetrics(symbol, finnhubData),
+            prisma.ticker.findUnique({
+                where: { symbol },
+                select: { sector: true, industry: true, description: true, websiteUrl: true, name: true, logoUrl: true, employees: true, lastPrice: true, lastMarketCap: true, headquarters: true }
+            })
         ]);
-
-        const tickerRecord = await prisma.ticker.findUnique({
-            where: { symbol },
-            select: { sector: true, industry: true, description: true, websiteUrl: true, name: true, logoUrl: true, employees: true, lastPrice: true, lastMarketCap: true, headquarters: true }
-        });
 
         let peers: string[] = [];
         if (tickerRecord?.sector) {

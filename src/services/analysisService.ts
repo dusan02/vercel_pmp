@@ -47,7 +47,7 @@ export class AnalysisService {
                 const extract = (report: any, section: string, concepts: string[]): number | null => {
                     const list = report[section] || [];
                     for (const concept of concepts) {
-                        const found = list.find((item: any) => item.concept === concept);
+                        const found = list.find((item: any) => item.concept.toLowerCase() === concept.toLowerCase());
                         if (found && found.value !== undefined) return found.value;
                     }
                     return null;
@@ -64,63 +64,84 @@ export class AnalysisService {
 
                     const revenue = extract(report, 'ic', [
                         'us-gaap_Revenues', 'us-gaap_SalesRevenueNet', 'us-gaap_RevenuesNetOfInterestExpense', 
-                        'us-gaap_RevenueFromContractWithCustomerExcludingAssessedTax', 'us-gaap_HealthCareOrganizationRevenue'
+                        'us-gaap_RevenueFromContractWithCustomerExcludingAssessedTax', 'us-gaap_HealthCareOrganizationRevenue',
+                        'ifrs-full_Revenue', 'ifrs-full_RevenueFromContractWithCustomers'
                     ]);
                     const netIncome = extract(report, 'ic', [
-                        'us-gaap_NetIncomeLoss', 'us-gaap_NetIncomeLossAvailableToCommonStockholdersBasic', 'us-gaap_ProfitLoss'
+                        'us-gaap_NetIncomeLoss', 'us-gaap_NetIncomeLossAvailableToCommonStockholdersBasic', 'us-gaap_ProfitLoss',
+                        'ifrs-full_ProfitLoss', 'ifrs-full_ProfitLossAttributableToOwnersOfParent'
                     ]);
-                    const grossProfit = extract(report, 'ic', ['us-gaap_GrossProfit']);
+                    const grossProfit = extract(report, 'ic', ['us-gaap_GrossProfit', 'ifrs-full_GrossProfit']);
                     
                     let ebit = extract(report, 'ic', [
-                        'us-gaap_OperatingIncomeLoss', 'us-gaap_IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest'
+                        'us-gaap_OperatingIncomeLoss', 'us-gaap_IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest',
+                        'ifrs-full_ProfitLossFromOperatingActivities'
                     ]);
                     if (ebit === null && grossProfit !== null) {
-                        const rnde = extract(report, 'ic', ['us-gaap_ResearchAndDevelopmentExpense']) || 0;
-                        const sgae = extract(report, 'ic', ['us-gaap_SellingGeneralAndAdministrativeExpense']) || 0;
+                        const rnde = extract(report, 'ic', ['us-gaap_ResearchAndDevelopmentExpense', 'ifrs-full_ResearchAndDevelopmentExpense']) || 0;
+                        const sgae = extract(report, 'ic', ['us-gaap_SellingGeneralAndAdministrativeExpense', 'ifrs-full_SellingGeneralAndAdministrativeExpense']) || 0;
                         ebit = grossProfit - rnde - sgae;
                     }
 
                     const operatingCashFlow = extract(report, 'cf', [
-                        'us-gaap_NetCashProvidedByUsedInOperatingActivities', 'us-gaap_NetCashProvidedByUsedInOperatingActivitiesContinuing'
+                        'us-gaap_NetCashProvidedByUsedInOperatingActivities', 'us-gaap_NetCashProvidedByUsedInOperatingActivitiesContinuing',
+                        'ifrs-full_CashFlowsFromUsedInOperatingActivities'
                     ]);
                     const capex = extract(report, 'cf', [
                         'us-gaap_PaymentsToAcquirePropertyPlantAndEquipment', 'us-gaap_PaymentsToAcquireOtherPropertyPlantAndEquipment', 
-                        'us-gaap_PaymentsToAcquireProductiveAssets'
+                        'us-gaap_PaymentsToAcquireProductiveAssets', 'ifrs-full_PurchaseOfPropertyPlantAndEquipment'
                     ]);
                     
-                    const totalAssets = extract(report, 'bs', ['us-gaap_Assets']);
-                    const totalLiabilities = extract(report, 'bs', ['us-gaap_Liabilities']);
-                    const currentAssets = extract(report, 'bs', ['us-gaap_AssetsCurrent']);
-                    const currentLiabilities = extract(report, 'bs', ['us-gaap_LiabilitiesCurrent']);
-                    const retainedEarnings = extract(report, 'bs', ['us-gaap_RetainedEarningsAccumulatedDeficit']);
+                    const totalAssets = extract(report, 'bs', ['us-gaap_Assets', 'ifrs-full_Assets']);
+                    const totalLiabilities = extract(report, 'bs', ['us-gaap_Liabilities', 'ifrs-full_Liabilities']);
+                    const currentAssets = extract(report, 'bs', ['us-gaap_AssetsCurrent', 'ifrs-full_CurrentAssets']);
+                    const currentLiabilities = extract(report, 'bs', ['us-gaap_LiabilitiesCurrent', 'ifrs-full_CurrentLiabilities']);
+                    const retainedEarnings = extract(report, 'bs', ['us-gaap_RetainedEarningsAccumulatedDeficit', 'ifrs-full_RetainedEarnings']);
                     const totalEquity = extract(report, 'bs', [
-                        'us-gaap_StockholdersEquity', 'us-gaap_StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest', 'us-gaap_PartnerCapital'
+                        'us-gaap_StockholdersEquity', 'us-gaap_StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest', 'us-gaap_PartnerCapital',
+                        'ifrs-full_Equity'
                     ]);
 
                     const sharesOutstandingRaw = extract(report, 'ic', [
-                        'us-gaap_WeightedAverageNumberOfDilutedSharesOutstanding', 'us-gaap_WeightedAverageNumberOfSharesOutstandingBasic'
-                    ]) ?? extract(report, 'bs', ['dei_EntityCommonStockSharesOutstanding']);
+                        'us-gaap_WeightedAverageNumberOfDilutedSharesOutstanding', 'us-gaap_WeightedAverageNumberOfSharesOutstandingBasic',
+                        'ifrs-full_WeightedAverageNumberOfOrdinarySharesOutstanding'
+                    ]) ?? extract(report, 'bs', [
+                        'dei_EntityCommonStockSharesOutstanding', 'ifrs-full_NumberOfOrdinarySharesOutstanding'
+                    ]);
                     const sharesOutstanding = (sharesOutstandingRaw !== null && sharesOutstandingRaw > 1000000) ? sharesOutstandingRaw : null;
 
                     const sbc = extract(report, 'cf', [
                         'us-gaap_ShareBasedCompensation', 'us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsGrantsInPeriodGross'
                     ]) ?? extract(report, 'ic', ['us-gaap_ShareBasedCompensation']);
 
-                    const interestExpense = extract(report, 'ic', ['us-gaap_InterestExpense', 'us-gaap_InterestExpenseDebt']);
+                    const interestExpense = extract(report, 'ic', [
+                        'us-gaap_InterestExpense', 'us-gaap_InterestExpenseDebt', 'ifrs-full_InterestExpense'
+                    ]);
                     
                     const longTermDebt = extract(report, 'bs', [
-                        'us-gaap_LongTermDebtNoncurrent', 'us-gaap_LongTermDebtAndCapitalLeaseObligations', 'us-gaap_LongTermDebt'
+                        'us-gaap_LongTermDebtNoncurrent', 'us-gaap_LongTermDebtAndCapitalLeaseObligations', 'us-gaap_LongTermDebt',
+                        'us-gaap_FinanceLeaseLiabilityNoncurrent', 'ifrs-full_NonCurrentBorrowings'
                     ]);
                     const shortTermDebt = extract(report, 'bs', [
-                        'us-gaap_DebtCurrent', 'us-gaap_ShortTermBorrowings', 'us-gaap_LongTermDebtAndCapitalLeaseObligationsCurrent'
+                        'us-gaap_DebtCurrent', 'us-gaap_ShortTermBorrowings', 'us-gaap_LongTermDebtAndCapitalLeaseObligationsCurrent',
+                        'us-gaap_FinanceLeaseLiabilityCurrent', 'ifrs-full_CurrentBorrowings'
                     ]);
                     let totalDebt = null;
                     if (longTermDebt !== null || shortTermDebt !== null) {
                         totalDebt = (longTermDebt || 0) + (shortTermDebt || 0);
+                    } else {
+                        // try generic borrowings
+                        totalDebt = extract(report, 'bs', ['ifrs-full_Borrowings']);
                     }
 
                     const cashAndEquivalents = extract(report, 'bs', [
-                        'us-gaap_CashAndCashEquivalentsAtCarryingValue', 'us-gaap_Cash', 'us-gaap_CashAndShortTermInvestments', 'us-gaap_CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents'
+                        'us-gaap_CashAndCashEquivalentsAtCarryingValue', 
+                        'ifrs-full_CashAndCashEquivalents',
+                        'us-gaap_Cash', 
+                        'us-gaap_CashAndShortTermInvestments', 
+                        'us-gaap_CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents',
+                        'ifrs-full_Cash',
+                        'us-gaap_MarketableSecuritiesCurrent'
                     ]);
 
                     const netPPE = extract(report, 'bs', ['us-gaap_PropertyPlantAndEquipmentNet']);
