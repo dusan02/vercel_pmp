@@ -593,22 +593,30 @@ export class AnalysisService {
 
         // 4. Net Debt position: Prefer Finnhub debt/equity, fallback to manual calculation
         let debtEquityRatio: number | null = finnhubMetrics?.debtEquityRatio ?? null;
-        const currentNetDebt = (latestStmt.totalDebt || 0) - (latestStmt.cashAndEquivalents || 0);
-        if (latestStmt.totalDebt !== null || latestStmt.cashAndEquivalents !== null) {
-            if (currentNetDebt <= 0) {
-                healthScore += 25; // Net cash position
-            } else if (debtEquityRatio !== null) {
-                // Use Finnhub debt/equity ratio
-                if (debtEquityRatio < 0.30) healthScore += 20;
-                else if (debtEquityRatio < 0.70) healthScore += 12;
-                else if (debtEquityRatio < 1.50) healthScore += 5;
-            } else if (latestStmt.totalAssets && latestStmt.totalAssets > 0) {
-                const debtRatio = currentNetDebt / latestStmt.totalAssets;
-                if (debtRatio < 0.10) healthScore += 20;
-                else if (debtRatio < 0.30) healthScore += 12;
-                else if (debtRatio < 0.50) healthScore += 5;
-                // >= 0.50: 0 pts
-            }
+        
+        // Ak Finnhub nevráti dáta, vypočítame manuálne z vlastných dát (ako percento, aby sme zladili s Finnhubom)
+        if (debtEquityRatio === null && latestStmt.totalDebt !== null && latestStmt.totalEquity && latestStmt.totalEquity > 0) {
+            debtEquityRatio = (latestStmt.totalDebt / latestStmt.totalEquity) * 100;
+        }
+
+        const hasValidDebtAndCash = latestStmt.totalDebt !== null && latestStmt.cashAndEquivalents !== null;
+        const currentNetDebt = hasValidDebtAndCash ? (latestStmt.totalDebt! - latestStmt.cashAndEquivalents!) : null;
+
+        if (currentNetDebt !== null && currentNetDebt <= 0) {
+            healthScore += 25; // Net cash position je najlepšia možná situácia
+        } else if (debtEquityRatio !== null) {
+            // Finnhub vracia debtEquityRatio zvyčajne ako percento (napr. 45.5 pre 45.5%)
+            if (debtEquityRatio < 30) healthScore += 20;
+            else if (debtEquityRatio < 70) healthScore += 12;
+            else if (debtEquityRatio < 150) healthScore += 5;
+            // >= 150%: 0 pts
+        } else if (latestStmt.totalAssets && latestStmt.totalAssets > 0 && latestStmt.totalDebt !== null) {
+            // Posledný fallback, ak nemáme ani equity
+            const debtRatio = latestStmt.totalDebt / latestStmt.totalAssets;
+            if (debtRatio < 0.10) healthScore += 20;
+            else if (debtRatio < 0.30) healthScore += 12;
+            else if (debtRatio < 0.50) healthScore += 5;
+            // >= 0.50: 0 pts
         }
 
         healthScore = Math.max(0, Math.min(100, Math.round(healthScore)));
