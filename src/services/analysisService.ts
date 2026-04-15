@@ -124,14 +124,14 @@ export class AnalysisService {
                     ]);
                     const shortTermDebt = extract(report, 'bs', [
                         'us-gaap_DebtCurrent', 'us-gaap_ShortTermBorrowings', 'us-gaap_LongTermDebtAndCapitalLeaseObligationsCurrent',
-                        'us-gaap_FinanceLeaseLiabilityCurrent', 'ifrs-full_CurrentBorrowings'
+                        'us-gaap_FinanceLeaseLiabilityCurrent', 'ifrs-full_CurrentBorrowings', 'us-gaap_ShortTermDebt'
                     ]);
                     let totalDebt = null;
                     if (longTermDebt !== null || shortTermDebt !== null) {
                         totalDebt = (longTermDebt || 0) + (shortTermDebt || 0);
                     } else {
                         // try generic borrowings
-                        totalDebt = extract(report, 'bs', ['ifrs-full_Borrowings']);
+                        totalDebt = extract(report, 'bs', ['ifrs-full_Borrowings', 'us-gaap_DebtAndCapitalLeaseObligations']);
                     }
 
                     const baseCash = extract(report, 'bs', [
@@ -358,6 +358,12 @@ export class AnalysisService {
         const toStr   = toDate.toISOString().slice(0, 10);
         console.log(`[syncValuationHistory] ${symbol}: fetching ${fromStr} → ${toStr} (${lastRecord ? 'incremental' : 'full 10Y'})`);
 
+        const tickerData = await prisma.ticker.findUnique({
+            where: { symbol },
+            select: { sharesOutstanding: true }
+        });
+        const fallbackShares = tickerData?.sharesOutstanding || null;
+
         // Aggs API for daily prices
         const url = `https://api.polygon.io/v2/aggs/ticker/${symbol}/range/1/day/${fromStr}/${toStr}?apiKey=${this.POLYGON_API_KEY}`;
 
@@ -405,17 +411,19 @@ export class AnalysisService {
                     statements.find(s => s.endDate.getTime() <= date.getTime()) ||
                     statements[statements.length - 1];
 
-                if (stmt && stmt.sharesOutstanding) {
-                    marketCap = closePrice * stmt.sharesOutstanding;
+                const sharesToUse = stmt?.sharesOutstanding || fallbackShares;
+
+                if (stmt && sharesToUse) {
+                    marketCap = closePrice * sharesToUse;
 
                     // P/E = Price / (NetIncome / Shares) => closePrice / EPS
                     if (stmt.netIncome && stmt.netIncome > 0) {
-                        peRatio = closePrice / (stmt.netIncome / stmt.sharesOutstanding);
+                        peRatio = closePrice / (stmt.netIncome / sharesToUse);
                     }
 
                     // P/S = Price / (Revenue / Shares) => closePrice / SPS
                     if (stmt.revenue && stmt.revenue > 0) {
-                        psRatio = closePrice / (stmt.revenue / stmt.sharesOutstanding);
+                        psRatio = closePrice / (stmt.revenue / sharesToUse);
                     }
 
                     // EV/EBITDA
