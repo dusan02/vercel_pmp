@@ -1,6 +1,18 @@
 import { jest } from '@jest/globals';
 jest.mock('@/lib/clients/yahooFinanceScraper');
 jest.mock('@/lib/utils/marketCapUtils'); // Mock marketCapUtils pre tento test
+jest.mock('@/lib/clients/finnhubClient', () => ({
+  getFinnhubClient: jest.fn(() => ({
+    fetchEarningsCalendar: jest.fn().mockResolvedValue({ earningsCalendar: [] })
+  }))
+}));
+jest.mock('@/lib/db/prisma', () => ({
+  prisma: {
+    dailyRef: {
+      findMany: jest.fn().mockResolvedValue([])
+    }
+  }
+}));
 jest.mock('@/data/defaultTickers', () => ({
   DEFAULT_TICKERS: {
     pmp: ['AAPL', 'MSFT', 'GOOGL', 'NVDA', 'TSLA', 'META', 'AMZN', 'NFLX'],

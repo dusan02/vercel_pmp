@@ -105,7 +105,12 @@ async function getYahooFinanceEarnings(date: string): Promise<ProcessedEarningsR
 
   } catch (error) {
     console.error('❌ Error getting Yahoo Finance earnings:', error);
-    throw error;
+    // Graceful degradation: return empty data instead of crashing
+    return {
+      success: true,
+      data: { preMarket: [], afterMarket: [] },
+      message: `Error fetching earnings for ${date}: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
   }
 }
 
@@ -348,6 +353,10 @@ export async function GET(request: NextRequest) {
     const refresh = searchParams.get('refresh') === 'true';
 
     console.log(`🔍 Yahoo Finance earnings request:`, { date, refresh });
+
+    if (!process.env.POLYGON_API_KEY) {
+      throw new Error('POLYGON_API_KEY is not configured');
+    }
 
     // Skontroluj cache
     if (!refresh) {
