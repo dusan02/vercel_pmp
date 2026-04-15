@@ -134,15 +134,35 @@ export class AnalysisService {
                         totalDebt = extract(report, 'bs', ['ifrs-full_Borrowings']);
                     }
 
-                    const cashAndEquivalents = extract(report, 'bs', [
+                    const baseCash = extract(report, 'bs', [
                         'us-gaap_CashAndCashEquivalentsAtCarryingValue', 
-                        'ifrs-full_CashAndCashEquivalents',
-                        'us-gaap_Cash', 
-                        'us-gaap_CashAndShortTermInvestments', 
                         'us-gaap_CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents',
+                        'us-gaap_CashAndCashEquivalentsFairValueDisclosure',
+                        'us-gaap_Cash', 
+                        'ifrs-full_CashAndCashEquivalents',
                         'ifrs-full_Cash',
-                        'us-gaap_MarketableSecuritiesCurrent'
+                        'us-gaap_CashEquivalentsAtCarryingValue'
                     ]);
+
+                    const shortTermInvestments = extract(report, 'bs', [
+                        'us-gaap_ShortTermInvestments',
+                        'us-gaap_AvailableForSaleSecuritiesCurrent',
+                        'us-gaap_MarketableSecuritiesCurrent',
+                        'us-gaap_AvailableForSaleSecuritiesDebtSecuritiesCurrent'
+                    ]);
+
+                    const combinedCash = extract(report, 'bs', [
+                        'us-gaap_CashAndShortTermInvestments',
+                        'us-gaap_CashCashEquivalentsAndShortTermInvestments'
+                    ]);
+
+                    let cashAndEquivalents = null;
+                    if (combinedCash !== null) {
+                        cashAndEquivalents = combinedCash; // Firma reportuje obe v jednom (ideálne)
+                    } else if (baseCash !== null || shortTermInvestments !== null) {
+                        // Sčítame hotovosť a krátkodobé investície, ak sú reportované osobitne
+                        cashAndEquivalents = (baseCash || 0) + (shortTermInvestments || 0);
+                    }
 
                     const netPPE = extract(report, 'bs', ['us-gaap_PropertyPlantAndEquipmentNet']);
 
