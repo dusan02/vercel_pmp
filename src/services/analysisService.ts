@@ -2,9 +2,23 @@ import { prisma } from '@/lib/db/prisma';
 import { aiService } from './aiService';
 import { NotificationService } from './notificationService';
 import { getSectorFromSic, toTitleCase } from '@/lib/utils/sectorMapping';
+import { FinnhubService } from './finnhubService';
+import { FinnhubMetric } from '@/lib/clients/finnhubClient';
 
 export class AnalysisService {
     private static readonly POLYGON_API_KEY = process.env.POLYGON_API_KEY;
+    
+    /**
+     * Helper: Get Finnhub metrics with fallback to null
+     */
+    private static async getFinnhubMetrics(symbol: string): Promise<FinnhubMetric | null> {
+        try {
+            return await FinnhubService.getMetrics(symbol);
+        } catch (error) {
+            console.warn(`⚠️ [AnalysisService] Failed to fetch Finnhub metrics for ${symbol}:`, error);
+            return null;
+        }
+    }
 
     /**
      * 1. Sťahovanie a mapovanie Financials vX z Polygon.io (nástupca v3)
@@ -424,6 +438,13 @@ export class AnalysisService {
         let profitabilityScore = 50;
         let verdictText = 'Neutral';
 
+        // 🎯 Load Finnhub metrics (pre-computed professional ratios)
+        // This reduces calculation errors and provides more accurate data
+        const finnhubMetrics = await this.getFinnhubMetrics(symbol);
+        if (finnhubMetrics) {
+            console.log(`✅ [AnalysisService] Using Finnhub metrics for ${symbol}`);
+        }
+
         const tickerData = await prisma.ticker.findUnique({
             where: { symbol },
             select: { lastPrice: true, lastMarketCap: true, sharesOutstanding: true }
@@ -509,8 +530,9 @@ export class AnalysisService {
         }
 
         // ─── Interest Coverage (needed by Health Score below) ─────────────────
-        let interestCoverage: number | null = null;
-        if (latestStmt.ebit !== null && latestStmt.interestExpense !== null && latestStmt.interestExpense !== 0) {
+        // 🎯 Interest Coverage: Prefer Finnhub pre-computed, fallback to manual calculation
+        let interestCoverage: number | null = finnhubMetrics?.interestCoverage ?? null;
+        if (interestCoverage === null && latestStmt.ebit !== null && latestStmt.interestExpense !== null && latestStmt.interestExpense !== 0) {
             interestCoverage = latestStmt.ebit / Math.abs(latestStmt.interestExpense);
         }
 
@@ -526,9 +548,13 @@ export class AnalysisService {
             else healthScore += 3; // distress zone but still contributes slightly
         }
 
-        // 2. Current Ratio (Liquidity: currentAssets / currentLiabilities)
-        if (latestStmt.currentAssets && latestStmt.currentLiabilities && latestStmt.currentLiabilities > 0) {
-            const cr = latestStmt.currentAssets / latestStmt.currentLiabilities;
+        // 2. Current Ratio: Prefer Finnhub pre-computed, fallback to manual calculation
+        let currentRatio: number | null = finnhubMetrics?.currentRatio ?? null;
+        if (currentRatio === null && latestStmt.currentAssets && latestStmt.currentLiabilities && latestStmt.currentLiabilities > 0) {
+            currentRatio = latestStmt.currentAssets / latestStmt.currentLiabilities;
+        }
+        if (currentRatio !== null) {
+            const cr = currentRatio;
             if (cr >= 2.0) healthScore += 25;
             else if (cr >= 1.5) healthScore += 18;
             else if (cr >= 1.0) healthScore += 12;
@@ -536,7 +562,7 @@ export class AnalysisService {
             // < 0.7: 0 pts
         }
 
-        // 3. Interest Coverage (EBIT / |interest expense|)
+        // 3. Interest Coverage (already computed above with Finnhub priority)
         if (interestCoverage !== null) {
             if (interestCoverage > 10) healthScore += 25;
             else if (interestCoverage > 5)  healthScore += 18;
@@ -547,11 +573,17 @@ export class AnalysisService {
             healthScore += 25;
         }
 
-        // 4. Net Debt position (totalDebt - cash vs totalAssets)
+        // 4. Net Debt position: Prefer Finnhub debt/equity, fallback to manual calculation
+        let debtEquityRatio: number | null = finnhubMetrics?.debtEquityRatio ?? null;
         const currentNetDebt = (latestStmt.totalDebt || 0) - (latestStmt.cashAndEquivalents || 0);
         if (latestStmt.totalDebt !== null || latestStmt.cashAndEquivalents !== null) {
             if (currentNetDebt <= 0) {
                 healthScore += 25; // Net cash position
+            } else if (debtEquityRatio !== null) {
+                // Use Finnhub debt/equity ratio
+                if (debtEquityRatio < 0.30) healthScore += 20;
+                else if (debtEquityRatio < 0.70) healthScore += 12;
+                else if (debtEquityRatio < 1.50) healthScore += 5;
             } else if (latestStmt.totalAssets && latestStmt.totalAssets > 0) {
                 const debtRatio = currentNetDebt / latestStmt.totalAssets;
                 if (debtRatio < 0.10) healthScore += 20;
@@ -567,45 +599,61 @@ export class AnalysisService {
         // 4 components × 25 pts each: Net Margin | Gross Margin | ROE | Revenue Growth YoY
         profitabilityScore = 0;
 
-        if (latestStmt.revenue && latestStmt.revenue > 0) {
-            // 1. Net Margin
-            const netMargin = (latestStmt.netIncome || 0) / latestStmt.revenue;
+        // 🎯 Use Finnhub pre-computed metrics with fallback to manual calculations
+        
+        // 1. Net Margin: Prefer Finnhub, fallback to manual
+        let netMargin: number | null = finnhubMetrics?.netMargin ?? null;
+        if (netMargin === null && latestStmt.revenue && latestStmt.revenue > 0) {
+            netMargin = (latestStmt.netIncome || 0) / latestStmt.revenue;
+        }
+        if (netMargin !== null) {
             if (netMargin > 0.20)       profitabilityScore += 25;
             else if (netMargin > 0.10)  profitabilityScore += 20;
             else if (netMargin > 0.05)  profitabilityScore += 13;
             else if (netMargin > 0)     profitabilityScore += 6;
             // negative: 0
+        }
 
-            // 2. Gross Margin
-            if (latestStmt.grossProfit !== null) {
-                const grossMargin = latestStmt.grossProfit / latestStmt.revenue;
-                if (grossMargin > 0.60)      profitabilityScore += 25;
-                else if (grossMargin > 0.40) profitabilityScore += 20;
-                else if (grossMargin > 0.25) profitabilityScore += 12;
-                else if (grossMargin > 0.10) profitabilityScore += 5;
-            }
+        // 2. Gross Margin: Prefer Finnhub, fallback to manual
+        let grossMargin: number | null = finnhubMetrics?.grossMargin ?? null;
+        if (grossMargin === null && latestStmt.grossProfit !== null && latestStmt.revenue && latestStmt.revenue > 0) {
+            grossMargin = latestStmt.grossProfit / latestStmt.revenue;
+        }
+        if (grossMargin !== null) {
+            if (grossMargin > 0.60)      profitabilityScore += 25;
+            else if (grossMargin > 0.40) profitabilityScore += 20;
+            else if (grossMargin > 0.25) profitabilityScore += 12;
+            else if (grossMargin > 0.10) profitabilityScore += 5;
+        }
 
-            // 3. ROE (Return on Equity)
-            if (latestStmt.totalEquity && latestStmt.totalEquity > 0) {
-                const roe = (latestStmt.netIncome || 0) / latestStmt.totalEquity;
-                if (roe > 0.25)      profitabilityScore += 25;
-                else if (roe > 0.15) profitabilityScore += 20;
-                else if (roe > 0.08) profitabilityScore += 12;
-                else if (roe > 0)    profitabilityScore += 5;
-            }
+        // 3. ROE: Prefer Finnhub, fallback to manual
+        let roe: number | null = finnhubMetrics?.roe ?? null;
+        if (roe === null && latestStmt.totalEquity && latestStmt.totalEquity > 0) {
+            roe = (latestStmt.netIncome || 0) / latestStmt.totalEquity;
+        }
+        if (roe !== null) {
+            if (roe > 0.25)      profitabilityScore += 25;
+            else if (roe > 0.15) profitabilityScore += 20;
+            else if (roe > 0.08) profitabilityScore += 12;
+            else if (roe > 0)    profitabilityScore += 5;
+        }
 
-            // 4. Revenue Growth YoY (compare latest stmt to ~4 quarters ago)
+        // 4. Revenue Growth: Prefer Finnhub 3Y growth, fallback to manual YoY
+        let revenueGrowth: number | null = finnhubMetrics?.revenueGrowth ?? null;
+        if (revenueGrowth === null && latestStmt.revenue && latestStmt.revenue > 0) {
             const prevYearStmt = stmts[4] || null;
             if (prevYearStmt?.revenue && prevYearStmt.revenue > 0) {
-                const revenueGrowth = (latestStmt.revenue - prevYearStmt.revenue) / prevYearStmt.revenue;
-                if (revenueGrowth > 0.25)       profitabilityScore += 25;
-                else if (revenueGrowth > 0.10)  profitabilityScore += 20;
-                else if (revenueGrowth > 0)     profitabilityScore += 12;
-                else if (revenueGrowth > -0.10) profitabilityScore += 4;
-                // < -10%: 0
-            } else {
-                profitabilityScore += 10; // No prior year data — neutral
+                revenueGrowth = (latestStmt.revenue - prevYearStmt.revenue) / prevYearStmt.revenue;
             }
+        }
+        if (revenueGrowth !== null) {
+            if (revenueGrowth > 0.25)       profitabilityScore += 25;
+            else if (revenueGrowth > 0.10)  profitabilityScore += 20;
+            else if (revenueGrowth > 0)     profitabilityScore += 12;
+            else if (revenueGrowth > -0.10) profitabilityScore += 4;
+            // < -10%: 0
+        } else {
+            profitabilityScore += 10; // No prior year data — neutral
         }
 
         profitabilityScore = Math.max(0, Math.min(100, Math.round(profitabilityScore)));

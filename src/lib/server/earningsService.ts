@@ -3,6 +3,7 @@ import { getAllProjectTickers } from '@/data/defaultTickers';
 import { detectSession, nowET } from '@/lib/utils/timeUtils';
 import { prisma } from '@/lib/db/prisma';
 import { getDateET, createETDate } from '@/lib/utils/dateET';
+import { getFinnhubClient, FinnhubEarningsItem } from '@/lib/clients/finnhubClient';
 
 // --- Interfaces ---
 
@@ -87,77 +88,25 @@ function setCachedEarnings(date: string, data: ProcessedEarningsResponse): void 
 
 // --- Fetching Logic ---
 
-async function fetchEarningsData(date: string): Promise<FinnhubEarningsResponse> {
-    const apiKey = 'd28f1dhr01qjsuf342ogd28f1dhr01qjsuf342p0';
-    const url = `https://finnhub.io/api/v1/calendar/earnings?from=${date}&to=${date}&token=${apiKey}`;
-
-    try {
-        const response = await fetch(url, {
-            headers: {
-                'Accept': 'application/json',
-            },
-            signal: AbortSignal.timeout(10000) // 10s timeout
-        });
-
-        if (!response.ok) {
-            console.warn(`⚠️ Finnhub API returned ${response.status} for date ${date} - returning empty earnings`);
-            return { earningsCalendar: [] };
-        }
-
-        const data = await response.json();
-
-        if (!data || typeof data !== 'object') {
-            console.warn(`⚠️ Invalid Finnhub API response for date ${date} - returning empty earnings`);
-            return { earningsCalendar: [] };
-        }
-
-        if (!Array.isArray(data.earningsCalendar)) {
-            console.warn(`⚠️ Finnhub API response missing earningsCalendar array for date ${date} - returning empty earnings`);
-            return { earningsCalendar: [] };
-        }
-
-        return data;
-    } catch (error) {
-        if (error instanceof Error && (error.name === 'AbortError' || error.message.includes('timeout'))) {
-            console.warn(`⚠️ Finnhub API timeout for date ${date} - returning empty earnings`);
-            return { earningsCalendar: [] };
-        }
-        console.error(`❌ Error fetching Finnhub earnings for date ${date}:`, error);
-        throw error;
-    }
+async function fetchEarningsData(date: string): Promise<{ earningsCalendar: FinnhubEarningsItem[] }> {
+    const client = getFinnhubClient();
+    const data = await client.fetchEarningsCalendar(date, date);
+    return data || { earningsCalendar: [] };
 }
 
 async function fetchUpdatedEarningsData(ticker: string, date: string): Promise<{ epsActual: number | null; revenueActual: number | null } | null> {
-    const apiKey = 'd28f1dhr01qjsuf342ogd28f1dhr01qjsuf342p0';
-
-    try {
-        const url = `https://finnhub.io/api/v1/calendar/earnings?from=${date}&to=${date}&symbol=${ticker}&token=${apiKey}`;
-
-        const response = await fetch(url, {
-            headers: {
-                'Accept': 'application/json',
-            },
-            signal: AbortSignal.timeout(5000)
-        });
-
-        if (!response.ok) {
-            return null;
-        }
-
-        const data = await response.json();
-        const earnings = data.earningsCalendar?.[0];
-
-        if (earnings) {
-            return {
-                epsActual: earnings.epsActual,
-                revenueActual: earnings.revenueActual
-            };
-        }
-
-        return null;
-    } catch (error) {
+    const client = getFinnhubClient();
+    const data = await client.fetchEarningsCalendar(date, date, ticker);
+    
+    if (!data?.earningsCalendar?.[0]) {
         return null;
     }
+    
+    const earnings = data.earningsCalendar[0];
+    return {
+        epsActual: earnings.epsActual,
+        revenueActual: earnings.revenueActual
+    };
 }
 
 async function fetchCurrentPrice(ticker: string): Promise<{ currentPrice: number; previousClose: number } | null> {

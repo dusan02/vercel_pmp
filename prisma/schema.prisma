@@ -152,6 +152,12 @@ model Ticker {
   valuationHistories   ValuationHistory[]
   valuationPercentiles ValuationPercentiles[]
   volumeBuckets        VolumeBucket[]
+  
+  // Finnhub data
+  finnhubMetrics       FinnhubMetrics?
+  finnhubProfile       FinnhubProfile?
+  finnhubPriceTarget   FinnhubPriceTarget?
+  finnhubInsiderTransactions FinnhubInsiderTransaction[]
 
   @@index([sector])
   @@index([sharesOutstanding])
@@ -392,4 +398,141 @@ model ValuationPercentiles {
 
   @@unique([symbol, metric, period])
   @@index([symbol, metric])
+}
+
+// ============================================================================
+// Finnhub Data Models
+// ============================================================================
+
+model FinnhubMetrics {
+  id        String   @id @default(cuid())
+  symbol    String   @unique
+  
+  // Valuation ratios
+  peRatio               Float?
+  forwardPe             Float?
+  pbRatio               Float?
+  psRatio               Float?
+  evEbitda              Float?
+  evSales               Float?
+  pegRatio              Float?
+  priceCashFlow         Float?
+  priceFreeCashFlow     Float?
+  
+  // Profitability
+  grossMargin           Float?
+  operatingMargin       Float?
+  netMargin             Float?
+  roe                   Float?
+  roa                   Float?
+  roic                  Float?
+  rote                  Float?
+  
+  // Growth
+  revenueGrowth         Float?
+  earningsGrowth        Float?
+  bookValueGrowth       Float?
+  debtGrowth            Float?
+  
+  // Financial Health
+  currentRatio          Float?
+  quickRatio            Float?
+  debtEquityRatio       Float?
+  interestCoverage      Float?
+  totalDebtToCapitalization Float?
+  
+  // Per Share
+  revenuePerShare       Float?
+  netIncomePerShare     Float?
+  bookValuePerShare     Float?
+  cashPerShare          Float?
+  freeCashFlowPerShare  Float?
+  
+  // Other
+  beta                  Float?
+  dividendYield         Float?
+  payoutRatio           Float?
+  employees             Int?
+  revenuePerEmployee    Float?
+  assetTurnover         Float?
+  inventoryTurnover     Float?
+  receivablesTurnover   Float?
+  
+  // Metadata
+  fetchedAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  ticker    Ticker   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+  
+  @@index([symbol])
+  @@index([fetchedAt])
+}
+
+model FinnhubProfile {
+  id          String   @id @default(cuid())
+  symbol      String   @unique
+  
+  name               String?
+  isin               String?
+  cusip              String?
+  exchange           String?
+  currency           String?
+  country            String?
+  ipoDate            String?
+  marketCap          Float?
+  shareOutstanding   Float?
+  logo               String?
+  phone              String?
+  weburl             String?
+  finnhubIndustry    String?
+  finnhubSector      String?
+  
+  // Metadata
+  fetchedAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  ticker    Ticker   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+  
+  @@index([symbol])
+  @@index([fetchedAt])
+}
+
+model FinnhubPriceTarget {
+  id          String   @id @default(cuid())
+  symbol      String   @unique
+  
+  targetHigh       Float?
+  targetLow        Float?
+  targetMean       Float?
+  targetMedian     Float?
+  numberOfAnalysts Int?
+  currentPrice     Float?
+  
+  // Metadata
+  fetchedAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  ticker    Ticker   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+  
+  @@index([symbol])
+  @@index([fetchedAt])
+}
+
+model FinnhubInsiderTransaction {
+  id              String   @id @default(cuid())
+  symbol          String
+  
+  change          Float
+  filingDate      String
+  transactionDate String
+  transactionCode String
+  
+  // Metadata
+  fetchedAt       DateTime @default(now())
+  
+  ticker    Ticker   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+  
+  @@index([symbol])
+  @@index([transactionDate])
+  @@index([fetchedAt])
 }
