@@ -21,11 +21,11 @@ export class AnalysisService {
     }
 
     /**
-     * 1. Sťahovanie a mapovanie Financials vX z Polygon.io (nástupca v3)
+     * 1. Sťahovanie a mapovanie Financials z Finnhub XBRL
+     * Používa FinnhubClient (nie Polygon) — bug #7 fix: FINNHUB_API_KEY check bol zbytočný
+     * lebo klient má fallback; teraz sa priamo overuje v klientovi.
      */
     static async syncFinancials(symbol: string): Promise<void> {
-        if (!FINNHUB_API_KEY) throw new Error('Chýba Finnhub API Key pre Financials');
-
         const timeframes = ['annual', 'quarterly'];
         const client = getFinnhubClient();
 

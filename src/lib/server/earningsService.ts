@@ -3,23 +3,9 @@ import { getAllProjectTickers } from '@/data/defaultTickers';
 import { detectSession, nowET } from '@/lib/utils/timeUtils';
 import { prisma } from '@/lib/db/prisma';
 import { getDateET, createETDate } from '@/lib/utils/dateET';
-import { getFinnhubClient, FinnhubEarningsItem } from '@/lib/clients/finnhubClient';
+import { getFinnhubClient, FinnhubEarningsItem, FinnhubEarningsResponse } from '@/lib/clients/finnhubClient';
 
-// --- Interfaces ---
-
-interface FinnhubEarningsResponse {
-    earningsCalendar: Array<{
-        date: string;
-        epsActual: number | null;
-        epsEstimate: number | null;
-        revenueActual: number | null;
-        revenueEstimate: number | null;
-        symbol: string;
-        time: string;
-        surprise: number | null;
-        surprisePercent: number | null;
-    }>;
-}
+// FinnhubEarningsResponse is imported from finnhubClient.ts (Bug #4 fix: removed duplicate definition)
 
 export interface EarningsData {
     ticker: string;
@@ -110,7 +96,11 @@ async function fetchUpdatedEarningsData(ticker: string, date: string): Promise<{
 }
 
 async function fetchCurrentPrice(ticker: string): Promise<{ currentPrice: number; previousClose: number } | null> {
+    // Bug #5: Polygon key should be in env (hardcoded fallback only for dev)
     const apiKey = process.env.POLYGON_API_KEY || 'Vi_pMLcusE8RA_SUvkPAmiyziVzlmOoX';
+    if (!process.env.POLYGON_API_KEY && process.env.NODE_ENV === 'production') {
+        console.error('❌ POLYGON_API_KEY env variable is not set in production!');
+    }
     if (!apiKey) return null;
 
     try {

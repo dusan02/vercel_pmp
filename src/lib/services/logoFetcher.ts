@@ -161,7 +161,7 @@ export class LogoFetcher {
             'BABA': 'alibabagroup.com',
             'AMD': 'amd.com',
             'NFLX': 'netflix.com',
-            'INTc': 'intel.com',
+            'INTC': 'intel.com',
             'QCOM': 'qualcomm.com',
             'IBM': 'ibm.com',
             'TXN': 'ti.com',

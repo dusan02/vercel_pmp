@@ -80,18 +80,26 @@ async function getYahooFinanceEarnings(date: string): Promise<ProcessedEarningsR
     // Použij náš Yahoo Finance scraper pre všetky tier
     const yahooResult = await checkEarningsForOurTickers(date, 'all');
 
-    // Ak Yahoo Finance nefunguje, skús Finnhub
+    // Ak Yahoo Finance nefunguje, skús Finnhub ako skutočný fallback
     if (yahooResult.totalFound === 0) {
-      console.log(`⚠️ Yahoo Finance returned 0 results, trying Finnhub...`);
+      console.log(`⚠️ Yahoo Finance returned 0 results, falling back to Finnhub...`);
       const { checkEarningsForOurTickers: checkFinnhub } = await import('@/lib/earningsMonitor');
       const finnhubResult = await checkFinnhub(date, 'pmp');
 
-      // Kombinuj výsledky zo všetkých tierov
-      const combinedResult = await combineAllTierResults(date);
-      return combinedResult;
+      if (finnhubResult.totalFound > 0) {
+        console.log(`✅ Finnhub fallback: ${finnhubResult.totalFound} earnings found`);
+        // Convert Finnhub result format to EarningsData format
+        const preMarketData = await convertToEarningsData(finnhubResult.preMarket, date, 'bmo');
+        const afterMarketData = await convertToEarningsData(finnhubResult.afterMarket, date, 'amc');
+        return {
+          success: true,
+          data: { preMarket: preMarketData, afterMarket: afterMarketData },
+          message: `Found ${finnhubResult.totalFound} earnings via Finnhub fallback for ${date}`
+        };
+      }
     }
 
-    // Kombinuj výsledky zo všetkých tierov
+    // Kombinuj výsledky zo všetkých tierov (Yahoo zdroj)
     const combinedResult = await combineAllTierResults(date);
     return combinedResult;
 
@@ -294,7 +302,11 @@ async function fetchFinnhubEarningsData(ticker: string, date: string): Promise<{
 async function fetchPolygonCompanyData(ticker: string): Promise<{ companyName: string; marketCap: number } | null> {
   try {
     const envApiKey = process.env.POLYGON_API_KEY;
+    // Bug #5: hardcoded fallback only for dev
     const apiKey = envApiKey || 'Vi_pMLcusE8RA_SUvkPAmiyziVzlmOoX';
+    if (!envApiKey && process.env.NODE_ENV === 'production') {
+        console.error('❌ POLYGON_API_KEY env variable is not set in production!');
+    }
     const url = `https://api.polygon.io/v3/reference/tickers/${ticker}?apiKey=${apiKey}`;
 
     console.log(`🔍 Fetching Polygon company data for ${ticker}...`);

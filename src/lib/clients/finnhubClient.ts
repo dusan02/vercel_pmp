@@ -8,7 +8,10 @@ import { withRetry, circuitBreaker } from '@/lib/api/rateLimiter';
 // Circuit breaker for Finnhub API
 const finnhubCircuitBreaker = circuitBreaker('finnhub', 5, 2, 60000);
 
-// API Key from environment or fallback (for development)
+// API Key from environment — hardcoded fallback only for development
+if (!process.env.FINNHUB_API_KEY && process.env.NODE_ENV === 'production') {
+    console.error('❌ FINNHUB_API_KEY env variable is not set in production!');
+}
 export const FINNHUB_API_KEY = process.env.FINNHUB_API_KEY || 'd28f1dhr01qjsuf342ogd28f1dhr01qjsuf342p0';
 
 export interface FinnhubClientConfig {
@@ -226,14 +229,15 @@ export class FinnhubClient {
         return {
             // Valuation
             peRatio: m['peNormalizedAnnual'] ?? m['peBasicExclExtraTTM'] ?? m['peExclExtraAnnual'] ?? null,
-            forwardPe: m['peNormalizedAnnual'] ?? null,
+            forwardPe: m['forwardPE'] ?? m['peNormalizedAnnual'] ?? null,
             pbRatio: m['pbAnnual'] ?? m['pbQuarterly'] ?? null,
             psRatio: m['psTTM'] ?? m['psAnnual'] ?? null,
             evEbitda: m['enterpriseValueOverEbitda'] ?? null,
-            evSales: m['evSales'] ?? null,
+            evSales: m['evSales'] ?? m['evSalesAnnual'] ?? null,
             pegRatio: m['pegRatio'] ?? null,
-            priceCashFlow: m['payoutRatioTTM'] ?? null,
-            priceFreeCashFlow: m['ptbv'] ?? null, // Using proxy
+            // Bug #1 fix: corrected metric keys (was payoutRatioTTM and ptbv — wrong!)
+            priceCashFlow: m['priceCFTTM'] ?? m['priceCFAnnual'] ?? null,
+            priceFreeCashFlow: m['priceToFreeCashFlowTTM'] ?? m['pfcfShareTTM'] ?? null,
             
             // Profitability
             grossMargin: m['grossMarginAnnual'] ?? m['grossMarginTTM'] ?? null,

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { AnalysisService } from '@/services/analysisService';
+import { FinnhubService } from '@/services/finnhubService';
 
 // Helper: compute metrics for a single symbol
 async function computeMetrics(symbol: string) {
@@ -81,6 +82,7 @@ async function computeMetrics(symbol: string) {
             totalLiabilities,
             currentAssets,
             currentLiabilities,
+            // Prefer Finnhub pre-computed ratios if available (more accurate)
             debtToEquity,
             currentRatio,
             assetToLiability,
@@ -115,7 +117,11 @@ export async function GET(
     const compareSymbol = searchParams.get('compare')?.toUpperCase() || null;
 
     try {
-        const primary = await computeMetrics(symbol);
+        // Fetch analysis data + Finnhub metrics in parallel for maximum speed
+        const [primary, finnhubData] = await Promise.all([
+            computeMetrics(symbol),
+            FinnhubService.getAnalysisData(symbol),
+        ]);
         if (!primary) return NextResponse.json(null);
 
         // Also fetch sector peers and ticker details (logo, sector, description)
@@ -137,28 +143,29 @@ export async function GET(
 
         // If compare requested, fetch secondary analysis
         if (compareSymbol) {
-            const secondary = await computeMetrics(compareSymbol);
+            const [secondary, secondaryFinnhub] = await Promise.all([
+                computeMetrics(compareSymbol),
+                FinnhubService.getAnalysisData(compareSymbol),
+            ]);
             return NextResponse.json({
-                primary: { ...primary, ticker: tickerRecord },
-                secondary,
+                primary: { ...primary, ticker: tickerRecord, finnhub: finnhubData },
+                secondary: secondary ? { ...secondary, finnhub: secondaryFinnhub } : null,
                 peers
             });
         }
 
         // Background revalidation: if cache is stale (> 7 days), trigger async refresh
-        // without blocking the response — next load will see fresh data
         const cacheAge = await prisma.analysisCache.findUnique({
             where: { symbol },
             select: { updatedAt: true },
         });
         const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
         if (cacheAge && cacheAge.updatedAt < sevenDaysAgo) {
-            // Fire-and-forget background refresh (non-blocking)
             fetch(`${new URL(request.url).origin}/api/analysis/${symbol}`, { method: 'POST' })
                 .catch(() => {/* silent — background job */});
         }
 
-        return NextResponse.json({ ...primary, ticker: tickerRecord, peers });
+        return NextResponse.json({ ...primary, ticker: tickerRecord, peers, finnhub: finnhubData });
     } catch (error) {
         console.error(`Error fetching analysis for ${symbol}:`, error);
         return NextResponse.json({ error: 'Failed to fetch analysis' }, { status: 500 });
@@ -222,7 +229,11 @@ export async function POST(
             throw e;
         }
 
-        const primary = await computeMetrics(symbol);
+        // Fetch fresh Finnhub metrics (forceRefresh after manual POST)
+        const [primary, finnhubData] = await Promise.all([
+            computeMetrics(symbol),
+            FinnhubService.getAnalysisData(symbol),
+        ]);
 
         const tickerRecord = await prisma.ticker.findUnique({
             where: { symbol },
@@ -241,7 +252,7 @@ export async function POST(
         }
 
         console.log(`[Analysis API] Deep analysis complete for ${symbol}`);
-        return NextResponse.json({ ...primary, ticker: tickerRecord, peers });
+        return NextResponse.json({ ...primary, ticker: tickerRecord, peers, finnhub: finnhubData });
     } catch (error: any) {
         console.error(`Error generating analysis for ${symbol}:`, error);
         return NextResponse.json({

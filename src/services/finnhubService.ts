@@ -10,7 +10,7 @@
 
 import { prisma } from '@/lib/db/prisma';
 import { redisOps } from '@/lib/redis/enhancedOperations';
-import { FinnhubClient, FinnhubMetric, FinnhubProfile, FinnhubPriceTarget, FinnhubInsiderTransaction } from '@/lib/clients/finnhubClient';
+import { getFinnhubClient, FinnhubMetric, FinnhubProfile, FinnhubPriceTarget, FinnhubInsiderTransaction } from '@/lib/clients/finnhubClient';
 import { Prisma } from '@prisma/client';
 
 // Cache TTL configuration (in seconds)
@@ -30,15 +30,7 @@ const REDIS_KEYS = {
     lastSync: (symbol: string, type: string) => `finnhub:lastsync:${symbol}:${type}`,
 };
 
-// Singleton client instance
-let finnhubClient: FinnhubClient | null = null;
-
-function getClient(): FinnhubClient {
-    if (!finnhubClient) {
-        finnhubClient = new FinnhubClient();
-    }
-    return finnhubClient;
-}
+// Use shared singleton from finnhubClient.ts (Bug #6 fix: no more duplicate instances)
 
 /**
  * Check if cached data is stale (older than maxAge hours)
@@ -352,7 +344,7 @@ export class FinnhubService {
         }
 
         console.log(`🌐 [FinnhubService] Fetching metrics from API for ${symbol}`);
-        const client = getClient();
+        const client = getFinnhubClient();
         const metrics = await client.fetchMetrics(symbol);
 
         if (metrics) {
@@ -376,7 +368,7 @@ export class FinnhubService {
             }
         }
 
-        const client = getClient();
+        const client = getFinnhubClient();
         const profile = await client.fetchProfile(symbol);
 
         if (profile) {
@@ -399,7 +391,7 @@ export class FinnhubService {
             }
         }
 
-        const client = getClient();
+        const client = getFinnhubClient();
         const priceTarget = await client.fetchPriceTarget(symbol);
 
         if (priceTarget) {

@@ -230,7 +230,9 @@ Return strictly valid JSON:
         sector: string | null
     ): MoverInsight {
         const absZ = Math.abs(parseFloat(zStr) || 0);
-        const highRvol = parseFloat(rvolStr) >= 2;
+        // rvolStr can be 'N/A' when latestMoversRVOL is null — safe parse
+        const rvolNum = parseFloat(rvolStr);
+        const highRvol = !isNaN(rvolNum) && rvolNum >= 2;
 
         let reason: string;
         let category = 'Technical';
