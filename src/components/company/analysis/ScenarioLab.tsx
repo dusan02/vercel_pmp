@@ -8,20 +8,33 @@ interface ScenarioCalculatorProps {
 
 export function ScenarioLab({ currentEps, currentPe, currentPrice }: ScenarioCalculatorProps) {
     const [epsGrowth, setEpsGrowth] = useState<number>(10);
-    // Clamp initial exitPe to [5, 100] — negative/zero PE (loss-making company) breaks projection
-    const [exitPe, setExitPe] = useState<number>(Math.max(5, Math.min(100, currentPe || 20)));
+    
+    // Safety fallback for negative/zero PE
+    const safeCurrentPe = (currentPe && currentPe > 0 && currentPe < 500) ? currentPe : 20;
+    const [exitPe, setExitPe] = useState<number>(Math.max(5, Math.min(100, safeCurrentPe)));
 
-    const isNegativePe = !currentPe || currentPe <= 0;
+    const isNegativePe = !currentPe || currentPe <= 0 || currentPe > 500;
+    const isNegativeEps = !currentEps || currentEps <= 0;
 
     // Target Price in 5 years: EPS_current * (1 + Growth)^5 * P/E_target
-    const projectedEps = currentEps * Math.pow(1 + epsGrowth / 100, 5);
-    const targetPrice = projectedEps * exitPe;
+    // If EPS is negative, we assume they hit $0.50 per share in 5 years as a baseline turnaround, rather than breaking the math
+    let projectedEps = 0;
+    if (isNegativeEps) {
+        // Just a speculative baseline for companies losing money
+        projectedEps = 0.50 * Math.pow(1 + epsGrowth / 100, 5); 
+    } else {
+        projectedEps = currentEps * Math.pow(1 + epsGrowth / 100, 5);
+    }
+    
+    const targetPrice = Math.max(0, projectedEps * exitPe);
 
     // CAGR: (TargetPrice / CurrentPrice)^(1/5) - 1
     // Guard: targetPrice and currentPrice must both be positive
     let cagr = 0;
     if (currentPrice > 0 && targetPrice > 0) {
         cagr = (Math.pow(targetPrice / currentPrice, 1 / 5) - 1) * 100;
+    } else if (targetPrice === 0 && currentPrice > 0) {
+        cagr = -100; // Complete loss
     }
 
     const isMarketBeating = cagr > 15;

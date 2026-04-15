@@ -278,15 +278,15 @@ export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabP
                 title="Scenario Lab"
                 subtitle="Interactive 5-Year Investment Projection"
             >
-                {(!data.metrics?.currentEps || !data.metrics?.currentPe) ? (
+                {(!data.metrics?.currentEps && !(data.finnhub?.metrics as any)?.epsExclExtraItemsTTM) ? (
                     <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-lg text-center border border-gray-100 dark:border-gray-700/50">
-                        <p className="text-gray-500 dark:text-gray-400">Not enough data available to run scenarios. Missing valid EPS or P/E Ratio.</p>
+                        <p className="text-gray-500 dark:text-gray-400">Not enough data available to run scenarios. Missing valid EPS.</p>
                     </div>
                 ) : (
                     <ScenarioLab
-                        currentEps={data.metrics.currentEps || 0}
-                        currentPe={data.metrics.currentPe || 0}
-                        currentPrice={data.ticker?.lastPrice ?? (data.metrics.currentEps || 0) * (data.metrics.currentPe || 0)}
+                        currentEps={data.metrics?.currentEps ?? (data.finnhub?.metrics as any)?.epsExclExtraItemsTTM ?? 0}
+                        currentPe={data.metrics?.currentPe ?? data.finnhub?.metrics?.peRatio ?? 20}
+                        currentPrice={data.ticker?.lastPrice ?? ((data.metrics?.currentEps ?? (data.finnhub?.metrics as any)?.epsExclExtraItemsTTM ?? 0) * (data.metrics?.currentPe ?? data.finnhub?.metrics?.peRatio ?? 20))}
                     />
                 )}
             </ChartSection>
