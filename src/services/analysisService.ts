@@ -3,7 +3,7 @@ import { aiService } from './aiService';
 import { NotificationService } from './notificationService';
 import { getSectorFromSic, toTitleCase } from '@/lib/utils/sectorMapping';
 import { FinnhubService } from './finnhubService';
-import { FinnhubMetric } from '@/lib/clients/finnhubClient';
+import { FinnhubMetric, FINNHUB_API_KEY, getFinnhubClient } from '@/lib/clients/finnhubClient';
 
 export class AnalysisService {
     private static readonly POLYGON_API_KEY = process.env.POLYGON_API_KEY;
@@ -24,10 +24,10 @@ export class AnalysisService {
      * 1. Sťahovanie a mapovanie Financials vX z Polygon.io (nástupca v3)
      */
     static async syncFinancials(symbol: string): Promise<void> {
-        const FINNHUB_API_KEY = process.env.FINNHUB_API_KEY;
         if (!FINNHUB_API_KEY) throw new Error('Chýba Finnhub API Key pre Financials');
 
         const timeframes = ['annual', 'quarterly'];
+        const client = getFinnhubClient();
 
         try {
             // Ensure Ticker row exists (FK requirement for FinancialStatement)
@@ -38,11 +38,8 @@ export class AnalysisService {
             });
 
             for (const timeframe of timeframes) {
-                const url = `https://finnhub.io/api/v1/stock/financials-reported?symbol=${symbol}&freq=${timeframe}&token=${FINNHUB_API_KEY}`;
-                
-                const res: Response = await fetch(url);
-                if (!res.ok) throw new Error(`Finnhub API chyba: ${res.status} ${res.statusText}`);
-                const data: any = await res.json();
+                const data = await client.fetchFinancials(symbol, timeframe as 'annual' | 'quarterly');
+                if (!data) continue;
                 
                 const results = data.data || [];
 

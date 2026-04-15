@@ -5,6 +5,7 @@ import { DEFAULT_TICKERS } from '@/data/defaultTickers';
 import { detectSession, nowET } from '@/lib/utils/timeUtils';
 import { prisma } from '@/lib/db/prisma';
 import { getDateET, createETDate } from '@/lib/utils/dateET';
+import { getFinnhubClient } from '@/lib/clients/finnhubClient';
 
 interface EarningsData {
   ticker: string;
@@ -261,28 +262,12 @@ async function convertToEarningsData(tickers: string[], date: string, time: stri
  * Získa EPS a Revenue dáta z Finnhub API
  */
 async function fetchFinnhubEarningsData(ticker: string, date: string): Promise<{ epsEstimate: number | null; epsActual: number | null; revenueEstimate: number | null; revenueActual: number | null } | null> {
-  const apiKey = 'd28f1dhr01qjsuf342ogd28f1dhr01qjsuf342p0';
-
   try {
-    // Získaj earnings dáta pre konkrétny ticker a dátum
-    const url = `https://finnhub.io/api/v1/calendar/earnings?from=${date}&to=${date}&symbol=${ticker}&token=${apiKey}`;
-
     console.log(`🔍 Fetching Finnhub earnings for ${ticker} on ${date}...`);
-
-    const response = await fetch(url, {
-      headers: {
-        'Accept': 'application/json',
-      },
-      signal: AbortSignal.timeout(5000)
-    });
-
-    if (!response.ok) {
-      console.warn(`⚠️ Failed to fetch Finnhub earnings for ${ticker}:`, response.statusText);
-      return null;
-    }
-
-    const data = await response.json();
-    const earnings = data.earningsCalendar?.[0];
+    
+    const client = getFinnhubClient();
+    const data = await client.fetchEarningsCalendar(date, date, ticker);
+    const earnings = data?.earningsCalendar?.[0];
 
     if (earnings) {
       const result = {

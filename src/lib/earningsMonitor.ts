@@ -1,20 +1,5 @@
 import { getProjectTickers } from '@/data/defaultTickers';
-
-interface FinnhubEarningsItem {
-  date: string;
-  epsActual: number | null;
-  epsEstimate: number | null;
-  revenueActual: number | null;
-  revenueEstimate: number | null;
-  symbol: string;
-  time: string; // 'bmo' | 'amc' | 'dmt'
-  surprise: number | null;
-  surprisePercent: number | null;
-}
-
-interface FinnhubEarningsResponse {
-  earningsCalendar: FinnhubEarningsItem[];
-}
+import { getFinnhubClient, FinnhubEarningsItem, FinnhubEarningsResponse } from '@/lib/clients/finnhubClient';
 
 interface ProcessedEarnings {
   preMarket: string[];
@@ -27,26 +12,9 @@ interface ProcessedEarnings {
  * Získa earnings kalendár z Finnhub API pre daný dátum
  */
 async function fetchFinnhubEarningsCalendar(date: string): Promise<FinnhubEarningsResponse> {
-  const apiKey = 'd28f1dhr01qjsuf342ogd28f1dhr01qjsuf342p0';
-  const url = `https://finnhub.io/api/v1/calendar/earnings?from=${date}&to=${date}&token=${apiKey}`;
-  
-  try {
-    const response = await fetch(url, {
-      headers: {
-        'Accept': 'application/json',
-      },
-      signal: AbortSignal.timeout(10000)
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Finnhub API error: ${response.status}`);
-    }
-    
-    return await response.json();
-  } catch (error) {
-    console.error('❌ Error fetching Finnhub earnings calendar:', error);
-    throw error;
-  }
+  const client = getFinnhubClient();
+  const data = await client.fetchEarningsCalendar(date, date);
+  return data || { earningsCalendar: [] };
 }
 
 /**

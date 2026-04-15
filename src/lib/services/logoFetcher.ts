@@ -105,11 +105,11 @@ export class LogoFetcher {
     }
 
     private async fetchFromFinnhub(ticker: string): Promise<{ buffer: Buffer, contentType: string } | null> {
-        const apiKey = process.env.FINNHUB_API_KEY;
-        if (!apiKey) return null;
+        const { FINNHUB_API_KEY } = await import('@/lib/clients/finnhubClient');
+        if (!FINNHUB_API_KEY) return null;
 
         try {
-            const url = `https://finnhub.io/api/v1/stock/profile2?symbol=${ticker}&token=${apiKey}`;
+            const url = `https://finnhub.io/api/v1/stock/profile2?symbol=${ticker}&token=${FINNHUB_API_KEY}`;
             const res = await this.fetchWithTimeout(url);
             if (!res.ok) return null;
 

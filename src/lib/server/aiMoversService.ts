@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db/prisma';
 import { getPolygonClient } from '@/lib/clients/polygonClient';
+import { FINNHUB_API_KEY } from '@/lib/clients/finnhubClient';
 import { redisClient } from '@/lib/redis';
 import { REDIS_KEYS } from '@/lib/redis/keys';
 import { getDateET } from '@/lib/utils/dateET';
@@ -146,14 +147,13 @@ export class AiMoversService {
 
         try {
             // 1. Fetch recent news (last 3 days) via Finnhub
-            const finnhubKey = process.env.FINNHUB_API_KEY;
             let newsSummary = '';
 
-            if (finnhubKey) {
+            if (FINNHUB_API_KEY) {
                 const toDate = new Date().toISOString().split('T')[0];
                 const fromDate = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-                const finnhubUrl = `https://finnhub.io/api/v1/company-news?symbol=${symbol}&from=${fromDate}&to=${toDate}&token=${finnhubKey}`;
+                const finnhubUrl = `https://finnhub.io/api/v1/company-news?symbol=${symbol}&from=${fromDate}&to=${toDate}&token=${FINNHUB_API_KEY}`;
                 const res = await fetch(finnhubUrl);
 
                 if (res.ok) {

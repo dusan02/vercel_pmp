@@ -9,7 +9,7 @@ import { withRetry, circuitBreaker } from '@/lib/api/rateLimiter';
 const finnhubCircuitBreaker = circuitBreaker('finnhub', 5, 2, 60000);
 
 // API Key from environment or fallback (for development)
-const FINNHUB_API_KEY = process.env.FINNHUB_API_KEY || 'd28f1dhr01qjsuf342ogd28f1dhr01qjsuf342p0';
+export const FINNHUB_API_KEY = process.env.FINNHUB_API_KEY || 'd28f1dhr01qjsuf342ogd28f1dhr01qjsuf342p0';
 
 export interface FinnhubClientConfig {
     apiKey?: string;
@@ -274,6 +274,19 @@ export class FinnhubClient {
             inventoryTurnover: m['inventoryTurnoverAnnual'] ?? null,
             receivablesTurnover: m['receivablesTurnoverAnnual'] ?? null,
         };
+    }
+
+    /**
+     * Fetch reported financials (XBRL data)
+     * Endpoint: /stock/financials-reported
+     */
+    async fetchFinancials(symbol: string, freq: 'annual' | 'quarterly' = 'annual', options: FetchOptions = {}): Promise<{ data: any[] } | null> {
+        const url = `https://finnhub.io/api/v1/stock/financials-reported?symbol=${symbol}&freq=${freq}&token=${this.apiKey}`;
+        return await this.fetchWithRetry<{ data: any[] }>(
+            url,
+            options.timeout || this.timeout,
+            options.signal
+        );
     }
 
     /**
