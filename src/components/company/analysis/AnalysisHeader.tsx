@@ -87,8 +87,18 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
         { label: 'Industry',    value: t.industry?.replace('SIC: ', '') },
         { label: 'Market Cap',  value: formatMarketCap(t.lastMarketCap) },
         { label: 'Price',       value: t.lastPrice ? `$${t.lastPrice.toFixed(2)}` : null },
-        { label: 'Employees',   value: t.employees ? t.employees.toLocaleString() : null },
-        { label: 'HQ',          value: t.headquarters },
+        { 
+            label: 'Target Price', 
+            value: data.finnhub?.priceTarget?.targetMean 
+                ? `$${data.finnhub.priceTarget.targetMean.toFixed(2)}` 
+                : null 
+        },
+        { 
+            label: 'Upside',       
+            value: (t.lastPrice && data.finnhub?.priceTarget?.targetMean) 
+                ? `${(((data.finnhub.priceTarget.targetMean / t.lastPrice) - 1) * 100).toFixed(1)}%` 
+                : null 
+        },
     ] : [];
 
     const companyName = (t?.name && t.name !== ticker) ? t.name : ticker;

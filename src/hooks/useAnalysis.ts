@@ -2,10 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { AnalysisData } from '../components/company/AnalysisTab';
 
 const ANALYSIS_STEPS = [
-    'Connecting to Polygon API...',
-    'Syncing financial statements (V3)...',
-    'Fetching 1 year of daily aggregates...',
-    'Computing valuation multiples...',
+    'Fetching Finnhub financial data...',
+    'Syncing XBRL financial statements...',
+    'Fetching 10Y daily price aggregates...',
+    'Computing valuation multiples & P/E bands...',
     'Calculating Altman Z-Score & Beneish M-Score...',
     'Running Piotroski F-Score analysis...',
     'Finalizing AI Verdict...',
@@ -59,10 +59,11 @@ export function useAnalysis(ticker: string) {
             }
             const json = await res.json();
             if (json && json.primary) {
-                setData({ ...json.primary, peers: json.peers || [] });
-                setSecondaryData(json.secondary || null);
+                // Pass through finnhub data from API response
+                setData({ ...json.primary, peers: json.peers || [], finnhub: json.primary.finnhub ?? null });
+                setSecondaryData(json.secondary ? { ...json.secondary, finnhub: json.secondary.finnhub ?? null } : null);
             } else {
-                setData(json ? { ...json } : null);
+                setData(json ? { ...json, finnhub: json.finnhub ?? null } : null);
                 setSecondaryData(null);
             }
         } catch (err) {
@@ -113,7 +114,8 @@ export function useAnalysis(ticker: string) {
                 throw new Error(msg);
             }
             const json = await res.json();
-            setData(json);
+            // Pass through finnhub data from POST response as well
+            setData(json ? { ...json, finnhub: json.finnhub ?? null } : null);
         } catch (err: any) {
             console.error(err);
             setError(err?.message || 'An error occurred during deep analysis.');

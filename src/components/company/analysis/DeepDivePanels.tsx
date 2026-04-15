@@ -10,6 +10,11 @@ interface DeepDivePanelsProps {
     togglePanel: (p: 'health' | 'profitability' | 'valuation') => void;
 }
 
+function fmtPct(v: number | null | undefined, decimals = 1): string {
+    if (v == null) return 'N/A';
+    return `${v.toFixed(decimals)}%`;
+}
+
 export function DeepDivePanels({
     ticker,
     data,
@@ -18,6 +23,10 @@ export function DeepDivePanels({
     openPanel,
     togglePanel
 }: DeepDivePanelsProps) {
+    // Finnhub metrics shortcuts
+    const fh = data.finnhub?.metrics;
+    const sfh = secondaryData?.finnhub?.metrics;
+
     return (
         <div className="space-y-3">
             {/* Health Details */}
@@ -85,26 +94,27 @@ export function DeepDivePanels({
                             </div>
                         </div>
 
-                        {/* Interest Coverage */}
+                        {/* Interest Coverage — prefer Finnhub, fallback to computed */}
                         <div className="flex justify-between items-start py-2 border-t border-gray-100 dark:border-gray-700">
                             <div>
                                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300" title="EBIT / Interest Expense. Measures ability to pay interest. > 3 is Solid.">Interest Coverage ⓘ</p>
-                                <p className="text-xs text-gray-400">EBIT / Interest Expense</p>
+                                <p className="text-xs text-gray-400">EBIT / Interest Expense · {fh?.interestCoverage != null ? 'via Finnhub' : 'computed'}</p>
                             </div>
                             <div className="flex gap-4">
                                 <div className="text-right">
                                     <div className="text-[10px] text-gray-400">{ticker}</div>
-                                    <span className={`text-base font-bold ${data.interestCoverage === null || data.interestCoverage === undefined ? 'text-gray-400' : data.interestCoverage > 5 ? 'text-green-500' : data.interestCoverage > 2 ? 'text-yellow-500' : 'text-red-500'}`}>
-                                        {data.interestCoverage !== null && data.interestCoverage !== undefined ? `${data.interestCoverage.toFixed(1)}x` : 'N/A'}
-                                        {compareWith && (data.interestCoverage || 0) > (secondaryData?.interestCoverage || 0) && ' 🏆'}
+                                    {/* Finnhub > computed fallback */}
+                                    <span className={`text-base font-bold ${(fh?.interestCoverage ?? data.interestCoverage) == null ? 'text-gray-400' : (fh?.interestCoverage ?? data.interestCoverage)! > 5 ? 'text-green-500' : (fh?.interestCoverage ?? data.interestCoverage)! > 2 ? 'text-yellow-500' : 'text-red-500'}`}>
+                                        {(fh?.interestCoverage ?? data.interestCoverage) != null ? `${(fh?.interestCoverage ?? data.interestCoverage)!.toFixed(1)}x` : 'N/A'}
+                                        {compareWith && ((fh?.interestCoverage ?? data.interestCoverage) || 0) > ((sfh?.interestCoverage ?? secondaryData?.interestCoverage) || 0) && ' 🏆'}
                                     </span>
                                 </div>
                                 {compareWith && (
                                     <div className="text-right border-l dark:border-gray-700 pl-4">
                                         <div className="text-[10px] text-gray-400">{compareWith}</div>
-                                        <span className={`text-base font-bold ${secondaryData?.interestCoverage === null || secondaryData?.interestCoverage === undefined ? 'text-gray-400' : secondaryData.interestCoverage > 5 ? 'text-green-500' : secondaryData.interestCoverage > 2 ? 'text-yellow-500' : 'text-red-500'}`}>
-                                            {secondaryData?.interestCoverage !== null && secondaryData?.interestCoverage !== undefined ? `${secondaryData.interestCoverage.toFixed(1)}x` : 'N/A'}
-                                            {(secondaryData?.interestCoverage || 0) > (data.interestCoverage || 0) && ' 🏆'}
+                                        <span className={`text-base font-bold ${(sfh?.interestCoverage ?? secondaryData?.interestCoverage) == null ? 'text-gray-400' : (sfh?.interestCoverage ?? secondaryData?.interestCoverage)! > 5 ? 'text-green-500' : (sfh?.interestCoverage ?? secondaryData?.interestCoverage)! > 2 ? 'text-yellow-500' : 'text-red-500'}`}>
+                                            {(sfh?.interestCoverage ?? secondaryData?.interestCoverage) != null ? `${(sfh?.interestCoverage ?? secondaryData?.interestCoverage)!.toFixed(1)}x` : 'N/A'}
+                                            {((sfh?.interestCoverage ?? secondaryData?.interestCoverage) || 0) > ((fh?.interestCoverage ?? data.interestCoverage) || 0) && ' 🏆'}
                                         </span>
                                     </div>
                                 )}
@@ -124,10 +134,11 @@ export function DeepDivePanels({
                 </button>
                 {openPanel === 'profitability' && (
                     <div className="border-t border-gray-100 dark:border-gray-700 px-6 py-4 space-y-3">
+                        {/* Revenue CAGR (computed) */}
                         <div className="flex justify-between items-start py-2">
                             <div>
                                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Revenue CAGR (5Y)</p>
-                                <p className="text-xs text-gray-400">Annual revenue growth rate</p>
+                                <p className="text-xs text-gray-400">Annual revenue growth rate · computed</p>
                             </div>
                             <div className="flex gap-4">
                                 <div className="text-right">
@@ -148,10 +159,11 @@ export function DeepDivePanels({
                                 )}
                             </div>
                         </div>
+                        {/* Net Income CAGR (computed) */}
                         <div className="flex justify-between items-start py-2 border-t border-gray-100 dark:border-gray-700">
                             <div>
                                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Net Income CAGR (5Y)</p>
-                                <p className="text-xs text-gray-400">Annual net income growth rate</p>
+                                <p className="text-xs text-gray-400">Annual net income growth rate · computed</p>
                             </div>
                             <div className="flex gap-4">
                                 <div className="text-right">
@@ -172,6 +184,60 @@ export function DeepDivePanels({
                                 )}
                             </div>
                         </div>
+                        {/* Gross Margin (Finnhub) — NEW */}
+                        {(fh?.grossMargin != null || sfh?.grossMargin != null) && (
+                            <div className="flex justify-between items-start py-2 border-t border-gray-100 dark:border-gray-700">
+                                <div>
+                                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Gross Margin <span className="text-[9px] font-bold px-1 py-0 rounded bg-blue-50 text-blue-500 dark:bg-blue-900/30 dark:text-blue-400 uppercase ml-1">FH</span></p>
+                                    <p className="text-xs text-gray-400">(Revenue − COGS) / Revenue · via Finnhub</p>
+                                </div>
+                                <div className="flex gap-4">
+                                    <div className="text-right">
+                                        <div className="text-[10px] text-gray-400">{ticker}</div>
+                                        <span className={`text-base font-bold ${fh?.grossMargin == null ? 'text-gray-400' : fh.grossMargin > 50 ? 'text-green-500' : fh.grossMargin > 20 ? 'text-yellow-500' : 'text-red-500'}`}>
+                                            {fmtPct(fh?.grossMargin)}
+                                            {compareWith && (fh?.grossMargin || -99) > (sfh?.grossMargin || -99) && ' 🏆'}
+                                        </span>
+                                    </div>
+                                    {compareWith && (
+                                        <div className="text-right border-l dark:border-gray-700 pl-4">
+                                            <div className="text-[10px] text-gray-400">{compareWith}</div>
+                                            <span className={`text-base font-bold ${sfh?.grossMargin == null ? 'text-gray-400' : sfh.grossMargin > 50 ? 'text-green-500' : sfh.grossMargin > 20 ? 'text-yellow-500' : 'text-red-500'}`}>
+                                                {fmtPct(sfh?.grossMargin)}
+                                                {(sfh?.grossMargin || -99) > (fh?.grossMargin || -99) && ' 🏆'}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                        {/* ROIC (Finnhub) — NEW */}
+                        {(fh?.roic != null || sfh?.roic != null) && (
+                            <div className="flex justify-between items-start py-2 border-t border-gray-100 dark:border-gray-700">
+                                <div>
+                                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">ROIC <span className="text-[9px] font-bold px-1 py-0 rounded bg-blue-50 text-blue-500 dark:bg-blue-900/30 dark:text-blue-400 uppercase ml-1">FH</span></p>
+                                    <p className="text-xs text-gray-400">Return on Invested Capital · via Finnhub</p>
+                                </div>
+                                <div className="flex gap-4">
+                                    <div className="text-right">
+                                        <div className="text-[10px] text-gray-400">{ticker}</div>
+                                        <span className={`text-base font-bold ${fh?.roic == null ? 'text-gray-400' : fh.roic > 15 ? 'text-green-500' : fh.roic > 8 ? 'text-yellow-500' : 'text-red-500'}`}>
+                                            {fmtPct(fh?.roic)}
+                                            {compareWith && (fh?.roic || -99) > (sfh?.roic || -99) && ' 🏆'}
+                                        </span>
+                                    </div>
+                                    {compareWith && (
+                                        <div className="text-right border-l dark:border-gray-700 pl-4">
+                                            <div className="text-[10px] text-gray-400">{compareWith}</div>
+                                            <span className={`text-base font-bold ${sfh?.roic == null ? 'text-gray-400' : sfh.roic > 15 ? 'text-green-500' : sfh.roic > 8 ? 'text-yellow-500' : 'text-red-500'}`}>
+                                                {fmtPct(sfh?.roic)}
+                                                {(sfh?.roic || -99) > (fh?.roic || -99) && ' 🏆'}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
@@ -186,6 +252,7 @@ export function DeepDivePanels({
                 </button>
                 {openPanel === 'valuation' && (
                     <div className="border-t border-gray-100 dark:border-gray-700 px-6 py-4 space-y-3">
+                        {/* FCF Yield */}
                         <div className="flex justify-between items-start py-2">
                             <div>
                                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300">FCF Yield</p>
@@ -210,25 +277,34 @@ export function DeepDivePanels({
                                 )}
                             </div>
                         </div>
+                        {/* P/E Ratio — Finnhub primary, computed fallback */}
                         <div className="flex justify-between items-start py-2 border-t border-gray-100 dark:border-gray-700">
                             <div>
-                                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">P/E Ratio</p>
-                                <p className="text-xs text-gray-400">Price to Earnings</p>
+                                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    P/E Ratio
+                                    {fh?.peRatio != null && <span className="text-[9px] font-bold px-1 py-0 rounded bg-blue-50 text-blue-500 dark:bg-blue-900/30 dark:text-blue-400 uppercase ml-1">FH</span>}
+                                </p>
+                                <p className="text-xs text-gray-400">Price to Earnings · {fh?.peRatio != null ? 'Finnhub TTM' : 'computed from DB'}</p>
                             </div>
                             <div className="flex gap-4">
                                 <div className="text-right">
                                     <div className="text-[10px] text-gray-400">{ticker}</div>
+                                    {/* Use Finnhub P/E first, fall back to computed */}
                                     <p className="text-base font-bold text-gray-700 dark:text-gray-300">
-                                        {data.metrics?.currentPe !== null && data.metrics?.currentPe !== undefined ? `${data.metrics.currentPe.toFixed(1)}x` : 'N/A'}
-                                        {compareWith && (data.metrics?.currentPe || 999) < (secondaryData?.metrics?.currentPe || 999) && ' 🏆'}
+                                        {(fh?.peRatio ?? data.metrics?.currentPe) !== null && (fh?.peRatio ?? data.metrics?.currentPe) !== undefined
+                                            ? `${(fh?.peRatio ?? data.metrics?.currentPe)!.toFixed(1)}x`
+                                            : 'N/A'}
+                                        {compareWith && (fh?.peRatio ?? data.metrics?.currentPe ?? 999) < (sfh?.peRatio ?? secondaryData?.metrics?.currentPe ?? 999) && ' 🏆'}
                                     </p>
                                 </div>
                                 {compareWith && (
                                     <div className="text-right border-l dark:border-gray-700 pl-4">
                                         <div className="text-[10px] text-gray-400">{compareWith}</div>
                                         <p className="text-base font-bold text-gray-700 dark:text-gray-300">
-                                            {secondaryData?.metrics?.currentPe !== null && secondaryData?.metrics?.currentPe !== undefined ? `${secondaryData.metrics.currentPe.toFixed(1)}x` : 'N/A'}
-                                            {(secondaryData?.metrics?.currentPe || 999) < (data.metrics?.currentPe || 999) && ' 🏆'}
+                                            {(sfh?.peRatio ?? secondaryData?.metrics?.currentPe) !== null && (sfh?.peRatio ?? secondaryData?.metrics?.currentPe) !== undefined
+                                                ? `${(sfh?.peRatio ?? secondaryData?.metrics?.currentPe)!.toFixed(1)}x`
+                                                : 'N/A'}
+                                            {(sfh?.peRatio ?? secondaryData?.metrics?.currentPe ?? 999) < (fh?.peRatio ?? data.metrics?.currentPe ?? 999) && ' 🏆'}
                                         </p>
                                     </div>
                                 )}
@@ -236,6 +312,33 @@ export function DeepDivePanels({
                         </div>
                         <div className="text-[10px] text-blue-600 dark:text-blue-400 font-medium">{data.humanPeInfo}</div>
                         {compareWith && secondaryData?.humanPeInfo && <div className="text-[10px] text-indigo-600 dark:text-indigo-400 font-medium">[{compareWith}] {secondaryData.humanPeInfo}</div>}
+                        {/* EV/EBITDA (Finnhub) — NEW */}
+                        {(fh?.evEbitda != null || sfh?.evEbitda != null) && (
+                            <div className="flex justify-between items-start py-2 border-t border-gray-100 dark:border-gray-700">
+                                <div>
+                                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">EV/EBITDA <span className="text-[9px] font-bold px-1 py-0 rounded bg-blue-50 text-blue-500 dark:bg-blue-900/30 dark:text-blue-400 uppercase ml-1">FH</span></p>
+                                    <p className="text-xs text-gray-400">Enterprise Value / EBITDA · via Finnhub</p>
+                                </div>
+                                <div className="flex gap-4">
+                                    <div className="text-right">
+                                        <div className="text-[10px] text-gray-400">{ticker}</div>
+                                        <span className={`text-base font-bold ${fh?.evEbitda == null ? 'text-gray-400' : fh.evEbitda < 10 ? 'text-green-500' : fh.evEbitda > 25 ? 'text-red-500' : 'text-yellow-500'}`}>
+                                            {fh?.evEbitda != null ? `${fh.evEbitda.toFixed(1)}x` : 'N/A'}
+                                            {compareWith && (fh?.evEbitda || 999) < (sfh?.evEbitda || 999) && ' 🏆'}
+                                        </span>
+                                    </div>
+                                    {compareWith && (
+                                        <div className="text-right border-l dark:border-gray-700 pl-4">
+                                            <div className="text-[10px] text-gray-400">{compareWith}</div>
+                                            <span className={`text-base font-bold ${sfh?.evEbitda == null ? 'text-gray-400' : sfh.evEbitda < 10 ? 'text-green-500' : sfh.evEbitda > 25 ? 'text-red-500' : 'text-yellow-500'}`}>
+                                                {sfh?.evEbitda != null ? `${sfh.evEbitda.toFixed(1)}x` : 'N/A'}
+                                                {(sfh?.evEbitda || 999) < (fh?.evEbitda || 999) && ' 🏆'}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

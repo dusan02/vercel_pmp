@@ -34,6 +34,65 @@ export interface AnalysisMetrics {
     fcfConversion: number | null;
 }
 
+/** Subset of Finnhub metrics exposed to the frontend */
+export interface FinnhubMetricsSubset {
+    // Valuation
+    peRatio: number | null;
+    forwardPe: number | null;
+    pbRatio: number | null;
+    psRatio: number | null;
+    evEbitda: number | null;
+    pegRatio: number | null;
+    priceCashFlow: number | null;
+    // Profitability
+    grossMargin: number | null;
+    operatingMargin: number | null;
+    netMargin: number | null;
+    roe: number | null;
+    roa: number | null;
+    roic: number | null;
+    // Growth
+    revenueGrowth: number | null;
+    earningsGrowth: number | null;
+    // Financial Health
+    currentRatio: number | null;
+    quickRatio: number | null;
+    debtEquityRatio: number | null;
+    interestCoverage: number | null;
+    // Other
+    beta: number | null;
+    dividendYield: number | null;
+    payoutRatio: number | null;
+    employees: number | null;
+}
+
+export interface FinnhubPriceTargetSubset {
+    targetHigh: number | null;
+    targetLow: number | null;
+    targetMean: number | null;
+    targetMedian: number | null;
+    numberOfAnalysts: number | null;
+    currentPrice: number | null;
+}
+
+export interface FinnhubProfileSubset {
+    exchange: string | null;
+    currency: string | null;
+    country: string | null;
+    ipoDate: string | null;
+    marketCap: number | null;
+    shareOutstanding: number | null;
+    finnhubIndustry: string | null;
+    finnhubSector: string | null;
+}
+
+/** Finnhub-sourced data bundle from the API */
+export interface FinnhubData {
+    metrics: FinnhubMetricsSubset | null;
+    priceTarget: FinnhubPriceTargetSubset | null;
+    profile: FinnhubProfileSubset | null;
+}
+
 export interface AnalysisData {
     healthScore: number | null;
     profitabilityScore: number | null;
@@ -52,6 +111,8 @@ export interface AnalysisData {
     humanPeInfo?: string | null;
     marginStability?: number | null;
     negativeNiYears?: number | null;
+    /** Finnhub-sourced metrics (more accurate, pre-computed by Finnhub) */
+    finnhub?: FinnhubData | null;
     ticker?: {
         name: string | null;
         description: string | null;
