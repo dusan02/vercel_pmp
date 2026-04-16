@@ -117,33 +117,37 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
             {t ? (
                 <>
                     {/* ── TOP: Logo + Identity + Scores ── */}
-                    <div className="flex items-center gap-4 px-6 lg:px-8 pt-6 lg:pt-7 pb-5">
-                        <CompanyLogo
-                            ticker={ticker}
-                            logoUrl={t.logoUrl}
-                            size={64}
-                            priority
-                        />
-                        <div className="min-w-0 flex items-center gap-3 flex-wrap">
-                            <h1 className="text-xl lg:text-2xl font-bold text-gray-900 dark:text-white leading-tight tracking-tight">
-                                {companyName}
-                            </h1>
-                            <span className="px-2 py-0.5 bg-blue-600 text-white text-[10px] font-bold rounded tracking-widest uppercase shrink-0">
-                                {ticker}
-                            </span>
-                            {t.websiteUrl && (
-                                <a
-                                    href={t.websiteUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-[10px] uppercase tracking-widest font-semibold text-gray-400 hover:text-blue-500 dark:text-gray-500 dark:hover:text-blue-400 transition-colors shrink-0"
-                                >
-                                    Website ↗
-                                </a>
-                            )}
+                    <div className="flex flex-col md:flex-row md:items-center gap-4 px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 lg:pt-7 pb-5">
+                        <div className="flex items-start md:items-center gap-4">
+                            <CompanyLogo
+                                ticker={ticker}
+                                logoUrl={t.logoUrl}
+                                size={56}
+                                priority
+                            />
+                            <div className="min-w-0 flex flex-col items-start gap-1 sm:gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white leading-tight tracking-tight">
+                                        {companyName}
+                                    </h1>
+                                    <span className="px-2 py-0.5 bg-blue-600 text-white text-[10px] font-bold rounded tracking-widest uppercase shrink-0 mt-0.5">
+                                        {ticker}
+                                    </span>
+                                </div>
+                                {t.websiteUrl && (
+                                    <a
+                                        href={t.websiteUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-[10px] uppercase tracking-widest font-semibold text-gray-400 hover:text-blue-500 dark:text-gray-500 dark:hover:text-blue-400 transition-colors shrink-0"
+                                    >
+                                        Website ↗
+                                    </a>
+                                )}
+                            </div>
                         </div>
-                        {/* ── Score circles (compact, top-right) ── */}
-                        <div className="ml-auto flex items-center gap-4 shrink-0 pl-4">
+                        {/* ── Score circles (compact, top-right or below on mobile) ── */}
+                        <div className="md:ml-auto flex justify-around md:justify-end items-center gap-2 sm:gap-4 shrink-0 pt-2 md:pt-0 w-full md:w-auto">
                             <MiniScoreCircle label="Health" score={data.healthScore} />
                             <MiniScoreCircle label="Profitability" score={data.profitabilityScore} />
                             <MiniScoreCircle label="Valuation" score={data.valuationScore} />
