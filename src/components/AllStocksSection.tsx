@@ -173,7 +173,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
       render: (stock) => <span className="tabular-nums block w-full text-right">{formatBillions(stock.marketCap)}</span>
     },
     {
-      key: 'marketCapDiffDesktop',
+      key: 'marketCapDiff',
       header: 'Cap Diff',
       sortable: isDesktop, // Only sortable on desktop, on mobile we use merged Cap column
       align: 'center',

@@ -205,7 +205,7 @@ export const StocksTable = React.memo(function StocksTable({
       }
     },
     {
-      key: 'marketCapDiffDesktop',
+      key: 'marketCapDiff',
       header: 'Cap Δ',
       sortable: true,
       align: 'right',

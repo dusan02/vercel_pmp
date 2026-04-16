@@ -57,10 +57,14 @@ export async function getStocksList(options: {
     const pricingState = getPricingState(etNow);
 
     // IMPORTANT: For "All stocks" list (no explicit tickers), exclude rows with no price.
-    // These are usually tickers that Polygon doesn't support / haven't been ingested yet and show up as $0.00 in UI.
+    // Also exclude tickers that haven't been updated in the last 7 days (they are likely delisted or removed from tracked indices).
+    const SEVEN_DAYS_AGO = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const where = tickers && tickers.length > 0
       ? { symbol: { in: tickers } }
-      : { lastPrice: { gt: 0 } };
+      : { 
+          lastPrice: { gt: 0 },
+          updatedAt: { gte: SEVEN_DAYS_AGO }
+        };
 
     // Only apply limit if no specific tickers are requested
     // When tickers are specified, return all requested tickers (respecting the ticker list, not the limit)
