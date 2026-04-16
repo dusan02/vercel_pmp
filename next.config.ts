@@ -70,6 +70,17 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   generateEtags: false,
 
+  // Setup permanent redirects for deprecated routes
+  async redirects() {
+    return [
+      {
+        source: '/stock/:ticker',
+        destination: '/?tab=analysis&ticker=:ticker',
+        permanent: true, // 301 Redirect for SEO (Google will update indices)
+      },
+    ];
+  },
+
   // Headers for CDN and caching
   async headers() {
     return [

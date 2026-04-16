@@ -79,12 +79,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   // -------------------------------------------------------
-  // 2. ALL TICKERS — /stock/[ticker] canonical pages
+  // 2. ALL TICKERS — /?tab=analysis&ticker=[ticker] canonical pages
   // -------------------------------------------------------
   const allTickers = getProjectTickers('pmp');
 
   const stockPages: MetadataRoute.Sitemap = allTickers.map((ticker) => ({
-    url: `${baseUrl}/stock/${ticker}`,
+    url: `${baseUrl}/?tab=analysis&ticker=${ticker}`,
     lastModified: currentDate,
     changeFrequency: 'daily' as const,
     priority: 0.8,
