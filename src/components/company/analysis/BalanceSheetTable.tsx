@@ -139,53 +139,53 @@ export function BalanceSheetTable({ ticker, data, compareWith, secondaryData }: 
 
     return (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex items-center gap-3">
-                <div className="p-2 bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 rounded-lg">
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex items-center gap-3">
+                <div className="p-2 bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 rounded-lg shrink-0">
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18M10 4l-2 16M14 4l-2 16" />
                     </svg>
                 </div>
-                <div>
-                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Balance Sheet Insights</h4>
-                    <p className="text-xs text-gray-400">Based on latest annual financial statement</p>
+                <div className="min-w-0">
+                    <h4 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white truncate">Balance Sheet Insights</h4>
+                    <p className="text-[10px] sm:text-xs text-gray-400 truncate">Based on latest annual financial statement</p>
                 </div>
             </div>
-            <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                    <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700/50 dark:text-gray-400">
-                        <tr>
-                            <th className="px-6 py-3 border-b dark:border-gray-700">Metric</th>
-                            <th className="px-6 py-3 border-b dark:border-gray-700">{ticker}</th>
-                            {compareWith
-                                ? <th className="px-6 py-3 border-b dark:border-gray-700">{compareWith}</th>
-                                : <th className="px-6 py-3 border-b dark:border-gray-700">Status</th>
-                            }
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {rows.map((row, i) => (
-                            <tr key={row.label} className={`border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 ${i === rows.length - 1 ? 'border-0' : ''}`}>
-                                <td className="px-6 py-4">
-                                    <div className="font-medium text-gray-900 dark:text-white" title={row.hint}>
-                                        {row.label} <span className="text-gray-400 text-xs">ⓘ</span>
+
+            <div className="p-4 sm:p-6 bg-gray-50/30 dark:bg-gray-900/30">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+                    {rows.map((row) => (
+                        <div key={row.label} className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col justify-between hover:border-gray-200 dark:hover:border-gray-600 transition-colors">
+                            <div className="flex justify-between items-start mb-3">
+                                <h5 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider pr-2" title={row.hint}>
+                                    {row.label}
+                                </h5>
+                                {!compareWith && row.primaryStatus && row.statusLabel && row.primaryStatus !== 'neutral' && (
+                                    <div className="shrink-0">
+                                        {statusBadge(row.statusLabel, row.primaryStatus)}
                                     </div>
-                                </td>
-                                <td className="px-6 py-4 font-mono font-semibold text-gray-900 dark:text-white">
-                                    {row.primary}
-                                </td>
-                                {compareWith
-                                    ? <td className="px-6 py-4 font-mono font-semibold text-gray-900 dark:text-white">{row.secondary ?? 'N/A'}</td>
-                                    : <td className="px-6 py-4">
-                                        {row.primaryStatus && row.statusLabel && row.primaryStatus !== 'neutral'
-                                            ? statusBadge(row.statusLabel, row.primaryStatus)
-                                            : <span className="text-gray-400 text-xs">{row.statusLabel || '—'}</span>
-                                        }
-                                    </td>
-                                }
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                                )}
+                            </div>
+                            
+                            <div className="flex items-end justify-between mt-auto">
+                                <div className="flex flex-col">
+                                    {compareWith && <span className="text-[10px] text-gray-400 mb-0.5">{ticker}</span>}
+                                    <span className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white leading-none">
+                                        {row.primary}
+                                    </span>
+                                </div>
+                                
+                                {compareWith && (
+                                    <div className="flex flex-col items-end text-right">
+                                        <span className="text-[10px] text-gray-400 mb-0.5">{compareWith}</span>
+                                        <span className="text-lg sm:text-xl font-bold text-gray-600 dark:text-gray-300 leading-none">
+                                            {row.secondary ?? 'N/A'}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
         </div>
     );

@@ -168,50 +168,53 @@ export function FinancialHealthTable({ ticker, data, compareWith, secondaryData 
 
     return (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex items-center gap-3">
-                <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Financial Health Metrics</h4>
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 uppercase tracking-wide">
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex flex-wrap items-center gap-3">
+                <h4 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Financial Health Metrics</h4>
+                <span className="text-[9px] sm:text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 uppercase tracking-wide">
                     Finnhub-first
                 </span>
             </div>
-            <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                    <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700/50 dark:text-gray-400">
-                        <tr>
-                            <th className="px-6 py-3 border-b dark:border-gray-700">Metric</th>
-                            <th className="px-6 py-3 border-b dark:border-gray-700">{ticker}</th>
-                            {compareWith ? <th className="px-6 py-3 border-b dark:border-gray-700">{compareWith}</th> : <th className="px-6 py-3 border-b dark:border-gray-700">Status</th>}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {rows.map((row) => (
-                            <tr key={row.label} className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                <td className="px-6 py-4">
-                                    <div className="font-medium text-gray-900 dark:text-white flex items-center" title={row.hint}>
-                                        {row.label}
-                                        <span className="text-gray-400 text-[10px] ml-1">ⓘ</span>
-                                        {row.source && sourceBadge(row.source)}
+            
+            <div className="p-4 sm:p-6 bg-gray-50/30 dark:bg-gray-900/30">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+                    {rows.map((row) => (
+                        <div key={row.label} className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col justify-between hover:border-gray-200 dark:hover:border-gray-600 transition-colors">
+                            <div className="flex justify-between items-start mb-3">
+                                <div className="flex items-center gap-1.5" title={row.hint}>
+                                    <h5 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{row.label}</h5>
+                                    {row.source && sourceBadge(row.source)}
+                                </div>
+                                {!compareWith && row.statusLabel && row.statusType && (
+                                    <div className="shrink-0 ml-2">
+                                        {statusBadge(row.statusLabel, row.statusType)}
                                     </div>
-                                </td>
-                                <td className="px-6 py-4 font-mono font-semibold text-gray-900 dark:text-white">
-                                    {row.primary}
-                                </td>
-                                {compareWith ? (
-                                    <td className="px-6 py-4 font-mono font-semibold text-gray-900 dark:text-white">
-                                        {row.secondary}
-                                    </td>
-                                ) : (
-                                    <td className="px-6 py-4">
-                                        {row.statusLabel && row.statusType && statusBadge(row.statusLabel, row.statusType)}
-                                    </td>
                                 )}
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                            </div>
+                            
+                            <div className="flex items-end justify-between mt-auto">
+                                <div className="flex flex-col">
+                                    {compareWith && <span className="text-[10px] text-gray-400 mb-0.5">{ticker}</span>}
+                                    <span className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white leading-none">
+                                        {row.primary}
+                                    </span>
+                                </div>
+                                
+                                {compareWith && (
+                                    <div className="flex flex-col items-end text-right">
+                                        <span className="text-[10px] text-gray-400 mb-0.5">{compareWith}</span>
+                                        <span className="text-lg sm:text-xl font-bold text-gray-600 dark:text-gray-300 leading-none">
+                                            {row.secondary}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
-            <div className="px-6 py-2 bg-gray-50/50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700">
-                <p className="text-[10px] text-gray-400 dark:text-gray-500">
+
+            <div className="px-4 sm:px-6 py-3 bg-gray-50/50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700">
+                <p className="text-[10px] text-gray-400 dark:text-gray-500 leading-relaxed">
                     <span className="inline-flex items-center gap-1">
                         <span className="px-1 py-0 rounded text-[9px] font-bold bg-blue-50 text-blue-500 dark:bg-blue-900/30 dark:text-blue-400 uppercase">FH</span>
                         = sourced from Finnhub API (pre-computed, TTM). Computed metrics use internal DB calculations.
