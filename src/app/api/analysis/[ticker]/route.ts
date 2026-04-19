@@ -1,25 +1,23 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { AnalysisService } from '@/services/analysisService';
-import { FinnhubService } from '@/services/finnhubService';
 
 // Helper: compute metrics for a single symbol
-async function computeMetrics(symbol: string, finnhubData?: any) {
-    const [analysis, stmts, latestValuation] = await Promise.all([
-        prisma.analysisCache.findUnique({ where: { symbol } }),
-        prisma.financialStatement.findMany({
-            where: { symbol },
-            orderBy: { endDate: 'desc' },
-            take: 120 
-        }),
-        prisma.dailyValuationHistory.findFirst({
-            where: { symbol },
-            orderBy: { date: 'desc' }
-        })
-    ]);
-
+async function computeMetrics(symbol: string) {
+    const analysis = await prisma.analysisCache.findUnique({ where: { symbol } });
     if (!analysis) return null;
+
+    const stmts = await prisma.financialStatement.findMany({
+        where: { symbol },
+        orderBy: { endDate: 'desc' },
+        take: 120 // 10Y annual (10) + 10Y quarterly (40) + buffer = enough for full history charts
+    });
     const latestStmt = stmts[0] || null;
+
+    const latestValuation = await prisma.dailyValuationHistory.findFirst({
+        where: { symbol },
+        orderBy: { date: 'desc' }
+    });
 
     const cached = analysis as any;
     const altmanZ = cached.altmanZ;
@@ -37,18 +35,7 @@ async function computeMetrics(symbol: string, finnhubData?: any) {
     // Balance Sheet from latest annual statement
     const latestAnnual = stmts.find(s => s.fiscalPeriod === 'FY') || latestStmt;
     const totalDebt = latestAnnual?.totalDebt ?? null;
-    
-    // Primary source: Reported Financials from DB. 
-    // Fallback: Finnhub pre-computed metrics if available.
-    // If not passed from parent, fetch internally (with cache)
-    const fh = finnhubData || await FinnhubService.getAnalysisData(symbol);
-    const fhMetrics = fh?.metrics;
-    
-    let cash = latestAnnual?.cashAndEquivalents ?? null;
-    if (cash === null && fhMetrics?.cashPerShare && fh?.profile?.shareOutstanding) {
-        cash = fhMetrics.cashPerShare * fh.profile.shareOutstanding;
-    }
-
+    const cash = latestAnnual?.cashAndEquivalents ?? null;
     const netDebt = (totalDebt !== null && cash !== null) ? totalDebt - cash : null;
     const totalEquity = latestAnnual?.totalEquity ?? null;
     const totalAssets = latestAnnual?.totalAssets ?? null;
@@ -58,15 +45,10 @@ async function computeMetrics(symbol: string, finnhubData?: any) {
     const sbc = latestAnnual?.sbc ?? null;
     const sharesOutstanding = latestAnnual?.sharesOutstanding ?? null;
     const ebit = latestAnnual?.ebit ?? null;
-    const debtToEquity = fhMetrics?.totalDebtToEquityAnnual 
-        ? fhMetrics.totalDebtToEquityAnnual / 100 // Finnhub returns percentage e.g. 35.5
-        : (totalDebt !== null && totalEquity !== null && totalEquity !== 0)
-            ? totalDebt / totalEquity : null;
-            
-    const currentRatio = fhMetrics?.currentRatioAnnual
-        ?? ((currentAssets !== null && currentLiabilities !== null && currentLiabilities !== 0)
-            ? currentAssets / currentLiabilities : null);
-            
+    const debtToEquity = (totalDebt !== null && totalEquity !== null && totalEquity !== 0)
+        ? totalDebt / totalEquity : null;
+    const currentRatio = (currentAssets !== null && currentLiabilities !== null && currentLiabilities !== 0)
+        ? currentAssets / currentLiabilities : null;
     const assetToLiability = (totalAssets !== null && totalLiabilities !== null && totalLiabilities !== 0)
         ? totalAssets / totalLiabilities : null;
     // Net Debt / EBIT (schema has no depreciation field, so EBITDA cannot be computed)
@@ -99,7 +81,6 @@ async function computeMetrics(symbol: string, finnhubData?: any) {
             totalLiabilities,
             currentAssets,
             currentLiabilities,
-            // Prefer Finnhub pre-computed ratios if available (more accurate)
             debtToEquity,
             currentRatio,
             assetToLiability,
@@ -134,19 +115,14 @@ export async function GET(
     const compareSymbol = searchParams.get('compare')?.toUpperCase() || null;
 
     try {
-        // Fetch Finnhub metrics first so computeMetrics can use them without re-fetching
-        const finnhubData = await FinnhubService.getAnalysisData(symbol);
-        
-        // Parallelize primary analysis and ticker details
-        const [primary, tickerRecord] = await Promise.all([
-            computeMetrics(symbol, finnhubData),
-            prisma.ticker.findUnique({
-                where: { symbol },
-                select: { sector: true, industry: true, description: true, websiteUrl: true, name: true, logoUrl: true, employees: true, lastPrice: true, lastMarketCap: true, headquarters: true }
-            })
-        ]);
-
+        const primary = await computeMetrics(symbol);
         if (!primary) return NextResponse.json(null);
+
+        // Also fetch sector peers and ticker details (logo, sector, description)
+        const tickerRecord = await prisma.ticker.findUnique({
+            where: { symbol },
+            select: { sector: true, industry: true, description: true, websiteUrl: true, name: true, logoUrl: true, employees: true, lastPrice: true, lastMarketCap: true, lastChangePct: true, lastMarketCapDiff: true, headquarters: true }
+        });
 
         let peers: string[] = [];
         if (tickerRecord?.sector) {
@@ -161,29 +137,28 @@ export async function GET(
 
         // If compare requested, fetch secondary analysis
         if (compareSymbol) {
-            const [secondary, secondaryFinnhub] = await Promise.all([
-                computeMetrics(compareSymbol),
-                FinnhubService.getAnalysisData(compareSymbol),
-            ]);
+            const secondary = await computeMetrics(compareSymbol);
             return NextResponse.json({
-                primary: { ...primary, ticker: tickerRecord, finnhub: finnhubData },
-                secondary: secondary ? { ...secondary, finnhub: secondaryFinnhub } : null,
+                primary: { ...primary, ticker: tickerRecord },
+                secondary,
                 peers
             });
         }
 
         // Background revalidation: if cache is stale (> 7 days), trigger async refresh
+        // without blocking the response — next load will see fresh data
         const cacheAge = await prisma.analysisCache.findUnique({
             where: { symbol },
             select: { updatedAt: true },
         });
         const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
         if (cacheAge && cacheAge.updatedAt < sevenDaysAgo) {
+            // Fire-and-forget background refresh (non-blocking)
             fetch(`${new URL(request.url).origin}/api/analysis/${symbol}`, { method: 'POST' })
                 .catch(() => {/* silent — background job */});
         }
 
-        return NextResponse.json({ ...primary, ticker: tickerRecord, peers, finnhub: finnhubData });
+        return NextResponse.json({ ...primary, ticker: tickerRecord, peers });
     } catch (error) {
         console.error(`Error fetching analysis for ${symbol}:`, error);
         return NextResponse.json({ error: 'Failed to fetch analysis' }, { status: 500 });
@@ -247,16 +222,12 @@ export async function POST(
             throw e;
         }
 
-        // Fetch fresh Finnhub metrics (forceRefresh after manual POST)
-        const finnhubData = await FinnhubService.getAnalysisData(symbol);
-        
-        const [primary, tickerRecord] = await Promise.all([
-            computeMetrics(symbol, finnhubData),
-            prisma.ticker.findUnique({
-                where: { symbol },
-                select: { sector: true, industry: true, description: true, websiteUrl: true, name: true, logoUrl: true, employees: true, lastPrice: true, lastMarketCap: true, headquarters: true }
-            })
-        ]);
+        const primary = await computeMetrics(symbol);
+
+        const tickerRecord = await prisma.ticker.findUnique({
+            where: { symbol },
+            select: { sector: true, industry: true, description: true, websiteUrl: true, name: true, logoUrl: true, employees: true, lastPrice: true, lastMarketCap: true, lastChangePct: true, lastMarketCapDiff: true, headquarters: true }
+        });
 
         let peers: string[] = [];
         if (tickerRecord?.sector) {
@@ -270,7 +241,7 @@ export async function POST(
         }
 
         console.log(`[Analysis API] Deep analysis complete for ${symbol}`);
-        return NextResponse.json({ ...primary, ticker: tickerRecord, peers, finnhub: finnhubData });
+        return NextResponse.json({ ...primary, ticker: tickerRecord, peers });
     } catch (error: any) {
         console.error(`Error generating analysis for ${symbol}:`, error);
         return NextResponse.json({

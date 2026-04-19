@@ -43,7 +43,7 @@ export async function GET(
         // Fetch 10Y daily valuation history
         const rows = await prisma.dailyValuationHistory.findMany({
             where: { symbol, date: { gte: tenYearsAgo } },
-            select: { date: true, peRatio: true, psRatio: true },
+            select: { date: true, peRatio: true, psRatio: true, closePrice: true },
             orderBy: { date: 'asc' },
         });
 
@@ -76,12 +76,18 @@ export async function GET(
         const latestPE = [...rows].reverse().find(r => VALID_PE(r.peRatio))?.peRatio ?? null;
         const latestPS = [...rows].reverse().find(r => VALID_PS(r.psRatio))?.psRatio ?? null;
 
+        // Price history (weekly) for Scenario Lab chart
+        const priceHistory = weekly
+            .filter(r => r.closePrice !== null && r.closePrice !== undefined && r.closePrice > 0)
+            .map(r => ({ date: r.date.toISOString().split('T')[0], price: parseFloat((r.closePrice as number).toFixed(2)) }));
+
         const peStats = buildStats(peAllValues);
         const psStats = buildStats(psAllValues);
 
         return NextResponse.json({
             peHistory,
             psHistory,
+            priceHistory,
             current: {
                 pe: latestPE !== null ? parseFloat((latestPE as number).toFixed(2)) : null,
                 ps: latestPS !== null ? parseFloat((latestPS as number).toFixed(2)) : null,

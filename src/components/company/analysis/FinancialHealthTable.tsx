@@ -1,5 +1,6 @@
 import React from 'react';
 import { AnalysisData } from '../AnalysisTab';
+import { MetricCard, MetricCardDef } from '../shared/MetricCard';
 
 interface FinancialHealthTableProps {
     ticker: string;
@@ -8,217 +9,169 @@ interface FinancialHealthTableProps {
     secondaryData: AnalysisData | null;
 }
 
-interface RowDef {
-    label: string;
-    hint: string;
-    primary: React.ReactNode;
-    secondary?: React.ReactNode;
-    statusLabel?: string;
-    statusType?: 'good' | 'warn' | 'bad' | 'neutral';
-    source?: 'finnhub' | 'computed';
-}
-
-function statusBadge(label: string, type: 'good' | 'warn' | 'bad' | 'neutral') {
-    const classes = {
-        good: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-        warn: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-        bad: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-        neutral: 'bg-gray-100 text-gray-600 dark:bg-gray-700/50 dark:text-gray-400',
-    };
-    return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${classes[type]}`}>{label}</span>;
-}
-
-function sourceBadge(source: 'finnhub' | 'computed') {
-    return source === 'finnhub'
-        ? <span className="ml-1.5 inline-flex items-center px-1.5 py-0 rounded text-[9px] font-bold bg-blue-50 text-blue-500 dark:bg-blue-900/30 dark:text-blue-400 uppercase tracking-wide">FH</span>
-        : null;
-}
-
-function fmt(val: number | null | undefined, decimals = 2, suffix = ''): string {
-    if (val == null) return 'N/A';
-    return `${val.toFixed(decimals)}${suffix}`;
-}
-
-function fmtPct(val: number | null | undefined, multiply = false): string {
-    if (val == null) return 'N/A';
-    const v = multiply ? val * 100 : val;
-    return `${v.toFixed(1)}%`;
-}
-
-export function FinancialHealthTable({ ticker, data, compareWith, secondaryData }: FinancialHealthTableProps) {
+function computeMetricCards(
+    data: AnalysisData,
+    secondaryData: AnalysisData | null,
+    compareWith: string
+): MetricCardDef[] {
     const m = data.metrics;
     const sm = secondaryData?.metrics;
-    const fh = data.finnhub?.metrics;
-    const sfh = secondaryData?.finnhub?.metrics;
+    const bs = data.balanceSheet;
+    const sbs = secondaryData?.balanceSheet;
+    const latestAnnual = data.statements?.find(s => s.fiscalPeriod === 'FY');
+    const secLatestAnnual = secondaryData?.statements?.find(s => s.fiscalPeriod === 'FY');
 
-    const rows: RowDef[] = [
-        // ── Altman Z-Score (computed) ──────────────────────────────
+    // Compute derived metrics
+    const altmanZ = m?.altmanZ ?? m?.zScore ?? null;
+    const secAltmanZ = sm?.altmanZ ?? sm?.zScore ?? null;
+
+    const debtRepay = m?.debtRepaymentYears ?? m?.debtRepaymentTime ?? null;
+    const secDebtRepay = sm?.debtRepaymentYears ?? sm?.debtRepaymentTime ?? null;
+
+    const fcfYield = m?.fcfYield ?? null;
+    const secFcfYield = sm?.fcfYield ?? null;
+
+    const peRatio = m?.currentPe ?? null;
+    const secPeRatio = sm?.currentPe ?? null;
+
+    const marketCap = data.ticker?.lastMarketCap ?? null;
+    const secMarketCap = secondaryData?.ticker?.lastMarketCap ?? null;
+    const pbRatio = (marketCap && bs?.totalEquity && bs.totalEquity > 0) ? marketCap / bs.totalEquity : null;
+    const secPbRatio = (secMarketCap && sbs?.totalEquity && sbs.totalEquity > 0) ? secMarketCap / sbs.totalEquity : null;
+
+    const roe = (latestAnnual?.netIncome && bs?.totalEquity && bs.totalEquity > 0)
+        ? latestAnnual.netIncome / bs.totalEquity : null;
+    const secRoe = (secLatestAnnual?.netIncome && sbs?.totalEquity && sbs.totalEquity > 0)
+        ? secLatestAnnual.netIncome / sbs.totalEquity : null;
+
+    const netMargin = (latestAnnual?.netIncome !== null && latestAnnual?.netIncome !== undefined && latestAnnual?.revenue && latestAnnual.revenue > 0)
+        ? latestAnnual.netIncome / latestAnnual.revenue : null;
+    const secNetMargin = (secLatestAnnual?.netIncome !== null && secLatestAnnual?.netIncome !== undefined && secLatestAnnual?.revenue && secLatestAnnual.revenue > 0)
+        ? secLatestAnnual.netIncome / secLatestAnnual.revenue : null;
+
+    const currentRatio = bs?.currentRatio ?? null;
+    const secCurrentRatio = sbs?.currentRatio ?? null;
+
+    const intCov = data.interestCoverage ?? null;
+    const secIntCov = secondaryData?.interestCoverage ?? null;
+
+    const cards: MetricCardDef[] = [
         {
             label: 'Altman Z-Score',
-            hint: 'Predictive model for bankruptcy risk. > 3.0 is Safe, < 1.8 is Distressed.',
-            primary: fmt(m?.altmanZ ?? m?.zScore, 2),
-            secondary: compareWith ? fmt(sm?.altmanZ ?? sm?.zScore, 2) : undefined,
-            statusType: (m?.altmanZ ?? m?.zScore) == null ? 'neutral' : (m.altmanZ ?? m.zScore)! > 3.0 ? 'good' : (m.altmanZ ?? m.zScore)! < 1.8 ? 'bad' : 'warn',
-            statusLabel: (m?.altmanZ ?? m?.zScore) == null ? 'N/A' : (m.altmanZ ?? m.zScore)! > 3.0 ? 'Safe' : (m.altmanZ ?? m.zScore)! < 1.8 ? 'Distress' : 'Grey Zone',
-            source: 'computed',
+            hint: 'Bankruptcy risk predictor. >3.0 Safe, 1.8–3.0 Grey Zone, <1.8 Distress.',
+            value: altmanZ != null ? altmanZ.toFixed(2) : 'N/A',
+            secondaryValue: compareWith ? (secAltmanZ != null ? secAltmanZ.toFixed(2) : 'N/A') : undefined,
+            statusLabel: altmanZ == null ? 'N/A' : altmanZ > 3.0 ? 'Safe' : altmanZ < 1.8 ? 'Distress' : 'Grey Zone',
+            statusType: altmanZ == null ? 'neutral' : altmanZ > 3.0 ? 'good' : altmanZ < 1.8 ? 'bad' : 'warn',
         },
-        // ── Debt Repayment (computed) ──────────────────────────────
         {
             label: 'Debt Repayment',
-            hint: 'Years needed to pay off debt using FCF. < 3y is Excellent, > 8y is High Risk.',
-            primary: (m?.debtRepaymentYears ?? m?.debtRepaymentTime) != null ? `${fmt(m?.debtRepaymentYears ?? m?.debtRepaymentTime, 1)}y` : 'N/A',
-            secondary: compareWith ? ((sm?.debtRepaymentYears ?? sm?.debtRepaymentTime) != null ? `${fmt(sm?.debtRepaymentYears ?? sm?.debtRepaymentTime, 1)}y` : 'N/A') : undefined,
-            statusType: (m?.debtRepaymentYears ?? m?.debtRepaymentTime) == null ? 'neutral' : (m.debtRepaymentYears ?? m.debtRepaymentTime)! < 3 ? 'good' : (m.debtRepaymentYears ?? m.debtRepaymentTime)! > 10 ? 'bad' : 'warn',
-            statusLabel: (m?.debtRepaymentYears ?? m?.debtRepaymentTime) == null ? 'N/A' : (m.debtRepaymentYears ?? m.debtRepaymentTime)! < 3 ? 'Strong' : (m.debtRepaymentYears ?? m.debtRepaymentTime)! > 10 ? 'Weak' : 'Adequate',
-            source: 'computed',
+            hint: 'Years to repay net debt from FCF. 0 = net cash. <3y Excellent, >8y High Risk.',
+            value: debtRepay != null ? (debtRepay === 0 ? 'Net Cash' : `${debtRepay.toFixed(1)}y`) : 'N/A',
+            secondaryValue: compareWith ? (secDebtRepay != null ? (secDebtRepay === 0 ? 'Net Cash' : `${secDebtRepay.toFixed(1)}y`) : 'N/A') : undefined,
+            statusLabel: debtRepay == null ? 'N/A' : debtRepay === 0 ? 'Excellent' : debtRepay < 3 ? 'Strong' : debtRepay > 10 ? 'Weak' : 'Adequate',
+            statusType: debtRepay == null ? 'neutral' : debtRepay <= 3 ? 'good' : debtRepay > 10 ? 'bad' : 'warn',
         },
-        // ── FCF Yield (computed from DB) ───────────────────────────
         {
             label: 'FCF Yield',
-            hint: 'Free Cash Flow / Market Cap. Higher is better value. > 5% is Good.',
-            primary: m?.fcfYield != null ? fmtPct(m.fcfYield, true) : 'N/A',
-            secondary: compareWith && sm?.fcfYield != null ? fmtPct(sm.fcfYield, true) : undefined,
-            statusType: (m?.fcfYield || 0) > 0.05 ? 'good' : (m?.fcfYield || 0) < 0 ? 'bad' : 'warn',
-            statusLabel: (m?.fcfYield || 0) > 0.05 ? 'High' : (m?.fcfYield || 0) < 0 ? 'Negative' : 'Moderate',
-            source: 'computed',
+            hint: 'Free Cash Flow / Market Cap. >5% Good value, <2% Expensive.',
+            value: fcfYield != null ? `${(fcfYield * 100).toFixed(2)}%` : 'N/A',
+            secondaryValue: compareWith ? (secFcfYield != null ? `${(secFcfYield * 100).toFixed(2)}%` : 'N/A') : undefined,
+            statusLabel: fcfYield == null ? 'N/A' : fcfYield > 0.05 ? 'High' : fcfYield < 0 ? 'Negative' : fcfYield > 0.03 ? 'Moderate' : 'Low',
+            statusType: fcfYield == null ? 'neutral' : fcfYield > 0.05 ? 'good' : fcfYield < 0 ? 'bad' : 'warn',
         },
-        // ── FCF Quality (computed) ─────────────────────────────────
         {
             label: 'FCF Quality',
-            hint: 'FCF Margin & Conversion. Measures how efficiently revenue turns into actual cash.',
-            primary: (
-                <div className="text-[11px] leading-tight">
-                    <div>Margin: <span className="font-bold">{m?.fcfMargin != null ? fmtPct(m.fcfMargin, true) : 'N/A'}</span></div>
-                    <div>Conv: <span className="font-bold">{m?.fcfConversion != null ? fmtPct(m.fcfConversion, true) : 'N/A'}</span></div>
-                </div>
-            ),
-            secondary: compareWith ? (
-                <div className="text-[11px] leading-tight">
-                    <div>Margin: <span className="font-bold">{sm?.fcfMargin != null ? fmtPct(sm.fcfMargin, true) : 'N/A'}</span></div>
-                    <div>Conv: <span className="font-bold">{sm?.fcfConversion != null ? fmtPct(sm.fcfConversion, true) : 'N/A'}</span></div>
-                </div>
+            hint: 'FCF Margin (FCF/Revenue) and Conversion (FCF/NetIncome). Higher = better cash generation.',
+            value: (m?.fcfMargin != null || m?.fcfConversion != null)
+                ? `M: ${m?.fcfMargin != null ? (m.fcfMargin * 100).toFixed(0) + '%' : '—'} C: ${m?.fcfConversion != null ? (m.fcfConversion * 100).toFixed(0) + '%' : '—'}`
+                : 'N/A',
+            secondaryValue: compareWith ? (
+                (sm?.fcfMargin != null || sm?.fcfConversion != null)
+                    ? `M: ${sm?.fcfMargin != null ? (sm.fcfMargin * 100).toFixed(0) + '%' : '—'} C: ${sm?.fcfConversion != null ? (sm.fcfConversion * 100).toFixed(0) + '%' : '—'}`
+                    : 'N/A'
             ) : undefined,
-            statusLabel: (m?.fcfConversion || 0) > 0.8 ? 'Efficient' : (m?.fcfConversion || 0) < 0.5 ? 'High Accruals' : 'Steady',
-            statusType: (m?.fcfConversion || 0) > 0.8 ? 'good' : (m?.fcfConversion || 0) < 0.5 ? 'bad' : 'neutral',
-            source: 'computed',
+            statusLabel: (m?.fcfConversion ?? 0) > 0.8 ? 'Efficient' : (m?.fcfConversion ?? 0) > 0.5 ? 'Steady' : (m?.fcfConversion ?? 0) > 0 ? 'Low Conv' : 'High Accruals',
+            statusType: (m?.fcfConversion ?? 0) > 0.8 ? 'good' : (m?.fcfConversion ?? 0) > 0.5 ? 'neutral' : 'bad',
         },
-
-        // ── FINNHUB METRICS ────────────────────────────────────────
-        // P/E Ratio (Finnhub) — more accurate than manually computed currentPe
         {
             label: 'P/E Ratio (TTM)',
-            hint: 'Price to Earnings ratio from Finnhub. Reflects trailing twelve months earnings.',
-            primary: fh?.peRatio != null ? `${fh.peRatio.toFixed(1)}x` : (m?.currentPe != null ? `${m.currentPe.toFixed(1)}x` : 'N/A'),
-            secondary: compareWith ? (sfh?.peRatio != null ? `${sfh.peRatio.toFixed(1)}x` : (sm?.currentPe != null ? `${sm.currentPe.toFixed(1)}x` : 'N/A')) : undefined,
-            statusType: fh?.peRatio == null ? 'neutral' : fh.peRatio < 15 ? 'good' : fh.peRatio > 40 ? 'bad' : 'warn',
-            statusLabel: fh?.peRatio == null ? 'N/A' : fh.peRatio < 15 ? 'Cheap' : fh.peRatio > 40 ? 'Expensive' : 'Fair',
+            hint: 'Price-to-Earnings. <15 Cheap, 15–25 Fair, >30 Expensive for most sectors.',
+            value: peRatio != null ? `${peRatio.toFixed(1)}x` : 'N/A',
+            secondaryValue: compareWith ? (secPeRatio != null ? `${secPeRatio.toFixed(1)}x` : 'N/A') : undefined,
+            statusLabel: peRatio == null ? 'N/A' : peRatio < 15 ? 'Cheap' : peRatio <= 25 ? 'Fair' : peRatio <= 35 ? 'Rich' : 'Expensive',
+            statusType: peRatio == null ? 'neutral' : peRatio < 15 ? 'good' : peRatio <= 25 ? 'good' : peRatio <= 35 ? 'warn' : 'bad',
             source: 'finnhub',
         },
-        // P/B Ratio (Finnhub)
         {
             label: 'P/B Ratio',
-            hint: 'Price to Book. < 1 may indicate undervaluation, > 5 is premium. From Finnhub.',
-            primary: fmt(fh?.pbRatio, 2, 'x'),
-            secondary: compareWith ? fmt(sfh?.pbRatio, 2, 'x') : undefined,
-            statusType: fh?.pbRatio == null ? 'neutral' : fh.pbRatio < 1.5 ? 'good' : fh.pbRatio > 5 ? 'bad' : 'warn',
-            statusLabel: fh?.pbRatio == null ? 'N/A' : fh.pbRatio < 1.5 ? 'Low' : fh.pbRatio > 5 ? 'High' : 'Fair',
+            hint: 'Price-to-Book Value. <3 Fair, >10 Expensive (varies by sector).',
+            value: pbRatio != null ? `${pbRatio.toFixed(2)}x` : 'N/A',
+            secondaryValue: compareWith ? (secPbRatio != null ? `${secPbRatio.toFixed(2)}x` : 'N/A') : undefined,
+            statusLabel: pbRatio == null ? 'N/A' : pbRatio < 3 ? 'Fair' : pbRatio < 8 ? 'Moderate' : 'High',
+            statusType: pbRatio == null ? 'neutral' : pbRatio < 3 ? 'good' : pbRatio < 8 ? 'warn' : 'bad',
             source: 'finnhub',
         },
-        // ROE (Finnhub) — better than manually computed
         {
             label: 'ROE (TTM)',
-            hint: 'Return on Equity from Finnhub. > 15% is Strong, < 5% is Weak.',
-            primary: fh?.roe != null ? fmtPct(fh.roe) : 'N/A',
-            secondary: compareWith ? (sfh?.roe != null ? fmtPct(sfh.roe) : 'N/A') : undefined,
-            statusType: fh?.roe == null ? 'neutral' : fh.roe > 15 ? 'good' : fh.roe < 5 ? 'bad' : 'warn',
-            statusLabel: fh?.roe == null ? 'N/A' : fh.roe > 15 ? 'Strong' : fh.roe < 5 ? 'Weak' : 'Adequate',
+            hint: 'Return on Equity. >20% Strong, 10–20% Good, <10% Weak.',
+            value: roe != null ? `${(roe * 100).toFixed(1)}%` : 'N/A',
+            secondaryValue: compareWith ? (secRoe != null ? `${(secRoe * 100).toFixed(1)}%` : 'N/A') : undefined,
+            statusLabel: roe == null ? 'N/A' : roe > 0.20 ? 'Strong' : roe > 0.10 ? 'Good' : roe > 0 ? 'Weak' : 'Negative',
+            statusType: roe == null ? 'neutral' : roe > 0.20 ? 'good' : roe > 0.10 ? 'warn' : 'bad',
             source: 'finnhub',
         },
-        // Net Margin (Finnhub)
         {
             label: 'Net Margin',
-            hint: 'Net Income / Revenue from Finnhub. > 15% is healthy for most sectors.',
-            primary: fh?.netMargin != null ? fmtPct(fh.netMargin) : 'N/A',
-            secondary: compareWith ? (sfh?.netMargin != null ? fmtPct(sfh.netMargin) : 'N/A') : undefined,
-            statusType: fh?.netMargin == null ? 'neutral' : fh.netMargin > 15 ? 'good' : fh.netMargin < 0 ? 'bad' : 'warn',
-            statusLabel: fh?.netMargin == null ? 'N/A' : fh.netMargin > 15 ? 'Strong' : fh.netMargin < 0 ? 'Loss' : 'Moderate',
+            hint: 'Net Income / Revenue. >20% Excellent, 10–20% Good, <5% Thin.',
+            value: netMargin != null ? `${(netMargin * 100).toFixed(1)}%` : 'N/A',
+            secondaryValue: compareWith ? (secNetMargin != null ? `${(secNetMargin * 100).toFixed(1)}%` : 'N/A') : undefined,
+            statusLabel: netMargin == null ? 'N/A' : netMargin > 0.20 ? 'Strong' : netMargin > 0.10 ? 'Good' : netMargin > 0.05 ? 'Fair' : netMargin > 0 ? 'Thin' : 'Loss',
+            statusType: netMargin == null ? 'neutral' : netMargin > 0.20 ? 'good' : netMargin > 0.10 ? 'good' : netMargin > 0.05 ? 'warn' : 'bad',
             source: 'finnhub',
         },
-        // Current Ratio (Finnhub — prefer over manual computation)
         {
             label: 'Current Ratio',
-            hint: 'Current Assets / Current Liabilities from Finnhub. > 2 is Strong, < 1 is risky.',
-            primary: fmt(fh?.currentRatio ?? data.balanceSheet?.currentRatio, 2, 'x'),
-            secondary: compareWith ? fmt(sfh?.currentRatio ?? secondaryData?.balanceSheet?.currentRatio, 2, 'x') : undefined,
-            statusType: (fh?.currentRatio ?? data.balanceSheet?.currentRatio) == null ? 'neutral' : (fh?.currentRatio ?? data.balanceSheet?.currentRatio)! > 2 ? 'good' : (fh?.currentRatio ?? data.balanceSheet?.currentRatio)! < 1 ? 'bad' : 'warn',
-            statusLabel: (fh?.currentRatio ?? data.balanceSheet?.currentRatio) == null ? 'N/A' : (fh?.currentRatio ?? data.balanceSheet?.currentRatio)! > 2 ? 'Strong' : (fh?.currentRatio ?? data.balanceSheet?.currentRatio)! < 1 ? 'Risky' : 'Adequate',
-            source: fh?.currentRatio != null ? 'finnhub' : 'computed',
+            hint: 'Current Assets / Current Liabilities. >2.0 Strong, 1.0–2.0 OK, <1.0 Risk.',
+            value: currentRatio != null ? `${currentRatio.toFixed(2)}x` : 'N/A',
+            secondaryValue: compareWith ? (secCurrentRatio != null ? `${secCurrentRatio.toFixed(2)}x` : 'N/A') : undefined,
+            statusLabel: currentRatio == null ? 'N/A' : currentRatio >= 2.0 ? 'Strong' : currentRatio >= 1.0 ? 'Adequate' : 'Risk',
+            statusType: currentRatio == null ? 'neutral' : currentRatio >= 2.0 ? 'good' : currentRatio >= 1.0 ? 'warn' : 'bad',
+            source: 'finnhub',
         },
-        // Beta (Finnhub)
         {
-            label: 'Beta',
-            hint: 'Market sensitivity from Finnhub. 1.0 = market-neutral, > 1.5 = high volatility.',
-            primary: fmt(fh?.beta, 2),
-            secondary: compareWith ? fmt(sfh?.beta, 2) : undefined,
-            statusType: fh?.beta == null ? 'neutral' : fh.beta < 0.8 ? 'good' : fh.beta > 1.5 ? 'warn' : 'neutral',
-            statusLabel: fh?.beta == null ? 'N/A' : fh.beta < 0.8 ? 'Low Vol' : fh.beta > 1.5 ? 'High Vol' : 'Normal',
+            label: 'Interest Coverage',
+            hint: 'EBIT / Interest Expense. >10 Excellent, 3–10 OK, <3 Risky.',
+            value: intCov != null ? `${intCov.toFixed(1)}x` : 'N/A',
+            secondaryValue: compareWith ? (secIntCov != null ? `${secIntCov.toFixed(1)}x` : 'N/A') : undefined,
+            statusLabel: intCov == null ? 'N/A' : intCov > 10 ? 'Strong' : intCov > 3 ? 'Adequate' : intCov > 0 ? 'Weak' : 'None',
+            statusType: intCov == null ? 'neutral' : intCov > 10 ? 'good' : intCov > 3 ? 'warn' : 'bad',
             source: 'finnhub',
         },
     ];
 
+    return cards;
+}
+
+export function FinancialHealthTable({ ticker, data, compareWith, secondaryData }: FinancialHealthTableProps) {
+    const cards = computeMetricCards(data, secondaryData, compareWith);
+
     return (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex flex-wrap items-center gap-3">
-                <h4 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Financial Health Metrics</h4>
-                <span className="text-[9px] sm:text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 uppercase tracking-wide">
-                    Finnhub-first
+            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Financial Health Metrics</h4>
+                <span className="text-[10px] uppercase tracking-widest font-bold text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2.5 py-1 rounded-full">
+                    Finnhub + Computed
                 </span>
             </div>
-            
-            <div className="p-4 sm:p-6 bg-gray-50/30 dark:bg-gray-900/30">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-                    {rows.map((row) => (
-                        <div key={row.label} className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col justify-between hover:border-gray-200 dark:hover:border-gray-600 transition-colors">
-                            <div className="flex justify-between items-start mb-3">
-                                <div className="flex items-center gap-1.5" title={row.hint}>
-                                    <h5 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{row.label}</h5>
-                                    {row.source && sourceBadge(row.source)}
-                                </div>
-                                {!compareWith && row.statusLabel && row.statusType && (
-                                    <div className="shrink-0 ml-2">
-                                        {statusBadge(row.statusLabel, row.statusType)}
-                                    </div>
-                                )}
-                            </div>
-                            
-                            <div className="flex items-end justify-between mt-auto">
-                                <div className="flex flex-col">
-                                    {compareWith && <span className="text-[10px] text-gray-400 mb-0.5">{ticker}</span>}
-                                    <span className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white leading-none">
-                                        {row.primary}
-                                    </span>
-                                </div>
-                                
-                                {compareWith && (
-                                    <div className="flex flex-col items-end text-right">
-                                        <span className="text-[10px] text-gray-400 mb-0.5">{compareWith}</span>
-                                        <span className="text-lg sm:text-xl font-bold text-gray-600 dark:text-gray-300 leading-none">
-                                            {row.secondary}
-                                        </span>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
+            <div className="p-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    {cards.map(card => (
+                        <MetricCard key={card.label} card={card} compareWith={compareWith} />
                     ))}
                 </div>
-            </div>
-
-            <div className="px-4 sm:px-6 py-3 bg-gray-50/50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700">
-                <p className="text-[10px] text-gray-400 dark:text-gray-500 leading-relaxed">
-                    <span className="inline-flex items-center gap-1">
-                        <span className="px-1 py-0 rounded text-[9px] font-bold bg-blue-50 text-blue-500 dark:bg-blue-900/30 dark:text-blue-400 uppercase">FH</span>
-                        = sourced from Finnhub API (pre-computed, TTM). Computed metrics use internal DB calculations.
-                    </span>
+                <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-4 px-1">
+                    <span className="text-blue-400 dark:text-blue-500 font-bold">FH</span> = sourced from SEC filings via Finnhub API. Other metrics computed from internal DB calculations.
                 </p>
             </div>
         </div>

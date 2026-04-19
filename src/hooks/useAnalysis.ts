@@ -21,12 +21,8 @@ export function useAnalysis(ticker: string) {
     const [compareInput, setCompareInput] = useState<string>('');
     const [secondaryData, setSecondaryData] = useState<AnalysisData | null>(null);
     const [loadingCompare, setLoadingCompare] = useState(false);
-    const [openPanel, setOpenPanel] = useState<'health' | 'profitability' | 'valuation' | null>(null);
-
     const [analysisStep, setAnalysisStep] = useState<string>('');
     const autoTriggered = useRef(false);
-
-    const togglePanel = (p: 'health' | 'profitability' | 'valuation') => setOpenPanel(prev => prev === p ? null : p);
 
     useEffect(() => {
         let timer: any;
@@ -134,8 +130,6 @@ export function useAnalysis(ticker: string) {
         secondaryData,
         loadingCompare,
         analysisStep,
-        openPanel,
-        togglePanel,
         setCompareInput,
         runDeepAnalysis,
         handleAddComparison,

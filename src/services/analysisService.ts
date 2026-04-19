@@ -2,32 +2,18 @@ import { prisma } from '@/lib/db/prisma';
 import { aiService } from './aiService';
 import { NotificationService } from './notificationService';
 import { getSectorFromSic, toTitleCase } from '@/lib/utils/sectorMapping';
-import { FinnhubService } from './finnhubService';
-import { FinnhubMetric, FINNHUB_API_KEY, getFinnhubClient } from '@/lib/clients/finnhubClient';
 
 export class AnalysisService {
     private static readonly POLYGON_API_KEY = process.env.POLYGON_API_KEY;
-    
-    /**
-     * Helper: Get Finnhub metrics with fallback to null
-     */
-    private static async getFinnhubMetrics(symbol: string): Promise<FinnhubMetric | null> {
-        try {
-            return await FinnhubService.getMetrics(symbol);
-        } catch (error) {
-            console.warn(`⚠️ [AnalysisService] Failed to fetch Finnhub metrics for ${symbol}:`, error);
-            return null;
-        }
-    }
 
     /**
-     * 1. Sťahovanie a mapovanie Financials z Finnhub XBRL
-     * Používa FinnhubClient (nie Polygon) — bug #7 fix: FINNHUB_API_KEY check bol zbytočný
-     * lebo klient má fallback; teraz sa priamo overuje v klientovi.
+     * 1. Sťahovanie a mapovanie Financials vX z Polygon.io (nástupca v3)
      */
     static async syncFinancials(symbol: string): Promise<void> {
+        const FINNHUB_API_KEY = process.env.FINNHUB_API_KEY;
+        if (!FINNHUB_API_KEY) throw new Error('Chýba Finnhub API Key pre Financials');
+
         const timeframes = ['annual', 'quarterly'];
-        const client = getFinnhubClient();
 
         try {
             // Ensure Ticker row exists (FK requirement for FinancialStatement)
@@ -38,8 +24,11 @@ export class AnalysisService {
             });
 
             for (const timeframe of timeframes) {
-                const data = await client.fetchFinancials(symbol, timeframe as 'annual' | 'quarterly');
-                if (!data) continue;
+                const url = `https://finnhub.io/api/v1/stock/financials-reported?symbol=${symbol}&freq=${timeframe}&token=${FINNHUB_API_KEY}`;
+                
+                const res: Response = await fetch(url);
+                if (!res.ok) throw new Error(`Finnhub API chyba: ${res.status} ${res.statusText}`);
+                const data: any = await res.json();
                 
                 const results = data.data || [];
 
@@ -47,7 +36,7 @@ export class AnalysisService {
                 const extract = (report: any, section: string, concepts: string[]): number | null => {
                     const list = report[section] || [];
                     for (const concept of concepts) {
-                        const found = list.find((item: any) => item.concept.toLowerCase() === concept.toLowerCase());
+                        const found = list.find((item: any) => item.concept === concept);
                         if (found && found.value !== undefined) return found.value;
                     }
                     return null;
@@ -64,105 +53,74 @@ export class AnalysisService {
 
                     const revenue = extract(report, 'ic', [
                         'us-gaap_Revenues', 'us-gaap_SalesRevenueNet', 'us-gaap_RevenuesNetOfInterestExpense', 
-                        'us-gaap_RevenueFromContractWithCustomerExcludingAssessedTax', 'us-gaap_HealthCareOrganizationRevenue',
-                        'ifrs-full_Revenue', 'ifrs-full_RevenueFromContractWithCustomers'
+                        'us-gaap_RevenueFromContractWithCustomerExcludingAssessedTax', 'us-gaap_HealthCareOrganizationRevenue'
                     ]);
                     const netIncome = extract(report, 'ic', [
-                        'us-gaap_NetIncomeLoss', 'us-gaap_NetIncomeLossAvailableToCommonStockholdersBasic', 'us-gaap_ProfitLoss',
-                        'ifrs-full_ProfitLoss', 'ifrs-full_ProfitLossAttributableToOwnersOfParent'
+                        'us-gaap_NetIncomeLoss', 'us-gaap_NetIncomeLossAvailableToCommonStockholdersBasic', 'us-gaap_ProfitLoss'
                     ]);
-                    const grossProfit = extract(report, 'ic', ['us-gaap_GrossProfit', 'ifrs-full_GrossProfit']);
+                    const grossProfit = extract(report, 'ic', ['us-gaap_GrossProfit']);
                     
                     let ebit = extract(report, 'ic', [
-                        'us-gaap_OperatingIncomeLoss', 'us-gaap_IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest',
-                        'ifrs-full_ProfitLossFromOperatingActivities'
+                        'us-gaap_OperatingIncomeLoss', 'us-gaap_IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest'
                     ]);
                     if (ebit === null && grossProfit !== null) {
-                        const rnde = extract(report, 'ic', ['us-gaap_ResearchAndDevelopmentExpense', 'ifrs-full_ResearchAndDevelopmentExpense']) || 0;
-                        const sgae = extract(report, 'ic', ['us-gaap_SellingGeneralAndAdministrativeExpense', 'ifrs-full_SellingGeneralAndAdministrativeExpense']) || 0;
+                        const rnde = extract(report, 'ic', ['us-gaap_ResearchAndDevelopmentExpense']) || 0;
+                        const sgae = extract(report, 'ic', ['us-gaap_SellingGeneralAndAdministrativeExpense']) || 0;
                         ebit = grossProfit - rnde - sgae;
                     }
 
                     const operatingCashFlow = extract(report, 'cf', [
-                        'us-gaap_NetCashProvidedByUsedInOperatingActivities', 'us-gaap_NetCashProvidedByUsedInOperatingActivitiesContinuing',
-                        'ifrs-full_CashFlowsFromUsedInOperatingActivities'
+                        'us-gaap_NetCashProvidedByUsedInOperatingActivities', 'us-gaap_NetCashProvidedByUsedInOperatingActivitiesContinuing'
                     ]);
                     const capex = extract(report, 'cf', [
                         'us-gaap_PaymentsToAcquirePropertyPlantAndEquipment', 'us-gaap_PaymentsToAcquireOtherPropertyPlantAndEquipment', 
-                        'us-gaap_PaymentsToAcquireProductiveAssets', 'ifrs-full_PurchaseOfPropertyPlantAndEquipment'
+                        'us-gaap_PaymentsToAcquireProductiveAssets'
                     ]);
                     
-                    const totalAssets = extract(report, 'bs', ['us-gaap_Assets', 'ifrs-full_Assets']);
-                    const totalLiabilities = extract(report, 'bs', ['us-gaap_Liabilities', 'ifrs-full_Liabilities']);
-                    const currentAssets = extract(report, 'bs', ['us-gaap_AssetsCurrent', 'ifrs-full_CurrentAssets']);
-                    const currentLiabilities = extract(report, 'bs', ['us-gaap_LiabilitiesCurrent', 'ifrs-full_CurrentLiabilities']);
-                    const retainedEarnings = extract(report, 'bs', ['us-gaap_RetainedEarningsAccumulatedDeficit', 'ifrs-full_RetainedEarnings']);
+                    const totalAssets = extract(report, 'bs', ['us-gaap_Assets']);
+                    const totalLiabilities = extract(report, 'bs', ['us-gaap_Liabilities']);
+                    const currentAssets = extract(report, 'bs', ['us-gaap_AssetsCurrent']);
+                    const currentLiabilities = extract(report, 'bs', ['us-gaap_LiabilitiesCurrent']);
+                    const retainedEarnings = extract(report, 'bs', ['us-gaap_RetainedEarningsAccumulatedDeficit']);
                     const totalEquity = extract(report, 'bs', [
-                        'us-gaap_StockholdersEquity', 'us-gaap_StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest', 'us-gaap_PartnerCapital',
-                        'ifrs-full_Equity'
+                        'us-gaap_StockholdersEquity', 'us-gaap_StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest', 'us-gaap_PartnerCapital'
                     ]);
 
                     const sharesOutstandingRaw = extract(report, 'ic', [
-                        'us-gaap_WeightedAverageNumberOfDilutedSharesOutstanding', 'us-gaap_WeightedAverageNumberOfSharesOutstandingBasic',
-                        'ifrs-full_WeightedAverageNumberOfOrdinarySharesOutstanding'
-                    ]) ?? extract(report, 'bs', [
-                        'dei_EntityCommonStockSharesOutstanding', 'ifrs-full_NumberOfOrdinarySharesOutstanding'
-                    ]);
+                        'us-gaap_WeightedAverageNumberOfDilutedSharesOutstanding', 'us-gaap_WeightedAverageNumberOfSharesOutstandingBasic'
+                    ]) ?? extract(report, 'bs', ['dei_EntityCommonStockSharesOutstanding']);
                     const sharesOutstanding = (sharesOutstandingRaw !== null && sharesOutstandingRaw > 1000000) ? sharesOutstandingRaw : null;
 
                     const sbc = extract(report, 'cf', [
-                        'us-gaap_ShareBasedCompensation', 'us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsGrantsInPeriodGross'
-                    ]) ?? extract(report, 'ic', ['us-gaap_ShareBasedCompensation']);
-
-                    const interestExpense = extract(report, 'ic', [
-                        'us-gaap_InterestExpense', 'us-gaap_InterestExpenseDebt', 'ifrs-full_InterestExpense'
+                        'us-gaap_ShareBasedCompensation',
+                        'us-gaap_AllocatedShareBasedCompensationExpense',
+                        'us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsGrantsInPeriodGross'
+                    ]) ?? extract(report, 'ic', [
+                        'us-gaap_AllocatedShareBasedCompensationExpense',
+                        'us-gaap_ShareBasedCompensation'
                     ]);
+
+                    const interestExpense = extract(report, 'ic', ['us-gaap_InterestExpense', 'us-gaap_InterestExpenseDebt']);
                     
                     const longTermDebt = extract(report, 'bs', [
-                        'us-gaap_LongTermDebtNoncurrent', 'us-gaap_LongTermDebtAndCapitalLeaseObligations', 'us-gaap_LongTermDebt',
-                        'us-gaap_FinanceLeaseLiabilityNoncurrent', 'ifrs-full_NonCurrentBorrowings'
+                        'us-gaap_LongTermDebtNoncurrent', 'us-gaap_LongTermDebtAndCapitalLeaseObligations', 'us-gaap_LongTermDebt'
                     ]);
                     const shortTermDebt = extract(report, 'bs', [
-                        'us-gaap_DebtCurrent', 'us-gaap_ShortTermBorrowings', 'us-gaap_LongTermDebtAndCapitalLeaseObligationsCurrent',
-                        'us-gaap_FinanceLeaseLiabilityCurrent', 'ifrs-full_CurrentBorrowings', 'us-gaap_ShortTermDebt'
+                        'us-gaap_DebtCurrent', 'us-gaap_ShortTermBorrowings', 'us-gaap_LongTermDebtAndCapitalLeaseObligationsCurrent'
                     ]);
                     let totalDebt = null;
                     if (longTermDebt !== null || shortTermDebt !== null) {
                         totalDebt = (longTermDebt || 0) + (shortTermDebt || 0);
-                    } else {
-                        // try generic borrowings
-                        totalDebt = extract(report, 'bs', ['ifrs-full_Borrowings', 'us-gaap_DebtAndCapitalLeaseObligations']);
                     }
 
-                    const baseCash = extract(report, 'bs', [
-                        'us-gaap_CashAndCashEquivalentsAtCarryingValue', 
+                    const cashAndEquivalents = extract(report, 'bs', [
+                        'us-gaap_CashAndCashEquivalentsAtCarryingValue',
+                        'us-gaap_CashCashEquivalentsAndShortTermInvestments',
+                        'us-gaap_Cash',
+                        'us-gaap_CashAndShortTermInvestments',
                         'us-gaap_CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents',
-                        'us-gaap_CashAndCashEquivalentsFairValueDisclosure',
-                        'us-gaap_Cash', 
-                        'ifrs-full_CashAndCashEquivalents',
-                        'ifrs-full_Cash',
                         'us-gaap_CashEquivalentsAtCarryingValue'
                     ]);
-
-                    const shortTermInvestments = extract(report, 'bs', [
-                        'us-gaap_ShortTermInvestments',
-                        'us-gaap_AvailableForSaleSecuritiesCurrent',
-                        'us-gaap_MarketableSecuritiesCurrent',
-                        'us-gaap_AvailableForSaleSecuritiesDebtSecuritiesCurrent'
-                    ]);
-
-                    const combinedCash = extract(report, 'bs', [
-                        'us-gaap_CashAndShortTermInvestments',
-                        'us-gaap_CashCashEquivalentsAndShortTermInvestments'
-                    ]);
-
-                    let cashAndEquivalents = null;
-                    if (combinedCash !== null) {
-                        cashAndEquivalents = combinedCash; // Firma reportuje obe v jednom (ideálne)
-                    } else if (baseCash !== null || shortTermInvestments !== null) {
-                        // Sčítame hotovosť a krátkodobé investície, ak sú reportované osobitne
-                        cashAndEquivalents = (baseCash || 0) + (shortTermInvestments || 0);
-                    }
 
                     const netPPE = extract(report, 'bs', ['us-gaap_PropertyPlantAndEquipmentNet']);
 
@@ -358,12 +316,6 @@ export class AnalysisService {
         const toStr   = toDate.toISOString().slice(0, 10);
         console.log(`[syncValuationHistory] ${symbol}: fetching ${fromStr} → ${toStr} (${lastRecord ? 'incremental' : 'full 10Y'})`);
 
-        const tickerData = await prisma.ticker.findUnique({
-            where: { symbol },
-            select: { sharesOutstanding: true }
-        });
-        const fallbackShares = tickerData?.sharesOutstanding || null;
-
         // Aggs API for daily prices
         const url = `https://api.polygon.io/v2/aggs/ticker/${symbol}/range/1/day/${fromStr}/${toStr}?apiKey=${this.POLYGON_API_KEY}`;
 
@@ -411,19 +363,17 @@ export class AnalysisService {
                     statements.find(s => s.endDate.getTime() <= date.getTime()) ||
                     statements[statements.length - 1];
 
-                const sharesToUse = stmt?.sharesOutstanding || fallbackShares;
-
-                if (stmt && sharesToUse) {
-                    marketCap = closePrice * sharesToUse;
+                if (stmt && stmt.sharesOutstanding) {
+                    marketCap = closePrice * stmt.sharesOutstanding;
 
                     // P/E = Price / (NetIncome / Shares) => closePrice / EPS
                     if (stmt.netIncome && stmt.netIncome > 0) {
-                        peRatio = closePrice / (stmt.netIncome / sharesToUse);
+                        peRatio = closePrice / (stmt.netIncome / stmt.sharesOutstanding);
                     }
 
                     // P/S = Price / (Revenue / Shares) => closePrice / SPS
                     if (stmt.revenue && stmt.revenue > 0) {
-                        psRatio = closePrice / (stmt.revenue / sharesToUse);
+                        psRatio = closePrice / (stmt.revenue / stmt.sharesOutstanding);
                     }
 
                     // EV/EBITDA
@@ -483,13 +433,6 @@ export class AnalysisService {
         let valuationScore = 50;
         let profitabilityScore = 50;
         let verdictText = 'Neutral';
-
-        // 🎯 Load Finnhub metrics (pre-computed professional ratios)
-        // This reduces calculation errors and provides more accurate data
-        const finnhubMetrics = await this.getFinnhubMetrics(symbol);
-        if (finnhubMetrics) {
-            console.log(`✅ [AnalysisService] Using Finnhub metrics for ${symbol}`);
-        }
 
         const tickerData = await prisma.ticker.findUnique({
             where: { symbol },
@@ -576,9 +519,8 @@ export class AnalysisService {
         }
 
         // ─── Interest Coverage (needed by Health Score below) ─────────────────
-        // 🎯 Interest Coverage: Prefer Finnhub pre-computed, fallback to manual calculation
-        let interestCoverage: number | null = finnhubMetrics?.interestCoverage ?? null;
-        if (interestCoverage === null && latestStmt.ebit !== null && latestStmt.interestExpense !== null && latestStmt.interestExpense !== 0) {
+        let interestCoverage: number | null = null;
+        if (latestStmt.ebit !== null && latestStmt.interestExpense !== null && latestStmt.interestExpense !== 0) {
             interestCoverage = latestStmt.ebit / Math.abs(latestStmt.interestExpense);
         }
 
@@ -594,13 +536,9 @@ export class AnalysisService {
             else healthScore += 3; // distress zone but still contributes slightly
         }
 
-        // 2. Current Ratio: Prefer Finnhub pre-computed, fallback to manual calculation
-        let currentRatio: number | null = finnhubMetrics?.currentRatio ?? null;
-        if (currentRatio === null && latestStmt.currentAssets && latestStmt.currentLiabilities && latestStmt.currentLiabilities > 0) {
-            currentRatio = latestStmt.currentAssets / latestStmt.currentLiabilities;
-        }
-        if (currentRatio !== null) {
-            const cr = currentRatio;
+        // 2. Current Ratio (Liquidity: currentAssets / currentLiabilities)
+        if (latestStmt.currentAssets && latestStmt.currentLiabilities && latestStmt.currentLiabilities > 0) {
+            const cr = latestStmt.currentAssets / latestStmt.currentLiabilities;
             if (cr >= 2.0) healthScore += 25;
             else if (cr >= 1.5) healthScore += 18;
             else if (cr >= 1.0) healthScore += 12;
@@ -608,7 +546,7 @@ export class AnalysisService {
             // < 0.7: 0 pts
         }
 
-        // 3. Interest Coverage (already computed above with Finnhub priority)
+        // 3. Interest Coverage (EBIT / |interest expense|)
         if (interestCoverage !== null) {
             if (interestCoverage > 10) healthScore += 25;
             else if (interestCoverage > 5)  healthScore += 18;
@@ -619,32 +557,18 @@ export class AnalysisService {
             healthScore += 25;
         }
 
-        // 4. Net Debt position: Prefer Finnhub debt/equity, fallback to manual calculation
-        let debtEquityRatio: number | null = finnhubMetrics?.debtEquityRatio ?? null;
-        
-        // Ak Finnhub nevráti dáta, vypočítame manuálne z vlastných dát (ako percento, aby sme zladili s Finnhubom)
-        if (debtEquityRatio === null && latestStmt.totalDebt !== null && latestStmt.totalEquity && latestStmt.totalEquity > 0) {
-            debtEquityRatio = (latestStmt.totalDebt / latestStmt.totalEquity) * 100;
-        }
-
-        const hasValidDebtAndCash = latestStmt.totalDebt !== null && latestStmt.cashAndEquivalents !== null;
-        const currentNetDebt = hasValidDebtAndCash ? (latestStmt.totalDebt! - latestStmt.cashAndEquivalents!) : null;
-
-        if (currentNetDebt !== null && currentNetDebt <= 0) {
-            healthScore += 25; // Net cash position je najlepšia možná situácia
-        } else if (debtEquityRatio !== null) {
-            // Finnhub vracia debtEquityRatio zvyčajne ako percento (napr. 45.5 pre 45.5%)
-            if (debtEquityRatio < 30) healthScore += 20;
-            else if (debtEquityRatio < 70) healthScore += 12;
-            else if (debtEquityRatio < 150) healthScore += 5;
-            // >= 150%: 0 pts
-        } else if (latestStmt.totalAssets && latestStmt.totalAssets > 0 && latestStmt.totalDebt !== null) {
-            // Posledný fallback, ak nemáme ani equity
-            const debtRatio = latestStmt.totalDebt / latestStmt.totalAssets;
-            if (debtRatio < 0.10) healthScore += 20;
-            else if (debtRatio < 0.30) healthScore += 12;
-            else if (debtRatio < 0.50) healthScore += 5;
-            // >= 0.50: 0 pts
+        // 4. Net Debt position (totalDebt - cash vs totalAssets)
+        const currentNetDebt = (latestStmt.totalDebt || 0) - (latestStmt.cashAndEquivalents || 0);
+        if (latestStmt.totalDebt !== null || latestStmt.cashAndEquivalents !== null) {
+            if (currentNetDebt <= 0) {
+                healthScore += 25; // Net cash position
+            } else if (latestStmt.totalAssets && latestStmt.totalAssets > 0) {
+                const debtRatio = currentNetDebt / latestStmt.totalAssets;
+                if (debtRatio < 0.10) healthScore += 20;
+                else if (debtRatio < 0.30) healthScore += 12;
+                else if (debtRatio < 0.50) healthScore += 5;
+                // >= 0.50: 0 pts
+            }
         }
 
         healthScore = Math.max(0, Math.min(100, Math.round(healthScore)));
@@ -653,94 +577,141 @@ export class AnalysisService {
         // 4 components × 25 pts each: Net Margin | Gross Margin | ROE | Revenue Growth YoY
         profitabilityScore = 0;
 
-        // 🎯 Use Finnhub pre-computed metrics with fallback to manual calculations
-        
-        // 1. Net Margin: Prefer Finnhub, fallback to manual
-        let netMargin: number | null = finnhubMetrics?.netMargin ?? null;
-        if (netMargin === null && latestStmt.revenue && latestStmt.revenue > 0) {
-            netMargin = (latestStmt.netIncome || 0) / latestStmt.revenue;
-        }
-        if (netMargin !== null) {
+        if (latestStmt.revenue && latestStmt.revenue > 0) {
+            // 1. Net Margin
+            const netMargin = (latestStmt.netIncome || 0) / latestStmt.revenue;
             if (netMargin > 0.20)       profitabilityScore += 25;
             else if (netMargin > 0.10)  profitabilityScore += 20;
             else if (netMargin > 0.05)  profitabilityScore += 13;
             else if (netMargin > 0)     profitabilityScore += 6;
             // negative: 0
-        }
 
-        // 2. Gross Margin: Prefer Finnhub, fallback to manual
-        let grossMargin: number | null = finnhubMetrics?.grossMargin ?? null;
-        if (grossMargin === null && latestStmt.grossProfit !== null && latestStmt.revenue && latestStmt.revenue > 0) {
-            grossMargin = latestStmt.grossProfit / latestStmt.revenue;
-        }
-        if (grossMargin !== null) {
-            if (grossMargin > 0.60)      profitabilityScore += 25;
-            else if (grossMargin > 0.40) profitabilityScore += 20;
-            else if (grossMargin > 0.25) profitabilityScore += 12;
-            else if (grossMargin > 0.10) profitabilityScore += 5;
-        }
-
-        // 3. ROE: Prefer Finnhub, fallback to manual
-        let roe: number | null = finnhubMetrics?.roe ?? null;
-        if (roe === null && latestStmt.totalEquity && latestStmt.totalEquity > 0) {
-            roe = (latestStmt.netIncome || 0) / latestStmt.totalEquity;
-        }
-        if (roe !== null) {
-            if (roe > 0.25)      profitabilityScore += 25;
-            else if (roe > 0.15) profitabilityScore += 20;
-            else if (roe > 0.08) profitabilityScore += 12;
-            else if (roe > 0)    profitabilityScore += 5;
-        }
-
-        // 4. Revenue Growth: Prefer Finnhub 3Y growth, fallback to manual YoY
-        let revenueGrowth: number | null = finnhubMetrics?.revenueGrowth ?? null;
-        if (revenueGrowth === null && latestStmt.revenue && latestStmt.revenue > 0) {
-            const prevYearStmt = stmts[4] || null;
-            if (prevYearStmt?.revenue && prevYearStmt.revenue > 0) {
-                revenueGrowth = (latestStmt.revenue - prevYearStmt.revenue) / prevYearStmt.revenue;
+            // 2. Gross Margin
+            if (latestStmt.grossProfit !== null) {
+                const grossMargin = latestStmt.grossProfit / latestStmt.revenue;
+                if (grossMargin > 0.60)      profitabilityScore += 25;
+                else if (grossMargin > 0.40) profitabilityScore += 20;
+                else if (grossMargin > 0.25) profitabilityScore += 12;
+                else if (grossMargin > 0.10) profitabilityScore += 5;
             }
-        }
-        if (revenueGrowth !== null) {
-            if (revenueGrowth > 0.25)       profitabilityScore += 25;
-            else if (revenueGrowth > 0.10)  profitabilityScore += 20;
-            else if (revenueGrowth > 0)     profitabilityScore += 12;
-            else if (revenueGrowth > -0.10) profitabilityScore += 4;
-            // < -10%: 0
-        } else {
-            profitabilityScore += 10; // No prior year data — neutral
+
+            // 3. ROE (Return on Equity)
+            if (latestStmt.totalEquity && latestStmt.totalEquity > 0) {
+                const roe = (latestStmt.netIncome || 0) / latestStmt.totalEquity;
+                if (roe > 0.25)      profitabilityScore += 25;
+                else if (roe > 0.15) profitabilityScore += 20;
+                else if (roe > 0.08) profitabilityScore += 12;
+                else if (roe > 0)    profitabilityScore += 5;
+            }
+
+            // 4. Revenue Growth YoY (find same fiscal period from previous year)
+            const prevYearStmt = stmts.find(s =>
+                s.fiscalPeriod === latestStmt.fiscalPeriod &&
+                s.fiscalYear === latestStmt.fiscalYear - 1
+            ) || null;
+            if (prevYearStmt?.revenue && prevYearStmt.revenue > 0) {
+                const revenueGrowth = (latestStmt.revenue - prevYearStmt.revenue) / prevYearStmt.revenue;
+                if (revenueGrowth > 0.25)       profitabilityScore += 25;
+                else if (revenueGrowth > 0.10)  profitabilityScore += 20;
+                else if (revenueGrowth > 0)     profitabilityScore += 12;
+                else if (revenueGrowth > -0.10) profitabilityScore += 4;
+                // < -10%: 0
+            } else {
+                profitabilityScore += 10; // No prior year data — neutral
+            }
         }
 
         profitabilityScore = Math.max(0, Math.min(100, Math.round(profitabilityScore)));
 
-        // Valuation & PE Percentile
+        // ─── VALUATION SCORE (additive, 0-100) ────────────────────────
+        // 4 components × 25 pts each: P/E Percentile | FCF Yield | Price-to-Sales | EV/EBIT
+        valuationScore = 0;
         let humanPeInfo: string | null = null;
+
+        // Compute TTM Net Income (sum of last 4 quarterly statements)
+        const quarterlyStmts = stmts.filter(s => s.fiscalPeriod !== 'FY' && s.netIncome !== null);
+        const ttmNetIncome = quarterlyStmts.length >= 4
+            ? quarterlyStmts.slice(0, 4).reduce((sum, s) => sum + (s.netIncome || 0), 0)
+            : null;
+
+        // Compute TTM Revenue (sum of last 4 quarterly statements)
+        const quarterlyRevenueStmts = stmts.filter(s => s.fiscalPeriod !== 'FY' && s.revenue !== null && s.revenue > 0);
+        const ttmRevenue = quarterlyRevenueStmts.length >= 4
+            ? quarterlyRevenueStmts.slice(0, 4).reduce((sum, s) => sum + (s.revenue || 0), 0)
+            : null;
+
+        // Compute TTM EBIT (sum of last 4 quarterly statements)
+        const quarterlyEbitStmts = stmts.filter(s => s.fiscalPeriod !== 'FY' && s.ebit !== null);
+        const ttmEbit = quarterlyEbitStmts.length >= 4
+            ? quarterlyEbitStmts.slice(0, 4).reduce((sum, s) => sum + (s.ebit || 0), 0)
+            : null;
+
+        // 1. P/E Percentile (where current P/E sits in historical range)
         const allValuations = await prisma.dailyValuationHistory.findMany({
             where: { symbol, peRatio: { not: null } },
             select: { peRatio: true },
             orderBy: { peRatio: 'asc' }
         });
 
-        if (allValuations.length > 0) {
-            let vScore = 50;
-            const currentPE = tickerData?.lastPrice && latestStmt.sharesOutstanding && latestStmt.netIncome && latestStmt.netIncome > 0
-                ? (tickerData.lastPrice * latestStmt.sharesOutstanding) / latestStmt.netIncome
-                : (latestValuation?.peRatio || null);
+        const effectiveNetIncome = ttmNetIncome ?? latestStmt.netIncome;
+        const currentPE = (currentPrice > 0 && latestStmt.sharesOutstanding && effectiveNetIncome && effectiveNetIncome > 0)
+            ? (currentPrice * latestStmt.sharesOutstanding) / effectiveNetIncome
+            : (latestValuation?.peRatio || null);
 
-            if (currentPE !== null && currentPE > 0) {
-                const index = allValuations.findIndex(v => v.peRatio !== null && v.peRatio >= currentPE);
-                const percentile = index === -1 ? 100 : (index / allValuations.length) * 100;
-                vScore += (50 - percentile) / 2;
-                humanPeInfo = `Aktuálne P/E je v ${percentile > 50 ? 'horných' : 'dolných'} ${percentile > 50 ? (100 - percentile).toFixed(0) : percentile.toFixed(0)}% historických hodnôt.`;
-            }
-
-            if (fcf !== null && marketCap > 0) {
-                const currentFcfYield = fcf / marketCap;
-                if (currentFcfYield > 0.08) vScore += 25;
-                else if (currentFcfYield >= 0.04) vScore += 10;
-                else if (currentFcfYield < 0.02) vScore -= 20;
-            }
-            valuationScore = Math.max(0, Math.min(100, Math.round(vScore)));
+        if (allValuations.length > 0 && currentPE !== null && currentPE > 0) {
+            const index = allValuations.findIndex(v => v.peRatio !== null && v.peRatio >= currentPE);
+            const percentile = index === -1 ? 100 : (index / allValuations.length) * 100;
+            // Lower percentile = cheaper = more points
+            if (percentile < 20)      valuationScore += 25;
+            else if (percentile < 40) valuationScore += 20;
+            else if (percentile < 60) valuationScore += 12;
+            else if (percentile < 80) valuationScore += 5;
+            // >= 80: 0 pts (historically expensive)
+            humanPeInfo = `Aktuálne P/E je v ${percentile > 50 ? 'horných' : 'dolných'} ${percentile > 50 ? (100 - percentile).toFixed(0) : percentile.toFixed(0)}% historických hodnôt.`;
+        } else if (currentPE === null) {
+            valuationScore += 10; // No P/E data — neutral
         }
+
+        // 2. FCF Yield (FCF / Market Cap)
+        if (fcf !== null && marketCap > 0) {
+            const currentFcfYield = fcf / marketCap;
+            if (currentFcfYield > 0.08)      valuationScore += 25;
+            else if (currentFcfYield > 0.05) valuationScore += 20;
+            else if (currentFcfYield > 0.03) valuationScore += 12;
+            else if (currentFcfYield > 0)    valuationScore += 5;
+            // <= 0: 0 pts
+        } else {
+            valuationScore += 10; // No FCF data — neutral
+        }
+
+        // 3. Price-to-Sales (Market Cap / TTM Revenue)
+        const effectiveRevenue = ttmRevenue ?? latestStmt.revenue;
+        if (effectiveRevenue && effectiveRevenue > 0 && marketCap > 0) {
+            const ps = marketCap / effectiveRevenue;
+            if (ps < 2)       valuationScore += 25;
+            else if (ps < 5)  valuationScore += 20;
+            else if (ps < 10) valuationScore += 12;
+            else if (ps < 20) valuationScore += 5;
+            // >= 20: 0 pts
+        } else {
+            valuationScore += 10; // No data — neutral
+        }
+
+        // 4. EV/EBIT (Enterprise Value / TTM EBIT)
+        const effectiveEbit = ttmEbit ?? latestStmt.ebit;
+        if (effectiveEbit && effectiveEbit > 0 && marketCap > 0) {
+            const ev = marketCap + (latestStmt.totalDebt || 0) - (latestStmt.cashAndEquivalents || 0);
+            const evToEbit = ev / effectiveEbit;
+            if (evToEbit < 10)      valuationScore += 25;
+            else if (evToEbit < 15) valuationScore += 20;
+            else if (evToEbit < 25) valuationScore += 12;
+            else if (evToEbit < 40) valuationScore += 5;
+            // >= 40: 0 pts
+        } else {
+            valuationScore += 10; // No data — neutral
+        }
+
+        valuationScore = Math.max(0, Math.min(100, Math.round(valuationScore)));
 
         // Deep-Dive (interestCoverage already computed above before healthScore)
         let revenueCagr: number | null = null;

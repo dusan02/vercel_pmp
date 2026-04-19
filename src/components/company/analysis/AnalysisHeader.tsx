@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import CompanyLogo from '@/components/CompanyLogo';
 import type { AnalysisData } from '@/components/company/AnalysisTab';
-import { formatMarketCap as fmtMcap } from '@/lib/utils/format';
+import { formatMarketCap as fmtMcap, formatPrice, formatPercent, formatMarketCapDiff } from '@/lib/utils/format';
 import { getColorClass, getStrokeColor } from './ScoreCard';
 
 /** Wraps shared formatMarketCap — adds $ prefix, returns null for empty */
@@ -82,23 +82,30 @@ function truncateToSentences(text: string, n: number): string {
 export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps) {
     const t = data.ticker;
 
+    // Real-time metrics
+    const [realTimeData, setRealTimeData] = useState<{currentPrice: number, percentChange: number, marketCapDiff: number} | null>(null);
+
+    useEffect(() => {
+        let mounted = true;
+        fetch(`/api/prices/cached?tickers=${ticker}`)
+            .then(res => res.json())
+            .then(json => {
+                if (!mounted) return;
+                if (json?.data && json.data.length > 0) {
+                    setRealTimeData(json.data[0]);
+                }
+            })
+            .catch(err => console.error('Failed to fetch real-time data:', err));
+        return () => { mounted = false; };
+    }, [ticker]);
+
     const stats = t ? [
         { label: 'Sector',      value: t.sector },
         { label: 'Industry',    value: t.industry?.replace('SIC: ', '') },
         { label: 'Market Cap',  value: formatMarketCap(t.lastMarketCap) },
         { label: 'Price',       value: t.lastPrice ? `$${t.lastPrice.toFixed(2)}` : null },
-        { 
-            label: 'Target Price', 
-            value: data.finnhub?.priceTarget?.targetMean 
-                ? `$${data.finnhub.priceTarget.targetMean.toFixed(2)}` 
-                : null 
-        },
-        { 
-            label: 'Upside',       
-            value: (t.lastPrice && data.finnhub?.priceTarget?.targetMean) 
-                ? `${(((data.finnhub.priceTarget.targetMean / t.lastPrice) - 1) * 100).toFixed(1)}%` 
-                : null 
-        },
+        { label: 'Employees',   value: t.employees ? t.employees.toLocaleString() : null },
+        { label: 'HQ',          value: t.headquarters },
     ] : [];
 
     const companyName = (t?.name && t.name !== ticker) ? t.name : ticker;
@@ -117,37 +124,56 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
             {t ? (
                 <>
                     {/* ── TOP: Logo + Identity + Scores ── */}
-                    <div className="flex flex-col md:flex-row md:items-center gap-4 px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 lg:pt-7 pb-5">
-                        <div className="flex items-start md:items-center gap-4">
-                            <CompanyLogo
-                                ticker={ticker}
-                                logoUrl={t.logoUrl}
-                                size={56}
-                                priority
-                            />
-                            <div className="min-w-0 flex flex-col items-start gap-1 sm:gap-2">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                    <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white leading-tight tracking-tight">
-                                        {companyName}
-                                    </h1>
-                                    <span className="px-2 py-0.5 bg-blue-600 text-white text-[10px] font-bold rounded tracking-widest uppercase shrink-0 mt-0.5">
-                                        {ticker}
-                                    </span>
-                                </div>
-                                {t.websiteUrl && (
-                                    <a
-                                        href={t.websiteUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-[10px] uppercase tracking-widest font-semibold text-gray-400 hover:text-blue-500 dark:text-gray-500 dark:hover:text-blue-400 transition-colors shrink-0"
-                                    >
-                                        Website ↗
-                                    </a>
-                                )}
-                            </div>
+                    <div className="flex items-center gap-4 px-6 lg:px-8 pt-6 lg:pt-7 pb-5">
+                        <CompanyLogo
+                            ticker={ticker}
+                            logoUrl={t.logoUrl}
+                            size={64}
+                            priority
+                        />
+                        <div className="min-w-0 flex items-center gap-3 flex-wrap">
+                            <h1 className="text-xl lg:text-2xl font-bold text-gray-900 dark:text-white leading-tight tracking-tight">
+                                {companyName}
+                            </h1>
+                            <span className="px-2 py-0.5 bg-blue-600 text-white text-[10px] font-bold rounded tracking-widest uppercase shrink-0">
+                                {ticker}
+                            </span>
+                            {t.websiteUrl && (
+                                <a
+                                    href={t.websiteUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-[10px] uppercase tracking-widest font-semibold text-gray-400 hover:text-blue-500 dark:text-gray-500 dark:hover:text-blue-400 transition-colors shrink-0"
+                                >
+                                    Website ↗
+                                </a>
+                            )}
                         </div>
-                        {/* ── Score circles (compact, top-right or below on mobile) ── */}
-                        <div className="md:ml-auto flex justify-around md:justify-end items-center gap-2 sm:gap-4 shrink-0 pt-2 md:pt-0 w-full md:w-auto">
+
+                        {/* Real-time Price & Movement */}
+                        <div className="hidden sm:flex flex-col ml-4 lg:ml-8 border-l border-gray-100 dark:border-gray-700/60 pl-4 lg:pl-8 min-w-[120px]">
+                            {realTimeData || t?.lastPrice ? (
+                                <>
+                                    <div className="flex items-baseline gap-2">
+                                        <span className="text-2xl xl:text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
+                                            {realTimeData?.currentPrice ? `$${formatPrice(realTimeData.currentPrice)}` : `$${t?.lastPrice?.toFixed(2) ?? '0.00'}`}
+                                        </span>
+                                        {(realTimeData?.percentChange ?? t?.lastChangePct) != null && (
+                                            <span className={`text-sm xl:text-base font-bold ${(realTimeData?.percentChange ?? t?.lastChangePct ?? 0) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
+                                                {formatPercent(realTimeData?.percentChange ?? t?.lastChangePct)}
+                                            </span>
+                                        )}
+                                    </div>
+                                    {(realTimeData?.marketCapDiff ?? t?.lastMarketCapDiff) != null && (
+                                        <div className={`text-xs font-semibold ${(realTimeData?.marketCapDiff ?? t?.lastMarketCapDiff ?? 0) >= 0 ? 'text-green-600/70 dark:text-green-400/70' : 'text-red-500/70 dark:text-red-400/70'}`}>
+                                            {formatMarketCapDiff(realTimeData?.marketCapDiff ?? t?.lastMarketCapDiff)} <span className="opacity-70 font-medium">Market Cap Today</span>
+                                        </div>
+                                    )}
+                                </>
+                            ) : null}
+                        </div>
+                        {/* ── Score circles (compact, top-right) ── */}
+                        <div className="ml-auto flex items-center gap-4 shrink-0 pl-4">
                             <MiniScoreCircle label="Health" score={data.healthScore} />
                             <MiniScoreCircle label="Profitability" score={data.profitabilityScore} />
                             <MiniScoreCircle label="Valuation" score={data.valuationScore} />

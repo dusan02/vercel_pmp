@@ -80,7 +80,7 @@ export default function ShareDilutionChart({ statements }: ShareDilutionChartPro
         return (
             <div className="text-gray-500 text-sm p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
                 <p className="font-medium">No share count data available</p>
-                <p className="text-xs mt-1">Click Refresh Analysis to fetch from Polygon.</p>
+                <p className="text-xs mt-1">Click Refresh Analysis to fetch data.</p>
             </div>
         );
     }
@@ -105,8 +105,8 @@ export default function ShareDilutionChart({ statements }: ShareDilutionChartPro
                     </button>
                 </div>
             </div>
-            <div className="w-full" style={{ minHeight: 320 }}>
-                <ResponsiveContainer width="100%" height={320}>
+            <div className="w-full" style={{ minHeight: 260 }}>
+                <ResponsiveContainer width="100%" height={300}>
                     <ComposedChart data={chartData} margin={{ top: 10, right: showBuyback ? 50 : 10, left: 10, bottom: viewMode === 'quarterly' ? 8 : 5 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" className="dark:stroke-gray-700" />
                         <XAxis dataKey="date"
@@ -119,18 +119,13 @@ export default function ShareDilutionChart({ statements }: ShareDilutionChartPro
                         )}
                         <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(107, 114, 128, 0.05)' }} />
                         {showShares && <ReferenceLine yAxisId="left" y={0} stroke="#9CA3AF" />}
-                        {showShares && <Bar yAxisId="left" dataKey="shares" name="Shares Outstanding" fill="#3B82F6" radius={[2, 2, 0, 0]} maxBarSize={40} />}
+                        {showShares && <Bar yAxisId="left" dataKey="shares" name="Shares Outstanding" fill="#3B82F6" radius={[2, 2, 0, 0]} maxBarSize={40} isAnimationActive={false} />}
                         {showBuyback && (
                             <Line yAxisId="right" type="monotone" dataKey="buybackRatio" name="Buyback Ratio %"
-                                stroke="#10B981" strokeWidth={2} dot={{ r: 3, fill: '#10B981' }} activeDot={{ r: 5 }} />
+                                stroke="#10B981" strokeWidth={2} dot={{ r: 3, fill: '#10B981' }} activeDot={{ r: 5 }} isAnimationActive={false} />
                         )}
                     </ComposedChart>
                 </ResponsiveContainer>
-            </div>
-            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <p className="text-xs text-blue-700 dark:text-blue-300">
-                    <strong>Tip:</strong> Positive buyback ratio = shares decreased (buybacks). Negative = dilution (new shares issued). Consistent buybacks indicate shareholder-friendly management.
-                </p>
             </div>
         </div>
     );

@@ -4,7 +4,6 @@ import {
     ResponsiveContainer,
     ComposedChart,
     Area,
-    Line,
     XAxis,
     YAxis,
     CartesianGrid,
@@ -32,11 +31,11 @@ interface ValuationChartsProps {
 }
 
 const PERIODS = [
-    { id: '1y',  label: '1Y',  months: 12 },
-    { id: '3y',  label: '3Y',  months: 36 },
-    { id: '5y',  label: '5Y',  months: 60 },
-    { id: '10y', label: '10Y', months: 120 },
-    { id: 'all', label: 'All', months: 999 },
+    { id: '1y',  label: '1Y',  years: 1  },
+    { id: '3y',  label: '3Y',  years: 3  },
+    { id: '5y',  label: '5Y',  years: 5  },
+    { id: '10y', label: '10Y', years: 10 },
+    { id: 'all', label: 'All', years: 99 },
 ] as const;
 type PeriodId = typeof PERIODS[number]['id'];
 
@@ -49,33 +48,25 @@ type MetricId = 'pe' | 'ps';
 function RatioTooltip({ active, payload, label }: any) {
     if (!active || !payload?.length) return null;
     return (
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-3 shadow-xl min-w-[140px]">
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 border-b border-gray-100 dark:border-gray-700 pb-1">{label}</p>
-            <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: payload[0].stroke || payload[0].fill }} />
-                <span className="font-bold text-gray-900 dark:text-white text-sm">
-                    {typeof payload[0]?.value === 'number' ? `${payload[0].value.toFixed(2)}x` : '—'}
-                </span>
-            </div>
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 shadow-lg text-xs">
+            <p className="text-gray-500 dark:text-gray-400 mb-1">{label}</p>
+            <p className="font-bold text-gray-900 dark:text-white">
+                {typeof payload[0]?.value === 'number' ? `${payload[0].value.toFixed(2)}×` : '—'}
+            </p>
         </div>
     );
 }
 
 function StatPill({ label, value, highlight }: { label: string; value: number | null; highlight?: 'green' | 'red' | 'gray' }) {
-    const bgClass = highlight === 'green' ? 'bg-emerald-50 dark:bg-emerald-900/20'
-                  : highlight === 'red'   ? 'bg-red-50 dark:bg-red-900/20'
-                  : 'bg-gray-50 dark:bg-gray-800/50';
-                  
-    const col = highlight === 'green' ? 'text-emerald-700 dark:text-emerald-400'
-               : highlight === 'red'   ? 'text-red-700 dark:text-red-400'
+    const col = highlight === 'green' ? 'text-emerald-600 dark:text-emerald-400'
+               : highlight === 'red'   ? 'text-red-500 dark:text-red-400'
                : 'text-gray-800 dark:text-gray-200';
-               
     return (
-        <div className={`flex flex-col items-center justify-center px-4 py-2.5 rounded-xl border border-gray-100 dark:border-gray-700/50 flex-1 min-w-[70px] ${bgClass}`}>
-            <span className={`text-[10px] uppercase tracking-wider mb-1 font-semibold text-gray-500 dark:text-gray-400`}>{label}</span>
-            <span className={`text-base font-bold tabular-nums ${col}`}>
-                {value !== null ? `${value.toFixed(1)}x` : '—'}
+        <div className="flex flex-col items-center px-2 sm:px-3 py-1.5 sm:py-2 bg-gray-50 dark:bg-gray-800/60 rounded-lg min-w-[52px] sm:min-w-[64px]">
+            <span className={`text-xs sm:text-sm font-bold tabular-nums ${col}`}>
+                {value !== null ? `${value.toFixed(1)}×` : '—'}
             </span>
+            <span className="text-[9px] sm:text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">{label}</span>
         </div>
     );
 }
@@ -102,231 +93,179 @@ export default function ValuationCharts({ ticker }: ValuationChartsProps) {
     const filteredHistory = useMemo(() => {
         if (!data) return [];
         const raw = metric === 'pe' ? (data.peHistory ?? []) : (data.psHistory ?? []);
-        if (raw.length === 0) return [];
-        
-        if (period === 'all') return raw;
-
-        const periodMonths = PERIODS.find(p => p.id === period)?.months ?? 60;
-        
-        // Get the latest date from the dataset itself, rather than strictly today
-        // This ensures the charts work even if data is a few days old
-        const latestPoint = raw[raw.length - 1];
-        if (!latestPoint) return [];
-
-        const latestDate = new Date(latestPoint.date);
-        
-        const cutoff = new Date(latestDate);
-        cutoff.setMonth(cutoff.getMonth() - periodMonths);
+        const periodYears = PERIODS.find(p => p.id === period)?.years ?? 5;
+        const cutoff = new Date();
+        cutoff.setFullYear(cutoff.getFullYear() - periodYears);
         const cutoffStr = cutoff.toISOString().slice(0, 10);
-        
         return raw.filter(d => d.date >= cutoffStr);
     }, [data, metric, period]);
 
-    // Recalculate stats based *only* on the selected time period
-    const currentStats = useMemo(() => {
-        if (!filteredHistory || filteredHistory.length === 0) return null;
-        
-        const values = filteredHistory.map(h => h.value).sort((a, b) => a - b);
-        const count = values.length;
-        
-        const pct = (p: number) => {
-            if (count === 0) return 0;
-            const idx = (p / 100) * (count - 1);
-            const lo = Math.floor(idx);
-            const hi = Math.ceil(idx);
-            const weight = idx - lo;
-            const valLo = values[lo] ?? 0;
-            const valHi = values[hi] ?? 0;
-            return valLo + (valHi - valLo) * weight;
-        };
-
-        return {
-            p10: pct(10),
-            p25: pct(25),
-            median: pct(50),
-            p75: pct(75),
-            p90: pct(90),
-            max: values[count - 1],
-            min: values[0],
-            avg: values.reduce((a,b) => a+b, 0) / count,
-            count
-        };
-    }, [filteredHistory]);
-
+    const stats   = metric === 'pe' ? (data?.stats?.pe  ?? null) : (data?.stats?.ps  ?? null);
     const current = metric === 'pe' ? (data?.current?.pe ?? null) : (data?.current?.ps ?? null);
     const cfg     = METRICS.find(m => m.id === metric)!;
 
-    // Determine if current is cheap / expensive vs percentiles of the current period
-    const valBadge = (current !== null && current !== undefined && currentStats)
-        ? current <= currentStats.p25 ? { label: 'Cheap Zone', color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800' }
-        : current >= currentStats.p75 ? { label: 'Expensive Zone', color: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-400 border border-red-200 dark:border-red-800' }
-        : { label: 'Fair Value Zone', color: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 border border-gray-200 dark:border-gray-700' }
+    // Determine if current is cheap / expensive vs percentiles
+    const valBadge = (current !== null && current !== undefined && stats)
+        ? current <= stats.p25 ? { label: 'Cheap Zone', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' }
+        : current >= stats.p75 ? { label: 'Expensive Zone', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' }
+        : { label: 'Fair Value Zone', color: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400' }
         : null;
 
-    const yDomain: [number | 'auto', number | 'auto'] = (currentStats && currentStats.p90 && currentStats.max)
-        ? [0, Math.min(currentStats.p90 * 1.5, currentStats.max * 1.1)]
+    const yDomain: [number | 'auto', number | 'auto'] = (stats && stats.p90 && stats.max)
+        ? [0, Math.min(stats.p90 * 1.3, stats.max)]
         : [0, 'auto'];
 
     if (loading) return (
-        <div className="flex justify-center items-center h-64 bg-gray-50 dark:bg-gray-800/20 rounded-2xl border border-gray-100 dark:border-gray-800">
-            <div className="flex flex-col items-center gap-3">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500" />
-                <span className="text-xs text-gray-500">Loading valuation history...</span>
-            </div>
+        <div className="flex justify-center items-center h-44">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-500" />
         </div>
     );
 
-    if (!data || filteredHistory.length === 0) return (
-        <div className="text-center text-gray-500 dark:text-gray-400 text-sm py-16 bg-gray-50 dark:bg-gray-800/20 rounded-2xl border border-gray-100 dark:border-gray-800">
-            No historical {cfg.label} data available for this timeframe.
+    if (!data) return (
+        <div className="text-center text-gray-400 text-sm py-10">
+            No historical data. Run Deep Analysis to populate valuation history.
         </div>
     );
 
     return (
-        <div className="space-y-6">
-            {/* Top Header: Controls & Current Value */}
-            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                
-                {/* Left side: Current Value & Badges */}
-                <div className="flex flex-col gap-2">
-                    <div className="flex items-end gap-3">
-                        <span className="text-4xl font-extrabold tracking-tight tabular-nums" style={{ color: cfg.color }}>
-                            {current !== null && current !== undefined ? `${current.toFixed(1)}x` : '—'}
-                        </span>
-                        <div className="pb-1.5 flex flex-col">
-                            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Current {cfg.label}</span>
-                        </div>
-                    </div>
-                    
-                    {valBadge && (
-                        <div className="inline-flex mt-1">
-                            <span className={`text-[10px] font-bold px-3 py-1 rounded-full ${valBadge.color}`}>
-                                {valBadge.label} vs {period.toUpperCase()} History
-                            </span>
-                        </div>
-                    )}
+        <div className="space-y-4">
+            {/* Controls row */}
+            <div className="flex flex-wrap items-center gap-3">
+                {/* Metric toggle */}
+                <div className="bg-gray-100 dark:bg-gray-800 p-1 rounded-lg inline-flex">
+                    {METRICS.map(m => (
+                        <button key={m.id} onClick={() => setMetric(m.id)}
+                            className={`text-[10px] px-3 py-1 rounded font-medium transition-colors ${
+                                metric === m.id
+                                    ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                            }`}>
+                            {m.label}
+                        </button>
+                    ))}
                 </div>
-
-                {/* Right side: Toggles */}
-                <div className="flex flex-col gap-2 md:items-end">
-                    <div className="bg-gray-100/80 dark:bg-gray-800/80 p-1 rounded-lg inline-flex shadow-inner">
-                        {METRICS.map(m => (
-                            <button key={m.id} onClick={() => setMetric(m.id)}
-                                className={`text-[11px] px-4 py-1.5 rounded-md font-bold transition-all ${
-                                    metric === m.id
-                                        ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                                }`}>
-                                {m.label}
-                            </button>
-                        ))}
-                    </div>
-                    
-                    <div className="bg-gray-100/80 dark:bg-gray-800/80 p-1 rounded-lg inline-flex shadow-inner">
-                        {PERIODS.map(p => (
-                            <button key={p.id} onClick={() => setPeriod(p.id)}
-                                className={`text-[10px] px-3 py-1 rounded-md font-bold transition-all ${
-                                    period === p.id
-                                        ? 'text-white shadow-sm'
-                                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                                }`}
-                                style={period === p.id ? { backgroundColor: cfg.color } : {}}>
-                                {p.label}
-                            </button>
-                        ))}
-                    </div>
+                {/* Period toggle */}
+                <div className="flex gap-1">
+                    {PERIODS.map(p => (
+                        <button key={p.id} onClick={() => setPeriod(p.id)}
+                            className={`text-[10px] px-2.5 py-1 rounded font-medium transition-colors ${
+                                period === p.id
+                                    ? 'text-white shadow-sm'
+                                    : 'text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-200'
+                            }`}
+                            style={period === p.id ? { backgroundColor: cfg.color } : {}}>
+                            {p.label}
+                        </button>
+                    ))}
                 </div>
+                {/* Valuation badge */}
+                {valBadge && (
+                    <span className={`ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-full ${valBadge.color}`}>
+                        {valBadge.label}
+                    </span>
+                )}
             </div>
 
-            {/* Stats Row */}
-            <div className="flex flex-wrap gap-2 w-full">
-                <StatPill label="P10 (Cheap)" value={currentStats?.p10 ?? null} highlight="green" />
-                <StatPill label="P25" value={currentStats?.p25 ?? null} />
-                <StatPill label="Median" value={currentStats?.median ?? null} />
-                <StatPill label="P75" value={currentStats?.p75 ?? null} />
-                <StatPill label="P90 (Exp)" value={currentStats?.p90 ?? null} highlight="red" />
+            {/* Current + Stats pills */}
+            <div className="flex flex-wrap gap-1.5 sm:gap-2 items-end">
+                {/* Current value — prominent */}
+                <div className="flex flex-col mr-1 sm:mr-2">
+                    <span className="text-[10px] text-gray-400 uppercase tracking-wide">Current {cfg.label.split(' ')[0]}</span>
+                    <span className="text-xl sm:text-2xl font-bold tabular-nums" style={{ color: cfg.color }}>
+                        {current !== null && current !== undefined ? `${current.toFixed(1)}×` : '—'}
+                    </span>
+                </div>
+                <StatPill label="Median" value={stats?.median ?? null} />
+                <StatPill label="P10 (cheap)" value={stats?.p10 ?? null} highlight="green" />
+                <StatPill label="P25" value={stats?.p25 ?? null} />
+                <StatPill label="P75" value={stats?.p75 ?? null} />
+                <StatPill label="P90 (exp.)" value={stats?.p90 ?? null} highlight="red" />
             </div>
 
-            {/* Chart Area */}
-            <div className="pt-4 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl shadow-sm p-4 relative overflow-hidden">
-                <ResponsiveContainer width="100%" height={320}>
-                    <ComposedChart data={filteredHistory} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+            {/* Chart */}
+            {filteredHistory.length === 0 ? (
+                <div className="text-center text-gray-400 text-sm py-12 bg-gray-50 dark:bg-gray-800/30 rounded-lg">
+                    No {cfg.label} data for this period.
+                </div>
+            ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                    <ComposedChart data={filteredHistory} margin={{ top: 8, right: 16, left: 8, bottom: 4 }}>
                         <defs>
                             <linearGradient id="peGrad" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                                <stop offset="95%" stopColor="#6366f1" stopOpacity={0.0} />
+                                <stop offset="0%" stopColor="#6366f1" stopOpacity={0.25} />
+                                <stop offset="100%" stopColor="#6366f1" stopOpacity={0.03} />
                             </linearGradient>
                             <linearGradient id="psGrad" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.3} />
-                                <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0.0} />
+                                <stop offset="0%" stopColor="#0ea5e9" stopOpacity={0.25} />
+                                <stop offset="100%" stopColor="#0ea5e9" stopOpacity={0.03} />
                             </linearGradient>
                         </defs>
-                        
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" className="dark:stroke-gray-800" />
-                        
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" className="dark:stroke-gray-700" />
                         <XAxis
                             dataKey="date"
-                            tick={{ fontSize: 10, fill: '#9ca3af', fontWeight: 500 }}
+                            tick={{ fontSize: 10, fill: '#9ca3af' }}
                             axisLine={false} tickLine={false}
-                            tickFormatter={v => {
-                                const d = new Date(v);
-                                return period === '1y' 
-                                    ? d.toLocaleDateString('en-US', { month: 'short' }) 
-                                    : d.getFullYear().toString();
-                            }}
-                            minTickGap={40}
-                            dy={10}
+                            tickFormatter={v => v.slice(0, 7)}
+                            interval={Math.max(Math.floor(filteredHistory.length / 8) - 1, 0)}
                         />
-                        
                         <YAxis
-                            tick={{ fontSize: 11, fill: '#9ca3af', fontWeight: 600 }}
+                            tick={{ fontSize: 10, fill: '#9ca3af' }}
                             axisLine={false} tickLine={false}
-                            width={45}
-                            tickFormatter={v => `${v}x`}
+                            width={38}
+                            tickFormatter={v => `${v}×`}
                             domain={yDomain}
                         />
-                        
-                        <Tooltip content={<RatioTooltip />} cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '5 5' }} />
+                        <Tooltip content={<RatioTooltip />} cursor={{ stroke: '#9ca3af', strokeWidth: 1 }} />
 
-                        {/* Valuation Bands */}
-                        {currentStats?.p90 && (
-                            <ReferenceLine y={currentStats.p90} stroke="#f87171" strokeWidth={1} strokeDasharray="5 5"
-                                label={{ value: `P90`, position: 'insideTopRight', fontSize: 10, fill: '#f87171', fontWeight: 600 }} />
+                        {/* P90 — Expensive zone upper boundary */}
+                        {stats?.p90 && (
+                            <ReferenceLine y={stats.p90} stroke="#ef4444" strokeWidth={1} strokeDasharray="4 2"
+                                label={{ value: `P90 ${stats.p90.toFixed(1)}×`, position: 'right', fontSize: 9, fill: '#ef4444' }} />
                         )}
-                        {currentStats?.median && (
-                            <ReferenceLine y={currentStats.median} stroke="#9ca3af" strokeWidth={1.5} strokeDasharray="3 3"
-                                label={{ value: `Median`, position: 'insideTopRight', fontSize: 10, fill: '#9ca3af', fontWeight: 600 }} />
+                        {/* P75 — subtle */}
+                        {stats?.p75 && (
+                            <ReferenceLine y={stats.p75} stroke="#f97316" strokeWidth={1} strokeDasharray="2 4"
+                                label={{ value: `P75`, position: 'right', fontSize: 8, fill: '#f97316' }} />
                         )}
-                        {currentStats?.p10 && (
-                            <ReferenceLine y={currentStats.p10} stroke="#34d399" strokeWidth={1} strokeDasharray="5 5"
-                                label={{ value: `P10`, position: 'insideBottomRight', fontSize: 10, fill: '#34d399', fontWeight: 600 }} />
+                        {/* Median */}
+                        {stats?.median && (
+                            <ReferenceLine y={stats.median} stroke="#9ca3af" strokeWidth={1} strokeDasharray="4 2"
+                                label={{ value: `Median ${stats.median.toFixed(1)}×`, position: 'right', fontSize: 9, fill: '#9ca3af' }} />
+                        )}
+                        {/* P25 — subtle */}
+                        {stats?.p25 && (
+                            <ReferenceLine y={stats.p25} stroke="#34d399" strokeWidth={1} strokeDasharray="2 4"
+                                label={{ value: `P25`, position: 'right', fontSize: 8, fill: '#34d399' }} />
+                        )}
+                        {/* P10 — Cheap zone lower boundary */}
+                        {stats?.p10 && (
+                            <ReferenceLine y={stats.p10} stroke="#10b981" strokeWidth={1} strokeDasharray="4 2"
+                                label={{ value: `P10 ${stats.p10.toFixed(1)}×`, position: 'right', fontSize: 9, fill: '#10b981' }} />
                         )}
 
-                        {/* Main Data Line */}
+                        {/* Filled area + line */}
                         <Area
                             type="monotone"
                             dataKey="value"
                             name={cfg.label}
                             stroke={cfg.color}
-                            strokeWidth={3}
+                            strokeWidth={2}
                             fill={`url(#${cfg.gradient})`}
-                            activeDot={{ r: 6, strokeWidth: 0, fill: cfg.color }}
+                            dot={false}
+                            connectNulls
                             isAnimationActive={false}
                         />
                     </ComposedChart>
                 </ResponsiveContainer>
+            )}
 
-                {/* Micro legend */}
-                <div className="absolute bottom-2 left-10 flex gap-4 bg-white/80 dark:bg-gray-900/80 px-3 py-1 rounded-full text-[9px] font-medium text-gray-500 backdrop-blur-sm border border-gray-100 dark:border-gray-800">
-                    <span className="flex items-center gap-1"><div className="w-2 h-0.5 bg-red-400 rounded-full"></div> Expensive</span>
-                    <span className="flex items-center gap-1"><div className="w-2 h-0.5 bg-gray-400 rounded-full"></div> Fair</span>
-                    <span className="flex items-center gap-1"><div className="w-2 h-0.5 bg-emerald-400 rounded-full"></div> Cheap</span>
-                </div>
+            {/* Legend */}
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[9px] sm:text-[10px] text-gray-400 dark:text-gray-500">
+                <span className="flex items-center gap-1.5"><span className="w-3 h-px border-t border-dashed border-emerald-500 inline-block" /> Cheap</span>
+                <span className="flex items-center gap-1.5"><span className="w-3 h-px border-t border-dashed border-gray-400 inline-block" /> Median</span>
+                <span className="flex items-center gap-1.5"><span className="w-3 h-px border-t border-dashed border-red-500 inline-block" /> Expensive</span>
+                <span className="flex items-center gap-1.5 sm:ml-auto text-gray-300 dark:text-gray-600">Based on {stats?.count ?? 0} daily trading points.</span>
             </div>
-            
-            <p className="text-[10px] text-gray-400 dark:text-gray-500 text-right px-2">
-                Based on {currentStats?.count.toLocaleString() ?? 0} daily trading points.
-            </p>
         </div>
     );
 }
