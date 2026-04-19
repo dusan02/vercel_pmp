@@ -7,7 +7,6 @@ import CashFlowChart from './CashFlowChart';
 import ShareDilutionChart from './ShareDilutionChart';
 import { AnalysisHeader } from './analysis/AnalysisHeader';
 import { FinancialHealthTable } from './analysis/FinancialHealthTable';
-import { QualityStabilityStats } from './analysis/QualityStabilityStats';
 import { ScenarioLab } from './analysis/ScenarioLab';
 import { useAnalysis } from '../../hooks/useAnalysis';
 import { LoadingSkeleton } from './analysis/LoadingSkeleton';
@@ -121,15 +120,7 @@ export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabP
             {/* ── Hero Section: Company Profile + Quick Search ── */}
             <AnalysisHeader ticker={ticker} hideSearch={hideSearch} data={data} />
 
-            {/* Stability & Quality Stats — overview-first */}
-            <QualityStabilityStats
-                ticker={ticker}
-                data={data}
-                compareWith={compareWith}
-                secondaryData={secondaryData}
-            />
-
-            {/* Financial Health Table */}
+            {/* Key Financial Metrics (merged: solvency, profitability, valuation, quality) */}
             <FinancialHealthTable
                 ticker={ticker}
                 data={data}

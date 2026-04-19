@@ -219,6 +219,13 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
                                     No description available. Run Deep Analysis to populate.
                                 </p>
                             )}
+
+                            {data.verdictText && (
+                                <div className="mt-4 px-3.5 py-2.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 rounded-lg">
+                                    <p className="text-[10px] uppercase tracking-widest font-bold text-blue-500 dark:text-blue-400 mb-1">AI Verdict</p>
+                                    <p className="text-sm text-blue-800 dark:text-blue-200 leading-relaxed font-medium">{data.verdictText}</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </>

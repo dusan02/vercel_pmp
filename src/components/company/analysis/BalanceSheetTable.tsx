@@ -33,11 +33,6 @@ function ratioStatusAbove(val: number | null | undefined, goodAbove: number, war
     return val >= goodAbove ? 'good' : val >= warnAbove ? 'warn' : 'bad';
 }
 
-function pctStatus(val: number | null | undefined): StatusType {
-    if (val === null || val === undefined) return 'neutral';
-    return val > 10 ? 'good' : val > 0 ? 'warn' : 'bad';
-}
-
 // ─── Piotroski Gauge ─────────────────────────────────────────────
 function PiotroskiGauge({ score, ticker, compareScore, compareWith }: {
     score: number | null | undefined;
@@ -165,76 +160,9 @@ export function BalanceSheetTable({ ticker, data, compareWith, secondaryData }: 
         { label: 'Total Equity', hint: "Shareholders' equity (book value).", value: fmtB(bs.totalEquity), secondaryValue: compareWith ? fmtB(sbs?.totalEquity) : undefined, statusType: 'neutral', statusLabel: '' },
     ];
 
-    // ── Growth Cards ──
-    const growthCards: MetricCardDef[] = [
-        {
-            label: 'Revenue CAGR (5Y)', hint: 'Compound annual growth rate of revenue over 5 years.',
-            value: data.revenueCagr !== null && data.revenueCagr !== undefined ? `${data.revenueCagr.toFixed(1)}%` : 'N/A',
-            secondaryValue: compareWith && secondaryData?.revenueCagr !== null && secondaryData?.revenueCagr !== undefined ? `${secondaryData.revenueCagr.toFixed(1)}%` : undefined,
-            statusType: pctStatus(data.revenueCagr), statusLabel: data.revenueCagr !== null && data.revenueCagr !== undefined ? (data.revenueCagr > 10 ? 'Strong' : data.revenueCagr > 0 ? 'Moderate' : 'Declining') : 'N/A',
-        },
-        {
-            label: 'Net Income CAGR (5Y)', hint: 'Compound annual growth rate of net income over 5 years.',
-            value: data.netIncomeCagr !== null && data.netIncomeCagr !== undefined ? `${data.netIncomeCagr.toFixed(1)}%` : 'N/A',
-            secondaryValue: compareWith && secondaryData?.netIncomeCagr !== null && secondaryData?.netIncomeCagr !== undefined ? `${secondaryData.netIncomeCagr.toFixed(1)}%` : undefined,
-            statusType: pctStatus(data.netIncomeCagr), statusLabel: data.netIncomeCagr !== null && data.netIncomeCagr !== undefined ? (data.netIncomeCagr > 10 ? 'Strong' : data.netIncomeCagr > 0 ? 'Moderate' : 'Declining') : 'N/A',
-        },
-    ];
-
-    // ── Valuation Cards ──
-    const fcfY = data.metrics?.fcfYield;
-    const fcfYSec = secondaryData?.metrics?.fcfYield;
-    const valuationCards: MetricCardDef[] = [
-        {
-            label: 'FCF Yield', hint: 'Free Cash Flow / Market Cap. Higher = better value.',
-            value: fcfY !== null && fcfY !== undefined ? `${(fcfY * 100).toFixed(1)}%` : 'N/A',
-            secondaryValue: compareWith && fcfYSec !== null && fcfYSec !== undefined ? `${(fcfYSec * 100).toFixed(1)}%` : undefined,
-            statusType: fcfY !== null && fcfY !== undefined ? (fcfY > 0.05 ? 'good' : fcfY > 0.02 ? 'warn' : 'bad') : 'neutral',
-            statusLabel: fcfY !== null && fcfY !== undefined ? (fcfY > 0.05 ? 'Attractive' : fcfY > 0.02 ? 'Fair' : 'Expensive') : 'N/A',
-        },
-        {
-            label: 'P/E Ratio', hint: 'Price to Earnings ratio.',
-            value: data.metrics?.currentPe !== null && data.metrics?.currentPe !== undefined ? `${data.metrics.currentPe.toFixed(1)}x` : 'N/A',
-            secondaryValue: compareWith && secondaryData?.metrics?.currentPe !== null && secondaryData?.metrics?.currentPe !== undefined ? `${secondaryData.metrics.currentPe.toFixed(1)}x` : undefined,
-            statusType: 'neutral', statusLabel: '',
-        },
-    ];
-
-    // ── Dilution & SBC Cards ──
-    const dilutionCards: MetricCardDef[] = [];
-    if (bs.dilution1y !== null && bs.dilution1y !== undefined) {
-        dilutionCards.push({
-            label: '1Y Share Dilution', hint: 'Change in shares outstanding over 1 year. Negative = buyback.',
-            value: `${bs.dilution1y.toFixed(1)}%`,
-            secondaryValue: compareWith && sbs?.dilution1y !== null && sbs?.dilution1y !== undefined ? `${sbs.dilution1y.toFixed(1)}%` : undefined,
-            statusType: bs.dilution1y <= -0.5 ? 'good' : bs.dilution1y <= 1 ? 'warn' : 'bad',
-            statusLabel: bs.dilution1y < 0 ? 'Buyback' : bs.dilution1y <= 1 ? 'Stable' : 'Diluting',
-        });
-    }
-    if (bs.dilution5y !== null && bs.dilution5y !== undefined) {
-        dilutionCards.push({
-            label: '5Y Share Dilution', hint: 'Cumulative change in shares outstanding over 5 years.',
-            value: `${bs.dilution5y.toFixed(1)}%`,
-            secondaryValue: compareWith && sbs?.dilution5y !== null && sbs?.dilution5y !== undefined ? `${sbs.dilution5y.toFixed(1)}%` : undefined,
-            statusType: bs.dilution5y <= -2 ? 'good' : bs.dilution5y <= 5 ? 'warn' : 'bad',
-            statusLabel: bs.dilution5y < 0 ? 'Buyback' : bs.dilution5y <= 5 ? 'Moderate' : 'Heavy Dilution',
-        });
-    }
-    if (bs.sbcRatio !== null && bs.sbcRatio !== undefined) {
-        dilutionCards.push({
-            label: 'SBC / Net Income', hint: 'Stock-based compensation as % of net income. High = quality concern.',
-            value: `${bs.sbcRatio.toFixed(1)}%`,
-            secondaryValue: compareWith && sbs?.sbcRatio !== null && sbs?.sbcRatio !== undefined ? `${sbs.sbcRatio.toFixed(1)}%` : undefined,
-            statusType: bs.sbcRatio <= 10 ? 'good' : bs.sbcRatio <= 25 ? 'warn' : 'bad',
-            statusLabel: bs.sbcRatio <= 10 ? 'Low' : bs.sbcRatio <= 25 ? 'Moderate' : 'High',
-        });
-    }
-
-    // ── Beneish & Interest Coverage ──
+    // ── Beneish M-Score ──
     const bScore = data.beneishScore;
     const bScoreSec = secondaryData?.beneishScore;
-    const ic = data.interestCoverage;
-    const icSec = secondaryData?.interestCoverage;
 
     return (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
@@ -280,44 +208,7 @@ export function BalanceSheetTable({ ticker, data, compareWith, secondaryData }: 
                         secondaryValue={compareWith && bScoreSec !== null && bScoreSec !== undefined ? bScoreSec.toFixed(2) : undefined}
                         compareWith={compareWith || undefined}
                     />
-                    <MetricRow
-                        label="Interest Coverage"
-                        hint="EBIT / Interest Expense. > 5x is strong, < 2x is risky."
-                        value={ic !== null && ic !== undefined ? `${ic.toFixed(1)}x` : 'N/A'}
-                        status={ic !== null && ic !== undefined ? (ic > 5 ? 'good' : ic > 2 ? 'warn' : 'bad') : 'neutral'}
-                        statusLabel={ic !== null && ic !== undefined ? (ic > 5 ? 'Strong' : ic > 2 ? 'Adequate' : 'Weak') : 'N/A'}
-                        secondaryValue={compareWith && icSec !== null && icSec !== undefined ? `${icSec.toFixed(1)}x` : undefined}
-                        compareWith={compareWith || undefined}
-                    />
                 </div>
-
-                {/* ── Growth Trajectory ── */}
-                <SectionTitle title="Growth Trajectory" />
-                <div className="grid grid-cols-2 gap-3">
-                    {growthCards.map(c => <MetricCard key={c.label} card={c} compareWith={compareWith} bgClass="bg-gray-50 dark:bg-gray-900/40" />)}
-                </div>
-
-                {/* ── Valuation ── */}
-                <SectionTitle title="Valuation" />
-                <div className="grid grid-cols-2 gap-3">
-                    {valuationCards.map(c => <MetricCard key={c.label} card={c} compareWith={compareWith} bgClass="bg-gray-50 dark:bg-gray-900/40" />)}
-                </div>
-                {data.humanPeInfo && (
-                    <p className="text-xs text-blue-600 dark:text-blue-400 font-medium -mt-3">{data.humanPeInfo}</p>
-                )}
-                {compareWith && secondaryData?.humanPeInfo && (
-                    <p className="text-xs text-indigo-600 dark:text-indigo-400 font-medium -mt-4">[{compareWith}] {secondaryData.humanPeInfo}</p>
-                )}
-
-                {/* ── Dilution & SBC ── */}
-                {dilutionCards.length > 0 && (
-                    <>
-                        <SectionTitle title="Dilution & SBC" />
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                            {dilutionCards.map(c => <MetricCard key={c.label} card={c} compareWith={compareWith} bgClass="bg-gray-50 dark:bg-gray-900/40" />)}
-                        </div>
-                    </>
-                )}
             </div>
         </div>
     );
