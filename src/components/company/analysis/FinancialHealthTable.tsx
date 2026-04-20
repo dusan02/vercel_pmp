@@ -36,10 +36,11 @@ function buildCards(data: AnalysisData, secondaryData: AnalysisData | null, comp
     const peRatio = m?.currentPe ?? null;
     const secPeRatio = sm?.currentPe ?? null;
 
-    const marketCap = data.ticker?.lastMarketCap ?? null;
-    const secMarketCap = secondaryData?.ticker?.lastMarketCap ?? null;
-    const pbRatio = (marketCap && bs?.totalEquity && bs.totalEquity > 0) ? marketCap / bs.totalEquity : null;
-    const secPbRatio = (secMarketCap && sbs?.totalEquity && sbs.totalEquity > 0) ? secMarketCap / sbs.totalEquity : null;
+    // lastMarketCap is stored in billions, totalEquity is raw USD — normalize
+    const marketCapRaw = data.ticker?.lastMarketCap ? data.ticker.lastMarketCap * 1e9 : null;
+    const secMarketCapRaw = secondaryData?.ticker?.lastMarketCap ? secondaryData.ticker.lastMarketCap * 1e9 : null;
+    const pbRatio = (marketCapRaw && bs?.totalEquity && bs.totalEquity > 0) ? marketCapRaw / bs.totalEquity : null;
+    const secPbRatio = (secMarketCapRaw && sbs?.totalEquity && sbs.totalEquity > 0) ? secMarketCapRaw / sbs.totalEquity : null;
 
     const roe = (latestAnnual?.netIncome && bs?.totalEquity && bs.totalEquity > 0) ? latestAnnual.netIncome / bs.totalEquity : null;
     const secRoe = (secLatestAnnual?.netIncome && sbs?.totalEquity && sbs.totalEquity > 0) ? secLatestAnnual.netIncome / sbs.totalEquity : null;

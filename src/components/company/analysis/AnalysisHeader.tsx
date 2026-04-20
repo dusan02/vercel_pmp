@@ -101,12 +101,12 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
 
     // Staleness detection: if DB price is > 4 hours old, consider it stale
     const STALE_THRESHOLD_MS = 4 * 60 * 60 * 1000;
-    const dbPriceUpdated = (t as any)?.lastPriceUpdated ? new Date((t as any).lastPriceUpdated).getTime() : 0;
+    const dbPriceUpdated = t?.lastPriceUpdated ? new Date(t.lastPriceUpdated).getTime() : 0;
     const isDbPriceStale = dbPriceUpdated > 0 && (Date.now() - dbPriceUpdated) > STALE_THRESHOLD_MS;
     // Best available price: prefer real-time, then fresh DB, then prevClose as last resort
     const bestPrice = realTimeData?.currentPrice
         ?? (!isDbPriceStale && t?.lastPrice ? t.lastPrice : null)
-        ?? (t as any)?.latestPrevClose
+        ?? t?.latestPrevClose
         ?? t?.lastPrice
         ?? null;
     const hasFreshPrice = !!realTimeData?.currentPrice || !isDbPriceStale;

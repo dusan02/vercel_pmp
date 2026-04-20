@@ -63,6 +63,8 @@ export interface AnalysisData {
         lastChangePct: number | null;
         lastMarketCapDiff: number | null;
         headquarters: string | null;
+        lastPriceUpdated: string | null;
+        latestPrevClose: number | null;
     } | null;
     balanceSheet?: {
         totalDebt: number | null;
@@ -206,7 +208,7 @@ export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabP
                         ticker={ticker}
                         currentEps={data.metrics.currentEps || 0}
                         currentPe={data.metrics.currentPe || 0}
-                        currentPrice={data.ticker?.lastPrice ?? (data.metrics.currentEps || 0) * (data.metrics.currentPe || 0)}
+                        currentPrice={data.ticker?.lastPrice || data.ticker?.latestPrevClose || (data.metrics.currentEps || 0) * (data.metrics.currentPe || 0)}
                     />
                 )}
             </ChartSection>
