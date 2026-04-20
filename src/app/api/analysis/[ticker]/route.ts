@@ -121,7 +121,7 @@ export async function GET(
         // Also fetch sector peers and ticker details (logo, sector, description)
         const tickerRecord = await prisma.ticker.findUnique({
             where: { symbol },
-            select: { sector: true, industry: true, description: true, websiteUrl: true, name: true, logoUrl: true, employees: true, lastPrice: true, lastMarketCap: true, lastChangePct: true, lastMarketCapDiff: true, headquarters: true }
+            select: { sector: true, industry: true, description: true, websiteUrl: true, name: true, logoUrl: true, employees: true, lastPrice: true, lastMarketCap: true, lastChangePct: true, lastMarketCapDiff: true, headquarters: true, lastPriceUpdated: true, latestPrevClose: true }
         });
 
         let peers: string[] = [];
@@ -226,7 +226,7 @@ export async function POST(
 
         const tickerRecord = await prisma.ticker.findUnique({
             where: { symbol },
-            select: { sector: true, industry: true, description: true, websiteUrl: true, name: true, logoUrl: true, employees: true, lastPrice: true, lastMarketCap: true, lastChangePct: true, lastMarketCapDiff: true, headquarters: true }
+            select: { sector: true, industry: true, description: true, websiteUrl: true, name: true, logoUrl: true, employees: true, lastPrice: true, lastMarketCap: true, lastChangePct: true, lastMarketCapDiff: true, headquarters: true, lastPriceUpdated: true, latestPrevClose: true }
         });
 
         let peers: string[] = [];

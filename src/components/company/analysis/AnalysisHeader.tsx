@@ -99,11 +99,23 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
         return () => { mounted = false; };
     }, [ticker]);
 
+    // Staleness detection: if DB price is > 4 hours old, consider it stale
+    const STALE_THRESHOLD_MS = 4 * 60 * 60 * 1000;
+    const dbPriceUpdated = (t as any)?.lastPriceUpdated ? new Date((t as any).lastPriceUpdated).getTime() : 0;
+    const isDbPriceStale = dbPriceUpdated > 0 && (Date.now() - dbPriceUpdated) > STALE_THRESHOLD_MS;
+    // Best available price: prefer real-time, then fresh DB, then prevClose as last resort
+    const bestPrice = realTimeData?.currentPrice
+        ?? (!isDbPriceStale && t?.lastPrice ? t.lastPrice : null)
+        ?? (t as any)?.latestPrevClose
+        ?? t?.lastPrice
+        ?? null;
+    const hasFreshPrice = !!realTimeData?.currentPrice || !isDbPriceStale;
+
     const stats = t ? [
         { label: 'Sector',      value: t.sector },
         { label: 'Industry',    value: t.industry?.replace('SIC: ', '') },
         { label: 'Market Cap',  value: formatMarketCap(t.lastMarketCap) },
-        { label: 'Price',       value: t.lastPrice ? `$${t.lastPrice.toFixed(2)}` : null },
+        { label: 'Price',       value: bestPrice ? `$${bestPrice.toFixed(2)}` : null },
         { label: 'Employees',   value: t.employees ? t.employees.toLocaleString() : null },
         { label: 'HQ',          value: t.headquarters },
     ] : [];
@@ -152,19 +164,24 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
 
                         {/* Real-time Price & Movement */}
                         <div className="hidden sm:flex flex-col ml-4 lg:ml-8 border-l border-gray-100 dark:border-gray-700/60 pl-4 lg:pl-8 min-w-[120px]">
-                            {realTimeData || t?.lastPrice ? (
+                            {bestPrice ? (
                                 <>
                                     <div className="flex items-baseline gap-2">
                                         <span className="text-2xl xl:text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
-                                            {realTimeData?.currentPrice ? `$${formatPrice(realTimeData.currentPrice)}` : `$${t?.lastPrice?.toFixed(2) ?? '0.00'}`}
+                                            {`$${formatPrice(bestPrice)}`}
                                         </span>
-                                        {(realTimeData?.percentChange ?? t?.lastChangePct) != null && (
+                                        {hasFreshPrice && (realTimeData?.percentChange ?? t?.lastChangePct) != null && (
                                             <span className={`text-sm xl:text-base font-bold ${(realTimeData?.percentChange ?? t?.lastChangePct ?? 0) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
                                                 {formatPercent(realTimeData?.percentChange ?? t?.lastChangePct)}
                                             </span>
                                         )}
+                                        {!hasFreshPrice && (
+                                            <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0.5 rounded">
+                                                Prev Close
+                                            </span>
+                                        )}
                                     </div>
-                                    {(realTimeData?.marketCapDiff ?? t?.lastMarketCapDiff) != null && (
+                                    {hasFreshPrice && (realTimeData?.marketCapDiff ?? t?.lastMarketCapDiff) != null && (
                                         <div className={`text-xs font-semibold ${(realTimeData?.marketCapDiff ?? t?.lastMarketCapDiff ?? 0) >= 0 ? 'text-green-600/70 dark:text-green-400/70' : 'text-red-500/70 dark:text-red-400/70'}`}>
                                             {formatMarketCapDiff(realTimeData?.marketCapDiff ?? t?.lastMarketCapDiff)} <span className="opacity-70 font-medium">Market Cap Today</span>
                                         </div>
