@@ -42,6 +42,21 @@ export class AnalysisService {
                     return null;
                 };
 
+                // Helper: sum multiple XBRL concepts (for cash which companies split across items)
+                const extractSum = (report: any, section: string, concepts: string[]): number | null => {
+                    const list = report[section] || [];
+                    let sum = 0;
+                    let found = false;
+                    for (const concept of concepts) {
+                        const item = list.find((i: any) => i.concept === concept);
+                        if (item && item.value !== undefined) {
+                            sum += item.value;
+                            found = true;
+                        }
+                    }
+                    return found ? sum : null;
+                };
+
                 for (const item of results) {
                     const { year, quarter, endDate, report } = item;
                     if (!year || !endDate || !report) continue;
@@ -113,14 +128,33 @@ export class AnalysisService {
                         totalDebt = (longTermDebt || 0) + (shortTermDebt || 0);
                     }
 
-                    const cashAndEquivalents = extract(report, 'bs', [
-                        'us-gaap_CashAndCashEquivalentsAtCarryingValue',
+                    // Cash extraction — multi-strategy for maximum coverage
+                    // Strategy 1: Combined concepts (META, NVDA, AAPL use these)
+                    let cashAndEquivalents = extract(report, 'bs', [
+                        'us-gaap_CashCashEquivalentsAndMarketableSecuritiesCurrent',
+                        'us-gaap_CashCashEquivalentsAndMarketableSecurities',
                         'us-gaap_CashCashEquivalentsAndShortTermInvestments',
-                        'us-gaap_Cash',
                         'us-gaap_CashAndShortTermInvestments',
-                        'us-gaap_CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents',
-                        'us-gaap_CashEquivalentsAtCarryingValue'
                     ]);
+                    // Strategy 2: Standard individual concepts
+                    if (cashAndEquivalents === null) {
+                        cashAndEquivalents = extract(report, 'bs', [
+                            'us-gaap_CashAndCashEquivalentsAtCarryingValue',
+                            'us-gaap_Cash',
+                            'us-gaap_CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents',
+                            'us-gaap_CashEquivalentsAtCarryingValue',
+                        ]);
+                    }
+                    // Strategy 3: Sum cash + marketable securities (AAPL-style split reporting)
+                    if (cashAndEquivalents === null) {
+                        cashAndEquivalents = extractSum(report, 'bs', [
+                            'us-gaap_CashAndCashEquivalentsAtCarryingValue',
+                            'us-gaap_MarketableSecuritiesCurrent',
+                            'us-gaap_ShortTermInvestments',
+                            'us-gaap_AvailableForSaleSecuritiesDebtSecuritiesCurrent',
+                            'us-gaap_OtherShortTermInvestments',
+                        ]);
+                    }
 
                     const netPPE = extract(report, 'bs', ['us-gaap_PropertyPlantAndEquipmentNet']);
 
