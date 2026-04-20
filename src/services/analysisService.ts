@@ -129,23 +129,14 @@ export class AnalysisService {
                     }
 
                     // Cash extraction — multi-strategy for maximum coverage
-                    // Strategy 1: Combined concepts (META, NVDA, AAPL use these)
+                    // Strategy 1: Single combined concept (MSFT, GOOGL style)
                     let cashAndEquivalents = extract(report, 'bs', [
                         'us-gaap_CashCashEquivalentsAndMarketableSecuritiesCurrent',
                         'us-gaap_CashCashEquivalentsAndMarketableSecurities',
                         'us-gaap_CashCashEquivalentsAndShortTermInvestments',
                         'us-gaap_CashAndShortTermInvestments',
                     ]);
-                    // Strategy 2: Standard individual concepts
-                    if (cashAndEquivalents === null) {
-                        cashAndEquivalents = extract(report, 'bs', [
-                            'us-gaap_CashAndCashEquivalentsAtCarryingValue',
-                            'us-gaap_Cash',
-                            'us-gaap_CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents',
-                            'us-gaap_CashEquivalentsAtCarryingValue',
-                        ]);
-                    }
-                    // Strategy 3: Sum cash + marketable securities (AAPL-style split reporting)
+                    // Strategy 2: Sum cash + marketable securities (META, AAPL, NVDA split reporting)
                     if (cashAndEquivalents === null) {
                         cashAndEquivalents = extractSum(report, 'bs', [
                             'us-gaap_CashAndCashEquivalentsAtCarryingValue',
@@ -153,6 +144,14 @@ export class AnalysisService {
                             'us-gaap_ShortTermInvestments',
                             'us-gaap_AvailableForSaleSecuritiesDebtSecuritiesCurrent',
                             'us-gaap_OtherShortTermInvestments',
+                        ]);
+                    }
+                    // Strategy 3: Individual cash-only concepts (last resort)
+                    if (cashAndEquivalents === null) {
+                        cashAndEquivalents = extract(report, 'bs', [
+                            'us-gaap_Cash',
+                            'us-gaap_CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents',
+                            'us-gaap_CashEquivalentsAtCarryingValue',
                         ]);
                     }
 
