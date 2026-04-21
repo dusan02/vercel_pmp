@@ -75,7 +75,12 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/stock/:ticker',
-        destination: '/?tab=analysis&ticker=:ticker',
+        destination: '/analysis/:ticker',
+        permanent: true, // 301 Redirect for SEO (Google will update indices)
+      },
+      {
+        source: '/company/:ticker',
+        destination: '/analysis/:ticker',
         permanent: true, // 301 Redirect for SEO (Google will update indices)
       },
     ];
