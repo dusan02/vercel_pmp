@@ -1,9 +1,9 @@
-import { loadEnvConfig } from '@next/env';
+import { config } from 'dotenv';
 import { resolve } from 'path';
 
 // Load .env relative to the project root
-const projectDir = resolve(__dirname, '..');
-loadEnvConfig(projectDir);
+config({ path: resolve(__dirname, '../.env') });
+config({ path: resolve(__dirname, '../.env.local'), override: true });
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 const CRON_SECRET = process.env.CRON_SECRET_KEY;
