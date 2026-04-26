@@ -1,9 +1,9 @@
-import { config } from 'dotenv';
 import { resolve } from 'path';
 
-// Load .env relative to the project root
-config({ path: resolve(__dirname, '../.env') });
-config({ path: resolve(__dirname, '../.env.local'), override: true });
+// Load .env relative to the project root (use require to avoid ESM named export issue with @next/env)
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { loadEnvConfig } = require('@next/env');
+loadEnvConfig(resolve(__dirname, '..'));
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 const CRON_SECRET = process.env.CRON_SECRET_KEY;
