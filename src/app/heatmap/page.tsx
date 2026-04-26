@@ -4,7 +4,7 @@ import React, { useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import ResponsiveMarketHeatmap from '@/components/ResponsiveMarketHeatmap';
 import type { CompanyNode } from '@/lib/heatmap/types';
-import { HeatmapLegend } from '@/components/MarketHeatmap';
+import { HeatmapLegend } from '@/components/HeatmapLegend';
 import { useHeatmapMetric } from '@/hooks/useHeatmapMetric';
 import { HeatmapMetricButtons } from '@/components/HeatmapMetricButtons';
 import { logger } from '@/lib/utils/logger';
@@ -59,19 +59,11 @@ export default function HeatmapPage() {
     };
   }, []);
 
-  const handleTileClick = (company: CompanyNode) => {
+  const handleTileClick = useCallback((company: CompanyNode) => {
     logger.debug('Heatmap tile clicked', { symbol: company.symbol });
-    
-    // Track ticker click event
-    event('ticker_click', {
-      ticker: company.symbol,
-      source: 'heatmap'
-    });
-
-    // Redirect to home page with Analysis tab and the clicked ticker
-    // Format: /?tab=analysis&ticker=SYMBOL
+    event('ticker_click', { ticker: company.symbol, source: 'heatmap' });
     router.push(`/?tab=analysis&ticker=${company.symbol.toUpperCase()}`);
-  };
+  }, [router]);
 
   return (
     <div 

@@ -18,22 +18,20 @@ interface MobileHeatmapTileProps {
 }
 
 /**
- * Single tile in the mobile heatmap.
- * Absolutely positioned within its sector's tile zone.
+ * Single tile — positioned at exact D3 coordinates (sub-pixel precise).
+ * Gap between tiles is baked into D3 layout via paddingInner(1).
+ * No manual inset needed.
  */
 export const MobileHeatmapTile = React.memo<MobileHeatmapTileProps>(({
   company,
   x, y, width, height,
   color, label, onClick,
 }) => {
-  if (width <= 0 || height <= 0) return null;
+  if (width < 1 || height < 1) return null;
 
-  const labelHeight = (label.symbolFontPx || 0) + (label.showValue ? (label.valueFontPx || 0) : 0);
-  const useOpticalOffset = height > 60 && labelHeight > 20;
-  const opticalOffsetPx = useOpticalOffset ? getMobileTileOpticalOffsetPx(label) : 0;
-
-  const borderRadius = width > 40 && height > 40 ? '4px'
-    : width > 20 && height > 20 ? '2px' : '1px';
+  const labelH = (label.symbolFontPx || 0) + (label.showValue ? (label.valueFontPx || 0) : 0);
+  const opticalOffset = height > 60 && labelH > 20 ? getMobileTileOpticalOffsetPx(label) : 0;
+  const r = width > 40 && height > 40 ? 3 : width > 20 && height > 20 ? 2 : 1;
 
   return (
     <div
@@ -44,16 +42,13 @@ export const MobileHeatmapTile = React.memo<MobileHeatmapTileProps>(({
       onClick={(e) => { e.stopPropagation(); onClick(company); }}
       style={{
         position: 'absolute',
-        left: `${x + 1}px`,
-        top: `${y + 1}px`,
-        width: `${Math.max(0, width - 2)}px`,
-        height: `${Math.max(0, height - 2)}px`,
+        left: `${x}px`,
+        top: `${y}px`,
+        width: `${width}px`,
+        height: `${height}px`,
         background: color,
-        boxShadow: [
-          'inset 0 0 0 1px rgba(255,255,255,0.18)',
-          'inset 0 1px 0 rgba(255,255,255,0.28)',
-          '0 0 0 1px rgba(0,0,0,0.35)',
-        ].join(', '),
+        borderRadius: `${r}px`,
+        boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.12), inset 0 1px 0 rgba(255,255,255,0.2)',
         boxSizing: 'border-box',
         overflow: 'hidden',
         display: 'flex',
@@ -61,14 +56,12 @@ export const MobileHeatmapTile = React.memo<MobileHeatmapTileProps>(({
         justifyContent: 'center',
         alignItems: 'center',
         cursor: 'pointer',
-        zIndex: 1,
         touchAction: 'pan-y',
-        borderRadius,
-        transition: 'filter 0.15s ease',
+        WebkitTapHighlightColor: 'transparent',
       }}
     >
       {/* Dot indicator for tiny tiles */}
-      {!(label.showSymbol || label.showValue) && width >= 10 && height >= 10 && (
+      {!(label.showSymbol || label.showValue) && width >= 8 && height >= 8 && (
         <div style={{
           width: Math.min(4, width * 0.2),
           height: Math.min(4, height * 0.2),
@@ -89,17 +82,17 @@ export const MobileHeatmapTile = React.memo<MobileHeatmapTileProps>(({
             width: '100%',
             pointerEvents: 'none',
             textAlign: 'center',
-            lineHeight: '1',
+            lineHeight: 1,
             gap: label.showValue ? 2 : 0,
-            transform: opticalOffsetPx > 0 ? `translateY(-${opticalOffsetPx}px)` : 'none',
+            transform: opticalOffset > 0 ? `translateY(-${opticalOffset}px)` : undefined,
           }}
         >
           {label.showSymbol && (
             <div style={{
               fontSize: `${label.symbolFontPx}px`,
               fontWeight: 800,
-              color: '#ffffff',
-              textShadow: '0 1px 2px rgba(0,0,0,0.55)',
+              color: '#fff',
+              textShadow: '0 1px 2px rgba(0,0,0,0.6)',
               letterSpacing: '0.01em',
               whiteSpace: 'nowrap',
               lineHeight: 1,
@@ -111,8 +104,8 @@ export const MobileHeatmapTile = React.memo<MobileHeatmapTileProps>(({
             <div style={{
               fontSize: `${label.valueFontPx}px`,
               fontWeight: 600,
-              color: 'rgba(255, 255, 255, 0.92)',
-              textShadow: '0 1px 2px rgba(0,0,0,0.45)',
+              color: 'rgba(255,255,255,0.92)',
+              textShadow: '0 1px 2px rgba(0,0,0,0.5)',
               whiteSpace: 'nowrap',
               lineHeight: 1,
             }}>

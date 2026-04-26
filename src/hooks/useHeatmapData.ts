@@ -111,13 +111,7 @@ export function useHeatmapData({
     setError(null);
 
     try {
-      // Determine URL
-      let url: URL;
-      if (apiEndpoint.includes('/heatmap')) {
-        url = new URL('/api/heatmap', window.location.origin);
-      } else {
-        url = new URL('/api/heatmap', window.location.origin);
-      }
+      const url = new URL('/api/heatmap', window.location.origin);
 
       // Add query params
       url.searchParams.set('timeframe', timeframe);

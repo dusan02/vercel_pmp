@@ -3,14 +3,13 @@
 import React, { useMemo, useCallback, useLayoutEffect, useRef, useState } from 'react';
 import type { CompanyNode } from '@/lib/heatmap/types';
 import { createHeatmapColorScale } from '@/lib/utils/heatmapColors';
-import { computeMobileTreemapSectors, prepareMobileTreemapData } from '@/lib/heatmap/mobileTreemap';
-import { useUserPreferences } from '@/hooks/useUserPreferences';
+import { computeMobileTreemapSectors, prepareMobileTreemapData, SECTOR_CHROME_PX, COLUMN_GAP_PX } from '@/lib/heatmap/mobileTreemap';
 import { MobileHeatmapHeader } from './mobile/MobileHeatmapHeader';
 import { MobileHeatmapSheet } from './mobile/MobileHeatmapSheet';
 import { MobileHeatmapSector } from './mobile/MobileHeatmapSector';
 
 // ---------------------------------------------------------------------------
-// Types & constants
+// Types
 // ---------------------------------------------------------------------------
 
 interface MobileTreemapNewProps {
@@ -25,10 +24,6 @@ interface MobileTreemapNewProps {
   activeView?: string | undefined;
   height?: number;
 }
-
-// Sector chrome sizing — must match MobileHeatmapSector constants.
-const SECTOR_CHROME_H = 21; // 16 + 2 + 1 + 2
-const SECTOR_COL_GAP = 4;
 
 // ---------------------------------------------------------------------------
 // Component
@@ -45,8 +40,6 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   isFavorite,
   height,
 }) => {
-  useUserPreferences();
-
   // -- Container measurement --------------------------------------------------
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [containerSize, setContainerSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
@@ -106,8 +99,8 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
         : {};
 
     return computeMobileTreemapSectors(sortedData, containerSize, layoutMetric || metric, {
-      sectorChromeHeightPx: SECTOR_CHROME_H,
-      columnGapPx: SECTOR_COL_GAP,
+      sectorChromeHeightPx: SECTOR_CHROME_PX,
+      columnGapPx: COLUMN_GAP_PX,
       ...heightConfig,
     });
   }, [sortedData, metric, layoutMetric, containerSize, height]);
@@ -122,7 +115,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
     >
       <MobileHeatmapHeader metric={metric} onMetricChange={onMetricChange} />
 
-      {/* Treemap scroll container */}
+      {/* Treemap scroll container — full-bleed, no padding waste */}
       <div
         ref={containerRef}
         className="mobile-heatmap-scroll"
@@ -130,14 +123,13 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
           width: '100%',
           overflowX: 'hidden',
           backgroundColor: '#0a0a0a',
-          padding: '4px',
           ...(height !== undefined
             ? { height: `${height}px`, overflowY: 'hidden' }
             : { flex: 1, overflowY: 'auto' }),
           WebkitOverflowScrolling: 'touch',
         }}
       >
-        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', paddingTop: '6px' }}>
+        <div style={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
           {rows && rows.length > 0 && containerSize.width > 0 ? (
             rows.map((row) => (
               <div
@@ -147,8 +139,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                   width: '100%',
                   height: `${row.height}px`,
                   flexShrink: 0,
-                  gap: `${SECTOR_COL_GAP}px`,
-                  marginBottom: '2px',
+                  gap: `${COLUMN_GAP_PX}px`,
                 }}
               >
                 {row.sectors.map((sector) => (
@@ -167,7 +158,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
             <div
               style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                gap: '12px', height: '100%', minHeight: '300px', background: 'var(--clr-bg)',
+                gap: '12px', height: '100%', minHeight: '300px',
               }}
             >
               <div

@@ -139,12 +139,6 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
     setIsMounted(true);
   }, []);
 
-  useEffect(() => {
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('📏 Heatmap Dimensions:', { width, height, isMounted, loading, hasData: !!data });
-    }
-  }, [width, height, isMounted, loading, data]);
-
   // Vypočítaj vek dát pre zobrazenie
   const getDataAgeDisplay = (): string | null => {
     if (!lastUpdated) return null;
@@ -235,33 +229,8 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
       );
     }
 
-    // Mobile: Use TRUE mobile treemap (2D grid, not vertical list)
-    // Desktop: Use full MarketHeatmap with treemap layout
+    // Mobile: MobileTreemapNew | Desktop: MarketHeatmap
     if (isMobile) {
-      // CRITICAL: Show skeleton immediately (faster perceived load)
-      // Don't wait for data - show skeleton while loading
-      if (loading && (!data || data.length === 0)) {
-        return (
-          <div className="h-full w-full bg-black p-2">
-            <div className="grid grid-cols-2 gap-2" style={{ gridAutoRows: 'minmax(72px, auto)' }}>
-              {[...Array(12)].map((_, i) => (
-                <div
-                  key={i}
-                  className="bg-gray-800 animate-pulse"
-                  style={{
-                    height: i < 3 ? '144px' : i < 9 ? '72px' : '72px',
-                    gridColumn: i < 3 ? 'span 2' : i < 9 ? 'span 2' : 'span 1',
-                    gridRow: i < 3 ? 'span 2' : 'span 1',
-                    animationDelay: `${i * 50}ms`,
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-        );
-      }
-
-      // Use new MobileTreemapNew component - completely new approach
       return (
         <MobileTreemapNew
           data={data || []}

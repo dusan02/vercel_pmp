@@ -22,8 +22,8 @@ export function getMobileTileLabel(
 ): MobileTileLabel {
   const minDim = Math.min(w, h);
 
-  // Too small → no text at all (unless zoomed, but caller passes effective size)
-  if (minDim < 12) {
+  // Too small → no text at all. 18px threshold ensures text is always readable on mobile.
+  if (minDim < 18) {
     return { showSymbol: false, showValue: false, symbol: '', value: '', symbolFontPx: 0, valueFontPx: 0 };
   }
 
@@ -46,8 +46,8 @@ export function getMobileTileLabel(
   const approxCharW = 0.62; // uppercase letter width in em-ish
 
   // Fit ticker to box (width + height).
-  // Mobile readability minimum: 9px — below this the text is visible but not readable on mobile.
-  const MIN_SYMBOL_PX = 9;
+  // Mobile readability minimum: 11px — below this the text is not comfortably readable.
+  const MIN_SYMBOL_PX = 11;
   const byWidthSymbol = Math.floor(maxW / Math.max(1, symbolText.length * approxCharW));
   const fittedSymbolFontPx = Math.min(baseSymbolFontPx, byWidthSymbol, Math.floor(maxH));
   if (fittedSymbolFontPx < MIN_SYMBOL_PX) {
@@ -56,7 +56,7 @@ export function getMobileTileLabel(
 
   // Decide if we can show value as a second line.
   // Keep existing behavior gate (needs room), then further degrade if it won't fit.
-  const wantsValue = minDim >= 28 && valueText.length > 0;
+  const wantsValue = minDim >= 36 && valueText.length > 0;
   let showValue = wantsValue;
   let fittedValueFontPx = baseValueFontPx;
 
