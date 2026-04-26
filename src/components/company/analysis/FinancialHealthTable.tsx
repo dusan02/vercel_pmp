@@ -14,7 +14,7 @@ function Row({
     label, value, statusLabel, statusType, hint, secondary, compareWith,
 }: {
     label: string; value: string; statusLabel: string; statusType: StatusType;
-    hint: string; secondary?: string; compareWith?: string;
+    hint: string; secondary?: string | undefined; compareWith?: string | undefined;
 }) {
     return (
         <div
