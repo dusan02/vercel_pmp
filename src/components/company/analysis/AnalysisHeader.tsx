@@ -57,16 +57,16 @@ function MiniScoreCircle({ label, score }: { label: string; score: number | null
     const color = getColorClass(score);
     const stroke = getStrokeColor(score);
     return (
-        <div className="flex flex-col items-center gap-1">
-            <p className="text-[9px] uppercase tracking-widest font-semibold text-gray-400 dark:text-gray-500 text-center">{label}</p>
-            <div className="relative w-[60px] h-[60px]">
+        <div className="flex flex-col items-center gap-0.5 sm:gap-1">
+            <p className="text-[8px] sm:text-[9px] uppercase tracking-widest font-semibold text-gray-400 dark:text-gray-500 text-center">{label}</p>
+            <div className="relative w-[44px] h-[44px] sm:w-[60px] sm:h-[60px]">
                 <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                     <circle cx="50" cy="50" r={radius} fill="transparent" stroke="currentColor" strokeWidth="10" className="text-gray-100 dark:text-gray-700" />
                     <circle cx="50" cy="50" r={radius} fill="transparent" stroke={stroke} strokeWidth="10" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} className="transition-all duration-700 ease-out" />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className={`text-base font-bold leading-none ${color}`}>{score ?? '—'}</span>
-                    <span className="text-[8px] text-gray-400 mt-0.5">/100</span>
+                    <span className={`text-sm sm:text-base font-bold leading-none ${color}`}>{score ?? '—'}</span>
+                    <span className="text-[7px] sm:text-[8px] text-gray-400 mt-0.5">/100</span>
                 </div>
             </div>
         </div>
@@ -135,34 +135,38 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
 
             {t ? (
                 <>
-                    {/* ── TOP: Logo + Identity + Scores ── */}
-                    <div className="flex items-center gap-4 px-6 lg:px-8 pt-6 lg:pt-7 pb-5">
-                        <CompanyLogo
-                            ticker={ticker}
-                            logoUrl={t.logoUrl}
-                            size={64}
-                            priority
-                        />
-                        <div className="min-w-0 flex items-center gap-3 flex-wrap">
-                            <h1 className="text-xl lg:text-2xl font-bold text-gray-900 dark:text-white leading-tight tracking-tight">
-                                {companyName}
-                            </h1>
-                            <span className="px-2 py-0.5 bg-blue-600 text-white text-[10px] font-bold rounded tracking-widest uppercase shrink-0">
-                                {ticker}
-                            </span>
-                            {t.websiteUrl && (
-                                <a
-                                    href={t.websiteUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-[10px] uppercase tracking-widest font-semibold text-gray-400 hover:text-blue-500 dark:text-gray-500 dark:hover:text-blue-400 transition-colors shrink-0"
-                                >
-                                    Website ↗
-                                </a>
-                            )}
+                    {/* ── TOP: Logo + Identity (row 1) + Scores (row 2 on mobile, same row on sm+) ── */}
+                    <div className="flex flex-wrap items-center gap-4 px-4 sm:px-6 lg:px-8 pt-5 sm:pt-6 lg:pt-7 pb-4 sm:pb-5">
+                        {/* Logo + Name + Badge */}
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <CompanyLogo
+                                ticker={ticker}
+                                logoUrl={t.logoUrl}
+                                size={48}
+                                className=""
+                                priority
+                            />
+                            <div className="min-w-0 flex items-center gap-2 sm:gap-3 flex-wrap">
+                                <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white leading-tight tracking-tight">
+                                    {companyName}
+                                </h1>
+                                <span className="px-2 py-0.5 bg-blue-600 text-white text-[10px] font-bold rounded tracking-widest uppercase shrink-0">
+                                    {ticker}
+                                </span>
+                                {t.websiteUrl && (
+                                    <a
+                                        href={t.websiteUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-[10px] uppercase tracking-widest font-semibold text-gray-400 hover:text-blue-500 dark:text-gray-500 dark:hover:text-blue-400 transition-colors shrink-0"
+                                    >
+                                        Website ↗
+                                    </a>
+                                )}
+                            </div>
                         </div>
 
-                        {/* Real-time Price & Movement */}
+                        {/* Real-time Price & Movement — desktop only */}
                         <div className="hidden sm:flex flex-col ml-4 lg:ml-8 border-l border-gray-100 dark:border-gray-700/60 pl-4 lg:pl-8 min-w-[120px]">
                             {bestPrice ? (
                                 <>
@@ -189,8 +193,9 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
                                 </>
                             ) : null}
                         </div>
-                        {/* ── Score circles (compact, top-right) ── */}
-                        <div className="ml-auto flex items-center gap-4 shrink-0 pl-4">
+
+                        {/* ── Score circles — full width row on mobile, inline on sm+ ── */}
+                        <div className="flex items-center justify-center sm:justify-end gap-3 sm:gap-4 w-full sm:w-auto sm:ml-auto shrink-0">
                             <MiniScoreCircle label="Health" score={data.healthScore} />
                             <MiniScoreCircle label="Profitability" score={data.profitabilityScore} />
                             <MiniScoreCircle label="Valuation" score={data.valuationScore} />
