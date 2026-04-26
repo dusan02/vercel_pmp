@@ -79,28 +79,35 @@ export function ScenarioLab({ ticker, currentEps, currentPe, currentPrice }: Sce
             hist.push({ date: new Date().toISOString().slice(0, 10), historical: currentPrice, projection: null, projected: false });
         }
 
-        // Bridge point: last historical price → start of projection
         const lastDate = hist.length > 0 ? hist[hist.length - 1]!.date : new Date().toISOString().slice(0, 10);
-        const lastPrice = hist.length > 0 ? hist[hist.length - 1]!.historical : currentPrice;
+        const lastHist = hist.length > 0 ? hist[hist.length - 1]!.historical : currentPrice;
 
-        // Projected points — one per year, dashed line
         const projPoints: typeof hist = [];
         const today = new Date(lastDate);
 
-        // Bridge: both lines connect at today
-        projPoints.push({ date: lastDate, historical: lastPrice ?? currentPrice, projection: lastPrice ?? currentPrice, projected: false });
+        // Bridge: anchor projection at currentPrice so dashed line connects smoothly
+        projPoints.push({ date: lastDate, historical: lastHist, projection: currentPrice, projected: false });
 
         for (let y = 1; y <= years; y++) {
             const futureDate = new Date(today);
             futureDate.setFullYear(futureDate.getFullYear() + y);
             const label = futureDate.toISOString().slice(0, 10);
-            const epsAtYear = currentEps * Math.pow(1 + epsGrowth / 100, y);
-            const priceAtYear = epsAtYear * exitPe;
+
+            let priceAtYear: number;
+            if (currentPe > 0 && currentEps > 0) {
+                // Interpolate PE linearly from currentPe → exitPe over investment horizon
+                // This avoids a sudden jump at Y=1 when exitPe differs from currentPe
+                const peAtYear = currentPe + (exitPe - currentPe) * (y / years);
+                priceAtYear = currentEps * Math.pow(1 + epsGrowth / 100, y) * peAtYear;
+            } else {
+                // Fallback for loss-making companies: linear interpolation to targetPrice
+                priceAtYear = currentPrice + (targetPrice - currentPrice) * (y / years);
+            }
             projPoints.push({ date: label, historical: null as any, projection: priceAtYear, projected: true });
         }
 
         return [...hist, ...projPoints];
-    }, [priceHistory, currentPrice, currentEps, epsGrowth, exitPe, years]);
+    }, [priceHistory, currentPrice, currentEps, currentPe, epsGrowth, exitPe, years, targetPrice]);
 
     // Y-axis domain
     const allPrices = chartData.map(d => d.historical ?? d.projection ?? 0).filter(v => v > 0);
@@ -223,12 +230,14 @@ export function ScenarioLab({ ticker, currentEps, currentPe, currentPrice }: Sce
                             <span className="font-mono text-blue-600 dark:text-blue-400">{exitPe.toFixed(1)}x</span>
                         </label>
                         <input
-                            type="range" min="5" max="100" step="0.5" value={exitPe}
+                            type="range" min="3" max="100" step="0.5" value={exitPe}
                             onChange={(e) => setExitPe(Number(e.target.value))}
                             className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-blue-600"
                         />
                         <div className="flex justify-between text-xs text-gray-400 mt-1">
-                            <span>Current: {currentPe.toFixed(1)}x</span>
+                            <span>3x</span>
+                            <span className="text-blue-400 font-semibold">Current: {currentPe.toFixed(1)}x</span>
+                            <span>100x</span>
                         </div>
                     </div>
                 </div>
