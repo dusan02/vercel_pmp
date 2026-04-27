@@ -31,8 +31,7 @@ export async function GET(request: NextRequest) {
             try {
                 const response = await fetch(`${apiUrl}&timeframe=${timeframe}`, {
                     headers: {
-                        'Authorization': authHeader || '', // Pass through auth if needed
-                        // Add a custom header so the heatmap API knows it's a cron job if we need special handling later
+                        'Authorization': request.headers.get('authorization') || '',
                         'X-Source': 'cron-keep-warm'
                     }
                 });
