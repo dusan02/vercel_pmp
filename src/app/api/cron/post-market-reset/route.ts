@@ -103,26 +103,19 @@ export async function POST(request: NextRequest) {
         // 4. RECOMPUTE ANALYSIS FOR ALL TRACKED TICKERS
         console.log('\n📝 Step 4: Recomputing analysis for all tracked tickers...');
         const trackedTickers = await getAllTrackedTickers();
-        const analysisResults = { success: 0, failed: 0 };
-
-        for (const symbol of trackedTickers) {
-            try {
-                // Sync and analyze sequentially to respect Polygon API rate limits
-                const success = await AnalysisService.syncAndAnalyze(symbol);
-                if (success) {
-                    analysisResults.success++;
-                } else {
-                    analysisResults.failed++;
+        const analysisResults = await processBatch(
+            trackedTickers,
+            async (symbol: string) => {
+                try {
+                    return await AnalysisService.syncAndAnalyze(symbol);
+                } catch (err: any) {
+                    console.error(`❌ Analysis error for ${symbol}:`, err.message);
+                    return false;
                 }
-
-                // Add a small delay between tickers (e.g. 500ms) to prevent burst errors
-                // For free tier users, this should be increased to ~12000ms
-                await new Promise(resolve => setTimeout(resolve, process.env.NODE_ENV === 'production' ? 1000 : 100));
-            } catch (err: any) {
-                console.error(`❌ Fatal error in analysis for ${symbol}:`, err.message);
-                analysisResults.failed++;
-            }
-        }
+            },
+            5,  // batchSize: 5 tickers per outer batch
+            3   // concurrencyLimit: 3 parallel within each batch (respects Polygon rate limits)
+        );
         console.log(`✅ Analysis Sync Complete: ${analysisResults.success} updated, ${analysisResults.failed} failed`);
 
         await updateCronStatus('post_market_reset');

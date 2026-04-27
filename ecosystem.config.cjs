@@ -109,7 +109,7 @@ module.exports = {
       error_file: path.join(__dirname, "logs", "pm2", "bulk-preloader-error.log"),
       out_file: path.join(__dirname, "logs", "pm2", "bulk-preloader-out.log"),
       log_date_format: "YYYY-MM-DD HH:mm:ss Z",
-      cron_restart: "*/5 13-20 * * 1-5", // Každých 5 minút počas trading hours (13-20 UTC = 8-15 ET)
+      cron_restart: "*/5 12-21 * * 1-5", // Každých 5 minút počas market hours (12-21 UTC = 7-16 ET winter / 8-17 ET summer)
       autorestart: false, // Cron job sa spúšťa automaticky, nepotrebuje autorestart
     },
     {

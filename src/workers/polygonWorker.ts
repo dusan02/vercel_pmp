@@ -31,6 +31,7 @@ import { updateRankIndexes, updateStatsCache, getRankMinMax } from '@/lib/redis/
 import { computeMarketCap, computeMarketCapDiff, getSharesOutstanding } from '@/lib/utils/marketCapUtils';
 import { getPolygonClient } from '@/lib/clients/polygonClient';
 import { prisma } from '@/lib/db/prisma';
+import { processBatchWithConcurrency } from '@/lib/batchProcessor';
 import type { MarketSession } from '@/lib/types';
 
 // Circuit breaker for Polygon API
@@ -1139,164 +1140,149 @@ export async function ingestBatch(
   } catch (error) {
     console.warn('⚠️  Failed to batch load statistical baselines:', error);
   }
+  // Process each snapshot in parallel with limited concurrency (optimization)
+  const redisSession = mapToRedisSession(session);
+  const dateStr = getDateET();
 
-  // Process each snapshot
-  for (const snapshot of snapshots) {
-    const symbol = snapshot.ticker;
-    const previousClose = prevCloseMap.get(symbol) || null;
-    const regularClose = regularCloseMap.get(symbol) || null;
-    const frozenPrice = frozenPricesMap.get(symbol);
+  const batchResults = await processBatchWithConcurrency(
+    snapshots,
+    async (snapshot): Promise<IngestResult> => {
+      const symbol = snapshot.ticker;
+      const previousClose = prevCloseMap.get(symbol) || null;
+      const regularClose = regularCloseMap.get(symbol) || null;
+      const frozenPrice = frozenPricesMap.get(symbol);
 
-    if (symbol === 'GOOG' || symbol === 'GOOGL') {
-      console.log(`🔍 Debug ${symbol}:`);
-      console.log(`   PrevClose=${previousClose}, RegularClose=${regularClose}, FrozenPrice=${frozenPrice?.price || 'none'}`);
-      console.log(`   Snapshot: day.c=${snapshot.day?.c || 'N/A'}, min.c=${snapshot.min?.c || 'N/A'}, lastTrade.p=${snapshot.lastTrade?.p || 'N/A'}`);
-      console.log(`   Session=${session}, Force=${force}`);
-    }
-
-    try {
-      // Normalize using session-aware resolver
-      // If static update is locked and no prevClose, still normalize (will return null if no prevClose by design)
-      // This prevents calculating % with null reference, but still allows price updates
-      const normalized = normalizeSnapshot(
-        snapshot,
-        previousClose,
-        regularClose,
-        session,
-        frozenPrice,
-        force
-      );
-
-      // Log if locked and no prevClose (for debugging)
-      if (isStaticUpdateLocked && !previousClose && normalized) {
-        console.log(`⚠️  ${symbol}: Normalized during lock without prevClose - % may be 0`);
+      if (symbol === 'GOOG' || symbol === 'GOOGL') {
+        console.log(`🔍 Debug ${symbol}:`);
+        console.log(`   PrevClose=${previousClose}, RegularClose=${regularClose}, FrozenPrice=${frozenPrice?.price || 'none'}`);
+        console.log(`   Snapshot: day.c=${snapshot.day?.c || 'N/A'}, min.c=${snapshot.min?.c || 'N/A'}, lastTrade.p=${snapshot.lastTrade?.p || 'N/A'}`);
+        console.log(`   Session=${session}, Force=${force}`);
       }
-      if (!normalized) {
-        if (symbol === 'GOOG' || symbol === 'GOOGL') {
-          console.log(`   ❌ normalizeSnapshot returned null for ${symbol}`);
+
+      try {
+        // Normalize using session-aware resolver
+        const normalized = normalizeSnapshot(
+          snapshot,
+          previousClose,
+          regularClose,
+          session,
+          frozenPrice,
+          force
+        );
+
+        if (isStaticUpdateLocked && !previousClose && normalized) {
+          console.log(`⚠️  ${symbol}: Normalized during lock without prevClose - % may be 0`);
         }
-        results.push({
+
+        if (!normalized) {
+          if (symbol === 'GOOG' || symbol === 'GOOGL') {
+            console.log(`   ❌ normalizeSnapshot returned null for ${symbol}`);
+          }
+          return {
+            symbol,
+            price: 0,
+            changePct: 0,
+            timestamp: new Date(),
+            quality: 'snapshot',
+            success: false,
+            error: 'No price data'
+          };
+        }
+
+        // Get batch-fetched shares
+        let shares = sharesMap.get(symbol) || 0;
+        if (shares === 0) {
+          shares = await getSharesOutstanding(symbol, normalized.price);
+        }
+
+        const marketCap = computeMarketCap(normalized.price, shares);
+        const marketCapDiff = previousClose
+          ? computeMarketCapDiff(normalized.price, previousClose, shares)
+          : 0;
+
+        const cachedLastChangePct = lastChangePctMap.get(symbol);
+        const stats = statsMap.get(symbol);
+        const { success: dbSuccess, effectiveChangePct, zScore, rvol } = await upsertToDB(
+          symbol, session, normalized, previousClose, marketCap, marketCapDiff, isStaticUpdateLocked, cachedLastChangePct, stats, force
+        );
+
+        const priceData: PriceData = {
+          p: normalized.price,
+          change: effectiveChangePct,
+          ts: normalized.timestamp.getTime(),
+          source: normalized.quality,
+          quality: normalized.quality
+        };
+
+        // Atomic update: last price + heatmap
+        await atomicUpdatePrice(redisSession, symbol, priceData, effectiveChangePct);
+
+        // Get ticker info for name/sector
+        const ticker = await prisma.ticker.findUnique({
+          where: { symbol },
+          select: { name: true, sector: true, industry: true }
+        });
+
+        // Update rank indexes
+        await updateRankIndexes(dateStr, redisSession, {
+          symbol,
+          price: normalized.price,
+          marketCap,
+          marketCapDiff,
+          changePct: effectiveChangePct,
+          name: ticker?.name ?? undefined,
+          sector: ticker?.sector ?? undefined,
+          industry: ticker?.industry ?? undefined,
+          zscore: zScore,
+          rvol: rvol
+        }, false);
+
+        // Check and update stats cache (min/max)
+        const checkAndUpdateStats = async (field: 'price' | 'cap' | 'capdiff' | 'chg', value: number) => {
+          const currentStats = await getRankMinMax(dateStr, redisSession, field);
+          const min = currentStats.min;
+          const max = currentStats.max;
+          const isMin = !min || value < min.v;
+          const isMax = !max || value > max.v;
+          if (isMin || isMax) {
+            await updateStatsCache(dateStr, redisSession, field, symbol, value, isMin, isMax);
+          }
+        };
+
+        await Promise.all([
+          checkAndUpdateStats('price', normalized.price),
+          checkAndUpdateStats('cap', marketCap),
+          checkAndUpdateStats('capdiff', marketCapDiff),
+          checkAndUpdateStats('chg', Math.round(effectiveChangePct * 10000))
+        ]);
+
+        await publishTick(symbol, redisSession, priceData);
+
+        return {
+          symbol,
+          price: normalized.price,
+          changePct: effectiveChangePct,
+          timestamp: normalized.timestamp,
+          quality: normalized.quality,
+          success: dbSuccess
+        };
+      } catch (error) {
+        console.error(`Error processing ${symbol}:`, error);
+        return {
           symbol,
           price: 0,
           changePct: 0,
           timestamp: new Date(),
           quality: 'snapshot',
           success: false,
-          error: 'No price data'
-        });
-        continue;
+          error: error instanceof Error ? error.message : 'Unknown error'
+        };
       }
+    },
+    15 // Concurrency limit: 15 tickers in parallel
+  );
 
-      // Get batch-fetched shares (ak existuje), inak fetch jednotlivo
-      let shares = sharesMap.get(symbol) || 0;
-      if (shares === 0) {
-        shares = await getSharesOutstanding(symbol, normalized.price);
-      }
-
-      const marketCap = computeMarketCap(normalized.price, shares);
-      // Use previousClose (adjusted aggregates) for marketCapDiff, not effectivePrevClose
-      const marketCapDiff = previousClose
-        ? computeMarketCapDiff(normalized.price, previousClose, shares)
-        : 0;
-
-      // Upsert to DB (includes updating Ticker table for sorting)
-      // Pass previousClose - always use adjusted aggregates API value
-      // Pass isStaticUpdateLocked to preserve lastChangePct during lock
-      // Pass cached lastChangePct to avoid per-ticker query during lock
-      const cachedLastChangePct = lastChangePctMap.get(symbol);
-      const stats = statsMap.get(symbol);
-      const { success: dbSuccess, effectiveChangePct, zScore, rvol } = await upsertToDB(
-        symbol, session, normalized, previousClose, marketCap, marketCapDiff, isStaticUpdateLocked, cachedLastChangePct, stats, force
-      );
-
-      // Write to Redis (atomic operation)
-      const priceData: PriceData = {
-        p: normalized.price,
-        change: effectiveChangePct, // CRITICAL: Use resolved effective percent, not normalized (which might be 0)
-        ts: normalized.timestamp.getTime(),
-        source: normalized.quality,
-        quality: normalized.quality
-      };
-
-      // Map 'closed' to 'after' for Redis operations
-      const redisSession = mapToRedisSession(session);
-
-      // Atomic update: last price + heatmap
-      await atomicUpdatePrice(redisSession, symbol, priceData, effectiveChangePct);
-
-      // Get ticker info for name/sector
-      const ticker = await prisma.ticker.findUnique({
-        where: { symbol },
-        select: { name: true, sector: true, industry: true }
-      });
-
-      // Update rank indexes (date-based ZSET indexes) - ATOMIC
-      const date = getDateET();
-      await updateRankIndexes(date, redisSession, {
-        symbol,
-        price: normalized.price,
-        marketCap,
-        marketCapDiff,
-        changePct: effectiveChangePct, // Use effective pct
-        name: ticker?.name ?? undefined,
-        sector: ticker?.sector ?? undefined,
-        industry: ticker?.industry ?? undefined,
-        zscore: zScore,
-        rvol: rvol
-      }, false); // Don't update stats here, we'll do it separately after checking min/max
-
-      // Check and update stats cache (min/max) - only if this is a new min/max
-      // This is done after rank update to ensure ZSETs are up to date
-      const checkAndUpdateStats = async (field: 'price' | 'cap' | 'capdiff' | 'chg', value: number) => {
-        const currentStats = await getRankMinMax(date, redisSession, field);
-
-        const min = currentStats.min;
-        const max = currentStats.max;
-
-        const isMin = !min || value < min.v;
-        const isMax = !max || value > max.v;
-
-        if (isMin || isMax) {
-          await updateStatsCache(date, redisSession, field, symbol, value, isMin, isMax);
-        }
-      };
-
-      // Check all fields (in parallel, but only update if needed)
-      await Promise.all([
-        checkAndUpdateStats('price', normalized.price),
-        checkAndUpdateStats('cap', marketCap),
-        checkAndUpdateStats('capdiff', marketCapDiff),
-        checkAndUpdateStats('chg', Math.round(effectiveChangePct * 10000))
-      ]);
-
-      // Publish to Redis Pub/Sub (for WebSocket)
-      await publishTick(symbol, redisSession, priceData);
-
-      results.push({
-        symbol,
-        price: normalized.price,
-        changePct: effectiveChangePct,
-        timestamp: normalized.timestamp,
-        quality: normalized.quality,
-        success: dbSuccess
-      });
-    } catch (error) {
-      console.error(`Error processing ${symbol}:`, error);
-
-      // Add to DLQ after max retries - commented out to avoid startup issues
-      // await addToDLQ('ingest', { symbol, tickers }, error, 1);
-
-      results.push({
-        symbol,
-        price: 0,
-        changePct: 0,
-        timestamp: new Date(),
-        quality: 'snapshot',
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  }
+  results.push(...batchResults);
 
   return results;
 }
@@ -1836,8 +1822,12 @@ async function main() {
     };
 
     const ingestLoop = async () => {
-      const etNow = nowET();
-      const session = detectSession(etNow);
+      const loopStartTime = Date.now();
+      let totalIngestSuccess = 0;
+
+      try {
+        const etNow = nowET();
+        const session = detectSession(etNow);
 
       // --- Regular close + next-day prevClose (CRITICAL) ---
       // In production we run the worker in MODE=snapshot (see PM2 ecosystem).
@@ -1911,6 +1901,21 @@ async function main() {
         // Fall through to normal ingest below — canOverwrite:false prevents DB overwrites
       }
 
+      // Weekday 04:00 ET bootstrap (self-healing for snapshot mode — MODE=refs never runs)
+      // If post-market-daily-reset failed the previous evening, prevClose stays stale until this runs.
+      if (!isWeekendOrHoliday && session === 'closed') {
+        const etParts = toET(etNow);
+        if (etParts.hour === 4 && etParts.minute < 5) {
+          const today = getDateET(etNow);
+          const { getPrevClose } = await import('@/lib/redis/operations');
+          const samplePrevCloses = await getPrevClose(today, tickers.slice(0, 5));
+          if (samplePrevCloses.size === 0) {
+            console.log('🌅 04:00 ET weekday bootstrap: prevClose missing — bootstrapping...');
+            await bootstrapPreviousCloses(tickers, apiKey, today);
+          }
+        }
+      }
+
       // For pre-market, after-hours, live, or closed (but not weekend/holiday) - INGEST DATA!
       // This is critical for premarketprice.com - we need pre-market prices!
       if (session === 'pre' || session === 'after') {
@@ -1969,6 +1974,8 @@ async function main() {
 
       if (tickersNeedingUpdate.length === 0) {
         console.log('⏭️ No tickers need update yet (within refresh intervals)');
+        // Still record success if we are just idling between intervals
+        await recordSuccess('ingestLoop', 0);
         return;
       }
 
@@ -2006,7 +2013,6 @@ async function main() {
         }
       }
 
-      let hasSuccess = false;
       for (let i = 0; i < processedTickers.length; i += usedBatchSize) {
         const batch = processedTickers.slice(i, i + usedBatchSize);
         const batchNum = Math.floor(i / usedBatchSize) + 1;
@@ -2016,12 +2022,10 @@ async function main() {
         try {
           const results = await ingestBatch(batch, apiKey);
           const successSymbols = results.filter(r => r.success).map(r => r.symbol);
-          if (successSymbols.length > 0) {
-            hasSuccess = true;
-          }
+          totalIngestSuccess += successSymbols.length;
 
           // Update freshness metrics
-          if (redisClient && redisClient.isOpen) {
+          if (redisClient && redisClient.isOpen && successSymbols.length > 0) {
             const { updateFreshnessTimestampsBatch } = await import('@/lib/utils/freshnessMetrics');
             const freshnessUpdates = new Map<string, number>();
             successSymbols.forEach(ticker => freshnessUpdates.set(ticker, now));
@@ -2039,9 +2043,18 @@ async function main() {
         }
       }
 
-      // Update worker status after successful ingest
-      if (hasSuccess) {
-        await updateWorkerStatus();
+        const loopDuration = Date.now() - loopStartTime;
+        console.log(`✅ ingestLoop completed: ${totalIngestSuccess} tickers updated in ${loopDuration}ms`);
+
+        // Update health monitor status
+        await recordSuccess('ingestLoop', totalIngestSuccess);
+
+        if (totalIngestSuccess > 0) {
+          await updateWorkerStatus();
+        }
+      } catch (error) {
+        console.error('❌ Ingest loop failed:', error);
+        await recordFailure('ingestLoop', error instanceof Error ? error.message : String(error));
       }
     };
 
