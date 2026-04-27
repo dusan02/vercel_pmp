@@ -55,8 +55,12 @@ export function ScenarioLab({ ticker, currentEps, currentPe, currentPrice }: Sce
         return () => { cancelled = true; };
     }, [ticker]);
 
+    // To prevent a sudden jump from currentPrice to Year 1 due to rounding/mismatches in currentEps vs currentPe,
+    // we calculate an "implied" EPS based strictly on the current price and P/E.
+    const impliedEps = (currentPe > 0 && currentPrice > 0) ? (currentPrice / currentPe) : currentEps;
+    
     // Calculations
-    const projectedEps = currentEps * Math.pow(1 + epsGrowth / 100, years);
+    const projectedEps = impliedEps * Math.pow(1 + epsGrowth / 100, years);
     const targetPrice = projectedEps * exitPe;
     let cagr = 0;
     if (currentPrice > 0 && targetPrice > 0) {
@@ -73,20 +77,29 @@ export function ScenarioLab({ ticker, currentEps, currentPe, currentPrice }: Sce
         // Historical — solid line
         const hist = priceHistory
             .filter(p => p.date >= cutoff)
-            .map(p => ({ date: p.date, historical: p.price, projection: null as number | null, projected: false }));
+            .map(p => ({ 
+                date: p.date, 
+                timestamp: new Date(p.date).getTime(), 
+                historical: p.price, 
+                projection: null as number | null, 
+                projected: false 
+            }));
 
         if (hist.length === 0 && currentPrice > 0) {
-            hist.push({ date: new Date().toISOString().slice(0, 10), historical: currentPrice, projection: null, projected: false });
+            const d = new Date().toISOString().slice(0, 10);
+            hist.push({ date: d, timestamp: new Date(d).getTime(), historical: currentPrice, projection: null, projected: false });
+        }
+
+        if (hist.length > 0) {
+            // Bridge: anchor projection at currentPrice on the last historical point
+            // so the dashed line connects smoothly without duplicating the date
+            hist[hist.length - 1]!.projection = currentPrice;
         }
 
         const lastDate = hist.length > 0 ? hist[hist.length - 1]!.date : new Date().toISOString().slice(0, 10);
-        const lastHist = hist.length > 0 ? hist[hist.length - 1]!.historical : currentPrice;
 
         const projPoints: typeof hist = [];
         const today = new Date(lastDate);
-
-        // Bridge: anchor projection at currentPrice so dashed line connects smoothly
-        projPoints.push({ date: lastDate, historical: lastHist, projection: currentPrice, projected: false });
 
         for (let y = 1; y <= years; y++) {
             const futureDate = new Date(today);
@@ -94,16 +107,16 @@ export function ScenarioLab({ ticker, currentEps, currentPe, currentPrice }: Sce
             const label = futureDate.toISOString().slice(0, 10);
 
             let priceAtYear: number;
-            if (currentPe > 0 && currentEps > 0) {
+            if (currentPe > 0 && impliedEps > 0) {
                 // Interpolate PE linearly from currentPe → exitPe over investment horizon
                 // This avoids a sudden jump at Y=1 when exitPe differs from currentPe
                 const peAtYear = currentPe + (exitPe - currentPe) * (y / years);
-                priceAtYear = currentEps * Math.pow(1 + epsGrowth / 100, y) * peAtYear;
+                priceAtYear = impliedEps * Math.pow(1 + epsGrowth / 100, y) * peAtYear;
             } else {
                 // Fallback for loss-making companies: linear interpolation to targetPrice
                 priceAtYear = currentPrice + (targetPrice - currentPrice) * (y / years);
             }
-            projPoints.push({ date: label, historical: null as any, projection: priceAtYear, projected: true });
+            projPoints.push({ date: label, timestamp: futureDate.getTime(), historical: null as any, projection: priceAtYear, projected: true });
         }
 
         return [...hist, ...projPoints];
@@ -135,11 +148,14 @@ export function ScenarioLab({ ticker, currentEps, currentPe, currentPrice }: Sce
                             </defs>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" className="dark:stroke-gray-700" />
                             <XAxis
-                                dataKey="date"
+                                dataKey="timestamp"
+                                type="number"
+                                scale="time"
+                                domain={['dataMin', 'dataMax']}
+                                tickFormatter={(val) => new Date(val).getFullYear().toString()}
                                 tick={{ fontSize: 10, fill: '#9CA3AF' }}
                                 axisLine={false}
                                 tickLine={false}
-                                interval="preserveStartEnd"
                                 minTickGap={60}
                             />
                             <YAxis
@@ -151,7 +167,7 @@ export function ScenarioLab({ ticker, currentEps, currentPe, currentPrice }: Sce
                                 tickFormatter={(v: number) => `$${v >= 1000 ? `${(v/1000).toFixed(0)}k` : v.toFixed(0)}`}
                             />
                             <Tooltip content={<ScenarioTooltip />} />
-                            <ReferenceLine x={chartData.find(d => d.projection !== null && d.historical !== null)?.date ?? ''} stroke="#9CA3AF" strokeDasharray="3 3" label={{ value: 'Today', fontSize: 10, fill: '#9CA3AF', position: 'top' }} />
+                            <ReferenceLine x={chartData.find(d => d.projection !== null && d.historical !== null)?.timestamp ?? ''} stroke="#9CA3AF" strokeDasharray="3 3" label={{ value: 'Today', fontSize: 10, fill: '#9CA3AF', position: 'top' }} />
                             {/* Historical solid line */}
                             <Line
                                 type="monotone"
