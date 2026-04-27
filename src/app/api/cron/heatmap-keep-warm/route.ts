@@ -1,19 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { headers } from 'next/headers';
+import { verifyCronAuth } from '@/lib/utils/cronAuth';
 
 /**
  * Cron job to keep heatmap cache warm
  * Runs every 10 minutes (matching the cache TTL)
  */
 export async function GET(request: NextRequest) {
-    // Verify cron secret
-    const authHeader = (await headers()).get('authorization');
-    if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-        return NextResponse.json(
-            { success: false, error: 'Unauthorized' },
-            { status: 401 }
-        );
-    }
+    const authError = verifyCronAuth(request);
+    if (authError) return authError;
 
     try {
         const startTime = Date.now();

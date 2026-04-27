@@ -1,69 +1,55 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { verifyCronAuth } from '@/lib/utils/cronAuth';
 import { prisma } from '@/lib/db/prisma';
 import { AnalysisService } from '@/services/analysisService';
-
-const DELAY_MS = 2000; // 2s between tickers to respect Polygon rate limits
-const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+import { processBatch } from '@/lib/utils/batchProcessing';
 
 /**
  * Weekly cron: refresh analysis cache for all previously analyzed tickers.
  *
  * Trigger via:
- *   - Vercel Cron (add to vercel.json): {"path": "/api/cron/refresh-all", "schedule": "0 4 * * 1"}
- *   - External cron / curl: GET /api/cron/refresh-all?secret=<CRON_SECRET>
- *   - Manual: curl https://premarketprice.com/api/cron/refresh-all?secret=...
+ *   - curl -H "Authorization: Bearer $CRON_SECRET_KEY" https://premarketprice.com/api/cron/refresh-all
  *
- * Env var required: CRON_SECRET (set in .env.local and Vercel dashboard)
+ * Env var required: CRON_SECRET_KEY
  */
-export async function GET(request: Request) {
-    const { searchParams } = new URL(request.url);
-    const secret = searchParams.get('secret');
-
-    if (secret !== process.env.CRON_SECRET) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+export async function GET(request: NextRequest) {
+    const authError = verifyCronAuth(request);
+    if (authError) return authError;
 
     const startedAt = Date.now();
 
-    // Get all tickers that have been analyzed before, ordered by most recently updated
     const cached = await prisma.analysisCache.findMany({
         select: { symbol: true, updatedAt: true },
         orderBy: { updatedAt: 'asc' }, // oldest first — most urgent to refresh
     });
 
-    const results: { symbol: string; status: string; ms: number }[] = [];
-    let succeeded = 0;
-    let failed = 0;
-
     console.log(`[cron/refresh-all] Starting refresh for ${cached.length} tickers`);
 
-    for (const { symbol } of cached) {
-        const t0 = Date.now();
-        try {
-            await AnalysisService.syncFinancials(symbol);
-            await AnalysisService.syncValuationHistory(symbol); // now incremental — fast
-            await AnalysisService.calculateScores(symbol);
-            const ms = Date.now() - t0;
-            results.push({ symbol, status: 'ok', ms });
-            succeeded++;
-            console.log(`[cron/refresh-all] ✓ ${symbol} (${ms}ms)`);
-        } catch (err: any) {
-            const ms = Date.now() - t0;
-            results.push({ symbol, status: `error: ${err?.message}`, ms });
-            failed++;
-            console.error(`[cron/refresh-all] ✗ ${symbol}: ${err?.message}`);
-        }
-        await sleep(DELAY_MS);
-    }
+    const results = await processBatch(
+        cached.map(c => c.symbol),
+        async (symbol: string) => {
+            try {
+                await AnalysisService.syncFinancials(symbol);
+                await AnalysisService.syncValuationHistory(symbol);
+                await AnalysisService.calculateScores(symbol);
+                console.log(`[cron/refresh-all] ✓ ${symbol}`);
+                return true;
+            } catch (err: any) {
+                console.error(`[cron/refresh-all] ✗ ${symbol}: ${err?.message}`);
+                return false;
+            }
+        },
+        5,  // batchSize
+        2   // concurrencyLimit (conservative — Polygon rate limits)
+    );
 
     const totalMs = Date.now() - startedAt;
-    console.log(`[cron/refresh-all] Done. ${succeeded} ok, ${failed} failed. Total: ${totalMs}ms`);
+    console.log(`[cron/refresh-all] Done. ${results.success} ok, ${results.failed} failed. Total: ${totalMs}ms`);
 
     return NextResponse.json({
         total: cached.length,
-        succeeded,
-        failed,
+        succeeded: results.success,
+        failed: results.failed,
         totalMs,
-        results,
     });
 }
