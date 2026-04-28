@@ -8,7 +8,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { clearAllCachesAndReload, clearAllCaches, CacheClearResult } from '@/lib/utils/cacheClear';
+import { clearAllCachesAndReload, clearAllCaches, CacheClearResult } from '@/lib/utils/browserCacheReset';
 
 interface CacheClearButtonProps {
   variant?: 'button' | 'link';

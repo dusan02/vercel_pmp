@@ -117,7 +117,7 @@ import { useStockData } from '@/hooks/useStockData';
 import { useStockFilter } from '@/hooks/useStockFilter';
 // import { useLogoLoader } from '@/hooks/useLogoLoader';
 import { useTablePerformance } from '@/hooks/useTablePerformance';
-import { autoRepairLocalStorage } from '@/lib/utils/clearCache';
+import { autoRepairLocalStorage } from '@/lib/utils/localStorageCache';
 import { logger } from '@/lib/utils/logger';
 import { useMobilePrefetch } from '@/hooks/useMobilePrefetch';
 import { useMobileOptimization } from '@/hooks/useMobileOptimization';
