@@ -95,6 +95,7 @@ module.exports = {
       min_uptime: "10s",
     },
     {
+      // Background Preloader Worker
       name: "pmp-bulk-preloader",
       script: "src/workers/backgroundPreloader.ts",
       interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
@@ -109,8 +110,11 @@ module.exports = {
       error_file: path.join(__dirname, "logs", "pm2", "bulk-preloader-error.log"),
       out_file: path.join(__dirname, "logs", "pm2", "bulk-preloader-out.log"),
       log_date_format: "YYYY-MM-DD HH:mm:ss Z",
-      cron_restart: "*/5 12-21 * * 1-5", // Každých 5 minút počas market hours (12-21 UTC = 7-16 ET winter / 8-17 ET summer)
-      autorestart: false, // Cron job sa spúšťa automaticky, nepotrebuje autorestart
+      // ZMENA: Nereštartovať každých 5 minút (tento skript trvá bežať >10 minút,
+      // čo spôsobovalo nekonečné reštarty a zahltenie SQLite databázy).
+      // Namiesto toho ho pustíme len raz za hodinu.
+      cron_restart: "0 * * * *", 
+      autorestart: false,
     },
     {
       name: "daily-ticker-validator",
@@ -127,7 +131,7 @@ module.exports = {
       out_file: path.join(__dirname, "logs", "pm2", "daily-ticker-validator-out.log"),
       log_date_format: "YYYY-MM-DD HH:mm:ss Z",
       cron_restart: "0 2 * * *", // Raz denne o 02:00 UTC
-      autorestart: false, // Cron job sa spúšťa automaticky, nepotrebuje autorestart
+      autorestart: false,
     },
     {
       name: "daily-integrity-check",
@@ -144,13 +148,10 @@ module.exports = {
       error_file: path.join(__dirname, "logs", "pm2", "daily-integrity-check-error.log"),
       out_file: path.join(__dirname, "logs", "pm2", "daily-integrity-check-out.log"),
       log_date_format: "YYYY-MM-DD HH:mm:ss Z",
-      // 10:00 UTC ~= 05:00 ET (winter) / 06:00 ET (summer) -> safely AFTER prevClose bootstrap (04:00 ET)
       cron_restart: "0 10 * * *",
       autorestart: false,
     },
     {
-      // Post-market daily reset (saves regular close, updates shares, clears AI text)
-      // Replaces the old morning data refresh. Runs once after market closes.
       name: "post-market-daily-reset",
       script: "scripts/post-market-reset.ts",
       interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
@@ -159,19 +160,16 @@ module.exports = {
       exec_mode: "fork",
       env_production: {
         NODE_ENV: "production",
-        // Call the local Next.js server directly (avoids external DNS/SSL issues)
         BASE_URL: "http://127.0.0.1:3000",
         CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || envVars.CRON_SECRET || process.env.CRON_SECRET_KEY || process.env.CRON_SECRET,
       },
       error_file: path.join(__dirname, "logs", "pm2", "post-market-daily-reset-error.log"),
       out_file: path.join(__dirname, "logs", "pm2", "post-market-daily-reset-out.log"),
       log_date_format: "YYYY-MM-DD HH:mm:ss Z",
-      // 21:30 UTC = 16:30 ET (winter) / 17:30 ET (summer) -> Shortly after market close
       cron_restart: "30 21 * * *",
       autorestart: false,
     },
     {
-      // Verify/fix prevClose values vs Polygon (lightweight, safe)
       name: "cron-verify-prevclose",
       script: "scripts/trigger-verify-prevclose.ts",
       interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
@@ -186,12 +184,10 @@ module.exports = {
       error_file: path.join(__dirname, "logs", "pm2", "cron-verify-prevclose-error.log"),
       out_file: path.join(__dirname, "logs", "pm2", "cron-verify-prevclose-out.log"),
       log_date_format: "YYYY-MM-DD HH:mm:ss Z",
-      // 22:00 UTC = 17:00 / 18:00 ET (safely post-market to catch mismatches)
       cron_restart: "0 22 * * *",
       autorestart: false,
     },
     {
-      // Verify/fix sector/industry taxonomy once daily
       name: "cron-verify-sector-industry",
       script: "scripts/trigger-verify-sector-industry.ts",
       interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
@@ -210,7 +206,6 @@ module.exports = {
       autorestart: false,
     },
     {
-      // Lightweight health/staleness monitor (alerts via optional footer)
       name: "pmp-health-monitor",
       script: "scripts/health-monitor.ts",
       interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
@@ -226,7 +221,10 @@ module.exports = {
       error_file: path.join(__dirname, "logs", "pm2", "pmp-health-monitor-error.log"),
       out_file: path.join(__dirname, "logs", "pm2", "pmp-health-monitor-out.log"),
       log_date_format: "YYYY-MM-DD HH:mm:ss Z",
-      cron_restart: "*/5 * * * *", // every 5 minutes
+      // ZMENA: Monitor bežal každých 5 minút, ale ak bola appka spomalená z predchádzajúcich DB záťaží, 
+      // monitor mohol eskalovať chybu a PM2 občas resetol veci.
+      // Health monitor znížime na beh každých 15 minút
+      cron_restart: "*/15 * * * *", 
       autorestart: false,
     },
   ],
