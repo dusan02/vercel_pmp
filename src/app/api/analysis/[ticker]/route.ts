@@ -51,9 +51,11 @@ async function computeMetrics(symbol: string) {
         ? currentAssets / currentLiabilities : null;
     const assetToLiability = (totalAssets !== null && totalLiabilities !== null && totalLiabilities !== 0)
         ? totalAssets / totalLiabilities : null;
-    // Net Debt / EBIT (schema has no depreciation field, so EBITDA cannot be computed)
-    const netDebtToEbitda = (netDebt !== null && ebit !== null && ebit !== 0)
+    // Net Debt / EBIT
+    const netDebtToEbit = (netDebt !== null && ebit !== null && ebit !== 0)
         ? netDebt / ebit : null;
+    const sbcToRevenue = (sbc !== null && latestAnnual?.revenue && latestAnnual.revenue > 0)
+        ? sbc / latestAnnual.revenue : null;
 
     // Calculate Dilution (Share Count change)
     // stmts is already sorted by date desc
@@ -84,8 +86,9 @@ async function computeMetrics(symbol: string) {
             debtToEquity,
             currentRatio,
             assetToLiability,
-            netDebtToEbitda,
+            netDebtToEbit,
             sbc,
+            sbcToRevenue,
             sbcRatio,
             sharesOutstanding,
             dilution1y,

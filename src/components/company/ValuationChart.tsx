@@ -51,7 +51,9 @@ const METRIC_CONFIG = {
     unit: 'x'
   },
   ev_ebitda: {
-    label: 'EV/EBITDA',
+    label: 'EV/EBIT',
+    formatter: (val: number) => `${val.toFixed(1)}x`,
+    domain: ['auto', 'auto'],
     color: '#8b5cf6',
     unit: 'x'
   }

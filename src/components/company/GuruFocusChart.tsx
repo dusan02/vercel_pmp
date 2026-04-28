@@ -35,7 +35,7 @@ const METRIC_CONFIG = {
   peRatio: { label: 'P/E Ratio', unit: 'x', color: '#3b82f6' },
   psRatio: { label: 'P/S Ratio', unit: 'x', color: '#10b981' },
   pbRatio: { label: 'P/B Ratio', unit: 'x', color: '#f59e0b' },
-  evEbitda: { label: 'EV/EBITDA', unit: 'x', color: '#8b5cf6' },
+  evEbitda: { label: 'EV/EBIT', unit: 'x', color: '#8b5cf6' },
   fcfYield: { label: 'FCF Yield', unit: '%', color: '#06b6d4' },
   evRevenue: { label: 'EV/Revenue', unit: 'x', color: '#ec4899' },
   evFcf: { label: 'EV/FCF', unit: 'x', color: '#f97316' },

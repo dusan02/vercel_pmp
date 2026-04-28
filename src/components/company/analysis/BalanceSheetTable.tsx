@@ -133,9 +133,9 @@ export function BalanceSheetTable({ ticker, data, compareWith, secondaryData }: 
         },
         {
             label: 'Net Debt / EBIT', hint: 'Net Debt / EBIT. < 2x is healthy, > 4x is risky.',
-            value: fmt(bs.netDebtToEbitda, 'x'), secondaryValue: compareWith ? fmt(sbs?.netDebtToEbitda, 'x') : undefined,
-            statusType: ratioStatus(bs.netDebtToEbitda, 2, 4),
-            statusLabel: bs.netDebtToEbitda !== null ? (bs.netDebtToEbitda <= 2 ? 'Healthy' : bs.netDebtToEbitda <= 4 ? 'Elevated' : 'High') : 'N/A',
+            value: fmt(bs.netDebtToEbit, 'x'), secondaryValue: compareWith ? fmt(sbs?.netDebtToEbit, 'x') : undefined,
+            statusType: ratioStatus(bs.netDebtToEbit, 2, 4),
+            statusLabel: bs.netDebtToEbit !== null ? (bs.netDebtToEbit <= 2 ? 'Healthy' : bs.netDebtToEbit <= 4 ? 'Elevated' : 'High') : 'N/A',
         },
         {
             label: 'Current Ratio', hint: 'Current Assets / Current Liabilities. > 2 is strong, < 1 is risky.',

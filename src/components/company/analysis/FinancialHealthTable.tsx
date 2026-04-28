@@ -117,8 +117,8 @@ function buildMetrics(data: AnalysisData, sec: AnalysisData | null, cw: string) 
     const sIntCov= sec?.interestCoverage ?? null;
     const cr     = bs?.currentRatio ?? null;
     const scr    = sbs?.currentRatio ?? null;
-    const nde    = bs?.netDebtToEbitda ?? null;
-    const snde   = sbs?.netDebtToEbitda ?? null;
+    const nde    = bs?.netDebtToEbit ?? null;
+    const snde   = sbs?.netDebtToEbit ?? null;
     const dte    = bs?.debtToEquity ?? null;
     const sdte   = sbs?.debtToEquity ?? null;
     const fcfMar = m?.fcfMargin ?? null;
@@ -156,7 +156,7 @@ function buildMetrics(data: AnalysisData, sec: AnalysisData | null, cw: string) 
         def('Debt Repayment', yr(debtRp), s(yr(sDebtRp)), debtRp == null ? 'neutral' : debtRp <= 3 ? 'good' : debtRp > 10 ? 'bad' : 'warn', 'Years to repay net debt via FCF'),
         def('Interest Coverage', intCov != null ? `${intCov.toFixed(1)}x` : 'N/A', s(intCov != null ? `${intCov.toFixed(1)}x` : 'N/A'), intCov == null ? 'neutral' : intCov > 10 ? 'good' : intCov > 3 ? 'warn' : 'bad', 'EBIT/Interest. >10 Strong · <3 Risky'),
         def('Current Ratio', mul(cr), s(mul(scr)), cr == null ? 'neutral' : cr > 2 ? 'good' : cr > 1 ? 'warn' : 'bad', 'Current Assets/Liabilities. >2 Strong'),
-        def('Net Debt/EBITDA', nde != null ? (nde < 0 ? 'Net Cash' : `${nde.toFixed(1)}x`) : 'N/A', s(snde != null ? (snde < 0 ? 'Net Cash' : `${snde.toFixed(1)}x`) : 'N/A'), nde == null ? 'neutral' : nde < 0 ? 'good' : nde < 2 ? 'good' : nde < 4 ? 'warn' : 'bad', 'Leverage. <2x Low · 4x+ High'),
+        def('Net Debt/EBIT', nde != null ? (nde < 0 ? 'Net Cash' : `${nde.toFixed(1)}x`) : 'N/A', s(snde != null ? (snde < 0 ? 'Net Cash' : `${snde.toFixed(1)}x`) : 'N/A'), nde == null ? 'neutral' : nde < 0 ? 'good' : nde < 2 ? 'good' : nde < 4 ? 'warn' : 'bad', 'Leverage. <2x Low · 4x+ High'),
         def('Debt/Equity', dte != null ? `${dte.toFixed(2)}x` : 'N/A', s(sdte != null ? `${sdte.toFixed(2)}x` : 'N/A'), dte == null ? 'neutral' : dte < 1 ? 'good' : dte < 2 ? 'warn' : 'bad', '<1 Conservative · >3 Risky'),
     ];
 
