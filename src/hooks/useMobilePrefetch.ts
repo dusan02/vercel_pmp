@@ -21,17 +21,8 @@ export function useMobilePrefetch(activeView: string) {
     });
 
     // Prefetch API endpoints pre neaktívne views
+    // NOTE: Heatmap prefetch removed — useHeatmapData handles its own fetch lifecycle.
     const prefetchAPIs = () => {
-      // Heatmap API - prefetch ak nie je aktívny
-      if (activeView !== 'heatmap') {
-        // Prefetch s low priority (neblokuje hlavné requesty)
-        fetch('/api/heatmap?timeframe=day&metric=percent', { 
-          method: 'HEAD',
-          cache: 'force-cache',
-          priority: 'low' as RequestPriority
-        }).catch(() => {});
-      }
-
       // Stocks API - prefetch ak nie je aktívny allStocks
       if (activeView !== 'allStocks') {
         fetch('/api/stocks?getAll=true&limit=50', { 

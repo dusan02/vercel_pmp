@@ -291,16 +291,9 @@ export function useHeatmapData({
 
   // Initial load and auto-refresh
   useEffect(() => {
-    // Ak už máme dáta z localStorage, nevolaj fetchData hneď (už sa zobrazujú)
-    // Ale spusti background refresh po 100ms
-    if (currentDataRef.current.length > 0) {
-      setTimeout(() => {
-        fetchDataRef.current(false); // Background refresh
-      }, 100);
-    } else {
-      // Ak nemáme dáta, načítaj hneď
-      fetchDataRef.current(false);
-    }
+    // Single initial fetch — no duplicate 100ms background refresh.
+    // If we have cached data it will show immediately; this fetch updates in the background.
+    fetchDataRef.current(false);
 
     if (autoRefresh && refreshInterval > 0) {
       const interval = setInterval(() => fetchDataRef.current(false), refreshInterval);
@@ -315,10 +308,15 @@ export function useHeatmapData({
     }
   }, [initialTimeframe]);
 
-  // Re-fetch on timeframe change
+  // Re-fetch on timeframe change (skip initial mount — already handled above)
+  const isFirstTimeframeRender = useRef(true);
   useEffect(() => {
+    if (isFirstTimeframeRender.current) {
+      isFirstTimeframeRender.current = false;
+      return;
+    }
     fetchData(true);
-  }, [timeframe]); // Removed fetchData from deps to avoid loop if not careful (but useCallback handles it)
+  }, [timeframe]);
 
   return {
     data,

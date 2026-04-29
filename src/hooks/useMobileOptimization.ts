@@ -33,47 +33,8 @@ export function useMobileOptimization(activeView: string) {
     // dnsPrefetch.href = 'https://api.polygon.io';
     // document.head.appendChild(dnsPrefetch);
 
-    // CRITICAL: Prioritizuj heatmap API ak je aktívny (prvá obrazovka)
-    if (activeView === 'heatmap') {
-      // Prefetch heatmap API s high priority
-      const prefetchHeatmap = () => {
-        // Use fetch with high priority (Chrome/Edge)
-        fetch('/api/heatmap?timeframe=day&metric=percent', {
-          method: 'GET',
-          priority: 'high' as RequestPriority,
-          cache: 'default',
-        }).catch(() => {
-          // Ignore errors, just warm up connection
-        });
-      };
-
-      // Prefetch okamžite (ak ešte nie je načítaný)
-      prefetchHeatmap();
-    }
-
-    // Defer neaktívne API calls (low priority)
-    const deferNonActiveAPIs = () => {
-      if (activeView !== 'allStocks') {
-        // Low priority prefetch
-        fetch('/api/stocks?getAll=true&limit=50', {
-          method: 'HEAD',
-          priority: 'low' as RequestPriority,
-        }).catch(() => {});
-      }
-
-      if (activeView !== 'earnings') {
-        fetch('/api/earnings/today', {
-          method: 'HEAD',
-          priority: 'low' as RequestPriority,
-        }).catch(() => {});
-      }
-    };
-
-    // Defer po 2 sekundách (dá čas na načítanie hlavného obsahu)
-    const deferTimer = setTimeout(deferNonActiveAPIs, 2000);
-
-    return () => {
-      clearTimeout(deferTimer);
-    };
+    // NOTE: Heatmap prefetch removed — useHeatmapData already fetches on mount.
+    // Stocks/earnings prefetch removed — useMobilePrefetch handles deferred prefetch.
+    // This hook now only handles preconnect (above).
   }, [activeView]);
 }

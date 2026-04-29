@@ -124,8 +124,16 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
 }
 
 // Enable ISR (Incremental Static Regeneration) for better performance
-// Page is cached and regenerated every 10 seconds
-export const revalidate = 10;
+// Page is cached and regenerated every 30 seconds (was 10s — too aggressive, causes frequent cold SSR)
+export const revalidate = 30;
+
+/** Race a promise against a timeout. Returns fallback on timeout. */
+function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
+  ]);
+}
 
 export default async function Page() {
   // Server-side data fetching for initial render (SSR)
@@ -142,22 +150,33 @@ export default async function Page() {
 
     logger.ssr('Fetching initial data for Top 20 tickers and Earnings...');
 
-    // Parallel fetch for speed
+    // Parallel fetch with 3-second timeout — prevents blocking HTML for 10+ seconds
+    // when DB is slow (cold connection, revalidation after ISR expiry).
+    // Client-side hooks will fetch the data anyway, so empty initial data is safe.
+    const SSR_TIMEOUT_MS = 3000;
+
     const [stocksResult, earningsResult] = await Promise.allSettled([
-      getStocksData(topTickers, project),
-      getEarningsForDate(todayET)
+      withTimeout(getStocksData(topTickers, project), SSR_TIMEOUT_MS, { data: [], errors: ['SSR timeout'] }),
+      withTimeout(getEarningsForDate(todayET), SSR_TIMEOUT_MS, null)
     ]);
 
-    if (stocksResult.status === 'fulfilled') {
-      initialData = stocksResult.value.data;
-      logger.ssr(`Loaded ${initialData.length} stocks`);
+    if (stocksResult.status === 'fulfilled' && stocksResult.value) {
+      const res = stocksResult.value as { data: any[]; errors?: string[] };
+      initialData = res.data;
+      if (initialData.length > 0) {
+        logger.ssr(`Loaded ${initialData.length} stocks`);
+      } else {
+        logger.ssr('SSR stocks: timeout or empty — client will fetch');
+      }
     } else {
-      logger.error('SSR Error fetching stocks', stocksResult.reason);
+      logger.error('SSR Error fetching stocks', stocksResult.status === 'rejected' ? stocksResult.reason : 'unknown');
     }
 
     if (earningsResult.status === 'fulfilled') {
       initialEarningsData = earningsResult.value;
-      logger.ssr(`Loaded Earnings for ${todayET}`);
+      if (initialEarningsData) {
+        logger.ssr(`Loaded Earnings for ${todayET}`);
+      }
     } else {
       logger.error('SSR Error fetching earnings', earningsResult.reason);
     }
