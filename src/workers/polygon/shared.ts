@@ -86,4 +86,4 @@ interface IngestResult {
  * Fetch snapshot data from Polygon API (batch) with retry and circuit breaker
  */
 export { polygonCircuitBreaker, __IS_TEST__, sleep };
-export type { PolygonSnapshot };
+export type { PolygonSnapshot, IngestResult };

@@ -35,7 +35,7 @@ import { processBatchWithConcurrency } from '@/lib/batchProcessor';
 import type { MarketSession } from '@/lib/types';
 
 // Circuit breaker for Polygon API
-import { polygonCircuitBreaker, __IS_TEST__, sleep, PolygonSnapshot } from './shared';
+import { polygonCircuitBreaker, __IS_TEST__, sleep, PolygonSnapshot, IngestResult } from './shared';
 import { fetchPolygonSnapshot, normalizeSnapshot, upsertToDB } from './core';
 import { saveRegularClose } from './saveRegularClose';
 export async function ingestBatch(
@@ -166,7 +166,8 @@ export async function ingestBatch(
     console.log(`⚠️ Missing previous close for ${missingPrevClose.length} tickers, attempting to fetch...`);
     // Only fetch a few to avoid rate limits if many are missing
     const toFetch = missingPrevClose.slice(0, 50);
-    // bootstrapPreviousCloses expects calendar date, will calculate trading day internally
+    // Dynamic import to break circular dependency (bootstrapPrevClose.ts imports ingestBatch)
+    const { bootstrapPreviousCloses } = await import('./bootstrapPrevClose');
     await bootstrapPreviousCloses(toFetch, apiKey, calendarDateETStr);
 
     // Reload map after bootstrap (keyed by calendar date)
