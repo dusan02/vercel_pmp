@@ -38,6 +38,9 @@ import type { MarketSession } from '@/lib/types';
 import { polygonCircuitBreaker, __IS_TEST__, sleep, PolygonSnapshot, IngestResult } from './shared';
 import { fetchPolygonSnapshot, normalizeSnapshot, upsertToDB } from './core';
 import { saveRegularClose } from './saveRegularClose';
+import type { IngestResult } from '../types';
+import { bootstrapPreviousCloses } from './bootstrapPrevClose';
+
 export async function ingestBatch(
   tickers: string[],
   apiKey: string,
