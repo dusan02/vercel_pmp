@@ -33,10 +33,10 @@ interface AllStocksSectionProps {
   onLoadMore?: () => void;
   isLoadingMore?: boolean;
   totalCount?: number;
-  selectedSector: string;
-  selectedIndustry: string;
-  onSectorChange: (value: string) => void;
-  onIndustryChange: (value: string) => void;
+  selectedSectors: string[];
+  selectedIndustries: string[];
+  onSectorsChange: (value: string[]) => void;
+  onIndustriesChange: (value: string[]) => void;
   uniqueSectors: string[];
   availableIndustries: string[];
 }
@@ -71,10 +71,10 @@ export const AllStocksSection = React.memo(function AllStocksSection({
   onLoadMore,
   isLoadingMore = false,
   totalCount,
-  selectedSector,
-  selectedIndustry,
-  onSectorChange,
-  onIndustryChange,
+  selectedSectors,
+  selectedIndustries,
+  onSectorsChange,
+  onIndustriesChange,
   uniqueSectors,
   availableIndustries
 }: AllStocksSectionProps) {
@@ -90,34 +90,32 @@ export const AllStocksSection = React.memo(function AllStocksSection({
     }
   }, []);
 
-  // Reset industry when sector changes
-  const handleSectorChange = useCallback((value: string) => {
-    onSectorChange(value);
-    if (value === 'all') {
-      onIndustryChange('all');
+  // Reset industries when sectors change
+  const handleSectorsChange = useCallback((value: string[]) => {
+    onSectorsChange(value);
+    if (value.length === 0) {
+      onIndustriesChange([]);
     }
-  }, [onSectorChange, onIndustryChange]);
+  }, [onSectorsChange, onIndustriesChange]);
 
-  // Reset industry when sector changes and current industry is not available in new sector
+  // Reset industries when sector changes and current industries are not available
   useEffect(() => {
-    if (selectedSector !== 'all' && selectedIndustry !== 'all') {
-      const isIndustryAvailable = availableIndustries.includes(selectedIndustry);
-      if (!isIndustryAvailable) {
-        onIndustryChange('all');
+    if (selectedSectors.length > 0 && selectedIndustries.length > 0) {
+      const stillAvailable = selectedIndustries.filter(i => availableIndustries.includes(i));
+      if (stillAvailable.length !== selectedIndustries.length) {
+        onIndustriesChange(stillAvailable);
       }
     }
-  }, [selectedSector, availableIndustries, selectedIndustry, onIndustryChange]);
+  }, [selectedSectors, availableIndustries, selectedIndustries, onIndustriesChange]);
 
-  // Prepare dropdown options
-  const sectorOptions = useMemo(() => [
-    { value: 'all', label: 'All Sectors' },
-    ...uniqueSectors.map(sector => ({ value: sector, label: formatSectorName(sector) }))
-  ], [uniqueSectors]);
+  // Prepare dropdown options (no "All" option needed — empty selection = all)
+  const sectorOptions = useMemo(() =>
+    uniqueSectors.map(sector => ({ value: sector, label: formatSectorName(sector) }))
+  , [uniqueSectors]);
 
-  const industryOptions = useMemo(() => [
-    { value: 'all', label: 'All Industries' },
-    ...availableIndustries.map(industry => ({ value: industry, label: industry }))
-  ], [availableIndustries]);
+  const industryOptions = useMemo(() =>
+    availableIndustries.map(industry => ({ value: industry, label: industry }))
+  , [availableIndustries]);
 
   // Column Definitions for UniversalTable
   const columns: ColumnDef<StockData>[] = useMemo(() => [
@@ -312,20 +310,24 @@ export const AllStocksSection = React.memo(function AllStocksSection({
             </div>
             <div className="flex items-center gap-3">
               <CustomDropdown
-                value={selectedSector}
-                onChange={handleSectorChange}
+                value={selectedSectors}
+                onChange={handleSectorsChange}
                 options={sectorOptions}
                 className="sector-filter w-72"
                 ariaLabel="Filter by sector"
                 placeholder="All Sectors"
+                multiple
+                searchable
               />
               <CustomDropdown
-                value={selectedIndustry}
-                onChange={onIndustryChange}
+                value={selectedIndustries}
+                onChange={onIndustriesChange}
                 options={industryOptions}
                 className="industry-filter w-72"
                 ariaLabel="Filter by industry"
                 placeholder="All Industries"
+                multiple
+                searchable
               />
             </div>
           </div>
@@ -355,28 +357,32 @@ export const AllStocksSection = React.memo(function AllStocksSection({
           <div className="mobile-filters-row mb-2 flex gap-2">
             <div className="flex-1 min-w-0">
               <CustomDropdown
-                value={selectedSector}
-                onChange={handleSectorChange}
+                value={selectedSectors}
+                onChange={handleSectorsChange}
                 options={sectorOptions}
                 className="sector-filter w-full"
                 ariaLabel="Filter by sector"
                 placeholder="All Sectors"
+                multiple
+                searchable
               />
             </div>
             <div className="flex-1 min-w-0">
               <CustomDropdown
-                value={selectedIndustry}
-                onChange={onIndustryChange}
+                value={selectedIndustries}
+                onChange={onIndustriesChange}
                 options={industryOptions}
                 className="industry-filter w-full"
                 ariaLabel="Filter by industry"
                 placeholder="All Industries"
+                multiple
+                searchable
               />
             </div>
           </div>
 
           {/* Active filters chips */}
-          {(selectedSector !== 'all' || selectedIndustry !== 'all' || searchTerm.trim().length > 0) && (
+          {(selectedSectors.length > 0 || selectedIndustries.length > 0 || searchTerm.trim().length > 0) && (
             <div className="mt-2 flex flex-wrap gap-2 mb-2">
               {searchTerm.trim().length > 0 && (
                 <button
@@ -391,45 +397,45 @@ export const AllStocksSection = React.memo(function AllStocksSection({
                   <span className="opacity-80">×</span>
                 </button>
               )}
-              {selectedSector !== 'all' && (
+              {selectedSectors.map(s => (
                 <button
+                  key={s}
                   type="button"
-                  onClick={() => handleSectorChange('all')}
-                  className="px-2 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-white/80 flex items-center gap-1"
-                  aria-label="Clear sector filter"
+                  onClick={() => onSectorsChange(selectedSectors.filter(x => x !== s))}
+                  className="px-2 py-1 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 flex items-center gap-1"
+                  aria-label={`Remove ${s} filter`}
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
-                  <span className="opacity-80">Sector</span>
-                  <span className="max-w-[160px] truncate">{formatSectorName(selectedSector)}</span>
+                  <span className="max-w-[160px] truncate">{formatSectorName(s)}</span>
                   <span className="opacity-80">×</span>
                 </button>
-              )}
-              {selectedIndustry !== 'all' && (
+              ))}
+              {selectedIndustries.map(i => (
                 <button
+                  key={i}
                   type="button"
-                  onClick={() => onIndustryChange('all')}
-                  className="px-2 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-white/80 flex items-center gap-1"
-                  aria-label="Clear industry filter"
+                  onClick={() => onIndustriesChange(selectedIndustries.filter(x => x !== i))}
+                  className="px-2 py-1 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 flex items-center gap-1"
+                  aria-label={`Remove ${i} filter`}
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
-                  <span className="opacity-80">Industry</span>
-                  <span className="max-w-[160px] truncate">{selectedIndustry}</span>
+                  <span className="max-w-[160px] truncate">{i}</span>
                   <span className="opacity-80">×</span>
                 </button>
-              )}
+              ))}
             </div>
           )}
 
           {/* Results count removed as requested */}
-          {(selectedSector !== 'all' || selectedIndustry !== 'all' || searchTerm.trim().length > 0) && (
+          {(selectedSectors.length > 0 || selectedIndustries.length > 0 || searchTerm.trim().length > 0) && (
             <div className="mobile-results-row">
               <button
                 type="button"
                 className="mobile-clear-btn ml-auto"
                 onClick={() => {
                   onSearchChange('');
-                  handleSectorChange('all');
-                  onIndustryChange('all');
+                  handleSectorsChange([]);
+                  onIndustriesChange([]);
                 }}
               >
                 Clear all filters
@@ -448,7 +454,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
         ascending={ascending}
         onSort={onSort}
         onRowClick={handleRowClick}
-        emptyMessage={(selectedSector !== 'all' || selectedIndustry !== 'all' || searchTerm.trim().length > 0)
+        emptyMessage={(selectedSectors.length > 0 || selectedIndustries.length > 0 || searchTerm.trim().length > 0)
           ? 'No results for the selected filters.'
           : 'No stocks to display.'}
         renderMobileCard={(stock) => (

@@ -338,8 +338,8 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
     allStocksSorted,
     favSortKey, favAscending, requestFavSort,
     allSortKey, allAscending, requestAllSort,
-    selectedSector, setSelectedSector,
-    selectedIndustry, setSelectedIndustry,
+    selectedSectors, setSelectedSectors,
+    selectedIndustries, setSelectedIndustries,
     uniqueSectors, availableIndustries
   } = useStockFilter({
     stockData,
@@ -532,10 +532,10 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
                     onLoadMore={loadMore}
                     isLoadingMore={isLoadingMore}
                     totalCount={optimizedAllStocks.length}
-                    selectedSector={selectedSector}
-                    selectedIndustry={selectedIndustry}
-                    onSectorChange={setSelectedSector}
-                    onIndustryChange={setSelectedIndustry}
+                    selectedSectors={selectedSectors}
+                    selectedIndustries={selectedIndustries}
+                    onSectorsChange={setSelectedSectors}
+                    onIndustriesChange={setSelectedIndustries}
                     uniqueSectors={uniqueSectors}
                     availableIndustries={availableIndustries}
                   />
@@ -684,10 +684,10 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
                               onLoadMore={loadMore}
                               isLoadingMore={isLoadingMore}
                               totalCount={optimizedAllStocks.length}
-                              selectedSector={selectedSector}
-                              selectedIndustry={selectedIndustry}
-                              onSectorChange={setSelectedSector}
-                              onIndustryChange={setSelectedIndustry}
+                              selectedSectors={selectedSectors}
+                              selectedIndustries={selectedIndustries}
+                              onSectorsChange={setSelectedSectors}
+                              onIndustriesChange={setSelectedIndustries}
                               uniqueSectors={uniqueSectors}
                               availableIndustries={availableIndustries}
                             />

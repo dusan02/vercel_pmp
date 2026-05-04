@@ -18,10 +18,10 @@ interface HomeAllStocksProps {
     onLoadMore?: () => void;
     isLoadingMore?: boolean;
     totalCount?: number;
-    selectedSector: string;
-    selectedIndustry: string;
-    onSectorChange: (value: string) => void;
-    onIndustryChange: (value: string) => void;
+    selectedSectors: string[];
+    selectedIndustries: string[];
+    onSectorsChange: (value: string[]) => void;
+    onIndustriesChange: (value: string[]) => void;
     uniqueSectors: string[];
     availableIndustries: string[];
 }
@@ -40,10 +40,10 @@ export function HomeAllStocks({
     onLoadMore,
     isLoadingMore,
     totalCount,
-    selectedSector,
-    selectedIndustry,
-    onSectorChange,
-    onIndustryChange,
+    selectedSectors,
+    selectedIndustries,
+    onSectorsChange,
+    onIndustriesChange,
     uniqueSectors,
     availableIndustries
 }: HomeAllStocksProps) {
@@ -63,10 +63,10 @@ export function HomeAllStocks({
                 {...(onLoadMore ? { onLoadMore } : {})}
                 {...(typeof isLoadingMore === 'boolean' ? { isLoadingMore } : {})}
                 {...(typeof totalCount === 'number' ? { totalCount } : {})}
-                selectedSector={selectedSector}
-                selectedIndustry={selectedIndustry}
-                onSectorChange={onSectorChange}
-                onIndustryChange={onIndustryChange}
+                selectedSectors={selectedSectors}
+                selectedIndustries={selectedIndustries}
+                onSectorsChange={onSectorsChange}
+                onIndustriesChange={onIndustriesChange}
                 uniqueSectors={uniqueSectors}
                 availableIndustries={availableIndustries}
             />

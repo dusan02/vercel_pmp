@@ -14,8 +14,8 @@ export function useStockFilter({ stockData, favorites, isFavorite }: UseStockFil
   const [searchTerm, setSearchTerm] = useState('');
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [filterCategory, setFilterCategory] = useState<'all' | 'gainers' | 'losers' | 'movers' | 'bigMovers'>('all');
-  const [selectedSector, setSelectedSector] = useState<string>('all');
-  const [selectedIndustry, setSelectedIndustry] = useState<string>('all');
+  const [selectedSectors, setSelectedSectors] = useState<string[]>([]);
+  const [selectedIndustries, setSelectedIndustries] = useState<string[]>([]);
 
   // Debounce search term to reduce filtering computations
   const debouncedSearchTerm = useDebounce(searchTerm, 200);
@@ -32,11 +32,11 @@ export function useStockFilter({ stockData, favorites, isFavorite }: UseStockFil
       // Favorites-only filter
       if (favoritesOnly && !isFavorite(stock.ticker)) return false;
       
-      // Sector filter
-      if (selectedSector !== 'all' && stock.sector !== selectedSector) return false;
+      // Sector filter (multi-select: empty = all)
+      if (selectedSectors.length > 0 && !selectedSectors.includes(stock.sector || '')) return false;
       
-      // Industry filter
-      if (selectedIndustry !== 'all' && stock.industry !== selectedIndustry) return false;
+      // Industry filter (multi-select: empty = all)
+      if (selectedIndustries.length > 0 && !selectedIndustries.includes(stock.industry || '')) return false;
       
       // Category filter
       switch (filterCategory) {
@@ -52,7 +52,7 @@ export function useStockFilter({ stockData, favorites, isFavorite }: UseStockFil
           return true;
       }
     });
-  }, [stockData, debouncedSearchTerm, favoritesOnly, selectedSector, selectedIndustry, filterCategory, isFavorite]);
+  }, [stockData, debouncedSearchTerm, favoritesOnly, selectedSectors, selectedIndustries, filterCategory, isFavorite]);
 
   // Favorite stocks subset (always filtered by favorites logic, independent of UI toggle)
   const favoriteStocks = useMemo(() => {
@@ -101,19 +101,19 @@ export function useStockFilter({ stockData, favorites, isFavorite }: UseStockFil
     return Array.from(industries).sort();
   }, [stockData]);
 
-  // Filter industries based on selected sector
+  // Filter industries based on selected sectors (multi-select)
   const availableIndustries = useMemo(() => {
-    if (selectedSector === 'all') {
+    if (selectedSectors.length === 0) {
       return uniqueIndustries;
     }
     const industries = new Set<string>();
     stockData.forEach(stock => {
-      if (stock.sector === selectedSector && stock.industry) {
+      if (selectedSectors.includes(stock.sector || '') && stock.industry) {
         industries.add(stock.industry);
       }
     });
     return Array.from(industries).sort();
-  }, [stockData, selectedSector, uniqueIndustries]);
+  }, [stockData, selectedSectors, uniqueIndustries]);
 
   return {
     searchTerm,
@@ -122,10 +122,10 @@ export function useStockFilter({ stockData, favorites, isFavorite }: UseStockFil
     setFavoritesOnly,
     filterCategory,
     setFilterCategory,
-    selectedSector,
-    setSelectedSector,
-    selectedIndustry,
-    setSelectedIndustry,
+    selectedSectors,
+    setSelectedSectors,
+    selectedIndustries,
+    setSelectedIndustries,
     filteredStocks,
     favoriteStocksSorted,
     allStocksSorted,
