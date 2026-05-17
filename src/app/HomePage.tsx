@@ -431,6 +431,8 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
                     wrapperClass="mobile-heatmap-wrapper"
                     activeView={activeSection === 'heatmap' ? 'heatmap' : undefined}
                     onTileClick={(ticker) => handleMobileNavChange('analysis', ticker)}
+                    stockData={stockData}
+                    onSelectTicker={(ticker) => handleMobileNavChange('analysis', ticker)}
                   />
                 )}
               </MobileScreen>
@@ -611,6 +613,8 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
                             <HomeHeatmap
                               wrapperClass="desktop-heatmap-wrapper"
                               onTileClick={(ticker) => handleMobileNavChange('analysis', ticker)}
+                              stockData={stockData}
+                              onSelectTicker={(ticker) => handleMobileNavChange('analysis', ticker)}
                             />
                           </div>
                         )}

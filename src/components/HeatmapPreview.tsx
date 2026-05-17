@@ -8,6 +8,8 @@ import { useHeatmapMetric } from '@/hooks/useHeatmapMetric';
 import { HeatmapMetricButtons } from './HeatmapMetricButtons';
 import { HeatmapViewButton } from './HeatmapViewButton';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { GlobalStockSearch } from './GlobalStockSearch';
+import { StockData } from '@/lib/types';
 
 // OPTIMIZATION: Enable SSR for desktop (faster initial load)
 // Mobile uses different components, so SSR is safe for desktop
@@ -28,7 +30,7 @@ const ResponsiveMarketHeatmap = dynamic(
  * Zobrazuje zmenšenú verziu heatmapy, ktorá pri kliknutí presmeruje na plnú stránku
  * Prepínacie buttony (% Change / Mcap Change) sú vedľa nadpisu
  */
-export function HeatmapPreview({ activeView, wrapperClass, onTileClick }: { activeView?: string | undefined; wrapperClass?: string; onTileClick?: (ticker: string) => void }) {
+export function HeatmapPreview({ activeView, wrapperClass, onTileClick, stockData, onSelectTicker }: { activeView?: string | undefined; wrapperClass?: string; onTileClick?: (ticker: string) => void; stockData?: StockData[]; onSelectTicker?: (ticker: string) => void }) {
   const router = useRouter();
   // Centralized metric state with localStorage persistence
   const { metric, setMetric } = useHeatmapMetric('percent');
@@ -59,14 +61,23 @@ export function HeatmapPreview({ activeView, wrapperClass, onTileClick }: { acti
     <section className={`heatmap-preview ${wrapperClass || ''} ${!isDesktop ? 'h-full flex flex-col' : ''}`}>
       {/* Header - hide on mobile (MobileTreemap has its own) */}
       {isDesktop && (
-        <div className="flex items-center justify-between mb-4 px-4 border-none outline-none">
-          <div className="flex items-center">
+        <div className="flex items-center gap-4 mb-4 px-4 border-none outline-none">
+          <div className="flex items-center shrink-0">
             <h2 className="flex items-center gap-3 text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white m-0 relative -top-1.5">
               <SectionIcon type="heatmap" size={28} className="text-gray-900 dark:text-white shrink-0" />
               <span>Heatmap</span>
             </h2>
           </div>
-          <div className="flex items-center gap-3">
+          {stockData && onSelectTicker && (
+            <div className="flex-1 max-w-md">
+              <GlobalStockSearch
+                stockData={stockData}
+                onSelectTicker={onSelectTicker}
+                placeholder="Search stocks..."
+              />
+            </div>
+          )}
+          <div className="flex items-center gap-3 ml-auto shrink-0">
             <HeatmapMetricButtons
               metric={metric}
               onMetricChange={setMetric}
