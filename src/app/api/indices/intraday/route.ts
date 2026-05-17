@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPolygonClient } from '@/lib/clients/polygonClient';
 import { withRetry } from '@/lib/api/rateLimiter';
 
 const INDICES = ['SPY', 'QQQ', 'DIA'];
@@ -7,8 +6,8 @@ const INDICES = ['SPY', 'QQQ', 'DIA'];
 export const revalidate = 300; // 5 min
 
 export async function GET(_req: NextRequest) {
-  const polygon = getPolygonClient();
-  if (!polygon) {
+  const apiKey = process.env.POLYGON_API_KEY;
+  if (!apiKey) {
     return NextResponse.json({ error: 'Polygon API key missing' }, { status: 500 });
   }
 
@@ -19,7 +18,7 @@ export async function GET(_req: NextRequest) {
 
     const results = await Promise.all(
       INDICES.map(async (ticker) => {
-        const url = `https://api.polygon.io/v2/aggs/ticker/${ticker}/range/5/minute/${todayIso}/${todayIso}?adjusted=true&sort=asc&limit=500&apiKey=${polygon.apiKey}`;
+        const url = `https://api.polygon.io/v2/aggs/ticker/${ticker}/range/5/minute/${todayIso}/${todayIso}?adjusted=true&sort=asc&limit=500&apiKey=${apiKey}`;
         const res = await withRetry(async () => fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(15000) }));
         if (!res.ok) return [ticker, []] as const;
         const json = await res.json();
