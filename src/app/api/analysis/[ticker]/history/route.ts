@@ -134,6 +134,46 @@ export async function GET(
             ? epsPerShareHistory.map(pt => ({ date: pt.date, impliedPrice: parseFloat((pt.value * medianPE).toFixed(2)) }))
             : [];
 
+        // Valuation history: choose intrinsic series and align with price history
+        const intrinsicSeries = impliedPricePE.length > 0 ? impliedPricePE : impliedPricePS;
+        const valuationHistory = priceHistory.map(p => {
+            const intrinsicPoint = intrinsicSeries.find(i => i.date === p.date);
+            if (!intrinsicPoint) return null;
+            const intrinsic = intrinsicPoint.impliedPrice;
+            const underval = intrinsic > 0 ? ((intrinsic - p.price) / intrinsic) * 100 : 0;
+            return {
+                date: p.date,
+                price: p.price,
+                intrinsic,
+                undervaluationPct: parseFloat(underval.toFixed(2)),
+            };
+        }).filter(Boolean) as { date: string; price: number; intrinsic: number; undervaluationPct: number }[];
+
+        const currentUndervaluation = valuationHistory.length
+            ? valuationHistory[valuationHistory.length - 1]!.undervaluationPct
+            : null;
+
+        // 5Y average undervaluation
+        const cutoff5y = new Date(); cutoff5y.setFullYear(cutoff5y.getFullYear() - 5);
+        const avg5yVals = valuationHistory.filter(v => new Date(v.date) >= cutoff5y);
+        const avg5yUnderval = avg5yVals.length
+            ? parseFloat((avg5yVals.reduce((a, b) => a + b.undervaluationPct, 0) / avg5yVals.length).toFixed(2))
+            : null;
+
+        // Intrinsic CAGR (using earliest vs latest intrinsic)
+        const intrinsicCagr = valuationHistory.length >= 2
+            ? (() => {
+                const start = valuationHistory[0]!.intrinsic;
+                const end = valuationHistory[valuationHistory.length - 1]!.intrinsic;
+                const startDate = new Date(valuationHistory[0]!.date);
+                const endDate = new Date(valuationHistory[valuationHistory.length - 1]!.date);
+                const years = Math.max(1, (endDate.getTime() - startDate.getTime()) / (365 * 24 * 60 * 60 * 1000));
+                if (start <= 0 || end <= 0) return null;
+                const cagr = Math.pow(end / start, 1 / years) - 1;
+                return parseFloat((cagr * 100).toFixed(2));
+            })()
+            : null;
+
         // --- Simple forward estimates (projection) ---
         function projectForward(base: { date: string; value: number }[], quarters: number) {
             if (!base.length) return [] as { date: string; value: number; isForecast: boolean }[];
@@ -200,6 +240,12 @@ export async function GET(
             epsPerShareHistory,
             impliedPricePS,
             impliedPricePE,
+            valuationHistory,
+            valuationSummary: {
+                currentUndervaluation,
+                avg5yUndervaluation: avg5yUnderval,
+                intrinsicCagr,
+            },
             correlation: {
                 priceVsImpliedPS: corrPS,
                 priceVsImpliedPE: corrPE,
