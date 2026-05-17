@@ -4,8 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { StockData } from '@/lib/types';
 import { formatPrice, formatPercent } from '@/lib/utils/format';
 import { logger } from '@/lib/utils/logger';
-// Duplicate imports removed
 import { TrendingUp } from 'lucide-react';
+import { MiniIntradayChart } from './MiniIntradayChart';
 
 
 const INDICES = [
@@ -16,6 +16,7 @@ const INDICES = [
 
 export function MarketIndices() {
     const [data, setData] = useState<Record<string, StockData>>({});
+    const [history, setHistory] = useState<Record<string, { ts: string; price: number }[]>>({});
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -30,6 +31,7 @@ export function MarketIndices() {
             const tickers = INDICES.map(i => i.ticker).join(',');
 
             try {
+                // Fetch quotes
                 const res = await fetch(`/api/stocks?tickers=${tickers}`, {
                     signal: abortController.signal,
                     cache: 'no-store',
@@ -47,6 +49,38 @@ export function MarketIndices() {
                     });
                     setData(map);
                 }
+
+                // Fetch intraday history (sessionPrice) for sparklines
+                const historyEntries = await Promise.all(
+                    INDICES.map(async ({ ticker }) => {
+                        try {
+                            const hRes = await fetch(`/api/history?ticker=${ticker}&limit=180`, {
+                                signal: abortController?.signal ?? null,
+                                cache: 'no-store',
+                            });
+                            if (!hRes.ok) throw new Error(`history ${hRes.status}`);
+                            const hJson = await hRes.json();
+                            const points = Array.isArray(hJson.data)
+                                ? (hJson.data as { timestamp: string; price: number }[])
+                                    .filter(p => p.price)
+                                    .map(p => ({ ts: p.timestamp, price: p.price }))
+                                    .reverse() // API returns desc; sparkline needs asc
+                                : [];
+                            return [ticker, points] as const;
+                        } catch (err) {
+                            if (process.env.NODE_ENV === 'development') {
+                                console.warn('History fetch error', ticker, err);
+                            }
+                            return [ticker, []] as const;
+                        }
+                    })
+                );
+
+                const histMap: Record<string, { ts: string; price: number }[]> = {};
+                historyEntries.forEach(([ticker, points]) => {
+                    histMap[ticker] = [...points];
+                });
+                setHistory(histMap);
             } catch (err: any) {
                 if (err.name === 'AbortError' || err.message?.includes('aborted')) return;
                 // Silent error handling in production
@@ -99,7 +133,13 @@ export function MarketIndices() {
                                     </div>
                                     <span className="text-sm font-bold text-[var(--clr-text)] tracking-tight">{ticker}</span>
                                 </div>
-                                {/* Placeholder for sparkline or mini-indicator */}
+                                <div className="w-24 h-12 hidden sm:block">
+                                    {history[ticker]?.length ? (
+                                        <MiniIntradayChart points={history[ticker]!} width={96} height={48} />
+                                    ) : (
+                                        <div className="w-full h-full bg-gray-100 dark:bg-white/5 rounded-md animate-pulse" />
+                                    )}
+                                </div>
                             </div>
 
                             {/* Price Section */}
