@@ -81,13 +81,77 @@ export async function GET(
             .filter(r => r.closePrice !== null && r.closePrice !== undefined && r.closePrice > 0)
             .map(r => ({ date: r.date.toISOString().split('T')[0], price: parseFloat((r.closePrice as number).toFixed(2)) }));
 
+        // Build stats first
         const peStats = buildStats(peAllValues);
         const psStats = buildStats(psAllValues);
+
+        // Derived revenue per share and EPS per share (from ratios)
+        const revPerShareHistory = weekly
+            .filter(r => VALID_PS(r.psRatio) && r.closePrice && r.closePrice > 0)
+            .map(r => ({
+                date: r.date.toISOString().split('T')[0],
+                revPerShare: parseFloat(((r.closePrice as number) / (r.psRatio as number)).toFixed(4)),
+            }));
+
+        const epsPerShareHistory = weekly
+            .filter(r => VALID_PE(r.peRatio) && r.closePrice && r.closePrice > 0)
+            .map(r => ({
+                date: r.date.toISOString().split('T')[0],
+                epsPerShare: parseFloat(((r.closePrice as number) / (r.peRatio as number)).toFixed(4)),
+            }));
+
+        const medianPS = psStats?.median ?? latestPS ?? null;
+        const medianPE = peStats?.median ?? latestPE ?? null;
+
+        const impliedPricePS = medianPS
+            ? revPerShareHistory.map(pt => ({ date: pt.date, impliedPrice: parseFloat((pt.revPerShare * medianPS).toFixed(2)) }))
+            : [];
+
+        const impliedPricePE = medianPE
+            ? epsPerShareHistory.map(pt => ({ date: pt.date, impliedPrice: parseFloat((pt.epsPerShare * medianPE).toFixed(2)) }))
+            : [];
+
+        function pearson(xs: number[], ys: number[]) {
+            if (xs.length !== ys.length || xs.length === 0) return null;
+            const n = xs.length;
+            const meanX = xs.reduce((a, b) => a + b, 0) / n;
+            const meanY = ys.reduce((a, b) => a + b, 0) / n;
+            let num = 0, denX = 0, denY = 0;
+            for (let i = 0; i < n; i++) {
+                const dx = xs[i]! - meanX;
+                const dy = ys[i]! - meanY;
+                num += dx * dy;
+                denX += dx * dx;
+                denY += dy * dy;
+            }
+            const den = Math.sqrt(denX * denY);
+            if (den === 0) return null;
+            return parseFloat((num / den).toFixed(4));
+        }
+
+        const priceMap = new Map(priceHistory.map(p => [p.date, p.price]));
+        const psAligned = impliedPricePS.filter(pt => priceMap.has(pt.date));
+        const psPrices = psAligned.map(pt => priceMap.get(pt.date) as number);
+        const psImplied = psAligned.map(pt => pt.impliedPrice);
+        const corrPS = (psPrices.length > 2) ? pearson(psPrices, psImplied) : null;
+
+        const peAligned = impliedPricePE.filter(pt => priceMap.has(pt.date));
+        const pePrices = peAligned.map(pt => priceMap.get(pt.date) as number);
+        const peImplied = peAligned.map(pt => pt.impliedPrice);
+        const corrPE = (pePrices.length > 2) ? pearson(pePrices, peImplied) : null;
 
         return NextResponse.json({
             peHistory,
             psHistory,
             priceHistory,
+            revPerShareHistory,
+            epsPerShareHistory,
+            impliedPricePS,
+            impliedPricePE,
+            correlation: {
+                priceVsImpliedPS: corrPS,
+                priceVsImpliedPE: corrPE,
+            },
             current: {
                 pe: latestPE !== null ? parseFloat((latestPE as number).toFixed(2)) : null,
                 ps: latestPS !== null ? parseFloat((latestPS as number).toFixed(2)) : null,

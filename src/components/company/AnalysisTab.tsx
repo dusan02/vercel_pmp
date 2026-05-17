@@ -5,6 +5,7 @@ import FinancialChart, { FinancialStatement } from './FinancialChart';
 import DebtCashChart from './DebtCashChart';
 import CashFlowChart from './CashFlowChart';
 import ShareDilutionChart from './ShareDilutionChart';
+import { CorrelationChart } from './CorrelationChart';
 import { AnalysisHeader } from './analysis/AnalysisHeader';
 import { FinancialHealthTable } from './analysis/FinancialHealthTable';
 import { ScenarioLab } from './analysis/ScenarioLab';
@@ -85,6 +86,15 @@ export interface AnalysisData {
         dilution1y: number | null;
         dilution5y: number | null;
     } | null;
+
+    // Correlation / valuation extras
+    priceHistory?: { date: string; price: number }[];
+    impliedPricePS?: { date: string; impliedPrice: number }[];
+    impliedPricePE?: { date: string; impliedPrice: number }[];
+    correlation?: {
+        priceVsImpliedPS: number | null;
+        priceVsImpliedPE: number | null;
+    };
 }
 
 export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabProps) {
@@ -182,6 +192,23 @@ export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabP
             >
                 <Suspense fallback={<div className="flex justify-center items-center h-48"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500" /></div>}>
                     <ValuationCharts ticker={ticker} />
+                </Suspense>
+            </ChartSection>
+
+            <ChartSection
+                iconBgClass="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400"
+                icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3v18h18" /></svg>}
+                title="Correlation Analysis"
+                subtitle="Price vs Revenue / Price vs EPS (GuruFocus-style)"
+            >
+                <Suspense fallback={<div className="flex justify-center items-center h-48"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-500" /></div>}>
+                    <CorrelationChart
+                        priceHistory={data.priceHistory ?? []}
+                        impliedPS={data.impliedPricePS ?? []}
+                        impliedPE={data.impliedPricePE ?? []}
+                        corrPS={data.correlation?.priceVsImpliedPS ?? null}
+                        corrPE={data.correlation?.priceVsImpliedPE ?? null}
+                    />
                 </Suspense>
             </ChartSection>
 
