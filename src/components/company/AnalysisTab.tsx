@@ -104,6 +104,7 @@ export interface AnalysisData {
         avg5yUndervaluation: number | null;
         intrinsicCagr: number | null;
     } | null;
+    valuationForecast?: { date: string; intrinsic: number }[];
 }
 
 export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabProps) {
@@ -152,6 +153,7 @@ export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabP
             >
                 <ValuationHistoryChart
                     valuationHistory={data.valuationHistory ?? []}
+                    valuationForecast={data.valuationForecast ?? []}
                     summary={data.valuationSummary ?? null}
                 />
             </ChartSection>

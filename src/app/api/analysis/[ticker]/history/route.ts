@@ -203,6 +203,8 @@ export async function GET(
             ? epsForecast.map(pt => ({ date: pt.date, impliedPrice: parseFloat((pt.value * medianPE).toFixed(2)), isForecast: true }))
             : [];
 
+        const intrinsicForecastSeries = impliedPEForecast.length > 0 ? impliedPEForecast : impliedPSForecast;
+
         function pearson(xs: number[], ys: number[]) {
             if (xs.length !== ys.length || xs.length === 0) return null;
             const n = xs.length;
@@ -240,6 +242,7 @@ export async function GET(
             epsPerShareHistory,
             impliedPricePS,
             impliedPricePE,
+            valuationForecast: intrinsicForecastSeries.map(pt => ({ date: pt.date, intrinsic: pt.impliedPrice })),
             valuationHistory,
             valuationSummary: {
                 currentUndervaluation,

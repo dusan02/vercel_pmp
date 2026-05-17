@@ -18,10 +18,12 @@ type ValuationPoint = {
   price: number;
   intrinsic: number;
   undervaluationPct: number;
+  isForecast?: boolean;
 };
 
 interface ValuationHistoryChartProps {
   valuationHistory: ValuationPoint[];
+  valuationForecast?: { date: string; intrinsic: number }[];
   summary?: {
     currentUndervaluation: number | null;
     avg5yUndervaluation: number | null;
@@ -50,7 +52,7 @@ function CustomTooltip({ active, payload, label }: any) {
   );
 }
 
-export function ValuationHistoryChart({ valuationHistory, summary }: ValuationHistoryChartProps) {
+export function ValuationHistoryChart({ valuationHistory, valuationForecast = [], summary }: ValuationHistoryChartProps) {
   if (!valuationHistory?.length) {
     return <div className="text-center text-gray-400 text-sm py-10">No valuation data available.</div>;
   }
@@ -71,7 +73,7 @@ export function ValuationHistoryChart({ valuationHistory, summary }: ValuationHi
 
       <div className="w-full bg-white dark:bg-gray-900 rounded-lg p-3" style={{ height: 360 }}>
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={valuationHistory} margin={{ top: 10, right: 20, left: 10, bottom: 30 }}>
+          <ComposedChart data={[...valuationHistory, ...valuationForecast.map(f => ({ ...f, price: null, undervaluationPct: null, isForecast: true }))]} margin={{ top: 10, right: 20, left: 10, bottom: 30 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" className="dark:stroke-gray-700" />
             <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} angle={-25} textAnchor="end" height={38} />
             <YAxis yAxisId="left" tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} width={48} tickFormatter={v => `$${v.toFixed(0)}`} domain={['auto', 'auto']} />
@@ -99,6 +101,18 @@ export function ValuationHistoryChart({ valuationHistory, summary }: ValuationHi
               strokeDasharray="4 2"
               strokeWidth={2}
               dot={false}
+            />
+            <Area
+              yAxisId="left"
+              type="monotone"
+              dataKey={(d: any) => (d.isForecast ? d.intrinsic : null)}
+              name="Intrinsic Forecast"
+              stroke="#6366f1"
+              fill="#6366f1"
+              fillOpacity={0.12}
+              strokeWidth={1}
+              connectNulls
+              isAnimationActive={false}
             />
             <Line
               yAxisId="right"
