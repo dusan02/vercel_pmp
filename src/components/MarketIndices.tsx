@@ -76,8 +76,31 @@ export function MarketIndices() {
                     })
                 );
 
+                // Fallback to Polygon intraday API if sessionPrice is empty
+                const anyMissing = historyEntries.some(([, pts]) => pts.length === 0);
+                let merged = historyEntries;
+                if (anyMissing) {
+                    try {
+                        const polyRes = await fetch('/api/indices/intraday', { cache: 'no-store' });
+                        if (polyRes.ok) {
+                            const polyJson = await polyRes.json();
+                            if (polyJson?.data) {
+                                merged = historyEntries.map(([ticker, pts]) => {
+                                    if (pts.length > 0) return [ticker, pts] as [string, { ts: string; price: number }[]];
+                                    const fallback = (polyJson.data[ticker] as { ts: string; price: number }[]) ?? [];
+                                    return [ticker, fallback] as [string, { ts: string; price: number }[]];
+                                });
+                            }
+                        }
+                    } catch (err) {
+                        if (process.env.NODE_ENV === 'development') {
+                            console.warn('Polygon intraday fallback error', err);
+                        }
+                    }
+                }
+
                 const histMap: Record<string, { ts: string; price: number }[]> = {};
-                historyEntries.forEach(([ticker, points]) => {
+                merged.forEach(([ticker, points]) => {
                     histMap[ticker] = [...points];
                 });
                 setHistory(histMap);
