@@ -6,6 +6,7 @@ import DebtCashChart from './DebtCashChart';
 import CashFlowChart from './CashFlowChart';
 import ShareDilutionChart from './ShareDilutionChart';
 import { CorrelationChart } from './CorrelationChart';
+import { ValuationHistoryChart } from './ValuationHistoryChart';
 import { AnalysisHeader } from './analysis/AnalysisHeader';
 import { FinancialHealthTable } from './analysis/FinancialHealthTable';
 import { ScenarioLab } from './analysis/ScenarioLab';
@@ -95,6 +96,14 @@ export interface AnalysisData {
         priceVsImpliedPS: number | null;
         priceVsImpliedPE: number | null;
     };
+
+    // Valuation history (intrinsic vs price)
+    valuationHistory?: { date: string; price: number; intrinsic: number; undervaluationPct: number }[];
+    valuationSummary?: {
+        currentUndervaluation: number | null;
+        avg5yUndervaluation: number | null;
+        intrinsicCagr: number | null;
+    } | null;
 }
 
 export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabProps) {
@@ -131,6 +140,21 @@ export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabP
 
             {/* ── Hero Section: Company Profile + Quick Search ── */}
             <AnalysisHeader ticker={ticker} hideSearch={hideSearch} data={data} />
+
+            {/* Valuation History (Intrinsic vs Price) */}
+            <ChartSection
+                iconBgClass="bg-gray-50 dark:bg-gray-800/60 text-gray-700 dark:text-gray-200"
+                icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3v18h18" /></svg>}
+                title="Valuation History"
+                subtitle="Intrinsic value vs Price (PE/PS median)"
+                hasData={!!(data.valuationHistory && data.valuationHistory.length)}
+                emptyMessage="No valuation history available"
+            >
+                <ValuationHistoryChart
+                    valuationHistory={data.valuationHistory ?? []}
+                    summary={data.valuationSummary ?? null}
+                />
+            </ChartSection>
 
             {/* Key Financial Metrics (merged: solvency, profitability, valuation, quality) */}
             <FinancialHealthTable
