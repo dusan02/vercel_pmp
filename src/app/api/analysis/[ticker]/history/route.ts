@@ -85,30 +85,82 @@ export async function GET(
         const peStats = buildStats(peAllValues);
         const psStats = buildStats(psAllValues);
 
-        // Derived revenue per share and EPS per share (from ratios)
-        const revPerShareHistory = weekly
-            .filter(r => VALID_PS(r.psRatio) && r.closePrice && r.closePrice > 0)
-            .map(r => ({
-                date: r.date.toISOString().split('T')[0],
-                revPerShare: parseFloat(((r.closePrice as number) / (r.psRatio as number)).toFixed(4)),
-            }));
+        // --- Financial statements: compute TTM per-share metrics ---
+        const statements = await prisma.financialStatement.findMany({
+            where: { symbol },
+            orderBy: { endDate: 'asc' },
+            select: { endDate: true, revenue: true, netIncome: true, sharesOutstanding: true, fiscalPeriod: true }
+        });
 
-        const epsPerShareHistory = weekly
-            .filter(r => VALID_PE(r.peRatio) && r.closePrice && r.closePrice > 0)
-            .map(r => ({
-                date: r.date.toISOString().split('T')[0],
-                epsPerShare: parseFloat(((r.closePrice as number) / (r.peRatio as number)).toFixed(4)),
-            }));
+        type PerSharePoint = { date: string; value: number };
+        const revPerShareHistory: PerSharePoint[] = [];
+        const epsPerShareHistory: PerSharePoint[] = [];
+
+        // compute TTM over rolling 4 quarters
+        const quarterly = statements.filter(s => s.fiscalPeriod?.toLowerCase().includes('q')); // heuristic
+        for (let i = 3; i < quarterly.length; i++) {
+            const slice = quarterly.slice(i - 3, i + 1);
+            const revSum = slice.reduce((a, b) => a + (b.revenue || 0), 0);
+            const niSum = slice.reduce((a, b) => a + (b.netIncome || 0), 0);
+            const shares = slice[slice.length - 1]?.sharesOutstanding || slice[0]?.sharesOutstanding || 0;
+            const end = slice[slice.length - 1]?.endDate;
+            if (shares && shares > 0 && end) {
+                const dateStr = end.toISOString().split('T')[0] as string;
+                revPerShareHistory.push({ date: dateStr, value: parseFloat((revSum / shares).toFixed(4)) });
+                epsPerShareHistory.push({ date: dateStr, value: parseFloat((niSum / shares).toFixed(4)) });
+            }
+        }
+
+        // Fallback to ratio-derived if statements missing
+        if (revPerShareHistory.length === 0) {
+            revPerShareHistory.push(...weekly
+                .filter(r => VALID_PS(r.psRatio) && r.closePrice && r.closePrice > 0)
+                .map(r => ({ date: r.date.toISOString().split('T')[0] as string, value: parseFloat(((r.closePrice as number) / (r.psRatio as number)).toFixed(4)) })));
+        }
+        if (epsPerShareHistory.length === 0) {
+            epsPerShareHistory.push(...weekly
+                .filter(r => VALID_PE(r.peRatio) && r.closePrice && r.closePrice > 0)
+                .map(r => ({ date: r.date.toISOString().split('T')[0] as string, value: parseFloat(((r.closePrice as number) / (r.peRatio as number)).toFixed(4)) })));
+        }
 
         const medianPS = psStats?.median ?? latestPS ?? null;
         const medianPE = peStats?.median ?? latestPE ?? null;
 
         const impliedPricePS = medianPS
-            ? revPerShareHistory.map(pt => ({ date: pt.date, impliedPrice: parseFloat((pt.revPerShare * medianPS).toFixed(2)) }))
+            ? revPerShareHistory.map(pt => ({ date: pt.date, impliedPrice: parseFloat((pt.value * medianPS).toFixed(2)) }))
             : [];
 
         const impliedPricePE = medianPE
-            ? epsPerShareHistory.map(pt => ({ date: pt.date, impliedPrice: parseFloat((pt.epsPerShare * medianPE).toFixed(2)) }))
+            ? epsPerShareHistory.map(pt => ({ date: pt.date, impliedPrice: parseFloat((pt.value * medianPE).toFixed(2)) }))
+            : [];
+
+        // --- Simple forward estimates (projection) ---
+        function projectForward(base: { date: string; value: number }[], quarters: number) {
+            if (!base.length) return [] as { date: string; value: number; isForecast: boolean }[];
+            const last = base[base.length - 1]!;
+            const lastDate = new Date(last.date);
+            // Growth rate: CAGR of last 4 points (approx TTM trend)
+            const n = Math.min(4, base.length);
+            const first = base[base.length - n]!;
+            const growth = first.value > 0 ? Math.pow(last.value / first.value, 1 / Math.max(1, n - 1)) - 1 : 0;
+            const forecasts: { date: string; value: number; isForecast: boolean }[] = [];
+            for (let i = 1; i <= quarters; i++) {
+                const d = new Date(lastDate);
+                d.setMonth(d.getMonth() + i * 3); // quarterly step
+                const next = last.value * Math.pow(1 + growth, i);
+                forecasts.push({ date: d.toISOString().split('T')[0] as string, value: parseFloat(next.toFixed(4)), isForecast: true });
+            }
+            return forecasts;
+        }
+
+        const revForecast = projectForward(revPerShareHistory, 6);
+        const epsForecast = projectForward(epsPerShareHistory, 6);
+
+        const impliedPSForecast = medianPS
+            ? revForecast.map(pt => ({ date: pt.date, impliedPrice: parseFloat((pt.value * medianPS).toFixed(2)), isForecast: true }))
+            : [];
+        const impliedPEForecast = medianPE
+            ? epsForecast.map(pt => ({ date: pt.date, impliedPrice: parseFloat((pt.value * medianPE).toFixed(2)), isForecast: true }))
             : [];
 
         function pearson(xs: number[], ys: number[]) {

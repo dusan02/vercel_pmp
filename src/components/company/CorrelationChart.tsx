@@ -14,7 +14,7 @@ import {
 } from 'recharts';
 
 interface HistoryPoint { date: string; price: number; }
-interface ImpliedPoint { date: string; impliedPrice: number; }
+interface ImpliedPoint { date: string; impliedPrice: number; isForecast?: boolean; }
 
 interface CorrelationChartProps {
   priceHistory: HistoryPoint[];
@@ -87,10 +87,10 @@ export function CorrelationChart({ priceHistory, impliedPS, impliedPE, corrPS, c
 
     const priceMap = new Map(priceHistory.map(p => [p.date, p.price]));
     const merged = implied
-      .map(pt => ({ date: pt.date, impliedPrice: pt.impliedPrice, price: priceMap.get(pt.date) }))
-      .filter(d => typeof d.price === 'number');
+      .map(pt => ({ date: pt.date, impliedPrice: pt.impliedPrice, price: priceMap.get(pt.date), isForecast: pt.isForecast }))
+      .filter(d => typeof d.price === 'number' || d.isForecast);
 
-    const forecast = buildForecast(merged, 8);
+    const forecast = buildForecast(merged.filter(m => !m.isForecast && typeof m.price === 'number'), 8);
     const combined = [...merged, ...forecast];
 
     return {
@@ -165,8 +165,8 @@ export function CorrelationChart({ priceHistory, impliedPS, impliedPE, corrPS, c
               name="Estimates"
               stroke="#fbbf24"
               fill="#fbbf24"
-              fillOpacity={0.15}
-              strokeWidth={0}
+              fillOpacity={0.18}
+              strokeWidth={1}
               connectNulls
               isAnimationActive={false}
             />
