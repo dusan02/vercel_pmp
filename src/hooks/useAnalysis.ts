@@ -46,7 +46,12 @@ export function useAnalysis(ticker: string) {
             const url = compare
                 ? `/api/analysis/${ticker}?compare=${compare}`
                 : `/api/analysis/${ticker}`;
-            const res = await fetch(url);
+
+            // Fetch main analysis + history (for correlation/valuation charts) in parallel
+            const [res, histRes] = await Promise.all([
+                fetch(url),
+                fetch(`/api/analysis/${ticker}/history`),
+            ]);
             
             if (!res.ok) {
                 setData(null);
@@ -54,12 +59,25 @@ export function useAnalysis(ticker: string) {
                 return;
             }
             const json = await res.json();
+            const histJson = histRes.ok ? await histRes.json().catch(() => ({})) : {};
+
+            // Fields sourced from /history endpoint
+            const historyExtras = {
+                priceHistory: histJson.priceHistory ?? [],
+                impliedPricePS: histJson.impliedPricePS ?? [],
+                impliedPricePE: histJson.impliedPricePE ?? [],
+                correlation: histJson.correlation ?? undefined,
+                valuationHistory: histJson.valuationHistory ?? [],
+                valuationSummary: histJson.valuationSummary ?? null,
+                valuationForecast: histJson.valuationForecast ?? [],
+            };
+
             if (json && json.primary) {
                 // Pass through finnhub data from API response
-                setData({ ...json.primary, peers: json.peers || [], finnhub: json.primary.finnhub ?? null });
+                setData({ ...json.primary, ...historyExtras, peers: json.peers || [], finnhub: json.primary.finnhub ?? null });
                 setSecondaryData(json.secondary ? { ...json.secondary, finnhub: json.secondary.finnhub ?? null } : null);
             } else {
-                setData(json ? { ...json, finnhub: json.finnhub ?? null } : null);
+                setData(json ? { ...json, ...historyExtras, finnhub: json.finnhub ?? null } : null);
                 setSecondaryData(null);
             }
         } catch (err) {
