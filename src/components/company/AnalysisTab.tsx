@@ -155,6 +155,7 @@ export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabP
                     valuationHistory={data.valuationHistory ?? []}
                     valuationForecast={data.valuationForecast ?? []}
                     summary={data.valuationSummary ?? null}
+                    ticker={ticker}
                 />
             </ChartSection>
 
