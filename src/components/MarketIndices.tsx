@@ -3,15 +3,12 @@
 import React, { useEffect, useState } from 'react';
 import { StockData } from '@/lib/types';
 import { formatPrice, formatPercent } from '@/lib/utils/format';
-import { logger } from '@/lib/utils/logger';
-import { TrendingUp } from 'lucide-react';
 import { MiniIntradayChart } from './MiniIntradayChart';
 
-
 const INDICES = [
-    { ticker: 'SPY', name: 'S&P 500' },
-    { ticker: 'QQQ', name: 'NASDAQ' },
-    { ticker: 'DIA', name: 'DOW' }
+    { ticker: 'SPY', label: 'SPY' },
+    { ticker: 'QQQ', label: 'QQQ' },
+    { ticker: 'DIA', label: 'DIA' }
 ];
 
 export function MarketIndices() {
@@ -106,7 +103,6 @@ export function MarketIndices() {
                 setHistory(histMap);
             } catch (err: any) {
                 if (err.name === 'AbortError' || err.message?.includes('aborted')) return;
-                // Silent error handling in production
                 if (process.env.NODE_ENV === 'development') {
                     console.warn('MarketIndices fetch error:', err);
                 }
@@ -124,73 +120,71 @@ export function MarketIndices() {
     }, []);
 
     return (
-        <div className="flex items-center">
-            <div className="flex items-center gap-3 w-full justify-start sm:justify-center px-1 lg:px-0">
-                {INDICES.map(({ ticker, name }) => {
-                    const stock = data[ticker];
-                    const price = stock?.currentPrice;
-                    const change = stock?.percentChange;
-                    const isPositive = (change || 0) >= 0;
+        <div className="flex items-center gap-2 sm:gap-3">
+            {INDICES.map(({ ticker, label }) => {
+                const stock = data[ticker];
+                const price = stock?.currentPrice;
+                const change = stock?.percentChange;
+                const isPositive = (change || 0) >= 0;
 
-                    return (
-                        <div
-                            key={ticker}
-                            className="group flex flex-col justify-between
-                                bg-gray-50 dark:bg-white/5 
-                                hover:bg-white dark:hover:bg-white/10
-                                rounded-xl 
-                                px-4 py-2.5 
-                                min-w-[110px] sm:min-w-[130px] 
-                                transition-all duration-300 ease-out
-                                cursor-default 
-                                relative overflow-hidden
-                                shadow-sm hover:shadow-md
-                                border border-transparent hover:border-gray-100 dark:hover:border-white/10"
-                            title={`${name} (${ticker})`}
-                        >
-                            {/* Header: Logo + Ticker */}
-                            <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-2">
-                                    <div className="p-1.5 rounded-md bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
-                                        <TrendingUp size={16} />
-                                    </div>
-                                    <span className="text-sm font-bold text-[var(--clr-text)] tracking-tight">{ticker}</span>
-                                </div>
-                                <div className="w-24 h-12 hidden sm:block">
-                                    {history[ticker]?.length ? (
-                                        <MiniIntradayChart points={history[ticker]!} width={96} height={48} />
-                                    ) : (
-                                        <div className="w-full h-full bg-gray-100 dark:bg-white/5 rounded-md animate-pulse" />
-                                    )}
-                                </div>
+                return (
+                    <div
+                        key={ticker}
+                        className="relative flex items-center gap-2.5 px-3 py-2 rounded-lg
+                            bg-white/80 dark:bg-gray-800/60
+                            backdrop-blur-sm
+                            border border-gray-200/60 dark:border-gray-700/40
+                            hover:border-gray-300 dark:hover:border-gray-600
+                            transition-all duration-200 cursor-default
+                            min-w-[150px] sm:min-w-[175px]"
+                        title={`${label}`}
+                    >
+                        {/* Sparkline as background */}
+                        <div className="absolute inset-0 overflow-hidden rounded-lg opacity-60 pointer-events-none flex items-end">
+                            {history[ticker]?.length ? (
+                                <MiniIntradayChart
+                                    points={history[ticker]!}
+                                    width={175}
+                                    height={40}
+                                    positive={isPositive}
+                                />
+                            ) : null}
+                        </div>
+
+                        {/* Content */}
+                        <div className="relative z-10 flex items-center gap-2.5 w-full">
+                            {/* Ticker badge */}
+                            <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-bold tracking-wide
+                                ${isPositive
+                                    ? 'bg-emerald-100/80 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300'
+                                    : 'bg-red-100/80 dark:bg-red-900/40 text-red-700 dark:text-red-300'
+                                }`}>
+                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d={isPositive ? 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6' : 'M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6'} />
+                                </svg>
+                                {label}
                             </div>
 
-                            {/* Price Section */}
-                            <div className="flex flex-col items-start gap-0.5">
-                                <span className="text-lg font-bold text-[var(--clr-text)] font-mono leading-none tracking-tight">
-                                    {loading && !stock ? (
-                                        <span className="animate-pulse bg-gray-200 dark:bg-gray-700 h-5 w-20 block rounded"></span>
-                                    ) : (
-                                        `$${formatPrice(price)}`
-                                    )}
-                                </span>
-
-                                <span className={`flex items-center gap-1 text-xs font-bold leading-none
-                                    ${isPositive ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}
-                                >
-                                    {loading && !stock ? (
-                                        <span className="animate-pulse bg-gray-200 dark:bg-gray-700 h-3 w-12 block rounded mt-1"></span>
-                                    ) : (
-                                        <>
-                                            <span>{isPositive ? '+' : ''}{formatPercent(change)}</span>
-                                        </>
-                                    )}
-                                </span>
+                            {/* Price + Change */}
+                            <div className="flex flex-col items-end ml-auto">
+                                {loading && !stock ? (
+                                    <span className="animate-pulse bg-gray-200 dark:bg-gray-700 h-4 w-16 block rounded" />
+                                ) : (
+                                    <>
+                                        <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 font-mono leading-tight tabular-nums">
+                                            ${formatPrice(price)}
+                                        </span>
+                                        <span className={`text-[11px] font-bold leading-tight tabular-nums
+                                            ${isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                                            {isPositive ? '+' : ''}{formatPercent(change)}
+                                        </span>
+                                    </>
+                                )}
                             </div>
                         </div>
-                    );
-                })}
-            </div>
+                    </div>
+                );
+            })}
         </div>
     );
 }

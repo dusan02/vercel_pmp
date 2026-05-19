@@ -10,6 +10,7 @@ interface MiniIntradayChartProps {
   points: Point[];
   width?: number;
   height?: number;
+  positive?: boolean;
 }
 
 const PRE_START = 4 * 60; // 04:00 ET
@@ -23,53 +24,57 @@ function minutesSinceMidnightET(date: Date): number {
   return et.hour * 60 + et.minute;
 }
 
-export function MiniIntradayChart({ points, width = 160, height = 64 }: MiniIntradayChartProps) {
-  const { path, min, max } = useMemo(() => {
-    if (!points || points.length === 0) return { path: '', min: 0, max: 0 };
+export function MiniIntradayChart({ points, width = 120, height = 40, positive = true }: MiniIntradayChartProps) {
+  const { linePath, areaPath } = useMemo(() => {
+    if (!points || points.length === 0) return { linePath: '', areaPath: '' };
     const prices = points.map(p => p.price);
     const minPrice = Math.min(...prices);
     const maxPrice = Math.max(...prices);
     const span = Math.max(maxPrice - minPrice || 1, 0.0001);
+    const pad = 2;
+    const drawW = width - pad * 2;
+    const drawH = height - pad * 2;
 
-    const d = points.map((p, idx) => {
+    const coords = points.map((p, idx) => {
       const date = new Date(p.ts);
       const mins = minutesSinceMidnightET(date);
-      const x = Math.max(0, Math.min(width, ((mins - PRE_START) / TOTAL_SPAN) * width));
-      const y = height - ((p.price - minPrice) / span) * height;
-      return `${idx === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
-    }).join(' ');
+      const x = pad + Math.max(0, Math.min(drawW, ((mins - PRE_START) / TOTAL_SPAN) * drawW));
+      const y = pad + drawH - ((p.price - minPrice) / span) * drawH;
+      return { x, y };
+    });
 
-    return { path: d, min: minPrice, max: maxPrice };
+    const line = coords.map((c, i) => `${i === 0 ? 'M' : 'L'}${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(' ');
+    const lastCoord = coords[coords.length - 1];
+    const firstCoord = coords[0];
+    const area = line + ` L${lastCoord!.x.toFixed(1)},${height} L${firstCoord!.x.toFixed(1)},${height} Z`;
+
+    return { linePath: line, areaPath: area };
   }, [points, width, height]);
 
+  const id = `spark-${positive ? 'up' : 'dn'}-${width}`;
+  const strokeColor = positive ? '#10b981' : '#ef4444';
+  const fillStart = positive ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)';
+  const fillEnd = positive ? 'rgba(16,185,129,0)' : 'rgba(239,68,68,0)';
+
   return (
-    <svg width={width} height={height} className="block">
-      {/* Session backgrounds */}
-      <rect x={0} y={0} width={(OPEN - PRE_START) / TOTAL_SPAN * width} height={height} fill="rgba(59,130,246,0.06)" />
-      <rect x={(OPEN - PRE_START) / TOTAL_SPAN * width} y={0} width={(CLOSE - OPEN) / TOTAL_SPAN * width} height={height} fill="rgba(16,185,129,0.06)" />
-      <rect x={(CLOSE - PRE_START) / TOTAL_SPAN * width} y={0} width={(AFTER_END - CLOSE) / TOTAL_SPAN * width} height={height} fill="rgba(249,115,22,0.06)" />
-
-      {/* Axis baseline */}
-      <line x1={0} y1={height} x2={width} y2={height} stroke="rgba(148,163,184,0.4)" strokeWidth={1} />
-
-      {/* Sparkline */}
-      {path && (
-        <path
-          d={path}
-          fill="none"
-          stroke="url(#mini-gradient)"
-          strokeWidth={2}
-          strokeLinecap="round"
-        />
-      )}
-
+    <svg width={width} height={height} className="block" preserveAspectRatio="none">
       <defs>
-        <linearGradient id="mini-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#3b82f6" />
-          <stop offset="50%" stopColor="#10b981" />
-          <stop offset="100%" stopColor="#f97316" />
+        <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={fillStart} />
+          <stop offset="100%" stopColor={fillEnd} />
         </linearGradient>
       </defs>
+      {areaPath && <path d={areaPath} fill={`url(#${id})`} />}
+      {linePath && (
+        <path
+          d={linePath}
+          fill="none"
+          stroke={strokeColor}
+          strokeWidth={1.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      )}
     </svg>
   );
 }
