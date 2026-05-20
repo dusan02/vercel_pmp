@@ -115,8 +115,8 @@ export function MarketIndices() {
                             backdrop-blur-sm
                             border border-gray-200/60 dark:border-gray-700/40
                             hover:border-gray-300 dark:hover:border-gray-600
-                            rounded-lg px-2.5 pt-1.5 pb-1.5
-                            min-w-[130px] sm:min-w-[155px]
+                            rounded-lg px-2 pt-1.5 pb-1.5
+                            min-w-[120px] sm:min-w-[140px]
                             transition-all duration-200 cursor-default"
                         title={label}
                     >
@@ -137,7 +137,7 @@ export function MarketIndices() {
                                 <span className={`text-[11px] font-bold tabular-nums
                                     ${isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}
                                 >
-                                    {isPositive ? '+' : ''}{formatPercent(change)}
+                                    {formatPercent(change)}
                                 </span>
                             )}
                         </div>
