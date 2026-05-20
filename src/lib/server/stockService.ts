@@ -381,6 +381,11 @@ export async function getStocksList(options: {
         ? pct.changePct
         : 0; // Return 0 instead of stale lastChangePct
 
+      // Outlier guard: warn in logs if % change exceeds ±15% (likely bad prevClose in DB)
+      if (Math.abs(percentChange) > 15 && currentPrice > 0) {
+        console.warn(`⚠️ [OUTLIER] ${s.symbol}: percentChange=${percentChange.toFixed(2)}% (price=${currentPrice}, prevClose=${previousClose}, refUsed=${pct.reference.used}) — likely stale/bad prevClose in DB`);
+      }
+
       // Vypočítaj market cap z aktuálnych hodnôt
       let marketCap = (currentPrice > 0 && sharesOutstanding > 0)
         ? computeMarketCap(currentPrice, sharesOutstanding)
@@ -472,9 +477,9 @@ export async function getStocksList(options: {
         marketCapDiff = 0;
         capDiffMethod = "none";
       } else if (marketCap > 0) {
-        const maxAbs = marketCap * 0.50; // 50% cap guard (relaxed from 15% to allow for earnings volatility)
+        const maxAbs = marketCap * 0.25; // 25% cap guard — catches bad prevClose before it hits UI
         if (Math.abs(marketCapDiff) > maxAbs) {
-          // Ak sem padneš, zvyčajne je percentChange alebo marketCap chyba z API
+          console.warn(`⚠️ [SANITY] ${s.symbol}: marketCapDiff=${marketCapDiff.toFixed(2)}B capped (>${(maxAbs).toFixed(2)}B, ${(Math.abs(marketCapDiff)/marketCap*100).toFixed(1)}% of mcap). prevClose=${previousClose}, price=${currentPrice}`);
           marketCapDiff = 0;
           capDiffMethod = "none";
         }
