@@ -492,17 +492,16 @@ export async function getStocksList(options: {
         console.log(`⚠️ ${s.symbol}: marketCapDiff=0 (marketCap=${marketCap}B, percentChange=${percentChange}%, sharesOutstanding=${sharesOutstanding} (type: ${typeof sharesOutstanding}), method=${capDiffMethod})`);
       }
 
+      const _ov = SECTOR_INDUSTRY_OVERRIDES[s.symbol];
       return {
         ticker: s.symbol,
-        companyName: s.name || '',
+        companyName: _ov?.name || s.name || '',
         sector: (() => {
-          const ov = SECTOR_INDUSTRY_OVERRIDES[s.symbol];
-          if (ov) return ov.sector;
+          if (_ov) return _ov.sector;
           return normalizeSectorIndustryPair(s.sector, s.industry).sector;
         })(),
         industry: (() => {
-          const ov = SECTOR_INDUSTRY_OVERRIDES[s.symbol];
-          if (ov) return ov.industry;
+          if (_ov) return _ov.industry;
           return normalizeSectorIndustryPair(s.sector, s.industry).industry;
         })(),
         logoUrl: s.logoUrl || `/logos/${s.symbol.toLowerCase()}-32.webp`,
