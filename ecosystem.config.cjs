@@ -206,6 +206,43 @@ module.exports = {
       autorestart: false,
     },
     {
+      name: "cron-earnings-calendar",
+      script: "scripts/trigger-earnings-calendar.ts",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
+      cwd: __dirname,
+      instances: 1,
+      exec_mode: "fork",
+      env_production: {
+        NODE_ENV: "production",
+        BASE_URL: "http://127.0.0.1:3000",
+        CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || envVars.CRON_SECRET || process.env.CRON_SECRET_KEY || process.env.CRON_SECRET,
+      },
+      error_file: path.join(__dirname, "logs", "pm2", "cron-earnings-calendar-error.log"),
+      out_file: path.join(__dirname, "logs", "pm2", "cron-earnings-calendar-out.log"),
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      cron_restart: "0 8 * * *", // Každý deň o 08:00 UTC (pred otvorením trhu)
+      autorestart: false,
+    },
+    {
+      name: "cron-finnhub-metrics-sync",
+      script: "scripts/sync-finnhub-metrics.ts",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
+      cwd: __dirname,
+      instances: 1,
+      exec_mode: "fork",
+      env_production: {
+        NODE_ENV: "production",
+        DATABASE_URL: envVars.DATABASE_URL || process.env.DATABASE_URL,
+        FINNHUB_API_KEY: envVars.FINNHUB_API_KEY || process.env.FINNHUB_API_KEY,
+        USE_LOCAL_REDIS: "true",
+      },
+      error_file: path.join(__dirname, "logs", "pm2", "cron-finnhub-metrics-sync-error.log"),
+      out_file: path.join(__dirname, "logs", "pm2", "cron-finnhub-metrics-sync-out.log"),
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      cron_restart: "0 3 * * *", // Každý deň o 03:00 UTC (po zatvorení trhu)
+      autorestart: false,
+    },
+    {
       name: "pmp-health-monitor",
       script: "scripts/health-monitor.ts",
       interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
