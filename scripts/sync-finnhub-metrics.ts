@@ -27,16 +27,52 @@ async function main() {
     ...(limit ? { take: limit } : {}),
   });
 
-  const symbols = tickers.map(t => t.symbol);
+  const symbols = tickers.map(t => t.symbol).filter((s): s is string => !!s);
   console.log(`📊 Found ${symbols.length} active tickers to sync`);
 
-  if (forceRefresh) {
-    const result = await FinnhubService.batchGetMetrics(symbols);
-    console.log(`✅ Force-synced ${result.size} tickers`);
-  } else {
-    const result = await FinnhubService.backgroundSync(symbols);
-    console.log(`✅ Background sync complete: ${result.success} success, ${result.failed} failed`);
+  // Serial processing with 2s delay → ~30 calls/min (safe for Finnhub free tier 60/min)
+  const DELAY_MS = 2000;
+  let success = 0;
+  let failed = 0;
+  let skipped = 0;
+
+  let idx = 0;
+  for (const symbol of symbols) {
+    try {
+      if (!forceRefresh) {
+        const existing = await prisma.finnhubMetrics.findFirst({
+          where: { symbol },
+          select: { fetchedAt: true },
+        });
+        const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
+        if (existing?.fetchedAt && existing.fetchedAt > twelveHoursAgo) {
+          skipped++;
+          idx++;
+          continue;
+        }
+      }
+
+      const metrics = await FinnhubService.getMetrics(symbol, true);
+      if (metrics) {
+        success++;
+      } else {
+        failed++;
+      }
+    } catch {
+      failed++;
+    }
+
+    idx++;
+    if (idx % 50 === 0) {
+      console.log(`📈 Progress: ${idx}/${symbols.length} (✅ ${success} saved, ⏭️ ${skipped} skipped, ❌ ${failed} failed)`);
+    }
+
+    if (idx < symbols.length) {
+      await new Promise(resolve => setTimeout(resolve, DELAY_MS));
+    }
   }
+
+  console.log(`✅ Sync complete: ${success} saved, ${skipped} skipped (fresh), ${failed} failed`);
 
   await prisma.$disconnect();
 }
