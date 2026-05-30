@@ -88,7 +88,7 @@ export class NotificationService {
                                         ${message}
                                     </p>
                                     <div style="margin: 30px 0;">
-                                        <a href="${process.env.NEXTAUTH_URL}/?tab=analysis&ticker=${ticker}" 
+                                        <a href="${process.env.NEXTAUTH_URL}/analysis/${ticker}" 
                                            style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 14px;">
                                            View Deep Dive Analysis
                                         </a>

@@ -62,7 +62,7 @@ export default function HeatmapPage() {
   const handleTileClick = useCallback((company: CompanyNode) => {
     logger.debug('Heatmap tile clicked', { symbol: company.symbol });
     event('ticker_click', { ticker: company.symbol, source: 'heatmap' });
-    router.push(`/?tab=analysis&ticker=${company.symbol.toUpperCase()}`);
+    router.push(`/analysis/${company.symbol.toUpperCase()}`);
   }, [router]);
 
   return (

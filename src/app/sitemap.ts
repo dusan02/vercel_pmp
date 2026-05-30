@@ -79,22 +79,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   // -------------------------------------------------------
-  // 2. ALL TICKERS — /?tab=analysis&ticker=[ticker] canonical pages
-  // -------------------------------------------------------
-  const allTickers = getProjectTickers('pmp');
-
-  const stockPages: MetadataRoute.Sitemap = allTickers.map((ticker) => ({
-    url: `${baseUrl}/?tab=analysis&ticker=${ticker}`,
-    lastModified: currentDate,
-    changeFrequency: 'daily' as const,
-    priority: 0.8,
-  }));
-
-  // -------------------------------------------------------
-  // 3. ANALYSIS PAGES — /analysis/[ticker] — SEO gold
+  // 2. ANALYSIS PAGES — /analysis/[ticker] — SEO gold
   //    These are proper canonical pages (not query params!)
   //    Covers ALL tickers (300+) for programmatic SEO.
   // -------------------------------------------------------
+  const allTickers = getProjectTickers('pmp');
+
   const analysisPages: MetadataRoute.Sitemap = allTickers.map((ticker) => ({
     url: `${baseUrl}/analysis/${ticker}`,
     lastModified: currentDate,
@@ -168,7 +158,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [
     ...mainPages,
-    ...stockPages,
     ...analysisPages,
     ...sectorPages,
     ...archivePages,
