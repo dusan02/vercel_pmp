@@ -1,5 +1,6 @@
 // ... imports ...
 import React from 'react';
+import Link from 'next/link';
 import { SectionIcon } from './SectionIcon';
 
 export interface SectionNavigationProps {
@@ -56,6 +57,16 @@ export function SectionNavigation({ activeTab, onTabChange }: SectionNavigationP
             </button>
           );
         })}
+
+        {/* Blog — external link, not a tab */}
+        <Link
+          href="/blog"
+          className="flex items-center gap-2 px-6 py-3 text-sm font-medium whitespace-nowrap transition-colors relative text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+        >
+          <SectionIcon type="book" size={16} />
+          <span>Blog</span>
+          <div className="absolute right-0 top-3 bottom-3 w-px bg-gray-200 dark:bg-gray-700 pointer-events-none" />
+        </Link>
       </div>
     </nav>
   );
