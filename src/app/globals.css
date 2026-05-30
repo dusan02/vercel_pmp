@@ -88,12 +88,12 @@
   html {
     height: 100%;
     overflow-x: hidden;
+    overflow-y: scroll;
   }
 
   body {
     height: 100%;
     overflow-x: hidden;
-    scrollbar-gutter: stable;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     transition: background-color 0.2s ease, color 0.2s ease;
