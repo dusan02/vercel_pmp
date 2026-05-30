@@ -46,6 +46,10 @@ const HomeEarnings = dynamic(
   () => import('@/components/home/HomeEarnings').then((mod) => mod.HomeEarnings),
   { ssr: false, loading: () => null }
 );
+const HomeBlog = dynamic(
+  () => import('@/components/home/HomeBlog').then((mod) => mod.HomeBlog),
+  { ssr: false, loading: () => null }
+);
 const HomeMovers = dynamic(
   () => import('@/components/home/HomeMovers').then((mod) => mod.HomeMovers),
   { ssr: false, loading: () => null }
@@ -127,7 +131,7 @@ interface HomePageProps {
   initialEarningsData?: any;
 }
 
-type ActiveSection = 'heatmap' | 'analysis' | 'movers' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks' | 'screener';
+type ActiveSection = 'heatmap' | 'analysis' | 'movers' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks' | 'screener' | 'blog';
 
 export default function HomePage({ initialData = [], initialEarningsData }: HomePageProps) {
   // Auto-repair localStorage on mount (fixes corrupted cache issues)
@@ -168,7 +172,7 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
 
   // Helper function to validate and set tab
   const setActiveTab = useCallback((tab: string) => {
-    if (tab === 'heatmap' || tab === 'analysis' || tab === 'movers' || tab === 'portfolio' || tab === 'favorites' || tab === 'earnings' || tab === 'allStocks' || tab === 'screener') {
+    if (tab === 'heatmap' || tab === 'analysis' || tab === 'movers' || tab === 'portfolio' || tab === 'favorites' || tab === 'earnings' || tab === 'allStocks' || tab === 'screener' || tab === 'blog') {
       setActiveSection(tab as ActiveSection);
       return true;
     }
@@ -700,6 +704,12 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
                         {activeSection === 'screener' && (
                           <div className="tab-content fade-in container mx-auto py-8">
                             <GlobalScreener />
+                          </div>
+                        )}
+
+                        {activeSection === 'blog' && (
+                          <div className="tab-content fade-in">
+                            <HomeBlog />
                           </div>
                         )}
                       </div>
