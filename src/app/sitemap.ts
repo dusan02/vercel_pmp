@@ -1,6 +1,7 @@
 import { MetadataRoute } from 'next';
 import { getProjectTickers } from '@/data/defaultTickers';
 import { getDateET } from '@/lib/utils/dateET';
+import { prisma } from '@/lib/db/prisma';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://premarketprice.com';
@@ -156,11 +157,40 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Fallback: ignore date pages if the date util or DB fails
   }
 
+  // -------------------------------------------------------
+  // 5. BLOG PAGES — /blog + /blog/[date]
+  // -------------------------------------------------------
+  const blogPages: MetadataRoute.Sitemap = [{
+    url: `${baseUrl}/blog`,
+    lastModified: currentDate,
+    changeFrequency: 'daily' as const,
+    priority: 0.8,
+  }];
+
+  try {
+    const snapshots = await prisma.dailyBlogSnapshot.findMany({
+      orderBy: { date: 'desc' },
+      take: 60,
+      select: { date: true },
+    });
+    for (const snap of snapshots) {
+      blogPages.push({
+        url: `${baseUrl}/blog/${snap.date}`,
+        lastModified: snap.date,
+        changeFrequency: 'monthly' as const,
+        priority: 0.7,
+      });
+    }
+  } catch {
+    // Fallback: no blog date pages if DB unavailable
+  }
+
   return [
     ...mainPages,
     ...analysisPages,
     ...sectorPages,
     ...archivePages,
     ...earningsPages,
+    ...blogPages,
   ];
 }

@@ -90,6 +90,11 @@ function FooterContent() {
             </h3>
             <ul className="space-y-2">
               <li>
+                <Link href="/blog" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                  Blog
+                </Link>
+              </li>
+              <li>
                 <Link href="/about" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                   About Us
                 </Link>

@@ -536,3 +536,16 @@ model FinnhubInsiderTransaction {
   @@index([transactionDate])
   @@index([fetchedAt])
 }
+
+model DailyBlogSnapshot {
+  date          String   @id               // "2026-05-30" — ET date
+  gainersJson   String                     // JSON array of top gainers
+  losersJson    String                     // JSON array of top losers
+  mcapMoversJson String                    // JSON array of biggest market cap movers
+  overviewJson  String                     // JSON: totalStocks, gainers, losers, avgChange, totalMcapChange, sentiment
+  earningsJson  String   @default("[]")    // JSON array of earnings today (from Finnhub)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([date])
+}
