@@ -70,7 +70,7 @@ export function generateCompanyMetadata({
     ...(industry ? [industry.toLowerCase()] : []),
   ].filter(Boolean).join(', ');
 
-  const url = `${baseUrl}/stock/${ticker}`;
+  const url = `${baseUrl}/analysis/${ticker}`;
   const ogImage = `${baseUrl}/og-image.png`;
 
   return {
