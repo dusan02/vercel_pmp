@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { prisma } from '@/lib/db/prisma';
 
-export const revalidate = 3600;
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: 'Premarket Reports & Market Insights | PreMarketPrice Blog',
