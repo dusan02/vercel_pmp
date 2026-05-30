@@ -17,7 +17,7 @@ interface PageHeaderProps {
 export function PageHeader({ navigation, onLogoClick }: PageHeaderProps) {
   return (
     <header className="w-full bg-[var(--clr-surface)] border-b border-[var(--clr-border)] relative z-50 py-2 text-left sticky top-0 lg:static">
-      <div className="flex items-center justify-between w-full max-w-[1400px] mx-auto px-2 sm:px-4 gap-2 sm:gap-4 flex-wrap lg:flex-nowrap">
+      <div className="flex items-center justify-between w-full px-3 sm:px-6 gap-2 sm:gap-4 flex-wrap lg:flex-nowrap">
         {/* MOBILE: Simple layout - Brand + Sign In */}
         <div className="lg:hidden flex items-center justify-between w-full">
           <div
@@ -64,7 +64,7 @@ export function PageHeader({ navigation, onLogoClick }: PageHeaderProps) {
             </div>
 
             {/* Indices */}
-            <div className="flex-1 flex justify-center items-center px-4">
+            <div className="flex-[2] flex items-center px-4 min-w-0">
               <MarketIndices />
             </div>
 

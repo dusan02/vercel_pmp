@@ -99,56 +99,67 @@ export function MarketIndices() {
     }, []);
 
     return (
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-stretch gap-2 sm:gap-3 w-full">
             {INDICES.map(({ ticker, label }) => {
                 const stock      = data[ticker];
                 const price      = stock?.currentPrice;
+                const close      = stock?.closePrice;
                 const change     = stock?.percentChange;
                 const isPositive = (change ?? 0) >= 0;
                 const pts        = history[ticker] ?? [];
+                const dollarChg  = (price != null && close != null) ? price - close : null;
 
                 return (
                     <div
                         key={ticker}
-                        className="flex flex-col gap-0.5
-                            bg-white/80 dark:bg-gray-800/60
-                            backdrop-blur-sm
-                            border border-gray-200/60 dark:border-gray-700/40
-                            hover:border-gray-300 dark:hover:border-gray-600
-                            rounded-lg px-2 pt-1.5 pb-1.5
-                            min-w-[120px] sm:min-w-[140px]
-                            transition-all duration-200 cursor-default"
+                        className={`
+                            flex-1 flex flex-col gap-1
+                            bg-white dark:bg-gray-900
+                            border border-gray-200 dark:border-gray-700
+                            border-l-[3px]
+                            ${isPositive
+                                ? 'border-l-emerald-500'
+                                : 'border-l-red-500'}
+                            rounded-lg px-3 pt-2 pb-2
+                            transition-all duration-200 cursor-default
+                            hover:shadow-sm
+                        `}
                         title={label}
                     >
-                        {/* ── Row 1: label left · % change right ── */}
-                        <div className="flex items-center justify-between">
-                            <span className={`
-                                text-[11px] font-bold tracking-wide px-1.5 py-0.5 rounded
-                                ${isPositive
-                                    ? 'bg-emerald-100/80 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300'
-                                    : 'bg-red-100/80 dark:bg-red-900/40 text-red-700 dark:text-red-300'}
-                            `}>
+                        {/* ── Row 1: label · % change · $ change ── */}
+                        <div className="flex items-center justify-between gap-2">
+                            <span className="text-[11px] font-bold tracking-widest uppercase text-gray-500 dark:text-gray-400">
                                 {label}
                             </span>
 
-                            {loading && !stock ? (
-                                <span className="animate-pulse bg-gray-200 dark:bg-gray-700 h-3 w-10 rounded" />
-                            ) : (
-                                <span className={`text-[11px] font-bold tabular-nums
-                                    ${isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}
-                                >
-                                    {formatPercent(change)}
-                                </span>
-                            )}
+                            <div className="flex items-center gap-1.5">
+                                {loading && !stock ? (
+                                    <span className="animate-pulse bg-gray-200 dark:bg-gray-700 h-3 w-12 rounded" />
+                                ) : (
+                                    <>
+                                        {dollarChg !== null && (
+                                            <span className={`text-[11px] font-medium tabular-nums hidden sm:inline
+                                                ${isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
+                                                {isPositive ? '+' : ''}{dollarChg.toFixed(2)}
+                                            </span>
+                                        )}
+                                        <span className={`text-xs font-bold tabular-nums px-1.5 py-0.5 rounded
+                                            ${isPositive
+                                                ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
+                                                : 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400'}`}>
+                                            {formatPercent(change)}
+                                        </span>
+                                    </>
+                                )}
+                            </div>
                         </div>
 
-                        {/* ── Row 2: sparkline — full card width ── */}
-                        <div className="w-full" style={{ height: 40 }}>
+                        {/* ── Row 2: sparkline — full card width, taller ── */}
+                        <div className="w-full" style={{ height: 56 }}>
                             {pts.length > 0 ? (
                                 <MiniIntradayChart
                                     points={pts}
-                                    width={148}
-                                    height={40}
+                                    height={56}
                                     positive={isPositive}
                                 />
                             ) : (
@@ -158,9 +169,9 @@ export function MarketIndices() {
 
                         {/* ── Row 3: price ── */}
                         {loading && !stock ? (
-                            <span className="animate-pulse bg-gray-200 dark:bg-gray-700 h-4 w-16 rounded" />
+                            <span className="animate-pulse bg-gray-200 dark:bg-gray-700 h-5 w-20 rounded" />
                         ) : (
-                            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 font-mono tabular-nums leading-tight">
+                            <span className="text-base font-bold text-gray-900 dark:text-white font-mono tabular-nums leading-tight">
                                 ${formatPrice(price)}
                             </span>
                         )}
