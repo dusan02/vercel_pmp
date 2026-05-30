@@ -17,7 +17,7 @@ interface PageHeaderProps {
 export function PageHeader({ navigation, onLogoClick }: PageHeaderProps) {
   return (
     <header className="w-full bg-[var(--clr-surface)] border-b border-[var(--clr-border)] relative z-50 py-2 text-left sticky top-0 lg:static">
-      <div className="flex items-center justify-between w-full px-3 sm:px-6 gap-2 sm:gap-4 flex-wrap lg:flex-nowrap">
+      <div className="flex items-center justify-between w-full max-w-screen-2xl mx-auto px-3 sm:px-6 gap-2 sm:gap-4 flex-wrap lg:flex-nowrap">
         {/* MOBILE: Simple layout - Brand + Sign In */}
         <div className="lg:hidden flex items-center justify-between w-full">
           <div

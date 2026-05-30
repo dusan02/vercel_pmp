@@ -88,7 +88,7 @@ export class SocialDistributorService {
                 const mediaId = await twitterClient.v1.uploadMedia(imageBuffer, { type: 'png' });
 
                 // 4c. Post tweet
-                const tweetText = `${mover.socialCopy}\n\nView Analysis: https://premarketprice.pro/ticker/${mover.symbol}`;
+                const tweetText = `${mover.socialCopy}\n\nView Analysis: https://premarketprice.com/analysis/${mover.symbol}`;
                 await twitterClient.v2.tweet({
                     text: tweetText,
                     media: { media_ids: [mediaId] }
