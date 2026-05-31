@@ -92,6 +92,8 @@ app
     server.listen(port, listenHost, () => {
       console.log(`🚀 Next.js server ready on http://${listenHost}:${port}`);
       console.log(`🔌 WebSocket server ready on ws://${listenHost}:${port}`);
+      // Signal PM2 that the server is ready to receive traffic (required for wait_ready: true)
+      if (process.send) process.send('ready');
 
       if (process.env.NODE_ENV === 'production' || process.env.ENABLE_WEBSOCKET === 'true') {
         console.log('📡 WebSocket real-time updates: ENABLED');

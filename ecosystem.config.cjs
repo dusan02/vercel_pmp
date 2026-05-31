@@ -38,9 +38,14 @@ module.exports = {
       // Resource management - prevent memory leaks and ensure restarts
       max_memory_restart: "2G",
       kill_timeout: 5000,
-      
-      // Restart strategy
-      max_restarts: 10,
+
+      // Wait for app to signal ready before routing traffic (prevents 502 during restart)
+      wait_ready: true,
+      listen_timeout: 30000,
+
+      // Restart strategy — unlimited restarts prevents permanent 502
+      max_restarts: -1,
+      restart_delay: 2000,
       min_uptime: "10s",
       autorestart: true,
       
