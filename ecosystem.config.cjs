@@ -44,7 +44,7 @@ module.exports = {
       listen_timeout: 30000,
 
       // Restart strategy — unlimited restarts prevents permanent 502
-      max_restarts: -1,
+      max_restarts: 9999,
       restart_delay: 2000,
       min_uptime: "10s",
       autorestart: true,
