@@ -146,13 +146,6 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
 
   const isDesktop = useMediaQuery('(min-width: 1024px)');
 
-  // Debug: Log desktop detection
-  useEffect(() => {
-    if (isMounted) {
-      console.log('[HomePage] isMounted:', isMounted, 'isDesktop:', isDesktop, 'window width:', typeof window !== 'undefined' ? window.innerWidth : 'N/A');
-    }
-  }, [isMounted, isDesktop]);
-
   // Use user preferences hook for persistence
   const { preferences, savePreferences, setConsent } = useUserPreferences();
 
@@ -190,13 +183,11 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
   useEffect(() => {
     if (!isMounted) return;
     const { tab, ticker } = parseUrlParams();
-    console.log('🔍 Deep-link tab detection:', { tab, ticker, currentActiveSection: activeSection });
     if (ticker) {
       setAnalysisTicker(ticker.toUpperCase());
     }
     if (tab) {
-      const success = setActiveTab(tab);
-      console.log('🔍 setActiveTab result:', { tab, success, newActiveSection: activeSection });
+      setActiveTab(tab);
     }
   }, [isMounted, setActiveTab, parseUrlParams]);
 
@@ -302,7 +293,6 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
   const allStocksLoadedRef = useRef(false);
   useEffect(() => {
     if (activeSection === 'allStocks' && !allStocksLoadedRef.current && !loadingStates.remainingStocks) {
-      console.log('🔄 User navigated to All Stocks - loading all remaining stocks...');
       fetchRemainingStocksData();
       allStocksLoadedRef.current = true;
     }

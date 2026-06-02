@@ -127,9 +127,10 @@ export function useAnalysis(ticker: string) {
                 const msg = body?.details || body?.error || `Analysis failed (${res.status})`;
                 throw new Error(msg);
             }
-            const json = await res.json();
-            // Pass through finnhub data from POST response as well
-            setData(json ? { ...json, finnhub: json.finnhub ?? null } : null);
+            await res.json();
+            // POST response lacks historyExtras (priceHistory, valuationHistory, etc.)
+            // Fetch full data (including /history endpoint) to populate all charts correctly
+            await fetchAnalysis();
         } catch (err: any) {
             console.error(err);
             setError(err?.message || 'An error occurred during deep analysis.');
