@@ -38,50 +38,23 @@ export function MarketIndices() {
                     setData(map);
                 }
 
-                // ── Intraday history ─────────────────────────────────────────
-                const histEntries = await Promise.all(
-                    INDICES.map(async ({ ticker }) => {
-                        try {
-                            const hRes = await fetch(`/api/history?ticker=${ticker}&limit=180`, {
-                                signal: abortController?.signal ?? null,
-                                cache: 'no-store',
+                // ── Intraday from Polygon (5-min bars: pre + regular + after-hours) ──
+                try {
+                    const polyRes = await fetch('/api/indices/intraday', {
+                        signal: abortController?.signal ?? null,
+                        cache: 'no-store',
+                    });
+                    if (polyRes.ok) {
+                        const polyJson = await polyRes.json();
+                        if (polyJson?.data) {
+                            const histMap: Record<string, { ts: string; price: number }[]> = {};
+                            INDICES.forEach(({ ticker }) => {
+                                histMap[ticker] = polyJson.data[ticker] ?? [];
                             });
-                            if (!hRes.ok) throw new Error(`history ${hRes.status}`);
-                            const hJson = await hRes.json();
-                            const pts = Array.isArray(hJson.data)
-                                ? (hJson.data as { timestamp: string; price: number }[])
-                                    .filter(p => p.price)
-                                    .map(p => ({ ts: p.timestamp, price: p.price }))
-                                    .reverse()
-                                : [];
-                            return [ticker, pts] as const;
-                        } catch {
-                            return [ticker, []] as const;
+                            setHistory(histMap);
                         }
-                    })
-                );
-
-                // ── Polygon fallback ─────────────────────────────────────────
-                const anyMissing = histEntries.some(([, pts]) => pts.length === 0);
-                let merged = histEntries;
-                if (anyMissing) {
-                    try {
-                        const polyRes = await fetch('/api/indices/intraday', { cache: 'no-store' });
-                        if (polyRes.ok) {
-                            const polyJson = await polyRes.json();
-                            if (polyJson?.data) {
-                                merged = histEntries.map(([t, pts]) => {
-                                    if (pts.length > 0) return [t, pts] as [string, { ts: string; price: number }[]];
-                                    return [t, (polyJson.data[t] ?? [])] as [string, { ts: string; price: number }[]];
-                                });
-                            }
-                        }
-                    } catch { /* silent */ }
-                }
-
-                const histMap: Record<string, { ts: string; price: number }[]> = {};
-                merged.forEach(([t, pts]) => { histMap[t] = [...pts]; });
-                setHistory(histMap);
+                    }
+                } catch { /* silent — chart stays empty, quotes still show */ }
 
             } catch (err: any) {
                 if (err.name === 'AbortError' || err.message?.includes('aborted')) return;
@@ -91,7 +64,7 @@ export function MarketIndices() {
         };
 
         fetchIndices();
-        const interval = setInterval(fetchIndices, 60_000);
+        const interval = setInterval(fetchIndices, 5 * 60_000);
         return () => {
             clearInterval(interval);
             abortController?.abort();

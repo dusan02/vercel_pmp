@@ -70,7 +70,7 @@ export function MiniIntradayChart({ points, width = 148, height = 48, positive =
   const xClose = ((CLOSE - PRE_START) / TOTAL_SPAN) * width;
 
   return (
-    <svg width={width} height={height} className="block w-full" preserveAspectRatio="none">
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="block w-full" preserveAspectRatio="none">
       <defs>
         <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%"   stopColor={fillTop} />
