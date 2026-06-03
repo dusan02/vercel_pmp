@@ -53,21 +53,14 @@ export default function EarningsCalendar() {
       setError(null);
 
       if (!currentDate) {
-        console.log('⚠️ No date set, skipping earnings fetch');
         setLoading(false);
         return;
       }
-
-      console.log('🔍 Fetching earnings for date:', currentDate);
-      console.log('🔍 API URL:', `/api/earnings-calendar?date=${currentDate}`);
 
       // 🚀 OPTIMIZATION: Use new database-backed API endpoint
       const response = await fetch(`/api/earnings/today?date=${currentDate}`, {
         signal: AbortSignal.timeout(5000) // Increased timeout for better reliability
       });
-
-      console.log('🔍 Earnings API response status:', response.status);
-      console.log('🔍 Earnings API response headers:', response.headers);
 
       if (!response.ok) {
         console.error('❌ Earnings API error:', response.status, response.statusText);
@@ -99,7 +92,6 @@ export default function EarningsCalendar() {
       }
 
       const data: EarningsResponse = await response.json();
-      console.log('🔍 Earnings API response data:', data);
 
       // Validate response structure
       if (!data || !data.success || !data.data) {

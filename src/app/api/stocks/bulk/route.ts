@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { StockData } from '@/lib/types';
 import { getCachedData, setCachedData } from '@/lib/redis/operations';
 import { getCacheKey } from '@/lib/redis/keys';
 import { getSharesOutstanding, getPreviousClose, getCurrentPrice, computePercentChange, computeMarketCap, computeMarketCapDiff } from '@/lib/utils/marketCapUtils';
@@ -6,17 +7,6 @@ import { detectSession, nowET } from '@/lib/utils/timeUtils';
 import { prisma } from '@/lib/db/prisma';
 import { getDateET, createETDate } from '@/lib/utils/dateET';
 
-interface StockData {
-  ticker: string;
-  currentPrice: number;
-  closePrice: number;
-  percentChange: number;
-  marketCap: number;
-  marketCapDiff: number;
-  sector?: string;
-  industry?: string;
-  lastUpdated: string;
-}
 
 export async function GET(req: NextRequest) {
   const startTime = Date.now();

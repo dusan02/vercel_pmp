@@ -45,7 +45,6 @@ export function WebSocketStatus({ showDetails = false, className = '' }: WebSock
       const data = await response.json();
       
       if (data.success) {
-        console.log(`✅ WebSocket server ${action}ed successfully`);
         await fetchServerStatus(); // Refresh status
       } else {
         console.error(`❌ Failed to ${action} WebSocket server:`, data.error);

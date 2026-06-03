@@ -88,7 +88,6 @@ export function MobileTabBar({ activeTab, onTabChange }: MobileTabBarProps) {
         const baseHeight = 72; // var(--tabbar-h)
         if (Math.abs(h - baseHeight) > 5) {
           // Safe-area is significant, ensure consistency
-          console.log(`[MobileTabBar] Real height: ${h}px (base: ${baseHeight}px, safe-area: ${h - baseHeight}px)`);
         }
       }
     };

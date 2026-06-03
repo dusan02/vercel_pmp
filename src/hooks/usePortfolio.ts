@@ -191,10 +191,6 @@ export function usePortfolio(props?: UsePortfolioProps) {
     return currentValue * (pct / (100 + pct));
   }, [portfolioHoldings]);
 
-  // DEPRECATED: Use calculateDailyChange instead
-  // Kept for backwards compatibility
-  const calculateStockValue = calculateDailyChange;
-
   // Calculate total portfolio value (sum of all position values)
   const totalPortfolioValue = useMemo(() => {
     return stockData.reduce((total, stock) => {
@@ -245,8 +241,7 @@ export function usePortfolio(props?: UsePortfolioProps) {
     removeStock,
     addStock,
     isLoaded,
-    calculateStockValue, // DEPRECATED: Use calculateDailyChange
-    calculateTotalStockValue, // New: Total portfolio value
+    calculateTotalStockValue, // Total portfolio value
     calculateDailyChange, // New: Daily change value
     totalPortfolioValue, // Total daily change
     portfolioStocks
