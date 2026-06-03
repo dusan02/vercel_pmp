@@ -72,8 +72,6 @@ jspm_packages/
 # next.js build output
 .next
 
-# logos
-public/logos/
 
 # nuxt.js build output
 .nuxt

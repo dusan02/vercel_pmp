@@ -22,6 +22,14 @@ export class LogoFetcher {
 
     // --- Public Methods ---
 
+    async saveBufferPublic(ticker: string, buffer: Buffer): Promise<void> {
+        try {
+            await this.saveBufferToWebP(buffer, ticker);
+        } catch {
+            // Non-critical
+        }
+    }
+
     async fetchAndSave(ticker: string): Promise<string | null> {
         try {
             const result = await this.fetchLogoStrategies(ticker);
@@ -42,19 +50,64 @@ export class LogoFetcher {
     // --- Internal Strategies ---
 
     private async fetchLogoStrategies(ticker: string): Promise<LogoFetchResult | null> {
-        // 1. Polygon
+        // 1. Simple Icons (instant local lookup, no external calls — preferred for major brands)
+        const icon = this.fetchFromSimpleIcons(ticker);
+        if (icon) return { ...icon, source: 'domain' };
+
+        // 2. Polygon
         const polygon = await this.fetchFromPolygon(ticker);
         if (polygon) return { ...polygon, source: 'polygon' };
 
-        // 2. Finnhub
+        // 3. Finnhub
         const finnhub = await this.fetchFromFinnhub(ticker);
         if (finnhub) return { ...finnhub, source: 'finnhub' };
 
-        // 3. Domain Fallback
+        // 4. Domain Fallback (Clearbit / Google favicon)
         const domain = await this.fetchFromDomain(ticker);
         if (domain) return { ...domain, source: 'domain' };
 
         return null;
+    }
+
+    private fetchFromSimpleIcons(ticker: string): { buffer: Buffer; contentType: string } | null {
+        const TICKER_TO_SI_SLUG: Record<string, string> = {
+            'AAPL': 'apple', 'MSFT': 'microsoft', 'GOOGL': 'google', 'GOOG': 'google',
+            'AMZN': 'amazon', 'META': 'meta', 'TSLA': 'tesla', 'NVDA': 'nvidia',
+            'NFLX': 'netflix', 'AMD': 'amd', 'INTC': 'intel', 'V': 'visa',
+            'MA': 'mastercard', 'PYPL': 'paypal', 'T': 'atandt', 'VZ': 'verizon',
+            'CMCSA': 'comcast', 'ORCL': 'oracle', 'IBM': 'ibm', 'CRM': 'salesforce',
+            'SAP': 'sap', 'ADBE': 'adobe', 'NOW': 'servicenow', 'INTU': 'intuit',
+            'CSCO': 'cisco', 'QCOM': 'qualcomm', 'DELL': 'dell', 'HPQ': 'hp',
+            'SHOP': 'shopify', 'SPOT': 'spotify', 'UBER': 'uber', 'LYFT': 'lyft',
+            'SNAP': 'snapchat', 'PINS': 'pinterest', 'RBLX': 'roblox', 'COIN': 'coinbase',
+            'ETSY': 'etsy', 'ABNB': 'airbnb', 'ZM': 'zoom',
+            'OKTA': 'okta', 'CRWD': 'crowdstrike', 'DDOG': 'datadog', 'SNOW': 'snowflake',
+            'NET': 'cloudflare', 'PLTR': 'palantir', 'TEAM': 'atlassian', 'DOCU': 'docusign',
+            'HUBS': 'hubspot', 'MDB': 'mongodb', 'GTLB': 'gitlab', 'ROKU': 'roku',
+            'TWLO': 'twilio', 'HOOD': 'robinhood', 'NKE': 'nike', 'MCD': 'mcdonalds',
+            'SBUX': 'starbucks', 'BABA': 'alibaba', 'TSM': 'tsmc', 'BP': 'bp',
+            'AXP': 'americanexpress', 'BAC': 'bankofamerica', 'ZS': 'zscaler',
+            'ENPH': 'enphase', 'RIVN': 'rivian', 'F': 'ford', 'BB': 'blackberry',
+            'EA': 'electronicarts', 'DKNG': 'draftkings', 'BKNG': 'booking',
+            'EBAY': 'ebay', 'TTD': 'thetradedesk', 'PATH': 'uipath', 'U': 'unity',
+            'DIS': 'disney', 'AVGO': 'broadcom', 'TXN': 'texasinstruments',
+            'PANW': 'paloaltonetworks', 'SQ': 'square', 'XOM': 'exxon',
+        };
+
+        const slug = TICKER_TO_SI_SLUG[ticker.toUpperCase()];
+        if (!slug) return null;
+
+        try {
+            const key = `si${slug.charAt(0).toUpperCase()}${slug.slice(1)}`;
+            const iconData = (si as any)[key];
+            if (!iconData?.path) return null;
+
+            const iconColor = `#${iconData.hex || '000000'}`;
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="128" height="128"><rect width="24" height="24" fill="#FFFFFF"/><path d="${iconData.path}" fill="${iconColor}"/></svg>`;
+            return { buffer: Buffer.from(svg), contentType: 'image/svg+xml' };
+        } catch {
+            return null;
+        }
     }
 
     private async fetchWithTimeout(url: string, timeout = 5000): Promise<Response> {
@@ -219,6 +272,15 @@ export class LogoFetcher {
             'TTD': 'thetradedesk.com',
             'MDB': 'mongodb.com',
             'DDOG': 'datadoghq.com',
+            'TMUS': 'tmobile.com',
+            'MS': 'morganstanley.com',
+            'GS': 'goldmansachs.com',
+            'BAC': 'bankofamerica.com',
+            'WFC': 'wellsfargo.com',
+            'C': 'citigroup.com',
+            'SCHW': 'schwab.com',
+            'BLK': 'blackrock.com',
+            'AAPL': 'apple.com',
             'ANSS': 'ansys.com',
             'SWKS': 'skyworksinc.com',
             'SPLK': 'splunk.com',

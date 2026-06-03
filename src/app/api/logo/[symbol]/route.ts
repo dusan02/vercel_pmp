@@ -1,6 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { readFile, access } from 'fs/promises';
+import { readFile, writeFile, access } from 'fs/promises';
 import { createHash } from 'crypto';
 import { join } from 'path';
 import { redisClient } from '@/lib/redis/client';
@@ -101,16 +101,28 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ symb
         }, etag);
       }
 
-      // 2. Redis Cache
+      // 1b. Static SVG file (from simple-icons, saved on previous live fetch)
+      const staticSvgPath = join(process.cwd(), 'public', 'logos', `${symbol.toLowerCase()}.svg`);
+      if (await fileExists(staticSvgPath)) {
+        const content = await readFile(staticSvgPath, 'utf8');
+        return createResponse(content, {
+          'Content-Type': 'image/svg+xml',
+          'Cache-Control': 'public, max-age=31536000, immutable',
+          'X-Logo-Source': 'static-svg'
+        });
+      }
+
+      // 2. Redis Cache (base64-encoded to avoid binary corruption)
       if (redisClient?.isOpen) {
-        const cached = await redisClient.get(`logo:img:${symbol}:${size}`);
+        const cached = await redisClient.get(`logo:b64:${symbol}`);
         if (cached) {
-          const buffer = Buffer.isBuffer(cached) ? cached : Buffer.from(cached);
+          const buffer = Buffer.from(cached, 'base64');
           const etag = generateETag(buffer);
           const notModified = checkETag(req, etag);
           if (notModified) return notModified;
-          return createResponse(buffer, {
-            'Content-Type': 'image/webp', // Assuming we cache webp/png
+          const isSvg = cached.startsWith('PHN2Zy') || cached.startsWith('PHN2'); // base64 of '<svg'
+          return createResponse(isSvg ? buffer.toString('utf8') : buffer, {
+            'Content-Type': isSvg ? 'image/svg+xml' : 'image/webp',
             'Cache-Control': 'public, max-age=86400',
             'X-Logo-Source': 'redis'
           }, etag);
@@ -129,13 +141,24 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ symb
         const result = await logoFetcher.fetchBuffer(symbol);
         if (result) {
           const etag = generateETag(result.buffer);
+          const isSvg = result.contentType.includes('svg');
 
-          // Cache in Redis
+          // Cache in Redis as base64 (binary-safe)
           if (redisClient?.isOpen) {
-            await redisClient.setEx(`logo:img:${symbol}:${size}`, 86400, result.buffer);
+            await redisClient.setEx(`logo:b64:${symbol}`, 86400 * 7, result.buffer.toString('base64'));
           }
 
-          return createResponse(result.buffer, {
+          // Persist to static file so future requests skip Redis/live fetch entirely
+          if (isSvg) {
+            // Save SVG directly (e.g. simple-icons result)
+            const svgPath = join(process.cwd(), 'public', 'logos', `${symbol.toLowerCase()}.svg`);
+            writeFile(svgPath, result.buffer.toString('utf8')).catch(() => {});
+          } else {
+            // Save bitmap as WebP (fire-and-forget)
+            logoFetcher.saveBufferPublic(symbol, result.buffer).catch(() => {});
+          }
+
+          return createResponse(isSvg ? result.buffer.toString('utf8') : result.buffer, {
             'Content-Type': result.contentType,
             'Cache-Control': 'public, max-age=86400',
             'X-Logo-Source': `live-${result.source}`
