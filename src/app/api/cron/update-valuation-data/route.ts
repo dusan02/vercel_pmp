@@ -1,20 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { ValuationService } from '@/services/valuationService';
-import { getCronAuth } from '@/lib/cronAuth';
+import { verifyCronAuth } from '@/lib/utils/cronAuth';
 
 // Cron job pre aktualizáciu valučných dát
 // Beží každý deň o 2:00 AM UTC (9:00 PM EST)
 export async function POST(request: NextRequest, context: { params: Promise<{}> }) {
   try {
-    // Overenie cron autorizácie
-    const authResult = await getCronAuth(request);
-    if (!authResult.success) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const authError = verifyCronAuth(request);
+    if (authError) return authError;
 
     console.log('🔄 Starting valuation data update cron job');
     

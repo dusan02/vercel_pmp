@@ -41,18 +41,8 @@ import { saveRegularClose } from './polygon/saveRegularClose';
 import { ingestBatch } from './polygon/ingestBatch';
 import { bootstrapPreviousCloses } from './polygon/bootstrapPrevClose';
 export { saveRegularClose, ingestBatch, bootstrapPreviousCloses };
-
-/**
- * Returns true when we are inside the bulk-preload / stale-alert window: 07:30–15:55 ET.
- * Bug fix: the previous inline version used `hours >= 7` which incorrectly included 07:00–07:29.
- */
-function isBulkPreloadWindow(hours: number, minutes: number): boolean {
-  return (
-    (hours > 7 && hours < 15) ||
-    (hours === 7 && minutes >= 30) ||
-    (hours === 15 && minutes < 55)
-  );
-}
+export { isBulkPreloadWindow } from '@/lib/utils/marketWindowUtils';
+import { isBulkPreloadWindow } from '@/lib/utils/marketWindowUtils';
 
 async function main() {
   const mode = process.env.MODE || 'snapshot';

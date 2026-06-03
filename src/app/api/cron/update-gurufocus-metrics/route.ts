@@ -1,20 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { GuruFocusService } from '@/services/guruFocusService';
-import { getCronAuth } from '@/lib/cronAuth';
+import { verifyCronAuth } from '@/lib/utils/cronAuth';
 
 // Cron job pre aktualizáciu GuruFocus metrík
 // Beží každý deň o 1:00 AM UTC (8:00 PM EST predchádzajúci deň)
 export async function POST(request: NextRequest, context: { params: Promise<{}> }) {
   try {
-    // Overenie cron autorizácie
-    const authResult = await getCronAuth(request);
-    if (!authResult.success) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const authError = verifyCronAuth(request);
+    if (authError) return authError;
 
     console.log('🔄 Starting GuruFocus metrics update cron job');
     

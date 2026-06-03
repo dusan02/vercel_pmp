@@ -4,6 +4,31 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { handleCronError } from './cronErrorHandler';
+
+/**
+ * Wraps a cron handler with: auth check → try/catch → standardized error response.
+ *
+ * Usage:
+ *   export const POST = withCronHandler('my-job', async (req) => {
+ *     // business logic only — auth and error handling are automatic
+ *     return createCronSuccessResponse({ message: 'Done' });
+ *   });
+ */
+export function withCronHandler(
+  jobName: string,
+  handler: (request: NextRequest) => Promise<NextResponse>
+): (request: NextRequest) => Promise<NextResponse> {
+  return async (request: NextRequest) => {
+    const authError = verifyCronAuth(request);
+    if (authError) return authError;
+    try {
+      return await handler(request);
+    } catch (error) {
+      return handleCronError(error, jobName);
+    }
+  };
+}
 
 /**
  * Verify cron job authorization
