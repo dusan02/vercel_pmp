@@ -41,6 +41,19 @@ import { saveRegularClose } from './polygon/saveRegularClose';
 import { ingestBatch } from './polygon/ingestBatch';
 import { bootstrapPreviousCloses } from './polygon/bootstrapPrevClose';
 export { saveRegularClose, ingestBatch, bootstrapPreviousCloses };
+
+/**
+ * Returns true when we are inside the bulk-preload / stale-alert window: 07:30–15:55 ET.
+ * Bug fix: the previous inline version used `hours >= 7` which incorrectly included 07:00–07:29.
+ */
+function isBulkPreloadWindow(hours: number, minutes: number): boolean {
+  return (
+    (hours > 7 && hours < 15) ||
+    (hours === 7 && minutes >= 30) ||
+    (hours === 15 && minutes < 55)
+  );
+}
+
 async function main() {
   const mode = process.env.MODE || 'snapshot';
   const apiKey = process.env.POLYGON_API_KEY;
@@ -259,16 +272,10 @@ async function main() {
       const minutes = et.minute;
       const dayOfWeek = et.weekday;
 
-      // Pre-market + live trading: 07:30-15:55 ET (DST-safe via toET())
-      // Stop at 15:55 to avoid overlap with regular close save at 16:00
-      const isPreMarketOrLive = (hours >= 7 && hours < 15) ||
-        (hours === 7 && minutes >= 30) ||
-        (hours === 15 && minutes < 55);
-
-      // Only on weekdays (1-5 = Monday-Friday)
+      // Only on weekdays during the 07:30–15:55 ET window
       const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
 
-      if (!isPreMarketOrLive || !isWeekday) {
+      if (!isBulkPreloadWindow(hours, minutes) || !isWeekday) {
         return; // Outside bulk preload window
       }
 
@@ -342,16 +349,11 @@ async function main() {
               await redisClient.del('bulk:last_error'); // Clear error on success (unless exceeded 10min)
             }
 
-            // Check for stale bulk preload (alert if age > 10 min during window 07:30-15:55)
+            // Alert if bulk preload is stale during the 07:30–15:55 ET window
             const etNow = nowET();
             const et = toET(etNow);
-            const hours = et.hour;
-            const minutes = et.minute;
-            const isPreMarketOrLive = (hours >= 7 && hours < 15) ||
-              (hours === 7 && minutes >= 30) ||
-              (hours === 15 && minutes < 55);
 
-            if (isPreMarketOrLive) {
+            if (isBulkPreloadWindow(et.hour, et.minute)) {
               const bulkAgeMinutes = Math.floor((now - parseInt(await redisClient.get('bulk:last_success_ts') || '0', 10)) / 60000);
               if (bulkAgeMinutes > 10) {
                 console.error(`ALERT: [runId:${runId}] Bulk preload stale - last success ${bulkAgeMinutes}min ago (threshold: 10min) during market hours`);

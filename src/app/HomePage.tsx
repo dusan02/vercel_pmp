@@ -2,8 +2,7 @@
 
 // Client component containing all page logic
 // This is imported by page.tsx (server component)
-import React, { useState, useEffect, Suspense, useMemo, useCallback, useRef } from 'react';
-import { useSearchParams } from 'next/navigation';
+import React, { useState, useEffect, Suspense } from 'react';
 import dynamic from 'next/dynamic';
 
 // All component imports moved to dynamic imports - fixed pattern for named exports
@@ -110,290 +109,51 @@ const FloatingSearchButton = dynamic(
 );
 
 // Hooks and utilities
-import { useFavorites } from '@/hooks/useFavorites';
-import { usePortfolio } from '@/hooks/usePortfolio';
 import { usePWA } from '@/hooks/usePWA';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
-import { useLazyLoading } from '@/hooks/useLazyLoading';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { StockData } from '@/lib/types';
-import { useStockData } from '@/hooks/useStockData';
-import { useStockFilter } from '@/hooks/useStockFilter';
-// import { useLogoLoader } from '@/hooks/useLogoLoader';
-import { useTablePerformance } from '@/hooks/useTablePerformance';
 import { autoRepairLocalStorage } from '@/lib/utils/localStorageCache';
-import { logger } from '@/lib/utils/logger';
 import { useMobilePrefetch } from '@/hooks/useMobilePrefetch';
 import { useMobileOptimization } from '@/hooks/useMobileOptimization';
+import { useHomeNavigation } from '@/hooks/useHomeNavigation';
+import { useHomeData } from '@/hooks/useHomeData';
 
 interface HomePageProps {
   initialData?: StockData[];
   initialEarningsData?: any;
 }
 
-type ActiveSection = 'heatmap' | 'analysis' | 'movers' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks' | 'screener' | 'blog';
-
 export default function HomePage({ initialData = [], initialEarningsData }: HomePageProps) {
-  // Auto-repair localStorage on mount (fixes corrupted cache issues)
-  useEffect(() => {
-    autoRepairLocalStorage();
-  }, []);
+  useEffect(() => { autoRepairLocalStorage(); }, []);
 
   const [isMounted, setIsMounted] = useState(false);
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+  useEffect(() => { setIsMounted(true); }, []);
 
   const isDesktop = useMediaQuery('(min-width: 1024px)');
-
-  // Use user preferences hook for persistence
-  const { preferences, savePreferences, setConsent } = useUserPreferences();
-
-  // Scroll to section function
-  const scrollToSection = useCallback((sectionId: string) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }, []);
-
-  // Navigation state (unified for mobile and desktop)
-  const [activeSection, setActiveSection] = useState<ActiveSection>('heatmap');
-  const [analysisTicker, setAnalysisTicker] = useState<string>('NVDA');
-
-  const searchParams = useSearchParams();
-
-  // Helper function to validate and set tab
-  const setActiveTab = useCallback((tab: string) => {
-    if (tab === 'heatmap' || tab === 'analysis' || tab === 'movers' || tab === 'portfolio' || tab === 'favorites' || tab === 'earnings' || tab === 'allStocks' || tab === 'screener' || tab === 'blog') {
-      setActiveSection(tab as ActiveSection);
-      return true;
-    }
-    return false;
-  }, []);
-
-  // Parse URL params (centralized)
-  const parseUrlParams = useCallback(() => {
-    const tab = searchParams.get('tab');
-    const ticker = searchParams.get('ticker');
-    return { tab, ticker };
-  }, [searchParams]);
-
-  // Allow deep-linking to a specific mobile tab (e.g. "/?tab=allStocks" or "/?tab=analysis&ticker=MSFT")
-  useEffect(() => {
-    if (!isMounted) return;
-    const { tab, ticker } = parseUrlParams();
-    if (ticker) {
-      setAnalysisTicker(ticker.toUpperCase());
-    }
-    if (tab) {
-      setActiveTab(tab);
-    }
-  }, [isMounted, setActiveTab, parseUrlParams]);
-
-  // Sync activeSection with URL search params (for client-side navigation from footer links)
-  useEffect(() => {
-    if (!isMounted) return;
-    const { tab, ticker } = parseUrlParams();
-    if (ticker) {
-      setAnalysisTicker(ticker.toUpperCase());
-    }
-    if (tab) {
-      setActiveTab(tab);
-    } else {
-      setActiveTab('heatmap');
-    }
-  }, [isMounted, parseUrlParams]);
-
-  // Listen for browser back/forward navigation (popstate)
-  useEffect(() => {
-    if (!isMounted) return;
-    const handlePopState = () => {
-      const { tab, ticker } = parseUrlParams();
-      if (ticker) {
-        setAnalysisTicker(ticker.toUpperCase());
-      }
-      if (tab) {
-        setActiveTab(tab);
-      } else {
-        setActiveTab('heatmap');
-      }
-    };
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, [isMounted, parseUrlParams]);
-
-  // Listen for custom navigation events (e.g., from FavoritesSection, AllStocksSection, etc.)
-  useEffect(() => {
-    if (!isMounted) return;
-    const handleNavChange = (e: CustomEvent<string | { tab: string; ticker?: string }>) => {
-      const detail = e.detail;
-      const tab = typeof detail === 'string' ? detail : detail.tab;
-      const ticker = typeof detail === 'object' ? detail.ticker : undefined;
-
-      if (setActiveTab(tab)) {
-        if (ticker) {
-          setAnalysisTicker(ticker.toUpperCase());
-        }
-        // Update URL without page reload
-        const url = new URL(window.location.href);
-        url.searchParams.set('tab', tab);
-        if (ticker && tab === 'analysis') {
-          url.searchParams.set('ticker', ticker.toUpperCase());
-        } else if (tab !== 'analysis') {
-          url.searchParams.delete('ticker');
-        }
-        window.history.pushState({}, '', url.toString());
-      }
-    };
-    window.addEventListener('mobile-nav-change', handleNavChange as EventListener);
-    return () => window.removeEventListener('mobile-nav-change', handleNavChange as EventListener);
-  }, [isMounted, setActiveTab]);
-
-  // Handle mobile bottom navigation change - VIEW-BASED (tabs, not scroll)
-  const handleMobileNavChange = useCallback((section: ActiveSection, ticker?: string) => {
-    setActiveSection(section);
-    if (ticker) {
-      setAnalysisTicker(ticker.toUpperCase());
-    }
-    // Update URL to keep it in sync (also write ticker when switching to analysis)
-    const navUrl = new URL(window.location.href);
-    navUrl.searchParams.set('tab', section);
-    if (ticker && section === 'analysis') {
-      navUrl.searchParams.set('ticker', ticker.toUpperCase());
-    } else if (section !== 'analysis') {
-      navUrl.searchParams.delete('ticker');
-    }
-    window.history.pushState({}, '', navUrl.toString());
-  }, []);
-
-  // Prefetch neaktívne screens a API endpoints pre rýchlejšie prepínanie
-  useMobilePrefetch(activeSection);
-
-  // CRITICAL: Mobile optimization - prioritizuje heatmap (prvá obrazovka)
-  useMobileOptimization(activeSection);
-
-  const { favorites, toggleFavorite, isFavorite } = useFavorites();
+  const { preferences, setConsent } = useUserPreferences();
   const { isOnline } = usePWA();
 
-  // Custom hooks for data and filtering - REFACTORED
-  const {
-    stockData,
-    loadingStates,
-    error,
-    fetchRemainingStocksData,
-    fetchSpecificTickers,
-    loadData
-  } = useStockData({
-    initialData,
-    favorites
-  });
-
-  // Auto-load all stocks when user navigates to All Stocks section
-  const allStocksLoadedRef = useRef(false);
-  useEffect(() => {
-    if (activeSection === 'allStocks' && !allStocksLoadedRef.current && !loadingStates.remainingStocks) {
-      fetchRemainingStocksData();
-      allStocksLoadedRef.current = true;
-    }
-  }, [activeSection, fetchRemainingStocksData, loadingStates.remainingStocks]);
-
-  // Hooks for core functionality - Refactored to use updated hook logic
-  const {
-    portfolioHoldings,
-    updateQuantity,
-    removeStock,
-    addStock,
-    calculateStockValue, // DEPRECATED: daily change
-    calculateTotalStockValue, // Total value
-    calculateDailyChange, // Daily change
-    totalPortfolioValue,
-    portfolioStocks
-  } = usePortfolio({ stockData });
-
-  // Load portfolio tickers that are not in stockData - optimized with debounce
-  useEffect(() => {
-    const portfolioTickers = Object.keys(portfolioHoldings);
-    const missingTickers = portfolioTickers.filter(ticker => !stockData.some(s => s.ticker === ticker));
-
-    if (missingTickers.length > 0) {
-      const timeoutId = setTimeout(() => {
-        fetchSpecificTickers(missingTickers);
-      }, 300);
-      return () => clearTimeout(timeoutId);
-    }
-  }, [portfolioHoldings, stockData, fetchSpecificTickers]);
+  const { activeSection, analysisTicker, setAnalysisTicker, handleMobileNavChange } =
+    useHomeNavigation({ isMounted });
 
   const {
+    toggleFavorite, isFavorite,
+    stockData, loadingStates, error, loadData,
+    portfolioHoldings, updateQuantity, removeStock, addStock,
+    calculateTotalStockValue, calculateDailyChange, totalPortfolioValue, portfolioStocks,
     searchTerm, setSearchTerm,
-    favoritesOnly, setFavoritesOnly,
-    filteredStocks,
-    favoriteStocksSorted,
-    allStocksSorted,
-    favSortKey, favAscending, requestFavSort,
+    favoriteStocksSorted, favSortKey, favAscending, requestFavSort,
     allSortKey, allAscending, requestAllSort,
     selectedSectors, setSelectedSectors,
     selectedIndustries, setSelectedIndustries,
-    uniqueSectors, availableIndustries
-  } = useStockFilter({
-    stockData,
-    favorites,
-    isFavorite
-  });
+    uniqueSectors, availableIndustries,
+    optimizedAllStocks, displayedStocks, hasMore, loadMore, isLoadingMore,
+  } = useHomeData({ initialData, activeSection });
 
-
-  // Optimized table performance hook for All Stocks section
-  const { filteredStocks: optimizedAllStocks } = useTablePerformance({
-    stocks: allStocksSorted,
-    sortKey: allSortKey,
-    ascending: allAscending,
-    searchTerm: '' // Search is already applied in useStockFilter
-  });
-
-  // Trigger fetchRemainingStocksData early to ensure all data is loaded
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (allStocksSorted.length < 200) {
-        logger.data('Auto-triggering remaining stocks load (low count detected)');
-        fetchRemainingStocksData();
-      }
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, [allStocksSorted.length, fetchRemainingStocksData]);
-
-  // Lazy loading hook - optimized for smooth scrolling
-  const {
-    displayLimit,
-    hasMore,
-    reset: resetLazyLoading,
-    loadMore,
-    isLoading: isLoadingMore,
-  } = useLazyLoading({
-    initialLimit: 50,
-    incrementSize: 50,
-    totalItems: optimizedAllStocks.length,
-    threshold: 500,
-    onLoadRemaining: fetchRemainingStocksData,
-    enableProgressiveLoading: true
-  });
-
-  const displayedStocks = optimizedAllStocks.slice(0, Math.min(displayLimit, optimizedAllStocks.length));
-
-  // Debug: Log when stocks are loaded (only in development)
-  useEffect(() => {
-    if (optimizedAllStocks.length > 0) {
-      logger.data(`Stocks available: ${optimizedAllStocks.length}, Displayed: ${displayedStocks.length}, Limit: ${displayLimit}`);
-    }
-  }, [optimizedAllStocks.length, displayedStocks.length, displayLimit]);
-
-  // Optimized logo loading hook - REMOVED: Redundant and causes preload warnings
-  // const displayedTickers = useMemo(() => displayedStocks.map(s => s.ticker), [displayedStocks]);
-  // useLogoLoader({
-  //   tickers: displayedTickers,
-  //   priorityCount: 100,
-  //   size: 32
-  // });
+  // Prefetch inactive screens and prioritize heatmap on mobile
+  useMobilePrefetch(activeSection);
+  useMobileOptimization(activeSection);
 
 
   return (
