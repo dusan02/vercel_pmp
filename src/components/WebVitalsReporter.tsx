@@ -2,6 +2,7 @@
 
 import { useReportWebVitals } from 'next/web-vitals';
 import { useMemo } from 'react';
+import { safeGetItem, safeSetItem } from '@/lib/utils/safeStorage';
 
 type NextWebVitalMetric = {
   id: string;
@@ -31,19 +32,14 @@ function getOrCreateSessionId(): string {
 }
 
 function shouldSample(): boolean {
-  try {
-    const key = 'pmp_rum_sample_v1';
-    const existing = localStorage.getItem(key);
-    if (existing === '1') return true;
-    if (existing === '0') return false;
-    // Default: 10% sample (persisted)
-    const sampled = Math.random() < 0.1;
-    localStorage.setItem(key, sampled ? '1' : '0');
-    return sampled;
-  } catch {
-    // If storage is blocked, do a tiny sample to avoid spamming.
-    return Math.random() < 0.02;
-  }
+  const key = 'pmp_rum_sample_v1';
+  const existing = safeGetItem(key);
+  if (existing === '1') return true;
+  if (existing === '0') return false;
+  // Default: 10% sample (persisted); falls back to 2% if storage unavailable
+  const sampled = Math.random() < 0.1;
+  const saved = safeSetItem(key, sampled ? '1' : '0');
+  return saved ? sampled : Math.random() < 0.02;
 }
 
 async function sendVitals(payload: unknown) {

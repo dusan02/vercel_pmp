@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyCronAuth } from '@/lib/utils/cronAuth';
+import { withCronHandler } from '@/lib/utils/cronAuth';
 import { socialDistributorService } from '@/lib/server/socialDistributorService';
 import { handleCronError, createCronSuccessResponse } from '@/lib/utils/cronErrorHandler';
 import { updateCronStatus } from '@/lib/utils/cronStatus';
@@ -9,37 +9,19 @@ import { updateCronStatus } from '@/lib/utils/cronStatus';
  * 
  * Frequency: Every 30-60 minutes during market hours
  */
-export async function POST(request: NextRequest) {
+export const POST = withCronHandler('post-social', async () => {
     const startTime = Date.now();
-
-    try {
-        // 1. Verify Authorization
-        const authError = verifyCronAuth(request);
-        if (authError) return authError;
-
-        console.log('🚀 SocialDistributor Cron: Starting social distribution...');
-
-        // 2. Process with SocialDistributorService
-        const results = await socialDistributorService.distributeTopMovers();
-
-        // 3. Update Cron Status
-        await updateCronStatus('social_distribution');
-
-        // 4. Return Success
-        const duration = Date.now() - startTime;
-        return createCronSuccessResponse({
-            message: 'Social distribution completed',
-            results,
-            summary: {
-                duration: `${(duration / 1000).toFixed(2)}s`,
-                action: results.posted.length > 0 ? `Posted ${results.posted.join(', ')}` : 'Nothing posted'
-            },
-        });
-
-    } catch (error) {
-        return handleCronError(error, 'social distribution cron job');
-    }
-}
+    const results = await socialDistributorService.distributeTopMovers();
+    await updateCronStatus('social_distribution');
+    return createCronSuccessResponse({
+        message: 'Social distribution completed',
+        results,
+        summary: {
+            duration: `${((Date.now() - startTime) / 1000).toFixed(2)}s`,
+            action: results.posted.length > 0 ? `Posted ${results.posted.join(', ')}` : 'Nothing posted',
+        },
+    });
+});
 
 // GET endpoint for manual testing (requires CRON_SECRET_KEY in production)
 export async function GET(request: NextRequest) {

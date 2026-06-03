@@ -204,8 +204,8 @@ export function useUserPreferences() {
 
       // Save to localStorage
       const updatedPrefs = { ...prevPrefs, favorites: newFavorites };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedPrefs));
-      localStorage.setItem(FAVORITES_KEY, JSON.stringify(newFavorites));
+      safeSetItem(STORAGE_KEY, JSON.stringify(updatedPrefs));
+      safeSetItem(FAVORITES_KEY, JSON.stringify(newFavorites));
 
       return updatedPrefs;
     });
@@ -221,8 +221,8 @@ export function useUserPreferences() {
 
       // Save to localStorage
       const updatedPrefs = { ...prevPrefs, favorites: newFavorites };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedPrefs));
-      localStorage.setItem(FAVORITES_KEY, JSON.stringify(newFavorites));
+      safeSetItem(STORAGE_KEY, JSON.stringify(updatedPrefs));
+      safeSetItem(FAVORITES_KEY, JSON.stringify(newFavorites));
 
       return updatedPrefs;
     });

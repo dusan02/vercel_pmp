@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyCronAuth } from '@/lib/utils/cronAuth';
+import { withCronHandler } from '@/lib/utils/cronAuth';
 import { getAllTrackedTickers } from '@/lib/utils/universeHelpers';
 import { statsService } from '@/lib/server/statsService';
 import { handleCronError, createCronSuccessResponse } from '@/lib/utils/cronErrorHandler';
@@ -11,44 +11,20 @@ import { updateCronStatus } from '@/lib/utils/cronStatus';
  * 
  * Frequency: Once daily (e.g., 01:00 ET)
  */
-export async function POST(request: NextRequest) {
+export const POST = withCronHandler('update-ticker-stats', async () => {
     const startTime = Date.now();
-
-    try {
-        // 1. Verify Authorization
-        const authError = verifyCronAuth(request);
-        if (authError) return authError;
-
-        console.log('🚀 StatsService Cron: Starting daily ticker stats update...');
-
-        // 2. Get tickers to process
-        const allTickers = await getAllTrackedTickers();
-        console.log(`📊 StatsService Cron: Processing ${allTickers.length} tickers`);
-
-        // 3. Process with StatsService
-        const { success, failed } = await statsService.updateHistoricalStats(allTickers);
-
-        // 4. Update Cron Status
-        await updateCronStatus('ticker_stats');
-
-        // 5. Return Success
-        const duration = Date.now() - startTime;
-        return createCronSuccessResponse({
-            message: 'Ticker stats baseline update completed',
-            results: {
-                success,
-                failed,
-            },
-            summary: {
-                totalTickers: allTickers.length,
-                duration: `${(duration / 1000).toFixed(2)}s`,
-            },
-        });
-
-    } catch (error) {
-        return handleCronError(error, 'ticker stats update cron job');
-    }
-}
+    const allTickers = await getAllTrackedTickers();
+    const { success, failed } = await statsService.updateHistoricalStats(allTickers);
+    await updateCronStatus('ticker_stats');
+    return createCronSuccessResponse({
+        message: 'Ticker stats baseline update completed',
+        results: { success, failed },
+        summary: {
+            totalTickers: allTickers.length,
+            duration: `${((Date.now() - startTime) / 1000).toFixed(2)}s`,
+        },
+    });
+});
 
 // GET endpoint for manual testing
 export async function GET(request: NextRequest) {
