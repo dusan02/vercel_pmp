@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useMemo, useCallback, useLayoutEffect, useRef, useState } from 'react';
+import React, { useMemo, useCallback, useLayoutEffect, useRef, useState, useEffect } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import type { CompanyNode } from '@/lib/heatmap/types';
 import { createHeatmapColorScale } from '@/lib/utils/heatmapColors';
 import { computeMobileTreemapSectors, prepareMobileTreemapData, SECTOR_CHROME_PX, COLUMN_GAP_PX } from '@/lib/heatmap/mobileTreemap';
@@ -38,6 +39,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   onTileClick,
   onToggleFavorite,
   isFavorite,
+  activeView,
   height,
 }) => {
   // -- Container measurement --------------------------------------------------
@@ -70,6 +72,11 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   // -- Detail sheet -----------------------------------------------------------
   const [selectedCompany, setSelectedCompany] = useState<CompanyNode | null>(null);
   const closeSheet = useCallback(() => setSelectedCompany(null), []);
+
+  // Auto-close sheet when the view is deactivated (user switched tabs)
+  useEffect(() => {
+    closeSheet();
+  }, [activeView, closeSheet]);
 
   const handleTileSelect = useCallback((company: CompanyNode) => {
     setSelectedCompany(company);
@@ -172,14 +179,17 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
       </div>
 
       {/* Detail bottom sheet */}
-      {selectedCompany && (
-        <MobileHeatmapSheet
-          company={selectedCompany}
-          onClose={closeSheet}
-          onToggleFavorite={onToggleFavorite}
-          isFavorite={isFavorite}
-        />
-      )}
+      <AnimatePresence>
+        {selectedCompany && (
+          <MobileHeatmapSheet
+            company={selectedCompany}
+            onClose={closeSheet}
+            onToggleFavorite={onToggleFavorite}
+            isFavorite={isFavorite}
+            onNavigateToAnalysis={onTileClick}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };

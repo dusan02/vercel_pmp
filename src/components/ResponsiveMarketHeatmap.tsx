@@ -284,12 +284,6 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
       if (parent) {
         const parentRect = parent.getBoundingClientRect();
         if (parentRect.width > 0 && parentRect.height > 0) {
-          if (process.env.NODE_ENV !== 'production') {
-            console.log('📐 Heatmap: Using parent dimensions as fallback', {
-              parentWidth: parentRect.width,
-              parentHeight: parentRect.height
-            });
-          }
           // Force a re-measure by triggering a resize
           window.dispatchEvent(new Event('resize'));
         }

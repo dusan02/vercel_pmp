@@ -20,6 +20,7 @@ export function PullToRefresh({
   disabled = false
 }: PullToRefreshProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const touchStartYRef = useRef<number>(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
   const [isClient, setIsClient] = useState(false);
@@ -56,25 +57,29 @@ export function PullToRefresh({
     const element = containerRef.current;
     if (!element) return;
 
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartYRef.current = e.touches[0]?.clientY ?? 0;
+    };
+
     const handleTouchMove = (e: TouchEvent) => {
       if (disabled) return;
-
       const touch = e.touches[0];
       if (!touch) return;
-      const rect = element.getBoundingClientRect();
-      const pullDistance = Math.max(0, (rect.top - touch.clientY) * resistance);
-
-      setPullDistance(pullDistance);
+      // Only show indicator when pulling down (positive delta) from the top
+      const delta = touch.clientY - touchStartYRef.current;
+      setPullDistance(Math.max(0, delta * resistance));
     };
 
     const handleTouchEnd = () => {
       setPullDistance(0);
     };
 
+    element.addEventListener('touchstart', handleTouchStart, { passive: true });
     element.addEventListener('touchmove', handleTouchMove, { passive: true });
     element.addEventListener('touchend', handleTouchEnd, { passive: true });
 
     return () => {
+      element.removeEventListener('touchstart', handleTouchStart);
       element.removeEventListener('touchmove', handleTouchMove);
       element.removeEventListener('touchend', handleTouchEnd);
     };

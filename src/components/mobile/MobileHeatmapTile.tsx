@@ -123,7 +123,8 @@ export const MobileHeatmapTile = React.memo<MobileHeatmapTileProps>(({
   prev.color === next.color &&
   prev.label.showSymbol === next.label.showSymbol &&
   prev.label.showValue === next.label.showValue &&
-  prev.label.symbolFontPx === next.label.symbolFontPx
+  prev.label.symbolFontPx === next.label.symbolFontPx &&
+  prev.label.value === next.label.value
 ));
 
 MobileHeatmapTile.displayName = 'MobileHeatmapTile';
