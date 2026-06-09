@@ -21,8 +21,9 @@ export interface Candle {
 }
 
 /**
- * Returns ~5 years of weekly OHLC candles for the given ticker, sourced
- * directly from Polygon aggregates. Cached aggressively at the edge.
+ * Returns ~5 years of weekly OHLC candles for the given ticker.
+ * Sources daily aggregates from Polygon (to avoid DELAYED status on weekly),
+ * then downsamples to weekly in code. Cached aggressively at the edge.
  */
 export async function GET(
   _request: Request,
@@ -43,9 +44,10 @@ export async function GET(
   const fromStr = fromDate.toISOString().slice(0, 10);
   const toStr = toDate.toISOString().slice(0, 10);
 
+  // Fetch daily data (works for recent data unlike weekly DELAYED)
   const url =
-    `https://api.polygon.io/v2/aggs/ticker/${symbol}/range/1/week/${fromStr}/${toStr}` +
-    `?adjusted=true&sort=asc&limit=400&apiKey=${apiKey}`;
+    `https://api.polygon.io/v2/aggs/ticker/${symbol}/range/1/day/${fromStr}/${toStr}` +
+    `?adjusted=true&sort=asc&limit=5000&apiKey=${apiKey}`;
 
   try {
     const res = await fetch(url, { next: { revalidate: 3600 } });
@@ -59,7 +61,22 @@ export async function GET(
     const json = await res.json();
     const aggs: PolygonAgg[] = json.results ?? [];
 
-    const candles: Candle[] = aggs
+    if (!aggs.length) {
+      return NextResponse.json({ symbol, candles: [] }, {
+        headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' },
+      });
+    }
+
+    // Downsample daily to weekly: keep last row of each ISO-week bucket
+    const MS_WEEK = 7 * 24 * 60 * 60 * 1000;
+    const weekMap = new Map<number, PolygonAgg>();
+    for (const agg of aggs) {
+      const weekKey = Math.floor(agg.t / MS_WEEK);
+      weekMap.set(weekKey, agg);
+    }
+    const weekly = Array.from(weekMap.values()).sort((a, b) => a.t - b.t);
+
+    const candles: Candle[] = weekly
       .filter((a) => a && a.o > 0 && a.h > 0 && a.l > 0 && a.c > 0)
       .map((a) => ({
         t: a.t,
