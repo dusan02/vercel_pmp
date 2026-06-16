@@ -306,16 +306,14 @@ async function fetchFinnhubEarningsData(ticker: string, date: string): Promise<{
  */
 async function fetchPolygonCompanyData(ticker: string): Promise<{ companyName: string; marketCap: number } | null> {
   try {
-    const envApiKey = process.env.POLYGON_API_KEY;
-    // Bug #5: hardcoded fallback only for dev
-    const apiKey = envApiKey || 'Vi_pMLcusE8RA_SUvkPAmiyziVzlmOoX';
-    if (!envApiKey && process.env.NODE_ENV === 'production') {
-        console.error('❌ POLYGON_API_KEY env variable is not set in production!');
+    const apiKey = process.env.POLYGON_API_KEY;
+    if (!apiKey) {
+      console.error('❌ POLYGON_API_KEY env variable is not set!');
+      return null;
     }
     const url = `https://api.polygon.io/v3/reference/tickers/${ticker}?apiKey=${apiKey}`;
 
     console.log(`🔍 Fetching Polygon company data for ${ticker}...`);
-    console.log(`🔑 API Key: ${envApiKey ? 'from env' : 'using fallback'}`);
 
     const response = await fetch(url, {
       headers: {

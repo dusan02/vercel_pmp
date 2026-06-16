@@ -247,9 +247,11 @@ export async function GET(request: NextRequest) {
       earningsCache.delete(date);
     }
     
-    const apiKey = process.env.POLYGON_API_KEY || 'Vi_pMLcusE8RA_SUvkPAmiyziVzlmOoX';
-    console.log('🔑 API Key (first 10 chars):', apiKey.substring(0, 10) + '...');
-    console.log('🔑 API Key length:', apiKey.length);
+    const apiKey = process.env.POLYGON_API_KEY;
+    if (!apiKey) {
+      console.error('❌ POLYGON_API_KEY env variable is not set!');
+      return NextResponse.json({ error: 'Polygon API key missing' }, { status: 500 });
+    }
     
     // Get earnings calendar for the specified date
     // Use the basic Polygon API endpoint for earnings calendar
