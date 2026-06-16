@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
     const requestedLimit = limitParam ? Math.max(1, Math.min(3000, Number(limitParam))) : null;
     
     const timeframe = request.nextUrl.searchParams.get('timeframe') || 'day';
-    const isCompact = request.nextUrl.searchParams.get('compact') === 'true' || true; // Default to true for new optimization
+    const isCompact = true; // Always compact – large payload optimization is permanently enabled
 
     // Skontroluj, či chceme force refresh (bypass cache)
     const forceRefresh = request.nextUrl.searchParams.get('force') === 'true';
@@ -125,23 +125,6 @@ export async function GET(request: NextRequest) {
     console.log('🔄 Heatmap cache miss - fetching from DB...');
 
     // 2. Načítaj dáta priamo z DB (SessionPrice, DailyRef, Ticker) - rýchlejšie ako /api/stocks
-    let prisma;
-    try {
-      const prismaModule = await import('@/lib/db/prisma');
-      prisma = prismaModule.prisma;
-    } catch (prismaError) {
-      console.error('❌ Failed to import Prisma:', prismaError);
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Database connection failed',
-          data: [],
-          count: 0,
-          timestamp: new Date().toISOString(),
-        },
-        { status: 500 }
-      );
-    }
 
     // Získaj tickery z DB (Ticker table).
     // IMPORTANT: Heatmap needs sector/industry for grouping, but local/dev DB may not have it populated yet.

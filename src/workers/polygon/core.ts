@@ -255,11 +255,6 @@ function normalizeSnapshot(
     volume: snapshot.day?.v || snapshot.min?.v || 0
   };
 
-  // Temporary debug log
-  if (['AXON', 'CRCL', 'COIN'].includes(snapshot.ticker)) {
-    console.log(`[normalizeSnapshot] ${snapshot.ticker} raw min.c=${snapshot.min?.c} day.c=${snapshot.day?.c} prevClose=${previousClose} -> effective: ${result.price} changePct: ${result.changePct} (ref: ${result.reference.price})`);
-  }
-
   return result;
 }
 
@@ -335,8 +330,9 @@ async function upsertToDB(
 
               metadataUpdate = {
                 name: details.name || undefined,
-                sector: details.sic_description || undefined,
-                industry: details.sic_description || undefined,
+                // sector and industry are intentionally NOT set from sic_description
+                // (a raw text like "Guided Missiles & Space Vehicles" breaks heatmap grouping).
+                // Sector/industry are managed via sectorIndustryOverrides or populated separately.
                 sharesOutstanding: details.weighted_shares_outstanding || details.share_class_shares_outstanding || undefined,
               };
             } else {

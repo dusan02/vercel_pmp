@@ -188,10 +188,11 @@ export async function ingestBatch(
   const snapshots = await fetchPolygonSnapshot(tickers, apiKey);
   console.log(`✅ Received ${snapshots.length} snapshots`);
 
-  // Batch fetch sharesOutstanding pre všetky tickery naraz (optimalizácia)
+  // Batch fetch sharesOutstanding pre tickery, kt. majú prevClose ale chýbajú im shares.
+  // marketCapDiff je 0 keď prevClose chýba (pozri riadok nižšie), takže shares
+  // sú potrebné len pre tickery kde prevClose existuje.
   const symbolsNeedingShares = snapshots.map(s => s.ticker).filter(symbol => {
-    // Fetch len ak nemáme previousClose (inak už máme dáta)
-    return !prevCloseMap.has(symbol);
+    return prevCloseMap.has(symbol);
   });
 
   const sharesMap = new Map<string, number>();
@@ -326,13 +327,6 @@ export async function ingestBatch(
       const regularClose = regularCloseMap.get(symbol) || null;
       const frozenPrice = frozenPricesMap.get(symbol);
 
-      if (symbol === 'GOOG' || symbol === 'GOOGL') {
-        console.log(`🔍 Debug ${symbol}:`);
-        console.log(`   PrevClose=${previousClose}, RegularClose=${regularClose}, FrozenPrice=${frozenPrice?.price || 'none'}`);
-        console.log(`   Snapshot: day.c=${snapshot.day?.c || 'N/A'}, min.c=${snapshot.min?.c || 'N/A'}, lastTrade.p=${snapshot.lastTrade?.p || 'N/A'}`);
-        console.log(`   Session=${session}, Force=${force}`);
-      }
-
       try {
         // Normalize using session-aware resolver
         const normalized = normalizeSnapshot(
@@ -344,14 +338,7 @@ export async function ingestBatch(
           force
         );
 
-        if (isStaticUpdateLocked && !previousClose && normalized) {
-          console.log(`⚠️  ${symbol}: Normalized during lock without prevClose - % may be 0`);
-        }
-
         if (!normalized) {
-          if (symbol === 'GOOG' || symbol === 'GOOGL') {
-            console.log(`   ❌ normalizeSnapshot returned null for ${symbol}`);
-          }
           return {
             symbol,
             price: 0,
