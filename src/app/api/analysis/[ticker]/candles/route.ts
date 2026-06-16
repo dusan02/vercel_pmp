@@ -67,17 +67,29 @@ export async function GET(
       });
     }
 
-    // Downsample daily to weekly: keep last row of each ISO-week bucket
+    // Downsample daily → weekly: proper OHLC aggregation
+    // open = first trading day's open, high = week max, low = week min,
+    // close = last trading day's close, volume = sum, t = first day's timestamp
     const MS_WEEK = 7 * 24 * 60 * 60 * 1000;
-    const weekMap = new Map<number, PolygonAgg>();
+    type WeekBucket = { t: number; o: number; h: number; l: number; c: number; v: number };
+    const weekMap = new Map<number, WeekBucket>();
     for (const agg of aggs) {
+      if (!agg || agg.o <= 0) continue;
       const weekKey = Math.floor(agg.t / MS_WEEK);
-      weekMap.set(weekKey, agg);
+      const existing = weekMap.get(weekKey);
+      if (!existing) {
+        weekMap.set(weekKey, { t: agg.t, o: agg.o, h: agg.h, l: agg.l, c: agg.c, v: agg.v });
+      } else {
+        existing.h = Math.max(existing.h, agg.h);
+        existing.l = Math.min(existing.l, agg.l);
+        existing.c = agg.c;   // last trading day's close
+        existing.v += agg.v;  // cumulative volume
+      }
     }
     const weekly = Array.from(weekMap.values()).sort((a, b) => a.t - b.t);
 
     const candles: Candle[] = weekly
-      .filter((a) => a && a.o > 0 && a.h > 0 && a.l > 0 && a.c > 0)
+      .filter((a) => a.o > 0 && a.h > 0 && a.l > 0 && a.c > 0)
       .map((a) => ({
         t: a.t,
         o: parseFloat(a.o.toFixed(2)),

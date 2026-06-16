@@ -50,13 +50,25 @@ async function main() {
   const logoUrl      = d?.branding?.logo_url ? `${d.branding.logo_url}?apiKey=${API_KEY}` : null;
   const websiteUrl   = d?.homepage_url || null;
 
-  // Map SIC description to basic sector (rough approximation for ETFs / financials)
+  // Derive sector/industry from SIC code description.
+  // Only set values we're confident about; leave null otherwise so the
+  // heatmap sectorIndustryOverrides (or Polygon's own metadata) can take precedence.
   const sicDesc: string = (d?.sic_description || '').toLowerCase();
-  let sector   = 'Financial Services';
-  let industry = 'Asset Management';
-  if (sicDesc.includes('tech') || sicDesc.includes('software')) { sector = 'Technology'; industry = 'Software'; }
-  else if (sicDesc.includes('health') || sicDesc.includes('pharma')) { sector = 'Healthcare'; industry = 'Biotechnology'; }
-  else if (sicDesc.includes('energy')) { sector = 'Energy'; industry = 'Oil & Gas Integrated'; }
+  const sicCode: number = d?.sic || 0;
+  let sector: string | null   = null;
+  let industry: string | null = null;
+  if (sicCode >= 2800 && sicCode <= 2899) { sector = 'Healthcare'; industry = 'Drug Manufacturers'; }
+  else if (sicCode >= 3559 && sicCode <= 3679) { sector = 'Technology'; industry = 'Semiconductors'; }
+  else if (sicCode >= 7370 && sicCode <= 7379) { sector = 'Technology'; industry = 'Software'; }
+  else if (sicCode >= 4810 && sicCode <= 4899) { sector = 'Communication Services'; industry = 'Telecom Services'; }
+  else if (sicCode >= 3720 && sicCode <= 3769) { sector = 'Industrials'; industry = 'Aerospace & Defense'; }
+  else if (sicCode >= 6020 && sicCode <= 6099) { sector = 'Financial Services'; industry = 'Banks'; }
+  else if (sicCode >= 6200 && sicCode <= 6299) { sector = 'Financial Services'; industry = 'Asset Management'; }
+  else if (sicDesc.includes('software')) { sector = 'Technology'; industry = 'Software'; }
+  else if (sicDesc.includes('semiconductor')) { sector = 'Technology'; industry = 'Semiconductors'; }
+  else if (sicDesc.includes('aerospace') || sicDesc.includes('aircraft') || sicDesc.includes('guided missiles')) { sector = 'Industrials'; industry = 'Aerospace & Defense'; }
+  else if (sicDesc.includes('pharmaceutical') || sicDesc.includes('drug')) { sector = 'Healthcare'; industry = 'Drug Manufacturers'; }
+  else if (sicDesc.includes('petroleum') || sicDesc.includes('oil')) { sector = 'Energy'; industry = 'Oil & Gas Integrated'; }
 
   console.log(`   Name:        ${name}`);
   console.log(`   Price:       $${lastPrice}`);
