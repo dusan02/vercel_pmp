@@ -96,12 +96,11 @@ async function fetchUpdatedEarningsData(ticker: string, date: string): Promise<{
 }
 
 async function fetchCurrentPrice(ticker: string): Promise<{ currentPrice: number; previousClose: number } | null> {
-    // Bug #5: Polygon key should be in env (hardcoded fallback only for dev)
-    const apiKey = process.env.POLYGON_API_KEY || 'Vi_pMLcusE8RA_SUvkPAmiyziVzlmOoX';
-    if (!process.env.POLYGON_API_KEY && process.env.NODE_ENV === 'production') {
-        console.error('❌ POLYGON_API_KEY env variable is not set in production!');
+    const apiKey = process.env.POLYGON_API_KEY;
+    if (!apiKey) {
+        console.error('❌ POLYGON_API_KEY env variable is not set!');
+        return null;
     }
-    if (!apiKey) return null;
 
     try {
         const snapshotUrl = `https://api.polygon.io/v2/snapshot/locale/us/markets/stocks/tickers/${ticker}?apikey=${apiKey}`;
@@ -235,12 +234,14 @@ async function enrichEarningsData(earnings: EarningsData[]): Promise<EarningsDat
 
                 if (companyName === earning.ticker) {
                     try {
-                        const apiKey = process.env.POLYGON_API_KEY || 'Vi_pMLcusE8RA_SUvkPAmiyziVzlmOoX';
-                        const referenceUrl = `https://api.polygon.io/v3/reference/tickers/${earning.ticker}?apiKey=${apiKey}`;
-                        const refResponse = await fetch(referenceUrl, { signal: AbortSignal.timeout(3000) });
-                        if (refResponse.ok) {
-                            const refData = await refResponse.json();
-                            companyName = refData.results?.name || companyName;
+                        const apiKey = process.env.POLYGON_API_KEY;
+                        if (apiKey) {
+                            const referenceUrl = `https://api.polygon.io/v3/reference/tickers/${earning.ticker}?apiKey=${apiKey}`;
+                            const refResponse = await fetch(referenceUrl, { signal: AbortSignal.timeout(3000) });
+                            if (refResponse.ok) {
+                                const refData = await refResponse.json();
+                                companyName = refData.results?.name || companyName;
+                            }
                         }
                     } catch (e) { }
                 }

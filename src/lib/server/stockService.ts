@@ -21,9 +21,7 @@ export async function getStocksData(
   tickers: string[],
   project: string = 'pmp'
 ): Promise<StockServiceResult> {
-  console.log(`🔍 getStocksData CALLED with tickers=${tickers.join(',')}, project=${project}`);
   const result = await getStocksList({ tickers });
-  console.log(`🔍 getStocksData RETURNING ${result.data.length} stocks, ${result.errors.length} errors`);
   return result;
 }
 
@@ -38,7 +36,6 @@ export async function getStocksList(options: {
   tickers?: string[];
 }): Promise<StockServiceResult> {
   const { limit = 50, offset = 0, sort = 'marketCapDiff', order = 'desc', tickers } = options;
-  console.log(`🔍 getStocksList CALLED with tickers=${tickers?.join(',') || 'ALL'}, limit=${limit}, offset=${offset}, sort=${sort}`);
 
   // Map sort keys to DB columns
   const sortMapping: Record<string, string> = {
@@ -75,10 +72,6 @@ export async function getStocksList(options: {
     // Only apply offset when fetching all tickers (not when specific tickers are requested)
     const effectiveOffset = (tickers && tickers.length > 0) ? undefined : offset;
 
-    // Guard log: explicit tickers mode ignores offset/limit
-    if (tickers && tickers.length > 0 && (offset !== 0 || (limit && limit > 0))) {
-      console.log(`🔍 Explicit tickers mode: ignoring offset=${offset} and limit=${limit}, returning all ${tickers.length} requested tickers`);
-    }
 
     const stocks = await prisma.ticker.findMany({
       where,
@@ -170,16 +163,6 @@ export async function getStocksList(options: {
     bestPriceBySymbol.forEach((v, k) => {
       priceBySymbol.set(k, v.price || 0);
     });
-
-    // DEBUG: Log na začiatok getStocksList
-    if (tickers && tickers.some(t => ['NVDA', 'GOOG', 'MSFT'].includes(t))) {
-      console.log(`🔍 getStocksList: Found ${stocks.length} stocks, tickers=${tickers.join(',')}`);
-      stocks.forEach(s => {
-        if (['NVDA', 'GOOG', 'MSFT'].includes(s.symbol)) {
-          console.log(`🔍 DB VALUES for ${s.symbol}: lastMarketCap=${s.lastMarketCap}, lastPrice=${s.lastPrice}, latestPrevClose=${s.latestPrevClose}, sharesOutstanding=${s.sharesOutstanding} (type: ${typeof s.sharesOutstanding})`);
-        }
-      });
-    }
 
     // CRITICAL: Always fetch regularClose for all sessions (needed for correct % change calculation)
     // Only use regularClose from TODAY (not previous day) - same logic as heatmap API
@@ -316,11 +299,6 @@ export async function getStocksList(options: {
     // which degrades UX and can cascade into 502s behind nginx.
     // Persistence is handled by background workers (pmp-polygon-worker).
 
-    // DEBUG: Log pred map
-    if (tickers && tickers.some(t => ['NVDA', 'GOOG', 'MSFT'].includes(t))) {
-      console.log(`🔍 About to map ${stocks.length} stocks`);
-    }
-
     const results: StockData[] = stocks.map(s => {
       const best = bestPriceBySymbol.get(s.symbol);
       const currentPrice = best?.price || 0;
@@ -330,23 +308,6 @@ export async function getStocksList(options: {
       // FALLBACK: Ticker.latestPrevClose (DB cache)
       let previousClose = onDemandPrevCloseMap.get(s.symbol) || prevCloseBySymbol.get(s.symbol) || (s.latestPrevClose || 0);
       
-      // DEBUG: Force real previous close for testing (WMT should be 0.74%)
-      if (s.symbol === 'WMT' && previousClose === 0) {
-        // Create realistic previous close for WMT (0.74% change)
-        const currentPrice = best?.price || 122.05;
-        previousClose = currentPrice / (1 + 0.74 / 100); // ~121.15
-        console.log(`🔧 DEBUG: Forcing previousClose for ${s.symbol}: ${previousClose} (current: ${currentPrice}, expected change: 0.74%)`);
-      }
-      
-      // DEBUG: Force real previous close for major tickers (testing)
-      if (previousClose === 0 && ['AAPL', 'MSFT', 'GOOGL', 'GOOG', 'AMZN', 'META', 'TSLA', 'NVDA', 'BRK.B', 'JPM'].includes(s.symbol)) {
-        // Create realistic previous close (1-3% change)
-        const currentPrice = best?.price || 0;
-        const expectedChange = (Math.random() - 0.5) * 6; // -3% to +3%
-        previousClose = currentPrice / (1 + expectedChange / 100);
-        console.log(`🔧 DEBUG: Forcing previousClose for ${s.symbol}: ${previousClose} (current: ${currentPrice}, expected change: ${expectedChange.toFixed(2)}%)`);
-      }
-
       const sharesOutstanding = onDemandSharesMap.get(s.symbol) || (s.sharesOutstanding || 0);
       const regularClose = regularCloseBySymbol.get(s.symbol) || 0;
 
@@ -397,11 +358,6 @@ export async function getStocksList(options: {
         marketCap = marketCap / 1_000_000_000;
       }
 
-      // DEBUG: Log pre veľké spoločnosti PRED výpočtom marketCapDiff
-      if (s.lastMarketCap && s.lastMarketCap > 1000) {
-        console.log(`🔍 ${s.symbol}: PRE-CALC - marketCap=${marketCap}B (from DB: ${s.lastMarketCap}B), price=${currentPrice}, prevClose=${previousClose}, shares=${sharesOutstanding} (type: ${typeof sharesOutstanding}), pct.changePct=${pct.changePct}, pct.ref.price=${pct.reference.price}, pct.ref.used=${pct.reference.used}`);
-      }
-
       // VŽDY počítať marketCapDiff z aktuálnych hodnôt pre konzistentnosť
       // Metóda A (highest confidence): price + prevClose + shares
       // Metóda B (medium): marketCap + percentChange (použijeme dynamicky vypočítaný pct.changePct)
@@ -416,11 +372,6 @@ export async function getStocksList(options: {
       let marketCapDiff = 0;
       let capDiffMethod: CapDiffMethod = "none";
 
-      // Debug log pre veľké spoločnosti na začiatku (handle NULL sharesOutstanding)
-      if (marketCap > 1000 && (!sharesOutstanding || sharesOutstanding === 0)) {
-        console.log(`🔍 ${s.symbol}: START - marketCap=${marketCap}B, price=${currentPrice}, prevClose=${previousClose}, shares=${sharesOutstanding} (type: ${typeof sharesOutstanding}), pct.changePct=${pct.changePct}, pct.ref.price=${pct.reference.price}`);
-      }
-
       // Guard log: track sharesOutstanding source
       const sharesSource = sharesSourceMap.get(s.symbol) || (sharesOutstanding > 0 ? 'db' : 'missing');
 
@@ -432,39 +383,20 @@ export async function getStocksList(options: {
       if (currentPrice > 0 && referencePrice > 0 && sharesOutstanding > 0) {
         marketCapDiff = computeMarketCapDiff(currentPrice, referencePrice, sharesOutstanding);
         capDiffMethod = "shares";
-        if (marketCap > 1000) {
-          console.log(`✅ ${s.symbol}: Method A (shares) - marketCapDiff=${marketCapDiff}B [sharesSource=${sharesSource}, refPrice=${referencePrice}, refUsed=${pct.reference.used}]`);
-        }
       }
       // B) Bez shares: marketCap + percentChange (použijeme dynamicky vypočítaný pct.changePct, nie percentChange z DB)
       else if (marketCap > 0 && pct.changePct !== 0 && pct.reference.price && pct.reference.price > 0) {
         // Použijeme dynamicky vypočítaný percentChange (pct.changePct), nie percentChange z DB
         marketCapDiff = computeCapDiffFromMcapPct(marketCap, pct.changePct);
         capDiffMethod = "mcap_pct";
-        // Guard log: track why Method B was used
-        const reason = sharesSource === 'missing' ? 'polygon missing field' : sharesSource === 'fallback' ? 'polygon error' : 'db stale';
-        if (marketCap > 1000) {
-          console.log(`📊 ${s.symbol}: Method B (pct.changePct) - marketCapDiff=${marketCapDiff}B (marketCap=${marketCap}B, percentChange=${pct.changePct}%, method=${capDiffMethod}, reason=${reason})`);
-        }
       }
       // B2) Alternatíva: ak máme marketCap a referencePrice, môžeme dopočítať percentChange
       else if (marketCap > 0 && currentPrice > 0 && referencePrice > 0 && referencePrice !== currentPrice) {
-        // Vypočítaj percentChange z currentPrice a referencePrice (same as percentChange calculation)
         const calculatedPct = ((currentPrice - referencePrice) / referencePrice) * 100;
         if (calculatedPct !== 0) {
           marketCapDiff = computeCapDiffFromMcapPct(marketCap, calculatedPct);
           capDiffMethod = "mcap_pct";
-          // Guard log: track why Method B2 was used
-          const reason = sharesSource === 'missing' ? 'polygon missing field' : sharesSource === 'fallback' ? 'polygon error' : 'db stale';
-          if (marketCap > 1000) {
-            console.log(`📊 ${s.symbol}: Method B2 (calculatedPct) - marketCapDiff=${marketCapDiff}B (marketCap=${marketCap}B, calculatedPct=${calculatedPct}%, method=${capDiffMethod}, reason=${reason}, price=${currentPrice}, refPrice=${referencePrice}, refUsed=${pct.reference.used})`);
-          }
-        } else if (marketCap > 1000) {
-          console.log(`⚠️ ${s.symbol}: calculatedPct=0 (price=${currentPrice}, refPrice=${referencePrice})`);
         }
-      } else if (marketCap > 1000 && (!sharesOutstanding || sharesOutstanding === 0)) {
-        // Debug: prečo sa nepočíta pre veľké spoločnosti
-        console.log(`⚠️ ${s.symbol}: NO METHOD - marketCap=${marketCap}B, price=${currentPrice}, refPrice=${referencePrice}, shares=${sharesOutstanding} (type: ${typeof sharesOutstanding}, source=${sharesSource}), pct.changePct=${pct.changePct}, pct.ref.price=${pct.reference.price}, condition A=${currentPrice > 0 && referencePrice > 0 && sharesOutstanding > 0}, condition B=${marketCap > 0 && pct.changePct !== 0 && pct.reference.price && pct.reference.price > 0}, condition B2=${marketCap > 0 && currentPrice > 0 && referencePrice > 0 && referencePrice !== currentPrice}`);
       }
       // C) Fallback z DB
       else if (s.lastMarketCapDiff && s.lastMarketCapDiff !== 0) {
@@ -487,10 +419,6 @@ export async function getStocksList(options: {
 
       // NOTE: We intentionally do not persist marketCapDiff here.
       // If you need persistence, add it to a background worker instead.
-      if (marketCap > 1000 && marketCapDiff === 0 && (!sharesOutstanding || sharesOutstanding === 0)) {
-        // Debug: prečo sa nepočíta pre veľké spoločnosti
-        console.log(`⚠️ ${s.symbol}: marketCapDiff=0 (marketCap=${marketCap}B, percentChange=${percentChange}%, sharesOutstanding=${sharesOutstanding} (type: ${typeof sharesOutstanding}), method=${capDiffMethod})`);
-      }
 
       const _ov = SECTOR_INDUSTRY_OVERRIDES[s.symbol];
       return {
