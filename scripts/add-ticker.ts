@@ -10,19 +10,29 @@ loadEnvFromFiles();
 
 import { prisma } from '../src/lib/db/prisma';
 
-const symbol = (process.argv[2] || '').trim().toUpperCase();
+const symbol  = (process.argv[2] || '').trim().toUpperCase();
+const sector  = process.argv[3] || null;
+const industry = process.argv[4] || null;
+const name    = process.argv[5] || null;
+
 if (!symbol) {
-  console.error('Usage: npx tsx scripts/add-ticker.ts <SYMBOL>');
+  console.error('Usage: npx tsx scripts/add-ticker.ts <SYMBOL> [sector] [industry] [name]');
   process.exit(1);
 }
 
 async function main() {
   const result = await prisma.ticker.upsert({
     where: { symbol },
-    update: {},
+    update: {
+      ...(sector   ? { sector }   : {}),
+      ...(industry ? { industry } : {}),
+      ...(name     ? { name }     : {}),
+    },
     create: {
       symbol,
-      name: symbol,
+      name: name || symbol,
+      ...(sector   ? { sector }   : {}),
+      ...(industry ? { industry } : {}),
       lastPrice: 0,
       lastChangePct: 0,
       lastMarketCap: 0,
@@ -30,7 +40,7 @@ async function main() {
       lastVolume: 0,
     },
   });
-  console.log(`✅ Ticker ${symbol} upserted (symbol: ${result.symbol})`);
+  console.log(`✅ Ticker ${result.symbol} upserted – sector: ${result.sector}, industry: ${result.industry}`);
 }
 
 main()
