@@ -778,8 +778,8 @@ export const SECTOR_INDUSTRY_OVERRIDES: Record<string, SectorIndustryOverride> =
       name: "Trip.com Group Limited",
     },
     SPCX: {
-      sector: "Financial Services",
-      industry: "Asset Management",
-      name: "SPCX",
+      sector: "Industrials",
+      industry: "Aerospace & Defense",
+      name: "SpaceX",
     },
   };
