@@ -492,7 +492,7 @@ async function main() {
       // Goal: keep major tickers highly fresh even in pre-market, while keeping overall API load reasonable.
       const isPreMarket = session === 'pre';
       const isOffHours = session === 'after' || (session === 'closed' && !isWeekendOrHoliday);
-      const PREMIUM_INTERVAL = isPreMarket ? 60 * 1000 : isOffHours ? 2 * 60 * 1000 : 60 * 1000; // pre: 60s, off-hours: 2min, live: 60s
+      const PREMIUM_INTERVAL = 60 * 1000; // 60s for all sessions (pre-market, after-hours, live) — earnings reactions need fast updates
       const REST_INTERVAL = 5 * 60 * 1000; // keep rest at 5min to avoid rate-limit pressure
 
       // Load last update times from Redis (using freshness metrics hash - O(1))

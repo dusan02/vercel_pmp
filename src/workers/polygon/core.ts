@@ -457,6 +457,18 @@ async function upsertToDB(
       // console.log(`⚠️ ${symbol}: No reference price (prevClose=${previousClose}), preserving lastChangePct=${changePctToUse}`);
     }
 
+    // Additional preserve: when price source is 'regularClose' (fallback — no actual pre-market
+    // or after-hours trade exists yet), keep the last meaningful changePct instead of 0%.
+    // This ensures the heatmap shows after-hours / close % from the previous session
+    // rather than going gray (0.00%) during the overnight / early pre-market gap.
+    if (normalized.source === 'regularClose' && normalized.isStale) {
+      if (lastChangePctFromCache !== undefined && lastChangePctFromCache !== null) {
+        changePctToUse = lastChangePctFromCache;
+      } else if (existingTicker?.lastChangePct !== null && existingTicker?.lastChangePct !== undefined) {
+        changePctToUse = existingTicker.lastChangePct;
+      }
+    }
+
     // If skipping price update, forced to use existing pct (so we return the correct "current" pct)
     if (skipPriceUpdate && existingTicker?.lastChangePct !== null && existingTicker?.lastChangePct !== undefined) {
       changePctToUse = existingTicker.lastChangePct;
