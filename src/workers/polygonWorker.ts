@@ -491,14 +491,13 @@ async function main() {
       // Adjust intervals based on session
       // Goal: keep major tickers highly fresh even in pre-market, while keeping overall API load reasonable.
       const isPreMarket = session === 'pre';
-      const isOffHours = session === 'after' || (session === 'closed' && !isWeekendOrHoliday);
+      const isAfterHours = session === 'after';
       const PREMIUM_INTERVAL = 60 * 1000; // 60s for all sessions (pre-market, after-hours, live) — earnings reactions need fast updates
       const REST_INTERVAL = 5 * 60 * 1000; // keep rest at 5min to avoid rate-limit pressure
 
       // Load last update times from Redis (using freshness metrics hash - O(1))
       if (redisClient && redisClient.isOpen) {
         try {
-          const { getFreshnessMetrics } = await import('@/lib/utils/freshnessMetrics');
           const hashKey = 'freshness:last_update';
           const timestamps = await redisClient.hGetAll(hashKey);
 
@@ -536,8 +535,7 @@ async function main() {
       const restNeedingUpdate = tickersNeedingUpdate.filter(t => !premiumTickers.includes(t));
       const prioritizedTickers = [...premiumNeedingUpdate, ...restNeedingUpdate];
 
-      const intervalDesc = isPreMarket ? '60s' : isOffHours ? '2min' : '60s';
-      console.log(`📊 Processing ${prioritizedTickers.length} tickers: ${premiumNeedingUpdate.length} premium (${intervalDesc}), ${restNeedingUpdate.length} rest (5min)`);
+      console.log(`📊 Processing ${prioritizedTickers.length} tickers: ${premiumNeedingUpdate.length} premium (60s), ${restNeedingUpdate.length} rest (5min)`);
 
       // Rate-limit logic
       const envLimit = parseInt(process.env.POLYGON_MAX_REQUESTS_PER_MINUTE || '250', 10);
@@ -553,15 +551,21 @@ async function main() {
       let usedDelay = delayBetweenBatches;
       let processedTickers = prioritizedTickers;
 
-      if (isPreMarket && (now - (parseInt(await redisClient.get('worker:last_bootstrap_ts') || '0', 10))) < 10 * 60 * 1000) {
-        // If bootstrap ran within last 10 minutes and we are in pre-market,
-        // it's likely a fresh start. We can trigger a full pass.
-        // We'll use the full 'tickers' list but keep within rate limits.
-        const lastTurboPass = await redisClient.get(`worker:last_turbo_pass:${getDateET(etNow)}`);
+      // TURBO MODE: full first-pass when entering pre-market (after bootstrap) OR after-hours (earnings).
+      // Pre-market: bootstrap sets last_bootstrap_ts → turbo fires within 10 min.
+      // After-hours: session transition at 4pm ET → fire once per day for fast earnings data.
+      const bootstrapTs = parseInt(await redisClient.get('worker:last_bootstrap_ts') || '0', 10);
+      const isPostBootstrap = isPreMarket && (now - bootstrapTs) < 10 * 60 * 1000;
+      const isAfterHoursEntry = isAfterHours;
+      if (isPostBootstrap || isAfterHoursEntry) {
+        const turboKey = isPostBootstrap
+          ? `worker:last_turbo_pass:${getDateET(etNow)}`
+          : `worker:last_ah_turbo_pass:${getDateET(etNow)}`;
+        const lastTurboPass = await redisClient.get(turboKey);
         if (!lastTurboPass) {
-          console.log('🚀 TURBO MODE: Performing first-pass pre-market refresh...');
+          console.log(`🚀 TURBO MODE: Performing first-pass ${isPostBootstrap ? 'pre-market' : 'after-hours'} refresh...`);
           processedTickers = tickers; // All tickers
-          await redisClient.setEx(`worker:last_turbo_pass:${getDateET(etNow)}`, 3600, now.toString());
+          await redisClient.setEx(turboKey, 3600, now.toString());
         }
       }
 

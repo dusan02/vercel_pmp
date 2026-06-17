@@ -438,30 +438,15 @@ async function upsertToDB(
 
 
     // 3. Resolve Change Pct to Use
-    // If we have a valid reference, use the calculated changePct.
-    // If NOT (e.g. no prevClose), try to preserve existing changePct from DB or cache.
+    // Preserve last meaningful changePct in two cases:
+    // a) No valid reference price (prevClose missing) — calculated 0% would be misleading.
+    // b) Price is the 'regularClose' fallback (no actual pre-market trade yet) — prevents
+    //    overnight gap from wiping out after-hours % and showing gray 0.00% on the heatmap.
     let changePctToUse = normalized.changePct;
     const hasValidReference = normalized.reference && normalized.reference.used !== null;
+    const isPriceFromFallback = normalized.source === 'regularClose' && normalized.isStale;
 
-    if (!hasValidReference) {
-      // Logic from original code "isStaticUpdateLocked && !previousClose" extended to general case
-      // If we computed 0% because of missing reference, DO NOT SAVE 0%.
-      // Use cached value or existing DB value.
-      if (lastChangePctFromCache !== undefined && lastChangePctFromCache !== null) {
-        changePctToUse = lastChangePctFromCache;
-      } else if (existingTicker?.lastChangePct !== null && existingTicker?.lastChangePct !== undefined) {
-        changePctToUse = existingTicker.lastChangePct;
-      }
-
-      // Log limits: only if it changed significantly or first time
-      // console.log(`⚠️ ${symbol}: No reference price (prevClose=${previousClose}), preserving lastChangePct=${changePctToUse}`);
-    }
-
-    // Additional preserve: when price source is 'regularClose' (fallback — no actual pre-market
-    // or after-hours trade exists yet), keep the last meaningful changePct instead of 0%.
-    // This ensures the heatmap shows after-hours / close % from the previous session
-    // rather than going gray (0.00%) during the overnight / early pre-market gap.
-    if (normalized.source === 'regularClose' && normalized.isStale) {
+    if (!hasValidReference || isPriceFromFallback) {
       if (lastChangePctFromCache !== undefined && lastChangePctFromCache !== null) {
         changePctToUse = lastChangePctFromCache;
       } else if (existingTicker?.lastChangePct !== null && existingTicker?.lastChangePct !== undefined) {
