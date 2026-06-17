@@ -136,7 +136,15 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
           WebkitOverflowScrolling: 'touch',
         }}
       >
-        <div style={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
+        <div
+          style={{
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            // Clear the fixed BottomNavigation so the last row isn't hidden behind it.
+            paddingBottom: 'calc(var(--tabbar-real-h, var(--tabbar-h, 72px)) + env(safe-area-inset-bottom, 0px) + 8px)',
+          }}
+        >
           {rows && rows.length > 0 && containerSize.width > 0 ? (
             rows.map((row) => (
               <div

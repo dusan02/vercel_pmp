@@ -10,9 +10,29 @@ export type MobileTileLabel = {
   valueFontPx: number;
 };
 
+const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
+
+const EMPTY: MobileTileLabel = {
+  showSymbol: false, showValue: false, symbol: '', value: '', symbolFontPx: 0, valueFontPx: 0,
+};
+
+// Approx width of an uppercase character relative to its font size (Inter/Space Grotesk, bold).
+const CHAR_W_RATIO = 0.62;
+// Digits/percent glyphs are narrower than uppercase letters.
+const VALUE_CHAR_W_RATIO = 0.56;
+// Readability floors (px). Below these the text is not comfortably readable on mobile.
+const MIN_SYMBOL_PX = 9;
+const MIN_VALUE_PX = 8;
+
 /**
- * Mobile tile label rules: small, predictable thresholds (no expensive text measurement).
- * Keep behavior aligned with the current MobileTreemapNew logic.
+ * 3-tier mobile tile labels (no expensive DOM text measurement):
+ *
+ *  - Tier 0 (tiny, minDim < 13px):  no text — the tile renders a dot indicator.
+ *  - Tier 1 (small):                ticker only. Font shrinks to fit; as a last
+ *                                   resort the ticker is truncated so SOMETHING
+ *                                   is always shown when there's any room.
+ *  - Tier 2 (medium+, minDim >= 32):ticker + value on two lines (only when both
+ *                                   lines fit comfortably).
  */
 export function getMobileTileLabel(
   company: CompanyNode,
@@ -20,68 +40,64 @@ export function getMobileTileLabel(
   h: number,
   metric: HeatmapMetric
 ): MobileTileLabel {
+  const pad = 3; // small inset from borders
+  const maxW = w - pad * 2;
+  const maxH = h - pad * 2;
   const minDim = Math.min(w, h);
 
-  // Too small → no text at all. 18px threshold ensures text is always readable on mobile.
-  if (minDim < 18) {
-    return { showSymbol: false, showValue: false, symbol: '', value: '', symbolFontPx: 0, valueFontPx: 0 };
-  }
+  // Tier 0 — too small for any readable text.
+  if (minDim < 13 || maxW <= 2 || maxH <= 2) return EMPTY;
 
-  const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
-  const pad = 4; // keep small inset from borders
-  const maxW = Math.max(0, w - pad * 2);
-  const maxH = Math.max(0, h - pad * 2);
-  if (maxW <= 0 || maxH <= 0) {
-    return { showSymbol: false, showValue: false, symbol: '', value: '', symbolFontPx: 0, valueFontPx: 0 };
-  }
-
-  const baseSymbolFontPx = Math.round(clamp(minDim * 0.28, 9, 20));
-  const baseValueFontPx = Math.round(clamp(baseSymbolFontPx - 4, 8, 14));
+  const symbolText = (company.symbol ?? '').toUpperCase();
+  if (!symbolText) return EMPTY;
 
   const valueText = metric === 'percent'
     ? formatPercent(company.changePercent ?? 0)
     : (company.marketCapDiff == null ? '' : formatMarketCapDiff(company.marketCapDiff));
 
-  const symbolText = (company.symbol ?? '').toUpperCase();
-  const approxCharW = 0.62; // uppercase letter width in em-ish
+  // ── Tier 1: symbol sizing ──────────────────────────────────────────
+  // Ideal font scales with tile size, capped by the box height (single line).
+  const idealSymbolPx = Math.round(clamp(minDim * 0.34, MIN_SYMBOL_PX, 22));
+  let symbolFontPx = Math.min(idealSymbolPx, Math.floor(maxH));
+  let displaySymbol = symbolText;
 
-  // Fit ticker to box (width + height).
-  // Mobile readability minimum: 11px — below this the text is not comfortably readable.
-  const MIN_SYMBOL_PX = 11;
-  const byWidthSymbol = Math.floor(maxW / Math.max(1, symbolText.length * approxCharW));
-  const fittedSymbolFontPx = Math.min(baseSymbolFontPx, byWidthSymbol, Math.floor(maxH));
-  if (fittedSymbolFontPx < MIN_SYMBOL_PX) {
-    return { showSymbol: false, showValue: false, symbol: '', value: '', symbolFontPx: 0, valueFontPx: 0 };
+  const widthFor = (chars: number, px: number, ratio = CHAR_W_RATIO) => chars * px * ratio;
+
+  if (widthFor(displaySymbol.length, symbolFontPx) > maxW) {
+    // Full ticker doesn't fit at the ideal font — try shrinking the font to fit width.
+    const fontByWidth = Math.floor(maxW / (displaySymbol.length * CHAR_W_RATIO));
+    if (fontByWidth >= MIN_SYMBOL_PX) {
+      symbolFontPx = fontByWidth;
+    } else {
+      // Last resort: keep the minimum readable font and truncate the ticker.
+      symbolFontPx = MIN_SYMBOL_PX;
+      const maxChars = Math.floor(maxW / (symbolFontPx * CHAR_W_RATIO));
+      if (maxChars < 1) return EMPTY; // genuinely no room even for one char
+      displaySymbol = symbolText.slice(0, maxChars);
+    }
   }
 
-  // Decide if we can show value as a second line.
-  // Keep existing behavior gate (needs room), then further degrade if it won't fit.
-  const wantsValue = minDim >= 36 && valueText.length > 0;
-  let showValue = wantsValue;
-  let fittedValueFontPx = baseValueFontPx;
-
-  if (showValue) {
-    const byWidthValue = Math.floor(maxW / Math.max(1, valueText.length * 0.56));
-    // Reserve rough vertical split between symbol/value lines
-    const symbolBoxH = Math.max(1, Math.floor(maxH * 0.55));
-    const valueBoxH = Math.max(1, Math.floor(maxH * 0.45));
-    const fittedSymbolForTwoLines = Math.min(fittedSymbolFontPx, symbolBoxH);
-    fittedValueFontPx = Math.min(baseValueFontPx, byWidthValue, valueBoxH);
-
-    // If either line becomes unreadable, degrade to ticker-only.
-    if (fittedSymbolForTwoLines < MIN_SYMBOL_PX || fittedValueFontPx < 8) {
-      showValue = false;
-      fittedValueFontPx = 0;
+  // ── Tier 2: value as a second line ─────────────────────────────────
+  // Only when the tile is comfortably large AND both lines fit.
+  let showValue = false;
+  let valueFontPx = 0;
+  if (minDim >= 32 && valueText.length > 0) {
+    const candidate = Math.round(clamp(symbolFontPx - 3, MIN_VALUE_PX, 14));
+    const valueFitsW = widthFor(valueText.length, candidate, VALUE_CHAR_W_RATIO) <= maxW;
+    const twoLinesFitH = symbolFontPx + candidate + 3 <= maxH;
+    if (valueFitsW && twoLinesFitH) {
+      showValue = true;
+      valueFontPx = candidate;
     }
   }
 
   return {
     showSymbol: true,
     showValue,
-    symbol: symbolText,
+    symbol: displaySymbol,
     value: valueText,
-    symbolFontPx: fittedSymbolFontPx,
-    valueFontPx: fittedValueFontPx || Math.round(clamp(fittedSymbolFontPx - 4, 8, 12)),
+    symbolFontPx,
+    valueFontPx: valueFontPx || Math.round(clamp(symbolFontPx - 3, MIN_VALUE_PX, 12)),
   };
 }
 
