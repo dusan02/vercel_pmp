@@ -2,6 +2,7 @@
 
 import React, { useRef, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import { Star } from 'lucide-react';
 import type { CompanyNode } from '@/lib/heatmap/types';
 import { formatPrice, formatPercent, formatMarketCap, formatMarketCapDiff } from '@/lib/utils/format';
 import CompanyLogo from '../CompanyLogo';
@@ -165,7 +166,11 @@ export const MobileHeatmapSheet: React.FC<MobileHeatmapSheetProps> = ({
                 }}
                 aria-label={isFav ? 'Remove from favorites' : 'Add to favorites'}
               >
-                {isFav ? '★' : '☆'}
+                <Star
+                  size={18}
+                  fill={isFav ? 'currentColor' : 'none'}
+                  strokeWidth={isFav ? 0 : 1.5}
+                />
               </button>
             )}
             <button

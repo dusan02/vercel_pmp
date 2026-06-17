@@ -4,9 +4,11 @@ import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { LayoutGrid, PieChart, Star, Calendar, Globe, BarChart3 } from 'lucide-react';
 
+type NavSection = 'heatmap' | 'analysis' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks' | 'movers';
+
 interface BottomNavigationProps {
   activeSection?: string;
-  onSectionChange?: (section: any) => void;
+  onSectionChange?: (section: NavSection) => void;
 }
 
 export function BottomNavigation({ activeSection, onSectionChange }: BottomNavigationProps) {
@@ -60,8 +62,7 @@ export function BottomNavigation({ activeSection, onSectionChange }: BottomNavig
 
   const handleNavigation = (item: typeof navItems[0]) => {
     if (onSectionChange) {
-      const sectionName = item.id === 'all-stocks' ? 'allStocks' : item.id;
-      onSectionChange(sectionName);
+      onSectionChange(item.id as NavSection);
     } else {
       router.push(item.path);
     }
@@ -69,7 +70,6 @@ export function BottomNavigation({ activeSection, onSectionChange }: BottomNavig
 
   return (
     <nav
-      role="navigation"
       aria-label="Main navigation"
       className="lg:hidden fixed bottom-0 left-0 w-full border-t border-gray-200 dark:border-gray-800 z-[110]
         bg-white dark:bg-[#0f0f0f]"
@@ -98,7 +98,7 @@ export function BottomNavigation({ activeSection, onSectionChange }: BottomNavig
               style={{ minWidth: '44px', minHeight: '44px' }}
             >
               <Icon size={22} strokeWidth={active ? 2.5 : 2} />
-              <span className={`text-[9px] leading-none ${active ? 'font-semibold' : 'font-normal'}`}>
+              <span className={`text-xs leading-none ${active ? 'font-semibold' : 'font-normal'}`}>
                 {item.label}
               </span>
             </button>

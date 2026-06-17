@@ -13,16 +13,9 @@ interface MobileScreenProps {
 }
 
 /**
- * MobileScreen - Kontajner pre jednotlivé obrazovky s lazy loading
- * - Renderuje children len keď je active (alebo prefetch je true)
- * - Zobrazuje skeleton počas načítania
- * - Podporuje smooth transitions
- * - Error boundary pre každý screen
- * 
- * Vylepšenia:
- * - Error boundary pre lepšiu error handling
- * - Lepšie loading states
- * - Accessibility improvements
+ * MobileScreen - Kontajner pre jednotlivé obrazovky s lazy loading.
+ * Renderuje children keď je prvýkrát active (alebo prefetch=true).
+ * Po prvom mount sa nikdy neodmountuje — zachováva scroll pozíciu a stav.
  */
 export function MobileScreen({
   children,
@@ -32,35 +25,16 @@ export function MobileScreen({
   prefetch = false,
   screenName = 'Screen'
 }: MobileScreenProps) {
-  const [shouldRender, setShouldRender] = useState(active || prefetch);
-  const [hasRendered, setHasRendered] = useState(active); // Initialize to true if initially active
-  const [isLoading, setIsLoading] = useState(!active); // Not loading if initially active
+  // Single boolean: has this screen been mounted at least once?
+  const [mounted, setMounted] = useState(active);
 
-  // Lazy load: render len keď je active alebo prefetch
   useEffect(() => {
-    if (active || prefetch) {
-      setShouldRender(true);
-      // Označ ako rendered po prvom načítaní
-      if (!hasRendered) {
-        if (active) {
-          // Active screen: render immediately, no delay
-          setHasRendered(true);
-          setIsLoading(false);
-        } else if (prefetch) {
-          // Prefetch: oneskorenie 1s (neblokuje initial load)
-          const timer = setTimeout(() => {
-            setHasRendered(true);
-            setIsLoading(false);
-          }, 1000);
-          return () => clearTimeout(timer);
-        }
-      } else {
-        setIsLoading(false);
-      }
-    } else {
-      setIsLoading(true);
+    if (!mounted && (active || prefetch)) {
+      setMounted(true);
     }
-  }, [active, prefetch, hasRendered]);
+  }, [active, prefetch, mounted]);
+
+  const isLoading = !mounted;
 
   // Default skeleton loader - REFAKTOROVANÝ pre dark theme mobile
   const defaultSkeleton = (
@@ -103,10 +77,10 @@ export function MobileScreen({
       aria-hidden={!active}
       aria-busy={isLoading}
     >
-      {shouldRender ? (
+      {mounted ? (
         <SectionErrorBoundary sectionName={screenName}>
           <Suspense fallback={loadingContent}>
-            {hasRendered ? children : loadingContent}
+            {children}
           </Suspense>
         </SectionErrorBoundary>
       ) : (

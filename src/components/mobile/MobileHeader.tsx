@@ -39,7 +39,7 @@ export function MobileHeader({ onLogoClick }: MobileHeaderProps) {
           aria-label="Navigate to heatmap"
           style={{ minWidth: '44px', minHeight: '44px' }}
         >
-          <div className={`transition-opacity ${isNavigating ? 'opacity-50' : ''}`}>
+          <div className={`flex items-center transition-opacity ${isNavigating ? 'opacity-50' : ''}`}>
             <BrandLogo size={24} />
             <span className="font-bold text-sm tracking-tight text-gray-900 dark:text-white ml-2">
               PreMarketPrice

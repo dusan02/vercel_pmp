@@ -193,7 +193,7 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
               <MobileScreen
                 active={activeSection === 'analysis'}
                 className="screen-analysis"
-                prefetch={activeSection === 'heatmap'}
+                prefetch={false}
                 screenName="Analysis"
                 skeleton={<MobileSkeleton type="list" count={1} />}
               >
@@ -205,7 +205,7 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
               <MobileScreen
                 active={activeSection === 'movers'}
                 className="screen-movers"
-                prefetch={activeSection === 'heatmap'}
+                prefetch={false}
                 screenName="Movers"
                 skeleton={<MobileSkeleton type="list" count={1} />}
               >
@@ -238,7 +238,7 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
               <MobileScreen
                 active={activeSection === 'favorites'}
                 className="screen-favorites"
-                prefetch={activeSection === 'heatmap'} // Prefetch keď je heatmap aktívny
+                prefetch={false}
                 screenName="Favorites"
                 skeleton={<MobileSkeleton type="cards" count={2} />}
               >

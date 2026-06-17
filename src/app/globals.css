@@ -222,18 +222,6 @@
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
 
-    .mobile-app-content {
-      flex: 1;
-      height: 100%;
-      /* CRITICAL: Ensure it takes full height of parent */
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      position: relative;
-      min-height: 0;
-      /* padding-top removed because Header is now flex item, not fixed */
-      padding-top: 0;
-    }
 
     /* CRITICAL: Heatmap view fills entire height */
     .mobile-app-content.is-heatmap {
@@ -508,13 +496,7 @@
   /* Legacy spacing removed - see Unified Section Spacing below */
   /* .favorites, .all-stocks { margin-bottom: 2rem; } */
 
-  /* Section Headers with Icons */
-  .favorites h2,
-  .all-stocks h2,
-  .portfolio h2,
-  .todays-earnings h2 {
-    /* Legacy header font-sizes removed to allow Tailwind utilities to work */
-  }
+  /* Section Headers with Icons — font-sizes handled by Tailwind utilities */
 
   /* Footer */
   .footer {
