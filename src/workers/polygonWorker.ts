@@ -453,7 +453,9 @@ async function main() {
 
       // Weekday 04:00 ET bootstrap (self-healing for snapshot mode — MODE=refs never runs)
       // If post-market-daily-reset failed the previous evening, prevClose stays stale until this runs.
-      if (!isWeekendOrHoliday && session === 'closed') {
+      // NOTE: detectSession() returns 'pre' at exactly 4:00 AM ET (preMarketStart = 4*60),
+      // so we must allow both 'pre' and 'closed' here — 'closed' alone is unreachable at hour 4.
+      if (!isWeekendOrHoliday && (session === 'pre' || session === 'closed')) {
         const etParts = toET(etNow);
         if (etParts.hour === 4 && etParts.minute < 5) {
           const today = getDateET(etNow);

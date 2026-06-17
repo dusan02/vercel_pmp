@@ -226,8 +226,13 @@ function normalizeSnapshot(
   }
 
   // Calculate change percentage based on session rules (returns reference info)
-  // CRITICAL: Ensure we use the snapshot's prevDay close if external DB closes are missing
-  const effectivePreviousClose = previousClose || snapshot.prevDay?.c || null;
+  // CRITICAL: Don't use snapshot.prevDay.c as BOTH the current price AND the reference price.
+  // When effectivePrice.source === 'regularClose', the price IS prevDay.c (no actual trade yet).
+  // Using prevDay.c as reference too would always yield 0% change, overwriting meaningful
+  // after-hours or intraday changePct. Instead, fall back only to the explicitly provided prevClose.
+  const effectivePreviousClose = effectivePrice.source === 'regularClose'
+    ? previousClose
+    : (previousClose || snapshot.prevDay?.c || null);
 
   const percentResult = calculatePercentChange(
     effectivePrice.price,
