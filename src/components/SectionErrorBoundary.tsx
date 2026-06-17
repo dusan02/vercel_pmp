@@ -37,7 +37,18 @@ export class SectionErrorBoundary extends Component<SectionErrorBoundaryProps, S
     });
   }
 
+  private get isChunkError(): boolean {
+    const msg = this.state.error?.message || '';
+    return msg.includes('Failed to load chunk') || msg.includes('Loading chunk') || msg.includes('ChunkLoadError');
+  }
+
   handleReload = () => {
+    // Chunk loading errors (stale chunk hash after deploy) cannot be recovered by
+    // resetting React state — the old chunk URL is permanently 404.
+    if (this.isChunkError) {
+      window.location.reload();
+      return;
+    }
     this.setState({ hasError: false, error: null });
   };
 
@@ -52,14 +63,16 @@ export class SectionErrorBoundary extends Component<SectionErrorBoundaryProps, S
           <div className="section-error-content">
             <h3 className="section-error-title">Error loading {this.props.sectionName}</h3>
             <p className="section-error-message">
-              {this.state.error?.message || 'An error occurred while loading this section'}
+              {this.isChunkError
+                ? 'App update detected. Please reload to get the latest version.'
+                : (this.state.error?.message || 'An error occurred while loading this section')}
             </p>
             <button
               onClick={this.handleReload}
               className="section-error-button"
-              aria-label={`Reload ${this.props.sectionName} section`}
+              aria-label={this.isChunkError ? `Reload page to update ${this.props.sectionName}` : `Reload ${this.props.sectionName} section`}
             >
-              Try Again
+              {this.isChunkError ? 'Reload page' : 'Try Again'}
             </button>
           </div>
         </div>
