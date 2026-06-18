@@ -4,10 +4,10 @@ import { StockData } from '@/lib/types';
 import { SessionPrice, DailyRef } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { formatMarketCapDiff } from '@/lib/utils/format';
-import { computeMarketCap, computeMarketCapDiff, computePercentChange, getPreviousClose } from '@/lib/utils/marketCapUtils';
+import { computeMarketCap, computeMarketCapDiff, computePercentChange, getPreviousClose, validateMarketCap, validatePercentChange } from '@/lib/utils/marketCapUtils';
 import { getCacheKey } from '@/lib/redis/keys';
 import { getDateET, createETDate, toET } from '@/lib/utils/dateET';
-import { detectSession, nowET, isMarketHoliday, getTradingDay } from '@/lib/utils/timeUtils';
+import { detectSession, nowET, isMarketHoliday, getTradingDay, getLastTradingDay } from '@/lib/utils/timeUtils';
 import { SECTOR_INDUSTRY_OVERRIDES } from '@/data/sectorIndustryOverrides';
 import { normalizeSectorIndustryPair } from '@/lib/utils/sectorIndustryValidator';
 import { isWeekendET } from '@/lib/utils/dateET';
@@ -227,11 +227,14 @@ export async function GET(request: NextRequest) {
 
     // 24h okno pre heatmap.today
     // OPTIMIZATION: Check if we can use "Fast Path" (skip SessionPrice/DailyRef for 'day' timeframe if Ticker is fresh)
-    const canUseFastPath = timeframe === 'day' && !forceRefresh && tickers.some(t => {
+    // IMP5: Require at least 100 tickers updated recently — "some()" was too optimistic (1 fresh ticker sufficed).
+    const FAST_PATH_MIN_FRESH = 100;
+    const fastPathFreshCount = tickers.filter(t => {
       if (!t.lastPriceUpdated) return false;
       const ageMs = Date.now() - new Date(t.lastPriceUpdated).getTime();
-      return ageMs < 30 * 60 * 1000; // If some top tickers were updated in last 30 mins
-    });
+      return ageMs < 30 * 60 * 1000;
+    }).length;
+    const canUseFastPath = timeframe === 'day' && !forceRefresh && fastPathFreshCount >= FAST_PATH_MIN_FRESH;
 
     const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
@@ -382,13 +385,12 @@ export async function GET(request: NextRequest) {
     const isNonTradingClosedDay =
       session === 'closed' && (isWeekendET(etNow) || isMarketHoliday(etNow));
 
-    // On weekends/holidays we still want "% change" to be computed as:
-    // currentPrice / (last trading day's regular close) - 1
-    // (i.e. not Friday vs Thursday when viewed on Saturday/Sunday).
-    const isClosedWeekendOrHoliday =
-      session === 'closed' && (isWeekendET(etNow) || isMarketHoliday(etNow));
-    const lastTradingDayForReference = isClosedWeekendOrHoliday ? getTradingDay(etNow) : null;
-    const regularCloseReferenceDayStr = isClosedWeekendOrHoliday && lastTradingDayForReference
+    // The last trading day (D-1) — used to validate freshness of latestPrevClose.
+    // latestPrevClose is only trustworthy if latestPrevCloseDate >= lastTradingDayForQuery.
+    const lastTradingDayForQuery = getLastTradingDay(calendarDateET);
+
+    const lastTradingDayForReference = isNonTradingClosedDay ? getTradingDay(etNow) : null;
+    const regularCloseReferenceDayStr = isNonTradingClosedDay && lastTradingDayForReference
       ? getDateET(lastTradingDayForReference)
       : null;
 
@@ -595,8 +597,7 @@ export async function GET(request: NextRequest) {
         priceSource = 'cache';
         cacheHits++;
         
-        // Validate and filter out extreme values for cache path
-        const { validateMarketCap, validatePercentChange } = await import('@/lib/utils/marketCapUtils');
+        // Validate and filter out extreme values for cache path (static import — no await)
         if (!validateMarketCap(marketCap, ticker)) {
           skippedNoMarketCap++;
           continue;
@@ -615,12 +616,24 @@ export async function GET(request: NextRequest) {
 
         // Prefer denormalized prev close (fast), fallback to DailyRef-derived map.
         // On closed non-trading days, prefer DailyRef-derived "last trading day close" to show 0% vs Friday close on weekend.
+        // STALENESS GUARD: latestPrevClose is only valid if latestPrevCloseDate >= lastTradingDayForQuery.
+        // Without this check, a weeks-old prevClose produces massive fake % changes.
         const tickerInfoFromMap = tickerMap.get(ticker);
-        const prevFromTicker = tickerInfoFromMap?.latestPrevClose || 0;
+        const rawPrevClose = tickerInfoFromMap?.latestPrevClose || 0;
+        const rawPrevCloseDate = tickerInfoFromMap?.latestPrevCloseDate;
+        const prevCloseDateIsValid = rawPrevCloseDate
+          ? new Date(rawPrevCloseDate).getTime() >= lastTradingDayForQuery.getTime()
+          : false;
+        const prevFromTicker = (rawPrevClose > 0 && prevCloseDateIsValid) ? rawPrevClose : 0;
+        if (rawPrevClose > 0 && !prevCloseDateIsValid) {
+          console.warn(`⚠️ [STALE_PREVCLOSE][heatmap] ${ticker}: latestPrevClose=${rawPrevClose} from ${rawPrevCloseDate ? new Date(rawPrevCloseDate).toISOString().slice(0,10) : 'null'}, expected >= ${lastTradingDayForQuery.toISOString().slice(0,10)} — ignoring`);
+        }
         const prevFromDaily = previousCloseMap.get(ticker) || 0;
-        previousClose = isNonTradingClosedDay
-          ? (prevFromDaily || prevFromTicker)
-          : (prevFromTicker || prevFromDaily);
+        // DailyRef has priority in all sessions (it is always fresh from today's worker run).
+        // latestPrevClose (Ticker) is only used as fallback when DailyRef is missing.
+        previousClose = prevFromDaily > 0
+          ? prevFromDaily
+          : (isNonTradingClosedDay ? 0 : prevFromTicker); // on non-trading days, don't fall back to stale ticker prevClose
 
         dbHits++;
 
@@ -686,27 +699,24 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
-      // Validate and filter out extreme values
-      const { validateMarketCap, validatePercentChange } = await import('@/lib/utils/marketCapUtils');
+      // Validate and filter out extreme values (static import — no await)
       if (!validateMarketCap(marketCap, ticker)) {
         skippedNoMarketCap++;
         continue;
       }
 
+      // BUG2 FIX: Use same 50% outlier threshold as stockService (was >999% — far too lenient)
       if (!validatePercentChange(changePercent, ticker)) {
         skippedNoPrice++; // Count as skipped due to invalid data
         continue;
       }
 
-      // "isStale" is used for UX/diagnostics ("is this price reasonably fresh for this session?").
-      // The previous thresholds (live=1min, pre/after=5min) were too strict and caused most tickers
-      // to appear stale even though they were updated recently.
       // Filter out 'Unknown' or null sectors - these are usually de-listed or broken tickers
       if (!tickerInfo.sector || tickerInfo.sector === 'Unknown' || tickerInfo.sector === 'Other') {
-        continue; 
+        continue;
       }
 
-      // Filter out anomalous percent changes (> 999% is often a data error or missing reference)
+      // Secondary outlier filter: anything above 999% is definitely bad data (belt-and-suspenders)
       if (Math.abs(changePercent) > 999) {
         console.warn(`⚠️ [Heatmap] Filtering out ${ticker} due to extreme change: ${changePercent.toFixed(2)}%`);
         continue;

@@ -12,8 +12,7 @@ export enum PriceState {
   PRE_MARKET_LIVE = 'pre_market_live',      // 04:00-09:30 ET, live updates
   LIVE = 'live',                            // 09:30-16:00 ET, live updates
   AFTER_HOURS_LIVE = 'after_hours_live',    // 16:00-20:00 ET, live updates
-  AFTER_HOURS_FROZEN = 'after_hours_frozen', // 20:00-04:00 ET, frozen (no overwrites)
-  OVERNIGHT_FROZEN = 'overnight_frozen',    // 20:00-04:00 ET (same as above, alias)
+  OVERNIGHT_FROZEN = 'overnight_frozen',    // 20:00-04:00 ET, frozen (no overwrites)
   WEEKEND_FROZEN = 'weekend_frozen'         // Weekend/holiday, frozen (no updates)
 }
 

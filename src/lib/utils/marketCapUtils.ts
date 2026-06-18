@@ -1,11 +1,21 @@
 import Decimal from 'decimal.js';
+import { calculatePercentChange } from './priceResolver';
 
 // Cache for share counts (24-hour TTL)
+// NOTE: This is a module-level Map — it only lives within a single Node.js process.
+// In serverless (Vercel) or PM2 cluster mode each request may get a new process,
+// so this cache is effectively always empty in production.
+// Kept for long-running dev/PM2 single-process scenarios only.
 const shareCountCache = new Map<string, { shares: number; timestamp: number }>();
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
-// Cache for previous close (24-hour TTL)
-const prevCloseCache = new Map<string, { prevClose: number; timestamp: number }>();
+/**
+ * Shared outlier threshold for percent change validation.
+ * Used by both stockService and heatmap to ensure consistent filtering.
+ * Values above this are almost certainly due to a stale/bad prevClose,
+ * NOT legitimate market moves.
+ */
+export const OUTLIER_CHANGE_PCT_THRESHOLD = 50; // 50%
 
 /**
  * Get market status from Polygon API
@@ -123,18 +133,11 @@ export async function getSharesOutstanding(ticker: string, currentPrice?: number
 }
 
 /**
- * Get previous close from Polygon aggregates with adjusted=true and 24-hour cache
+ * Get previous close from Polygon aggregates with adjusted=true.
+ * NOTE: The in-memory prevCloseCache was removed (it doesn't work in serverless/cluster).
+ * Real caching is handled by Redis in onDemandPrevClose.ts.
  */
 export async function getPreviousClose(ticker: string): Promise<number> {
-  const now = Date.now();
-  const cached = prevCloseCache.get(ticker);
-
-  // Return cached value if still valid (24-hour cache until midnight ET)
-  if (cached && (now - cached.timestamp) < CACHE_TTL) {
-    console.log(`📊 Using cached prevClose for ${ticker}: $${cached.prevClose}`);
-    return cached.prevClose;
-  }
-
   try {
     const apiKey = process.env.POLYGON_API_KEY;
     if (!apiKey) {
@@ -159,10 +162,7 @@ export async function getPreviousClose(ticker: string): Promise<number> {
 
     const prevClose = data.results[0].c;
 
-    // Cache the result for 24 hours
-    prevCloseCache.set(ticker, { prevClose, timestamp: now });
-
-    // Log len ak nie je v tichom režime (pre API endpointy)
+    // Log only when not in silent mode
     if (process.env.SILENT_PREVCLOSE_LOGS !== 'true') {
       console.log(`✅ Fetched prevClose for ${ticker}: $${prevClose}`);
     }
@@ -172,6 +172,7 @@ export async function getPreviousClose(ticker: string): Promise<number> {
     return 0;
   }
 }
+
 
 /**
  * Get current price from Polygon snapshot data with robust fallbacks
@@ -261,7 +262,6 @@ export function computePercentChange(
   // If session-aware parameters are provided, use calculatePercentChange logic
   if (session !== undefined) {
     try {
-      const { calculatePercentChange } = require('./priceResolver');
       const result = calculatePercentChange(currentPrice, session, prevClose, regularClose || null);
       return Math.round(result.changePct * 100) / 100; // Round to 2 decimal places
     } catch (error) {
@@ -331,15 +331,14 @@ export function validateMarketCap(marketCap: number, ticker: string): boolean {
 }
 
 /**
- * Validate percent change and filter out extreme values
+ * Validate percent change and filter out extreme values.
+ * Uses OUTLIER_CHANGE_PCT_THRESHOLD (50%) as the shared limit — consistent with stockService.
  */
 export function validatePercentChange(percentChange: number, ticker: string): boolean {
-  // Filter out extreme percent changes (possible splits or data errors)
-  if (Math.abs(percentChange) > 100) {
-    console.warn(`⚠️ Extreme percent change detected for ${ticker}: ${percentChange.toFixed(2)}% - filtering out`);
+  if (Math.abs(percentChange) > OUTLIER_CHANGE_PCT_THRESHOLD) {
+    console.warn(`⚠️ Extreme percent change for ${ticker}: ${percentChange.toFixed(2)}% (threshold ±${OUTLIER_CHANGE_PCT_THRESHOLD}%) — filtering out (likely stale prevClose)`);
     return false;
   }
-
   return true;
 }
 
@@ -362,8 +361,7 @@ export function logCalculationData(ticker: string, currentPrice: number, prevClo
  */
 export function clearAllCaches(): void {
   shareCountCache.clear();
-  prevCloseCache.clear();
-  console.log('🧹 All caches cleared');
+  console.log('🧹 Share count cache cleared');
 }
 
 /**
@@ -371,7 +369,6 @@ export function clearAllCaches(): void {
  */
 export function getCacheStatus(): {
   shareCounts: { size: number; entries: Array<{ ticker: string; shares: number; age: number }> };
-  prevCloses: { size: number; entries: Array<{ ticker: string; prevClose: number; age: number }> };
 } {
   const now = Date.now();
 
@@ -381,20 +378,10 @@ export function getCacheStatus(): {
     age: Math.round((now - data.timestamp) / 1000 / 60) // Age in minutes
   }));
 
-  const prevCloseEntries = Array.from(prevCloseCache.entries()).map(([ticker, data]) => ({
-    ticker,
-    prevClose: data.prevClose,
-    age: Math.round((now - data.timestamp) / 1000 / 60) // Age in minutes
-  }));
-
   return {
     shareCounts: {
       size: shareCountCache.size,
       entries: shareEntries
-    },
-    prevCloses: {
-      size: prevCloseCache.size,
-      entries: prevCloseEntries
     }
   };
 }

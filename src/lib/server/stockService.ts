@@ -16,13 +16,13 @@ interface StockServiceResult {
 
 /**
  * Main entry point for stock data - SQL-first implementation using Ticker table
+ * @deprecated Use getStocksList directly.
  */
 export async function getStocksData(
   tickers: string[],
   project: string = 'pmp'
 ): Promise<StockServiceResult> {
-  const result = await getStocksList({ tickers });
-  return result;
+  return getStocksList({ tickers });
 }
 
 /**
@@ -91,6 +91,7 @@ export async function getStocksList(options: {
         lastMarketCap: true,
         lastMarketCapDiff: true,
         latestPrevClose: true,
+        latestPrevCloseDate: true, // CRITICAL: needed to validate staleness of latestPrevClose
         updatedAt: true,
         lastPriceUpdated: true,
         lastVolume: true,
@@ -155,7 +156,8 @@ export async function getStocksList(options: {
         }
       }
     } catch (e) {
-      // Non-fatal: fall back to Ticker.lastPrice
+      // Non-fatal: fall back to Ticker.lastPrice, but log so DB issues are visible
+      console.warn('⚠️ [stockService] SessionPrice fetch failed, falling back to Ticker.lastPrice:', e instanceof Error ? e.message : String(e));
     }
 
     // Quick lookup for current price (used for best-effort shares estimation from Polygon market_cap)
@@ -170,6 +172,10 @@ export async function getStocksList(options: {
     const prevCloseBySymbol = new Map<string, number>();
     const dateET = getDateET(etNow);
     const todayDateObj = createETDate(dateET);
+
+    // The last trading day (D-1) — used to validate freshness of latestPrevClose.
+    // latestPrevClose is only trustworthy if latestPrevCloseDate >= lastTradingDay.
+    const lastTradingDayForQuery = getLastTradingDay(todayDateObj);
 
     if (!isLargeQuery) {
       const dailyRefs = await prisma.dailyRef.findMany({
@@ -193,9 +199,21 @@ export async function getStocksList(options: {
       });
     }
 
-    // On-demand prevClose fetch for tickers missing previousClose (API-safe for /api/stocks)
+    // On-demand prevClose fetch for tickers that:
+    //   a) have no latestPrevClose at all, OR
+    //   b) have a latestPrevClose that is stale (latestPrevCloseDate < lastTradingDay)
+    //      — these will be ignored by the staleness guard, so we need a fresh fetch.
+    // Also skip tickers that already have a valid DailyRef prevClose for today.
     const tickersNeedingPrevClose = stocks
-      .filter(s => (priceBySymbol.get(s.symbol) || 0) > 0 && (s.latestPrevClose || 0) === 0)
+      .filter(s => {
+        if ((priceBySymbol.get(s.symbol) || 0) === 0) return false; // no price, skip
+        if ((prevCloseBySymbol.get(s.symbol) || 0) > 0) return false; // DailyRef already covers it
+        const raw = s.latestPrevClose || 0;
+        if (raw === 0) return true; // missing entirely
+        // Also fetch if latestPrevCloseDate is stale (staleness guard will zero it out)
+        if (!s.latestPrevCloseDate) return true;
+        return s.latestPrevCloseDate.getTime() < lastTradingDayForQuery.getTime();
+      })
       .map(s => s.symbol);
 
     const onDemandPrevCloseMap = new Map<string, number>();
@@ -302,12 +320,35 @@ export async function getStocksList(options: {
     const results: StockData[] = stocks.map(s => {
       const best = bestPriceBySymbol.get(s.symbol);
       const currentPrice = best?.price || 0;
+
       // Get true previous close (D-1) for daily move calculation
       // HIGHEST PRIORITY: On-demand fresh fetch
       // SECOND PRIORITY: Today's DailyRef.previousClose (which worker sets to precisely D-1 close)
-      // FALLBACK: Ticker.latestPrevClose (DB cache)
-      let previousClose = onDemandPrevCloseMap.get(s.symbol) || prevCloseBySymbol.get(s.symbol) || (s.latestPrevClose || 0);
-      
+      // FALLBACK: Ticker.latestPrevClose (DB cache) — only if latestPrevCloseDate is fresh enough
+      const onDemandPrev = onDemandPrevCloseMap.get(s.symbol) || 0;
+      const dailyRefPrev = prevCloseBySymbol.get(s.symbol) || 0;
+
+      // STALENESS GUARD: latestPrevClose is valid only if its date is the last trading day.
+      // If latestPrevCloseDate is missing or older than the last trading day, treat it as 0
+      // to prevent a days-old prevClose creating a massive fake % change.
+      let latestPrevCloseSafe = 0;
+      if ((s.latestPrevClose || 0) > 0 && s.latestPrevCloseDate) {
+        const prevCloseDay = s.latestPrevCloseDate.getTime();
+        // Allow prevClose if it is from the last trading day OR later
+        // (getTime comparison: lastTradingDay is midnight ET of last trade day)
+        if (prevCloseDay >= lastTradingDayForQuery.getTime()) {
+          latestPrevCloseSafe = s.latestPrevClose!;
+        } else {
+          console.warn(`⚠️ [STALE_PREVCLOSE] ${s.symbol}: latestPrevClose=${s.latestPrevClose} is from ${s.latestPrevCloseDate.toISOString().slice(0,10)}, expected >= ${lastTradingDayForQuery.toISOString().slice(0,10)} — ignoring to prevent fake % change`);
+        }
+      }
+
+      let previousClose = onDemandPrev > 0
+        ? onDemandPrev
+        : dailyRefPrev > 0
+          ? dailyRefPrev
+          : latestPrevCloseSafe; // safe (date-validated) fallback only
+
       const sharesOutstanding = onDemandSharesMap.get(s.symbol) || (s.sharesOutstanding || 0);
       const regularClose = regularCloseBySymbol.get(s.symbol) || 0;
 
@@ -338,13 +379,20 @@ export async function getStocksList(options: {
       // CRITICAL: Always use calculated percentChange if we have valid reference price
       // Don't fallback to s.lastChangePct (it may be stale) - same as heatmap API
       // This ensures consistency between heatmap and tables
-      const percentChange = (currentPrice > 0 && (pct.reference.price ?? 0) > 0)
+      let percentChange = (currentPrice > 0 && (pct.reference.price ?? 0) > 0)
         ? pct.changePct
         : 0; // Return 0 instead of stale lastChangePct
 
-      // Outlier guard: warn in logs if % change exceeds ±15% (likely bad prevClose in DB)
-      if (Math.abs(percentChange) > 15 && currentPrice > 0) {
-        console.warn(`⚠️ [OUTLIER] ${s.symbol}: percentChange=${percentChange.toFixed(2)}% (price=${currentPrice}, prevClose=${previousClose}, refUsed=${pct.reference.used}) — likely stale/bad prevClose in DB`);
+      // OUTLIER GUARD: If % change exceeds ±50%, it almost certainly means a bad/stale prevClose
+      // slipped through (e.g. pre-split price, or prevClose from weeks ago).
+      // Hard-reset to 0 instead of just logging — this prevents the UI from showing fake movers.
+      if (Math.abs(percentChange) > 50 && currentPrice > 0) {
+        console.warn(`⚠️ [OUTLIER_RESET] ${s.symbol}: percentChange=${percentChange.toFixed(2)}% RESET to 0 (price=${currentPrice}, prevClose=${previousClose}, refUsed=${pct.reference.used}, prevCloseDate=${s.latestPrevCloseDate?.toISOString().slice(0,10) ?? 'null'}) — stale/bad prevClose detected`);
+        percentChange = 0;
+        previousClose = 0; // also invalidate so marketCapDiff is 0 via correct path below
+      } else if (Math.abs(percentChange) > 15 && currentPrice > 0) {
+        // Softer warning band: log but keep (legitimate movers can be 15-50%)
+        console.warn(`⚠️ [OUTLIER_WARN] ${s.symbol}: percentChange=${percentChange.toFixed(2)}% (price=${currentPrice}, prevClose=${previousClose}, refUsed=${pct.reference.used}) — verify prevClose`);
       }
 
       // Vypočítaj market cap z aktuálnych hodnôt
@@ -409,8 +457,12 @@ export async function getStocksList(options: {
         marketCapDiff = 0;
         capDiffMethod = "none";
       } else if (marketCap > 0) {
-        const maxAbs = marketCap * 0.25; // 25% cap guard — catches bad prevClose before it hits UI
-        if (Math.abs(marketCapDiff) > maxAbs) {
+        // IMP4: For small-caps (< 1B), skip the cap guard — they can legitimately move >25% intraday.
+        // For large/mid-caps use 50% cap (raised from 25%) to catch truly bad data.
+        const isSmallCap = marketCap < 1; // marketCap is in billions
+        const capPct = isSmallCap ? Infinity : 0.50;
+        const maxAbs = marketCap * capPct;
+        if (!isSmallCap && Math.abs(marketCapDiff) > maxAbs) {
           console.warn(`⚠️ [SANITY] ${s.symbol}: marketCapDiff=${marketCapDiff.toFixed(2)}B capped (>${(maxAbs).toFixed(2)}B, ${(Math.abs(marketCapDiff)/marketCap*100).toFixed(1)}% of mcap). prevClose=${previousClose}, price=${currentPrice}`);
           marketCapDiff = 0;
           capDiffMethod = "none";
