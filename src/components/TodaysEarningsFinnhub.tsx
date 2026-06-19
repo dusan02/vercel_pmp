@@ -262,9 +262,9 @@ const EarningsHeader = () => (
 );
 
 // Loading component for earnings
-const EarningsLoader = () => (
+const EarningsLoader = ({ hideHeader }: { hideHeader?: boolean }) => (
   <section className="todays-earnings">
-    <EarningsHeader />
+    {!hideHeader && <EarningsHeader />}
     <div className="flex items-center justify-center p-8 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800">
       <span className="text-gray-600 dark:text-gray-400">Loading today&apos;s earnings...</span>
     </div>
@@ -272,9 +272,9 @@ const EarningsLoader = () => (
 );
 
 // Error component for earnings - REFAKTOROVANÝ
-const EarningsError = ({ error, onRetry }: { error: string; onRetry: () => void }) => (
+const EarningsError = ({ error, onRetry, hideHeader }: { error: string; onRetry: () => void, hideHeader?: boolean }) => (
   <section className="todays-earnings">
-    <EarningsHeader />
+    {!hideHeader && <EarningsHeader />}
     <div className="flex flex-col items-center justify-center gap-3 py-16 px-4 text-center bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800">
       <div className="text-6xl mb-2 opacity-50 grayscale">
         ⚠️
@@ -296,15 +296,15 @@ const EarningsError = ({ error, onRetry }: { error: string; onRetry: () => void 
 );
 
 // Empty state component for earnings - REFAKTOROVANÝ
-const EarningsEmpty = () => (
+const EarningsEmpty = ({ hideHeader }: { hideHeader?: boolean }) => (
   <section className="todays-earnings">
-    <EarningsHeader />
+    {!hideHeader && <EarningsHeader />}
     <div className="flex flex-col items-center justify-center gap-3 py-16 px-4 text-center bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800">
       <div className="text-6xl mb-2 opacity-50 grayscale">
         📅
       </div>
       <span className="text-base font-semibold text-gray-900 dark:text-white">
-        No earnings scheduled for today
+        No earnings scheduled for this date
       </span>
       <p className="text-sm max-w-xs text-gray-500 dark:text-gray-400">
         For the full list, visit{' '}
@@ -321,7 +321,7 @@ const EarningsEmpty = () => (
   </section>
 );
 
-export default function TodaysEarningsFinnhub({ initialData }: { initialData?: any }) {
+export default function TodaysEarningsFinnhub({ initialData, selectedDate, hideHeader }: { initialData?: any, selectedDate?: string, hideHeader?: boolean }) {
   const [currentDate, setCurrentDate] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('marketCap');
   const [ascending, setAscending] = useState(false);
@@ -335,8 +335,13 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
     }
   };
 
-  // Set current date in Eastern Time
+  // Set current date in Eastern Time or use selectedDate
   useEffect(() => {
+    if (selectedDate) {
+      setCurrentDate(selectedDate);
+      return;
+    }
+
     const updateDate = () => {
       // Use ET calendar date derived via Intl (no localized string parsing).
       import('@/lib/utils/dateET').then(({ getDateET }) => {
@@ -372,7 +377,7 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
         clearTimeout(midnightTimeout);
       }
     };
-  }, []);
+  }, [selectedDate]);
 
   const { data, isLoading, error, refetch } = useEarningsData(currentDate, initialData);
 
@@ -407,17 +412,17 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
 
   // Show loading state
   if (isLoading) {
-    return <EarningsLoader />;
+    return <EarningsLoader hideHeader={hideHeader} />;
   }
 
   // Show error state
   if (error) {
-    return <EarningsError error={error} onRetry={refetch} />;
+    return <EarningsError error={error} onRetry={refetch} hideHeader={hideHeader} />;
   }
 
   // Show empty state
   if (!data || (!data.data.preMarket.length && !data.data.afterMarket.length)) {
-    return <EarningsEmpty />;
+    return <EarningsEmpty hideHeader={hideHeader} />;
   }
 
   const sortedPreMarket = sortData(data.data.preMarket);
@@ -538,7 +543,7 @@ export default function TodaysEarningsFinnhub({ initialData }: { initialData?: a
 
   return (
     <section className="todays-earnings border-none outline-none ring-0">
-      <EarningsHeader />
+      {!hideHeader && <EarningsHeader />}
 
       <UniversalTable
         data={allEarnings}

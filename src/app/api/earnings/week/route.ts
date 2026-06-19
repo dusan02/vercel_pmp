@@ -23,9 +23,9 @@ export async function GET(request: NextRequest) {
   const diff = baseDate.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
   const monday = new Date(baseDate.setDate(diff));
   
-  // Generate 5 days (Monday to Friday)
+  // Generate 7 days (Monday to Sunday)
   const weekDates: string[] = [];
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 7; i++) {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
     weekDates.push(d.toISOString().slice(0, 10));

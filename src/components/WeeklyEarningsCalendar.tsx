@@ -5,6 +5,7 @@ import { format, addDays, subWeeks, addWeeks, startOfWeek, isSameDay } from 'dat
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Coffee } from 'lucide-react';
 import CompanyLogo from './CompanyLogo';
 import { isMarketHoliday } from '@/lib/utils/timeUtils';
+import TodaysEarningsFinnhub from './TodaysEarningsFinnhub';
 
 // Helper to get ET current date
 const getETDate = () => {
@@ -37,17 +38,18 @@ export default function WeeklyEarningsCalendar() {
     return startOfWeek(et, { weekStartsOn: 1 });
   });
 
+  const [selectedDate, setSelectedDate] = useState<Date>(getETDate());
   const [weeklyData, setWeeklyData] = useState<Record<string, DayEarnings>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Compute the 5 days of the selected week (Mon-Fri)
+  // Compute the 7 days of the selected week (Mon-Sun)
   const weekDays = useMemo(() => {
-    return Array.from({ length: 5 }).map((_, i) => addDays(currentDate, i));
+    return Array.from({ length: 7 }).map((_, i) => addDays(currentDate, i));
   }, [currentDate]);
 
   const startDateStr = format(weekDays[0]!, 'yyyy-MM-dd');
-  const endDateStr = format(weekDays[4]!, 'yyyy-MM-dd');
+  const endDateStr = format(weekDays[6]!, 'yyyy-MM-dd');
 
   useEffect(() => {
     const fetchWeekData = async () => {
@@ -157,7 +159,7 @@ export default function WeeklyEarningsCalendar() {
       )}
 
       {!loading && !error && (
-        <div className="flex gap-4 overflow-x-auto pb-4 snap-x">
+        <div className="flex gap-3 overflow-x-auto pb-4 snap-x [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {weekDays.map((date) => {
             const dateStr = format(date, 'yyyy-MM-dd');
             const dayData = weeklyData[dateStr];
@@ -165,19 +167,27 @@ export default function WeeklyEarningsCalendar() {
             const isHoliday = isMarketHoliday(date);
             
             const totalForDay = dayData ? (dayData.preMarket?.length + dayData.afterMarket?.length + dayData.timeTbd?.length) : 0;
+            const isSelected = isSameDay(date, selectedDate);
 
             return (
               <div 
                 key={dateStr} 
-                className={`flex-none w-[280px] snap-center rounded-xl overflow-hidden border ${
+                onClick={() => setSelectedDate(date)}
+                className={`flex-none w-[260px] lg:min-w-[150px] lg:flex-1 snap-center rounded-xl overflow-hidden border cursor-pointer transition-all ${
                   isToday 
                     ? 'border-green-400 dark:border-green-600 bg-green-50/80 dark:bg-green-900/20 shadow-[0_0_15px_rgba(74,222,128,0.2)] dark:shadow-[0_0_15px_rgba(22,163,74,0.3)]' 
-                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
-                } shadow-sm flex flex-col relative`}
+                    : isSelected 
+                      ? 'border-blue-400 dark:border-blue-600 bg-blue-50/80 dark:bg-blue-900/20 shadow-md transform scale-[1.02]'
+                      : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600'
+                } flex flex-col relative`}
               >
                 {/* Column Header */}
-                <div className={`px-4 py-3 border-b flex justify-between items-center ${
-                  isToday ? 'border-green-300 dark:border-green-700 bg-green-100/80 dark:bg-green-800/40' : 'border-gray-100 dark:border-gray-700'
+                <div className={`px-3 py-3 border-b flex flex-col xl:flex-row xl:justify-between items-start xl:items-center gap-1 xl:gap-0 ${
+                  isToday 
+                    ? 'border-green-300 dark:border-green-700 bg-green-100/80 dark:bg-green-800/40' 
+                    : isSelected
+                      ? 'border-blue-300 dark:border-blue-700 bg-blue-100/80 dark:bg-blue-800/40'
+                      : 'border-gray-100 dark:border-gray-700'
                 }`}>
                   <div className="flex items-center gap-2">
                     <span className={`font-bold uppercase text-sm tracking-wider ${
@@ -189,8 +199,8 @@ export default function WeeklyEarningsCalendar() {
                       <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-green-600 text-white uppercase">Today</span>
                     )}
                   </div>
-                  <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-                    <span className={isToday ? "text-green-700 dark:text-green-400 font-medium" : ""}>{format(date, 'MMM d')}</span>
+                  <div className="flex items-center gap-1.5 text-[11px] xl:text-xs text-gray-500 dark:text-gray-400">
+                    <span className={isToday ? "text-green-700 dark:text-green-400 font-medium" : (isSelected ? "text-blue-700 dark:text-blue-400 font-medium" : "")}>{format(date, 'MMM d')}</span>
                     {!isHoliday && (
                       <span className="font-semibold px-1.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">{totalForDay}</span>
                     )}
@@ -198,7 +208,7 @@ export default function WeeklyEarningsCalendar() {
                 </div>
 
                 {/* Column Content */}
-                <div className="p-4 flex-1 overflow-y-auto max-h-[700px]">
+                <div className="p-3 flex-1 overflow-y-auto max-h-[400px] xl:max-h-[500px]">
                   {isHoliday ? (
                     <div className="h-full flex flex-col items-center justify-center text-gray-400 dark:text-gray-500 pt-10">
                       <Coffee size={32} className="mb-3 opacity-30 text-orange-500 dark:text-orange-400" />
@@ -235,6 +245,15 @@ export default function WeeklyEarningsCalendar() {
           })}
         </div>
       )}
+
+      {/* Detailed Earnings Table for the Selected Date */}
+      <div className="mt-4 pt-6 border-t border-gray-200 dark:border-gray-700">
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+          Details for {format(selectedDate, 'EEEE, MMMM d')}
+        </h3>
+        <TodaysEarningsFinnhub selectedDate={format(selectedDate, 'yyyy-MM-dd')} hideHeader={true} />
+      </div>
+
     </div>
   );
 }
