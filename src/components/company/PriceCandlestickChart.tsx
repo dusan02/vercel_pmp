@@ -9,7 +9,6 @@ import {
   CartesianGrid,
   Tooltip,
   Bar,
-  Customized,
 } from 'recharts';
 
 interface Candle {
@@ -83,64 +82,6 @@ function CandleTooltip({ active, payload }: any) {
   );
 }
 
-// ── Candle + volume renderer (drawn via Customized using axis scales) ─────────
-function CandleSeries(props: any) {
-  const { xAxisMap, yAxisMap, data } = props;
-  const xAxis: any = xAxisMap ? Object.values(xAxisMap)[0] : null;
-  const yAxis: any = yAxisMap ? Object.values(yAxisMap)[0] : null;
-  if (!xAxis || !yAxis || !data?.length) return null;
-
-  const xScale = xAxis.scale;
-  const yScale = yAxis.scale;
-  const bandwidth: number = typeof xScale.bandwidth === 'function' ? xScale.bandwidth() : 8;
-  const bodyW = Math.max(1, Math.min(bandwidth * 0.7, 14));
-
-  // Volume area: bottom 16% of the plot
-  const [yBottom, yTop] = yScale.range() as [number, number];
-  const plotHeight = yBottom - yTop;
-  const volTop = yBottom - plotHeight * 0.16;
-  const maxVol = Math.max(...data.map((d: ChartPoint) => d.v || 0), 1);
-
-  return (
-    <g>
-      {data.map((d: ChartPoint) => {
-        const xLeft = xScale(d.date);
-        if (xLeft == null || Number.isNaN(xLeft)) return null;
-        const cx = xLeft + bandwidth / 2;
-        const up = d.c >= d.o;
-        const color = up ? UP : DOWN;
-
-        const yHigh = yScale(d.h);
-        const yLow = yScale(d.l);
-        const yOpen = yScale(d.o);
-        const yClose = yScale(d.c);
-        const bodyTop = Math.min(yOpen, yClose);
-        const bodyH = Math.max(1, Math.abs(yClose - yOpen));
-
-        // Volume bar
-        const vH = maxVol > 0 ? ((d.v || 0) / maxVol) * (yBottom - volTop) : 0;
-
-        return (
-          <g key={d.t}>
-            {/* volume */}
-            <rect
-              x={cx - bodyW / 2}
-              y={yBottom - vH}
-              width={bodyW}
-              height={vH}
-              fill={color}
-              opacity={0.18}
-            />
-            {/* wick */}
-            <line x1={cx} x2={cx} y1={yHigh} y2={yLow} stroke={color} strokeWidth={1} />
-            {/* body */}
-            <rect x={cx - bodyW / 2} y={bodyTop} width={bodyW} height={bodyH} fill={color} />
-          </g>
-        );
-      })}
-    </g>
-  );
-}
 
 export function PriceCandlestickChart({ ticker }: PriceCandlestickChartProps) {
   const [allCandles, setAllCandles] = useState<Candle[] | null>(null);
@@ -279,10 +220,66 @@ export function PriceCandlestickChart({ ticker }: PriceCandlestickChartProps) {
             cursor={{ fill: 'rgba(148,163,184,0.12)' }}
             isAnimationActive={false}
           />
-          {/* Invisible bar: provides hover detection + tooltip payload */}
-          <Bar dataKey="h" fill="transparent" isAnimationActive={false} />
-          {/* Visible candles + volume drawn with axis scales */}
-          <Customized component={(p: any) => <CandleSeries {...p} data={data} />} />
+          {/* Visible candles + volume drawn as a custom shape inside Bar */}
+          <Bar 
+            dataKey="c" 
+            isAnimationActive={false} 
+            shape={(props: any) => {
+              const { x, width, payload } = props;
+              const d = payload as ChartPoint;
+              
+              if (!d || x == null) return null;
+              
+              // Calculate Y coordinates manually since Recharts 3 Bar shape only gives y for dataKey
+              const [minY, maxY] = yDomain;
+              const range = maxY - minY;
+              const top = 8;
+              const plotHeight = 340 - 8 - 4; // height - top - bottom
+              
+              const getY = (val: number) => {
+                if (range === 0) return top + plotHeight / 2;
+                return top + plotHeight * (1 - (val - minY) / range);
+              };
+              
+              const cx = x + width / 2;
+              const up = d.c >= d.o;
+              const color = up ? UP : DOWN;
+              
+              const yHigh = getY(d.h);
+              const yLow = getY(d.l);
+              const yOpen = getY(d.o);
+              const yClose = getY(d.c);
+              const bodyTop = Math.min(yOpen, yClose);
+              const bodyH = Math.max(1, Math.abs(yClose - yOpen));
+              
+              // Volume bar (bottom 16%)
+              const volTop = top + plotHeight * 0.84;
+              const yBottom = top + plotHeight;
+              const maxVol = Math.max(...data.map(pt => pt.v || 0), 1);
+              const vH = maxVol > 0 ? ((d.v || 0) / maxVol) * (yBottom - volTop) : 0;
+              
+              // Bar width clamp
+              const bodyW = Math.max(1, Math.min(width * 0.7, 14));
+              
+              return (
+                <g key={d.t}>
+                  {/* volume */}
+                  <rect
+                    x={cx - bodyW / 2}
+                    y={yBottom - vH}
+                    width={bodyW}
+                    height={vH}
+                    fill={color}
+                    opacity={0.18}
+                  />
+                  {/* wick */}
+                  <line x1={cx} x2={cx} y1={yHigh} y2={yLow} stroke={color} strokeWidth={1} />
+                  {/* body */}
+                  <rect x={cx - bodyW / 2} y={bodyTop} width={bodyW} height={bodyH} fill={color} />
+                </g>
+              );
+            }} 
+          />
         </ComposedChart>
       </ResponsiveContainer>
     </div>
