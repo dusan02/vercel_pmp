@@ -45,19 +45,20 @@ async function computeMetrics(symbol: string) {
     const latestAnnual = stmts.find(s => s.fiscalPeriod === 'FY') || latestStmt;
 
     // Helper for TTM calculation
-    const getTtmOrAnnual = (field: keyof typeof latestStmt) => {
+    const getTtmOrAnnual = (field: 'netIncome' | 'revenue' | 'ebit' | 'grossProfit' | 'sbc' | 'operatingCashFlow' | 'capex') => {
         if (has4Q) {
             let sum = 0;
             let valid = false;
             for (const s of ttmStmts) {
-                if (s[field] != null) {
-                    sum += s[field] as number;
+                const val = s[field as keyof typeof s];
+                if (val != null) {
+                    sum += val as number;
                     valid = true;
                 }
             }
             return valid ? sum : null;
         }
-        return latestAnnual?.[field as keyof typeof latestAnnual] as number | null ?? null;
+        return (latestAnnual as any)?.[field] as number | null ?? null;
     };
 
     const ttmNetIncome = getTtmOrAnnual('netIncome');
