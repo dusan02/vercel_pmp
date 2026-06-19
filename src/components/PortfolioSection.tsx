@@ -381,17 +381,6 @@ export function PortfolioSection({
           )}
         </div>
       </div>
-      {/* Visualizations: Only show when portfolio has stocks */}
-      {portfolioStocks.length > 0 && (
-        <div className="mb-8 space-y-8 px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <PortfolioSectorDistributionChart data={chartData} />
-            <PortfolioStockDistributionChart data={chartData} />
-          </div>
-          <PortfolioPerformanceTreemap data={chartData} />
-        </div>
-      )}
-
       {/* 4. Table */}
       <UniversalTable
         data={sortedPortfolioStocks}
@@ -421,6 +410,17 @@ export function PortfolioSection({
         // forceTable={true} // REMOVED to enable mobile cards
         tfootRows={footerRow}
       />
+
+      {/* Visualizations: Heatmap first, then 2x pie charts at the bottom */}
+      {portfolioStocks.length > 0 && (
+        <div className="mb-8 space-y-8 px-4 mt-8">
+          <PortfolioPerformanceTreemap data={chartData} />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <PortfolioSectorDistributionChart data={chartData} />
+            <PortfolioStockDistributionChart data={chartData} />
+          </div>
+        </div>
+      )}
     </section>
   );
 }

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import CompanyLogo from '@/components/CompanyLogo';
 import type { AnalysisData } from '@/components/company/AnalysisTab';
 import { formatMarketCap as fmtMcap, formatPrice, formatPercent, formatMarketCapDiff } from '@/lib/utils/format';
-import { getColorClass, getStrokeColor } from './ScoreCard';
 
 /** Wraps shared formatMarketCap — adds $ prefix, returns null for empty */
 export function formatMarketCap(val: number | null | undefined): string | null {
@@ -49,35 +48,6 @@ interface AnalysisHeaderProps {
     data: AnalysisData;
 }
 
-function MiniScoreCircle({ label, score }: { label: string; score: number | null }) {
-    const radius = 38;
-    const circumference = 2 * Math.PI * radius;
-    const displayScore = (score != null && !isNaN(score)) ? score : 0;
-    const strokeDashoffset = circumference - (displayScore / 100) * circumference;
-    const color = getColorClass(score);
-    const stroke = getStrokeColor(score);
-    return (
-        <div className="flex flex-col items-center gap-0.5 sm:gap-1">
-            <p className="text-[8px] sm:text-[9px] uppercase tracking-widest font-semibold text-gray-400 dark:text-gray-500 text-center">{label}</p>
-            <div className="relative w-[44px] h-[44px] sm:w-[60px] sm:h-[60px]">
-                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                    <circle cx="50" cy="50" r={radius} fill="transparent" stroke="currentColor" strokeWidth="10" className="text-gray-100 dark:text-gray-700" />
-                    <circle cx="50" cy="50" r={radius} fill="transparent" stroke={stroke} strokeWidth="10" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} className="transition-all duration-700 ease-out" />
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className={`text-sm sm:text-base font-bold leading-none ${color}`}>{score ?? '—'}</span>
-                    <span className="text-[7px] sm:text-[8px] text-gray-400 mt-0.5">/100</span>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-/** Truncate description to first N sentences */
-function truncateToSentences(text: string, n: number): string {
-    const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
-    return sentences.slice(0, n).join(' ').trim();
-}
 
 export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps) {
     const t = data.ticker;
@@ -121,7 +91,6 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
     ] : [];
 
     const companyName = (t?.name && t.name !== ticker) ? t.name : ticker;
-    const shortDesc = t?.description ? truncateToSentences(t.description, 4) : null;
 
     return (
         <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
@@ -194,60 +163,24 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
                             ) : null}
                         </div>
 
-                        {/* ── Score circles — full width row on mobile, inline on sm+ ── */}
-                        <div className="flex items-center justify-center sm:justify-end gap-3 sm:gap-4 w-full sm:w-auto sm:ml-auto shrink-0">
-                            <MiniScoreCircle label="Health" score={data.healthScore} />
-                            <MiniScoreCircle label="Profitability" score={data.profitabilityScore} />
-                            <MiniScoreCircle label="Valuation" score={data.valuationScore} />
-                        </div>
                     </div>
 
                     {/* ── Horizontal divider ── */}
                     <div className="border-t border-gray-100 dark:border-gray-700/60" />
 
-                    {/* ── BOTTOM: Stats left | Description right ── */}
-                    <div className="flex flex-col md:flex-row min-h-0">
-
-                        {/* Left: Stats — label + value inline */}
-                        <div className="w-full md:w-72 lg:w-80 shrink-0 px-6 lg:px-8 py-5 border-b md:border-b-0 md:border-r border-gray-100 dark:border-gray-700/60">
-                            <dl className="space-y-2">
-                                {stats.map(({ label, value }) => (
-                                    <div key={label} className="flex items-baseline gap-2">
-                                        <dt className="text-[10px] uppercase tracking-widest font-semibold text-gray-400 dark:text-gray-500 shrink-0 w-[104px]">
-                                            {label}
-                                        </dt>
-                                        <dd className={`text-sm font-semibold leading-snug ${value ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-gray-600'}`}>
-                                            {value || 'N/A'}
-                                        </dd>
-                                    </div>
-                                ))}
-                            </dl>
-                        </div>
-
-                        {/* Right: Company description */}
-                        <div className="flex-1 min-w-0 px-6 lg:px-8 py-5">
-                            <p className="text-[10px] uppercase tracking-widest font-semibold text-gray-400 dark:text-gray-500 mb-3 flex items-center gap-1.5">
-                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                Company Description
-                            </p>
-                            {shortDesc ? (
-                                <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-                                    {shortDesc}
-                                </p>
-                            ) : (
-                                <p className="text-sm text-gray-300 dark:text-gray-600 italic">
-                                    No description available. Run Deep Analysis to populate.
-                                </p>
-                            )}
-
-                            {data.verdictText && (
-                                <div className="mt-4 px-3.5 py-2.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 rounded-lg">
-                                    <p className="text-[10px] uppercase tracking-widest font-bold text-blue-500 dark:text-blue-400 mb-1">AI Verdict</p>
-                                    <p className="text-sm text-blue-800 dark:text-blue-200 leading-relaxed font-medium">{data.verdictText}</p>
+                    {/* ── BOTTOM: Clean horizontal stats grid ── */}
+                    <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-x-4 gap-y-3">
+                            {stats.map(({ label, value }) => (
+                                <div key={label}>
+                                    <p className="text-[10px] uppercase tracking-widest font-semibold text-gray-400 dark:text-gray-500">
+                                        {label}
+                                    </p>
+                                    <p className={`text-sm font-semibold mt-0.5 ${value ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-gray-600'}`}>
+                                        {value || 'N/A'}
+                                    </p>
                                 </div>
-                            )}
+                            ))}
                         </div>
                     </div>
                 </>

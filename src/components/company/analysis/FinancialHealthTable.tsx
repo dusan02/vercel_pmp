@@ -1,12 +1,38 @@
 import React from 'react';
 import { AnalysisData } from '../AnalysisTab';
 import { CompactMetricRow, MetricCardDef, StatusType, StatusBadge } from '../shared/MetricCard';
+import { getColorClass, getStrokeColor } from './ScoreCard';
 
 interface Props {
     ticker: string;
     data: AnalysisData;
     compareWith: string;
     secondaryData: AnalysisData | null;
+}
+
+// ── Score Ring (redesigned for Summary Card) ────────────────────────────────
+function ScoreRing({ label, score }: { label: string; score: number | null }) {
+    const radius = 42;
+    const circumference = 2 * Math.PI * radius;
+    const displayScore = (score != null && !isNaN(score)) ? score : 0;
+    const strokeDashoffset = circumference - (displayScore / 100) * circumference;
+    const color = getColorClass(score);
+    const stroke = getStrokeColor(score);
+    return (
+        <div className="flex flex-col items-center gap-2">
+            <p className="text-[10px] uppercase tracking-widest font-semibold text-gray-400 dark:text-gray-500">{label}</p>
+            <div className="relative w-[88px] h-[88px] sm:w-[100px] sm:h-[100px]">
+                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r={radius} fill="transparent" stroke="currentColor" strokeWidth="8" className="text-gray-100 dark:text-gray-700" />
+                    <circle cx="50" cy="50" r={radius} fill="transparent" stroke={stroke} strokeWidth="8" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} className="transition-all duration-700 ease-out" />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className={`text-xl sm:text-2xl font-bold ${color}`}>{score ?? '—'}</span>
+                    <span className="text-[9px] text-gray-400 mt-0.5">/ 100</span>
+                </div>
+            </div>
+        </div>
+    );
 }
 
 // ── Build all metrics ────────────────────────────────────────────────────────
@@ -178,6 +204,23 @@ export function FinancialHealthTable({ ticker, data, compareWith, secondaryData 
                         <h2 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">Key Financial Metrics</h2>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Comprehensive view of financial health, valuation, and quality</p>
                     </div>
+                </div>
+            </div>
+
+            {/* Summary Card: Scores + AI Verdict */}
+            <div className="bg-white dark:bg-[#15171e] rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-gray-100 dark:border-gray-800/80 mb-6">
+                <div className="flex flex-col lg:flex-row items-center gap-6">
+                    <div className="flex items-center justify-center gap-6 sm:gap-8 shrink-0">
+                        <ScoreRing label="Health" score={data.healthScore} />
+                        <ScoreRing label="Profitability" score={data.profitabilityScore} />
+                        <ScoreRing label="Valuation" score={data.valuationScore} />
+                    </div>
+                    {data.verdictText && (
+                        <div className="flex-1 min-w-0">
+                            <p className="text-[10px] uppercase tracking-widest font-bold text-blue-500 dark:text-blue-400 mb-2">AI Verdict</p>
+                            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{data.verdictText}</p>
+                        </div>
+                    )}
                 </div>
             </div>
 
