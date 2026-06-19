@@ -128,7 +128,11 @@ export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabP
 
     if (!data) {
         if (analyzing) return <LoadingSkeleton />;
-        if (error)     return (
+        if (error) return <div className="p-4 text-red-500">Error: {error}</div>;
+        return <div className="p-4 text-gray-500">No analysis data available.</div>;
+    }
+
+    return (
         <div className="space-y-6 p-4 bg-transparent dark:bg-gray-900 rounded-xl transition-all animate-fade-in">
 
             {/* ── Hero Section: Company Profile + Quick Search ── */}
@@ -267,5 +271,4 @@ export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabP
             </div>
         </div>
     );
-}
 }
