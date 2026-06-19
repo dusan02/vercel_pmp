@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { format, addDays, subWeeks, addWeeks, startOfWeek, isSameDay } from 'date-fns';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Coffee } from 'lucide-react';
 import CompanyLogo from './CompanyLogo';
+import { isMarketHoliday } from '@/lib/utils/timeUtils';
 
 // Helper to get ET current date
 const getETDate = () => {
@@ -161,6 +162,7 @@ export default function WeeklyEarningsCalendar() {
             const dateStr = format(date, 'yyyy-MM-dd');
             const dayData = weeklyData[dateStr];
             const isToday = isSameDay(date, todayET);
+            const isHoliday = isMarketHoliday(date);
             
             const totalForDay = dayData ? (dayData.preMarket?.length + dayData.afterMarket?.length + dayData.timeTbd?.length) : 0;
 
@@ -169,33 +171,41 @@ export default function WeeklyEarningsCalendar() {
                 key={dateStr} 
                 className={`flex-none w-[280px] snap-center rounded-xl overflow-hidden border ${
                   isToday 
-                    ? 'border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-900/10' 
+                    ? 'border-green-400 dark:border-green-600 bg-green-50/80 dark:bg-green-900/20 shadow-[0_0_15px_rgba(74,222,128,0.2)] dark:shadow-[0_0_15px_rgba(22,163,74,0.3)]' 
                     : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
-                } shadow-sm flex flex-col`}
+                } shadow-sm flex flex-col relative`}
               >
                 {/* Column Header */}
                 <div className={`px-4 py-3 border-b flex justify-between items-center ${
-                  isToday ? 'border-blue-200 dark:border-blue-800 bg-blue-100/50 dark:bg-blue-900/30' : 'border-gray-100 dark:border-gray-700'
+                  isToday ? 'border-green-300 dark:border-green-700 bg-green-100/80 dark:bg-green-800/40' : 'border-gray-100 dark:border-gray-700'
                 }`}>
                   <div className="flex items-center gap-2">
                     <span className={`font-bold uppercase text-sm tracking-wider ${
-                      isToday ? 'text-blue-700 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'
+                      isToday ? 'text-green-800 dark:text-green-300' : 'text-gray-700 dark:text-gray-300'
                     }`}>
                       {format(date, 'EEEE')}
                     </span>
                     {isToday && (
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-600 text-white uppercase">Today</span>
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-green-600 text-white uppercase">Today</span>
                     )}
                   </div>
                   <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-                    <span>{format(date, 'MMM d')}</span>
-                    <span className="font-semibold px-1.5 rounded-full bg-gray-100 dark:bg-gray-700">{totalForDay}</span>
+                    <span className={isToday ? "text-green-700 dark:text-green-400 font-medium" : ""}>{format(date, 'MMM d')}</span>
+                    {!isHoliday && (
+                      <span className="font-semibold px-1.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">{totalForDay}</span>
+                    )}
                   </div>
                 </div>
 
                 {/* Column Content */}
                 <div className="p-4 flex-1 overflow-y-auto max-h-[700px]">
-                  {!dayData || totalForDay === 0 ? (
+                  {isHoliday ? (
+                    <div className="h-full flex flex-col items-center justify-center text-gray-400 dark:text-gray-500 pt-10">
+                      <Coffee size={32} className="mb-3 opacity-30 text-orange-500 dark:text-orange-400" />
+                      <span className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-widest">Market Holiday</span>
+                      <span className="text-xs text-center mt-2 px-4 leading-relaxed">No earnings are scheduled on public holidays.</span>
+                    </div>
+                  ) : (!dayData || totalForDay === 0) ? (
                     <div className="h-full flex flex-col items-center justify-center text-gray-400 dark:text-gray-600 pt-10">
                       <CalendarIcon size={32} className="mb-2 opacity-20" />
                       <span className="text-sm">No reports</span>
