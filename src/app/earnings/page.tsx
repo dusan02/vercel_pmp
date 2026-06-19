@@ -6,11 +6,9 @@ import dynamic from 'next/dynamic';
 
 const baseUrl = 'https://premarketprice.com';
 
-// Dynamically import the earnings component (client component)
-// Note: ssr: false removed - component will be client-side only by default
-const TodaysEarningsFinnhub = dynamic(
-  () => import('@/components/TodaysEarningsFinnhub'),
-  { loading: () => <div className="p-4">Loading earnings data...</div> }
+const WeeklyEarningsCalendar = dynamic(
+  () => import('@/components/WeeklyEarningsCalendar'),
+  { loading: () => <div className="p-4">Loading weekly calendar...</div> }
 );
 
 export const metadata: Metadata = generatePageMetadata({
@@ -61,8 +59,8 @@ export default function EarningsPage() {
           </p>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-          <TodaysEarningsFinnhub />
+        <div className="bg-transparent mt-6">
+          <WeeklyEarningsCalendar />
         </div>
       </main>
 
