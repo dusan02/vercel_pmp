@@ -459,8 +459,19 @@ export class AnalysisService {
 
         const latestStmt = stmts[0];
         if (!latestStmt) return;
+        const annualStmts = stmts.filter(s => s.fiscalPeriod === 'FY');
+        const quarterlyStmts = stmts.filter(s => s.fiscalPeriod !== 'FY');
+        
+        // Compute TTMs
+        const ttmStmts = quarterlyStmts.slice(0, 4);
+        const has4Q = ttmStmts.length >= 4;
+        const ttmNetIncome = has4Q ? ttmStmts.reduce((sum, s) => sum + (s.netIncome || 0), 0) : null;
+        const ttmRevenue = has4Q ? ttmStmts.reduce((sum, s) => sum + (s.revenue || 0), 0) : null;
+        const ttmEbit = has4Q ? ttmStmts.reduce((sum, s) => sum + (s.ebit || 0), 0) : null;
+        const ttmOcf = has4Q ? ttmStmts.reduce((sum, s) => sum + (s.operatingCashFlow || 0), 0) : null;
+        const ttmCapex = has4Q ? ttmStmts.reduce((sum, s) => sum + (s.capex || 0), 0) : null;
+
         const prevStmt = stmts[1] || null;
-        const stmt5yAgo = stmts[19] || stmts[stmts.length - 1] || null;
 
         let healthScore = 50;
         let valuationScore = 50;
@@ -504,8 +515,8 @@ export class AnalysisService {
         let debtRepaymentYears: number | null = null;
         let humanDebtInfo: string | null = null;
 
-        if (latestStmt.operatingCashFlow !== null && latestStmt.capex !== null) {
-            fcf = latestStmt.operatingCashFlow - Math.abs(latestStmt.capex);
+        if (ttmOcf !== null && ttmCapex !== null) {
+            fcf = ttmOcf - Math.abs(ttmCapex);
             const netDebt = (latestStmt.totalDebt || 0) - (latestStmt.cashAndEquivalents || 0);
 
             if (netDebt <= 0) {
@@ -521,12 +532,12 @@ export class AnalysisService {
 
         let fcfMargin: number | null = null;
         if (fcf !== null && latestStmt.revenue && latestStmt.revenue > 0) {
-            fcfMargin = fcf / latestStmt.revenue;
+            fcfMargin = fcf / (ttmRevenue ?? latestStmt.revenue);
         }
 
         let fcfConversion: number | null = null;
         if (fcf !== null && latestStmt.netIncome && latestStmt.netIncome > 0) {
-            fcfConversion = fcf / latestStmt.netIncome;
+            fcfConversion = fcf / (ttmNetIncome ?? latestStmt.netIncome);
         }
 
         // Quality Stats
@@ -661,23 +672,11 @@ export class AnalysisService {
         valuationScore = 0;
         let humanPeInfo: string | null = null;
 
-        // Compute TTM Net Income (sum of last 4 quarterly statements)
-        const quarterlyStmts = stmts.filter(s => s.fiscalPeriod !== 'FY' && s.netIncome !== null);
-        const ttmNetIncome = quarterlyStmts.length >= 4
-            ? quarterlyStmts.slice(0, 4).reduce((sum, s) => sum + (s.netIncome || 0), 0)
-            : null;
+        
 
-        // Compute TTM Revenue (sum of last 4 quarterly statements)
-        const quarterlyRevenueStmts = stmts.filter(s => s.fiscalPeriod !== 'FY' && s.revenue !== null && s.revenue > 0);
-        const ttmRevenue = quarterlyRevenueStmts.length >= 4
-            ? quarterlyRevenueStmts.slice(0, 4).reduce((sum, s) => sum + (s.revenue || 0), 0)
-            : null;
+        
 
-        // Compute TTM EBIT (sum of last 4 quarterly statements)
-        const quarterlyEbitStmts = stmts.filter(s => s.fiscalPeriod !== 'FY' && s.ebit !== null);
-        const ttmEbit = quarterlyEbitStmts.length >= 4
-            ? quarterlyEbitStmts.slice(0, 4).reduce((sum, s) => sum + (s.ebit || 0), 0)
-            : null;
+        
 
         // 1. P/E Percentile (where current P/E sits in historical range)
         const allValuations = await prisma.dailyValuationHistory.findMany({
@@ -749,49 +748,57 @@ export class AnalysisService {
         // Deep-Dive (interestCoverage already computed above before healthScore)
         let revenueCagr: number | null = null;
         let netIncomeCagr: number | null = null;
-        const yearsBack = stmts.length >= 20 ? 5 : (stmts.length - 1) / 4;
-        if (stmt5yAgo && yearsBack > 0) {
-            if (latestStmt.revenue && stmt5yAgo.revenue && stmt5yAgo.revenue > 0) {
-                revenueCagr = (Math.pow(latestStmt.revenue / stmt5yAgo.revenue, 1 / yearsBack) - 1) * 100;
+        const latestAnnual = annualStmts[0] || null;
+        const stmt5yAgoAnnual = annualStmts[4] || annualStmts[annualStmts.length - 1] || null;
+        const yearsBack = annualStmts.length >= 5 ? 4 : (annualStmts.length - 1);
+        
+        if (latestAnnual && stmt5yAgoAnnual && yearsBack > 0) {
+            if (latestAnnual.revenue && stmt5yAgoAnnual.revenue && stmt5yAgoAnnual.revenue > 0) {
+                revenueCagr = (Math.pow(latestAnnual.revenue / stmt5yAgoAnnual.revenue, 1 / yearsBack) - 1) * 100;
             }
-            if (latestStmt.netIncome && stmt5yAgo.netIncome && stmt5yAgo.netIncome > 0 && latestStmt.netIncome > 0) {
-                netIncomeCagr = (Math.pow(latestStmt.netIncome / stmt5yAgo.netIncome, 1 / yearsBack) - 1) * 100;
+            if (latestAnnual.netIncome && stmt5yAgoAnnual.netIncome && stmt5yAgoAnnual.netIncome > 0 && latestAnnual.netIncome > 0) {
+                netIncomeCagr = (Math.pow(latestAnnual.netIncome / stmt5yAgoAnnual.netIncome, 1 / yearsBack) - 1) * 100;
             }
         }
 
         let piotroskiScore = 0;
-        if (prevStmt) {
-            const totalAssets = latestStmt.totalAssets || 1;
-            const prevTotalAssets = prevStmt.totalAssets || 1;
-            const roa = (latestStmt.netIncome || 0) / totalAssets;
-            const prevRoa = (prevStmt.netIncome || 0) / prevTotalAssets;
-            const cfo = (latestStmt.operatingCashFlow || 0) / totalAssets;
+        const prevAnnual = annualStmts[1] || null;
+        if (latestAnnual && prevAnnual) {
+            const lA = latestAnnual;
+            const pA = prevAnnual;
+            const totalAssets = lA.totalAssets || 1;
+            const prevTotalAssets = pA.totalAssets || 1;
+            const roa = (lA.netIncome || 0) / totalAssets;
+            const prevRoa = (pA.netIncome || 0) / prevTotalAssets;
+            const cfo = (lA.operatingCashFlow || 0) / totalAssets;
             if (roa > 0) piotroskiScore += 1;
-            if (latestStmt.operatingCashFlow && latestStmt.operatingCashFlow > 0) piotroskiScore += 1;
+            if (lA.operatingCashFlow && lA.operatingCashFlow > 0) piotroskiScore += 1;
             if (roa > prevRoa) piotroskiScore += 1;
             if (cfo > roa) piotroskiScore += 1;
 
-            const leverage = latestStmt.totalDebt && totalAssets > 0 ? latestStmt.totalDebt / totalAssets : 0;
-            const prevLeverage = prevStmt.totalDebt && prevTotalAssets > 0 ? prevStmt.totalDebt / prevTotalAssets : 0;
-            const currRatio = latestStmt.currentAssets && latestStmt.currentLiabilities ? latestStmt.currentAssets / latestStmt.currentLiabilities : 0;
-            const prevCurrRatio = prevStmt.currentAssets && prevStmt.currentLiabilities ? prevStmt.currentAssets / prevStmt.currentLiabilities : 0;
+            const leverage = lA.totalDebt && totalAssets > 0 ? lA.totalDebt / totalAssets : 0;
+            const prevLeverage = pA.totalDebt && prevTotalAssets > 0 ? pA.totalDebt / prevTotalAssets : 0;
+            const currRatio = lA.currentAssets && lA.currentLiabilities ? lA.currentAssets / lA.currentLiabilities : 0;
+            const prevCurrRatio = pA.currentAssets && pA.currentLiabilities ? pA.currentAssets / pA.currentLiabilities : 0;
             if (leverage < prevLeverage) piotroskiScore += 1;
             if (currRatio > prevCurrRatio) piotroskiScore += 1;
-            if ((latestStmt.sharesOutstanding || 0) <= (prevStmt.sharesOutstanding || 0)) piotroskiScore += 1;
+            if ((lA.sharesOutstanding || 0) <= (pA.sharesOutstanding || 0)) piotroskiScore += 1;
 
-            const gm = latestStmt.revenue ? (latestStmt.grossProfit || 0) / latestStmt.revenue : 0;
-            const prevGm = prevStmt.revenue ? (prevStmt.grossProfit || 0) / prevStmt.revenue : 0;
-            const at = latestStmt.revenue ? latestStmt.revenue / totalAssets : 0;
-            const prevAt = prevStmt.revenue ? prevStmt.revenue / prevTotalAssets : 0;
+            const gm = lA.revenue ? (lA.grossProfit || 0) / lA.revenue : 0;
+            const prevGm = pA.revenue ? (pA.grossProfit || 0) / pA.revenue : 0;
+            const at = lA.revenue ? lA.revenue / totalAssets : 0;
+            const prevAt = pA.revenue ? pA.revenue / prevTotalAssets : 0;
             if (gm > prevGm) piotroskiScore += 1;
             if (at > prevAt) piotroskiScore += 1;
         }
 
         let beneishScore: number | null = null;
-        if (prevStmt && latestStmt.revenue && prevStmt.revenue && prevStmt.revenue > 0) {
-            const dsri = ((latestStmt.currentAssets || 0) / latestStmt.revenue) / ((prevStmt.currentAssets || 0) / prevStmt.revenue);
-            const gmIndex = ((prevStmt.grossProfit || 0) / prevStmt.revenue) / ((latestStmt.grossProfit || 0) / latestStmt.revenue);
-            const sgi = latestStmt.revenue / prevStmt.revenue;
+        if (latestAnnual && prevAnnual && latestAnnual.revenue && prevAnnual.revenue && prevAnnual.revenue > 0) {
+            const lA = latestAnnual;
+            const pA = prevAnnual;
+            const dsri = ((lA.currentAssets || 0) / lA.revenue) / ((pA.currentAssets || 0) / pA.revenue);
+            const gmIndex = ((pA.grossProfit || 0) / pA.revenue) / ((lA.grossProfit || 0) / lA.revenue);
+            const sgi = lA.revenue / pA.revenue;
             beneishScore = -6.065 + 0.823 * (dsri || 1) + 0.906 * (gmIndex || 1) + 0.717 * (sgi || 1);
         }
 

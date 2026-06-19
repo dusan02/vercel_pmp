@@ -57,6 +57,15 @@ async function computeMetrics(symbol: string) {
     const sbcToRevenue = (sbc !== null && latestAnnual?.revenue && latestAnnual.revenue > 0)
         ? sbc / latestAnnual.revenue : null;
 
+    // Compute TTM for UI
+    const quarterlyStmts = stmts.filter(s => s.fiscalPeriod !== 'FY');
+    const ttmStmts = quarterlyStmts.slice(0, 4);
+    const has4Q = ttmStmts.length >= 4;
+    const ttmNetIncome = has4Q ? ttmStmts.reduce((sum, s) => sum + (s.netIncome || 0), 0) : null;
+    const ttmRevenue = has4Q ? ttmStmts.reduce((sum, s) => sum + (s.revenue || 0), 0) : null;
+    const ttmEbit = has4Q ? ttmStmts.reduce((sum, s) => sum + (s.ebit || 0), 0) : null;
+    const ttmGrossProfit = has4Q ? ttmStmts.reduce((sum, s) => sum + (s.grossProfit || 0), 0) : null;
+
     // Calculate Dilution (Share Count change)
     // stmts is already sorted by date desc
     const currentShares = latestStmt?.sharesOutstanding ?? null;
@@ -93,6 +102,12 @@ async function computeMetrics(symbol: string) {
             sharesOutstanding,
             dilution1y,
             dilution5y
+        },
+        ttm: {
+            netIncome: ttmNetIncome,
+            revenue: ttmRevenue,
+            ebit: ttmEbit,
+            grossProfit: ttmGrossProfit
         },
         metrics: {
             zScore: altmanZ,

@@ -88,6 +88,12 @@ export interface AnalysisData {
         dilution1y: number | null;
         dilution5y: number | null;
     } | null;
+    ttm?: {
+        netIncome: number | null;
+        revenue: number | null;
+        ebit: number | null;
+        grossProfit: number | null;
+    } | null;
 
     // Correlation / valuation extras
     priceHistory?: { date: string; price: number }[];

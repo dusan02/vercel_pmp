@@ -35,16 +35,19 @@ function buildMetrics(data: AnalysisData, sec: AnalysisData | null, cw: string) 
         return `$${val.toFixed(0)}`;
     }
 
-    const roe      = (fy?.netIncome && bs?.totalEquity && bs.totalEquity > 0) ? fy.netIncome / bs.totalEquity : null;
-    const sroe     = (sfy?.netIncome && sbs?.totalEquity && sbs.totalEquity > 0) ? sfy.netIncome / sbs.totalEquity : null;
-    const netMar   = (fy?.netIncome != null && fy?.revenue && fy.revenue > 0) ? fy.netIncome / fy.revenue : null;
-    const sNetMar  = (sfy?.netIncome != null && sfy?.revenue && sfy.revenue > 0) ? sfy.netIncome / sfy.revenue : null;
-    const grossMar = (fy?.grossProfit != null && fy?.revenue && fy.revenue > 0) ? fy.grossProfit / fy.revenue : null;
-    const sGrossMar= (sfy?.grossProfit != null && sfy?.revenue && sfy.revenue > 0) ? sfy.grossProfit / sfy.revenue : null;
+    const ttm = data.ttm;
+    const sttm = sec?.ttm;
+
+    const roe      = (ttm?.netIncome && bs?.totalEquity && bs.totalEquity > 0) ? ttm.netIncome / bs.totalEquity : null;
+    const sroe     = (sttm?.netIncome && sbs?.totalEquity && sbs.totalEquity > 0) ? sttm.netIncome / sbs.totalEquity : null;
+    const netMar   = (ttm?.netIncome != null && ttm?.revenue && ttm.revenue > 0) ? ttm.netIncome / ttm.revenue : null;
+    const sNetMar  = (sttm?.netIncome != null && sttm?.revenue && sttm.revenue > 0) ? sttm.netIncome / sttm.revenue : null;
+    const grossMar = (ttm?.grossProfit != null && ttm?.revenue && ttm.revenue > 0) ? ttm.grossProfit / ttm.revenue : null;
+    const sGrossMar= (sttm?.grossProfit != null && sttm?.revenue && sttm.revenue > 0) ? sttm.grossProfit / sttm.revenue : null;
     const pbRatio  = (mcap && bs?.totalEquity && bs.totalEquity > 0) ? mcap / bs.totalEquity : null;
     const spbRatio = (smcap && sbs?.totalEquity && sbs.totalEquity > 0) ? smcap / sbs.totalEquity : null;
-    const psRatio  = (mcap && fy?.revenue && fy.revenue > 0) ? mcap / fy.revenue : null;
-    const spsRatio = (smcap && sfy?.revenue && sfy.revenue > 0) ? smcap / sfy.revenue : null;
+    const psRatio  = (mcap && ttm?.revenue && ttm.revenue > 0) ? mcap / ttm.revenue : null;
+    const spsRatio = (smcap && sttm?.revenue && sttm.revenue > 0) ? smcap / sttm.revenue : null;
 
     const altZ   = m?.altmanZ ?? m?.zScore ?? null;
     const saltZ  = sm?.altmanZ ?? sm?.zScore ?? null;
