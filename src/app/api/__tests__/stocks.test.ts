@@ -23,6 +23,7 @@ jest.mock('@/lib/db/prisma', () => ({
           logoUrl: '/logos/nvda-32.webp',
           sharesOutstanding: 1_000_000_000,
           latestPrevClose: 780.0,
+          latestPrevCloseDate: new Date(),
           lastPrice: 800.0,
           lastChangePct: 2.56,
           lastMarketCap: 800_000_000_000,
@@ -37,6 +38,7 @@ jest.mock('@/lib/db/prisma', () => ({
           logoUrl: '/logos/mcd-32.webp',
           sharesOutstanding: 500_000_000,
           latestPrevClose: 315.0,
+          latestPrevCloseDate: new Date(),
           lastPrice: 320.0,
           lastChangePct: 1.58,
           lastMarketCap: 160_000_000_000,
@@ -51,6 +53,7 @@ jest.mock('@/lib/db/prisma', () => ({
           logoUrl: '/logos/aapl-32.webp',
           sharesOutstanding: 2_000_000_000,
           latestPrevClose: 195.0,
+          latestPrevCloseDate: new Date(),
           lastPrice: 200.0,
           lastChangePct: 2.56,
           lastMarketCap: 400_000_000_000,
@@ -105,12 +108,7 @@ import {
 import { prisma } from '@/lib/db/prisma';
 import * as redis from '@/lib/redis';
 
-jest.mock('@/lib/redis', () => ({
-    __esModule: true,
-    getCachedData: jest.fn().mockResolvedValue(null),
-    setCachedData: jest.fn().mockResolvedValue(undefined),
-    getCacheKey: jest.fn((project: any, ticker: any, type: any) => `test-cache-${project}-${ticker}-${type}`)
-}));
+
 
 describe('/api/stocks', () => {
 
