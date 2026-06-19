@@ -159,7 +159,7 @@ export default function WeeklyEarningsCalendar() {
       )}
 
       {!loading && !error && (
-        <div className="flex gap-3 overflow-x-auto pb-4 snap-x [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3 pb-4">
           {weekDays.map((date) => {
             const dateStr = format(date, 'yyyy-MM-dd');
             const dayData = weeklyData[dateStr];
@@ -173,7 +173,7 @@ export default function WeeklyEarningsCalendar() {
               <div 
                 key={dateStr} 
                 onClick={() => setSelectedDate(date)}
-                className={`flex-none w-[260px] lg:min-w-[150px] lg:flex-1 snap-center rounded-xl overflow-hidden border cursor-pointer transition-all ${
+                className={`snap-center rounded-xl overflow-hidden border cursor-pointer transition-all h-full ${
                   isToday 
                     ? 'border-green-400 dark:border-green-600 bg-green-50/80 dark:bg-green-900/20 shadow-[0_0_15px_rgba(74,222,128,0.2)] dark:shadow-[0_0_15px_rgba(22,163,74,0.3)]' 
                     : isSelected 

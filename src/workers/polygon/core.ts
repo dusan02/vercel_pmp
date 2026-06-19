@@ -524,87 +524,99 @@ async function upsertToDB(
       return { success: true, effectiveChangePct: changePctToUse, zScore, rvol };
     }
 
-    // Standard Upsert (New Data or Create)
-    await prisma.ticker.upsert({
-      where: { symbol },
-      update: {
-        updatedAt: new Date(),
-        lastPrice: normalized.price,
-        lastChangePct: changePctToUse,
-        lastMarketCap: marketCap,
-        lastMarketCapDiff: marketCapDiff,
-        lastPriceUpdated: normalized.timestamp,
-        lastVolume: normalized.volume,
-        ...(shouldUpdatePrevClose ? {
-          latestPrevClose: previousClose,
-          latestPrevCloseDate: lastTradingDay
-        } : {}),
-        latestMoversZScore: zScore,
-        latestMoversRVOL: rvol,
-        ...metadataUpdate
-      },
-      create: {
-        symbol,
-        updatedAt: new Date(),
-        lastPrice: normalized.price,
-        lastChangePct: changePctToUse,
-        lastMarketCap: marketCap,
-        lastMarketCapDiff: marketCapDiff,
-        lastPriceUpdated: normalized.timestamp,
-        lastVolume: normalized.volume,
-        latestPrevClose: previousClose || 0,
-        latestPrevCloseDate: previousClose ? lastTradingDay : null,
-        latestMoversZScore: zScore,
-        latestMoversRVOL: rvol,
-        sector: 'Unknown', // Default if metadata fetch failed
-        industry: 'Unknown',
-        ...metadataUpdate
-      }
-    });
+    // IMPORTANT: Skip upserting Ticker to SQLite on every tick to avoid P1008 DB locks.
+    // Real-time data is now served exclusively from Redis by the frontend.
+    // We only write to Ticker if it's a new symbol, a forced static update, or a date boundary.
+    const isNewDay = existingTicker?.lastPriceUpdated && existingTicker.lastPriceUpdated.getDate() !== normalized.timestamp.getDate();
+    const shouldUpdateTicker = !existingTicker || isStaticUpdateLocked || force || isNewDay;
 
-    // Upsert session price (SessionPrice)
-    // Same logic: check staleness against SessionPrice table
-    const pricingState = getPricingState(nowET());
-    const existingSession = await prisma.sessionPrice.findUnique({
-      where: { symbol_date_session: { symbol, date: today, session } }
-    });
-
-    const sessionCanOverwrite = existingSession && existingSession.lastPrice && existingSession.lastPrice > 0
-      ? canOverwritePrice(
-        pricingState,
-        { price: existingSession.lastPrice, timestamp: existingSession.lastTs, session: existingSession.session },
-        { price: normalized.price, timestamp: normalized.timestamp }
-      )
-      : true;
-
-    if (sessionCanOverwrite && (!existingSession || normalized.timestamp >= existingSession.lastTs)) {
-      await prisma.sessionPrice.upsert({
-        where: { symbol_date_session: { symbol, date: today, session } },
+    if (shouldUpdateTicker) {
+      // Standard Upsert (New Data or Create)
+      await prisma.ticker.upsert({
+        where: { symbol },
         update: {
+          updatedAt: new Date(),
           lastPrice: normalized.price,
-          lastTs: normalized.timestamp,
-          changePct: changePctToUse, // Use the resolved pct
-          source: normalized.quality,
-          quality: normalized.quality,
-          zScore,
-          rvol,
-          updatedAt: new Date()
+          lastChangePct: changePctToUse,
+          lastMarketCap: marketCap,
+          lastMarketCapDiff: marketCapDiff,
+          lastPriceUpdated: normalized.timestamp,
+          lastVolume: normalized.volume,
+          ...(shouldUpdatePrevClose ? {
+            latestPrevClose: previousClose,
+            latestPrevCloseDate: lastTradingDay
+          } : {}),
+          latestMoversZScore: zScore,
+          latestMoversRVOL: rvol,
+          ...metadataUpdate
         },
         create: {
-          symbol, date: today, session,
+          symbol,
+          updatedAt: new Date(),
           lastPrice: normalized.price,
-          lastTs: normalized.timestamp,
-          changePct: changePctToUse, // Use the resolved pct
-          source: normalized.quality,
-          quality: normalized.quality,
-          zScore,
-          rvol
+          lastChangePct: changePctToUse,
+          lastMarketCap: marketCap,
+          lastMarketCapDiff: marketCapDiff,
+          lastPriceUpdated: normalized.timestamp,
+          lastVolume: normalized.volume,
+          latestPrevClose: previousClose || 0,
+          latestPrevCloseDate: previousClose ? lastTradingDay : null,
+          latestMoversZScore: zScore,
+          latestMoversRVOL: rvol,
+          sector: 'Unknown', // Default if metadata fetch failed
+          industry: 'Unknown',
+          ...metadataUpdate
         }
       });
     }
 
+    // IMPORTANT: Skip upserting SessionPrice to SQLite during intraday to avoid P1008 locking.
+    // Redis is the primary source of truth for real-time prices.
+    // We only write to SessionPrice if we are doing a forced static update.
+    if (isStaticUpdateLocked || force) {
+      const existingSession = await prisma.sessionPrice.findUnique({
+        where: { symbol_date_session: { symbol, date: today, session } }
+      });
+
+      const sessionCanOverwrite = existingSession && existingSession.lastPrice && existingSession.lastPrice > 0
+        ? canOverwritePrice(
+          pricingStateNow,
+          { price: existingSession.lastPrice, timestamp: existingSession.lastTs, session: existingSession.session },
+          { price: normalized.price, timestamp: normalized.timestamp }
+        )
+        : true;
+
+      if (sessionCanOverwrite && (!existingSession || normalized.timestamp >= existingSession.lastTs)) {
+        await prisma.sessionPrice.upsert({
+          where: { symbol_date_session: { symbol, date: today, session } },
+          update: {
+            lastPrice: normalized.price,
+            lastTs: normalized.timestamp,
+            changePct: changePctToUse,
+            source: normalized.quality,
+            quality: normalized.quality,
+            zScore,
+            rvol,
+            updatedAt: new Date()
+          },
+          create: {
+            symbol, date: today, session,
+            lastPrice: normalized.price,
+            lastTs: normalized.timestamp,
+            changePct: changePctToUse,
+            source: normalized.quality,
+            quality: normalized.quality,
+            zScore,
+            rvol
+          }
+        });
+      }
+    }
+
     // Upsert daily ref if previous close is available
-    if (previousClose) {
+    // IMPORTANT: Skip updating dailyRef on every tick to avoid DB locks. 
+    // It's fetched/saved primarily during bootstrap and 16:00 ET close.
+    if (previousClose && (isStaticUpdateLocked || force)) {
       await prisma.dailyRef.upsert({
         where: { symbol_date: { symbol, date: today } },
         update: { previousClose, updatedAt: new Date() },
