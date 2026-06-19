@@ -90,7 +90,7 @@ function buildMetrics(data: AnalysisData, sec: AnalysisData | null, cw: string) 
         label: string, value: string, secondary: string | undefined,
         statusType: StatusType, statusLabel: string, hint: string,
         progress?: number
-    ): MetricCardDef => ({ label, value, secondaryValue: secondary, statusType, statusLabel, hint, progress });
+    ): MetricCardDef => ({ label, value, secondaryValue: secondary, statusType, statusLabel, hint, ...(progress !== undefined ? { progress } : {}) });
 
     const solvency: MetricCardDef[] = [
         def('Altman Z-Score', altZ != null ? altZ.toFixed(2) : 'N/A', s(altZ != null ? altZ.toFixed(2) : 'N/A'), altZ == null ? 'neutral' : altZ > 3 ? 'good' : altZ < 1.8 ? 'bad' : 'warn', altZ == null ? '-' : altZ > 3 ? 'Safe' : altZ < 1.8 ? 'Distress' : 'Grey', 'Bankruptcy risk. >3 Safe, <1.8 Distress', altZ != null ? (altZ / 5) * 100 : undefined),
