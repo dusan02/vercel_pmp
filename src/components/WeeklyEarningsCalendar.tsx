@@ -164,7 +164,10 @@ export default function WeeklyEarningsCalendar() {
             const dateStr = format(date, 'yyyy-MM-dd');
             const dayData = weeklyData[dateStr];
             const isToday = isSameDay(date, todayET);
-            const isHoliday = isMarketHoliday(date);
+            
+            // Fix timezone shift: create date at noon UTC to ensure it evaluates to the correct calendar day
+            const noonUTC = new Date(`${dateStr}T12:00:00Z`);
+            const isHoliday = isMarketHoliday(noonUTC);
             
             const totalForDay = dayData ? (dayData.preMarket?.length + dayData.afterMarket?.length + dayData.timeTbd?.length) : 0;
             const isSelected = isSameDay(date, selectedDate);

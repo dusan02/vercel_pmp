@@ -177,27 +177,36 @@ export async function POST(request: NextRequest) {
     const authError = verifyCronAuth(request);
     if (authError) return authError;
 
-    const today = new Date().toISOString().split('T')[0];
-    console.log(`🚀 Starting daily earnings calendar update for ${today}`);
+    console.log(`🚀 Starting daily earnings calendar update for extended range (-3 to +7 days)`);
+    let totalProcessed = 0;
+    const today = new Date();
 
-    // 1. Vyčisti existujúce záznamy pre dnešný dátum
-    if (!today) {
-      return NextResponse.json({ error: 'Date parameter is required' }, { status: 400 });
-    }
-    await clearEarningsCalendar(today);
+    for (let i = -3; i <= 7; i++) {
+      const targetDate = new Date(today);
+      targetDate.setDate(today.getDate() + i);
+      const dateStr = targetDate.toISOString().split('T')[0];
+      
+      if (!dateStr) continue;
+      
+      console.log(`\n--- Processing date: ${dateStr} ---`);
+      
+      // 1. Vyčisti existujúce záznamy pre tento dátum
+      await clearEarningsCalendar(dateStr);
 
-    // 2. Získaj earnings data z Yahoo Finance
-    const earningsData = await fetchEarningsFromYahoo(today);
+      // 2. Získaj earnings data z Yahoo Finance
+      const earningsData = await fetchEarningsFromYahoo(dateStr);
 
-    // 3. Ulož do databázy
-    if (earningsData.length > 0) {
-      await saveEarningsToDatabase(earningsData, today);
+      // 3. Ulož do databázy
+      if (earningsData.length > 0) {
+        await saveEarningsToDatabase(earningsData, dateStr);
+        totalProcessed += earningsData.length;
+      }
     }
 
     return NextResponse.json({
       success: true,
-      message: `Earnings calendar updated for ${today}`,
-      recordsProcessed: earningsData.length
+      message: `Earnings calendar updated for extended range`,
+      recordsProcessed: totalProcessed
     });
 
   } catch (error) {
@@ -212,28 +221,34 @@ export async function POST(request: NextRequest) {
 // GET endpoint pre manuálne spustenie (testing)
 export async function GET(request: NextRequest) {
   try {
-    const today = new Date().toISOString().split('T')[0];
-    console.log(`🔧 Manual earnings calendar update for ${today}`);
+    console.log(`🔧 Manual earnings calendar update for extended range (-3 to +7 days)`);
+    let totalProcessed = 0;
+    const today = new Date();
 
-    // 1. Vyčisti existujúce záznamy
-    if (!today) {
-      return NextResponse.json({ error: 'Date parameter is required' }, { status: 400 });
-    }
-    await clearEarningsCalendar(today);
+    for (let i = -3; i <= 7; i++) {
+      const targetDate = new Date(today);
+      targetDate.setDate(today.getDate() + i);
+      const dateStr = targetDate.toISOString().split('T')[0];
+      
+      if (!dateStr) continue;
 
-    // 2. Získaj earnings data
-    const earningsData = await fetchEarningsFromYahoo(today);
+      // 1. Vyčisti existujúce záznamy
+      await clearEarningsCalendar(dateStr);
 
-    // 3. Ulož do databázy
-    if (earningsData.length > 0) {
-      await saveEarningsToDatabase(earningsData, today);
+      // 2. Získaj earnings data
+      const earningsData = await fetchEarningsFromYahoo(dateStr);
+
+      // 3. Ulož do databázy
+      if (earningsData.length > 0) {
+        await saveEarningsToDatabase(earningsData, dateStr);
+        totalProcessed += earningsData.length;
+      }
     }
 
     return NextResponse.json({
       success: true,
-      message: `Manual earnings calendar update completed for ${today}`,
-      recordsProcessed: earningsData.length,
-      data: earningsData
+      message: `Manual earnings calendar update completed for extended range`,
+      recordsProcessed: totalProcessed
     });
 
   } catch (error) {
