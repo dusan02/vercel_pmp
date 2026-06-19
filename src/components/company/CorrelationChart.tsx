@@ -26,8 +26,9 @@ interface CorrelationChartProps {
 
 type Mode = 'ps' | 'pe';
 
-function formatDateTick(v: string) {
-  return v.slice(0, 7);
+function formatDateTick(v: string | unknown) {
+  if (typeof v === 'string') return v.slice(0, 7);
+  return String(v || '');
 }
 
 function formatYAxis(v: number) {

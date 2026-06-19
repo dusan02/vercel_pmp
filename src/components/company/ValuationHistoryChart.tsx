@@ -41,8 +41,10 @@ function fmtDollar(v: number) {
 }
 
 // ── Tick label formatter ────────────────────────────────────────────────────
-function formatXTick(dateStr: string) {
+function formatXTick(dateStr: string | unknown) {
+  if (typeof dateStr !== 'string' || !dateStr) return '';
   const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '';
   return d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
 }
 

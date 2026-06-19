@@ -266,16 +266,16 @@ export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabP
                 title="Scenario Lab"
                 subtitle="Interactive Investment Projection with Historical Price"
             >
-                {(!data.metrics?.currentEps || !data.metrics?.currentPe) ? (
+                {(data.metrics?.currentEps == null || data.metrics.currentEps <= 0 || data.metrics?.currentPe == null || data.metrics.currentPe <= 0) ? (
                     <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-lg text-center border border-gray-100 dark:border-gray-700/50">
-                        <p className="text-gray-500 dark:text-gray-400">Not enough data available to run scenarios. Missing valid EPS or P/E Ratio.</p>
+                        <p className="text-gray-500 dark:text-gray-400">Not enough data available to run scenarios. Missing valid EPS or P/E Ratio (must be positive).</p>
                     </div>
                 ) : (
                     <ScenarioLab
                         ticker={ticker}
                         currentEps={data.metrics.currentEps || 0}
                         currentPe={data.metrics.currentPe || 0}
-                        currentPrice={data.ticker?.lastPrice || data.ticker?.latestPrevClose || (data.metrics.currentEps || 0) * (data.metrics.currentPe || 0)}
+                        currentPrice={Math.max(0, data.ticker?.lastPrice || data.ticker?.latestPrevClose || (data.metrics.currentEps || 0) * (data.metrics.currentPe || 0))}
                     />
                 )}
             </ChartSection>
