@@ -138,7 +138,7 @@ export async function GET(
         const intrinsicSeries = impliedPricePE.length > 0 ? impliedPricePE : impliedPricePS;
         const valuationHistory = priceHistory.map(p => {
             // Find the most recent intrinsic point on or before this price date (forward-fill)
-            const validPoints = intrinsicSeries.filter(i => i.date <= p.date);
+            const validPoints = intrinsicSeries.filter(i => i.date <= (p.date || ''));
             if (validPoints.length === 0) return null;
             const intrinsicPoint = validPoints[validPoints.length - 1]!; // already sorted ascending
             
