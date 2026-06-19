@@ -410,28 +410,8 @@ export default function TodaysEarningsFinnhub({ initialData, selectedDate, hideH
     });
   };
 
-  // Show loading state
-  if (isLoading) {
-    return <EarningsLoader hideHeader={hideHeader} />;
-  }
-
-  // Show error state
-  if (error) {
-    return <EarningsError error={error} onRetry={refetch} hideHeader={hideHeader} />;
-  }
-
-  // Show empty state
-  if (!data || (!data.data.preMarket.length && !data.data.afterMarket.length)) {
-    return <EarningsEmpty hideHeader={hideHeader} />;
-  }
-
-  const sortedPreMarket = sortData(data.data.preMarket);
-  const sortedAfterMarket = sortData(data.data.afterMarket);
-
-  // Combine pre-market and after-market into one table
-  const allEarnings = [...sortedPreMarket, ...sortedAfterMarket];
-
-  // Column Definitions for UniversalTable
+  // Column Definitions for UniversalTable — MUST be defined before any conditional returns
+  // to maintain consistent hook count across renders (fixes React #310)
   const columns: ColumnDef<EarningsData>[] = React.useMemo(() => [
     {
       key: 'logo',
@@ -540,6 +520,27 @@ export default function TodaysEarningsFinnhub({ initialData, selectedDate, hideH
       }
     }
   ], []);
+
+  // Show loading state
+  if (isLoading) {
+    return <EarningsLoader hideHeader={hideHeader} />;
+  }
+
+  // Show error state
+  if (error) {
+    return <EarningsError error={error} onRetry={refetch} hideHeader={hideHeader} />;
+  }
+
+  // Show empty state
+  if (!data || (!data.data.preMarket.length && !data.data.afterMarket.length)) {
+    return <EarningsEmpty hideHeader={hideHeader} />;
+  }
+
+  const sortedPreMarket = sortData(data.data.preMarket);
+  const sortedAfterMarket = sortData(data.data.afterMarket);
+
+  // Combine pre-market and after-market into one table
+  const allEarnings = [...sortedPreMarket, ...sortedAfterMarket];
 
   return (
     <section className="todays-earnings border-none outline-none ring-0">
