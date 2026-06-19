@@ -1,6 +1,6 @@
 import React from 'react';
 import { AnalysisData } from '../AnalysisTab';
-import { MetricCard, MetricCardDef, StatusType, StatusBadge } from '../shared/MetricCard';
+import { CompactMetricRow, MetricCardDef, StatusType, StatusBadge } from '../shared/MetricCard';
 
 interface Props {
     ticker: string;
@@ -136,14 +136,14 @@ function buildMetrics(data: AnalysisData, sec: AnalysisData | null, cw: string) 
 // ── Sub-component for Grid Section ───────────────────────────────────────────
 function MetricGrid({ title, metrics, compareWith, children }: { title: string, metrics: MetricCardDef[], compareWith: string, children?: React.ReactNode }) {
     return (
-        <div className="mb-8 last:mb-0">
-            <div className="flex items-center gap-3 mb-4">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white">{title}</h3>
+        <div className="break-inside-avoid bg-white dark:bg-[#15171e] rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-gray-100 dark:border-gray-800/80 mb-6">
+            <div className="flex items-center justify-between mb-2">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">{title}</h3>
                 {children}
             </div>
-            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="flex flex-col">
                 {metrics.map((m, idx) => (
-                    <MetricCard key={idx} card={m} compareWith={compareWith} />
+                    <CompactMetricRow key={idx} card={m} compareWith={compareWith} />
                 ))}
             </div>
         </div>
@@ -172,16 +172,17 @@ export function FinancialHealthTable({ ticker, data, compareWith, secondaryData 
             </div>
 
             {/* Sections */}
-            <MetricGrid title="Profitability" metrics={profitability} compareWith={compareWith}>
-                {lossYears > 0 && (
-                    <StatusBadge label={`${lossYears} Loss Years (10Y)`} type={lossYears <= 2 ? 'warn' : 'bad'} />
-                )}
-            </MetricGrid>
-            <MetricGrid title="Valuation" metrics={valuation} compareWith={compareWith} />
-            <MetricGrid title="Growth & Dilution" metrics={growth} compareWith={compareWith} />
-            <MetricGrid title="Solvency & Debt" metrics={solvency} compareWith={compareWith} />
-            <MetricGrid title="Quality & Risk" metrics={quality} compareWith={compareWith} />
-            
+            <div className="columns-1 md:columns-2 xl:columns-3 gap-6">
+                <MetricGrid title="Profitability" metrics={profitability} compareWith={compareWith}>
+                    {lossYears > 0 && (
+                        <StatusBadge label={`${lossYears} Loss Years (10Y)`} type={lossYears <= 2 ? 'warn' : 'bad'} />
+                    )}
+                </MetricGrid>
+                <MetricGrid title="Valuation" metrics={valuation} compareWith={compareWith} />
+                <MetricGrid title="Growth & Dilution" metrics={growth} compareWith={compareWith} />
+                <MetricGrid title="Solvency & Debt" metrics={solvency} compareWith={compareWith} />
+                <MetricGrid title="Quality & Risk" metrics={quality} compareWith={compareWith} />
+            </div>
         </div>
     );
 }

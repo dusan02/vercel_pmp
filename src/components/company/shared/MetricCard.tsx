@@ -104,3 +104,43 @@ export function MetricCard({ card, compareWith, bgClass = 'bg-white dark:bg-gray
         </div>
     );
 }
+
+
+// ─── Compact Metric Row ──────────────────────────────────────────
+export function CompactMetricRow({ card, compareWith }: MetricCardProps) {
+    return (
+        <div className="py-3 border-b border-gray-100 dark:border-gray-800/60 last:border-0" title={card.hint}>
+            <div className="flex justify-between items-center mb-1.5">
+                <div className="flex items-center gap-2">
+                    <span className="text-[11px] uppercase tracking-widest font-semibold text-gray-500 dark:text-gray-400">
+                        {card.label}
+                    </span>
+                    {card.source === 'finnhub' && <SourceTag />}
+                </div>
+                <div className="flex items-center gap-3 text-right">
+                    <div className="flex flex-col items-end justify-center">
+                        <span className={`text-lg font-bold leading-none tracking-tight ${card.statusType === 'neutral' ? VALUE_COLORS.neutral : VALUE_COLORS[card.statusType]}`}>
+                            {card.value}
+                        </span>
+                        {compareWith && card.secondaryValue !== undefined && (
+                            <span className="text-[10px] text-gray-400 mt-0.5">
+                                vs {compareWith}: <span className="font-medium text-gray-500 dark:text-gray-400">{card.secondaryValue}</span>
+                            </span>
+                        )}
+                    </div>
+                    <div className="w-[60px] flex justify-end">
+                        <StatusBadge label={card.statusLabel} type={card.statusType} />
+                    </div>
+                </div>
+            </div>
+            {card.progress !== undefined && (
+                <div className="w-full h-[3px] bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden flex relative mt-2">
+                    <div 
+                        className={`h-full rounded-full transition-all duration-1000 ease-out ${PROGRESS_COLORS[card.statusType]}`}
+                        style={{ width: `${Math.max(0, Math.min(100, card.progress))}%` }}
+                    />
+                </div>
+            )}
+        </div>
+    );
+}
