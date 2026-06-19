@@ -43,13 +43,13 @@ export default function WeeklyEarningsCalendar() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Compute the 7 days of the selected week (Mon-Sun)
+  // Compute the 5 days of the selected week (Mon-Fri)
   const weekDays = useMemo(() => {
-    return Array.from({ length: 7 }).map((_, i) => addDays(currentDate, i));
+    return Array.from({ length: 5 }).map((_, i) => addDays(currentDate, i));
   }, [currentDate]);
 
   const startDateStr = format(weekDays[0]!, 'yyyy-MM-dd');
-  const endDateStr = format(weekDays[6]!, 'yyyy-MM-dd');
+  const endDateStr = format(weekDays[4]!, 'yyyy-MM-dd');
 
   useEffect(() => {
     const fetchWeekData = async () => {
@@ -159,7 +159,7 @@ export default function WeeklyEarningsCalendar() {
       )}
 
       {!loading && !error && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3 pb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 pb-4">
           {weekDays.map((date) => {
             const dateStr = format(date, 'yyyy-MM-dd');
             const dayData = weeklyData[dateStr];
@@ -173,42 +173,42 @@ export default function WeeklyEarningsCalendar() {
               <div 
                 key={dateStr} 
                 onClick={() => setSelectedDate(date)}
-                className={`snap-center rounded-xl overflow-hidden border cursor-pointer transition-all h-full ${
+                className={`snap-center rounded-2xl overflow-hidden border cursor-pointer transition-all h-[550px] xl:h-[650px] flex flex-col ${
                   isToday 
-                    ? 'border-green-400 dark:border-green-600 bg-green-50/80 dark:bg-green-900/20 shadow-[0_0_15px_rgba(74,222,128,0.2)] dark:shadow-[0_0_15px_rgba(22,163,74,0.3)]' 
-                    : isSelected 
-                      ? 'border-blue-400 dark:border-blue-600 bg-blue-50/80 dark:bg-blue-900/20 shadow-md transform scale-[1.02]'
-                      : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600'
-                } flex flex-col relative`}
+                    ? 'border-blue-200 dark:border-blue-800 bg-blue-50/30 dark:bg-blue-900/10 shadow-sm' 
+                    : isSelected
+                      ? 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-md ring-1 ring-gray-200 dark:ring-gray-700'
+                      : 'border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 hover:border-gray-200 dark:hover:border-gray-700'
+                }`}
               >
                 {/* Column Header */}
-                <div className={`px-3 py-3 border-b flex flex-col xl:flex-row xl:justify-between items-start xl:items-center gap-1 xl:gap-0 ${
+                <div className={`px-4 py-3.5 flex justify-between items-center ${
                   isToday 
-                    ? 'border-green-300 dark:border-green-700 bg-green-100/80 dark:bg-green-800/40' 
+                    ? 'border-b border-blue-100 dark:border-blue-800/50 bg-blue-50/60 dark:bg-blue-900/20' 
                     : isSelected
-                      ? 'border-blue-300 dark:border-blue-700 bg-blue-100/80 dark:bg-blue-800/40'
-                      : 'border-gray-100 dark:border-gray-700'
+                      ? 'border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/30'
+                      : 'border-b border-gray-50 dark:border-gray-800/80'
                 }`}>
                   <div className="flex items-center gap-2">
-                    <span className={`font-bold uppercase text-sm tracking-wider ${
-                      isToday ? 'text-green-800 dark:text-green-300' : 'text-gray-700 dark:text-gray-300'
+                    <span className={`font-bold text-xs uppercase tracking-wider ${
+                      isToday ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'
                     }`}>
                       {format(date, 'EEEE')}
                     </span>
                     {isToday && (
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-green-600 text-white uppercase">Today</span>
+                      <span className="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Today</span>
                     )}
                   </div>
-                  <div className="flex items-center gap-1.5 text-[11px] xl:text-xs text-gray-500 dark:text-gray-400">
-                    <span className={isToday ? "text-green-700 dark:text-green-400 font-medium" : (isSelected ? "text-blue-700 dark:text-blue-400 font-medium" : "")}>{format(date, 'MMM d')}</span>
-                    {!isHoliday && (
-                      <span className="font-semibold px-1.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">{totalForDay}</span>
+                  <div className="flex items-center gap-2 text-[11px] text-gray-400 font-medium">
+                    <span>{format(date, 'MMM d')}</span>
+                    {!isHoliday && totalForDay > 0 && (
+                      <span className="font-semibold text-gray-500">{totalForDay}</span>
                     )}
                   </div>
                 </div>
 
                 {/* Column Content */}
-                <div className="p-3 flex-1 overflow-y-auto max-h-[400px] xl:max-h-[500px]">
+                <div className="p-4 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                   {isHoliday ? (
                     <div className="h-full flex flex-col items-center justify-center text-gray-400 dark:text-gray-500 pt-10">
                       <Coffee size={32} className="mb-3 opacity-30 text-orange-500 dark:text-orange-400" />
@@ -216,9 +216,9 @@ export default function WeeklyEarningsCalendar() {
                       <span className="text-xs text-center mt-2 px-4 leading-relaxed">No earnings are scheduled on public holidays.</span>
                     </div>
                   ) : (!dayData || totalForDay === 0) ? (
-                    <div className="h-full flex flex-col items-center justify-center text-gray-400 dark:text-gray-600 pt-10">
-                      <CalendarIcon size={32} className="mb-2 opacity-20" />
-                      <span className="text-sm">No reports</span>
+                    <div className="h-full flex flex-col items-center pt-20 text-gray-300 dark:text-gray-600">
+                      <CalendarIcon size={32} className="mb-2 opacity-30" />
+                      <span className="text-sm font-medium">No reports</span>
                     </div>
                   ) : (
                     <div className="flex flex-col gap-6">
