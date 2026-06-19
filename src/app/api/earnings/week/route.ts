@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
   for (let i = 0; i < 5; i++) {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
-    weekDates.push(d.toISOString().split('T')[0]);
+    weekDates.push(d.toISOString().slice(0, 10));
   }
   
   const refresh = searchParams.get('refresh') === 'true';

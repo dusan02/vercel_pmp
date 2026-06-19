@@ -45,8 +45,8 @@ export default function WeeklyEarningsCalendar() {
     return Array.from({ length: 5 }).map((_, i) => addDays(currentDate, i));
   }, [currentDate]);
 
-  const startDateStr = format(weekDays[0], 'yyyy-MM-dd');
-  const endDateStr = format(weekDays[4], 'yyyy-MM-dd');
+  const startDateStr = format(weekDays[0]!, 'yyyy-MM-dd');
+  const endDateStr = format(weekDays[4]!, 'yyyy-MM-dd');
 
   useEffect(() => {
     const fetchWeekData = async () => {
