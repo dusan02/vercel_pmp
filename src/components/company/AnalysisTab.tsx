@@ -12,7 +12,6 @@ import { FinancialHealthTable } from './analysis/FinancialHealthTable';
 import { ScenarioLab } from './analysis/ScenarioLab';
 import { useAnalysis } from '../../hooks/useAnalysis';
 import { LoadingSkeleton } from './analysis/LoadingSkeleton';
-import { BalanceSheetTable } from './analysis/BalanceSheetTable';
 import { ChartSection } from './shared/ChartSection';
 
 const ValuationCharts = lazy(() => import('./ValuationCharts'));
@@ -245,16 +244,6 @@ export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabP
                         />
                     </Suspense>
                 </ChartSection>
-            </div>
-
-            {/* ── Bottom Section: Tools & Insights (2-Column Grid) ── */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                <BalanceSheetTable
-                    ticker={ticker}
-                    data={data}
-                    compareWith={compareWith}
-                    secondaryData={secondaryData}
-                />
 
                 <ChartSection
                     iconBgClass="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"

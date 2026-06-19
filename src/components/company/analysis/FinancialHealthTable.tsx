@@ -130,7 +130,17 @@ function buildMetrics(data: AnalysisData, sec: AnalysisData | null, cw: string) 
         def('SBC / Net Income', sbc != null ? `${sbc.toFixed(1)}%` : 'N/A', s(ssbc != null ? `${ssbc.toFixed(1)}%` : 'N/A'), sbc == null ? 'neutral' : sbc < 10 ? 'good' : sbc < 20 ? 'warn' : 'bad', sbc == null ? '-' : sbc < 10 ? 'Low' : sbc < 20 ? 'Med' : 'High', 'Stock-based comp/Net income. >30% = dilution risk'),
     ];
 
-    return { solvency, profitability, growth, valuation, quality, lossYears: niYrs };
+    const balanceSheet: MetricCardDef[] = [
+        def('Total Debt', fmtB(bs?.totalDebt), s(fmtB(sbs?.totalDebt)), 'neutral', '-', 'Total debt obligations (short + long term)'),
+        def('Cash & Equiv.', fmtB(bs?.cash), s(fmtB(sbs?.cash)), 'neutral', '-', 'Cash and short-term investments'),
+        def('Net Debt', fmtB(bs?.netDebt), s(fmtB(sbs?.netDebt)), bs?.netDebt != null ? (bs.netDebt < 0 ? 'good' : 'neutral') : 'neutral', bs?.netDebt != null && bs.netDebt < 0 ? 'Net Cash' : '-', 'Total Debt minus Cash. Negative = Net Cash position'),
+        def('Total Equity', fmtB(bs?.totalEquity), s(fmtB(sbs?.totalEquity)), 'neutral', '-', "Shareholders' equity (book value)"),
+        def('Current Ratio', bs?.currentRatio != null ? `${bs.currentRatio.toFixed(2)}x` : 'N/A', s(sbs?.currentRatio != null ? `${sbs.currentRatio.toFixed(2)}x` : 'N/A'), bs?.currentRatio == null ? 'neutral' : bs.currentRatio >= 2 ? 'good' : bs.currentRatio >= 1 ? 'warn' : 'bad', bs?.currentRatio == null ? '-' : bs.currentRatio >= 2 ? 'Strong' : bs.currentRatio >= 1 ? 'Adequate' : 'Weak', 'Current Assets / Current Liabilities. > 2 is strong', bs?.currentRatio != null ? Math.min(100, (bs.currentRatio / 3) * 100) : undefined),
+        def('Asset / Liability', bs?.assetToLiability != null ? `${bs.assetToLiability.toFixed(2)}x` : 'N/A', s(sbs?.assetToLiability != null ? `${sbs.assetToLiability.toFixed(2)}x` : 'N/A'), bs?.assetToLiability == null ? 'neutral' : bs.assetToLiability >= 2 ? 'good' : bs.assetToLiability >= 1 ? 'warn' : 'bad', bs?.assetToLiability == null ? '-' : bs.assetToLiability >= 2 ? 'Solid' : bs.assetToLiability >= 1 ? 'Adequate' : 'Risky', 'Total Assets / Total Liabilities', bs?.assetToLiability != null ? Math.min(100, (bs.assetToLiability / 3) * 100) : undefined),
+    ];
+
+
+    return { solvency, profitability, growth, valuation, quality, balanceSheet, lossYears: niYrs };
 }
 
 // ── Sub-component for Grid Section ───────────────────────────────────────────
@@ -152,7 +162,7 @@ function MetricGrid({ title, metrics, compareWith, children }: { title: string, 
 
 // ── Main export ──────────────────────────────────────────────────────────────
 export function FinancialHealthTable({ ticker, data, compareWith, secondaryData }: Props) {
-    const { solvency, profitability, growth, valuation, quality, lossYears } = buildMetrics(data, secondaryData, compareWith);
+    const { solvency, profitability, growth, valuation, quality, balanceSheet, lossYears } = buildMetrics(data, secondaryData, compareWith);
 
     return (
         <div className="bg-transparent">
@@ -182,6 +192,7 @@ export function FinancialHealthTable({ ticker, data, compareWith, secondaryData 
                 <MetricGrid title="Growth & Dilution" metrics={growth} compareWith={compareWith} />
                 <MetricGrid title="Solvency & Debt" metrics={solvency} compareWith={compareWith} />
                 <MetricGrid title="Quality & Risk" metrics={quality} compareWith={compareWith} />
+                <MetricGrid title="Balance Sheet" metrics={balanceSheet} compareWith={compareWith} />
             </div>
         </div>
     );
