@@ -262,7 +262,7 @@ const EarningsHeader = () => (
 );
 
 // Loading component for earnings
-const EarningsLoader = ({ hideHeader }: { hideHeader?: boolean }) => (
+const EarningsLoader = ({ hideHeader }: { hideHeader?: boolean | undefined }) => (
   <section className="todays-earnings">
     {!hideHeader && <EarningsHeader />}
     <div className="flex items-center justify-center p-8 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800">
@@ -272,7 +272,7 @@ const EarningsLoader = ({ hideHeader }: { hideHeader?: boolean }) => (
 );
 
 // Error component for earnings - REFAKTOROVANÝ
-const EarningsError = ({ error, onRetry, hideHeader }: { error: string; onRetry: () => void, hideHeader?: boolean }) => (
+const EarningsError = ({ error, onRetry, hideHeader }: { error: string; onRetry: () => void, hideHeader?: boolean | undefined }) => (
   <section className="todays-earnings">
     {!hideHeader && <EarningsHeader />}
     <div className="flex flex-col items-center justify-center gap-3 py-16 px-4 text-center bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800">
@@ -296,7 +296,7 @@ const EarningsError = ({ error, onRetry, hideHeader }: { error: string; onRetry:
 );
 
 // Empty state component for earnings - REFAKTOROVANÝ
-const EarningsEmpty = ({ hideHeader }: { hideHeader?: boolean }) => (
+const EarningsEmpty = ({ hideHeader }: { hideHeader?: boolean | undefined }) => (
   <section className="todays-earnings">
     {!hideHeader && <EarningsHeader />}
     <div className="flex flex-col items-center justify-center gap-3 py-16 px-4 text-center bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800">
