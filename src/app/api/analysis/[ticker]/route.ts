@@ -139,6 +139,66 @@ async function computeMetrics(symbol: string) {
     };
 }
 
+export async function GET(
+    request: Request,
+    { params }: { params: Promise<{ ticker: string }> }
+) {
+    const { ticker } = await params;
+    const symbol = ticker.toUpperCase();
+    const { searchParams } = new URL(request.url);
+    const compareSymbol = searchParams.get('compare')?.toUpperCase() || null;
+
+    try {
+        const primary = await computeMetrics(symbol);
+        if (!primary) return NextResponse.json(null);
+
+        // Also fetch sector peers and ticker details (logo, sector, description)
+        const tickerRecord = await prisma.ticker.findUnique({
+            where: { symbol },
+            select: { sector: true, industry: true, description: true, websiteUrl: true, name: true, logoUrl: true, employees: true, lastPrice: true, lastMarketCap: true, lastChangePct: true, lastMarketCapDiff: true, headquarters: true, lastPriceUpdated: true, latestPrevClose: true }
+        });
+
+        let peers: string[] = [];
+        if (tickerRecord?.sector) {
+            const peerTickers = await prisma.ticker.findMany({
+                where: { sector: tickerRecord.sector, symbol: { not: symbol } },
+                select: { symbol: true },
+                take: 4,
+                orderBy: { lastMarketCap: 'desc' },
+            });
+            peers = peerTickers.map((t: { symbol: string }) => t.symbol);
+        }
+
+        // If compare requested, fetch secondary analysis
+        if (compareSymbol) {
+            const secondary = await computeMetrics(compareSymbol);
+            return NextResponse.json({
+                primary: { ...primary, ticker: tickerRecord },
+                secondary,
+                peers
+            });
+        }
+
+        // Background revalidation: if cache is stale (> 7 days), trigger async refresh
+        // without blocking the response — next load will see fresh data
+        const cacheAge = await prisma.analysisCache.findUnique({
+            where: { symbol },
+            select: { updatedAt: true },
+        });
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        if (cacheAge && cacheAge.updatedAt < sevenDaysAgo) {
+            // Fire-and-forget background refresh (non-blocking)
+            fetch(`${new URL(request.url).origin}/api/analysis/${symbol}`, { method: 'POST' })
+                .catch(() => {/* silent — background job */});
+        }
+
+        return NextResponse.json({ ...primary, ticker: tickerRecord, peers });
+    } catch (error) {
+        console.error(`Error fetching analysis for ${symbol}:`, error);
+        return NextResponse.json({ error: 'Failed to fetch analysis' }, { status: 500 });
+    }
+}
+
 export async function POST(
     request: Request,
     { params }: { params: Promise<{ ticker: string }> }
