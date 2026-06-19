@@ -23,48 +23,66 @@ async function computeMetrics(symbol: string) {
     const altmanZ = cached.altmanZ;
     const debtRepaymentYears = cached.debtRepaymentYears;
     const fcfYield = latestValuation?.fcfYield ?? null;
-    let currentEps = null;
     let currentPe = latestValuation?.peRatio || null;
 
-    if (latestStmt) {
-        if (latestStmt.netIncome !== null && latestStmt.sharesOutstanding !== null && latestStmt.sharesOutstanding > 0) {
-            currentEps = latestStmt.netIncome / latestStmt.sharesOutstanding;
+    // Snapshot variables MUST come from latestStmt (most recent quarter or annual)
+    const totalDebt = latestStmt?.totalDebt ?? null;
+    const cash = latestStmt?.cashAndEquivalents ?? null;
+    const netDebt = (totalDebt !== null && cash !== null) ? totalDebt - cash : null;
+    const totalEquity = latestStmt?.totalEquity ?? null;
+    const totalAssets = latestStmt?.totalAssets ?? null;
+    const totalLiabilities = latestStmt?.totalLiabilities ?? null;
+    const currentAssets = latestStmt?.currentAssets ?? null;
+    const currentLiabilities = latestStmt?.currentLiabilities ?? null;
+    const sharesOutstanding = latestStmt?.sharesOutstanding ?? null;
+    const sbcSnapshot = latestStmt?.sbc ?? null;
+
+    // TTM Flow Variables
+    const quarterlyStmts = stmts.filter(s => s.fiscalPeriod !== 'FY');
+    const ttmStmts = quarterlyStmts.slice(0, 4);
+    const has4Q = ttmStmts.length >= 4;
+
+    const latestAnnual = stmts.find(s => s.fiscalPeriod === 'FY') || latestStmt;
+
+    // Helper for TTM calculation
+    const getTtmOrAnnual = (field: keyof typeof latestStmt) => {
+        if (has4Q) {
+            let sum = 0;
+            let valid = false;
+            for (const s of ttmStmts) {
+                if (s[field] != null) {
+                    sum += s[field] as number;
+                    valid = true;
+                }
+            }
+            return valid ? sum : null;
         }
+        return latestAnnual?.[field as keyof typeof latestAnnual] as number | null ?? null;
+    };
+
+    const ttmNetIncome = getTtmOrAnnual('netIncome');
+    const ttmRevenue = getTtmOrAnnual('revenue');
+    const ttmEbit = getTtmOrAnnual('ebit');
+    const ttmGrossProfit = getTtmOrAnnual('grossProfit');
+    const ttmSbc = getTtmOrAnnual('sbc');
+
+    let currentEps = null;
+    if (ttmNetIncome !== null && sharesOutstanding !== null && sharesOutstanding > 0) {
+        currentEps = ttmNetIncome / sharesOutstanding;
     }
 
-    // Balance Sheet from latest annual statement
-    const latestAnnual = stmts.find(s => s.fiscalPeriod === 'FY') || latestStmt;
-    const totalDebt = latestAnnual?.totalDebt ?? null;
-    const cash = latestAnnual?.cashAndEquivalents ?? null;
-    const netDebt = (totalDebt !== null && cash !== null) ? totalDebt - cash : null;
-    const totalEquity = latestAnnual?.totalEquity ?? null;
-    const totalAssets = latestAnnual?.totalAssets ?? null;
-    const totalLiabilities = latestAnnual?.totalLiabilities ?? null;
-    const currentAssets = latestAnnual?.currentAssets ?? null;
-    const currentLiabilities = latestAnnual?.currentLiabilities ?? null;
-    const sbc = latestAnnual?.sbc ?? null;
-    const sharesOutstanding = latestAnnual?.sharesOutstanding ?? null;
-    const ebit = latestAnnual?.ebit ?? null;
     const debtToEquity = (totalDebt !== null && totalEquity !== null && totalEquity !== 0)
         ? totalDebt / totalEquity : null;
     const currentRatio = (currentAssets !== null && currentLiabilities !== null && currentLiabilities !== 0)
         ? currentAssets / currentLiabilities : null;
     const assetToLiability = (totalAssets !== null && totalLiabilities !== null && totalLiabilities !== 0)
         ? totalAssets / totalLiabilities : null;
-    // Net Debt / EBIT
-    const netDebtToEbit = (netDebt !== null && ebit !== null && ebit !== 0)
-        ? netDebt / ebit : null;
-    const sbcToRevenue = (sbc !== null && latestAnnual?.revenue && latestAnnual.revenue > 0)
-        ? sbc / latestAnnual.revenue : null;
-
-    // Compute TTM for UI
-    const quarterlyStmts = stmts.filter(s => s.fiscalPeriod !== 'FY');
-    const ttmStmts = quarterlyStmts.slice(0, 4);
-    const has4Q = ttmStmts.length >= 4;
-    const ttmNetIncome = has4Q ? ttmStmts.reduce((sum, s) => sum + (s.netIncome || 0), 0) : null;
-    const ttmRevenue = has4Q ? ttmStmts.reduce((sum, s) => sum + (s.revenue || 0), 0) : null;
-    const ttmEbit = has4Q ? ttmStmts.reduce((sum, s) => sum + (s.ebit || 0), 0) : null;
-    const ttmGrossProfit = has4Q ? ttmStmts.reduce((sum, s) => sum + (s.grossProfit || 0), 0) : null;
+    const netDebtToEbit = (netDebt !== null && ttmEbit !== null && ttmEbit !== 0)
+        ? netDebt / ttmEbit : null;
+    const sbcToRevenue = (ttmSbc !== null && ttmRevenue !== null && ttmRevenue > 0)
+        ? ttmSbc / ttmRevenue : null;
+    const sbcRatio = (ttmSbc !== null && ttmNetIncome !== null && ttmNetIncome > 0)
+        ? (ttmSbc / ttmNetIncome) * 100 : null;
 
     // Calculate Dilution (Share Count change)
     // stmts is already sorted by date desc
@@ -76,9 +94,6 @@ async function computeMetrics(symbol: string) {
         ? (currentShares / stmt1y.sharesOutstanding - 1) * 100 : null;
     const dilution5y = (currentShares && stmt5y?.sharesOutstanding)
         ? (currentShares / stmt5y.sharesOutstanding - 1) * 100 : null;
-
-    const netIncome = latestStmt?.netIncome ?? 0;
-    const sbcRatio = (sbc !== null && netIncome > 0) ? (sbc / netIncome) * 100 : null;
 
     return {
         ...analysis,
@@ -96,7 +111,7 @@ async function computeMetrics(symbol: string) {
             currentRatio,
             assetToLiability,
             netDebtToEbit,
-            sbc,
+            sbc: sbcSnapshot,
             sbcToRevenue,
             sbcRatio,
             sharesOutstanding,
@@ -121,66 +136,6 @@ async function computeMetrics(symbol: string) {
             fcfConversion: cached.fcfConversion
         }
     };
-}
-
-export async function GET(
-    request: Request,
-    { params }: { params: Promise<{ ticker: string }> }
-) {
-    const { ticker } = await params;
-    const symbol = ticker.toUpperCase();
-    const { searchParams } = new URL(request.url);
-    const compareSymbol = searchParams.get('compare')?.toUpperCase() || null;
-
-    try {
-        const primary = await computeMetrics(symbol);
-        if (!primary) return NextResponse.json(null);
-
-        // Also fetch sector peers and ticker details (logo, sector, description)
-        const tickerRecord = await prisma.ticker.findUnique({
-            where: { symbol },
-            select: { sector: true, industry: true, description: true, websiteUrl: true, name: true, logoUrl: true, employees: true, lastPrice: true, lastMarketCap: true, lastChangePct: true, lastMarketCapDiff: true, headquarters: true, lastPriceUpdated: true, latestPrevClose: true }
-        });
-
-        let peers: string[] = [];
-        if (tickerRecord?.sector) {
-            const peerTickers = await prisma.ticker.findMany({
-                where: { sector: tickerRecord.sector, symbol: { not: symbol } },
-                select: { symbol: true },
-                take: 4,
-                orderBy: { lastMarketCap: 'desc' },
-            });
-            peers = peerTickers.map((t: { symbol: string }) => t.symbol);
-        }
-
-        // If compare requested, fetch secondary analysis
-        if (compareSymbol) {
-            const secondary = await computeMetrics(compareSymbol);
-            return NextResponse.json({
-                primary: { ...primary, ticker: tickerRecord },
-                secondary,
-                peers
-            });
-        }
-
-        // Background revalidation: if cache is stale (> 7 days), trigger async refresh
-        // without blocking the response — next load will see fresh data
-        const cacheAge = await prisma.analysisCache.findUnique({
-            where: { symbol },
-            select: { updatedAt: true },
-        });
-        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-        if (cacheAge && cacheAge.updatedAt < sevenDaysAgo) {
-            // Fire-and-forget background refresh (non-blocking)
-            fetch(`${new URL(request.url).origin}/api/analysis/${symbol}`, { method: 'POST' })
-                .catch(() => {/* silent — background job */});
-        }
-
-        return NextResponse.json({ ...primary, ticker: tickerRecord, peers });
-    } catch (error) {
-        console.error(`Error fetching analysis for ${symbol}:`, error);
-        return NextResponse.json({ error: 'Failed to fetch analysis' }, { status: 500 });
-    }
 }
 
 export async function POST(

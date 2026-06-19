@@ -25,10 +25,10 @@ export function PageHeader({ navigation, onLogoClick }: PageHeaderProps) {
             onClick={onLogoClick}
           >
             <BrandLogo size={40} className="flex-shrink-0" />
-            <h1 className="font-['Space_Grotesk'] font-bold text-[0.9375rem] leading-[1.125rem] tracking-[-0.02em] m-0 text-[var(--clr-text)] whitespace-nowrap">
+            <h1 className="font-sans font-extrabold text-[1.05rem] leading-[1.125rem] tracking-tight m-0 text-gray-900 dark:text-white whitespace-nowrap">
               <span className="flex flex-col sm:block justify-center gap-0">
-                <span className="text-[var(--clr-text)]">PreMarket</span>
-                <span className="text-[var(--clr-primary)]"> Price</span>
+                <span>PreMarket</span>
+                <span className="text-gray-500 dark:text-gray-400"> Price</span>
               </span>
             </h1>
           </div>
@@ -50,16 +50,14 @@ export function PageHeader({ navigation, onLogoClick }: PageHeaderProps) {
               >
                 <div className="flex items-center gap-3">
                   <BrandLogo size={42} className="flex-shrink-0" />
-                  <h1 className="font-['Space_Grotesk'] font-bold text-2xl leading-none tracking-[-0.02em] m-0 text-[var(--clr-text)] whitespace-nowrap">
+                  <h1 className="font-sans font-extrabold text-2xl leading-none tracking-tight m-0 text-gray-900 dark:text-white whitespace-nowrap">
                     <span className="flex items-center gap-1">
-                      <span className="text-[var(--clr-text)]">PreMarket</span>
-                      <span className="text-blue-600"> Price</span>
+                      <span>PreMarket</span>
+                      <span className="text-gray-500 dark:text-gray-400">Price</span>
                     </span>
                   </h1>
                 </div>
-                <p className="text-xs font-medium text-[var(--clr-subtext)] pl-[54px] -mt-1 tracking-wide">
-                  Trade ahead of the market
-                </p>
+                
               </div>
             </div>
 
