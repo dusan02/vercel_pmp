@@ -796,10 +796,12 @@ export class AnalysisService {
         if (latestAnnual && prevAnnual && latestAnnual.revenue && prevAnnual.revenue && prevAnnual.revenue > 0) {
             const lA = latestAnnual;
             const pA = prevAnnual;
-            const dsri = ((lA.currentAssets || 0) / lA.revenue) / ((pA.currentAssets || 0) / pA.revenue);
-            const gmIndex = ((pA.grossProfit || 0) / pA.revenue) / ((lA.grossProfit || 0) / lA.revenue);
-            const sgi = lA.revenue / pA.revenue;
-            beneishScore = -6.065 + 0.823 * (dsri || 1) + 0.906 * (gmIndex || 1) + 0.717 * (sgi || 1);
+            if (lA.revenue !== null && pA.revenue !== null) {
+                const dsri = ((lA.currentAssets || 0) / lA.revenue) / ((pA.currentAssets || 0) / pA.revenue);
+                const gmIndex = ((pA.grossProfit || 0) / pA.revenue) / ((lA.grossProfit || 0) / lA.revenue);
+                const sgi = lA.revenue / pA.revenue;
+                beneishScore = -6.065 + 0.823 * (dsri || 1) + 0.906 * (gmIndex || 1) + 0.717 * (sgi || 1);
+            }
         }
 
         // Verdict & Save
