@@ -11,6 +11,7 @@ export interface MetricCardDef {
     statusLabel: string;
     statusType: StatusType;
     source?: 'computed' | 'finnhub' | undefined;
+    progress?: number; // 0-100%
 }
 
 // ─── Shared constants ────────────────────────────────────────────
@@ -19,6 +20,20 @@ export const STATUS_CLASSES: Record<StatusType, string> = {
     warn: 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800',
     bad: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800',
     neutral: 'bg-gray-50 text-gray-500 border-gray-200 dark:bg-gray-700/30 dark:text-gray-400 dark:border-gray-600',
+};
+
+export const VALUE_COLORS: Record<StatusType, string> = {
+    good: 'text-green-600 dark:text-green-400',
+    warn: 'text-yellow-600 dark:text-yellow-400',
+    bad: 'text-red-600 dark:text-red-400',
+    neutral: 'text-gray-900 dark:text-white',
+};
+
+export const PROGRESS_COLORS: Record<StatusType, string> = {
+    good: 'bg-green-500 dark:bg-green-400',
+    warn: 'bg-yellow-400 dark:bg-yellow-500',
+    bad: 'bg-red-500 dark:bg-red-500',
+    neutral: 'bg-gray-400 dark:bg-gray-500',
 };
 
 // ─── Sub-components ──────────────────────────────────────────────
@@ -51,31 +66,41 @@ interface MetricCardProps {
 export function MetricCard({ card, compareWith, bgClass = 'bg-white dark:bg-gray-800' }: MetricCardProps) {
     return (
         <div
-            className={`${bgClass} rounded-xl p-4 border border-gray-100 dark:border-gray-700 hover:border-gray-200 dark:hover:border-gray-600 transition-colors`}
+            className={`${bgClass} rounded-xl p-4 border border-gray-100 dark:border-gray-700 hover:border-gray-200 dark:hover:border-gray-600 transition-colors flex flex-col justify-between`}
             title={card.hint}
         >
-            <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] uppercase tracking-widest font-semibold text-gray-400 dark:text-gray-500 leading-tight">
-                        {card.label}
-                    </span>
-                    {card.source === 'finnhub' && <SourceTag />}
-                </div>
-                <StatusBadge label={card.statusLabel} type={card.statusType} />
-            </div>
-            <div className="flex items-end justify-between">
-                <div className="text-2xl font-bold text-gray-900 dark:text-white leading-none tracking-tight">
-                    {card.value}
-                </div>
-                {compareWith && card.secondaryValue !== undefined && (
-                    <div className="text-right">
-                        <div className="text-[9px] text-gray-400 mb-0.5">{compareWith}</div>
-                        <div className="text-sm font-bold text-gray-500 dark:text-gray-400">
-                            {card.secondaryValue}
-                        </div>
+            <div>
+                <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] uppercase tracking-widest font-semibold text-gray-400 dark:text-gray-500 leading-tight">
+                            {card.label}
+                        </span>
+                        {card.source === 'finnhub' && <SourceTag />}
                     </div>
-                )}
+                    <StatusBadge label={card.statusLabel} type={card.statusType} />
+                </div>
+                <div className="flex items-end justify-between">
+                    <div className={`text-2xl font-bold leading-none tracking-tight ${card.statusType === 'neutral' ? VALUE_COLORS.neutral : VALUE_COLORS[card.statusType]}`}>
+                        {card.value}
+                    </div>
+                    {compareWith && card.secondaryValue !== undefined && (
+                        <div className="text-right">
+                            <div className="text-[9px] text-gray-400 mb-0.5">{compareWith}</div>
+                            <div className="text-sm font-bold text-gray-500 dark:text-gray-400">
+                                {card.secondaryValue}
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
+            {card.progress !== undefined && (
+                <div className="mt-4 w-full h-1.5 bg-gray-100 dark:bg-gray-700/50 rounded-full overflow-hidden flex relative">
+                    <div 
+                        className={`h-full rounded-full transition-all duration-1000 ease-out ${PROGRESS_COLORS[card.statusType]}`}
+                        style={{ width: `${Math.max(0, Math.min(100, card.progress))}%` }}
+                    />
+                </div>
+            )}
         </div>
     );
 }
