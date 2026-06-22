@@ -572,14 +572,18 @@ export async function GET(request: NextRequest) {
       let priceTsMs = 0;
       let priceSource: 'cache' | 'ticker' | 'session' | 'unknown' = 'unknown';
 
-      if (cachedStockData && cachedStockData.currentPrice && cachedStockData.closePrice) {
+      const hasStockData = cachedStockData && cachedStockData.currentPrice;
+      const hasPriceData = cachedStockData && cachedStockData.p !== undefined;
+
+      if (hasStockData || hasPriceData) {
         // Použij cache dáta z stocks endpointu (najaktuálnejšie)
-        currentPrice = cachedStockData.currentPrice;
+        currentPrice = hasStockData ? cachedStockData.currentPrice : cachedStockData.p;
+        const cachedClose = hasStockData ? cachedStockData.closePrice : 0;
 
         // cachedStockData.closePrice can reflect the prior session reference (e.g. Thursday close used during Friday session).
         // On closed non-trading days, override it with the last trading day's close (DailyRef-derived map).
         const refFromDaily = previousCloseMap.get(ticker) || 0;
-        previousClose = isNonTradingClosedDay ? (refFromDaily || cachedStockData.closePrice) : cachedStockData.closePrice;
+        previousClose = isNonTradingClosedDay ? (refFromDaily || cachedClose) : (cachedClose || prevCloseBatchMap.get(ticker) || refFromDaily);
 
         const regularClose = regularCloseMap.get(ticker) || null;
         changePercent = computePercentChange(currentPrice, previousClose, session, regularClose);

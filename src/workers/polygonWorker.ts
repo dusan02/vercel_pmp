@@ -234,9 +234,17 @@ async function main() {
       }
     };
 
-    // Check every minute
-    setInterval(scheduleTask, 60000);
-    scheduleTask(); // Run immediately
+    // Check every minute, using setTimeout to prevent overlap
+    const runTask = async () => {
+      try {
+        await scheduleTask();
+      } catch (error) {
+        console.error('Error in scheduleTask:', error);
+      } finally {
+        setTimeout(runTask, 60000);
+      }
+    };
+    runTask(); // Run immediately
 
   } else if (mode === 'snapshot') {
     // Continuous snapshot ingest
@@ -618,8 +626,16 @@ async function main() {
     // During live trading: Premium tickers updated every 60s, rest every 5min
     // During pre-market/after-hours: All tickers updated every 5min (critical for premarketprice.com!)
     // Note: 60s check interval matches premium ticker update interval, reducing unnecessary checks
-    setInterval(ingestLoop, 60000); // 60s check interval (optimized - matches premium update interval)
-    ingestLoop(); // Run immediately
+    const runIngestLoop = async () => {
+      try {
+        await ingestLoop();
+      } catch (error) {
+        console.error('Unhandled error in ingestLoop:', error);
+      } finally {
+        setTimeout(runIngestLoop, 60000);
+      }
+    };
+    runIngestLoop(); // Run immediately
   }
 }
 
