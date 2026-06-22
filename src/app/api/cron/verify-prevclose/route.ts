@@ -163,7 +163,7 @@ export async function POST(request: NextRequest) {
                 OR: [
                   { latestPrevCloseDate: null },
                   { latestPrevCloseDate: { lt: yesterdayTradingDayStart } },
-                  { latestPrevCloseDate: { gte: yesterdayTradingDayEnd } }
+                  { latestPrevCloseDate: { gt: yesterdayTradingDayEnd } }
                 ]
               }
             ]
@@ -241,9 +241,9 @@ export async function POST(request: NextRequest) {
         }
       });
 
-      // Rate limiting: delay between batches
+      // Rate limiting: delay between batches (3 req per 1 sec = 180 req/min, safely below 250 limit)
       if (i + MAX_CONCURRENT < tickers.length) {
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
 
