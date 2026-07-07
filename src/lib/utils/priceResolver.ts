@@ -507,15 +507,15 @@ export function calculatePercentChange(
 
     case 'after':
     case 'closed':
-      // FIX: To show Total Daily Move even in after-hours/closed sessions,
-      // we must use previousClose (D-1) as the reference.
-      // Using regularClose (D) would show only the move SINCE market close.
-      if (previousClose && previousClose > 0) {
-        referencePrice = previousClose;
-        referenceUsed = 'previousClose';
-      } else if (regularClose && regularClose > 0) {
+      // After market close, show move relative to regularClose (today's close).
+      // E.g. stock closes at $200, after-hours $220 → shows +10%.
+      // Falls back to previousClose (D-1) if regularClose not yet available.
+      if (regularClose && regularClose > 0) {
         referencePrice = regularClose;
         referenceUsed = 'regularClose';
+      } else if (previousClose && previousClose > 0) {
+        referencePrice = previousClose;
+        referenceUsed = 'previousClose';
       }
       break;
 
