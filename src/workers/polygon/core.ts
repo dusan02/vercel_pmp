@@ -21,7 +21,7 @@ import { redisClient } from '@/lib/redis';
 import { recordSuccess, recordFailure } from '../healthMonitor';
 import { PriceData } from '@/lib/types';
 import { detectSession, isMarketOpen, isMarketHoliday, mapToRedisSession, getLastTradingDay, getTradingDay } from '@/lib/utils/timeUtils';
-import { nowET, getDateET, createETDate, isWeekendET, toET } from '@/lib/utils/dateET';
+import { nowET, getDateET, createETDate, isWeekendET, toET, isSameETDay } from '@/lib/utils/dateET';
 import { resolveEffectivePrice, calculatePercentChange } from '@/lib/utils/priceResolver';
 import { getPricingState, canOverwritePrice, getPreviousCloseTTL, PriceState } from '@/lib/utils/pricingStateMachine';
 import { withRetry, circuitBreaker } from '@/lib/api/rateLimiter';
@@ -527,7 +527,8 @@ async function upsertToDB(
     // IMPORTANT: Skip upserting Ticker to SQLite on every tick to avoid P1008 DB locks.
     // Real-time data is now served exclusively from Redis by the frontend.
     // We only write to Ticker if it's a new symbol, a forced static update, or a date boundary.
-    const isNewDay = existingTicker?.lastPriceUpdated && existingTicker.lastPriceUpdated.getDate() !== normalized.timestamp.getDate();
+    // CRITICAL: Use ET-aware comparison, not local getDate() — server may be in non-ET timezone.
+    const isNewDay = existingTicker?.lastPriceUpdated && !isSameETDay(existingTicker.lastPriceUpdated, normalized.timestamp);
     const shouldUpdateTicker = !existingTicker || isStaticUpdateLocked || force || isNewDay;
 
     if (shouldUpdateTicker) {
