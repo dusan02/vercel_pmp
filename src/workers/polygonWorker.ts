@@ -639,6 +639,14 @@ async function main() {
   }
 }
 
+// Prevent crashes from unhandled promise rejections (Polygon API timeouts, etc.)
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('⚠️ Unhandled Rejection (non-fatal):', reason);
+});
+process.on('uncaughtException', (error) => {
+  console.error('⚠️ Uncaught Exception (non-fatal):', error.message);
+});
+
 // Run if executed directly
 if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch(error => {
