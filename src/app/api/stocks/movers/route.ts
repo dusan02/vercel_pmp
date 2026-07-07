@@ -19,7 +19,7 @@ import { calculatePercentChange } from '@/lib/utils/priceResolver';
 export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
-        const limit = parseInt(searchParams.get('limit') || '10');
+        const limit = parseInt(searchParams.get('limit') || '10', 10);
         // Threshold: 2.0 = statistically significant (2 std dev above mean).
         const minZScore = parseFloat(searchParams.get('minZ') || '2.0');
 

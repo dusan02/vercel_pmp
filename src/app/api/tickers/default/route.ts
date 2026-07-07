@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const project = searchParams.get('project') || 'pmp';
     const limitParam = searchParams.get('limit');
-    const limit = limitParam !== null ? parseInt(limitParam) : null;
+    const limit = limitParam !== null ? parseInt(limitParam, 10) : null;
     // Handle invalid numbers (NaN)
     const finalLimit = isNaN(limit!) ? null : limit;
 

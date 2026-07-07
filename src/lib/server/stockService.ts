@@ -368,7 +368,9 @@ export async function getStocksList(options: {
               }
             });
           }
-        } catch (polyError) {}
+        } catch (polyError) {
+          console.warn('⚠️ StockService: Polygon batch fetch failed:', polyError);
+        }
       }
     }
 

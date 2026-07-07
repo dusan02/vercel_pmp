@@ -182,25 +182,21 @@ export function getCurrentPrice(snapshotData: unknown): number {
 
   // Priority 1: lastTrade.p (most current)
   if (data?.ticker?.lastTrade?.p && data.ticker.lastTrade.p > 0) {
-    console.log(`✅ Using lastTrade.p: $${data.ticker.lastTrade.p}`);
     return data.ticker.lastTrade.p;
   }
 
   // Priority 2: min.c (current minute data)
   if (data?.ticker?.min?.c && data.ticker.min.c > 0) {
-    console.log(`✅ Using min.c: $${data.ticker.min.c}`);
     return data.ticker.min.c;
   }
 
   // Priority 3: day.c (day close - most reliable fallback)
   if (data?.ticker?.day?.c && data.ticker.day.c > 0) {
-    console.log(`✅ Using day.c: $${data.ticker.day.c}`);
     return data.ticker.day.c;
   }
 
   // Priority 4: prevDay.c (previous day close)
   if (data?.ticker?.prevDay?.c && data.ticker.prevDay.c > 0) {
-    console.log(`✅ Using prevDay.c: $${data.ticker.prevDay.c}`);
     return data.ticker.prevDay.c;
   }
 

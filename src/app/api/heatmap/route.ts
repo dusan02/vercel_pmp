@@ -572,16 +572,17 @@ export async function GET(request: NextRequest) {
       let priceTsMs = 0;
       let priceSource: 'cache' | 'ticker' | 'session' | 'unknown' = 'unknown';
 
-      const hasStockData = cachedStockData && cachedStockData.currentPrice;
-      const hasPriceData = cachedStockData && cachedStockData.p !== undefined;
+      // Handle both cache formats:
+      // 1. StockData format (currentPrice, closePrice, marketCap) from /api/stocks
+      // 2. PriceData format (p, change, ts, source, quality) from worker/redis
+      const hasStockCache = cachedStockData && (cachedStockData.currentPrice || cachedStockData.p) && cachedStockData.closePrice;
+      const hasPriceCache = cachedStockData && cachedStockData.p && !cachedStockData.closePrice;
 
-      if (hasStockData || hasPriceData) {
-        // Použij cache dáta z stocks endpointu (najaktuálnejšie)
-        currentPrice = hasStockData ? cachedStockData.currentPrice : cachedStockData.p;
-        const cachedClose = hasStockData ? cachedStockData.closePrice : 0;
+      if (hasStockCache) {
+        // StockData format from /api/stocks cache
+        currentPrice = cachedStockData.currentPrice || cachedStockData.p;
+        const cachedClose = cachedStockData.closePrice;
 
-        // cachedStockData.closePrice can reflect the prior session reference (e.g. Thursday close used during Friday session).
-        // On closed non-trading days, override it with the last trading day's close (DailyRef-derived map).
         const refFromDaily = previousCloseMap.get(ticker) || 0;
         previousClose = isNonTradingClosedDay ? (refFromDaily || cachedClose) : (cachedClose || prevCloseBatchMap.get(ticker) || refFromDaily);
 
@@ -590,17 +591,15 @@ export async function GET(request: NextRequest) {
 
         marketCap = cachedStockData.marketCap || 0;
 
-        // Recompute marketCapDiff when possible so it's consistent with the overridden reference.
         const sharesOutstanding = tickerInfo?.sharesOutstanding || 0;
         const referencePrice = (regularClose && regularClose > 0) ? regularClose : previousClose;
         marketCapDiff = (sharesOutstanding > 0 && referencePrice > 0)
           ? computeMarketCapDiff(currentPrice, referencePrice, sharesOutstanding)
           : (cachedStockData.marketCapDiff || 0);
-        // NOTE: cache payload may not include per-ticker timestamps in a reliable way
-        // (and Redis can be disabled). We'll still label source for debugging.
+
         priceSource = 'cache';
         cacheHits++;
-        
+
         // Validate and filter out extreme values for cache path (static import — no await)
         if (!validateMarketCap(marketCap, ticker)) {
           skippedNoMarketCap++;
@@ -608,7 +607,56 @@ export async function GET(request: NextRequest) {
         }
 
         if (!validatePercentChange(changePercent, ticker)) {
-          skippedNoPrice++; // Count as skipped due to invalid data
+          skippedNoPrice++;
+          continue;
+        }
+      } else if (hasPriceCache) {
+        // PriceData format from worker Redis cache (p, change, ts, source, quality)
+        currentPrice = cachedStockData.p;
+        priceTsMs = cachedStockData.ts || 0;
+
+        const refFromDaily = previousCloseMap.get(ticker) || 0;
+        const prevFromTicker = tickerInfo?.latestPrevClose || 0;
+        previousClose = isNonTradingClosedDay
+          ? (refFromDaily || prevFromTicker)
+          : (prevFromTicker || refFromDaily);
+
+        if (previousClose === 0 && currentPrice > 0) {
+          previousClose = prevCloseBatchMap.get(ticker) || 0;
+          if (previousClose === 0) {
+            skippedNoPrice++;
+            continue;
+          }
+        }
+
+        const regularClose = regularCloseMap.get(ticker) || null;
+        changePercent = computePercentChange(currentPrice, previousClose, session, regularClose);
+
+        const sharesOutstanding = tickerInfo?.sharesOutstanding || 0;
+        marketCap = sharesOutstanding > 0
+          ? computeMarketCap(currentPrice, sharesOutstanding)
+          : (tickerInfo?.lastMarketCap || 0);
+
+        if (marketCap <= 0) {
+          skippedNoMarketCap++;
+          continue;
+        }
+
+        const referencePrice = regularClose && regularClose > 0 ? regularClose : previousClose;
+        marketCapDiff = (sharesOutstanding > 0 && referencePrice > 0)
+          ? computeMarketCapDiff(currentPrice, referencePrice, sharesOutstanding)
+          : (tickerInfo?.lastMarketCapDiff || 0);
+
+        priceSource = 'cache';
+        cacheHits++;
+
+        if (!validateMarketCap(marketCap, ticker)) {
+          skippedNoMarketCap++;
+          continue;
+        }
+
+        if (!validatePercentChange(changePercent, ticker)) {
+          skippedNoPrice++;
           continue;
         }
       } else {

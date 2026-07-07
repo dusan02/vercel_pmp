@@ -142,6 +142,7 @@ async function fetchCurrentPrice(ticker: string): Promise<{ currentPrice: number
             previousClose
         };
     } catch (error) {
+        console.warn('⚠️ EarningsService: Failed to fetch price data:', error);
         return null;
     }
 }
@@ -243,7 +244,9 @@ async function enrichEarningsData(earnings: EarningsData[]): Promise<EarningsDat
                                 companyName = refData.results?.name || companyName;
                             }
                         }
-                    } catch (e) { }
+                    } catch (e) {
+                        console.warn('⚠️ EarningsService: Failed to fetch company name:', e);
+                    }
                 }
 
                 let percentChange = null;

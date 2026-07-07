@@ -158,6 +158,7 @@ async function combineAllTierResults(date: string): Promise<ProcessedEarningsRes
 async function convertToEarningsData(tickers: string[], date: string, time: string): Promise<EarningsData[]> {
   const earningsData: EarningsData[] = [];
   const apiKey = process.env.POLYGON_API_KEY;
+  if (!apiKey) return earningsData;
 
   // Get current session for session-aware percent change calculation
   const etNow = nowET();

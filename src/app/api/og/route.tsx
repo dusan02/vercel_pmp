@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
         const category = searchParams.get('category') || 'Technical';
         const reason = searchParams.get('reason') || 'Significant movement detected with statistical confirmation.';
         const isSbc = searchParams.get('sbc') === '1';
-        const confidence = parseInt(searchParams.get('confidence') || '0');
+        const confidence = parseInt(searchParams.get('confidence') || '0', 10);
 
         const isPositive = changePct >= 0;
         const color = isPositive ? '#00ff00' : '#ff3b30'; // Bloomberg green / red

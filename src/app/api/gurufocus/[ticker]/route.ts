@@ -10,7 +10,7 @@ export async function GET(
     const { searchParams } = new URL(request.url);
     
     const metric = (searchParams.get('metric') || 'peRatio') as keyof GuruFocusMetrics;
-    const years = parseInt(searchParams.get('years') || '10');
+    const years = parseInt(searchParams.get('years') || '10', 10);
     
     // Validácia metriky
     const validMetrics: (keyof GuruFocusMetrics)[] = [
