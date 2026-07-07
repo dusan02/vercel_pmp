@@ -618,6 +618,15 @@ export async function GET(request: NextRequest) {
         priceTsMs = priceInfo?.tsMs || 0;
         priceSource = priceInfo?.source || 'unknown';
 
+        // STALENESS GUARD: Skip tickers whose DB price is older than 24 hours OR has no timestamp.
+        // Without this, stale DB prices (e.g. from weeks ago) combined with fresh prevClose
+        // produce fake extreme % changes (e.g. WDC showing +34% instead of -7%).
+        // Also skip when priceTsMs is 0 (lastPriceUpdated is null) — we can't verify freshness.
+        if (priceTsMs === 0 || (now.getTime() - priceTsMs) > 24 * 60 * 60 * 1000) {
+          skippedNoPrice++;
+          continue;
+        }
+
         // Prefer denormalized prev close (fast), fallback to DailyRef-derived map.
         // On closed non-trading days, prefer DailyRef-derived "last trading day close" to show 0% vs Friday close on weekend.
         // STALENESS GUARD: latestPrevClose is only valid if latestPrevCloseDate >= lastTradingDayForQuery.
