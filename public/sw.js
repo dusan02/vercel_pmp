@@ -1,6 +1,6 @@
 // Version management - increment on layout/structure changes
 // Bump this whenever we ship caching changes to ensure clients drop stale caches
-const CACHE_VERSION = "2.0.3";
+const CACHE_VERSION = "2.0.4";
 const CACHE_NAME = `premarketprice-v${CACHE_VERSION}`;
 const STATIC_CACHE = `premarketprice-static-v${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `premarketprice-dynamic-v${CACHE_VERSION}`;
