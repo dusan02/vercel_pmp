@@ -62,7 +62,7 @@ async function getTopMovers(order: 'asc' | 'desc', limit: number): Promise<Mover
       reason: d.reason,
       category: d.cat
     };
-  });
+  }).filter(r => order === 'desc' ? (r.changePct ?? 0) > 0 : (r.changePct ?? 0) < 0);
 }
 
 function MoversTable({ title, rows }: { title: string; rows: MoverRow[] }) {
