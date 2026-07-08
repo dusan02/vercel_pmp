@@ -53,6 +53,30 @@ async function main() {
     process.exit(1);
   }
 
+  // Startup: refresh universe from DB (ensures all DB tickers are tracked immediately)
+  try {
+    const { prisma } = await import('@/lib/db/prisma');
+    const dbTickers = await prisma.ticker.findMany({
+      where: {},
+      select: { symbol: true },
+    });
+    const startupTickers = dbTickers.map((t: { symbol: string }) => t.symbol);
+    if (startupTickers.length > 0) {
+      const { redisClient } = await import('@/lib/redis');
+      if (redisClient && redisClient.isOpen) {
+        await redisClient.del('universe:sp500');
+      }
+      await addToUniverse('sp500', startupTickers);
+      console.log(`✅ Startup: ${startupTickers.length} tickers from DB added to universe:sp500`);
+    }
+  } catch (error) {
+    console.error('❌ Startup universe refresh failed, using fallback:', error);
+    const { getAllProjectTickers } = await import('@/data/defaultTickers');
+    const fallback = getAllProjectTickers('pmp');
+    await addToUniverse('sp500', fallback);
+    console.log(`✅ Fallback: ${fallback.length} tickers from defaultTickers added to universe:sp500`);
+  }
+
   if (mode === 'refs') {
     // Daily reference tasks
     console.log('🔄 Starting refs worker...');
@@ -64,21 +88,37 @@ async function main() {
       const hours = et.hour;
       const minutes = et.minute;
 
-      // 03:30 ET - Refresh universe
+      // 03:30 ET - Refresh universe from DB
       if (hours === 3 && minutes === 30) {
-        console.log('🔄 Refreshing universe...');
+        console.log('🔄 Refreshing universe from DB...');
         try {
-          const { getAllProjectTickers } = await import('@/data/defaultTickers');
-          const tickers = getAllProjectTickers('pmp');
-          console.log(`📊 Adding ${tickers.length} tickers to universe:sp500...`);
+          const { prisma } = await import('@/lib/db/prisma');
+          const dbTickers = await prisma.ticker.findMany({
+            where: {},
+            select: { symbol: true },
+          });
+          const tickers = dbTickers.map(t => t.symbol);
+          console.log(`📊 Adding ${tickers.length} tickers from DB to universe:sp500...`);
 
-          for (const ticker of tickers) {
-            await addToUniverse('sp500', [ticker]);
+          // Clear and rebuild universe
+          const { redisClient } = await import('@/lib/redis');
+          if (redisClient && redisClient.isOpen) {
+            await redisClient.del('universe:sp500');
           }
+          await addToUniverse('sp500', tickers);
 
-          console.log(`✅ Universe refreshed: ${tickers.length} tickers added to universe:sp500`);
+          console.log(`✅ Universe refreshed: ${tickers.length} tickers from DB added to universe:sp500`);
         } catch (error) {
-          console.error('❌ Error refreshing universe:', error);
+          console.error('❌ Error refreshing universe from DB:', error);
+          // Fallback to hardcoded list
+          try {
+            const { getAllProjectTickers } = await import('@/data/defaultTickers');
+            const tickers = getAllProjectTickers('pmp');
+            await addToUniverse('sp500', tickers);
+            console.log(`✅ Fallback: ${tickers.length} tickers from defaultTickers added to universe:sp500`);
+          } catch (fallbackError) {
+            console.error('❌ Fallback also failed:', fallbackError);
+          }
         }
       }
 
