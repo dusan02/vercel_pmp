@@ -361,17 +361,17 @@ describe('priceResolver', () => {
       expect(result.reference.price).toBe(150.00);
     });
 
-    it('should calculate after-hours vs regularClose', () => {
+    it('should calculate after-hours vs previousClose (same as Finviz)', () => {
       const result = calculatePercentChange(
         160.00, // current
         'after',
-        150.00, // previousClose (D-1)
+        150.00, // previousClose (D-1) — preferred
         158.00  // regularClose (D)
       );
 
-      expect(result.changePct).toBeCloseTo(1.27, 2); // (160/158 - 1) * 100
-      expect(result.reference.used).toBe('regularClose');
-      expect(result.reference.price).toBe(158.00);
+      expect(result.changePct).toBeCloseTo(6.67, 2); // (160/150 - 1) * 100
+      expect(result.reference.used).toBe('previousClose');
+      expect(result.reference.price).toBe(150.00);
     });
 
     it('should fallback to previousClose when regularClose is missing', () => {
@@ -550,19 +550,19 @@ describe('priceResolver', () => {
         // UI should display: "After-hours +6.67% (vs prev close 150.00)"
       });
 
-      it('should prefer regularClose when both are available', () => {
+      it('should prefer previousClose when both are available (same as Finviz)', () => {
         const result = calculatePercentChange(
           160.00, // current
           'after',
-          150.00, // previousClose (D-1)
-          158.00  // regularClose (D) - preferred
+          150.00, // previousClose (D-1) - preferred
+          158.00  // regularClose (D)
         );
 
-        expect(result.changePct).toBeCloseTo(1.27, 2); // (160/158 - 1) * 100
-        expect(result.reference.used).toBe('regularClose');
-        expect(result.reference.price).toBe(158.00);
+        expect(result.changePct).toBeCloseTo(6.67, 2); // (160/150 - 1) * 100
+        expect(result.reference.used).toBe('previousClose');
+        expect(result.reference.price).toBe(150.00);
         
-        // UI should display: "After-hours +1.27% (vs regular close 158.00)"
+        // UI should display: "After-hours +6.67% (vs prev close 150.00)"
       });
 
       it('should return null reference when both are missing', () => {

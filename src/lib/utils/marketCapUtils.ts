@@ -245,7 +245,7 @@ export function computeMarketCapDiff(currentPrice: number, prevClose: number, sh
  * 
  * If session and regularClose are provided, uses session-aware logic:
  * - Pre-market/Live: vs previousClose (D-1)
- * - After-hours/Closed: vs regularClose (D) if available, else previousClose (D-1)
+ * - After-hours/Closed: vs previousClose (D-1) if available, else regularClose (D)
  * 
  * Otherwise, uses simple calculation vs previousClose (backward compatibility)
  */

@@ -106,7 +106,11 @@ export async function saveRegularClose(apiKey: string, date: string, runId?: str
             create: {
               symbol,
               date: todayTradingDay,
-              previousClose: regularClose, // Fallback if previousClose not set
+              // Do NOT set previousClose = regularClose here!
+              // previousClose should be YESTERDAY's close (D-1), not today's close.
+              // Setting it to regularClose causes after-hours % to show only the
+              // after-hours delta instead of the total daily change vs previous day.
+              previousClose: 0,
               regularClose
             }
           });
@@ -150,17 +154,12 @@ export async function saveRegularClose(apiKey: string, date: string, runId?: str
             // For nextTradingDay, prevClose(nextTradingDay) = close(todayTradingDay) = today's regularClose
             await setPrevClose(nextTradingDateStr, symbol, regularClose);
 
-            // Update Ticker.latestPrevClose and latestPrevCloseDate
-            // This is the denormalized field used by heatmap API
-            // The date should be todayTradingDay (when the close happened)
-            await prisma.ticker.update({
-              where: { symbol },
-              data: {
-                latestPrevClose: regularClose,
-                latestPrevCloseDate: todayTradingDay, // Today's trading day (when close happened)
-                updatedAt: new Date()
-              }
-            });
+            // NOTE: We intentionally do NOT update Ticker.latestPrevClose here.
+            // saveRegularClose sets latestPrevClose = today's close, but after-hours %
+            // calculations need latestPrevClose to remain as YESTERDAY's close (D-1).
+            // Overwriting it with today's close causes inverted % changes vs Finviz.
+            // The DailyRef(nextTradingDay).previousClose and Redis prevClose(nextTradingDay)
+            // are sufficient for the next trading day's pre-market calculations.
 
             prevCloseUpdated++;
           } catch (prevCloseError) {

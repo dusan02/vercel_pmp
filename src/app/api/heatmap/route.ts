@@ -592,7 +592,7 @@ export async function GET(request: NextRequest) {
         marketCap = cachedStockData.marketCap || 0;
 
         const sharesOutstanding = tickerInfo?.sharesOutstanding || 0;
-        const referencePrice = (regularClose && regularClose > 0) ? regularClose : previousClose;
+        const referencePrice = previousClose > 0 ? previousClose : (regularClose && regularClose > 0 ? regularClose : 0);
         marketCapDiff = (sharesOutstanding > 0 && referencePrice > 0)
           ? computeMarketCapDiff(currentPrice, referencePrice, sharesOutstanding)
           : (cachedStockData.marketCapDiff || 0);
@@ -642,7 +642,7 @@ export async function GET(request: NextRequest) {
           continue;
         }
 
-        const referencePrice = regularClose && regularClose > 0 ? regularClose : previousClose;
+        const referencePrice = previousClose > 0 ? previousClose : (regularClose && regularClose > 0 ? regularClose : 0);
         marketCapDiff = (sharesOutstanding > 0 && referencePrice > 0)
           ? computeMarketCapDiff(currentPrice, referencePrice, sharesOutstanding)
           : (tickerInfo?.lastMarketCapDiff || 0);
@@ -741,8 +741,8 @@ export async function GET(request: NextRequest) {
 
         // Vypočítaj market cap diff - vždy z aktuálnych hodnôt, fallback na denormalized diff
         // CRITICAL: Use the same reference price as percentChange calculation (for after-hours consistency)
-        // For after-hours/closed sessions, use regularClose if available, otherwise previousClose
-        const referencePrice = regularClose && regularClose > 0 ? regularClose : previousClose;
+        // Prefer previousClose (D-1) to match Finviz, fallback to regularClose (D)
+        const referencePrice = previousClose > 0 ? previousClose : (regularClose && regularClose > 0 ? regularClose : 0);
         marketCapDiff = (sharesOutstanding > 0 && referencePrice > 0)
           ? computeMarketCapDiff(currentPrice, referencePrice, sharesOutstanding)
           : (tickerInfo.lastMarketCapDiff ? tickerInfo.lastMarketCapDiff / 1_000_000_000 : 0);

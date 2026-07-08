@@ -470,9 +470,9 @@ export function resolveEffectivePrice(
  * Rules:
  * - Pre-market: vs previousClose (D-1)
  * - Live: vs previousClose (D-1)
- * - After-hours: vs regularClose (D) if available, else previousClose (D-1)
- * - Overnight: vs regularClose (D) if available, else previousClose (D-1)
- * - Weekend: vs regularClose (last trading day) if available, else previousClose
+ * - After-hours: vs previousClose (D-1) if available, else regularClose (D)
+ * - Overnight: vs previousClose (D-1) if available, else regularClose (D)
+ * - Weekend: vs previousClose (D-1) if available, else regularClose (last trading day)
  * 
  * Returns both the percentage and which reference was used (for UI display)
  */
@@ -507,15 +507,15 @@ export function calculatePercentChange(
 
     case 'after':
     case 'closed':
-      // After market close, show move relative to regularClose (today's close).
-      // E.g. stock closes at $200, after-hours $220 → shows +10%.
-      // Falls back to previousClose (D-1) if regularClose not yet available.
-      if (regularClose && regularClose > 0) {
-        referencePrice = regularClose;
-        referenceUsed = 'regularClose';
-      } else if (previousClose && previousClose > 0) {
+      // Always use previousClose (D-1) as reference — same as Finviz.
+      // This shows the total daily move, not just the after-hours delta.
+      // Falls back to regularClose (D) only if previousClose is missing.
+      if (previousClose && previousClose > 0) {
         referencePrice = previousClose;
         referenceUsed = 'previousClose';
+      } else if (regularClose && regularClose > 0) {
+        referencePrice = regularClose;
+        referenceUsed = 'regularClose';
       }
       break;
 
