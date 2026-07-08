@@ -29,8 +29,14 @@ export async function GET(request: NextRequest) {
         const session = detectSession(etNow);
 
         // ── Step 1: Fetch candidates from DB ──────────────────────────────────
+        // STALENESS GUARD: Only include tickers with fresh lastPriceUpdated (< 24h).
+        // Without this, stale tickers with old Z-scores/RVOL show 0.00% change
+        // because their prevClose is missing or price is outdated.
+        const TWENTY_FOUR_HOURS_AGO = new Date(Date.now() - 24 * 60 * 60 * 1000);
         let topMovers = await prisma.ticker.findMany({
             where: {
+                lastPrice: { gt: 0 },
+                lastPriceUpdated: { gte: TWENTY_FOUR_HOURS_AGO },
                 OR: [
                     { latestMoversZScore: { gte: minZScore } },
                     { latestMoversZScore: { lte: -minZScore } },
