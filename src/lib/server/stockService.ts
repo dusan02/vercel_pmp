@@ -68,7 +68,11 @@ export async function getStocksList(options: {
 
       if (symbolsToFetch.length > 0) {
         const { getManyLastWithDate } = await import('@/lib/redis/ranking');
-        const dataMap = await getManyLastWithDate(dateET, redisSession, symbolsToFetch);
+        const { getPrevClose } = await import('@/lib/redis/operations');
+        const [dataMap, prevCloseMap] = await Promise.all([
+          getManyLastWithDate(dateET, redisSession, symbolsToFetch),
+          getPrevClose(dateET, symbolsToFetch)
+        ]);
 
         if (dataMap.size > 0) {
           const results: StockData[] = [];
@@ -82,7 +86,7 @@ export async function getStocksList(options: {
                 industry: data.industry || 'Unknown',
                 logoUrl: `/logos/${sym.toLowerCase()}-32.webp`,
                 currentPrice: Number(data.p) || 0,
-                closePrice: 0, // Fallback, not critical for tables
+                closePrice: Number(prevCloseMap.get(sym)) || 0,
                 percentChange: Number(data.change_pct) || 0,
                 marketCap: Number(data.cap) || 0,
                 marketCapDiff: Number(data.cap_diff) || 0,
