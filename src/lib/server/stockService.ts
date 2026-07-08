@@ -113,11 +113,26 @@ export async function getStocksList(options: {
           }
 
           console.log(`🚀 [stockService] Fast path: Served ${results.length} stocks from Redis!`);
-          return { data: results, errors: [] };
+
+          // If specific tickers were requested but some are missing from Redis
+          // (e.g. ETFs like QQQ/DIA not in universe), fall through to DB/Polygon
+          // fallback for the missing ones instead of returning incomplete data.
+          if (!isGlobalQuery && tickers && results.length < tickers.length) {
+            const found = new Set(results.map(r => r.ticker));
+            const missing = tickers.filter(t => !found.has(t));
+            console.log(`🔄 [stockService] ${missing.length} tickers missing from Redis, falling through to DB/Polygon: ${missing.join(',')}`);
+            // Don't return — fall through to slow path which will query DB + Polygon for missing tickers
+            // But we need to keep our Redis results and merge them later
+            // Simplest: set tickers to only the missing ones and continue to slow path
+            // Then merge results at the end
+            // For now, just fall through — the slow path will fetch ALL requested tickers from DB
+            // and the Polygon fallback at the end handles any still-missing ones.
+          } else {
+            return { data: results, errors: [] };
+          }
         }
       }
-    }
-  } catch (redisError) {
+    } catch (redisError) {
     console.error('⚠️ [stockService] Redis fast path failed, falling back to SQLite:', redisError);
   }
 
