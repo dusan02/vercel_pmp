@@ -529,7 +529,8 @@ async function upsertToDB(
     // We only write to Ticker if it's a new symbol, a forced static update, or a date boundary.
     // CRITICAL: Use ET-aware comparison, not local getDate() — server may be in non-ET timezone.
     const isNewDay = existingTicker?.lastPriceUpdated && !isSameETDay(existingTicker.lastPriceUpdated, normalized.timestamp);
-    const shouldUpdateTicker = !existingTicker || isStaticUpdateLocked || force || isNewDay;
+    const hasNullTimestamp = existingTicker && !existingTicker.lastPriceUpdated;
+    const shouldUpdateTicker = !existingTicker || isStaticUpdateLocked || force || isNewDay || hasNullTimestamp;
 
     if (shouldUpdateTicker) {
       // Standard Upsert (New Data or Create)
