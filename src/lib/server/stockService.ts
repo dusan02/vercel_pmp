@@ -132,6 +132,7 @@ export async function getStocksList(options: {
           }
         }
       }
+    }
     } catch (redisError) {
     console.error('⚠️ [stockService] Redis fast path failed, falling back to SQLite:', redisError);
   }
