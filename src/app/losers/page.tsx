@@ -52,7 +52,7 @@ async function getRows(limit: number): Promise<Row[]> {
       changePct: d.change_pct,
       marketCapDiff: d.cap_diff,
     };
-  }).filter(r => (r.changePct ?? 0) < 0);
+  }).filter(r => (r.changePct ?? 0) < -0.01);
 }
 
 export default async function LosersPage() {
