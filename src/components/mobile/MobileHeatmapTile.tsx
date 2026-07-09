@@ -58,7 +58,6 @@ export const MobileHeatmapTile = React.memo<MobileHeatmapTileProps>(({
         cursor: 'pointer',
         touchAction: 'pan-y',
         WebkitTapHighlightColor: 'transparent',
-        willChange: 'transform',
       }}
     >
       {/* Dot indicator for tiny tiles */}

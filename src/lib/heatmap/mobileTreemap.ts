@@ -162,14 +162,15 @@ export function computeMobileTreemapSectors(
       const flat = { ...item.node, children: flattenLeaves(item.node) };
 
       // D3 treemap — round(true) for integer coordinates (ZERO overlap guarantee)
-      // paddingInner(2) for consistent 2px gap between tiles
+      // paddingInner(0): we create the visible gap ourselves with CSS margins so
+      // tiny tiles get the maximum possible area and no D3 rounding artifacts.
       const h = hierarchy(flat)
         .sum((d: any) => d.value || 0)
         .sort((a: any, b: any) => (b.value || 0) - (a.value || 0));
 
       treemap()
         .size([secW, tilesH])
-        .paddingInner(2)
+        .paddingInner(0)
         .round(true)
         .tile(treemapSquarify)(h);
 
@@ -179,16 +180,20 @@ export function computeMobileTreemapSectors(
           const y0 = Math.round(l.y0);
           const x1 = Math.round(l.x1);
           const y1 = Math.round(l.y1);
-          // 1px safety margin on right/bottom to absorb any browser sub-pixel
-          // rounding or container dimension mismatch that could cause overlap.
+          // Uniform 1px inset on every side creates a clean 2px gap between
+          // adjacent tiles when they are edge-to-edge in D3 coordinate space.
+          // This prevents any browser sub-pixel compositor overlap and gives
+          // tiny tiles more usable area than D3 paddingInner would.
+          const insetX0 = Math.min(x1, x0 + 1);
+          const insetY0 = Math.min(y1, y0 + 1);
+          const insetX1 = Math.max(insetX0 + 1, x1 - 1);
+          const insetY1 = Math.max(insetY0 + 1, y1 - 1);
           // Clamp to sector bounds so a tile never extends outside its container.
-          const safeX1 = Math.min(secW, Math.max(x0 + 1, x1 - 1));
-          const safeY1 = Math.min(tilesH, Math.max(y0 + 1, y1 - 1));
           return {
-            x0,
-            y0,
-            x1: safeX1,
-            y1: safeY1,
+            x0: insetX0,
+            y0: insetY0,
+            x1: Math.min(secW, insetX1),
+            y1: Math.min(tilesH, insetY1),
             company: l.data.meta?.companyData || l.data,
           };
         })
