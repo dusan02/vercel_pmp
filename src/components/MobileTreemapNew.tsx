@@ -50,18 +50,28 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   useLayoutEffect(() => {
     if (!containerRef.current) return;
 
-    // Capture initial size once. Height must stay frozen to prevent infinite
-    // layout thrashing: re-layout changes content height → ResizeObserver fires
-    // → re-layout → loop.
-    const initialRect = containerRef.current.getBoundingClientRect();
-    const initialW = Math.round(initialRect.width);
-    const initialH = Math.round(initialRect.height);
-    setContainerSize((prev) => ({
-      width: prev.width > 0 ? prev.width : initialW,
-      height: prev.height > 0 ? prev.height : initialH,
-    }));
+    // Capture initial size. useLayoutEffect runs before paint, so the parent
+    // flex layout may not be fully settled yet. We do a one-time re-measure
+    // after 150ms to grab the real height, without creating a feedback loop.
+    const updateSize = (rect: DOMRectReadOnly | DOMRect) => {
+      const width = Math.round(rect.width);
+      const height = Math.round(rect.height);
+      if (width <= 0 || height <= 0) return;
+      setContainerSize((prev) =>
+        prev.width !== width || prev.height !== height ? { width, height } : prev
+      );
+    };
 
-    // Track width only — height is frozen after initial capture.
+    updateSize(containerRef.current.getBoundingClientRect());
+
+    const delayedMeasure = setTimeout(() => {
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      updateSize(rect);
+    }, 150);
+
+    // Track width only — height must stay frozen to prevent infinite layout
+    // thrashing: re-layout changes content height → ResizeObserver fires → re-layout.
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const { width } = entry.contentRect;
@@ -77,6 +87,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
 
     observer.observe(containerRef.current);
     return () => {
+      clearTimeout(delayedMeasure);
       observer.disconnect();
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
