@@ -587,7 +587,13 @@ export async function GET(request: NextRequest) {
         previousClose = isNonTradingClosedDay ? (refFromDaily || cachedClose) : (cachedClose || prevCloseBatchMap.get(ticker) || refFromDaily);
 
         const regularClose = regularCloseMap.get(ticker) || null;
-        changePercent = computePercentChange(currentPrice, previousClose, session, regularClose);
+        // Prefer cached percentChange from worker — it handles fallback/staleness correctly.
+        // Recalculating here gives 0% when currentPrice === previousClose (no pre-market trades yet,
+        // price is regularClose fallback), overwriting the last meaningful change.
+        const cachedPct = Number(cachedStockData.percentChange);
+        changePercent = (cachedPct && isFinite(cachedPct))
+          ? cachedPct
+          : computePercentChange(currentPrice, previousClose, session, regularClose);
 
         marketCap = cachedStockData.marketCap || 0;
 
