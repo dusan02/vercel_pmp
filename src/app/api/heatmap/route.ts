@@ -636,7 +636,12 @@ export async function GET(request: NextRequest) {
         }
 
         const regularClose = regularCloseMap.get(ticker) || null;
-        changePercent = computePercentChange(currentPrice, previousClose, session, regularClose);
+        // Prefer cached change from worker — it handles fallback/staleness correctly.
+        // Recalculating gives 0% when currentPrice === previousClose (no pre-market trades yet).
+        const cachedChange = Number(cachedStockData.change);
+        changePercent = (cachedChange && isFinite(cachedChange))
+          ? cachedChange
+          : computePercentChange(currentPrice, previousClose, session, regularClose);
 
         const sharesOutstanding = tickerInfo?.sharesOutstanding || 0;
         marketCap = sharesOutstanding > 0
@@ -730,7 +735,13 @@ export async function GET(request: NextRequest) {
         // Toto zabezpečuje konzistentnosť s /api/stocks endpointom
         // Use session-aware calculation for correct after-hours % changes
         const regularClose = regularCloseMap.get(ticker) || null;
-        changePercent = computePercentChange(currentPrice, previousClose, session, regularClose);
+        // When currentPrice === previousClose (no pre-market trades yet, price is regularClose fallback),
+        // prefer the last meaningful changePct from DB instead of recalculating 0%.
+        if (currentPrice > 0 && previousClose > 0 && Math.abs(currentPrice - previousClose) < 0.001) {
+          changePercent = tickerInfo.lastChangePct || 0;
+        } else {
+          changePercent = computePercentChange(currentPrice, previousClose, session, regularClose);
+        }
 
         // Vypočítaj market cap.
         // Prefer compute(price * shares), but if shares are missing (common in dev), fall back to denormalized columns.
