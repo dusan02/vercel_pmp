@@ -41,40 +41,37 @@ function generateMixedData(): CompanyNode[] {
   return data;
 }
 
-function detectOverlapsAndBounds(rows: ReturnType<typeof computeMobileTreemapSectors>['rows']) {
+function detectOverlapsAndBounds(sectors: ReturnType<typeof computeMobileTreemapSectors>['sectors']) {
   let overlapCount = 0;
   let outOfBoundsCount = 0;
   const overlapDetails: string[] = [];
 
-  for (const row of rows) {
-    for (const sector of row.sectors) {
-      const { width: secW, tilesHeight: secH } = sector;
-      const tiles = sector.children;
+  for (const sector of sectors) {
+    const tiles = sector.tiles;
 
-      for (let i = 0; i < tiles.length; i++) {
-        const a = tiles[i]!;
+    for (let i = 0; i < tiles.length; i++) {
+      const a = tiles[i]!;
 
-        // Out of bounds
-        if (a.x0 < 0 || a.y0 < 0 || a.x1 > secW || a.y1 > secH) {
-          outOfBoundsCount++;
+      // Out of bounds relative to sector
+      if (a.x0 < sector.x0 || a.y0 < sector.y0 || a.x1 > sector.x1 || a.y1 > sector.y1) {
+        outOfBoundsCount++;
+        overlapDetails.push(
+          `${a.company.symbol}: OOB [${a.x0},${a.y0},${a.x1},${a.y1}] in sector [${sector.x0},${sector.y0},${sector.x1},${sector.y1}]`
+        );
+      }
+
+      // Overlaps with other tiles
+      for (let j = i + 1; j < tiles.length; j++) {
+        const b = tiles[j]!;
+        const xOverlap = a.x0 < b.x1 && a.x1 > b.x0;
+        const yOverlap = a.y0 < b.y1 && a.y1 > b.y0;
+        if (xOverlap && yOverlap) {
+          overlapCount++;
+          const xOverlapPx = Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0);
+          const yOverlapPx = Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0);
           overlapDetails.push(
-            `${a.company.symbol}: OOB [${a.x0},${a.y0},${a.x1},${a.y1}] in ${secW}x${secH}`
+            `${a.company.symbol} vs ${b.company.symbol}: overlap ${xOverlapPx}x${yOverlapPx}px`
           );
-        }
-
-        // Overlaps with other tiles
-        for (let j = i + 1; j < tiles.length; j++) {
-          const b = tiles[j]!;
-          const xOverlap = a.x0 < b.x1 && a.x1 > b.x0;
-          const yOverlap = a.y0 < b.y1 && a.y1 > b.y0;
-          if (xOverlap && yOverlap) {
-            overlapCount++;
-            const xOverlapPx = Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0);
-            const yOverlapPx = Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0);
-            overlapDetails.push(
-              `${a.company.symbol} vs ${b.company.symbol}: overlap ${xOverlapPx}x${yOverlapPx}px at [${Math.max(a.x0, b.x0)},${Math.max(a.y0, b.y0)}]`
-            );
-          }
         }
       }
     }
@@ -91,12 +88,11 @@ describe('mobileTreemap layout', () => {
     // Typical mobile viewport: iPhone 12 Pro / similar
     const result = computeMobileTreemapSectors(sorted, { width: 393, height: 720 }, 'percent', {
       sectorChromeHeightPx: 16,
-      columnGapPx: 3,
     });
 
-    expect(result.rows.length).toBeGreaterThan(0);
+    expect(result.sectors.length).toBeGreaterThan(0);
 
-    const { overlapCount, outOfBoundsCount, overlapDetails } = detectOverlapsAndBounds(result.rows);
+    const { overlapCount, outOfBoundsCount, overlapDetails } = detectOverlapsAndBounds(result.sectors);
 
     if (overlapCount > 0 || outOfBoundsCount > 0) {
       console.error('Layout issues:', overlapDetails.slice(0, 20));
@@ -112,10 +108,9 @@ describe('mobileTreemap layout', () => {
 
     const result = computeMobileTreemapSectors(sorted, { width: 393, height: 720 }, 'mcap', {
       sectorChromeHeightPx: 16,
-      columnGapPx: 3,
     });
 
-    const { overlapCount, outOfBoundsCount, overlapDetails } = detectOverlapsAndBounds(result.rows);
+    const { overlapCount, outOfBoundsCount, overlapDetails } = detectOverlapsAndBounds(result.sectors);
 
     if (overlapCount > 0 || outOfBoundsCount > 0) {
       console.error('Layout issues (mcap):', overlapDetails.slice(0, 20));
@@ -131,10 +126,9 @@ describe('mobileTreemap layout', () => {
 
     const result = computeMobileTreemapSectors(sorted, { width: 320, height: 568 }, 'percent', {
       sectorChromeHeightPx: 16,
-      columnGapPx: 3,
     });
 
-    const { overlapCount, outOfBoundsCount } = detectOverlapsAndBounds(result.rows);
+    const { overlapCount, outOfBoundsCount } = detectOverlapsAndBounds(result.sectors);
     expect(overlapCount).toBe(0);
     expect(outOfBoundsCount).toBe(0);
   });

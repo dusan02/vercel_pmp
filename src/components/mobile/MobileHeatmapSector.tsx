@@ -2,18 +2,16 @@
 
 import React from 'react';
 import type { CompanyNode, HeatmapMetric } from '@/lib/heatmap/types';
-import type { MobileTreemapSectorBlock } from '@/lib/heatmap/mobileTreemap';
+import type { MobileTreemapSector } from '@/lib/heatmap/mobileTreemap';
 import { getMobileTileLabel } from '@/lib/heatmap/mobileLabels';
 import { pickCompanyWithHitSlop } from '@/lib/heatmap/mobileHitSlop';
 import { MobileHeatmapTile } from './MobileHeatmapTile';
 
-// Sector chrome: 16px = 12px label + 1px divider + 3px spacing
-// Must match SECTOR_CHROME_PX in mobileTreemap.ts
 const LABEL_H = 12;
 const CHROME_H = 16;
 
 interface MobileHeatmapSectorProps {
-  sector: MobileTreemapSectorBlock;
+  sector: MobileTreemapSector;
   metric: HeatmapMetric;
   getColor: (company: CompanyNode) => string;
   onTileSelect: (company: CompanyNode) => void;
@@ -21,12 +19,15 @@ interface MobileHeatmapSectorProps {
 }
 
 /**
- * Renders one sector block: compact label (top) + tile area (below).
- * Absolute positioning guarantees zero overlap between label and tiles.
+ * Renders one sector: positioned absolutely by D3 global treemap coordinates.
+ * Tiles are positioned relative to the sector origin.
  */
 export const MobileHeatmapSector: React.FC<MobileHeatmapSectorProps> = ({
   sector, metric, getColor, onTileSelect, onTileClick,
 }) => {
+  const secW = sector.x1 - sector.x0;
+  const secH = sector.y1 - sector.y0;
+
   const handleTilesClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement | null;
     const tileEl = target?.closest?.('[data-heatmap-tile="1"]') as HTMLElement | null;
@@ -36,8 +37,11 @@ export const MobileHeatmapSector: React.FC<MobileHeatmapSectorProps> = ({
     }
 
     const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+    // Tiles have global coordinates; add sector origin to convert relative click to global
+    const px = e.clientX - rect.left + sector.x0;
+    const py = e.clientY - rect.top + sector.y0;
     const picked = pickCompanyWithHitSlop(
-      sector.children, e.clientX - rect.left, e.clientY - rect.top, { radiusPx: 20 }
+      sector.tiles, px, py, { radiusPx: 20 }
     );
     if (!picked) return;
     e.preventDefault();
@@ -54,11 +58,11 @@ export const MobileHeatmapSector: React.FC<MobileHeatmapSectorProps> = ({
   return (
     <div
       style={{
-        position: 'relative',
-        flexBasis: `${sector.width}px`,
-        flexShrink: 0,
-        flexGrow: 0,
-        height: '100%',
+        position: 'absolute',
+        left: `${sector.x0}px`,
+        top: `${sector.y0}px`,
+        width: `${secW}px`,
+        height: `${secH}px`,
         overflow: 'hidden',
         background: '#0a0a0a',
       }}
@@ -104,27 +108,28 @@ export const MobileHeatmapSector: React.FC<MobileHeatmapSectorProps> = ({
         />
       </div>
 
-      {/* Tiles area */}
+      {/* Tiles area — tiles are positioned relative to sector origin */}
       <div
         onClickCapture={handleTilesClick}
         style={{
           position: 'absolute',
-          top: `${CHROME_H}px`,
-          left: 0, width: '100%',
-          height: `${sector.tilesHeight}px`,
+          top: 0, left: 0, width: '100%', height: '100%',
           overflow: 'hidden',
         }}
       >
-        {sector.children.map((leaf, i) => {
+        {sector.tiles.map((leaf, i) => {
           const company = leaf.company;
           const w = leaf.x1 - leaf.x0;
           const h = leaf.y1 - leaf.y0;
+          // Tile coordinates are global; subtract sector origin for relative positioning
+          const relX = leaf.x0 - sector.x0;
+          const relY = leaf.y0 - sector.y0;
           return (
             <MobileHeatmapTile
               key={`${company.symbol}-${i}`}
               company={company}
-              x={leaf.x0}
-              y={leaf.y0}
+              x={relX}
+              y={relY}
               width={w}
               height={h}
               color={getColor(company)}

@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useMemo, useCallback, useLayoutEffect, useRef, useState, useEffect } from 'react';
+import React, { useMemo, useCallback, useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import type { CompanyNode } from '@/lib/heatmap/types';
 import { createHeatmapColorScale } from '@/lib/utils/heatmapColors';
-import { computeMobileTreemapSectors, prepareMobileTreemapData, SECTOR_CHROME_PX, COLUMN_GAP_PX } from '@/lib/heatmap/mobileTreemap';
+import { computeMobileTreemapSectors, prepareMobileTreemapData, SECTOR_CHROME_PX } from '@/lib/heatmap/mobileTreemap';
+import { useElementResize } from '@/hooks/useElementResize';
 import { MobileHeatmapHeader } from './mobile/MobileHeatmapHeader';
 import { MobileHeatmapSheet } from './mobile/MobileHeatmapSheet';
 import { MobileHeatmapSector } from './mobile/MobileHeatmapSector';
@@ -42,56 +43,8 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   activeView,
   height,
 }) => {
-  // -- Container measurement --------------------------------------------------
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const [containerSize, setContainerSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
-  const rafRef = useRef<number | null>(null);
-
-  useLayoutEffect(() => {
-    if (!containerRef.current) return;
-
-    // Capture initial size. useLayoutEffect runs before paint, so the parent
-    // flex layout may not be fully settled yet. We do a one-time re-measure
-    // after 150ms to grab the real height, without creating a feedback loop.
-    const updateSize = (rect: DOMRectReadOnly | DOMRect) => {
-      const width = Math.round(rect.width);
-      const height = Math.round(rect.height);
-      if (width <= 0 || height <= 0) return;
-      setContainerSize((prev) =>
-        prev.width !== width || prev.height !== height ? { width, height } : prev
-      );
-    };
-
-    updateSize(containerRef.current.getBoundingClientRect());
-
-    const delayedMeasure = setTimeout(() => {
-      if (!containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
-      updateSize(rect);
-    }, 150);
-
-    // Track width only — height must stay frozen to prevent infinite layout
-    // thrashing: re-layout changes content height → ResizeObserver fires → re-layout.
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const { width } = entry.contentRect;
-        if (width <= 0) continue;
-        if (rafRef.current) cancelAnimationFrame(rafRef.current);
-        rafRef.current = requestAnimationFrame(() => {
-          setContainerSize((prev) =>
-            prev.width !== width ? { width, height: prev.height } : prev
-          );
-        });
-      }
-    });
-
-    observer.observe(containerRef.current);
-    return () => {
-      clearTimeout(delayedMeasure);
-      observer.disconnect();
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
-  }, []);
+  // -- Container measurement via useElementResize (width + height) ---------
+  const { ref: containerRef, size: containerSize } = useElementResize();
 
   // -- Detail sheet -----------------------------------------------------------
   const [selectedCompany, setSelectedCompany] = useState<CompanyNode | null>(null);
@@ -124,19 +77,17 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   );
 
   const treemapResult = useMemo(() => {
-    const heightConfig =
-      height !== undefined
-        ? { contentHeightMultiplier: 1, minTotalContentHeightPx: height - 16 }
-        : {};
-
-    return computeMobileTreemapSectors(sortedData, containerSize, layoutMetric || metric, {
+    const effectiveSize = height !== undefined
+      ? { width: containerSize.width, height }
+      : containerSize;
+    if (effectiveSize.width <= 0 || effectiveSize.height <= 0) return null;
+    return computeMobileTreemapSectors(sortedData, effectiveSize, layoutMetric || metric, {
       sectorChromeHeightPx: SECTOR_CHROME_PX,
-      columnGapPx: COLUMN_GAP_PX,
-      ...heightConfig,
     });
   }, [sortedData, metric, layoutMetric, containerSize, height]);
 
-  const { rows } = treemapResult;
+  const sectors = treemapResult?.sectors ?? [];
+  const layoutHeight = treemapResult?.height ?? 0;
 
   // -- Render -----------------------------------------------------------------
   return (
@@ -146,52 +97,40 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
     >
       <MobileHeatmapHeader metric={metric} onMetricChange={onMetricChange} />
 
-      {/* Treemap scroll container — full-bleed, no padding waste */}
+      {/* Treemap scroll container */}
       <div
         ref={containerRef}
         className="mobile-heatmap-scroll"
         style={{
           width: '100%',
-          overflowX: 'hidden',
-          backgroundColor: '#0a0a0a',
           ...(height !== undefined
             ? { height: `${height}px`, overflowY: 'hidden' }
             : { flex: 1, overflowY: 'auto' }),
+          overflowX: 'hidden',
+          backgroundColor: '#0a0a0a',
           WebkitOverflowScrolling: 'touch',
         }}
       >
+        {/* Treemap canvas — single positioned container for all sectors */}
         <div
           style={{
+            position: 'relative',
             width: '100%',
-            display: 'flex',
-            flexDirection: 'column',
+            height: layoutHeight > 0 ? `${layoutHeight}px` : '100%',
             // Clear the fixed BottomNavigation so the last row isn't hidden behind it.
             paddingBottom: 'calc(var(--tabbar-real-h, var(--tabbar-h, 72px)) + env(safe-area-inset-bottom, 0px) + 8px)',
           }}
         >
-          {rows && rows.length > 0 && containerSize.width > 0 ? (
-            rows.map((row) => (
-              <div
-                key={row.id}
-                style={{
-                  display: 'flex',
-                  width: '100%',
-                  height: `${row.height}px`,
-                  flexShrink: 0,
-                  gap: `${COLUMN_GAP_PX}px`,
-                }}
-              >
-                {row.sectors.map((sector) => (
-                  <MobileHeatmapSector
-                    key={sector.name}
-                    sector={sector}
-                    metric={metric}
-                    getColor={getColor}
-                    onTileSelect={handleTileSelect}
-                    onTileClick={onTileClick}
-                  />
-                ))}
-              </div>
+          {sectors.length > 0 && containerSize.width > 0 ? (
+            sectors.map((sector) => (
+              <MobileHeatmapSector
+                key={sector.name}
+                sector={sector}
+                metric={metric}
+                getColor={getColor}
+                onTileSelect={handleTileSelect}
+                onTileClick={onTileClick}
+              />
             ))
           ) : (
             <div

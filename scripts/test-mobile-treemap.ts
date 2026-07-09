@@ -39,38 +39,38 @@ function generateMixedData(): CompanyNode[] {
   return data;
 }
 
-function detectOverlapsAndBounds(rows: ReturnType<typeof computeMobileTreemapSectors>['rows']) {
+function detectOverlapsAndBounds(sectors: ReturnType<typeof computeMobileTreemapSectors>['sectors']) {
   let overlapCount = 0;
   let outOfBoundsCount = 0;
   const overlapDetails: string[] = [];
 
-  for (const row of rows) {
-    for (const sector of row.sectors) {
-      const { width: secW, tilesHeight: secH } = sector;
-      const tiles = sector.children;
+  for (const sector of sectors) {
+    const secW = sector.x1 - sector.x0;
+    const secH = sector.y1 - sector.y0;
+    const tiles = sector.tiles;
 
-      for (let i = 0; i < tiles.length; i++) {
-        const a = tiles[i]!;
+    for (let i = 0; i < tiles.length; i++) {
+      const a = tiles[i]!;
 
-        if (a.x0 < 0 || a.y0 < 0 || a.x1 > secW || a.y1 > secH) {
-          outOfBoundsCount++;
+      // Check out of bounds relative to sector
+      if (a.x0 < sector.x0 || a.y0 < sector.y0 || a.x1 > sector.x1 || a.y1 > sector.y1) {
+        outOfBoundsCount++;
+        overlapDetails.push(
+          `${a.company.symbol}: OOB [${a.x0},${a.y0},${a.x1},${a.y1}] in sector [${sector.x0},${sector.y0},${sector.x1},${sector.y1}]`
+        );
+      }
+
+      for (let j = i + 1; j < tiles.length; j++) {
+        const b = tiles[j]!;
+        const xOverlap = a.x0 < b.x1 && a.x1 > b.x0;
+        const yOverlap = a.y0 < b.y1 && a.y1 > b.y0;
+        if (xOverlap && yOverlap) {
+          overlapCount++;
+          const xOverlapPx = Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0);
+          const yOverlapPx = Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0);
           overlapDetails.push(
-            `${a.company.symbol}: OOB [${a.x0},${a.y0},${a.x1},${a.y1}] in ${secW}x${secH}`
+            `${a.company.symbol} vs ${b.company.symbol}: overlap ${xOverlapPx}x${yOverlapPx}px`
           );
-        }
-
-        for (let j = i + 1; j < tiles.length; j++) {
-          const b = tiles[j]!;
-          const xOverlap = a.x0 < b.x1 && a.x1 > b.x0;
-          const yOverlap = a.y0 < b.y1 && a.y1 > b.y0;
-          if (xOverlap && yOverlap) {
-            overlapCount++;
-            const xOverlapPx = Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0);
-            const yOverlapPx = Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0);
-            overlapDetails.push(
-              `${a.company.symbol} vs ${b.company.symbol}: overlap ${xOverlapPx}x${yOverlapPx}px at [${Math.max(a.x0, b.x0)},${Math.max(a.y0, b.y0)}]`
-            );
-          }
         }
       }
     }
@@ -87,13 +87,13 @@ console.log(`Testing with ${sorted.length} companies`);
 ['percent', 'mcap'].forEach((metric) => {
   const result = computeMobileTreemapSectors(sorted, { width: 393, height: 720 }, metric as any, {
     sectorChromeHeightPx: 16,
-    columnGapPx: 3,
   });
 
-  const { overlapCount, outOfBoundsCount, overlapDetails } = detectOverlapsAndBounds(result.rows);
+  const { overlapCount, outOfBoundsCount, overlapDetails } = detectOverlapsAndBounds(result.sectors);
 
   console.log(`\nMetric: ${metric}`);
-  console.log(`Rows: ${result.rows.length}`);
+  console.log(`Sectors: ${result.sectors.length}`);
+  console.log(`Layout: ${result.width}x${result.height}`);
   console.log(`Overlaps: ${overlapCount}`);
   console.log(`Out of bounds: ${outOfBoundsCount}`);
   if (overlapDetails.length > 0) {

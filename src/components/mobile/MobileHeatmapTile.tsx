@@ -18,8 +18,8 @@ interface MobileHeatmapTileProps {
 }
 
 /**
- * Single tile — positioned with transform: translate3d for GPU-accurate
- * integer-pixel placement. Gap between tiles is baked into D3 layout.
+ * Single tile — positioned with left/top at integer D3 coordinates.
+ * Gap between tiles is handled by D3 paddingInner(2) in the global treemap.
  */
 export const MobileHeatmapTile = React.memo<MobileHeatmapTileProps>(({
   company,
@@ -41,11 +41,10 @@ export const MobileHeatmapTile = React.memo<MobileHeatmapTileProps>(({
       onClick={(e) => { e.stopPropagation(); onClick(company); }}
       style={{
         position: 'absolute',
-        left: 0,
-        top: 0,
+        left: `${x}px`,
+        top: `${y}px`,
         width: `${width}px`,
         height: `${height}px`,
-        transform: `translate3d(${x}px, ${y}px, 0)`,
         background: color,
         borderRadius: `${r}px`,
         boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.12), inset 0 1px 0 rgba(255,255,255,0.2)',
