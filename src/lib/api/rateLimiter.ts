@@ -1,5 +1,8 @@
 /**
  * Rate limiter and circuit breaker utilities
+ * 
+ * In-memory rate limiter uses sliding window log algorithm (Edge-compatible).
+ * For multi-instance deployments, use redisRateLimit (Node.js runtime only).
  */
 
 interface RateLimitConfig {
@@ -14,7 +17,8 @@ interface CircuitBreakerState {
   successCount: number;
 }
 
-const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
+// Sliding window log: store timestamps of requests per identifier
+const slidingWindowStore = new Map<string, number[]>();
 const circuitBreakers = new Map<string, CircuitBreakerState>();
 
 // Cleanup expired entries every 5 minutes
@@ -23,9 +27,14 @@ let cleanupTimer: NodeJS.Timeout | null = null;
 
 function cleanupExpiredEntries() {
   const now = Date.now();
-  for (const [key, entry] of rateLimitStore.entries()) {
-    if (now > entry.resetTime) {
-      rateLimitStore.delete(key);
+  for (const [key, timestamps] of slidingWindowStore.entries()) {
+    // Remove entries where all timestamps are older than 2 minutes (max window we'd use)
+    const cutoff = now - 120_000;
+    const fresh = timestamps.filter(t => t > cutoff);
+    if (fresh.length === 0) {
+      slidingWindowStore.delete(key);
+    } else if (fresh.length !== timestamps.length) {
+      slidingWindowStore.set(key, fresh);
     }
   }
 }
@@ -36,27 +45,64 @@ if (typeof window === 'undefined') {
 }
 
 /**
- * Rate limiter middleware
+ * In-memory sliding window rate limiter (Edge-compatible).
+ * More accurate than fixed window — prevents burst-at-boundary problem.
  */
 export function rateLimit(
   identifier: string,
   config: RateLimitConfig = { maxRequests: 60, windowMs: 60000 }
 ): boolean {
   const now = Date.now();
-  const key = identifier;
-  const stored = rateLimitStore.get(key);
-
-  if (!stored || now > stored.resetTime) {
-    rateLimitStore.set(key, { count: 1, resetTime: now + config.windowMs });
-    return true;
-  }
-
-  if (stored.count >= config.maxRequests) {
+  const windowStart = now - config.windowMs;
+  
+  const timestamps = slidingWindowStore.get(identifier) || [];
+  // Filter to only timestamps within the current window
+  const recent = timestamps.filter(t => t > windowStart);
+  
+  if (recent.length >= config.maxRequests) {
+    slidingWindowStore.set(identifier, recent);
     return false;
   }
-
-  stored.count++;
+  
+  recent.push(now);
+  slidingWindowStore.set(identifier, recent);
   return true;
+}
+
+/**
+ * Redis-based sliding window rate limiter for Node.js runtime (non-Edge).
+ * Use this in API routes that run in Node.js runtime for multi-instance accuracy.
+ * Falls back to in-memory if Redis is unavailable.
+ */
+export async function redisRateLimit(
+  identifier: string,
+  config: RateLimitConfig = { maxRequests: 60, windowMs: 60000 }
+): Promise<boolean> {
+  try {
+    const { redisClient } = await import('@/lib/redis/client');
+    if (!redisClient || !redisClient.isOpen) {
+      return rateLimit(identifier, config);
+    }
+    
+    const now = Date.now();
+    const windowStart = now - config.windowMs;
+    const key = `ratelimit:${identifier}`;
+    
+    // Remove expired entries and add current timestamp atomically
+    const pipeline = redisClient.multi();
+    pipeline.zremrangebyscore(key, 0, windowStart);
+    pipeline.zadd(key, now, `${now}`);
+    pipeline.zcard(key);
+    pipeline.pexpire(key, config.windowMs);
+    
+    const results = await pipeline.exec();
+    const count = results?.[2]?.[1] as number;
+    
+    return count <= config.maxRequests;
+  } catch {
+    // Fallback to in-memory if Redis fails
+    return rateLimit(identifier, config);
+  }
 }
 
 /**
