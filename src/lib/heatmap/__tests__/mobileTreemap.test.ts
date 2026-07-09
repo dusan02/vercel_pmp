@@ -12,7 +12,10 @@ function generateSectorData(sectorName: string, count: number, baseMarketCap: nu
   const companies: CompanyNode[] = [];
   for (let i = 0; i < count; i++) {
     const marketCap = baseMarketCap * Math.pow(0.92, i); // decreasing market caps
-    const changePercent = (Math.random() - 0.5) * 10;
+    // Deterministic pseudo-random based on index + sector name hash
+    // (avoids Math.random() which makes tests flaky across CI runs)
+    const seed = (sectorName.charCodeAt(0) * 31 + i * 7) % 100;
+    const changePercent = ((seed / 100) - 0.5) * 10;
     companies.push({
       symbol: `${sectorName.slice(0, 3)}${i}`,
       name: `Company ${i}`,
