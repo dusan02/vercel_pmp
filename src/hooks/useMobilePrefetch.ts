@@ -1,49 +1,30 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 
 /**
- * Hook pre prefetching neaktívnych mobile screens a API endpoints
- * Optimalizuje rýchlosť prepínania medzi tabmi
+ * Prefetch API endpoints for inactive mobile screens.
+ * Fires after 3s delay to avoid blocking initial load.
  */
 export function useMobilePrefetch(activeView: string) {
-  const router = useRouter();
-
   useEffect(() => {
-    // Prefetch routes pre neaktívne views
-    const viewsToPrefetch = ['heatmap', 'portfolio', 'favorites', 'earnings', 'allStocks'];
-    viewsToPrefetch.forEach(view => {
-      if (view !== activeView) {
-        // Prefetch route (ak existuje)
-        // router.prefetch(`/${view}`); // Ak máš routes pre jednotlivé views
-      }
-    });
-
-    // Prefetch API endpoints pre neaktívne views
-    // NOTE: Heatmap prefetch removed — useHeatmapData handles its own fetch lifecycle.
     const prefetchAPIs = () => {
-      // Stocks API - prefetch ak nie je aktívny allStocks
       if (activeView !== 'allStocks') {
-        fetch('/api/stocks?getAll=true&limit=50', { 
-          method: 'HEAD',
+        fetch('/api/stocks?getAll=true&limit=50', {
           cache: 'force-cache',
           priority: 'low' as RequestPriority
         }).catch(() => {});
       }
 
-      // Earnings API - prefetch ak nie je aktívny
       if (activeView !== 'earnings') {
-        fetch('/api/earnings/today', { 
-          method: 'HEAD',
+        fetch('/api/earnings/today', {
           cache: 'force-cache',
           priority: 'low' as RequestPriority
         }).catch(() => {});
       }
     };
 
-    // Prefetch po 3 sekundách (neblokuje initial load, dá čas na načítanie hlavného obsahu)
     const timer = setTimeout(prefetchAPIs, 3000);
     return () => clearTimeout(timer);
-  }, [activeView, router]);
+  }, [activeView]);
 }

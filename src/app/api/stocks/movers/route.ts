@@ -154,10 +154,13 @@ export async function GET(request: NextRequest) {
                 regularClose > 0 ? regularClose : null
             );
 
-            // Use fresh calculated % if we have valid reference, else fall back to DB value
-            const lastChangePct = (currentPrice > 0 && (pct.reference.price ?? 0) > 0)
+            // Prefer recalculated % when price has moved (currentPrice !== previousClose).
+            // When currentPrice === previousClose (no new trades, price is regularClose fallback),
+            // use Ticker.lastChangePct from the worker which has the correct value.
+            const hasPriceMovement = currentPrice > 0 && previousClose > 0 && currentPrice !== previousClose;
+            const lastChangePct = hasPriceMovement
                 ? pct.changePct
-                : (m.lastChangePct || 0);
+                : (m.lastChangePct || pct.changePct || 0);
 
             return {
                 symbol: m.symbol,

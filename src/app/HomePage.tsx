@@ -110,7 +110,6 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { StockData } from '@/lib/types';
 import { autoRepairLocalStorage } from '@/lib/utils/localStorageCache';
 import { useMobilePrefetch } from '@/hooks/useMobilePrefetch';
-import { useMobileOptimization } from '@/hooks/useMobileOptimization';
 import { useHomeNavigation } from '@/hooks/useHomeNavigation';
 import { useHomeData } from '@/hooks/useHomeData';
 
@@ -148,7 +147,6 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
 
   // Prefetch inactive screens and prioritize heatmap on mobile
   useMobilePrefetch(activeSection);
-  useMobileOptimization(activeSection);
 
 
   return (
