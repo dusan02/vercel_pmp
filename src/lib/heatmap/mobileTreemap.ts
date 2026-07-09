@@ -3,9 +3,10 @@
  *
  * Key fix over V2:
  * - round(true) → integer coordinates, guarantees ZERO tile overlap
- * - paddingInner(2) → consistent 2px gap between tiles
- * - snapToInt → safety net for any remaining sub-pixel values
- * - Small tile threshold lowered to 1px (integer coords are precise)
+ * - paddingInner(0) + 1px CSS inset → uniform 2px gap, max tile area
+ * - Tile limiting: sectors with too many companies for their area
+ *   aggregate excess into an "Other" tile (minTilePx = 4px)
+ * - transform: translate3d for GPU-precise positioning
  */
 
 import { hierarchy, treemap, treemapSquarify } from 'd3-hierarchy';
@@ -76,6 +77,7 @@ export type ComputeMobileTreemapOptions = {
   smallSectorThreshold?: number;
   maxColumns?: number;
   columnGapPx?: number;
+  minTilePx?: number;
 };
 
 const DEFAULTS = {
@@ -85,6 +87,7 @@ const DEFAULTS = {
   smallSectorThreshold: 0.03,
   maxColumns: 2,
   columnGapPx: COLUMN_GAP_PX,
+  minTilePx: 4,
 };
 
 // ─── Helpers ────────────────────────────────────────────────────────
@@ -118,6 +121,7 @@ export function computeMobileTreemapSectors(
   const minTilesH = options.minTilesHeightPx ?? DEFAULTS.minTilesHeightPx;
   const threshold = options.smallSectorThreshold ?? DEFAULTS.smallSectorThreshold;
   const maxCols = options.maxColumns ?? DEFAULTS.maxColumns;
+  const minTilePx = options.minTilePx ?? DEFAULTS.minTilePx;
 
   const hier = buildHeatmapHierarchy(sortedData, metric);
   const rawSectors = hier.children ?? [];
@@ -159,7 +163,31 @@ export function computeMobileTreemapSectors(
       remW -= secW;
 
       const tilesH = Math.max(1, rowH - chromeH);
-      const flat = { ...item.node, children: flattenLeaves(item.node) };
+      const allLeaves = flattenLeaves(item.node);
+
+      // Limit the number of tiles per sector based on available area.
+      // Each tile needs at least minTilePx × minTilePx pixels (plus 2px for inset gap).
+      // Excess companies are aggregated into a single "Other" tile so the treemap
+      // never tries to squeeze too many tiles into a small space.
+      const tileCellPx = minTilePx + 2; // account for 1px inset on each side
+      const maxTiles = Math.max(1, Math.floor(secW / tileCellPx) * Math.floor(tilesH / tileCellPx));
+
+      let leavesForTreemap = allLeaves;
+      if (allLeaves.length > maxTiles) {
+        // Sort by value descending (already sorted by buildHeatmapHierarchy, but be safe)
+        const sorted = [...allLeaves].sort((a: any, b: any) => (b.value || 0) - (a.value || 0));
+        const kept = sorted.slice(0, maxTiles - 1);
+        const dropped = sorted.slice(maxTiles - 1);
+        const otherValue = dropped.reduce((s: number, c: any) => s + (c.value || 0), 0);
+        kept.push({
+          name: `Other (${dropped.length})`,
+          value: otherValue,
+          meta: { type: 'company', companyData: dropped[0]?.meta?.companyData || { symbol: '…', name: 'Other', sector: item.node.name, industry: '', marketCap: 0, changePercent: 0 } },
+        });
+        leavesForTreemap = kept;
+      }
+
+      const flat = { ...item.node, children: leavesForTreemap };
 
       // D3 treemap — round(true) for integer coordinates (ZERO overlap guarantee)
       // paddingInner(0): we create the visible gap ourselves with CSS margins so
@@ -197,7 +225,7 @@ export function computeMobileTreemapSectors(
             company: l.data.meta?.companyData || l.data,
           };
         })
-        .filter(l => (l.x1 - l.x0) >= 1 && (l.y1 - l.y0) >= 1);
+        .filter(l => (l.x1 - l.x0) >= 2 && (l.y1 - l.y0) >= 2);
 
       return { name: item.node.name, width: secW, height: rowH, tilesHeight: tilesH, children: leaves };
     });
