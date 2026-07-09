@@ -174,13 +174,24 @@ export function computeMobileTreemapSectors(
         .tile(treemapSquarify)(h);
 
       const leaves: MobileTreemapLeaf[] = h.leaves()
-        .map((l: any) => ({
-          x0: Math.round(l.x0),
-          y0: Math.round(l.y0),
-          x1: Math.round(l.x1),
-          y1: Math.round(l.y1),
-          company: l.data.meta?.companyData || l.data,
-        }))
+        .map((l: any) => {
+          const x0 = Math.round(l.x0);
+          const y0 = Math.round(l.y0);
+          const x1 = Math.round(l.x1);
+          const y1 = Math.round(l.y1);
+          // 1px safety margin on right/bottom to absorb any browser sub-pixel
+          // rounding or container dimension mismatch that could cause overlap.
+          // Clamp to sector bounds so a tile never extends outside its container.
+          const safeX1 = Math.min(secW, Math.max(x0 + 1, x1 - 1));
+          const safeY1 = Math.min(tilesH, Math.max(y0 + 1, y1 - 1));
+          return {
+            x0,
+            y0,
+            x1: safeX1,
+            y1: safeY1,
+            company: l.data.meta?.companyData || l.data,
+          };
+        })
         .filter(l => (l.x1 - l.x0) >= 1 && (l.y1 - l.y0) >= 1);
 
       return { name: item.node.name, width: secW, height: rowH, tilesHeight: tilesH, children: leaves };

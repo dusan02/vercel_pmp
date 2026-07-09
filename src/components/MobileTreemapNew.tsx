@@ -45,28 +45,35 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   // -- Container measurement --------------------------------------------------
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [containerSize, setContainerSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
+  const rafRef = useRef<number | null>(null);
 
   useLayoutEffect(() => {
     if (!containerRef.current) return;
 
-    // Capture initial height once (before D3 grows the container).
-    const initialH = containerRef.current.getBoundingClientRect().height;
-    setContainerSize((prev) =>
-      prev.height > 0 ? prev : { width: prev.width, height: initialH },
-    );
+    const updateSize = (rect: DOMRectReadOnly | DOMRect) => {
+      const width = Math.round(rect.width);
+      const height = Math.round(rect.height);
+      if (width <= 0 || height <= 0) return;
+      setContainerSize((prev) =>
+        prev.width !== width || prev.height !== height ? { width, height } : prev
+      );
+    };
 
-    // Track width only — height must stay frozen to prevent infinite layout thrashing.
+    updateSize(containerRef.current.getBoundingClientRect());
+
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        const { width } = entry.contentRect;
-        if (width > 0) {
-          setContainerSize((prev) => (prev.width !== width ? { width, height: prev.height } : prev));
-        }
+        const rect = entry.contentRect;
+        if (rafRef.current) cancelAnimationFrame(rafRef.current);
+        rafRef.current = requestAnimationFrame(() => updateSize(rect));
       }
     });
 
     observer.observe(containerRef.current);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
   }, []);
 
   // -- Detail sheet -----------------------------------------------------------
