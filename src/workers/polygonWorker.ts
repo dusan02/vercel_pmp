@@ -439,9 +439,11 @@ async function main() {
         const hours = et.hour;
         const minutes = et.minute;
 
-        // Window 16:05 - 16:59 ET (retry every 5 minutes)
+        // Window 16:05 - 16:59 ET (retry every minute; throttle prevents over-calling)
+        // CRITICAL: ingestLoop can take 14+ minutes per cycle, so checking only every 5 minutes
+        // means we may never hit a 5-minute boundary. Always check and let the throttle handle rate limiting.
         const inCloseWindow = hours === 16 && minutes >= 5;
-        const isRetryMinute = (minutes % 5) === 0;
+        const isRetryMinute = true;
 
         if (inCloseWindow && isRetryMinute) {
           const today = getDateET(etNow);

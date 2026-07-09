@@ -21,7 +21,7 @@ import { redisClient } from '@/lib/redis';
 import { recordSuccess, recordFailure } from '../healthMonitor';
 import { PriceData } from '@/lib/types';
 import { detectSession, isMarketOpen, isMarketHoliday, mapToRedisSession, getLastTradingDay, getTradingDay } from '@/lib/utils/timeUtils';
-import { nowET, getDateET, createETDate, isWeekendET, toET, isSameETDay } from '@/lib/utils/dateET';
+import { nowET, getDateET, createETDate, isWeekendET, toET } from '@/lib/utils/dateET';
 import { resolveEffectivePrice, calculatePercentChange } from '@/lib/utils/priceResolver';
 import { getPricingState, canOverwritePrice, getPreviousCloseTTL, PriceState } from '@/lib/utils/pricingStateMachine';
 import { withRetry, circuitBreaker } from '@/lib/api/rateLimiter';
@@ -524,13 +524,10 @@ async function upsertToDB(
       return { success: true, effectiveChangePct: changePctToUse, zScore, rvol };
     }
 
-    // IMPORTANT: Skip upserting Ticker to SQLite on every tick to avoid P1008 DB locks.
-    // Real-time data is now served exclusively from Redis by the frontend.
-    // We only write to Ticker if it's a new symbol, a forced static update, or a date boundary.
-    // CRITICAL: Use ET-aware comparison, not local getDate() — server may be in non-ET timezone.
-    const isNewDay = existingTicker?.lastPriceUpdated && !isSameETDay(existingTicker.lastPriceUpdated, normalized.timestamp);
-    const hasNullTimestamp = existingTicker && !existingTicker.lastPriceUpdated;
-    const shouldUpdateTicker = !existingTicker || isStaticUpdateLocked || force || isNewDay || hasNullTimestamp;
+    // Always update Ticker table so heatmap API Fast Path can serve fresh data.
+    // The heatmap API reads from DB (not Redis), so we must keep Ticker.lastPrice etc. current.
+    // SQLite single-writer is safe here — worker is the only continuous writer.
+    const shouldUpdateTicker = true;
 
     if (shouldUpdateTicker) {
       // Standard Upsert (New Data or Create)
