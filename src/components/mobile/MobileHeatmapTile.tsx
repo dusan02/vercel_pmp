@@ -18,8 +18,8 @@ interface MobileHeatmapTileProps {
 }
 
 /**
- * Single tile — positioned at exact D3 coordinates (sub-pixel precise).
- * Gap between tiles is baked into D3 layout via paddingInner(1).
+ * Single tile — positioned at exact D3 coordinates (integer-precise).
+ * Gap between tiles is baked into D3 layout via paddingInner(2).
  * No manual inset needed.
  */
 export const MobileHeatmapTile = React.memo<MobileHeatmapTileProps>(({

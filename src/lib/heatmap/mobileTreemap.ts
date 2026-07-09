@@ -1,11 +1,11 @@
 /**
- * Mobile Heatmap Layout Engine — V2
+ * Mobile Heatmap Layout Engine — V3
  *
- * Key improvements over V1:
- * - round(false) → sub-pixel precise coordinates, no edge gaps or tile overlap
- * - paddingInner(1) → clean 1px gap between tiles, built into D3 layout
- * - Reduced sector chrome (16px vs 21px) → more tile space
- * - Full-bleed rendering → no wasted padding
+ * Key fix over V2:
+ * - round(true) → integer coordinates, guarantees ZERO tile overlap
+ * - paddingInner(2) → consistent 2px gap between tiles
+ * - snapToInt → safety net for any remaining sub-pixel values
+ * - Small tile threshold lowered to 1px (integer coords are precise)
  */
 
 import { hierarchy, treemap, treemapSquarify } from 'd3-hierarchy';
@@ -161,24 +161,27 @@ export function computeMobileTreemapSectors(
       const tilesH = Math.max(1, rowH - chromeH);
       const flat = { ...item.node, children: flattenLeaves(item.node) };
 
-      // D3 treemap — round(false) for sub-pixel precision (no edge gaps)
-      // paddingInner(1.5) for clean gap between tiles, visually ~1-2px
+      // D3 treemap — round(true) for integer coordinates (ZERO overlap guarantee)
+      // paddingInner(2) for consistent 2px gap between tiles
       const h = hierarchy(flat)
         .sum((d: any) => d.value || 0)
         .sort((a: any, b: any) => (b.value || 0) - (a.value || 0));
 
       treemap()
         .size([secW, tilesH])
-        .paddingInner(1.5)
-        .round(false)
+        .paddingInner(2)
+        .round(true)
         .tile(treemapSquarify)(h);
 
       const leaves: MobileTreemapLeaf[] = h.leaves()
         .map((l: any) => ({
-          x0: l.x0, y0: l.y0, x1: l.x1, y1: l.y1,
+          x0: Math.round(l.x0),
+          y0: Math.round(l.y0),
+          x1: Math.round(l.x1),
+          y1: Math.round(l.y1),
           company: l.data.meta?.companyData || l.data,
         }))
-        .filter(l => (l.x1 - l.x0) >= 2 && (l.y1 - l.y0) >= 2);
+        .filter(l => (l.x1 - l.x0) >= 1 && (l.y1 - l.y0) >= 1);
 
       return { name: item.node.name, width: secW, height: rowH, tilesHeight: tilesH, children: leaves };
     });
