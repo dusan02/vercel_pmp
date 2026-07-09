@@ -50,22 +50,28 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   useLayoutEffect(() => {
     if (!containerRef.current) return;
 
-    const updateSize = (rect: DOMRectReadOnly | DOMRect) => {
-      const width = Math.round(rect.width);
-      const height = Math.round(rect.height);
-      if (width <= 0 || height <= 0) return;
-      setContainerSize((prev) =>
-        prev.width !== width || prev.height !== height ? { width, height } : prev
-      );
-    };
+    // Capture initial size once. Height must stay frozen to prevent infinite
+    // layout thrashing: re-layout changes content height → ResizeObserver fires
+    // → re-layout → loop.
+    const initialRect = containerRef.current.getBoundingClientRect();
+    const initialW = Math.round(initialRect.width);
+    const initialH = Math.round(initialRect.height);
+    setContainerSize((prev) => ({
+      width: prev.width > 0 ? prev.width : initialW,
+      height: prev.height > 0 ? prev.height : initialH,
+    }));
 
-    updateSize(containerRef.current.getBoundingClientRect());
-
+    // Track width only — height is frozen after initial capture.
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        const rect = entry.contentRect;
+        const { width } = entry.contentRect;
+        if (width <= 0) continue;
         if (rafRef.current) cancelAnimationFrame(rafRef.current);
-        rafRef.current = requestAnimationFrame(() => updateSize(rect));
+        rafRef.current = requestAnimationFrame(() => {
+          setContainerSize((prev) =>
+            prev.width !== width ? { width, height: prev.height } : prev
+          );
+        });
       }
     });
 
