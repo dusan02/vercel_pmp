@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ingestBatch } from '@/workers/polygonWorker';
 import { getUniverse } from '@/lib/redis/operations';
 import { getAllProjectTickers } from '@/data/defaultTickers';
+import { verifyCronAuth } from '@/lib/utils/cronAuth';
 
 export async function POST(request: NextRequest) {
+  const authError = verifyCronAuth(request);
+  if (authError) return authError;
+
   try {
     const apiKey = process.env.POLYGON_API_KEY;
     if (!apiKey) {

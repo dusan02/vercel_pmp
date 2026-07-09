@@ -6,14 +6,15 @@ import React, { useState, useEffect, Suspense } from 'react';
 import dynamic from 'next/dynamic';
 
 // All component imports moved to dynamic imports - fixed pattern for named exports
-const PerformanceOptimizer = dynamic(
+const isDev = process.env.NODE_ENV === 'development';
+const PerformanceOptimizer = isDev ? dynamic(
   () => import('@/components/PerformanceOptimizer').then((mod) => mod.PerformanceOptimizer),
   { ssr: false, loading: () => null }
-);
-const MobileTester = dynamic(
+) : ({ children }: { children: React.ReactNode }) => <>{children}</>;
+const MobileTester = isDev ? dynamic(
   () => import('@/components/MobileTester').then((mod) => mod.MobileTester),
   { ssr: false, loading: () => null }
-);
+) : ({ children }: { children: React.ReactNode }) => <>{children}</>;
 const PullToRefresh = dynamic(
   () => import('@/components/PullToRefresh').then((mod) => mod.PullToRefresh),
   { ssr: false, loading: () => null }
@@ -314,12 +315,12 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
 
           <Suspense fallback={<div className="flex justify-center items-center h-screen bg-black text-white">Loading...</div>}>
             <PerformanceOptimizer
-              enableMonitoring={process.env.NODE_ENV === 'development'}
+              enableMonitoring={isDev}
               enableLazyLoading={true}
               enableImageOptimization={true}
             >
               <MobileTester
-                enableTesting={process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_ENABLE_MOBILE_TESTING === 'true'}
+                enableTesting={isDev && process.env.NEXT_PUBLIC_ENABLE_MOBILE_TESTING === 'true'}
                 showDeviceFrame={true}
               >
                 <PullToRefresh onRefresh={loadData}>
