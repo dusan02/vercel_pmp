@@ -1,10 +1,24 @@
 import type { NextConfig } from "next";
 import path from "path";
+import { execSync } from "child_process";
+
+// Build ID from git commit hash — used for cache versioning (auto-bust on deploy)
+const gitCommitHash = (() => {
+  try {
+    return execSync("git rev-parse --short HEAD").toString().trim();
+  } catch {
+    return "dev";
+  }
+})();
 
 const nextConfig: NextConfig = {
+  // Build ID — changes on every deploy, used for cache key versioning
+  generateBuildId: () => gitCommitHash,
+
   // Environment configuration
   env: {
     CUSTOM_KEY: process.env.CUSTOM_KEY,
+    NEXT_PUBLIC_BUILD_ID: gitCommitHash,
   },
 
   // Image optimization

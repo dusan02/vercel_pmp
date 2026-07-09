@@ -12,7 +12,7 @@ import { SECTOR_INDUSTRY_OVERRIDES } from '@/data/sectorIndustryOverrides';
 import { normalizeSectorIndustryPair } from '@/lib/utils/sectorIndustryValidator';
 import { isWeekendET } from '@/lib/utils/dateET';
 
-const CACHE_KEY = 'heatmap-data';
+const CACHE_KEY = `heatmap-data:${process.env.NEXT_PUBLIC_BUILD_ID || 'dev'}`;
 const CACHE_TTL = 900; // 15 minút (prekvitie s 10m cronom)
 const ETAG_BUCKET_SIZE = 5000; // 5 sekúnd
 
