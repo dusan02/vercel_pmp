@@ -14,6 +14,7 @@ export default {
         },
       },
     ],
+    "^.+\\.js$": "ts-jest",
   },
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
@@ -56,6 +57,7 @@ export default {
   setupFiles: ["<rootDir>/jest.env.ts"],
   setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
   testPathIgnorePatterns: ["/node_modules/", "/.next/"],
+  transformIgnorePatterns: ["/node_modules/(?!d3-hierarchy)"],
   testTimeout: 10000,
   // Force exit to prevent hanging from open handles
   forceExit: true,
