@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { AnalysisService } from '@/services/analysisService';
 
+// In-memory dedup: prevents multiple concurrent background revalidations for the same symbol
+const revalidating = new Set<string>();
+
 // Helper: compute metrics for a single symbol
 async function computeMetrics(symbol: string) {
     const analysis = await prisma.analysisCache.findUnique({ where: { symbol } });
@@ -186,10 +189,12 @@ export async function GET(
             select: { updatedAt: true },
         });
         const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-        if (cacheAge && cacheAge.updatedAt < sevenDaysAgo) {
+        if (cacheAge && cacheAge.updatedAt < sevenDaysAgo && !revalidating.has(symbol)) {
+            revalidating.add(symbol);
             // Fire-and-forget background refresh (non-blocking)
             fetch(`${new URL(request.url).origin}/api/analysis/${symbol}`, { method: 'POST' })
-                .catch(() => {/* silent — background job */});
+                .catch(() => {/* silent — background job */})
+                .finally(() => revalidating.delete(symbol));
         }
 
         return NextResponse.json({ ...primary, ticker: tickerRecord, peers });

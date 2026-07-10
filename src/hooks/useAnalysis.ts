@@ -56,6 +56,11 @@ export function useAnalysis(ticker: string) {
             if (!res.ok) {
                 setData(null);
                 setSecondaryData(null);
+                if (res.status === 404) {
+                    setError('No analysis data available for this ticker.');
+                } else {
+                    setError(`Analysis request failed (${res.status}). Please try again.`);
+                }
                 return;
             }
             const json = await res.json();

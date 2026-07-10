@@ -204,7 +204,7 @@ export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabP
                     hasData={!!(data.statements && data.statements.length > 0)}
                     emptyMessage="No financial statement data available for this ticker. Click Refresh Analysis to fetch data."
                 >
-                    <FinancialChart statements={data.statements!} />
+                    <FinancialChart statements={data.statements ?? []} />
                 </ChartSection>
 
                 <ChartSection
@@ -215,7 +215,7 @@ export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabP
                     hasData={!!(data.statements && data.statements.length > 0)}
                     emptyMessage="No cash flow data available. Click Refresh Analysis to fetch data."
                 >
-                    <CashFlowChart statements={data.statements!} />
+                    <CashFlowChart statements={data.statements ?? []} />
                 </ChartSection>
 
                 <ChartSection
@@ -226,7 +226,7 @@ export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabP
                     hasData={!!(data.statements && data.statements.length > 0)}
                     emptyMessage="No balance sheet data available for this ticker. Click Refresh Analysis to fetch data."
                 >
-                    <DebtCashChart statements={data.statements!} />
+                    <DebtCashChart statements={data.statements ?? []} />
                 </ChartSection>
 
                 <ChartSection
@@ -237,7 +237,7 @@ export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabP
                     hasData={!!(data.statements && data.statements.length > 0)}
                     emptyMessage="No share data available. Click Refresh Analysis to fetch data."
                 >
-                    <ShareDilutionChart statements={data.statements!} />
+                    <ShareDilutionChart statements={data.statements ?? []} />
                 </ChartSection>
 
                 <ChartSection

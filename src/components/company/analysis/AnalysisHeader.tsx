@@ -56,17 +56,21 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
     const [realTimeData, setRealTimeData] = useState<{currentPrice: number, percentChange: number, marketCapDiff: number} | null>(null);
 
     useEffect(() => {
-        let mounted = true;
-        fetch(`/api/prices/cached?tickers=${ticker}`)
+        const controller = new AbortController();
+        fetch(`/api/prices/cached?tickers=${ticker}`, { signal: controller.signal })
             .then(res => res.json())
             .then(json => {
-                if (!mounted) return;
+                if (controller.signal.aborted) return;
                 if (json?.data && json.data.length > 0) {
                     setRealTimeData(json.data[0]);
                 }
             })
-            .catch(err => console.error('Failed to fetch real-time data:', err));
-        return () => { mounted = false; };
+            .catch(err => {
+                if (err.name !== 'AbortError') {
+                    console.error('Failed to fetch real-time data:', err);
+                }
+            });
+        return () => { controller.abort(); };
     }, [ticker]);
 
     // Staleness detection: if DB price is > 4 hours old, consider it stale

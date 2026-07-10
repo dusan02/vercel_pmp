@@ -186,11 +186,12 @@ export async function GET(
             const n = Math.min(4, base.length);
             const first = base[base.length - n]!;
             const growth = first.value > 0 ? Math.pow(last.value / first.value, 1 / Math.max(1, n - 1)) - 1 : 0;
+            const clampedGrowth = Math.max(-0.5, Math.min(0.5, growth));
             const forecasts: { date: string; value: number; isForecast: boolean }[] = [];
             for (let i = 1; i <= quarters; i++) {
                 const d = new Date(lastDate);
                 d.setMonth(d.getMonth() + i * 3); // quarterly step
-                const next = last.value * Math.pow(1 + growth, i);
+                const next = last.value * Math.pow(1 + clampedGrowth, i);
                 forecasts.push({ date: d.toISOString().split('T')[0] as string, value: parseFloat(next.toFixed(4)), isForecast: true });
             }
             return forecasts;
