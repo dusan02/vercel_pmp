@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { AnalysisData } from '../components/company/AnalysisTab';
 
 const ANALYSIS_STEPS = [
@@ -39,7 +39,7 @@ export function useAnalysis(ticker: string) {
         return () => clearInterval(timer);
     }, [analyzing]);
 
-    const fetchAnalysis = async (compare?: string) => {
+    const fetchAnalysis = useCallback(async (compare?: string) => {
         try {
             setLoading(true);
             setError(null);
@@ -91,12 +91,12 @@ export function useAnalysis(ticker: string) {
         } finally {
             setLoading(false);
         }
-    };
+    }, [ticker]);
 
     useEffect(() => {
         autoTriggered.current = false;
         fetchAnalysis();
-    }, [ticker]);
+    }, [ticker, fetchAnalysis]);
 
     // Auto-run deep analysis when no cached data exists for this ticker
     useEffect(() => {
