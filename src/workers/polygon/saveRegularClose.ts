@@ -37,6 +37,7 @@ import type { MarketSession } from '@/lib/types';
 // Circuit breaker for Polygon API
 import { polygonCircuitBreaker, __IS_TEST__, sleep, PolygonSnapshot } from './shared';
 import { fetchPolygonSnapshot, normalizeSnapshot, upsertToDB } from './core';
+import { writePrevClose, writeRegularClose } from '@/lib/heatmap/prevCloseService';
 export async function saveRegularClose(apiKey: string, date: string, runId?: string): Promise<void> {
   const correlationId = runId || Date.now().toString(36);
   try {
@@ -92,35 +93,13 @@ export async function saveRegularClose(apiKey: string, date: string, runId?: str
 
         // INVARIANT: Only save valid prices
         if (regularClose && regularClose > 0) {
-          // Update DailyRef with regular close (for today's trading day)
-          await prisma.dailyRef.upsert({
-            where: {
-              symbol_date: {
-                symbol,
-                date: todayTradingDay
-              }
-            },
-            update: {
-              regularClose
-            },
-            create: {
-              symbol,
-              date: todayTradingDay,
-              // Do NOT set previousClose = regularClose here!
-              // previousClose should be YESTERDAY's close (D-1), not today's close.
-              // Setting it to regularClose causes after-hours % to show only the
-              // after-hours delta instead of the total daily change vs previous day.
-              previousClose: 0,
-              regularClose
-            }
-          });
+          // 1. Write regularClose for today's trading day
+          await writeRegularClose(todayTradingDay, symbol, regularClose);
           saved++;
 
-          // CRITICAL: Update previousClose for nextTradingDay (Model A)
-          // Model A: prevCloseKey(nextTradingDay) = close(todayTradingDay)
-          // This ensures pre-market next trading day uses today's regularClose as reference
+          // 2. Write prevClose for nextTradingDay (Model A: prevClose(next) = close(today))
+          // skipTickerUpdate: true — after-hours needs latestPrevClose to remain as D-1
           try {
-            // INVARIANT: nextTradingDay must be a trading day (not weekend/holiday)
             const nextTradingDayET = toET(nextTradingDay);
             const isNextTradingDayValid = nextTradingDayET.weekday !== 0 &&
               nextTradingDayET.weekday !== 6 &&
@@ -131,39 +110,9 @@ export async function saveRegularClose(apiKey: string, date: string, runId?: str
               throw new Error(`nextTradingDay ${nextTradingDateStr} is not a valid trading day`);
             }
 
-            // Update DailyRef for nextTradingDay - nextTradingDay's previousClose = today's regularClose
-            await prisma.dailyRef.upsert({
-              where: {
-                symbol_date: {
-                  symbol,
-                  date: nextTradingDateObj
-                }
-              },
-              update: {
-                previousClose: regularClose,
-                updatedAt: new Date()
-              },
-              create: {
-                symbol,
-                date: nextTradingDateObj,
-                previousClose: regularClose
-              }
-            });
-
-            // CRITICAL: Redis cache uses Model A: prevCloseKey(date) = close(date-1)
-            // For nextTradingDay, prevClose(nextTradingDay) = close(todayTradingDay) = today's regularClose
-            await setPrevClose(nextTradingDateStr, symbol, regularClose);
-
-            // NOTE: We intentionally do NOT update Ticker.latestPrevClose here.
-            // saveRegularClose sets latestPrevClose = today's close, but after-hours %
-            // calculations need latestPrevClose to remain as YESTERDAY's close (D-1).
-            // Overwriting it with today's close causes inverted % changes vs Finviz.
-            // The DailyRef(nextTradingDay).previousClose and Redis prevClose(nextTradingDay)
-            // are sufficient for the next trading day's pre-market calculations.
-
+            await writePrevClose(nextTradingDateStr, nextTradingDateObj, symbol, regularClose, { skipTickerUpdate: true });
             prevCloseUpdated++;
           } catch (prevCloseError) {
-            // Non-fatal: log but continue
             console.warn(`⚠️ Failed to update previousClose for ${symbol} (nextTradingDay: ${nextTradingDateStr}):`, prevCloseError);
           }
         }

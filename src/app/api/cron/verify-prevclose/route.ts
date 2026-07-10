@@ -19,8 +19,8 @@ import { prisma } from '@/lib/db/prisma';
 import { getPreviousClose } from '@/lib/utils/marketCapUtils';
 import { getLastTradingDay, detectSession } from '@/lib/utils/timeUtils';
 import { getDateET, createETDate, nowET } from '@/lib/utils/dateET';
-import { setPrevClose } from '@/lib/redis/operations';
 import { verifyCronAuth } from '@/lib/utils/cronAuth';
+import { writePrevClose } from '@/lib/heatmap/prevCloseService';
 
 const MAX_CONCURRENT = 3; // Conservative to avoid rate limiting
 // Note: By default checks ALL tickers (no limit)
@@ -58,44 +58,9 @@ async function verifyAndFixTicker(
     // Fix if not dry run
     if (!dryRun) {
       try {
-        // Update Ticker table
-        await prisma.ticker.update({
-          where: { symbol: ticker },
-          data: {
-            latestPrevClose: correctPrevClose,
-            latestPrevCloseDate: lastTradingDay,
-            updatedAt: new Date()
-          }
-        });
-
-        // Update DailyRef table
+        // Use centralized prevCloseService: updates Redis + DailyRef + Ticker atomically
         // INVARIANT: Only update prevClose for lastTradingDay (todayTradingDay), never nextTradingDay
-        // This prevents overwriting future prevClose values prepared by saveRegularClose
-        await prisma.dailyRef.upsert({
-          where: {
-            symbol_date: {
-              symbol: ticker,
-              date: lastTradingDay // todayTradingDay - this is the target day for verification
-            }
-          },
-          update: {
-            previousClose: correctPrevClose,
-            updatedAt: new Date()
-          },
-          create: {
-            symbol: ticker,
-            date: lastTradingDay,
-            previousClose: correctPrevClose
-          }
-        });
-
-        // Update Redis cache - Model A: prevCloseKey(todayTradingDay) = close(yesterdayTradingDay)
-        // todayStr is actually todayTradingDateStr passed from caller
-        try {
-          await setPrevClose(todayStr, ticker, correctPrevClose);
-        } catch (error) {
-          // Non-fatal
-        }
+        await writePrevClose(todayStr, lastTradingDay, ticker, correctPrevClose);
 
         return { needsFix: true, fixed: true, diff, correctValue: correctPrevClose };
       } catch (error) {
