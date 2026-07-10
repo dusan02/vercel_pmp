@@ -11,6 +11,7 @@ import { detectSession, nowET, isMarketHoliday, getTradingDay, getLastTradingDay
 import { SECTOR_INDUSTRY_OVERRIDES } from '@/data/sectorIndustryOverrides';
 import { normalizeSectorIndustryPair } from '@/lib/utils/sectorIndustryValidator';
 import { isWeekendET } from '@/lib/utils/dateET';
+import { resolvePrevClose } from '@/lib/heatmap/resolvePrevClose';
 
 const CACHE_KEY = `heatmap-data:${process.env.NEXT_PUBLIC_BUILD_ID || 'dev'}`;
 const CACHE_TTL = 900; // 15 minút (prekvitie s 10m cronom)
@@ -583,8 +584,10 @@ export async function GET(request: NextRequest) {
         currentPrice = cachedStockData.currentPrice || cachedStockData.p;
         const cachedClose = cachedStockData.closePrice;
 
-        const refFromDaily = previousCloseMap.get(ticker) || 0;
-        previousClose = isNonTradingClosedDay ? (refFromDaily || cachedClose) : (cachedClose || prevCloseBatchMap.get(ticker) || refFromDaily);
+        previousClose = resolvePrevClose(
+          { refFromDaily: previousCloseMap.get(ticker) || 0, prevFromTicker: 0, cachedClose, batchClose: prevCloseBatchMap.get(ticker) || 0 },
+          { isNonTradingClosedDay }
+        );
 
         const regularClose = regularCloseMap.get(ticker) || null;
         // Prefer cached percentChange from worker — it handles fallback/staleness correctly.
@@ -621,11 +624,10 @@ export async function GET(request: NextRequest) {
         currentPrice = cachedStockData.p;
         priceTsMs = cachedStockData.ts || 0;
 
-        const refFromDaily = previousCloseMap.get(ticker) || 0;
-        const prevFromTicker = tickerInfo?.latestPrevClose || 0;
-        previousClose = isNonTradingClosedDay
-          ? (refFromDaily || prevFromTicker)
-          : (prevFromTicker || refFromDaily);
+        previousClose = resolvePrevClose(
+          { refFromDaily: previousCloseMap.get(ticker) || 0, prevFromTicker: tickerInfo?.latestPrevClose || 0, cachedClose: 0, batchClose: prevCloseBatchMap.get(ticker) || 0 },
+          { isNonTradingClosedDay }
+        );
 
         if (previousClose === 0 && currentPrice > 0) {
           previousClose = prevCloseBatchMap.get(ticker) || 0;
@@ -701,11 +703,11 @@ export async function GET(request: NextRequest) {
           console.warn(`⚠️ [STALE_PREVCLOSE][heatmap] ${ticker}: latestPrevClose=${rawPrevClose} from ${rawPrevCloseDate ? new Date(rawPrevCloseDate).toISOString().slice(0,10) : 'null'}, expected >= ${lastTradingDayForQuery.toISOString().slice(0,10)} — ignoring`);
         }
         const prevFromDaily = previousCloseMap.get(ticker) || 0;
-        // DailyRef has priority in all sessions (it is always fresh from today's worker run).
-        // latestPrevClose (Ticker) is only used as fallback when DailyRef is missing.
-        previousClose = prevFromDaily > 0
-          ? prevFromDaily
-          : (isNonTradingClosedDay ? 0 : prevFromTicker); // on non-trading days, don't fall back to stale ticker prevClose
+
+        previousClose = resolvePrevClose(
+          { refFromDaily: prevFromDaily, prevFromTicker, cachedClose: 0, batchClose: prevCloseBatchMap.get(ticker) || 0 },
+          { isNonTradingClosedDay }
+        );
 
         dbHits++;
 

@@ -129,19 +129,44 @@ export async function setPrevClose(
 
 /**
  * Get previous close for multiple symbols with fallback
+ * Uses MGET for O(1) Redis round-trips instead of N individual GETs.
  */
 export async function getPrevClose(
     date: string,
     symbols: string[]
 ): Promise<Map<string, number>> {
     const result = new Map<string, number>();
-    
+
+    if (symbols.length === 0) return result;
+
     try {
-        // Get each symbol's previous close
+        const keys = symbols.map(symbol => `${REDIS_KEYS.prevclose(date)}:${symbol}`);
+
+        // Try batch MGET first
+        try {
+            const { redisClient } = await import('./client');
+            if (redisClient && redisClient.isOpen) {
+                const values = await redisClient.mGet(keys);
+                symbols.forEach((symbol, index) => {
+                    const data = values[index];
+                    if (data) {
+                        const prevClose = JSON.parse(data) as number;
+                        if (typeof prevClose === 'number' && isFinite(prevClose)) {
+                            result.set(symbol, prevClose);
+                        }
+                    }
+                });
+                return result;
+            }
+        } catch (mgetError) {
+            console.warn('⚠️ MGET failed, falling back to individual GETs:', mgetError);
+        }
+
+        // Fallback: individual GETs via enhanced operations
         for (const symbol of symbols) {
             const key = `${REDIS_KEYS.prevclose(date)}:${symbol}`;
             const data = await redisOps.get(key);
-            
+
             if (data) {
                 const prevClose = JSON.parse(data) as number;
                 if (typeof prevClose === 'number' && isFinite(prevClose)) {
@@ -152,7 +177,7 @@ export async function getPrevClose(
     } catch (error) {
         console.error('❌ Error in enhanced getPrevClose:', error);
     }
-    
+
     return result;
 }
 
