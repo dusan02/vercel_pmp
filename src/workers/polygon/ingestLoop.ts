@@ -132,13 +132,11 @@ async function maybeApplyTurboMode(
   session: string,
   etNow: Date
 ): Promise<string[]> {
-  const isPreMarket = session === 'pre';
-  const isAfterHours = session === 'after';
   const now = Date.now();
 
   const bootstrapTs = parseInt(await redisClient.get('worker:last_bootstrap_ts') || '0', 10);
-  const isPostBootstrap = isPreMarket && (now - bootstrapTs) < 10 * 60 * 1000;
-  const isAfterHoursEntry = isAfterHours;
+  const isPostBootstrap = session === 'pre' && (now - bootstrapTs) < 10 * 60 * 1000;
+  const isAfterHoursEntry = session === 'after';
 
   if (!isPostBootstrap && !isAfterHoursEntry) {
     return prioritized;

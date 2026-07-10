@@ -3,8 +3,8 @@ import { logger } from '@/lib/utils/logger'; // Assuming this path based on comm
 import { getAllTrackedTickers } from '@/lib/utils/universeHelpers';
 import { nowET, detectSession } from '@/lib/utils/timeUtils';
 
-const BATCH_SIZE = 50;
-const TARGET_TICKER_COUNT = 600;
+const BATCH_SIZE = parseInt(process.env.POLYGON_MAX_BATCH_SIZE || '100', 10);
+const BATCH_DELAY_MS = parseInt(process.env.BULK_PRELOAD_BATCH_DELAY_MS || '5000', 10);
 
 /**
  * Background Preloader Worker
@@ -50,9 +50,9 @@ async function preloadBulkStocks(apiKey: string): Promise<{ success: number; fai
         failed: batchFailed
       });
 
-      // Rate limiting: 60s between batches (Polygon free tier: 5 calls/min)
+      // Rate limiting between batches (5s default, configurable via env)
       if (i + BATCH_SIZE < tickers.length) {
-        await new Promise(resolve => setTimeout(resolve, 60000));
+        await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS));
       }
     } catch (error) {
       logger.error('Batch ingest failed', error, { batch: batchNum });

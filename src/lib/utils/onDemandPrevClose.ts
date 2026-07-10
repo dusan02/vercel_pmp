@@ -9,6 +9,7 @@ import { getDateET, createETDate } from './dateET';
 import { getLastTradingDay } from './timeUtils';
 import { logger } from './logger';
 import { setPrevClose } from '../redis/operations';
+import { writePrevClose } from '../heatmap/prevCloseService';
 
 const POLYGON_API_KEY = process.env.POLYGON_API_KEY || '';
 
@@ -327,8 +328,7 @@ export async function fetchPreviousClosesBatchAndPersist(
   const results = await fetchPreviousClosesBatch(tickers, targetDate, options);
   const today = targetDate || getDateET();
 
-  // Persist successful results to DB
-  // Edge case: partial persist (fetch OK, but DB fails) - at least keep in Redis cache
+  // Persist successful results to DB via prevCloseService
   if (results.size > 0) {
     let persistSuccessCount = 0;
     let persistFailedCount = 0;
@@ -336,49 +336,24 @@ export async function fetchPreviousClosesBatchAndPersist(
     const isLikelySqlite = (process.env.DATABASE_URL || '').startsWith('file:');
     
     try {
-      const { prisma } = await import('@/lib/db/prisma');
       const dateObj = createETDate(today);
       const lastTradingDay = getLastTradingDay(dateObj);
-
-      // SQLite is extremely sensitive to concurrent writes. Persist sequentially when SQLite is used.
-      // For other DBs we can keep parallelism (bounded by options.maxConcurrent elsewhere in fetch).
       const entries = Array.from(results.entries());
-      const persistOne = async (ticker: string, prevClose: number) => {
-        // Save to DailyRef
-        await prisma.dailyRef.upsert({
-          where: {
-            symbol_date: {
-              symbol: ticker,
-              date: lastTradingDay
-            }
-          },
-          update: {
-            previousClose: prevClose,
-            updatedAt: new Date()
-          },
-          create: {
-            symbol: ticker,
-            date: lastTradingDay,
-            previousClose: prevClose
-          }
-        });
 
-        // Update Ticker.latestPrevClose
-        await prisma.ticker.update({
-          where: { symbol: ticker },
-          data: {
-            latestPrevClose: prevClose,
-            latestPrevCloseDate: lastTradingDay,
-            updatedAt: new Date()
-          }
-        });
+      const persistOne = async (ticker: string, prevClose: number) => {
+        const res = await writePrevClose(today, lastTradingDay, ticker, prevClose);
+        if (res.dailyRef || res.ticker) {
+          persistSuccessCount++;
+        } else {
+          persistFailedCount++;
+          persistErrors.push(`${ticker}: DB write failed`);
+        }
       };
 
       if (isLikelySqlite) {
         for (const [ticker, prevClose] of entries) {
           try {
             await persistOne(ticker, prevClose);
-            persistSuccessCount++;
           } catch (error) {
             persistFailedCount++;
             const errorMsg = error instanceof Error ? error.message : String(error);
@@ -390,7 +365,6 @@ export async function fetchPreviousClosesBatchAndPersist(
         const persistPromises = entries.map(async ([ticker, prevClose]) => {
           try {
             await persistOne(ticker, prevClose);
-            persistSuccessCount++;
           } catch (error) {
             persistFailedCount++;
             const errorMsg = error instanceof Error ? error.message : String(error);
