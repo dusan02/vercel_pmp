@@ -42,7 +42,7 @@ export function StructuredData({
       '@type': 'Corporation',
       name: companyData.name,
       tickerSymbol: companyData.ticker,
-      url: `${baseUrl}/stock/${companyData.ticker}`,
+      url: `${baseUrl}/analysis/${companyData.ticker}`,
       ...(companyData.sector && { industry: companyData.sector }),
     };
 
@@ -52,7 +52,7 @@ export function StructuredData({
       '@type': 'FinancialProduct',
       name: `${companyData.name} (${companyData.ticker}) Stock`,
       description: `Pre-market stock data for ${companyData.name} (${companyData.ticker})${companyData.sector ? ` in the ${companyData.sector} sector` : ''}.`,
-      url: `${baseUrl}/stock/${companyData.ticker}`,
+      url: `${baseUrl}/analysis/${companyData.ticker}`,
       provider: {
         '@type': 'Organization',
         name: 'PreMarketPrice',

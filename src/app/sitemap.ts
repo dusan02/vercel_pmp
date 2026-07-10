@@ -86,9 +86,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // -------------------------------------------------------
   const allTickers = getProjectTickers('pmp');
 
+  // Fetch lastUpdated timestamps from DB for analysis pages
+  const tickerUpdates = new Map<string, string>();
+  try {
+    const tickersFromDB = await prisma.ticker.findMany({
+      where: { symbol: { in: allTickers } },
+      select: { symbol: true, updatedAt: true }
+    });
+    for (const t of tickersFromDB) {
+      if (t.updatedAt) {
+        const ts = t.updatedAt.toISOString().split('T')[0];
+        if (ts) tickerUpdates.set(t.symbol, ts);
+      }
+    }
+  } catch {
+    // Fallback: use currentDate for all
+  }
+
   const analysisPages: MetadataRoute.Sitemap = allTickers.map((ticker) => ({
     url: `${baseUrl}/analysis/${ticker}`,
-    lastModified: currentDate,
+    lastModified: tickerUpdates.get(ticker) || currentDate,
     changeFrequency: 'daily' as const,
     // Top 50 tickers get higher priority
     priority: allTickers.indexOf(ticker) < 50 ? 0.85 : 0.7,
@@ -176,7 +193,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     for (const snap of snapshots) {
       blogPages.push({
         url: `${baseUrl}/blog/${snap.date}`,
-        lastModified: snap.date,
+        lastModified: new Date(snap.date).toISOString(),
         changeFrequency: 'monthly' as const,
         priority: 0.7,
       });
