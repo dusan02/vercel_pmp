@@ -179,99 +179,9 @@ async function main() {
         }
       }
 
-      // 16:00-17:00 ET - Save regular close (with retry logic for early closes)
-      // Retry every 5 minutes until 17:00 ET or until all tickers have regular close
-      if (hours >= 16 && hours < 17) {
-        // Check if we need to save regular close
-        const { redisClient } = await import('@/lib/redis');
-        if (redisClient && redisClient.isOpen) {
-          const lastRegularCloseSave = await redisClient.get(`regular_close:last_save:${today}`);
-          const now = Date.now();
-          const fiveMinAgo = now - (5 * 60 * 1000);
-
-          // Save/retry if: (1) first time (16:00), or (2) last save was > 5 min ago
-          const shouldSave = !lastRegularCloseSave || parseInt(lastRegularCloseSave, 10) < fiveMinAgo;
-
-          if (shouldSave) {
-            // Check if regular close is missing for any tickers
-            // Use stratified sample: top 50 (premium) + random 50 (to catch batch failures)
-            const tickers = await getUniverse('sp500');
-            const { getAllProjectTickers } = await import('@/data/defaultTickers');
-            const premiumTickers = getAllProjectTickers('pmp').slice(0, 50);
-            // Reservoir sampling for random 50 (O(n) instead of O(n log n), more uniform distribution)
-            const remainingTickers = tickers.filter(t => !premiumTickers.includes(t));
-            const randomTickers: string[] = [];
-            const randomCount = Math.min(50, remainingTickers.length);
-
-            // Fisher-Yates shuffle for first N elements (more efficient than full sort)
-            for (let i = 0; i < randomCount; i++) {
-              const j = Math.floor(Math.random() * (remainingTickers.length - i)) + i;
-              const temp = remainingTickers[i];
-              if (temp && remainingTickers[j]) {
-                remainingTickers[i] = remainingTickers[j];
-                remainingTickers[j] = temp;
-                randomTickers.push(temp);
-              }
-            }
-
-            const sampleTickers = [...premiumTickers, ...randomTickers];
-
-            const { prisma } = await import('@/lib/db/prisma');
-            const dateObj = createETDate(today);
-
-            const missingCount = await prisma.dailyRef.count({
-              where: {
-                symbol: { in: sampleTickers },
-                date: dateObj,
-                regularClose: null
-              }
-            });
-
-            if (missingCount > 0 || !lastRegularCloseSave) {
-              const runId = Date.now().toString(36);
-              console.log(`🔄 [runId:${runId}] Saving regular close (retry: ${!!lastRegularCloseSave})...`);
-              await saveRegularClose(apiKey, today, runId);
-              await redisClient.setEx(`regular_close:last_save:${today}`, 3600, now.toString());
-            }
-          }
-        } else {
-          // Fallback: save at 16:00 ET if Redis unavailable
-          // Guard: check if already saved for today (safe by design)
-          if (hours === 16 && minutes === 0) {
-            try {
-              const { prisma } = await import('@/lib/db/prisma');
-              const { createETDate } = await import('@/lib/utils/dateET');
-              const { getLastTradingDay } = await import('@/lib/utils/timeUtils');
-              const todayDate = createETDate(today);
-              const todayTradingDay = getLastTradingDay(todayDate);
-
-              // Check if regular close already saved for today
-              const existingDailyRef = await prisma.dailyRef.findFirst({
-                where: {
-                  date: todayTradingDay,
-                  regularClose: { not: null }
-                },
-                select: { symbol: true }
-              });
-
-              if (!existingDailyRef) {
-                // Not saved yet - safe to save
-                const runId = Date.now().toString(36);
-                console.log(`🔄 [runId:${runId}] Saving regular close (Redis unavailable, fallback - not saved yet)...`);
-                await saveRegularClose(apiKey, today, runId);
-              } else {
-                console.log(`⏭️  Skipping fallback saveRegularClose - already saved for ${todayTradingDay.toISOString().split('T')[0]}`);
-              }
-            } catch (fallbackError) {
-              console.warn('⚠️  Failed to check if regular close already saved (fallback):', fallbackError);
-              // Continue anyway - better to save twice than not at all
-              const runId = Date.now().toString(36);
-              console.log(`🔄 [runId:${runId}] Saving regular close (Redis unavailable, fallback - check failed)...`);
-              await saveRegularClose(apiKey, today, runId);
-            }
-          }
-        }
-      }
+      // saveRegularClose is now handled exclusively by the post-market-daily-reset cron job
+      // (runs at 16:30 ET daily via PM2 cron_restart). Previously also scheduled here in refs mode
+      // with 5-minute retry logic, but this caused double-execution and timing issues.
     };
 
     // Check every minute, using setTimeout to prevent overlap
@@ -427,48 +337,11 @@ async function main() {
         const etNow = nowET();
         const session = detectSession(etNow);
 
-      // --- Regular close + next-day prevClose (CRITICAL) ---
-      // In production we run the worker in MODE=snapshot (see PM2 ecosystem).
-      // Previously, regular close saving (and preparing nextTradingDay prevClose) only ran in MODE=refs,
-      // which meant "previous close available shortly after market close" was not guaranteed.
-      //
-      // Goal: have regularClose/prevClose available ASAP after 16:00 ET (target: ~5 minutes).
-      // Strategy: attempt at 16:05 ET and retry every 5 minutes until 17:00 ET, with Redis throttling + DB idempotency.
-      try {
-        const et = toET(etNow);
-        const hours = et.hour;
-        const minutes = et.minute;
-
-        // Window 16:05 - 16:59 ET (retry every minute; throttle prevents over-calling)
-        // CRITICAL: ingestLoop can take 14+ minutes per cycle, so checking only every 5 minutes
-        // means we may never hit a 5-minute boundary. Always check and let the throttle handle rate limiting.
-        const inCloseWindow = hours === 16 && minutes >= 5;
-        const isRetryMinute = true;
-
-        if (inCloseWindow && isRetryMinute) {
-          const today = getDateET(etNow);
-
-          const throttleKey = `regular_close:last_save:${today}`;
-          const nowMs = Date.now();
-
-          // Throttle: don't run more often than every ~4 minutes even if loop timing jitters
-          const lastStr = (redisClient && redisClient.isOpen) ? await redisClient.get(throttleKey) : null;
-          const lastMs = lastStr ? parseInt(lastStr, 10) : 0;
-          const tooSoon = lastMs && (nowMs - lastMs) < (4 * 60 * 1000);
-
-          if (!tooSoon) {
-            const runId = nowMs.toString(36);
-            console.log(`🔔 [runId:${runId}] Snapshot worker: attempting saveRegularClose (ET ${hours}:${String(minutes).padStart(2, '0')})...`);
-            await saveRegularClose(apiKey, today, runId);
-            if (redisClient && redisClient.isOpen) {
-              await redisClient.setEx(throttleKey, 3600, nowMs.toString());
-            }
-          }
-        }
-      } catch (e) {
-        // Non-fatal: regular close save failures should not stop ingest loop
-        console.warn('⚠️ Snapshot worker: saveRegularClose attempt failed:', e);
-      }
+      // --- Regular close + next-day prevClose ---
+      // saveRegularClose is now handled exclusively by the post-market-daily-reset cron job
+      // (runs at 16:30 ET daily via PM2 cron_restart). Previously this was also scheduled
+      // in ingestLoop, but the 14+ minute loop cycle often missed the retry window.
+      // The cron job is more reliable and avoids double-execution.
 
       // Schedule bulk preload (DST-safe, with lock)
       await scheduleBulkPreload();
