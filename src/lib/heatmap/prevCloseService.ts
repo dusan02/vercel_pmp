@@ -46,10 +46,12 @@ export async function writePrevClose(
   prevClose: number,
   opts?: {
     skipTickerUpdate?: boolean;
+    skipRedis?: boolean;
     dbRetry?: DbRetryFn;
   }
 ): Promise<PrevCloseWriteResult> {
   const skipTicker = opts?.skipTickerUpdate ?? false;
+  const skipRedis = opts?.skipRedis ?? false;
   const retry = opts?.dbRetry ?? (async <T>(fn: () => Promise<T>): Promise<T | null> => {
     try { return await fn(); } catch { return null; }
   });
@@ -59,10 +61,14 @@ export async function writePrevClose(
   if (prevClose <= 0) return result;
 
   // 1. Redis
-  try {
-    result.redis = await setPrevClose(dateStr, symbol, prevClose);
-  } catch {
-    // non-fatal
+  if (!skipRedis) {
+    try {
+      result.redis = await setPrevClose(dateStr, symbol, prevClose);
+    } catch {
+      // non-fatal
+    }
+  } else {
+    result.redis = true; // Already written by caller
   }
 
   // 2. DailyRef — only update previousClose, preserve existing regularClose

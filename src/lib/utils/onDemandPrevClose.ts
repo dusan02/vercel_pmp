@@ -341,7 +341,7 @@ export async function fetchPreviousClosesBatchAndPersist(
       const entries = Array.from(results.entries());
 
       const persistOne = async (ticker: string, prevClose: number) => {
-        const res = await writePrevClose(today, lastTradingDay, ticker, prevClose);
+        const res = await writePrevClose(today, lastTradingDay, ticker, prevClose, { skipRedis: true });
         if (res.dailyRef || res.ticker) {
           persistSuccessCount++;
         } else {

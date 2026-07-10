@@ -1,4 +1,4 @@
-import { ingestBatch } from './polygonWorker';
+import { ingestBatch } from './polygon/ingestBatch';
 import { logger } from '@/lib/utils/logger'; // Assuming this path based on common patterns, will verify
 import { getAllTrackedTickers } from '@/lib/utils/universeHelpers';
 import { nowET, detectSession } from '@/lib/utils/timeUtils';

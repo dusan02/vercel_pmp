@@ -13,7 +13,7 @@
 import { redisClient } from '@/lib/redis';
 import { getUniverse, getPrevClose } from '@/lib/redis/operations';
 import { recordSuccess, recordFailure } from '../healthMonitor';
-import { detectSession, isMarketOpen, isMarketHoliday } from '@/lib/utils/timeUtils';
+import { detectSession, isMarketHoliday } from '@/lib/utils/timeUtils';
 import { nowET, getDateET, isWeekendET, toET } from '@/lib/utils/dateET';
 import { ingestBatch } from './ingestBatch';
 import { bootstrapPreviousCloses } from './bootstrapPrevClose';
