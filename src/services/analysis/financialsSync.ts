@@ -115,9 +115,20 @@ export async function syncFinancials(symbol: string): Promise<void> {
                     'us-gaap_StockholdersEquity', 'us-gaap_StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest', 'us-gaap_PartnerCapital'
                 ]);
 
-                const sharesOutstandingRaw = extract(report, 'ic', [
+                let sharesOutstandingRaw = extract(report, 'ic', [
                     'us-gaap_WeightedAverageNumberOfDilutedSharesOutstanding', 'us-gaap_WeightedAverageNumberOfSharesOutstandingBasic'
                 ]) ?? extract(report, 'bs', ['dei_EntityCommonStockSharesOutstanding']);
+
+                // Fallback: derive shares from NetIncome / EPS (e.g. GOOGL reports EPS but not shares count)
+                if (sharesOutstandingRaw === null || sharesOutstandingRaw <= 0) {
+                    const eps = extract(report, 'ic', [
+                        'us-gaap_EarningsPerShareDiluted', 'us-gaap_EarningsPerShareBasic'
+                    ]);
+                    if (eps && eps !== 0 && netIncome !== null && netIncome !== 0) {
+                        sharesOutstandingRaw = Math.abs(netIncome / eps);
+                    }
+                }
+
                 // Some companies (e.g. MCD) report shares in millions (710 = 710M)
                 // If value < 10000, assume millions and convert to absolute
                 const sharesOutstanding = (sharesOutstandingRaw !== null && sharesOutstandingRaw > 0)
