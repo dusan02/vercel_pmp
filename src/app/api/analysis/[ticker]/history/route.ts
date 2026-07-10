@@ -33,7 +33,7 @@ export async function GET(
         // Filter valid (positive, non-extreme) values for percentile calculation
         // P/E < 2 almost always indicates a stock split mismatch (adjusted shares vs pre-split price)
         const VALID_PE = (v: number | null): v is number => v !== null && v > 2 && v < 500;
-        const VALID_PS = (v: number | null): v is number => v !== null && v > 0.1 && v < 200;
+        const VALID_PS = (v: number | null): v is number => v !== null && v > 0.5 && v < 200;
 
         const peAllValues = rows.map(r => r.peRatio).filter(VALID_PE);
         const psAllValues = rows.map(r => r.psRatio).filter(VALID_PS);
