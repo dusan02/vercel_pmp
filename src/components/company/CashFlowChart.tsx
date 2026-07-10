@@ -49,7 +49,7 @@ export default function CashFlowChart({ statements }: CashFlowChartProps) {
         return sorted.map(s => {
             const ocf = (s.operatingCashFlow ?? 0) / 1e6;
             const capex = s.capex ? Math.abs(s.capex) / 1e6 : 0;
-            const fcf = s.capex !== null ? ocf - capex : ocf;
+            const fcf = (s.operatingCashFlow !== null && s.capex !== null) ? ocf - capex : 0;
             const ni = (s.netIncome ?? 0) / 1e6;
             const sbc = (s.sbc ?? 0) / 1e6;
             const label = buildPeriodLabel(s.fiscalPeriod, s.fiscalYear);

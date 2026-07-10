@@ -90,7 +90,8 @@ export async function syncFinancials(symbol: string): Promise<void> {
                 }
 
                 const operatingCashFlow = extract(report, 'cf', [
-                    'us-gaap_NetCashProvidedByUsedInOperatingActivities', 'us-gaap_NetCashProvidedByUsedInOperatingActivitiesContinuing'
+                    'us-gaap_NetCashProvidedByUsedInOperatingActivities', 'us-gaap_NetCashProvidedByUsedInOperatingActivitiesContinuing',
+                    'us-gaap_NetCashProvidedByUsedInOperatingActivitiesContinuingOperations'
                 ]);
                 const capex = extract(report, 'cf', [
                     'us-gaap_PaymentsToAcquirePropertyPlantAndEquipment', 'us-gaap_PaymentsToAcquireOtherPropertyPlantAndEquipment', 
