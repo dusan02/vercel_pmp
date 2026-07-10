@@ -68,7 +68,16 @@ export async function syncFinancials(symbol: string): Promise<void> {
                 const netIncome = extract(report, 'ic', [
                     'us-gaap_NetIncomeLoss', 'us-gaap_NetIncomeLossAvailableToCommonStockholdersBasic', 'us-gaap_ProfitLoss'
                 ]);
-                const grossProfit = extract(report, 'ic', ['us-gaap_GrossProfit']);
+                let grossProfit = extract(report, 'ic', ['us-gaap_GrossProfit']);
+                // Fallback: compute from Revenue - COGS if gross profit not directly reported
+                if (grossProfit === null && revenue !== null) {
+                    const cogs = extract(report, 'ic', [
+                        'us-gaap_CostOfGoodsAndServicesSold', 'us-gaap_CostOfRevenue', 'us-gaap_CostOfGoodsSold'
+                    ]);
+                    if (cogs !== null) {
+                        grossProfit = revenue - cogs;
+                    }
+                }
                 
                 let ebit = extract(report, 'ic', [
                     'us-gaap_OperatingIncomeLoss', 'us-gaap_IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest'
@@ -88,7 +97,17 @@ export async function syncFinancials(symbol: string): Promise<void> {
                 ]);
                 
                 const totalAssets = extract(report, 'bs', ['us-gaap_Assets']);
-                const totalLiabilities = extract(report, 'bs', ['us-gaap_Liabilities']);
+                let totalLiabilities = extract(report, 'bs', ['us-gaap_Liabilities']);
+                // Fallback: compute from accounting equation (Assets = Liabilities + Equity)
+                // Needed for companies like MCD that don't report us-gaap_Liabilities directly
+                if (totalLiabilities === null && totalAssets !== null) {
+                    const eq = extract(report, 'bs', [
+                        'us-gaap_StockholdersEquity', 'us-gaap_StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest', 'us-gaap_PartnerCapital'
+                    ]);
+                    if (eq !== null) {
+                        totalLiabilities = totalAssets - eq;
+                    }
+                }
                 const currentAssets = extract(report, 'bs', ['us-gaap_AssetsCurrent']);
                 const currentLiabilities = extract(report, 'bs', ['us-gaap_LiabilitiesCurrent']);
                 const retainedEarnings = extract(report, 'bs', ['us-gaap_RetainedEarningsAccumulatedDeficit']);
@@ -99,7 +118,11 @@ export async function syncFinancials(symbol: string): Promise<void> {
                 const sharesOutstandingRaw = extract(report, 'ic', [
                     'us-gaap_WeightedAverageNumberOfDilutedSharesOutstanding', 'us-gaap_WeightedAverageNumberOfSharesOutstandingBasic'
                 ]) ?? extract(report, 'bs', ['dei_EntityCommonStockSharesOutstanding']);
-                const sharesOutstanding = (sharesOutstandingRaw !== null && sharesOutstandingRaw > 1000000) ? sharesOutstandingRaw : null;
+                // Some companies (e.g. MCD) report shares in millions (710 = 710M)
+                // If value < 10000, assume millions and convert to absolute
+                const sharesOutstanding = (sharesOutstandingRaw !== null && sharesOutstandingRaw > 0)
+                    ? (sharesOutstandingRaw < 10000 ? sharesOutstandingRaw * 1_000_000 : sharesOutstandingRaw)
+                    : null;
 
                 const sbc = extract(report, 'cf', [
                     'us-gaap_ShareBasedCompensation',

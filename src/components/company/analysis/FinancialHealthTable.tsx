@@ -136,8 +136,8 @@ function buildMetrics(data: AnalysisData, sec: AnalysisData | null, cw: string) 
     ];
 
     const growth: MetricCardDef[] = [
-        def('Revenue CAGR (5Y)', rCagr != null ? `${(rCagr * 100).toFixed(1)}%` : 'N/A', s(srCagr != null ? `${(srCagr * 100).toFixed(1)}%` : 'N/A'), rCagr == null ? 'neutral' : rCagr > 0.15 ? 'good' : rCagr > 0.05 ? 'warn' : 'bad', rCagr == null ? '-' : rCagr > 0.15 ? 'High' : rCagr > 0.05 ? 'Ok' : 'Low', 'Compound annual revenue growth'),
-        def('Net Income CAGR (5Y)', niCagr != null ? `${(niCagr * 100).toFixed(1)}%` : 'N/A', s(sniCagr != null ? `${(sniCagr * 100).toFixed(1)}%` : 'N/A'), niCagr == null ? 'neutral' : niCagr > 0.15 ? 'good' : niCagr > 0.05 ? 'warn' : 'bad', niCagr == null ? '-' : niCagr > 0.15 ? 'High' : niCagr > 0.05 ? 'Ok' : 'Low', 'Compound annual net income growth'),
+        def('Revenue CAGR (5Y)', rCagr != null ? `${rCagr.toFixed(1)}%` : 'N/A', s(srCagr != null ? `${srCagr.toFixed(1)}%` : 'N/A'), rCagr == null ? 'neutral' : rCagr > 15 ? 'good' : rCagr > 5 ? 'warn' : 'bad', rCagr == null ? '-' : rCagr > 15 ? 'High' : rCagr > 5 ? 'Ok' : 'Low', 'Compound annual revenue growth'),
+        def('Net Income CAGR (5Y)', niCagr != null ? `${niCagr.toFixed(1)}%` : 'N/A', s(sniCagr != null ? `${sniCagr.toFixed(1)}%` : 'N/A'), niCagr == null ? 'neutral' : niCagr > 15 ? 'good' : niCagr > 5 ? 'warn' : 'bad', niCagr == null ? '-' : niCagr > 15 ? 'High' : niCagr > 5 ? 'Ok' : 'Low', 'Compound annual net income growth'),
         def('Dilution (5Y)', dil != null ? `${dil > 0 ? '+' : ''}${dil.toFixed(1)}%` : 'N/A', s(sdil != null ? `${sdil > 0 ? '+' : ''}${sdil.toFixed(1)}%` : 'N/A'), dil == null ? 'neutral' : dil < -2 ? 'good' : dil <= 2 ? 'neutral' : dil <= 10 ? 'warn' : 'bad', dil == null ? '-' : dil < -2 ? 'Buybacks' : dil <= 2 ? 'Flat' : 'Dilutive', 'Share count change over 5Y'),
     ];
 
