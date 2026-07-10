@@ -46,19 +46,56 @@ async function computeMetrics(symbol: string) {
 
     const latestAnnual = stmts.find(s => s.fiscalPeriod === 'FY') || latestStmt;
 
-    // Helper for TTM calculation
+    // De-cumulate quarterly statements: Finnhub reports CUMULATIVE values
+    // (Q1=3M, Q2=6M, Q3=9M). To get single-quarter values, subtract previous
+    // period from same fiscal year. Q1 is already single-quarter.
+    function deCumulate(stmts: any[], field: string): (number | null)[] {
+        return stmts.map((s, i) => {
+            const val = s[field];
+            if (val == null) return null;
+            // Q1 is always single-quarter (3 months)
+            if (s.fiscalPeriod === 'Q1') return val;
+            // For Q2/Q3/Q4, find the previous quarter from same fiscal year
+            const prev = stmts[i + 1];
+            if (prev && prev.fiscalYear === s.fiscalYear && prev.fiscalPeriod !== 'FY') {
+                const prevVal = prev[field];
+                if (prevVal != null) return val - prevVal;
+            }
+            // Can't de-cumulate, return as-is (will be wrong but better than null)
+            return val;
+        });
+    }
+
+    // Helper for TTM calculation with de-cumulation
     const getTtmOrAnnual = (field: 'netIncome' | 'revenue' | 'ebit' | 'grossProfit' | 'sbc' | 'operatingCashFlow' | 'capex') => {
         if (has4Q) {
+            // Strategy: use last 4 de-cumulated quarters
+            // But if we have FY + next Q1, Q2, Q3, use: FY - Q3_prev + Q3_curr - Q2_curr + Q2_prev - Q1_prev + Q1_curr
+            // Simpler: de-cumulate all 4 quarters and sum
+            const vals = deCumulate(ttmStmts, field);
             let sum = 0;
             let valid = false;
-            for (const s of ttmStmts) {
-                const val = s[field as keyof typeof s];
-                if (val != null) {
-                    sum += val as number;
+            for (const v of vals) {
+                if (v != null) {
+                    sum += v;
                     valid = true;
                 }
             }
-            return valid ? sum : null;
+            if (valid) return sum;
+
+            // Fallback: FY - Q3_of_same_FY + latest Q3 (if available)
+            const fy = stmts.find(s => s.fiscalPeriod === 'FY');
+            const q3SameFY = stmts.find(s => s.fiscalPeriod === 'Q3' && s.fiscalYear === fy?.fiscalYear);
+            const latestQ = ttmStmts[0]; // most recent quarter
+            if (fy && q3SameFY && latestQ && latestQ.fiscalPeriod === 'Q1') {
+                const fyVal = fy[field as keyof typeof fy] as number | null;
+                const q3Val = q3SameFY[field as keyof typeof q3SameFY] as number | null;
+                const q1Val = latestQ[field as keyof typeof latestQ] as number | null;
+                if (fyVal != null && q3Val != null && q1Val != null) {
+                    return fyVal - q3Val + q1Val;
+                }
+            }
+            return null;
         }
         return (latestAnnual as any)?.[field] as number | null ?? null;
     };

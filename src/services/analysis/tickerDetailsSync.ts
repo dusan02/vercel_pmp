@@ -192,9 +192,33 @@ export async function syncValuationHistory(symbol: string): Promise<void> {
             const stmt = (hasTtm ? ttmStmts[0] : null) || annualStmt ||
                 stmtsBeforeDate[0] || statements[statements.length - 1];
 
-            // For TTM P/E, use sum of 4 quarters' net income
-            const ttmNetIncome = hasTtm ? ttmStmts.reduce((sum, s) => sum + (s.netIncome || 0), 0) : null;
-            const ttmRevenue = hasTtm ? ttmStmts.reduce((sum, s) => sum + (s.revenue || 0), 0) : null;
+            // For TTM P/E, de-cumulate quarterly values (Finnhub reports cumulative)
+            function deCumTtm(stmts: any[], field: string): number | null {
+                if (!hasTtm) return null;
+                let sum = 0;
+                let valid = false;
+                for (let i = 0; i < stmts.length; i++) {
+                    const s = stmts[i]!;
+                    const val = s[field as keyof typeof s] as number | null;
+                    if (val == null) continue;
+                    if (s.fiscalPeriod === 'Q1') {
+                        sum += val;
+                        valid = true;
+                    } else {
+                        const prev = stmts[i + 1];
+                        if (prev && prev.fiscalYear === s.fiscalYear && prev.fiscalPeriod !== 'FY') {
+                            const prevVal = prev[field as keyof typeof prev] as number | null;
+                            if (prevVal != null) {
+                                sum += val - prevVal;
+                                valid = true;
+                            }
+                        }
+                    }
+                }
+                return valid ? sum : null;
+            }
+            const ttmNetIncome = deCumTtm(ttmStmts, 'netIncome');
+            const ttmRevenue = deCumTtm(ttmStmts, 'revenue');
 
             if (stmt && stmt.sharesOutstanding) {
                 marketCap = closePrice * stmt.sharesOutstanding;

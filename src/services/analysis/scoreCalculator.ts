@@ -19,14 +19,40 @@ export async function calculateScores(symbol: string): Promise<void> {
     const annualStmts = stmts.filter(s => s.fiscalPeriod === 'FY');
     const quarterlyStmts = stmts.filter(s => s.fiscalPeriod !== 'FY');
     
-    // Compute TTMs
+    // Compute TTMs with de-cumulation (Finnhub reports cumulative quarterly values)
     const ttmStmts = quarterlyStmts.slice(0, 4);
     const has4Q = ttmStmts.length >= 4;
-    const ttmNetIncome = has4Q ? ttmStmts.reduce((sum, s) => sum + (s.netIncome || 0), 0) : null;
-    const ttmRevenue = has4Q ? ttmStmts.reduce((sum, s) => sum + (s.revenue || 0), 0) : null;
-    const ttmEbit = has4Q ? ttmStmts.reduce((sum, s) => sum + (s.ebit || 0), 0) : null;
-    const ttmOcf = has4Q ? ttmStmts.reduce((sum, s) => sum + (s.operatingCashFlow || 0), 0) : null;
-    const ttmCapex = has4Q ? ttmStmts.reduce((sum, s) => sum + (s.capex || 0), 0) : null;
+    
+    function deCumulateTtm(field: string): number | null {
+        if (!has4Q) return null;
+        let sum = 0;
+        let valid = false;
+        for (let i = 0; i < ttmStmts.length; i++) {
+            const s = ttmStmts[i]!;
+            const val = s[field as keyof typeof s] as number | null;
+            if (val == null) continue;
+            if (s.fiscalPeriod === 'Q1') {
+                sum += val;
+                valid = true;
+            } else {
+                const prev = ttmStmts[i + 1];
+                if (prev && prev.fiscalYear === s.fiscalYear && prev.fiscalPeriod !== 'FY') {
+                    const prevVal = prev[field as keyof typeof prev] as number | null;
+                    if (prevVal != null) {
+                        sum += val - prevVal;
+                        valid = true;
+                    }
+                }
+            }
+        }
+        return valid ? sum : null;
+    }
+    
+    const ttmNetIncome = deCumulateTtm('netIncome');
+    const ttmRevenue = deCumulateTtm('revenue');
+    const ttmEbit = deCumulateTtm('ebit');
+    const ttmOcf = deCumulateTtm('operatingCashFlow');
+    const ttmCapex = deCumulateTtm('capex');
 
     let healthScore = 50;
     let valuationScore = 50;

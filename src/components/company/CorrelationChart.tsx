@@ -97,7 +97,7 @@ export function CorrelationChart({ priceHistory, impliedPS, impliedPE, corrPS, c
     return {
       mergedData: combined,
       correlation: corr,
-      label: mode === 'ps' ? 'Price vs Revenue (Med PS)' : 'Price vs EPS (Med PE)',
+      label: mode === 'ps' ? 'Implied Price (P/S)' : 'Implied Price (P/E)',
     };
   }, [mode, impliedPS, impliedPE, priceHistory, corrPS, corrPE]);
 
@@ -105,8 +105,24 @@ export function CorrelationChart({ priceHistory, impliedPS, impliedPE, corrPS, c
     return <div className="text-center text-gray-400 text-sm py-10">No correlation data available.</div>;
   }
 
+  const corrColor = correlation !== null
+    ? correlation > 0.7 ? 'text-green-600 dark:text-green-400'
+    : correlation > 0.4 ? 'text-yellow-600 dark:text-yellow-400'
+    : 'text-gray-500 dark:text-gray-400'
+    : 'text-gray-400';
+  const corrLabel = correlation !== null
+    ? correlation > 0.7 ? 'Strong' : correlation > 0.4 ? 'Moderate' : 'Weak'
+    : 'n/a';
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
+      {/* Explanation */}
+      <p className="text-[11px] text-gray-400 dark:text-gray-500 leading-relaxed">
+        Compares actual price to implied price derived from {mode === 'ps' ? 'revenue per share × median P/S multiple' : 'EPS × median P/E multiple'}. 
+        High correlation means the market prices this stock based on {mode === 'ps' ? 'revenue' : 'earnings'}.
+      </p>
+
+      {/* Controls + Correlation Badge */}
       <div className="flex items-center gap-2 flex-wrap">
         <div className="bg-gray-100 dark:bg-gray-800 p-1 rounded-lg inline-flex">
           {([
@@ -126,7 +142,9 @@ export function CorrelationChart({ priceHistory, impliedPS, impliedPE, corrPS, c
             </button>
           ))}
         </div>
-        <span className="ml-auto text-xs text-gray-500 dark:text-gray-400">Correlation: {correlation !== null ? `${(correlation * 100).toFixed(0)}%` : 'n/a'}</span>
+        <span className={`ml-auto text-xs font-semibold ${corrColor}`}>
+          Correlation: {correlation !== null ? `${(correlation * 100).toFixed(0)}%` : 'n/a'} <span className="opacity-70">({corrLabel})</span>
+        </span>
       </div>
 
       <div className="w-full bg-white dark:bg-gray-900 rounded-lg p-3" style={{ height: 320 }}>
@@ -152,7 +170,7 @@ export function CorrelationChart({ priceHistory, impliedPS, impliedPE, corrPS, c
             <Line
               type="monotone"
               dataKey="price"
-              name="Price"
+              name="Actual Price"
               stroke="#3b82f6"
               strokeWidth={2}
               dot={false}
@@ -163,11 +181,12 @@ export function CorrelationChart({ priceHistory, impliedPS, impliedPE, corrPS, c
             <Area
               type="monotone"
               dataKey={(d: any) => (d.isForecast ? d.impliedPrice : null)}
-              name="Estimates"
+              name="Forecast"
               stroke="#fbbf24"
               fill="#fbbf24"
               fillOpacity={0.18}
               strokeWidth={1}
+              strokeDasharray="4 4"
               connectNulls
               isAnimationActive={false}
             />
