@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db/prisma';
 import { getSectorFromSic, toTitleCase } from '@/lib/utils/sectorMapping';
+import { computeTTMAtDate } from '@/lib/utils/ttm';
 
 const POLYGON_API_KEY = process.env.POLYGON_API_KEY;
 
@@ -180,34 +181,11 @@ export async function syncValuationHistory(symbol: string): Promise<void> {
             let evEbitda = null; // Note: this is EV/EBIT (not EBITDA) — D&A not available from Finnhub
             let fcfYield = null;
 
-            // TTM P/E using correct formula: latestQ + FY - sameQ_prevYear
-            // Finnhub reports cumulative quarterly values; Q4 is embedded in FY
+            // TTM P/E using shared utility (point-in-time)
+            const { netIncome: ttmNetIncome, revenue: ttmRevenue } = computeTTMAtDate(statements, date);
+
             const stmtsBeforeDate = statements.filter(s => s.endDate.getTime() <= date.getTime());
-            const quarterlyBeforeDate = stmtsBeforeDate.filter(s => s.fiscalPeriod !== 'FY');
-            const latestQBefore = quarterlyBeforeDate[0] ?? null;
-            const latestFYBefore = stmtsBeforeDate.find(s => s.fiscalPeriod === 'FY') ?? null;
-            const prevYearSameQBefore = latestQBefore
-                ? quarterlyBeforeDate.find(s => s.fiscalPeriod === latestQBefore.fiscalPeriod && s.fiscalYear === latestQBefore.fiscalYear! - 1)
-                : null;
-
-            const stmt = latestQBefore || latestFYBefore || stmtsBeforeDate[0] || statements[statements.length - 1];
-
-            let ttmNetIncome: number | null = null;
-            let ttmRevenue: number | null = null;
-            if (latestQBefore && latestFYBefore && prevYearSameQBefore) {
-                const qNI = latestQBefore.netIncome;
-                const fyNI = latestFYBefore.netIncome;
-                const prevQNI = prevYearSameQBefore.netIncome;
-                if (qNI != null && fyNI != null && prevQNI != null) {
-                    ttmNetIncome = qNI + fyNI - prevQNI;
-                }
-                const qRev = latestQBefore.revenue;
-                const fyRev = latestFYBefore.revenue;
-                const prevQRev = prevYearSameQBefore.revenue;
-                if (qRev != null && fyRev != null && prevQRev != null) {
-                    ttmRevenue = qRev + fyRev - prevQRev;
-                }
-            }
+            const stmt = stmtsBeforeDate[0] || statements[statements.length - 1];
 
             if (stmt && stmt.sharesOutstanding) {
                 marketCap = closePrice * stmt.sharesOutstanding;

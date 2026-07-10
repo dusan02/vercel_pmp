@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { AnalysisService } from '@/services/analysisService';
 import { FinnhubService } from '@/services/finnhubService';
+import { computeTTM } from '@/lib/utils/ttm';
 
 // In-memory dedup: prevents multiple concurrent background revalidations for the same symbol
 const revalidating = new Set<string>();
@@ -29,7 +30,11 @@ async function computeMetrics(symbol: string) {
     const cached = analysis as any;
     const altmanZ = cached.altmanZ;
     const debtRepaymentYears = cached.debtRepaymentYears;
-    const fcfYield = latestValuation?.fcfYield ?? null;
+    // FCF Yield: prefer valuation history, fallback to Finnhub P/FCF (inverse)
+    const fcfYield = latestValuation?.fcfYield
+        ?? (finnhubMetrics?.priceFreeCashFlow != null && finnhubMetrics.priceFreeCashFlow > 0
+            ? 1 / finnhubMetrics.priceFreeCashFlow
+            : null);
 
     // Snapshot variables MUST come from latestStmt (most recent quarter or annual)
     const totalDebt = latestStmt?.totalDebt ?? null;
@@ -43,40 +48,13 @@ async function computeMetrics(symbol: string) {
     const sharesOutstanding = latestStmt?.sharesOutstanding ?? null;
     const sbcSnapshot = latestStmt?.sbc ?? null;
 
-    // TTM Flow Variables — correct de-cumulation for Finnhub's cumulative quarterly reporting
-    // Finnhub reports Q1=3M, Q2=6M (cumulative), Q3=9M (cumulative). Q4 is embedded in FY.
-    // Standard TTM formula: latest_quarter_value + FY_prev - same_quarter_prev_year
-    // This gives 12 contiguous months regardless of which quarter is latest.
-    const quarterlyStmts = stmts.filter(s => s.fiscalPeriod !== 'FY');
-    const latestQ = quarterlyStmts[0] ?? null;
-    const latestFY = stmts.find(s => s.fiscalPeriod === 'FY') || null;
-
-    // Find same quarter from previous fiscal year
-    const prevYearSameQ = latestQ
-        ? quarterlyStmts.find(s => s.fiscalPeriod === latestQ.fiscalPeriod && s.fiscalYear === latestQ.fiscalYear! - 1)
-        : null;
-
-    const canComputeTtm = latestQ && latestFY && prevYearSameQ;
-
-    // Helper for TTM: latestQ + FY - prevYearSameQ (all cumulative, so subtraction works)
-    const getTtmOrAnnual = (field: 'netIncome' | 'revenue' | 'ebit' | 'grossProfit' | 'sbc' | 'operatingCashFlow' | 'capex') => {
-        if (canComputeTtm && latestQ && latestFY && prevYearSameQ) {
-            const qVal = latestQ[field as keyof typeof latestQ] as number | null;
-            const fyVal = latestFY[field as keyof typeof latestFY] as number | null;
-            const prevQVal = prevYearSameQ[field as keyof typeof prevYearSameQ] as number | null;
-            if (qVal != null && fyVal != null && prevQVal != null) {
-                return qVal + fyVal - prevQVal;
-            }
-        }
-        // Fallback to latest annual
-        return (latestFY as any)?.[field] as number | null ?? null;
-    };
-
-    const ttmNetIncome = getTtmOrAnnual('netIncome');
-    const ttmRevenue = getTtmOrAnnual('revenue');
-    const ttmEbit = getTtmOrAnnual('ebit');
-    const ttmGrossProfit = getTtmOrAnnual('grossProfit');
-    const ttmSbc = getTtmOrAnnual('sbc');
+    // TTM via shared utility (latestQ + FY - sameQ_prevYear)
+    const ttm = computeTTM(stmts);
+    const ttmNetIncome = ttm.netIncome;
+    const ttmRevenue = ttm.revenue;
+    const ttmEbit = ttm.ebit;
+    const ttmGrossProfit = ttm.grossProfit;
+    const ttmSbc = ttm.sbc;
 
     // P/E: prefer Finnhub pre-computed, fallback to our TTM calculation
     const tickerForPrice = await prisma.ticker.findUnique({

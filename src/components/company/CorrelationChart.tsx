@@ -37,16 +37,25 @@ function formatYAxis(v: number) {
 
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
+  const price = payload.find((p: any) => p.dataKey === 'price')?.value;
+  const implied = payload.find((p: any) => p.dataKey === 'impliedPrice')?.value;
+  const isForecast = payload.find((p: any) => p.dataKey === 'isForecast')?.value;
+  const diff = (price != null && implied != null) ? ((price - implied) / implied) * 100 : null;
   return (
     <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 shadow-lg text-xs">
-      <p className="text-gray-500 dark:text-gray-400 mb-1">{label}</p>
+      <p className="text-gray-500 dark:text-gray-400 mb-1.5 font-medium">{label}</p>
       {payload.map((p: any) => (
-        <div key={p.name} className="flex items-center gap-2">
+        <div key={p.name} className="flex items-center gap-2 mb-0.5">
           <span className="w-2 h-2 rounded-full" style={{ background: p.color }} />
           <span className="text-gray-800 dark:text-gray-100 font-semibold">{p.name}:</span>
           <span className="font-mono">${p.value?.toFixed?.(2)}</span>
         </div>
       ))}
+      {diff !== null && (
+        <div className={`mt-1.5 pt-1.5 border-t border-gray-100 dark:border-gray-700 font-semibold ${diff > 0 ? 'text-red-500' : 'text-green-500'}`}>
+          {diff > 0 ? 'Overvalued' : 'Undervalued'} by {Math.abs(diff).toFixed(1)}%
+        </div>
+      )}
     </div>
   );
 }
@@ -118,8 +127,8 @@ export function CorrelationChart({ priceHistory, impliedPS, impliedPE, corrPS, c
     <div className="space-y-3">
       {/* Explanation */}
       <p className="text-[11px] text-gray-400 dark:text-gray-500 leading-relaxed">
-        Compares actual price to implied price derived from {mode === 'ps' ? 'revenue per share × median P/S multiple' : 'EPS × median P/E multiple'}. 
-        High correlation means the market prices this stock based on {mode === 'ps' ? 'revenue' : 'earnings'}.
+        Compares actual price to <strong>implied price</strong> — what the stock <em>should</em> trade at based on {mode === 'ps' ? 'revenue per share × median P/S multiple' : 'EPS × median P/E multiple'}. 
+        When actual price is <span className="text-red-500">above</span> implied, stock may be overvalued. When <span className="text-green-500">below</span>, potentially undervalued.
       </p>
 
       {/* Controls + Correlation Badge */}

@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db/prisma';
 import { aiService } from '../aiService';
 import { NotificationService } from '../notificationService';
+import { computeTTM } from '@/lib/utils/ttm';
 
 /**
  * Calculate health, profitability, and valuation scores.
@@ -18,33 +19,13 @@ export async function calculateScores(symbol: string): Promise<void> {
     if (!latestStmt) return;
     const annualStmts = stmts.filter(s => s.fiscalPeriod === 'FY');
     
-    // Compute TTM using correct formula: latestQ + FY - sameQ_prevYear
-    // Finnhub reports cumulative quarterly values (Q1=3M, Q2=6M, Q3=9M). Q4 is in FY.
-    const quarterlyStmts = stmts.filter(s => s.fiscalPeriod !== 'FY');
-    const latestQ = quarterlyStmts[0] ?? null;
-    const latestFY = annualStmts[0] ?? null;
-    const prevYearSameQ = latestQ
-        ? quarterlyStmts.find(s => s.fiscalPeriod === latestQ.fiscalPeriod && s.fiscalYear === latestQ.fiscalYear! - 1)
-        : null;
-    const canTtm = !!(latestQ && latestFY && prevYearSameQ);
-
-    function ttmVal(field: string): number | null {
-        if (canTtm && latestQ && latestFY && prevYearSameQ) {
-            const qVal = latestQ[field as keyof typeof latestQ] as number | null;
-            const fyVal = latestFY[field as keyof typeof latestFY] as number | null;
-            const prevQVal = prevYearSameQ[field as keyof typeof prevYearSameQ] as number | null;
-            if (qVal != null && fyVal != null && prevQVal != null) {
-                return qVal + fyVal - prevQVal;
-            }
-        }
-        return (latestFY as any)?.[field] as number | null ?? null;
-    }
-
-    const ttmNetIncome = ttmVal('netIncome');
-    const ttmRevenue = ttmVal('revenue');
-    const ttmEbit = ttmVal('ebit');
-    const ttmOcf = ttmVal('operatingCashFlow');
-    const ttmCapex = ttmVal('capex');
+    // TTM via shared utility
+    const ttm = computeTTM(stmts);
+    const ttmNetIncome = ttm.netIncome;
+    const ttmRevenue = ttm.revenue;
+    const ttmEbit = ttm.ebit;
+    const ttmOcf = ttm.operatingCashFlow;
+    const ttmCapex = ttm.capex;
 
     let healthScore = 50;
     let valuationScore = 50;
@@ -55,6 +36,9 @@ export async function calculateScores(symbol: string): Promise<void> {
         where: { symbol },
         select: { lastPrice: true, lastMarketCap: true, sharesOutstanding: true }
     });
+
+    // Fetch Finnhub pre-computed metrics for scoring
+    const finnhubMetrics = await prisma.finnhubMetrics.findUnique({ where: { symbol } });
 
     const latestValuation = !tickerData?.lastPrice ? await prisma.dailyValuationHistory.findFirst({
         where: { symbol },
@@ -93,12 +77,12 @@ export async function calculateScores(symbol: string): Promise<void> {
 
         if (netDebt <= 0) {
             debtRepaymentYears = 0;
-            humanDebtInfo = "Spoločnosť je po očistení o hotovosť prakticky bez dlhu.";
+            humanDebtInfo = "Company is effectively debt-free after netting cash.";
         } else if (fcf > 0) {
             debtRepaymentYears = netDebt / fcf;
-            humanDebtInfo = `Firma potrebuje približne ${debtRepaymentYears.toFixed(1)} roka na splatenie čistého dlhu z voľného cash flow.`;
+            humanDebtInfo = `Takes ~${debtRepaymentYears.toFixed(1)} years to repay net debt from free cash flow.`;
         } else {
-            humanDebtInfo = "Spoločnosť má záporné FCF, čo sťažuje splácanie dlhu z vlastných operácií.";
+            humanDebtInfo = "Company has negative FCF, making debt repayment from operations difficult.";
         }
     }
 
@@ -183,23 +167,33 @@ export async function calculateScores(symbol: string): Promise<void> {
     // ─── PROFITABILITY SCORE (0-100, 4 × 25pts) ─────────────────────────
     profitabilityScore = 0;
 
+    // Use Finnhub pre-computed margins (returned as percentages) with fallback to XBRL
+    const fhNetMargin = finnhubMetrics?.netMargin != null ? finnhubMetrics.netMargin / 100 : null;
+    const fhGrossMargin = finnhubMetrics?.grossMargin != null ? finnhubMetrics.grossMargin / 100 : null;
+    const fhRoe = finnhubMetrics?.roe != null ? finnhubMetrics.roe / 100 : null;
+
     if (latestStmt.revenue && latestStmt.revenue > 0) {
-        const netMargin = (latestStmt.netIncome || 0) / latestStmt.revenue;
+        // Net Margin: prefer Finnhub, fallback to XBRL
+        const netMargin = fhNetMargin ?? ((latestStmt.netIncome || 0) / latestStmt.revenue);
         if (netMargin > 0.20)       profitabilityScore += 25;
         else if (netMargin > 0.10)  profitabilityScore += 20;
         else if (netMargin > 0.05)  profitabilityScore += 13;
         else if (netMargin > 0)     profitabilityScore += 6;
 
-        if (latestStmt.grossProfit !== null) {
-            const grossMargin = latestStmt.grossProfit / latestStmt.revenue;
+        // Gross Margin: prefer Finnhub, fallback to XBRL
+        const grossMargin = fhGrossMargin ?? (latestStmt.grossProfit != null ? latestStmt.grossProfit / latestStmt.revenue : null);
+        if (grossMargin != null) {
             if (grossMargin > 0.60)      profitabilityScore += 25;
             else if (grossMargin > 0.40) profitabilityScore += 20;
             else if (grossMargin > 0.25) profitabilityScore += 12;
             else if (grossMargin > 0.10) profitabilityScore += 5;
         }
 
-        if (latestStmt.totalEquity && latestStmt.totalEquity > 0) {
-            const roe = (latestStmt.netIncome || 0) / latestStmt.totalEquity;
+        // ROE: prefer Finnhub, fallback to XBRL (skip if negative equity)
+        const roe = (latestStmt.totalEquity && latestStmt.totalEquity > 0)
+            ? (fhRoe ?? ((latestStmt.netIncome || 0) / latestStmt.totalEquity))
+            : null;
+        if (roe != null) {
             if (roe > 0.25)      profitabilityScore += 25;
             else if (roe > 0.15) profitabilityScore += 20;
             else if (roe > 0.08) profitabilityScore += 12;
@@ -234,9 +228,10 @@ export async function calculateScores(symbol: string): Promise<void> {
     });
 
     const effectiveNetIncome = ttmNetIncome ?? latestStmt.netIncome;
-    const currentPE = (currentPrice > 0 && latestStmt.sharesOutstanding && effectiveNetIncome && effectiveNetIncome > 0)
+    // Prefer Finnhub P/E for scoring consistency with UI
+    const currentPE = finnhubMetrics?.peRatio ?? ((currentPrice > 0 && latestStmt.sharesOutstanding && effectiveNetIncome && effectiveNetIncome > 0)
         ? (currentPrice * latestStmt.sharesOutstanding) / effectiveNetIncome
-        : (latestValuation?.peRatio || null);
+        : (latestValuation?.peRatio || null));
 
     if (allValuations.length > 0 && currentPE !== null && currentPE > 0) {
         const index = allValuations.findIndex(v => v.peRatio !== null && v.peRatio >= currentPE);
@@ -245,7 +240,7 @@ export async function calculateScores(symbol: string): Promise<void> {
         else if (percentile < 40) valuationScore += 20;
         else if (percentile < 60) valuationScore += 12;
         else if (percentile < 80) valuationScore += 5;
-        humanPeInfo = `Aktuálne P/E je v ${percentile > 50 ? 'horných' : 'dolných'} ${percentile > 50 ? (100 - percentile).toFixed(0) : percentile.toFixed(0)}% historických hodnôt.`;
+        humanPeInfo = `Current P/E is in the ${percentile > 50 ? 'top' : 'bottom'} ${percentile > 50 ? (100 - percentile).toFixed(0) : percentile.toFixed(0)}% of historical values.`;
     } else if (currentPE === null) {
         valuationScore += 10;
     }
@@ -261,12 +256,13 @@ export async function calculateScores(symbol: string): Promise<void> {
     }
 
     const effectiveRevenue = ttmRevenue ?? latestStmt.revenue;
-    if (effectiveRevenue && effectiveRevenue > 0 && marketCap > 0) {
-        const ps = marketCap / effectiveRevenue;
-        if (ps < 2)       valuationScore += 25;
-        else if (ps < 5)  valuationScore += 20;
-        else if (ps < 10) valuationScore += 12;
-        else if (ps < 20) valuationScore += 5;
+    // Prefer Finnhub P/S for scoring consistency
+    const currentPS = finnhubMetrics?.psRatio ?? ((effectiveRevenue && effectiveRevenue > 0 && marketCap > 0) ? marketCap / effectiveRevenue : null);
+    if (currentPS != null) {
+        if (currentPS < 2)       valuationScore += 25;
+        else if (currentPS < 5)  valuationScore += 20;
+        else if (currentPS < 10) valuationScore += 12;
+        else if (currentPS < 20) valuationScore += 5;
     } else {
         valuationScore += 10;
     }
