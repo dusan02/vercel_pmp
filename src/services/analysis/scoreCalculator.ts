@@ -290,15 +290,16 @@ export async function calculateScores(symbol: string): Promise<void> {
         const pA = prevAnnual;
         const totalAssets = lA.totalAssets || 1;
         const prevTotalAssets = pA.totalAssets || 1;
-        const roa = (lA.netIncome || 0) / totalAssets;
+        const avgTotalAssets = (totalAssets + prevTotalAssets) / 2;
+        const roa = (lA.netIncome || 0) / avgTotalAssets;
         const prevRoa = (pA.netIncome || 0) / prevTotalAssets;
-        const cfo = (lA.operatingCashFlow || 0) / totalAssets;
+        const cfo = (lA.operatingCashFlow || 0) / avgTotalAssets;
         if (roa > 0) piotroskiScore += 1;
         if (lA.operatingCashFlow && lA.operatingCashFlow > 0) piotroskiScore += 1;
         if (roa > prevRoa) piotroskiScore += 1;
         if (cfo > roa) piotroskiScore += 1;
 
-        const leverage = lA.totalDebt && totalAssets > 0 ? lA.totalDebt / totalAssets : 0;
+        const leverage = lA.totalDebt && avgTotalAssets > 0 ? lA.totalDebt / avgTotalAssets : 0;
         const prevLeverage = pA.totalDebt && prevTotalAssets > 0 ? pA.totalDebt / prevTotalAssets : 0;
         const currRatio = lA.currentAssets && lA.currentLiabilities ? lA.currentAssets / lA.currentLiabilities : 0;
         const prevCurrRatio = pA.currentAssets && pA.currentLiabilities ? pA.currentAssets / pA.currentLiabilities : 0;
@@ -308,7 +309,7 @@ export async function calculateScores(symbol: string): Promise<void> {
 
         const gm = lA.revenue ? (lA.grossProfit || 0) / lA.revenue : 0;
         const prevGm = pA.revenue ? (pA.grossProfit || 0) / pA.revenue : 0;
-        const at = lA.revenue ? lA.revenue / totalAssets : 0;
+        const at = lA.revenue ? lA.revenue / avgTotalAssets : 0;
         const prevAt = pA.revenue ? pA.revenue / prevTotalAssets : 0;
         if (gm > prevGm) piotroskiScore += 1;
         if (at > prevAt) piotroskiScore += 1;
@@ -318,12 +319,39 @@ export async function calculateScores(symbol: string): Promise<void> {
     if (latestAnnual && prevAnnual && latestAnnual.revenue && prevAnnual.revenue && prevAnnual.revenue > 0) {
         const lA = latestAnnual;
         const pA = prevAnnual;
-        if (lA.revenue !== null && pA.revenue !== null) {
-            const dsri = ((lA.currentAssets || 0) / lA.revenue) / ((pA.currentAssets || 0) / pA.revenue);
-            const gmIndex = ((pA.grossProfit || 0) / pA.revenue) / ((lA.grossProfit || 0) / lA.revenue);
-            const sgi = lA.revenue / pA.revenue;
-            beneishScore = -6.065 + 0.823 * (dsri || 1) + 0.906 * (gmIndex || 1) + 0.717 * (sgi || 1);
-        }
+        const lTA = lA.totalAssets || 1;
+        const pTA = pA.totalAssets || 1;
+        const lRev = lA.revenue!;
+        const pRev = pA.revenue!;
+
+        // Days Sales in Receivables Index
+        const dsri = ((lA.currentAssets || 0) / lRev) / ((pA.currentAssets || 0) / pRev);
+        // Gross Margin Index (higher = worse, i.e. margins deteriorating)
+        const gmIndex = ((pA.grossProfit || 0) / pRev) / ((lA.grossProfit || 0) / lRev);
+        // Asset Quality Index (non-current assets excluding PPE as proportion of total assets)
+        const lNonCurrentNonPPE = Math.max(0, (lTA - (lA.currentAssets || 0)) - (lA.netPPE || 0));
+        const pNonCurrentNonPPE = Math.max(0, (pTA - (pA.currentAssets || 0)) - (pA.netPPE || 0));
+        const aqi = (lNonCurrentNonPPE / lTA) / (pNonCurrentNonPPE / pTA || 1);
+        // Sales Growth Index
+        const sgi = lRev / pRev;
+        // Depreciation Index (higher = worse — decreasing depreciation relative to assets)
+        const depi = ((pA.netPPE || 0) / ((pA.netPPE || 0) + (lA.netPPE || 0))) / (((pA.netPPE || 0) + (lA.netPPE || 0)) / (lTA + pTA));
+        // SG&A Expense Index (SGA as % of sales — higher = worse)
+        const sgai = ((pA.grossProfit || 0) - (pA.ebit || 0)) / pRev / (((lA.grossProfit || 0) - (lA.ebit || 0)) / lRev || 1);
+        // Leverage Index (debt-to-assets — higher = worse)
+        const lvgi = ((lA.totalDebt || 0) / lTA) / ((pA.totalDebt || 0) / pTA || 1);
+        // Total Accruals to Total Assets
+        const tata = ((lA.netIncome || 0) - (lA.operatingCashFlow || 0)) / lTA;
+
+        beneishScore = -4.84
+            + 0.92 * (isFinite(dsri) ? dsri : 1)
+            + 0.528 * (isFinite(gmIndex) ? gmIndex : 1)
+            + 0.404 * (isFinite(aqi) ? aqi : 1)
+            + 0.892 * (isFinite(sgi) ? sgi : 1)
+            + 0.115 * (isFinite(depi) ? depi : 1)
+            - 0.173 * (isFinite(sgai) ? sgai : 1)
+            + 0.352 * (isFinite(lvgi) ? lvgi : 1)
+            - 0.44 * (isFinite(tata) ? tata : 0);
     }
 
     // ─── AI Verdict ────────────────────────────────────────────────

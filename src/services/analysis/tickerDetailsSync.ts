@@ -177,26 +177,36 @@ export async function syncValuationHistory(symbol: string): Promise<void> {
             let peRatio = null;
             let psRatio = null;
             let marketCap = null;
-            let evEbitda = null;
+            let evEbitda = null; // Note: this is EV/EBIT (not EBITDA) — D&A not available from Finnhub
             let fcfYield = null;
 
-            const annualStmt = statements.find(s =>
-                s.endDate.getTime() <= date.getTime() &&
-                (s.fiscalPeriod === 'FY' || s.period === 'annual')
+            // Prefer TTM (last 4 quarters ending before price date) for more accurate P/E
+            const stmtsBeforeDate = statements.filter(s => s.endDate.getTime() <= date.getTime());
+            const quarterlyBeforeDate = stmtsBeforeDate.filter(s => s.fiscalPeriod !== 'FY');
+            const ttmStmts = quarterlyBeforeDate.slice(0, 4);
+            const hasTtm = ttmStmts.length >= 4;
+
+            const annualStmt = stmtsBeforeDate.find(s =>
+                s.fiscalPeriod === 'FY' || s.period === 'annual'
             );
-            const stmt = annualStmt ||
-                statements.find(s => s.endDate.getTime() <= date.getTime()) ||
-                statements[statements.length - 1];
+            const stmt = (hasTtm ? ttmStmts[0] : null) || annualStmt ||
+                stmtsBeforeDate[0] || statements[statements.length - 1];
+
+            // For TTM P/E, use sum of 4 quarters' net income
+            const ttmNetIncome = hasTtm ? ttmStmts.reduce((sum, s) => sum + (s.netIncome || 0), 0) : null;
+            const ttmRevenue = hasTtm ? ttmStmts.reduce((sum, s) => sum + (s.revenue || 0), 0) : null;
 
             if (stmt && stmt.sharesOutstanding) {
                 marketCap = closePrice * stmt.sharesOutstanding;
 
-                if (stmt.netIncome && stmt.netIncome > 0) {
-                    peRatio = closePrice / (stmt.netIncome / stmt.sharesOutstanding);
+                const effectiveNI = ttmNetIncome ?? stmt.netIncome;
+                if (effectiveNI && effectiveNI > 0) {
+                    peRatio = closePrice / (effectiveNI / stmt.sharesOutstanding);
                 }
 
-                if (stmt.revenue && stmt.revenue > 0) {
-                    psRatio = closePrice / (stmt.revenue / stmt.sharesOutstanding);
+                const effectiveRev = ttmRevenue ?? stmt.revenue;
+                if (effectiveRev && effectiveRev > 0) {
+                    psRatio = closePrice / (effectiveRev / stmt.sharesOutstanding);
                 }
 
                 if (stmt.ebit && stmt.ebit > 0 && stmt.totalDebt !== null && stmt.cashAndEquivalents !== null) {

@@ -139,7 +139,7 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
                             </div>
                         </div>
 
-                        {/* Real-time Price & Movement — desktop only */}
+                        {/* Real-time Price & Movement — desktop */}
                         <div className="hidden sm:flex flex-col ml-4 lg:ml-8 border-l border-gray-100 dark:border-gray-700/60 pl-4 lg:pl-8 min-w-[120px]">
                             {bestPrice ? (
                                 <>
@@ -166,6 +166,25 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
                                 </>
                             ) : null}
                         </div>
+
+                        {/* Compact price badge — mobile only */}
+                        {bestPrice && (
+                            <div className="flex sm:hidden items-baseline gap-2 ml-auto pl-2">
+                                <span className="text-lg font-bold text-gray-900 dark:text-white">
+                                    {`$${formatPrice(bestPrice)}`}
+                                </span>
+                                {hasFreshPrice && (realTimeData?.percentChange ?? t?.lastChangePct) != null && (
+                                    <span className={`text-sm font-bold ${(realTimeData?.percentChange ?? t?.lastChangePct ?? 0) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
+                                        {formatPercent(realTimeData?.percentChange ?? t?.lastChangePct)}
+                                    </span>
+                                )}
+                                {!hasFreshPrice && (
+                                    <span className="text-[9px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                                        Prev
+                                    </span>
+                                )}
+                            </div>
+                        )}
 
                     </div>
 
