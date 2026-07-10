@@ -20,7 +20,7 @@ interface AnalysisChartsProps {
 
 export function AnalysisCharts({ ticker, data }: AnalysisChartsProps) {
     return (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             {/* Valuation History (Intrinsic vs Price) */}
             <ChartSection
                 iconBgClass="bg-gray-50 dark:bg-gray-800/60 text-gray-700 dark:text-gray-200"
