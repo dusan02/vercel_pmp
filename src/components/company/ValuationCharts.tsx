@@ -10,7 +10,7 @@ import {
     Tooltip,
     ReferenceLine,
 } from 'recharts';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 
 interface HistoryPoint { date: string; value: number; }
 
@@ -28,6 +28,10 @@ interface HistoryData {
 
 interface ValuationChartsProps {
     ticker: string;
+    peHistory?: { date: string; value: number }[];
+    psHistory?: { date: string; value: number }[];
+    current?: { pe: number | null; ps: number | null } | null;
+    stats?: { pe: RatioStats | null; ps: RatioStats | null } | null;
 }
 
 const PERIODS = [
@@ -70,23 +74,17 @@ function StatPill({ label, value, highlight }: { label: string; value: number | 
     );
 }
 
-export default function ValuationCharts({ ticker }: ValuationChartsProps) {
-    const [data, setData]       = useState<HistoryData | null>(null);
-    const [loading, setLoading] = useState(true);
+export default function ValuationCharts({ ticker, peHistory, psHistory, current: currentProp, stats: propStats }: ValuationChartsProps) {
+    const [loading, setLoading] = useState(!peHistory && !psHistory);
     const [metric, setMetric]   = useState<MetricId>('pe');
     const [period, setPeriod]   = useState<PeriodId>('5y');
 
-    useEffect(() => {
-        (async () => {
-            try {
-                setLoading(true);
-                const res = await fetch(`/api/analysis/${ticker}/history`);
-                if (res.ok) setData(await res.json());
-            } finally {
-                setLoading(false);
-            }
-        })();
-    }, [ticker]);
+    const data: HistoryData | null = (peHistory || psHistory) ? {
+        peHistory: peHistory ?? [],
+        psHistory: psHistory ?? [],
+        current: currentProp ?? { pe: null, ps: null },
+        stats: propStats ?? { pe: null, ps: null },
+    } : null;
 
     // Filter history to selected period (client-side)
     const filteredHistory = useMemo(() => {

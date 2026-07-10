@@ -16,6 +16,7 @@ interface ScenarioLabProps {
     currentEps: number;
     currentPe: number;
     currentPrice: number;
+    priceHistory?: { date: string; price: number }[];
 }
 
 interface PricePoint {
@@ -37,23 +38,24 @@ function ScenarioTooltip({ active, payload, label }: any) {
     );
 }
 
-export function ScenarioLab({ ticker, currentEps, currentPe, currentPrice }: ScenarioLabProps) {
+export function ScenarioLab({ ticker, currentEps, currentPe, currentPrice, priceHistory: propPriceHistory }: ScenarioLabProps) {
     const [epsGrowth, setEpsGrowth] = useState<number>(10);
     const [exitPe, setExitPe] = useState<number>(Math.max(5, Math.min(100, currentPe || 20)));
     const [years, setYears] = useState<number>(5);
-    const [priceHistory, setPriceHistory] = useState<PricePoint[]>([]);
+    const [priceHistory, setPriceHistory] = useState<PricePoint[]>(propPriceHistory ?? []);
 
-    const isNegativePe = !currentPe || currentPe <= 0;
-
-    // Fetch historical price data
+    // Fetch historical price data only if not provided via props
     useEffect(() => {
+        if (propPriceHistory && propPriceHistory.length > 0) return;
         let cancelled = false;
         fetch(`/api/analysis/${ticker}/history`)
             .then(r => r.json())
             .then(d => { if (!cancelled && d.priceHistory) setPriceHistory(d.priceHistory); })
             .catch(() => {});
         return () => { cancelled = true; };
-    }, [ticker]);
+    }, [ticker, propPriceHistory]);
+
+    const isNegativePe = !currentPe || currentPe <= 0;
 
     // To prevent a sudden jump from currentPrice to Year 1 due to rounding/mismatches in currentEps vs currentPe,
     // we calculate an "implied" EPS based strictly on the current price and P/E.

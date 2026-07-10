@@ -41,8 +41,8 @@ function buildMetrics(data: AnalysisData, sec: AnalysisData | null, cw: string) 
     const sm = sec?.metrics;
     const bs = data.balanceSheet;
     const sbs = sec?.balanceSheet;
-    const fy = data.statements?.find(s => s.fiscalPeriod === 'FY');
-    const sfy = sec?.statements?.find(s => s.fiscalPeriod === 'FY');
+    const fy = data.statements?.filter(s => s.fiscalPeriod === 'FY').sort((a, b) => new Date(b.endDate).getTime() - new Date(a.endDate).getTime())[0];
+    const sfy = sec?.statements?.filter(s => s.fiscalPeriod === 'FY').sort((a, b) => new Date(b.endDate).getTime() - new Date(a.endDate).getTime())[0];
     const mcap = data.ticker?.lastMarketCap ? data.ticker.lastMarketCap * 1e9 : null;
     const smcap = sec?.ticker?.lastMarketCap ? sec.ticker.lastMarketCap * 1e9 : null;
 

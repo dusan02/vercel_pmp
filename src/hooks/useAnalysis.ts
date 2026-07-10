@@ -75,6 +75,10 @@ export function useAnalysis(ticker: string) {
                 valuationHistory: histJson.valuationHistory ?? [],
                 valuationSummary: histJson.valuationSummary ?? null,
                 valuationForecast: histJson.valuationForecast ?? [],
+                peHistory: histJson.peHistory ?? [],
+                psHistory: histJson.psHistory ?? [],
+                valuationCurrent: histJson.current ?? null,
+                valuationStats: histJson.stats ?? null,
             };
 
             if (json && json.primary) {

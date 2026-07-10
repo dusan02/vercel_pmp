@@ -16,6 +16,11 @@ export interface AnalysisTabProps {
     hideSearch?: boolean;
 }
 
+export interface RatioStats {
+    avg: number; p10: number; p25: number; median: number;
+    p75: number; p90: number; min: number; max: number; count: number;
+}
+
 export interface AnalysisMetrics {
     zScore: number | null;
     altmanZ: number | null;
@@ -105,6 +110,12 @@ export interface AnalysisData {
         intrinsicCagr: number | null;
     } | null;
     valuationForecast?: { date: string; intrinsic: number }[];
+
+    // Valuation charts (P/E & P/S bands)
+    peHistory?: { date: string; value: number }[];
+    psHistory?: { date: string; value: number }[];
+    valuationCurrent?: { pe: number | null; ps: number | null } | null;
+    valuationStats?: { pe: RatioStats | null; ps: RatioStats | null } | null;
 
     // Finnhub pre-computed metrics (primary source for ratios)
     finnhub?: {

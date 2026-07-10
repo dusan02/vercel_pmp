@@ -89,7 +89,13 @@ export function AnalysisCharts({ ticker, data }: AnalysisChartsProps) {
                 subtitle="P/E Bands & P/S Bands (GuruFocus Style)"
             >
                 <Suspense fallback={<div className="flex justify-center items-center h-48"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500" /></div>}>
-                    <ValuationCharts ticker={ticker} />
+                    <ValuationCharts
+                        ticker={ticker}
+                        peHistory={data.peHistory ?? []}
+                        psHistory={data.psHistory ?? []}
+                        current={data.valuationCurrent ?? null}
+                        stats={data.valuationStats ?? null}
+                    />
                 </Suspense>
             </ChartSection>
 
@@ -126,6 +132,7 @@ export function AnalysisCharts({ ticker, data }: AnalysisChartsProps) {
                         currentEps={data.metrics.currentEps || 0}
                         currentPe={data.metrics.currentPe || 0}
                         currentPrice={Math.max(0, data.ticker?.lastPrice || data.ticker?.latestPrevClose || (data.metrics.currentEps || 0) * (data.metrics.currentPe || 0))}
+                        priceHistory={data.priceHistory ?? []}
                     />
                 )}
             </ChartSection>
