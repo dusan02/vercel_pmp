@@ -180,45 +180,34 @@ export async function syncValuationHistory(symbol: string): Promise<void> {
             let evEbitda = null; // Note: this is EV/EBIT (not EBITDA) — D&A not available from Finnhub
             let fcfYield = null;
 
-            // Prefer TTM (last 4 quarters ending before price date) for more accurate P/E
+            // TTM P/E using correct formula: latestQ + FY - sameQ_prevYear
+            // Finnhub reports cumulative quarterly values; Q4 is embedded in FY
             const stmtsBeforeDate = statements.filter(s => s.endDate.getTime() <= date.getTime());
             const quarterlyBeforeDate = stmtsBeforeDate.filter(s => s.fiscalPeriod !== 'FY');
-            const ttmStmts = quarterlyBeforeDate.slice(0, 4);
-            const hasTtm = ttmStmts.length >= 4;
+            const latestQBefore = quarterlyBeforeDate[0] ?? null;
+            const latestFYBefore = stmtsBeforeDate.find(s => s.fiscalPeriod === 'FY') ?? null;
+            const prevYearSameQBefore = latestQBefore
+                ? quarterlyBeforeDate.find(s => s.fiscalPeriod === latestQBefore.fiscalPeriod && s.fiscalYear === latestQBefore.fiscalYear! - 1)
+                : null;
 
-            const annualStmt = stmtsBeforeDate.find(s =>
-                s.fiscalPeriod === 'FY' || s.period === 'annual'
-            );
-            const stmt = (hasTtm ? ttmStmts[0] : null) || annualStmt ||
-                stmtsBeforeDate[0] || statements[statements.length - 1];
+            const stmt = latestQBefore || latestFYBefore || stmtsBeforeDate[0] || statements[statements.length - 1];
 
-            // For TTM P/E, de-cumulate quarterly values (Finnhub reports cumulative)
-            function deCumTtm(stmts: any[], field: string): number | null {
-                if (!hasTtm) return null;
-                let sum = 0;
-                let valid = false;
-                for (let i = 0; i < stmts.length; i++) {
-                    const s = stmts[i]!;
-                    const val = s[field as keyof typeof s] as number | null;
-                    if (val == null) continue;
-                    if (s.fiscalPeriod === 'Q1') {
-                        sum += val;
-                        valid = true;
-                    } else {
-                        const prev = stmts[i + 1];
-                        if (prev && prev.fiscalYear === s.fiscalYear && prev.fiscalPeriod !== 'FY') {
-                            const prevVal = prev[field as keyof typeof prev] as number | null;
-                            if (prevVal != null) {
-                                sum += val - prevVal;
-                                valid = true;
-                            }
-                        }
-                    }
+            let ttmNetIncome: number | null = null;
+            let ttmRevenue: number | null = null;
+            if (latestQBefore && latestFYBefore && prevYearSameQBefore) {
+                const qNI = latestQBefore.netIncome;
+                const fyNI = latestFYBefore.netIncome;
+                const prevQNI = prevYearSameQBefore.netIncome;
+                if (qNI != null && fyNI != null && prevQNI != null) {
+                    ttmNetIncome = qNI + fyNI - prevQNI;
                 }
-                return valid ? sum : null;
+                const qRev = latestQBefore.revenue;
+                const fyRev = latestFYBefore.revenue;
+                const prevQRev = prevYearSameQBefore.revenue;
+                if (qRev != null && fyRev != null && prevQRev != null) {
+                    ttmRevenue = qRev + fyRev - prevQRev;
+                }
             }
-            const ttmNetIncome = deCumTtm(ttmStmts, 'netIncome');
-            const ttmRevenue = deCumTtm(ttmStmts, 'revenue');
 
             if (stmt && stmt.sharesOutstanding) {
                 marketCap = closePrice * stmt.sharesOutstanding;

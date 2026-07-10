@@ -17,42 +17,34 @@ export async function calculateScores(symbol: string): Promise<void> {
     const latestStmt = stmts[0];
     if (!latestStmt) return;
     const annualStmts = stmts.filter(s => s.fiscalPeriod === 'FY');
+    
+    // Compute TTM using correct formula: latestQ + FY - sameQ_prevYear
+    // Finnhub reports cumulative quarterly values (Q1=3M, Q2=6M, Q3=9M). Q4 is in FY.
     const quarterlyStmts = stmts.filter(s => s.fiscalPeriod !== 'FY');
-    
-    // Compute TTMs with de-cumulation (Finnhub reports cumulative quarterly values)
-    const ttmStmts = quarterlyStmts.slice(0, 4);
-    const has4Q = ttmStmts.length >= 4;
-    
-    function deCumulateTtm(field: string): number | null {
-        if (!has4Q) return null;
-        let sum = 0;
-        let valid = false;
-        for (let i = 0; i < ttmStmts.length; i++) {
-            const s = ttmStmts[i]!;
-            const val = s[field as keyof typeof s] as number | null;
-            if (val == null) continue;
-            if (s.fiscalPeriod === 'Q1') {
-                sum += val;
-                valid = true;
-            } else {
-                const prev = ttmStmts[i + 1];
-                if (prev && prev.fiscalYear === s.fiscalYear && prev.fiscalPeriod !== 'FY') {
-                    const prevVal = prev[field as keyof typeof prev] as number | null;
-                    if (prevVal != null) {
-                        sum += val - prevVal;
-                        valid = true;
-                    }
-                }
+    const latestQ = quarterlyStmts[0] ?? null;
+    const latestFY = annualStmts[0] ?? null;
+    const prevYearSameQ = latestQ
+        ? quarterlyStmts.find(s => s.fiscalPeriod === latestQ.fiscalPeriod && s.fiscalYear === latestQ.fiscalYear! - 1)
+        : null;
+    const canTtm = !!(latestQ && latestFY && prevYearSameQ);
+
+    function ttmVal(field: string): number | null {
+        if (canTtm && latestQ && latestFY && prevYearSameQ) {
+            const qVal = latestQ[field as keyof typeof latestQ] as number | null;
+            const fyVal = latestFY[field as keyof typeof latestFY] as number | null;
+            const prevQVal = prevYearSameQ[field as keyof typeof prevYearSameQ] as number | null;
+            if (qVal != null && fyVal != null && prevQVal != null) {
+                return qVal + fyVal - prevQVal;
             }
         }
-        return valid ? sum : null;
+        return (latestFY as any)?.[field] as number | null ?? null;
     }
-    
-    const ttmNetIncome = deCumulateTtm('netIncome');
-    const ttmRevenue = deCumulateTtm('revenue');
-    const ttmEbit = deCumulateTtm('ebit');
-    const ttmOcf = deCumulateTtm('operatingCashFlow');
-    const ttmCapex = deCumulateTtm('capex');
+
+    const ttmNetIncome = ttmVal('netIncome');
+    const ttmRevenue = ttmVal('revenue');
+    const ttmEbit = ttmVal('ebit');
+    const ttmOcf = ttmVal('operatingCashFlow');
+    const ttmCapex = ttmVal('capex');
 
     let healthScore = 50;
     let valuationScore = 50;

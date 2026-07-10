@@ -39,65 +39,33 @@ async function computeMetrics(symbol: string) {
     const sharesOutstanding = latestStmt?.sharesOutstanding ?? null;
     const sbcSnapshot = latestStmt?.sbc ?? null;
 
-    // TTM Flow Variables
+    // TTM Flow Variables — correct de-cumulation for Finnhub's cumulative quarterly reporting
+    // Finnhub reports Q1=3M, Q2=6M (cumulative), Q3=9M (cumulative). Q4 is embedded in FY.
+    // Standard TTM formula: latest_quarter_value + FY_prev - same_quarter_prev_year
+    // This gives 12 contiguous months regardless of which quarter is latest.
     const quarterlyStmts = stmts.filter(s => s.fiscalPeriod !== 'FY');
-    const ttmStmts = quarterlyStmts.slice(0, 4);
-    const has4Q = ttmStmts.length >= 4;
+    const latestQ = quarterlyStmts[0] ?? null;
+    const latestFY = stmts.find(s => s.fiscalPeriod === 'FY') || null;
 
-    const latestAnnual = stmts.find(s => s.fiscalPeriod === 'FY') || latestStmt;
+    // Find same quarter from previous fiscal year
+    const prevYearSameQ = latestQ
+        ? quarterlyStmts.find(s => s.fiscalPeriod === latestQ.fiscalPeriod && s.fiscalYear === latestQ.fiscalYear! - 1)
+        : null;
 
-    // De-cumulate quarterly statements: Finnhub reports CUMULATIVE values
-    // (Q1=3M, Q2=6M, Q3=9M). To get single-quarter values, subtract previous
-    // period from same fiscal year. Q1 is already single-quarter.
-    function deCumulate(stmts: any[], field: string): (number | null)[] {
-        return stmts.map((s, i) => {
-            const val = s[field];
-            if (val == null) return null;
-            // Q1 is always single-quarter (3 months)
-            if (s.fiscalPeriod === 'Q1') return val;
-            // For Q2/Q3/Q4, find the previous quarter from same fiscal year
-            const prev = stmts[i + 1];
-            if (prev && prev.fiscalYear === s.fiscalYear && prev.fiscalPeriod !== 'FY') {
-                const prevVal = prev[field];
-                if (prevVal != null) return val - prevVal;
-            }
-            // Can't de-cumulate, return as-is (will be wrong but better than null)
-            return val;
-        });
-    }
+    const canComputeTtm = latestQ && latestFY && prevYearSameQ;
 
-    // Helper for TTM calculation with de-cumulation
+    // Helper for TTM: latestQ + FY - prevYearSameQ (all cumulative, so subtraction works)
     const getTtmOrAnnual = (field: 'netIncome' | 'revenue' | 'ebit' | 'grossProfit' | 'sbc' | 'operatingCashFlow' | 'capex') => {
-        if (has4Q) {
-            // Strategy: use last 4 de-cumulated quarters
-            // But if we have FY + next Q1, Q2, Q3, use: FY - Q3_prev + Q3_curr - Q2_curr + Q2_prev - Q1_prev + Q1_curr
-            // Simpler: de-cumulate all 4 quarters and sum
-            const vals = deCumulate(ttmStmts, field);
-            let sum = 0;
-            let valid = false;
-            for (const v of vals) {
-                if (v != null) {
-                    sum += v;
-                    valid = true;
-                }
+        if (canComputeTtm && latestQ && latestFY && prevYearSameQ) {
+            const qVal = latestQ[field as keyof typeof latestQ] as number | null;
+            const fyVal = latestFY[field as keyof typeof latestFY] as number | null;
+            const prevQVal = prevYearSameQ[field as keyof typeof prevYearSameQ] as number | null;
+            if (qVal != null && fyVal != null && prevQVal != null) {
+                return qVal + fyVal - prevQVal;
             }
-            if (valid) return sum;
-
-            // Fallback: FY - Q3_of_same_FY + latest Q3 (if available)
-            const fy = stmts.find(s => s.fiscalPeriod === 'FY');
-            const q3SameFY = stmts.find(s => s.fiscalPeriod === 'Q3' && s.fiscalYear === fy?.fiscalYear);
-            const latestQ = ttmStmts[0]; // most recent quarter
-            if (fy && q3SameFY && latestQ && latestQ.fiscalPeriod === 'Q1') {
-                const fyVal = fy[field as keyof typeof fy] as number | null;
-                const q3Val = q3SameFY[field as keyof typeof q3SameFY] as number | null;
-                const q1Val = latestQ[field as keyof typeof latestQ] as number | null;
-                if (fyVal != null && q3Val != null && q1Val != null) {
-                    return fyVal - q3Val + q1Val;
-                }
-            }
-            return null;
         }
-        return (latestAnnual as any)?.[field] as number | null ?? null;
+        // Fallback to latest annual
+        return (latestFY as any)?.[field] as number | null ?? null;
     };
 
     const ttmNetIncome = getTtmOrAnnual('netIncome');
