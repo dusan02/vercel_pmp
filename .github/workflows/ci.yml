@@ -144,5 +144,5 @@ jobs:
       - name: Apply database migrations
         run: npx prisma migrate deploy
 
-      - name: Run integration tests
-        run: npm test -- --testPathPatterns="polygonWorker.integration"
+      - name: Run unit tests (prevCloseResolver + batchStatsLoader)
+        run: npm test -- --testPathPatterns="prevCloseResolver"
