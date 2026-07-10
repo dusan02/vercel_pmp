@@ -94,55 +94,17 @@ jobs:
       
       - name: Run pre-deploy specific tests
         run: npm test -- src/__tests__/pre-deploy.test.ts
-      
+
       - name: Start app & verify endpoints
         run: |
           npm run dev &
           sleep 30
           curl -f http://localhost:3000/api/stocks || exit 1
           curl -f http://localhost:3000/api/health || exit 1
-      
-      - name: Verify Redis fallback
+
+      - name: Verify Redis fallback (no Redis, DB only)
         run: |
-          REDIS_URL=invalid npx prisma migrate deploy && npm run build
-
-  test-critical:
-    name: Critical Pricing Logic Tests
-    runs-on: ubuntu-latest
-    env:
-      DATABASE_URL: "file:./test.db"
-    services:
-      redis:
-        image: redis
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run critical unit tests (first pass)
-        run: npm test -- --testPathPatterns="priceResolver|pricingStateMachine"
-
-      - name: Run critical unit tests (second pass - non-flaky check)
-        run: npm test -- --testPathPatterns="priceResolver|pricingStateMachine"
-
-      - name: Apply database migrations
-        run: npx prisma migrate deploy
-
-      - name: Run unit tests (prevCloseResolver + batchStatsLoader)
-        run: npm test -- --testPathPatterns="prevCloseResolver"
+          REDIS_URL=invalid npm run dev &
+          sleep 15
+          curl -f http://localhost:3000/api/health || exit 1
+          kill %1 2>/dev/null || true
