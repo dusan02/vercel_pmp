@@ -57,16 +57,6 @@ export default function CashFlowChart({ statements }: CashFlowChartProps) {
         });
     }, [statements, viewMode]);
 
-
-    if (!statements || statements.length === 0 || chartData.length === 0) {
-        return (
-            <div className="text-gray-500 text-sm p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                <p className="font-medium">No cash flow data available</p>
-                <p className="text-xs mt-1">Click Refresh Analysis to fetch data.</p>
-            </div>
-        );
-    }
-
     const yMin = useMemo(() => {
         const allVals = chartData.flatMap(d => {
             const vals: number[] = [];
@@ -78,6 +68,15 @@ export default function CashFlowChart({ statements }: CashFlowChartProps) {
         const min = Math.min(0, ...allVals);
         return min < 0 ? Math.floor(min * 1.1) : 0;
     }, [chartData, selectedMetrics]);
+
+    if (!statements || statements.length === 0 || chartData.length === 0) {
+        return (
+            <div className="text-gray-500 text-sm p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                <p className="font-medium">No cash flow data available</p>
+                <p className="text-xs mt-1">Click Refresh Analysis to fetch data.</p>
+            </div>
+        );
+    }
 
     // Filter METRICS to only show ones with data
     const visibleMetrics = METRICS.filter(m => availableMetrics.includes(m.key));

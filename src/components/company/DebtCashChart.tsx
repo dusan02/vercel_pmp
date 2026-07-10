@@ -44,6 +44,16 @@ export default function DebtCashChart({ statements }: DebtCashChartProps) {
         });
     }, [statements, viewMode]);
 
+    const yMin = useMemo(() => {
+        const allVals = chartData.flatMap(d => {
+            const vals: number[] = [d.netDebt];
+            if (selectedMetrics.includes('cash')) vals.push(d.cash);
+            if (selectedMetrics.includes('totalDebt')) vals.push(d.totalDebt);
+            return vals;
+        });
+        const min = Math.min(0, ...allVals);
+        return min < 0 ? Math.floor(min * 1.1) : 0;
+    }, [chartData, selectedMetrics]);
 
     if (!statements || statements.length === 0) {
         return <div className="text-gray-500 text-sm">No balance sheet data available.</div>;
@@ -60,17 +70,6 @@ export default function DebtCashChart({ statements }: DebtCashChartProps) {
 
     const latestData = chartData[chartData.length - 1];
     const isNetCash = latestData && (latestData.cash > latestData.totalDebt);
-
-    const yMin = useMemo(() => {
-        const allVals = chartData.flatMap(d => {
-            const vals: number[] = [d.netDebt];
-            if (selectedMetrics.includes('cash')) vals.push(d.cash);
-            if (selectedMetrics.includes('totalDebt')) vals.push(d.totalDebt);
-            return vals;
-        });
-        const min = Math.min(0, ...allVals);
-        return min < 0 ? Math.floor(min * 1.1) : 0;
-    }, [chartData, selectedMetrics]);
 
     return (
         <div className="w-full h-full flex flex-col">

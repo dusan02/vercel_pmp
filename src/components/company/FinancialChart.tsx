@@ -66,6 +66,12 @@ export default function FinancialChart({ statements }: FinancialChartProps) {
         });
     }, [statements, viewMode]);
 
+    const yMin = useMemo(() => {
+        if (!selectedMetrics.includes('netIncome')) return 0;
+        const min = Math.min(0, ...chartData.map(d => d.netIncome as number));
+        return min < 0 ? Math.floor(min * 1.1) : 0;
+    }, [chartData, selectedMetrics]);
+
 
     if (!statements || statements.length === 0) {
         return <div className="text-gray-500 text-sm">No financial statement data available.</div>;
@@ -79,12 +85,6 @@ export default function FinancialChart({ statements }: FinancialChartProps) {
             </div>
         );
     }
-
-    const yMin = useMemo(() => {
-        if (!selectedMetrics.includes('netIncome')) return 0;
-        const min = Math.min(0, ...chartData.map(d => d.netIncome as number));
-        return min < 0 ? Math.floor(min * 1.1) : 0;
-    }, [chartData, selectedMetrics]);
 
     return (
         <div className="w-full h-full flex flex-col">
