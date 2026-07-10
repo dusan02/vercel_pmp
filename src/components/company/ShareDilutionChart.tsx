@@ -63,9 +63,13 @@ export default function ShareDilutionChart({ statements }: ShareDilutionChartPro
 
         return sorted.map((s, idx) => {
             const shares = (s.sharesOutstanding ?? 0) / 1e6; // in millions
-            const prev = idx > 0 ? sorted[idx - 1] : undefined;
-            const prevShares = prev?.sharesOutstanding
-                ? prev.sharesOutstanding / 1e6
+            // Find same period one year earlier for YoY comparison
+            const prevYear = sorted.find(prev =>
+                prev.fiscalPeriod === s.fiscalPeriod &&
+                prev.fiscalYear === s.fiscalYear - 1
+            );
+            const prevShares = prevYear?.sharesOutstanding
+                ? prevYear.sharesOutstanding / 1e6
                 : null;
             // Buyback ratio: positive = shares decreased (buyback), negative = dilution
             const buybackRatio = prevShares && prevShares > 0
@@ -100,7 +104,7 @@ export default function ShareDilutionChart({ statements }: ShareDilutionChartPro
                     </button>
                     <button onClick={() => setShowBuyback(!showBuyback)}
                         className={`text-[10px] px-2 py-1 rounded font-medium transition-all ${showBuyback ? 'text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 bg-gray-200 dark:bg-gray-700'}`}
-                        style={{ backgroundColor: showBuyback ? '#10B981' : undefined }}>
+                        style={{ backgroundColor: showBuyback ? '#F59E0B' : undefined }}>
                         Buyback Ratio %{showBuyback && <span className="ml-1">✓</span>}
                     </button>
                 </div>
@@ -115,14 +119,14 @@ export default function ShareDilutionChart({ statements }: ShareDilutionChartPro
                         {showShares && <YAxis yAxisId="left" tickFormatter={formatSharesAxis} tick={{ fontSize: 12, fill: '#6B7280' }} axisLine={false} tickLine={false} width={55} />}
                         {showBuyback && (
                             <YAxis yAxisId="right" orientation="right" tickFormatter={(v: number) => `${v.toFixed(1)}%`}
-                                tick={{ fontSize: 11, fill: '#10B981' }} axisLine={false} tickLine={false} width={45} domain={buybackDomain} />
+                                tick={{ fontSize: 11, fill: '#F59E0B' }} axisLine={false} tickLine={false} width={45} domain={buybackDomain} />
                         )}
                         <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(107, 114, 128, 0.05)' }} />
                         {showShares && <ReferenceLine yAxisId="left" y={0} stroke="#9CA3AF" />}
                         {showShares && <Bar yAxisId="left" dataKey="shares" name="Shares Outstanding" fill="#3B82F6" radius={[2, 2, 0, 0]} maxBarSize={40} isAnimationActive={false} />}
                         {showBuyback && (
                             <Line yAxisId="right" type="monotone" dataKey="buybackRatio" name="Buyback Ratio %"
-                                stroke="#10B981" strokeWidth={2} dot={{ r: 3, fill: '#10B981' }} activeDot={{ r: 5 }} isAnimationActive={false} />
+                                stroke="#F59E0B" strokeWidth={2} dot={{ r: 3, fill: '#F59E0B' }} activeDot={{ r: 5 }} isAnimationActive={false} />
                         )}
                     </ComposedChart>
                 </ResponsiveContainer>
