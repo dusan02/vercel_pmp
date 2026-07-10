@@ -62,8 +62,11 @@ export async function GET(
         const psStats = buildStats(psAllValues);
 
         // --- Financial statements: compute TTM per-share metrics ---
+        const tenYearsAgoStmts = new Date();
+        tenYearsAgoStmts.setFullYear(tenYearsAgoStmts.getFullYear() - 10);
+
         const statements = await prisma.financialStatement.findMany({
-            where: { symbol },
+            where: { symbol, endDate: { gte: tenYearsAgoStmts } },
             orderBy: { endDate: 'asc' },
         });
 

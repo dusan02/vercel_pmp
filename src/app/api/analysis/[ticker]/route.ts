@@ -12,10 +12,12 @@ async function computeMetrics(symbol: string) {
     const analysis = await prisma.analysisCache.findUnique({ where: { symbol } });
     if (!analysis) return null;
 
+    const tenYearsAgo = new Date();
+    tenYearsAgo.setFullYear(tenYearsAgo.getFullYear() - 10);
+
     const stmts = await prisma.financialStatement.findMany({
-        where: { symbol },
+        where: { symbol, endDate: { gte: tenYearsAgo } },
         orderBy: { endDate: 'desc' },
-        take: 120 // 10Y annual (10) + 10Y quarterly (40) + buffer = enough for full history charts
     });
     const latestStmt = stmts[0] || null;
 
