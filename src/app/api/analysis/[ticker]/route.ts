@@ -74,16 +74,20 @@ async function computeMetrics(symbol: string) {
     const ttmGrossProfit = getTtmOrAnnual('grossProfit');
     const ttmSbc = getTtmOrAnnual('sbc');
 
-    // Compute P/E directly from TTM NI and shares if valuation history P/E is stale/null
+    // Compute P/E directly from TTM NI + current price + shares (more accurate than stale valuation history)
     const tickerForPrice = await prisma.ticker.findUnique({
         where: { symbol },
         select: { lastPrice: true }
     });
     const effectivePrice = tickerForPrice?.lastPrice || latestValuation?.closePrice || 0;
     const effectiveNI = ttmNetIncome ?? latestStmt?.netIncome ?? null;
-    let currentPe = latestValuation?.peRatio || null;
-    if (currentPe === null && effectivePrice > 0 && sharesOutstanding && sharesOutstanding > 0 && effectiveNI && effectiveNI > 0) {
+    let currentPe: number | null = null;
+    if (effectivePrice > 0 && sharesOutstanding && sharesOutstanding > 0 && effectiveNI && effectiveNI > 0) {
         currentPe = (effectivePrice * sharesOutstanding) / effectiveNI;
+    }
+    // Fallback to valuation history only if we couldn't compute
+    if (currentPe === null) {
+        currentPe = latestValuation?.peRatio || null;
     }
 
     let currentEps = null;
