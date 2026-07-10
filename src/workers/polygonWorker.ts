@@ -1,48 +1,27 @@
 /**
- * Polygon Worker - Batch ingest stock data
- * 
- * This worker:
- * 1. Fetches snapshot/aggs from Polygon API (batch 60-80 tickers)
- * 2. Normalizes data
- * 3. Upserts to DB (only if newer timestamp)
- * 4. Writes to Redis (hot cache)
- * 5. Publishes to Redis Pub/Sub for WebSocket updates
+ * Polygon Worker — entry point / orchestrator.
+ *
+ * Two modes:
+ * - MODE=refs:    Daily Reference tasks (universe refresh, bootstrap prevCloses)
+ * - MODE=snapshot: Continuous snapshot ingestion (default, production)
+ *
+ * Re-exports for cron routes:
+ *   saveRegularClose, ingestBatch, bootstrapPreviousCloses
  */
 
-import {
-  setPrevClose,
-  getPrevClose,
-  publishTick,
-  getUniverse,
-  addToUniverse,
-  atomicUpdatePrice
-} from '@/lib/redis/operations';
+import { getUniverse, getPrevClose } from '@/lib/redis/operations';
 import { redisClient } from '@/lib/redis';
-import { recordSuccess, recordFailure } from './healthMonitor';
-import { PriceData } from '@/lib/types';
-import { detectSession, isMarketOpen, isMarketHoliday, mapToRedisSession, getLastTradingDay, getTradingDay } from '@/lib/utils/timeUtils';
-import { nowET, getDateET, createETDate, isWeekendET, toET } from '@/lib/utils/dateET';
-import { resolveEffectivePrice, calculatePercentChange } from '@/lib/utils/priceResolver';
-import { getPricingState, canOverwritePrice, getPreviousCloseTTL, PriceState } from '@/lib/utils/pricingStateMachine';
-import { withRetry, circuitBreaker } from '@/lib/api/rateLimiter';
-// DLQ import - commented out to avoid startup issues
-// import { addToDLQ } from '@/lib/dlq';
-import { updateRankIndexes, updateStatsCache, getRankMinMax } from '@/lib/redis/ranking';
-import { computeMarketCap, computeMarketCapDiff, getSharesOutstanding } from '@/lib/utils/marketCapUtils';
-import { getPolygonClient } from '@/lib/clients/polygonClient';
-import { prisma } from '@/lib/db/prisma';
-import { processBatchWithConcurrency } from '@/lib/batchProcessor';
-import type { MarketSession } from '@/lib/types';
+import { getDateET, createETDate, toET } from '@/lib/utils/dateET';
+import { getLastTradingDay, getTradingDay } from '@/lib/utils/timeUtils';
 
-// Circuit breaker for Polygon API
-import { polygonCircuitBreaker, __IS_TEST__, sleep, PolygonSnapshot } from './polygon/shared';
-import { fetchPolygonSnapshot, normalizeSnapshot, upsertToDB } from './polygon/core';
 import { saveRegularClose } from './polygon/saveRegularClose';
 import { ingestBatch } from './polygon/ingestBatch';
 import { bootstrapPreviousCloses } from './polygon/bootstrapPrevClose';
+import { refreshUniverseAtStartup, refreshUniverseFromDB } from './polygon/universeManager';
+import { ingestLoop } from './polygon/ingestLoop';
+
 export { saveRegularClose, ingestBatch, bootstrapPreviousCloses };
 export { isBulkPreloadWindow } from '@/lib/utils/marketWindowUtils';
-import { isBulkPreloadWindow } from '@/lib/utils/marketWindowUtils';
 
 async function main() {
   const mode = process.env.MODE || 'snapshot';
@@ -53,509 +32,113 @@ async function main() {
     process.exit(1);
   }
 
-  // Startup: refresh universe from DB (ensures all DB tickers are tracked immediately)
-  try {
-    const { prisma } = await import('@/lib/db/prisma');
-    const dbTickers = await prisma.ticker.findMany({
-      where: {},
-      select: { symbol: true },
-    });
-    const startupTickers = dbTickers.map((t: { symbol: string }) => t.symbol);
-    if (startupTickers.length > 0) {
-      const { redisClient } = await import('@/lib/redis');
-      if (redisClient && redisClient.isOpen) {
-        await redisClient.del('universe:sp500');
-      }
-      await addToUniverse('sp500', startupTickers);
-      console.log(`✅ Startup: ${startupTickers.length} tickers from DB added to universe:sp500`);
-    }
-  } catch (error) {
-    console.error('❌ Startup universe refresh failed, using fallback:', error);
-    const { getAllProjectTickers } = await import('@/data/defaultTickers');
-    const fallback = getAllProjectTickers('pmp');
-    await addToUniverse('sp500', fallback);
-    console.log(`✅ Fallback: ${fallback.length} tickers from defaultTickers added to universe:sp500`);
-  }
+  // Startup: refresh universe from DB
+  await refreshUniverseAtStartup();
 
   if (mode === 'refs') {
-    // Daily reference tasks
     console.log('🔄 Starting refs worker...');
-
-    // Schedule tasks based on ET time
-    const scheduleTask = async () => {
-      const now = new Date(); // real instant
-      const et = toET(now);
-      const hours = et.hour;
-      const minutes = et.minute;
-
-      // 03:30 ET - Refresh universe from DB
-      if (hours === 3 && minutes === 30) {
-        console.log('🔄 Refreshing universe from DB...');
-        try {
-          const { prisma } = await import('@/lib/db/prisma');
-          const dbTickers = await prisma.ticker.findMany({
-            where: {},
-            select: { symbol: true },
-          });
-          const tickers = dbTickers.map(t => t.symbol);
-          console.log(`📊 Adding ${tickers.length} tickers from DB to universe:sp500...`);
-
-          // Clear and rebuild universe
-          const { redisClient } = await import('@/lib/redis');
-          if (redisClient && redisClient.isOpen) {
-            await redisClient.del('universe:sp500');
-          }
-          await addToUniverse('sp500', tickers);
-
-          console.log(`✅ Universe refreshed: ${tickers.length} tickers from DB added to universe:sp500`);
-        } catch (error) {
-          console.error('❌ Error refreshing universe from DB:', error);
-          // Fallback to hardcoded list
-          try {
-            const { getAllProjectTickers } = await import('@/data/defaultTickers');
-            const tickers = getAllProjectTickers('pmp');
-            await addToUniverse('sp500', tickers);
-            console.log(`✅ Fallback: ${tickers.length} tickers from defaultTickers added to universe:sp500`);
-          } catch (fallbackError) {
-            console.error('❌ Fallback also failed:', fallbackError);
-          }
-        }
-      }
-
-      // Bootstrap previous closes (04:00 ET or if missing)
-      const today = getDateET(now);
-      const tickers = await getUniverse('sp500');
-
-      if (tickers.length > 0 && today) {
-        const { getPrevClose } = await import('@/lib/redis/operations');
-        const samplePrevCloses = await getPrevClose(today, tickers.slice(0, 10));
-
-        // Bootstrap if:
-        // 1) It's 04:00 ET (normal daily bootstrap)
-        // 2) Previous closes are missing (any time before market close)
-        // 3) Previous closes are present but STALE vs expected trading day (self-heal)
-        //
-        // NOTE: Our Redis prevClose cache doesn't store the trading-day date, only the number.
-        // To detect staleness we sample the DB `latestPrevCloseDate` for a small set of tickers.
-        let isStale = false;
-        try {
-          const { prisma } = await import('@/lib/db/prisma');
-          const expectedPrevYMD = getDateET(getLastTradingDay(getTradingDay(createETDate(today))));
-          const sampleSymbols = tickers.slice(0, 25);
-          const rows = await prisma.ticker.findMany({
-            where: { symbol: { in: sampleSymbols } },
-            select: { latestPrevCloseDate: true }
-          });
-
-          const counts = new Map<string, number>();
-          for (const r of rows) {
-            if (!r.latestPrevCloseDate) continue;
-            const ymd = r.latestPrevCloseDate.toISOString().slice(0, 10);
-            counts.set(ymd, (counts.get(ymd) || 0) + 1);
-          }
-          const mode = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
-          if (mode && expectedPrevYMD && mode < expectedPrevYMD) {
-            isStale = true;
-          }
-        } catch {
-          // Non-fatal: if DB is unavailable we fall back to missing-cache logic.
-        }
-
-        // Rate-limit stale-trigger bootstraps to every 30 minutes to avoid Polygon spam
-        const staleWindowOk = minutes % 30 === 0;
-
-        const shouldBootstrap =
-          (hours === 4 && minutes === 0) ||
-          (samplePrevCloses.size === 0 && hours >= 0 && hours < 16) ||
-          (isStale && hours >= 0 && hours < 16 && staleWindowOk);
-
-        if (shouldBootstrap) {
-          console.log('🔄 Bootstrapping previous closes...');
-          await bootstrapPreviousCloses(tickers, apiKey, today);
-          // NEW: Track bootstrap time for cold-start turbo mode
-          if (redisClient && redisClient.isOpen) {
-            await redisClient.set('worker:last_bootstrap_ts', Date.now().toString());
-          }
-        }
-      }
-
-      // saveRegularClose is now handled exclusively by the post-market-daily-reset cron job
-      // (runs at 16:30 ET daily via PM2 cron_restart). Previously also scheduled here in refs mode
-      // with 5-minute retry logic, but this caused double-execution and timing issues.
-    };
-
-    // Check every minute, using setTimeout to prevent overlap
-    const runTask = async () => {
-      try {
-        await scheduleTask();
-      } catch (error) {
-        console.error('Error in scheduleTask:', error);
-      } finally {
-        setTimeout(runTask, 60000);
-      }
-    };
-    runTask(); // Run immediately
-
-  } else if (mode === 'snapshot') {
-    // Continuous snapshot ingest
+    await runRefsScheduler(apiKey);
+  } else {
     console.log('🔄 Starting snapshot worker...');
-
-    // Update worker status in Redis
-    const updateWorkerStatus = async () => {
-      try {
-        const { redisClient } = await import('@/lib/redis');
-        if (redisClient && redisClient.isOpen) {
-          await redisClient.setEx('worker:last_success_ts', 3600, Date.now().toString()); // 1 hour TTL
-        }
-      } catch (error) {
-        console.warn('Failed to update worker status:', error);
-      }
-    };
-
-    // DST-safe bulk preloader scheduler
-    const scheduleBulkPreload = async () => {
-      const etNow = nowET();
-      const et = toET(etNow);
-      const hours = et.hour;
-      const minutes = et.minute;
-      const dayOfWeek = et.weekday;
-
-      // Only on weekdays during the 07:30–15:55 ET window
-      const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
-
-      if (!isBulkPreloadWindow(hours, minutes) || !isWeekday) {
-        return; // Outside bulk preload window
-      }
-
-      // Check if last bulk preload was > 5 min ago
-      const { redisClient } = await import('@/lib/redis');
-      if (!redisClient || !redisClient.isOpen) {
-        return;
-      }
-
-      const lastPreloadKey = 'bulk:last_preload_ts';
-      const lastPreloadStr = await redisClient.get(lastPreloadKey);
-      const now = Date.now();
-      const fiveMinAgo = now - (5 * 60 * 1000);
-
-      // Check timestamp (not TTL-based gating)
-      if (lastPreloadStr && parseInt(lastPreloadStr, 10) >= fiveMinAgo) {
-        return; // Too soon since last preload
-      }
-
-      // Acquire lock to prevent parallel execution
-      const { withLock } = await import('@/lib/utils/redisLocks');
-      const { preloadBulkStocks } = await import('./backgroundPreloader');
-
-      const result = await withLock(
-        'bulk_preload',
-        8 * 60, // 8 min TTL (2x typical runtime ~3-4 min, prevents expiration during run)
-        async () => {
-          console.log('🔄 Running DST-safe bulk preload...');
-          const apiKey = process.env.POLYGON_API_KEY;
-          if (!apiKey) {
-            console.warn('⚠️ POLYGON_API_KEY not set, skipping bulk preload');
-            return;
-          }
-
-          // Import and run bulk preload logic
-          const { preloadBulkStocks } = await import('./backgroundPreloader');
-          const tickers = await getUniverse('sp500');
-          if (tickers.length === 0) {
-            return;
-          }
-
-          // Generate correlation ID for this run
-          const runId = Date.now().toString(36);
-
-          // Run bulk preload with duration tracking
-          const preloadStartTime = Date.now();
-          let preloadSuccess = true;
-          let preloadError: string | null = null;
-
-          console.log(`🔄 [runId:${runId}] Starting bulk preload...`);
-
-          try {
-            await preloadBulkStocks(apiKey);
-            const preloadDuration = Date.now() - preloadStartTime;
-            const preloadDurationMin = preloadDuration / (60 * 1000);
-
-            // Max runtime alarms (warn at 6 min, error at 10 min)
-            if (preloadDurationMin > 10) {
-              const errorMsg = `Bulk preload took ${preloadDurationMin.toFixed(1)}min (exceeds 10min threshold) - possible Polygon/Redis/DB slowdown`;
-              console.error(`❌ [runId:${runId}] ${errorMsg}`);
-              await redisClient.set('bulk:last_error', errorMsg);
-            } else if (preloadDurationMin > 6) {
-              console.warn(`⚠️ [runId:${runId}] Bulk preload took ${preloadDurationMin.toFixed(1)}min (exceeds 6min threshold) - monitoring for slowdown`);
-            }
-
-            // Update last preload timestamp and metrics (no TTL - persistent, not TTL-based gating)
-            await redisClient.set(lastPreloadKey, now.toString());
-            await redisClient.set('bulk:last_duration_ms', preloadDuration.toString());
-            await redisClient.set('bulk:last_success_ts', now.toString());
-            if (preloadDurationMin <= 10) {
-              await redisClient.del('bulk:last_error'); // Clear error on success (unless exceeded 10min)
-            }
-
-            // Alert if bulk preload is stale during the 07:30–15:55 ET window
-            const etNow = nowET();
-            const et = toET(etNow);
-
-            if (isBulkPreloadWindow(et.hour, et.minute)) {
-              const bulkAgeMinutes = Math.floor((now - parseInt(await redisClient.get('bulk:last_success_ts') || '0', 10)) / 60000);
-              if (bulkAgeMinutes > 10) {
-                console.error(`ALERT: [runId:${runId}] Bulk preload stale - last success ${bulkAgeMinutes}min ago (threshold: 10min) during market hours`);
-              }
-            }
-
-            console.log(`✅ [runId:${runId}] Bulk preload completed in ${preloadDuration}ms (${preloadDurationMin.toFixed(1)}min)`);
-          } catch (error) {
-            preloadSuccess = false;
-            preloadError = error instanceof Error ? error.message : String(error);
-            const preloadDuration = Date.now() - preloadStartTime;
-
-            await redisClient.set('bulk:last_duration_ms', preloadDuration.toString());
-            await redisClient.set('bulk:last_error', preloadError);
-
-            console.error(`❌ Bulk preload failed after ${preloadDuration}ms:`, error);
-            throw error; // Re-throw to let withLock handle it
-          }
-        }
-      );
-
-      if (result === null) {
-        // Lock acquisition failed (another process is running it)
-        console.log('⏸️ Bulk preload already running, skipping...');
-      }
-    };
-
-    const ingestLoop = async () => {
-      const loopStartTime = Date.now();
-      let totalIngestSuccess = 0;
-
-      try {
-        const etNow = nowET();
-        const session = detectSession(etNow);
-
-      // --- Regular close + next-day prevClose ---
-      // saveRegularClose is now handled exclusively by the post-market-daily-reset cron job
-      // (runs at 16:30 ET daily via PM2 cron_restart). Previously this was also scheduled
-      // in ingestLoop, but the 14+ minute loop cycle often missed the retry window.
-      // The cron job is more reliable and avoids double-execution.
-
-      // Schedule bulk preload (DST-safe, with lock)
-      await scheduleBulkPreload();
-
-      // Always try to ingest (even when market closed, we can get previous close)
-      const tickers = await getUniverse('sp500'); // Get from Redis
-
-      if (tickers.length === 0) {
-        console.log('⚠️ Universe is empty, waiting...');
-        return;
-      }
-
-      // CRITICAL: For premarketprice.com, we MUST ingest pre-market and after-hours data!
-      // Only skip on weekends/holidays (true closed days)
-      const isWeekendOrHoliday = isWeekendET(etNow) || isMarketHoliday(etNow);
-
-      if (session === 'closed' && isWeekendOrHoliday) {
-        // Weekend/holiday: bootstrap prevCloses if missing (needed for % change calculation),
-        // then fall through to normal ingest. State machine has canOverwrite:false so DB is safe.
-        const today = getDateET(etNow);
-        const { getPrevClose } = await import('@/lib/redis/operations');
-        const samplePrevCloses = await getPrevClose(today, tickers.slice(0, 10));
-
-        if (samplePrevCloses.size === 0) {
-          console.log(`🔔 Weekend/Holiday: bootstrapping previous closes for % change...`);
-          await bootstrapPreviousCloses(tickers, apiKey, today);
-        } else {
-          console.log(`🔔 Weekend/Holiday: prevCloses ready, proceeding with Redis ingest (DB protected)`);
-        }
-        // Fall through to normal ingest below — canOverwrite:false prevents DB overwrites
-      }
-
-      // Weekday 04:00 ET bootstrap (self-healing for snapshot mode — MODE=refs never runs)
-      // If post-market-daily-reset failed the previous evening, prevClose stays stale until this runs.
-      // NOTE: detectSession() returns 'pre' at exactly 4:00 AM ET (preMarketStart = 4*60),
-      // so we must allow both 'pre' and 'closed' here — 'closed' alone is unreachable at hour 4.
-      if (!isWeekendOrHoliday && (session === 'pre' || session === 'closed')) {
-        const etParts = toET(etNow);
-        if (etParts.hour === 4 && etParts.minute < 5) {
-          const today = getDateET(etNow);
-          const { getPrevClose } = await import('@/lib/redis/operations');
-          const samplePrevCloses = await getPrevClose(today, tickers.slice(0, 5));
-          if (samplePrevCloses.size === 0) {
-            console.log('🌅 04:00 ET weekday bootstrap: prevClose missing — bootstrapping...');
-            await bootstrapPreviousCloses(tickers, apiKey, today);
-          }
-        }
-      }
-
-      // For pre-market, after-hours, live, or closed (but not weekend/holiday) - INGEST DATA!
-      // This is critical for premarketprice.com - we need pre-market prices!
-      if (session === 'pre' || session === 'after') {
-        console.log(`🌅 Pre-market/After-hours mode (session: ${session}) - ingesting pre-market prices...`);
-      } else if (session === 'closed' && !isWeekendOrHoliday) {
-        // Closed but not weekend/holiday (e.g., before 4:00 AM or after 8:00 PM) - still ingest
-        console.log(`🌙 Off-hours (session: ${session}) - ingesting available prices...`);
-      } else {
-        console.log(`📊 Market open (session: ${session}), ingesting with prioritization...`);
-      }
-
-      // Prioritize tickers: top 200 get frequent updates (60s), rest less frequent (5min)
-      // For pre-market/after-hours, use longer intervals (5min for all)
-      const { getAllProjectTickers } = await import('@/data/defaultTickers');
-      // Load last update times from Redis (persistent across restarts)
-      const lastUpdateMap = new Map<string, number>();
-      const premiumTickers = getAllProjectTickers('pmp').slice(0, 200); // Top 200
-
-
-
-      // Adjust intervals based on session
-      // Goal: keep major tickers highly fresh even in pre-market, while keeping overall API load reasonable.
-      const isPreMarket = session === 'pre';
-      const isAfterHours = session === 'after';
-      const PREMIUM_INTERVAL = 60 * 1000; // 60s for all sessions (pre-market, after-hours, live) — earnings reactions need fast updates
-      const REST_INTERVAL = 5 * 60 * 1000; // keep rest at 5min to avoid rate-limit pressure
-
-      // Load last update times from Redis (using freshness metrics hash - O(1))
-      if (redisClient && redisClient.isOpen) {
-        try {
-          const hashKey = 'freshness:last_update';
-          const timestamps = await redisClient.hGetAll(hashKey);
-
-          tickers.forEach((ticker) => {
-            const timestampStr = timestamps[ticker];
-            if (timestampStr) {
-              const timestamp = parseInt(timestampStr, 10);
-              if (!isNaN(timestamp)) {
-                lastUpdateMap.set(ticker, timestamp);
-              }
-            }
-          });
-        } catch (error) {
-          console.warn('Failed to load freshness timestamps from Redis:', error);
-        }
-      }
-
-      // Get tickers that need update based on priority
-      const now = Date.now();
-      const tickersNeedingUpdate = tickers.filter(ticker => {
-        const lastUpdate = lastUpdateMap.get(ticker) || 0;
-        const interval = premiumTickers.includes(ticker) ? PREMIUM_INTERVAL : REST_INTERVAL;
-        return (now - lastUpdate) >= interval;
-      });
-
-      if (tickersNeedingUpdate.length === 0) {
-        console.log('⏭️ No tickers need update yet (within refresh intervals)');
-        // Still record success if we are just idling between intervals
-        await recordSuccess('ingestLoop', 0);
-        return;
-      }
-
-      // Prioritize: process premium tickers first, then rest
-      const premiumNeedingUpdate = tickersNeedingUpdate.filter(t => premiumTickers.includes(t));
-      const restNeedingUpdate = tickersNeedingUpdate.filter(t => !premiumTickers.includes(t));
-      const prioritizedTickers = [...premiumNeedingUpdate, ...restNeedingUpdate];
-
-      console.log(`📊 Processing ${prioritizedTickers.length} tickers: ${premiumNeedingUpdate.length} premium (60s), ${restNeedingUpdate.length} rest (5min)`);
-
-      // Rate-limit logic
-      const envLimit = parseInt(process.env.POLYGON_MAX_REQUESTS_PER_MINUTE || '250', 10);
-      const MAX_REQUESTS_PER_MINUTE = envLimit;
-      const envBatchSize = parseInt(process.env.POLYGON_MAX_BATCH_SIZE || '100', 10);
-      const batchSize = Math.min(100, Math.max(1, envBatchSize));
-      
-      const delayBetweenBatches = Math.ceil((60 * 1000) / (MAX_REQUESTS_PER_MINUTE / batchSize));
-
-      // --- COLD START TURBO MODE ---
-      // If we just entered 'pre' session, we force-update all tickers once as fast as possible
-      let usedBatchSize = batchSize;
-      let usedDelay = delayBetweenBatches;
-      let processedTickers = prioritizedTickers;
-
-      // TURBO MODE: full first-pass when entering pre-market (after bootstrap) OR after-hours (earnings).
-      // Pre-market: bootstrap sets last_bootstrap_ts → turbo fires within 10 min.
-      // After-hours: session transition at 4pm ET → fire once per day for fast earnings data.
-      const bootstrapTs = parseInt(await redisClient.get('worker:last_bootstrap_ts') || '0', 10);
-      const isPostBootstrap = isPreMarket && (now - bootstrapTs) < 10 * 60 * 1000;
-      const isAfterHoursEntry = isAfterHours;
-      if (isPostBootstrap || isAfterHoursEntry) {
-        const turboKey = isPostBootstrap
-          ? `worker:last_turbo_pass:${getDateET(etNow)}`
-          : `worker:last_ah_turbo_pass:${getDateET(etNow)}`;
-        const lastTurboPass = await redisClient.get(turboKey);
-        if (!lastTurboPass) {
-          console.log(`🚀 TURBO MODE: Performing first-pass ${isPostBootstrap ? 'pre-market' : 'after-hours'} refresh...`);
-          processedTickers = tickers; // All tickers
-          await redisClient.setEx(turboKey, 3600, now.toString());
-        }
-      }
-
-      for (let i = 0; i < processedTickers.length; i += usedBatchSize) {
-        const batch = processedTickers.slice(i, i + usedBatchSize);
-        const batchNum = Math.floor(i / usedBatchSize) + 1;
-        const totalBatches = Math.ceil(processedTickers.length / usedBatchSize);
-        console.log(`📥 Processing batch ${batchNum}/${totalBatches} (${batch.length} tickers)...`);
-
-        try {
-          const results = await ingestBatch(batch, apiKey);
-          const successSymbols = results.filter(r => r.success).map(r => r.symbol);
-          totalIngestSuccess += successSymbols.length;
-
-          // Update freshness metrics
-          if (redisClient && redisClient.isOpen && successSymbols.length > 0) {
-            const { updateFreshnessTimestampsBatch } = await import('@/lib/utils/freshnessMetrics');
-            const freshnessUpdates = new Map<string, number>();
-            successSymbols.forEach(ticker => freshnessUpdates.set(ticker, now));
-            await updateFreshnessTimestampsBatch(freshnessUpdates).catch(err => {
-              console.warn('Failed to update freshness metrics:', err);
-            });
-          }
-        } catch (error) {
-          console.error(`Error in batch ${i}:`, error);
-        }
-
-        // Delay between batches
-        if (i + usedBatchSize < processedTickers.length) {
-          await new Promise(resolve => setTimeout(resolve, usedDelay));
-        }
-      }
-
-        const loopDuration = Date.now() - loopStartTime;
-        console.log(`✅ ingestLoop completed: ${totalIngestSuccess} tickers updated in ${loopDuration}ms`);
-
-        // Update health monitor status
-        await recordSuccess('ingestLoop', totalIngestSuccess);
-
-        if (totalIngestSuccess > 0) {
-          await updateWorkerStatus();
-        }
-      } catch (error) {
-        console.error('❌ Ingest loop failed:', error);
-        await recordFailure('ingestLoop', error instanceof Error ? error.message : String(error));
-      }
-    };
-
-    // Run every 60 seconds to check for updates (optimized from 30s)
-    // During live trading: Premium tickers updated every 60s, rest every 5min
-    // During pre-market/after-hours: All tickers updated every 5min (critical for premarketprice.com!)
-    // Note: 60s check interval matches premium ticker update interval, reducing unnecessary checks
-    const runIngestLoop = async () => {
-      try {
-        await ingestLoop();
-      } catch (error) {
-        console.error('Unhandled error in ingestLoop:', error);
-      } finally {
-        setTimeout(runIngestLoop, 60000);
-      }
-    };
-    runIngestLoop(); // Run immediately
+    runSnapshotLoop(apiKey);
   }
 }
 
-// Prevent crashes from unhandled promise rejections (Polygon API timeouts, etc.)
-process.on('unhandledRejection', (reason, promise) => {
+/**
+ * Refs mode: periodic daily reference tasks (every 60s check).
+ * - 03:30 ET: refresh universe from DB
+ * - 04:00 ET or if missing/stale: bootstrap previous closes
+ */
+async function runRefsScheduler(apiKey: string): Promise<void> {
+  const scheduleTask = async () => {
+    const now = new Date();
+    const et = toET(now);
+    const hours = et.hour;
+    const minutes = et.minute;
+
+    // 03:30 ET — refresh universe
+    if (hours === 3 && minutes === 30) {
+      console.log('🔄 Refreshing universe from DB...');
+      await refreshUniverseFromDB();
+    }
+
+    // Bootstrap previous closes (04:00 ET or if missing/stale)
+    const today = getDateET(now);
+    const tickers = await getUniverse('sp500');
+
+    if (tickers.length > 0 && today) {
+      const samplePrevCloses = await getPrevClose(today, tickers.slice(0, 10));
+
+      let isStale = false;
+      try {
+        const { prisma } = await import('@/lib/db/prisma');
+        const expectedPrevYMD = getDateET(getLastTradingDay(getTradingDay(createETDate(today))));
+        const sampleSymbols = tickers.slice(0, 25);
+        const rows = await prisma.ticker.findMany({
+          where: { symbol: { in: sampleSymbols } },
+          select: { latestPrevCloseDate: true }
+        });
+
+        const counts = new Map<string, number>();
+        for (const r of rows) {
+          if (!r.latestPrevCloseDate) continue;
+          const ymd = r.latestPrevCloseDate.toISOString().slice(0, 10);
+          counts.set(ymd, (counts.get(ymd) || 0) + 1);
+        }
+        const modeDate = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+        if (modeDate && expectedPrevYMD && modeDate < expectedPrevYMD) {
+          isStale = true;
+        }
+      } catch {
+        // Non-fatal
+      }
+
+      const staleWindowOk = minutes % 30 === 0;
+      const shouldBootstrap =
+        (hours === 4 && minutes === 0) ||
+        (samplePrevCloses.size === 0 && hours >= 0 && hours < 16) ||
+        (isStale && hours >= 0 && hours < 16 && staleWindowOk);
+
+      if (shouldBootstrap) {
+        console.log('🔄 Bootstrapping previous closes...');
+        await bootstrapPreviousCloses(tickers, apiKey, today);
+        if (redisClient && redisClient.isOpen) {
+          await redisClient.set('worker:last_bootstrap_ts', Date.now().toString());
+        }
+      }
+    }
+  };
+
+  const runTask = async () => {
+    try {
+      await scheduleTask();
+    } catch (error) {
+      console.error('Error in scheduleTask:', error);
+    } finally {
+      setTimeout(runTask, 60000);
+    }
+  };
+  runTask();
+}
+
+/**
+ * Snapshot mode: continuous ingestion loop (every 60s).
+ */
+function runSnapshotLoop(apiKey: string): void {
+  const runIngestLoop = async () => {
+    try {
+      await ingestLoop(apiKey);
+    } catch (error) {
+      console.error('Unhandled error in ingestLoop:', error);
+    } finally {
+      setTimeout(runIngestLoop, 60000);
+    }
+  };
+  runIngestLoop();
+}
+
+// Prevent crashes from unhandled promise rejections
+process.on('unhandledRejection', (reason) => {
   console.error('⚠️ Unhandled Rejection (non-fatal):', reason);
 });
 process.on('uncaughtException', (error) => {
@@ -569,4 +152,3 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     process.exit(1);
   });
 }
-
