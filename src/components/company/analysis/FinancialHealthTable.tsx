@@ -67,16 +67,18 @@ function buildMetrics(data: AnalysisData, sec: AnalysisData | null, cw: string) 
     const fh = data.finnhub;
     const sfh = sec?.finnhub;
 
-    // ROE: prefer Finnhub, fallback to our calculation
-    const roe      = fh?.roe ?? ((ttm?.netIncome != null && bs?.totalEquity != null && bs.totalEquity > 0) ? ttm.netIncome / bs.totalEquity : null);
-    const sroe     = sfh?.roe ?? ((sttm?.netIncome != null && sbs?.totalEquity != null && sbs.totalEquity > 0) ? sttm.netIncome / sbs.totalEquity : null);
-    // Net Margin: prefer Finnhub
-    const netMar   = fh?.netMargin ?? ((ttm?.netIncome != null && ttm?.revenue != null && ttm.revenue > 0) ? ttm.netIncome / ttm.revenue : null);
-    const sNetMar  = sfh?.netMargin ?? ((sttm?.netIncome != null && sttm?.revenue != null && sttm.revenue > 0) ? sttm.netIncome / sttm.revenue : null);
-    // Gross Margin: prefer Finnhub
-    const grossMar = fh?.grossMargin ?? ((ttm?.grossProfit != null && ttm?.revenue != null && ttm.revenue > 0) ? ttm.grossProfit / ttm.revenue : null);
-    const sGrossMar= sfh?.grossMargin ?? ((sttm?.grossProfit != null && sttm?.revenue != null && sttm.revenue > 0) ? sttm.grossProfit / sttm.revenue : null);
     const hasNegEquity  = bs?.totalEquity != null && bs.totalEquity <= 0;
+
+    // ROE: prefer Finnhub (returns %), fallback to our calculation (decimal)
+    // If equity is negative, ROE is misleading — show 'Neg. Equity' instead
+    const roe      = hasNegEquity ? null : (fh?.roe != null ? fh.roe / 100 : ((ttm?.netIncome != null && bs?.totalEquity != null && bs.totalEquity > 0) ? ttm.netIncome / bs.totalEquity : null));
+    const sroe     = (sbs?.totalEquity != null && sbs.totalEquity <= 0) ? null : (sfh?.roe != null ? sfh.roe / 100 : ((sttm?.netIncome != null && sbs?.totalEquity != null && sbs.totalEquity > 0) ? sttm.netIncome / sbs.totalEquity : null));
+    // Net Margin: prefer Finnhub (returns %)
+    const netMar   = fh?.netMargin != null ? fh.netMargin / 100 : ((ttm?.netIncome != null && ttm?.revenue != null && ttm.revenue > 0) ? ttm.netIncome / ttm.revenue : null);
+    const sNetMar  = sfh?.netMargin != null ? sfh.netMargin / 100 : ((sttm?.netIncome != null && sttm?.revenue != null && sttm.revenue > 0) ? sttm.netIncome / sttm.revenue : null);
+    // Gross Margin: prefer Finnhub (returns %)
+    const grossMar = fh?.grossMargin != null ? fh.grossMargin / 100 : ((ttm?.grossProfit != null && ttm?.revenue != null && ttm.revenue > 0) ? ttm.grossProfit / ttm.revenue : null);
+    const sGrossMar= sfh?.grossMargin != null ? sfh.grossMargin / 100 : ((sttm?.grossProfit != null && sttm?.revenue != null && sttm.revenue > 0) ? sttm.grossProfit / sttm.revenue : null);
     // P/B: prefer Finnhub, fallback to our calculation
     const pbRatio  = fh?.pbRatio ?? ((mcap != null && bs?.totalEquity != null && bs.totalEquity > 0) ? mcap / bs.totalEquity : null);
     const spbRatio = sfh?.pbRatio ?? ((smcap != null && sbs?.totalEquity != null && sbs.totalEquity > 0) ? smcap / sbs.totalEquity : null);
