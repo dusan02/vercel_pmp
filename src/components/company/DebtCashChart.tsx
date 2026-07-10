@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import {
     ComposedChart,
     Bar,
+    Line,
     XAxis,
     YAxis,
     CartesianGrid,
@@ -23,6 +24,7 @@ interface DebtCashChartProps {
 const METRICS = [
     { key: 'cash', label: 'Liquidity (Cash & ST. Inv)', color: '#10B981' },
     { key: 'totalDebt', label: 'Total Debt', color: '#EF4444' },
+    { key: 'netDebt', label: 'Net Debt', color: '#8B5CF6' },
 ] as const;
 
 export default function DebtCashChart({ statements }: DebtCashChartProps) {
@@ -36,8 +38,9 @@ export default function DebtCashChart({ statements }: DebtCashChartProps) {
         return sorted.map(s => {
             const cashVal = (s.cashAndEquivalents ?? 0) / 1e6;
             const debtVal = (s.totalDebt ?? 0) / 1e6;
+            const netDebtVal = (s.totalDebt !== null || s.cashAndEquivalents !== null) ? debtVal - cashVal : 0;
             const label = buildPeriodLabel(s.fiscalPeriod, s.fiscalYear);
-            return { name: label, date: label, cash: cashVal, totalDebt: debtVal };
+            return { name: label, date: label, cash: cashVal, totalDebt: debtVal, netDebt: netDebtVal };
         });
     }, [statements, viewMode]);
 
@@ -57,6 +60,17 @@ export default function DebtCashChart({ statements }: DebtCashChartProps) {
 
     const latestData = chartData[chartData.length - 1];
     const isNetCash = latestData && (latestData.cash > latestData.totalDebt);
+
+    const yMin = useMemo(() => {
+        const allVals = chartData.flatMap(d => {
+            const vals: number[] = [d.netDebt];
+            if (selectedMetrics.includes('cash')) vals.push(d.cash);
+            if (selectedMetrics.includes('totalDebt')) vals.push(d.totalDebt);
+            return vals;
+        });
+        const min = Math.min(0, ...allVals);
+        return min < 0 ? Math.floor(min * 1.1) : 0;
+    }, [chartData, selectedMetrics]);
 
     return (
         <div className="w-full h-full flex flex-col">
@@ -99,7 +113,7 @@ export default function DebtCashChart({ statements }: DebtCashChartProps) {
                             axisLine={false}
                             tickLine={false}
                             width={55}
-                            domain={[0, 'auto']}
+                            domain={[yMin, 'auto']}
                         />
                         <Tooltip content={<ChartTooltip metrics={METRICS} />} cursor={{ fill: 'rgba(107, 114, 128, 0.05)' }} />
                         <ReferenceLine y={0} stroke="#9CA3AF" />
@@ -120,6 +134,16 @@ export default function DebtCashChart({ statements }: DebtCashChartProps) {
                             radius={[2, 2, 0, 0]}
                             maxBarSize={40}
                             hide={!selectedMetrics.includes('totalDebt')}
+                            isAnimationActive={false}
+                        />
+                        <Line
+                            type="monotone"
+                            dataKey="netDebt"
+                            name="Net Debt"
+                            stroke="#8B5CF6"
+                            strokeWidth={2}
+                            strokeDasharray="4 2"
+                            dot={{ r: 3, fill: '#8B5CF6' }}
                             isAnimationActive={false}
                         />
                     </ComposedChart>
