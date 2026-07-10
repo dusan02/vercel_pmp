@@ -35,7 +35,6 @@ const PERIODS = [
     { id: '3y',  label: '3Y',  years: 3  },
     { id: '5y',  label: '5Y',  years: 5  },
     { id: '10y', label: '10Y', years: 10 },
-    { id: 'all', label: 'All', years: 99 },
 ] as const;
 type PeriodId = typeof PERIODS[number]['id'];
 
@@ -100,7 +99,25 @@ export default function ValuationCharts({ ticker }: ValuationChartsProps) {
         return raw.filter(d => d.date >= cutoffStr);
     }, [data, metric, period]);
 
-    const stats   = metric === 'pe' ? (data?.stats?.pe  ?? null) : (data?.stats?.ps  ?? null);
+    // Recompute stats for the selected period from filtered data
+    const stats   = useMemo(() => {
+        if (filteredHistory.length < 5) return null;
+        const values = filteredHistory.map(d => d.value).sort((a, b) => a - b);
+        const n = values.length;
+        const percentile = (p: number) => values[Math.max(0, Math.min(Math.ceil((p / 100) * n) - 1, n - 1))];
+        return {
+            avg: values.reduce((s, v) => s + v, 0) / n,
+            p10: percentile(10),
+            p25: percentile(25),
+            median: percentile(50),
+            p75: percentile(75),
+            p90: percentile(90),
+            min: values[0]!,
+            max: values[n - 1]!,
+            count: n,
+        } as RatioStats;
+    }, [filteredHistory]);
+
     const current = metric === 'pe' ? (data?.current?.pe ?? null) : (data?.current?.ps ?? null);
     const cfg     = METRICS.find(m => m.id === metric)!;
 
@@ -111,8 +128,8 @@ export default function ValuationCharts({ ticker }: ValuationChartsProps) {
         : { label: 'Fair Value Zone', color: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400' }
         : null;
 
-    const yDomain: [number | 'auto', number | 'auto'] = (stats && stats.p90 && stats.max)
-        ? [0, Math.min(stats.p90 * 1.3, stats.max)]
+    const yDomain: [number | 'auto', number | 'auto'] = (stats && stats.p10 && stats.p90 && stats.max)
+        ? [Math.max(0, Math.floor(stats.p10 * 0.8)), Math.min(stats.p90 * 1.3, stats.max)]
         : [0, 'auto'];
 
     if (loading) return (
