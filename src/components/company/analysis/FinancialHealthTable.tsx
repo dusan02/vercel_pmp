@@ -70,6 +70,7 @@ function buildMetrics(data: AnalysisData, sec: AnalysisData | null, cw: string) 
     const sNetMar  = (sttm?.netIncome != null && sttm?.revenue != null && sttm.revenue > 0) ? sttm.netIncome / sttm.revenue : null;
     const grossMar = (ttm?.grossProfit != null && ttm?.revenue != null && ttm.revenue > 0) ? ttm.grossProfit / ttm.revenue : null;
     const sGrossMar= (sttm?.grossProfit != null && sttm?.revenue != null && sttm.revenue > 0) ? sttm.grossProfit / sttm.revenue : null;
+    const hasNegEquity  = bs?.totalEquity != null && bs.totalEquity <= 0;
     const pbRatio  = (mcap != null && bs?.totalEquity != null && bs.totalEquity > 0) ? mcap / bs.totalEquity : null;
     const spbRatio = (smcap != null && sbs?.totalEquity != null && sbs.totalEquity > 0) ? smcap / sbs.totalEquity : null;
     const psRatio  = (mcap != null && ttm?.revenue != null && ttm.revenue > 0) ? mcap / ttm.revenue : null;
@@ -128,7 +129,7 @@ function buildMetrics(data: AnalysisData, sec: AnalysisData | null, cw: string) 
     ];
 
     const profitability: MetricCardDef[] = [
-        def('ROE', pct(roe), s(pct(sroe)), roe == null ? 'neutral' : roe > 0.20 ? 'good' : roe > 0.10 ? 'warn' : 'bad', roe == null ? '-' : roe > 0.2 ? 'Strong' : roe > 0.1 ? 'Avg' : 'Weak', 'Return on Equity. >20% Strong', roe != null ? (roe / 0.3) * 100 : undefined),
+        def('ROE', roe != null ? pct(roe) : (hasNegEquity ? 'Neg. Equity' : 'N/A'), s(sroe != null ? pct(sroe) : 'N/A'), roe == null ? (hasNegEquity ? 'warn' : 'neutral') : roe > 0.20 ? 'good' : roe > 0.10 ? 'warn' : 'bad', roe == null ? (hasNegEquity ? 'Buybacks' : '-') : roe > 0.2 ? 'Strong' : roe > 0.1 ? 'Avg' : 'Weak', 'Return on Equity. Neg. equity = heavy buybacks', roe != null ? (roe / 0.3) * 100 : undefined),
         def('Net Margin', pct(netMar), s(pct(sNetMar)), netMar == null ? 'neutral' : netMar > 0.10 ? 'good' : netMar > 0.05 ? 'warn' : 'bad', netMar == null ? '-' : netMar > 0.1 ? 'High' : netMar > 0.05 ? 'Avg' : 'Low', 'Net Income / Revenue', netMar != null ? (netMar / 0.3) * 100 : undefined),
         def('Gross Margin', pct(grossMar), s(pct(sGrossMar)), grossMar == null ? 'neutral' : grossMar > 0.50 ? 'good' : grossMar > 0.30 ? 'warn' : 'bad', grossMar == null ? '-' : grossMar > 0.5 ? 'Premium' : grossMar > 0.3 ? 'Avg' : 'Low', 'Gross Profit / Revenue', grossMar != null ? (grossMar / 0.7) * 100 : undefined),
         def('FCF Margin', pct(fcfMar), s(pct(sfcfMar)), fcfMar == null ? 'neutral' : fcfMar > 0.15 ? 'good' : fcfMar > 0.08 ? 'warn' : 'bad', fcfMar == null ? '-' : fcfMar > 0.15 ? 'High' : fcfMar > 0.08 ? 'Avg' : 'Low', 'FCF / Revenue', fcfMar != null ? (fcfMar / 0.3) * 100 : undefined),
@@ -145,7 +146,7 @@ function buildMetrics(data: AnalysisData, sec: AnalysisData | null, cw: string) 
         def('Market Cap', fmtB(mcap), s(fmtB(smcap)), 'neutral', 'Size', 'Current Market Capitalization'),
         def('P/E (TTM)', pe != null ? `${pe.toFixed(1)}x` : 'N/A', s(spe != null ? `${spe.toFixed(1)}x` : 'N/A'), pe == null ? 'neutral' : pe < 15 ? 'good' : pe <= 25 ? 'neutral' : pe <= 35 ? 'warn' : 'bad', pe == null ? '-' : pe < 15 ? 'Cheap' : pe <= 25 ? 'Fair' : 'Exp.', 'Price to Earnings', pe != null ? (pe / 40) * 100 : undefined),
         def('P/S (TTM)', psRatio != null ? `${psRatio.toFixed(2)}x` : 'N/A', s(spsRatio != null ? `${spsRatio.toFixed(2)}x` : 'N/A'), psRatio == null ? 'neutral' : psRatio < 2 ? 'good' : psRatio <= 5 ? 'neutral' : psRatio <= 10 ? 'warn' : 'bad', psRatio == null ? '-' : psRatio < 2 ? 'Cheap' : psRatio <= 5 ? 'Fair' : 'Exp.', 'Price to Sales', psRatio != null ? (psRatio / 15) * 100 : undefined),
-        def('P/B Ratio', mul(pbRatio), s(mul(spbRatio)), pbRatio == null ? 'neutral' : pbRatio < 3 ? 'good' : pbRatio < 8 ? 'warn' : 'bad', pbRatio == null ? '-' : pbRatio < 3 ? 'Fair' : pbRatio < 8 ? 'Exp.' : 'V.Exp.', 'Price to Book Value', pbRatio != null ? (pbRatio / 10) * 100 : undefined),
+        def('P/B Ratio', pbRatio != null ? mul(pbRatio) : (hasNegEquity ? 'Neg. Equity' : 'N/A'), s(spbRatio != null ? mul(spbRatio) : 'N/A'), pbRatio == null ? (hasNegEquity ? 'warn' : 'neutral') : pbRatio < 3 ? 'good' : pbRatio < 8 ? 'warn' : 'bad', pbRatio == null ? (hasNegEquity ? 'Buybacks' : '-') : pbRatio < 3 ? 'Fair' : pbRatio < 8 ? 'Exp.' : 'V.Exp.', 'Price to Book Value. Neg. equity = heavy buybacks', pbRatio != null ? (pbRatio / 10) * 100 : undefined),
         def('FCF Yield', pct(fcfY), s(pct(sfcfY)), fcfY == null ? 'neutral' : fcfY > 0.05 ? 'good' : fcfY < 0 ? 'bad' : 'warn', fcfY == null ? '-' : fcfY > 0.05 ? 'Value' : fcfY < 0 ? 'Negative' : 'Low', 'FCF / Market Cap', fcfY != null ? Math.max(0, (fcfY / 0.1) * 100) : undefined),
     ];
 
