@@ -1,11 +1,10 @@
 'use client';
 
-import React, { useMemo, useCallback, useState, useEffect } from 'react';
+import React, { useMemo, useCallback, useState, useEffect, useRef } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import type { CompanyNode } from '@/lib/heatmap/types';
 import { createHeatmapColorScale } from '@/lib/utils/heatmapColors';
 import { computeMobileTreemapSectors, prepareMobileTreemapData, SECTOR_CHROME_PX } from '@/lib/heatmap/mobileTreemap';
-import { useElementResize } from '@/hooks/useElementResize';
 import { MobileHeatmapHeader } from './mobile/MobileHeatmapHeader';
 import { MobileHeatmapSheet } from './mobile/MobileHeatmapSheet';
 import { MobileHeatmapSector } from './mobile/MobileHeatmapSector';
@@ -43,8 +42,72 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   activeView,
   height,
 }) => {
-  // -- Container measurement via useElementResize (width + height) ---------
-  const { ref: containerRef, size: containerSize } = useElementResize();
+  // -- Container measurement: width-only continuous + one-time height --------
+  // Width-only tracking prevents layout thrashing: re-layout changes content
+  // height → if ResizeObserver tracked height → re-layout → infinite loop.
+  // Height is measured once (after flex settles) and from window.innerHeight.
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const [containerHeight, setContainerHeight] = useState(0);
+  const rafRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const measureWidth = (el: HTMLElement) => {
+      const w = Math.round(el.getBoundingClientRect().width);
+      if (w > 0) setContainerWidth(w);
+    };
+
+    measureWidth(containerRef.current);
+
+    // One-time delayed height measure after flex layout settles
+    const delayedMeasure = setTimeout(() => {
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const h = Math.round(rect.height);
+      if (h > 0) {
+        setContainerHeight(h);
+      } else {
+        // Fallback: use window.innerHeight minus approximate header
+        setContainerHeight(Math.max(400, window.innerHeight - 120));
+      }
+    }, 150);
+
+    // Track width only — height must stay frozen to prevent feedback loop
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width } = entry.contentRect;
+        if (width <= 0) continue;
+        if (rafRef.current) cancelAnimationFrame(rafRef.current);
+        rafRef.current = requestAnimationFrame(() => {
+          setContainerWidth(Math.round(width));
+        });
+      }
+    });
+
+    observer.observe(containerRef.current);
+
+    // Also update height on window resize (orientation change)
+    const onWindowResize = () => {
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const h = Math.round(rect.height);
+      if (h > 0) setContainerHeight(h);
+    };
+    window.addEventListener('resize', onWindowResize);
+    window.addEventListener('orientationchange', onWindowResize);
+
+    return () => {
+      clearTimeout(delayedMeasure);
+      observer.disconnect();
+      window.removeEventListener('resize', onWindowResize);
+      window.removeEventListener('orientationchange', onWindowResize);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
+
+  const containerSize = { width: containerWidth, height: height ?? containerHeight };
 
   // -- Detail sheet -----------------------------------------------------------
   const [selectedCompany, setSelectedCompany] = useState<CompanyNode | null>(null);
@@ -77,14 +140,11 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   );
 
   const treemapResult = useMemo(() => {
-    const effectiveSize = height !== undefined
-      ? { width: containerSize.width, height }
-      : containerSize;
-    if (effectiveSize.width <= 0 || effectiveSize.height <= 0) return null;
-    return computeMobileTreemapSectors(sortedData, effectiveSize, layoutMetric || metric, {
+    if (containerSize.width <= 0 || containerSize.height <= 0) return null;
+    return computeMobileTreemapSectors(sortedData, containerSize, layoutMetric || metric, {
       sectorChromeHeightPx: SECTOR_CHROME_PX,
     });
-  }, [sortedData, metric, layoutMetric, containerSize, height]);
+  }, [sortedData, metric, layoutMetric, containerSize]);
 
   const sectors = treemapResult?.sectors ?? [];
   const layoutHeight = treemapResult?.height ?? 0;
@@ -121,7 +181,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
             paddingBottom: 'calc(var(--tabbar-real-h, var(--tabbar-h, 72px)) + env(safe-area-inset-bottom, 0px) + 8px)',
           }}
         >
-          {sectors.length > 0 && containerSize.width > 0 ? (
+          {sectors.length > 0 && containerWidth > 0 ? (
             sectors.map((sector) => (
               <MobileHeatmapSector
                 key={sector.name}

@@ -169,7 +169,9 @@ export async function bootstrapPreviousCloses(
             await dbWriteRetry(
               () => prisma.dailyRef.upsert({
                 where: { symbol_date: { symbol, date: actualPrevTradingDay! } },
-                update: { previousClose: prevClose, regularClose: prevClose, updatedAt: new Date() },
+                // Only update previousClose — preserve existing regularClose (may have been
+                // set correctly by saveRegularClose; snapshot.prevDay.c can be inaccurate).
+                update: { previousClose: prevClose, updatedAt: new Date() },
                 create: { symbol, date: actualPrevTradingDay!, previousClose: prevClose, regularClose: prevClose }
               }),
               `dailyRef.upsert:${symbol}`

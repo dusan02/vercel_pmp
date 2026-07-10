@@ -161,7 +161,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
       render: (stock) => stock.industry || 'N/A'
     },
     {
-      key: isDesktop ? 'marketCap' : 'marketCapDiffMobile',
+      key: 'marketCap',
       header: isDesktop ? 'Market Cap' : 'M Cap',
       sortable: true,
       align: 'right',
@@ -186,7 +186,7 @@ export const AllStocksSection = React.memo(function AllStocksSection({
       }
     },
     {
-      key: isDesktop ? 'currentPrice' : 'percentChange',
+      key: 'currentPrice',
       header: 'Price',
       sortable: true,
       align: 'right',
