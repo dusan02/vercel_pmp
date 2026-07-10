@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { AnalysisService } from '@/services/analysisService';
+import { FinnhubService } from '@/services/finnhubService';
 
 // In-memory dedup: prevents multiple concurrent background revalidations for the same symbol
 const revalidating = new Set<string>();
@@ -21,6 +22,9 @@ async function computeMetrics(symbol: string) {
         where: { symbol },
         orderBy: { date: 'desc' }
     });
+
+    // Fetch Finnhub pre-computed metrics (primary source for ratios)
+    const finnhubMetrics = await prisma.finnhubMetrics.findUnique({ where: { symbol } });
 
     const cached = analysis as any;
     const altmanZ = cached.altmanZ;
@@ -74,31 +78,32 @@ async function computeMetrics(symbol: string) {
     const ttmGrossProfit = getTtmOrAnnual('grossProfit');
     const ttmSbc = getTtmOrAnnual('sbc');
 
-    // Compute P/E directly from TTM NI + current price + shares (more accurate than stale valuation history)
+    // P/E: prefer Finnhub pre-computed, fallback to our TTM calculation
     const tickerForPrice = await prisma.ticker.findUnique({
         where: { symbol },
         select: { lastPrice: true }
     });
     const effectivePrice = tickerForPrice?.lastPrice || latestValuation?.closePrice || 0;
     const effectiveNI = ttmNetIncome ?? latestStmt?.netIncome ?? null;
-    let currentPe: number | null = null;
-    if (effectivePrice > 0 && sharesOutstanding && sharesOutstanding > 0 && effectiveNI && effectiveNI > 0) {
+    let currentPe: number | null = finnhubMetrics?.peRatio ?? null;
+    if (currentPe === null && effectivePrice > 0 && sharesOutstanding && sharesOutstanding > 0 && effectiveNI && effectiveNI > 0) {
         currentPe = (effectivePrice * sharesOutstanding) / effectiveNI;
     }
-    // Fallback to valuation history only if we couldn't compute
     if (currentPe === null) {
         currentPe = latestValuation?.peRatio || null;
     }
 
-    let currentEps = null;
-    if (ttmNetIncome !== null && sharesOutstanding !== null && sharesOutstanding > 0) {
+    // EPS: prefer Finnhub, fallback to our calculation
+    let currentEps = finnhubMetrics?.netIncomePerShare ?? null;
+    if (currentEps === null && ttmNetIncome !== null && sharesOutstanding !== null && sharesOutstanding > 0) {
         currentEps = ttmNetIncome / sharesOutstanding;
     }
 
-    const debtToEquity = (totalDebt !== null && totalEquity !== null && totalEquity !== 0)
-        ? totalDebt / totalEquity : null;
-    const currentRatio = (currentAssets !== null && currentLiabilities !== null && currentLiabilities !== 0)
-        ? currentAssets / currentLiabilities : null;
+    // Prefer Finnhub pre-computed ratios, fallback to our calculations
+    const debtToEquity = finnhubMetrics?.debtEquityRatio ?? ((totalDebt !== null && totalEquity !== null && totalEquity !== 0)
+        ? totalDebt / totalEquity : null);
+    const currentRatio = finnhubMetrics?.currentRatio ?? ((currentAssets !== null && currentLiabilities !== null && currentLiabilities !== 0)
+        ? currentAssets / currentLiabilities : null);
     const assetToLiability = (totalAssets !== null && totalLiabilities !== null && totalLiabilities !== 0)
         ? totalAssets / totalLiabilities : null;
     const netDebtToEbit = (netDebt !== null && ttmEbit !== null && ttmEbit !== 0)
@@ -107,6 +112,7 @@ async function computeMetrics(symbol: string) {
         ? ttmSbc / ttmRevenue : null;
     const sbcRatio = (ttmSbc !== null && ttmNetIncome !== null && ttmNetIncome > 0)
         ? (ttmSbc / ttmNetIncome) * 100 : null;
+    const interestCoverage = finnhubMetrics?.interestCoverage ?? null;
 
     // Calculate Dilution (Share Count change)
     // stmts is already sorted by date desc
@@ -158,7 +164,34 @@ async function computeMetrics(symbol: string) {
             currentPe,
             fcfMargin: cached.fcfMargin,
             fcfConversion: cached.fcfConversion
-        }
+        },
+        finnhub: finnhubMetrics ? {
+            peRatio: finnhubMetrics.peRatio,
+            pbRatio: finnhubMetrics.pbRatio,
+            psRatio: finnhubMetrics.psRatio,
+            evEbitda: finnhubMetrics.evEbitda,
+            grossMargin: finnhubMetrics.grossMargin,
+            operatingMargin: finnhubMetrics.operatingMargin,
+            netMargin: finnhubMetrics.netMargin,
+            roe: finnhubMetrics.roe,
+            roa: finnhubMetrics.roa,
+            roic: finnhubMetrics.roic,
+            currentRatio: finnhubMetrics.currentRatio,
+            quickRatio: finnhubMetrics.quickRatio,
+            debtEquityRatio: finnhubMetrics.debtEquityRatio,
+            interestCoverage: finnhubMetrics.interestCoverage,
+            revenueGrowth: finnhubMetrics.revenueGrowth,
+            earningsGrowth: finnhubMetrics.earningsGrowth,
+            revenuePerShare: finnhubMetrics.revenuePerShare,
+            netIncomePerShare: finnhubMetrics.netIncomePerShare,
+            bookValuePerShare: finnhubMetrics.bookValuePerShare,
+            freeCashFlowPerShare: finnhubMetrics.freeCashFlowPerShare,
+            dividendYield: finnhubMetrics.dividendYield,
+            payoutRatio: finnhubMetrics.payoutRatio,
+            beta: finnhubMetrics.beta,
+            pegRatio: finnhubMetrics.pegRatio,
+            priceFreeCashFlow: finnhubMetrics.priceFreeCashFlow,
+        } : null
     };
 }
 
@@ -240,6 +273,14 @@ export async function POST(
         } catch (e: any) {
             console.error(`[Analysis API] Financials sync failed for ${symbol}:`, e.message);
             throw e;
+        }
+
+        // Sync Finnhub pre-computed metrics (P/E, P/B, ROE, margins, etc.)
+        try {
+            await FinnhubService.getMetrics(symbol, true);
+            console.log(`[Analysis API] Finnhub metrics synced for ${symbol}`);
+        } catch (e: any) {
+            console.error(`[Analysis API] Finnhub metrics sync failed for ${symbol}:`, e.message);
         }
 
         // Skip syncTickerDetails if data was refreshed within 30 days and key fields are populated

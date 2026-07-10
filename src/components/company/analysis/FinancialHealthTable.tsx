@@ -64,30 +64,38 @@ function buildMetrics(data: AnalysisData, sec: AnalysisData | null, cw: string) 
     const ttm = data.ttm;
     const sttm = sec?.ttm;
 
-    const roe      = (ttm?.netIncome != null && bs?.totalEquity != null && bs.totalEquity > 0) ? ttm.netIncome / bs.totalEquity : null;
-    const sroe     = (sttm?.netIncome != null && sbs?.totalEquity != null && sbs.totalEquity > 0) ? sttm.netIncome / sbs.totalEquity : null;
-    const netMar   = (ttm?.netIncome != null && ttm?.revenue != null && ttm.revenue > 0) ? ttm.netIncome / ttm.revenue : null;
-    const sNetMar  = (sttm?.netIncome != null && sttm?.revenue != null && sttm.revenue > 0) ? sttm.netIncome / sttm.revenue : null;
-    const grossMar = (ttm?.grossProfit != null && ttm?.revenue != null && ttm.revenue > 0) ? ttm.grossProfit / ttm.revenue : null;
-    const sGrossMar= (sttm?.grossProfit != null && sttm?.revenue != null && sttm.revenue > 0) ? sttm.grossProfit / sttm.revenue : null;
+    const fh = data.finnhub;
+    const sfh = sec?.finnhub;
+
+    // ROE: prefer Finnhub, fallback to our calculation
+    const roe      = fh?.roe ?? ((ttm?.netIncome != null && bs?.totalEquity != null && bs.totalEquity > 0) ? ttm.netIncome / bs.totalEquity : null);
+    const sroe     = sfh?.roe ?? ((sttm?.netIncome != null && sbs?.totalEquity != null && sbs.totalEquity > 0) ? sttm.netIncome / sbs.totalEquity : null);
+    // Net Margin: prefer Finnhub
+    const netMar   = fh?.netMargin ?? ((ttm?.netIncome != null && ttm?.revenue != null && ttm.revenue > 0) ? ttm.netIncome / ttm.revenue : null);
+    const sNetMar  = sfh?.netMargin ?? ((sttm?.netIncome != null && sttm?.revenue != null && sttm.revenue > 0) ? sttm.netIncome / sttm.revenue : null);
+    // Gross Margin: prefer Finnhub
+    const grossMar = fh?.grossMargin ?? ((ttm?.grossProfit != null && ttm?.revenue != null && ttm.revenue > 0) ? ttm.grossProfit / ttm.revenue : null);
+    const sGrossMar= sfh?.grossMargin ?? ((sttm?.grossProfit != null && sttm?.revenue != null && sttm.revenue > 0) ? sttm.grossProfit / sttm.revenue : null);
     const hasNegEquity  = bs?.totalEquity != null && bs.totalEquity <= 0;
-    const pbRatio  = (mcap != null && bs?.totalEquity != null && bs.totalEquity > 0) ? mcap / bs.totalEquity : null;
-    const spbRatio = (smcap != null && sbs?.totalEquity != null && sbs.totalEquity > 0) ? smcap / sbs.totalEquity : null;
-    const psRatio  = (mcap != null && ttm?.revenue != null && ttm.revenue > 0) ? mcap / ttm.revenue : null;
-    const spsRatio = (smcap != null && sttm?.revenue != null && sttm.revenue > 0) ? smcap / sttm.revenue : null;
+    // P/B: prefer Finnhub, fallback to our calculation
+    const pbRatio  = fh?.pbRatio ?? ((mcap != null && bs?.totalEquity != null && bs.totalEquity > 0) ? mcap / bs.totalEquity : null);
+    const spbRatio = sfh?.pbRatio ?? ((smcap != null && sbs?.totalEquity != null && sbs.totalEquity > 0) ? smcap / sbs.totalEquity : null);
+    // P/S: prefer Finnhub, fallback to our calculation
+    const psRatio  = fh?.psRatio ?? ((mcap != null && ttm?.revenue != null && ttm.revenue > 0) ? mcap / ttm.revenue : null);
+    const spsRatio = sfh?.psRatio ?? ((smcap != null && sttm?.revenue != null && sttm.revenue > 0) ? smcap / sttm.revenue : null);
 
     const altZ   = m?.altmanZ ?? m?.zScore ?? null;
     const saltZ  = sm?.altmanZ ?? sm?.zScore ?? null;
     const debtRp = m?.debtRepaymentYears ?? m?.debtRepaymentTime ?? null;
     const sDebtRp= sm?.debtRepaymentYears ?? sm?.debtRepaymentTime ?? null;
-    const intCov = data.interestCoverage ?? null;
-    const sIntCov= sec?.interestCoverage ?? null;
-    const cr     = bs?.currentRatio ?? null;
-    const scr    = sbs?.currentRatio ?? null;
+    const intCov = fh?.interestCoverage ?? data.interestCoverage ?? null;
+    const sIntCov= sfh?.interestCoverage ?? sec?.interestCoverage ?? null;
+    const cr     = fh?.currentRatio ?? bs?.currentRatio ?? null;
+    const scr    = sfh?.currentRatio ?? sbs?.currentRatio ?? null;
     const nde    = bs?.netDebtToEbit ?? null;
     const snde   = sbs?.netDebtToEbit ?? null;
-    const dte    = bs?.debtToEquity ?? null;
-    const sdte   = sbs?.debtToEquity ?? null;
+    const dte    = fh?.debtEquityRatio ?? bs?.debtToEquity ?? null;
+    const sdte   = sfh?.debtEquityRatio ?? sbs?.debtToEquity ?? null;
     const fcfMar = m?.fcfMargin ?? null;
     const sfcfMar= sm?.fcfMargin ?? null;
     const fcfCon = m?.fcfConversion ?? null;

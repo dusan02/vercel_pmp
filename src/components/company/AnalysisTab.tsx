@@ -105,6 +105,35 @@ export interface AnalysisData {
         intrinsicCagr: number | null;
     } | null;
     valuationForecast?: { date: string; intrinsic: number }[];
+
+    // Finnhub pre-computed metrics (primary source for ratios)
+    finnhub?: {
+        peRatio: number | null;
+        pbRatio: number | null;
+        psRatio: number | null;
+        evEbitda: number | null;
+        grossMargin: number | null;
+        operatingMargin: number | null;
+        netMargin: number | null;
+        roe: number | null;
+        roa: number | null;
+        roic: number | null;
+        currentRatio: number | null;
+        quickRatio: number | null;
+        debtEquityRatio: number | null;
+        interestCoverage: number | null;
+        revenueGrowth: number | null;
+        earningsGrowth: number | null;
+        revenuePerShare: number | null;
+        netIncomePerShare: number | null;
+        bookValuePerShare: number | null;
+        freeCashFlowPerShare: number | null;
+        dividendYield: number | null;
+        payoutRatio: number | null;
+        beta: number | null;
+        pegRatio: number | null;
+        priceFreeCashFlow: number | null;
+    } | null;
 }
 
 function CompanyDescription({ text }: { text: string }) {

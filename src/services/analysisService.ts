@@ -15,6 +15,7 @@ import { syncTickerDetails } from './analysis/tickerDetailsSync';
 import { syncFinancials } from './analysis/financialsSync';
 import { syncValuationHistory } from './analysis/tickerDetailsSync';
 import { calculateScores } from './analysis/scoreCalculator';
+import { FinnhubService } from './finnhubService';
 
 export class AnalysisService {
     static syncFinancials = syncFinancials;
@@ -30,6 +31,7 @@ export class AnalysisService {
         try {
             await this.syncTickerDetails(symbol);
             await this.syncFinancials(symbol);
+            await FinnhubService.getMetrics(symbol, true);
             await this.syncValuationHistory(symbol);
             await this.calculateScores(symbol);
             return true;
