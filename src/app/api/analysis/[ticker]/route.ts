@@ -26,7 +26,6 @@ async function computeMetrics(symbol: string) {
     const altmanZ = cached.altmanZ;
     const debtRepaymentYears = cached.debtRepaymentYears;
     const fcfYield = latestValuation?.fcfYield ?? null;
-    let currentPe = latestValuation?.peRatio || null;
 
     // Snapshot variables MUST come from latestStmt (most recent quarter or annual)
     const totalDebt = latestStmt?.totalDebt ?? null;
@@ -69,6 +68,18 @@ async function computeMetrics(symbol: string) {
     const ttmEbit = getTtmOrAnnual('ebit');
     const ttmGrossProfit = getTtmOrAnnual('grossProfit');
     const ttmSbc = getTtmOrAnnual('sbc');
+
+    // Compute P/E directly from TTM NI and shares if valuation history P/E is stale/null
+    const tickerForPrice = await prisma.ticker.findUnique({
+        where: { symbol },
+        select: { lastPrice: true }
+    });
+    const effectivePrice = tickerForPrice?.lastPrice || latestValuation?.closePrice || 0;
+    const effectiveNI = ttmNetIncome ?? latestStmt?.netIncome ?? null;
+    let currentPe = latestValuation?.peRatio || null;
+    if (currentPe === null && effectivePrice > 0 && sharesOutstanding && sharesOutstanding > 0 && effectiveNI && effectiveNI > 0) {
+        currentPe = (effectivePrice * sharesOutstanding) / effectiveNI;
+    }
 
     let currentEps = null;
     if (ttmNetIncome !== null && sharesOutstanding !== null && sharesOutstanding > 0) {
