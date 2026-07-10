@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { projectForward, pearson, buildStats, type PerSharePoint } from '@/lib/utils/analysisMath';
+import { computeTTMAtDate } from '@/lib/utils/ttm';
 
 export async function GET(
     request: Request,
@@ -62,24 +63,24 @@ export async function GET(
         const statements = await prisma.financialStatement.findMany({
             where: { symbol },
             orderBy: { endDate: 'asc' },
-            select: { endDate: true, revenue: true, netIncome: true, sharesOutstanding: true, fiscalPeriod: true }
         });
 
         const revPerShareHistory: PerSharePoint[] = [];
         const epsPerShareHistory: PerSharePoint[] = [];
 
-        // compute TTM over rolling 4 quarters
-        const quarterly = statements.filter(s => s.fiscalPeriod?.toLowerCase().includes('q')); // heuristic
-        for (let i = 3; i < quarterly.length; i++) {
-            const slice = quarterly.slice(i - 3, i + 1);
-            const revSum = slice.reduce((a, b) => a + (b.revenue || 0), 0);
-            const niSum = slice.reduce((a, b) => a + (b.netIncome || 0), 0);
-            const shares = slice[slice.length - 1]?.sharesOutstanding || slice[0]?.sharesOutstanding || 0;
-            const end = slice[slice.length - 1]?.endDate;
-            if (shares && shares > 0 && end) {
-                const dateStr = end.toISOString().split('T')[0] as string;
-                revPerShareHistory.push({ date: dateStr, value: parseFloat((revSum / shares).toFixed(4)) });
-                epsPerShareHistory.push({ date: dateStr, value: parseFloat((niSum / shares).toFixed(4)) });
+        // Compute TTM per-share at each statement date using shared utility
+        for (const s of statements) {
+            if (!s.fiscalPeriod || s.fiscalPeriod === 'FY') continue;
+            const { netIncome: ttmNI, revenue: ttmRev } = computeTTMAtDate(statements, s.endDate);
+            const shares = s.sharesOutstanding;
+            if (shares && shares > 0 && s.endDate) {
+                const dateStr = s.endDate.toISOString().split('T')[0] as string;
+                if (ttmRev != null && ttmRev > 0) {
+                    revPerShareHistory.push({ date: dateStr, value: parseFloat((ttmRev / shares).toFixed(4)) });
+                }
+                if (ttmNI != null && ttmNI > 0) {
+                    epsPerShareHistory.push({ date: dateStr, value: parseFloat((ttmNI / shares).toFixed(4)) });
+                }
             }
         }
 
@@ -95,15 +96,36 @@ export async function GET(
                 .map(r => ({ date: r.date.toISOString().split('T')[0] as string, value: parseFloat(((r.closePrice as number) / (r.peRatio as number)).toFixed(4)) })));
         }
 
+        // Forward-fill per-share data to align with weekly price dates
+        function forwardFillPerShare(perShare: PerSharePoint[], priceDates: string[]): { date: string; value: number }[] {
+            const result: { date: string; value: number }[] = [];
+            let lastValue: number | null = null;
+            let pi = 0;
+            for (const pd of priceDates) {
+                while (pi < perShare.length && perShare[pi]!.date <= pd) {
+                    lastValue = perShare[pi]!.value;
+                    pi++;
+                }
+                if (lastValue !== null) {
+                    result.push({ date: pd, value: lastValue });
+                }
+            }
+            return result;
+        }
+
+        const weeklyDates = weekly.map(r => r.date.toISOString().split('T')[0]!);
+        const revPerShareFilled = forwardFillPerShare(revPerShareHistory, weeklyDates);
+        const epsPerShareFilled = forwardFillPerShare(epsPerShareHistory, weeklyDates);
+
         const medianPS = psStats?.median ?? latestPS ?? null;
         const medianPE = peStats?.median ?? latestPE ?? null;
 
-        const impliedPricePS = medianPS
-            ? revPerShareHistory.map(pt => ({ date: pt.date, impliedPrice: parseFloat((pt.value * medianPS).toFixed(2)) }))
+        const impliedPricePS = medianPS != null
+            ? revPerShareFilled.map(pt => ({ date: pt.date, impliedPrice: parseFloat((pt.value * medianPS).toFixed(2)) }))
             : [];
 
-        const impliedPricePE = medianPE
-            ? epsPerShareHistory.map(pt => ({ date: pt.date, impliedPrice: parseFloat((pt.value * medianPE).toFixed(2)) }))
+        const impliedPricePE = medianPE != null
+            ? epsPerShareFilled.map(pt => ({ date: pt.date, impliedPrice: parseFloat((pt.value * medianPE).toFixed(2)) }))
             : [];
 
         // Valuation history: choose intrinsic series and align with price history
