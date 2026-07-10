@@ -65,7 +65,9 @@ export function computeTTMAtDate(stmts: FinancialStatement[], date: Date): {
     netIncome: number | null;
     revenue: number | null;
 } {
-    const stmtsBeforeDate = stmts.filter(s => s.endDate.getTime() <= date.getTime());
+    // Sort descending by endDate to ensure latest-first ordering
+    const sorted = [...stmts].sort((a, b) => b.endDate.getTime() - a.endDate.getTime());
+    const stmtsBeforeDate = sorted.filter(s => s.endDate.getTime() <= date.getTime());
     const quarterlyBeforeDate = stmtsBeforeDate.filter(s => s.fiscalPeriod !== 'FY');
     const latestQ = quarterlyBeforeDate[0] ?? null;
     const latestFY = stmtsBeforeDate.find(s => s.fiscalPeriod === 'FY') ?? null;
