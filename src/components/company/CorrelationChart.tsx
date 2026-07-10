@@ -39,7 +39,7 @@ function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   const price = payload.find((p: any) => p.dataKey === 'price')?.value;
   const implied = payload.find((p: any) => p.dataKey === 'impliedPrice')?.value;
-  const isForecast = payload.find((p: any) => p.dataKey === 'isForecast')?.value;
+  const isForecast = payload[0]?.payload?.isForecast;
   const diff = (price != null && implied != null) ? ((price - implied) / implied) * 100 : null;
   return (
     <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 shadow-lg text-xs">
@@ -60,33 +60,6 @@ function CustomTooltip({ active, payload, label }: any) {
   );
 }
 
-function buildForecast(points: { date: string; impliedPrice: number }[], periods = 8) {
-  if (points.length < 2) return [];
-  const data = points.slice(-periods);
-  const n = data.length;
-  let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
-  for (let i = 0; i < n; i++) {
-    sumX += i;
-    sumY += data[i]!.impliedPrice;
-    sumXY += i * data[i]!.impliedPrice;
-    sumX2 += i * i;
-  }
-  const denom = n * sumX2 - sumX * sumX;
-  if (denom === 0) return [];
-  const slope = (n * sumXY - sumX * sumY) / denom;
-  const intercept = (sumY - slope * sumX) / n;
-  // predict next 6 points
-  const forecast: { date: string; impliedPrice: number; isForecast: boolean }[] = [];
-  const lastDate = new Date(data[data.length - 1]!.date);
-  for (let i = 1; i <= 6; i++) {
-    const idx = n - 1 + i;
-    const price = intercept + slope * idx;
-    const d = new Date(lastDate);
-    d.setDate(d.getDate() + i * 7); // weekly step
-    forecast.push({ date: d.toISOString().slice(0, 10), impliedPrice: price, isForecast: true });
-  }
-  return forecast;
-}
 
 export function CorrelationChart({ priceHistory, impliedPS, impliedPE, corrPS, corrPE }: CorrelationChartProps) {
   const [mode, setMode] = useState<Mode>('ps');
@@ -100,11 +73,8 @@ export function CorrelationChart({ priceHistory, impliedPS, impliedPE, corrPS, c
       .map(pt => ({ date: pt.date, impliedPrice: pt.impliedPrice, price: priceMap.get(pt.date), isForecast: pt.isForecast }))
       .filter(d => typeof d.price === 'number' || d.isForecast);
 
-    const forecast = buildForecast(merged.filter(m => !m.isForecast && typeof m.price === 'number'), 8);
-    const combined = [...merged, ...forecast];
-
     return {
-      mergedData: combined,
+      mergedData: merged,
       correlation: corr,
       label: mode === 'ps' ? 'Implied Price (P/S)' : 'Implied Price (P/E)',
     };
