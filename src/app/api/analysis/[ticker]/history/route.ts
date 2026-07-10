@@ -31,8 +31,9 @@ export async function GET(
         const weekly = Array.from(weekMap.values()).sort((a, b) => a.date.getTime() - b.date.getTime());
 
         // Filter valid (positive, non-extreme) values for percentile calculation
-        const VALID_PE = (v: number | null): v is number => v !== null && v > 0 && v < 500;
-        const VALID_PS = (v: number | null): v is number => v !== null && v > 0 && v < 200;
+        // P/E < 2 almost always indicates a stock split mismatch (adjusted shares vs pre-split price)
+        const VALID_PE = (v: number | null): v is number => v !== null && v > 2 && v < 500;
+        const VALID_PS = (v: number | null): v is number => v !== null && v > 0.1 && v < 200;
 
         const peAllValues = rows.map(r => r.peRatio).filter(VALID_PE);
         const psAllValues = rows.map(r => r.psRatio).filter(VALID_PS);
