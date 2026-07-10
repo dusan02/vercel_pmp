@@ -21,7 +21,6 @@ import { refreshUniverseAtStartup, refreshUniverseFromDB } from './polygon/unive
 import { ingestLoop } from './polygon/ingestLoop';
 
 export { saveRegularClose, ingestBatch, bootstrapPreviousCloses };
-export { isBulkPreloadWindow } from '@/lib/utils/marketWindowUtils';
 
 async function main() {
   const mode = process.env.MODE || 'snapshot';

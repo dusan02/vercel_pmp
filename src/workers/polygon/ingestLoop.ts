@@ -203,7 +203,11 @@ export async function ingestLoop(apiKey: string): Promise<void> {
     // Apply turbo mode if applicable
     const processedTickers = await maybeApplyTurboMode(tickers, prioritized, session, etNow);
 
-    console.log(`📊 Processing ${processedTickers.length} tickers: ${premium} premium (60s), ${rest} rest (5min)`);
+    if (processedTickers.length > prioritized.length) {
+      console.log(`🚀 Processing ${processedTickers.length} tickers (TURBO: all tickers, was ${prioritized.length})`);
+    } else {
+      console.log(`📊 Processing ${processedTickers.length} tickers: ${premium} premium (60s), ${rest} rest (5min)`);
+    }
 
     // Rate-limit config
     const envLimit = parseInt(process.env.POLYGON_MAX_REQUESTS_PER_MINUTE || '250', 10);
