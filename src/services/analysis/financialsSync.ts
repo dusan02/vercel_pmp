@@ -62,8 +62,9 @@ export async function syncFinancials(symbol: string): Promise<void> {
                 if (timeframe === 'quarterly' && !quarter) continue; // Skip invalid quarterly
 
                 const revenue = extract(report, 'ic', [
-                    'us-gaap_Revenues', 'us-gaap_SalesRevenueNet', 'us-gaap_RevenuesNetOfInterestExpense', 
-                    'us-gaap_RevenueFromContractWithCustomerExcludingAssessedTax', 'us-gaap_HealthCareOrganizationRevenue'
+                    'us-gaap_Revenues', 'us-gaap_SalesRevenueNet', 'us-gaap_RevenuesNetOfInterestExpense',
+                    'us-gaap_RevenueFromContractWithCustomerExcludingAssessedTax', 'us-gaap_HealthCareOrganizationRevenue',
+                    'us-gaap_RevenueFromContractWithCustomerIncludingAssessedTax'
                 ]);
                 const netIncome = extract(report, 'ic', [
                     'us-gaap_NetIncomeLoss', 'us-gaap_NetIncomeLossAvailableToCommonStockholdersBasic', 'us-gaap_ProfitLoss'
