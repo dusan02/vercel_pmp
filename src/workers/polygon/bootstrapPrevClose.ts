@@ -39,6 +39,7 @@ import { polygonCircuitBreaker, __IS_TEST__, sleep, PolygonSnapshot } from './sh
 import { fetchPolygonSnapshot, normalizeSnapshot, upsertToDB } from './core';
 import { saveRegularClose } from './saveRegularClose';
 import { ingestBatch } from './ingestBatch';
+import { writePrevClose, writeRegularClose, writePrevCloseForToday } from '@/lib/heatmap/prevCloseService';
 export async function bootstrapPreviousCloses(
   tickers: string[],
   apiKey: string,
@@ -143,70 +144,22 @@ export async function bootstrapPreviousCloses(
         }
 
         if (prevClose > 0 && actualPrevTradingDay) {
-          try {
-            await setPrevClose(date, symbol, prevClose);
-          } catch (redisErr) {
-            console.warn(`⚠️ Redis setPrevClose failed for ${symbol}`);
-          }
-
+          // 1. Non-trading day backfill: write regularClose for last trading day
           if (isNonTradingCalendarDay && rawDayClose > 0) {
-            const lastTradingDay = todayTradingDay;
             const prevForBackfill = backfillPrevClose > 0 ? backfillPrevClose : prevClose;
-
-            await dbWriteRetry(
-              () => prisma.dailyRef.upsert({
-                where: { symbol_date: { symbol, date: lastTradingDay } },
-                update: { regularClose: rawDayClose, previousClose: prevForBackfill, updatedAt: new Date() },
-                create: { symbol, date: lastTradingDay, regularClose: rawDayClose, previousClose: prevForBackfill }
-              }),
-              `dailyRef.upsert(lastTradingDayClose):${symbol}`
-            );
+            await writeRegularClose(todayTradingDay, symbol, rawDayClose, { dbRetry: (fn) => dbWriteRetry(fn, `writeRegularClose:${symbol}`) });
+            // Also set previousClose for the last trading day
+            await writePrevClose(date, todayTradingDay, symbol, prevForBackfill, { dbRetry: (fn) => dbWriteRetry(fn, `writePrevClose:backfill:${symbol}`), skipTickerUpdate: true });
           }
 
+          // 2. Write prevClose for the actual previous trading day
           const shouldUpsertSourceRecord = !isNonTradingCalendarDay || (isNonTradingCalendarDay && prevClose === rawPrevDayClose);
-
           if (shouldUpsertSourceRecord) {
-            await dbWriteRetry(
-              () => prisma.dailyRef.upsert({
-                where: { symbol_date: { symbol, date: actualPrevTradingDay! } },
-                // Only update previousClose — preserve existing regularClose (may have been
-                // set correctly by saveRegularClose; snapshot.prevDay.c can be inaccurate).
-                update: { previousClose: prevClose, updatedAt: new Date() },
-                create: { symbol, date: actualPrevTradingDay!, previousClose: prevClose, regularClose: prevClose }
-              }),
-              `dailyRef.upsert:${symbol}`
-            );
+            await writePrevClose(date, actualPrevTradingDay, symbol, prevClose, { dbRetry: (fn) => dbWriteRetry(fn, `writePrevClose:${symbol}`) });
           }
 
-          // Ensure Ticker exists before writing DailyRef (FK constraint: DailyRef -> Ticker)
-          await dbWriteRetry(
-            () => prisma.ticker.upsert({
-              where: { symbol },
-              update: { latestPrevClose: prevClose, latestPrevCloseDate: actualPrevTradingDay },
-              create: {
-                symbol,
-                latestPrevClose: prevClose,
-                latestPrevCloseDate: actualPrevTradingDay,
-                lastPrice: 0,
-                lastChangePct: 0,
-                lastMarketCap: 0,
-                lastMarketCapDiff: 0,
-                lastVolume: 0,
-                sector: 'Unknown',
-                industry: 'Unknown',
-              }
-            }),
-            `ticker.upsert(prevClose):${symbol}`
-          );
-
-          await dbWriteRetry(
-            () => prisma.dailyRef.upsert({
-              where: { symbol_date: { symbol, date: calendarDateET } },
-              update: { previousClose: prevClose, updatedAt: new Date() },
-              create: { symbol, date: calendarDateET, previousClose: prevClose }
-            }),
-            `dailyRef.upsert(todayPrevClose):${symbol}`
-          );
+          // 3. Write prevClose for today's calendar date (so heatmap can find it)
+          await writePrevCloseForToday(calendarDateET, symbol, prevClose, { dbRetry: (fn) => dbWriteRetry(fn, `writePrevCloseForToday:${symbol}`), skipTickerUpdate: true });
         } else {
           failedCount++;
         }
