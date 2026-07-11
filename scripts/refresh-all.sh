@@ -1,19 +1,17 @@
 #!/bin/bash
-# Refresh all tickers analysis data
+# Refresh all tickers analysis data via pm2
 # Usage: ssh root@SERVER 'bash /var/www/premarketprice/scripts/refresh-all.sh'
 
-# Kill any existing refresh process
-pkill -f "refresh-all-tickers" 2>/dev/null
-sleep 1
+cd /var/www/premarketprice
+
+# Stop any existing refresh process
+pm2 delete refresh-all 2>/dev/null
 
 # Clear old log
 rm -f /tmp/refresh-all.log
 
-# Start fresh
-cd /var/www/premarketprice
-setsid npx tsx src/scripts/refresh-all-tickers.ts > /tmp/refresh-all.log 2>&1 &
-PID=$!
+# Start via pm2 (survives SSH disconnect)
+pm2 start npx --name refresh-all -- tsx src/scripts/refresh-all-tickers.ts
 
-echo "✅ Refresh started. PID: $PID"
-echo "📋 Log: /tmp/refresh-all.log"
-echo "🔍 Check: tail -5 /tmp/refresh-all.log"
+echo "✅ Refresh started via pm2"
+echo "📋 Check: pm2 logs refresh-all --lines 5 --nostream"
