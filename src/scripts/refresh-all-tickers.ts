@@ -81,6 +81,15 @@ async function main() {
     console.log(`[refresh-all] Done. ${success} ok, ${failed} failed (${rateLimited} rate-limited). Total: ${(totalMs / 1000).toFixed(1)}s (${(totalMs / 1000 / 60).toFixed(1)} min)`);
 
     await prisma.$disconnect();
+
+    // Auto-delete pm2 process if running under pm2
+    if (process.env.pm_id) {
+        try {
+            const { execSync } = await import('child_process');
+            execSync(`pm2 delete ${process.env.pm_id}`, { stdio: 'ignore' });
+        } catch {}
+    }
+
     process.exit(0);
 }
 
