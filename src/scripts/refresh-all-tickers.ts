@@ -13,9 +13,31 @@ import { prisma } from '@/lib/db/prisma';
 import { AnalysisService } from '@/services/analysisService';
 
 const FINNHUB_DELAY_MS = 1200; // Finnhub free tier: 60 calls/min → 1s min, 1.2s safe
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 60_000; // 60s wait on 429 before retry
 
 async function sleep(ms: number) {
     return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function refreshTickerWithRetry(symbol: string): Promise<boolean> {
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
+            await AnalysisService.syncFinancials(symbol);
+            await AnalysisService.syncValuationHistory(symbol);
+            await AnalysisService.calculateScores(symbol);
+            return true;
+        } catch (err: any) {
+            const msg = err?.message ?? 'Unknown error';
+            if (msg.includes('429') && attempt < MAX_RETRIES) {
+                console.log(`[refresh-all] ⏳ ${symbol}: 429 on attempt ${attempt}/${MAX_RETRIES}, waiting ${RETRY_DELAY_MS / 1000}s...`);
+                await sleep(RETRY_DELAY_MS);
+                continue;
+            }
+            throw err;
+        }
+    }
+    return false;
 }
 
 async function main() {
@@ -39,9 +61,7 @@ async function main() {
         const elapsed = ((Date.now() - startedAt) / 1000).toFixed(0);
 
         try {
-            await AnalysisService.syncFinancials(symbol);
-            await AnalysisService.syncValuationHistory(symbol);
-            await AnalysisService.calculateScores(symbol);
+            await refreshTickerWithRetry(symbol);
             success++;
             console.log(`[refresh-all] ✓ ${symbol} (${i + 1}/${tickers.length}) — ${elapsed}s`);
         } catch (err: any) {
@@ -63,6 +83,10 @@ async function main() {
     await prisma.$disconnect();
     process.exit(0);
 }
+
+// Keep process alive even if stdout pipe breaks (SSH disconnect)
+process.stdout?.on?.('error', () => {});
+process.stderr?.on?.('error', () => {});
 
 main().catch(err => {
     console.error('[refresh-all] Fatal error:', err);
