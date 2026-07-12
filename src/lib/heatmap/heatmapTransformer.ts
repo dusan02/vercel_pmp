@@ -282,7 +282,9 @@ export function transformToHeatmap(
       priceTsMs = priceInfo?.tsMs || 0;
       priceSource = priceInfo?.source || 'unknown';
 
-      if (priceTsMs === 0 || (now.getTime() - priceTsMs) > 24 * 60 * 60 * 1000) {
+      // On weekends/holidays, allow prices up to 72h old (Friday close)
+      const maxAgeMs = ctx.isNonTradingClosedDay ? 72 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+      if (priceTsMs === 0 || (now.getTime() - priceTsMs) > maxAgeMs) {
         skippedNoPrice++; continue;
       }
 
