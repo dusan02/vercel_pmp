@@ -255,8 +255,8 @@ export async function upsertToDB(
       }
     });
 
-    // 5. SessionPrice upsert (only during static lock or forced)
-    if (isStaticUpdateLocked || force) {
+    // 5. SessionPrice upsert (always — canOverwritePrice guards stale data)
+    {
       const existingSession = await prisma.sessionPrice.findUnique({
         where: { symbol_date_session: { symbol, date: today, session } }
       });
@@ -296,8 +296,8 @@ export async function upsertToDB(
       }
     }
 
-    // 6. DailyRef upsert (only during static lock or forced)
-    if (previousClose && (isStaticUpdateLocked || force)) {
+    // 6. DailyRef upsert (always when previousClose is available)
+    if (previousClose) {
       await prisma.dailyRef.upsert({
         where: { symbol_date: { symbol, date: today } },
         update: { previousClose, updatedAt: new Date() },
