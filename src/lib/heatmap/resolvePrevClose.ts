@@ -33,7 +33,7 @@ export type PrevCloseContext = {
  * Non-trading closed day (weekend/holiday):
  *   1. refFromDaily (DailyRef regularClose from last trading day = Friday's close)
  *   2. cachedClose (worker cache)
- *   3. prevFromTicker (NOT used — stale on non-trading days)
+ *   3. prevFromTicker (Ticker.latestPrevClose — last trading day's prevClose)
  *   4. batchClose
  */
 export function resolvePrevClose(
@@ -44,10 +44,10 @@ export function resolvePrevClose(
   const { isNonTradingClosedDay } = ctx;
 
   if (isNonTradingClosedDay) {
-    // On weekends/holidays: prefer DailyRef (Friday's regularClose), then cache, then batch.
-    // Do NOT fall back to Ticker.latestPrevClose — it may be stale from Thursday.
+    // On weekends/holidays: prefer DailyRef (Friday's regularClose), then cache, then Ticker, then batch.
     if (refFromDaily > 0) return refFromDaily;
     if (cachedClose > 0) return cachedClose;
+    if (prevFromTicker > 0) return prevFromTicker;
     if (batchClose > 0) return batchClose;
     return 0;
   }
