@@ -96,6 +96,10 @@ export function buildPrevCloseMaps(
         if (dr.regularClose && dr.regularClose > 0) {
           previousCloseMap.set(dr.symbol, dr.regularClose);
           debugStats.counts.dailyRefOlder++;
+        } else if (ctx.isNonTradingClosedDay && dr.previousClose > 0) {
+          // On weekends/holidays, use previousClose from most recent DailyRef as fallback
+          previousCloseMap.set(dr.symbol, dr.previousClose);
+          debugStats.counts.dailyRefOlder++;
         }
       }
     }
