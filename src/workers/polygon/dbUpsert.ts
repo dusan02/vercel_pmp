@@ -211,49 +211,49 @@ export async function upsertToDB(
       return lastTradingDay.getTime() >= existingTicker.latestPrevCloseDate.getTime();
     })();
 
-    // WEEKEND_FROZEN: skip DB write
+    // WEEKEND_FROZEN: skip Ticker price update but still write SessionPrice/DailyRef
     const pricingStateNow = getPricingState(nowET());
-    if (pricingStateNow.state === PriceState.WEEKEND_FROZEN && !force) {
-      return { success: true, effectiveChangePct: changePctToUse, zScore, rvol };
-    }
+    const isWeekendFrozen = pricingStateNow.state === PriceState.WEEKEND_FROZEN && !force;
 
-    // 4. Ticker upsert
-    await prisma.ticker.upsert({
-      where: { symbol },
-      update: {
-        updatedAt: new Date(),
-        lastPrice: normalized.price,
-        lastChangePct: changePctToUse,
-        lastMarketCap: marketCap,
-        lastMarketCapDiff: marketCapDiff,
-        lastPriceUpdated: normalized.timestamp,
-        lastVolume: normalized.volume,
-        ...(shouldUpdatePrevClose ? {
-          latestPrevClose: previousClose,
-          latestPrevCloseDate: lastTradingDay
-        } : {}),
-        latestMoversZScore: zScore,
-        latestMoversRVOL: rvol,
-        ...metadataUpdate
-      },
-      create: {
-        symbol,
-        updatedAt: new Date(),
-        lastPrice: normalized.price,
-        lastChangePct: changePctToUse,
-        lastMarketCap: marketCap,
-        lastMarketCapDiff: marketCapDiff,
-        lastPriceUpdated: normalized.timestamp,
-        lastVolume: normalized.volume,
-        latestPrevClose: previousClose || 0,
-        latestPrevCloseDate: previousClose ? lastTradingDay : null,
-        latestMoversZScore: zScore,
-        latestMoversRVOL: rvol,
-        sector: 'Unknown',
-        industry: 'Unknown',
-        ...metadataUpdate
-      }
-    });
+    // 4. Ticker upsert (skip on weekend frozen — keep Friday's close)
+    if (!isWeekendFrozen) {
+      await prisma.ticker.upsert({
+        where: { symbol },
+        update: {
+          updatedAt: new Date(),
+          lastPrice: normalized.price,
+          lastChangePct: changePctToUse,
+          lastMarketCap: marketCap,
+          lastMarketCapDiff: marketCapDiff,
+          lastPriceUpdated: normalized.timestamp,
+          lastVolume: normalized.volume,
+          ...(shouldUpdatePrevClose ? {
+            latestPrevClose: previousClose,
+            latestPrevCloseDate: lastTradingDay
+          } : {}),
+          latestMoversZScore: zScore,
+          latestMoversRVOL: rvol,
+          ...metadataUpdate
+        },
+        create: {
+          symbol,
+          updatedAt: new Date(),
+          lastPrice: normalized.price,
+          lastChangePct: changePctToUse,
+          lastMarketCap: marketCap,
+          lastMarketCapDiff: marketCapDiff,
+          lastPriceUpdated: normalized.timestamp,
+          lastVolume: normalized.volume,
+          latestPrevClose: previousClose || 0,
+          latestPrevCloseDate: previousClose ? lastTradingDay : null,
+          latestMoversZScore: zScore,
+          latestMoversRVOL: rvol,
+          sector: 'Unknown',
+          industry: 'Unknown',
+          ...metadataUpdate
+        }
+      });
+    }
 
     // 5. SessionPrice upsert (always — canOverwritePrice guards stale data)
     {
