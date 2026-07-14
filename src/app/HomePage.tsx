@@ -50,6 +50,10 @@ const HomeBlog = dynamic(
   () => import('@/components/home/HomeBlog').then((mod) => mod.HomeBlog),
   { ssr: false, loading: () => null }
 );
+const HomePricing = dynamic(
+  () => import('@/components/home/HomePricing').then((mod) => mod.HomePricing),
+  { ssr: false, loading: () => null }
+);
 const HomeMovers = dynamic(
   () => import('@/components/home/HomeMovers').then((mod) => mod.HomeMovers),
   { ssr: false, loading: () => null }
@@ -291,6 +295,15 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
                   />
                 )}
               </MobileScreen>
+              <MobileScreen
+                active={activeSection === 'pricing'}
+                className="screen-pricing"
+                prefetch={false}
+                screenName="Pricing"
+                skeleton={<MobileSkeleton type="list" count={1} />}
+              >
+                <HomePricing />
+              </MobileScreen>
             </div>
           </PullToRefresh>
           {/* Floating Search Button Removed */}
@@ -454,6 +467,12 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
                         {activeSection === 'blog' && (
                           <div className="tab-content fade-in">
                             <HomeBlog />
+                          </div>
+                        )}
+
+                        {activeSection === 'pricing' && (
+                          <div className="tab-content fade-in">
+                            <HomePricing />
                           </div>
                         )}
                       </div>

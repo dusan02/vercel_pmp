@@ -199,7 +199,7 @@ export function computeMobileTreemapSectors(
   const minTilePx = options?.minTilePx ?? DEFAULTS.minTilePx;
   const minContentH = options?.minContentHeightPx ?? DEFAULTS.minContentHeightPx;
 
-  const layoutH = Math.max(height, minContentH);
+  const layoutH = Math.max(height * 1.8, minContentH);
   const totalArea = width * layoutH;
 
   // Build 2-level hierarchy with tile limiting

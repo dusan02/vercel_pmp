@@ -12,11 +12,12 @@ export type ActiveSection =
   | 'earnings'
   | 'allStocks'
   | 'screener'
-  | 'blog';
+  | 'blog'
+  | 'pricing';
 
 const VALID_SECTIONS: ActiveSection[] = [
   'heatmap', 'analysis', 'movers', 'portfolio', 'favorites',
-  'earnings', 'allStocks', 'screener', 'blog',
+  'earnings', 'allStocks', 'screener', 'blog', 'pricing',
 ];
 
 interface UseHomeNavigationOptions {
