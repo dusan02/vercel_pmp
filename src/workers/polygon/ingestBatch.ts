@@ -156,19 +156,14 @@ export async function ingestBatch(
           shares = await getSharesOutstanding(symbol, normalized.price);
         }
 
-        const marketCap = computeMarketCap(normalized.price, shares);
-        const marketCapDiff = previousClose
-          ? computeMarketCapDiff(normalized.price, previousClose, shares)
-          : 0;
-
         const cachedLastChangePct = lastChangePctMap.get(symbol);
         const stats = statsMap.get(symbol);
-        const { success: dbSuccess, effectiveChangePct, zScore, rvol } = await upsertToDB(
-          symbol, session, normalized, previousClose, marketCap, marketCapDiff, isStaticUpdateLocked, cachedLastChangePct, stats, force
+        const { success: dbSuccess, effectiveChangePct, effectivePrice, marketCap, marketCapDiff, zScore, rvol } = await upsertToDB(
+          symbol, session, normalized, previousClose, shares, isStaticUpdateLocked, cachedLastChangePct, stats, force
         );
 
         const priceData: PriceData = {
-          p: normalized.price,
+          p: effectivePrice,
           change: effectiveChangePct,
           ts: normalized.timestamp.getTime(),
           source: normalized.quality,

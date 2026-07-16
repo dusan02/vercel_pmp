@@ -20,20 +20,20 @@ import { prisma } from '@/lib/db/prisma';
 import type { MarketSession } from '@/lib/types';
 import { calculateExpectedVolume } from './snapshotFetcher';
 import type { NormalizedSnapshot } from './snapshotNormalizer';
+import { computeMarketCap, computeMarketCapDiff } from '@/lib/utils/marketCapUtils';
 
 export async function upsertToDB(
   symbol: string,
   session: MarketSession,
   normalized: NormalizedSnapshot | null,
   previousClose: number | null,
-  marketCap: number,
-  marketCapDiff: number,
+  shares: number,
   isStaticUpdateLocked: boolean = false,
   lastChangePctFromCache: number | null | undefined = undefined,
   stats?: { avgVolume20d: number | null; avgReturn20d: number | null; stdDevReturn20d: number | null },
   force: boolean = false
-): Promise<{ success: boolean; effectiveChangePct: number; zScore: number; rvol: number }> {
-  if (!normalized) return { success: false, effectiveChangePct: 0, zScore: 0, rvol: 0 };
+): Promise<{ success: boolean; effectiveChangePct: number; effectivePrice: number; marketCap: number; marketCapDiff: number; zScore: number; rvol: number }> {
+  if (!normalized) return { success: false, effectiveChangePct: 0, effectivePrice: 0, marketCap: 0, marketCapDiff: 0, zScore: 0, rvol: 0 };
 
   try {
     const dateET = getDateET();
@@ -81,7 +81,7 @@ export async function upsertToDB(
                 await redisClient.sRem('universe:sp500', symbol);
                 await redisClient.sRem('universe:pmp', symbol);
               }
-              return { success: false, effectiveChangePct: 0, zScore: 0, rvol: 0 };
+              return { success: false, effectiveChangePct: 0, effectivePrice: 0, marketCap: 0, marketCapDiff: 0, zScore: 0, rvol: 0 };
             }
 
             metadataUpdate = {
@@ -170,16 +170,24 @@ export async function upsertToDB(
       }
     }
 
-    // When skipping price update (incoming data is older than last DB price), recompute
-    // changePct from the existing lastPrice and current previousClose so Redis cache
-    // stays consistent with the correct reference price (not stale lastChangePct which
-    // may have been computed with wrong prevClose).
-    if (skipPriceUpdate && existingTicker?.lastPrice && previousClose) {
-      const recomputedPct = ((existingTicker.lastPrice / previousClose) - 1) * 100;
+    // When skipping price update (incoming data is older than last DB price), use
+    // existing lastPrice (newer than normalized.price) and recompute changePct from
+    // current previousClose so Redis cache stays consistent.
+    const effectivePrice = (skipPriceUpdate && existingTicker?.lastPrice && existingTicker.lastPrice > 0)
+      ? existingTicker.lastPrice
+      : normalized.price;
+
+    if (skipPriceUpdate && effectivePrice && previousClose) {
+      const recomputedPct = ((effectivePrice / previousClose) - 1) * 100;
       if (Math.abs(recomputedPct) <= 1000) {
         changePctToUse = recomputedPct;
       }
     }
+
+    const marketCap = computeMarketCap(effectivePrice, shares);
+    const marketCapDiff = previousClose && previousClose > 0
+      ? computeMarketCapDiff(effectivePrice, previousClose, shares)
+      : 0;
 
     // 4. Skip path: stale data
     if (skipPriceUpdate) {
@@ -210,7 +218,7 @@ export async function upsertToDB(
         });
       }
 
-      return { success: true, effectiveChangePct: changePctToUse, zScore, rvol };
+      return { success: true, effectiveChangePct: changePctToUse, effectivePrice, marketCap, marketCapDiff, zScore, rvol };
     }
 
     // Guard latestPrevClose from being overwritten with stale data
@@ -349,9 +357,9 @@ export async function upsertToDB(
       }
     }
 
-    return { success: true, effectiveChangePct: changePctToUse, zScore, rvol };
+  return { success: true, effectiveChangePct: changePctToUse, effectivePrice, marketCap, marketCapDiff, zScore, rvol };
   } catch (error) {
     console.error(`Error upserting ${symbol} to DB:`, error);
-    return { success: false, effectiveChangePct: normalized ? normalized.changePct : 0, zScore: 0, rvol: 0 };
+    return { success: false, effectiveChangePct: normalized ? normalized.changePct : 0, effectivePrice: normalized ? normalized.price : 0, marketCap: 0, marketCapDiff: 0, zScore: 0, rvol: 0 };
   }
 }
