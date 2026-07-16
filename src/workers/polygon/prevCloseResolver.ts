@@ -94,13 +94,14 @@ export async function resolvePrevCloses(
 ): Promise<Map<string, number>> {
   const prevCloseMap = await getPrevClose(calendarDateETStr, tickers);
 
-  // Fallback: load from DB
-  if (prevCloseMap.size === 0) {
-    console.log('⚠️ No previous closes found in Redis, checking DB...');
+  // Fallback: load missing from DB
+  const missingAfterRedis = tickers.filter(t => !prevCloseMap.has(t));
+  if (missingAfterRedis.length > 0) {
+    console.log(`⚠️ Missing previous close for ${missingAfterRedis.length} tickers in Redis, checking DB...`);
     try {
       const dailyRefs = await prisma.dailyRef.findMany({
         where: {
-          symbol: { in: tickers },
+          symbol: { in: missingAfterRedis },
           date: calendarDateET
         },
         select: { symbol: true, previousClose: true }
@@ -109,8 +110,10 @@ export async function resolvePrevCloses(
       if (dailyRefs.length > 0) {
         console.log(`✅ Loaded ${dailyRefs.length} previous closes from DB`);
         for (const ref of dailyRefs) {
-          prevCloseMap.set(ref.symbol, ref.previousClose);
-          await setPrevClose(calendarDateETStr, ref.symbol, ref.previousClose);
+          if (ref.previousClose && ref.previousClose > 0) {
+            prevCloseMap.set(ref.symbol, ref.previousClose);
+            await setPrevClose(calendarDateETStr, ref.symbol, ref.previousClose);
+          }
         }
       }
     } catch (dbError) {
@@ -118,7 +121,7 @@ export async function resolvePrevCloses(
     }
   }
 
-  // Fallback: bootstrap from Polygon
+  // Fallback: bootstrap from Polygon only for tickers still missing
   const missingPrevClose = tickers.filter(t => !prevCloseMap.has(t));
   if (!isStaticUpdateLocked && missingPrevClose.length > 0) {
     console.log(`⚠️ Missing previous close for ${missingPrevClose.length} tickers, attempting to fetch...`);

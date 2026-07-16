@@ -10,7 +10,8 @@
  * Called by: polygonWorker startup, refsScheduler
  */
 
-import { getUniverse } from '@/lib/redis/operations';
+import { getUniverse, getPrevClose } from '@/lib/redis/operations';
+import { redisClient } from '@/lib/redis';
 import { recordSuccess } from '../healthMonitor';
 import { isMarketHoliday, getLastTradingDay, getTradingDay } from '@/lib/utils/timeUtils';
 import { getDateET, createETDate, toET } from '@/lib/utils/dateET';
@@ -60,9 +61,21 @@ export async function bootstrapPreviousCloses(
   const expectedPrevYMD = getDateET(prevTradingDay);
   const isNonTradingCalendarDay = getDateET(todayTradingDay) !== date;
 
+  // Skip tickers that already have prevClose in Redis for this date to avoid overwriting
+  // correct values (set by saveRegularClose) with stale Polygon prevDay.c.
+  const existingPrevCloseMap = await getPrevClose(date, tickers);
+  const tickersToProcess = tickers.filter(t => !existingPrevCloseMap.has(t));
+  if (tickersToProcess.length < tickers.length) {
+    console.log(`⏭️ Skipping ${tickers.length - tickersToProcess.length} tickers with existing prevClose in Redis`);
+  }
+  if (tickersToProcess.length === 0) {
+    console.log('✅ All tickers already have prevClose in Redis, skipping bootstrap');
+    return;
+  }
+
   // 1. Fetch snapshots in large batches
-  console.log('📥 Fetching snapshots for batch previous day reference...');
-  const snapshots = await fetchPolygonSnapshot(tickers, apiKey);
+  console.log(`📥 Fetching snapshots for ${tickersToProcess.length} tickers...`);
+  const snapshots = await fetchPolygonSnapshot(tickersToProcess, apiKey);
   const snapshotMap = new Map<string, PolygonSnapshot>();
   snapshots.forEach(s => snapshotMap.set(s.ticker, s));
   console.log(`✅ Received ${snapshots.length} snapshots`);
@@ -140,10 +153,10 @@ export async function bootstrapPreviousCloses(
   };
 
   // Split into chunks for parallel processing
-  const chunkSize = Math.ceil(tickers.length / DB_CONCURRENCY);
+  const chunkSize = Math.ceil(tickersToProcess.length / DB_CONCURRENCY);
   const chunks: string[][] = [];
-  for (let i = 0; i < tickers.length; i += chunkSize) {
-    chunks.push(tickers.slice(i, i + chunkSize));
+  for (let i = 0; i < tickersToProcess.length; i += chunkSize) {
+    chunks.push(tickersToProcess.slice(i, i + chunkSize));
   }
 
   await Promise.all(chunks.map(chunk =>
