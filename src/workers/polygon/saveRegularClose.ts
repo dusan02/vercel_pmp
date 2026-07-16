@@ -43,23 +43,10 @@ export async function saveRegularClose(apiKey: string, date: string, runId?: str
   try {
     console.log(`💾 [runId:${correlationId}] Starting regular close save...`);
 
-    // IDEMPOTENCY: Check if already saved for today (avoid unnecessary Polygon API calls)
+    // IDEMPOTENCY: Check which tickers already have regularClose for today
     const calendarDateETStr = getDateET();
     const calendarDateET = createETDate(calendarDateETStr);
     const todayTradingDay = getTradingDay(calendarDateET);
-
-    const existingRegularClose = await prisma.dailyRef.findFirst({
-      where: {
-        date: todayTradingDay,
-        regularClose: { not: null }
-      },
-      select: { symbol: true }
-    });
-
-    if (existingRegularClose) {
-      console.log(`⏭️  [runId:${correlationId}] Skipping saveRegularClose - already saved for ${getDateET(todayTradingDay)} (idempotent check, saved for ${existingRegularClose.symbol})`);
-      return;
-    }
 
     const tickers = await getUniverse('sp500');
 
@@ -68,8 +55,27 @@ export async function saveRegularClose(apiKey: string, date: string, runId?: str
       return;
     }
 
-    console.log(`📊 [runId:${correlationId}] Fetching regular close for ${tickers.length} tickers...`);
-    const snapshots = await fetchPolygonSnapshot(tickers, apiKey);
+    // Find tickers that already have regularClose set for today
+    const existingRegularCloses = await prisma.dailyRef.findMany({
+      where: {
+        date: todayTradingDay,
+        symbol: { in: tickers },
+        regularClose: { not: null }
+      },
+      select: { symbol: true }
+    });
+    const alreadySavedSymbols = new Set(existingRegularCloses.map(r => r.symbol));
+    const tickersToSave = tickers.filter(t => !alreadySavedSymbols.has(t));
+
+    if (tickersToSave.length === 0) {
+      console.log(`⏭️  [runId:${correlationId}] Skipping saveRegularClose - all ${tickers.length} tickers already saved for ${getDateET(todayTradingDay)}`);
+      return;
+    }
+
+    console.log(`📊 [runId:${correlationId}] ${tickersToSave.length}/${tickers.length} tickers need regular close (already saved: ${alreadySavedSymbols.size})`);
+
+    console.log(`📊 [runId:${correlationId}] Fetching regular close for ${tickersToSave.length} tickers...`);
+    const snapshots = await fetchPolygonSnapshot(tickersToSave, apiKey);
     console.log(`✅ [runId:${correlationId}] Received ${snapshots.length} snapshots`);
 
     // DST-safe date creation (reuse variables from idempotency check above)
@@ -87,6 +93,8 @@ export async function saveRegularClose(apiKey: string, date: string, runId?: str
     for (const snapshot of snapshots) {
       try {
         const symbol = snapshot.ticker;
+        // Skip tickers that already have regularClose (idempotency)
+        if (alreadySavedSymbols.has(symbol)) continue;
         // Get regular close from snapshot (day.c is the regular session close)
         // Polygon snapshot day.c is already adjusted (split-adjusted)
         const regularClose = snapshot.day?.c;

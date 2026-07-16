@@ -1,6 +1,42 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+
+const isChunkLoadError = (msg: string) => {
+  const m = (msg || '').toLowerCase();
+  return (
+    m.includes('chunkloaderror') ||
+    m.includes('loading chunk') ||
+    m.includes('failed to load chunk') ||
+    m.includes('dynamically imported module')
+  );
+};
+
+async function hardReload() {
+  try {
+    if (typeof caches !== 'undefined' && caches.keys) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k)));
+    }
+  } catch { /* ignore */ }
+
+  try {
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map((r) => r.unregister()));
+    }
+  } catch { /* ignore */ }
+
+  await new Promise(resolve => setTimeout(resolve, 300));
+
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.set('_recover', String(Date.now()));
+    window.location.replace(url.toString());
+  } catch {
+    window.location.reload();
+  }
+}
 
 export default function GlobalError({
   error,
@@ -9,25 +45,44 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const [isChunkError] = useState(() => isChunkLoadError(error.message));
+
   useEffect(() => {
     console.error('Global Error:', error);
 
-    const isChunkLoadError = error.message.includes('ChunkLoadError') || error.message.includes('Loading chunk') || error.message.includes('Failed to load chunk');
-
-    if (isChunkLoadError) {
+    if (isChunkError) {
       if (typeof window !== 'undefined') {
         const key = 'global_chunk_load_error_reload';
         const now = Date.now();
         const lastReload = parseInt(sessionStorage.getItem(key) || '0', 10);
 
-        // Reload only if we haven't reloaded in the last 10 seconds
         if (now - lastReload > 10000) {
           sessionStorage.setItem(key, now.toString());
-          window.location.reload();
+          void hardReload();
         }
       }
     }
-  }, [error]);
+  }, [error, isChunkError]);
+  if (isChunkError) {
+    return (
+      <html>
+        <body>
+          <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 text-gray-900 p-4">
+            <h2 className="text-2xl font-bold mb-4">Updating app…</h2>
+            <p className="text-gray-600 mb-6 text-center max-w-md">
+              A new version was deployed. Refreshing automatically to get the latest update.
+            </p>
+            <button
+              onClick={() => void hardReload()}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Reload now
+            </button>
+          </div>
+        </body>
+      </html>
+    );
+  }
 
   return (
     <html>

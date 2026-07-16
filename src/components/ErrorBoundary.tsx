@@ -3,6 +3,32 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { logger } from '@/lib/utils/logger';
 
+async function hardReload() {
+  try {
+    if (typeof caches !== 'undefined' && caches.keys) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k)));
+    }
+  } catch { /* ignore */ }
+
+  try {
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map((r) => r.unregister()));
+    }
+  } catch { /* ignore */ }
+
+  await new Promise(resolve => setTimeout(resolve, 300));
+
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.set('_recover', String(Date.now()));
+    window.location.replace(url.toString());
+  } catch {
+    window.location.reload();
+  }
+}
+
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
@@ -56,7 +82,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
           if (now - lastReload > 5000) {
             sessionStorage.setItem(key, now.toString());
-            window.location.reload();
+            void hardReload();
           }
         }
       }, 1000);
@@ -76,11 +102,7 @@ export class ErrorBoundary extends Component<Props, State> {
             {this.state.error?.message || 'An error occurred while loading the page'}
           </p>
           <button
-            onClick={() => {
-              if (typeof window !== 'undefined') {
-                window.location.reload();
-              }
-            }}
+            onClick={() => void hardReload()}
             className="error-boundary-reload-button"
             aria-label="Reload page"
           >

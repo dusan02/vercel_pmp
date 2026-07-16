@@ -152,11 +152,10 @@ export async function bootstrapPreviousCloses(
             await writePrevClose(date, todayTradingDay, symbol, prevForBackfill, { dbRetry: (fn) => dbWriteRetry(fn, `writePrevClose:backfill:${symbol}`), skipTickerUpdate: true });
           }
 
-          // 2. Write prevClose for the actual previous trading day
-          const shouldUpsertSourceRecord = !isNonTradingCalendarDay || (isNonTradingCalendarDay && prevClose === rawPrevDayClose);
-          if (shouldUpsertSourceRecord) {
-            await writePrevClose(date, actualPrevTradingDay, symbol, prevClose, { dbRetry: (fn) => dbWriteRetry(fn, `writePrevClose:${symbol}`) });
-          }
+          // 2. REMOVED: Previously wrote prevClose to previousTradingDay's DailyRef, which
+          // overwrote the correct previousClose (set by saveRegularClose from the day before).
+          // This caused previousClose for prevTradingDay to become prevTradingDay's own close
+          // instead of the close from the day before that.
 
           // 3. Write prevClose for today's calendar date (so heatmap can find it)
           await writePrevCloseForToday(calendarDateET, symbol, prevClose, { dbRetry: (fn) => dbWriteRetry(fn, `writePrevCloseForToday:${symbol}`), skipTickerUpdate: true });
