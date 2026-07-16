@@ -44,6 +44,7 @@ export async function upsertToDB(
     const existingTicker = await prisma.ticker.findUnique({
       where: { symbol },
       select: {
+        lastPrice: true,
         lastPriceUpdated: true,
         lastChangePct: true,
         latestPrevClose: true,
@@ -169,8 +170,15 @@ export async function upsertToDB(
       }
     }
 
-    if (skipPriceUpdate && existingTicker?.lastChangePct !== null && existingTicker?.lastChangePct !== undefined) {
-      changePctToUse = existingTicker.lastChangePct;
+    // When skipping price update (incoming data is older than last DB price), recompute
+    // changePct from the existing lastPrice and current previousClose so Redis cache
+    // stays consistent with the correct reference price (not stale lastChangePct which
+    // may have been computed with wrong prevClose).
+    if (skipPriceUpdate && existingTicker?.lastPrice && previousClose) {
+      const recomputedPct = ((existingTicker.lastPrice / previousClose) - 1) * 100;
+      if (Math.abs(recomputedPct) <= 1000) {
+        changePctToUse = recomputedPct;
+      }
     }
 
     // 4. Skip path: stale data

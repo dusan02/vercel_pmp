@@ -17,6 +17,8 @@ npm run build
 
 echo "▶ [4/5] Start PM2"
 pm2 start ecosystem.config.cjs --only "$APP" --env production
+pm2 restart pmp-polygon-worker 2>/dev/null || true
+pm2 restart post-market-daily-reset 2>/dev/null || true
 
 echo "▶ [5/5] Reload nginx (config changes)"
 cp "$DIR/nginx.conf" /etc/nginx/nginx.conf && nginx -t && nginx -s reload
