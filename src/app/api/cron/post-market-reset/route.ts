@@ -47,89 +47,100 @@ export async function POST(request: NextRequest) {
         console.log('\n📝 Step 1: Saving regular close for tomorrow...');
         await saveRegularClose(apiKey, calendarDateETStr, runId);
 
-        // 2. RESET MOVERS AI FIELDS
-        console.log('\n📝 Step 2: Resetting Movers AI fields for fresh start...');
-        const updated = await prisma.ticker.updateMany({
-            where: {
-                OR: [
-                    { moversReason: { not: null } },
-                    { moversCategory: { not: null } },
-                    { socialCopy: { not: null } },
-                ]
-            },
-            data: {
-                moversReason: null,
-                moversCategory: null,
-                socialCopy: null,
-                isSbcAlert: false,
-                aiConfidence: null,
-            }
-        });
-
-        let redisCleared = 0;
-        if (redisClient && redisClient.isOpen) {
+        // Steps 2-4 are non-critical and can run asynchronously to avoid HTTP timeout.
+        // We fire them off and return immediately after Step 1 completes.
+        const remainingSteps = (async () => {
             try {
-                const keys: string[] = [];
-                const scanIterator = redisClient.scanIterator({ MATCH: 'stock:*', COUNT: 200 });
-                for await (const key of scanIterator) {
-                    keys.push(key);
-                }
-
-                if (keys.length > 0) {
-                    const pipe = redisClient.multi();
-                    for (const key of keys) {
-                        pipe.hDel(key, ['reason', 'cat', 'copy', 'sbc', 'conf']);
+                // 2. RESET MOVERS AI FIELDS
+                console.log('\n📝 Step 2: Resetting Movers AI fields for fresh start...');
+                const updated = await prisma.ticker.updateMany({
+                    where: {
+                        OR: [
+                            { moversReason: { not: null } },
+                            { moversCategory: { not: null } },
+                            { socialCopy: { not: null } },
+                        ]
+                    },
+                    data: {
+                        moversReason: null,
+                        moversCategory: null,
+                        socialCopy: null,
+                        isSbcAlert: false,
+                        aiConfidence: null,
                     }
-                    await pipe.exec();
-                    redisCleared = keys.length;
+                });
+
+                let redisCleared = 0;
+                if (redisClient && redisClient.isOpen) {
+                    try {
+                        const keys: string[] = [];
+                        const scanIterator = redisClient.scanIterator({ MATCH: 'stock:*', COUNT: 200 });
+                        for await (const key of scanIterator) {
+                            keys.push(key);
+                        }
+
+                        if (keys.length > 0) {
+                            const pipe = redisClient.multi();
+                            for (const key of keys) {
+                                pipe.hDel(key, ['reason', 'cat', 'copy', 'sbc', 'conf']);
+                            }
+                            await pipe.exec();
+                            redisCleared = keys.length;
+                        }
+                    } catch (redisErr) {
+                        console.warn('⚠️ [reset-movers] Redis clear failed (non-fatal):', redisErr);
+                    }
                 }
-            } catch (redisErr) {
-                console.warn('⚠️ [reset-movers] Redis clear failed (non-fatal):', redisErr);
+                console.log(`✅ Cleared movers AI fields for ${updated.count} DB rows, ${redisCleared} Redis keys.`);
+
+                // 3. UPDATE SHARES OUTSTANDING
+                console.log('\n📝 Step 3: Updating sharesOutstanding...');
+                const allTickers = await getAllTrackedTickers();
+                const sharesResults = await processBatch(
+                    allTickers,
+                    updateTickerSharesOutstanding,
+                    BATCH_SIZE,
+                    CONCURRENCY_LIMIT
+                );
+                console.log(`✅ SharesOutstanding: ${sharesResults.success} updated, ${sharesResults.failed} failed`);
+
+                // 4. RECOMPUTE ANALYSIS FOR ALL TRACKED TICKERS
+                console.log('\n📝 Step 4: Recomputing analysis for all tracked tickers...');
+                const trackedTickers = await getAllTrackedTickers();
+                const analysisResults = await processBatch(
+                    trackedTickers,
+                    async (symbol: string) => {
+                        try {
+                            return await AnalysisService.syncAndAnalyze(symbol);
+                        } catch (err: any) {
+                            console.error(`❌ Analysis error for ${symbol}:`, err.message);
+                            return false;
+                        }
+                    },
+                    5,  // batchSize: 5 tickers per outer batch
+                    3   // concurrencyLimit: 3 parallel within each batch (respects Polygon rate limits)
+                );
+                console.log(`✅ Analysis Sync Complete: ${analysisResults.success} updated, ${analysisResults.failed} failed`);
+
+                await updateCronStatus('post_market_reset');
+                console.log(`✅ Post-market reset background steps completed in ${Date.now() - startTime}ms`);
+            } catch (bgError) {
+                console.error('❌ Post-market reset background steps failed:', bgError);
             }
-        }
-        console.log(`✅ Cleared movers AI fields for ${updated.count} DB rows, ${redisCleared} Redis keys.`);
+        })();
 
-        // 3. UPDATE SHARES OUTSTANDING
-        console.log('\n📝 Step 3: Updating sharesOutstanding...');
-        const allTickers = await getAllTrackedTickers();
-        const sharesResults = await processBatch(
-            allTickers,
-            updateTickerSharesOutstanding,
-            BATCH_SIZE,
-            CONCURRENCY_LIMIT
-        );
-        console.log(`✅ SharesOutstanding: ${sharesResults.success} updated, ${sharesResults.failed} failed`);
-
-        // 4. RECOMPUTE ANALYSIS FOR ALL TRACKED TICKERS
-        console.log('\n📝 Step 4: Recomputing analysis for all tracked tickers...');
-        const trackedTickers = await getAllTrackedTickers();
-        const analysisResults = await processBatch(
-            trackedTickers,
-            async (symbol: string) => {
-                try {
-                    return await AnalysisService.syncAndAnalyze(symbol);
-                } catch (err: any) {
-                    console.error(`❌ Analysis error for ${symbol}:`, err.message);
-                    return false;
-                }
-            },
-            5,  // batchSize: 5 tickers per outer batch
-            3   // concurrencyLimit: 3 parallel within each batch (respects Polygon rate limits)
-        );
-        console.log(`✅ Analysis Sync Complete: ${analysisResults.success} updated, ${analysisResults.failed} failed`);
-
-        await updateCronStatus('post_market_reset');
+        // Don't await remainingSteps - let them run in background
+        // This prevents HTTP timeout while Step 1 (critical) already completed
 
         const duration = Date.now() - startTime;
 
         return createCronSuccessResponse({
-            message: 'Post-market daily reset completed successfully',
+            message: 'Post-market daily reset: regular close saved, background steps running',
             results: {
-                sharesOutstanding: sharesResults,
-                moversReset: { dbUpdated: updated.count, redisCleared }
+                regularClose: 'saved',
+                backgroundSteps: 'running (movers reset, shares update, analysis)'
             },
             summary: {
-                totalTickers: allTickers.length,
                 duration: `${(duration / 1000).toFixed(2)}s`,
             },
         });

@@ -76,7 +76,7 @@ export async function writePrevClose(
     () => prisma.dailyRef.upsert({
       where: { symbol_date: { symbol, date: tradingDay } },
       update: { previousClose: prevClose, updatedAt: new Date() },
-      create: { symbol, date: tradingDay, previousClose: prevClose, regularClose: prevClose },
+      create: { symbol, date: tradingDay, previousClose: prevClose, regularClose: null },
     }),
     `prevCloseService.dailyRef:${symbol}`
   );
