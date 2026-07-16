@@ -1,45 +1,24 @@
 /**
- * Polygon Worker - Batch ingest stock data
- * 
- * This worker:
- * 1. Fetches snapshot/aggs from Polygon API (batch 60-80 tickers)
- * 2. Normalizes data
- * 3. Upserts to DB (only if newer timestamp)
- * 4. Writes to Redis (hot cache)
- * 5. Publishes to Redis Pub/Sub for WebSocket updates
+ * bootstrapPreviousCloses - Fills gaps in previousClose data for tickers
+ * that don't yet have a prevClose for the current trading day.
+ *
+ * Strategy:
+ * 1. Fetch Polygon snapshots (batch) to get prevDay.c and day.c
+ * 2. For non-trading calendar days (weekends/holidays), backfill regularClose
+ * 3. Write prevClose for today's calendar date (so heatmap can find it)
+ *
+ * Called by: polygonWorker startup, refsScheduler
  */
 
-import {
-  setPrevClose,
-  getPrevClose,
-  publishTick,
-  getUniverse,
-  addToUniverse,
-  atomicUpdatePrice
-} from '@/lib/redis/operations';
-import { redisClient } from '@/lib/redis';
-import { recordSuccess, recordFailure } from '../healthMonitor';
-import { PriceData } from '@/lib/types';
-import { detectSession, isMarketOpen, isMarketHoliday, mapToRedisSession, getLastTradingDay, getTradingDay } from '@/lib/utils/timeUtils';
-import { nowET, getDateET, createETDate, isWeekendET, toET } from '@/lib/utils/dateET';
-import { resolveEffectivePrice, calculatePercentChange } from '@/lib/utils/priceResolver';
-import { getPricingState, canOverwritePrice, getPreviousCloseTTL, PriceState } from '@/lib/utils/pricingStateMachine';
-import { withRetry, circuitBreaker } from '@/lib/api/rateLimiter';
-// DLQ import - commented out to avoid startup issues
-// import { addToDLQ } from '@/lib/dlq';
-import { updateRankIndexes, updateStatsCache, getRankMinMax } from '@/lib/redis/ranking';
-import { computeMarketCap, computeMarketCapDiff, getSharesOutstanding } from '@/lib/utils/marketCapUtils';
-import { getPolygonClient } from '@/lib/clients/polygonClient';
-import { prisma } from '@/lib/db/prisma';
-import { processBatchWithConcurrency } from '@/lib/batchProcessor';
-import type { MarketSession } from '@/lib/types';
-
-// Circuit breaker for Polygon API
+import { getUniverse } from '@/lib/redis/operations';
+import { recordSuccess } from '../healthMonitor';
+import { isMarketHoliday, getLastTradingDay, getTradingDay } from '@/lib/utils/timeUtils';
+import { getDateET, createETDate, toET } from '@/lib/utils/dateET';
+import { withRetry } from '@/lib/api/rateLimiter';
 import { polygonCircuitBreaker, __IS_TEST__, sleep, PolygonSnapshot } from './shared';
-import { fetchPolygonSnapshot, normalizeSnapshot, upsertToDB } from './core';
-import { saveRegularClose } from './saveRegularClose';
-import { ingestBatch } from './ingestBatch';
+import { fetchPolygonSnapshot } from './core';
 import { writePrevClose, writeRegularClose, writePrevCloseForToday } from '@/lib/heatmap/prevCloseService';
+
 export async function bootstrapPreviousCloses(
   tickers: string[],
   apiKey: string,
@@ -92,97 +71,85 @@ export async function bootstrapPreviousCloses(
   let fallbackHits = 0;
   let failedCount = 0;
 
-  // OPTIMIZATION: Process in chunks with controlled concurrency for DB writes
   const DB_CONCURRENCY = 5;
-  const processChunk = async (symbolBatch: string[]) => {
-    for (const symbol of symbolBatch) {
-      try {
-        let prevClose = 0;
-        let backfillPrevClose = 0;
-        let actualPrevTradingDay: Date | null = null;
-        let rawDayClose = 0;
+  const processTicker = async (symbol: string) => {
+    try {
+      let prevClose = 0;
+      let backfillPrevClose = 0;
+      let actualPrevTradingDay: Date | null = null;
+      let rawDayClose = 0;
 
-        const snapshot = snapshotMap.get(symbol);
-        let rawPrevDayClose = 0;
-        if (snapshot?.prevDay?.c && snapshot.prevDay.c > 0) {
-          rawPrevDayClose = snapshot.prevDay.c;
-        }
-        if (snapshot?.day?.c && snapshot.day.c > 0) {
-          rawDayClose = snapshot.day.c;
-        }
+      const snapshot = snapshotMap.get(symbol);
+      let rawPrevDayClose = 0;
+      if (snapshot?.prevDay?.c && snapshot.prevDay.c > 0) {
+        rawPrevDayClose = snapshot.prevDay.c;
+      }
+      if (snapshot?.day?.c && snapshot.day.c > 0) {
+        rawDayClose = snapshot.day.c;
+      }
 
-        if (rawPrevDayClose <= 0) {
-          try {
-            const rangeUrl = `https://api.polygon.io/v2/aggs/ticker/${symbol}/range/1/day/${expectedPrevYMD}/${expectedPrevYMD}?adjusted=true&apiKey=${apiKey}`;
-            const rangeResp = await withRetry(async () => fetch(rangeUrl));
-            if (rangeResp && rangeResp.ok) {
-              const rangeData = await rangeResp.json();
-              const result = rangeData?.results?.[0];
-              const c = result?.c;
-              if (typeof c === 'number' && c > 0) {
-                rawPrevDayClose = c;
-                fallbackHits++;
-              }
+      // Fallback: fetch from aggregates API if snapshot didn't have prevDay.c
+      if (rawPrevDayClose <= 0) {
+        try {
+          const rangeUrl = `https://api.polygon.io/v2/aggs/ticker/${symbol}/range/1/day/${expectedPrevYMD}/${expectedPrevYMD}?adjusted=true&apiKey=${apiKey}`;
+          const rangeResp = await withRetry(async () => fetch(rangeUrl));
+          if (rangeResp && rangeResp.ok) {
+            const rangeData = await rangeResp.json();
+            const c = rangeData?.results?.[0]?.c;
+            if (typeof c === 'number' && c > 0) {
+              rawPrevDayClose = c;
+              fallbackHits++;
             }
-          } catch (rangeError) {}
-        } else {
-          snapshotHits++;
-        }
-
-        if (isNonTradingCalendarDay) {
-          if (rawDayClose > 0) {
-            prevClose = rawDayClose;
-            actualPrevTradingDay = todayTradingDay;
-          } else {
-            prevClose = rawPrevDayClose;
-            actualPrevTradingDay = prevTradingDay;
           }
-          backfillPrevClose = rawPrevDayClose;
+        } catch { /* non-fatal */ }
+      } else {
+        snapshotHits++;
+      }
+
+      if (isNonTradingCalendarDay) {
+        if (rawDayClose > 0) {
+          prevClose = rawDayClose;
+          actualPrevTradingDay = todayTradingDay;
         } else {
-          prevClose = rawPrevDayClose > 0 ? rawPrevDayClose : (snapshot?.prevDay?.c || 0);
+          prevClose = rawPrevDayClose;
           actualPrevTradingDay = prevTradingDay;
         }
+        backfillPrevClose = rawPrevDayClose;
+      } else {
+        prevClose = rawPrevDayClose > 0 ? rawPrevDayClose : (snapshot?.prevDay?.c || 0);
+        actualPrevTradingDay = prevTradingDay;
+      }
 
-        if (prevClose > 0 && actualPrevTradingDay) {
-          // 1. Non-trading day backfill: write regularClose for last trading day
-          if (isNonTradingCalendarDay && rawDayClose > 0) {
-            const prevForBackfill = backfillPrevClose > 0 ? backfillPrevClose : prevClose;
-            await writeRegularClose(todayTradingDay, symbol, rawDayClose, { dbRetry: (fn) => dbWriteRetry(fn, `writeRegularClose:${symbol}`) });
-            // Also set previousClose for the last trading day
-            await writePrevClose(date, todayTradingDay, symbol, prevForBackfill, { dbRetry: (fn) => dbWriteRetry(fn, `writePrevClose:backfill:${symbol}`), skipTickerUpdate: true });
-          }
-
-          // 2. REMOVED: Previously wrote prevClose to previousTradingDay's DailyRef, which
-          // overwrote the correct previousClose (set by saveRegularClose from the day before).
-          // This caused previousClose for prevTradingDay to become prevTradingDay's own close
-          // instead of the close from the day before that.
-
-          // 3. Write prevClose for today's calendar date (so heatmap can find it)
-          await writePrevCloseForToday(calendarDateET, symbol, prevClose, { dbRetry: (fn) => dbWriteRetry(fn, `writePrevCloseForToday:${symbol}`), skipTickerUpdate: true });
-        } else {
-          failedCount++;
+      if (prevClose > 0 && actualPrevTradingDay) {
+        // Non-trading day backfill: write regularClose for last trading day
+        if (isNonTradingCalendarDay && rawDayClose > 0) {
+          const prevForBackfill = backfillPrevClose > 0 ? backfillPrevClose : prevClose;
+          await writeRegularClose(todayTradingDay, symbol, rawDayClose, { dbRetry: (fn) => dbWriteRetry(fn, `writeRegularClose:${symbol}`) });
+          await writePrevClose(date, todayTradingDay, symbol, prevForBackfill, { dbRetry: (fn) => dbWriteRetry(fn, `writePrevClose:backfill:${symbol}`), skipTickerUpdate: true });
         }
-      } catch (error) {
-        console.error(`Error bootstrapping ${symbol}:`, error);
+
+        // Write prevClose for today's calendar date (so heatmap can find it)
+        await writePrevCloseForToday(calendarDateET, symbol, prevClose, { dbRetry: (fn) => dbWriteRetry(fn, `writePrevCloseForToday:${symbol}`), skipTickerUpdate: true });
+      } else {
         failedCount++;
       }
+    } catch (error) {
+      console.error(`Error bootstrapping ${symbol}:`, error);
+      failedCount++;
     }
   };
 
   // Split into chunks for parallel processing
-  const chunks: string[][] = [];
   const chunkSize = Math.ceil(tickers.length / DB_CONCURRENCY);
+  const chunks: string[][] = [];
   for (let i = 0; i < tickers.length; i += chunkSize) {
     chunks.push(tickers.slice(i, i + chunkSize));
   }
 
-  await Promise.all(chunks.map(chunk => processChunk(chunk)));
+  await Promise.all(chunks.map(chunk =>
+    Promise.all(chunk.map(symbol => processTicker(symbol)))
+  ));
 
   console.log(`✅ Bootstrap complete: ${snapshotHits} from snapshot, ${fallbackHits} from fallback, ${failedCount} failed`);
-  // Health monitoring: record bootstrap result
   await recordSuccess('bootstrapPreviousCloses', snapshotHits + fallbackHits);
 }
-
-/**
- * Main worker entry point (PM2)
- */

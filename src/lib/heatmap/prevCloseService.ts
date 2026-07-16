@@ -25,6 +25,61 @@ export type PrevCloseWriteResult = {
   ticker: boolean;
 };
 
+const defaultRetry: DbRetryFn = async <T>(fn: () => Promise<T>): Promise<T | null> => {
+  try { return await fn(); } catch { return null; }
+};
+
+const DEFAULT_TICKER_CREATE = {
+  lastPrice: 0,
+  lastChangePct: 0,
+  lastMarketCap: 0,
+  lastMarketCapDiff: 0,
+  lastVolume: 0,
+  sector: 'Unknown',
+  industry: 'Unknown',
+} as const;
+
+function upsertTickerPrevClose(
+  symbol: string,
+  prevClose: number,
+  tradingDay: Date
+) {
+  return prisma.ticker.upsert({
+    where: { symbol },
+    update: { latestPrevClose: prevClose, latestPrevCloseDate: tradingDay },
+    create: {
+      symbol,
+      latestPrevClose: prevClose,
+      latestPrevCloseDate: tradingDay,
+      ...DEFAULT_TICKER_CREATE,
+    },
+  });
+}
+
+function upsertDailyRefPrevClose(
+  symbol: string,
+  tradingDay: Date,
+  prevClose: number
+) {
+  return prisma.dailyRef.upsert({
+    where: { symbol_date: { symbol, date: tradingDay } },
+    update: { previousClose: prevClose, updatedAt: new Date() },
+    create: { symbol, date: tradingDay, previousClose: prevClose, regularClose: null },
+  });
+}
+
+function upsertDailyRefRegularClose(
+  symbol: string,
+  tradingDay: Date,
+  regularClose: number
+) {
+  return prisma.dailyRef.upsert({
+    where: { symbol_date: { symbol, date: tradingDay } },
+    update: { regularClose, updatedAt: new Date() },
+    create: { symbol, date: tradingDay, regularClose, previousClose: 0 },
+  });
+}
+
 /**
  * Write previousClose for a specific trading day.
  *
@@ -52,9 +107,7 @@ export async function writePrevClose(
 ): Promise<PrevCloseWriteResult> {
   const skipTicker = opts?.skipTickerUpdate ?? false;
   const skipRedis = opts?.skipRedis ?? false;
-  const retry = opts?.dbRetry ?? (async <T>(fn: () => Promise<T>): Promise<T | null> => {
-    try { return await fn(); } catch { return null; }
-  });
+  const retry = opts?.dbRetry ?? defaultRetry;
 
   const result: PrevCloseWriteResult = { redis: false, dailyRef: false, ticker: false };
 
@@ -68,16 +121,12 @@ export async function writePrevClose(
       // non-fatal
     }
   } else {
-    result.redis = true; // Already written by caller
+    result.redis = true;
   }
 
   // 2. DailyRef — only update previousClose, preserve existing regularClose
   const drResult = await retry(
-    () => prisma.dailyRef.upsert({
-      where: { symbol_date: { symbol, date: tradingDay } },
-      update: { previousClose: prevClose, updatedAt: new Date() },
-      create: { symbol, date: tradingDay, previousClose: prevClose, regularClose: null },
-    }),
+    () => upsertDailyRefPrevClose(symbol, tradingDay, prevClose),
     `prevCloseService.dailyRef:${symbol}`
   );
   result.dailyRef = drResult !== null;
@@ -85,22 +134,7 @@ export async function writePrevClose(
   // 3. Ticker (optional — saveRegularClose skips this to avoid after-hours inversion)
   if (!skipTicker) {
     const tResult = await retry(
-      () => prisma.ticker.upsert({
-        where: { symbol },
-        update: { latestPrevClose: prevClose, latestPrevCloseDate: tradingDay },
-        create: {
-          symbol,
-          latestPrevClose: prevClose,
-          latestPrevCloseDate: tradingDay,
-          lastPrice: 0,
-          lastChangePct: 0,
-          lastMarketCap: 0,
-          lastMarketCapDiff: 0,
-          lastVolume: 0,
-          sector: 'Unknown',
-          industry: 'Unknown',
-        },
-      }),
+      () => upsertTickerPrevClose(symbol, prevClose, tradingDay),
       `prevCloseService.ticker:${symbol}`
     );
     result.ticker = tResult !== null;
@@ -127,16 +161,10 @@ export async function writeRegularClose(
 ): Promise<boolean> {
   if (regularClose <= 0) return false;
 
-  const retry = opts?.dbRetry ?? (async <T>(fn: () => Promise<T>): Promise<T | null> => {
-    try { return await fn(); } catch { return null; }
-  });
+  const retry = opts?.dbRetry ?? defaultRetry;
 
   const result = await retry(
-    () => prisma.dailyRef.upsert({
-      where: { symbol_date: { symbol, date: tradingDay } },
-      update: { regularClose, updatedAt: new Date() },
-      create: { symbol, date: tradingDay, regularClose, previousClose: 0 },
-    }),
+    () => upsertDailyRefRegularClose(symbol, tradingDay, regularClose),
     `prevCloseService.regularClose:${symbol}`
   );
 

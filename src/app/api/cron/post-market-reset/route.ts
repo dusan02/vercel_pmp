@@ -1,28 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyCronAuth } from '@/lib/utils/cronAuth';
 import { handleCronError, createCronSuccessResponse } from '@/lib/utils/cronErrorHandler';
-import { updateCronStatus } from '@/lib/utils/cronStatus';
 import { saveRegularClose } from '@/workers/polygonWorker';
-import { processBatch } from '@/lib/utils/batchProcessing';
-import { updateTickerSharesOutstanding } from '@/lib/utils/tickerUpdates';
-import { getAllTrackedTickers } from '@/lib/utils/universeHelpers';
-import { getDateET, createETDate } from '@/lib/utils/dateET';
-import { getTradingDay } from '@/lib/utils/timeUtils';
-import { prisma } from '@/lib/db/prisma';
-import { redisClient } from '@/lib/redis';
-import { AnalysisService } from '@/services/analysisService';
-
-const BATCH_SIZE = 50;
-const CONCURRENCY_LIMIT = 10;
+import { getDateET } from '@/lib/utils/dateET';
 
 /**
  * Post-Market Reset Route
- * 
+ *
  * Executed once a day, shortly after 16:00 ET (e.g. 16:30 ET).
- * This performs exactly ONE continuous data handover per day:
- * 1. Saves today's Regular Close as Tomorrow's Previous Close.
- * 2. Clears Movers AI texts for the new day.
- * 3. Updates Shares Outstanding.
+ * This performs the critical data handover:
+ *   Saves today's Regular Close as Tomorrow's Previous Close.
+ *
+ * Non-critical steps (movers reset, shares update, analysis) have been
+ * split into separate cron routes:
+ *   - /api/cron/reset-movers
+ *   - /api/cron/post-market-sync
+ *
+ * Those can be scheduled independently with their own timeouts.
  */
 export async function POST(request: NextRequest) {
     const startTime = Date.now();
@@ -31,7 +25,7 @@ export async function POST(request: NextRequest) {
         const authError = verifyCronAuth(request);
         if (authError) return authError;
 
-        console.log('🚀 Starting Post-Market Daily Reset...');
+        console.log('🚀 Starting Post-Market Reset (saveRegularClose)...');
 
         const apiKey = process.env.POLYGON_API_KEY;
         if (!apiKey) {
@@ -41,105 +35,13 @@ export async function POST(request: NextRequest) {
         const calendarDateETStr = getDateET();
         const runId = Date.now().toString(36);
 
-        // 1. SAVE REGULAR CLOSE
-        // This fetches today's day.c and saves it as previousClose for the NEXT trading day.
-        // It also natively sets the Redis cache for the NEXT trading day.
-        console.log('\n📝 Step 1: Saving regular close for tomorrow...');
         await saveRegularClose(apiKey, calendarDateETStr, runId);
 
-        // Steps 2-4 are non-critical and can run asynchronously to avoid HTTP timeout.
-        // We fire them off and return immediately after Step 1 completes.
-        const remainingSteps = (async () => {
-            try {
-                // 2. RESET MOVERS AI FIELDS
-                console.log('\n📝 Step 2: Resetting Movers AI fields for fresh start...');
-                const updated = await prisma.ticker.updateMany({
-                    where: {
-                        OR: [
-                            { moversReason: { not: null } },
-                            { moversCategory: { not: null } },
-                            { socialCopy: { not: null } },
-                        ]
-                    },
-                    data: {
-                        moversReason: null,
-                        moversCategory: null,
-                        socialCopy: null,
-                        isSbcAlert: false,
-                        aiConfidence: null,
-                    }
-                });
-
-                let redisCleared = 0;
-                if (redisClient && redisClient.isOpen) {
-                    try {
-                        const keys: string[] = [];
-                        const scanIterator = redisClient.scanIterator({ MATCH: 'stock:*', COUNT: 200 });
-                        for await (const key of scanIterator) {
-                            keys.push(key);
-                        }
-
-                        if (keys.length > 0) {
-                            const pipe = redisClient.multi();
-                            for (const key of keys) {
-                                pipe.hDel(key, ['reason', 'cat', 'copy', 'sbc', 'conf']);
-                            }
-                            await pipe.exec();
-                            redisCleared = keys.length;
-                        }
-                    } catch (redisErr) {
-                        console.warn('⚠️ [reset-movers] Redis clear failed (non-fatal):', redisErr);
-                    }
-                }
-                console.log(`✅ Cleared movers AI fields for ${updated.count} DB rows, ${redisCleared} Redis keys.`);
-
-                // 3. UPDATE SHARES OUTSTANDING
-                console.log('\n📝 Step 3: Updating sharesOutstanding...');
-                const allTickers = await getAllTrackedTickers();
-                const sharesResults = await processBatch(
-                    allTickers,
-                    updateTickerSharesOutstanding,
-                    BATCH_SIZE,
-                    CONCURRENCY_LIMIT
-                );
-                console.log(`✅ SharesOutstanding: ${sharesResults.success} updated, ${sharesResults.failed} failed`);
-
-                // 4. RECOMPUTE ANALYSIS FOR ALL TRACKED TICKERS
-                console.log('\n📝 Step 4: Recomputing analysis for all tracked tickers...');
-                const trackedTickers = await getAllTrackedTickers();
-                const analysisResults = await processBatch(
-                    trackedTickers,
-                    async (symbol: string) => {
-                        try {
-                            return await AnalysisService.syncAndAnalyze(symbol);
-                        } catch (err: any) {
-                            console.error(`❌ Analysis error for ${symbol}:`, err.message);
-                            return false;
-                        }
-                    },
-                    5,  // batchSize: 5 tickers per outer batch
-                    3   // concurrencyLimit: 3 parallel within each batch (respects Polygon rate limits)
-                );
-                console.log(`✅ Analysis Sync Complete: ${analysisResults.success} updated, ${analysisResults.failed} failed`);
-
-                await updateCronStatus('post_market_reset');
-                console.log(`✅ Post-market reset background steps completed in ${Date.now() - startTime}ms`);
-            } catch (bgError) {
-                console.error('❌ Post-market reset background steps failed:', bgError);
-            }
-        })();
-
-        // Don't await remainingSteps - let them run in background
-        // This prevents HTTP timeout while Step 1 (critical) already completed
-
         const duration = Date.now() - startTime;
+        console.log(`✅ Post-market reset completed in ${(duration / 1000).toFixed(2)}s`);
 
         return createCronSuccessResponse({
-            message: 'Post-market daily reset: regular close saved, background steps running',
-            results: {
-                regularClose: 'saved',
-                backgroundSteps: 'running (movers reset, shares update, analysis)'
-            },
+            message: 'Post-market reset: regular close saved successfully',
             summary: {
                 duration: `${(duration / 1000).toFixed(2)}s`,
             },

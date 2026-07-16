@@ -11,6 +11,14 @@
         {
             "path": "/api/cron/post-market-reset",
             "schedule": "30 21 * * *"
+        },
+        {
+            "path": "/api/cron/reset-movers",
+            "schedule": "35 21 * * *"
+        },
+        {
+            "path": "/api/cron/post-market-sync",
+            "schedule": "45 21 * * *"
         }
     ],
     "env": {
