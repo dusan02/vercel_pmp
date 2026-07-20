@@ -1,7 +1,8 @@
 import { resolve } from 'path';
+import { createRequire } from 'module';
 
 // Load .env relative to the project root
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+const require = createRequire(import.meta.url);
 const { loadEnvConfig } = require('@next/env');
 loadEnvConfig(resolve(__dirname, '..'));
 
