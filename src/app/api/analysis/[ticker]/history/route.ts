@@ -96,14 +96,12 @@ export async function GET(
             const lastStmtShares = statements[statements.length - 1]!.sharesOutstanding;
             if (lastStmtShares && lastStmtShares > 0) {
                 const ratio = tickerInfo.sharesOutstanding / lastStmtShares;
-                console.log(`[split-debug] ${symbol}: tickerShares=${tickerInfo.sharesOutstanding}, lastStmtShares=${lastStmtShares}, ratio=${ratio.toFixed(2)}`);
                 // Only adjust if shares increased significantly (ratio > 1.5)
                 if (ratio > 1.5) {
                     const commonSplits = [2, 3, 4, 5, 7, 8, 10, 15, 20, 25];
                     const nearestSplit = commonSplits.reduce((best, r) =>
                         Math.abs(ratio - r) < Math.abs(ratio - best) ? r : best
                     );
-                    console.log(`[split-debug] ${symbol}: nearestSplit=${nearestSplit}, diff=${Math.abs(ratio - nearestSplit) / nearestSplit}`);
                     // Ratio must be close to a common split ratio (within 15%)
                     if (Math.abs(ratio - nearestSplit) / nearestSplit <= 0.15) {
                         // Sanity check: compute what EPS would be after adjustment
@@ -112,28 +110,19 @@ export async function GET(
                         const lastStmt = statements[statements.length - 1]!;
                         const { netIncome: ttmNI } = computeTTMAtDate(statements, lastStmt.endDate);
                         const currentPrice = weekly.length > 0 ? weekly[weekly.length - 1]!.closePrice : null;
-                        console.log(`[split-debug] ${symbol}: ttmNI=${ttmNI}, currentPrice=${currentPrice}`);
                         if (ttmNI != null && ttmNI > 0 && currentPrice && currentPrice > 0) {
                             const adjustedShares = lastStmtShares * nearestSplit;
                             const adjustedEPS = ttmNI / adjustedShares;
                             const impliedPE = currentPrice / adjustedEPS;
-                            console.log(`[split-debug] ${symbol}: adjustedShares=${adjustedShares}, adjustedEPS=${adjustedEPS.toFixed(2)}, impliedPE=${impliedPE.toFixed(1)}`);
                             // Only apply adjustment if implied P/E is reasonable
                             if (impliedPE >= 5 && impliedPE <= 300) {
-                                console.log(`[split-debug] ${symbol}: APPLYING split adjustment x${nearestSplit}`);
                                 for (const s of statements) {
                                     if (s.sharesOutstanding && s.sharesOutstanding > 0) {
                                         s.sharesOutstanding = s.sharesOutstanding * nearestSplit;
                                     }
                                 }
-                            } else {
-                                console.log(`[split-debug] ${symbol}: SKIPPED, impliedPE=${impliedPE.toFixed(1)} out of range [5, 300]`);
                             }
-                        } else {
-                            console.log(`[split-debug] ${symbol}: SKIPPED, ttmNI or currentPrice is null/zero`);
                         }
-                    } else {
-                        console.log(`[split-debug] ${symbol}: SKIPPED, ratio doesn't match common split`);
                     }
                 }
             }
@@ -142,47 +131,52 @@ export async function GET(
         const revPerShareHistory: PerSharePoint[] = [];
         const epsPerShareHistory: PerSharePoint[] = [];
 
-        // Detect if a shares outstanding increase is a legitimate stock split
-        // by checking if the price dropped by approximately the same factor.
-        function isLikelyStockSplit(stmtDate: Date, sharesRatio: number): boolean {
-            const commonSplitRatios = [2, 3, 4, 5, 8, 10];
-            const nearest = commonSplitRatios.reduce((best, r) =>
-                Math.abs(sharesRatio - r) < Math.abs(sharesRatio - best) ? r : best
-            );
-            // Shares ratio must be close to a common split ratio (within 15%)
-            if (Math.abs(sharesRatio - nearest) / nearest > 0.15) return false;
-
-            const targetDate = stmtDate.toISOString().split('T')[0]!;
-            // Find price ~4 weeks before and at/after statement date
-            const beforeDate = new Date(stmtDate);
-            beforeDate.setDate(beforeDate.getDate() - 28);
-            const beforeStr = beforeDate.toISOString().split('T')[0]!;
-
-            const priceBefore = sortedPriceDates.filter(d => d <= beforeStr).slice(-1)[0];
-            const priceAfter = sortedPriceDates.filter(d => d >= targetDate)[0];
-            if (!priceBefore || !priceAfter) return false;
-
-            const pBefore = weeklyPriceMap.get(priceBefore)!;
-            const pAfter = weeklyPriceMap.get(priceAfter)!;
-            if (pBefore <= 0 || pAfter <= 0) return false;
-
-            const priceRatio = pBefore / pAfter;
-            // Price should drop by approximately the same factor as shares increased
-            return Math.abs(priceRatio - sharesRatio) / sharesRatio < 0.25;
+        // Compute TTM per-share at each statement date using shared utility.
+        // Pre-process: detect stock split boundaries within the statement history.
+        // Finnhub sometimes has mixed pre-split and post-split shares (e.g. AMZN:
+        // old statements at 509M shares, new statements at 10.87B after 20:1 split).
+        // We detect splits by checking if the shares ratio between consecutive
+        // statements matches a common split ratio. Price history can't verify this
+        // because DailyValuationHistory prices are already split-adjusted.
+        const quarterlyStmts = statements.filter(s => s.fiscalPeriod && s.fiscalPeriod !== 'FY');
+        for (let i = 1; i < quarterlyStmts.length; i++) {
+            const prev = quarterlyStmts[i - 1]!;
+            const curr = quarterlyStmts[i]!;
+            if (prev.sharesOutstanding && prev.sharesOutstanding > 0 &&
+                curr.sharesOutstanding && curr.sharesOutstanding > 0) {
+                const ratio = curr.sharesOutstanding / prev.sharesOutstanding;
+                if (ratio > 1.5) {
+                    const commonSplits = [2, 3, 4, 5, 7, 8, 10, 15, 20, 25];
+                    const nearestSplit = commonSplits.reduce((best, r) =>
+                        Math.abs(ratio - r) < Math.abs(ratio - best) ? r : best
+                    );
+                    if (Math.abs(ratio - nearestSplit) / nearestSplit <= 0.15) {
+                        // Split detected at curr.endDate — multiply all earlier statements by split ratio
+                        for (const s of statements) {
+                            if (s.endDate.getTime() < curr.endDate.getTime() &&
+                                s.sharesOutstanding && s.sharesOutstanding > 0) {
+                                s.sharesOutstanding = s.sharesOutstanding * nearestSplit;
+                            }
+                        }
+                    }
+                }
+            }
         }
 
-        // Compute TTM per-share at each statement date using shared utility.
-        // Guard against anomalous shares outstanding (e.g. Finnhub reporting
-        // in different units) by detecting stock splits via price history.
-        // If shares jump >2x AND price didn't drop proportionally, it's a data error.
         let prevShares: number | null = null;
         for (const s of statements) {
             if (!s.fiscalPeriod || s.fiscalPeriod === 'FY') continue;
             const { netIncome: ttmNI, revenue: ttmRev } = computeTTMAtDate(statements, s.endDate);
             let shares = s.sharesOutstanding;
+            // After split adjustment, shares should be consistent.
+            // If there's still a >2x jump that doesn't match a split ratio, it's a data error.
             if (shares && shares > 0 && prevShares && prevShares > 0 && shares > prevShares * 2) {
                 const sharesRatio = shares / prevShares;
-                if (!isLikelyStockSplit(s.endDate, sharesRatio)) {
+                const commonRatios = [2, 3, 4, 5, 7, 8, 10, 15, 20, 25];
+                const nearest = commonRatios.reduce((best, r) =>
+                    Math.abs(sharesRatio - r) < Math.abs(sharesRatio - best) ? r : best
+                );
+                if (Math.abs(sharesRatio - nearest) / nearest > 0.15) {
                     shares = prevShares; // Data error, not a real split
                 }
             }
