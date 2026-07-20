@@ -36,20 +36,16 @@ function extractFinancialData(html: string): SAData | null {
         else if (html[i] === '}') depth--;
         if (depth === 0) {
             const objStr = html[start] + html.slice(start + 1, i + 1);
-            // Keys are unquoted JS identifiers — wrap them in quotes for JSON.parse
-            const jsonStr = objStr.replace(/([{,])([a-zA-Z_][a-zA-Z0-9_]*):/g, '$1"$2":');
+            // 1. Quote unquoted JS keys: {key: -> {"key":
+            let jsonStr = objStr.replace(/([{,])([a-zA-Z_][a-zA-Z0-9_]*):/g, '$1"$2":');
+            // 2. Fix JS number literals: .06306 -> 0.06306 (valid JSON requires leading digit)
+            jsonStr = jsonStr.replace(/:\s*\.\d/g, ': 0.').replace(/,\s*\.\d/g, ', 0.');
+            jsonStr = jsonStr.replace(/\[-\.\d/g, '[-0.').replace(/\[\.\d/g, '[0.');
             try {
                 return JSON.parse(jsonStr);
-            } catch {
-                // Try a more aggressive regex for keys with special chars
-                const jsonStr2 = objStr.replace(/([{,])([a-zA-Z_][a-zA-Z0-9_]*):/g, '$1"$2":')
-                    .replace(/([{,])([a-zA-Z_]+_[a-zA-Z_]+):/g, '$1"$2":');
-                try {
-                    return JSON.parse(jsonStr2);
-                } catch (e) {
-                    console.error('  Failed to parse financialData JSON:', (e as Error).message);
-                    return null;
-                }
+            } catch (e) {
+                console.error('  Failed to parse financialData JSON:', (e as Error).message);
+                return null;
             }
         }
     }
