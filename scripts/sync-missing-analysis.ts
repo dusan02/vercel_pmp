@@ -51,7 +51,7 @@ async function main() {
       errors.push({ symbol, error: err?.message || 'unknown' });
     }
     // Small delay to respect API rate limits
-    if (i < missing.length - 1) await new Promise(r => setTimeout(r, 300));
+    if (i < missing.length - 1) await new Promise(r => setTimeout(r, 2000));
   }
 
   console.log(`\n=== DONE ===`);
