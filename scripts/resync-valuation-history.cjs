@@ -102,25 +102,27 @@ async function syncOneTicker(symbol) {
     .sort((a, b) => a.endDate.getTime() - b.endDate.getTime());
 
   // Helper: verify a real stock split by checking if raw price dropped proportionally
-  // Since we use adjusted=false, a real split shows a price drop on the split date.
-  // Financial statement dates are quarter-end, but splits happen mid-quarter,
-  // so we search for the price drop within a 90-day window before the statement date.
-  function isSplitReasonable(splitDate, splitRatio) {
-    // Search 90 days before the statement date for a price drop matching splitRatio
-    const windowStart = new Date(splitDate);
-    windowStart.setDate(windowStart.getDate() - 90);
+  // and find the actual split date (price drop date) instead of using statement date.
+  // Searches the full period between previous and current statement.
+  function detectSplit(prevStmtDate, splitDate, detectedRatio) {
+    // Search from 180 days before prevStmtDate to splitDate
+    // (split could happen any time during the quarter)
+    const windowStart = new Date(prevStmtDate || splitDate);
+    windowStart.setDate(windowStart.getDate() - 30);
+    const windowEnd = new Date(splitDate);
+    windowEnd.setDate(windowEnd.getDate() + 7);
 
     // Find all daily prices in the window
     const windowPrices = [];
     for (const agg of aggs) {
       const d = new Date(agg.t);
-      if (d.getTime() >= windowStart.getTime() && d.getTime() <= splitDate.getTime()) {
+      if (d.getTime() >= windowStart.getTime() && d.getTime() <= windowEnd.getTime()) {
         windowPrices.push({ date: d, price: agg.c });
       }
     }
     if (windowPrices.length < 2) {
-      console.log(`  ⚠ ${symbol}: split x${splitRatio} — cannot verify (insufficient price data in window)`);
-      return true; // can't verify, allow
+      console.log(`  ⚠ ${symbol}: split x${detectedRatio} — cannot verify (insufficient price data in window)`);
+      return null;
     }
 
     // Find the largest single-day price drop ratio in the window
@@ -134,16 +136,30 @@ async function syncOneTicker(symbol) {
       }
     }
 
-    // For a real split, the largest drop should be ~splitRatio (within 30% tolerance)
-    const expectedMin = splitRatio * 0.7;
-    const expectedMax = splitRatio * 1.3;
-    const reasonable = maxDropRatio >= expectedMin && maxDropRatio <= expectedMax;
-    if (!reasonable) {
-      console.log(`  ⚠ ${symbol}: split x${splitRatio} rejected — max price drop=${maxDropRatio.toFixed(2)}x (expected ~${splitRatio}x) in 90d window before ${splitDate.toISOString().slice(0, 10)}`);
-    } else {
-      console.log(`  ✓ ${symbol}: split x${splitRatio} confirmed — price drop ${maxDropRatio.toFixed(2)}x on ${dropDate.toISOString().slice(0, 10)}`);
+    // Check if the price drop matches ANY common split ratio (not just the detected one)
+    // Finnhub shares data can be inaccurate, so the detected ratio might differ from actual
+    const commonSplits = [2, 3, 4, 5, 7, 8, 10, 15, 20, 25];
+    let bestMatch = null;
+    for (const r of commonSplits) {
+      if (maxDropRatio >= r * 0.7 && maxDropRatio <= r * 1.3) {
+        bestMatch = r;
+        break;
+      }
     }
-    return reasonable;
+
+    if (bestMatch) {
+      console.log(`  ✓ ${symbol}: split x${bestMatch} confirmed — price drop ${maxDropRatio.toFixed(2)}x on ${dropDate.toISOString().slice(0, 10)} (detected ratio was x${detectedRatio})`);
+      return { date: dropDate, ratio: bestMatch };
+    }
+
+    // Also check if maxDropRatio itself is > 1.5 (might be an uncommon split)
+    if (maxDropRatio > 1.5) {
+      console.log(`  ✓ ${symbol}: split x${maxDropRatio.toFixed(1)} confirmed (uncommon) — price drop on ${dropDate.toISOString().slice(0, 10)}`);
+      return { date: dropDate, ratio: Math.round(maxDropRatio) };
+    }
+
+    console.log(`  ⚠ ${symbol}: split x${detectedRatio} rejected — max price drop=${maxDropRatio.toFixed(2)}x in window before ${splitDate.toISOString().slice(0, 10)}`);
+    return null;
   }
 
   for (let i = 1; i < quarterlyStmts.length; i++) {
@@ -158,9 +174,9 @@ async function syncOneTicker(symbol) {
           Math.abs(ratio - r) < Math.abs(ratio - best) ? r : best
         );
         if (Math.abs(ratio - nearest) / nearest <= 0.15) {
-          if (isSplitReasonable(curr.endDate, nearest)) {
-            splits.push({ date: curr.endDate, ratio: nearest });
-            console.log(`  ⚡ ${symbol}: split x${nearest} detected at ${curr.endDate.toISOString().slice(0, 10)}`);
+          const result = detectSplit(prev.endDate, curr.endDate, nearest);
+          if (result) {
+            splits.push(result);
           }
         }
       }
@@ -185,9 +201,11 @@ async function syncOneTicker(symbol) {
           // Check if we already detected this split
           const alreadyDetected = splits.some(s => s.ratio === nearest &&
             Math.abs(s.date.getTime() - lastQ.endDate.getTime()) < 90 * 86400000);
-          if (!alreadyDetected && isSplitReasonable(lastQ.endDate, nearest)) {
-            splits.push({ date: lastQ.endDate, ratio: nearest });
-            console.log(`  ⚡ ${symbol}: split x${nearest} detected from ticker shares (recent)`);
+          if (!alreadyDetected) {
+            const result = detectSplit(lastQ.endDate, lastQ.endDate, nearest);
+            if (result) {
+              splits.push(result);
+            }
           }
         }
       }
