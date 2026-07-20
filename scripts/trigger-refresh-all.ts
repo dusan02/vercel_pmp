@@ -1,7 +1,10 @@
-import { resolve } from 'path';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
 
 // Load .env relative to the project root
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 const require = createRequire(import.meta.url);
 const { loadEnvConfig } = require('@next/env');
 loadEnvConfig(resolve(__dirname, '..'));
