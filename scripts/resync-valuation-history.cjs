@@ -71,8 +71,8 @@ async function syncOneTicker(symbol) {
   const fromStr = tenYearsAgo.toISOString().slice(0, 10);
   const toStr = toDate.toISOString().slice(0, 10);
 
-  // Polygon aggs with adjusted=true (split-adjusted prices)
-  const url = `https://api.polygon.io/v2/aggs/ticker/${symbol}/range/1/day/${fromStr}/${toStr}?adjusted=true&sort=asc&limit=50000&apiKey=${POLYGON_API_KEY}`;
+  // Polygon aggs with adjusted=false (raw prices) — adjusted=true over-adjusts some tickers
+  const url = `https://api.polygon.io/v2/aggs/ticker/${symbol}/range/1/day/${fromStr}/${toStr}?adjusted=false&sort=asc&limit=50000&apiKey=${POLYGON_API_KEY}`;
 
   const resp = await fetch(url);
   if (!resp.ok) {
@@ -93,6 +93,80 @@ async function syncOneTicker(symbol) {
     orderBy: { endDate: 'desc' },
   });
 
+  // Detect stock splits from shares outstanding jumps in quarterly statements
+  // and build a list of {date, ratio} split events
+  const splits = [];
+  const quarterlyStmts = statements
+    .filter(s => s.fiscalPeriod && s.fiscalPeriod !== 'FY')
+    .sort((a, b) => a.endDate.getTime() - b.endDate.getTime());
+  for (let i = 1; i < quarterlyStmts.length; i++) {
+    const prev = quarterlyStmts[i - 1];
+    const curr = quarterlyStmts[i];
+    if (prev.sharesOutstanding && prev.sharesOutstanding > 0 &&
+        curr.sharesOutstanding && curr.sharesOutstanding > 0) {
+      const ratio = curr.sharesOutstanding / prev.sharesOutstanding;
+      if (ratio > 1.5) {
+        const commonSplits = [2, 3, 4, 5, 7, 8, 10, 15, 20, 25];
+        const nearest = commonSplits.reduce((best, r) =>
+          Math.abs(ratio - r) < Math.abs(ratio - best) ? r : best
+        );
+        if (Math.abs(ratio - nearest) / nearest <= 0.15) {
+          splits.push({ date: curr.endDate, ratio: nearest });
+          console.log(`  ⚡ ${symbol}: split x${nearest} detected at ${curr.endDate.toISOString().slice(0, 10)}`);
+        }
+      }
+    }
+  }
+
+  // Also check Ticker.sharesOutstanding vs last statement for recent splits
+  const tickerInfo = await prisma.ticker.findUnique({
+    where: { symbol },
+    select: { sharesOutstanding: true },
+  });
+  if (tickerInfo?.sharesOutstanding && tickerInfo.sharesOutstanding > 0 && quarterlyStmts.length > 0) {
+    const lastQ = quarterlyStmts[quarterlyStmts.length - 1];
+    if (lastQ?.sharesOutstanding && lastQ.sharesOutstanding > 0) {
+      const ratio = tickerInfo.sharesOutstanding / lastQ.sharesOutstanding;
+      if (ratio > 1.5) {
+        const commonSplits = [2, 3, 4, 5, 7, 8, 10, 15, 20, 25];
+        const nearest = commonSplits.reduce((best, r) =>
+          Math.abs(ratio - r) < Math.abs(ratio - best) ? r : best
+        );
+        if (Math.abs(ratio - nearest) / nearest <= 0.15) {
+          // Check if we already detected this split
+          const alreadyDetected = splits.some(s => s.ratio === nearest &&
+            Math.abs(s.date.getTime() - lastQ.endDate.getTime()) < 90 * 86400000);
+          if (!alreadyDetected) {
+            splits.push({ date: lastQ.endDate, ratio: nearest });
+            console.log(`  ⚡ ${symbol}: split x${nearest} detected from ticker shares (recent)`);
+          }
+        }
+      }
+    }
+  }
+
+  // Function to adjust raw price for splits that occurred after the price date
+  function adjustPrice(rawPrice, priceDate) {
+    let adjusted = rawPrice;
+    for (const split of splits) {
+      if (priceDate.getTime() < split.date.getTime()) {
+        adjusted = adjusted / split.ratio;
+      }
+    }
+    return adjusted;
+  }
+
+  // Apply split adjustment to statements: multiply pre-split shares by split ratio
+  // so that EPS is computed on a post-split basis (matching API route logic)
+  for (const split of splits) {
+    for (const s of statements) {
+      if (s.endDate.getTime() < split.date.getTime() &&
+          s.sharesOutstanding && s.sharesOutstanding > 0) {
+        s.sharesOutstanding = s.sharesOutstanding * split.ratio;
+      }
+    }
+  }
+
   // Delete existing records for this ticker
   await prisma.dailyValuationHistory.deleteMany({ where: { symbol } });
 
@@ -100,7 +174,8 @@ async function syncOneTicker(symbol) {
 
   for (const agg of aggs) {
     const date = new Date(agg.t);
-    const closePrice = agg.c;
+    const rawPrice = agg.c;
+    const closePrice = adjustPrice(rawPrice, date);
 
     let peRatio = null;
     let psRatio = null;
