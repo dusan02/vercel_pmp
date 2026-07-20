@@ -82,9 +82,11 @@ export async function GET(
         // Post-split shares adjustment:
         // If Finnhub doesn't have post-split statements (e.g. AMZN did 20:1 split
         // but last Finnhub statement still has pre-split shares), we detect this
-        // by comparing last statement shares to Ticker.sharesOutstanding.
-        // If the ratio matches a common split ratio AND price history confirms
-        // a proportional price drop, we multiply ALL historical shares by the ratio.
+        // by comparing last statement shares to Ticker.sharesOutstanding (from Polygon).
+        // If the ratio matches a common split ratio, we multiply ALL historical shares
+        // by that ratio to convert pre-split to post-split equivalents.
+        // Note: we can't verify via price history because DailyValuationHistory prices
+        // are already split-adjusted, so the price drop is not visible there.
         const tickerInfo = await prisma.ticker.findUnique({
             where: { symbol },
             select: { sharesOutstanding: true },
@@ -102,25 +104,21 @@ export async function GET(
                     );
                     // Ratio must be close to a common split ratio (within 15%)
                     if (Math.abs(ratio - nearestSplit) / nearestSplit <= 0.15) {
-                        // Verify with price history: price should have dropped by ~same factor
-                        const lastStmtDate = statements[statements.length - 1]!.endDate;
-                        const targetDate = lastStmtDate.toISOString().split('T')[0]!;
-                        const afterDate = new Date();
-                        const priceAtStmt = sortedPriceDates.filter(d => d <= targetDate).slice(-1)[0];
-                        const priceNow = sortedPriceDates.slice(-1)[0];
-                        if (priceAtStmt && priceNow) {
-                            const pBefore = weeklyPriceMap.get(priceAtStmt)!;
-                            const pAfter = weeklyPriceMap.get(priceNow)!;
-                            if (pBefore > 0 && pAfter > 0) {
-                                const priceRatio = pBefore / pAfter;
-                                // Price should be in the same ballpark as the split ratio
-                                // (not exact because price also moves over time, so allow 50% tolerance)
-                                if (priceRatio > nearestSplit * 0.5 && priceRatio < nearestSplit * 2) {
-                                    // Confirmed split — adjust all historical shares
-                                    for (const s of statements) {
-                                        if (s.sharesOutstanding && s.sharesOutstanding > 0) {
-                                            s.sharesOutstanding = s.sharesOutstanding * nearestSplit;
-                                        }
+                        // Sanity check: compute what EPS would be after adjustment
+                        // and verify implied P/E is reasonable (5-200).
+                        // This prevents false positives when Ticker.sharesOutstanding is wrong.
+                        const lastStmt = statements[statements.length - 1]!;
+                        const { netIncome: ttmNI } = computeTTMAtDate(statements, lastStmt.endDate);
+                        const currentPrice = weekly.length > 0 ? weekly[weekly.length - 1]!.closePrice : null;
+                        if (ttmNI != null && ttmNI > 0 && currentPrice && currentPrice > 0) {
+                            const adjustedShares = lastStmtShares * nearestSplit;
+                            const adjustedEPS = ttmNI / adjustedShares;
+                            const impliedPE = currentPrice / adjustedEPS;
+                            // Only apply adjustment if implied P/E is reasonable
+                            if (impliedPE >= 5 && impliedPE <= 200) {
+                                for (const s of statements) {
+                                    if (s.sharesOutstanding && s.sharesOutstanding > 0) {
+                                        s.sharesOutstanding = s.sharesOutstanding * nearestSplit;
                                     }
                                 }
                             }
