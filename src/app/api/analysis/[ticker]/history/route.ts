@@ -96,33 +96,44 @@ export async function GET(
             const lastStmtShares = statements[statements.length - 1]!.sharesOutstanding;
             if (lastStmtShares && lastStmtShares > 0) {
                 const ratio = tickerInfo.sharesOutstanding / lastStmtShares;
+                console.log(`[split-debug] ${symbol}: tickerShares=${tickerInfo.sharesOutstanding}, lastStmtShares=${lastStmtShares}, ratio=${ratio.toFixed(2)}`);
                 // Only adjust if shares increased significantly (ratio > 1.5)
                 if (ratio > 1.5) {
                     const commonSplits = [2, 3, 4, 5, 7, 8, 10, 15, 20, 25];
                     const nearestSplit = commonSplits.reduce((best, r) =>
                         Math.abs(ratio - r) < Math.abs(ratio - best) ? r : best
                     );
+                    console.log(`[split-debug] ${symbol}: nearestSplit=${nearestSplit}, diff=${Math.abs(ratio - nearestSplit) / nearestSplit}`);
                     // Ratio must be close to a common split ratio (within 15%)
                     if (Math.abs(ratio - nearestSplit) / nearestSplit <= 0.15) {
                         // Sanity check: compute what EPS would be after adjustment
-                        // and verify implied P/E is reasonable (5-200).
+                        // and verify implied P/E is reasonable (5-300).
                         // This prevents false positives when Ticker.sharesOutstanding is wrong.
                         const lastStmt = statements[statements.length - 1]!;
                         const { netIncome: ttmNI } = computeTTMAtDate(statements, lastStmt.endDate);
                         const currentPrice = weekly.length > 0 ? weekly[weekly.length - 1]!.closePrice : null;
+                        console.log(`[split-debug] ${symbol}: ttmNI=${ttmNI}, currentPrice=${currentPrice}`);
                         if (ttmNI != null && ttmNI > 0 && currentPrice && currentPrice > 0) {
                             const adjustedShares = lastStmtShares * nearestSplit;
                             const adjustedEPS = ttmNI / adjustedShares;
                             const impliedPE = currentPrice / adjustedEPS;
+                            console.log(`[split-debug] ${symbol}: adjustedShares=${adjustedShares}, adjustedEPS=${adjustedEPS.toFixed(2)}, impliedPE=${impliedPE.toFixed(1)}`);
                             // Only apply adjustment if implied P/E is reasonable
                             if (impliedPE >= 5 && impliedPE <= 300) {
+                                console.log(`[split-debug] ${symbol}: APPLYING split adjustment x${nearestSplit}`);
                                 for (const s of statements) {
                                     if (s.sharesOutstanding && s.sharesOutstanding > 0) {
                                         s.sharesOutstanding = s.sharesOutstanding * nearestSplit;
                                     }
                                 }
+                            } else {
+                                console.log(`[split-debug] ${symbol}: SKIPPED, impliedPE=${impliedPE.toFixed(1)} out of range [5, 300]`);
                             }
+                        } else {
+                            console.log(`[split-debug] ${symbol}: SKIPPED, ttmNI or currentPrice is null/zero`);
                         }
+                    } else {
+                        console.log(`[split-debug] ${symbol}: SKIPPED, ratio doesn't match common split`);
                     }
                 }
             }
