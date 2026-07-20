@@ -95,10 +95,37 @@ async function syncOneTicker(symbol) {
 
   // Detect stock splits from shares outstanding jumps in quarterly statements
   // and build a list of {date, ratio} split events
+  // Sanity check: verify adjusted P/E is reasonable (5-300) to avoid false positives
   const splits = [];
   const quarterlyStmts = statements
     .filter(s => s.fiscalPeriod && s.fiscalPeriod !== 'FY')
     .sort((a, b) => a.endDate.getTime() - b.endDate.getTime());
+
+  // Helper: check if a split produces reasonable P/E
+  function isSplitReasonable(splitDate, splitRatio) {
+    // Find a price near the split date (before it) and compute P/E with adjusted shares
+    const beforeDate = new Date(splitDate);
+    beforeDate.setDate(beforeDate.getDate() - 30);
+    const beforeStr = beforeDate.toISOString().slice(0, 10);
+    const priceRow = aggs.find(a => {
+      const d = new Date(a.t);
+      return d.toISOString().slice(0, 10) <= beforeStr;
+    });
+    if (!priceRow) return true; // can't verify, allow
+    const rawPrice = priceRow.c;
+    const adjustedPrice = rawPrice / splitRatio;
+    // Find statement before split date for TTM
+    const { netIncome: ttmNI } = computeTTMAtDate(statements, beforeDate);
+    const stmt = statements.find(s => s.endDate.getTime() <= beforeDate.getTime()) || statements[statements.length - 1];
+    if (!stmt?.sharesOutstanding || !ttmNI || ttmNI <= 0) return true;
+    const adjustedShares = stmt.sharesOutstanding * splitRatio;
+    const adjustedEPS = ttmNI / adjustedShares;
+    const impliedPE = adjustedPrice / adjustedEPS;
+    const reasonable = impliedPE >= 5 && impliedPE <= 300;
+    if (!reasonable) console.log(`  ⚠ ${symbol}: split x${splitRatio} rejected — implied P/E=${impliedPE.toFixed(1)}`);
+    return reasonable;
+  }
+
   for (let i = 1; i < quarterlyStmts.length; i++) {
     const prev = quarterlyStmts[i - 1];
     const curr = quarterlyStmts[i];
@@ -111,8 +138,10 @@ async function syncOneTicker(symbol) {
           Math.abs(ratio - r) < Math.abs(ratio - best) ? r : best
         );
         if (Math.abs(ratio - nearest) / nearest <= 0.15) {
-          splits.push({ date: curr.endDate, ratio: nearest });
-          console.log(`  ⚡ ${symbol}: split x${nearest} detected at ${curr.endDate.toISOString().slice(0, 10)}`);
+          if (isSplitReasonable(curr.endDate, nearest)) {
+            splits.push({ date: curr.endDate, ratio: nearest });
+            console.log(`  ⚡ ${symbol}: split x${nearest} detected at ${curr.endDate.toISOString().slice(0, 10)}`);
+          }
         }
       }
     }
@@ -136,7 +165,7 @@ async function syncOneTicker(symbol) {
           // Check if we already detected this split
           const alreadyDetected = splits.some(s => s.ratio === nearest &&
             Math.abs(s.date.getTime() - lastQ.endDate.getTime()) < 90 * 86400000);
-          if (!alreadyDetected) {
+          if (!alreadyDetected && isSplitReasonable(lastQ.endDate, nearest)) {
             splits.push({ date: lastQ.endDate, ratio: nearest });
             console.log(`  ⚡ ${symbol}: split x${nearest} detected from ticker shares (recent)`);
           }
