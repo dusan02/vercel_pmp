@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { MarketSignals } from './MarketSignals';
 import { NotificationToggle } from '../notifications/NotificationToggle';
 import { formatMarketCap } from '@/lib/utils/format';
@@ -171,7 +172,7 @@ export function GlobalScreener() {
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
                                             {item.ticker?.logoUrl ? (
-                                                <img src={item.ticker.logoUrl} alt="" className="w-8 h-8 rounded-full bg-gray-100 p-1" />
+                                                <Image src={item.ticker.logoUrl} alt={`${item.symbol} logo`} width={32} height={32} className="w-8 h-8 rounded-full bg-gray-100 p-1" unoptimized />
                                             ) : (
                                                 <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center font-bold text-xs">
                                                     {item.symbol[0]}

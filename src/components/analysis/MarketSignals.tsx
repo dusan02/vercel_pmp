@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 
 interface Alert {
     symbol: string;
@@ -74,7 +75,7 @@ export function MarketSignals() {
 
                         <div className="flex items-center gap-3 mb-3">
                             {alert.ticker.logoUrl ? (
-                                <img src={alert.ticker.logoUrl} alt="" className="w-10 h-10 rounded-full bg-gray-50 p-1" />
+                                <Image src={alert.ticker.logoUrl} alt={`${alert.symbol} logo`} width={40} height={40} className="w-10 h-10 rounded-full bg-gray-50 p-1" unoptimized />
                             ) : (
                                 <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center font-bold text-blue-600">
                                     {alert.symbol[0]}

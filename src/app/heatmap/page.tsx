@@ -31,7 +31,6 @@ export default function HeatmapPage() {
 
   // Handler pre exit fullscreen (návrat na homepage)
   const handleExitFullscreen = useCallback(() => {
-    console.log('🔄 Exit fullscreen clicked');
     event('heatmap_fullscreen_toggle', { enabled: false });
     router.push('/');
   }, [router]);

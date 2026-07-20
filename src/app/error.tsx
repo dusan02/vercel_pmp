@@ -1,42 +1,7 @@
-'use client'; // Error components must be Client Components
+'use client';
 
 import { useEffect, useState } from 'react';
-
-const isChunkLoadError = (msg: string) => {
-  const m = (msg || '').toLowerCase();
-  return (
-    m.includes('chunkloaderror') ||
-    m.includes('loading chunk') ||
-    m.includes('failed to load chunk') ||
-    m.includes('dynamically imported module')
-  );
-};
-
-async function hardReload() {
-  try {
-    if (typeof caches !== 'undefined' && caches.keys) {
-      const keys = await caches.keys();
-      await Promise.all(keys.map((k) => caches.delete(k)));
-    }
-  } catch { /* ignore */ }
-
-  try {
-    if ('serviceWorker' in navigator) {
-      const regs = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(regs.map((r) => r.unregister()));
-    }
-  } catch { /* ignore */ }
-
-  await new Promise(resolve => setTimeout(resolve, 300));
-
-  try {
-    const url = new URL(window.location.href);
-    url.searchParams.set('_recover', String(Date.now()));
-    window.location.replace(url.toString());
-  } catch {
-    window.location.reload();
-  }
-}
+import { isChunkLoadError, hardReload } from '@/lib/utils/chunkRecovery';
 
 export default function Error({
   error,
@@ -50,16 +15,14 @@ export default function Error({
   useEffect(() => {
     console.error('App Error:', error);
 
-    if (isChunkError) {
-      if (typeof window !== 'undefined') {
-        const key = 'chunk_load_error_reload';
-        const now = Date.now();
-        const lastReload = parseInt(sessionStorage.getItem(key) || '0', 10);
+    if (isChunkError && typeof window !== 'undefined') {
+      const key = 'chunk_load_error_reload';
+      const now = Date.now();
+      const lastReload = parseInt(sessionStorage.getItem(key) || '0', 10);
 
-        if (now - lastReload > 10000) {
-          sessionStorage.setItem(key, now.toString());
-          void hardReload();
-        }
+      if (now - lastReload > 10000) {
+        sessionStorage.setItem(key, now.toString());
+        void hardReload(key);
       }
     }
   }, [error, isChunkError]);
@@ -72,7 +35,7 @@ export default function Error({
           A new version was deployed. Refreshing automatically to get the latest update.
         </p>
         <button
-          onClick={() => void hardReload()}
+          onClick={() => void hardReload('chunk_load_error_reload')}
           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
         >
           Reload now

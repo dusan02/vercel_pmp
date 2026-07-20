@@ -194,8 +194,8 @@ export default async function Page() {
       {/* Server-rendered internal links (helps crawl/discovery even if the main UI is client-heavy) */}
       <nav className="sr-only" aria-label="Primary navigation">
         <Link href="/premarket-movers">Premarket Movers</Link>
-        <Link href="/gainers">Top Gainers</Link>
-        <Link href="/losers">Top Losers</Link>
+        <Link href="/?tab=movers">Top Gainers</Link>
+        <Link href="/?tab=movers">Top Losers</Link>
         <Link href="/sectors">Sectors</Link>
         <Link href="/stocks">All Stocks</Link>
         <Link href="/heatmap">Market Heatmap</Link>

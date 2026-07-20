@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutGrid, PieChart, Star, Calendar, Globe, BarChart3 } from 'lucide-react';
+import { LayoutGrid, PieChart, Star, Calendar, Globe, BarChart3, Zap } from 'lucide-react';
 
 type NavSection = 'heatmap' | 'analysis' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks' | 'movers';
 
@@ -50,6 +50,13 @@ export function BottomNavigation({ activeSection, onSectionChange }: BottomNavig
       icon: Calendar,
       path: '/#earnings',
       isActive: (section?: string) => section === 'earnings'
+    },
+    {
+      id: 'movers',
+      label: 'Movers',
+      icon: Zap,
+      path: '/#movers',
+      isActive: (section?: string) => section === 'movers'
     },
     {
       id: 'allStocks',
