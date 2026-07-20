@@ -277,7 +277,6 @@ async function main() {
     symbols = argTickers.map(s => s.toUpperCase());
   } else {
     const tickers = await prisma.ticker.findMany({
-      where: { active: true },
       select: { symbol: true },
       orderBy: { symbol: 'asc' },
     });
