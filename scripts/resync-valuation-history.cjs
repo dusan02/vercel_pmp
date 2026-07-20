@@ -101,28 +101,38 @@ async function syncOneTicker(symbol) {
     .filter(s => s.fiscalPeriod && s.fiscalPeriod !== 'FY')
     .sort((a, b) => a.endDate.getTime() - b.endDate.getTime());
 
-  // Helper: check if a split produces reasonable P/E
+  // Helper: verify a real stock split by checking if raw price dropped proportionally
+  // Since we use adjusted=false, a real split shows a price drop on the split date
   function isSplitReasonable(splitDate, splitRatio) {
-    // Find a price near the split date (before it) and compute P/E with adjusted shares
+    // Find price ~7 days before and ~7 days after split date
     const beforeDate = new Date(splitDate);
-    beforeDate.setDate(beforeDate.getDate() - 30);
-    const beforeStr = beforeDate.toISOString().slice(0, 10);
-    const priceRow = aggs.find(a => {
-      const d = new Date(a.t);
-      return d.toISOString().slice(0, 10) <= beforeStr;
-    });
-    if (!priceRow) return true; // can't verify, allow
-    const rawPrice = priceRow.c;
-    const adjustedPrice = rawPrice / splitRatio;
-    // Find statement before split date for TTM
-    const { netIncome: ttmNI } = computeTTMAtDate(statements, beforeDate);
-    const stmt = statements.find(s => s.endDate.getTime() <= beforeDate.getTime()) || statements[statements.length - 1];
-    if (!stmt?.sharesOutstanding || !ttmNI || ttmNI <= 0) return true;
-    const adjustedShares = stmt.sharesOutstanding * splitRatio;
-    const adjustedEPS = ttmNI / adjustedShares;
-    const impliedPE = adjustedPrice / adjustedEPS;
-    const reasonable = impliedPE >= 5 && impliedPE <= 300;
-    if (!reasonable) console.log(`  ⚠ ${symbol}: split x${splitRatio} rejected — implied P/E=${impliedPE.toFixed(1)}`);
+    beforeDate.setDate(beforeDate.getDate() - 7);
+    const afterDate = new Date(splitDate);
+    afterDate.setDate(afterDate.getDate() + 7);
+
+    let priceBefore = null;
+    let priceAfter = null;
+    for (const agg of aggs) {
+      const d = new Date(agg.t);
+      if (d.getTime() <= beforeDate.getTime()) priceBefore = agg.c;
+      if (d.getTime() >= splitDate.getTime() && d.getTime() <= afterDate.getTime()) {
+        priceAfter = agg.c;
+        break;
+      }
+    }
+    if (!priceBefore || !priceAfter || priceBefore <= 0 || priceAfter <= 0) {
+      console.log(`  ⚠ ${symbol}: split x${splitRatio} — cannot verify (no price data around split date)`);
+      return true; // can't verify, allow
+    }
+    const priceRatio = priceBefore / priceAfter;
+    // For a real split, price should drop by ~splitRatio (within 30% tolerance)
+    // e.g. 20:1 split: priceBefore/priceAfter should be ~20
+    const expectedMin = splitRatio * 0.7;
+    const expectedMax = splitRatio * 1.3;
+    const reasonable = priceRatio >= expectedMin && priceRatio <= expectedMax;
+    if (!reasonable) {
+      console.log(`  ⚠ ${symbol}: split x${splitRatio} rejected — price ratio=${priceRatio.toFixed(2)} (expected ~${splitRatio}), before=${priceBefore.toFixed(2)} after=${priceAfter.toFixed(2)}`);
+    }
     return reasonable;
   }
 
