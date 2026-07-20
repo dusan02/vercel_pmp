@@ -4,6 +4,7 @@ import { SECTOR_INDUSTRY_OVERRIDES } from '@/data/sectorIndustryOverrides';
 import { normalizeSectorIndustryPair } from '@/lib/utils/sectorIndustryValidator';
 import { getCacheKey } from '@/lib/redis/keys';
 import { getDateET, createETDate, toET } from '@/lib/utils/dateET';
+import { getLastTradingDay } from '@/lib/utils/timeUtils';
 
 export interface TickerInfo {
   name: string;
@@ -228,7 +229,7 @@ export function computeDateBoundaries(now: Date) {
   const today = createETDate(todayYMD);
   const tomorrow = createETDate(tomorrowYMD);
   const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const dayAgo = getLastTradingDay(now);
 
   return { todayYMD, today, tomorrow, oneWeekAgo, dayAgo };
 }

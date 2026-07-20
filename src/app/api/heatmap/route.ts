@@ -215,7 +215,7 @@ export async function GET(request: NextRequest) {
       console.warn(`  - No SessionPrice records found for ${tickerSymbols.length} tickers`);
       console.warn(`  - No DailyRef records found`);
       console.warn(`  - All tickers skipped due to missing price or market cap`);
-      console.warn(`  - Date range: ${dayAgo.toISOString()} to ${tomorrow.toISOString()} (24h window)`);
+      console.warn(`  - Date range: ${dayAgo.toISOString()} to ${tomorrow.toISOString()} (last trading day window)`);
     }
 
     // 12. Build payload
