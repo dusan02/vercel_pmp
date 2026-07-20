@@ -184,6 +184,7 @@ export async function syncFinancials(symbol: string): Promise<void> {
             for (const item of results) {
                 const { year, quarter, endDate, report } = item;
                 if (!year || !endDate || !report) continue;
+                if (year < 2016) continue; // Only keep 2016+ data (10 year window)
 
                 // Určenie obdobia
                 const fiscalYear = year;
