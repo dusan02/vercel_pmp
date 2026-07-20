@@ -38,7 +38,9 @@ function extractFinancialData(html: string): SAData | null {
             const objStr = html[start] + html.slice(start + 1, i + 1);
             // 1. Quote unquoted JS keys: {key: -> {"key":
             let jsonStr = objStr.replace(/([{,])([a-zA-Z_][a-zA-Z0-9_]*):/g, '$1"$2":');
-            // 2. Fix JS number literals without leading zero: .06306 -> 0.06306, -.06306 -> -0.06306
+            // 2. Replace JS void 0 (undefined) with null for valid JSON
+            jsonStr = jsonStr.replace(/void 0/g, 'null');
+            // 3. Fix JS number literals without leading zero: .06306 -> 0.06306, -.06306 -> -0.06306
             //    JSON requires a leading digit before the decimal point
             jsonStr = jsonStr.replace(/([\[:,\[])(-?)\.(\d)/g, '$1$20.$3');
             try {
