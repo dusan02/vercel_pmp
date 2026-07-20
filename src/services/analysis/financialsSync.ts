@@ -231,12 +231,27 @@ export async function syncFinancials(symbol: string): Promise<void> {
                 }
                 
                 let ebit = extract(report, 'ic', [
-                    'us-gaap_OperatingIncomeLoss', 'us-gaap_IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest'
+                    'us-gaap_OperatingIncomeLoss',
+                    'us-gaap_IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest',
+                    'us-gaap_OperatingIncomeLossFromContinuingOperations',
+                    // Without prefix
+                    'OperatingIncomeLoss',
+                    'IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest'
                 ]);
                 if (ebit === null && grossProfit !== null) {
                     const rnde = extract(report, 'ic', ['us-gaap_ResearchAndDevelopmentExpense']) || 0;
                     const sgae = extract(report, 'ic', ['us-gaap_SellingGeneralAndAdministrativeExpense']) || 0;
                     ebit = grossProfit - rnde - sgae;
+                }
+                // Fallback: revenue - total costs and expenses
+                if (ebit === null && revenue !== null) {
+                    const costsAndExpenses = extract(report, 'ic', [
+                        'us-gaap_CostsAndExpenses', 'us-gaap_CostOfRevenue',
+                        'us-gaap_CostOfGoodsAndServicesSold', 'us-gaap_CostOfGoodsSold'
+                    ]);
+                    if (costsAndExpenses !== null) {
+                        ebit = revenue - costsAndExpenses;
+                    }
                 }
 
                 const operatingCashFlow = extract(report, 'cf', [
