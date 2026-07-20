@@ -110,6 +110,43 @@ async function syncFromStockAnalysis(symbol: string): Promise<number> {
     return upserted;
 }
 
+// ─── XBRL extraction helpers (module-level for reusability) ──────────
+
+const isValidValue = (v: any) => v !== undefined && v !== null && v !== 'N/A' && v !== '';
+
+function extract(report: any, section: string, concepts: string[]): number | null {
+    const list = report[section] || [];
+    for (const concept of concepts) {
+        const found = list.find((item: any) => item.concept === concept);
+        if (found && isValidValue(found.value)) return found.value;
+        const shortConcept = concept.replace(/^us-gaap_/, '');
+        const foundShort = list.find((item: any) => item.concept === shortConcept);
+        if (foundShort && isValidValue(foundShort.value)) return foundShort.value;
+    }
+    return null;
+}
+
+function extractSum(report: any, section: string, concepts: string[]): number | null {
+    const list = report[section] || [];
+    let sum = 0;
+    let found = false;
+    for (const concept of concepts) {
+        const item = list.find((i: any) => i.concept === concept);
+        if (item && isValidValue(item.value)) {
+            sum += item.value;
+            found = true;
+            continue;
+        }
+        const shortConcept = concept.replace(/^us-gaap_/, '');
+        const itemShort = list.find((i: any) => i.concept === shortConcept);
+        if (itemShort && isValidValue(itemShort.value)) {
+            sum += itemShort.value;
+            found = true;
+        }
+    }
+    return found ? sum : null;
+}
+
 /**
  * Sync financial statements from Finnhub XBRL API.
  * Falls back to stockanalysis.com scraper for ADR/foreign tickers not in Finnhub.
@@ -141,45 +178,6 @@ export async function syncFinancials(symbol: string): Promise<void> {
             const data: any = await res.json();
             
             const results = data.data || [];
-
-            // Helper to extract value from Finnhub XBRL concepts
-            const extract = (report: any, section: string, concepts: string[]): number | null => {
-                const list = report[section] || [];
-                const isValid = (v: any) => v !== undefined && v !== null && v !== 'N/A' && v !== '';
-                for (const concept of concepts) {
-                    const found = list.find((item: any) => item.concept === concept);
-                    if (found && isValid(found.value)) return found.value;
-                    // Also try without us-gaap_ prefix (some filings omit it)
-                    const shortConcept = concept.replace(/^us-gaap_/, '');
-                    const foundShort = list.find((item: any) => item.concept === shortConcept);
-                    if (foundShort && isValid(foundShort.value)) return foundShort.value;
-                }
-                return null;
-            };
-
-            // Helper: sum multiple XBRL concepts (for cash which companies split across items)
-            const extractSum = (report: any, section: string, concepts: string[]): number | null => {
-                const list = report[section] || [];
-                let sum = 0;
-                let found = false;
-                const isValid = (v: any) => v !== undefined && v !== null && v !== 'N/A' && v !== '';
-                for (const concept of concepts) {
-                    const item = list.find((i: any) => i.concept === concept);
-                    if (item && isValid(item.value)) {
-                        sum += item.value;
-                        found = true;
-                        continue;
-                    }
-                    // Also try without us-gaap_ prefix
-                    const shortConcept = concept.replace(/^us-gaap_/, '');
-                    const itemShort = list.find((i: any) => i.concept === shortConcept);
-                    if (itemShort && isValid(itemShort.value)) {
-                        sum += itemShort.value;
-                        found = true;
-                    }
-                }
-                return found ? sum : null;
-            };
 
             for (const item of results) {
                 const { year, quarter, endDate, report } = item;
@@ -219,14 +217,28 @@ export async function syncFinancials(symbol: string): Promise<void> {
                 const netIncome = extract(report, 'ic', [
                     'us-gaap_NetIncomeLoss', 'us-gaap_NetIncomeLossAvailableToCommonStockholdersBasic', 'us-gaap_ProfitLoss'
                 ]);
-                let grossProfit = extract(report, 'ic', ['us-gaap_GrossProfit']);
-                // Fallback: compute from Revenue - COGS if gross profit not directly reported
+                let grossProfit = extract(report, 'ic', [
+                    'us-gaap_GrossProfit',
+                    // Without prefix
+                    'GrossProfit'
+                ]);
+                // Fallback 1: compute from Revenue - COGS
                 if (grossProfit === null && revenue !== null) {
                     const cogs = extract(report, 'ic', [
-                        'us-gaap_CostOfGoodsAndServicesSold', 'us-gaap_CostOfRevenue', 'us-gaap_CostOfGoodsSold'
+                        'us-gaap_CostOfGoodsAndServicesSold', 'us-gaap_CostOfRevenue', 'us-gaap_CostOfGoodsSold',
+                        'us-gaap_CostOfServices', 'us-gaap_CostOfGoodsSoldExcludingDepreciationDepletionAndAmortization',
+                        // Without prefix
+                        'CostOfGoodsAndServicesSold', 'CostOfRevenue', 'CostOfGoodsSold', 'CostOfServices'
                     ]);
                     if (cogs !== null) {
                         grossProfit = revenue - cogs;
+                    }
+                }
+                // Fallback 2: Revenue - COGS - SGA (some companies bundle costs)
+                if (grossProfit === null && revenue !== null) {
+                    const costsAndExpenses = extract(report, 'ic', ['us-gaap_CostsAndExpenses', 'CostsAndExpenses']);
+                    if (costsAndExpenses !== null) {
+                        grossProfit = revenue - costsAndExpenses;
                     }
                 }
                 
@@ -259,8 +271,13 @@ export async function syncFinancials(symbol: string): Promise<void> {
                     'us-gaap_NetCashProvidedByUsedInOperatingActivitiesContinuingOperations'
                 ]);
                 const capex = extract(report, 'cf', [
-                    'us-gaap_PaymentsToAcquirePropertyPlantAndEquipment', 'us-gaap_PaymentsToAcquireOtherPropertyPlantAndEquipment', 
-                    'us-gaap_PaymentsToAcquireProductiveAssets'
+                    'us-gaap_PaymentsToAcquirePropertyPlantAndEquipment', 'us-gaap_PaymentsToAcquireOtherPropertyPlantAndEquipment',
+                    'us-gaap_PaymentsToAcquireProductiveAssets',
+                    'us-gaap_PaymentsToAcquireFixedAssets',
+                    'us-gaap_CapitalExpenditureIncurredForPropertyPlantAndEquipment',
+                    // Without prefix
+                    'PaymentsToAcquirePropertyPlantAndEquipment', 'PaymentsToAcquireProductiveAssets',
+                    'CapitalExpenditureIncurredForPropertyPlantAndEquipment'
                 ]);
                 
                 const totalAssets = extract(report, 'bs', ['us-gaap_Assets']);
