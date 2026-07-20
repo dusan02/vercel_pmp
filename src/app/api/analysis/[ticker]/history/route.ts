@@ -115,7 +115,7 @@ export async function GET(
                             const adjustedEPS = ttmNI / adjustedShares;
                             const impliedPE = currentPrice / adjustedEPS;
                             // Only apply adjustment if implied P/E is reasonable
-                            if (impliedPE >= 5 && impliedPE <= 200) {
+                            if (impliedPE >= 5 && impliedPE <= 300) {
                                 for (const s of statements) {
                                     if (s.sharesOutstanding && s.sharesOutstanding > 0) {
                                         s.sharesOutstanding = s.sharesOutstanding * nearestSplit;
