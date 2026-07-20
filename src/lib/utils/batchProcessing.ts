@@ -17,7 +17,8 @@ export async function processBatch<T>(
   processor: (item: T) => Promise<boolean>,
   batchSize: number = 50,
   concurrencyLimit: number = 10,
-  onBatchProgress?: (batchNum: number, totalBatches: number, batchSize: number) => void
+  onBatchProgress?: (batchNum: number, totalBatches: number, batchSize: number) => void,
+  interBatchDelay: number = 200
 ): Promise<BatchResult> {
   let success = 0;
   let failed = 0;
@@ -58,7 +59,7 @@ export async function processBatch<T>(
 
     // Delay between batches
     if (i + batchSize < items.length) {
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise(resolve => setTimeout(resolve, interBatchDelay));
     }
   }
 

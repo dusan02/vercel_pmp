@@ -40,7 +40,9 @@ export async function GET(request: NextRequest) {
             }
         },
         5,  // batchSize
-        2   // concurrencyLimit (conservative — Polygon rate limits)
+        2,  // concurrencyLimit (conservative — Polygon rate limits)
+        undefined,
+        5000  // interBatchDelay — 5s between batches to avoid Finnhub 429
     );
 
     const totalMs = Date.now() - startedAt;

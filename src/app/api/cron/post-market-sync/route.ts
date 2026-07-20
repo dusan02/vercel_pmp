@@ -54,7 +54,9 @@ export async function POST(request: NextRequest) {
                 }
             },
             5,  // batchSize: 5 tickers per outer batch
-            3   // concurrencyLimit: 3 parallel within each batch (respects Polygon rate limits)
+            3,  // concurrencyLimit: 3 parallel within each batch (respects Polygon rate limits)
+            undefined,
+            5000  // interBatchDelay — 5s between batches to avoid Finnhub 429
         );
         console.log(`✅ Analysis Sync Complete: ${analysisResults.success} updated, ${analysisResults.failed} failed`);
 
