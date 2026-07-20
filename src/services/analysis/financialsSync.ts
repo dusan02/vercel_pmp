@@ -147,7 +147,11 @@ export async function syncFinancials(symbol: string): Promise<void> {
                 const list = report[section] || [];
                 for (const concept of concepts) {
                     const found = list.find((item: any) => item.concept === concept);
-                    if (found && found.value !== undefined) return found.value;
+                    if (found && found.value !== undefined && found.value !== null) return found.value;
+                    // Also try without us-gaap_ prefix (some filings omit it)
+                    const shortConcept = concept.replace(/^us-gaap_/, '');
+                    const foundShort = list.find((item: any) => item.concept === shortConcept);
+                    if (foundShort && foundShort.value !== undefined && foundShort.value !== null) return foundShort.value;
                 }
                 return null;
             };
@@ -159,8 +163,16 @@ export async function syncFinancials(symbol: string): Promise<void> {
                 let found = false;
                 for (const concept of concepts) {
                     const item = list.find((i: any) => i.concept === concept);
-                    if (item && item.value !== undefined) {
+                    if (item && item.value !== undefined && item.value !== null) {
                         sum += item.value;
+                        found = true;
+                        continue;
+                    }
+                    // Also try without us-gaap_ prefix
+                    const shortConcept = concept.replace(/^us-gaap_/, '');
+                    const itemShort = list.find((i: any) => i.concept === shortConcept);
+                    if (itemShort && itemShort.value !== undefined && itemShort.value !== null) {
+                        sum += itemShort.value;
                         found = true;
                     }
                 }
