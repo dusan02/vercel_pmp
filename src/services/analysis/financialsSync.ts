@@ -314,14 +314,27 @@ export async function syncFinancials(symbol: string): Promise<void> {
                 const interestExpense = extract(report, 'ic', ['us-gaap_InterestExpense', 'us-gaap_InterestExpenseDebt']);
                 
                 const longTermDebt = extract(report, 'bs', [
-                    'us-gaap_LongTermDebtNoncurrent', 'us-gaap_LongTermDebtAndCapitalLeaseObligations', 'us-gaap_LongTermDebt'
+                    'us-gaap_LongTermDebtNoncurrent', 'us-gaap_LongTermDebtAndCapitalLeaseObligations', 'us-gaap_LongTermDebt',
+                    'us-gaap_LongTermDebtFairValue', 'us-gaap_LongTermLineOfCredit',
+                    // Without prefix
+                    'LongTermDebtNoncurrent', 'LongTermDebt'
                 ]);
                 const shortTermDebt = extract(report, 'bs', [
-                    'us-gaap_DebtCurrent', 'us-gaap_ShortTermBorrowings', 'us-gaap_LongTermDebtAndCapitalLeaseObligationsCurrent'
+                    'us-gaap_DebtCurrent', 'us-gaap_ShortTermBorrowings', 'us-gaap_LongTermDebtAndCapitalLeaseObligationsCurrent',
+                    'us-gaap_CommercialPaper', 'us-gaap_ShortTermDebt',
+                    // Without prefix
+                    'DebtCurrent', 'ShortTermBorrowings'
                 ]);
                 let totalDebt = null;
                 if (longTermDebt !== null || shortTermDebt !== null) {
                     totalDebt = (longTermDebt || 0) + (shortTermDebt || 0);
+                }
+                // Fallback: try direct total debt concept
+                if (totalDebt === null) {
+                    totalDebt = extract(report, 'bs', [
+                        'us-gaap_DebtLongtermAndShorttermCombined', 'us-gaap_LiabilitiesNoncurrent',
+                        'us-gaap_LongTermDebtAndShortTermDebt'
+                    ]);
                 }
 
                 // Cash extraction — multi-strategy for maximum coverage

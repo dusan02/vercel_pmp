@@ -144,6 +144,7 @@ export default function DebtCashChart({ statements }: DebtCashChartProps) {
                             strokeDasharray="4 2"
                             dot={{ r: 3, fill: '#8B5CF6' }}
                             isAnimationActive={false}
+                            hide={!selectedMetrics.includes('netDebt')}
                         />
                     </ComposedChart>
                 </ResponsiveContainer>
