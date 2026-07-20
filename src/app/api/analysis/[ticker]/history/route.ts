@@ -70,9 +70,6 @@ export async function GET(
             orderBy: { endDate: 'asc' },
         });
 
-        const revPerShareHistory: PerSharePoint[] = [];
-        const epsPerShareHistory: PerSharePoint[] = [];
-
         // Build weekly price lookup for stock split detection
         const weeklyPriceMap = new Map<string, number>();
         for (const w of weekly) {
@@ -81,6 +78,60 @@ export async function GET(
             }
         }
         const sortedPriceDates = Array.from(weeklyPriceMap.keys()).sort();
+
+        // Post-split shares adjustment:
+        // If Finnhub doesn't have post-split statements (e.g. AMZN did 20:1 split
+        // but last Finnhub statement still has pre-split shares), we detect this
+        // by comparing last statement shares to Ticker.sharesOutstanding.
+        // If the ratio matches a common split ratio AND price history confirms
+        // a proportional price drop, we multiply ALL historical shares by the ratio.
+        const tickerInfo = await prisma.ticker.findUnique({
+            where: { symbol },
+            select: { sharesOutstanding: true },
+        });
+
+        if (tickerInfo?.sharesOutstanding && tickerInfo.sharesOutstanding > 0 && statements.length > 0) {
+            const lastStmtShares = statements[statements.length - 1]!.sharesOutstanding;
+            if (lastStmtShares && lastStmtShares > 0) {
+                const ratio = tickerInfo.sharesOutstanding / lastStmtShares;
+                // Only adjust if shares increased significantly (ratio > 1.5)
+                if (ratio > 1.5) {
+                    const commonSplits = [2, 3, 4, 5, 7, 8, 10, 15, 20, 25];
+                    const nearestSplit = commonSplits.reduce((best, r) =>
+                        Math.abs(ratio - r) < Math.abs(ratio - best) ? r : best
+                    );
+                    // Ratio must be close to a common split ratio (within 15%)
+                    if (Math.abs(ratio - nearestSplit) / nearestSplit <= 0.15) {
+                        // Verify with price history: price should have dropped by ~same factor
+                        const lastStmtDate = statements[statements.length - 1]!.endDate;
+                        const targetDate = lastStmtDate.toISOString().split('T')[0]!;
+                        const afterDate = new Date();
+                        const priceAtStmt = sortedPriceDates.filter(d => d <= targetDate).slice(-1)[0];
+                        const priceNow = sortedPriceDates.slice(-1)[0];
+                        if (priceAtStmt && priceNow) {
+                            const pBefore = weeklyPriceMap.get(priceAtStmt)!;
+                            const pAfter = weeklyPriceMap.get(priceNow)!;
+                            if (pBefore > 0 && pAfter > 0) {
+                                const priceRatio = pBefore / pAfter;
+                                // Price should be in the same ballpark as the split ratio
+                                // (not exact because price also moves over time, so allow 50% tolerance)
+                                if (priceRatio > nearestSplit * 0.5 && priceRatio < nearestSplit * 2) {
+                                    // Confirmed split — adjust all historical shares
+                                    for (const s of statements) {
+                                        if (s.sharesOutstanding && s.sharesOutstanding > 0) {
+                                            s.sharesOutstanding = s.sharesOutstanding * nearestSplit;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        const revPerShareHistory: PerSharePoint[] = [];
+        const epsPerShareHistory: PerSharePoint[] = [];
 
         // Detect if a shares outstanding increase is a legitimate stock split
         // by checking if the price dropped by approximately the same factor.
