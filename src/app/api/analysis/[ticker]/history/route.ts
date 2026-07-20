@@ -73,12 +73,20 @@ export async function GET(
         const revPerShareHistory: PerSharePoint[] = [];
         const epsPerShareHistory: PerSharePoint[] = [];
 
-        // Compute TTM per-share at each statement date using shared utility
+        // Compute TTM per-share at each statement date using shared utility.
+        // Guard against anomalous shares outstanding (e.g. Finnhub reporting
+        // in different units) by falling back to the previous quarter's shares
+        // if the current value jumps more than 2x.
+        let prevShares: number | null = null;
         for (const s of statements) {
             if (!s.fiscalPeriod || s.fiscalPeriod === 'FY') continue;
             const { netIncome: ttmNI, revenue: ttmRev } = computeTTMAtDate(statements, s.endDate);
-            const shares = s.sharesOutstanding;
+            let shares = s.sharesOutstanding;
+            if (shares && shares > 0 && prevShares && prevShares > 0 && shares > prevShares * 2) {
+                shares = prevShares;
+            }
             if (shares && shares > 0 && s.endDate) {
+                prevShares = shares;
                 const dateStr = s.endDate.toISOString().split('T')[0] as string;
                 if (ttmRev != null && ttmRev > 0) {
                     revPerShareHistory.push({ date: dateStr, value: parseFloat((ttmRev / shares).toFixed(4)) });
