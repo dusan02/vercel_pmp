@@ -140,10 +140,14 @@ async function syncOneTicker(symbol) {
     // Finnhub shares data can be inaccurate, so the detected ratio might differ from actual
     const commonSplits = [2, 3, 4, 5, 7, 8, 10, 15, 20, 25];
     let bestMatch = null;
+    let bestDiff = Infinity;
     for (const r of commonSplits) {
       if (maxDropRatio >= r * 0.7 && maxDropRatio <= r * 1.3) {
-        bestMatch = r;
-        break;
+        const diff = Math.abs(maxDropRatio - r);
+        if (diff < bestDiff) {
+          bestDiff = diff;
+          bestMatch = r;
+        }
       }
     }
 
