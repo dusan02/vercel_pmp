@@ -27,12 +27,17 @@ export function computeTTM(stmts: FinancialStatement[]): TTMResult {
     const annualStmts = stmts.filter(s => s.fiscalPeriod === 'FY');
 
     const latestQ = quarterlyStmts[0] ?? null;
-    const latestFY = annualStmts[0] ?? null;
+    // Use the FY whose fiscalYear = latestQ.fiscalYear - 1 (the correct one for TTM formula).
+    // Falls back to most recent FY if the matching one doesn't exist.
+    const matchingFY = latestQ?.fiscalYear != null
+        ? annualStmts.find(s => s.fiscalYear === latestQ.fiscalYear! - 1) ?? null
+        : null;
+    const latestFY = matchingFY ?? annualStmts[0] ?? null;
     const prevYearSameQ = latestQ
         ? quarterlyStmts.find(s => s.fiscalPeriod === latestQ.fiscalPeriod && s.fiscalYear === latestQ.fiscalYear! - 1)
         : null;
 
-    const canTtm = !!(latestQ && latestFY && prevYearSameQ);
+    const canTtm = !!(latestQ && matchingFY && prevYearSameQ);
 
     function ttmVal(field: keyof FinancialStatement): number | null {
         if (canTtm && latestQ && latestFY && prevYearSameQ) {
@@ -61,14 +66,17 @@ export function computeTTM(stmts: FinancialStatement[]): TTMResult {
  * Compute TTM for a point-in-time (for historical valuation).
  * Only uses statements with endDate <= the given date.
  *
- * Primary formula: TTM = latestQ + latestFY - prevYearSameQ
+ * Primary formula: TTM = latestQ + matchingFY - prevYearSameQ
  * This works because Finnhub reports cumulative quarterly values
  * (Q1=3M, Q2=6M, Q3=9M, FY=12M), so Q + FY - prevYearSameQ gives
- * exactly 12 contiguous months.
+ * exactly 12 contiguous months — BUT only when FY is the fiscal year
+ * that ends between prevYearSameQ and latestQ (i.e. FY.fiscalYear =
+ * latestQ.fiscalYear - 1). Using a different FY produces non-contiguous
+ * months and garbage results.
  *
- * Fallback: when prevYearSameQ is missing (causing primary to fail),
- * use the latest FY value as TTM. This is slightly stale but correct
- * in magnitude, unlike summing 4 cumulative quarters.
+ * Fallback: when the matching FY or prevYearSameQ is missing, use the
+ * latest available FY value as TTM. This is slightly stale but correct
+ * in magnitude.
  */
 export function computeTTMAtDate(stmts: FinancialStatement[], date: Date): {
     netIncome: number | null;
@@ -78,8 +86,16 @@ export function computeTTMAtDate(stmts: FinancialStatement[], date: Date): {
     const sorted = [...stmts].sort((a, b) => b.endDate.getTime() - a.endDate.getTime());
     const stmtsBeforeDate = sorted.filter(s => s.endDate.getTime() <= date.getTime());
     const quarterlyBeforeDate = stmtsBeforeDate.filter(s => s.fiscalPeriod !== 'FY');
+    const annualBeforeDate = stmtsBeforeDate.filter(s => s.fiscalPeriod === 'FY');
     const latestQ = quarterlyBeforeDate[0] ?? null;
-    const latestFY = stmtsBeforeDate.find(s => s.fiscalPeriod === 'FY') ?? null;
+
+    // The correct FY for the TTM formula is the one whose fiscalYear =
+    // latestQ.fiscalYear - 1 (the fiscal year that just ended).
+    // Using any other FY produces non-contiguous months.
+    const matchingFY = latestQ?.fiscalYear != null
+        ? annualBeforeDate.find(s => s.fiscalYear === latestQ.fiscalYear! - 1) ?? null
+        : null;
+
     const prevYearSameQ = latestQ
         ? quarterlyBeforeDate.find(s => s.fiscalPeriod === latestQ.fiscalPeriod && s.fiscalYear === latestQ.fiscalYear! - 1)
         : null;
@@ -87,29 +103,30 @@ export function computeTTMAtDate(stmts: FinancialStatement[], date: Date): {
     let netIncome: number | null = null;
     let revenue: number | null = null;
 
-    if (latestQ && latestFY && prevYearSameQ) {
+    if (latestQ && matchingFY && prevYearSameQ) {
         const qNI = latestQ.netIncome;
-        const fyNI = latestFY.netIncome;
+        const fyNI = matchingFY.netIncome;
         const prevQNI = prevYearSameQ.netIncome;
         if (qNI != null && fyNI != null && prevQNI != null) {
             netIncome = qNI + fyNI - prevQNI;
         }
         const qRev = latestQ.revenue;
-        const fyRev = latestFY.revenue;
+        const fyRev = matchingFY.revenue;
         const prevQRev = prevYearSameQ.revenue;
         if (qRev != null && fyRev != null && prevQRev != null) {
             revenue = qRev + fyRev - prevQRev;
         }
     }
 
-    // Fallback: use latest FY value as TTM when primary formula failed.
-    // This is slightly stale (uses the most recent full-year data) but
-    // correct in magnitude. Summing 4 cumulative quarters would be wrong.
-    if (netIncome === null && latestFY?.netIncome != null) {
-        netIncome = latestFY.netIncome;
+    // Fallback: use latest available FY value as TTM when primary formula
+    // failed (missing matching FY or prevYearSameQ). This is slightly stale
+    // but correct in magnitude.
+    const fallbackFY = annualBeforeDate[0] ?? null;
+    if (netIncome === null && fallbackFY?.netIncome != null) {
+        netIncome = fallbackFY.netIncome;
     }
-    if (revenue === null && latestFY?.revenue != null) {
-        revenue = latestFY.revenue;
+    if (revenue === null && fallbackFY?.revenue != null) {
+        revenue = fallbackFY.revenue;
     }
 
     return { netIncome, revenue };
