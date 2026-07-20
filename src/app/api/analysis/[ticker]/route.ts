@@ -50,6 +50,37 @@ async function computeMetrics(symbol: string) {
 
     const latestStmt = stmts[0] || null;
 
+    // Post-split shares adjustment:
+    // If Finnhub hasn't updated statement shares after a recent split
+    // (e.g. NOW did x5 split but latest statement still has pre-split shares),
+    // detect by comparing Ticker.sharesOutstanding to latestStmt.sharesOutstanding.
+    // If ratio matches a common split ratio, multiply ALL statements by that ratio.
+    if (stmts.length > 0) {
+        const tickerInfo = await prisma.ticker.findUnique({
+            where: { symbol },
+            select: { sharesOutstanding: true },
+        });
+        if (tickerInfo?.sharesOutstanding && tickerInfo.sharesOutstanding > 0) {
+            const lastStmtShares = stmts[0]!.sharesOutstanding;
+            if (lastStmtShares && lastStmtShares > 0) {
+                const ratio = tickerInfo.sharesOutstanding / lastStmtShares;
+                if (ratio > 1.5) {
+                    const commonSplits = [2, 3, 4, 5, 7, 8, 10, 15, 20, 25];
+                    const nearestSplit = commonSplits.reduce((best, r) =>
+                        Math.abs(ratio - r) < Math.abs(ratio - best) ? r : best
+                    );
+                    if (Math.abs(ratio - nearestSplit) / nearestSplit <= 0.15) {
+                        for (const s of stmts) {
+                            if (s.sharesOutstanding && s.sharesOutstanding > 0) {
+                                s.sharesOutstanding = s.sharesOutstanding * nearestSplit;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     const latestValuation = await prisma.dailyValuationHistory.findFirst({
         where: { symbol },
         orderBy: { date: 'desc' }
