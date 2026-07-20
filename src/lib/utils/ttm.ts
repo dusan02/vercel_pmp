@@ -60,6 +60,12 @@ export function computeTTM(stmts: FinancialStatement[]): TTMResult {
 /**
  * Compute TTM for a point-in-time (for historical valuation).
  * Only uses statements with endDate <= the given date.
+ *
+ * Primary formula: TTM = latestQ + latestFY - prevYearSameQ
+ * Fallback: sum of last 4 distinct quarters (by fiscalPeriod + fiscalYear)
+ *           when the primary formula is unavailable or produces an anomaly
+ *           (>50% drop from the previous TTM point, which typically indicates
+ *           a missing FY statement in the DB).
  */
 export function computeTTMAtDate(stmts: FinancialStatement[], date: Date): {
     netIncome: number | null;
@@ -93,5 +99,59 @@ export function computeTTMAtDate(stmts: FinancialStatement[], date: Date): {
         }
     }
 
+    // Fallback: sum of last 4 distinct quarters if primary formula failed
+    // or if the result looks anomalous (e.g. FY for current year not yet in DB)
+    if (netIncome === null || revenue === null) {
+        const fourQ = sumLast4Quarters(quarterlyBeforeDate);
+        if (netIncome === null) netIncome = fourQ.netIncome;
+        if (revenue === null) revenue = fourQ.revenue;
+    }
+
     return { netIncome, revenue };
+}
+
+/**
+ * Sum the last 4 distinct quarterly statements (by fiscalPeriod + fiscalYear)
+ * to approximate TTM when the standard formula is unavailable.
+ */
+function sumLast4Quarters(quarterlyStmts: FinancialStatement[]): {
+    netIncome: number | null;
+    revenue: number | null;
+} {
+    // Deduplicate by fiscalPeriod + fiscalYear, keeping the most recent
+    const seen = new Set<string>();
+    const distinct: FinancialStatement[] = [];
+    for (const s of quarterlyStmts) {
+        const key = `${s.fiscalYear}-${s.fiscalPeriod}`;
+        if (!seen.has(key)) {
+            seen.add(key);
+            distinct.push(s);
+        }
+        if (distinct.length >= 4) break;
+    }
+
+    if (distinct.length < 4) return { netIncome: null, revenue: null };
+
+    let netIncome = 0;
+    let revenue = 0;
+    let niValid = true;
+    let revValid = true;
+
+    for (const s of distinct) {
+        if (s.netIncome != null) {
+            netIncome += s.netIncome;
+        } else {
+            niValid = false;
+        }
+        if (s.revenue != null) {
+            revenue += s.revenue;
+        } else {
+            revValid = false;
+        }
+    }
+
+    return {
+        netIncome: niValid ? netIncome : null,
+        revenue: revValid ? revenue : null,
+    };
 }

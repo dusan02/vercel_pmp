@@ -6,7 +6,9 @@ export type PerSharePoint = { date: string; value: number };
 
 /**
  * Project forward n quarters using CAGR of last 4 points.
- * Growth rate is clamped to ±50% per quarter to prevent absurd projections.
+ * Growth rate is clamped to [-25%, +50%] per quarter to prevent absurd projections.
+ * Negative growth is clamped more tightly since declining forecasts for fundamentally
+ * growing companies are usually artifacts of broken TTM data.
  */
 export function projectForward(base: PerSharePoint[], quarters: number): (PerSharePoint & { isForecast: boolean })[] {
   if (!base.length) return [];
@@ -14,8 +16,8 @@ export function projectForward(base: PerSharePoint[], quarters: number): (PerSha
   const lastDate = new Date(last.date);
   const n = Math.min(4, base.length);
   const first = base[base.length - n]!;
-  const growth = first.value > 0 ? Math.pow(last.value / first.value, 1 / Math.max(1, n - 1)) - 1 : 0;
-  const clampedGrowth = Math.max(-0.5, Math.min(0.5, growth));
+  const growth = first.value > 0 && last.value > 0 ? Math.pow(last.value / first.value, 1 / Math.max(1, n - 1)) - 1 : 0;
+  const clampedGrowth = Math.max(-0.25, Math.min(0.5, growth));
   const forecasts: (PerSharePoint & { isForecast: boolean })[] = [];
   for (let i = 1; i <= quarters; i++) {
     const d = new Date(lastDate);

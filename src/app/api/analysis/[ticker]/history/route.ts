@@ -74,6 +74,10 @@ export async function GET(
         const epsPerShareHistory: PerSharePoint[] = [];
 
         // Compute TTM per-share at each statement date using shared utility
+        // Anomaly filter: skip points where value drops >50% from the previous point,
+        // which typically indicates a missing FY statement in the DB causing broken TTM
+        let prevRevPS: number | null = null;
+        let prevEpsPS: number | null = null;
         for (const s of statements) {
             if (!s.fiscalPeriod || s.fiscalPeriod === 'FY') continue;
             const { netIncome: ttmNI, revenue: ttmRev } = computeTTMAtDate(statements, s.endDate);
@@ -81,10 +85,24 @@ export async function GET(
             if (shares && shares > 0 && s.endDate) {
                 const dateStr = s.endDate.toISOString().split('T')[0] as string;
                 if (ttmRev != null && ttmRev > 0) {
-                    revPerShareHistory.push({ date: dateStr, value: parseFloat((ttmRev / shares).toFixed(4)) });
+                    const revPS = parseFloat((ttmRev / shares).toFixed(4));
+                    // Skip if >50% drop from previous point (anomaly from broken TTM)
+                    if (prevRevPS !== null && revPS < prevRevPS * 0.5) {
+                        // Anomaly detected — skip this point
+                    } else {
+                        revPerShareHistory.push({ date: dateStr, value: revPS });
+                        prevRevPS = revPS;
+                    }
                 }
                 if (ttmNI != null && ttmNI > 0) {
-                    epsPerShareHistory.push({ date: dateStr, value: parseFloat((ttmNI / shares).toFixed(4)) });
+                    const epsPS = parseFloat((ttmNI / shares).toFixed(4));
+                    // Skip if >50% drop from previous point (anomaly from broken TTM)
+                    if (prevEpsPS !== null && epsPS < prevEpsPS * 0.5) {
+                        // Anomaly detected — skip this point
+                    } else {
+                        epsPerShareHistory.push({ date: dateStr, value: epsPS });
+                        prevEpsPS = epsPS;
+                    }
                 }
             }
         }
