@@ -5,24 +5,47 @@
 export type PerSharePoint = { date: string; value: number };
 
 /**
- * Project forward n quarters using CAGR.
- * Uses the full history for growth rate calculation (more stable than just 4 points).
- * Low-base guard: if the last value is < 30% of the historical average, use the
- * average as the projection base to avoid absurd exponential growth from a dip.
- * Growth rate is clamped to [-20%, +40%] per quarter to prevent absurd projections.
+ * Project forward n quarters using CAGR from recent history only (last 12 quarters = 3 years).
+ * This avoids the "low-base effect" where early startup-era EPS inflates long-term CAGR.
+ * Guards against negative EPS (transition from loss to profit) to prevent NaN.
+ * Growth rate is clamped to [-10%, +10%] per quarter (~[-34%, +46%] annually).
  */
 export function projectForward(base: PerSharePoint[], quarters: number): (PerSharePoint & { isForecast: boolean })[] {
-  if (!base.length) return [];
+  if (!base || base.length === 0) return [];
   const last = base[base.length - 1]!;
   const lastDate = new Date(last.date);
 
-  // Use full history for CAGR (more stable than just last 4 points)
-  const first = base[0]!;
-  const n = base.length;
-  const growth = first.value > 0 && last.value > 0
-    ? Math.pow(last.value / first.value, 1 / Math.max(1, n - 1)) - 1
-    : 0;
-  const clampedGrowth = Math.max(-0.20, Math.min(0.40, growth));
+  // Use last 12 quarters (3 years) for realistic recent trend
+  const recentN = Math.min(12, base.length);
+
+  // Not enough data points — return flat forecast
+  if (recentN < 2) {
+    const forecasts: (PerSharePoint & { isForecast: boolean })[] = [];
+    for (let i = 1; i <= quarters; i++) {
+      const d = new Date(lastDate);
+      d.setMonth(d.getMonth() + i * 3);
+      forecasts.push({ date: d.toISOString().split('T')[0] as string, value: parseFloat(last.value.toFixed(4)), isForecast: true });
+    }
+    return forecasts;
+  }
+
+  const first = base[base.length - recentN]!;
+
+  let growth = 0;
+
+  // Guard against negative EPS (CAGR from loss to profit is mathematically undefined)
+  if (first.value > 0 && last.value > 0) {
+    growth = Math.pow(last.value / first.value, 1 / (recentN - 1)) - 1;
+  } else if (first.value <= 0 && last.value > 0) {
+    // Transition from loss to profit — conservative +1.5% per quarter (~6% annually)
+    growth = 0.015;
+  } else if (last.value <= 0) {
+    // Currently in loss — flat projection
+    growth = 0;
+  }
+
+  // Tighter clamp: [-10%, +10%] per quarter
+  const clampedGrowth = Math.max(-0.10, Math.min(0.10, growth));
 
   // Low-base guard: if last value is < 30% of historical average, use average as base
   const avg = base.reduce((sum, p) => sum + p.value, 0) / base.length;
