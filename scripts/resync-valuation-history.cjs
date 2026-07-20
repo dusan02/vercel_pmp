@@ -102,36 +102,46 @@ async function syncOneTicker(symbol) {
     .sort((a, b) => a.endDate.getTime() - b.endDate.getTime());
 
   // Helper: verify a real stock split by checking if raw price dropped proportionally
-  // Since we use adjusted=false, a real split shows a price drop on the split date
+  // Since we use adjusted=false, a real split shows a price drop on the split date.
+  // Financial statement dates are quarter-end, but splits happen mid-quarter,
+  // so we search for the price drop within a 90-day window before the statement date.
   function isSplitReasonable(splitDate, splitRatio) {
-    // Find price ~7 days before and ~7 days after split date
-    const beforeDate = new Date(splitDate);
-    beforeDate.setDate(beforeDate.getDate() - 7);
-    const afterDate = new Date(splitDate);
-    afterDate.setDate(afterDate.getDate() + 7);
+    // Search 90 days before the statement date for a price drop matching splitRatio
+    const windowStart = new Date(splitDate);
+    windowStart.setDate(windowStart.getDate() - 90);
 
-    let priceBefore = null;
-    let priceAfter = null;
+    // Find all daily prices in the window
+    const windowPrices = [];
     for (const agg of aggs) {
       const d = new Date(agg.t);
-      if (d.getTime() <= beforeDate.getTime()) priceBefore = agg.c;
-      if (d.getTime() >= splitDate.getTime() && d.getTime() <= afterDate.getTime()) {
-        priceAfter = agg.c;
-        break;
+      if (d.getTime() >= windowStart.getTime() && d.getTime() <= splitDate.getTime()) {
+        windowPrices.push({ date: d, price: agg.c });
       }
     }
-    if (!priceBefore || !priceAfter || priceBefore <= 0 || priceAfter <= 0) {
-      console.log(`  ⚠ ${symbol}: split x${splitRatio} — cannot verify (no price data around split date)`);
+    if (windowPrices.length < 2) {
+      console.log(`  ⚠ ${symbol}: split x${splitRatio} — cannot verify (insufficient price data in window)`);
       return true; // can't verify, allow
     }
-    const priceRatio = priceBefore / priceAfter;
-    // For a real split, price should drop by ~splitRatio (within 30% tolerance)
-    // e.g. 20:1 split: priceBefore/priceAfter should be ~20
+
+    // Find the largest single-day price drop ratio in the window
+    let maxDropRatio = 1;
+    let dropDate = null;
+    for (let i = 1; i < windowPrices.length; i++) {
+      const ratio = windowPrices[i - 1].price / windowPrices[i].price;
+      if (ratio > maxDropRatio) {
+        maxDropRatio = ratio;
+        dropDate = windowPrices[i].date;
+      }
+    }
+
+    // For a real split, the largest drop should be ~splitRatio (within 30% tolerance)
     const expectedMin = splitRatio * 0.7;
     const expectedMax = splitRatio * 1.3;
-    const reasonable = priceRatio >= expectedMin && priceRatio <= expectedMax;
+    const reasonable = maxDropRatio >= expectedMin && maxDropRatio <= expectedMax;
     if (!reasonable) {
-      console.log(`  ⚠ ${symbol}: split x${splitRatio} rejected — price ratio=${priceRatio.toFixed(2)} (expected ~${splitRatio}), before=${priceBefore.toFixed(2)} after=${priceAfter.toFixed(2)}`);
+      console.log(`  ⚠ ${symbol}: split x${splitRatio} rejected — max price drop=${maxDropRatio.toFixed(2)}x (expected ~${splitRatio}x) in 90d window before ${splitDate.toISOString().slice(0, 10)}`);
+    } else {
+      console.log(`  ✓ ${symbol}: split x${splitRatio} confirmed — price drop ${maxDropRatio.toFixed(2)}x on ${dropDate.toISOString().slice(0, 10)}`);
     }
     return reasonable;
   }
