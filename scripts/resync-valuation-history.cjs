@@ -20,9 +20,9 @@ if (!POLYGON_API_KEY) {
   process.exit(1);
 }
 
-const BATCH_SIZE = 500;     // DB transaction batch size
+const BATCH_SIZE = 200;     // DB transaction batch size
 const DELAY_MS = 300;       // delay between Polygon API calls (rate limit safety)
-const CONCURRENCY = 3;      // parallel tickers
+const CONCURRENCY = 1;      // parallel tickers (SQLite can't handle concurrent writes)
 
 // TTM computation (mirrors src/lib/utils/ttm.ts computeTTMAtDate)
 function computeTTMAtDate(stmts, date) {
