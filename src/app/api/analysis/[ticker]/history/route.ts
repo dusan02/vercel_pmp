@@ -79,58 +79,6 @@ export async function GET(
         }
         const sortedPriceDates = Array.from(weeklyPriceMap.keys()).sort();
 
-        // Post-split shares adjustment:
-        // If Finnhub doesn't have post-split statements (e.g. AMZN did 20:1 split
-        // but last Finnhub statement still has pre-split shares), we detect this
-        // by comparing last statement shares to Ticker.sharesOutstanding (from Polygon).
-        // If the ratio matches a common split ratio, we multiply ALL historical shares
-        // by that ratio to convert pre-split to post-split equivalents.
-        // Note: we can't verify via price history because DailyValuationHistory prices
-        // are already split-adjusted, so the price drop is not visible there.
-        const tickerInfo = await prisma.ticker.findUnique({
-            where: { symbol },
-            select: { sharesOutstanding: true },
-        });
-
-        if (tickerInfo?.sharesOutstanding && tickerInfo.sharesOutstanding > 0 && statements.length > 0) {
-            const lastStmtShares = statements[statements.length - 1]!.sharesOutstanding;
-            if (lastStmtShares && lastStmtShares > 0) {
-                const ratio = tickerInfo.sharesOutstanding / lastStmtShares;
-                // Only adjust if shares increased significantly (ratio > 1.5)
-                if (ratio > 1.5) {
-                    const commonSplits = [2, 3, 4, 5, 7, 8, 10, 15, 20, 25];
-                    const nearestSplit = commonSplits.reduce((best, r) =>
-                        Math.abs(ratio - r) < Math.abs(ratio - best) ? r : best
-                    );
-                    // Ratio must be close to a common split ratio (within 15%)
-                    if (Math.abs(ratio - nearestSplit) / nearestSplit <= 0.15) {
-                        // Sanity check: compute what EPS would be after adjustment
-                        // and verify implied P/E is reasonable (5-300).
-                        // This prevents false positives when Ticker.sharesOutstanding is wrong.
-                        const lastStmt = statements[statements.length - 1]!;
-                        const { netIncome: ttmNI } = computeTTMAtDate(statements, lastStmt.endDate);
-                        const currentPrice = weekly.length > 0 ? weekly[weekly.length - 1]!.closePrice : null;
-                        if (ttmNI != null && ttmNI > 0 && currentPrice && currentPrice > 0) {
-                            const adjustedShares = lastStmtShares * nearestSplit;
-                            const adjustedEPS = ttmNI / adjustedShares;
-                            const impliedPE = currentPrice / adjustedEPS;
-                            // Only apply adjustment if implied P/E is reasonable
-                            if (impliedPE >= 5 && impliedPE <= 300) {
-                                for (const s of statements) {
-                                    if (s.sharesOutstanding && s.sharesOutstanding > 0) {
-                                        s.sharesOutstanding = s.sharesOutstanding * nearestSplit;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        const revPerShareHistory: PerSharePoint[] = [];
-        const epsPerShareHistory: PerSharePoint[] = [];
-
         // Detect stock splits using Polygon reference API (most reliable source)
         // Falls back to statement-based detection if API unavailable
         const polygonApiKey = process.env.POLYGON_API_KEY;
@@ -195,6 +143,41 @@ export async function GET(
                 }
             }
         }
+
+        // Post-split shares adjustment (for Finnhub statements not updated after recent split):
+        // If Ticker.sharesOutstanding is much larger than latest statement shares,
+        // and ratio matches a split ratio, multiply only statements that are still pre-split.
+        // Uses threshold to avoid double-adjusting statements already fixed above.
+        const tickerInfo = await prisma.ticker.findUnique({
+            where: { symbol },
+            select: { sharesOutstanding: true },
+        });
+
+        if (tickerInfo?.sharesOutstanding && tickerInfo.sharesOutstanding > 0 && statements.length > 0) {
+            const lastStmt = statements[statements.length - 1]!;
+            const lastStmtShares = lastStmt.sharesOutstanding;
+            if (lastStmtShares && lastStmtShares > 0) {
+                const ratio = tickerInfo.sharesOutstanding / lastStmtShares;
+                if (ratio > 1.5) {
+                    const commonSplits = [2, 3, 4, 5, 7, 8, 10, 15, 20, 25];
+                    const nearestSplit = commonSplits.reduce((best, r) =>
+                        Math.abs(ratio - r) < Math.abs(ratio - best) ? r : best
+                    );
+                    if (Math.abs(ratio - nearestSplit) / nearestSplit <= 0.15) {
+                        const threshold = tickerInfo.sharesOutstanding / 2;
+                        for (const s of statements) {
+                            if (s.sharesOutstanding && s.sharesOutstanding > 0 &&
+                                s.sharesOutstanding < threshold) {
+                                s.sharesOutstanding = s.sharesOutstanding * nearestSplit;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        const revPerShareHistory: PerSharePoint[] = [];
+        const epsPerShareHistory: PerSharePoint[] = [];
 
         let prevShares: number | null = null;
         for (const s of statements) {
