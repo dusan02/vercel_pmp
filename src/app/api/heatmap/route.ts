@@ -195,7 +195,7 @@ export async function GET(request: NextRequest) {
 
     // 9. Build price map + preliminary prevClose map for on-demand fetch
     const priceMap = buildPriceMap(tickerMap, sessionPrices);
-    const { previousCloseMap: prelimPrevCloseMap } = buildPrevCloseMaps(dailyRefs, ctx);
+    const { previousCloseMap: prelimPrevCloseMap } = buildPrevCloseMaps(rawDailyRefs, ctx);
 
     // 10. On-demand prevClose fetch
     const prevCloseBatchMap = await fetchPrevCloseOnDemand(
@@ -204,7 +204,7 @@ export async function GET(request: NextRequest) {
 
     // 11. Transform all data into heatmap rows
     const transformResult = transformToHeatmap(
-      tickerSymbols, tickerMap, sessionPrices, dailyRefs,
+      tickerSymbols, tickerMap, sessionPrices, rawDailyRefs,
       cachedStockDataMap, prevCloseBatchMap, ctx, now, debug
     );
 

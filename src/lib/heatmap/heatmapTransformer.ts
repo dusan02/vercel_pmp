@@ -74,6 +74,8 @@ export function buildPrevCloseMaps(
     }
   };
 
+  // Pass 1: Set regularCloseMap and previousCloseMap from regularClose.
+  // Records are ordered by date desc, so the first regularClose per symbol is the most recent.
   for (const dr of dailyRefs) {
     const drDate = new Date(dr.date);
     const drDateStr = getDateET(drDate);
@@ -86,22 +88,31 @@ export function buildPrevCloseMaps(
       if (isRegularCloseReferenceDay) {
         regularCloseMap.set(dr.symbol, dr.regularClose);
       }
-    }
 
-    if (!previousCloseMap.has(dr.symbol)) {
-      if (isToday) {
-        previousCloseMap.set(dr.symbol, dr.previousClose);
-        debugStats.counts.dailyRefToday++;
-      } else {
-        if (dr.regularClose && dr.regularClose > 0) {
-          previousCloseMap.set(dr.symbol, dr.regularClose);
-          debugStats.counts.dailyRefOlder++;
-        } else if (ctx.isNonTradingClosedDay && dr.previousClose > 0) {
-          // On weekends/holidays, use previousClose from most recent DailyRef as fallback
-          previousCloseMap.set(dr.symbol, dr.previousClose);
-          debugStats.counts.dailyRefOlder++;
-        }
+      // Use regularClose as previousClose for older records (not today)
+      if (!isToday && !previousCloseMap.has(dr.symbol)) {
+        previousCloseMap.set(dr.symbol, dr.regularClose);
+        debugStats.counts.dailyRefOlder++;
       }
+    }
+  }
+
+  // Pass 2: For symbols without previousClose from regularClose,
+  // use previousClose from the latest DailyRef record.
+  // Covers: early weekday mornings before pre-market, weekends, holidays.
+  for (const dr of dailyRefs) {
+    if (previousCloseMap.has(dr.symbol)) continue;
+
+    const drDate = new Date(dr.date);
+    const drDateStr = getDateET(drDate);
+    const isToday = drDateStr === ctx.todayDateStr;
+
+    if (isToday && dr.previousClose > 0) {
+      previousCloseMap.set(dr.symbol, dr.previousClose);
+      debugStats.counts.dailyRefToday++;
+    } else if (!isToday && dr.previousClose > 0 && (ctx.isNonTradingClosedDay || ctx.session === 'closed')) {
+      previousCloseMap.set(dr.symbol, dr.previousClose);
+      debugStats.counts.dailyRefOlder++;
     }
   }
 
