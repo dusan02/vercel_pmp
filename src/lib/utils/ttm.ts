@@ -61,11 +61,13 @@ export function computeTTM(stmts: FinancialStatement[]): TTMResult {
  * Compute TTM for a point-in-time (for historical valuation).
  * Only uses statements with endDate <= the given date.
  *
- * Primary formula: TTM = latestQ + latestFY - prevYearSameQ
- * Fallback: sum of last 4 distinct quarters (by fiscalPeriod + fiscalYear)
- *           when the primary formula is unavailable or produces an anomaly
- *           (>50% drop from the previous TTM point, which typically indicates
- *           a missing FY statement in the DB).
+ * Two methods are computed and cross-validated:
+ * 1. Primary formula: TTM = latestQ + latestFY - prevYearSameQ
+ * 2. 4-quarter sum: sum of last 4 distinct quarterly statements
+ *
+ * The 4-quarter sum is preferred when the two differ by more than 50%,
+ * as this typically indicates the primary formula is using a stale FY
+ * (e.g. FY 2025 not yet in DB, so it falls back to FY 2024).
  */
 export function computeTTMAtDate(stmts: FinancialStatement[], date: Date): {
     netIncome: number | null;
@@ -81,33 +83,39 @@ export function computeTTMAtDate(stmts: FinancialStatement[], date: Date): {
         ? quarterlyBeforeDate.find(s => s.fiscalPeriod === latestQ.fiscalPeriod && s.fiscalYear === latestQ.fiscalYear! - 1)
         : null;
 
-    let netIncome: number | null = null;
-    let revenue: number | null = null;
+    let primaryNI: number | null = null;
+    let primaryRev: number | null = null;
 
     if (latestQ && latestFY && prevYearSameQ) {
         const qNI = latestQ.netIncome;
         const fyNI = latestFY.netIncome;
         const prevQNI = prevYearSameQ.netIncome;
         if (qNI != null && fyNI != null && prevQNI != null) {
-            netIncome = qNI + fyNI - prevQNI;
+            primaryNI = qNI + fyNI - prevQNI;
         }
         const qRev = latestQ.revenue;
         const fyRev = latestFY.revenue;
         const prevQRev = prevYearSameQ.revenue;
         if (qRev != null && fyRev != null && prevQRev != null) {
-            revenue = qRev + fyRev - prevQRev;
+            primaryRev = qRev + fyRev - prevQRev;
         }
     }
 
-    // Fallback: sum of last 4 distinct quarters if primary formula failed
-    // or if the result looks anomalous (e.g. FY for current year not yet in DB)
-    if (netIncome === null || revenue === null) {
-        const fourQ = sumLast4Quarters(quarterlyBeforeDate);
-        if (netIncome === null) netIncome = fourQ.netIncome;
-        if (revenue === null) revenue = fourQ.revenue;
+    const fourQ = sumLast4Quarters(quarterlyBeforeDate);
+
+    // Cross-validate: prefer 4-quarter sum when primary formula result
+    // differs by more than 50% (indicates stale FY in primary formula)
+    function pickBetter(primary: number | null, fallback: number | null): number | null {
+        if (primary === null) return fallback;
+        if (fallback === null) return primary;
+        const diff = Math.abs(primary - fallback) / Math.max(Math.abs(primary), Math.abs(fallback));
+        return diff > 0.5 ? fallback : primary;
     }
 
-    return { netIncome, revenue };
+    return {
+        netIncome: pickBetter(primaryNI, fourQ.netIncome),
+        revenue: pickBetter(primaryRev, fourQ.revenue),
+    };
 }
 
 /**
