@@ -193,7 +193,13 @@ export async function syncFinancials(symbol: string): Promise<void> {
                 let revenue = extract(report, 'ic', [
                     'us-gaap_Revenues', 'us-gaap_SalesRevenueNet', 'us-gaap_RevenuesNetOfInterestExpense',
                     'us-gaap_RevenueFromContractWithCustomerExcludingAssessedTax', 'us-gaap_HealthCareOrganizationRevenue',
-                    'us-gaap_RevenueFromContractWithCustomerIncludingAssessedTax'
+                    'us-gaap_RevenueFromContractWithCustomerIncludingAssessedTax',
+                    // Utility-specific
+                    'us-gaap_RegulatedAndUnregulatedOperatingRevenue', 'us-gaap_RegulatedOperatingRevenue',
+                    // Without us-gaap_ prefix (older filings)
+                    'Revenues', 'SalesRevenueNet', 'RevenueFromContractWithCustomerExcludingAssessedTax',
+                    'RevenueFromContractWithCustomerIncludingAssessedTax',
+                    'RegulatedAndUnregulatedOperatingRevenue', 'RegulatedOperatingRevenue'
                 ]);
                 // Bank fallback: sum interest income + non-interest income
                 if (revenue === null) {
