@@ -147,11 +147,11 @@ export async function syncFinancials(symbol: string): Promise<void> {
                 const list = report[section] || [];
                 for (const concept of concepts) {
                     const found = list.find((item: any) => item.concept === concept);
-                    if (found && found.value !== undefined && found.value !== null) return found.value;
+                    if (found && found.value !== undefined && found.value !== null && found.value !== 'N/A') return found.value;
                     // Also try without us-gaap_ prefix (some filings omit it)
                     const shortConcept = concept.replace(/^us-gaap_/, '');
                     const foundShort = list.find((item: any) => item.concept === shortConcept);
-                    if (foundShort && foundShort.value !== undefined && foundShort.value !== null) return foundShort.value;
+                    if (foundShort && foundShort.value !== undefined && foundShort.value !== null && foundShort.value !== 'N/A') return foundShort.value;
                 }
                 return null;
             };
@@ -163,7 +163,7 @@ export async function syncFinancials(symbol: string): Promise<void> {
                 let found = false;
                 for (const concept of concepts) {
                     const item = list.find((i: any) => i.concept === concept);
-                    if (item && item.value !== undefined && item.value !== null) {
+                    if (item && item.value !== undefined && item.value !== null && item.value !== 'N/A') {
                         sum += item.value;
                         found = true;
                         continue;
@@ -171,7 +171,7 @@ export async function syncFinancials(symbol: string): Promise<void> {
                     // Also try without us-gaap_ prefix
                     const shortConcept = concept.replace(/^us-gaap_/, '');
                     const itemShort = list.find((i: any) => i.concept === shortConcept);
-                    if (itemShort && itemShort.value !== undefined && itemShort.value !== null) {
+                    if (itemShort && itemShort.value !== undefined && itemShort.value !== null && itemShort.value !== 'N/A') {
                         sum += itemShort.value;
                         found = true;
                     }
