@@ -782,4 +782,9 @@ export const SECTOR_INDUSTRY_OVERRIDES: Record<string, SectorIndustryOverride> =
       industry: "Aerospace & Defense",
       name: "SpaceX",
     },
+    SKHY: {
+      sector: "Technology",
+      industry: "Semiconductors",
+      name: "SK hynix Inc.",
+    },
   };
