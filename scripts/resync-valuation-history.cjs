@@ -1,0 +1,224 @@
+/**
+ * Full re-sync of DailyValuationHistory for all tickers.
+ *
+ * Deletes all existing records and re-fetches 10Y adjusted daily prices
+ * from Polygon, recomputing P/E, P/S, marketCap, EV/EBIT, FCF yield.
+ *
+ * Usage:
+ *   node scripts/resync-valuation-history.cjs          # all tickers
+ *   node scripts/resync-valuation-history.cjs NFLX TSLA  # specific tickers
+ *
+ * Requires DATABASE_URL and POLYGON_API_KEY env vars.
+ */
+
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+
+const POLYGON_API_KEY = process.env.POLYGON_API_KEY;
+if (!POLYGON_API_KEY) {
+  console.error('Missing POLYGON_API_KEY');
+  process.exit(1);
+}
+
+const BATCH_SIZE = 500;     // DB transaction batch size
+const DELAY_MS = 300;       // delay between Polygon API calls (rate limit safety)
+const CONCURRENCY = 3;      // parallel tickers
+
+// TTM computation (mirrors src/lib/utils/ttm.ts computeTTMAtDate)
+function computeTTMAtDate(stmts, date) {
+  const sorted = [...stmts].sort((a, b) => b.endDate.getTime() - a.endDate.getTime());
+  const before = sorted.filter(s => s.endDate.getTime() <= date.getTime());
+  const quarterly = before.filter(s => s.fiscalPeriod !== 'FY');
+  const annual = before.filter(s => s.fiscalPeriod === 'FY');
+  const latestQ = quarterly[0] || null;
+
+  const matchingFY = latestQ?.fiscalYear != null
+    ? annual.find(s => s.fiscalYear === latestQ.fiscalYear - 1) || null
+    : null;
+
+  const prevYearSameQ = latestQ
+    ? quarterly.find(s => s.fiscalPeriod === latestQ.fiscalPeriod && s.fiscalYear === latestQ.fiscalYear - 1) || null
+    : null;
+
+  let netIncome = null;
+  let revenue = null;
+
+  if (latestQ && matchingFY && prevYearSameQ) {
+    if (latestQ.netIncome != null && matchingFY.netIncome != null && prevYearSameQ.netIncome != null) {
+      netIncome = latestQ.netIncome + matchingFY.netIncome - prevYearSameQ.netIncome;
+    }
+    if (latestQ.revenue != null && matchingFY.revenue != null && prevYearSameQ.revenue != null) {
+      revenue = latestQ.revenue + matchingFY.revenue - prevYearSameQ.revenue;
+    }
+  }
+
+  const fallbackFY = annual[0] || null;
+  if (netIncome === null && fallbackFY?.netIncome != null) netIncome = fallbackFY.netIncome;
+  if (revenue === null && fallbackFY?.revenue != null) revenue = fallbackFY.revenue;
+
+  return { netIncome, revenue };
+}
+
+async function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+async function syncOneTicker(symbol) {
+  const tenYearsAgo = new Date();
+  tenYearsAgo.setFullYear(tenYearsAgo.getFullYear() - 10);
+  const toDate = new Date();
+
+  const fromStr = tenYearsAgo.toISOString().slice(0, 10);
+  const toStr = toDate.toISOString().slice(0, 10);
+
+  // Polygon aggs with adjusted=true (split-adjusted prices)
+  const url = `https://api.polygon.io/v2/aggs/ticker/${symbol}/range/1/day/${fromStr}/${toStr}?adjusted=true&sort=asc&limit=50000&apiKey=${POLYGON_API_KEY}`;
+
+  const resp = await fetch(url);
+  if (!resp.ok) {
+    console.error(`  ✗ ${symbol}: Polygon API error ${resp.status}`);
+    return { symbol, ok: false, count: 0 };
+  }
+
+  const data = await resp.json();
+  const aggs = data.results || [];
+  if (aggs.length === 0) {
+    console.warn(`  ⚠ ${symbol}: no price data from Polygon`);
+    return { symbol, ok: true, count: 0 };
+  }
+
+  // Fetch financial statements for P/E, P/S computation
+  const statements = await prisma.financialStatement.findMany({
+    where: { symbol },
+    orderBy: { endDate: 'desc' },
+  });
+
+  // Delete existing records for this ticker
+  await prisma.dailyValuationHistory.deleteMany({ where: { symbol } });
+
+  const transactions = [];
+
+  for (const agg of aggs) {
+    const date = new Date(agg.t);
+    const closePrice = agg.c;
+
+    let peRatio = null;
+    let psRatio = null;
+    let marketCap = null;
+    let evEbitda = null;
+    let fcfYield = null;
+
+    const { netIncome: ttmNI, revenue: ttmRev } = computeTTMAtDate(statements, date);
+
+    const stmtsBeforeDate = statements.filter(s => s.endDate.getTime() <= date.getTime());
+    const stmt = stmtsBeforeDate[0] || statements[statements.length - 1];
+
+    if (stmt && stmt.sharesOutstanding) {
+      marketCap = closePrice * stmt.sharesOutstanding;
+
+      const effectiveNI = ttmNI ?? stmt.netIncome;
+      if (effectiveNI && effectiveNI > 0) {
+        peRatio = closePrice / (effectiveNI / stmt.sharesOutstanding);
+      }
+
+      const effectiveRev = ttmRev ?? stmt.revenue;
+      if (effectiveRev && effectiveRev > 0) {
+        psRatio = closePrice / (effectiveRev / stmt.sharesOutstanding);
+      }
+
+      if (stmt.ebit && stmt.ebit > 0 && stmt.totalDebt !== null && stmt.cashAndEquivalents !== null) {
+        const ev = marketCap + stmt.totalDebt - stmt.cashAndEquivalents;
+        evEbitda = ev / stmt.ebit;
+      }
+
+      if (stmt.operatingCashFlow !== null && stmt.capex !== null && marketCap > 0) {
+        const fcf = stmt.operatingCashFlow - Math.abs(stmt.capex);
+        fcfYield = fcf / marketCap;
+      }
+    }
+
+    transactions.push(
+      prisma.dailyValuationHistory.upsert({
+        where: { symbol_date: { symbol, date } },
+        update: { closePrice, marketCap, peRatio, psRatio, evEbitda, fcfYield },
+        create: { symbol, date, closePrice, marketCap, peRatio, psRatio, evEbitda, fcfYield },
+      })
+    );
+  }
+
+  // Batch insert
+  for (let i = 0; i < transactions.length; i += BATCH_SIZE) {
+    await prisma.$transaction(transactions.slice(i, i + BATCH_SIZE));
+  }
+
+  console.log(`  ✓ ${symbol}: ${aggs.length} records synced`);
+  return { symbol, ok: true, count: aggs.length };
+}
+
+async function runConcurrent(items, fn, concurrency) {
+  const results = [];
+  let idx = 0;
+
+  async function worker() {
+    while (idx < items.length) {
+      const current = items[idx++];
+      try {
+        const result = await fn(current);
+        results.push(result);
+      } catch (err) {
+        console.error(`  ✗ ${current}: ${err.message}`);
+        results.push({ symbol: current, ok: false, count: 0 });
+      }
+      await sleep(DELAY_MS);
+    }
+  }
+
+  const workers = Array.from({ length: concurrency }, () => worker());
+  await Promise.all(workers);
+  return results;
+}
+
+async function main() {
+  const argTickers = process.argv.slice(2);
+
+  let symbols;
+  if (argTickers.length > 0) {
+    symbols = argTickers.map(s => s.toUpperCase());
+  } else {
+    const tickers = await prisma.ticker.findMany({
+      where: { active: true },
+      select: { symbol: true },
+      orderBy: { symbol: 'asc' },
+    });
+    symbols = tickers.map(t => t.symbol);
+  }
+
+  console.log(`\n=== Full Re-sync of DailyValuationHistory ===`);
+  console.log(`Tickers: ${symbols.length}`);
+  console.log(`Concurrency: ${CONCURRENCY}, Delay: ${DELAY_MS}ms\n`);
+
+  if (argTickers.length === 0) {
+    // Full wipe — only when syncing all tickers
+    console.log('Deleting all DailyValuationHistory records...');
+    const deleted = await prisma.dailyValuationHistory.deleteMany({});
+    console.log(`Deleted ${deleted.count} records.\n`);
+  }
+
+  const startTime = Date.now();
+  const results = await runConcurrent(symbols, syncOneTicker, CONCURRENCY);
+
+  const ok = results.filter(r => r.ok).length;
+  const failed = results.filter(r => !r.ok).length;
+  const totalRecords = results.reduce((sum, r) => sum + r.count, 0);
+  const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+
+  console.log(`\n=== Done ===`);
+  console.log(`OK: ${ok}, Failed: ${failed}, Records: ${totalRecords}, Time: ${duration}s`);
+
+  await prisma.$disconnect();
+}
+
+main().catch(err => {
+  console.error('Fatal error:', err);
+  process.exit(1);
+});
