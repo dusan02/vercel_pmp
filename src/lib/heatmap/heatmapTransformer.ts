@@ -297,8 +297,8 @@ export function transformToHeatmap(
       priceTsMs = priceInfo?.tsMs || 0;
       priceSource = priceInfo?.source || 'unknown';
 
-      // On weekends/holidays, allow prices up to 72h old (Friday close)
-      const maxAgeMs = ctx.isNonTradingClosedDay ? 72 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+      // When market is closed (weekend, holiday, or pre-market hours), allow prices up to 72h old (Friday close)
+      const maxAgeMs = (ctx.isNonTradingClosedDay || ctx.session === 'closed') ? 72 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
       if (priceTsMs === 0 || (now.getTime() - priceTsMs) > maxAgeMs) {
         skippedNoPrice++; continue;
       }
