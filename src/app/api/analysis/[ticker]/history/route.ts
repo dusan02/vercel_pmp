@@ -131,31 +131,64 @@ export async function GET(
         const revPerShareHistory: PerSharePoint[] = [];
         const epsPerShareHistory: PerSharePoint[] = [];
 
-        // Compute TTM per-share at each statement date using shared utility.
-        // Pre-process: detect stock split boundaries within the statement history.
-        // Finnhub sometimes has mixed pre-split and post-split shares (e.g. AMZN:
-        // old statements at 509M shares, new statements at 10.87B after 20:1 split).
-        // We detect splits by checking if the shares ratio between consecutive
-        // statements matches a common split ratio. Price history can't verify this
-        // because DailyValuationHistory prices are already split-adjusted.
-        const quarterlyStmts = statements.filter(s => s.fiscalPeriod && s.fiscalPeriod !== 'FY');
-        for (let i = 1; i < quarterlyStmts.length; i++) {
-            const prev = quarterlyStmts[i - 1]!;
-            const curr = quarterlyStmts[i]!;
-            if (prev.sharesOutstanding && prev.sharesOutstanding > 0 &&
-                curr.sharesOutstanding && curr.sharesOutstanding > 0) {
-                const ratio = curr.sharesOutstanding / prev.sharesOutstanding;
-                if (ratio > 1.5) {
-                    const commonSplits = [2, 3, 4, 5, 7, 8, 10, 15, 20, 25];
-                    const nearestSplit = commonSplits.reduce((best, r) =>
-                        Math.abs(ratio - r) < Math.abs(ratio - best) ? r : best
-                    );
-                    if (Math.abs(ratio - nearestSplit) / nearestSplit <= 0.15) {
-                        // Split detected at curr.endDate — multiply all earlier statements by split ratio
-                        for (const s of statements) {
-                            if (s.endDate.getTime() < curr.endDate.getTime() &&
-                                s.sharesOutstanding && s.sharesOutstanding > 0) {
-                                s.sharesOutstanding = s.sharesOutstanding * nearestSplit;
+        // Detect stock splits using Polygon reference API (most reliable source)
+        // Falls back to statement-based detection if API unavailable
+        const polygonApiKey = process.env.POLYGON_API_KEY;
+        const splitEvents: { date: Date; ratio: number }[] = [];
+
+        if (polygonApiKey) {
+            try {
+                const splitsResp = await fetch(
+                    `https://api.polygon.io/v3/reference/splits?ticker=${symbol}&apiKey=${polygonApiKey}`
+                );
+                if (splitsResp.ok) {
+                    const splitsData = await splitsResp.json();
+                    for (const sp of (splitsData.results || [])) {
+                        const splitDate = new Date(sp.execution_date + 'T00:00:00Z');
+                        const splitRatio = sp.split_to / sp.split_from;
+                        if (splitDate.getTime() >= tenYearsAgo.getTime()) {
+                            splitEvents.push({ date: splitDate, ratio: splitRatio });
+                        }
+                    }
+                }
+            } catch {
+                // Fall through to statement-based detection
+            }
+        }
+
+        if (splitEvents.length > 0) {
+            // Use Polygon split dates: multiply shares for statements before each split date
+            for (const split of splitEvents) {
+                for (const s of statements) {
+                    if (s.endDate.getTime() < split.date.getTime() &&
+                        s.sharesOutstanding && s.sharesOutstanding > 0) {
+                        s.sharesOutstanding = s.sharesOutstanding * split.ratio;
+                    }
+                }
+            }
+        } else {
+            // Fallback: detect splits from shares jumps between consecutive quarterly statements
+            const quarterlyStmts = statements.filter(s => s.fiscalPeriod && s.fiscalPeriod !== 'FY');
+            for (let i = 1; i < quarterlyStmts.length; i++) {
+                const prev = quarterlyStmts[i - 1]!;
+                const curr = quarterlyStmts[i]!;
+                if (prev.sharesOutstanding && prev.sharesOutstanding > 0 &&
+                    curr.sharesOutstanding && curr.sharesOutstanding > 0) {
+                    const ratio = curr.sharesOutstanding / prev.sharesOutstanding;
+                    if (ratio > 1.5) {
+                        const commonSplits = [2, 3, 4, 5, 7, 8, 10, 15, 20, 25];
+                        const nearestSplit = commonSplits.reduce((best, r) =>
+                            Math.abs(ratio - r) < Math.abs(ratio - best) ? r : best
+                        );
+                        if (Math.abs(ratio - nearestSplit) / nearestSplit <= 0.15) {
+                            // Only multiply statements that are clearly pre-split (shares < curr/2)
+                            const threshold = curr.sharesOutstanding / 2;
+                            for (const s of statements) {
+                                if (s.endDate.getTime() < curr.endDate.getTime() &&
+                                    s.sharesOutstanding && s.sharesOutstanding > 0 &&
+                                    s.sharesOutstanding < threshold) {
+                                    s.sharesOutstanding = s.sharesOutstanding * nearestSplit;
+                                }
                             }
                         }
                     }
