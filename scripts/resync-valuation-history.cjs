@@ -277,9 +277,13 @@ async function main() {
     symbols = argTickers.map(s => s.toUpperCase());
   } else {
     const tickers = await prisma.ticker.findMany({
-      select: { symbol: true },
-      orderBy: { symbol: 'asc' },
+      select: { symbol: true, sharesOutstanding: true, lastPrice: true },
     });
+    // Sort by market cap (shares * price) descending — most important first
+    tickers.sort((a, b) =>
+      ((b.sharesOutstanding || 0) * (b.lastPrice || 0)) -
+      ((a.sharesOutstanding || 0) * (a.lastPrice || 0))
+    );
     symbols = tickers.map(t => t.symbol);
   }
 
@@ -287,12 +291,7 @@ async function main() {
   console.log(`Tickers: ${symbols.length}`);
   console.log(`Concurrency: ${CONCURRENCY}, Delay: ${DELAY_MS}ms\n`);
 
-  if (argTickers.length === 0) {
-    // Full wipe — only when syncing all tickers
-    console.log('Deleting all DailyValuationHistory records...');
-    const deleted = await prisma.dailyValuationHistory.deleteMany({});
-    console.log(`Deleted ${deleted.count} records.\n`);
-  }
+  // No full wipe — syncOneTicker deletes per-ticker records
 
   const startTime = Date.now();
   const results = await runConcurrent(symbols, syncOneTicker, CONCURRENCY);
