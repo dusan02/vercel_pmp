@@ -1,7 +1,118 @@
 import { prisma } from '@/lib/db/prisma';
 
+// ─── stockanalysis.com fallback for ADR/foreign tickers ──────────────
+const SA_BASE = 'https://stockanalysis.com/stocks';
+const SA_HEADERS: Record<string, string> = {
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+};
+
+interface SAData {
+    datekey: string[];
+    fiscalYear: string[];
+    fiscalQuarter: string[];
+    [key: string]: any;
+}
+
+function extractSAFinancialData(html: string): SAData | null {
+    const idx = html.indexOf('financialData:{');
+    if (idx < 0) return null;
+    const start = idx + 'financialData:'.length;
+    let depth = 0;
+    for (let i = start; i < html.length; i++) {
+        if (html[i] === '{') depth++;
+        else if (html[i] === '}') depth--;
+        if (depth === 0) {
+            const objStr = html[start] + html.slice(start + 1, i + 1);
+            let jsonStr = objStr.replace(/([{,])([a-zA-Z_][a-zA-Z0-9_]*):/g, '$1"$2":');
+            jsonStr = jsonStr.replace(/void 0/g, 'null');
+            jsonStr = jsonStr.replace(/([\[:,\[])(-?)\.(\d)/g, '$1$20.$3');
+            try {
+                return JSON.parse(jsonStr);
+            } catch {
+                return null;
+            }
+        }
+    }
+    return null;
+}
+
+async function fetchSAData(symbol: string, statement: string): Promise<SAData | null> {
+    const url = `${SA_BASE}/${symbol.toLowerCase()}/financials/${statement}/`;
+    try {
+        const resp = await fetch(url, { headers: SA_HEADERS });
+        if (!resp.ok) return null;
+        const html = await resp.text();
+        return extractSAFinancialData(html);
+    } catch {
+        return null;
+    }
+}
+
+function saNumArr(data: SAData, key: string, i: number): number | null {
+    if (!data[key]) return null;
+    const v = data[key][i];
+    if (v === null || v === undefined || isNaN(v)) return null;
+    return Number(v);
+}
+
+async function syncFromStockAnalysis(symbol: string): Promise<number> {
+    const [income, balance, cashflow] = await Promise.all([
+        fetchSAData(symbol, ''),
+        fetchSAData(symbol, 'balance-sheet'),
+        fetchSAData(symbol, 'cash-flow-statement'),
+    ]);
+    if (!income) return 0;
+
+    await prisma.ticker.upsert({
+        where: { symbol },
+        update: {},
+        create: { symbol, name: symbol },
+    });
+
+    let upserted = 0;
+    for (let i = 0; i < income.datekey.length; i++) {
+        const dateStr = income.datekey[i]!;
+        if (dateStr === 'TTM') continue;
+        const fiscalYear = parseInt(income.fiscalYear[i]!, 10);
+        const fiscalQuarter = income.fiscalQuarter[i]!;
+        const fiscalPeriod = (fiscalQuarter === 'Q4' || fiscalQuarter === 'FY') ? 'FY' : fiscalQuarter;
+        const endDate = new Date(dateStr + 'T00:00:00Z');
+
+        const stmtData = {
+            endDate,
+            revenue: saNumArr(income, 'revenue', i),
+            netIncome: saNumArr(income, 'netIncome', i),
+            ebit: saNumArr(income, 'ebit', i) ?? saNumArr(income, 'operatingIncome', i),
+            grossProfit: saNumArr(income, 'grossProfit', i),
+            operatingCashFlow: cashflow ? (saNumArr(cashflow, 'cash_flow_statement_net_cash_from_operating_activities', i) ?? saNumArr(cashflow, 'cfo', i)) : null,
+            capex: cashflow ? (saNumArr(cashflow, 'cash_flow_statement_capital_expenditure', i) ?? saNumArr(cashflow, 'capex', i)) : null,
+            totalAssets: balance ? saNumArr(balance, 'assets', i) : null,
+            totalLiabilities: balance ? saNumArr(balance, 'liabilities', i) : null,
+            currentAssets: balance ? saNumArr(balance, 'assetsc', i) : null,
+            currentLiabilities: balance ? saNumArr(balance, 'liabilitiesc', i) : null,
+            retainedEarnings: balance ? saNumArr(balance, 'balance_sheet_retained_earnings', i) : null,
+            totalEquity: balance ? saNumArr(balance, 'equity', i) : null,
+            sharesOutstanding: saNumArr(income, 'sharesDiluted', i) ?? saNumArr(income, 'sharesBasic', i),
+            sbc: saNumArr(income, 'sbc', i),
+            interestExpense: saNumArr(income, 'income_statement_interest_expense', i),
+            totalDebt: balance ? saNumArr(balance, 'debt', i) : null,
+            cashAndEquivalents: balance ? (saNumArr(balance, 'totalcash', i) ?? saNumArr(balance, 'cashneq', i)) : null,
+            netPPE: balance ? saNumArr(balance, 'balance_sheet_net_property_plant_and_equipment', i) : null,
+        };
+
+        await prisma.financialStatement.upsert({
+            where: { symbol_fiscalYear_fiscalPeriod: { symbol, fiscalYear, fiscalPeriod } },
+            update: stmtData,
+            create: { symbol, period: fiscalPeriod, fiscalYear, fiscalPeriod, ...stmtData },
+        });
+        upserted++;
+    }
+    return upserted;
+}
+
 /**
  * Sync financial statements from Finnhub XBRL API.
+ * Falls back to stockanalysis.com scraper for ADR/foreign tickers not in Finnhub.
  * Extracts revenue, net income, EBIT, cash flow, balance sheet items, etc.
  */
 export async function syncFinancials(symbol: string): Promise<void> {
@@ -22,7 +133,11 @@ export async function syncFinancials(symbol: string): Promise<void> {
             const url = `https://finnhub.io/api/v1/stock/financials-reported?symbol=${symbol}&freq=${timeframe}&token=${FINNHUB_API_KEY}`;
             
             const res: Response = await fetch(url);
-            if (!res.ok) throw new Error(`Finnhub API chyba: ${res.status} ${res.statusText}`);
+            if (!res.ok) {
+                // Don't throw for 429/404 — fall through to stockanalysis.com fallback
+                if (res.status === 429 || res.status === 404) continue;
+                throw new Error(`Finnhub API chyba: ${res.status} ${res.statusText}`);
+            }
             const data: any = await res.json();
             
             const results = data.data || [];
@@ -217,5 +332,15 @@ export async function syncFinancials(symbol: string): Promise<void> {
     } catch (error) {
         console.error(`Error syncing financials mapping via Finnhub for ${symbol}:`, error);
         throw error;
+    }
+
+    // Fallback: if Finnhub returned 0 statements (ADR/foreign tickers),
+    // try stockanalysis.com scraper
+    const stmtCount = await prisma.financialStatement.count({ where: { symbol } });
+    if (stmtCount === 0) {
+        const saCount = await syncFromStockAnalysis(symbol);
+        if (saCount > 0) {
+            console.log(`[syncFinancials] ${symbol}: Finnhub had 0 statements, scraped ${saCount} from stockanalysis.com`);
+        }
     }
 }
