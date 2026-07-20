@@ -19,6 +19,35 @@ async function computeMetrics(symbol: string) {
         where: { symbol, endDate: { gte: tenYearsAgo } },
         orderBy: { endDate: 'desc' },
     });
+
+    // Adjust sharesOutstanding for stock splits using Polygon splits API
+    // Finnhub statements often have mixed pre-split and post-split shares
+    const polygonApiKey = process.env.POLYGON_API_KEY;
+    if (polygonApiKey && stmts.length > 0) {
+        try {
+            const splitsResp = await fetch(
+                `https://api.polygon.io/v3/reference/splits?ticker=${symbol}&apiKey=${polygonApiKey}`
+            );
+            if (splitsResp.ok) {
+                const splitsData = await splitsResp.json();
+                for (const sp of (splitsData.results || [])) {
+                    const splitDate = new Date(sp.execution_date + 'T00:00:00Z');
+                    const splitRatio = sp.split_to / sp.split_from;
+                    if (splitDate.getTime() >= tenYearsAgo.getTime()) {
+                        for (const s of stmts) {
+                            if (s.endDate.getTime() < splitDate.getTime() &&
+                                s.sharesOutstanding && s.sharesOutstanding > 0) {
+                                s.sharesOutstanding = s.sharesOutstanding * splitRatio;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch {
+            // Non-critical — continue with unadjusted shares
+        }
+    }
+
     const latestStmt = stmts[0] || null;
 
     const latestValuation = await prisma.dailyValuationHistory.findFirst({
