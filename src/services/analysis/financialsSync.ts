@@ -190,11 +190,23 @@ export async function syncFinancials(symbol: string): Promise<void> {
                 const fiscalPeriod = timeframe === 'annual' ? 'FY' : `Q${quarter}`;
                 if (timeframe === 'quarterly' && !quarter) continue; // Skip invalid quarterly
 
-                const revenue = extract(report, 'ic', [
+                let revenue = extract(report, 'ic', [
                     'us-gaap_Revenues', 'us-gaap_SalesRevenueNet', 'us-gaap_RevenuesNetOfInterestExpense',
                     'us-gaap_RevenueFromContractWithCustomerExcludingAssessedTax', 'us-gaap_HealthCareOrganizationRevenue',
                     'us-gaap_RevenueFromContractWithCustomerIncludingAssessedTax'
                 ]);
+                // Bank fallback: sum interest income + non-interest income
+                if (revenue === null) {
+                    const interestIncome = extract(report, 'ic', [
+                        'us-gaap_InterestAndDividendIncomeOperating',
+                        'us-gaap_InterestIncomeExpenseNet',
+                        'us-gaap_InterestIncome'
+                    ]);
+                    const noninterestIncome = extract(report, 'ic', ['us-gaap_NoninterestIncome']);
+                    if (interestIncome !== null) {
+                        revenue = interestIncome + (noninterestIncome || 0);
+                    }
+                }
                 const netIncome = extract(report, 'ic', [
                     'us-gaap_NetIncomeLoss', 'us-gaap_NetIncomeLossAvailableToCommonStockholdersBasic', 'us-gaap_ProfitLoss'
                 ]);
