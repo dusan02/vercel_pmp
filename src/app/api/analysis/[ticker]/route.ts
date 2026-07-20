@@ -54,7 +54,9 @@ async function computeMetrics(symbol: string) {
     // If Finnhub hasn't updated statement shares after a recent split
     // (e.g. NOW did x5 split but latest statement still has pre-split shares),
     // detect by comparing Ticker.sharesOutstanding to latestStmt.sharesOutstanding.
-    // If ratio matches a common split ratio, multiply ALL statements by that ratio.
+    // If ratio matches a common split ratio, multiply only statements that still
+    // have pre-split shares (below tickerInfo.sharesOutstanding / 2).
+    // This avoids double-adjusting statements already fixed by Polygon splits API above.
     if (stmts.length > 0) {
         const tickerInfo = await prisma.ticker.findUnique({
             where: { symbol },
@@ -70,8 +72,11 @@ async function computeMetrics(symbol: string) {
                         Math.abs(ratio - r) < Math.abs(ratio - best) ? r : best
                     );
                     if (Math.abs(ratio - nearestSplit) / nearestSplit <= 0.15) {
+                        // Only multiply statements that are clearly still pre-split
+                        const threshold = tickerInfo.sharesOutstanding / 2;
                         for (const s of stmts) {
-                            if (s.sharesOutstanding && s.sharesOutstanding > 0) {
+                            if (s.sharesOutstanding && s.sharesOutstanding > 0 &&
+                                s.sharesOutstanding < threshold) {
                                 s.sharesOutstanding = s.sharesOutstanding * nearestSplit;
                             }
                         }
