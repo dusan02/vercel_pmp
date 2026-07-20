@@ -32,8 +32,14 @@ export function AnalysisCharts({ ticker, data }: AnalysisChartsProps) {
             >
                 <ValuationHistoryChart
                     valuationHistory={data.valuationHistory ?? []}
+                    valuationHistoryPE={data.valuationHistoryPE ?? []}
+                    valuationHistoryPS={data.valuationHistoryPS ?? []}
                     valuationForecast={data.valuationForecast ?? []}
+                    valuationForecastPE={data.valuationForecastPE ?? []}
+                    valuationForecastPS={data.valuationForecastPS ?? []}
                     summary={data.valuationSummary ?? null}
+                    summaryPE={data.valuationSummaryPE ?? null}
+                    summaryPS={data.valuationSummaryPS ?? null}
                     ticker={ticker}
                 />
             </ChartSection>

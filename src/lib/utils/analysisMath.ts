@@ -5,24 +5,34 @@
 export type PerSharePoint = { date: string; value: number };
 
 /**
- * Project forward n quarters using CAGR of last 4 points.
- * Growth rate is clamped to [-25%, +50%] per quarter to prevent absurd projections.
- * Negative growth is clamped more tightly since declining forecasts for fundamentally
- * growing companies are usually artifacts of broken TTM data.
+ * Project forward n quarters using CAGR.
+ * Uses the full history for growth rate calculation (more stable than just 4 points).
+ * Low-base guard: if the last value is < 30% of the historical average, use the
+ * average as the projection base to avoid absurd exponential growth from a dip.
+ * Growth rate is clamped to [-20%, +40%] per quarter to prevent absurd projections.
  */
 export function projectForward(base: PerSharePoint[], quarters: number): (PerSharePoint & { isForecast: boolean })[] {
   if (!base.length) return [];
   const last = base[base.length - 1]!;
   const lastDate = new Date(last.date);
-  const n = Math.min(4, base.length);
-  const first = base[base.length - n]!;
-  const growth = first.value > 0 && last.value > 0 ? Math.pow(last.value / first.value, 1 / Math.max(1, n - 1)) - 1 : 0;
-  const clampedGrowth = Math.max(-0.25, Math.min(0.5, growth));
+
+  // Use full history for CAGR (more stable than just last 4 points)
+  const first = base[0]!;
+  const n = base.length;
+  const growth = first.value > 0 && last.value > 0
+    ? Math.pow(last.value / first.value, 1 / Math.max(1, n - 1)) - 1
+    : 0;
+  const clampedGrowth = Math.max(-0.20, Math.min(0.40, growth));
+
+  // Low-base guard: if last value is < 30% of historical average, use average as base
+  const avg = base.reduce((sum, p) => sum + p.value, 0) / base.length;
+  const projectionBase = (last.value < avg * 0.3 && avg > 0) ? avg : last.value;
+
   const forecasts: (PerSharePoint & { isForecast: boolean })[] = [];
   for (let i = 1; i <= quarters; i++) {
     const d = new Date(lastDate);
     d.setMonth(d.getMonth() + i * 3);
-    const next = last.value * Math.pow(1 + clampedGrowth, i);
+    const next = projectionBase * Math.pow(1 + clampedGrowth, i);
     forecasts.push({ date: d.toISOString().split('T')[0] as string, value: parseFloat(next.toFixed(4)), isForecast: true });
   }
   return forecasts;

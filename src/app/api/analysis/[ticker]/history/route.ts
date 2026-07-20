@@ -73,17 +73,58 @@ export async function GET(
         const revPerShareHistory: PerSharePoint[] = [];
         const epsPerShareHistory: PerSharePoint[] = [];
 
+        // Build weekly price lookup for stock split detection
+        const weeklyPriceMap = new Map<string, number>();
+        for (const w of weekly) {
+            if (w.closePrice && w.closePrice > 0) {
+                weeklyPriceMap.set(w.date.toISOString().split('T')[0]!, w.closePrice);
+            }
+        }
+        const sortedPriceDates = Array.from(weeklyPriceMap.keys()).sort();
+
+        // Detect if a shares outstanding increase is a legitimate stock split
+        // by checking if the price dropped by approximately the same factor.
+        function isLikelyStockSplit(stmtDate: Date, sharesRatio: number): boolean {
+            const commonSplitRatios = [2, 3, 4, 5, 8, 10];
+            const nearest = commonSplitRatios.reduce((best, r) =>
+                Math.abs(sharesRatio - r) < Math.abs(sharesRatio - best) ? r : best
+            );
+            // Shares ratio must be close to a common split ratio (within 15%)
+            if (Math.abs(sharesRatio - nearest) / nearest > 0.15) return false;
+
+            const targetDate = stmtDate.toISOString().split('T')[0]!;
+            // Find price ~4 weeks before and at/after statement date
+            const beforeDate = new Date(stmtDate);
+            beforeDate.setDate(beforeDate.getDate() - 28);
+            const beforeStr = beforeDate.toISOString().split('T')[0]!;
+
+            const priceBefore = sortedPriceDates.filter(d => d <= beforeStr).slice(-1)[0];
+            const priceAfter = sortedPriceDates.filter(d => d >= targetDate)[0];
+            if (!priceBefore || !priceAfter) return false;
+
+            const pBefore = weeklyPriceMap.get(priceBefore)!;
+            const pAfter = weeklyPriceMap.get(priceAfter)!;
+            if (pBefore <= 0 || pAfter <= 0) return false;
+
+            const priceRatio = pBefore / pAfter;
+            // Price should drop by approximately the same factor as shares increased
+            return Math.abs(priceRatio - sharesRatio) / sharesRatio < 0.25;
+        }
+
         // Compute TTM per-share at each statement date using shared utility.
         // Guard against anomalous shares outstanding (e.g. Finnhub reporting
-        // in different units) by falling back to the previous quarter's shares
-        // if the current value jumps more than 2x.
+        // in different units) by detecting stock splits via price history.
+        // If shares jump >2x AND price didn't drop proportionally, it's a data error.
         let prevShares: number | null = null;
         for (const s of statements) {
             if (!s.fiscalPeriod || s.fiscalPeriod === 'FY') continue;
             const { netIncome: ttmNI, revenue: ttmRev } = computeTTMAtDate(statements, s.endDate);
             let shares = s.sharesOutstanding;
             if (shares && shares > 0 && prevShares && prevShares > 0 && shares > prevShares * 2) {
-                shares = prevShares;
+                const sharesRatio = shares / prevShares;
+                if (!isLikelyStockSplit(s.endDate, sharesRatio)) {
+                    shares = prevShares; // Data error, not a real split
+                }
             }
             if (shares && shares > 0 && s.endDate) {
                 prevShares = shares;
@@ -141,48 +182,70 @@ export async function GET(
             ? epsPerShareFilled.map(pt => ({ date: pt.date, impliedPrice: parseFloat((pt.value * medianPE).toFixed(2)) }))
             : [];
 
-        // Valuation history: choose intrinsic series and align with price history
-        const intrinsicSeries = impliedPricePE.length > 0 ? impliedPricePE : impliedPricePS;
-        const valuationHistory = priceHistory.map(p => {
-            // Find the most recent intrinsic point on or before this price date (forward-fill)
-            const validPoints = intrinsicSeries.filter(i => i.date <= (p.date || ''));
-            if (validPoints.length === 0) return null;
-            const intrinsicPoint = validPoints[validPoints.length - 1]!; // already sorted ascending
-            
-            const intrinsic = intrinsicPoint.impliedPrice;
-            const underval = intrinsic > 0 ? ((intrinsic - p.price) / intrinsic) * 100 : 0;
-            return {
-                date: p.date,
-                price: p.price,
-                intrinsic,
-                undervaluationPct: parseFloat(underval.toFixed(2)),
-            };
-        }).filter(Boolean) as { date: string; price: number; intrinsic: number; undervaluationPct: number }[];
+        // Helper: build valuation history from a given intrinsic series
+        function buildValuationHistory(intrinsicSrc: { date: string; impliedPrice: number }[]) {
+            return priceHistory.map(p => {
+                const validPoints = intrinsicSrc.filter(i => i.date <= (p.date || ''));
+                if (validPoints.length === 0) return null;
+                const intrinsicPoint = validPoints[validPoints.length - 1]!;
+                const intrinsic = intrinsicPoint.impliedPrice;
+                // Guard: if intrinsic <= 0, mark as N/A (null) — don't compute nonsensical undervaluation
+                if (intrinsic <= 0) {
+                    return { date: p.date, price: p.price, intrinsic: 0, undervaluationPct: null as number | null };
+                }
+                const underval = ((intrinsic - p.price) / intrinsic) * 100;
+                return {
+                    date: p.date,
+                    price: p.price,
+                    intrinsic,
+                    undervaluationPct: parseFloat(underval.toFixed(2)),
+                };
+            }).filter(Boolean) as { date: string; price: number; intrinsic: number; undervaluationPct: number | null }[];
+        }
 
-        const currentUndervaluation = valuationHistory.length
-            ? valuationHistory[valuationHistory.length - 1]!.undervaluationPct
-            : null;
+        const valuationHistoryPE = buildValuationHistory(impliedPricePE);
+        const valuationHistoryPS = buildValuationHistory(impliedPricePS);
 
-        // 5Y average undervaluation
-        const cutoff5y = new Date(); cutoff5y.setFullYear(cutoff5y.getFullYear() - 5);
-        const avg5yVals = valuationHistory.filter(v => new Date(v.date) >= cutoff5y);
-        const avg5yUnderval = avg5yVals.length
-            ? parseFloat((avg5yVals.reduce((a, b) => a + b.undervaluationPct, 0) / avg5yVals.length).toFixed(2))
-            : null;
+        // Default: per-point PE/PS smart fallback — use PE when > 0, else PS
+        const valuationHistory = priceHistory.map((p, idx) => {
+            const pePoint = valuationHistoryPE[idx];
+            const psPoint = valuationHistoryPS[idx];
+            // Prefer PE when it has a valid positive intrinsic
+            if (pePoint && pePoint.intrinsic > 0) return pePoint;
+            if (psPoint && psPoint.intrinsic > 0) return psPoint;
+            // Both invalid — return PE point with null undervaluation
+            return pePoint ?? psPoint ?? null;
+        }).filter(Boolean) as { date: string; price: number; intrinsic: number; undervaluationPct: number | null }[];
 
-        // Intrinsic CAGR (using earliest vs latest intrinsic)
-        const intrinsicCagr = valuationHistory.length >= 2
-            ? (() => {
-                const start = valuationHistory[0]!.intrinsic;
-                const end = valuationHistory[valuationHistory.length - 1]!.intrinsic;
-                const startDate = new Date(valuationHistory[0]!.date);
-                const endDate = new Date(valuationHistory[valuationHistory.length - 1]!.date);
-                const years = Math.max(1, (endDate.getTime() - startDate.getTime()) / (365 * 24 * 60 * 60 * 1000));
-                if (start <= 0 || end <= 0) return null;
-                const cagr = Math.pow(end / start, 1 / years) - 1;
-                return parseFloat((cagr * 100).toFixed(2));
-            })()
-            : null;
+        function computeSummary(vh: { date: string; price: number; intrinsic: number; undervaluationPct: number | null }[]) {
+            const valid = vh.filter(v => v.undervaluationPct !== null);
+            const currentUnderval = valid.length ? valid[valid.length - 1]!.undervaluationPct : null;
+
+            const cutoff5y = new Date(); cutoff5y.setFullYear(cutoff5y.getFullYear() - 5);
+            const avg5yVals = valid.filter(v => new Date(v.date) >= cutoff5y);
+            const avg5yUnderval = avg5yVals.length
+                ? parseFloat((avg5yVals.reduce((a, b) => a + (b.undervaluationPct ?? 0), 0) / avg5yVals.length).toFixed(2))
+                : null;
+
+            const intrinsicCagr = valid.length >= 2
+                ? (() => {
+                    const start = valid[0]!.intrinsic;
+                    const end = valid[valid.length - 1]!.intrinsic;
+                    const startDate = new Date(valid[0]!.date);
+                    const endDate = new Date(valid[valid.length - 1]!.date);
+                    const years = Math.max(1, (endDate.getTime() - startDate.getTime()) / (365 * 24 * 60 * 60 * 1000));
+                    if (start <= 0 || end <= 0) return null;
+                    const cagr = Math.pow(end / start, 1 / years) - 1;
+                    return parseFloat((cagr * 100).toFixed(2));
+                })()
+                : null;
+
+            return { currentUndervaluation: currentUnderval, avg5yUndervaluation: avg5yUnderval, intrinsicCagr };
+        }
+
+        const valuationSummary = computeSummary(valuationHistory);
+        const valuationSummaryPE = computeSummary(valuationHistoryPE);
+        const valuationSummaryPS = computeSummary(valuationHistoryPS);
 
         // --- Simple forward estimates (projection) ---
         const revForecast = projectForward(revPerShareHistory, 6);
@@ -195,7 +258,10 @@ export async function GET(
             ? epsForecast.map(pt => ({ date: pt.date, impliedPrice: parseFloat((pt.value * medianPE).toFixed(2)), isForecast: true }))
             : [];
 
+        // Default forecast: PE-preferred with PS fallback
         const intrinsicForecastSeries = impliedPEForecast.length > 0 ? impliedPEForecast : impliedPSForecast;
+        const intrinsicForecastPE = impliedPEForecast;
+        const intrinsicForecastPS = impliedPSForecast;
 
         const priceMap = new Map(priceHistory.map(p => [p.date, p.price]));
         const psAligned = impliedPricePS.filter(pt => priceMap.has(pt.date));
@@ -217,12 +283,14 @@ export async function GET(
             impliedPricePS,
             impliedPricePE,
             valuationForecast: intrinsicForecastSeries.map(pt => ({ date: pt.date, intrinsic: pt.impliedPrice })),
+            valuationForecastPE: intrinsicForecastPE.map(pt => ({ date: pt.date, intrinsic: pt.impliedPrice })),
+            valuationForecastPS: intrinsicForecastPS.map(pt => ({ date: pt.date, intrinsic: pt.impliedPrice })),
             valuationHistory,
-            valuationSummary: {
-                currentUndervaluation,
-                avg5yUndervaluation: avg5yUnderval,
-                intrinsicCagr,
-            },
+            valuationHistoryPE,
+            valuationHistoryPS,
+            valuationSummary,
+            valuationSummaryPE,
+            valuationSummaryPS,
             correlation: {
                 priceVsImpliedPS: corrPS,
                 priceVsImpliedPE: corrPE,

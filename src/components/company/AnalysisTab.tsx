@@ -103,13 +103,27 @@ export interface AnalysisData {
     };
 
     // Valuation history (intrinsic vs price)
-    valuationHistory?: { date: string; price: number; intrinsic: number; undervaluationPct: number }[];
+    valuationHistory?: { date: string; price: number; intrinsic: number; undervaluationPct: number | null }[];
+    valuationHistoryPE?: { date: string; price: number; intrinsic: number; undervaluationPct: number | null }[];
+    valuationHistoryPS?: { date: string; price: number; intrinsic: number; undervaluationPct: number | null }[];
     valuationSummary?: {
         currentUndervaluation: number | null;
         avg5yUndervaluation: number | null;
         intrinsicCagr: number | null;
     } | null;
+    valuationSummaryPE?: {
+        currentUndervaluation: number | null;
+        avg5yUndervaluation: number | null;
+        intrinsicCagr: number | null;
+    } | null;
+    valuationSummaryPS?: {
+        currentUndervaluation: number | null;
+        avg5yUndervaluation: number | null;
+        intrinsicCagr: number | null;
+    } | null;
     valuationForecast?: { date: string; intrinsic: number }[];
+    valuationForecastPE?: { date: string; intrinsic: number }[];
+    valuationForecastPS?: { date: string; intrinsic: number }[];
 
     // Valuation charts (P/E & P/S bands)
     peHistory?: { date: string; value: number }[];
