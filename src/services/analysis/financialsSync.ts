@@ -145,13 +145,14 @@ export async function syncFinancials(symbol: string): Promise<void> {
             // Helper to extract value from Finnhub XBRL concepts
             const extract = (report: any, section: string, concepts: string[]): number | null => {
                 const list = report[section] || [];
+                const isValid = (v: any) => v !== undefined && v !== null && v !== 'N/A' && v !== '';
                 for (const concept of concepts) {
                     const found = list.find((item: any) => item.concept === concept);
-                    if (found && found.value !== undefined && found.value !== null && found.value !== 'N/A') return found.value;
+                    if (found && isValid(found.value)) return found.value;
                     // Also try without us-gaap_ prefix (some filings omit it)
                     const shortConcept = concept.replace(/^us-gaap_/, '');
                     const foundShort = list.find((item: any) => item.concept === shortConcept);
-                    if (foundShort && foundShort.value !== undefined && foundShort.value !== null && foundShort.value !== 'N/A') return foundShort.value;
+                    if (foundShort && isValid(foundShort.value)) return foundShort.value;
                 }
                 return null;
             };
@@ -161,9 +162,10 @@ export async function syncFinancials(symbol: string): Promise<void> {
                 const list = report[section] || [];
                 let sum = 0;
                 let found = false;
+                const isValid = (v: any) => v !== undefined && v !== null && v !== 'N/A' && v !== '';
                 for (const concept of concepts) {
                     const item = list.find((i: any) => i.concept === concept);
-                    if (item && item.value !== undefined && item.value !== null && item.value !== 'N/A') {
+                    if (item && isValid(item.value)) {
                         sum += item.value;
                         found = true;
                         continue;
@@ -171,7 +173,7 @@ export async function syncFinancials(symbol: string): Promise<void> {
                     // Also try without us-gaap_ prefix
                     const shortConcept = concept.replace(/^us-gaap_/, '');
                     const itemShort = list.find((i: any) => i.concept === shortConcept);
-                    if (itemShort && itemShort.value !== undefined && itemShort.value !== null && itemShort.value !== 'N/A') {
+                    if (itemShort && isValid(itemShort.value)) {
                         sum += itemShort.value;
                         found = true;
                     }
