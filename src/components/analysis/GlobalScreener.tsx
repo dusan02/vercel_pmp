@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { MarketSignals } from './MarketSignals';
 import { NotificationToggle } from '../notifications/NotificationToggle';
 import { formatMarketCap } from '@/lib/utils/format';
@@ -41,7 +42,8 @@ export function GlobalScreener() {
     const [minHealth, setMinHealth] = useState<number>(0);
     const [minAltman, setMinAltman] = useState<number>(0);
     const [selectedSector, setSelectedSector] = useState<string>('');
-    const [sortBy, setSortBy] = useState<string>('healthScore:desc');
+    const [sortField, setSortField] = useState<string>('healthScore');
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
     const fetchResults = async () => {
         setLoading(true);
@@ -49,7 +51,7 @@ export function GlobalScreener() {
             const params = new URLSearchParams({
                 minHealth: minHealth.toString(),
                 minAltman: minAltman.toString(),
-                sort: sortBy,
+                sort: `${sortField}:${sortOrder}`,
                 limit: '20',
                 page: page.toString()
             });
@@ -68,12 +70,28 @@ export function GlobalScreener() {
 
     useEffect(() => {
         fetchResults();
-    }, [minHealth, minAltman, selectedSector, sortBy, page]);
+    }, [minHealth, minAltman, selectedSector, sortField, sortOrder, page]);
 
     // Reset page on filter change
     useEffect(() => {
         setPage(1);
-    }, [minHealth, minAltman, selectedSector, sortBy]);
+    }, [minHealth, minAltman, selectedSector, sortField, sortOrder]);
+
+    const handleSort = (field: string) => {
+        if (sortField === field) {
+            setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortField(field);
+            setSortOrder('desc');
+        }
+    };
+
+    const SortIcon = ({ field }: { field: string }) => {
+        if (sortField !== field) return <ChevronsUpDown size={12} className="inline ml-1 text-gray-300 dark:text-gray-600" />;
+        return sortOrder === 'asc'
+            ? <ChevronUp size={12} className="inline ml-1 text-blue-500" />
+            : <ChevronDown size={12} className="inline ml-1 text-blue-500" />;
+    };
 
     const handleTickerClick = (symbol: string) => {
         const event = new CustomEvent('mobile-nav-change', {
@@ -130,14 +148,22 @@ export function GlobalScreener() {
                 <div className="flex flex-col gap-2 min-w-[150px]">
                     <label className="text-xs font-semibold uppercase text-gray-400 tracking-wider">Sort By</label>
                     <select
-                        value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value)}
+                        value={`${sortField}:${sortOrder}`}
+                        onChange={(e) => {
+                            const parts = e.target.value.split(':');
+                            const f = parts[0] ?? 'healthScore';
+                            const o = (parts[1] === 'asc' ? 'asc' : 'desc') as 'asc' | 'desc';
+                            setSortField(f);
+                            setSortOrder(o);
+                        }}
                         className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                     >
                         <option value="healthScore:desc">Health Score (High)</option>
+                        <option value="healthScore:asc">Health Score (Low)</option>
                         <option value="valuationScore:desc">Best Valuation</option>
                         <option value="profitabilityScore:desc">High Profitability</option>
                         <option value="altmanZ:desc">Safest (Altman Z)</option>
+                        <option value="ticker.lastMarketCap:desc">Largest Market Cap</option>
                     </select>
                 </div>
 
@@ -154,12 +180,24 @@ export function GlobalScreener() {
                     <table className="w-full text-sm text-left">
                         <thead className="bg-gray-50 dark:bg-gray-700/50 text-xs text-gray-500 dark:text-gray-400 uppercase">
                             <tr>
-                                <th className="px-6 py-4">Company</th>
-                                <th className="px-4 py-4 text-center">Health</th>
-                                <th className="px-4 py-4 text-center">Profit</th>
-                                <th className="px-4 py-4 text-center">Value</th>
-                                <th className="px-4 py-4 text-center">Altman Z</th>
-                                <th className="px-6 py-4 text-right">Market Cap</th>
+                                <th className="px-6 py-4 cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 select-none" onClick={() => handleSort('ticker.name')}>
+                                    Company <SortIcon field="ticker.name" />
+                                </th>
+                                <th className="px-4 py-4 text-center cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 select-none" onClick={() => handleSort('healthScore')}>
+                                    Health <SortIcon field="healthScore" />
+                                </th>
+                                <th className="px-4 py-4 text-center cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 select-none" onClick={() => handleSort('profitabilityScore')}>
+                                    Profit <SortIcon field="profitabilityScore" />
+                                </th>
+                                <th className="px-4 py-4 text-center cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 select-none" onClick={() => handleSort('valuationScore')}>
+                                    Value <SortIcon field="valuationScore" />
+                                </th>
+                                <th className="px-4 py-4 text-center cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 select-none" onClick={() => handleSort('altmanZ')}>
+                                    Altman Z <SortIcon field="altmanZ" />
+                                </th>
+                                <th className="px-6 py-4 text-right cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 select-none" onClick={() => handleSort('ticker.lastMarketCap')}>
+                                    Market Cap <SortIcon field="ticker.lastMarketCap" />
+                                </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100 dark:divide-gray-700">

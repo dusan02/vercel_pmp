@@ -33,6 +33,11 @@ const TAB_META: Record<string, { title: string; description: string; canonical: 
     description: 'Browse 300+ US stocks with real-time pre-market prices, % change, market cap, and sector data. Sort and filter by any metric.',
     canonical: `${baseUrl}/stocks`,
   },
+  screener: {
+    title: 'Stock Screener — Filter by Financial Health & Valuation | PreMarketPrice',
+    description: 'Screen 700+ US stocks by financial health score, profitability, valuation, Altman Z-score, and sector. Sort and filter to find the best investment opportunities.',
+    canonical: `${baseUrl}/screener`,
+  },
   analysis: {
     title: 'Stock Analysis — Technical & Fundamental Data | PreMarketPrice',
     description: 'Deep-dive stock analysis including pre-market price, technical indicators, earnings history, valuation scores, and financial health metrics.',
