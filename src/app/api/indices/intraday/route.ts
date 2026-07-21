@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withRetry } from '@/lib/api/rateLimiter';
 
-const INDICES = ['SPY', 'QQQ', 'DIA'];
+const INDICES = ['SPY', 'QQQ'];
 
 export const revalidate = 300; // 5 min
 
