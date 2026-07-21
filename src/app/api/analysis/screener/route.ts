@@ -59,9 +59,26 @@ export async function GET(request: Request) {
 
         const skip = (page - 1) * limit;
 
-        // Definitive fix for Prisma sort typing
+        // Build Prisma orderBy — support nested relation fields like "ticker.lastMarketCap"
+        const ALLOWED_SORT_FIELDS: Record<string, string> = {
+            healthScore: 'healthScore',
+            profitabilityScore: 'profitabilityScore',
+            valuationScore: 'valuationScore',
+            altmanZ: 'altmanZ',
+            'ticker.name': 'ticker.name',
+            'ticker.lastMarketCap': 'ticker.lastMarketCap',
+            'ticker.lastPrice': 'ticker.lastPrice',
+        };
+        const mappedField = ALLOWED_SORT_FIELDS[sortField] || 'healthScore';
         const orderBy: any = {};
-        orderBy[sortField] = sortOrder;
+        if (mappedField.includes('.')) {
+            const parts = mappedField.split('.');
+            const relation = parts[0] ?? 'ticker';
+            const field = parts[1] ?? 'name';
+            orderBy[relation] = { [field]: sortOrder };
+        } else {
+            orderBy[mappedField] = sortOrder;
+        }
 
         const [results, total] = await Promise.all([
             prisma.analysisCache.findMany({

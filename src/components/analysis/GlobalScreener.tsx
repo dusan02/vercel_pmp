@@ -69,8 +69,8 @@ export function GlobalScreener() {
 
             const res = await fetch(`/api/analysis/screener?${params.toString()}`);
             const data = await res.json();
-            setResults(data.results);
-            setPagination(data.pagination);
+            setResults(data.results || []);
+            setPagination(data.pagination || null);
         } catch (error) {
             console.error('Failed to fetch screener results:', error);
         } finally {
