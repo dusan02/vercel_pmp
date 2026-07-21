@@ -20,7 +20,7 @@ export function ChartSection({
     hasData = true,
 }: ChartSectionProps) {
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 sm:p-6 overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 sm:p-6 overflow-visible">
             <div className="flex items-center gap-2.5 sm:gap-3 mb-4 sm:mb-6">
                 <div className={`p-1.5 sm:p-2 rounded-lg flex-shrink-0 ${iconBgClass}`}>
                     {icon}

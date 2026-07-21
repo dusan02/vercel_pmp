@@ -204,7 +204,7 @@ export default function ValuationCharts({ ticker, peHistory, psHistory, current:
                 </div>
             ) : (
                 <ResponsiveContainer width="100%" height={300}>
-                    <ComposedChart data={filteredHistory} margin={{ top: 8, right: 16, left: 8, bottom: 4 }}>
+                    <ComposedChart data={filteredHistory} margin={{ top: 8, right: 55, left: 8, bottom: 4 }}>
                         <defs>
                             <linearGradient id="peGrad" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="0%" stopColor="#6366f1" stopOpacity={0.25} />
