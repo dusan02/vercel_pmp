@@ -14,7 +14,7 @@ import {
 
 export default function StockScreener() {
   const router = useRouter();
-  const screener = useScreener({ initialLimit: 25 });
+  const screener = useScreener({ initialLimit: 25, defaultMinHealth: 0, defaultMinProfit: 0, defaultMinValue: 0 });
   const {
     results, pagination, loading, page, setPage,
     minHealth, maxHealth, setMinHealth, setMaxHealth,

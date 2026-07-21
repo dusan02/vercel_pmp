@@ -5,43 +5,72 @@ import { ScreenerResult, ScreenerPagination } from '@/lib/utils/screener';
 
 interface UseScreenerOptions {
     initialLimit?: number;
-    defaultSort?: string;
+    defaultMinHealth?: number;
+    defaultMinProfit?: number;
+    defaultMinValue?: number;
 }
 
-export function useScreener({ initialLimit = 20, defaultSort = 'healthScore:desc' }: UseScreenerOptions = {}) {
+export function useScreener({
+    initialLimit = 20,
+    defaultMinHealth = 50,
+    defaultMinProfit = 50,
+    defaultMinValue = 50,
+}: UseScreenerOptions = {}) {
     const [results, setResults] = useState<ScreenerResult[]>([]);
     const [pagination, setPagination] = useState<ScreenerPagination | null>(null);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
 
     // Filters
-    const [minHealth, setMinHealth] = useState<number>(50);
+    const [minHealth, setMinHealth] = useState<number>(defaultMinHealth);
     const [maxHealth, setMaxHealth] = useState<number>(100);
-    const [minProfit, setMinProfit] = useState<number>(50);
+    const [minProfit, setMinProfit] = useState<number>(defaultMinProfit);
     const [maxProfit, setMaxProfit] = useState<number>(100);
-    const [minValue, setMinValue] = useState<number>(50);
+    const [minValue, setMinValue] = useState<number>(defaultMinValue);
     const [maxValue, setMaxValue] = useState<number>(100);
     const [minAltman, setMinAltman] = useState<number>(0);
     const [selectedSector, setSelectedSector] = useState<string>('');
     const [sortField, setSortField] = useState<string>('healthScore');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
+    // Debounced filter values
+    const [debouncedFilters, setDebouncedFilters] = useState({
+        minHealth: defaultMinHealth, maxHealth: 100,
+        minProfit: defaultMinProfit, maxProfit: 100,
+        minValue: defaultMinValue, maxValue: 100,
+        minAltman: 0, selectedSector: '',
+        sortField: 'healthScore', sortOrder: 'desc' as 'asc' | 'desc',
+    });
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedFilters({
+                minHealth, maxHealth,
+                minProfit, maxProfit,
+                minValue, maxValue,
+                minAltman, selectedSector,
+                sortField, sortOrder,
+            });
+        }, 400);
+        return () => clearTimeout(timer);
+    }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minAltman, selectedSector, sortField, sortOrder]);
+
     const fetchResults = useCallback(async () => {
         setLoading(true);
         try {
             const params = new URLSearchParams({
-                minHealth: minHealth.toString(),
-                maxHealth: maxHealth.toString(),
-                minProfitability: minProfit.toString(),
-                maxProfitability: maxProfit.toString(),
-                minValuation: minValue.toString(),
-                maxValuation: maxValue.toString(),
-                minAltman: minAltman.toString(),
-                sort: `${sortField}:${sortOrder}`,
+                minHealth: debouncedFilters.minHealth.toString(),
+                maxHealth: debouncedFilters.maxHealth.toString(),
+                minProfitability: debouncedFilters.minProfit.toString(),
+                maxProfitability: debouncedFilters.maxProfit.toString(),
+                minValuation: debouncedFilters.minValue.toString(),
+                maxValuation: debouncedFilters.maxValue.toString(),
+                minAltman: debouncedFilters.minAltman.toString(),
+                sort: `${debouncedFilters.sortField}:${debouncedFilters.sortOrder}`,
                 limit: initialLimit.toString(),
                 page: page.toString()
             });
-            if (selectedSector) params.append('sector', selectedSector);
+            if (debouncedFilters.selectedSector) params.append('sector', debouncedFilters.selectedSector);
 
             const res = await fetch(`/api/analysis/screener?${params.toString()}`);
             const data = await res.json();
@@ -53,13 +82,13 @@ export function useScreener({ initialLimit = 20, defaultSort = 'healthScore:desc
         } finally {
             setLoading(false);
         }
-    }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minAltman, selectedSector, sortField, sortOrder, page, initialLimit]);
+    }, [debouncedFilters, page, initialLimit]);
 
     useEffect(() => {
         fetchResults();
     }, [fetchResults]);
 
-    // Reset page on filter change
+    // Reset page on filter change (immediate, not debounced)
     useEffect(() => {
         setPage(1);
     }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minAltman, selectedSector, sortField, sortOrder]);
