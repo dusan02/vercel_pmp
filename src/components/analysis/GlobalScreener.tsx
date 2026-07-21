@@ -128,56 +128,62 @@ export function GlobalScreener() {
             </div>
 
             {/* Filters Bar */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 flex flex-wrap gap-6 items-end">
-                <DualRangeSlider
-                    label="Health Score"
-                    min={0} max={100}
-                    valueMin={minHealth} valueMax={maxHealth}
-                    onChangeMin={setMinHealth} onChangeMax={setMaxHealth}
-                    accentColor="blue"
-                />
-                <DualRangeSlider
-                    label="Profitability"
-                    min={0} max={100}
-                    valueMin={minProfit} valueMax={maxProfit}
-                    onChangeMin={setMinProfit} onChangeMax={setMaxProfit}
-                    accentColor="green"
-                />
-                <DualRangeSlider
-                    label="Valuation"
-                    min={0} max={100}
-                    valueMin={minValue} valueMax={maxValue}
-                    onChangeMin={setMinValue} onChangeMax={setMaxValue}
-                    accentColor="purple"
-                />
-
-                <div className="flex flex-col gap-2 min-w-[150px]">
-                    <label className="text-xs font-semibold uppercase text-gray-400 tracking-wider">Sort By</label>
-                    <select
-                        value={`${sortField}:${sortOrder}`}
-                        onChange={(e) => {
-                            const parts = e.target.value.split(':');
-                            const f = parts[0] ?? 'healthScore';
-                            const o = (parts[1] === 'asc' ? 'asc' : 'desc') as 'asc' | 'desc';
-                            setSortField(f);
-                            setSortOrder(o);
-                        }}
-                        className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                    >
-                        <option value="healthScore:desc">Health Score (High)</option>
-                        <option value="healthScore:asc">Health Score (Low)</option>
-                        <option value="valuationScore:desc">Best Valuation</option>
-                        <option value="profitabilityScore:desc">High Profitability</option>
-                        <option value="altmanZ:desc">Safest (Altman Z)</option>
-                        <option value="ticker.lastMarketCap:desc">Largest Market Cap</option>
-                    </select>
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
+                <div className="flex items-center gap-3 mb-4">
+                    <span className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Filters</span>
+                    <div className="flex-1 h-px bg-gray-100 dark:bg-gray-700" />
+                    {loading && (
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-200 dark:border-gray-600 border-t-blue-500" />
+                    )}
                 </div>
-
-                {loading && (
-                    <div className="flex-1 flex justify-end">
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-4">
+                    <DualRangeSlider
+                        label="Health Score"
+                        min={0} max={100}
+                        valueMin={minHealth} valueMax={maxHealth}
+                        onChangeMin={setMinHealth} onChangeMax={setMaxHealth}
+                        accentColor="blue"
+                    />
+                    <DualRangeSlider
+                        label="Profitability"
+                        min={0} max={100}
+                        valueMin={minProfit} valueMax={maxProfit}
+                        onChangeMin={setMinProfit} onChangeMax={setMaxProfit}
+                        accentColor="emerald"
+                    />
+                    <DualRangeSlider
+                        label="Valuation"
+                        min={0} max={100}
+                        valueMin={minValue} valueMax={maxValue}
+                        onChangeMin={setMinValue} onChangeMax={setMaxValue}
+                        accentColor="violet"
+                    />
+                    <div className="flex flex-col gap-1.5 min-w-[160px]">
+                        <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Sort By</label>
+                        <select
+                            value={`${sortField}:${sortOrder}`}
+                            onChange={(e) => {
+                                const parts = e.target.value.split(':');
+                                const f = parts[0] ?? 'healthScore';
+                                const o = (parts[1] === 'asc' ? 'asc' : 'desc') as 'asc' | 'desc';
+                                setSortField(f);
+                                setSortOrder(o);
+                            }}
+                            className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all cursor-pointer"
+                        >
+                            <option value="healthScore:desc">Health Score ↓</option>
+                            <option value="healthScore:asc">Health Score ↑</option>
+                            <option value="valuationScore:desc">Valuation ↓</option>
+                            <option value="valuationScore:asc">Valuation ↑</option>
+                            <option value="profitabilityScore:desc">Profitability ↓</option>
+                            <option value="profitabilityScore:asc">Profitability ↑</option>
+                            <option value="altmanZ:desc">Altman Z ↓</option>
+                            <option value="altmanZ:asc">Altman Z ↑</option>
+                            <option value="ticker.lastMarketCap:desc">Market Cap ↓</option>
+                            <option value="ticker.lastMarketCap:asc">Market Cap ↑</option>
+                        </select>
                     </div>
-                )}
+                </div>
             </div>
 
             {/* Results Table */}
