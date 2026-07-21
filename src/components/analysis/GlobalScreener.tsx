@@ -2,7 +2,6 @@
 
 import React, { useMemo } from 'react';
 import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
-import { NotificationToggle } from '../notifications/NotificationToggle';
 import { DualRangeSlider } from './DualRangeSlider';
 import CompanyLogo from '../CompanyLogo';
 import { UniversalTable, ColumnDef } from '../UniversalTable';
@@ -121,14 +120,9 @@ export function GlobalScreener() {
     return (
         <div className="flex flex-col gap-6 p-4 lg:p-0 mb-20 lg:mb-0">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Global Analysis Screener</h2>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Filter and sort the S&P 500 by professional health and quality metrics.</p>
-                </div>
-                <div className="w-full md:w-auto">
-                    <NotificationToggle />
-                </div>
+            <div>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Global Analysis Screener</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Filter and sort the S&P 500 by professional health and quality metrics.</p>
             </div>
 
             {/* Filters Bar */}
