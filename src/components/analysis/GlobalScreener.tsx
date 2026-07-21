@@ -7,7 +7,8 @@ import { DualRangeSlider } from './DualRangeSlider';
 import CompanyLogo from '../CompanyLogo';
 import { UniversalTable, ColumnDef } from '../UniversalTable';
 import { useScreener } from '@/hooks/useScreener';
-import { ScreenerResult, scoreColor, altmanZLabel, formatScreenerMarketCap, SORT_OPTIONS } from '@/lib/utils/screener';
+import { ScreenerResult, scoreColor, altmanZLabel, SORT_OPTIONS } from '@/lib/utils/screener';
+import { formatBillions } from '@/lib/utils/format';
 
 export function GlobalScreener() {
     const screener = useScreener({ initialLimit: 20 });
@@ -111,7 +112,7 @@ export function GlobalScreener() {
             sortable: true,
             render: (item) => (
                 <span className="font-mono text-gray-600 dark:text-gray-400">
-                    {formatScreenerMarketCap(item.ticker?.lastMarketCap)}
+                    {item.ticker?.lastMarketCap ? formatBillions(item.ticker.lastMarketCap) : '-'}
                 </span>
             )
         },
@@ -209,7 +210,7 @@ export function GlobalScreener() {
                                     </div>
                                     <div className="text-xs text-gray-400 truncate">{item.ticker?.name || '---'}</div>
                                 </div>
-                                <span className="text-xs font-mono text-gray-500">{formatScreenerMarketCap(item.ticker?.lastMarketCap)}</span>
+                                <span className="text-xs font-mono text-gray-500">{item.ticker?.lastMarketCap ? formatBillions(item.ticker.lastMarketCap) : '-'}</span>
                             </div>
                             <div className="grid grid-cols-4 gap-2 text-center">
                                 <div>

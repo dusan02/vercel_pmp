@@ -8,9 +8,10 @@ import { UniversalTable, ColumnDef } from './UniversalTable';
 import { DualRangeSlider } from './analysis/DualRangeSlider';
 import { useScreener } from '@/hooks/useScreener';
 import {
-  ScreenerResult, scoreColor, altmanZLabel, formatScreenerMarketCap,
+  ScreenerResult, scoreColor, altmanZLabel,
   SORT_OPTIONS, SECTORS,
 } from '@/lib/utils/screener';
+import { formatBillions } from '@/lib/utils/format';
 
 export default function StockScreener() {
   const router = useRouter();
@@ -77,7 +78,7 @@ export default function StockScreener() {
       align: 'right',
       sortable: true,
       className: 'hidden sm:table-cell',
-      render: (r) => <span className="text-gray-700 dark:text-gray-200">{formatScreenerMarketCap(r.ticker?.lastMarketCap)}</span>
+      render: (r) => <span className="text-gray-700 dark:text-gray-200">{r.ticker?.lastMarketCap ? formatBillions(r.ticker.lastMarketCap) : '-'}</span>
     },
     {
       key: 'healthScore',
@@ -239,7 +240,7 @@ export default function StockScreener() {
                   <div className="font-bold text-gray-900 dark:text-white">{r.symbol}</div>
                   <div className="text-xs text-gray-400 truncate">{r.ticker?.name || r.symbol}</div>
                 </div>
-                <span className="text-xs font-mono text-gray-500">{formatScreenerMarketCap(r.ticker?.lastMarketCap)}</span>
+                <span className="text-xs font-mono text-gray-500">{r.ticker?.lastMarketCap ? formatBillions(r.ticker.lastMarketCap) : '-'}</span>
               </div>
               <div className="grid grid-cols-4 gap-2 text-center">
                 <div>

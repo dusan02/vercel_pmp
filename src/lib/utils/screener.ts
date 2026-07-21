@@ -70,11 +70,3 @@ export function altmanZLabel(z: number | null): { color: string; label: string }
     if (z > 1.8) return { color: 'text-yellow-500', label: 'Grey' };
     return { color: 'text-red-500', label: 'Risk' };
 }
-
-export function formatScreenerMarketCap(mc: number | null | undefined): string {
-    if (!mc || mc <= 0) return '-';
-    if (mc >= 1e12) return `$${(mc / 1e12).toFixed(1)}T`;
-    if (mc >= 1e9) return `$${(mc / 1e9).toFixed(1)}B`;
-    if (mc >= 1e6) return `$${(mc / 1e6).toFixed(1)}M`;
-    return `$${mc.toFixed(0)}`;
-}
