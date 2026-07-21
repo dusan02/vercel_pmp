@@ -6,12 +6,12 @@ import { Search, Filter, ChevronLeft, ChevronRight, ArrowUpDown } from 'lucide-r
 import CompanyLogo from './CompanyLogo';
 
 interface ScreenerResult {
-  ticker: string;
+  symbol: string;
   healthScore: number | null;
   profitabilityScore: number | null;
   valuationScore: number | null;
   altmanZ: number | null;
-  tickerInfo: {
+  ticker: {
     name: string;
     sector: string;
     industry: string;
@@ -113,7 +113,13 @@ export default function StockScreener() {
       const res = await fetch(`/api/analysis/screener?${params.toString()}`);
       if (!res.ok) throw new Error('Failed to fetch');
       const data: ScreenerResponse = await res.json();
-      setResults(data.results || []);
+      // Map API response: 'symbol' is ticker string, 'ticker' is relation object
+      const mapped = (data.results || []).map((r: any) => ({
+        ...r,
+        ticker: r.ticker,
+        symbol: r.symbol,
+      }));
+      setResults(mapped);
       setTotalPages(data.pagination?.totalPages || 1);
       setTotal(data.pagination?.total || 0);
     } catch (err) {
@@ -287,31 +293,31 @@ export default function StockScreener() {
 
               {!loading && results.map((r) => (
                 <tr
-                  key={r.ticker}
-                  onClick={() => handleTickerClick(r.ticker)}
+                  key={r.symbol}
+                  onClick={() => handleTickerClick(r.symbol)}
                   className="border-b border-gray-100 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700/50 cursor-pointer transition-colors"
                 >
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 flex items-center justify-center shrink-0">
-                        <CompanyLogo ticker={r.ticker} size={32} />
+                        <CompanyLogo ticker={r.symbol} size={32} />
                       </div>
                       <div className="min-w-0">
-                        <div className="font-medium text-gray-900 dark:text-white">{r.ticker}</div>
+                        <div className="font-medium text-gray-900 dark:text-white">{r.symbol}</div>
                         <div className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-32">
-                          {r.tickerInfo?.name || r.ticker}
+                          {r.ticker?.name || r.symbol}
                         </div>
                       </div>
                     </div>
                   </td>
                   <td className="py-3 px-4 text-gray-600 dark:text-gray-300 hidden md:table-cell text-xs">
-                    {r.tickerInfo?.sector || '-'}
+                    {r.ticker?.sector || '-'}
                   </td>
                   <td className="py-3 px-4 text-right text-gray-700 dark:text-gray-200">
-                    {r.tickerInfo?.lastPrice ? `$${r.tickerInfo.lastPrice.toFixed(2)}` : '-'}
+                    {r.ticker?.lastPrice ? `$${r.ticker.lastPrice.toFixed(2)}` : '-'}
                   </td>
                   <td className="py-3 px-4 text-right text-gray-700 dark:text-gray-200 hidden sm:table-cell">
-                    {formatMarketCap(r.tickerInfo?.lastMarketCap ?? null)}
+                    {formatMarketCap(r.ticker?.lastMarketCap ?? null)}
                   </td>
                   <td className={`py-3 px-4 text-right ${scoreColor(r.healthScore)}`}>
                     {r.healthScore !== null ? r.healthScore.toFixed(0) : '-'}
