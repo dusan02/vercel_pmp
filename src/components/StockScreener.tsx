@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, Filter, ChevronLeft, ChevronRight, ArrowUpDown } from 'lucide-react';
 import CompanyLogo from './CompanyLogo';
+import { UniversalTable, ColumnDef } from './UniversalTable';
+import { formatMarketCap } from '@/lib/utils/format';
 
 interface ScreenerResult {
   symbol: string;
@@ -45,14 +47,6 @@ const SORT_OPTIONS = [
   { value: 'altmanZ:desc', label: 'Altman Z ↓' },
   { value: 'ticker:lastMarketCap:desc', label: 'Market Cap ↓' },
 ];
-
-function formatMarketCap(mc: number | null): string {
-  if (!mc || mc <= 0) return '-';
-  if (mc >= 1e12) return `$${(mc / 1e12).toFixed(1)}T`;
-  if (mc >= 1e9) return `$${(mc / 1e9).toFixed(1)}B`;
-  if (mc >= 1e6) return `$${(mc / 1e6).toFixed(1)}M`;
-  return `$${mc.toFixed(0)}`;
-}
 
 function scoreColor(score: number | null): string {
   if (score === null) return 'text-gray-400';
@@ -148,6 +142,86 @@ export default function StockScreener() {
   };
 
   const hasActiveFilters = minHealth || minProfitability || minValuation || minAltman || sector;
+
+  const sortParts = appliedFilters.sort.split(':');
+  const currentSortField = sortParts[0] ?? 'healthScore';
+  const currentSortOrder = (sortParts[1] === 'asc' ? 'asc' : 'desc') as 'asc' | 'desc';
+
+  const handleSortClick = (field: string) => {
+    if (currentSortField === field) {
+      setSort(`${field}:${currentSortOrder === 'asc' ? 'desc' : 'asc'}`);
+    } else {
+      setSort(`${field}:desc`);
+    }
+  };
+
+  const columns: ColumnDef<ScreenerResult>[] = useMemo(() => [
+    {
+      key: 'company',
+      header: 'Company',
+      align: 'left',
+      render: (r) => (
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 flex items-center justify-center shrink-0">
+            <CompanyLogo ticker={r.symbol} size={32} />
+          </div>
+          <div className="min-w-0">
+            <div className="font-medium text-gray-900 dark:text-white">{r.symbol}</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-32">
+              {r.ticker?.name || r.symbol}
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      key: 'sector',
+      header: 'Sector',
+      align: 'left',
+      className: 'hidden md:table-cell',
+      render: (r) => <span className="text-xs text-gray-600 dark:text-gray-300">{r.ticker?.sector || '-'}</span>
+    },
+    {
+      key: 'price',
+      header: 'Price',
+      align: 'right',
+      render: (r) => <span className="text-gray-700 dark:text-gray-200">{r.ticker?.lastPrice ? `$${r.ticker.lastPrice.toFixed(2)}` : '-'}</span>
+    },
+    {
+      key: 'marketCap',
+      header: 'Market Cap',
+      align: 'right',
+      className: 'hidden sm:table-cell',
+      render: (r) => <span className="text-gray-700 dark:text-gray-200">{formatMarketCap(r.ticker?.lastMarketCap ?? null)}</span>
+    },
+    {
+      key: 'healthScore',
+      header: 'Health',
+      align: 'right',
+      render: (r) => <span className={scoreColor(r.healthScore)}>{r.healthScore !== null ? r.healthScore.toFixed(0) : '-'}</span>
+    },
+    {
+      key: 'profitabilityScore',
+      header: 'Profit.',
+      align: 'right',
+      className: 'hidden md:table-cell',
+      render: (r) => <span className={scoreColor(r.profitabilityScore)}>{r.profitabilityScore !== null ? r.profitabilityScore.toFixed(0) : '-'}</span>
+    },
+    {
+      key: 'valuationScore',
+      header: 'Valuation',
+      align: 'right',
+      className: 'hidden md:table-cell',
+      render: (r) => <span className={scoreColor(r.valuationScore)}>{r.valuationScore !== null ? r.valuationScore.toFixed(0) : '-'}</span>
+    },
+    {
+      key: 'altmanZ',
+      header: 'Altman Z',
+      align: 'right',
+      className: 'hidden lg:table-cell',
+      render: (r) => <span className="text-gray-700 dark:text-gray-200">{r.altmanZ !== null ? r.altmanZ.toFixed(2) : '-'}</span>
+    },
+  ], []);
 
   return (
     <div className="space-y-4">
@@ -263,87 +337,14 @@ export default function StockScreener() {
 
       {/* Results Table */}
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50">
-                <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Company</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-300 hidden md:table-cell">Sector</th>
-                <th className="text-right py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Price</th>
-                <th className="text-right py-3 px-4 font-medium text-gray-600 dark:text-gray-300 hidden sm:table-cell">Market Cap</th>
-                <th className="text-right py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Health</th>
-                <th className="text-right py-3 px-4 font-medium text-gray-600 dark:text-gray-300 hidden md:table-cell">Profit.</th>
-                <th className="text-right py-3 px-4 font-medium text-gray-600 dark:text-gray-300 hidden md:table-cell">Valuation</th>
-                <th className="text-right py-3 px-4 font-medium text-gray-600 dark:text-gray-300 hidden lg:table-cell">Altman Z</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading && Array.from({ length: 10 }).map((_, i) => (
-                <tr key={i} className="border-b border-gray-100 dark:border-slate-700">
-                  <td className="py-3 px-4"><div className="h-4 w-32 bg-gray-200 dark:bg-slate-700 rounded animate-pulse" /></td>
-                  <td className="py-3 px-4 hidden md:table-cell"><div className="h-4 w-20 bg-gray-200 dark:bg-slate-700 rounded animate-pulse" /></td>
-                  <td className="py-3 px-4"><div className="h-4 w-16 bg-gray-200 dark:bg-slate-700 rounded animate-pulse ml-auto" /></td>
-                  <td className="py-3 px-4 hidden sm:table-cell"><div className="h-4 w-16 bg-gray-200 dark:bg-slate-700 rounded animate-pulse ml-auto" /></td>
-                  <td className="py-3 px-4"><div className="h-4 w-10 bg-gray-200 dark:bg-slate-700 rounded animate-pulse ml-auto" /></td>
-                  <td className="py-3 px-4 hidden md:table-cell"><div className="h-4 w-10 bg-gray-200 dark:bg-slate-700 rounded animate-pulse ml-auto" /></td>
-                  <td className="py-3 px-4 hidden md:table-cell"><div className="h-4 w-10 bg-gray-200 dark:bg-slate-700 rounded animate-pulse ml-auto" /></td>
-                  <td className="py-3 px-4 hidden lg:table-cell"><div className="h-4 w-10 bg-gray-200 dark:bg-slate-700 rounded animate-pulse ml-auto" /></td>
-                </tr>
-              ))}
-
-              {!loading && results.map((r) => (
-                <tr
-                  key={r.symbol}
-                  onClick={() => handleTickerClick(r.symbol)}
-                  className="border-b border-gray-100 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700/50 cursor-pointer transition-colors"
-                >
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 flex items-center justify-center shrink-0">
-                        <CompanyLogo ticker={r.symbol} size={32} />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="font-medium text-gray-900 dark:text-white">{r.symbol}</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-32">
-                          {r.ticker?.name || r.symbol}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4 text-gray-600 dark:text-gray-300 hidden md:table-cell text-xs">
-                    {r.ticker?.sector || '-'}
-                  </td>
-                  <td className="py-3 px-4 text-right text-gray-700 dark:text-gray-200">
-                    {r.ticker?.lastPrice ? `$${r.ticker.lastPrice.toFixed(2)}` : '-'}
-                  </td>
-                  <td className="py-3 px-4 text-right text-gray-700 dark:text-gray-200 hidden sm:table-cell">
-                    {formatMarketCap(r.ticker?.lastMarketCap ?? null)}
-                  </td>
-                  <td className={`py-3 px-4 text-right ${scoreColor(r.healthScore)}`}>
-                    {r.healthScore !== null ? r.healthScore.toFixed(0) : '-'}
-                  </td>
-                  <td className={`py-3 px-4 text-right hidden md:table-cell ${scoreColor(r.profitabilityScore)}`}>
-                    {r.profitabilityScore !== null ? r.profitabilityScore.toFixed(0) : '-'}
-                  </td>
-                  <td className={`py-3 px-4 text-right hidden md:table-cell ${scoreColor(r.valuationScore)}`}>
-                    {r.valuationScore !== null ? r.valuationScore.toFixed(0) : '-'}
-                  </td>
-                  <td className="py-3 px-4 text-right text-gray-700 dark:text-gray-200 hidden lg:table-cell">
-                    {r.altmanZ !== null ? r.altmanZ.toFixed(2) : '-'}
-                  </td>
-                </tr>
-              ))}
-
-              {!loading && results.length === 0 && (
-                <tr>
-                  <td colSpan={8} className="py-12 text-center text-gray-400 dark:text-gray-500">
-                    No companies match the selected filters.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <UniversalTable
+          data={results}
+          columns={columns}
+          keyExtractor={(r) => r.symbol}
+          isLoading={loading}
+          emptyMessage="No companies match the selected filters."
+          onRowClick={(r) => handleTickerClick(r.symbol)}
+        />
 
         {/* Pagination */}
         {totalPages > 1 && (

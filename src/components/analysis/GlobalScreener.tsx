@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { NotificationToggle } from '../notifications/NotificationToggle';
 import { DualRangeSlider } from './DualRangeSlider';
 import CompanyLogo from '../CompanyLogo';
+import { UniversalTable, ColumnDef } from '../UniversalTable';
 import { formatMarketCap } from '@/lib/utils/format';
 
 interface ScreenerResult {
@@ -110,6 +111,89 @@ export function GlobalScreener() {
         window.dispatchEvent(event);
     };
 
+    const columns: ColumnDef<ScreenerResult>[] = useMemo(() => [
+        {
+            key: 'ticker.name',
+            header: <>Company <SortIcon field="ticker.name" /></>,
+            align: 'left',
+            sortable: true,
+            render: (item) => (
+                <div className="flex items-center gap-3">
+                    <CompanyLogo ticker={item.symbol} logoUrl={item.ticker?.logoUrl} size={32} />
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <div className="font-bold text-gray-900 dark:text-white">{item.symbol}</div>
+                            {item.lastQualitySignalAt && (
+                                <span className="flex h-2 w-2 rounded-full bg-blue-500 animate-pulse" title="Recent Quality Breakout"></span>
+                            )}
+                        </div>
+                        <div className="text-[10px] text-gray-400 truncate max-w-[120px]">{item.ticker?.name || '---'}</div>
+                    </div>
+                </div>
+            )
+        },
+        {
+            key: 'healthScore',
+            header: <>Health <SortIcon field="healthScore" /></>,
+            align: 'center',
+            sortable: true,
+            render: (item) => (
+                <span className={`font-bold ${(item.healthScore || 0) > 70 ? 'text-green-500' : (item.healthScore || 0) > 40 ? 'text-yellow-500' : 'text-red-500'}`}>
+                    {item.healthScore ?? '0'}
+                </span>
+            )
+        },
+        {
+            key: 'profitabilityScore',
+            header: <>Profit <SortIcon field="profitabilityScore" /></>,
+            align: 'center',
+            sortable: true,
+            render: (item) => (
+                <span className={`font-bold ${(item.profitabilityScore || 0) > 70 ? 'text-green-500' : (item.profitabilityScore || 0) > 40 ? 'text-yellow-500' : 'text-red-500'}`}>
+                    {item.profitabilityScore ?? '0'}
+                </span>
+            )
+        },
+        {
+            key: 'valuationScore',
+            header: <>Value <SortIcon field="valuationScore" /></>,
+            align: 'center',
+            sortable: true,
+            render: (item) => (
+                <span className={`font-bold ${(item.valuationScore || 0) > 70 ? 'text-green-500' : (item.valuationScore || 0) > 40 ? 'text-yellow-500' : 'text-red-500'}`}>
+                    {item.valuationScore ?? '0'}
+                </span>
+            )
+        },
+        {
+            key: 'altmanZ',
+            header: <>Altman Z <SortIcon field="altmanZ" /></>,
+            align: 'center',
+            sortable: true,
+            render: (item) => (
+                <div className="flex flex-col">
+                    <span className={`font-mono font-bold ${(item.altmanZ || 0) > 3 ? 'text-green-500' : (item.altmanZ || 0) > 1.8 ? 'text-yellow-500' : 'text-red-500'}`}>
+                        {item.altmanZ?.toFixed(2) || '0.00'}
+                    </span>
+                    <span className="text-[9px] text-gray-400 uppercase">
+                        {(item.altmanZ || 0) > 3 ? 'Safe' : (item.altmanZ || 0) > 1.8 ? 'Grey' : 'Risk'}
+                    </span>
+                </div>
+            )
+        },
+        {
+            key: 'ticker.lastMarketCap',
+            header: <>Market Cap <SortIcon field="ticker.lastMarketCap" /></>,
+            align: 'right',
+            sortable: true,
+            render: (item) => (
+                <span className="font-mono text-gray-600 dark:text-gray-400">
+                    {formatMarketCap(item.ticker?.lastMarketCap)}
+                </span>
+            )
+        },
+    ], [sortField, sortOrder]);
+
     return (
         <div className="flex flex-col gap-6 p-4 lg:p-0 mb-20 lg:mb-0">
             {/* Header */}
@@ -184,84 +268,17 @@ export function GlobalScreener() {
 
             {/* Results Table */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left">
-                        <thead className="bg-gray-50 dark:bg-gray-700/50 text-xs text-gray-500 dark:text-gray-400 uppercase">
-                            <tr>
-                                <th className="px-6 py-4 cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 select-none" onClick={() => handleSort('ticker.name')}>
-                                    Company <SortIcon field="ticker.name" />
-                                </th>
-                                <th className="px-4 py-4 text-center cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 select-none" onClick={() => handleSort('healthScore')}>
-                                    Health <SortIcon field="healthScore" />
-                                </th>
-                                <th className="px-4 py-4 text-center cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 select-none" onClick={() => handleSort('profitabilityScore')}>
-                                    Profit <SortIcon field="profitabilityScore" />
-                                </th>
-                                <th className="px-4 py-4 text-center cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 select-none" onClick={() => handleSort('valuationScore')}>
-                                    Value <SortIcon field="valuationScore" />
-                                </th>
-                                <th className="px-4 py-4 text-center cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 select-none" onClick={() => handleSort('altmanZ')}>
-                                    Altman Z <SortIcon field="altmanZ" />
-                                </th>
-                                <th className="px-6 py-4 text-right cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 select-none" onClick={() => handleSort('ticker.lastMarketCap')}>
-                                    Market Cap <SortIcon field="ticker.lastMarketCap" />
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                            {results.map((item) => (
-                                <tr
-                                    key={item.symbol}
-                                    onClick={() => handleTickerClick(item.symbol)}
-                                    className="hover:bg-gray-50 dark:hover:bg-gray-900/40 cursor-pointer transition-colors"
-                                >
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <CompanyLogo ticker={item.symbol} logoUrl={item.ticker?.logoUrl} size={32} />
-                                            <div>
-                                                <div className="flex items-center gap-2">
-                                                    <div className="font-bold text-gray-900 dark:text-white">{item.symbol}</div>
-                                                    {item.lastQualitySignalAt && (
-                                                        <span className="flex h-2 w-2 rounded-full bg-blue-500 animate-pulse" title="Recent Quality Breakout"></span>
-                                                    )}
-                                                </div>
-                                                <div className="text-[10px] text-gray-400 truncate max-w-[120px]">{item.ticker?.name || '---'}</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-4 text-center">
-                                        <span className={`font-bold ${(item.healthScore || 0) > 70 ? 'text-green-500' : (item.healthScore || 0) > 40 ? 'text-yellow-500' : 'text-red-500'}`}>
-                                            {item.healthScore ?? '0'}
-                                        </span>
-                                    </td>
-                                    <td className="px-4 py-4 text-center">
-                                        <span className={`font-bold ${(item.profitabilityScore || 0) > 70 ? 'text-green-500' : (item.profitabilityScore || 0) > 40 ? 'text-yellow-500' : 'text-red-500'}`}>
-                                            {item.profitabilityScore ?? '0'}
-                                        </span>
-                                    </td>
-                                    <td className="px-4 py-4 text-center">
-                                        <span className={`font-bold ${(item.valuationScore || 0) > 70 ? 'text-green-500' : (item.valuationScore || 0) > 40 ? 'text-yellow-500' : 'text-red-500'}`}>
-                                            {item.valuationScore ?? '0'}
-                                        </span>
-                                    </td>
-                                    <td className="px-4 py-4 text-center">
-                                        <div className="flex flex-col">
-                                            <span className={`font-mono font-bold ${(item.altmanZ || 0) > 3 ? 'text-green-500' : (item.altmanZ || 0) > 1.8 ? 'text-yellow-500' : 'text-red-500'}`}>
-                                                {item.altmanZ?.toFixed(2) || '0.00'}
-                                            </span>
-                                            <span className="text-[9px] text-gray-400 uppercase">
-                                                {(item.altmanZ || 0) > 3 ? 'Safe' : (item.altmanZ || 0) > 1.8 ? 'Grey' : 'Risk'}
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-right font-mono text-gray-600 dark:text-gray-400">
-                                        {formatMarketCap(item.ticker?.lastMarketCap)}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                <UniversalTable
+                    data={results}
+                    columns={columns}
+                    keyExtractor={(item) => item.symbol}
+                    isLoading={loading}
+                    emptyMessage="No companies match your filters."
+                    sortKey={sortField as any}
+                    ascending={sortOrder === 'asc'}
+                    onSort={(key) => handleSort(key as string)}
+                    onRowClick={(item) => handleTickerClick(item.symbol)}
+                />
 
                 {/* Pagination controls */}
                 <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700/30 flex items-center justify-between">
@@ -285,12 +302,6 @@ export function GlobalScreener() {
                         </button>
                     </div>
                 </div>
-
-                {results.length === 0 && !loading && (
-                    <div className="p-12 text-center">
-                        <p className="text-gray-500">No companies match your filters.</p>
-                    </div>
-                )}
             </div>
         </div>
     );
