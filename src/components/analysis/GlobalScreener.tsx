@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { MarketSignals } from './MarketSignals';
 import { NotificationToggle } from '../notifications/NotificationToggle';
+import { DualRangeSlider } from './DualRangeSlider';
 import { formatMarketCap } from '@/lib/utils/format';
 
 interface ScreenerResult {
@@ -38,8 +39,13 @@ export function GlobalScreener() {
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
 
-    // Filters
-    const [minHealth, setMinHealth] = useState<number>(0);
+    // Filters - dual range defaults: min=50, max=100
+    const [minHealth, setMinHealth] = useState<number>(50);
+    const [maxHealth, setMaxHealth] = useState<number>(100);
+    const [minProfit, setMinProfit] = useState<number>(50);
+    const [maxProfit, setMaxProfit] = useState<number>(100);
+    const [minValue, setMinValue] = useState<number>(50);
+    const [maxValue, setMaxValue] = useState<number>(100);
     const [minAltman, setMinAltman] = useState<number>(0);
     const [selectedSector, setSelectedSector] = useState<string>('');
     const [sortField, setSortField] = useState<string>('healthScore');
@@ -50,6 +56,11 @@ export function GlobalScreener() {
         try {
             const params = new URLSearchParams({
                 minHealth: minHealth.toString(),
+                maxHealth: maxHealth.toString(),
+                minProfitability: minProfit.toString(),
+                maxProfitability: maxProfit.toString(),
+                minValuation: minValue.toString(),
+                maxValuation: maxValue.toString(),
                 minAltman: minAltman.toString(),
                 sort: `${sortField}:${sortOrder}`,
                 limit: '20',
@@ -70,12 +81,12 @@ export function GlobalScreener() {
 
     useEffect(() => {
         fetchResults();
-    }, [minHealth, minAltman, selectedSector, sortField, sortOrder, page]);
+    }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minAltman, selectedSector, sortField, sortOrder, page]);
 
     // Reset page on filter change
     useEffect(() => {
         setPage(1);
-    }, [minHealth, minAltman, selectedSector, sortField, sortOrder]);
+    }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minAltman, selectedSector, sortField, sortOrder]);
 
     const handleSort = (field: string) => {
         if (sortField === field) {
@@ -118,32 +129,27 @@ export function GlobalScreener() {
 
             {/* Filters Bar */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 flex flex-wrap gap-6 items-end">
-                <div className="flex flex-col gap-2 min-w-[150px]">
-                    <label className="text-xs font-semibold uppercase text-gray-400 tracking-wider">Altman Z-Score</label>
-                    <select
-                        value={minAltman}
-                        onChange={(e) => setMinAltman(parseFloat(e.target.value))}
-                        className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                    >
-                        <option value="0">Any Risk</option>
-                        <option value="1.8">Grey Zone (&gt;1.8)</option>
-                        <option value="3.0">Safe Haven (&gt;3.0)</option>
-                    </select>
-                </div>
-
-                <div className="flex flex-col gap-2 min-w-[150px]">
-                    <label className="text-xs font-semibold uppercase text-gray-400 tracking-wider">Min Health Score</label>
-                    <div className="flex items-center gap-3">
-                        <input
-                            type="range"
-                            min="0" max="100"
-                            value={minHealth}
-                            onChange={(e) => setMinHealth(parseInt(e.target.value))}
-                            className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                        />
-                        <span className="text-xs font-mono font-bold text-blue-600 dark:text-blue-400 min-w-[30px]">{minHealth}</span>
-                    </div>
-                </div>
+                <DualRangeSlider
+                    label="Health Score"
+                    min={0} max={100}
+                    valueMin={minHealth} valueMax={maxHealth}
+                    onChangeMin={setMinHealth} onChangeMax={setMaxHealth}
+                    accentColor="blue"
+                />
+                <DualRangeSlider
+                    label="Profitability"
+                    min={0} max={100}
+                    valueMin={minProfit} valueMax={maxProfit}
+                    onChangeMin={setMinProfit} onChangeMax={setMaxProfit}
+                    accentColor="green"
+                />
+                <DualRangeSlider
+                    label="Valuation"
+                    min={0} max={100}
+                    valueMin={minValue} valueMax={maxValue}
+                    onChangeMin={setMinValue} onChangeMax={setMaxValue}
+                    accentColor="purple"
+                />
 
                 <div className="flex flex-col gap-2 min-w-[150px]">
                     <label className="text-xs font-semibold uppercase text-gray-400 tracking-wider">Sort By</label>

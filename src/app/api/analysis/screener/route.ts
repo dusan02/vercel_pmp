@@ -7,11 +7,15 @@ const SCREENER_CACHE_TTL = 600; // 10 minutes
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
 
-    // Filters
+    // Filters - min
     const minHealth = searchParams.get('minHealth') ? parseFloat(searchParams.get('minHealth')!) : undefined;
     const minProfitability = searchParams.get('minProfitability') ? parseFloat(searchParams.get('minProfitability')!) : undefined;
     const minValuation = searchParams.get('minValuation') ? parseFloat(searchParams.get('minValuation')!) : undefined;
     const minAltman = searchParams.get('minAltman') ? parseFloat(searchParams.get('minAltman')!) : undefined;
+    // Filters - max
+    const maxHealth = searchParams.get('maxHealth') ? parseFloat(searchParams.get('maxHealth')!) : undefined;
+    const maxProfitability = searchParams.get('maxProfitability') ? parseFloat(searchParams.get('maxProfitability')!) : undefined;
+    const maxValuation = searchParams.get('maxValuation') ? parseFloat(searchParams.get('maxValuation')!) : undefined;
     const sector = searchParams.get('sector') || undefined;
 
     // Pagination & Sorting
@@ -23,7 +27,7 @@ export async function GET(request: Request) {
     const sortOrder = parts[1] || 'desc';
 
     // Build cache key from query params
-    const cacheKey = `screener:${minHealth || ''}:${minProfitability || ''}:${minValuation || ''}:${minAltman || ''}:${sector || ''}:${page}:${limit}:${sortParams}`;
+    const cacheKey = `screener:${minHealth || ''}:${maxHealth || ''}:${minProfitability || ''}:${maxProfitability || ''}:${minValuation || ''}:${maxValuation || ''}:${minAltman || ''}:${sector || ''}:${page}:${limit}:${sortParams}`;
     try {
         const cached = await getCachedData(cacheKey);
         if (cached) return NextResponse.json(cached);
@@ -32,9 +36,21 @@ export async function GET(request: Request) {
     try {
         const where: any = {};
 
-        if (minHealth !== undefined) where.healthScore = { gte: minHealth };
-        if (minProfitability !== undefined) where.profitabilityScore = { gte: minProfitability };
-        if (minValuation !== undefined) where.valuationScore = { gte: minValuation };
+        if (minHealth !== undefined || maxHealth !== undefined) {
+            where.healthScore = {};
+            if (minHealth !== undefined) where.healthScore.gte = minHealth;
+            if (maxHealth !== undefined) where.healthScore.lte = maxHealth;
+        }
+        if (minProfitability !== undefined || maxProfitability !== undefined) {
+            where.profitabilityScore = {};
+            if (minProfitability !== undefined) where.profitabilityScore.gte = minProfitability;
+            if (maxProfitability !== undefined) where.profitabilityScore.lte = maxProfitability;
+        }
+        if (minValuation !== undefined || maxValuation !== undefined) {
+            where.valuationScore = {};
+            if (minValuation !== undefined) where.valuationScore.gte = minValuation;
+            if (maxValuation !== undefined) where.valuationScore.lte = maxValuation;
+        }
         if (minAltman !== undefined) where.altmanZ = { gte: minAltman };
 
         if (sector) {
