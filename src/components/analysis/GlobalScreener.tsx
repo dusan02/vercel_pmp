@@ -1,101 +1,23 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { NotificationToggle } from '../notifications/NotificationToggle';
 import { DualRangeSlider } from './DualRangeSlider';
 import CompanyLogo from '../CompanyLogo';
 import { UniversalTable, ColumnDef } from '../UniversalTable';
-import { formatMarketCap } from '@/lib/utils/format';
-
-interface ScreenerResult {
-    symbol: string;
-    healthScore: number | null;
-    profitabilityScore: number | null;
-    valuationScore: number | null;
-    altmanZ: number | null;
-    debtRepaymentYears: number | null;
-    fcfYield: number | null;
-    lastQualitySignalAt: string | null;
-    ticker: {
-        name: string | null;
-        sector: string | null;
-        logoUrl: string | null;
-        lastPrice: number | null;
-        lastMarketCap: number | null;
-    } | null;
-}
-
-interface Pagination {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-}
+import { useScreener } from '@/hooks/useScreener';
+import { ScreenerResult, scoreColor, altmanZLabel, formatScreenerMarketCap, SORT_OPTIONS } from '@/lib/utils/screener';
 
 export function GlobalScreener() {
-    const [results, setResults] = useState<ScreenerResult[]>([]);
-    const [pagination, setPagination] = useState<Pagination | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [page, setPage] = useState(1);
-
-    // Filters - dual range defaults: min=50, max=100
-    const [minHealth, setMinHealth] = useState<number>(50);
-    const [maxHealth, setMaxHealth] = useState<number>(100);
-    const [minProfit, setMinProfit] = useState<number>(50);
-    const [maxProfit, setMaxProfit] = useState<number>(100);
-    const [minValue, setMinValue] = useState<number>(50);
-    const [maxValue, setMaxValue] = useState<number>(100);
-    const [minAltman, setMinAltman] = useState<number>(0);
-    const [selectedSector, setSelectedSector] = useState<string>('');
-    const [sortField, setSortField] = useState<string>('healthScore');
-    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-
-    const fetchResults = async () => {
-        setLoading(true);
-        try {
-            const params = new URLSearchParams({
-                minHealth: minHealth.toString(),
-                maxHealth: maxHealth.toString(),
-                minProfitability: minProfit.toString(),
-                maxProfitability: maxProfit.toString(),
-                minValuation: minValue.toString(),
-                maxValuation: maxValue.toString(),
-                minAltman: minAltman.toString(),
-                sort: `${sortField}:${sortOrder}`,
-                limit: '20',
-                page: page.toString()
-            });
-            if (selectedSector) params.append('sector', selectedSector);
-
-            const res = await fetch(`/api/analysis/screener?${params.toString()}`);
-            const data = await res.json();
-            setResults(data.results || []);
-            setPagination(data.pagination || null);
-        } catch (error) {
-            console.error('Failed to fetch screener results:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchResults();
-    }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minAltman, selectedSector, sortField, sortOrder, page]);
-
-    // Reset page on filter change
-    useEffect(() => {
-        setPage(1);
-    }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minAltman, selectedSector, sortField, sortOrder]);
-
-    const handleSort = (field: string) => {
-        if (sortField === field) {
-            setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
-        } else {
-            setSortField(field);
-            setSortOrder('desc');
-        }
-    };
+    const screener = useScreener({ initialLimit: 20 });
+    const {
+        results, pagination, loading, page, setPage,
+        minHealth, maxHealth, setMinHealth, setMaxHealth,
+        minProfit, maxProfit, setMinProfit, setMaxProfit,
+        minValue, maxValue, setMinValue, setMaxValue,
+        sortField, sortOrder, handleSort, setSort,
+    } = screener;
 
     const SortIcon = ({ field }: { field: string }) => {
         if (sortField !== field) return <ChevronsUpDown size={12} className="inline ml-1 text-gray-300 dark:text-gray-600" />;
@@ -138,8 +60,8 @@ export function GlobalScreener() {
             align: 'center',
             sortable: true,
             render: (item) => (
-                <span className={`font-bold ${(item.healthScore || 0) > 70 ? 'text-green-500' : (item.healthScore || 0) > 40 ? 'text-yellow-500' : 'text-red-500'}`}>
-                    {item.healthScore ?? '0'}
+                <span className={`font-bold ${scoreColor(item.healthScore)}`}>
+                    {item.healthScore !== null ? item.healthScore.toFixed(0) : '-'}
                 </span>
             )
         },
@@ -149,8 +71,8 @@ export function GlobalScreener() {
             align: 'center',
             sortable: true,
             render: (item) => (
-                <span className={`font-bold ${(item.profitabilityScore || 0) > 70 ? 'text-green-500' : (item.profitabilityScore || 0) > 40 ? 'text-yellow-500' : 'text-red-500'}`}>
-                    {item.profitabilityScore ?? '0'}
+                <span className={`font-bold ${scoreColor(item.profitabilityScore)}`}>
+                    {item.profitabilityScore !== null ? item.profitabilityScore.toFixed(0) : '-'}
                 </span>
             )
         },
@@ -160,8 +82,8 @@ export function GlobalScreener() {
             align: 'center',
             sortable: true,
             render: (item) => (
-                <span className={`font-bold ${(item.valuationScore || 0) > 70 ? 'text-green-500' : (item.valuationScore || 0) > 40 ? 'text-yellow-500' : 'text-red-500'}`}>
-                    {item.valuationScore ?? '0'}
+                <span className={`font-bold ${scoreColor(item.valuationScore)}`}>
+                    {item.valuationScore !== null ? item.valuationScore.toFixed(0) : '-'}
                 </span>
             )
         },
@@ -170,16 +92,17 @@ export function GlobalScreener() {
             header: <>Altman Z <SortIcon field="altmanZ" /></>,
             align: 'center',
             sortable: true,
-            render: (item) => (
-                <div className="flex flex-col">
-                    <span className={`font-mono font-bold ${(item.altmanZ || 0) > 3 ? 'text-green-500' : (item.altmanZ || 0) > 1.8 ? 'text-yellow-500' : 'text-red-500'}`}>
-                        {item.altmanZ?.toFixed(2) || '0.00'}
-                    </span>
-                    <span className="text-[9px] text-gray-400 uppercase">
-                        {(item.altmanZ || 0) > 3 ? 'Safe' : (item.altmanZ || 0) > 1.8 ? 'Grey' : 'Risk'}
-                    </span>
-                </div>
-            )
+            render: (item) => {
+                const z = altmanZLabel(item.altmanZ);
+                return (
+                    <div className="flex flex-col">
+                        <span className={`font-mono font-bold ${z.color}`}>
+                            {item.altmanZ !== null ? item.altmanZ.toFixed(2) : '-'}
+                        </span>
+                        <span className="text-[9px] text-gray-400 uppercase">{z.label}</span>
+                    </div>
+                );
+            }
         },
         {
             key: 'ticker.lastMarketCap',
@@ -188,7 +111,7 @@ export function GlobalScreener() {
             sortable: true,
             render: (item) => (
                 <span className="font-mono text-gray-600 dark:text-gray-400">
-                    {formatMarketCap(item.ticker?.lastMarketCap)}
+                    {formatScreenerMarketCap(item.ticker?.lastMarketCap)}
                 </span>
             )
         },
@@ -246,21 +169,13 @@ export function GlobalScreener() {
                                 const parts = e.target.value.split(':');
                                 const f = parts[0] ?? 'healthScore';
                                 const o = (parts[1] === 'asc' ? 'asc' : 'desc') as 'asc' | 'desc';
-                                setSortField(f);
-                                setSortOrder(o);
+                                setSort(f, o);
                             }}
                             className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all cursor-pointer"
                         >
-                            <option value="healthScore:desc">Health Score ↓</option>
-                            <option value="healthScore:asc">Health Score ↑</option>
-                            <option value="valuationScore:desc">Valuation ↓</option>
-                            <option value="valuationScore:asc">Valuation ↑</option>
-                            <option value="profitabilityScore:desc">Profitability ↓</option>
-                            <option value="profitabilityScore:asc">Profitability ↑</option>
-                            <option value="altmanZ:desc">Altman Z ↓</option>
-                            <option value="altmanZ:asc">Altman Z ↑</option>
-                            <option value="ticker.lastMarketCap:desc">Market Cap ↓</option>
-                            <option value="ticker.lastMarketCap:asc">Market Cap ↑</option>
+                            {SORT_OPTIONS.map((o) => (
+                                <option key={o.value} value={o.value}>{o.label}</option>
+                            ))}
                         </select>
                     </div>
                 </div>
@@ -278,6 +193,44 @@ export function GlobalScreener() {
                     ascending={sortOrder === 'asc'}
                     onSort={(key) => handleSort(key as string)}
                     onRowClick={(item) => handleTickerClick(item.symbol)}
+                    renderMobileCard={(item) => (
+                        <div
+                            onClick={() => handleTickerClick(item.symbol)}
+                            className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 cursor-pointer hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
+                        >
+                            <div className="flex items-center gap-3 mb-3">
+                                <CompanyLogo ticker={item.symbol} logoUrl={item.ticker?.logoUrl ?? null} size={40} />
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                        <div className="font-bold text-gray-900 dark:text-white">{item.symbol}</div>
+                                        {item.lastQualitySignalAt && (
+                                            <span className="flex h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
+                                        )}
+                                    </div>
+                                    <div className="text-xs text-gray-400 truncate">{item.ticker?.name || '---'}</div>
+                                </div>
+                                <span className="text-xs font-mono text-gray-500">{formatScreenerMarketCap(item.ticker?.lastMarketCap)}</span>
+                            </div>
+                            <div className="grid grid-cols-4 gap-2 text-center">
+                                <div>
+                                    <div className="text-[10px] text-gray-400 uppercase">Health</div>
+                                    <div className={`font-bold text-sm ${scoreColor(item.healthScore)}`}>{item.healthScore !== null ? item.healthScore.toFixed(0) : '-'}</div>
+                                </div>
+                                <div>
+                                    <div className="text-[10px] text-gray-400 uppercase">Profit</div>
+                                    <div className={`font-bold text-sm ${scoreColor(item.profitabilityScore)}`}>{item.profitabilityScore !== null ? item.profitabilityScore.toFixed(0) : '-'}</div>
+                                </div>
+                                <div>
+                                    <div className="text-[10px] text-gray-400 uppercase">Value</div>
+                                    <div className={`font-bold text-sm ${scoreColor(item.valuationScore)}`}>{item.valuationScore !== null ? item.valuationScore.toFixed(0) : '-'}</div>
+                                </div>
+                                <div>
+                                    <div className="text-[10px] text-gray-400 uppercase">Altman</div>
+                                    <div className={`font-bold text-sm ${altmanZLabel(item.altmanZ).color}`}>{item.altmanZ !== null ? item.altmanZ.toFixed(1) : '-'}</div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 />
 
                 {/* Pagination controls */}

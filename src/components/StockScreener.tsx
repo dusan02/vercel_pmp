@@ -1,153 +1,48 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import CompanyLogo from './CompanyLogo';
 import { UniversalTable, ColumnDef } from './UniversalTable';
-import { formatMarketCap } from '@/lib/utils/format';
-
-interface ScreenerResult {
-  symbol: string;
-  healthScore: number | null;
-  profitabilityScore: number | null;
-  valuationScore: number | null;
-  altmanZ: number | null;
-  ticker: {
-    name: string;
-    sector: string;
-    industry: string;
-    logoUrl: string | null;
-    lastPrice: number | null;
-    lastMarketCap: number | null;
-  };
-}
-
-interface ScreenerResponse {
-  results: ScreenerResult[];
-  pagination: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  };
-}
-
-const SECTORS = [
-  'Technology', 'Healthcare', 'Financial Services', 'Consumer Cyclical',
-  'Industrials', 'Communication Services', 'Consumer Defensive',
-  'Energy', 'Utilities', 'Real Estate', 'Basic Materials',
-];
-
-const SORT_OPTIONS = [
-  { value: 'healthScore:desc', label: 'Health Score ↓' },
-  { value: 'healthScore:asc', label: 'Health Score ↑' },
-  { value: 'profitabilityScore:desc', label: 'Profitability ↓' },
-  { value: 'profitabilityScore:asc', label: 'Profitability ↑' },
-  { value: 'valuationScore:desc', label: 'Valuation ↓' },
-  { value: 'valuationScore:asc', label: 'Valuation ↑' },
-  { value: 'altmanZ:desc', label: 'Altman Z ↓' },
-  { value: 'altmanZ:asc', label: 'Altman Z ↑' },
-  { value: 'ticker.lastMarketCap:desc', label: 'Market Cap ↓' },
-  { value: 'ticker.lastMarketCap:asc', label: 'Market Cap ↑' },
-  { value: 'ticker.name:desc', label: 'Company Name ↓' },
-  { value: 'ticker.name:asc', label: 'Company Name ↑' },
-];
-
-function scoreColor(score: number | null): string {
-  if (score === null) return 'text-gray-400';
-  if (score >= 75) return 'text-green-600 dark:text-green-400 font-semibold';
-  if (score >= 50) return 'text-yellow-600 dark:text-yellow-400 font-medium';
-  return 'text-red-600 dark:text-red-400 font-medium';
-}
+import { DualRangeSlider } from './analysis/DualRangeSlider';
+import { useScreener } from '@/hooks/useScreener';
+import {
+  ScreenerResult, scoreColor, altmanZLabel, formatScreenerMarketCap,
+  SORT_OPTIONS, SECTORS,
+} from '@/lib/utils/screener';
 
 export default function StockScreener() {
   const router = useRouter();
-  const [results, setResults] = useState<ScreenerResult[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
-
-  // Filters
-  const [minHealth, setMinHealth] = useState('');
-  const [minProfitability, setMinProfitability] = useState('');
-  const [minValuation, setMinValuation] = useState('');
-  const [minAltman, setMinAltman] = useState('');
-  const [sector, setSector] = useState('');
-  const [sort, setSort] = useState('healthScore:desc');
-
-  // Debounced filter application
-  const [appliedFilters, setAppliedFilters] = useState({
-    minHealth: '',
-    minProfitability: '',
-    minValuation: '',
-    minAltman: '',
-    sector: '',
-    sort: 'healthScore:desc',
-  });
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setAppliedFilters({
-        minHealth, minProfitability, minValuation, minAltman, sector, sort,
-      });
-      setPage(1);
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [minHealth, minProfitability, minValuation, minAltman, sector, sort]);
-
-  const fetchResults = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      params.set('page', String(page));
-      params.set('limit', '25');
-      params.set('sort', appliedFilters.sort);
-      if (appliedFilters.minHealth) params.set('minHealth', appliedFilters.minHealth);
-      if (appliedFilters.minProfitability) params.set('minProfitability', appliedFilters.minProfitability);
-      if (appliedFilters.minValuation) params.set('minValuation', appliedFilters.minValuation);
-      if (appliedFilters.minAltman) params.set('minAltman', appliedFilters.minAltman);
-      if (appliedFilters.sector) params.set('sector', appliedFilters.sector);
-
-      const res = await fetch(`/api/analysis/screener?${params.toString()}`);
-      if (!res.ok) throw new Error('Failed to fetch');
-      const data: ScreenerResponse = await res.json();
-      setResults(data.results || []);
-      setTotalPages(data.pagination?.totalPages || 1);
-      setTotal(data.pagination?.total || 0);
-    } catch (err) {
-      console.error('Screener fetch error:', err);
-      setResults([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, appliedFilters]);
-
-  useEffect(() => {
-    fetchResults();
-  }, [fetchResults]);
+  const screener = useScreener({ initialLimit: 25 });
+  const {
+    results, pagination, loading, page, setPage,
+    minHealth, maxHealth, setMinHealth, setMaxHealth,
+    minProfit, maxProfit, setMinProfit, setMaxProfit,
+    minValue, maxValue, setMinValue, setMaxValue,
+    minAltman, setMinAltman,
+    selectedSector, setSelectedSector,
+    sortField, sortOrder, handleSort, setSort,
+    resetFilters, hasActiveFilters,
+  } = screener;
 
   const handleTickerClick = (ticker: string) => {
     router.push(`/analysis/${ticker}`);
   };
 
-  const resetFilters = () => {
-    setMinHealth('');
-    setMinProfitability('');
-    setMinValuation('');
-    setMinAltman('');
-    setSector('');
-    setSort('healthScore:desc');
+  const SortIcon = ({ field }: { field: string }) => {
+    if (sortField !== field) return <ChevronsUpDown size={12} className="inline ml-1 text-gray-300 dark:text-gray-600" />;
+    return sortOrder === 'asc'
+      ? <ChevronUp size={12} className="inline ml-1 text-blue-500" />
+      : <ChevronDown size={12} className="inline ml-1 text-blue-500" />;
   };
-
-  const hasActiveFilters = minHealth || minProfitability || minValuation || minAltman || sector;
 
   const columns: ColumnDef<ScreenerResult>[] = useMemo(() => [
     {
-      key: 'company',
-      header: 'Company',
+      key: 'ticker.name',
+      header: <>Company <SortIcon field="ticker.name" /></>,
       align: 'left',
+      sortable: true,
       render: (r) => (
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 flex items-center justify-center shrink-0">
@@ -170,128 +65,128 @@ export default function StockScreener() {
       render: (r) => <span className="text-xs text-gray-600 dark:text-gray-300">{r.ticker?.sector || '-'}</span>
     },
     {
-      key: 'price',
-      header: 'Price',
+      key: 'ticker.lastPrice',
+      header: <>Price <SortIcon field="ticker.lastPrice" /></>,
       align: 'right',
+      sortable: true,
       render: (r) => <span className="text-gray-700 dark:text-gray-200">{r.ticker?.lastPrice ? `$${r.ticker.lastPrice.toFixed(2)}` : '-'}</span>
     },
     {
-      key: 'marketCap',
-      header: 'Market Cap',
+      key: 'ticker.lastMarketCap',
+      header: <>Market Cap <SortIcon field="ticker.lastMarketCap" /></>,
       align: 'right',
+      sortable: true,
       className: 'hidden sm:table-cell',
-      render: (r) => <span className="text-gray-700 dark:text-gray-200">{formatMarketCap(r.ticker?.lastMarketCap ?? null)}</span>
+      render: (r) => <span className="text-gray-700 dark:text-gray-200">{formatScreenerMarketCap(r.ticker?.lastMarketCap)}</span>
     },
     {
       key: 'healthScore',
-      header: 'Health',
+      header: <>Health <SortIcon field="healthScore" /></>,
       align: 'right',
+      sortable: true,
       render: (r) => <span className={scoreColor(r.healthScore)}>{r.healthScore !== null ? r.healthScore.toFixed(0) : '-'}</span>
     },
     {
       key: 'profitabilityScore',
-      header: 'Profit.',
+      header: <>Profit. <SortIcon field="profitabilityScore" /></>,
       align: 'right',
+      sortable: true,
       className: 'hidden md:table-cell',
       render: (r) => <span className={scoreColor(r.profitabilityScore)}>{r.profitabilityScore !== null ? r.profitabilityScore.toFixed(0) : '-'}</span>
     },
     {
       key: 'valuationScore',
-      header: 'Valuation',
+      header: <>Valuation <SortIcon field="valuationScore" /></>,
       align: 'right',
+      sortable: true,
       className: 'hidden md:table-cell',
       render: (r) => <span className={scoreColor(r.valuationScore)}>{r.valuationScore !== null ? r.valuationScore.toFixed(0) : '-'}</span>
     },
     {
       key: 'altmanZ',
-      header: 'Altman Z',
+      header: <>Altman Z <SortIcon field="altmanZ" /></>,
       align: 'right',
+      sortable: true,
       className: 'hidden lg:table-cell',
-      render: (r) => <span className="text-gray-700 dark:text-gray-200">{r.altmanZ !== null ? r.altmanZ.toFixed(2) : '-'}</span>
+      render: (r) => {
+        const z = altmanZLabel(r.altmanZ);
+        return <span className={z.color}>{r.altmanZ !== null ? r.altmanZ.toFixed(2) : '-'}</span>;
+      },
     },
-  ], []);
+  ], [sortField, sortOrder]);
+
+  const totalPages = pagination?.totalPages || 1;
+  const total = pagination?.total || 0;
 
   return (
     <div className="space-y-4">
       {/* Filter Bar */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <Filter size={18} className="text-gray-500 dark:text-gray-400" />
-          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Filters</h2>
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-5">
+        <div className="flex items-center gap-3 mb-4">
+          <span className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Filters</span>
+          <div className="flex-1 h-px bg-gray-100 dark:bg-gray-700" />
           {hasActiveFilters && (
             <button
               onClick={resetFilters}
-              className="ml-auto text-xs text-blue-600 dark:text-blue-400 hover:underline"
+              className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
             >
               Reset
             </button>
           )}
+          {loading && (
+            <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-200 dark:border-gray-600 border-t-blue-500" />
+          )}
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-          {/* Min Health Score */}
-          <div>
-            <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Min Health</label>
-            <input
-              type="number"
-              min="0"
-              max="100"
-              value={minHealth}
-              onChange={(e) => setMinHealth(e.target.value)}
-              placeholder="0-100"
-              className="w-full px-2 py-1.5 text-sm border border-gray-200 dark:border-slate-600 rounded-md bg-gray-50 dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-blue-500 outline-none"
-            />
-          </div>
-
-          {/* Min Profitability */}
-          <div>
-            <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Min Profitability</label>
-            <input
-              type="number"
-              min="0"
-              max="100"
-              value={minProfitability}
-              onChange={(e) => setMinProfitability(e.target.value)}
-              placeholder="0-100"
-              className="w-full px-2 py-1.5 text-sm border border-gray-200 dark:border-slate-600 rounded-md bg-gray-50 dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-blue-500 outline-none"
-            />
-          </div>
-
-          {/* Min Valuation */}
-          <div>
-            <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Min Valuation</label>
-            <input
-              type="number"
-              min="0"
-              max="100"
-              value={minValuation}
-              onChange={(e) => setMinValuation(e.target.value)}
-              placeholder="0-100"
-              className="w-full px-2 py-1.5 text-sm border border-gray-200 dark:border-slate-600 rounded-md bg-gray-50 dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-blue-500 outline-none"
-            />
-          </div>
-
-          {/* Min Altman Z */}
-          <div>
-            <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Min Altman Z</label>
-            <input
-              type="number"
-              min="0"
-              step="0.1"
-              value={minAltman}
-              onChange={(e) => setMinAltman(e.target.value)}
-              placeholder="e.g. 3.0"
-              className="w-full px-2 py-1.5 text-sm border border-gray-200 dark:border-slate-600 rounded-md bg-gray-50 dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-blue-500 outline-none"
-            />
-          </div>
-
-          {/* Sector */}
-          <div>
-            <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Sector</label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-4">
+          <DualRangeSlider
+            label="Health Score"
+            min={0} max={100}
+            valueMin={minHealth} valueMax={maxHealth}
+            onChangeMin={setMinHealth} onChangeMax={setMaxHealth}
+            accentColor="blue"
+          />
+          <DualRangeSlider
+            label="Profitability"
+            min={0} max={100}
+            valueMin={minProfit} valueMax={maxProfit}
+            onChangeMin={setMinProfit} onChangeMax={setMaxProfit}
+            accentColor="emerald"
+          />
+          <DualRangeSlider
+            label="Valuation"
+            min={0} max={100}
+            valueMin={minValue} valueMax={maxValue}
+            onChangeMin={setMinValue} onChangeMax={setMaxValue}
+            accentColor="violet"
+          />
+          <div className="flex flex-col gap-1.5 min-w-[160px]">
+            <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Sort By</label>
             <select
-              value={sector}
-              onChange={(e) => setSector(e.target.value)}
-              className="w-full px-2 py-1.5 text-sm border border-gray-200 dark:border-slate-600 rounded-md bg-gray-50 dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-blue-500 outline-none"
+              value={`${sortField}:${sortOrder}`}
+              onChange={(e) => {
+                const parts = e.target.value.split(':');
+                const f = parts[0] ?? 'healthScore';
+                const o = (parts[1] === 'asc' ? 'asc' : 'desc') as 'asc' | 'desc';
+                setSort(f, o);
+              }}
+              className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all cursor-pointer"
+            >
+              {SORT_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Sector + Altman row */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-3 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Sector</label>
+            <select
+              value={selectedSector}
+              onChange={(e) => setSelectedSector(e.target.value)}
+              className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all cursor-pointer"
             >
               <option value="">All Sectors</option>
               {SECTORS.map((s) => (
@@ -299,19 +194,17 @@ export default function StockScreener() {
               ))}
             </select>
           </div>
-
-          {/* Sort */}
-          <div>
-            <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Sort By</label>
-            <select
-              value={sort}
-              onChange={(e) => setSort(e.target.value)}
-              className="w-full px-2 py-1.5 text-sm border border-gray-200 dark:border-slate-600 rounded-md bg-gray-50 dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-blue-500 outline-none"
-            >
-              {SORT_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Min Altman Z</label>
+            <input
+              type="number"
+              min="0"
+              step="0.1"
+              value={minAltman || ''}
+              onChange={(e) => setMinAltman(parseFloat(e.target.value) || 0)}
+              placeholder="e.g. 3.0"
+              className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all"
+            />
           </div>
         </div>
       </div>
@@ -331,7 +224,47 @@ export default function StockScreener() {
           keyExtractor={(r) => r.symbol}
           isLoading={loading}
           emptyMessage="No companies match the selected filters."
+          sortKey={sortField as any}
+          ascending={sortOrder === 'asc'}
+          onSort={(key) => handleSort(key as string)}
           onRowClick={(r) => handleTickerClick(r.symbol)}
+          renderMobileCard={(r) => (
+            <div
+              onClick={() => handleTickerClick(r.symbol)}
+              className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 cursor-pointer hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <CompanyLogo ticker={r.symbol} size={40} />
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-gray-900 dark:text-white">{r.symbol}</div>
+                  <div className="text-xs text-gray-400 truncate">{r.ticker?.name || r.symbol}</div>
+                </div>
+                <span className="text-xs font-mono text-gray-500">{formatScreenerMarketCap(r.ticker?.lastMarketCap)}</span>
+              </div>
+              <div className="grid grid-cols-4 gap-2 text-center">
+                <div>
+                  <div className="text-[10px] text-gray-400 uppercase">Health</div>
+                  <div className={`font-bold text-sm ${scoreColor(r.healthScore)}`}>{r.healthScore !== null ? r.healthScore.toFixed(0) : '-'}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-gray-400 uppercase">Profit</div>
+                  <div className={`font-bold text-sm ${scoreColor(r.profitabilityScore)}`}>{r.profitabilityScore !== null ? r.profitabilityScore.toFixed(0) : '-'}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-gray-400 uppercase">Value</div>
+                  <div className={`font-bold text-sm ${scoreColor(r.valuationScore)}`}>{r.valuationScore !== null ? r.valuationScore.toFixed(0) : '-'}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-gray-400 uppercase">Altman</div>
+                  <div className={`font-bold text-sm ${altmanZLabel(r.altmanZ).color}`}>{r.altmanZ !== null ? r.altmanZ.toFixed(1) : '-'}</div>
+                </div>
+              </div>
+              <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700 flex justify-between text-xs text-gray-500">
+                <span>{r.ticker?.sector || '-'}</span>
+                <span>{r.ticker?.lastPrice ? `$${r.ticker.lastPrice.toFixed(2)}` : '-'}</span>
+              </div>
+            </div>
+          )}
         />
 
         {/* Pagination */}
