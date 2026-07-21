@@ -151,7 +151,34 @@ export default function WeeklyEarningsCalendar() {
       </div>
 
       {loading && (
-        <div className="py-20 text-center text-gray-500">Loading weekly earnings...</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 pb-4">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 h-[550px] xl:h-[650px] flex flex-col overflow-hidden">
+              <div className="px-4 py-3.5 border-b border-gray-50 dark:border-gray-800/80">
+                <div className="h-3 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-2" />
+                <div className="h-2 w-16 bg-gray-100 dark:bg-gray-700/50 rounded animate-pulse" />
+              </div>
+              <div className="p-4 flex-1 space-y-4">
+                <div className="space-y-2">
+                  <div className="h-2 w-16 bg-gray-100 dark:bg-gray-700/50 rounded animate-pulse" />
+                  <div className="flex gap-2">
+                    {Array.from({ length: 4 }).map((_, j) => (
+                      <div key={j} className="w-12 h-12 bg-gray-100 dark:bg-gray-700/50 rounded-lg animate-pulse" />
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="h-2 w-16 bg-gray-100 dark:bg-gray-700/50 rounded animate-pulse" />
+                  <div className="flex gap-2">
+                    {Array.from({ length: 3 }).map((_, j) => (
+                      <div key={j} className="w-12 h-12 bg-gray-100 dark:bg-gray-700/50 rounded-lg animate-pulse" />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
       
       {error && (

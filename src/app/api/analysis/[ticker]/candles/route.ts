@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
+import { getCachedData, setCachedData } from '@/lib/redis/operations';
 
 export const revalidate = 3600;
+
+const CANDLES_CACHE_TTL = 3600; // 1 hour
 
 interface PolygonAgg {
   t: number; // timestamp (ms)
@@ -32,6 +35,15 @@ export async function GET(
   const { ticker } = await params;
   const symbol = ticker.toUpperCase();
 
+  // Check Redis cache first
+  const cacheKey = `candles:${symbol}`;
+  try {
+    const cached = await getCachedData(cacheKey);
+    if (cached) return NextResponse.json(cached, {
+      headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' },
+    });
+  } catch {}
+
   const apiKey = process.env.POLYGON_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: 'Missing Polygon API key' }, { status: 500 });
@@ -62,7 +74,9 @@ export async function GET(
     const aggs: PolygonAgg[] = json.results ?? [];
 
     if (!aggs.length) {
-      return NextResponse.json({ symbol, candles: [] }, {
+      const emptyResponse = { symbol, candles: [] };
+      try { await setCachedData(cacheKey, emptyResponse, CANDLES_CACHE_TTL); } catch {}
+      return NextResponse.json(emptyResponse, {
         headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' },
       });
     }
@@ -99,8 +113,13 @@ export async function GET(
         v: Math.round(a.v),
       }));
 
+    const responseBody = { symbol, candles };
+
+    // Cache in Redis (1 hour TTL)
+    try { await setCachedData(cacheKey, responseBody, CANDLES_CACHE_TTL); } catch {}
+
     return NextResponse.json(
-      { symbol, candles },
+      responseBody,
       {
         headers: {
           'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',

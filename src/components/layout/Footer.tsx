@@ -80,6 +80,11 @@ function FooterContent() {
                   Market Heatmap
                 </Link>
               </li>
+              <li>
+                <Link href="/screener" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                  Stock Screener
+                </Link>
+              </li>
             </ul>
           </div>
 

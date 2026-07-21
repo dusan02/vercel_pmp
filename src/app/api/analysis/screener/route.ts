@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
+import { getCachedData, setCachedData } from '@/lib/redis/operations';
+
+const SCREENER_CACHE_TTL = 600; // 10 minutes
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -19,6 +22,13 @@ export async function GET(request: Request) {
     const sortField = parts[0] || 'healthScore';
     const sortOrder = parts[1] || 'desc';
 
+    // Build cache key from query params
+    const cacheKey = `screener:${minHealth || ''}:${minProfitability || ''}:${minValuation || ''}:${minAltman || ''}:${sector || ''}:${page}:${limit}:${sortParams}`;
+    try {
+        const cached = await getCachedData(cacheKey);
+        if (cached) return NextResponse.json(cached);
+    } catch {}
+
     try {
         const where: any = {};
 
@@ -28,7 +38,7 @@ export async function GET(request: Request) {
         if (minAltman !== undefined) where.altmanZ = { gte: minAltman };
 
         if (sector) {
-            where.ticker = { sector: sector };
+            where.ticker = { is: { sector } };
         }
 
         const skip = (page - 1) * limit;
@@ -59,7 +69,7 @@ export async function GET(request: Request) {
             prisma.analysisCache.count({ where })
         ]);
 
-        return NextResponse.json({
+        const responseBody = {
             results,
             pagination: {
                 total,
@@ -67,7 +77,11 @@ export async function GET(request: Request) {
                 limit,
                 totalPages: Math.ceil(total / limit)
             }
-        });
+        };
+
+        try { await setCachedData(cacheKey, responseBody, SCREENER_CACHE_TTL); } catch {}
+
+        return NextResponse.json(responseBody);
     } catch (error) {
         console.error('Error in Screener API:', error);
         return NextResponse.json({ error: 'Failed to fetch screened results' }, { status: 500 });

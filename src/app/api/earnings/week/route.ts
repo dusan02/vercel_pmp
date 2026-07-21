@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getEarningsForDate } from '@/lib/server/earningsService';
+import { getCachedData, setCachedData } from '@/lib/redis/operations';
+import { prisma } from '@/lib/db/prisma';
 
 export const revalidate = 60; // 1 min cache
+
+const WEEK_CACHE_TTL = 300; // 5 minutes Redis cache
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -31,6 +35,71 @@ export async function GET(request: NextRequest) {
     weekDates.push(d.toISOString().slice(0, 10));
   }
   
+  const cacheKey = `earnings:week:${weekDates[0]}`;
+  
+  // Check Redis cache first for instant load
+  try {
+    const cached = await getCachedData(cacheKey);
+    if (cached) {
+      return NextResponse.json(cached, {
+        headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },
+      });
+    }
+  } catch {}
+
+  // DB-first approach: fetch from EarningsCalendar table (populated by cron)
+  // This is much faster than calling Finnhub API for each day
+  try {
+    const startDate = new Date(weekDates[0] + 'T00:00:00Z');
+    const endDate = new Date(weekDates[6] + 'T23:59:59Z');
+    
+    const dbEarnings = await prisma.earningsCalendar.findMany({
+      where: {
+        date: { gte: startDate, lte: endDate }
+      },
+      orderBy: [{ date: 'asc' }, { time: 'asc' }, { ticker: 'asc' }],
+    });
+    
+    if (dbEarnings.length > 0) {
+      // Build week data from DB records
+      const weekData: Record<string, any> = {};
+      for (const dateStr of weekDates) {
+        const dayEarnings = dbEarnings.filter(e => 
+          e.date.toISOString().split('T')[0] === dateStr
+        );
+        
+        weekData[dateStr] = {
+          date: dateStr,
+          preMarket: dayEarnings.filter(e => e.time === 'bmo' || e.time === 'before').map(e => ({
+            ticker: e.ticker,
+            companyName: e.companyName,
+            time: e.time,
+          })),
+          afterMarket: dayEarnings.filter(e => e.time === 'amc' || e.time === 'after').map(e => ({
+            ticker: e.ticker,
+            companyName: e.companyName,
+            time: e.time,
+          })),
+          timeTbd: dayEarnings.filter(e => e.time !== 'bmo' && e.time !== 'amc' && e.time !== 'before' && e.time !== 'after').map(e => ({
+            ticker: e.ticker,
+            companyName: e.companyName,
+            time: e.time,
+          })),
+        };
+      }
+      
+      const responseBody = { success: true, data: weekData };
+      try { await setCachedData(cacheKey, responseBody, WEEK_CACHE_TTL); } catch {}
+      
+      return NextResponse.json(responseBody, {
+        headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },
+      });
+    }
+  } catch (dbError) {
+    console.warn('⚠️ DB earnings fetch failed, falling back to Finnhub:', dbError);
+  }
+
+  // Fallback: use Finnhub-based earningsService (slower but more complete)
   const refresh = searchParams.get('refresh') === 'true';
 
   try {
@@ -70,10 +139,15 @@ export async function GET(request: NextRequest) {
       return acc;
     }, {} as Record<string, any>);
 
-    return NextResponse.json({
+    const responseBody = {
       success: true,
       data: weekData
-    }, {
+    };
+
+    // Cache in Redis (5 min TTL)
+    try { await setCachedData(cacheKey, responseBody, WEEK_CACHE_TTL); } catch {}
+
+    return NextResponse.json(responseBody, {
       headers: {
         'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300'
       }

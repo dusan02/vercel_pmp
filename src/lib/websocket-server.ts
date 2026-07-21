@@ -10,13 +10,19 @@ import { PriceUpdate, BatchPriceUpdate, RedisClient } from './types';
 // Export types for backward compatibility
 export type { PriceUpdate, BatchPriceUpdate };
 
-// TOP 50 tickers for real-time updates (most liquid and popular)
+// TOP 100 tickers for real-time updates (premium + standard tiers)
 const TOP_TICKERS = [
   'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA', 'BRK.B', 'AVGO', 'LLY',
   'V', 'MA', 'JPM', 'WMT', 'UNH', 'JNJ', 'PG', 'HD', 'CVX', 'MRK',
   'ABBV', 'KO', 'PEP', 'BAC', 'COST', 'TMO', 'ACN', 'DHR', 'VZ', 'ADBE',
   'CRM', 'NFLX', 'TXN', 'QCOM', 'NKE', 'PM', 'RTX', 'HON', 'LOW', 'UPS',
-  'IBM', 'GS', 'MS', 'CAT', 'DE', 'AXP', 'BKNG', 'GILD', 'ISRG', 'BLK'
+  'IBM', 'GS', 'MS', 'CAT', 'DE', 'AXP', 'BKNG', 'GILD', 'ISRG', 'BLK',
+  // Standard tier additions
+  'UBER', 'C', 'BA', 'SPGI', 'AMGN', 'BSX', 'NEE', 'SYK', 'AMAT', 'PGR',
+  'BX', 'COF', 'UNP', 'APH', 'KKR', 'LRCX', 'ADP', 'VRTX', 'KLAC', 'COP',
+  'MU', 'PANW', 'SNPS', 'CRWD', 'WELL', 'NEE', 'CME', 'AMT', 'SBUX', 'LMT',
+  'PLD', 'MMC', 'CDNS', 'DUK', 'WM', 'PH', 'BMY', 'MCK', 'DELL', 'HCA',
+  'SHW', 'INTC', 'NOC', 'ORLY', 'GD', 'MDLZ', 'COIN', 'EMR', 'ABNB', 'CVS'
 ];
 
 interface TickData {
