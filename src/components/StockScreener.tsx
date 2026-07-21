@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, Filter, ChevronLeft, ChevronRight, ArrowUpDown } from 'lucide-react';
+import { Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import CompanyLogo from './CompanyLogo';
 import { UniversalTable, ColumnDef } from './UniversalTable';
 import { formatMarketCap } from '@/lib/utils/format';
@@ -43,9 +43,15 @@ const SORT_OPTIONS = [
   { value: 'healthScore:desc', label: 'Health Score ↓' },
   { value: 'healthScore:asc', label: 'Health Score ↑' },
   { value: 'profitabilityScore:desc', label: 'Profitability ↓' },
+  { value: 'profitabilityScore:asc', label: 'Profitability ↑' },
   { value: 'valuationScore:desc', label: 'Valuation ↓' },
+  { value: 'valuationScore:asc', label: 'Valuation ↑' },
   { value: 'altmanZ:desc', label: 'Altman Z ↓' },
-  { value: 'ticker:lastMarketCap:desc', label: 'Market Cap ↓' },
+  { value: 'altmanZ:asc', label: 'Altman Z ↑' },
+  { value: 'ticker.lastMarketCap:desc', label: 'Market Cap ↓' },
+  { value: 'ticker.lastMarketCap:asc', label: 'Market Cap ↑' },
+  { value: 'ticker.name:desc', label: 'Company Name ↓' },
+  { value: 'ticker.name:asc', label: 'Company Name ↑' },
 ];
 
 function scoreColor(score: number | null): string {
@@ -107,13 +113,7 @@ export default function StockScreener() {
       const res = await fetch(`/api/analysis/screener?${params.toString()}`);
       if (!res.ok) throw new Error('Failed to fetch');
       const data: ScreenerResponse = await res.json();
-      // Map API response: 'symbol' is ticker string, 'ticker' is relation object
-      const mapped = (data.results || []).map((r: any) => ({
-        ...r,
-        ticker: r.ticker,
-        symbol: r.symbol,
-      }));
-      setResults(mapped);
+      setResults(data.results || []);
       setTotalPages(data.pagination?.totalPages || 1);
       setTotal(data.pagination?.total || 0);
     } catch (err) {
@@ -142,18 +142,6 @@ export default function StockScreener() {
   };
 
   const hasActiveFilters = minHealth || minProfitability || minValuation || minAltman || sector;
-
-  const sortParts = appliedFilters.sort.split(':');
-  const currentSortField = sortParts[0] ?? 'healthScore';
-  const currentSortOrder = (sortParts[1] === 'asc' ? 'asc' : 'desc') as 'asc' | 'desc';
-
-  const handleSortClick = (field: string) => {
-    if (currentSortField === field) {
-      setSort(`${field}:${currentSortOrder === 'asc' ? 'desc' : 'asc'}`);
-    } else {
-      setSort(`${field}:desc`);
-    }
-  };
 
   const columns: ColumnDef<ScreenerResult>[] = useMemo(() => [
     {

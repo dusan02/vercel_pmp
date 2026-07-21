@@ -10,20 +10,20 @@ import { formatMarketCap } from '@/lib/utils/format';
 
 interface ScreenerResult {
     symbol: string;
-    healthScore: number;
-    profitabilityScore: number;
-    valuationScore: number;
-    altmanZ: number;
-    debtRepaymentYears: number;
-    fcfYield: number;
+    healthScore: number | null;
+    profitabilityScore: number | null;
+    valuationScore: number | null;
+    altmanZ: number | null;
+    debtRepaymentYears: number | null;
+    fcfYield: number | null;
     lastQualitySignalAt: string | null;
     ticker: {
-        name: string;
-        sector: string;
-        logoUrl: string;
-        lastPrice: number;
-        lastMarketCap: number;
-    };
+        name: string | null;
+        sector: string | null;
+        logoUrl: string | null;
+        lastPrice: number | null;
+        lastMarketCap: number | null;
+    } | null;
 }
 
 interface Pagination {
@@ -119,7 +119,7 @@ export function GlobalScreener() {
             sortable: true,
             render: (item) => (
                 <div className="flex items-center gap-3">
-                    <CompanyLogo ticker={item.symbol} logoUrl={item.ticker?.logoUrl} size={32} />
+                    <CompanyLogo ticker={item.symbol} logoUrl={item.ticker?.logoUrl ?? null} size={32} />
                     <div>
                         <div className="flex items-center gap-2">
                             <div className="font-bold text-gray-900 dark:text-white">{item.symbol}</div>
