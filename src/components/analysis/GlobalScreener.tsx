@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
-import { MarketSignals } from './MarketSignals';
 import { NotificationToggle } from '../notifications/NotificationToggle';
 import { DualRangeSlider } from './DualRangeSlider';
 import CompanyLogo from '../CompanyLogo';
@@ -113,9 +112,6 @@ export function GlobalScreener() {
 
     return (
         <div className="flex flex-col gap-6 p-4 lg:p-0 mb-20 lg:mb-0">
-            {/* Market Intelligence Signals (Phase 13) */}
-            <MarketSignals />
-
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
