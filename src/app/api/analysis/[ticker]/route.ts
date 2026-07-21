@@ -437,10 +437,10 @@ export async function POST(
         const primary = await computeMetrics(symbol, tickerRecord);
         const peers = await fetchPeers(symbol, tickerRecord?.sector ?? null);
 
-        // Invalidate Redis cache so next GET fetches fresh data
+        // Invalidate Redis caches so next GET fetches fresh data
         try {
             const { del } = await import('@/lib/redis/operations');
-            await del([`analysis:cache:${symbol}`]);
+            await del([`analysis:cache:${symbol}`, `analysis:history:${symbol}`]);
         } catch {}
 
         console.log(`[Analysis API] Deep analysis complete for ${symbol}`);

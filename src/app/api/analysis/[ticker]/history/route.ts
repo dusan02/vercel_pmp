@@ -2,6 +2,47 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { projectForward, pearson, buildStats, type PerSharePoint } from '@/lib/utils/analysisMath';
 import { computeTTMAtDate } from '@/lib/utils/ttm';
+import { getCachedData, setCachedData, del } from '@/lib/redis/operations';
+
+const HISTORY_CACHE_TTL = 3600; // 1 hour (valuation history changes slowly)
+
+// Shared with route.ts — keep in sync
+const SPLITS_CACHE_TTL = 7 * 24 * 60 * 60; // 7 days
+
+/**
+ * Fetch stock splits from Polygon API with Redis caching (7-day TTL).
+ * Splits change rarely so we cache aggressively.
+ */
+async function getCachedSplitsLocal(symbol: string, tenYearsAgo: Date): Promise<{ execution_date: string; split_to: number; split_from: number }[]> {
+    const cacheKey = `analysis:splits:${symbol}`;
+    try {
+        const cached = await getCachedData(cacheKey);
+        if (cached && Array.isArray(cached)) return cached;
+    } catch {}
+
+    const polygonApiKey = process.env.POLYGON_API_KEY;
+    if (!polygonApiKey) return [];
+
+    try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 3000);
+        const splitsResp = await fetch(
+            `https://api.polygon.io/v3/reference/splits?ticker=${symbol}&apiKey=${polygonApiKey}`,
+            { signal: controller.signal }
+        );
+        clearTimeout(timeout);
+        if (splitsResp.ok) {
+            const splitsData = await splitsResp.json();
+            const results = (splitsData.results || []).filter((sp: any) => {
+                const splitDate = new Date(sp.execution_date + 'T00:00:00Z');
+                return splitDate.getTime() >= tenYearsAgo.getTime();
+            });
+            try { await setCachedData(cacheKey, results, SPLITS_CACHE_TTL); } catch {}
+            return results;
+        }
+    } catch {}
+    return [];
+}
 
 export async function GET(
     request: Request,
@@ -9,6 +50,17 @@ export async function GET(
 ) {
     const { ticker } = await params;
     const symbol = ticker.toUpperCase();
+
+    // Check Redis cache first
+    const cacheKey = `analysis:history:${symbol}`;
+    try {
+        const cached = await getCachedData(cacheKey);
+        if (cached) {
+            return NextResponse.json(cached, {
+                headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' },
+            });
+        }
+    } catch {}
 
     try {
         const tenYearsAgo = new Date();
@@ -48,14 +100,18 @@ export async function GET(
             .filter(r => VALID_PS(r.psRatio))
             .map(r => ({ date: r.date.toISOString().split('T')[0], value: parseFloat((r.psRatio as number).toFixed(2)) }));
 
-        // Current values (most recent row with valid data)
-        const latestPE = [...rows].reverse().find(r => VALID_PE(r.peRatio))?.peRatio ?? null;
-        const latestPS = [...rows].reverse().find(r => VALID_PS(r.psRatio))?.psRatio ?? null;
+        // Current values (most recent row with valid data) — single reverse iteration
+        let latestPE: number | null = null;
+        let latestPS: number | null = null;
+        for (let i = rows.length - 1; i >= 0 && (latestPE === null || latestPS === null); i--) {
+            if (latestPE === null && VALID_PE(rows[i]!.peRatio)) latestPE = rows[i]!.peRatio;
+            if (latestPS === null && VALID_PS(rows[i]!.psRatio)) latestPS = rows[i]!.psRatio;
+        }
 
         // Price history (weekly) for Scenario Lab chart
         const priceHistory = weekly
             .filter(r => r.closePrice !== null && r.closePrice !== undefined && r.closePrice > 0)
-            .map(r => ({ date: r.date.toISOString().split('T')[0], price: parseFloat((r.closePrice as number).toFixed(2)) }));
+            .map(r => ({ date: r.date.toISOString().split('T')[0]!, price: parseFloat((r.closePrice as number).toFixed(2)) }));
 
         // Build stats first
         const peStats = buildStats(peAllValues);
@@ -79,29 +135,21 @@ export async function GET(
         }
         const sortedPriceDates = Array.from(weeklyPriceMap.keys()).sort();
 
-        // Detect stock splits using Polygon reference API (most reliable source)
+        // Detect stock splits using cached Polygon reference API (7-day Redis cache + 3s timeout)
         // Falls back to statement-based detection if API unavailable
-        const polygonApiKey = process.env.POLYGON_API_KEY;
         const splitEvents: { date: Date; ratio: number }[] = [];
 
-        if (polygonApiKey) {
-            try {
-                const splitsResp = await fetch(
-                    `https://api.polygon.io/v3/reference/splits?ticker=${symbol}&apiKey=${polygonApiKey}`
-                );
-                if (splitsResp.ok) {
-                    const splitsData = await splitsResp.json();
-                    for (const sp of (splitsData.results || [])) {
-                        const splitDate = new Date(sp.execution_date + 'T00:00:00Z');
-                        const splitRatio = sp.split_to / sp.split_from;
-                        if (splitDate.getTime() >= tenYearsAgo.getTime()) {
-                            splitEvents.push({ date: splitDate, ratio: splitRatio });
-                        }
-                    }
+        try {
+            const splits = await getCachedSplitsLocal(symbol, tenYearsAgo);
+            for (const sp of splits) {
+                const splitDate = new Date(sp.execution_date + 'T00:00:00Z');
+                const splitRatio = sp.split_to / sp.split_from;
+                if (splitDate.getTime() >= tenYearsAgo.getTime()) {
+                    splitEvents.push({ date: splitDate, ratio: splitRatio });
                 }
-            } catch {
-                // Fall through to statement-based detection
             }
+        } catch {
+            // Fall through to statement-based detection
         }
 
         if (splitEvents.length > 0) {
@@ -253,24 +301,26 @@ export async function GET(
             : [];
 
         // Helper: build valuation history from a given intrinsic series
+        // O(n+m) pointer-based — avoids O(n*m) filter inside map
         function buildValuationHistory(intrinsicSrc: { date: string; impliedPrice: number }[]) {
-            return priceHistory.map(p => {
-                const validPoints = intrinsicSrc.filter(i => i.date <= (p.date || ''));
-                if (validPoints.length === 0) return null;
-                const intrinsicPoint = validPoints[validPoints.length - 1]!;
-                const intrinsic = intrinsicPoint.impliedPrice;
-                // Guard: if intrinsic <= 0, mark as N/A (null) — don't compute nonsensical undervaluation
-                if (intrinsic <= 0) {
-                    return { date: p.date, price: p.price, intrinsic: 0, undervaluationPct: null as number | null };
+            const result: { date: string; price: number; intrinsic: number; undervaluationPct: number | null }[] = [];
+            let lastIntrinsic: { date: string; impliedPrice: number } | null = null;
+            let pi = 0;
+            for (const p of priceHistory) {
+                while (pi < intrinsicSrc.length && intrinsicSrc[pi]!.date <= p.date) {
+                    lastIntrinsic = intrinsicSrc[pi]!;
+                    pi++;
                 }
-                const underval = ((intrinsic - p.price) / intrinsic) * 100;
-                return {
-                    date: p.date,
-                    price: p.price,
-                    intrinsic,
-                    undervaluationPct: parseFloat(underval.toFixed(2)),
-                };
-            }).filter(Boolean) as { date: string; price: number; intrinsic: number; undervaluationPct: number | null }[];
+                if (!lastIntrinsic) continue;
+                const intrinsic = lastIntrinsic.impliedPrice;
+                if (intrinsic <= 0) {
+                    result.push({ date: p.date, price: p.price, intrinsic: 0, undervaluationPct: null });
+                } else {
+                    const underval = ((intrinsic - p.price) / intrinsic) * 100;
+                    result.push({ date: p.date, price: p.price, intrinsic, undervaluationPct: parseFloat(underval.toFixed(2)) });
+                }
+            }
+            return result;
         }
 
         const valuationHistoryPE = buildValuationHistory(impliedPricePE);
@@ -344,7 +394,7 @@ export async function GET(
         const peImplied = peAligned.map(pt => pt.impliedPrice);
         const corrPE = (pePrices.length > 2) ? pearson(pePrices, peImplied) : null;
 
-        return NextResponse.json({
+        const responseBody = {
             peHistory,
             psHistory,
             priceHistory,
@@ -370,11 +420,29 @@ export async function GET(
                 ps: latestPS !== null ? parseFloat((latestPS as number).toFixed(2)) : null,
             },
             stats: { pe: peStats, ps: psStats },
-        }, {
+        };
+
+        // Cache in Redis (1 hour TTL)
+        try { await setCachedData(cacheKey, responseBody, HISTORY_CACHE_TTL); } catch {}
+
+        return NextResponse.json(responseBody, {
             headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' },
         });
     } catch (error) {
         console.error(`Error fetching history for ${symbol}:`, error);
         return NextResponse.json({ error: 'Failed to fetch history' }, { status: 500 });
     }
+}
+
+// Invalidate cache when POST refreshes analysis data
+export async function POST(
+    request: Request,
+    { params }: { params: Promise<{ ticker: string }> }
+) {
+    const { ticker } = await params;
+    const symbol = ticker.toUpperCase();
+    try {
+        await del([`analysis:history:${symbol}`]);
+    } catch {}
+    return NextResponse.json({ ok: true });
 }
