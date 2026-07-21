@@ -199,12 +199,13 @@ export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabP
         compareWith,
         secondaryData,
         runDeepAnalysis,
+        analysisStep,
     } = useAnalysis(ticker);
 
-    if (loading) return <LoadingSkeleton />;
+    if (loading) return <LoadingSkeleton analysisStep={analysisStep} />;
 
     if (!data) {
-        if (analyzing) return <LoadingSkeleton />;
+        if (analyzing) return <LoadingSkeleton analysisStep={analysisStep} />;
         if (error) return <div className="p-4 text-red-500">Error: {error}</div>;
         return <div className="p-4 text-gray-500">No analysis data available.</div>;
     }

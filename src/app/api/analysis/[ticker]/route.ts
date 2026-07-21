@@ -3,12 +3,83 @@ import { prisma } from '@/lib/db/prisma';
 import { AnalysisService } from '@/services/analysisService';
 import { FinnhubService } from '@/services/finnhubService';
 import { computeTTM } from '@/lib/utils/ttm';
+import { getCachedData, setCachedData } from '@/lib/redis/operations';
 
 // In-memory dedup: prevents multiple concurrent background revalidations for the same symbol
 const revalidating = new Set<string>();
 
+const ANALYSIS_CACHE_TTL = 300; // 5 minutes
+const SPLITS_CACHE_TTL = 7 * 24 * 60 * 60; // 7 days (splits change rarely)
+
+// Shared ticker select — includes all fields needed by computeMetrics + GET/POST handlers
+const TICKER_SELECT = {
+    symbol: true,
+    name: true,
+    sector: true,
+    industry: true,
+    description: true,
+    websiteUrl: true,
+    logoUrl: true,
+    employees: true,
+    headquarters: true,
+    sharesOutstanding: true,
+    lastPrice: true,
+    lastPriceUpdated: true,
+    lastChangePct: true,
+    lastMarketCap: true,
+    lastMarketCapDiff: true,
+    latestPrevClose: true,
+    updatedAt: true,
+} as const;
+
+/**
+ * Fetch stock splits from Polygon API with Redis caching (7-day TTL).
+ * Splits change rarely so we cache aggressively.
+ */
+async function getCachedSplits(symbol: string, tenYearsAgo: Date): Promise<{ execution_date: string; split_to: number; split_from: number }[]> {
+    const cacheKey = `analysis:splits:${symbol}`;
+    try {
+        const cached = await getCachedData(cacheKey);
+        if (cached && Array.isArray(cached)) return cached;
+    } catch {}
+
+    const polygonApiKey = process.env.POLYGON_API_KEY;
+    if (!polygonApiKey) return [];
+
+    try {
+        const splitsResp = await fetch(
+            `https://api.polygon.io/v3/reference/splits?ticker=${symbol}&apiKey=${polygonApiKey}`
+        );
+        if (splitsResp.ok) {
+            const splitsData = await splitsResp.json();
+            const results = (splitsData.results || []).filter((sp: any) => {
+                const splitDate = new Date(sp.execution_date + 'T00:00:00Z');
+                return splitDate.getTime() >= tenYearsAgo.getTime();
+            });
+            try { await setCachedData(cacheKey, results, SPLITS_CACHE_TTL); } catch {}
+            return results;
+        }
+    } catch {}
+    return [];
+}
+
+/**
+ * Fetch sector peers for a given ticker.
+ */
+async function fetchPeers(symbol: string, sector: string | null): Promise<string[]> {
+    if (!sector) return [];
+    const peerTickers = await prisma.ticker.findMany({
+        where: { sector, symbol: { not: symbol } },
+        select: { symbol: true },
+        take: 4,
+        orderBy: { lastMarketCap: 'desc' },
+    });
+    return peerTickers.map(t => t.symbol);
+}
+
 // Helper: compute metrics for a single symbol
-async function computeMetrics(symbol: string) {
+// tickerRecord: pre-fetched Ticker row (avoids duplicate DB queries from GET/POST)
+async function computeMetrics(symbol: string, tickerRecord?: any) {
     const analysis = await prisma.analysisCache.findUnique({ where: { symbol } });
     if (!analysis) return null;
 
@@ -20,25 +91,19 @@ async function computeMetrics(symbol: string) {
         orderBy: { endDate: 'desc' },
     });
 
-    // Adjust sharesOutstanding for stock splits using Polygon splits API
+    // Adjust sharesOutstanding for stock splits using cached Polygon splits API
     // Finnhub statements often have mixed pre-split and post-split shares
-    const polygonApiKey = process.env.POLYGON_API_KEY;
-    if (polygonApiKey && stmts.length > 0) {
+    if (stmts.length > 0) {
         try {
-            const splitsResp = await fetch(
-                `https://api.polygon.io/v3/reference/splits?ticker=${symbol}&apiKey=${polygonApiKey}`
-            );
-            if (splitsResp.ok) {
-                const splitsData = await splitsResp.json();
-                for (const sp of (splitsData.results || [])) {
-                    const splitDate = new Date(sp.execution_date + 'T00:00:00Z');
-                    const splitRatio = sp.split_to / sp.split_from;
-                    if (splitDate.getTime() >= tenYearsAgo.getTime()) {
-                        for (const s of stmts) {
-                            if (s.endDate.getTime() < splitDate.getTime() &&
-                                s.sharesOutstanding && s.sharesOutstanding > 0) {
-                                s.sharesOutstanding = s.sharesOutstanding * splitRatio;
-                            }
+            const splits = await getCachedSplits(symbol, tenYearsAgo);
+            for (const sp of splits) {
+                const splitDate = new Date(sp.execution_date + 'T00:00:00Z');
+                const splitRatio = sp.split_to / sp.split_from;
+                if (splitDate.getTime() >= tenYearsAgo.getTime()) {
+                    for (const s of stmts) {
+                        if (s.endDate.getTime() < splitDate.getTime() &&
+                            s.sharesOutstanding && s.sharesOutstanding > 0) {
+                            s.sharesOutstanding = s.sharesOutstanding * splitRatio;
                         }
                     }
                 }
@@ -58,7 +123,7 @@ async function computeMetrics(symbol: string) {
     // have pre-split shares (below tickerInfo.sharesOutstanding / 2).
     // This avoids double-adjusting statements already fixed by Polygon splits API above.
     if (stmts.length > 0) {
-        const tickerInfo = await prisma.ticker.findUnique({
+        const tickerInfo = tickerRecord ?? await prisma.ticker.findUnique({
             where: { symbol },
             select: { sharesOutstanding: true },
         });
@@ -124,11 +189,7 @@ async function computeMetrics(symbol: string) {
     const ttmSbc = ttm.sbc;
 
     // P/E: prefer Finnhub pre-computed, fallback to our TTM calculation
-    const tickerForPrice = await prisma.ticker.findUnique({
-        where: { symbol },
-        select: { lastPrice: true }
-    });
-    const effectivePrice = tickerForPrice?.lastPrice || latestValuation?.closePrice || 0;
+    const effectivePrice = tickerRecord?.lastPrice || latestValuation?.closePrice || 0;
     const effectiveNI = ttmNetIncome ?? latestStmt?.netIncome ?? null;
     let currentPe: number | null = finnhubMetrics?.peRatio ?? null;
     if (currentPe === null && effectivePrice > 0 && sharesOutstanding && sharesOutstanding > 0 && effectiveNI && effectiveNI > 0) {
@@ -250,27 +311,30 @@ export async function GET(
     const compareSymbol = searchParams.get('compare')?.toUpperCase() || null;
 
     try {
-        const primary = await computeMetrics(symbol);
-        if (!primary) return NextResponse.json(null);
-
-        // Also fetch sector peers and ticker details (logo, sector, description)
-        const tickerRecord = await prisma.ticker.findUnique({
-            where: { symbol },
-            select: { sector: true, industry: true, description: true, websiteUrl: true, name: true, logoUrl: true, employees: true, lastPrice: true, lastMarketCap: true, lastChangePct: true, lastMarketCapDiff: true, headquarters: true, lastPriceUpdated: true, latestPrevClose: true }
-        });
-
-        let peers: string[] = [];
-        if (tickerRecord?.sector) {
-            const peerTickers = await prisma.ticker.findMany({
-                where: { sector: tickerRecord.sector, symbol: { not: symbol } },
-                select: { symbol: true },
-                take: 4,
-                orderBy: { lastMarketCap: 'desc' },
-            });
-            peers = peerTickers.map((t: { symbol: string }) => t.symbol);
+        // 1. Check Redis cache first (skip for compare requests — they need fresh data)
+        if (!compareSymbol) {
+            try {
+                const cached = await getCachedData(`analysis:cache:${symbol}`);
+                if (cached) {
+                    return NextResponse.json(cached);
+                }
+            } catch {}
         }
 
-        // If compare requested, fetch secondary analysis
+        // 2. Fetch ticker record once (shared select for computeMetrics + response)
+        const tickerRecord = await prisma.ticker.findUnique({
+            where: { symbol },
+            select: TICKER_SELECT,
+        });
+
+        // 3. Compute metrics (pass tickerRecord to avoid duplicate DB query)
+        const primary = await computeMetrics(symbol, tickerRecord);
+        if (!primary) return NextResponse.json(null);
+
+        // 4. Fetch peers
+        const peers = await fetchPeers(symbol, tickerRecord?.sector ?? null);
+
+        // 5. If compare requested, fetch secondary analysis
         if (compareSymbol) {
             const secondary = await computeMetrics(compareSymbol);
             return NextResponse.json({
@@ -280,22 +344,23 @@ export async function GET(
             });
         }
 
-        // Background revalidation: if cache is stale (> 7 days), trigger async refresh
-        // without blocking the response — next load will see fresh data
-        const cacheAge = await prisma.analysisCache.findUnique({
-            where: { symbol },
-            select: { updatedAt: true },
-        });
+        // 6. Background revalidation: if cache is stale (> 7 days), trigger async refresh
+        const analysisUpdatedAt = (primary as any)?.updatedAt;
         const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-        if (cacheAge && cacheAge.updatedAt < sevenDaysAgo && !revalidating.has(symbol)) {
+        if (analysisUpdatedAt && new Date(analysisUpdatedAt) < sevenDaysAgo && !revalidating.has(symbol)) {
             revalidating.add(symbol);
-            // Fire-and-forget background refresh (non-blocking)
             fetch(`${new URL(request.url).origin}/api/analysis/${symbol}`, { method: 'POST' })
                 .catch(() => {/* silent — background job */})
                 .finally(() => revalidating.delete(symbol));
         }
 
-        return NextResponse.json({ ...primary, ticker: tickerRecord, peers });
+        // 7. Build response and cache it
+        const response = { ...primary, ticker: tickerRecord, peers };
+        try {
+            await setCachedData(`analysis:cache:${symbol}`, response, ANALYSIS_CACHE_TTL);
+        } catch {}
+
+        return NextResponse.json(response);
     } catch (error) {
         console.error(`Error fetching analysis for ${symbol}:`, error);
         return NextResponse.json({ error: 'Failed to fetch analysis' }, { status: 500 });
@@ -329,7 +394,6 @@ export async function POST(
         }
 
         // Skip syncTickerDetails if data was refreshed within 30 days and key fields are populated
-        // (description, employees, HQ change rarely — no need to re-fetch on every Refresh Analysis)
         const existingTicker = await prisma.ticker.findUnique({
             where: { symbol },
             select: { updatedAt: true, description: true, employees: true, headquarters: true }
@@ -344,13 +408,11 @@ export async function POST(
                 console.log(`[Analysis API] Ticker details synced for ${symbol}`);
             } catch (e: any) {
                 console.error(`[Analysis API] Details sync failed for ${symbol}:`, e.message);
-                // Details are not critical, continue
             }
         } else {
             console.log(`[Analysis API] Ticker details fresh (< 30d), skipping sync for ${symbol}`);
         }
 
-        // Always sync valuation history on manual POST to ensure new EPS from Finnhub recalculates P/E ratios correctly
         try {
             await AnalysisService.syncValuationHistory(symbol);
             console.log(`[Analysis API] Valuation history synced for ${symbol}`);
@@ -367,23 +429,19 @@ export async function POST(
             throw e;
         }
 
-        const primary = await computeMetrics(symbol);
-
+        // Fetch ticker once with shared select, pass to computeMetrics
         const tickerRecord = await prisma.ticker.findUnique({
             where: { symbol },
-            select: { sector: true, industry: true, description: true, websiteUrl: true, name: true, logoUrl: true, employees: true, lastPrice: true, lastMarketCap: true, lastChangePct: true, lastMarketCapDiff: true, headquarters: true, lastPriceUpdated: true, latestPrevClose: true }
+            select: TICKER_SELECT,
         });
+        const primary = await computeMetrics(symbol, tickerRecord);
+        const peers = await fetchPeers(symbol, tickerRecord?.sector ?? null);
 
-        let peers: string[] = [];
-        if (tickerRecord?.sector) {
-            const peerTickers = await prisma.ticker.findMany({
-                where: { sector: tickerRecord.sector, symbol: { not: symbol } },
-                select: { symbol: true },
-                take: 4,
-                orderBy: { lastMarketCap: 'desc' },
-            });
-            peers = peerTickers.map(t => t.symbol);
-        }
+        // Invalidate Redis cache so next GET fetches fresh data
+        try {
+            const { del } = await import('@/lib/redis/operations');
+            await del([`analysis:cache:${symbol}`]);
+        } catch {}
 
         console.log(`[Analysis API] Deep analysis complete for ${symbol}`);
         return NextResponse.json({ ...primary, ticker: tickerRecord, peers });
