@@ -194,10 +194,20 @@ export function transformToHeatmap(
   prevCloseBatchMap: Map<string, number>,
   ctx: TransformContext,
   now: Date,
-  debug: boolean
+  debug: boolean,
+  precomputedMaps?: {
+    previousCloseMap: Map<string, number>;
+    regularCloseMap: Map<string, number>;
+    priceMap: Map<string, { price: number; changePct: number; tsMs: number; source: 'ticker' | 'session' }>;
+  }
 ): TransformResult {
-  const { previousCloseMap, regularCloseMap, debugStats } = buildPrevCloseMaps(dailyRefs, ctx);
-  const priceMap = buildPriceMap(tickerMap, sessionPrices);
+  // Use precomputed maps if available, otherwise compute from scratch
+  // Only compute debugStats when debug is true (avoids 4000+ record loop in production)
+  const prevCloseResult = (!precomputedMaps || debug) ? buildPrevCloseMaps(dailyRefs, ctx) : null;
+  const previousCloseMap = precomputedMaps?.previousCloseMap ?? prevCloseResult!.previousCloseMap;
+  const regularCloseMap = precomputedMaps?.regularCloseMap ?? prevCloseResult!.regularCloseMap;
+  const priceMap = precomputedMaps?.priceMap ?? buildPriceMap(tickerMap, sessionPrices);
+  const debugStats = prevCloseResult?.debugStats ?? { totalDailyRefs: 0, dailyRefsUsedConfig: {}, counts: { totalTickers: 0, dailyRefToday: 0, dailyRefOlder: 0, tickerFallback: 0, missing: 0 } };
   debugStats.counts.totalTickers = tickerSymbols.length;
 
   const results: HeatmapPayloadRow[] = [];
@@ -206,6 +216,7 @@ export function transformToHeatmap(
   let processed = 0;
   let cacheHits = 0;
   let dbHits = 0;
+  const stalePrevCloseTickers: string[] = [];
 
   for (const ticker of tickerSymbols) {
     if (ticker === 'GOOG') continue;
@@ -310,7 +321,7 @@ export function transformToHeatmap(
         : false;
       const prevFromTicker = (rawPrevClose > 0 && prevCloseDateIsValid) ? rawPrevClose : 0;
       if (rawPrevClose > 0 && !prevCloseDateIsValid) {
-        console.warn(`⚠️ [STALE_PREVCLOSE][heatmap] ${ticker}: latestPrevClose=${rawPrevClose} from ${rawPrevCloseDate ? new Date(rawPrevCloseDate).toISOString().slice(0,10) : 'null'}, expected >= ${ctx.lastTradingDayForQuery.toISOString().slice(0,10)} — ignoring`);
+        stalePrevCloseTickers.push(ticker);
       }
       const prevFromDaily = previousCloseMap.get(ticker) || 0;
 
@@ -379,6 +390,11 @@ export function transformToHeatmap(
     });
 
     processed++;
+  }
+
+  // Batch log stale prevClose warnings (single log instead of 800+ individual ones)
+  if (stalePrevCloseTickers.length > 0) {
+    console.warn(`⚠️ [STALE_PREVCLOSE][heatmap] ${stalePrevCloseTickers.length} tickers with stale latestPrevClose (expected >= ${ctx.lastTradingDayForQuery.toISOString().slice(0, 10)}): ${stalePrevCloseTickers.slice(0, 10).join(', ')}${stalePrevCloseTickers.length > 10 ? ` ... +${stalePrevCloseTickers.length - 10} more` : ''}`);
   }
 
   // Sort by market cap desc

@@ -157,10 +157,14 @@ export async function GET(request: NextRequest) {
 
     console.log(`📅 Date range: ${oneWeekAgo.toISOString()} to ${tomorrow.toISOString()} (last 7 days for DailyRef fallback)`);
 
-    // 5. Fetch SessionPrice + DailyRef in parallel
-    const { sessionPrices: rawSessionPrices, dailyRefs: rawDailyRefs } = await fetchPriceData(
-      tickerSymbols, canUseFastPath, timeframe, dayAgo, tomorrow, oneWeekAgo, today
-    );
+    // 5. Fetch SessionPrice + DailyRef AND cached stock data in parallel
+    const [
+      { sessionPrices: rawSessionPrices, dailyRefs: rawDailyRefs },
+      cachedStockDataMap
+    ] = await Promise.all([
+      fetchPriceData(tickerSymbols, canUseFastPath, timeframe, dayAgo, tomorrow, oneWeekAgo, today),
+      fetchCachedStockData(tickerSymbols, tickerMap),
+    ]);
 
     const sessionPrices = deduplicateSessionPrices(rawSessionPrices);
     const dailyRefs = deduplicateDailyRefs(rawDailyRefs);
@@ -187,25 +191,23 @@ export async function GET(request: NextRequest) {
 
     console.log(`📊 Unique DailyRef records: ${dailyRefs.length}`);
 
-    // 7. Batch fetch cached stock data from Redis
-    const cachedStockDataMap = await fetchCachedStockData(tickerSymbols, tickerMap);
-
-    // 8. Compute transform context
+    // 7. Compute transform context
     const ctx = computeTransformContext();
 
     // 9. Build price map + preliminary prevClose map for on-demand fetch
     const priceMap = buildPriceMap(tickerMap, sessionPrices);
-    const { previousCloseMap: prelimPrevCloseMap } = buildPrevCloseMaps(rawDailyRefs, ctx);
+    const prelimPrevCloseMaps = buildPrevCloseMaps(rawDailyRefs, ctx);
 
     // 10. On-demand prevClose fetch
     const prevCloseBatchMap = await fetchPrevCloseOnDemand(
-      tickerSymbols, tickerMap, cachedStockDataMap, prelimPrevCloseMap, priceMap, todayYMD
+      tickerSymbols, tickerMap, cachedStockDataMap, prelimPrevCloseMaps.previousCloseMap, priceMap, todayYMD
     );
 
-    // 11. Transform all data into heatmap rows
+    // 11. Transform all data into heatmap rows (pass precomputed maps to avoid double computation)
     const transformResult = transformToHeatmap(
       tickerSymbols, tickerMap, sessionPrices, rawDailyRefs,
-      cachedStockDataMap, prevCloseBatchMap, ctx, now, debug
+      cachedStockDataMap, prevCloseBatchMap, ctx, now, debug,
+      { previousCloseMap: prelimPrevCloseMaps.previousCloseMap, regularCloseMap: prelimPrevCloseMaps.regularCloseMap, priceMap }
     );
 
     console.log(`✅ Processed ${transformResult.processed} tickers (${transformResult.cacheHits} from cache, ${transformResult.dbHits} from DB), skipped ${transformResult.skippedNoPrice} (no price), ${transformResult.skippedNoMarketCap} (no market cap)`);
