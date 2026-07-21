@@ -189,7 +189,10 @@ async function fetchPrevCloseFromPolygon(
     // Track outbound request (for metrics)
     await trackPolygonRequest();
     
-    const rangeResponse = await fetch(rangeUrl);
+    const rangeController = new AbortController();
+    const rangeTimeout = setTimeout(() => rangeController.abort(), 1000);
+    const rangeResponse = await fetch(rangeUrl, { signal: rangeController.signal });
+    clearTimeout(rangeTimeout);
     
     if (rangeResponse.ok) {
       const rangeData = await rangeResponse.json();
@@ -220,7 +223,10 @@ async function fetchPrevCloseFromPolygon(
       // Track outbound request (for metrics)
       await trackPolygonRequest();
       
-      const response = await fetch(url);
+      const dayController = new AbortController();
+      const dayTimeout = setTimeout(() => dayController.abort(), 1000);
+      const response = await fetch(url, { signal: dayController.signal });
+      clearTimeout(dayTimeout);
 
       if (response.ok) {
         const data = await response.json();
