@@ -82,9 +82,14 @@ export async function GET(request: NextRequest) {
           if (dataAgeMs < MAX_DATA_AGE_FOR_ETAG) {
             console.log(`✅ Heatmap cache hit - returning ${cachedData.length} companies (data age: ${Math.floor(dataAgeMs / 1000)}s, ${Date.now() - startTime}ms)`);
             const limited = requestedLimit ? cachedData.slice(0, requestedLimit) : cachedData;
+            const compactRows = limited.map((s: any) => ({
+              t: s.ticker, n: s.companyName, s: s.sector, i: s.industry,
+              m: s.marketCap, c: s.percentChange, d: s.marketCapDiff, p: s.currentPrice,
+            }));
             return NextResponse.json({
               success: true,
               data: limited,
+              rows: compactRows,
               cached: true,
               count: limited.length,
               timestamp: new Date().toISOString(),
