@@ -4,7 +4,7 @@ import { computeMarketCap, computeMarketCapDiff, computePercentChange, validateM
 import { getDateET, createETDate } from '@/lib/utils/dateET';
 import { detectSession, nowET, isMarketHoliday, getTradingDay, getLastTradingDay } from '@/lib/utils/timeUtils';
 import { isWeekendET } from '@/lib/utils/dateET';
-import { resolvePrevClose } from '@/lib/heatmap/resolvePrevClose';
+import { resolvePrevClose, buildPrevCloseFromDailyRefs } from '@/lib/heatmap/resolvePrevClose';
 import type { TickerInfo } from './heatmapFetcher';
 
 export interface HeatmapPayloadRow {
@@ -45,6 +45,7 @@ export interface TransformResult {
 
 /**
  * Build previousClose and regularClose maps from DailyRef records.
+ * Delegates to buildPrevCloseFromDailyRefs in resolvePrevClose.ts (single source of truth).
  */
 export function buildPrevCloseMaps(
   dailyRefs: DailyRef[],
@@ -54,75 +55,34 @@ export function buildPrevCloseMaps(
   regularCloseMap: Map<string, number>;
   debugStats: any;
 } {
-  const previousCloseMap = new Map<string, number>();
-  const regularCloseMap = new Map<string, number>();
   const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][ctx.etNow.getDay()];
 
-  const debugStats = {
-    totalDailyRefs: dailyRefs.length,
-    dailyRefsUsedConfig: {
-      todayDateStr: ctx.todayDateStr,
-      todayName: dayName,
-      isMonday: ctx.etNow.getDay() === 1
+  const result = buildPrevCloseFromDailyRefs(dailyRefs, {
+    todayDateStr: ctx.todayDateStr,
+    isNonTradingClosedDay: ctx.isNonTradingClosedDay,
+    session: ctx.session,
+    regularCloseReferenceDayStr: ctx.regularCloseReferenceDayStr,
+  });
+
+  return {
+    previousCloseMap: result.previousCloseMap,
+    regularCloseMap: result.regularCloseMap,
+    debugStats: {
+      totalDailyRefs: result.debugStats.totalDailyRefs,
+      dailyRefsUsedConfig: {
+        todayDateStr: ctx.todayDateStr,
+        todayName: dayName,
+        isMonday: ctx.etNow.getDay() === 1,
+      },
+      counts: {
+        totalTickers: 0,
+        dailyRefToday: result.debugStats.counts.dailyRefToday,
+        dailyRefOlder: result.debugStats.counts.dailyRefOlder,
+        tickerFallback: 0,
+        missing: 0,
+      },
     },
-    counts: {
-      totalTickers: 0,
-      dailyRefToday: 0,
-      dailyRefOlder: 0,
-      tickerFallback: 0,
-      missing: 0
-    }
   };
-
-  // Pass 1: Set regularCloseMap from regularClose (for session-aware % change).
-  // Also set previousClose from today's DailyRef.previousClose (highest priority —
-  // it's yesterday's regular close, written by the worker).
-  for (const dr of dailyRefs) {
-    const drDate = new Date(dr.date);
-    const drDateStr = getDateET(drDate);
-    const isToday = drDateStr === ctx.todayDateStr;
-
-    if (dr.regularClose && dr.regularClose > 0) {
-      const isRegularCloseReferenceDay = ctx.regularCloseReferenceDayStr
-        ? (drDateStr === ctx.regularCloseReferenceDayStr)
-        : isToday;
-      if (isRegularCloseReferenceDay) {
-        regularCloseMap.set(dr.symbol, dr.regularClose);
-      }
-    }
-
-    // Today's previousClose = yesterday's close — highest priority for previousCloseMap
-    if (isToday && dr.previousClose && dr.previousClose > 0 && !previousCloseMap.has(dr.symbol)) {
-      previousCloseMap.set(dr.symbol, dr.previousClose);
-      debugStats.counts.dailyRefToday++;
-    }
-  }
-
-  // Pass 2: For symbols without previousClose from today's DailyRef,
-  // fall back to older regularClose or previousClose.
-  // Records are ordered by date desc, so the first match is the most recent.
-  for (const dr of dailyRefs) {
-    if (previousCloseMap.has(dr.symbol)) continue;
-
-    const drDate = new Date(dr.date);
-    const drDateStr = getDateET(drDate);
-    const isToday = drDateStr === ctx.todayDateStr;
-
-    // Use regularClose from older records as previousClose (e.g. Friday's close on Monday)
-    if (!isToday && dr.regularClose && dr.regularClose > 0) {
-      previousCloseMap.set(dr.symbol, dr.regularClose);
-      debugStats.counts.dailyRefOlder++;
-      continue;
-    }
-
-    // Use previousClose from older records on non-trading days (weekend/holiday)
-    if (!isToday && dr.previousClose && dr.previousClose > 0 && (ctx.isNonTradingClosedDay || ctx.session === 'closed')) {
-      previousCloseMap.set(dr.symbol, dr.previousClose);
-      debugStats.counts.dailyRefOlder++;
-    }
-  }
-
-  return { previousCloseMap, regularCloseMap, debugStats };
 }
 
 /**
