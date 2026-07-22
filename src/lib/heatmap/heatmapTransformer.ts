@@ -74,8 +74,9 @@ export function buildPrevCloseMaps(
     }
   };
 
-  // Pass 1: Set regularCloseMap and previousCloseMap from regularClose.
-  // Records are ordered by date desc, so the first regularClose per symbol is the most recent.
+  // Pass 1: Set regularCloseMap from regularClose (for session-aware % change).
+  // Also set previousClose from today's DailyRef.previousClose (highest priority —
+  // it's yesterday's regular close, written by the worker).
   for (const dr of dailyRefs) {
     const drDate = new Date(dr.date);
     const drDateStr = getDateET(drDate);
@@ -88,18 +89,18 @@ export function buildPrevCloseMaps(
       if (isRegularCloseReferenceDay) {
         regularCloseMap.set(dr.symbol, dr.regularClose);
       }
+    }
 
-      // Use regularClose as previousClose for older records (not today)
-      if (!isToday && !previousCloseMap.has(dr.symbol)) {
-        previousCloseMap.set(dr.symbol, dr.regularClose);
-        debugStats.counts.dailyRefOlder++;
-      }
+    // Today's previousClose = yesterday's close — highest priority for previousCloseMap
+    if (isToday && dr.previousClose && dr.previousClose > 0 && !previousCloseMap.has(dr.symbol)) {
+      previousCloseMap.set(dr.symbol, dr.previousClose);
+      debugStats.counts.dailyRefToday++;
     }
   }
 
-  // Pass 2: For symbols without previousClose from regularClose,
-  // use previousClose from the latest DailyRef record.
-  // Covers: early weekday mornings before pre-market, weekends, holidays.
+  // Pass 2: For symbols without previousClose from today's DailyRef,
+  // fall back to older regularClose or previousClose.
+  // Records are ordered by date desc, so the first match is the most recent.
   for (const dr of dailyRefs) {
     if (previousCloseMap.has(dr.symbol)) continue;
 
@@ -107,10 +108,15 @@ export function buildPrevCloseMaps(
     const drDateStr = getDateET(drDate);
     const isToday = drDateStr === ctx.todayDateStr;
 
-    if (isToday && dr.previousClose > 0) {
-      previousCloseMap.set(dr.symbol, dr.previousClose);
-      debugStats.counts.dailyRefToday++;
-    } else if (!isToday && dr.previousClose > 0 && (ctx.isNonTradingClosedDay || ctx.session === 'closed')) {
+    // Use regularClose from older records as previousClose (e.g. Friday's close on Monday)
+    if (!isToday && dr.regularClose && dr.regularClose > 0) {
+      previousCloseMap.set(dr.symbol, dr.regularClose);
+      debugStats.counts.dailyRefOlder++;
+      continue;
+    }
+
+    // Use previousClose from older records on non-trading days (weekend/holiday)
+    if (!isToday && dr.previousClose && dr.previousClose > 0 && (ctx.isNonTradingClosedDay || ctx.session === 'closed')) {
       previousCloseMap.set(dr.symbol, dr.previousClose);
       debugStats.counts.dailyRefOlder++;
     }
