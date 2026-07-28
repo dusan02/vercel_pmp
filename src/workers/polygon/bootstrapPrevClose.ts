@@ -159,9 +159,15 @@ export async function bootstrapPreviousCloses(
     chunks.push(tickersToProcess.slice(i, i + chunkSize));
   }
 
-  await Promise.all(chunks.map(chunk =>
-    Promise.all(chunk.map(symbol => processTicker(symbol)))
-  ));
+  // Process chunks sequentially to prevent SQLITE_BUSY crashes (3000 parallel writes is too much)
+  for (let i = 0; i < chunks.length; i++) {
+    const chunk = chunks[i];
+    console.log(`⏳ Processing bootstrap chunk ${i + 1}/${chunks.length} (${chunk.length} tickers)...`);
+    await Promise.all(chunk.map(symbol => processTicker(symbol)));
+    if (i < chunks.length - 1) {
+      await sleep(100);
+    }
+  }
 
   console.log(`✅ Bootstrap complete: ${snapshotHits} from snapshot, ${fallbackHits} from fallback, ${failedCount} failed`);
   await recordSuccess('bootstrapPreviousCloses', snapshotHits + fallbackHits);
