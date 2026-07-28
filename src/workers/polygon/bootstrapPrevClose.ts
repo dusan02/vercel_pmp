@@ -162,6 +162,7 @@ export async function bootstrapPreviousCloses(
   // Process chunks sequentially to prevent SQLITE_BUSY crashes (3000 parallel writes is too much)
   for (let i = 0; i < chunks.length; i++) {
     const chunk = chunks[i];
+    if (!chunk) continue;
     console.log(`⏳ Processing bootstrap chunk ${i + 1}/${chunks.length} (${chunk.length} tickers)...`);
     await Promise.all(chunk.map(symbol => processTicker(symbol)));
     if (i < chunks.length - 1) {
