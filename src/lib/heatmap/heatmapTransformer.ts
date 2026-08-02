@@ -129,8 +129,9 @@ export function computeTransformContext(): TransformContext {
   const session = detectSession(etNow);
   const calendarYMD = getDateET(etNow);
   const calendarDateET = createETDate(calendarYMD);
-  const isNonTradingClosedDay =
-    session === 'closed' && (isWeekendET(etNow) || isMarketHoliday(etNow));
+  // On weekends/holidays, always treat as non-trading closed day regardless of
+  // detectSession() (which may return 'after' on Sunday evening for futures).
+  const isNonTradingClosedDay = isWeekendET(etNow) || isMarketHoliday(etNow);
   const lastTradingDayForQuery = getLastTradingDay(calendarDateET);
   const lastTradingDayForReference = isNonTradingClosedDay ? getTradingDay(etNow) : null;
   const regularCloseReferenceDayStr = isNonTradingClosedDay && lastTradingDayForReference
