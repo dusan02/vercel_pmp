@@ -256,7 +256,7 @@ export async function getStocksList(options: {
     if (!isLargeQuery && tickersNeedingPrevClose.length > 0) {
       try {
         const { fetchPreviousClosesBatchAndPersist } = await import('@/lib/utils/onDemandPrevClose');
-        const onDemandResults = await fetchPreviousClosesBatchAndPersist(tickersNeedingPrevClose, getDateET(), { maxTickers: 50, timeoutBudget: 800, maxConcurrent: 5 });
+        const onDemandResults = await fetchPreviousClosesBatchAndPersist(tickersNeedingPrevClose, getDateET(), { maxTickers: 150, timeoutBudget: 5000, maxConcurrent: 10 });
         onDemandResults.forEach((prevClose, ticker) => onDemandPrevCloseMap.set(ticker, prevClose));
       } catch (error) {
         console.warn(`⚠️ On-demand prevClose fetch failed:`, error);

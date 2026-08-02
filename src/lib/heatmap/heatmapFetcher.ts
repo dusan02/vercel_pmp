@@ -193,13 +193,13 @@ export async function fetchPrevCloseOnDemand(
   const missingBefore = tickersNeedingPrevClose.length;
   if (missingBefore > 0) {
     const startTime = Date.now();
-    console.log(`🔄 On-demand fetching previousClose for ${missingBefore} tickers (max 50, timeout 600ms)...`);
+    console.log(`🔄 On-demand fetching previousClose for ${missingBefore} tickers (max 150, timeout 5000ms)...`);
     try {
       const { fetchPreviousClosesBatchAndPersist } = await import('@/lib/utils/onDemandPrevClose');
       const results = await fetchPreviousClosesBatchAndPersist(
         tickersNeedingPrevClose,
         todayYMD,
-        { maxTickers: 50, timeoutBudget: 600, maxConcurrent: 5 }
+        { maxTickers: 150, timeoutBudget: 5000, maxConcurrent: 10 }
       );
       results.forEach((prevClose, ticker) => prevCloseBatchMap.set(ticker, prevClose));
       const duration = Date.now() - startTime;
