@@ -244,6 +244,7 @@ export async function GET(request: NextRequest) {
     if (payload.length === 0) {
       const errorMsg = `No companies with valid data found. Checked ${tickerSymbols.length} tickers, found ${sessionPrices.length} SessionPrice records, ${dailyRefs.length} DailyRef records. Please ensure database is populated with recent data. The heatmap requires data from SessionPrice and DailyRef tables.`;
       console.error(`❌ ${errorMsg}`);
+      console.error(`❌ Skip breakdown: processed=${transformResult.processed}, cacheHits=${transformResult.cacheHits}, dbHits=${transformResult.dbHits}, skippedNoPrice=${transformResult.skippedNoPrice}, skippedNoMarketCap=${transformResult.skippedNoMarketCap}, results=${transformResult.results.length}`);
       return NextResponse.json(
         {
           success: false,
@@ -251,7 +252,28 @@ export async function GET(request: NextRequest) {
           data: [],
           count: 0,
           timestamp: new Date().toISOString(),
-          ...(debug ? { debug: transformResult.debugStats } : {})
+          ...(debug ? {
+            debug: transformResult.debugStats,
+            skipBreakdown: {
+              processed: transformResult.processed,
+              cacheHits: transformResult.cacheHits,
+              dbHits: transformResult.dbHits,
+              skippedNoPrice: transformResult.skippedNoPrice,
+              skippedNoMarketCap: transformResult.skippedNoMarketCap,
+              resultsBeforeFilter: transformResult.results.length,
+            },
+            ctx: {
+              session: ctx.session,
+              isNonTradingClosedDay: ctx.isNonTradingClosedDay,
+              todayDateStr: ctx.todayDateStr,
+              lastTradingDayForQuery: ctx.lastTradingDayForQuery.toISOString(),
+              regularCloseReferenceDayStr: ctx.regularCloseReferenceDayStr,
+            },
+            cachedStockDataCount: cachedStockDataMap.size,
+            priceMapSize: priceMap.size,
+            prevCloseMapSize: prelimPrevCloseMaps.previousCloseMap.size,
+            prevCloseBatchMapSize: prevCloseBatchMap.size,
+          } : {})
         },
         { status: 200 }
       );
