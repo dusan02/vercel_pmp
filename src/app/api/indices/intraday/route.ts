@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withRetry } from '@/lib/api/rateLimiter';
+import { getLastTradingDay } from '@/lib/utils/timeUtils';
+import { getDateET } from '@/lib/utils/dateET';
 
 const INDICES = ['SPY', 'QQQ'];
 
@@ -12,22 +14,37 @@ export async function GET(_req: NextRequest) {
   }
 
   try {
-    // Polygon aggregates: 5-min bars for today
+    // Determine the date to query: today if market is open, otherwise last trading day.
+    // This ensures the intraday chart shows a full trading session even on weekends/holidays.
     const now = new Date();
-    const todayIso = now.toISOString().split('T')[0];
+    const todayIso = getDateET(now);
+    const lastTradingDay = getLastTradingDay(now);
+    const lastTradingDayIso = getDateET(lastTradingDay);
 
     const results = await Promise.all(
       INDICES.map(async (ticker) => {
-        const url = `https://api.polygon.io/v2/aggs/ticker/${ticker}/range/5/minute/${todayIso}/${todayIso}?adjusted=true&sort=asc&limit=500&apiKey=${apiKey}`;
-        const res = await withRetry(async () => fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(15000) }));
-        if (!res.ok) return [ticker, []] as const;
-        const json = await res.json();
-        const points = Array.isArray(json.results)
-          ? json.results
-              .filter((p: any) => p.c)
-              .map((p: any) => ({ ts: new Date(p.t).toISOString(), price: p.c }))
-          : [];
-        return [ticker, points] as const;
+        // Try today first; if no results (market closed/weekend), fall back to last trading day.
+        const urls = [
+          `https://api.polygon.io/v2/aggs/ticker/${ticker}/range/5/minute/${todayIso}/${todayIso}?adjusted=true&sort=asc&limit=500&apiKey=${apiKey}`,
+          `https://api.polygon.io/v2/aggs/ticker/${ticker}/range/5/minute/${lastTradingDayIso}/${lastTradingDayIso}?adjusted=true&sort=asc&limit=500&apiKey=${apiKey}`,
+        ];
+
+        for (const url of urls) {
+          try {
+            const res = await withRetry(async () => fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(15000) }));
+            if (!res.ok) continue;
+            const json = await res.json();
+            const points = Array.isArray(json.results)
+              ? json.results
+                  .filter((p: any) => p.c)
+                  .map((p: any) => ({ ts: new Date(p.t).toISOString(), price: p.c }))
+              : [];
+            if (points.length > 0) return [ticker, points] as const;
+          } catch {
+            // try next URL
+          }
+        }
+        return [ticker, []] as const;
       })
     );
 
