@@ -787,4 +787,120 @@ export const SECTOR_INDUSTRY_OVERRIDES: Record<string, SectorIndustryOverride> =
       industry: "Semiconductors",
       name: "SK hynix Inc.",
     },
+    // --- Tickers previously missing from heatmap (sector was "Other") ---
+    ABM: {
+      sector: "Industrials",
+      industry: "Specialty Industrial Machinery",
+      name: "ABM Industries, Inc.",
+    },
+    AS: {
+      sector: "Consumer Cyclical",
+      industry: "Footwear & Accessories",
+      name: "Amer Sports, Inc.",
+    },
+    BN: {
+      sector: "Financial Services",
+      industry: "Asset Management",
+      name: "Brookfield Corporation",
+    },
+    BUD: {
+      sector: "Consumer Defensive",
+      industry: "Beverages - Alcoholic",
+      name: "Anheuser-Busch InBev SA/NV",
+    },
+    CRML: {
+      sector: "Basic Materials",
+      industry: "Other Industrial Metals & Mining",
+      name: "Critical Metals Corp.",
+    },
+    DSGX: {
+      sector: "Technology",
+      industry: "Software",
+      name: "Descartes Systems Group Inc.",
+    },
+    E: {
+      sector: "Energy",
+      industry: "Oil & Gas Integrated",
+      name: "ENI S.p.A.",
+    },
+    EBF: {
+      sector: "Consumer Cyclical",
+      industry: "Packaging & Containers",
+      name: "Ennis, Inc.",
+    },
+    FER: {
+      sector: "Industrials",
+      industry: "Farm & Heavy Construction Machinery",
+      name: "Ferrovial N.V.",
+    },
+    FNV: {
+      sector: "Basic Materials",
+      industry: "Gold",
+      name: "Franco-Nevada Corporation",
+    },
+    ING: {
+      sector: "Financial Services",
+      industry: "Banks",
+      name: "ING Groep N.V.",
+    },
+    KFY: {
+      sector: "Industrials",
+      industry: "Specialty Industrial Machinery",
+      name: "Korn Ferry",
+    },
+    MAN: {
+      sector: "Industrials",
+      industry: "Specialty Industrial Machinery",
+      name: "ManpowerGroup",
+    },
+    MFC: {
+      sector: "Financial Services",
+      industry: "Insurance",
+      name: "Manulife Financial Corp.",
+    },
+    MLKN: {
+      sector: "Consumer Cyclical",
+      industry: "Specialty Retail",
+      name: "MillerKnoll, Inc.",
+    },
+    NTES: {
+      sector: "Communication Services",
+      industry: "Entertainment",
+      name: "NetEase, Inc.",
+    },
+    OPRA: {
+      sector: "Technology",
+      industry: "Software",
+      name: "Opera Limited",
+    },
+    PBR: {
+      sector: "Energy",
+      industry: "Oil & Gas Integrated",
+      name: "Petrobras",
+    },
+    ROL: {
+      sector: "Industrials",
+      industry: "Waste Management",
+      name: "Rollins, Inc.",
+    },
+    SE: {
+      sector: "Consumer Cyclical",
+      industry: "Internet Retail",
+      name: "Sea Limited",
+    },
+    SU: {
+      sector: "Energy",
+      industry: "Oil & Gas Integrated",
+      name: "Suncor Energy, Inc.",
+    },
+    TRP: {
+      sector: "Utilities",
+      industry: "Utilities - Regulated Electric",
+      name: "TC Energy Corporation",
+    },
+    ZTO: {
+      sector: "Industrials",
+      industry: "Integrated Freight & Logistics",
+      name: "ZTO Express (Cayman) Inc.",
+    },
   };
