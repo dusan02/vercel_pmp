@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withRetry } from '@/lib/api/rateLimiter';
-import { getLastTradingDay, isMarketHoliday } from '@/lib/utils/timeUtils';
+import { detectSession, isMarketHoliday } from '@/lib/utils/timeUtils';
 import { getDateET, isWeekendET } from '@/lib/utils/dateET';
+import { getLastTradingDay } from '@/lib/utils/timeUtils';
 
 const INDICES = ['SPY', 'QQQ'];
 
@@ -15,16 +16,20 @@ export async function GET(_req: NextRequest) {
 
   try {
     // Determine the date to query.
-    // On weekends/holidays: use last trading day (shows full session, not just futures bars).
-    // On trading days: use today (shows live intraday as it builds up).
+    // - On trading days during/after market hours (session != 'closed'): use today (live intraday).
+    // - On weekends, holidays, or before market open on a trading day: use last trading day.
+    //   (Before open, Polygon only returns futures bars which don't represent the regular session.)
     const now = new Date();
+    const session = detectSession(now);
     const isNonTradingDay = isWeekendET(now) || isMarketHoliday(now);
+    const isPreMarket = session === 'closed' && !isNonTradingDay;
+    const useLastTradingDay = isNonTradingDay || isPreMarket;
+
     const todayIso = getDateET(now);
     const lastTradingDayIso = getDateET(getLastTradingDay(now));
 
-    // On non-trading days, prefer last trading day. On trading days, prefer today.
-    // Always fall back to the other date if the preferred one returns no data.
-    const dates = isNonTradingDay
+    // Prefer the appropriate date, fall back to the other if no data.
+    const dates = useLastTradingDay
       ? [lastTradingDayIso, todayIso]
       : [todayIso, lastTradingDayIso];
 
