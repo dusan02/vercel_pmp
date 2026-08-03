@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withRetry } from '@/lib/api/rateLimiter';
-import { getLastTradingDay } from '@/lib/utils/timeUtils';
-import { getDateET } from '@/lib/utils/dateET';
+import { getLastTradingDay, isMarketHoliday } from '@/lib/utils/timeUtils';
+import { getDateET, isWeekendET } from '@/lib/utils/dateET';
 
 const INDICES = ['SPY', 'QQQ'];
 
@@ -14,22 +14,24 @@ export async function GET(_req: NextRequest) {
   }
 
   try {
-    // Determine the date to query: today if market is open, otherwise last trading day.
-    // This ensures the intraday chart shows a full trading session even on weekends/holidays.
+    // Determine the date to query.
+    // On weekends/holidays: use last trading day (shows full session, not just futures bars).
+    // On trading days: use today (shows live intraday as it builds up).
     const now = new Date();
+    const isNonTradingDay = isWeekendET(now) || isMarketHoliday(now);
     const todayIso = getDateET(now);
-    const lastTradingDay = getLastTradingDay(now);
-    const lastTradingDayIso = getDateET(lastTradingDay);
+    const lastTradingDayIso = getDateET(getLastTradingDay(now));
+
+    // On non-trading days, prefer last trading day. On trading days, prefer today.
+    // Always fall back to the other date if the preferred one returns no data.
+    const dates = isNonTradingDay
+      ? [lastTradingDayIso, todayIso]
+      : [todayIso, lastTradingDayIso];
 
     const results = await Promise.all(
       INDICES.map(async (ticker) => {
-        // Try today first; if no results (market closed/weekend), fall back to last trading day.
-        const urls = [
-          `https://api.polygon.io/v2/aggs/ticker/${ticker}/range/5/minute/${todayIso}/${todayIso}?adjusted=true&sort=asc&limit=500&apiKey=${apiKey}`,
-          `https://api.polygon.io/v2/aggs/ticker/${ticker}/range/5/minute/${lastTradingDayIso}/${lastTradingDayIso}?adjusted=true&sort=asc&limit=500&apiKey=${apiKey}`,
-        ];
-
-        for (const url of urls) {
+        for (const dateIso of dates) {
+          const url = `https://api.polygon.io/v2/aggs/ticker/${ticker}/range/5/minute/${dateIso}/${dateIso}?adjusted=true&sort=asc&limit=500&apiKey=${apiKey}`;
           try {
             const res = await withRetry(async () => fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(15000) }));
             if (!res.ok) continue;
@@ -41,7 +43,7 @@ export async function GET(_req: NextRequest) {
               : [];
             if (points.length > 0) return [ticker, points] as const;
           } catch {
-            // try next URL
+            // try next date
           }
         }
         return [ticker, []] as const;
