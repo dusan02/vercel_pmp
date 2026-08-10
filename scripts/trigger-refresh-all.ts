@@ -23,6 +23,8 @@ async function triggerRefreshAll() {
                 'Authorization': `Bearer ${CRON_SECRET}`,
                 'Content-Type': 'application/json',
             },
+            // Refresh-all processes 705 tickers with rate-limited API calls — can take 30+ minutes
+            signal: AbortSignal.timeout(60 * 60 * 1000), // 60 min timeout
         });
 
         const data = await response.json();
