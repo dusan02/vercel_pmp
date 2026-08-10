@@ -18,7 +18,7 @@ import { fetchWithRetry } from './_utils/fetchWithRetry';
 
 loadEnvFromFiles();
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || process.env.BASE_URL || 'http://127.0.0.1:3000';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || process.env.BASE_URL || 'http://127.0.0.1:3001';
 const CRON_SECRET = process.env.CRON_SECRET_KEY || process.env.CRON_SECRET || '';
 
 function authHeaders(): Record<string, string> {

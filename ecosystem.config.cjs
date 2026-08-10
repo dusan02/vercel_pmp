@@ -51,7 +51,7 @@ module.exports = {
       
       env_production: {
         NODE_ENV: "production",
-        PORT: 3000,
+        PORT: 3001,
         // Ensure the custom server binds on IPv4 loopback (matches nginx + monitors)
         LISTEN_HOST: "127.0.0.1",
         ENABLE_WEBSOCKET: "true",
@@ -165,7 +165,7 @@ module.exports = {
       exec_mode: "fork",
       env_production: {
         NODE_ENV: "production",
-        BASE_URL: "http://127.0.0.1:3000",
+        BASE_URL: "http://127.0.0.1:3001",
         CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || envVars.CRON_SECRET || process.env.CRON_SECRET_KEY || process.env.CRON_SECRET,
       },
       error_file: path.join(__dirname, "logs", "pm2", "post-market-daily-reset-error.log"),
@@ -183,7 +183,7 @@ module.exports = {
       exec_mode: "fork",
       env_production: {
         NODE_ENV: "production",
-        BASE_URL: "http://127.0.0.1:3000",
+        BASE_URL: "http://127.0.0.1:3001",
         CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || envVars.CRON_SECRET || process.env.CRON_SECRET_KEY || process.env.CRON_SECRET,
       },
       error_file: path.join(__dirname, "logs", "pm2", "cron-verify-prevclose-error.log"),
@@ -201,7 +201,7 @@ module.exports = {
       exec_mode: "fork",
       env_production: {
         NODE_ENV: "production",
-        BASE_URL: "http://127.0.0.1:3000",
+        BASE_URL: "http://127.0.0.1:3001",
         CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || envVars.CRON_SECRET || process.env.CRON_SECRET_KEY || process.env.CRON_SECRET,
       },
       error_file: path.join(__dirname, "logs", "pm2", "cron-verify-sector-industry-error.log"),
@@ -219,7 +219,7 @@ module.exports = {
       exec_mode: "fork",
       env_production: {
         NODE_ENV: "production",
-        BASE_URL: "http://127.0.0.1:3000",
+        BASE_URL: "http://127.0.0.1:3001",
         CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || envVars.CRON_SECRET || process.env.CRON_SECRET_KEY || process.env.CRON_SECRET,
       },
       error_file: path.join(__dirname, "logs", "pm2", "cron-earnings-calendar-error.log"),
@@ -256,7 +256,7 @@ module.exports = {
       exec_mode: "fork",
       env_production: {
         NODE_ENV: "production",
-        BASE_URL: "http://127.0.0.1:3000",
+        BASE_URL: "http://127.0.0.1:3001",
         ALERT_WEBHOOK_URL: envVars.ALERT_WEBHOOK_URL || process.env.ALERT_WEBHOOK_URL,
         HEALTH_ALERT_COOLDOWN_MIN: envVars.HEALTH_ALERT_COOLDOWN_MIN || process.env.HEALTH_ALERT_COOLDOWN_MIN || "10",
       },

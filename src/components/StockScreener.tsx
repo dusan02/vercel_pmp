@@ -9,7 +9,7 @@ import { DualRangeSlider } from './analysis/DualRangeSlider';
 import { useScreener } from '@/hooks/useScreener';
 import {
   ScreenerResult, scoreColor, altmanZLabel,
-  SORT_OPTIONS, SECTORS,
+  SORT_OPTIONS, SECTORS, MARKET_CAP_PRESETS,
 } from '@/lib/utils/screener';
 import { formatBillions } from '@/lib/utils/format';
 
@@ -23,6 +23,7 @@ export default function StockScreener() {
     minValue, maxValue, setMinValue, setMaxValue,
     minAltman, setMinAltman,
     selectedSector, setSelectedSector,
+    marketCapPreset, setMarketCapPreset,
     sortField, sortOrder, handleSort, setSort,
     resetFilters, hasActiveFilters,
   } = screener;
@@ -180,7 +181,7 @@ export default function StockScreener() {
           </div>
         </div>
 
-        {/* Sector + Altman row */}
+        {/* Sector + Market Cap + Altman row */}
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-3 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
           <div className="flex flex-col gap-1.5">
             <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Sector</label>
@@ -192,6 +193,18 @@ export default function StockScreener() {
               <option value="">All Sectors</option>
               {SECTORS.map((s) => (
                 <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Market Cap</label>
+            <select
+              value={marketCapPreset}
+              onChange={(e) => setMarketCapPreset(e.target.value)}
+              className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all cursor-pointer"
+            >
+              {MARKET_CAP_PRESETS.map((p) => (
+                <option key={p.id} value={p.id}>{p.label}</option>
               ))}
             </select>
           </div>

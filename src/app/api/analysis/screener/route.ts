@@ -17,6 +17,9 @@ export async function GET(request: Request) {
     const maxProfitability = searchParams.get('maxProfitability') ? parseFloat(searchParams.get('maxProfitability')!) : undefined;
     const maxValuation = searchParams.get('maxValuation') ? parseFloat(searchParams.get('maxValuation')!) : undefined;
     const sector = searchParams.get('sector') || undefined;
+    // Market Cap filter (in billions)
+    const minMarketCap = searchParams.get('minMarketCap') ? parseFloat(searchParams.get('minMarketCap')!) : undefined;
+    const maxMarketCap = searchParams.get('maxMarketCap') ? parseFloat(searchParams.get('maxMarketCap')!) : undefined;
 
     // Pagination & Sorting
     const page = parseInt(searchParams.get('page') || '1', 10);
@@ -27,7 +30,7 @@ export async function GET(request: Request) {
     const sortOrder = parts[1] || 'desc';
 
     // Build cache key from query params
-    const cacheKey = `screener:${minHealth || ''}:${maxHealth || ''}:${minProfitability || ''}:${maxProfitability || ''}:${minValuation || ''}:${maxValuation || ''}:${minAltman || ''}:${sector || ''}:${page}:${limit}:${sortParams}`;
+    const cacheKey = `screener:${minHealth || ''}:${maxHealth || ''}:${minProfitability || ''}:${maxProfitability || ''}:${minValuation || ''}:${maxValuation || ''}:${minAltman || ''}:${sector || ''}:${minMarketCap || ''}:${maxMarketCap || ''}:${page}:${limit}:${sortParams}`;
     try {
         const cached = await getCachedData(cacheKey);
         if (cached) return NextResponse.json(cached);
@@ -55,6 +58,14 @@ export async function GET(request: Request) {
 
         if (sector) {
             where.ticker = { is: { sector } };
+        }
+
+        // Market Cap filter (stored in billions on Ticker)
+        if (minMarketCap !== undefined || maxMarketCap !== undefined) {
+            where.ticker = where.ticker || { is: {} };
+            where.ticker.is = where.ticker.is || {};
+            if (minMarketCap !== undefined) where.ticker.is.lastMarketCap = { ...where.ticker.is.lastMarketCap, gte: minMarketCap };
+            if (maxMarketCap !== undefined) where.ticker.is.lastMarketCap = { ...where.ticker.is.lastMarketCap, lte: maxMarketCap };
         }
 
         const skip = (page - 1) * limit;

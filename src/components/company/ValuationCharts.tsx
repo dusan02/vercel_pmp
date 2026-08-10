@@ -10,7 +10,7 @@ import {
     Tooltip,
     ReferenceLine,
 } from 'recharts';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { RatioStats } from './analysis/types';
 
 interface HistoryPoint { date: string; value: number; }
@@ -81,6 +81,24 @@ export default function ValuationCharts({ ticker, peHistory, psHistory, current:
         stats: propStats ?? { pe: null, ps: null },
     } : null;
 
+    // Determine which periods have data (data starts ~2021-07, so 10Y may be empty)
+    const availablePeriods = useMemo(() => {
+        const allHistory = [...(peHistory ?? []), ...(psHistory ?? [])];
+        if (allHistory.length === 0) return PERIODS;
+        const oldestDate = allHistory.reduce((min, p) => p.date < min ? p.date : min, allHistory[0]!.date);
+        const oldest = new Date(oldestDate);
+        const now = new Date();
+        const yearsAvailable = (now.getTime() - oldest.getTime()) / (365 * 24 * 60 * 60 * 1000);
+        return PERIODS.filter(p => p.years <= yearsAvailable + 0.5); // +0.5 tolerance
+    }, [peHistory, psHistory]);
+
+    // Auto-fallback: if selected period is not available, switch to longest available
+    useEffect(() => {
+        if (availablePeriods.length > 0 && !availablePeriods.find(p => p.id === period)) {
+            setPeriod(availablePeriods[availablePeriods.length - 1]!.id);
+        }
+    }, [availablePeriods, period]);
+
     // Filter history to selected period (client-side)
     const filteredHistory = useMemo(() => {
         if (!data) return [];
@@ -148,9 +166,9 @@ export default function ValuationCharts({ ticker, peHistory, psHistory, current:
                         </button>
                     ))}
                 </div>
-                {/* Period toggle */}
+                {/* Period toggle — only show periods that have data */}
                 <div className="flex gap-1">
-                    {PERIODS.map(p => (
+                    {availablePeriods.map(p => (
                         <button key={p.id} onClick={() => setPeriod(p.id)}
                             className={`text-[10px] px-2.5 py-1 rounded font-medium transition-colors ${
                                 period === p.id

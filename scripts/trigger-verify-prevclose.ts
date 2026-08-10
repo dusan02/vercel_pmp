@@ -13,7 +13,7 @@ async function main() {
   const baseUrl =
     process.env.BASE_URL ||
     process.env.NEXT_PUBLIC_BASE_URL ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://127.0.0.1:3000');
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://127.0.0.1:3001');
 
   if (!cronSecretKey) {
     console.error('❌ CRON_SECRET_KEY/CRON_SECRET not configured');

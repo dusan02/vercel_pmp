@@ -54,7 +54,7 @@ for p in ps:
 echo ""
 echo "=== HTTP ENDPOINT CHECKS ==="
 for endpoint in "/" "/api/healthz" "/api/health" "/api/health/worker" "/api/health/redis"; do
-  CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 "http://127.0.0.1:3000${endpoint}" 2>/dev/null || echo "000")
+  CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 "http://127.0.0.1:3001${endpoint}" 2>/dev/null || echo "000")
   if [ "$CODE" = "200" ]; then
     echo "  ✅ $endpoint -> $CODE"
   else

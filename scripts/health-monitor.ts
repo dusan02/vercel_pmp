@@ -4,7 +4,7 @@
  * Checks local health endpoints and optionally sends a webhook alert if the app is degraded/unhealthy.
  *
  * Env:
- * - BASE_URL: default http://127.0.0.1:3000
+ * - BASE_URL: default http://127.0.0.1:3001
  * - ALERT_WEBHOOK_URL: optional (Discord/Slack/etc.)
  * - HEALTH_ALERT_COOLDOWN_MIN: default 10
  */
@@ -20,7 +20,7 @@ type HealthResponse = {
   [k: string]: any;
 };
 
-const BASE_URL = (process.env.BASE_URL || 'http://127.0.0.1:3000').replace(/\/+$/, '');
+const BASE_URL = (process.env.BASE_URL || 'http://127.0.0.1:3001').replace(/\/+$/, '');
 const WEBHOOK_URL = (process.env.ALERT_WEBHOOK_URL || '').trim();
 const COOLDOWN_MIN = Number(process.env.HEALTH_ALERT_COOLDOWN_MIN || '10') || 10;
 

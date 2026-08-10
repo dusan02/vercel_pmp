@@ -227,6 +227,10 @@ export async function GET(
 
         // Helper: build valuation history from a given intrinsic series
         // O(n+m) pointer-based — avoids O(n*m) filter inside map
+        // Clamps undervaluation to [-200%, +200%] to prevent nonsensical extremes
+        // (e.g. INTC with intrinsic $0.42 vs price $103 → -24538% is meaningless).
+        // Also marks intrinsic as unreliable (null) when it's < 5% of price —
+        // this happens when EPS/revenue is near-zero, making median×per-share meaningless.
         function buildValuationHistory(intrinsicSrc: { date: string; impliedPrice: number }[]) {
             const result: { date: string; price: number; intrinsic: number; undervaluationPct: number | null }[] = [];
             let lastIntrinsic: { date: string; impliedPrice: number } | null = null;
@@ -240,9 +244,14 @@ export async function GET(
                 const intrinsic = lastIntrinsic.impliedPrice;
                 if (intrinsic <= 0) {
                     result.push({ date: p.date, price: p.price, intrinsic: 0, undervaluationPct: null });
+                } else if (intrinsic < p.price * 0.05) {
+                    // Intrinsic is < 5% of price — near-zero EPS/revenue makes this meaningless
+                    result.push({ date: p.date, price: p.price, intrinsic, undervaluationPct: null });
                 } else {
                     const underval = ((intrinsic - p.price) / intrinsic) * 100;
-                    result.push({ date: p.date, price: p.price, intrinsic, undervaluationPct: parseFloat(underval.toFixed(2)) });
+                    // Clamp to [-200%, +200%] to keep chart/tooltip readable
+                    const clamped = Math.max(-200, Math.min(200, underval));
+                    result.push({ date: p.date, price: p.price, intrinsic, undervaluationPct: parseFloat(clamped.toFixed(2)) });
                 }
             }
             return result;

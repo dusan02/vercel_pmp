@@ -2,7 +2,7 @@ import { loadEnvFromFiles } from './_utils/loadEnv';
 
 loadEnvFromFiles();
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || process.env.BASE_URL || 'http://localhost:3001';
 const CRON_SECRET = process.env.CRON_SECRET_KEY;
 
 async function triggerPostMarketReset() {

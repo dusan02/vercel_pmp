@@ -17,6 +17,15 @@ export interface ScreenerResult {
     } | null;
 }
 
+// Market Cap filter presets (in billions)
+export const MARKET_CAP_PRESETS = [
+    { id: 'all',       label: 'All',         min: undefined, max: undefined },
+    { id: 'mega',      label: 'Mega >$200B', min: 200,       max: undefined },
+    { id: 'large',     label: 'Large $10-200B', min: 10,     max: 200 },
+    { id: 'mid',       label: 'Mid $2-10B',  min: 2,         max: 10 },
+    { id: 'small',     label: 'Small <$2B',  min: undefined, max: 2 },
+] as const;
+
 export interface ScreenerPagination {
     total: number;
     page: number;
@@ -32,7 +41,7 @@ export interface ScreenerResponse {
 export const SECTORS = [
     'Technology', 'Healthcare', 'Financial Services', 'Consumer Cyclical',
     'Industrials', 'Communication Services', 'Consumer Defensive',
-    'Energy', 'Utilities', 'Real Estate', 'Basic Materials',
+    'Energy', 'Utilities', 'Real Estate', 'Basic Materials', 'Other',
 ];
 
 export const SORT_OPTIONS = [

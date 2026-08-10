@@ -255,11 +255,16 @@ export function ValuationHistoryChart({
   const cagr = activeSummary?.intrinsicCagr ?? null;
 
   // Determine verdict
-  const isUndervalued = currentUv != null && currentUv > 0;
+  // Fair Value zone: |undervaluation| < 5% — price is within 5% of intrinsic
+  const isUndervalued = currentUv != null && currentUv > 5;
+  const isOvervalued = currentUv != null && currentUv < -5;
+  const isFairValue = currentUv != null && Math.abs(currentUv) <= 5;
   const isCheaperThanAvg = avg5y != null && currentUv != null && currentUv > avg5y;
 
   const verdict = currentUv == null
     ? 'N/A'
+    : isFairValue
+    ? 'Fair Value'
     : isUndervalued
     ? isCheaperThanAvg
       ? 'Very Attractive'
@@ -270,11 +275,13 @@ export function ValuationHistoryChart({
     ? 'text-emerald-600 dark:text-emerald-400 font-bold'
     : verdict === 'Attractive'
     ? 'text-blue-600 dark:text-blue-400 font-bold'
+    : verdict === 'Fair Value'
+    ? 'text-gray-600 dark:text-gray-300 font-bold'
     : verdict === 'N/A'
     ? 'text-gray-400 font-bold'
     : 'text-red-500 dark:text-red-400 font-bold';
 
-  const headlineColor = isUndervalued ? 'bg-gray-800 dark:bg-gray-200' : 'bg-red-500';
+  const headlineColor = isUndervalued ? 'bg-gray-800 dark:bg-gray-200' : isFairValue ? 'bg-gray-400' : 'bg-red-500';
 
   return (
     <div className="space-y-4">
@@ -284,6 +291,8 @@ export function ValuationHistoryChart({
           <span className={`inline-block w-3 h-3 rounded-sm mr-1.5 align-middle ${currentUv == null ? 'bg-gray-300' : headlineColor}`} />
           {ticker && <strong>{ticker}</strong>} {currentUv == null
             ? `has insufficient earnings data for P/E-based valuation. Try P/S mode.`
+            : isFairValue
+            ? `is trading close to its intrinsic value (within ±5%).`
             : isUndervalued
             ? `is cheaper now than it has been on average over the past 5 years.`
             : `is more expensive now than it has been on average over the past 5 years.`}
@@ -306,12 +315,12 @@ export function ValuationHistoryChart({
         <Badge
           label="History Conclusion"
           value={verdict}
-          color={verdict === 'Very Attractive' ? 'green' : verdict === 'Attractive' ? 'blue' : 'gray'}
+          color={verdict === 'Very Attractive' ? 'green' : verdict === 'Attractive' ? 'blue' : verdict === 'Fair Value' ? 'gray' : 'gray'}
         />
         <Badge
           label="Current Valuation"
-          value={currentUv != null ? `${Math.abs(currentUv).toFixed(0)}% ${isUndervalued ? 'undervalued' : 'overvalued'}` : 'n/a'}
-          color={isUndervalued ? 'green' : 'gray'}
+          value={currentUv != null ? `${Math.abs(currentUv).toFixed(0)}% ${isUndervalued ? 'undervalued' : isFairValue ? 'fair value' : 'overvalued'}` : 'n/a'}
+          color={isUndervalued ? 'green' : isFairValue ? 'gray' : 'gray'}
         />
         {avg5y != null && (
           <Badge

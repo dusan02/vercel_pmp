@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { ScreenerResult, ScreenerPagination } from '@/lib/utils/screener';
+import { ScreenerResult, ScreenerPagination, MARKET_CAP_PRESETS } from '@/lib/utils/screener';
 
 interface UseScreenerOptions {
     initialLimit?: number;
@@ -30,6 +30,7 @@ export function useScreener({
     const [maxValue, setMaxValue] = useState<number>(100);
     const [minAltman, setMinAltman] = useState<number>(0);
     const [selectedSector, setSelectedSector] = useState<string>('');
+    const [marketCapPreset, setMarketCapPreset] = useState<string>('all');
     const [sortField, setSortField] = useState<string>('healthScore');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
@@ -39,6 +40,7 @@ export function useScreener({
         minProfit: defaultMinProfit, maxProfit: 100,
         minValue: defaultMinValue, maxValue: 100,
         minAltman: 0, selectedSector: '',
+        marketCapPreset: 'all',
         sortField: 'healthScore', sortOrder: 'desc' as 'asc' | 'desc',
     });
 
@@ -49,11 +51,12 @@ export function useScreener({
                 minProfit, maxProfit,
                 minValue, maxValue,
                 minAltman, selectedSector,
+                marketCapPreset,
                 sortField, sortOrder,
             });
         }, 400);
         return () => clearTimeout(timer);
-    }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minAltman, selectedSector, sortField, sortOrder]);
+    }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minAltman, selectedSector, marketCapPreset, sortField, sortOrder]);
 
     const fetchResults = useCallback(async () => {
         setLoading(true);
@@ -71,6 +74,13 @@ export function useScreener({
                 page: page.toString()
             });
             if (debouncedFilters.selectedSector) params.append('sector', debouncedFilters.selectedSector);
+
+            // Market Cap filter
+            const mcPreset = MARKET_CAP_PRESETS.find(p => p.id === debouncedFilters.marketCapPreset);
+            if (mcPreset) {
+                if (mcPreset.min !== undefined) params.append('minMarketCap', mcPreset.min.toString());
+                if (mcPreset.max !== undefined) params.append('maxMarketCap', mcPreset.max.toString());
+            }
 
             const res = await fetch(`/api/analysis/screener?${params.toString()}`);
             const data = await res.json();
@@ -91,7 +101,7 @@ export function useScreener({
     // Reset page on filter change (immediate, not debounced)
     useEffect(() => {
         setPage(1);
-    }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minAltman, selectedSector, sortField, sortOrder]);
+    }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minAltman, selectedSector, marketCapPreset, sortField, sortOrder]);
 
     const handleSort = (field: string) => {
         if (sortField === field) {
@@ -113,6 +123,7 @@ export function useScreener({
         setMinValue(0); setMaxValue(100);
         setMinAltman(0);
         setSelectedSector('');
+        setMarketCapPreset('all');
         setSortField('healthScore');
         setSortOrder('desc');
     };
@@ -121,7 +132,7 @@ export function useScreener({
         minHealth !== 0 || maxHealth !== 100 ||
         minProfit !== 0 || maxProfit !== 100 ||
         minValue !== 0 || maxValue !== 100 ||
-        minAltman !== 0 || selectedSector !== '';
+        minAltman !== 0 || selectedSector !== '' || marketCapPreset !== 'all';
 
     return {
         results, pagination, loading, page, setPage,
@@ -131,6 +142,7 @@ export function useScreener({
         minValue, maxValue, setMinValue, setMaxValue,
         minAltman, setMinAltman,
         selectedSector, setSelectedSector,
+        marketCapPreset, setMarketCapPreset,
         // sort
         sortField, sortOrder, handleSort, setSort,
         // utils
