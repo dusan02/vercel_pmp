@@ -9,7 +9,7 @@ import {
     ResponsiveContainer,
     ReferenceLine
 } from 'recharts';
-import { FinancialStatement } from './FinancialChart';
+import { FinancialStatement } from './analysis/types';
 import { filterStatementsByViewMode, formatChartYAxis, buildPeriodLabel } from '@/lib/utils/chartUtils';
 import { ChartViewToggle } from './shared/ChartViewToggle';
 import { ChartQuarterTick } from './shared/ChartQuarterTick';

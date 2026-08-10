@@ -14,25 +14,10 @@ import { ChartViewToggle } from './shared/ChartViewToggle';
 import { ChartQuarterTick } from './shared/ChartQuarterTick';
 import { ChartTooltip } from './shared/ChartTooltip';
 import { MetricToggleButtons, toggleMetric } from './shared/MetricToggleButtons';
+import type { FinancialStatement } from './analysis/types';
 
-export interface FinancialStatement {
-    id: string;
-    symbol: string;
-    period: string;
-    endDate: string;
-    fiscalYear: number;
-    fiscalPeriod: string;
-    revenue: number | null;
-    netIncome: number | null;
-    ebit: number | null;
-    grossProfit: number | null;
-    operatingCashFlow: number | null;
-    capex: number | null;
-    totalDebt: number | null;
-    cashAndEquivalents: number | null;
-    sharesOutstanding: number | null;
-    sbc: number | null;
-}
+// Re-export for backward compatibility (many files import from here)
+export type { FinancialStatement };
 
 interface FinancialChartProps {
     statements: FinancialStatement[];

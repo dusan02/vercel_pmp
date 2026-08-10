@@ -10,10 +10,20 @@ export type PerSharePoint = { date: string; value: number };
  * Guards against negative EPS (transition from loss to profit) to prevent NaN.
  * Growth rate is clamped to [-10%, +10%] per quarter (~[-34%, +46%] annually).
  */
-export function projectForward(base: PerSharePoint[], quarters: number): (PerSharePoint & { isForecast: boolean })[] {
+export function projectForward(
+  base: PerSharePoint[],
+  quarters: number,
+  startDate?: string | null,
+): (PerSharePoint & { isForecast: boolean })[] {
   if (!base || base.length === 0) return [];
   const last = base[base.length - 1]!;
-  const lastDate = new Date(last.date);
+  const lastPerShareDate = new Date(last.date);
+
+  // Forecast should start AFTER the latest known data point (price or per-share),
+  // whichever is later. This prevents forecast dates from overlapping with history.
+  const anchorDate = startDate
+    ? new Date(Math.max(lastPerShareDate.getTime(), new Date(startDate).getTime()))
+    : lastPerShareDate;
 
   // Use last 12 quarters (3 years) for realistic recent trend
   const recentN = Math.min(12, base.length);
@@ -22,7 +32,7 @@ export function projectForward(base: PerSharePoint[], quarters: number): (PerSha
   if (recentN < 2) {
     const forecasts: (PerSharePoint & { isForecast: boolean })[] = [];
     for (let i = 1; i <= quarters; i++) {
-      const d = new Date(lastDate);
+      const d = new Date(anchorDate);
       d.setMonth(d.getMonth() + i * 3);
       forecasts.push({ date: d.toISOString().split('T')[0] as string, value: parseFloat(last.value.toFixed(4)), isForecast: true });
     }
@@ -53,7 +63,7 @@ export function projectForward(base: PerSharePoint[], quarters: number): (PerSha
 
   const forecasts: (PerSharePoint & { isForecast: boolean })[] = [];
   for (let i = 1; i <= quarters; i++) {
-    const d = new Date(lastDate);
+    const d = new Date(anchorDate);
     d.setMonth(d.getMonth() + i * 3);
     const next = projectionBase * Math.pow(1 + clampedGrowth, i);
     forecasts.push({ date: d.toISOString().split('T')[0] as string, value: parseFloat(next.toFixed(4)), isForecast: true });

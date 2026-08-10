@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import CompanyLogo from '@/components/CompanyLogo';
-import type { AnalysisData } from '@/components/company/AnalysisTab';
+import type { AnalysisData } from './types';
 import { formatMarketCap as fmtMcap, formatPrice, formatPercent, formatMarketCapDiff } from '@/lib/utils/format';
 
 /** Wraps shared formatMarketCap — adds $ prefix, returns null for empty */

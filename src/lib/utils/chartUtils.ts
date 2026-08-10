@@ -1,4 +1,4 @@
-import type { FinancialStatement } from '@/components/company/FinancialChart';
+import type { FinancialStatement } from '@/components/company/analysis/types';
 
 export function filterStatementsByViewMode(
     statements: FinancialStatement[],
@@ -125,5 +125,7 @@ export function formatChartYAxis(value: number): string {
 export function buildPeriodLabel(fiscalPeriod: string | undefined, fiscalYear: number): string {
     const qMatch = fiscalPeriod?.match(/Q(\d)/);
     const shortYear = `'${String(fiscalYear).slice(2)}`;
-    return qMatch ? `Q${qMatch[1]}${shortYear}` : shortYear;
+    if (qMatch) return `Q${qMatch[1]}${shortYear}`;
+    if (fiscalPeriod === 'FY' || fiscalPeriod === 'annual') return `FY${shortYear}`;
+    return shortYear;
 }

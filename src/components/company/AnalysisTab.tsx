@@ -1,194 +1,26 @@
 'use client';
 
-import { lazy, Suspense, useState } from 'react';
-import type { FinancialStatement } from './FinancialChart';
+import { lazy, Suspense } from 'react';
 import { AnalysisHeader } from './analysis/AnalysisHeader';
 import { FinancialHealthTable } from './analysis/FinancialHealthTable';
+import { CompanyDescription } from './analysis/CompanyDescription';
+import { AnalysisControlsBar } from './analysis/AnalysisControlsBar';
 import { AnalysisCharts } from './AnalysisCharts';
 import { useAnalysis } from '../../hooks/useAnalysis';
 import { LoadingSkeleton } from './analysis/LoadingSkeleton';
 import { ChartSection } from './shared/ChartSection';
+import type { AnalysisTabProps } from './analysis/types';
+
+// Re-export types for backward compatibility (other files import from here)
+export type {
+    AnalysisTabProps,
+    AnalysisData,
+    AnalysisMetrics,
+    RatioStats,
+    FinancialStatement,
+} from './analysis/types';
 
 const PriceCandlestickChart = lazy(() => import('./PriceCandlestickChart'));
-
-export interface AnalysisTabProps {
-    ticker: string;
-    hideSearch?: boolean;
-}
-
-export interface RatioStats {
-    avg: number; p10: number; p25: number; median: number;
-    p75: number; p90: number; min: number; max: number; count: number;
-}
-
-export interface AnalysisMetrics {
-    zScore: number | null;
-    altmanZ: number | null;
-    debtRepaymentTime: number | null;
-    debtRepaymentYears: number | null;
-    fcfYield: number | null;
-    currentEps: number | null;
-    currentPe: number | null;
-    fcfMargin: number | null;
-    fcfConversion: number | null;
-}
-
-export interface AnalysisData {
-    healthScore: number | null;
-    profitabilityScore: number | null;
-    valuationScore: number | null;
-    verdictText: string | null;
-    updatedAt: string;
-    metrics: AnalysisMetrics;
-    statements?: FinancialStatement[];
-    peers?: string[];
-    piotroskiScore?: number | null;
-    beneishScore?: number | null;
-    interestCoverage?: number | null;
-    revenueCagr?: number | null;
-    netIncomeCagr?: number | null;
-    humanDebtInfo?: string | null;
-    humanPeInfo?: string | null;
-    marginStability?: number | null;
-    negativeNiYears?: number | null;
-    ticker?: {
-        name: string | null;
-        description: string | null;
-        websiteUrl: string | null;
-        logoUrl: string | null;
-        sector: string | null;
-        industry: string | null;
-        employees: number | null;
-        lastPrice: number | null;
-        lastMarketCap: number | null;
-        lastChangePct: number | null;
-        lastMarketCapDiff: number | null;
-        headquarters: string | null;
-        lastPriceUpdated: string | null;
-        latestPrevClose: number | null;
-    } | null;
-    balanceSheet?: {
-        totalDebt: number | null;
-        cash: number | null;
-        netDebt: number | null;
-        totalEquity: number | null;
-        totalAssets: number | null;
-        totalLiabilities: number | null;
-        currentAssets: number | null;
-        currentLiabilities: number | null;
-        debtToEquity: number | null;
-        currentRatio: number | null;
-        assetToLiability: number | null;
-        netDebtToEbit: number | null;
-        sbc: number | null;
-        sbcRatio: number | null;
-        sharesOutstanding: number | null;
-        dilution1y: number | null;
-        dilution5y: number | null;
-    } | null;
-    ttm?: {
-        netIncome: number | null;
-        revenue: number | null;
-        ebit: number | null;
-        grossProfit: number | null;
-    } | null;
-
-    // Correlation / valuation extras
-    priceHistory?: { date: string; price: number }[];
-    impliedPricePS?: { date: string; impliedPrice: number }[];
-    impliedPricePE?: { date: string; impliedPrice: number }[];
-    correlation?: {
-        priceVsImpliedPS: number | null;
-        priceVsImpliedPE: number | null;
-    };
-
-    // Valuation history (intrinsic vs price)
-    valuationHistory?: { date: string; price: number; intrinsic: number; undervaluationPct: number | null }[];
-    valuationHistoryPE?: { date: string; price: number; intrinsic: number; undervaluationPct: number | null }[];
-    valuationHistoryPS?: { date: string; price: number; intrinsic: number; undervaluationPct: number | null }[];
-    valuationSummary?: {
-        currentUndervaluation: number | null;
-        avg5yUndervaluation: number | null;
-        intrinsicCagr: number | null;
-    } | null;
-    valuationSummaryPE?: {
-        currentUndervaluation: number | null;
-        avg5yUndervaluation: number | null;
-        intrinsicCagr: number | null;
-    } | null;
-    valuationSummaryPS?: {
-        currentUndervaluation: number | null;
-        avg5yUndervaluation: number | null;
-        intrinsicCagr: number | null;
-    } | null;
-    valuationForecast?: { date: string; intrinsic: number }[];
-    valuationForecastPE?: { date: string; intrinsic: number }[];
-    valuationForecastPS?: { date: string; intrinsic: number }[];
-
-    // Valuation charts (P/E & P/S bands)
-    peHistory?: { date: string; value: number }[];
-    psHistory?: { date: string; value: number }[];
-    valuationCurrent?: { pe: number | null; ps: number | null } | null;
-    valuationStats?: { pe: RatioStats | null; ps: RatioStats | null } | null;
-
-    // Finnhub pre-computed metrics (primary source for ratios)
-    finnhub?: {
-        peRatio: number | null;
-        pbRatio: number | null;
-        psRatio: number | null;
-        evEbitda: number | null;
-        grossMargin: number | null;
-        operatingMargin: number | null;
-        netMargin: number | null;
-        roe: number | null;
-        roa: number | null;
-        roic: number | null;
-        currentRatio: number | null;
-        quickRatio: number | null;
-        debtEquityRatio: number | null;
-        interestCoverage: number | null;
-        revenueGrowth: number | null;
-        earningsGrowth: number | null;
-        revenuePerShare: number | null;
-        netIncomePerShare: number | null;
-        bookValuePerShare: number | null;
-        freeCashFlowPerShare: number | null;
-        dividendYield: number | null;
-        payoutRatio: number | null;
-        beta: number | null;
-        pegRatio: number | null;
-        priceFreeCashFlow: number | null;
-    } | null;
-}
-
-function CompanyDescription({ text }: { text: string }) {
-    const [expanded, setExpanded] = useState(false);
-    const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
-    const isLong = sentences.length > 5;
-    const display = expanded ? text : sentences.slice(0, 5).join(' ').trim();
-
-    return (
-        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-4 sm:p-6">
-            <p className="text-[10px] uppercase tracking-widest font-semibold text-gray-400 dark:text-gray-500 mb-3 flex items-center gap-1.5">
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Company Description
-            </p>
-            <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-                {display}
-            </p>
-            {isLong && (
-                <button
-                    onClick={() => setExpanded(!expanded)}
-                    className="mt-2 text-xs font-semibold text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
-                >
-                    {expanded ? 'Show less ↑' : 'Read more ↓'}
-                </button>
-            )}
-        </div>
-    );
-}
 
 export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabProps) {
     const {
@@ -212,9 +44,15 @@ export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabP
 
     return (
         <div className="space-y-6 p-4 bg-transparent dark:bg-gray-900 rounded-xl transition-all animate-fade-in">
-
             {/* ── Hero Section: Company Profile + Quick Search ── */}
             <AnalysisHeader ticker={ticker} hideSearch={hideSearch} data={data} />
+
+            {/* ── Controls: Last Updated + Refresh ── */}
+            <AnalysisControlsBar
+                updatedAt={data.updatedAt ?? null}
+                analyzing={analyzing}
+                onRefresh={runDeepAnalysis}
+            />
 
             {/* ── Price History — full width, prominent ── */}
             <ChartSection

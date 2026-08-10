@@ -70,7 +70,14 @@ export function CorrelationChart({ priceHistory, impliedPS, impliedPE, corrPS, c
 
     const priceMap = new Map(priceHistory.map(p => [p.date, p.price]));
     const merged = implied
-      .map(pt => ({ date: pt.date, impliedPrice: pt.impliedPrice, price: priceMap.get(pt.date), isForecast: pt.isForecast }))
+      .map(pt => ({
+        date: pt.date,
+        impliedPrice: pt.impliedPrice,
+        price: priceMap.get(pt.date),
+        isForecast: pt.isForecast,
+        // Pre-compute forecast value for reliable rendering (function dataKey is unreliable in Recharts)
+        forecastImplied: pt.isForecast ? pt.impliedPrice : null,
+      }))
       .filter(d => typeof d.price === 'number' || d.isForecast);
 
     return {
@@ -85,21 +92,30 @@ export function CorrelationChart({ priceHistory, impliedPS, impliedPE, corrPS, c
   }
 
   const corrColor = correlation !== null
-    ? correlation > 0.7 ? 'text-green-600 dark:text-green-400'
-    : correlation > 0.4 ? 'text-yellow-600 dark:text-yellow-400'
+    ? Math.abs(correlation) > 0.7 ? 'text-green-600 dark:text-green-400'
+    : Math.abs(correlation) > 0.4 ? 'text-yellow-600 dark:text-yellow-400'
     : 'text-gray-500 dark:text-gray-400'
     : 'text-gray-400';
   const corrLabel = correlation !== null
-    ? correlation > 0.7 ? 'Strong' : correlation > 0.4 ? 'Moderate' : 'Weak'
+    ? Math.abs(correlation) > 0.7 ? (correlation > 0 ? 'Strong (+)' : 'Strong (−)')
+      : Math.abs(correlation) > 0.4 ? (correlation > 0 ? 'Moderate (+)' : 'Moderate (−)')
+      : 'Weak'
     : 'n/a';
 
   return (
     <div className="space-y-3">
       {/* Explanation */}
       <p className="text-[11px] text-gray-400 dark:text-gray-500 leading-relaxed">
-        Compares actual price to <strong>implied price</strong> — what the stock <em>should</em> trade at based on {mode === 'ps' ? 'revenue per share × median P/S multiple' : 'EPS × median P/E multiple'}. 
+        Compares actual price to <strong>implied price</strong> — what the stock <em>should</em> trade at based on {mode === 'ps' ? 'revenue per share × median P/S multiple' : 'EPS × median P/E multiple'}.
         When actual price is <span className="text-red-500">above</span> implied, stock may be overvalued. When <span className="text-green-500">below</span>, potentially undervalued.
       </p>
+
+      {/* Negative correlation warning */}
+      {correlation !== null && correlation < -0.4 && (
+        <p className="text-[10px] text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded px-2 py-1 leading-relaxed">
+          ⚠️ Strong negative correlation: price moves <em>opposite</em> to implied value. The standard over/undervalued interpretation may not apply — the market is pricing this stock on factors outside {mode === 'ps' ? 'revenue' : 'earnings'} alone.
+        </p>
+      )}
 
       {/* Controls + Correlation Badge */}
       <div className="flex items-center gap-2 flex-wrap">
@@ -159,7 +175,7 @@ export function CorrelationChart({ priceHistory, impliedPS, impliedPE, corrPS, c
             {/* Forecast shading */}
             <Area
               type="monotone"
-              dataKey={(d: any) => (d.isForecast ? d.impliedPrice : null)}
+              dataKey="forecastImplied"
               name="Forecast"
               stroke="#fbbf24"
               fill="#fbbf24"

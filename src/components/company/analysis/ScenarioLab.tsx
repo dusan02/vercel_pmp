@@ -57,12 +57,16 @@ export function ScenarioLab({ ticker, currentEps, currentPe, currentPrice, price
 
     const isNegativePe = !currentPe || currentPe <= 0;
 
-    // To prevent a sudden jump from currentPrice to Year 1 due to rounding/mismatches in currentEps vs currentPe,
-    // we calculate an "implied" EPS based strictly on the current price and P/E.
-    const impliedEps = (currentPe > 0 && currentPrice > 0) ? (currentPrice / currentPe) : currentEps;
+    // Use the actual reported EPS as the base for projections.
+    // The previous "impliedEps = currentPrice / currentPe" introduced a ~3-5% error
+    // because Finnhub's P/E uses a slightly different price/share count than our TTM calc.
+    // If currentEps is unavailable or invalid, fall back to implied EPS from price/PE.
+    const baseEps = (currentEps > 0) ? currentEps
+        : (currentPe > 0 && currentPrice > 0) ? (currentPrice / currentPe)
+        : currentEps;
     
     // Calculations
-    const projectedEps = impliedEps * Math.pow(1 + epsGrowth / 100, years);
+    const projectedEps = baseEps * Math.pow(1 + epsGrowth / 100, years);
     const targetPrice = projectedEps * exitPe;
     let cagr = 0;
     if (currentPrice > 0 && targetPrice > 0) {
@@ -109,11 +113,11 @@ export function ScenarioLab({ ticker, currentEps, currentPe, currentPrice, price
             const label = futureDate.toISOString().slice(0, 10);
 
             let priceAtYear: number;
-            if (currentPe > 0 && impliedEps > 0) {
+            if (currentPe > 0 && baseEps > 0) {
                 // Interpolate PE linearly from currentPe → exitPe over investment horizon
                 // This avoids a sudden jump at Y=1 when exitPe differs from currentPe
                 const peAtYear = currentPe + (exitPe - currentPe) * (y / years);
-                priceAtYear = impliedEps * Math.pow(1 + epsGrowth / 100, y) * peAtYear;
+                priceAtYear = baseEps * Math.pow(1 + epsGrowth / 100, y) * peAtYear;
             } else {
                 // Fallback for loss-making companies: linear interpolation to targetPrice
                 priceAtYear = currentPrice + (targetPrice - currentPrice) * (y / years);
@@ -122,7 +126,7 @@ export function ScenarioLab({ ticker, currentEps, currentPe, currentPrice, price
         }
 
         return [...hist, ...projPoints];
-    }, [priceHistory, currentPrice, currentEps, currentPe, epsGrowth, exitPe, years, targetPrice]);
+    }, [priceHistory, currentPrice, currentEps, currentPe, epsGrowth, exitPe, years, targetPrice, baseEps]);
 
     // Y-axis domain
     const allPrices = chartData.map(d => d.historical ?? d.projection ?? 0).filter(v => v > 0);

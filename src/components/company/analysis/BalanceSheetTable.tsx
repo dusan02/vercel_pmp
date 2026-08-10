@@ -1,5 +1,5 @@
 import React from 'react';
-import { AnalysisData } from '../AnalysisTab';
+import { AnalysisData } from './types';
 import { MetricCard, MetricCardDef, StatusBadge, StatusType } from '../shared/MetricCard';
 
 interface BalanceSheetTableProps {

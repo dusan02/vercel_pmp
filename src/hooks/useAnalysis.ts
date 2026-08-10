@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { AnalysisData } from '../components/company/AnalysisTab';
+import type { AnalysisData } from '../components/company/analysis/types';
 
 const ANALYSIS_STEPS = [
     'Fetching Finnhub financial data...',
@@ -22,7 +22,7 @@ export function useAnalysis(ticker: string) {
     const [secondaryData, setSecondaryData] = useState<AnalysisData | null>(null);
     const [loadingCompare, setLoadingCompare] = useState(false);
     const [analysisStep, setAnalysisStep] = useState<string>('');
-    const autoTriggered = useRef(false);
+    const autoTriggered = useRef<string | null>(null);
 
     useEffect(() => {
         let timer: any;
@@ -104,17 +104,22 @@ export function useAnalysis(ticker: string) {
     }, [ticker]);
 
     useEffect(() => {
-        autoTriggered.current = false;
+        // Reset comparison state when ticker changes
+        setCompareWith('');
+        setCompareInput('');
+        setSecondaryData(null);
+        autoTriggered.current = null;
         fetchAnalysis();
     }, [ticker, fetchAnalysis]);
 
-    // Auto-run deep analysis when no cached data exists for this ticker
+    // Auto-run deep analysis when no cached data exists for this ticker.
+    // Use per-ticker guard to avoid re-triggering on the same ticker.
     useEffect(() => {
-        if (!loading && data === null && !analyzing && !error && !autoTriggered.current) {
-            autoTriggered.current = true;
+        if (!loading && data === null && !analyzing && !error && autoTriggered.current !== ticker) {
+            autoTriggered.current = ticker;
             runDeepAnalysis();
         }
-    }, [loading, data, analyzing, error]);
+    }, [loading, data, analyzing, error, ticker]);
 
     const handleAddComparison = async (symbol?: string) => {
         const target = (symbol || compareInput).toUpperCase().trim();

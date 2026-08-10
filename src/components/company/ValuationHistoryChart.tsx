@@ -288,8 +288,18 @@ export function ValuationHistoryChart({
             ? `is cheaper now than it has been on average over the past 5 years.`
             : `is more expensive now than it has been on average over the past 5 years.`}
         </p>
-        <MetricToggle mode={metricMode} onChange={setMetricMode} />
+        <div className="flex items-center gap-1.5">
+          <span className="text-[9px] text-gray-400 dark:text-gray-500 hidden sm:inline">Auto = PE preferred, PS fallback</span>
+          <MetricToggle mode={metricMode} onChange={setMetricMode} />
+        </div>
       </div>
+
+      {/* Forecast explanation */}
+      {activeForecast.length > 0 && (
+        <p className="text-[10px] text-gray-400 dark:text-gray-500 leading-relaxed">
+          <span className="font-semibold">Forecast:</span> Forward intrinsic value projected from recent per-share trend (clamped ±10%/quarter). Dashed line = projected range.
+        </p>
+      )}
 
       {/* Summary badges */}
       <div className="flex flex-wrap gap-2">

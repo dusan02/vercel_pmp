@@ -10,7 +10,7 @@ import {
     ResponsiveContainer,
     ReferenceLine
 } from 'recharts';
-import { FinancialStatement } from './FinancialChart';
+import { FinancialStatement } from './analysis/types';
 import { filterStatementsByViewMode, buildPeriodLabel } from '@/lib/utils/chartUtils';
 import { ChartViewToggle } from './shared/ChartViewToggle';
 import { ChartQuarterTick } from './shared/ChartQuarterTick';
@@ -24,7 +24,8 @@ function formatSharesAxis(value: number): string {
     const abs = Math.abs(value);
     if (abs >= 1000) return `${(value / 1000).toFixed(1)}B`;
     if (abs >= 1) return `${value.toFixed(0)}M`;
-    return `${value.toFixed(1)}M`;
+    if (abs >= 0.001) return `${(value * 1000).toFixed(0)}K`;
+    return value.toFixed(2);
 }
 
 function CustomTooltip({ active, payload, label }: any) {

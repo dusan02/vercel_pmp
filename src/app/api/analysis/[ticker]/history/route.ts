@@ -3,46 +3,9 @@ import { prisma } from '@/lib/db/prisma';
 import { projectForward, pearson, buildStats, type PerSharePoint } from '@/lib/utils/analysisMath';
 import { computeTTMAtDate } from '@/lib/utils/ttm';
 import { getCachedData, setCachedData, del } from '@/lib/redis/operations';
+import { applySplitAdjustments, applyPostSplitAdjustment, findNearestSplit, COMMON_SPLIT_RATIOS } from '@/lib/utils/splitAdjustment';
 
 const HISTORY_CACHE_TTL = 3600; // 1 hour (valuation history changes slowly)
-
-// Shared with route.ts — keep in sync
-const SPLITS_CACHE_TTL = 7 * 24 * 60 * 60; // 7 days
-
-/**
- * Fetch stock splits from Polygon API with Redis caching (7-day TTL).
- * Splits change rarely so we cache aggressively.
- */
-async function getCachedSplitsLocal(symbol: string, tenYearsAgo: Date): Promise<{ execution_date: string; split_to: number; split_from: number }[]> {
-    const cacheKey = `analysis:splits:${symbol}`;
-    try {
-        const cached = await getCachedData(cacheKey);
-        if (cached && Array.isArray(cached)) return cached;
-    } catch {}
-
-    const polygonApiKey = process.env.POLYGON_API_KEY;
-    if (!polygonApiKey) return [];
-
-    try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 3000);
-        const splitsResp = await fetch(
-            `https://api.polygon.io/v3/reference/splits?ticker=${symbol}&apiKey=${polygonApiKey}`,
-            { signal: controller.signal }
-        );
-        clearTimeout(timeout);
-        if (splitsResp.ok) {
-            const splitsData = await splitsResp.json();
-            const results = (splitsData.results || []).filter((sp: any) => {
-                const splitDate = new Date(sp.execution_date + 'T00:00:00Z');
-                return splitDate.getTime() >= tenYearsAgo.getTime();
-            });
-            try { await setCachedData(cacheKey, results, SPLITS_CACHE_TTL); } catch {}
-            return results;
-        }
-    } catch {}
-    return [];
-}
 
 export async function GET(
     request: Request,
@@ -83,10 +46,10 @@ export async function GET(
         const weekly = Array.from(weekMap.values()).sort((a, b) => a.date.getTime() - b.date.getTime());
 
         // Filter valid values for percentile calculation
-        // P/E < 5: stock split artifacts (adjusted shares vs pre-split price)
+        // P/E < 3: likely stock split artifacts or data errors (adjusted shares vs pre-split price)
         // P/E > 200: near-zero earnings spikes that distort bands (e.g. AMZN 2022-2023)
-        const VALID_PE = (v: number | null): v is number => v !== null && v > 5 && v < 200;
-        const VALID_PS = (v: number | null): v is number => v !== null && v > 0.5 && v < 200;
+        const VALID_PE = (v: number | null): v is number => v !== null && v > 3 && v < 200;
+        const VALID_PS = (v: number | null): v is number => v !== null && v > 0.3 && v < 200;
 
         const peAllValues = rows.map(r => r.peRatio).filter(VALID_PE);
         const psAllValues = rows.map(r => r.psRatio).filter(VALID_PS);
@@ -135,34 +98,17 @@ export async function GET(
         }
         const sortedPriceDates = Array.from(weeklyPriceMap.keys()).sort();
 
-        // Detect stock splits using cached Polygon reference API (7-day Redis cache + 3s timeout)
+        // Detect stock splits using shared utility (Polygon API with Redis cache)
         // Falls back to statement-based detection if API unavailable
-        const splitEvents: { date: Date; ratio: number }[] = [];
+        let splitEvents: { date: Date; ratio: number }[] = [];
 
         try {
-            const splits = await getCachedSplitsLocal(symbol, tenYearsAgo);
-            for (const sp of splits) {
-                const splitDate = new Date(sp.execution_date + 'T00:00:00Z');
-                const splitRatio = sp.split_to / sp.split_from;
-                if (splitDate.getTime() >= tenYearsAgo.getTime()) {
-                    splitEvents.push({ date: splitDate, ratio: splitRatio });
-                }
-            }
+            splitEvents = await applySplitAdjustments(statements, symbol, tenYearsAgo);
         } catch {
             // Fall through to statement-based detection
         }
 
-        if (splitEvents.length > 0) {
-            // Use Polygon split dates: multiply shares for statements before each split date
-            for (const split of splitEvents) {
-                for (const s of statements) {
-                    if (s.endDate.getTime() < split.date.getTime() &&
-                        s.sharesOutstanding && s.sharesOutstanding > 0) {
-                        s.sharesOutstanding = s.sharesOutstanding * split.ratio;
-                    }
-                }
-            }
-        } else {
+        if (splitEvents.length === 0) {
             // Fallback: detect splits from shares jumps between consecutive quarterly statements
             const quarterlyStmts = statements.filter(s => s.fiscalPeriod && s.fiscalPeriod !== 'FY');
             for (let i = 1; i < quarterlyStmts.length; i++) {
@@ -172,10 +118,7 @@ export async function GET(
                     curr.sharesOutstanding && curr.sharesOutstanding > 0) {
                     const ratio = curr.sharesOutstanding / prev.sharesOutstanding;
                     if (ratio > 1.5) {
-                        const commonSplits = [2, 3, 4, 5, 7, 8, 10, 15, 20, 25];
-                        const nearestSplit = commonSplits.reduce((best, r) =>
-                            Math.abs(ratio - r) < Math.abs(ratio - best) ? r : best
-                        );
+                        const nearestSplit = findNearestSplit(ratio);
                         if (Math.abs(ratio - nearestSplit) / nearestSplit <= 0.15) {
                             // Only multiply statements that are clearly pre-split (shares < curr/2)
                             const threshold = curr.sharesOutstanding / 2;
@@ -192,36 +135,14 @@ export async function GET(
             }
         }
 
-        // Post-split shares adjustment (for Finnhub statements not updated after recent split):
-        // If Ticker.sharesOutstanding is much larger than latest statement shares,
-        // and ratio matches a split ratio, multiply only statements that are still pre-split.
-        // Uses threshold to avoid double-adjusting statements already fixed above.
+        // Post-split shares adjustment for Finnhub statements not updated after recent split
         const tickerInfo = await prisma.ticker.findUnique({
             where: { symbol },
             select: { sharesOutstanding: true },
         });
 
-        if (tickerInfo?.sharesOutstanding && tickerInfo.sharesOutstanding > 0 && statements.length > 0) {
-            const lastStmt = statements[statements.length - 1]!;
-            const lastStmtShares = lastStmt.sharesOutstanding;
-            if (lastStmtShares && lastStmtShares > 0) {
-                const ratio = tickerInfo.sharesOutstanding / lastStmtShares;
-                if (ratio > 1.5) {
-                    const commonSplits = [2, 3, 4, 5, 7, 8, 10, 15, 20, 25];
-                    const nearestSplit = commonSplits.reduce((best, r) =>
-                        Math.abs(ratio - r) < Math.abs(ratio - best) ? r : best
-                    );
-                    if (Math.abs(ratio - nearestSplit) / nearestSplit <= 0.15) {
-                        const threshold = tickerInfo.sharesOutstanding / 2;
-                        for (const s of statements) {
-                            if (s.sharesOutstanding && s.sharesOutstanding > 0 &&
-                                s.sharesOutstanding < threshold) {
-                                s.sharesOutstanding = s.sharesOutstanding * nearestSplit;
-                            }
-                        }
-                    }
-                }
-            }
+        if (tickerInfo?.sharesOutstanding && statements.length > 0) {
+            applyPostSplitAdjustment(statements, tickerInfo.sharesOutstanding);
         }
 
         const revPerShareHistory: PerSharePoint[] = [];
@@ -246,7 +167,11 @@ export async function GET(
             }
             if (shares && shares > 0 && s.endDate) {
                 prevShares = shares;
-                const dateStr = s.endDate.toISOString().split('T')[0] as string;
+                // Use the calendar date of the statement end (add 1 day to compensate
+                // for UTC offset — Finnhub reports endDate as midnight UTC which is
+                // actually the end of the fiscal period in the company's local timezone).
+                const endDate = new Date(s.endDate.getTime() + 24 * 60 * 60 * 1000);
+                const dateStr = endDate.toISOString().split('T')[0] as string;
                 if (ttmRev != null && ttmRev > 0) {
                     revPerShareHistory.push({ date: dateStr, value: parseFloat((ttmRev / shares).toFixed(4)) });
                 }
@@ -368,8 +293,13 @@ export async function GET(
         const valuationSummaryPS = computeSummary(valuationHistoryPS);
 
         // --- Simple forward estimates (projection) ---
-        const revForecast = projectForward(revPerShareHistory, 6);
-        const epsForecast = projectForward(epsPerShareHistory, 6);
+        // Pass lastPriceDate so forecast starts AFTER the latest price point,
+        // preventing forecast dates from overlapping with historical data.
+        const lastPriceDate = priceHistory.length > 0
+            ? priceHistory[priceHistory.length - 1]!.date
+            : null;
+        const revForecast = projectForward(revPerShareHistory, 6, lastPriceDate);
+        const epsForecast = projectForward(epsPerShareHistory, 6, lastPriceDate);
 
         const impliedPSForecast = medianPS
             ? revForecast.map(pt => ({ date: pt.date, impliedPrice: parseFloat((pt.value * medianPS).toFixed(2)), isForecast: true }))

@@ -4,12 +4,12 @@ import { AnalysisService } from '@/services/analysisService';
 import { FinnhubService } from '@/services/finnhubService';
 import { computeTTM } from '@/lib/utils/ttm';
 import { getCachedData, setCachedData } from '@/lib/redis/operations';
+import { applySplitAdjustments, applyPostSplitAdjustment } from '@/lib/utils/splitAdjustment';
 
 // In-memory dedup: prevents multiple concurrent background revalidations for the same symbol
 const revalidating = new Set<string>();
 
 const ANALYSIS_CACHE_TTL = 300; // 5 minutes
-const SPLITS_CACHE_TTL = 7 * 24 * 60 * 60; // 7 days (splits change rarely)
 
 // Shared ticker select — includes all fields needed by computeMetrics + GET/POST handlers
 const TICKER_SELECT = {
@@ -31,37 +31,6 @@ const TICKER_SELECT = {
     latestPrevClose: true,
     updatedAt: true,
 } as const;
-
-/**
- * Fetch stock splits from Polygon API with Redis caching (7-day TTL).
- * Splits change rarely so we cache aggressively.
- */
-async function getCachedSplits(symbol: string, tenYearsAgo: Date): Promise<{ execution_date: string; split_to: number; split_from: number }[]> {
-    const cacheKey = `analysis:splits:${symbol}`;
-    try {
-        const cached = await getCachedData(cacheKey);
-        if (cached && Array.isArray(cached)) return cached;
-    } catch {}
-
-    const polygonApiKey = process.env.POLYGON_API_KEY;
-    if (!polygonApiKey) return [];
-
-    try {
-        const splitsResp = await fetch(
-            `https://api.polygon.io/v3/reference/splits?ticker=${symbol}&apiKey=${polygonApiKey}`
-        );
-        if (splitsResp.ok) {
-            const splitsData = await splitsResp.json();
-            const results = (splitsData.results || []).filter((sp: any) => {
-                const splitDate = new Date(sp.execution_date + 'T00:00:00Z');
-                return splitDate.getTime() >= tenYearsAgo.getTime();
-            });
-            try { await setCachedData(cacheKey, results, SPLITS_CACHE_TTL); } catch {}
-            return results;
-        }
-    } catch {}
-    return [];
-}
 
 /**
  * Fetch sector peers for a given ticker.
@@ -91,23 +60,11 @@ async function computeMetrics(symbol: string, tickerRecord?: any) {
         orderBy: { endDate: 'desc' },
     });
 
-    // Adjust sharesOutstanding for stock splits using cached Polygon splits API
+    // Adjust sharesOutstanding for stock splits using shared utility
     // Finnhub statements often have mixed pre-split and post-split shares
     if (stmts.length > 0) {
         try {
-            const splits = await getCachedSplits(symbol, tenYearsAgo);
-            for (const sp of splits) {
-                const splitDate = new Date(sp.execution_date + 'T00:00:00Z');
-                const splitRatio = sp.split_to / sp.split_from;
-                if (splitDate.getTime() >= tenYearsAgo.getTime()) {
-                    for (const s of stmts) {
-                        if (s.endDate.getTime() < splitDate.getTime() &&
-                            s.sharesOutstanding && s.sharesOutstanding > 0) {
-                            s.sharesOutstanding = s.sharesOutstanding * splitRatio;
-                        }
-                    }
-                }
-            }
+            await applySplitAdjustments(stmts, symbol, tenYearsAgo);
         } catch {
             // Non-critical — continue with unadjusted shares
         }
@@ -115,39 +72,14 @@ async function computeMetrics(symbol: string, tickerRecord?: any) {
 
     const latestStmt = stmts[0] || null;
 
-    // Post-split shares adjustment:
-    // If Finnhub hasn't updated statement shares after a recent split
-    // (e.g. NOW did x5 split but latest statement still has pre-split shares),
-    // detect by comparing Ticker.sharesOutstanding to latestStmt.sharesOutstanding.
-    // If ratio matches a common split ratio, multiply only statements that still
-    // have pre-split shares (below tickerInfo.sharesOutstanding / 2).
-    // This avoids double-adjusting statements already fixed by Polygon splits API above.
+    // Post-split shares adjustment for Finnhub statements not updated after a recent split
     if (stmts.length > 0) {
         const tickerInfo = tickerRecord ?? await prisma.ticker.findUnique({
             where: { symbol },
             select: { sharesOutstanding: true },
         });
-        if (tickerInfo?.sharesOutstanding && tickerInfo.sharesOutstanding > 0) {
-            const lastStmtShares = stmts[0]!.sharesOutstanding;
-            if (lastStmtShares && lastStmtShares > 0) {
-                const ratio = tickerInfo.sharesOutstanding / lastStmtShares;
-                if (ratio > 1.5) {
-                    const commonSplits = [2, 3, 4, 5, 7, 8, 10, 15, 20, 25];
-                    const nearestSplit = commonSplits.reduce((best, r) =>
-                        Math.abs(ratio - r) < Math.abs(ratio - best) ? r : best
-                    );
-                    if (Math.abs(ratio - nearestSplit) / nearestSplit <= 0.15) {
-                        // Only multiply statements that are clearly still pre-split
-                        const threshold = tickerInfo.sharesOutstanding / 2;
-                        for (const s of stmts) {
-                            if (s.sharesOutstanding && s.sharesOutstanding > 0 &&
-                                s.sharesOutstanding < threshold) {
-                                s.sharesOutstanding = s.sharesOutstanding * nearestSplit;
-                            }
-                        }
-                    }
-                }
-            }
+        if (tickerInfo?.sharesOutstanding) {
+            applyPostSplitAdjustment(stmts, tickerInfo.sharesOutstanding);
         }
     }
 
@@ -221,12 +153,20 @@ async function computeMetrics(symbol: string, tickerRecord?: any) {
     const interestCoverage = finnhubMetrics?.interestCoverage ?? null;
 
     // Calculate Dilution (Share Count change)
-    // stmts is already sorted by date desc
+    // Compare same fiscal period one year (or 5 years) earlier — not just any
+    // statement older than N days. This matches ShareDilutionChart logic.
     const currentShares = latestStmt?.sharesOutstanding ?? null;
-    const stmt1y = stmts.find(s => s.endDate < new Date(Date.now() - 365 * 24 * 60 * 60 * 1000));
-    const stmt5y = stmts.find(s => s.endDate < new Date(Date.now() - 5 * 365 * 24 * 60 * 60 * 1000));
-    
-    const dilution1y = (currentShares && stmt1y?.sharesOutstanding) 
+    const currentFP = latestStmt?.fiscalPeriod ?? null;
+    const currentFY = latestStmt?.fiscalYear ?? null;
+
+    const stmt1y = (currentFP && currentFY != null)
+        ? stmts.find(s => s.fiscalPeriod === currentFP && s.fiscalYear === currentFY - 1)
+        : stmts.find(s => s.endDate < new Date(Date.now() - 365 * 24 * 60 * 60 * 1000));
+    const stmt5y = (currentFP && currentFY != null)
+        ? stmts.find(s => s.fiscalPeriod === currentFP && s.fiscalYear === currentFY - 5)
+        : stmts.find(s => s.endDate < new Date(Date.now() - 5 * 365 * 24 * 60 * 60 * 1000));
+
+    const dilution1y = (currentShares && stmt1y?.sharesOutstanding)
         ? (currentShares / stmt1y.sharesOutstanding - 1) * 100 : null;
     const dilution5y = (currentShares && stmt5y?.sharesOutstanding)
         ? (currentShares / stmt5y.sharesOutstanding - 1) * 100 : null;

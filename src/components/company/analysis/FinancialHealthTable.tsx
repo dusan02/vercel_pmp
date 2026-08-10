@@ -1,5 +1,5 @@
 import React from 'react';
-import { AnalysisData } from '../AnalysisTab';
+import { AnalysisData } from './types';
 import { CompactMetricRow, MetricCardDef, StatusType, StatusBadge } from '../shared/MetricCard';
 import { getColorClass, getStrokeColor } from './ScoreCard';
 
@@ -14,8 +14,9 @@ interface Props {
 function ScoreRing({ label, score }: { label: string; score: number | null }) {
     const radius = 38;
     const circumference = 2 * Math.PI * radius;
-    const displayScore = (score != null && !isNaN(score)) ? score : 0;
-    const strokeDashoffset = circumference - (displayScore / 100) * circumference;
+    const hasScore = score != null && !isNaN(score);
+    const displayScore = hasScore ? score : 0;
+    const strokeDashoffset = hasScore ? circumference - (displayScore / 100) * circumference : circumference;
     const color = getColorClass(score);
     const stroke = getStrokeColor(score);
     return (
@@ -24,7 +25,9 @@ function ScoreRing({ label, score }: { label: string; score: number | null }) {
             <div className="relative w-[76px] h-[76px] sm:w-[100px] sm:h-[100px]">
                 <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                     <circle cx="50" cy="50" r={radius} fill="transparent" stroke="currentColor" strokeWidth="8" className="text-gray-100 dark:text-gray-700" />
-                    <circle cx="50" cy="50" r={radius} fill="transparent" stroke={stroke} strokeWidth="8" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} className="transition-all duration-700 ease-out" />
+                    {hasScore && (
+                        <circle cx="50" cy="50" r={radius} fill="transparent" stroke={stroke} strokeWidth="8" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} className="transition-all duration-700 ease-out" />
+                    )}
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                     <span className={`text-lg sm:text-2xl font-bold ${color}`}>{score ?? '—'}</span>
@@ -147,8 +150,8 @@ function buildMetrics(data: AnalysisData, sec: AnalysisData | null, cw: string) 
     ];
 
     const growth: MetricCardDef[] = [
-        def('Revenue CAGR (5Y)', rCagr != null ? `${rCagr.toFixed(1)}%` : 'N/A', s(srCagr != null ? `${srCagr.toFixed(1)}%` : 'N/A'), rCagr == null ? 'neutral' : rCagr > 15 ? 'good' : rCagr > 5 ? 'warn' : 'bad', rCagr == null ? '-' : rCagr > 15 ? 'High' : rCagr > 5 ? 'Ok' : 'Low', 'Compound annual revenue growth'),
-        def('Net Income CAGR (5Y)', niCagr != null ? `${niCagr.toFixed(1)}%` : 'N/A', s(sniCagr != null ? `${sniCagr.toFixed(1)}%` : 'N/A'), niCagr == null ? 'neutral' : niCagr > 15 ? 'good' : niCagr > 5 ? 'warn' : 'bad', niCagr == null ? '-' : niCagr > 15 ? 'High' : niCagr > 5 ? 'Ok' : 'Low', 'Compound annual net income growth'),
+        def('Revenue CAGR', rCagr != null ? `${rCagr.toFixed(1)}%` : 'N/A', s(srCagr != null ? `${srCagr.toFixed(1)}%` : 'N/A'), rCagr == null ? 'neutral' : rCagr > 15 ? 'good' : rCagr > 5 ? 'warn' : 'bad', rCagr == null ? '-' : rCagr > 15 ? 'High' : rCagr > 5 ? 'Ok' : 'Low', 'Compound annual revenue growth (up to 5Y depending on data availability)'),
+        def('Net Income CAGR', niCagr != null ? `${niCagr.toFixed(1)}%` : 'N/A', s(sniCagr != null ? `${sniCagr.toFixed(1)}%` : 'N/A'), niCagr == null ? 'neutral' : niCagr > 15 ? 'good' : niCagr > 5 ? 'warn' : 'bad', niCagr == null ? '-' : niCagr > 15 ? 'High' : niCagr > 5 ? 'Ok' : 'Low', 'Compound annual net income growth (up to 5Y depending on data availability)'),
         def('Dilution (5Y)', dil != null ? `${dil > 0 ? '+' : ''}${dil.toFixed(1)}%` : 'N/A', s(sdil != null ? `${sdil > 0 ? '+' : ''}${sdil.toFixed(1)}%` : 'N/A'), dil == null ? 'neutral' : dil < -2 ? 'good' : dil <= 2 ? 'neutral' : dil <= 10 ? 'warn' : 'bad', dil == null ? '-' : dil < -2 ? 'Buybacks' : dil <= 2 ? 'Flat' : 'Dilutive', 'Share count change over 5Y'),
     ];
 

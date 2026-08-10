@@ -11,13 +11,9 @@ import {
     ReferenceLine,
 } from 'recharts';
 import { useState, useMemo } from 'react';
+import type { RatioStats } from './analysis/types';
 
 interface HistoryPoint { date: string; value: number; }
-
-interface RatioStats {
-    avg: number; p10: number; p25: number; median: number;
-    p75: number; p90: number; min: number; max: number; count: number;
-}
 
 interface HistoryData {
     peHistory: HistoryPoint[];
@@ -75,7 +71,6 @@ function StatPill({ label, value, highlight }: { label: string; value: number | 
 }
 
 export default function ValuationCharts({ ticker, peHistory, psHistory, current: currentProp, stats: propStats }: ValuationChartsProps) {
-    const [loading, setLoading] = useState(!peHistory && !psHistory);
     const [metric, setMetric]   = useState<MetricId>('pe');
     const [period, setPeriod]   = useState<PeriodId>('5y');
 
@@ -121,20 +116,14 @@ export default function ValuationCharts({ ticker, peHistory, psHistory, current:
 
     // Determine if current is cheap / expensive vs percentiles
     const valBadge = (current !== null && current !== undefined && stats)
-        ? current <= stats.p25 ? { label: 'Cheap Zone', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' }
-        : current >= stats.p75 ? { label: 'Expensive Zone', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' }
-        : { label: 'Fair Value Zone', color: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400' }
+        ? current <= stats.p25 ? { label: 'Below P25 (Relatively Cheap)', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' }
+        : current >= stats.p75 ? { label: 'Above P75 (Relatively Expensive)', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' }
+        : { label: 'Fair Value Zone (P25–P75)', color: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400' }
         : null;
 
     const yDomain: [number | 'auto', number | 'auto'] = (stats && stats.p10 && stats.p90 && stats.max)
         ? [Math.max(0, Math.floor(stats.p10 * 0.8)), Math.min(stats.p90 * 1.3, stats.max)]
         : [0, 'auto'];
-
-    if (loading) return (
-        <div className="flex justify-center items-center h-44">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-500" />
-        </div>
-    );
 
     if (!data) return (
         <div className="text-center text-gray-400 text-sm py-10">
@@ -279,7 +268,7 @@ export default function ValuationCharts({ ticker, peHistory, psHistory, current:
                 <span className="flex items-center gap-1.5"><span className="w-3 h-px border-t border-dashed border-emerald-500 inline-block" /> Cheap</span>
                 <span className="flex items-center gap-1.5"><span className="w-3 h-px border-t border-dashed border-gray-400 inline-block" /> Median</span>
                 <span className="flex items-center gap-1.5"><span className="w-3 h-px border-t border-dashed border-red-500 inline-block" /> Expensive</span>
-                <span className="flex items-center gap-1.5 sm:ml-auto text-gray-300 dark:text-gray-600">Based on {stats?.count ?? 0} daily trading points.</span>
+                <span className="flex items-center gap-1.5 sm:ml-auto text-gray-300 dark:text-gray-600">Based on {filteredHistory.length} weekly data points in selected period.</span>
             </div>
         </div>
     );
