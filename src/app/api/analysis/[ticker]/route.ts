@@ -142,6 +142,10 @@ async function computeMetrics(symbol: string, tickerRecord?: any) {
     const forwardEps = (forwardPe !== null && forwardPe > 0 && effectivePrice > 0)
         ? effectivePrice / forwardPe
         : null;
+    // Forward implied 1Y growth = (forwardEps / currentEps - 1) × 100
+    const forwardImpliedGrowth = (forwardEps !== null && forwardEps > 0 && currentEps !== null && currentEps > 0)
+        ? parseFloat(((forwardEps / currentEps - 1) * 100).toFixed(2))
+        : null;
 
     // Prefer Finnhub pre-computed ratios, fallback to our calculations
     const debtToEquity = finnhubMetrics?.debtEquityRatio ?? ((totalDebt !== null && totalEquity !== null && totalEquity !== 0)
@@ -216,6 +220,7 @@ async function computeMetrics(symbol: string, tickerRecord?: any) {
             currentPe,
             forwardPe,
             forwardEps,
+            forwardImpliedGrowth,
             fcfMargin: cached.fcfMargin,
             fcfConversion: cached.fcfConversion
         },

@@ -175,6 +175,7 @@ export function AnalysisCharts({ ticker, data }: AnalysisChartsProps) {
                             priceHistory={data.priceHistory ?? []}
                             forwardPe={data.metrics.forwardPe ?? null}
                             forwardEps={data.metrics.forwardEps ?? null}
+                            forwardImpliedGrowth={data.metrics.forwardImpliedGrowth ?? null}
                             peStats={data.valuationStats?.pe ?? null}
                             epsCagr3y={data.epsCagr3y ?? null}
                             epsCagr5y={data.epsCagr5y ?? null}

@@ -52,6 +52,7 @@ export interface AnalysisMetrics {
     currentPe: number | null;
     forwardPe: number | null;
     forwardEps: number | null;
+    forwardImpliedGrowth: number | null;
     fcfMargin: number | null;
     fcfConversion: number | null;
 }

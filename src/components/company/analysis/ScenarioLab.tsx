@@ -20,6 +20,7 @@ interface ScenarioLabProps {
     priceHistory?: { date: string; price: number }[];
     forwardPe?: number | null;
     forwardEps?: number | null;
+    forwardImpliedGrowth?: number | null;
     peStats?: RatioStats | null;
     epsCagr3y?: number | null;
     epsCagr5y?: number | null;
@@ -31,6 +32,13 @@ interface PricePoint {
 }
 
 type Mode = 'manual' | 'dataDriven';
+
+// ── Normalization constants ──
+const GROWTH_CAP = 25;      // Max long-term EPS growth assumption (%)
+const GROWTH_FLOOR = -10;   // Min growth (%)
+const PE_ABSOLUTE_CAP = 60; // No stock sustains >60× long-term
+const PE_DERATING_THRESHOLD = 2.0; // If median > 2× forward P/E → de-rating signal
+const PE_DERATING_PREMIUM = 1.5;   // Use forward P/E × 1.5 as normalized base
 
 function ScenarioTooltip({ active, payload, label }: any) {
     if (!active || !payload?.length) return null;
@@ -64,6 +72,7 @@ export function ScenarioLab({
     priceHistory: propPriceHistory,
     forwardPe,
     forwardEps,
+    forwardImpliedGrowth,
     peStats,
     epsCagr3y,
     epsCagr5y,
@@ -78,8 +87,13 @@ export function ScenarioLab({
 
     // ── Data-Driven mode state ──
     const [ddYears, setDdYears] = useState<number>(5);
-    const defaultGrowth = epsCagr5y ?? epsCagr3y ?? 10;
-    const [ddGrowth, setDdGrowth] = useState<number>(Math.max(-20, Math.min(50, defaultGrowth)));
+
+    // Normalized growth: cap historical CAGR at GROWTH_CAP
+    const rawGrowth = epsCagr5y ?? epsCagr3y ?? 10;
+    const normalizedGrowth = Math.max(GROWTH_FLOOR, Math.min(GROWTH_CAP, rawGrowth));
+    const growthWasCapped = rawGrowth > GROWTH_CAP || rawGrowth < GROWTH_FLOOR;
+
+    const [ddGrowth, setDdGrowth] = useState<number>(normalizedGrowth);
     const [showMethodology, setShowMethodology] = useState<boolean>(false);
 
     // Fetch historical price data only if not provided via props
@@ -109,18 +123,34 @@ export function ScenarioLab({
     }
     const isMarketBeating = manualCagr > 15;
 
+    // ── Data-Driven mode: P/E normalization (mean reversion) ──
+    const rawBearPe = peStats?.p25 ?? null;
+    const rawBasePe = peStats?.median ?? null;
+    const rawBullPe = peStats?.p75 ?? null;
+
+    // Mean reversion: if 5Y median > 2× forward P/E, market signals de-rating
+    const isDerating = !!(forwardPe && forwardPe > 0 && rawBasePe && rawBasePe > forwardPe * PE_DERATING_THRESHOLD);
+    const peWasNormalized = isDerating;
+
+    function normalizePe(rawPe: number | null, isBase: boolean): number | null {
+        if (rawPe === null) return null;
+        if (isDerating && forwardPe && forwardPe > 0) {
+            // Use forward P/E × premium, but not exceeding raw historical
+            const reverted = forwardPe * PE_DERATING_PREMIUM;
+            return Math.min(rawPe, reverted, PE_ABSOLUTE_CAP);
+        }
+        return Math.min(rawPe, PE_ABSOLUTE_CAP);
+    }
+
+    const effectiveBearPe = normalizePe(rawBearPe, false)
+        ?? (currentPe > 0 ? currentPe * 0.8 : null);
+    const effectiveBasePe = normalizePe(rawBasePe, true)
+        ?? currentPe ?? null;
+    const effectiveBullPe = normalizePe(rawBullPe, false)
+        ?? (currentPe > 0 ? currentPe * 1.2 : null);
+
     // ── Data-Driven mode calculations ──
-    // Forward EPS is the starting point (market-implied), fallback to current EPS
     const ddBaseEps = (forwardEps && forwardEps > 0) ? forwardEps : baseEps;
-    const bearPe = peStats?.p25 ?? null;
-    const basePe = peStats?.median ?? null;
-    const bullPe = peStats?.p75 ?? null;
-
-    // If no historical P/E stats, fallback to current P/E ± 20%
-    const effectiveBearPe = bearPe ?? (currentPe > 0 ? currentPe * 0.8 : null);
-    const effectiveBasePe = basePe ?? currentPe ?? null;
-    const effectiveBullPe = bullPe ?? (currentPe > 0 ? currentPe * 1.2 : null);
-
     const ddProjectedEps = ddBaseEps * Math.pow(1 + ddGrowth / 100, ddYears);
     const bearPrice = (effectiveBearPe && effectiveBearPe > 0) ? ddProjectedEps * effectiveBearPe : null;
     const basePrice = (effectiveBasePe && effectiveBasePe > 0) ? ddProjectedEps * effectiveBasePe : null;
@@ -186,7 +216,6 @@ export function ScenarioLab({
                 }
                 projPoints.push({ date: label, timestamp: futureDate.getTime(), historical: null as any, projection: priceAtYear, bear: null, base: null, bull: null, projected: true });
             } else {
-                // Data-Driven: 3 lines (Bear/Base/Bull)
                 const epsAtYear = ddBaseEps * Math.pow(1 + ddGrowth / 100, y);
                 const bearP = (effectiveBearPe && effectiveBearPe > 0) ? epsAtYear * effectiveBearPe : null;
                 const baseP = (effectiveBasePe && effectiveBasePe > 0) ? epsAtYear * effectiveBasePe : null;
@@ -256,7 +285,9 @@ export function ScenarioLab({
                             )}
                         </div>
                         <p className="text-xs text-gray-400 dark:text-gray-500">
-                            Based on {forwardEps ? 'forward EPS' : 'current EPS'}, {epsCagr5y != null ? '5Y historical EPS CAGR' : epsCagr3y != null ? '3Y historical EPS CAGR' : 'assumed growth'}, and 5Y historical P/E distribution
+                            Based on {forwardEps ? 'forward EPS' : 'current EPS'}, normalized EPS growth
+                            {growthWasCapped ? ` (capped at ${GROWTH_CAP}%)` : ''}, and
+                            {peWasNormalized ? ' mean-reverted' : ' 5Y historical'} P/E distribution
                         </p>
                         <button
                             onClick={() => setShowMethodology(!showMethodology)}
@@ -292,7 +323,7 @@ export function ScenarioLab({
                                 </div>
                             </div>
 
-                            {/* 5Y Historical P/E */}
+                            {/* 5Y Historical P/E with normalization */}
                             <div>
                                 <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
                                     5Y Historical P/E Distribution {peStats ? `(${peStats.count} obs)` : ''}
@@ -301,31 +332,54 @@ export function ScenarioLab({
                                     <div className="text-center bg-red-50 dark:bg-red-900/10 rounded-lg py-2">
                                         <p className="text-xs text-red-400">Bear (P25)</p>
                                         <p className="font-mono font-semibold text-gray-900 dark:text-gray-100">{effectiveBearPe ? `${effectiveBearPe.toFixed(1)}×` : 'N/A'}</p>
+                                        {peWasNormalized && rawBearPe !== effectiveBearPe && (
+                                            <p className="text-[10px] text-gray-400 mt-0.5">raw: {rawBearPe?.toFixed(1)}×</p>
+                                        )}
                                     </div>
                                     <div className="text-center bg-blue-50 dark:bg-blue-900/10 rounded-lg py-2 ring-1 ring-blue-200 dark:ring-blue-800">
                                         <p className="text-xs text-blue-400">Base (Median)</p>
                                         <p className="font-mono font-semibold text-gray-900 dark:text-gray-100">{effectiveBasePe ? `${effectiveBasePe.toFixed(1)}×` : 'N/A'}</p>
+                                        {peWasNormalized && rawBasePe !== effectiveBasePe && (
+                                            <p className="text-[10px] text-gray-400 mt-0.5">raw: {rawBasePe?.toFixed(1)}×</p>
+                                        )}
                                     </div>
                                     <div className="text-center bg-green-50 dark:bg-green-900/10 rounded-lg py-2">
                                         <p className="text-xs text-green-400">Bull (P75)</p>
                                         <p className="font-mono font-semibold text-gray-900 dark:text-gray-100">{effectiveBullPe ? `${effectiveBullPe.toFixed(1)}×` : 'N/A'}</p>
+                                        {peWasNormalized && rawBullPe !== effectiveBullPe && (
+                                            <p className="text-[10px] text-gray-400 mt-0.5">raw: {rawBullPe?.toFixed(1)}×</p>
+                                        )}
                                     </div>
                                 </div>
+                                {peWasNormalized && (
+                                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
+                                        ⚠ P/E normalized: 5Y median ({rawBasePe?.toFixed(1)}×) is {PE_DERATING_THRESHOLD}×+ higher than forward P/E ({forwardPe?.toFixed(1)}×), indicating market expects valuation de-rating. Using forward P/E × {PE_DERATING_PREMIUM} as base.
+                                    </p>
+                                )}
                             </div>
 
-                            {/* EPS assumptions */}
+                            {/* EPS growth assumptions with normalization */}
                             <div>
                                 <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">EPS Growth Assumptions</p>
-                                <div className="grid grid-cols-2 gap-3 text-sm mb-3">
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm mb-3">
                                     <div>
-                                        <p className="text-xs text-gray-400 dark:text-gray-500">Historical 3Y EPS CAGR</p>
+                                        <p className="text-xs text-gray-400 dark:text-gray-500">Historical 3Y CAGR</p>
                                         <p className="font-mono font-semibold text-gray-900 dark:text-gray-100">{epsCagr3y != null ? `${epsCagr3y > 0 ? '+' : ''}${epsCagr3y.toFixed(1)}%` : 'N/A'}</p>
                                     </div>
                                     <div>
-                                        <p className="text-xs text-gray-400 dark:text-gray-500">Historical 5Y EPS CAGR</p>
+                                        <p className="text-xs text-gray-400 dark:text-gray-500">Historical 5Y CAGR</p>
                                         <p className="font-mono font-semibold text-gray-900 dark:text-gray-100">{epsCagr5y != null ? `${epsCagr5y > 0 ? '+' : ''}${epsCagr5y.toFixed(1)}%` : 'N/A'}</p>
                                     </div>
+                                    <div>
+                                        <p className="text-xs text-gray-400 dark:text-gray-500">Forward Implied (1Y)</p>
+                                        <p className="font-mono font-semibold text-gray-900 dark:text-gray-100">{forwardImpliedGrowth != null ? `${forwardImpliedGrowth > 0 ? '+' : ''}${forwardImpliedGrowth.toFixed(1)}%` : 'N/A'}</p>
+                                    </div>
                                 </div>
+                                {growthWasCapped && (
+                                    <p className="text-xs text-amber-600 dark:text-amber-400 mb-3">
+                                        ⚠ Growth normalized: historical {rawGrowth > GROWTH_CAP ? `${rawGrowth.toFixed(1)}%` : `${rawGrowth.toFixed(1)}%`} capped at {GROWTH_CAP}% — sustained {rawGrowth.toFixed(0)}% growth over 5 years is economically unrealistic.
+                                    </p>
+                                )}
                                 <label className="flex justify-between text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     <span>Long-term EPS Growth (adjustable)</span>
                                     <span className="font-mono text-blue-600 dark:text-blue-400">{ddGrowth}%</span>
