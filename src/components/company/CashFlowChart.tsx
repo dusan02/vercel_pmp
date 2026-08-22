@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
     BarChart,
     Bar,
@@ -33,25 +33,38 @@ export default function CashFlowChart({ statements }: CashFlowChartProps) {
     // Determine which metrics have data
     const availableMetrics = useMemo(() => {
         const hasOperatingCF = statements.some(s => s.operatingCashFlow !== null);
+        const hasCapex = statements.some(s => s.capex !== null);
         const hasSbc = statements.some(s => s.sbc !== null && s.sbc !== 0);
-        const defaults = ['operatingCF', 'netIncome'];
-        if (hasOperatingCF) defaults.push('freeCF'); // Always show freeCF if we have operating CF
-        if (hasSbc) defaults.push('sbc');
-        return defaults;
+        const result: string[] = ['netIncome'];
+        if (hasOperatingCF) result.push('operatingCF');
+        // Only show freeCF if we have BOTH operating CF and capex
+        if (hasOperatingCF && hasCapex) result.push('freeCF');
+        if (hasSbc) result.push('sbc');
+        return result;
     }, [statements]);
 
     const [selectedMetrics, setSelectedMetrics] = useState<string[]>(['operatingCF', 'freeCF', 'netIncome']);
+
+    // Sync selectedMetrics with availableMetrics on mount / when availability changes
+    useEffect(() => {
+        setSelectedMetrics(prev => {
+            const filtered = prev.filter(m => availableMetrics.includes(m));
+            // If nothing selected, default to all available
+            return filtered.length > 0 ? filtered : [...availableMetrics];
+        });
+    }, [availableMetrics]);
 
     const chartData = useMemo(() => {
         if (!statements || statements.length === 0) return [];
         const filtered = filterStatementsByViewMode(statements, viewMode);
         const sorted = [...filtered].sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime());
         return sorted.map(s => {
-            const ocf = (s.operatingCashFlow ?? 0) / 1e6;
-            const capex = s.capex ? Math.abs(s.capex) / 1e6 : 0;
-            const fcf = (s.operatingCashFlow !== null && s.capex !== null) ? ocf - capex : 0;
-            const ni = (s.netIncome ?? 0) / 1e6;
-            const sbc = (s.sbc ?? 0) / 1e6;
+            const ocf = s.operatingCashFlow !== null ? s.operatingCashFlow / 1e6 : null;
+            const capex = s.capex !== null ? Math.abs(s.capex) / 1e6 : null;
+            // freeCF is null if either component is null — don't show 0 for missing data
+            const fcf = (ocf !== null && capex !== null) ? ocf - capex : null;
+            const ni = s.netIncome !== null ? s.netIncome / 1e6 : null;
+            const sbc = s.sbc !== null ? s.sbc / 1e6 : null;
             const label = buildPeriodLabel(s.fiscalPeriod, s.fiscalYear);
             return { name: label, date: label, operatingCF: ocf, freeCF: fcf, netIncome: ni, sbc };
         });
@@ -60,9 +73,10 @@ export default function CashFlowChart({ statements }: CashFlowChartProps) {
     const yMin = useMemo(() => {
         const allVals = chartData.flatMap(d => {
             const vals: number[] = [];
-            if (selectedMetrics.includes('operatingCF')) vals.push(d.operatingCF);
-            if (selectedMetrics.includes('freeCF')) vals.push(d.freeCF);
-            if (selectedMetrics.includes('netIncome')) vals.push(d.netIncome);
+            if (selectedMetrics.includes('operatingCF') && d.operatingCF != null) vals.push(d.operatingCF);
+            if (selectedMetrics.includes('freeCF') && d.freeCF != null) vals.push(d.freeCF);
+            if (selectedMetrics.includes('netIncome') && d.netIncome != null) vals.push(d.netIncome);
+            if (selectedMetrics.includes('sbc') && d.sbc != null) vals.push(d.sbc);
             return vals;
         });
         const min = Math.min(0, ...allVals);

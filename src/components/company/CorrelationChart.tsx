@@ -64,7 +64,7 @@ function CustomTooltip({ active, payload, label }: any) {
 export function CorrelationChart({ priceHistory, impliedPS, impliedPE, corrPS, corrPE }: CorrelationChartProps) {
   const [mode, setMode] = useState<Mode>('ps');
 
-  const { mergedData, correlation, label } = useMemo(() => {
+  const { mergedData, correlation, label, hasForecast } = useMemo(() => {
     const implied = mode === 'ps' ? impliedPS : impliedPE;
     const corr = mode === 'ps' ? corrPS : corrPE;
 
@@ -80,10 +80,13 @@ export function CorrelationChart({ priceHistory, impliedPS, impliedPE, corrPS, c
       }))
       .filter(d => typeof d.price === 'number' || d.isForecast);
 
+    const hasForecastData = merged.some(d => d.isForecast);
+
     return {
       mergedData: merged,
       correlation: corr,
       label: mode === 'ps' ? 'Implied Price (P/S)' : 'Implied Price (P/E)',
+      hasForecast: hasForecastData,
     };
   }, [mode, impliedPS, impliedPE, priceHistory, corrPS, corrPE]);
 
@@ -172,19 +175,21 @@ export function CorrelationChart({ priceHistory, impliedPS, impliedPE, corrPS, c
               connectNulls
             />
 
-            {/* Forecast shading */}
-            <Area
-              type="monotone"
-              dataKey="forecastImplied"
-              name="Forecast"
-              stroke="#fbbf24"
-              fill="#fbbf24"
-              fillOpacity={0.18}
-              strokeWidth={1}
-              strokeDasharray="4 4"
-              connectNulls
-              isAnimationActive={false}
-            />
+            {/* Forecast shading — only render if forecast data exists */}
+            {hasForecast && (
+              <Area
+                type="monotone"
+                dataKey="forecastImplied"
+                name="Forecast"
+                stroke="#fbbf24"
+                fill="#fbbf24"
+                fillOpacity={0.18}
+                strokeWidth={1}
+                strokeDasharray="4 4"
+                connectNulls
+                isAnimationActive={false}
+              />
+            )}
           </ComposedChart>
         </ResponsiveContainer>
       </div>

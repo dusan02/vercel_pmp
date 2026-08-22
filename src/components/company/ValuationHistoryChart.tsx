@@ -249,6 +249,16 @@ export function ValuationHistoryChart({
     return <div className="text-center text-gray-400 text-sm py-10">No valuation data available.</div>;
   }
 
+  // Guard: activeHistory may be empty when user switches to PE/PS mode but that
+  // specific series has no data (e.g. negative EPS → empty PE history).
+  if (!activeHistory?.length) {
+    return (
+      <div className="text-center text-gray-400 text-sm py-10">
+        No {metricMode === 'pe' ? 'P/E' : 'P/S'} valuation data available. Try switching to {metricMode === 'pe' ? 'P/S' : 'P/E'} or Auto mode.
+      </div>
+    );
+  }
+
   const last = activeHistory[activeHistory.length - 1]!;
   const currentUv = activeSummary?.currentUndervaluation ?? last?.undervaluationPct ?? null;
   const avg5y = activeSummary?.avg5yUndervaluation ?? null;
@@ -256,8 +266,10 @@ export function ValuationHistoryChart({
 
   // Determine verdict
   // Fair Value zone: |undervaluation| < 5% — price is within 5% of intrinsic
+  // Significantly Overvalued: |undervaluation| >= 50% (clamped values included)
   const isUndervalued = currentUv != null && currentUv > 5;
   const isOvervalued = currentUv != null && currentUv < -5;
+  const isSignificantlyOvervalued = currentUv != null && currentUv <= -50;
   const isFairValue = currentUv != null && Math.abs(currentUv) <= 5;
   const isCheaperThanAvg = avg5y != null && currentUv != null && currentUv > avg5y;
 
@@ -269,6 +281,8 @@ export function ValuationHistoryChart({
     ? isCheaperThanAvg
       ? 'Very Attractive'
       : 'Attractive'
+    : isSignificantlyOvervalued
+    ? 'Significantly Overvalued'
     : 'Overvalued';
 
   const verdictColor = verdict === 'Very Attractive'
@@ -279,9 +293,11 @@ export function ValuationHistoryChart({
     ? 'text-gray-600 dark:text-gray-300 font-bold'
     : verdict === 'N/A'
     ? 'text-gray-400 font-bold'
+    : verdict === 'Significantly Overvalued'
+    ? 'text-red-600 dark:text-red-500 font-bold'
     : 'text-red-500 dark:text-red-400 font-bold';
 
-  const headlineColor = isUndervalued ? 'bg-gray-800 dark:bg-gray-200' : isFairValue ? 'bg-gray-400' : 'bg-red-500';
+  const headlineColor = isUndervalued ? 'bg-gray-800 dark:bg-gray-200' : isFairValue ? 'bg-gray-400' : isSignificantlyOvervalued ? 'bg-red-700' : 'bg-red-500';
 
   return (
     <div className="space-y-4">
@@ -295,6 +311,8 @@ export function ValuationHistoryChart({
             ? `is trading close to its intrinsic value (within ±5%).`
             : isUndervalued
             ? `is cheaper now than it has been on average over the past 5 years.`
+            : isSignificantlyOvervalued
+            ? `is significantly overvalued — price far exceeds intrinsic value (50%+ deviation).`
             : `is more expensive now than it has been on average over the past 5 years.`}
         </p>
         <div className="flex items-center gap-1.5">
@@ -315,12 +333,12 @@ export function ValuationHistoryChart({
         <Badge
           label="History Conclusion"
           value={verdict}
-          color={verdict === 'Very Attractive' ? 'green' : verdict === 'Attractive' ? 'blue' : verdict === 'Fair Value' ? 'gray' : 'gray'}
+          color={verdict === 'Very Attractive' ? 'green' : verdict === 'Attractive' ? 'blue' : verdict === 'Fair Value' ? 'gray' : verdict === 'Significantly Overvalued' ? 'amber' : 'gray'}
         />
         <Badge
           label="Current Valuation"
           value={currentUv != null ? `${Math.abs(currentUv).toFixed(0)}% ${isUndervalued ? 'undervalued' : isFairValue ? 'fair value' : 'overvalued'}` : 'n/a'}
-          color={isUndervalued ? 'green' : isFairValue ? 'gray' : 'gray'}
+          color={isUndervalued ? 'green' : isFairValue ? 'gray' : isSignificantlyOvervalued ? 'amber' : 'gray'}
         />
         {avg5y != null && (
           <Badge
@@ -488,6 +506,7 @@ function EndLabels({
 }) {
   const isUnder = undervaluationPct != null && undervaluationPct > 0;
   const isNa = undervaluationPct == null;
+  const isSigOver = undervaluationPct != null && undervaluationPct <= -50;
   return (
     <div className="absolute right-1 top-4 flex flex-col gap-1.5 items-end pointer-events-none">
       {/* Intrinsic Value label */}
@@ -500,7 +519,7 @@ function EndLabels({
       {/* Price label */}
       <div className="flex items-center gap-1.5">
         <span className="text-[10px] text-gray-500 dark:text-gray-400 font-medium">Price</span>
-        <span className={`text-white text-[10px] font-bold px-2 py-0.5 rounded-md ${isNa ? 'bg-gray-400' : isUnder ? 'bg-emerald-500' : 'bg-red-500'}`}>
+        <span className={`text-white text-[10px] font-bold px-2 py-0.5 rounded-md ${isNa ? 'bg-gray-400' : isUnder ? 'bg-emerald-500' : isSigOver ? 'bg-red-700' : 'bg-red-500'}`}>
           {fmtDollar(priceValue)}
         </span>
       </div>
@@ -510,9 +529,11 @@ function EndLabels({
           ? 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
           : isUnder
           ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+          : isSigOver
+          ? 'bg-red-200 text-red-800 dark:bg-red-900/60 dark:text-red-300'
           : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
       }`}>
-        {isNa ? 'N/A' : `${Math.abs(undervaluationPct!).toFixed(0)}% ${isUnder ? 'undervalued' : 'overvalued'}`}
+        {isNa ? 'N/A' : `${Math.abs(undervaluationPct!).toFixed(0)}% ${isUnder ? 'undervalued' : isSigOver ? 'significantly overvalued' : 'overvalued'}`}
       </span>
     </div>
   );
