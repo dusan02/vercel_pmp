@@ -12,8 +12,11 @@ cd "$DIR" && git pull origin main
 echo "▶ [2/5] Stop PM2 before build (prevents crash loop during next build)"
 pm2 stop "$APP" || true
 
-echo "▶ [3/5] Build"
-npm run build
+echo "▶ [3/5] Build (memory-limited to protect Docker containers on shared host)"
+# Cap Node.js heap at 1.5GB so next build doesn't trigger OOM killer
+# on Docker containers (verifa_arq_worker etc.) sharing the 8GB server.
+# 4GB swap was added to absorb peak usage without killing processes.
+NODE_OPTIONS="--max-old-space-size=1536" npm run build
 
 echo "▶ [4/5] Start PM2"
 pm2 start ecosystem.config.cjs --only "$APP" --env production
