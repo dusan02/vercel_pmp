@@ -23,8 +23,15 @@ pm2 start ecosystem.config.cjs --only "$APP" --env production
 pm2 restart pmp-polygon-worker 2>/dev/null || true
 pm2 restart post-market-daily-reset 2>/dev/null || true
 
-echo "▶ [5/5] Reload nginx (config changes)"
-cp "$DIR/nginx.conf" /etc/nginx/nginx.conf && nginx -t && nginx -s reload
+echo "▶ [5/5] Reload nginx"
+# CRITICAL: Never overwrite /etc/nginx/nginx.conf — it contains the global
+# `include /etc/nginx/sites-enabled/*;` directive that loads ALL site configs
+# (verifa.sk, earningstable.com, premarketprice.com). Overwriting it breaks
+# every other site on this shared server.
+#
+# PMP's site config is already in /etc/nginx/sites-enabled/premarketprice.com
+# (managed by Certbot). Just reload nginx to pick up any upstream changes.
+nginx -t && nginx -s reload
 
 echo ""
 echo "✅ Deploy complete"
