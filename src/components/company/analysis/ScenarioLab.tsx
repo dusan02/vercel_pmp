@@ -40,6 +40,9 @@ const PE_ABSOLUTE_CAP = 60; // No stock sustains >60× long-term
 const PE_DERATING_THRESHOLD = 2.0; // If median > 2× forward P/E → de-rating signal
 const PE_DERATING_PREMIUM = 1.5;   // Use forward P/E × 1.5 as normalized base
 
+// Clamp helper
+const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+
 function ScenarioTooltip({ active, payload, label }: any) {
     if (!active || !payload?.length) return null;
     const lines = payload
@@ -87,14 +90,35 @@ export function ScenarioLab({
 
     // ── Data-Driven mode state ──
     const [ddYears, setDdYears] = useState<number>(5);
-
-    // Normalized growth: cap historical CAGR at GROWTH_CAP
-    const rawGrowth = epsCagr5y ?? epsCagr3y ?? 10;
-    const normalizedGrowth = Math.max(GROWTH_FLOOR, Math.min(GROWTH_CAP, rawGrowth));
-    const growthWasCapped = rawGrowth > GROWTH_CAP || rawGrowth < GROWTH_FLOOR;
-
-    const [ddGrowth, setDdGrowth] = useState<number>(normalizedGrowth);
     const [showMethodology, setShowMethodology] = useState<boolean>(false);
+
+    // ── Growth inputs ──
+    // Three independent growth rates for Bear/Base/Bull scenarios.
+    // Smart defaults derived from historical CAGRs + forward implied growth.
+    const rawGrowth5y = epsCagr5y ?? null;
+    const rawGrowth3y = epsCagr3y ?? null;
+    const fwdImplied = forwardImpliedGrowth ?? null;
+
+    // Normalized base growth: cap at GROWTH_CAP
+    const normalizedBaseGrowth = clamp(rawGrowth5y ?? rawGrowth3y ?? 10, GROWTH_FLOOR, GROWTH_CAP);
+    const growthWasCapped = (rawGrowth5y !== null && rawGrowth5y > GROWTH_CAP) || (rawGrowth5y === null && rawGrowth3y !== null && rawGrowth3y > GROWTH_CAP);
+
+    // Bear: conservative — min of 3Y/5Y, floored at 0 for stability
+    const defaultBearGrowth = clamp(
+        Math.min(rawGrowth3y ?? normalizedBaseGrowth, rawGrowth5y ?? normalizedBaseGrowth),
+        0, GROWTH_CAP
+    );
+    // Base: normalized 5Y CAGR (capped)
+    const defaultBaseGrowth = normalizedBaseGrowth;
+    // Bull: higher — min of (max of 3Y/5Y, forward implied), capped at 35%
+    const defaultBullGrowth = clamp(
+        Math.max(rawGrowth3y ?? normalizedBaseGrowth, rawGrowth5y ?? normalizedBaseGrowth),
+        GROWTH_FLOOR, 35
+    );
+
+    const [bearGrowth, setBearGrowth] = useState<number>(defaultBearGrowth);
+    const [baseGrowth, setBaseGrowth] = useState<number>(defaultBaseGrowth);
+    const [bullGrowth, setBullGrowth] = useState<number>(defaultBullGrowth);
 
     // Fetch historical price data only if not provided via props
     useEffect(() => {
@@ -132,29 +156,33 @@ export function ScenarioLab({
     const isDerating = !!(forwardPe && forwardPe > 0 && rawBasePe && rawBasePe > forwardPe * PE_DERATING_THRESHOLD);
     const peWasNormalized = isDerating;
 
-    function normalizePe(rawPe: number | null, isBase: boolean): number | null {
+    function normalizePe(rawPe: number | null): number | null {
         if (rawPe === null) return null;
         if (isDerating && forwardPe && forwardPe > 0) {
-            // Use forward P/E × premium, but not exceeding raw historical
             const reverted = forwardPe * PE_DERATING_PREMIUM;
             return Math.min(rawPe, reverted, PE_ABSOLUTE_CAP);
         }
         return Math.min(rawPe, PE_ABSOLUTE_CAP);
     }
 
-    const effectiveBearPe = normalizePe(rawBearPe, false)
+    const effectiveBearPe = normalizePe(rawBearPe)
         ?? (currentPe > 0 ? currentPe * 0.8 : null);
-    const effectiveBasePe = normalizePe(rawBasePe, true)
+    const effectiveBasePe = normalizePe(rawBasePe)
         ?? currentPe ?? null;
-    const effectiveBullPe = normalizePe(rawBullPe, false)
+    const effectiveBullPe = normalizePe(rawBullPe)
         ?? (currentPe > 0 ? currentPe * 1.2 : null);
 
-    // ── Data-Driven mode calculations ──
+    // ── Data-Driven mode: 3 independent scenarios ──
+    // Each scenario has its own EPS growth + P/E multiple
     const ddBaseEps = (forwardEps && forwardEps > 0) ? forwardEps : baseEps;
-    const ddProjectedEps = ddBaseEps * Math.pow(1 + ddGrowth / 100, ddYears);
-    const bearPrice = (effectiveBearPe && effectiveBearPe > 0) ? ddProjectedEps * effectiveBearPe : null;
-    const basePrice = (effectiveBasePe && effectiveBasePe > 0) ? ddProjectedEps * effectiveBasePe : null;
-    const bullPrice = (effectiveBullPe && effectiveBullPe > 0) ? ddProjectedEps * effectiveBullPe : null;
+
+    const bearProjEps = ddBaseEps * Math.pow(1 + bearGrowth / 100, ddYears);
+    const baseProjEps = ddBaseEps * Math.pow(1 + baseGrowth / 100, ddYears);
+    const bullProjEps = ddBaseEps * Math.pow(1 + bullGrowth / 100, ddYears);
+
+    const bearPrice = (effectiveBearPe && effectiveBearPe > 0) ? bearProjEps * effectiveBearPe : null;
+    const basePrice = (effectiveBasePe && effectiveBasePe > 0) ? baseProjEps * effectiveBasePe : null;
+    const bullPrice = (effectiveBullPe && effectiveBullPe > 0) ? bullProjEps * effectiveBullPe : null;
 
     const bearCagr = (bearPrice && currentPrice > 0) ? (Math.pow(bearPrice / currentPrice, 1 / ddYears) - 1) * 100 : null;
     const baseCagr = (basePrice && currentPrice > 0) ? (Math.pow(basePrice / currentPrice, 1 / ddYears) - 1) * 100 : null;
@@ -162,6 +190,16 @@ export function ScenarioLab({
 
     const hasDataDrivenData = !!(ddBaseEps > 0 && effectiveBasePe && effectiveBasePe > 0);
     const targetYear = new Date().getFullYear() + ddYears;
+
+    // ── Confidence / evidence level ──
+    // Flag projections that rely heavily on normalization or have extreme inputs
+    const isHighGrowth = baseCagr !== null && baseCagr > 25;
+    const confidenceFlags: string[] = [];
+    if (growthWasCapped) confidenceFlags.push(`Growth capped at ${GROWTH_CAP}% (raw: ${rawGrowth5y?.toFixed(1)}%)`);
+    if (peWasNormalized) confidenceFlags.push(`P/E mean-reverted (raw median: ${rawBasePe?.toFixed(1)}× → ${effectiveBasePe?.toFixed(1)}×)`);
+    if (isHighGrowth) confidenceFlags.push(`Base CAGR > 25% — high-growth projection`);
+    if (fwdImplied !== null && fwdImplied > 50) confidenceFlags.push(`Forward implied growth ${fwdImplied.toFixed(0)}% — market expects extreme near-term growth`);
+    const hasConfidenceWarning = confidenceFlags.length > 0;
 
     // ── Chart data ──
     const chartData = useMemo(() => {
@@ -216,16 +254,19 @@ export function ScenarioLab({
                 }
                 projPoints.push({ date: label, timestamp: futureDate.getTime(), historical: null as any, projection: priceAtYear, bear: null, base: null, bull: null, projected: true });
             } else {
-                const epsAtYear = ddBaseEps * Math.pow(1 + ddGrowth / 100, y);
-                const bearP = (effectiveBearPe && effectiveBearPe > 0) ? epsAtYear * effectiveBearPe : null;
-                const baseP = (effectiveBasePe && effectiveBasePe > 0) ? epsAtYear * effectiveBasePe : null;
-                const bullP = (effectiveBullPe && effectiveBullPe > 0) ? epsAtYear * effectiveBullPe : null;
+                // Each scenario uses its own growth rate
+                const bearEpsAtYear = ddBaseEps * Math.pow(1 + bearGrowth / 100, y);
+                const baseEpsAtYear = ddBaseEps * Math.pow(1 + baseGrowth / 100, y);
+                const bullEpsAtYear = ddBaseEps * Math.pow(1 + bullGrowth / 100, y);
+                const bearP = (effectiveBearPe && effectiveBearPe > 0) ? bearEpsAtYear * effectiveBearPe : null;
+                const baseP = (effectiveBasePe && effectiveBasePe > 0) ? baseEpsAtYear * effectiveBasePe : null;
+                const bullP = (effectiveBullPe && effectiveBullPe > 0) ? bullEpsAtYear * effectiveBullPe : null;
                 projPoints.push({ date: label, timestamp: futureDate.getTime(), historical: null as any, projection: null, bear: bearP, base: baseP, bull: bullP, projected: true });
             }
         }
 
         return [...hist, ...projPoints];
-    }, [priceHistory, currentPrice, mode, years, ddYears, currentPe, baseEps, exitPe, epsGrowth, targetPrice, ddBaseEps, ddGrowth, effectiveBearPe, effectiveBasePe, effectiveBullPe]);
+    }, [priceHistory, currentPrice, mode, years, ddYears, currentPe, baseEps, exitPe, epsGrowth, targetPrice, ddBaseEps, bearGrowth, baseGrowth, bullGrowth, effectiveBearPe, effectiveBasePe, effectiveBullPe]);
 
     // Y-axis domain
     const allPrices = chartData.map(d => d.historical ?? d.projection ?? d.bear ?? d.base ?? d.bull ?? 0).filter(v => v > 0);
@@ -233,6 +274,23 @@ export function ScenarioLab({
     const yMax = allPrices.length > 0 ? Math.ceil(Math.max(...allPrices) * 1.1) : 100;
 
     const hasChart = chartData.length > 2;
+
+    // Helper for growth slider row
+    function GrowthSlider({ label, value, onChange, colorClass }: { label: string; value: number; onChange: (v: number) => void; colorClass: string }) {
+        return (
+            <div>
+                <label className="flex justify-between text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                    <span className={colorClass}>{label}</span>
+                    <span className={`font-mono ${colorClass}`}>{value > 0 ? '+' : ''}{value}%</span>
+                </label>
+                <input
+                    type="range" min="-20" max="50" step="1" value={value}
+                    onChange={(e) => onChange(Number(e.target.value))}
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-blue-600"
+                />
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-4">
@@ -274,7 +332,7 @@ export function ScenarioLab({
                         <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-1">
                             Estimated {targetYear} Value <span className="text-gray-400 dark:text-gray-500">(base case)</span>
                         </p>
-                        <div className="flex items-baseline gap-3 mb-3">
+                        <div className="flex items-baseline gap-3 mb-2">
                             <p className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">
                                 ${basePrice?.toFixed(2) ?? '—'}
                             </p>
@@ -284,9 +342,16 @@ export function ScenarioLab({
                                 </p>
                             )}
                         </div>
+                        {/* Confidence indicator */}
+                        {hasConfidenceWarning && (
+                            <div className="mt-2 mb-1">
+                                <span className="inline-block text-[10px] uppercase tracking-wider bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full font-semibold">
+                                    ⚠ High-growth projection
+                                </span>
+                            </div>
+                        )}
                         <p className="text-xs text-gray-400 dark:text-gray-500">
-                            Based on {forwardEps ? 'forward EPS' : 'current EPS'}, normalized EPS growth
-                            {growthWasCapped ? ` (capped at ${GROWTH_CAP}%)` : ''}, and
+                            Based on {forwardEps ? 'forward EPS' : 'current EPS'}, scenario-based EPS growth, and
                             {peWasNormalized ? ' mean-reverted' : ' 5Y historical'} P/E distribution
                         </p>
                         <button
@@ -321,6 +386,30 @@ export function ScenarioLab({
                                         <p className="font-mono font-semibold text-gray-900 dark:text-gray-100">${currentPrice.toFixed(2)}</p>
                                     </div>
                                 </div>
+                            </div>
+
+                            {/* EPS growth inputs */}
+                            <div>
+                                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">EPS Growth Inputs</p>
+                                <div className="grid grid-cols-3 gap-3 text-sm mb-3">
+                                    <div>
+                                        <p className="text-xs text-gray-400 dark:text-gray-500">Historical 3Y CAGR</p>
+                                        <p className="font-mono font-semibold text-gray-900 dark:text-gray-100">{rawGrowth3y != null ? `${rawGrowth3y > 0 ? '+' : ''}${rawGrowth3y.toFixed(1)}%` : 'N/A'}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-gray-400 dark:text-gray-500">Historical 5Y CAGR</p>
+                                        <p className="font-mono font-semibold text-gray-900 dark:text-gray-100">{rawGrowth5y != null ? `${rawGrowth5y > 0 ? '+' : ''}${rawGrowth5y.toFixed(1)}%` : 'N/A'}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-gray-400 dark:text-gray-500">Forward Implied (1Y)</p>
+                                        <p className="font-mono font-semibold text-gray-900 dark:text-gray-100">{fwdImplied != null ? `${fwdImplied > 0 ? '+' : ''}${fwdImplied.toFixed(1)}%` : 'N/A'}</p>
+                                    </div>
+                                </div>
+                                {growthWasCapped && (
+                                    <p className="text-xs text-amber-600 dark:text-amber-400 mb-3">
+                                        ⚠ Historical growth ({rawGrowth5y?.toFixed(1)}%) exceeds {GROWTH_CAP}% cap — sustained growth at this rate over 5 years is economically unrealistic. Base scenario uses {GROWTH_CAP}%.
+                                    </p>
+                                )}
                             </div>
 
                             {/* 5Y Historical P/E with normalization */}
@@ -358,41 +447,16 @@ export function ScenarioLab({
                                 )}
                             </div>
 
-                            {/* EPS growth assumptions with normalization */}
+                            {/* Scenario growth sliders */}
                             <div>
-                                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">EPS Growth Assumptions</p>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm mb-3">
-                                    <div>
-                                        <p className="text-xs text-gray-400 dark:text-gray-500">Historical 3Y CAGR</p>
-                                        <p className="font-mono font-semibold text-gray-900 dark:text-gray-100">{epsCagr3y != null ? `${epsCagr3y > 0 ? '+' : ''}${epsCagr3y.toFixed(1)}%` : 'N/A'}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-gray-400 dark:text-gray-500">Historical 5Y CAGR</p>
-                                        <p className="font-mono font-semibold text-gray-900 dark:text-gray-100">{epsCagr5y != null ? `${epsCagr5y > 0 ? '+' : ''}${epsCagr5y.toFixed(1)}%` : 'N/A'}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-gray-400 dark:text-gray-500">Forward Implied (1Y)</p>
-                                        <p className="font-mono font-semibold text-gray-900 dark:text-gray-100">{forwardImpliedGrowth != null ? `${forwardImpliedGrowth > 0 ? '+' : ''}${forwardImpliedGrowth.toFixed(1)}%` : 'N/A'}</p>
-                                    </div>
+                                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Scenario EPS Growth (adjustable)</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <GrowthSlider label="Bear Growth" value={bearGrowth} onChange={setBearGrowth} colorClass="text-red-500" />
+                                    <GrowthSlider label="Base Growth" value={baseGrowth} onChange={setBaseGrowth} colorClass="text-blue-500" />
+                                    <GrowthSlider label="Bull Growth" value={bullGrowth} onChange={setBullGrowth} colorClass="text-green-500" />
                                 </div>
-                                {growthWasCapped && (
-                                    <p className="text-xs text-amber-600 dark:text-amber-400 mb-3">
-                                        ⚠ Growth normalized: historical {rawGrowth > GROWTH_CAP ? `${rawGrowth.toFixed(1)}%` : `${rawGrowth.toFixed(1)}%`} capped at {GROWTH_CAP}% — sustained {rawGrowth.toFixed(0)}% growth over 5 years is economically unrealistic.
-                                    </p>
-                                )}
-                                <label className="flex justify-between text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    <span>Long-term EPS Growth (adjustable)</span>
-                                    <span className="font-mono text-blue-600 dark:text-blue-400">{ddGrowth}%</span>
-                                </label>
-                                <input
-                                    type="range" min="-20" max="50" step="1" value={ddGrowth}
-                                    onChange={(e) => setDdGrowth(Number(e.target.value))}
-                                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-blue-600"
-                                />
                                 <div className="flex justify-between text-xs text-gray-400 mt-1">
-                                    <span>-20%</span>
-                                    <span>0%</span>
-                                    <span>+50%</span>
+                                    <span>-20%</span><span>0%</span><span>+50%</span>
                                 </div>
                             </div>
 
@@ -414,7 +478,7 @@ export function ScenarioLab({
                                 </div>
                             </div>
 
-                            {/* Bear/Base/Bull table */}
+                            {/* Bear/Base/Bull table — now with separate growth rates */}
                             <div className="overflow-x-auto">
                                 <table className="w-full text-sm">
                                     <thead>
@@ -427,10 +491,16 @@ export function ScenarioLab({
                                     </thead>
                                     <tbody className="font-mono">
                                         <tr className="border-b border-gray-100 dark:border-gray-800">
+                                            <td className="py-2 px-2 text-xs text-gray-500 dark:text-gray-400">EPS Growth</td>
+                                            <td className="text-right py-2 px-2 text-red-500">{bearGrowth > 0 ? '+' : ''}{bearGrowth}%</td>
+                                            <td className="text-right py-2 px-2 text-blue-500">{baseGrowth > 0 ? '+' : ''}{baseGrowth}%</td>
+                                            <td className="text-right py-2 px-2 text-green-500">{bullGrowth > 0 ? '+' : ''}{bullGrowth}%</td>
+                                        </tr>
+                                        <tr className="border-b border-gray-100 dark:border-gray-800">
                                             <td className="py-2 px-2 text-xs text-gray-500 dark:text-gray-400">{targetYear} EPS</td>
-                                            <td className="text-right py-2 px-2 text-gray-900 dark:text-gray-100">${ddProjectedEps.toFixed(2)}</td>
-                                            <td className="text-right py-2 px-2 text-gray-900 dark:text-gray-100">${ddProjectedEps.toFixed(2)}</td>
-                                            <td className="text-right py-2 px-2 text-gray-900 dark:text-gray-100">${ddProjectedEps.toFixed(2)}</td>
+                                            <td className="text-right py-2 px-2 text-gray-900 dark:text-gray-100">${bearProjEps.toFixed(2)}</td>
+                                            <td className="text-right py-2 px-2 text-gray-900 dark:text-gray-100">${baseProjEps.toFixed(2)}</td>
+                                            <td className="text-right py-2 px-2 text-gray-900 dark:text-gray-100">${bullProjEps.toFixed(2)}</td>
                                         </tr>
                                         <tr className="border-b border-gray-100 dark:border-gray-800">
                                             <td className="py-2 px-2 text-xs text-gray-500 dark:text-gray-400">P/E Multiple</td>
@@ -459,6 +529,24 @@ export function ScenarioLab({
                                     </tbody>
                                 </table>
                             </div>
+
+                            {/* Confidence / evidence details */}
+                            {hasConfidenceWarning && (
+                                <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+                                    <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider mb-2">Evidence Level</p>
+                                    <ul className="space-y-1">
+                                        {confidenceFlags.map((flag, i) => (
+                                            <li key={i} className="text-xs text-amber-600 dark:text-amber-400 flex items-start gap-2">
+                                                <span className="mt-0.5">⚠</span>
+                                                <span>{flag}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 italic">
+                                        Projection relies on normalization of extreme inputs — treat as directional, not precise.
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     )}
                 </>
