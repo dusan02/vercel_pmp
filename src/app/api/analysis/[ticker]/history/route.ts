@@ -333,6 +333,35 @@ export async function GET(
         const peImplied = peAligned.map(pt => pt.impliedPrice);
         const corrPE = (pePrices.length > 2) ? pearson(pePrices, peImplied) : null;
 
+        // --- EPS CAGR (3Y & 5Y) from historical per-share earnings ---
+        // Used by Data-Driven Scenario Lab as default growth rate.
+        // Guards against negative/zero EPS (CAGR undefined for sign changes).
+        function computeEpsCagr(years: number): number | null {
+            if (epsPerShareHistory.length < 2) return null;
+            const last = epsPerShareHistory[epsPerShareHistory.length - 1]!;
+            const lastDate = new Date(last.date);
+            const targetDate = new Date(lastDate);
+            targetDate.setFullYear(targetDate.getFullYear() - years);
+            // Find the point closest to (but not after) the target date
+            let candidate = epsPerShareHistory[0]!;
+            for (const pt of epsPerShareHistory) {
+                if (new Date(pt.date) <= targetDate) {
+                    candidate = pt;
+                } else {
+                    break;
+                }
+            }
+            const actualYears = (lastDate.getTime() - new Date(candidate.date).getTime())
+                / (365 * 24 * 60 * 60 * 1000);
+            if (actualYears < years * 0.8) return null; // not enough history
+            if (candidate.value <= 0 || last.value <= 0) return null; // CAGR undefined
+            const cagr = Math.pow(last.value / candidate.value, 1 / actualYears) - 1;
+            return parseFloat((cagr * 100).toFixed(2));
+        }
+
+        const epsCagr3y = computeEpsCagr(3);
+        const epsCagr5y = computeEpsCagr(5);
+
         const responseBody = {
             peHistory,
             psHistory,
@@ -359,6 +388,8 @@ export async function GET(
                 ps: latestPS !== null ? parseFloat((latestPS as number).toFixed(2)) : null,
             },
             stats: { pe: peStats, ps: psStats },
+            epsCagr3y,
+            epsCagr5y,
         };
 
         // Cache in Redis (1 hour TTL)

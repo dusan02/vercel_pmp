@@ -137,6 +137,12 @@ async function computeMetrics(symbol: string, tickerRecord?: any) {
         currentEps = ttmNetIncome / sharesOutstanding;
     }
 
+    // Forward P/E & implied forward EPS (market-implied next-year earnings)
+    const forwardPe = finnhubMetrics?.forwardPe ?? null;
+    const forwardEps = (forwardPe !== null && forwardPe > 0 && effectivePrice > 0)
+        ? effectivePrice / forwardPe
+        : null;
+
     // Prefer Finnhub pre-computed ratios, fallback to our calculations
     const debtToEquity = finnhubMetrics?.debtEquityRatio ?? ((totalDebt !== null && totalEquity !== null && totalEquity !== 0)
         ? totalDebt / totalEquity : null);
@@ -208,11 +214,14 @@ async function computeMetrics(symbol: string, tickerRecord?: any) {
             fcfYield,
             currentEps,
             currentPe,
+            forwardPe,
+            forwardEps,
             fcfMargin: cached.fcfMargin,
             fcfConversion: cached.fcfConversion
         },
         finnhub: finnhubMetrics ? {
             peRatio: finnhubMetrics.peRatio,
+            forwardPe: finnhubMetrics.forwardPe,
             pbRatio: finnhubMetrics.pbRatio,
             psRatio: finnhubMetrics.psRatio,
             evEbitda: finnhubMetrics.evEbitda,

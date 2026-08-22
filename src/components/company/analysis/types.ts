@@ -50,6 +50,8 @@ export interface AnalysisMetrics {
     fcfYield: number | null;
     currentEps: number | null;
     currentPe: number | null;
+    forwardPe: number | null;
+    forwardEps: number | null;
     fcfMargin: number | null;
     fcfConversion: number | null;
 }
@@ -123,6 +125,7 @@ export interface CorrelationData {
 
 export interface FinnhubMetrics {
     peRatio: number | null;
+    forwardPe: number | null;
     pbRatio: number | null;
     psRatio: number | null;
     evEbitda: number | null;
@@ -195,6 +198,10 @@ export interface AnalysisData {
     psHistory?: { date: string; value: number }[];
     valuationCurrent?: { pe: number | null; ps: number | null } | null;
     valuationStats?: { pe: RatioStats | null; ps: RatioStats | null } | null;
+
+    // EPS CAGR (historical, from per-share earnings history)
+    epsCagr3y?: number | null;
+    epsCagr5y?: number | null;
 
     // Finnhub pre-computed metrics (primary source for ratios)
     finnhub?: FinnhubMetrics | null;

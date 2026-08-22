@@ -173,6 +173,11 @@ export function AnalysisCharts({ ticker, data }: AnalysisChartsProps) {
                             currentPe={data.metrics.currentPe || 0}
                             currentPrice={Math.max(0, data.ticker?.lastPrice || data.ticker?.latestPrevClose || (data.metrics.currentEps || 0) * (data.metrics.currentPe || 0))}
                             priceHistory={data.priceHistory ?? []}
+                            forwardPe={data.metrics.forwardPe ?? null}
+                            forwardEps={data.metrics.forwardEps ?? null}
+                            peStats={data.valuationStats?.pe ?? null}
+                            epsCagr3y={data.epsCagr3y ?? null}
+                            epsCagr5y={data.epsCagr5y ?? null}
                         />
                     ) : (
                         <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-lg text-center border border-gray-100 dark:border-gray-700/50">
