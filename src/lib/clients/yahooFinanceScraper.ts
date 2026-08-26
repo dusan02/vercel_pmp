@@ -22,6 +22,19 @@ interface ProcessedEarnings {
   afterMarket: string[];
   totalFound: number;
   date: string;
+  items?: EarningsItemFull[];
+}
+
+interface EarningsItemFull {
+  ticker: string;
+  companyName: string;
+  time: string;
+  epsEstimate: number | null;
+  epsActual: number | null;
+  revenueEstimate: number | null;
+  revenueActual: number | null;
+  surprise: number | null;
+  surprisePercent: number | null;
 }
 
 /**
@@ -316,24 +329,36 @@ export async function checkYahooFinanceEarningsForOurTickers(date: string, proje
     // Rozdeľ podľa času reportovania
     const preMarket: string[] = [];
     const afterMarket: string[] = [];
+    const items: EarningsItemFull[] = [];
 
     for (const earning of ourEarnings) {
-      const time = earning.earningsCallTime?.toUpperCase();
-      if (time === 'BMO' || time === 'BEFORE MARKET OPEN') {
+      const rawTime = earning.earningsCallTime?.toUpperCase() || 'AMC';
+      const normalizedTime = rawTime === 'BMO' || rawTime === 'BEFORE MARKET OPEN' ? 'bmo'
+        : rawTime === 'DMT' ? 'dmt' : 'amc';
+      if (normalizedTime === 'bmo') {
         preMarket.push(earning.symbol);
-      } else if (time === 'AMC' || time === 'AFTER MARKET CLOSE' || time === 'DMT') {
-        afterMarket.push(earning.symbol);
       } else {
-        // Ak nie je špecifikovaný čas, pridaj do after market
         afterMarket.push(earning.symbol);
       }
+      items.push({
+        ticker: earning.symbol,
+        companyName: earning.company || earning.symbol,
+        time: normalizedTime,
+        epsEstimate: earning.epsEstimate ?? null,
+        epsActual: earning.reportedEps ?? null,
+        revenueEstimate: null, // Yahoo scraper doesn't extract revenue
+        revenueActual: null,
+        surprise: earning.surprise ?? null,
+        surprisePercent: null, // Yahoo scraper doesn't extract surprise %
+      });
     }
 
     const result: ProcessedEarnings = {
       preMarket,
       afterMarket,
       totalFound: ourEarnings.length,
-      date
+      date,
+      items
     };
 
     console.log(`📊 Yahoo Finance earnings breakdown for ${date}:`, {

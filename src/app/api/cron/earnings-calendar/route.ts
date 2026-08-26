@@ -23,11 +23,13 @@ import { verifyCronAuth } from '@/lib/utils/cronAuth';
 interface EarningsData {
   ticker: string;
   companyName: string;
-  time: string; // "before" or "after"
+  time: string; // "bmo" | "amc" | "dmt"
   epsEstimate?: number;
   epsActual?: number;
   revenueEstimate?: number;
   revenueActual?: number;
+  epsSurprisePercent?: number;
+  revenueSurprisePercent?: number;
 }
 
 /**
@@ -89,7 +91,9 @@ async function saveEarningsToDatabase(earningsData: EarningsData[], date: string
       epsEstimate: earning.epsEstimate || null,
       epsActual: earning.epsActual || null,
       revenueEstimate: earning.revenueEstimate || null,
-      revenueActual: earning.revenueActual || null
+      revenueActual: earning.revenueActual || null,
+      epsSurprisePercent: earning.epsSurprisePercent || null,
+      revenueSurprisePercent: earning.revenueSurprisePercent || null
     }));
 
     // Použij upsert pre každý záznam
@@ -118,17 +122,12 @@ async function saveEarningsToDatabase(earningsData: EarningsData[], date: string
 }
 
 /**
- * Získa earnings data z Yahoo Finance pre daný dátum
+ * Získa earnings data z Yahoo Finance / Finnhub pre daný dátum
  */
 async function fetchEarningsFromYahoo(date: string): Promise<EarningsData[]> {
   try {
-    console.log(`🔍 Fetching earnings data from Yahoo Finance for ${date}...`);
+    console.log(`🔍 Fetching earnings data for ${date}...`);
 
-    // Získaj všetky tickery
-    const allTickers = getAllTickers();
-    console.log(`📊 Total tickers to check: ${allTickers.length}`);
-
-    // Použij náš Yahoo Finance scraper
     const yahooResult = await checkEarningsForOurTickers(date, 'all');
 
     if (yahooResult.totalFound === 0) {
@@ -136,38 +135,50 @@ async function fetchEarningsFromYahoo(date: string): Promise<EarningsData[]> {
       return [];
     }
 
-    // Konvertuj výsledky do formátu pre databázu
+    // Ak máme full items (s EPS dátami), použijeme ich
+    if (yahooResult.items && yahooResult.items.length > 0) {
+      const earningsData: EarningsData[] = yahooResult.items.map(item => ({
+        ticker: item.ticker,
+        companyName: item.companyName,
+        time: item.time,
+        epsEstimate: item.epsEstimate ?? undefined,
+        epsActual: item.epsActual ?? undefined,
+        revenueEstimate: item.revenueEstimate ?? undefined,
+        revenueActual: item.revenueActual ?? undefined,
+        epsSurprisePercent: item.surprisePercent ?? undefined,
+      }));
+      console.log(`✅ Found ${earningsData.length} earnings records for ${date} (with EPS data)`);
+      return earningsData;
+    }
+
+    // Fallback: iba ticker + time (starý formát)
     const earningsData: EarningsData[] = [];
 
-    // Pre-market earnings (string array)
     if (yahooResult.preMarket && yahooResult.preMarket.length > 0) {
       yahooResult.preMarket.forEach(ticker => {
         earningsData.push({
           ticker: ticker,
-          companyName: ticker, // Budeme aktualizovať neskôr z Polygon API
-          time: 'before'
-          // Optional properties omitted (exactOptionalPropertyTypes: true)
+          companyName: ticker,
+          time: 'bmo'
         });
       });
     }
 
-    // After-market earnings (string array)
     if (yahooResult.afterMarket && yahooResult.afterMarket.length > 0) {
       yahooResult.afterMarket.forEach(ticker => {
         earningsData.push({
           ticker: ticker,
-          companyName: ticker, // Budeme aktualizovať neskôr z Polygon API
-          time: 'after'
-          // Optional properties omitted (exactOptionalPropertyTypes: true)
+          companyName: ticker,
+          time: 'amc'
         });
       });
     }
 
-    console.log(`✅ Found ${earningsData.length} earnings records for ${date}`);
+    console.log(`✅ Found ${earningsData.length} earnings records for ${date} (fallback, no EPS data)`);
     return earningsData;
 
   } catch (error) {
-    console.error('❌ Error fetching earnings from Yahoo Finance:', error);
+    console.error('❌ Error fetching earnings:', error);
     throw error;
   }
 }
