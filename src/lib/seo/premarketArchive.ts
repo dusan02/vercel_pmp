@@ -36,7 +36,7 @@ export async function getPremarketMoversFromDB(
           gte: sessionStart,
           lt: sessionEnd,
         },
-        changePct: { not: null },
+        // changePct is non-nullable in schema (Float, not Float?)
       },
       include: {
         ticker: {
@@ -161,14 +161,14 @@ export async function getPremarketDateSummaries(
           where: {
             session: 'pre',
             date: { gte: sessionStart, lt: sessionEnd },
-            changePct: { not: null },
+            // changePct is non-nullable in schema (Float, not Float?)
           },
         }),
         prisma.sessionPrice.findFirst({
           where: {
             session: 'pre',
             date: { gte: sessionStart, lt: sessionEnd },
-            changePct: { not: null },
+            // changePct is non-nullable in schema (Float, not Float?)
           },
           select: { symbol: true, changePct: true },
           orderBy: { changePct: 'desc' },
@@ -177,7 +177,7 @@ export async function getPremarketDateSummaries(
           where: {
             session: 'pre',
             date: { gte: sessionStart, lt: sessionEnd },
-            changePct: { not: null },
+            // changePct is non-nullable in schema (Float, not Float?)
           },
           select: { symbol: true, changePct: true },
           orderBy: { changePct: 'asc' },
