@@ -6,6 +6,7 @@ import { generateCompanyMetadata } from '@/lib/seo/metadata';
 import { getCompanyName } from '@/lib/companyNames';
 import { getProjectTickers } from '@/data/defaultTickers';
 import { AnalysisTabClient } from '@/components/company/AnalysisTabClient';
+import { formatPercent, formatPrice } from '@/lib/utils/heatmapFormat';
 
 export const revalidate = 60;
 
@@ -45,6 +46,49 @@ export async function generateStaticParams() {
   return tickers.map((t) => ({ ticker: t.toLowerCase() }));
 }
 
+/**
+ * Fetch recent significant moves from SessionPrice for the "Recent Market Moves"
+ * section. Same logic as /movers/[symbol] — |zScore| >= 2.0, last 30 days.
+ */
+async function getRecentSignificantMoves(symbol: string) {
+  try {
+    const since = new Date();
+    since.setDate(since.getDate() - 30);
+
+    const [positive, negative] = await Promise.all([
+      prisma.sessionPrice.findMany({
+        where: { symbol, date: { gte: since }, zScore: { gte: 2.0 } },
+        orderBy: { date: 'desc' },
+        take: 5,
+        select: { date: true, session: true, changePct: true, zScore: true, lastPrice: true },
+      }),
+      prisma.sessionPrice.findMany({
+        where: { symbol, date: { gte: since }, zScore: { lte: -2.0 } },
+        orderBy: { date: 'desc' },
+        take: 5,
+        select: { date: true, session: true, changePct: true, zScore: true, lastPrice: true },
+      }),
+    ]);
+
+    const all = [...positive, ...negative].sort(
+      (a, b) => b.date.getTime() - a.date.getTime()
+    );
+    return all.slice(0, 5);
+  } catch {
+    return [];
+  }
+}
+
+function formatSessionLabel(session: string): string {
+  const map: Record<string, string> = {
+    pre: 'Pre-market',
+    live: 'Regular',
+    after: 'After-hours',
+    closed: 'Closed',
+  };
+  return map[session] ?? session;
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { ticker } = await params;
   const tickerUpper = ticker.toUpperCase();
@@ -82,7 +126,7 @@ export default async function AnalysisPage({ params }: PageProps) {
     '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Home', item: baseUrl },
-      { '@type': 'ListItem', position: 2, name: 'Stocks', item: `${baseUrl}/stocks` },
+      { '@type': 'ListItem', position: 2, name: 'Stocks', item: `${baseUrl}/premarket-movers` },
       { '@type': 'ListItem', position: 3, name: `${companyName} (${tickerUpper})`, item: `${baseUrl}/analysis/${tickerUpper}` },
     ],
   };
@@ -113,7 +157,7 @@ export default async function AnalysisPage({ params }: PageProps) {
             <ol className="flex items-center space-x-2 text-sm">
               <li><Link href="/" className="text-gray-500 hover:text-blue-600 dark:text-gray-400">Home</Link></li>
               <li className="text-gray-400">/</li>
-              <li><Link href="/stocks" className="text-gray-500 hover:text-blue-600 dark:text-gray-400">Stocks</Link></li>
+              <li><Link href="/premarket-movers" className="text-gray-500 hover:text-blue-600 dark:text-gray-400">Stocks</Link></li>
               <li className="text-gray-400">/</li>
               <li className="text-gray-900 dark:text-gray-100 font-medium">{tickerUpper}</li>
             </ol>
@@ -123,6 +167,65 @@ export default async function AnalysisPage({ params }: PageProps) {
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {/* Full interactive analysis (client-side) */}
           <AnalysisTabClient ticker={tickerUpper} hideSearch />
+
+          {/* Recent Market Moves — from SessionPrice data */}
+          {await (async () => {
+            const recentMoves = await getRecentSignificantMoves(tickerUpper);
+            if (recentMoves.length === 0) return null;
+
+            return (
+              <div className="mt-8 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Recent Market Moves
+                  </h2>
+                  <Link
+                    href={`/movers/${tickerUpper}`}
+                    className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    See all {tickerUpper} moves →
+                  </Link>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
+                        <th className="px-3 py-2 font-medium">Date</th>
+                        <th className="px-3 py-2 font-medium">Session</th>
+                        <th className="px-3 py-2 font-medium">Price</th>
+                        <th className="px-3 py-2 font-medium">Move</th>
+                        <th className="px-3 py-2 font-medium">Z-Score</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recentMoves.map((m, i) => {
+                        const moveUp = m.changePct >= 0;
+                        return (
+                          <tr key={i} className="border-b border-gray-50 dark:border-gray-700/50">
+                            <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">
+                              {m.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            </td>
+                            <td className="px-3 py-2 text-gray-700 dark:text-gray-300">
+                              {formatSessionLabel(m.session)}
+                            </td>
+                            <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">
+                              {formatPrice(m.lastPrice)}
+                            </td>
+                            <td className={`px-3 py-2 tabular-nums font-semibold ${moveUp ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                              {formatPercent(m.changePct)}
+                            </td>
+                            <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">
+                              {m.zScore?.toFixed(2) ?? '—'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* SEO: Related stocks */}
           <div className="mt-8 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
@@ -139,7 +242,7 @@ export default async function AnalysisPage({ params }: PageProps) {
                     {t}
                   </Link>
                 ))}
-              <Link href="/stocks" className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30 text-sm font-medium text-blue-700 dark:text-blue-300 hover:bg-blue-100 transition-colors">
+              <Link href="/premarket-movers" className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30 text-sm font-medium text-blue-700 dark:text-blue-300 hover:bg-blue-100 transition-colors">
                 View all stocks →
               </Link>
             </div>

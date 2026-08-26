@@ -112,6 +112,46 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   // -------------------------------------------------------
+  // 3b. MOVER PAGES — /movers/[ticker]
+  //     Only include tickers with enough significant moves (quality filter).
+  //     A page with 0-2 moves is thin content → noindex on the page itself
+  //     and excluded from sitemap to avoid wasting crawl budget.
+  // -------------------------------------------------------
+  const moverPages: MetadataRoute.Sitemap = [];
+  try {
+    const since = new Date();
+    since.setDate(since.getDate() - 30);
+
+    // Count significant moves (|zScore| >= 2.0) per ticker in last 30 days
+    const moveCounts = await prisma.sessionPrice.groupBy({
+      by: ['symbol'],
+      where: {
+        symbol: { in: allTickers },
+        date: { gte: since },
+        OR: [
+          { zScore: { gte: 2.0 } },
+          { zScore: { lte: -2.0 } },
+        ],
+      },
+      _count: { _all: true },
+    });
+
+    // Filter in JS — only tickers with >= 3 significant moves (quality threshold)
+    for (const row of moveCounts) {
+      if (row._count._all >= 3) {
+        moverPages.push({
+          url: `${baseUrl}/movers/${row.symbol}`,
+          lastModified: currentDate,
+          changeFrequency: 'daily' as const,
+          priority: 0.75,
+        });
+      }
+    }
+  } catch {
+    // Fallback: no mover pages if DB unavailable
+  }
+
+  // -------------------------------------------------------
   // 4. SECTOR PAGES — /sectors/[sector]
   // -------------------------------------------------------
   const sectors = [
@@ -205,6 +245,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     ...mainPages,
     ...analysisPages,
+    ...moverPages,
     ...sectorPages,
     ...archivePages,
     ...earningsPages,
