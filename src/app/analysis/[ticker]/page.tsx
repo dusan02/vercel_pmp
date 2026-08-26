@@ -221,28 +221,28 @@ function SeoAnalysisSummary({
     rows.push({ label: 'EV/EBITDA', value: metrics.evEbitda.toFixed(2) });
   }
   if (metrics?.roe != null) {
-    rows.push({ label: 'ROE', value: formatPct(metrics.roe * 100) });
+    rows.push({ label: 'ROE', value: formatPct(metrics.roe) });
   }
   if (metrics?.roa != null) {
-    rows.push({ label: 'ROA', value: formatPct(metrics.roa * 100) });
+    rows.push({ label: 'ROA', value: formatPct(metrics.roa) });
   }
   if (metrics?.grossMargin != null) {
-    rows.push({ label: 'Gross Margin', value: formatPct(metrics.grossMargin * 100) });
+    rows.push({ label: 'Gross Margin', value: formatPct(metrics.grossMargin) });
   }
   if (metrics?.netMargin != null) {
-    rows.push({ label: 'Net Margin', value: formatPct(metrics.netMargin * 100) });
+    rows.push({ label: 'Net Margin', value: formatPct(metrics.netMargin) });
   }
   if (cache?.revenueCagr != null) {
-    rows.push({ label: 'Revenue CAGR', value: formatPct(cache.revenueCagr * 100) });
+    rows.push({ label: 'Revenue CAGR', value: formatPct(cache.revenueCagr) });
   }
   if (cache?.netIncomeCagr != null) {
-    rows.push({ label: 'Net Income CAGR', value: formatPct(cache.netIncomeCagr * 100) });
+    rows.push({ label: 'Net Income CAGR', value: formatPct(cache.netIncomeCagr) });
   }
   if (metrics?.revenueGrowth != null) {
-    rows.push({ label: 'Revenue Growth (YoY)', value: formatPct(metrics.revenueGrowth * 100) });
+    rows.push({ label: 'Revenue Growth (YoY)', value: formatPct(metrics.revenueGrowth) });
   }
   if (metrics?.earningsGrowth != null) {
-    rows.push({ label: 'Earnings Growth (YoY)', value: formatPct(metrics.earningsGrowth * 100) });
+    rows.push({ label: 'Earnings Growth (YoY)', value: formatPct(metrics.earningsGrowth) });
   }
   if (metrics?.currentRatio != null) {
     rows.push({ label: 'Current Ratio', value: formatRatio(metrics.currentRatio, '') });
@@ -312,13 +312,13 @@ function SeoAnalysisSummary({
 
   const growthParts: string[] = [];
   if (cache?.revenueCagr != null) {
-    growthParts.push(`revenue CAGR of ${formatPct(cache.revenueCagr * 100)}`);
+    growthParts.push(`revenue CAGR of ${formatPct(cache.revenueCagr)}`);
   }
   if (cache?.netIncomeCagr != null) {
-    growthParts.push(`net income CAGR of ${formatPct(cache.netIncomeCagr * 100)}`);
+    growthParts.push(`net income CAGR of ${formatPct(cache.netIncomeCagr)}`);
   }
   if (metrics?.revenueGrowth != null) {
-    growthParts.push(`revenue growth of ${formatPct(metrics.revenueGrowth * 100)} YoY`);
+    growthParts.push(`revenue growth of ${formatPct(metrics.revenueGrowth)} YoY`);
   }
 
   if (growthParts.length > 0) {
