@@ -49,7 +49,7 @@ export async function generateStaticParams() {
 function percentile(sorted: number[], p: number): number {
   if (sorted.length === 0) return 0;
   const idx = Math.min(Math.floor(sorted.length * p), sorted.length - 1);
-  return sorted[idx];
+  return sorted[idx] ?? 0;
 }
 
 function computeStats(values: number[]) {
