@@ -1,10 +1,14 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { generatePageMetadata } from '@/lib/seo/metadata';
-import { detectSession, mapToRedisSession } from '@/lib/utils/timeUtils';
 import { formatPercent, formatPrice } from '@/lib/utils/heatmapFormat';
 import { formatSectorName } from '@/lib/utils/format';
-import { getDateET, getManyLastWithDate, getRankedSymbols } from '@/lib/redis/ranking';
+import { getDateET } from '@/lib/redis/ranking';
+import {
+  getPremarketMoversFromDB,
+  getAdjacentPremarketDates,
+  type PremarketArchiveRow,
+} from '@/lib/seo/premarketArchive';
 
 export const revalidate = 3600; // 1 hour — archive pages are less volatile
 
@@ -35,38 +39,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   });
 }
 
-type Row = {
-  symbol: string;
-  name?: string;
-  sector?: string;
-  price?: number;
-  changePct?: number;
-};
-
-async function getGainers(dateOverride: string, limit: number): Promise<Row[]> {
-  try {
-    const detected = detectSession();
-    const mapped = detected === 'closed' ? 'after' : (detected as 'pre' | 'live' | 'after');
-    const session = mapToRedisSession(mapped) ?? 'after';
-
-    const symbols = await getRankedSymbols(dateOverride, session, 'chg', 'desc', 0, limit);
-    const last = await getManyLastWithDate(dateOverride, session, symbols);
-
-    return symbols.map((symbol) => {
-      const d = last.get(symbol) ?? {};
-      return {
-        symbol,
-        name: d.name,
-        sector: d.sector,
-        price: d.p,
-        changePct: d.change_pct,
-      };
-    });
-  } catch {
-    return [];
-  }
-}
-
 export default async function PremarketGainersDatePage({ params }: PageProps) {
   const { date } = await params;
 
@@ -85,7 +57,10 @@ export default async function PremarketGainersDatePage({ params }: PageProps) {
   const display = formatDateDisplay(date);
   const todayStr = getDateET();
   const isToday = date === todayStr;
-  const rows = await getGainers(date, 50);
+
+  // PostgreSQL is the source of truth — no Redis dependency
+  const rows: PremarketArchiveRow[] = await getPremarketMoversFromDB(date, 'desc', 50);
+  const { prev, next } = await getAdjacentPremarketDates(date);
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-900">
@@ -102,6 +77,40 @@ export default async function PremarketGainersDatePage({ params }: PageProps) {
             {rows[0] && ` Top gainer: ${rows[0].name ?? rows[0].symbol} (${rows[0].symbol}) at ${formatPercent(rows[0].changePct ?? 0)}.`}
           </p>
         </div>
+
+        {/* Date navigation */}
+        <nav className="mb-6 flex items-center gap-3 text-sm">
+          {prev ? (
+            <Link
+              href={`/premarket-gainers/${prev}`}
+              className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+            >
+              ← {formatDateDisplay(prev)}
+            </Link>
+          ) : (
+            <span className="px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-300 dark:text-slate-700 cursor-not-allowed">
+              ← No earlier data
+            </span>
+          )}
+          {next ? (
+            <Link
+              href={`/premarket-gainers/${next}`}
+              className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+            >
+              {formatDateDisplay(next)} →
+            </Link>
+          ) : (
+            <span className="px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-300 dark:text-slate-700 cursor-not-allowed">
+              No later data →
+            </span>
+          )}
+          <Link
+            href={`/premarket-losers/${date}`}
+            className="ml-auto px-3 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-colors"
+          >
+            View Losers for {display} ↓
+          </Link>
+        </nav>
 
         {/* SEO content */}
         <section className="mb-8 max-w-4xl">
@@ -148,7 +157,7 @@ export default async function PremarketGainersDatePage({ params }: PageProps) {
                           {formatSectorName(sector)}
                         </Link>
                       </td>
-                      <td className="px-4 py-2 tabular-nums text-slate-700 dark:text-slate-300">{formatPrice(r.price)}</td>
+                      <td className="px-4 py-2 tabular-nums text-slate-700 dark:text-slate-300">{formatPrice(r.price ?? undefined)}</td>
                       <td className="px-4 py-2 tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">{formatPercent(r.changePct ?? 0)}</td>
                     </tr>
                   );

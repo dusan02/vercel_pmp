@@ -6,6 +6,8 @@ import { formatMarketCapDiff, formatPercent, formatPrice } from '@/lib/utils/hea
 import { formatSectorName } from '@/lib/utils/format';
 import { getDateET, getManyLastWithDate, getRankedSymbols } from '@/lib/redis/ranking';
 import { SsrMoverLinksCombined } from '@/components/seo/SsrMoverLinks';
+import { getPremarketDateSummaries } from '@/lib/seo/premarketArchive';
+import { formatPercent } from '@/lib/utils/heatmapFormat';
 
 export const revalidate = 60;
 
@@ -160,7 +162,11 @@ function MoversTable({ title, rows }: { title: string; rows: MoverRow[] }) {
 }
 
 export default async function PremarketMoversPage() {
-  const [gainers, losers] = await Promise.all([getTopMovers('desc', 50), getTopMovers('asc', 50)]);
+  const [gainers, losers, archiveDates] = await Promise.all([
+    getTopMovers('desc', 50),
+    getTopMovers('asc', 50),
+    getPremarketDateSummaries(7),
+  ]);
   const today = getTodayFormatted();
   const topGainer = gainers[0];
   const topLoser = losers[0];
@@ -202,6 +208,62 @@ export default async function PremarketMoversPage() {
           <MoversTable title="Top Gainers" rows={gainers} />
           <MoversTable title="Top Losers" rows={losers} />
         </div>
+
+        {/* Historical premarket archive — links to past dates from PostgreSQL */}
+        {archiveDates.length > 0 && (
+          <section className="mt-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-3">
+              Historical Premarket Movers
+            </h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+              Browse pre-market gainers and losers from previous trading days. Each date shows the top mover in each direction.
+            </p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50 dark:bg-slate-950">
+                  <tr className="text-left text-slate-600 dark:text-slate-400">
+                    <th className="px-3 py-2">Date</th>
+                    <th className="px-3 py-2">Tickers</th>
+                    <th className="px-3 py-2">Top Gainer</th>
+                    <th className="px-3 py-2">Top Loser</th>
+                    <th className="px-3 py-2">Links</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {archiveDates.map((d) => {
+                    const dateDisplay = new Date(d.date + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                    return (
+                      <tr key={d.date} className="border-t border-slate-100 dark:border-slate-800">
+                        <td className="px-3 py-2 font-medium text-slate-700 dark:text-slate-300">{dateDisplay}</td>
+                        <td className="px-3 py-2 tabular-nums text-slate-600 dark:text-slate-400">{d.totalTickers}</td>
+                        <td className="px-3 py-2">
+                          {d.topGainer ? (
+                            <span className="tabular-nums">
+                              <Link href={`/analysis/${d.topGainer.symbol}`} className="font-semibold text-slate-700 dark:text-slate-300 hover:underline">{d.topGainer.symbol}</Link>
+                              <span className="ml-2 text-emerald-600 dark:text-emerald-400">{formatPercent(d.topGainer.changePct)}</span>
+                            </span>
+                          ) : '—'}
+                        </td>
+                        <td className="px-3 py-2">
+                          {d.topLoser ? (
+                            <span className="tabular-nums">
+                              <Link href={`/analysis/${d.topLoser.symbol}`} className="font-semibold text-slate-700 dark:text-slate-300 hover:underline">{d.topLoser.symbol}</Link>
+                              <span className="ml-2 text-rose-600 dark:text-rose-400">{formatPercent(d.topLoser.changePct)}</span>
+                            </span>
+                          ) : '—'}
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap">
+                          <Link href={`/premarket-gainers/${d.date}`} className="text-emerald-600 dark:text-emerald-400 hover:underline mr-3">Gainers →</Link>
+                          <Link href={`/premarket-losers/${d.date}`} className="text-rose-600 dark:text-rose-400 hover:underline">Losers →</Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
 
         {/* Internal linking */}
         <nav className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800">
