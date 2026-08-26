@@ -3,7 +3,7 @@ import { generatePageMetadata } from '@/lib/seo/metadata';
 import { StructuredData } from '@/components/StructuredData';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { getEarningsRange, type EarningsSSRRow } from '@/lib/seo/earningsSSR';
+import { getEarningsRange, type EarningsSSRRow, type EarningsSSRGroup } from '@/lib/seo/earningsSSR';
 import { formatPercent } from '@/lib/utils/heatmapFormat';
 
 const baseUrl = 'https://premarketprice.com';
@@ -97,7 +97,7 @@ function EarningsRow({ row }: { row: EarningsSSRRow }) {
   );
 }
 
-function EarningsDaySection({ group }: { group: ReturnType<typeof getEarningsRange>[0] }) {
+function EarningsDaySection({ group }: { group: EarningsSSRGroup }) {
   if (group.total === 0) return null;
   const allRows = [...group.preMarket, ...group.afterMarket, ...group.timeTbd];
 
