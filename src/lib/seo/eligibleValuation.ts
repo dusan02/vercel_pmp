@@ -75,9 +75,10 @@ export async function hasValuationData(symbol: string): Promise<boolean> {
  */
 export async function getValuationHistory(symbol: string) {
   try {
+    // Get the most recent 500 observations (descending then reverse for chronological order)
     const rows = await prisma.dailyValuationHistory.findMany({
       where: { symbol },
-      orderBy: { date: 'asc' },
+      orderBy: { date: 'desc' },
       take: 500,
       select: {
         date: true,
@@ -90,7 +91,7 @@ export async function getValuationHistory(symbol: string) {
         marketCap: true,
       },
     });
-    return rows;
+    return rows.reverse(); // chronological order (oldest first)
   } catch {
     return [];
   }
