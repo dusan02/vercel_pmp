@@ -24,12 +24,12 @@ interface EarningsData {
   ticker: string;
   companyName: string;
   time: string; // "bmo" | "amc" | "dmt"
-  epsEstimate?: number;
-  epsActual?: number;
-  revenueEstimate?: number;
-  revenueActual?: number;
-  epsSurprisePercent?: number;
-  revenueSurprisePercent?: number;
+  epsEstimate?: number | undefined;
+  epsActual?: number | undefined;
+  revenueEstimate?: number | undefined;
+  revenueActual?: number | undefined;
+  epsSurprisePercent?: number | undefined;
+  revenueSurprisePercent?: number | undefined;
 }
 
 /**
