@@ -42,12 +42,22 @@ const TAB_META: Record<string, { title: string; description: string; canonical: 
   analysis: {
     title: 'Stock Analysis — Technical & Fundamental Data | PreMarketPrice',
     description: 'Deep-dive stock analysis including pre-market price, technical indicators, earnings history, valuation scores, and financial health metrics.',
-    canonical: `${baseUrl}/analysis`,
+    canonical: `${baseUrl}/stocks`,
   },
   portfolio: {
     title: 'My Portfolio — Track Your Pre-Market Holdings | PreMarketPrice',
     description: 'Track your personalized portfolio with real-time pre-market prices, % change, and market cap data for your favorite US stocks.',
     canonical: `${baseUrl}/?tab=portfolio`,
+  },
+  favorites: {
+    title: 'My Favorites — Track Your Watchlist | PreMarketPrice',
+    description: 'Track your favorite US stocks with real-time pre-market prices and % change.',
+    canonical: baseUrl,
+  },
+  blog: {
+    title: 'Daily Market Blog — Pre-Market Analysis & Insights | PreMarketPrice',
+    description: 'Daily pre-market analysis, stock movers, earnings recaps, and market insights.',
+    canonical: `${baseUrl}/blog`,
   },
 };
 
@@ -86,7 +96,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   // Other tabs
   if (tab && TAB_META[tab]) {
     const { title, description, canonical } = TAB_META[tab];
-    const isNoIndex = tab === 'portfolio'; // User-specific content — don't index
+    const isNoIndex = tab === 'portfolio' || tab === 'favorites'; // User-specific content — don't index
     return {
       title,
       description,

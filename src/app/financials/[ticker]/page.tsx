@@ -172,8 +172,8 @@ export default async function FinancialsPage({ params }: PageProps) {
 
   // Revenue trend
   if (trendData.length >= 2) {
-    const latest = trendData[trendData.length - 1]!!;
-    const previous = trendData[trendData.length - 2]!!;
+    const latest = trendData[trendData.length - 1]!;
+    const previous = trendData[trendData.length - 2]!;
     const revGrowth = yoyChange(latest.revenue!, previous.revenue!);
     const niGrowth = yoyChange(latest.netIncome!, previous.netIncome!);
 
