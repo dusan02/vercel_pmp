@@ -194,6 +194,9 @@ export default async function Page() {
 
   // All eligible tickers for crawlable internal links (SEO discovery)
   const allTickersForNav = await getEligibleAnalysisTickers();
+  // Only include top 50 by hardcoded priority in sr-only nav.
+  // Full discovery is handled by /stocks hub page (server-rendered, 700 tickers).
+  const topTickersForNav = allTickersForNav.slice(0, 50);
 
   return (
     <>
@@ -206,14 +209,11 @@ export default async function Page() {
         <Link href="/stocks">All Stocks</Link>
         <Link href="/heatmap">Market Heatmap</Link>
         <Link href="/earnings">Earnings Calendar</Link>
-        {/* All analysis + stock pages — help Googlebot discover every ticker */}
-        {allTickersForNav.map((ticker) => (
+        {/* Top 50 tickers for crawl priority. Remaining 650 are discoverable via /stocks hub. */}
+        {topTickersForNav.map((ticker) => (
           <span key={ticker}>
             <Link href={`/analysis/${ticker}`}>
               {getCompanyName(ticker)} ({ticker}) Analysis
-            </Link>
-            <Link href={`/analysis/${ticker}`}>
-              {getCompanyName(ticker)} ({ticker}) Stock
             </Link>
           </span>
         ))}
