@@ -24,17 +24,21 @@ export async function getPremarketMoversFromDB(
   limit: number = 50,
 ): Promise<PremarketArchiveRow[]> {
   try {
-    // SessionPrice.date is stored as epoch ms representing the session start (04:00 ET = 08:00 UTC)
-    // For a given YYYY-MM-DD, the pre-market session starts at 08:00 UTC
+    // SessionPrice.date is stored as epoch ms representing the session start in ET (04:00 ET = 08:00 UTC)
+    // But the DB stores it as 04:00 ET which is 08:00 UTC = dateStr + 'T08:00:00Z'
+    // However, Prisma stores DateTime as ISO string, so we query with the exact ET date
+    // The session start for YYYY-MM-DD is stored as that date at 04:00 ET (08:00 UTC)
     const sessionStart = new Date(dateStr + 'T08:00:00Z');
-    const sessionEnd = new Date(sessionStart.getTime() + 24 * 60 * 60 * 1000);
+    // Use a wide window (full day) to catch any timezone edge cases
+    const dayStart = new Date(dateStr + 'T00:00:00Z');
+    const dayEnd = new Date(dateStr + 'T23:59:59Z');
 
     const rows = await prisma.sessionPrice.findMany({
       where: {
         session: 'pre',
         date: {
-          gte: sessionStart,
-          lt: sessionEnd,
+          gte: dayStart,
+          lte: dayEnd,
         },
         // changePct is non-nullable in schema (Float, not Float?)
       },
@@ -99,23 +103,25 @@ export async function getAdjacentPremarketDates(
   currentDate: string,
 ): Promise<{ prev: string | null; next: string | null }> {
   try {
-    const current = new Date(currentDate + 'T08:00:00Z');
+    // Use start of current date as boundary (DB stores 04:00 UTC = 00:00 ET)
+    const dayStart = new Date(currentDate + 'T00:00:00Z');
 
-    // Previous date (before current)
+    // Previous date (before current day start)
     const prevRow = await prisma.sessionPrice.findFirst({
       where: {
         session: 'pre',
-        date: { lt: current },
+        date: { lt: dayStart },
       },
       select: { date: true },
       orderBy: { date: 'desc' },
     });
 
-    // Next date (after current)
+    // Next date (after current day end)
+    const dayEnd = new Date(currentDate + 'T23:59:59Z');
     const nextRow = await prisma.sessionPrice.findFirst({
       where: {
         session: 'pre',
-        date: { gt: current },
+        date: { gt: dayEnd },
       },
       select: { date: true },
       orderBy: { date: 'asc' },
@@ -153,22 +159,20 @@ export async function getPremarketDateSummaries(
     const summaries: PremarketDateSummary[] = [];
 
     for (const dateStr of dates) {
-      const sessionStart = new Date(dateStr + 'T08:00:00Z');
-      const sessionEnd = new Date(sessionStart.getTime() + 24 * 60 * 60 * 1000);
+      const dayStart = new Date(dateStr + 'T00:00:00Z');
+      const dayEnd = new Date(dateStr + 'T23:59:59Z');
 
       const [count, topGainer, topLoser] = await Promise.all([
         prisma.sessionPrice.count({
           where: {
             session: 'pre',
-            date: { gte: sessionStart, lt: sessionEnd },
-            // changePct is non-nullable in schema (Float, not Float?)
+            date: { gte: dayStart, lte: dayEnd },
           },
         }),
         prisma.sessionPrice.findFirst({
           where: {
             session: 'pre',
-            date: { gte: sessionStart, lt: sessionEnd },
-            // changePct is non-nullable in schema (Float, not Float?)
+            date: { gte: dayStart, lte: dayEnd },
           },
           select: { symbol: true, changePct: true },
           orderBy: { changePct: 'desc' },
@@ -176,8 +180,7 @@ export async function getPremarketDateSummaries(
         prisma.sessionPrice.findFirst({
           where: {
             session: 'pre',
-            date: { gte: sessionStart, lt: sessionEnd },
-            // changePct is non-nullable in schema (Float, not Float?)
+            date: { gte: dayStart, lte: dayEnd },
           },
           select: { symbol: true, changePct: true },
           orderBy: { changePct: 'asc' },
