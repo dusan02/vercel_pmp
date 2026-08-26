@@ -172,8 +172,8 @@ export default async function FinancialsPage({ params }: PageProps) {
 
   // Revenue trend
   if (trendData.length >= 2) {
-    const latest = trendData[trendData.length - 1];
-    const previous = trendData[trendData.length - 2];
+    const latest = trendData[trendData.length - 1]!!;
+    const previous = trendData[trendData.length - 2]!!;
     const revGrowth = yoyChange(latest.revenue!, previous.revenue!);
     const niGrowth = yoyChange(latest.netIncome!, previous.netIncome!);
 
@@ -193,8 +193,8 @@ export default async function FinancialsPage({ params }: PageProps) {
 
   // Multi-period revenue trend (if >=4 annual statements)
   if (trendData.length >= 4) {
-    const first = trendData[0];
-    const last = trendData[trendData.length - 1];
+    const first = trendData[0]!;
+    const last = trendData[trendData.length - 1]!;
     const totalGrowth = yoyChange(last.revenue!, first.revenue!);
     if (totalGrowth != null) {
       const yearsSpan = last.fiscalYear - first.fiscalYear;
@@ -208,8 +208,8 @@ export default async function FinancialsPage({ params }: PageProps) {
 
   // Balance sheet commentary
   if (trendData.length >= 2) {
-    const latest = trendData[trendData.length - 1];
-    const previous = trendData[trendData.length - 2];
+    const latest = trendData[trendData.length - 1]!;
+    const previous = trendData[trendData.length - 2]!;
     if (latest.totalDebt != null && previous.totalDebt != null) {
       const debtChange = ((latest.totalDebt - previous.totalDebt) / Math.abs(previous.totalDebt || 1)) * 100;
       if (Math.abs(debtChange) < 5) {
@@ -237,8 +237,8 @@ export default async function FinancialsPage({ params }: PageProps) {
 
   // Cash flow commentary
   if (trendData.length >= 2) {
-    const latest = trendData[trendData.length - 1];
-    const previous = trendData[trendData.length - 2];
+    const latest = trendData[trendData.length - 1]!;
+    const previous = trendData[trendData.length - 2]!;
     if (latest.operatingCashFlow != null && previous.operatingCashFlow != null) {
       const ocfGrowth = yoyChange(latest.operatingCashFlow, previous.operatingCashFlow);
       if (ocfGrowth != null) {
@@ -251,7 +251,7 @@ export default async function FinancialsPage({ params }: PageProps) {
 
   // Profitability summary
   if (trendData.length >= 1) {
-    const latest = trendData[trendData.length - 1];
+    const latest = trendData[trendData.length - 1]!;
     if (latest.revenue! > 0 && latest.netIncome != null) {
       const netMargin = (latest.netIncome / latest.revenue!) * 100;
       let marginAssessment: string;
@@ -306,7 +306,7 @@ export default async function FinancialsPage({ params }: PageProps) {
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
               Historical financial data — {statements.length} statements covering
-              {trendData.length > 0 && ` FY${trendData[0].fiscalYear}–FY${trendData[trendData.length - 1].fiscalYear}`}
+              {trendData.length > 0 && ` FY${trendData[0]!.fiscalYear}–FY${trendData[trendData.length - 1]!.fiscalYear}`}
             </p>
 
             {/* Natural-language summary */}
@@ -388,14 +388,14 @@ export default async function FinancialsPage({ params }: PageProps) {
                   Balance Sheet Summary (Latest Period)
                 </h2>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-                  <BalanceSheetItem label="Total Assets" value={trendData[trendData.length - 1].totalAssets} />
-                  <BalanceSheetItem label="Total Liabilities" value={trendData[trendData.length - 1].totalLiabilities} />
-                  <BalanceSheetItem label="Total Equity" value={trendData[trendData.length - 1].totalEquity} />
-                  <BalanceSheetItem label="Cash & Equivalents" value={trendData[trendData.length - 1].cashAndEquivalents} />
-                  <BalanceSheetItem label="Total Debt" value={trendData[trendData.length - 1].totalDebt} />
-                  <BalanceSheetItem label="Current Assets" value={trendData[trendData.length - 1].currentAssets} />
-                  <BalanceSheetItem label="Current Liabilities" value={trendData[trendData.length - 1].currentLiabilities} />
-                  <BalanceSheetItem label="Retained Earnings" value={trendData[trendData.length - 1].retainedEarnings} />
+                  <BalanceSheetItem label="Total Assets" value={trendData[trendData.length - 1]!.totalAssets} />
+                  <BalanceSheetItem label="Total Liabilities" value={trendData[trendData.length - 1]!.totalLiabilities} />
+                  <BalanceSheetItem label="Total Equity" value={trendData[trendData.length - 1]!.totalEquity} />
+                  <BalanceSheetItem label="Cash & Equivalents" value={trendData[trendData.length - 1]!.cashAndEquivalents} />
+                  <BalanceSheetItem label="Total Debt" value={trendData[trendData.length - 1]!.totalDebt} />
+                  <BalanceSheetItem label="Current Assets" value={trendData[trendData.length - 1]!.currentAssets} />
+                  <BalanceSheetItem label="Current Liabilities" value={trendData[trendData.length - 1]!.currentLiabilities} />
+                  <BalanceSheetItem label="Retained Earnings" value={trendData[trendData.length - 1]!.retainedEarnings} />
                 </div>
               </>
             )}
