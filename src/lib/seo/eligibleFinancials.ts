@@ -36,8 +36,8 @@ export async function getEligibleFinancialsTickers(): Promise<string[]> {
           { totalEquity: { not: null } },
         ],
       },
-      _count: { _all: true },
-      having: { _all: { _count: { gte: 4 } } },
+      _count: { revenue: true },
+      having: { revenue: { _count: { gte: 4 } } },
     });
     return tickers.map((t) => t.symbol).sort();
   } catch {
