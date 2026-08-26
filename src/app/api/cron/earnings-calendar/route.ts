@@ -137,16 +137,30 @@ async function fetchEarningsFromYahoo(date: string): Promise<EarningsData[]> {
 
     // Ak máme full items (s EPS dátami), použijeme ich
     if (yahooResult.items && yahooResult.items.length > 0) {
-      const earningsData: EarningsData[] = yahooResult.items.map(item => ({
-        ticker: item.ticker,
-        companyName: item.companyName,
-        time: item.time,
-        epsEstimate: item.epsEstimate ?? undefined,
-        epsActual: item.epsActual ?? undefined,
-        revenueEstimate: item.revenueEstimate ?? undefined,
-        revenueActual: item.revenueActual ?? undefined,
-        epsSurprisePercent: item.surprisePercent ?? undefined,
-      }));
+      const earningsData: EarningsData[] = yahooResult.items.map(item => {
+        // Compute epsSurprisePercent if both estimate and actual are available
+        // but Finnhub didn't return it
+        let epsSurprisePercent = item.surprisePercent ?? undefined;
+        if (epsSurprisePercent === undefined && item.epsEstimate != null && item.epsActual != null && item.epsEstimate !== 0) {
+          epsSurprisePercent = ((item.epsActual - item.epsEstimate) / Math.abs(item.epsEstimate)) * 100;
+        }
+        // Compute revenueSurprisePercent similarly
+        let revenueSurprisePercent: number | undefined = undefined;
+        if (item.revenueEstimate != null && item.revenueActual != null && item.revenueEstimate !== 0) {
+          revenueSurprisePercent = ((item.revenueActual - item.revenueEstimate) / Math.abs(item.revenueEstimate)) * 100;
+        }
+        return {
+          ticker: item.ticker,
+          companyName: item.companyName,
+          time: item.time,
+          epsEstimate: item.epsEstimate ?? undefined,
+          epsActual: item.epsActual ?? undefined,
+          revenueEstimate: item.revenueEstimate ?? undefined,
+          revenueActual: item.revenueActual ?? undefined,
+          epsSurprisePercent,
+          revenueSurprisePercent,
+        };
+      });
       console.log(`✅ Found ${earningsData.length} earnings records for ${date} (with EPS data)`);
       return earningsData;
     }
