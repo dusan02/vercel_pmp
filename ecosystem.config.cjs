@@ -175,6 +175,25 @@ module.exports = {
       autorestart: false,
     },
     {
+      name: "cron-update-ticker-stats",
+      script: "scripts/trigger-update-ticker-stats.ts",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
+      cwd: __dirname,
+      instances: 1,
+      exec_mode: "fork",
+      env_production: {
+        NODE_ENV: "production",
+        BASE_URL: "http://127.0.0.1:3001",
+        CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || envVars.CRON_SECRET || process.env.CRON_SECRET_KEY || process.env.CRON_SECRET,
+      },
+      error_file: path.join(__dirname, "logs", "pm2", "cron-update-ticker-stats-error.log"),
+      out_file: path.join(__dirname, "logs", "pm2", "cron-update-ticker-stats-out.log"),
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      // Daily at 06:00 UTC (02:00 ET) — before pre-market open (4:00 ET)
+      cron_restart: "0 6 * * *",
+      autorestart: false,
+    },
+    {
       name: "post-market-daily-reset",
       script: "scripts/post-market-reset.ts",
       interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
