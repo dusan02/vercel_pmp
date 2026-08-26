@@ -61,7 +61,7 @@ function computeStats(values: number[]) {
   const median = percentile(sorted, 0.5);
   const p25 = percentile(sorted, 0.25);
   const p75 = percentile(sorted, 0.75);
-  const current = valid[valid.length - 1]; // last value chronologically
+  const current = valid[valid.length - 1] ?? sorted[sorted.length - 1] ?? 0; // last value chronologically
   // Percentile rank of current value within historical range
   const below = sorted.filter((v) => v < current).length;
   const currentPercentile = Math.round((below / sorted.length) * 100);
