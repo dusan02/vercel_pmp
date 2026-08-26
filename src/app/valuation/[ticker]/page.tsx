@@ -52,7 +52,7 @@ function percentile(sorted: number[], p: number): number {
   return sorted[idx] ?? 0;
 }
 
-function computeStats(values: number[]) {
+function computeStats(values: (number | null | undefined)[]) {
   const valid = values.filter((v) => v != null && v > 0 && isFinite(v));
   if (valid.length === 0) return null;
   const sorted = [...valid].sort((a, b) => a - b);
