@@ -96,7 +96,7 @@ function MoversTable({ title, rows }: { title: string; rows: MoverRow[] }) {
                     : 'text-slate-600 dark:text-slate-400';
 
               const sector = r.sector || 'Other';
-              const sectorHref = `/sector/${encodeURIComponent(sector)}`;
+              const sectorHref = `/sectors/${encodeURIComponent(sector)}`;
 
               return (
                 <tr
