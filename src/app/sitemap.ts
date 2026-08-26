@@ -3,6 +3,7 @@ import { getProjectTickers } from '@/data/defaultTickers';
 import { getDateET } from '@/lib/utils/dateET';
 import { prisma } from '@/lib/db/prisma';
 import { getEligibleAnalysisTickers } from '@/lib/seo/eligibleTickers';
+import { getEligibleValuationTickers } from '@/lib/seo/eligibleValuation';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://premarketprice.com';
@@ -110,6 +111,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: 'daily' as const,
     // Top 50 tickers get higher priority
     priority: allTickers.indexOf(ticker) < 50 ? 0.85 : 0.7,
+  }));
+
+  // -------------------------------------------------------
+  // 3a. VALUATION PAGES — /valuation/[ticker]
+  //     Only include tickers with ≥20 PE AND ≥20 PS observations.
+  //     Tickers with insufficient data get noindex on the page itself.
+  // -------------------------------------------------------
+  const eligibleValuationTickers = await getEligibleValuationTickers();
+  const valuationPages: MetadataRoute.Sitemap = eligibleValuationTickers.map((ticker) => ({
+    url: `${baseUrl}/valuation/${ticker}`,
+    lastModified: tickerUpdates.get(ticker) || currentDate,
+    changeFrequency: 'weekly' as const,
+    priority: 0.7,
   }));
 
   // -------------------------------------------------------
@@ -246,6 +260,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     ...mainPages,
     ...analysisPages,
+    ...valuationPages,
     ...moverPages,
     ...sectorPages,
     ...archivePages,
