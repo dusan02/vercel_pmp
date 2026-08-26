@@ -4,6 +4,7 @@ import { getDateET } from '@/lib/utils/dateET';
 import { prisma } from '@/lib/db/prisma';
 import { getEligibleAnalysisTickers } from '@/lib/seo/eligibleTickers';
 import { getEligibleValuationTickers } from '@/lib/seo/eligibleValuation';
+import { getEligibleFinancialsTickers } from '@/lib/seo/eligibleFinancials';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://premarketprice.com';
@@ -133,7 +134,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   // -------------------------------------------------------
-  // 3b. MOVER PAGES — /movers/[ticker]
+  // 3b. FINANCIALS PAGES — /financials/[ticker]
+  //     Only include tickers with ≥4 FinancialStatement rows
+  //     with all 5 key fields non-null (revenue, netIncome,
+  //     totalAssets, totalLiabilities, totalEquity).
+  // -------------------------------------------------------
+  const eligibleFinancialsTickers = await getEligibleFinancialsTickers();
+  const financialsPages: MetadataRoute.Sitemap = eligibleFinancialsTickers.map((ticker) => ({
+    url: `${baseUrl}/financials/${ticker}`,
+    lastModified: tickerUpdates.get(ticker) || currentDate,
+    changeFrequency: 'weekly' as const,
+    priority: 0.7,
+  }));
+
+  // -------------------------------------------------------
+  // 3c. MOVER PAGES — /movers/[ticker]
   //     Only include tickers with enough significant moves (quality filter).
   //     A page with 0-2 moves is thin content → noindex on the page itself
   //     and excluded from sitemap to avoid wasting crawl budget.
@@ -267,6 +282,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...mainPages,
     ...analysisPages,
     ...valuationPages,
+    ...financialsPages,
     ...moverPages,
     ...sectorPages,
     ...archivePages,
