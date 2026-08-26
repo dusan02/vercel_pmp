@@ -53,7 +53,7 @@ function percentile(sorted: number[], p: number): number {
 }
 
 function computeStats(values: (number | null | undefined)[]) {
-  const valid = values.filter((v) => v != null && v > 0 && isFinite(v));
+  const valid = values.filter((v): v is number => v != null && v > 0 && isFinite(v));
   if (valid.length === 0) return null;
   const sorted = [...valid].sort((a, b) => a - b);
   const min = sorted[0];
