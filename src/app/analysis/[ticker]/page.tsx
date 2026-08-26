@@ -7,6 +7,7 @@ import { getCompanyName } from '@/lib/companyNames';
 import { AnalysisTabClient } from '@/components/company/AnalysisTabClient';
 import { formatPercent, formatPrice } from '@/lib/utils/heatmapFormat';
 import { getEligibleAnalysisTickers, hasAnalysisCache } from '@/lib/seo/eligibleTickers';
+import { getEarningsForTicker } from '@/lib/seo/earningsSSR';
 
 export const revalidate = 60;
 
@@ -589,6 +590,102 @@ export default async function AnalysisPage({ params }: PageProps) {
                     </tbody>
                   </table>
                 </div>
+              </div>
+            );
+          })()}
+
+          {/* Earnings section — SSR from EarningsCalendar DB */}
+          {await (async () => {
+            const { upcoming, recent } = await getEarningsForTicker(tickerUpper);
+            if (upcoming.length === 0 && recent.length === 0) return null;
+
+            const formatEpsShort = (v: number | null) => v == null ? '—' : `$${v.toFixed(2)}`;
+            const formatRevShort = (v: number | null) => {
+              if (v == null) return '—';
+              if (v >= 1e9) return `$${(v / 1e9).toFixed(1)}B`;
+              if (v >= 1e6) return `$${(v / 1e6).toFixed(0)}M`;
+              return `$${v.toFixed(0)}`;
+            };
+            const timeLabel = (t: string) => t === 'bmo' ? 'Pre-Mkt' : t === 'amc' ? 'After-Hrs' : t === 'dmt' ? 'During' : 'TBD';
+            const formatDateShort = (d: string) => new Date(d + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+            return (
+              <div className="mt-8 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Earnings Schedule
+                  </h2>
+                  <Link href="/earnings" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
+                    View earnings calendar →
+                  </Link>
+                </div>
+
+                {upcoming.length > 0 && (
+                  <div className="mb-4">
+                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Upcoming Earnings</h3>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
+                            <th className="px-3 py-2 font-medium">Date</th>
+                            <th className="px-3 py-2 font-medium">Time</th>
+                            <th className="px-3 py-2 font-medium">EPS Est.</th>
+                            <th className="px-3 py-2 font-medium">Rev Est.</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {upcoming.map((e, i) => (
+                            <tr key={i} className="border-b border-gray-50 dark:border-gray-700/50">
+                              <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">{formatDateShort(e.date)}</td>
+                              <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{timeLabel(e.time)}</td>
+                              <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">{formatEpsShort(e.epsEstimate)}</td>
+                              <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">{formatRevShort(e.revenueEstimate)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {recent.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Recent Earnings Results</h3>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
+                            <th className="px-3 py-2 font-medium">Date</th>
+                            <th className="px-3 py-2 font-medium">Time</th>
+                            <th className="px-3 py-2 font-medium">EPS Est.</th>
+                            <th className="px-3 py-2 font-medium">EPS Actual</th>
+                            <th className="px-3 py-2 font-medium">Surprise</th>
+                            <th className="px-3 py-2 font-medium">Rev Est.</th>
+                            <th className="px-3 py-2 font-medium">Rev Actual</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {recent.map((e, i) => {
+                            const surprise = e.epsSurprisePercent;
+                            return (
+                              <tr key={i} className="border-b border-gray-50 dark:border-gray-700/50">
+                                <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">{formatDateShort(e.date)}</td>
+                                <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{timeLabel(e.time)}</td>
+                                <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">{formatEpsShort(e.epsEstimate)}</td>
+                                <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">{formatEpsShort(e.epsActual)}</td>
+                                <td className={`px-3 py-2 tabular-nums font-semibold ${surprise != null ? (surprise >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400') : 'text-gray-400'}`}>
+                                  {surprise != null ? formatPercent(surprise) : '—'}
+                                </td>
+                                <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">{formatRevShort(e.revenueEstimate)}</td>
+                                <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">{formatRevShort(e.revenueActual)}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })()}
