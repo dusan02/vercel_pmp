@@ -5,6 +5,7 @@ import { detectSession, mapToRedisSession } from '@/lib/utils/timeUtils';
 import { formatMarketCapDiff, formatPercent, formatPrice } from '@/lib/utils/heatmapFormat';
 import { formatSectorName } from '@/lib/utils/format';
 import { getDateET, getManyLastWithDate, getRankedSymbols } from '@/lib/redis/ranking';
+import { SsrMoverLinks } from '@/components/seo/SsrMoverLinks';
 
 export const revalidate = 60;
 
@@ -92,6 +93,9 @@ export default async function GainersPage() {
             </p>
           </div>
         </section>
+
+        {/* SSR discovery section — ticker links from DB (independent of Redis) */}
+        <SsrMoverLinks direction="gainers" limit={25} title="Today's Top Gainers — Stock Analysis" />
 
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
           <div className="overflow-x-auto">

@@ -5,6 +5,7 @@ import { detectSession, mapToRedisSession } from '@/lib/utils/timeUtils';
 import { formatMarketCapDiff, formatPercent, formatPrice } from '@/lib/utils/heatmapFormat';
 import { formatSectorName } from '@/lib/utils/format';
 import { getDateET, getManyLastWithDate, getRankedSymbols } from '@/lib/redis/ranking';
+import { SsrMoverLinksCombined } from '@/components/seo/SsrMoverLinks';
 
 export const revalidate = 60;
 
@@ -193,6 +194,9 @@ export default async function PremarketMoversPage() {
             </p>
           </div>
         </section>
+
+        {/* SSR discovery section — ticker links from DB (independent of Redis) */}
+        <SsrMoverLinksCombined />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <MoversTable title="Top Gainers" rows={gainers} />
