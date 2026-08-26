@@ -140,11 +140,11 @@ export default async function PremarketGainersDatePage({ params }: PageProps) {
                   return (
                     <tr key={r.symbol} className="border-t border-slate-100 dark:border-slate-800 hover:bg-slate-50/60 dark:hover:bg-slate-950/60">
                       <td className="px-4 py-2 font-semibold">
-                        <Link className="hover:underline" href={`/stock/${r.symbol}`}>{r.symbol}</Link>
+                        <Link className="hover:underline" href={`/analysis/${r.symbol}`}>{r.symbol}</Link>
                       </td>
                       <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{r.name ?? ''}</td>
                       <td className="px-4 py-2">
-                        <Link className="text-slate-700 dark:text-slate-300 hover:underline" href={`/sector/${encodeURIComponent(sector)}`}>
+                        <Link className="text-slate-700 dark:text-slate-300 hover:underline" href={`/sectors/${encodeURIComponent(sector)}`}>
                           {formatSectorName(sector)}
                         </Link>
                       </td>

@@ -70,7 +70,7 @@ export default async function SectorsPage() {
           {sectors.map((s) => (
             <Link
               key={s.sector}
-              href={`/sector/${encodeURIComponent(s.sector)}`}
+              href={`/sectors/${encodeURIComponent(s.sector)}`}
               className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 hover:shadow-sm transition-shadow"
             >
               <div className="flex items-center justify-between">

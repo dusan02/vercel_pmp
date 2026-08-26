@@ -211,7 +211,7 @@ export default async function Page() {
             <Link href={`/analysis/${ticker}`}>
               {getCompanyName(ticker)} ({ticker}) Analysis
             </Link>
-            <Link href={`/stock/${ticker}`}>
+            <Link href={`/analysis/${ticker}`}>
               {getCompanyName(ticker)} ({ticker}) Stock
             </Link>
           </span>
