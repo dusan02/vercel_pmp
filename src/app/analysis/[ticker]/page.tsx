@@ -4,9 +4,9 @@ import Link from 'next/link';
 import { prisma } from '@/lib/db/prisma';
 import { generateCompanyMetadata } from '@/lib/seo/metadata';
 import { getCompanyName } from '@/lib/companyNames';
-import { getProjectTickers } from '@/data/defaultTickers';
 import { AnalysisTabClient } from '@/components/company/AnalysisTabClient';
 import { formatPercent, formatPrice } from '@/lib/utils/heatmapFormat';
+import { getEligibleAnalysisTickers, hasAnalysisCache } from '@/lib/seo/eligibleTickers';
 
 export const revalidate = 60;
 
@@ -42,7 +42,7 @@ async function getTickerData(symbol: string) {
 }
 
 export async function generateStaticParams() {
-  const tickers = getProjectTickers('pmp');
+  const tickers = await getEligibleAnalysisTickers();
   return tickers.map((t) => ({ ticker: t.toLowerCase() }));
 }
 
@@ -95,7 +95,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const data = await getTickerData(tickerUpper);
   const companyName = data?.name || getCompanyName(tickerUpper);
 
-  return generateCompanyMetadata({
+  const metadata = generateCompanyMetadata({
     ticker: tickerUpper,
     companyName,
     ...(data?.lastPrice != null ? { price: data.lastPrice } : {}),
@@ -104,6 +104,20 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     ...(data?.sector ? { sector: data.sector } : {}),
     ...(data?.industry ? { industry: data.industry } : {}),
   });
+
+  // Thin-content guard: tickers without AnalysisCache have no fundamental
+  // analysis data. The analysis tab is client-rendered (ssr:false), so without
+  // AnalysisCache the server-rendered HTML is minimal. → noindex to avoid
+  // wasting crawl budget on empty pages.
+  const hasCache = await hasAnalysisCache(tickerUpper);
+  if (!hasCache) {
+    return {
+      ...metadata,
+      robots: { index: false, follow: true },
+    };
+  }
+
+  return metadata;
 }
 
 export default async function AnalysisPage({ params }: PageProps) {

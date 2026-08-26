@@ -4,9 +4,9 @@ import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/db/prisma';
 import { generatePageMetadata } from '@/lib/seo/metadata';
 import { getCompanyName } from '@/lib/companyNames';
-import { getProjectTickers } from '@/data/defaultTickers';
 import { formatPercent, formatPrice, formatMarketCapDiff } from '@/lib/utils/heatmapFormat';
 import { formatSectorName } from '@/lib/utils/format';
+import { getEligibleAnalysisTickers } from '@/lib/seo/eligibleTickers';
 
 // Revalidate every 5 minutes — mover data is fairly stable post-session
 export const revalidate = 300;
@@ -145,10 +145,10 @@ function formatDateShort(date: Date): string {
 }
 
 export async function generateStaticParams() {
-  // Pre-generate only tickers in our universe. At runtime, non-universe
-  // tickers will 404. Sitemap will further filter to only tickers with
-  // enough move data.
-  const tickers = getProjectTickers('pmp');
+  // Pre-generate for the same eligible universe as analysis pages.
+  // At runtime, non-universe tickers will 404 via getTickerData() + notFound().
+  // Sitemap further filters to only tickers with enough move data.
+  const tickers = await getEligibleAnalysisTickers();
   return tickers.map((t) => ({ symbol: t }));
 }
 
@@ -156,12 +156,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { symbol } = await params;
   const tickerUpper = symbol.toUpperCase();
 
-  // Don't generate metadata for non-universe tickers
-  if (!getProjectTickers('pmp').includes(tickerUpper)) {
+  const data = await getTickerData(tickerUpper);
+  if (!data) {
     return { title: 'Not Found' };
   }
 
-  const data = await getTickerData(tickerUpper);
   const companyName = data?.name || getCompanyName(tickerUpper);
   const moves = await getRecentMoves(tickerUpper);
   const hasEnoughData = moves.length >= MIN_MOVES_FOR_INDEX;
@@ -203,11 +202,6 @@ function tickerLower(t: string): string {
 export default async function MoverSymbolPage({ params }: PageProps) {
   const { symbol } = await params;
   const tickerUpper = symbol.toUpperCase();
-
-  // Only allow tickers in our universe
-  if (!getProjectTickers('pmp').includes(tickerUpper)) {
-    notFound();
-  }
 
   const data = await getTickerData(tickerUpper);
   if (!data) {

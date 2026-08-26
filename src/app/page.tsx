@@ -8,6 +8,7 @@ import { getCompanyName } from '@/lib/companyNames';
 import { logger } from '@/lib/utils/logger';
 import { getDateET, createETDate } from '@/lib/utils/dateET';
 import Link from 'next/link';
+import { getEligibleAnalysisTickers } from '@/lib/seo/eligibleTickers';
 
 const baseUrl = 'https://premarketprice.com';
 
@@ -191,8 +192,8 @@ export default async function Page() {
     // Continue with empty initialData - client side will handle fallback
   }
 
-  // All tickers for crawlable internal links (SEO discovery)
-  const allTickersForNav = getProjectTickers('pmp');
+  // All eligible tickers for crawlable internal links (SEO discovery)
+  const allTickersForNav = await getEligibleAnalysisTickers();
 
   return (
     <>

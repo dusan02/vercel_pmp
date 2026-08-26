@@ -2,6 +2,7 @@ import { MetadataRoute } from 'next';
 import { getProjectTickers } from '@/data/defaultTickers';
 import { getDateET } from '@/lib/utils/dateET';
 import { prisma } from '@/lib/db/prisma';
+import { getEligibleAnalysisTickers } from '@/lib/seo/eligibleTickers';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://premarketprice.com';
@@ -82,9 +83,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // -------------------------------------------------------
   // 2. ANALYSIS PAGES — /analysis/[ticker] — SEO gold
   //    These are proper canonical pages (not query params!)
-  //    Covers ALL tickers (300+) for programmatic SEO.
+  //    Covers ALL eligible tickers (AnalysisCache required) for programmatic SEO.
   // -------------------------------------------------------
-  const allTickers = getProjectTickers('pmp');
+  const allTickers = await getEligibleAnalysisTickers();
 
   // Fetch lastUpdated timestamps from DB for analysis pages
   const tickerUpdates = new Map<string, string>();
