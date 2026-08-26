@@ -12,6 +12,12 @@ export async function GET(request: Request) {
     const minProfitability = searchParams.get('minProfitability') ? parseFloat(searchParams.get('minProfitability')!) : undefined;
     const minValuation = searchParams.get('minValuation') ? parseFloat(searchParams.get('minValuation')!) : undefined;
     const minAltman = searchParams.get('minAltman') ? parseFloat(searchParams.get('minAltman')!) : undefined;
+    const minPiotroski = searchParams.get('minPiotroski') ? parseInt(searchParams.get('minPiotroski')!, 10) : undefined;
+    // Beneish: lower = better. maxBeneish filters "at most this manipulation risk"
+    const maxBeneish = searchParams.get('maxBeneish') ? parseFloat(searchParams.get('maxBeneish')!) : undefined;
+    const minFcfMargin = searchParams.get('minFcfMargin') ? parseFloat(searchParams.get('minFcfMargin')!) : undefined;
+    // Debt repayment: lower = better. maxDebtRepayment filters "at most this many years"
+    const maxDebtRepayment = searchParams.get('maxDebtRepayment') ? parseFloat(searchParams.get('maxDebtRepayment')!) : undefined;
     // Filters - max
     const maxHealth = searchParams.get('maxHealth') ? parseFloat(searchParams.get('maxHealth')!) : undefined;
     const maxProfitability = searchParams.get('maxProfitability') ? parseFloat(searchParams.get('maxProfitability')!) : undefined;
@@ -30,7 +36,7 @@ export async function GET(request: Request) {
     const sortOrder = parts[1] || 'desc';
 
     // Build cache key from query params
-    const cacheKey = `screener:${minHealth || ''}:${maxHealth || ''}:${minProfitability || ''}:${maxProfitability || ''}:${minValuation || ''}:${maxValuation || ''}:${minAltman || ''}:${sector || ''}:${minMarketCap || ''}:${maxMarketCap || ''}:${page}:${limit}:${sortParams}`;
+    const cacheKey = `screener:${minHealth || ''}:${maxHealth || ''}:${minProfitability || ''}:${maxProfitability || ''}:${minValuation || ''}:${maxValuation || ''}:${minAltman || ''}:${minPiotroski || ''}:${maxBeneish || ''}:${minFcfMargin || ''}:${maxDebtRepayment || ''}:${sector || ''}:${minMarketCap || ''}:${maxMarketCap || ''}:${page}:${limit}:${sortParams}`;
     try {
         const cached = await getCachedData(cacheKey);
         if (cached) return NextResponse.json(cached);
@@ -55,6 +61,12 @@ export async function GET(request: Request) {
             if (maxValuation !== undefined) where.valuationScore.lte = maxValuation;
         }
         if (minAltman !== undefined) where.altmanZ = { gte: minAltman };
+        if (minPiotroski !== undefined) where.piotroskiScore = { gte: minPiotroski };
+        // Beneish: lower = better. maxBeneish means "show only companies with Beneish <= X"
+        if (maxBeneish !== undefined) where.beneishScore = { lte: maxBeneish };
+        if (minFcfMargin !== undefined) where.fcfMargin = { gte: minFcfMargin };
+        // Debt repayment: lower = better. maxDebtRepayment means "show only companies with debt repayment <= X years"
+        if (maxDebtRepayment !== undefined) where.debtRepaymentYears = { lte: maxDebtRepayment };
 
         if (sector) {
             where.ticker = { is: { sector } };
@@ -76,6 +88,10 @@ export async function GET(request: Request) {
             profitabilityScore: 'profitabilityScore',
             valuationScore: 'valuationScore',
             altmanZ: 'altmanZ',
+            piotroskiScore: 'piotroskiScore',
+            beneishScore: 'beneishScore',
+            fcfMargin: 'fcfMargin',
+            debtRepaymentYears: 'debtRepaymentYears',
             'ticker.name': 'ticker.name',
             'ticker.lastMarketCap': 'ticker.lastMarketCap',
             'ticker.lastPrice': 'ticker.lastPrice',

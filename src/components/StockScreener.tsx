@@ -8,7 +8,7 @@ import { UniversalTable, ColumnDef } from './UniversalTable';
 import { DualRangeSlider } from './analysis/DualRangeSlider';
 import { useScreener } from '@/hooks/useScreener';
 import {
-  ScreenerResult, scoreColor, altmanZLabel,
+  ScreenerResult, scoreColor, altmanZLabel, piotroskiLabel, beneishLabel, fcfMarginLabel, debtRepayLabel,
   SORT_OPTIONS, SECTORS, MARKET_CAP_PRESETS,
 } from '@/lib/utils/screener';
 import { formatBillions } from '@/lib/utils/format';
@@ -22,6 +22,10 @@ export default function StockScreener() {
     minProfit, maxProfit, setMinProfit, setMaxProfit,
     minValue, maxValue, setMinValue, setMaxValue,
     minAltman, setMinAltman,
+    minPiotroski, setMinPiotroski,
+    maxBeneish, setMaxBeneish,
+    minFcfMargin, setMinFcfMargin,
+    maxDebtRepayment, setMaxDebtRepayment,
     selectedSector, setSelectedSector,
     marketCapPreset, setMarketCapPreset,
     sortField, sortOrder, handleSort, setSort,
@@ -113,6 +117,39 @@ export default function StockScreener() {
       render: (r) => {
         const z = altmanZLabel(r.altmanZ);
         return <span className={z.color}>{r.altmanZ !== null ? r.altmanZ.toFixed(2) : '-'}</span>;
+      },
+    },
+    {
+      key: 'piotroskiScore',
+      header: <>Piotroski <SortIcon field="piotroskiScore" /></>,
+      align: 'right',
+      sortable: true,
+      className: 'hidden lg:table-cell',
+      render: (r) => {
+        const p = piotroskiLabel(r.piotroskiScore);
+        return <span className={p.color}>{r.piotroskiScore !== null ? `${r.piotroskiScore}/9` : '-'}</span>;
+      },
+    },
+    {
+      key: 'beneishScore',
+      header: <>Beneish M <SortIcon field="beneishScore" /></>,
+      align: 'right',
+      sortable: true,
+      className: 'hidden xl:table-cell',
+      render: (r) => {
+        const b = beneishLabel(r.beneishScore);
+        return <span className={b.color}>{r.beneishScore !== null ? r.beneishScore.toFixed(2) : '-'}</span>;
+      },
+    },
+    {
+      key: 'fcfMargin',
+      header: <>FCF Margin <SortIcon field="fcfMargin" /></>,
+      align: 'right',
+      sortable: true,
+      className: 'hidden xl:table-cell',
+      render: (r) => {
+        const f = fcfMarginLabel(r.fcfMargin);
+        return <span className={f.color}>{r.fcfMargin !== null ? `${(r.fcfMargin * 100).toFixed(1)}%` : '-'}</span>;
       },
     },
   ], [sortField, sortOrder]);
@@ -219,6 +256,61 @@ export default function StockScreener() {
               placeholder="e.g. 3.0"
               className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all"
             />
+          </div>
+        </div>
+
+        {/* Advanced Filters — Piotroski, Beneish, FCF Margin, Debt Repayment */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-3 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Min Piotroski F (0–9)</label>
+            <input
+              type="number"
+              min="0"
+              max="9"
+              step="1"
+              value={minPiotroski || ''}
+              onChange={(e) => setMinPiotroski(Math.min(9, Math.max(0, parseInt(e.target.value, 10) || 0)))}
+              placeholder="e.g. 7"
+              className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all"
+            />
+            <span className="text-[10px] text-gray-400">≥7 Strong, 4–6 Avg, &lt;4 Weak</span>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Max Beneish M</label>
+            <input
+              type="number"
+              step="0.1"
+              value={maxBeneish >= 10 ? '' : maxBeneish}
+              onChange={(e) => setMaxBeneish(parseFloat(e.target.value) || 10)}
+              placeholder="e.g. -1.78"
+              className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all"
+            />
+            <span className="text-[10px] text-gray-400">&lt;-2.22 Safe, -2.22 to -1.78 Grey, &gt;-1.78 Risky</span>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Min FCF Margin (%)</label>
+            <input
+              type="number"
+              step="1"
+              value={minFcfMargin <= -100 ? '' : (minFcfMargin * 100).toFixed(0)}
+              onChange={(e) => setMinFcfMargin(parseFloat(e.target.value) / 100 || -100)}
+              placeholder="e.g. 5"
+              className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all"
+            />
+            <span className="text-[10px] text-gray-400">≥15% High, ≥5% Good, &lt;0% Negative</span>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Max Debt Repay (years)</label>
+            <input
+              type="number"
+              min="0"
+              step="0.5"
+              value={maxDebtRepayment >= 350 ? '' : maxDebtRepayment}
+              onChange={(e) => setMaxDebtRepayment(parseFloat(e.target.value) || 350)}
+              placeholder="e.g. 5"
+              className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all"
+            />
+            <span className="text-[10px] text-gray-400">0 = No debt, ≤3 Fast, ≤5 OK, &gt;5 Slow</span>
           </div>
         </div>
       </div>

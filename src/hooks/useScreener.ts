@@ -29,6 +29,10 @@ export function useScreener({
     const [minValue, setMinValue] = useState<number>(defaultMinValue);
     const [maxValue, setMaxValue] = useState<number>(100);
     const [minAltman, setMinAltman] = useState<number>(0);
+    const [minPiotroski, setMinPiotroski] = useState<number>(0);
+    const [maxBeneish, setMaxBeneish] = useState<number>(10); // 10 = effectively no filter (most scores are < 10)
+    const [minFcfMargin, setMinFcfMargin] = useState<number>(-100); // -100% = effectively no filter
+    const [maxDebtRepayment, setMaxDebtRepayment] = useState<number>(350); // 350 = effectively no filter
     const [selectedSector, setSelectedSector] = useState<string>('');
     const [marketCapPreset, setMarketCapPreset] = useState<string>('all');
     const [sortField, setSortField] = useState<string>('healthScore');
@@ -39,7 +43,10 @@ export function useScreener({
         minHealth: defaultMinHealth, maxHealth: 100,
         minProfit: defaultMinProfit, maxProfit: 100,
         minValue: defaultMinValue, maxValue: 100,
-        minAltman: 0, selectedSector: '',
+        minAltman: 0,
+        minPiotroski: 0, maxBeneish: 10,
+        minFcfMargin: -100, maxDebtRepayment: 350,
+        selectedSector: '',
         marketCapPreset: 'all',
         sortField: 'healthScore', sortOrder: 'desc' as 'asc' | 'desc',
     });
@@ -50,13 +57,16 @@ export function useScreener({
                 minHealth, maxHealth,
                 minProfit, maxProfit,
                 minValue, maxValue,
-                minAltman, selectedSector,
+                minAltman,
+                minPiotroski, maxBeneish,
+                minFcfMargin, maxDebtRepayment,
+                selectedSector,
                 marketCapPreset,
                 sortField, sortOrder,
             });
         }, 400);
         return () => clearTimeout(timer);
-    }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minAltman, selectedSector, marketCapPreset, sortField, sortOrder]);
+    }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minAltman, minPiotroski, maxBeneish, minFcfMargin, maxDebtRepayment, selectedSector, marketCapPreset, sortField, sortOrder]);
 
     const fetchResults = useCallback(async () => {
         setLoading(true);
@@ -74,6 +84,12 @@ export function useScreener({
                 page: page.toString()
             });
             if (debouncedFilters.selectedSector) params.append('sector', debouncedFilters.selectedSector);
+
+            // Advanced filters — only send if user has changed from defaults
+            if (debouncedFilters.minPiotroski > 0) params.append('minPiotroski', debouncedFilters.minPiotroski.toString());
+            if (debouncedFilters.maxBeneish < 10) params.append('maxBeneish', debouncedFilters.maxBeneish.toString());
+            if (debouncedFilters.minFcfMargin > -100) params.append('minFcfMargin', debouncedFilters.minFcfMargin.toString());
+            if (debouncedFilters.maxDebtRepayment < 350) params.append('maxDebtRepayment', debouncedFilters.maxDebtRepayment.toString());
 
             // Market Cap filter
             const mcPreset = MARKET_CAP_PRESETS.find(p => p.id === debouncedFilters.marketCapPreset);
@@ -101,7 +117,7 @@ export function useScreener({
     // Reset page on filter change (immediate, not debounced)
     useEffect(() => {
         setPage(1);
-    }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minAltman, selectedSector, marketCapPreset, sortField, sortOrder]);
+    }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minAltman, minPiotroski, maxBeneish, minFcfMargin, maxDebtRepayment, selectedSector, marketCapPreset, sortField, sortOrder]);
 
     const handleSort = (field: string) => {
         if (sortField === field) {
@@ -122,6 +138,10 @@ export function useScreener({
         setMinProfit(0); setMaxProfit(100);
         setMinValue(0); setMaxValue(100);
         setMinAltman(0);
+        setMinPiotroski(0);
+        setMaxBeneish(10);
+        setMinFcfMargin(-100);
+        setMaxDebtRepayment(350);
         setSelectedSector('');
         setMarketCapPreset('all');
         setSortField('healthScore');
@@ -132,7 +152,8 @@ export function useScreener({
         minHealth !== 0 || maxHealth !== 100 ||
         minProfit !== 0 || maxProfit !== 100 ||
         minValue !== 0 || maxValue !== 100 ||
-        minAltman !== 0 || selectedSector !== '' || marketCapPreset !== 'all';
+        minAltman !== 0 || selectedSector !== '' || marketCapPreset !== 'all' ||
+        minPiotroski > 0 || maxBeneish < 10 || minFcfMargin > -100 || maxDebtRepayment < 350;
 
     return {
         results, pagination, loading, page, setPage,
@@ -141,6 +162,10 @@ export function useScreener({
         minProfit, maxProfit, setMinProfit, setMaxProfit,
         minValue, maxValue, setMinValue, setMaxValue,
         minAltman, setMinAltman,
+        minPiotroski, setMinPiotroski,
+        maxBeneish, setMaxBeneish,
+        minFcfMargin, setMinFcfMargin,
+        maxDebtRepayment, setMaxDebtRepayment,
         selectedSector, setSelectedSector,
         marketCapPreset, setMarketCapPreset,
         // sort
