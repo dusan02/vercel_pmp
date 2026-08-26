@@ -7,7 +7,6 @@ import { formatSectorName } from '@/lib/utils/format';
 import { getDateET, getManyLastWithDate, getRankedSymbols } from '@/lib/redis/ranking';
 import { SsrMoverLinksCombined } from '@/components/seo/SsrMoverLinks';
 import { getPremarketDateSummaries } from '@/lib/seo/premarketArchive';
-import { formatPercent } from '@/lib/utils/heatmapFormat';
 
 export const revalidate = 60;
 
