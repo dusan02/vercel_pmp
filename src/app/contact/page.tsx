@@ -28,10 +28,10 @@ export default function ContactPage() {
                   For technical issues, bug reports, or help using the platform.
                 </p>
                 <a 
-                  href="mailto:support@premarketprice.com" 
+                  href="mailto:info@verifa.sk" 
                   className="text-blue-600 dark:text-blue-400 font-medium hover:underline"
                 >
-                  support@premarketprice.com
+                  info@verifa.sk
                 </a>
               </div>
             </div>

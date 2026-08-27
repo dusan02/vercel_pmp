@@ -238,7 +238,7 @@ export default function RootLayout({
                   contactPoint: {
                     '@type': 'ContactPoint',
                     contactType: 'Customer Service',
-                    email: 'support@premarketprice.com',
+                    email: 'info@verifa.sk',
                   },
                 }),
               }}
