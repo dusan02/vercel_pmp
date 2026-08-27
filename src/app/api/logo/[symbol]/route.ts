@@ -5,7 +5,7 @@ import { createHash } from 'crypto';
 import { join } from 'path';
 import { redisClient } from '@/lib/redis/client';
 import { prisma } from '@/lib/db/prisma';
-import { LogoFetcher } from '@/lib/services/logoFetcher';
+import { LogoFetcher } from '@/services/logoFetcher';
 
 const logoFetcher = new LogoFetcher(prisma);
 

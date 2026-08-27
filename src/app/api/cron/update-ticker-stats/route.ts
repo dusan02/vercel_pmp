@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withCronHandler } from '@/lib/utils/cronAuth';
 import { getAllTrackedTickers } from '@/lib/utils/universeHelpers';
-import { statsService } from '@/lib/server/statsService';
+import { statsService } from '@/services/statsService';
 import { handleCronError, createCronSuccessResponse } from '@/lib/utils/cronErrorHandler';
 import { updateCronStatus } from '@/lib/utils/cronStatus';
 

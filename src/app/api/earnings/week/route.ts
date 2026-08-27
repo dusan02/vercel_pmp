@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getEarningsForDate } from '@/lib/server/earningsService';
+import { getEarningsForDate } from '@/services/earningsService';
 import { getCachedData, setCachedData } from '@/lib/redis/operations';
 import { prisma } from '@/lib/db/prisma';
 

@@ -1,5 +1,5 @@
 // Simplified utility for frontend/legacy use
-// Note: The main logo logic is now in @/lib/services/logoFetcher and the API route.
+// Note: The main logo logic is now in @/services/logoFetcher and the API route.
 
 export function getLogoCandidates(ticker: string, size: number = 32): string[] {
   const guessedDomain = `${ticker.toLowerCase()}.com`;

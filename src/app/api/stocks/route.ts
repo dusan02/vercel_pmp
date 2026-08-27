@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getStocksData } from '@/lib/server/stockService';
+import { getStocksData } from '@/services/stockService';
 
 export async function GET(request: NextRequest) {
   try {
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
     // If getAll is true, fetch all stocks from database with sorting
     if (getAll) {
-      const { getStocksList } = await import('@/lib/server/stockService');
+      const { getStocksList } = await import('@/services/stockService');
       const { data, errors } = await getStocksList({
         ...(limit ? { limit } : {}),
         offset,
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
     if (!tickersParam && !getAll) {
       // If neither tickers nor getAll is provided, default to getAll=true behavior
       // to avoid 400 errors from health checks or empty calls
-      const { getStocksList } = await import('@/lib/server/stockService');
+      const { getStocksList } = await import('@/services/stockService');
       const { data, errors } = await getStocksList({
         ...(limit ? { limit } : {}),
         offset,

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withCronHandler } from '@/lib/utils/cronAuth';
-import { socialDistributorService } from '@/lib/server/socialDistributorService';
+import { socialDistributorService } from '@/services/socialDistributorService';
 import { handleCronError, createCronSuccessResponse } from '@/lib/utils/cronErrorHandler';
 import { updateCronStatus } from '@/lib/utils/cronStatus';
 

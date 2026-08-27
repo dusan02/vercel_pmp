@@ -1,8 +1,8 @@
 import { Suspense } from 'react';
 import { Metadata } from 'next';
 import HomePage from './HomePage';
-import { getStocksData } from '@/lib/server/stockService';
-import { getEarningsForDate } from '@/lib/server/earningsService';
+import { getStocksData } from '@/services/stockService';
+import { getEarningsForDate } from '@/services/earningsService';
 import { getProjectTickers } from '@/data/defaultTickers';
 import { getCompanyName } from '@/lib/companyNames';
 import { logger } from '@/lib/utils/logger';

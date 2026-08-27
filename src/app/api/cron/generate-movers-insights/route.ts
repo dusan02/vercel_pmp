@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withCronHandler } from '@/lib/utils/cronAuth';
-import { aiMoversService } from '@/lib/server/aiMoversService';
+import { aiMoversService } from '@/services/aiMoversService';
 import { createCronSuccessResponse, handleCronError } from '@/lib/utils/cronErrorHandler';
 import { updateCronStatus } from '@/lib/utils/cronStatus';
 

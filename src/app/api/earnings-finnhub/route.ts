@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getEarningsForDate } from '@/lib/server/earningsService';
+import { getEarningsForDate } from '@/services/earningsService';
 
 // Cache for 60 seconds (ISR / route handler caching).
 // NOTE: Do not combine `dynamic = 'force-dynamic'` with `revalidate`,
