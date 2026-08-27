@@ -25,9 +25,14 @@ export async function GET() {
     const items = snapshots
       .filter(snap => snap.overviewJson != null)
       .map(snap => {
-        const overview = snap.overviewJson as Record<string, unknown> | null;
-        const title = overview?.title as string || `Daily Market Report — ${snap.date}`;
-        const summary = overview?.summary as string || overview?.content as string || '';
+        let overview: Record<string, unknown> | null = null;
+        try {
+          overview = JSON.parse(snap.overviewJson!) as Record<string, unknown>;
+        } catch {
+          // skip invalid JSON
+        }
+        const title = (overview?.title as string) || `Daily Market Report — ${snap.date}`;
+        const summary = (overview?.summary as string) || (overview?.content as string) || '';
         const url = `${SITE_URL}/blog/${snap.date}`;
         const pubDate = new Date(snap.date + 'T09:00:00Z').toUTCString();
 
