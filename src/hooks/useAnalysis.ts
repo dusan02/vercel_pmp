@@ -58,11 +58,12 @@ export function useAnalysis(ticker: string) {
 
             // Fetch main analysis + history (for correlation/valuation charts) in parallel
             // Skip history fetch for compare requests — secondary data doesn't need charts
-            const fetches: Promise<Response>[] = [fetch(url, { signal: controller.signal })];
-            if (!isCompare) {
-                fetches.push(fetch(`/api/analysis/${ticker}/history`, { signal: controller.signal }));
-            }
-            const [res, histRes] = await Promise.all(fetches);
+            const [res, histRes] = isCompare
+                ? await Promise.all([fetch(url, { signal: controller.signal }), Promise.resolve(undefined as Response | undefined)])
+                : await Promise.all([
+                      fetch(url, { signal: controller.signal }),
+                      fetch(`/api/analysis/${ticker}/history`, { signal: controller.signal }),
+                  ]);
 
             if (!res.ok) {
                 if (reqId !== fetchIdRef.current) return; // stale
