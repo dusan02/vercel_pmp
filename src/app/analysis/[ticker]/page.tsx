@@ -350,64 +350,40 @@ function SeoAnalysisSummary({
     return null;
   }
 
-  // Build natural-language summary paragraph
+  // Build natural-language summary — one concise analytical paragraph for SEO
   const summaryParts: string[] = [];
 
   if (data?.description) {
-    // Truncate description to ~200 chars for the summary
-    const desc = data.description.length > 200
-      ? data.description.slice(0, 197).trim() + '...'
+    const desc = data.description.length > 160
+      ? data.description.slice(0, 157).trim() + '...'
       : data.description;
     summaryParts.push(desc);
   }
 
-  const scoreParts: string[] = [];
-  if (cache?.healthScore != null) {
-    scoreParts.push(`financial health score of ${cache.healthScore.toFixed(0)}/100 (${scoreLabel(cache.healthScore)})`);
+  // Single concise analytical sentence combining scores + key metrics
+  const analysisParts: string[] = [];
+  if (cache?.valuationScore != null) {
+    analysisParts.push(`valuation score of ${cache.valuationScore.toFixed(0)}/100 (${scoreLabel(cache.valuationScore)})`);
   }
   if (cache?.profitabilityScore != null) {
-    scoreParts.push(`profitability score of ${cache.profitabilityScore.toFixed(0)}/100 (${scoreLabel(cache.profitabilityScore)})`);
+    analysisParts.push(`profitability score of ${cache.profitabilityScore.toFixed(0)}/100 (${scoreLabel(cache.profitabilityScore)})`);
   }
-  if (cache?.valuationScore != null) {
-    scoreParts.push(`valuation score of ${cache.valuationScore.toFixed(0)}/100 (${scoreLabel(cache.valuationScore)})`);
-  }
-
-  if (scoreParts.length > 0) {
-    summaryParts.push(`${companyName} (${ticker}) has a ${scoreParts.join(', ')}.`);
-  }
-
-  const ratioParts: string[] = [];
-  if (cache?.altmanZ != null) {
-    const zone = cache.altmanZ > 3 ? 'indicating low bankruptcy risk' : cache.altmanZ > 1.8 ? 'in the grey zone' : 'indicating financial distress';
-    ratioParts.push(`Altman Z-Score of ${cache.altmanZ.toFixed(2)} (${zone})`);
+  if (cache?.healthScore != null) {
+    analysisParts.push(`financial health score of ${cache.healthScore.toFixed(0)}/100 (${scoreLabel(cache.healthScore)})`);
   }
   if (cache?.piotroskiScore != null) {
-    ratioParts.push(`Piotroski F-Score of ${cache.piotroskiScore}/9`);
+    analysisParts.push(`Piotroski F-Score of ${cache.piotroskiScore}/9`);
   }
-  if (metrics?.peRatio != null && metrics.peRatio > 0) {
-    ratioParts.push(`P/E ratio of ${metrics.peRatio.toFixed(1)}`);
-  }
-  if (metrics?.psRatio != null && metrics.psRatio > 0) {
-    ratioParts.push(`P/S ratio of ${metrics.psRatio.toFixed(1)}`);
-  }
-
-  if (ratioParts.length > 0) {
-    summaryParts.push(`Key metrics include ${ratioParts.join(', ')}.`);
-  }
-
-  const growthParts: string[] = [];
-  if (cache?.revenueCagr != null) {
-    growthParts.push(`revenue CAGR of ${formatPct(cache.revenueCagr)}`);
-  }
-  if (cache?.netIncomeCagr != null) {
-    growthParts.push(`net income CAGR of ${formatPct(cache.netIncomeCagr)}`);
+  if (cache?.altmanZ != null) {
+    const zone = cache.altmanZ > 3 ? 'safe zone' : cache.altmanZ > 1.8 ? 'grey zone' : 'distressed';
+    analysisParts.push(`Altman Z-Score of ${cache.altmanZ.toFixed(2)} (${zone})`);
   }
   if (metrics?.revenueGrowth != null) {
-    growthParts.push(`revenue growth of ${formatPct(metrics.revenueGrowth)} YoY`);
+    analysisParts.push(`revenue growth of ${formatPct(metrics.revenueGrowth)} YoY`);
   }
 
-  if (growthParts.length > 0) {
-    summaryParts.push(`${companyName} shows ${growthParts.join(' and ')}.`);
+  if (analysisParts.length > 0) {
+    summaryParts.push(`${companyName} (${ticker}) has a ${analysisParts.join(', ')}.`);
   }
 
   if (cache?.verdictText) {
@@ -479,23 +455,23 @@ function SeoAnalysisSummary({
       )}
 
       {/* ── Investment Snapshot (key signals grid) ── */}
-      {(metrics?.peRatio != null || cache?.piotroskiScore != null || metrics?.revenueGrowth != null || cache?.altmanZ != null) && (
+      {(metrics?.peRatio != null || metrics?.roe != null || metrics?.revenueGrowth != null || cache?.fcfMargin != null) && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           {/* Valuation signal */}
           {metrics?.peRatio != null && metrics.peRatio > 0 && (
             <SnapshotTile label="Valuation" primary={`P/E ${metrics.peRatio.toFixed(1)}`} secondary={metrics?.forwardPe != null && metrics.forwardPe > 0 ? `Fwd ${metrics.forwardPe.toFixed(1)}` : undefined} />
           )}
-          {/* Quality signal */}
-          {cache?.piotroskiScore != null && (
-            <SnapshotTile label="Quality" primary={`F-Score ${cache.piotroskiScore}/9`} secondary={metrics?.roe != null ? `ROE ${formatPct(metrics.roe)}` : undefined} />
+          {/* Profitability signal */}
+          {metrics?.roe != null && (
+            <SnapshotTile label="Profitability" primary={`ROE ${formatPct(metrics.roe)}`} secondary={metrics?.netMargin != null ? `Net M ${formatPct(metrics.netMargin)}` : undefined} />
           )}
           {/* Growth signal */}
           {metrics?.revenueGrowth != null && (
             <SnapshotTile label="Growth" primary={`Rev ${formatPct(metrics.revenueGrowth)}`} secondary={cache?.revenueCagr != null ? `CAGR ${formatPct(cache.revenueCagr)}` : undefined} />
           )}
-          {/* Risk signal */}
-          {cache?.altmanZ != null && (
-            <SnapshotTile label="Risk" primary={`Z ${cache.altmanZ.toFixed(2)}`} secondary={cache.altmanZ > 3 ? 'Safe' : cache.altmanZ > 1.8 ? 'Grey zone' : 'Distressed'} />
+          {/* Cash flow signal */}
+          {cache?.fcfMargin != null && (
+            <SnapshotTile label="Cash Flow" primary={`FCF M ${formatPct(cache.fcfMargin * 100)}`} secondary={metrics?.currentRatio != null ? `Curr ${formatRatio(metrics.currentRatio, '')}` : undefined} />
           )}
         </div>
       )}
@@ -812,7 +788,7 @@ export default async function AnalysisPage({ params }: PageProps) {
               <div className="mt-8 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    Earnings Schedule
+                    Earnings
                   </h2>
                   <Link href="/earnings" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
                     View earnings calendar →
@@ -821,7 +797,7 @@ export default async function AnalysisPage({ params }: PageProps) {
 
                 {upcoming.length > 0 && (
                   <div className="mb-4">
-                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Upcoming Earnings</h3>
+                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Next Earnings</h3>
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead>
