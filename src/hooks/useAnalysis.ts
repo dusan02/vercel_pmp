@@ -23,9 +23,10 @@ export function useAnalysis(ticker: string) {
     const [loadingCompare, setLoadingCompare] = useState(false);
     const [analysisStep, setAnalysisStep] = useState<string>('');
     const autoTriggered = useRef<string | null>(null);
+    const fetchIdRef = useRef(0);
 
     useEffect(() => {
-        let timer: any;
+        let timer: ReturnType<typeof setInterval> | undefined;
         if (analyzing) {
             let step = 0;
             setAnalysisStep(ANALYSIS_STEPS[0]);
@@ -40,6 +41,9 @@ export function useAnalysis(ticker: string) {
     }, [analyzing]);
 
     const fetchAnalysis = useCallback(async (compare?: string) => {
+        const controller = new AbortController();
+        // Track the latest request so stale responses are discarded
+        const reqId = ++fetchIdRef.current;
         try {
             setLoading(true);
             setError(null);
@@ -49,11 +53,12 @@ export function useAnalysis(ticker: string) {
 
             // Fetch main analysis + history (for correlation/valuation charts) in parallel
             const [res, histRes] = await Promise.all([
-                fetch(url),
-                fetch(`/api/analysis/${ticker}/history`),
+                fetch(url, { signal: controller.signal }),
+                fetch(`/api/analysis/${ticker}/history`, { signal: controller.signal }),
             ]);
-            
+
             if (!res.ok) {
+                if (reqId !== fetchIdRef.current) return; // stale
                 setData(null);
                 setSecondaryData(null);
                 if (res.status === 404) {
@@ -65,6 +70,9 @@ export function useAnalysis(ticker: string) {
             }
             const json = await res.json();
             const histJson = histRes.ok ? await histRes.json().catch(() => ({})) : {};
+
+            // Discard if a newer request was started
+            if (reqId !== fetchIdRef.current) return;
 
             // Fields sourced from /history endpoint
             const historyExtras = {
@@ -98,10 +106,14 @@ export function useAnalysis(ticker: string) {
                 setSecondaryData(null);
             }
         } catch (err) {
+            if (err instanceof DOMException && err.name === 'AbortError') return;
+            if (reqId !== fetchIdRef.current) return; // stale
             console.error(err);
             setError('Could not load analysis data. Please try again later.');
         } finally {
-            setLoading(false);
+            if (reqId === fetchIdRef.current) {
+                setLoading(false);
+            }
         }
     }, [ticker]);
 

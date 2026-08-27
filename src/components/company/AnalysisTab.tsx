@@ -45,7 +45,7 @@ export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabP
     if (!data) {
         if (analyzing) return <LoadingSkeleton analysisStep={analysisStep} />;
         if (error) return (
-            <div className="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 text-center">
+            <div role="alert" className="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 text-center">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-900/30 mb-4">
                     <svg className="w-6 h-6 text-rose-600 dark:text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
@@ -57,12 +57,13 @@ export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabP
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 max-w-sm mx-auto">
                     We couldn&apos;t load the analysis data for {ticker}. This might be a temporary issue.
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-500 mb-6 font-mono bg-gray-50 dark:bg-gray-900/50 rounded-lg px-3 py-2 inline-block max-w-full truncate">
+                <p className="text-xs text-gray-500 dark:text-gray-500 mb-6 font-mono bg-gray-50 dark:bg-gray-900/50 rounded-lg px-3 py-2 block max-w-full overflow-hidden text-ellipsis whitespace-nowrap">
                     {error}
                 </p>
                 <div className="flex items-center justify-center gap-3">
                     <button
                         onClick={runDeepAnalysis}
+                        aria-label="Retry analysis"
                         className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors"
                     >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -80,7 +81,7 @@ export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabP
             </div>
         );
         return (
-            <div className="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 text-center">
+            <div role="status" aria-live="polite" className="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 text-center">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-700 mb-4">
                     <svg className="w-6 h-6 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
@@ -94,6 +95,7 @@ export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabP
                 </p>
                 <button
                     onClick={runDeepAnalysis}
+                    aria-label="Run deep analysis"
                     className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors"
                 >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">

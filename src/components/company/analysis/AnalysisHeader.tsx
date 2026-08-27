@@ -27,6 +27,7 @@ export function SearchTickerBar({ currentTicker }: { currentTicker: string }) {
         <form onSubmit={handleSubmit} className="relative w-full max-w-lg">
             <input
                 type="text"
+                aria-label="Search ticker"
                 value={value}
                 onChange={(e) => setValue(e.target.value.toUpperCase())}
                 placeholder="Search ticker (e.g. MSFT)"
@@ -34,6 +35,7 @@ export function SearchTickerBar({ currentTicker }: { currentTicker: string }) {
             />
             <button
                 type="submit"
+                aria-label="Analyze ticker"
                 className="absolute right-1.5 top-1.5 bottom-1.5 px-5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-colors"
             >
                 Analyze
@@ -75,7 +77,8 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
 
     // Staleness detection: if DB price is > 4 hours old, consider it stale
     const STALE_THRESHOLD_MS = 4 * 60 * 60 * 1000;
-    const dbPriceUpdated = t?.lastPriceUpdated ? new Date(t.lastPriceUpdated).getTime() : 0;
+    const dbPriceUpdatedRaw = t?.lastPriceUpdated ? new Date(t.lastPriceUpdated).getTime() : 0;
+    const dbPriceUpdated = !isNaN(dbPriceUpdatedRaw) ? dbPriceUpdatedRaw : 0;
     const isDbPriceStale = dbPriceUpdated > 0 && (Date.now() - dbPriceUpdated) > STALE_THRESHOLD_MS;
     // Best available price: prefer real-time, then fresh DB, then prevClose as last resort
     const bestPrice = realTimeData?.currentPrice

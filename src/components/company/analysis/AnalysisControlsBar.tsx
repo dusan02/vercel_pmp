@@ -13,9 +13,11 @@ export function AnalysisControlsBar({ updatedAt, analyzing, onRefresh }: Analysi
             className="flex justify-between items-center bg-gray-50 dark:bg-gray-800/50 px-4 py-2.5 rounded-xl border border-gray-100 dark:border-gray-700/50"
         >
             <span className="text-xs text-gray-500 dark:text-gray-400">
-                {updatedAt && (
-                    <>Last updated: {new Date(updatedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</>
-                )}
+                {updatedAt && (() => {
+                    const d = new Date(updatedAt);
+                    if (isNaN(d.getTime())) return null;
+                    return <>Last updated: {d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</>;
+                })()}
             </span>
             <button
                 onClick={onRefresh}

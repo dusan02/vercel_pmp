@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { AnalysisData } from './types';
 import { CompactMetricRow, MetricCardDef, StatusType, StatusBadge } from '../shared/MetricCard';
 import { getColorClass, getStrokeColor } from './ScoreCard';
@@ -202,7 +202,10 @@ function MetricGrid({ title, metrics, compareWith, children }: { title: string, 
 
 // ── Main export ──────────────────────────────────────────────────────────────
 export function FinancialHealthTable({ ticker, data, compareWith, secondaryData }: Props) {
-    const { solvency, profitability, growth, valuation, quality, balanceSheet, lossYears } = buildMetrics(data, secondaryData, compareWith);
+    const { solvency, profitability, growth, valuation, quality, balanceSheet, lossYears } = useMemo(
+        () => buildMetrics(data, secondaryData, compareWith),
+        [data, secondaryData, compareWith]
+    );
 
     return (
         <div className="bg-transparent">

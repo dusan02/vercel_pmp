@@ -32,7 +32,7 @@ export function CompareToolbar({
                         {compareWith ? `Comparing: ${ticker} vs ${compareWith}` : 'Compare with a competitor'}
                     </span>
                     {compareWith && (
-                        <button onClick={onRemoveComparison} className="ml-auto md:ml-4 text-xs text-gray-400 hover:text-red-500 transition-colors">
+                        <button onClick={onRemoveComparison} aria-label="Remove comparison" className="ml-auto md:ml-4 text-xs text-gray-400 hover:text-red-500 transition-colors">
                             ✕ Remove
                         </button>
                     )}
@@ -42,15 +42,18 @@ export function CompareToolbar({
                         <div className="flex gap-2">
                             <input
                                 type="text"
+                                aria-label="Enter ticker to compare"
                                 placeholder="Enter ticker (e.g. MSFT)"
                                 value={compareInput}
                                 onChange={(e) => onCompareInput(e.target.value.toUpperCase())}
-                                onKeyDown={(e) => e.key === 'Enter' && onAddComparison()}
+                                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); onAddComparison(); } }}
                                 className="flex-1 text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                             <button
                                 onClick={() => onAddComparison()}
                                 disabled={!compareInput || loadingCompare}
+                                aria-label="Add comparison"
+                                aria-busy={loadingCompare}
                                 className="text-sm bg-blue-600 hover:bg-blue-700 text-white font-medium px-3 py-1.5 rounded-lg disabled:opacity-50 min-w-[60px]"
                             >
                                 {loadingCompare ? '...' : 'Add'}

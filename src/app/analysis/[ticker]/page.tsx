@@ -6,7 +6,7 @@ import { generateCompanyMetadata } from '@/lib/seo/metadata';
 import { getCompanyName } from '@/lib/companyNames';
 import { AnalysisTabClient } from '@/components/company/AnalysisTabClient';
 import { formatPercent, formatPrice } from '@/lib/utils/heatmapFormat';
-import { getEligibleAnalysisTickers, hasAnalysisCache } from '@/lib/seo/eligibleTickers';
+import { getEligibleAnalysisTickers } from '@/lib/seo/eligibleTickers';
 import { getEarningsForTicker } from '@/lib/seo/earningsSSR';
 import ShareButtons from '@/components/ShareButtons';
 
@@ -160,261 +160,9 @@ function scoreLabel(score: number | null | undefined): string {
   return 'weak';
 }
 
-function formatRatio(value: number | null | undefined, suffix = '×'): string {
-  if (value == null || !isFinite(value)) return '';
-  return `${value.toFixed(2)}${suffix}`;
-}
-
 function formatPct(value: number | null | undefined): string {
   if (value == null || !isFinite(value)) return '';
   return `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`;
-}
-
-function formatMarketCapB(value: number | null | undefined): string {
-  if (value == null || value <= 0 || !isFinite(value)) return '';
-  if (value >= 1000) return `$${(value / 1000).toFixed(2)}T`;
-  if (value >= 1) return `$${value.toFixed(1)}B`;
-  return `$${(value * 1000).toFixed(0)}M`;
-}
-
-/**
- * Server-rendered SEO summary for /analysis/[ticker].
- *
- * This is the ONLY server-rendered financial content on the page — the
- * AnalysisTabClient below has ssr:false, so without this section Googlebot
- * sees only breadcrumbs, schema.org, and loading placeholders.
- *
- * The summary includes:
- *   - Stock header (name, price, change, market cap, sector)
- *   - Score cards (Financial Health, Profitability, Valuation, Verdict)
- *   - Investment snapshot (key signals: valuation, quality, growth, risk)
- *   - Grouped metrics (Valuation / Profitability / Growth / Financial Health)
- *   - Natural-language summary paragraph (for crawlers, visually hidden)
- *
- * All values are pulled from AnalysisCache + FinnhubMetrics + Ticker.
- * Missing values are omitted — no fake/default data.
- */
-
-function scoreColor(score: number): string {
-  if (score >= 75) return 'text-emerald-600 dark:text-emerald-400';
-  if (score >= 50) return 'text-yellow-600 dark:text-yellow-400';
-  return 'text-rose-600 dark:text-rose-400';
-}
-
-function scoreBg(score: number): string {
-  if (score >= 75) return 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800/50';
-  if (score >= 50) return 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800/50';
-  return 'bg-rose-50 dark:bg-rose-900/20 border-rose-200 dark:border-rose-800/50';
-}
-
-function ScoreCard({ label, value, max, tier, compact }: { label: string; value: string; max: string; tier: string; compact?: boolean }) {
-  return (
-    <div className={`rounded-xl border p-3 ${compact ? 'bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-700' : 'border-gray-200 dark:border-gray-700'}`}>
-      <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">{label}</div>
-      {compact ? (
-        <div className="text-base font-bold text-gray-900 dark:text-white">{value}</div>
-      ) : (
-        <>
-          <div className={`text-2xl font-bold tabular-nums ${scoreColor(parseFloat(value))}`}>{value}<span className="text-sm text-gray-400">{max}</span></div>
-          {tier && <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{tier}</div>}
-        </>
-      )}
-    </div>
-  );
-}
-
-function SnapshotTile({ label, primary, secondary }: { label: string; primary: string; secondary?: string | undefined }) {
-  return (
-    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3 border border-gray-100 dark:border-gray-700/50">
-      <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">{label}</div>
-      <div className="text-base font-bold text-gray-900 dark:text-white tabular-nums">{primary}</div>
-      {secondary && <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 tabular-nums">{secondary}</div>}
-    </div>
-  );
-}
-
-function SeoAnalysisSummary({
-  ticker,
-  companyName,
-  data,
-}: {
-  ticker: string;
-  companyName: string;
-  data: Awaited<ReturnType<typeof getTickerData>>;
-}) {
-  const cache = data?.analysisCache;
-  const metrics = data?.finnhubMetrics;
-
-  // Grouped metrics removed — FinancialHealthTable (interactive) covers these
-  // with more detail. SSR section keeps Score Cards + Investment Snapshot only.
-
-  // If we have no scores or description, don't render the section
-  if (!data?.description && cache?.healthScore == null && cache?.profitabilityScore == null && cache?.valuationScore == null) {
-    return null;
-  }
-
-  // Build natural-language summary — one concise analytical paragraph for SEO
-  const summaryParts: string[] = [];
-
-  if (data?.description) {
-    const desc = data.description.length > 160
-      ? data.description.slice(0, 157).trim() + '...'
-      : data.description;
-    summaryParts.push(desc);
-  }
-
-  // Single concise analytical sentence combining scores + key metrics
-  const analysisParts: string[] = [];
-  if (cache?.valuationScore != null) {
-    analysisParts.push(`valuation score of ${cache.valuationScore.toFixed(0)}/100 (${scoreLabel(cache.valuationScore)})`);
-  }
-  if (cache?.profitabilityScore != null) {
-    analysisParts.push(`profitability score of ${cache.profitabilityScore.toFixed(0)}/100 (${scoreLabel(cache.profitabilityScore)})`);
-  }
-  if (cache?.healthScore != null) {
-    analysisParts.push(`financial health score of ${cache.healthScore.toFixed(0)}/100 (${scoreLabel(cache.healthScore)})`);
-  }
-  if (cache?.piotroskiScore != null) {
-    analysisParts.push(`Piotroski F-Score of ${cache.piotroskiScore}/9`);
-  }
-  if (cache?.altmanZ != null) {
-    const zone = cache.altmanZ > 3 ? 'safe zone' : cache.altmanZ > 1.8 ? 'grey zone' : 'distressed';
-    analysisParts.push(`Altman Z-Score of ${cache.altmanZ.toFixed(2)} (${zone})`);
-  }
-  if (metrics?.revenueGrowth != null) {
-    analysisParts.push(`revenue growth of ${formatPct(metrics.revenueGrowth)} YoY`);
-  }
-
-  if (analysisParts.length > 0) {
-    summaryParts.push(`${companyName} (${ticker}) has a ${analysisParts.join(', ')}.`);
-  }
-
-  if (cache?.verdictText) {
-    summaryParts.push(cache.verdictText);
-  }
-
-  return (
-    <section
-      className="mb-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6"
-      aria-label={`${companyName} stock analysis summary`}
-    >
-      {/* ── Stock Header ── */}
-      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
-        <div className="flex-1">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-            {companyName} ({ticker})
-          </h2>
-          {data?.description && (
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 leading-relaxed max-w-2xl">
-              {data.description.length > 200
-                ? data.description.slice(0, 197).trim() + '...'
-                : data.description}
-            </p>
-          )}
-          <div className="flex flex-wrap items-center gap-3 mt-3 text-sm">
-            {data?.sector && (
-              <Link href={`/sectors/${encodeURIComponent(data.sector)}`} className="text-blue-600 dark:text-blue-400 hover:underline font-medium">
-                {data.sector}
-              </Link>
-            )}
-            {data?.lastMarketCap != null && data.lastMarketCap > 0 && (
-              <span className="text-gray-500 dark:text-gray-400">
-                · {formatMarketCapB(data.lastMarketCap)} Market Cap
-              </span>
-            )}
-          </div>
-        </div>
-        {/* Price block */}
-        {data?.lastPrice != null && (
-          <div className="flex flex-col items-end">
-            <div className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
-              {formatPrice(data.lastPrice)}
-            </div>
-            {data?.lastChangePct != null && (
-              <div className={`text-lg font-bold tabular-nums ${data.lastChangePct >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
-                {formatPercent(data.lastChangePct)}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* ── Score Cards (4 prominent) ── */}
-      {(cache?.healthScore != null || cache?.profitabilityScore != null || cache?.valuationScore != null) && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-          {cache?.healthScore != null && (
-            <ScoreCard label="Financial Health" value={cache.healthScore.toFixed(0)} max="/100" tier={scoreLabel(cache.healthScore)} />
-          )}
-          {cache?.profitabilityScore != null && (
-            <ScoreCard label="Profitability" value={cache.profitabilityScore.toFixed(0)} max="/100" tier={scoreLabel(cache.profitabilityScore)} />
-          )}
-          {cache?.valuationScore != null && (
-            <ScoreCard label="Valuation" value={cache.valuationScore.toFixed(0)} max="/100" tier={scoreLabel(cache.valuationScore)} />
-          )}
-          {cache?.verdictText && (
-            <ScoreCard label="Overall Verdict" value={cache.verdictText} max="" tier="" compact />
-          )}
-        </div>
-      )}
-
-      {/* ── Investment Snapshot (key signals grid) ── */}
-      {(metrics?.peRatio != null || metrics?.roe != null || metrics?.revenueGrowth != null || cache?.fcfMargin != null) && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-          {/* Valuation signal */}
-          {metrics?.peRatio != null && metrics.peRatio > 0 && (
-            <SnapshotTile label="Valuation" primary={`P/E ${metrics.peRatio.toFixed(1)}`} secondary={metrics?.forwardPe != null && metrics.forwardPe > 0 ? `Fwd ${metrics.forwardPe.toFixed(1)}` : undefined} />
-          )}
-          {/* Profitability signal */}
-          {metrics?.roe != null && (
-            <SnapshotTile label="Profitability" primary={`ROE ${formatPct(metrics.roe)}`} secondary={metrics?.netMargin != null ? `Net M ${formatPct(metrics.netMargin)}` : undefined} />
-          )}
-          {/* Growth signal */}
-          {metrics?.revenueGrowth != null && (
-            <SnapshotTile label="Growth" primary={`Rev ${formatPct(metrics.revenueGrowth)}`} secondary={cache?.revenueCagr != null ? `CAGR ${formatPct(cache.revenueCagr)}` : undefined} />
-          )}
-          {/* Cash flow signal */}
-          {cache?.fcfMargin != null && (
-            <SnapshotTile label="Cash Flow" primary={`FCF M ${formatPct(cache.fcfMargin * 100)}`} secondary={metrics?.currentRatio != null ? `Curr ${formatRatio(metrics.currentRatio, '')}` : undefined} />
-          )}
-        </div>
-      )}
-
-      {/* Grouped Financial Metrics removed — duplicated by interactive
-          FinancialHealthTable below which has more detail (labels, extra ratios).
-          Score Cards + Investment Snapshot provide the quick-glance summary;
-          FinancialHealthTable provides the full breakdown. */}
-
-      {/* SEO: natural-language summary (hidden visually, for crawlers) */}
-      {summaryParts.length > 0 && (
-        <div className="sr-only" aria-hidden="false">
-          {summaryParts.map((p, i) => (
-            <p key={i}>{p}</p>
-          ))}
-        </div>
-      )}
-
-      {/* Cross-link to valuation and financials pages + share */}
-      <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 text-sm flex flex-wrap items-center gap-4">
-        <Link
-          href={`/valuation/${ticker}`}
-          className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-        >
-          {companyName} ({ticker}) Valuation & P/E History →
-        </Link>
-        <Link
-          href={`/financials/${ticker}`}
-          className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-        >
-          {companyName} ({ticker}) Financial Statements →
-        </Link>
-        <ShareButtons
-          url={`${baseUrl}/analysis/${ticker}`}
-          title={`${companyName} (${ticker}) Stock Analysis | PreMarketPrice`}
-          description={data?.description?.slice(0, 100)}
-        />
-      </div>
-    </section>
-  );
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -437,7 +185,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   // analysis data. The analysis tab is client-rendered (ssr:false), so without
   // AnalysisCache the server-rendered HTML is minimal. → noindex to avoid
   // wasting crawl budget on empty pages.
-  const hasCache = await hasAnalysisCache(tickerUpper);
+  // Use the data already fetched above instead of a redundant DB query.
+  const hasCache = data?.analysisCache != null;
   if (!hasCache) {
     return {
       ...metadata,
@@ -453,15 +202,17 @@ export default async function AnalysisPage({ params }: PageProps) {
   const tickerUpper = ticker.toUpperCase();
   const data = await getTickerData(tickerUpper);
 
-  if (!data && !getCompanyName(tickerUpper)) {
+  if (!data) {
     notFound();
   }
 
   const companyName = data?.name || getCompanyName(tickerUpper) || tickerUpper;
-  const price = data?.lastPrice;
-  const changePct = data?.lastChangePct;
-  const marketCap = data?.lastMarketCap;
-  const isPositive = (changePct ?? 0) >= 0;
+
+  // Fetch earnings + recent moves in parallel (they're independent)
+  const [earningsData, recentMoves] = await Promise.all([
+    getEarningsForTicker(tickerUpper),
+    getRecentSignificantMoves(tickerUpper),
+  ]);
 
   const breadcrumbSchema = {
     '@context': 'https://schema.org',
@@ -494,7 +245,7 @@ export default async function AnalysisPage({ params }: PageProps) {
 
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Breadcrumb */}
-        <nav className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <nav className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700" aria-label="Breadcrumb">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
             <ol className="flex items-center space-x-2 text-sm">
               <li><Link href="/" className="text-gray-500 hover:text-blue-600 dark:text-gray-400">Home</Link></li>
@@ -507,12 +258,52 @@ export default async function AnalysisPage({ params }: PageProps) {
         </nav>
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          {/* Server-rendered SEO summary — visible to crawlers without JS */}
-          <SeoAnalysisSummary
-            ticker={tickerUpper}
-            companyName={companyName}
-            data={data}
-          />
+          {/* SEO: natural-language summary (hidden visually, for crawlers) */}
+          {(() => {
+            const cache = data?.analysisCache;
+            const metrics = data?.finnhubMetrics;
+            const summaryParts: string[] = [];
+            if (data?.description) {
+              const desc = data.description.length > 160
+                ? data.description.slice(0, 157).trim() + '...'
+                : data.description;
+              summaryParts.push(desc);
+            }
+            const analysisParts: string[] = [];
+            if (cache?.valuationScore != null) {
+              analysisParts.push(`valuation score of ${cache.valuationScore.toFixed(0)}/100 (${scoreLabel(cache.valuationScore)})`);
+            }
+            if (cache?.profitabilityScore != null) {
+              analysisParts.push(`profitability score of ${cache.profitabilityScore.toFixed(0)}/100 (${scoreLabel(cache.profitabilityScore)})`);
+            }
+            if (cache?.healthScore != null) {
+              analysisParts.push(`financial health score of ${cache.healthScore.toFixed(0)}/100 (${scoreLabel(cache.healthScore)})`);
+            }
+            if (cache?.piotroskiScore != null) {
+              analysisParts.push(`Piotroski F-Score of ${cache.piotroskiScore}/9`);
+            }
+            if (cache?.altmanZ != null) {
+              const zone = cache.altmanZ > 3 ? 'safe zone' : cache.altmanZ > 1.8 ? 'grey zone' : 'distressed';
+              analysisParts.push(`Altman Z-Score of ${cache.altmanZ.toFixed(2)} (${zone})`);
+            }
+            if (metrics?.revenueGrowth != null) {
+              analysisParts.push(`revenue growth of ${formatPct(metrics.revenueGrowth)} YoY`);
+            }
+            if (analysisParts.length > 0) {
+              summaryParts.push(`${companyName} (${tickerUpper}) has a ${analysisParts.join(', ')}.`);
+            }
+            if (cache?.verdictText) {
+              summaryParts.push(cache.verdictText);
+            }
+            if (summaryParts.length === 0) return null;
+            return (
+              <div className="sr-only" aria-hidden="false">
+                {summaryParts.map((p, i) => (
+                  <p key={i}>{p}</p>
+                ))}
+              </div>
+            );
+          })()}
 
           {/* Full interactive analysis (client-side) */}
           <AnalysisTabClient ticker={tickerUpper} hideSearch />
@@ -531,8 +322,9 @@ export default async function AnalysisPage({ params }: PageProps) {
               ? ((target / currentPrice - 1) * 100)
               : null;
             const freshness = pt?.fetchedAt ?? rec?.fetchedAt;
-            const freshnessStr = freshness
-              ? freshness.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            const freshnessDate = freshness ? new Date(freshness) : null;
+            const freshnessStr = freshnessDate && !isNaN(freshnessDate.getTime())
+              ? freshnessDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
               : null;
 
             // Recommendation consensus
@@ -640,7 +432,14 @@ export default async function AnalysisPage({ params }: PageProps) {
                         {totalAnalysts} analyst{totalAnalysts !== 1 ? 's' : ''}{rec?.period ? ` · ${rec.period}` : ''}
                       </span>
                     </div>
-                    <div className="flex h-6 rounded-lg overflow-hidden">
+                    <div
+                      className="flex h-6 rounded-lg overflow-hidden"
+                      role="progressbar"
+                      aria-valuenow={buyPct ?? 0}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-label={`${consensusLabel ?? 'Analyst'} consensus — ${totalAnalysts} analysts`}
+                    >
                       {sb > 0 && <div className="bg-emerald-600 flex items-center justify-center text-xs text-white font-medium" style={{ width: `${(sb / totalAnalysts) * 100}%` }} title={`Strong Buy: ${sb}`}>{sb > 1 ? sb : ''}</div>}
                       {b > 0 && <div className="bg-green-500 flex items-center justify-center text-xs text-white font-medium" style={{ width: `${(b / totalAnalysts) * 100}%` }} title={`Buy: ${b}`}>{b > 1 ? b : ''}</div>}
                       {h > 0 && <div className="bg-yellow-500 flex items-center justify-center text-xs text-white font-medium" style={{ width: `${(h / totalAnalysts) * 100}%` }} title={`Hold: ${h}`}>{h > 1 ? h : ''}</div>}
@@ -661,8 +460,8 @@ export default async function AnalysisPage({ params }: PageProps) {
           })()}
 
           {/* Earnings section — SSR from EarningsCalendar DB */}
-          {await (async () => {
-            const { upcoming, recent } = await getEarningsForTicker(tickerUpper);
+          {(() => {
+            const { upcoming, recent } = earningsData;
             if (upcoming.length === 0 && recent.length === 0) return null;
 
             const formatEpsShort = (v: number | null) => v == null ? '—' : `$${v.toFixed(2)}`;
@@ -673,7 +472,12 @@ export default async function AnalysisPage({ params }: PageProps) {
               return `$${v.toFixed(0)}`;
             };
             const timeLabel = (t: string) => t === 'bmo' ? 'Pre-Mkt' : t === 'amc' ? 'After-Hrs' : t === 'dmt' ? 'During' : 'TBD';
-            const formatDateShort = (d: string) => new Date(d + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            const formatDateShort = (d: string) => {
+              // Handle both 'YYYY-MM-DD' and full ISO strings safely
+              const date = d.length === 10 ? new Date(d + 'T12:00:00Z') : new Date(d);
+              if (isNaN(date.getTime())) return d;
+              return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            };
 
             return (
               <div className="mt-8 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
@@ -693,10 +497,10 @@ export default async function AnalysisPage({ params }: PageProps) {
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
-                            <th className="px-3 py-2 font-medium">Date</th>
-                            <th className="px-3 py-2 font-medium">Time</th>
-                            <th className="px-3 py-2 font-medium">EPS Est.</th>
-                            <th className="px-3 py-2 font-medium">Rev Est.</th>
+                            <th scope="col" className="px-3 py-2 font-medium">Date</th>
+                            <th scope="col" className="px-3 py-2 font-medium">Time</th>
+                            <th scope="col" className="px-3 py-2 font-medium">EPS Est.</th>
+                            <th scope="col" className="px-3 py-2 font-medium">Rev Est.</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -721,13 +525,13 @@ export default async function AnalysisPage({ params }: PageProps) {
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
-                            <th className="px-3 py-2 font-medium">Date</th>
-                            <th className="px-3 py-2 font-medium">Time</th>
-                            <th className="px-3 py-2 font-medium">EPS Est.</th>
-                            <th className="px-3 py-2 font-medium">EPS Actual</th>
-                            <th className="px-3 py-2 font-medium">Surprise</th>
-                            <th className="px-3 py-2 font-medium">Rev Est.</th>
-                            <th className="px-3 py-2 font-medium">Rev Actual</th>
+                            <th scope="col" className="px-3 py-2 font-medium">Date</th>
+                            <th scope="col" className="px-3 py-2 font-medium">Time</th>
+                            <th scope="col" className="px-3 py-2 font-medium">EPS Est.</th>
+                            <th scope="col" className="px-3 py-2 font-medium">EPS Actual</th>
+                            <th scope="col" className="px-3 py-2 font-medium">Surprise</th>
+                            <th scope="col" className="px-3 py-2 font-medium">Rev Est.</th>
+                            <th scope="col" className="px-3 py-2 font-medium">Rev Actual</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -757,8 +561,7 @@ export default async function AnalysisPage({ params }: PageProps) {
           })()}
 
           {/* Recent Market Moves — from SessionPrice data */}
-          {await (async () => {
-            const recentMoves = await getRecentSignificantMoves(tickerUpper);
+          {(() => {
             if (recentMoves.length === 0) return null;
 
             return (
@@ -778,17 +581,17 @@ export default async function AnalysisPage({ params }: PageProps) {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
-                        <th className="px-3 py-2 font-medium">Date</th>
-                        <th className="px-3 py-2 font-medium">Session</th>
-                        <th className="px-3 py-2 font-medium">Price</th>
-                        <th className="px-3 py-2 font-medium">Move</th>
-                        <th className="px-3 py-2 font-medium">Z-Score</th>
+                        <th scope="col" className="px-3 py-2 font-medium">Date</th>
+                        <th scope="col" className="px-3 py-2 font-medium">Session</th>
+                        <th scope="col" className="px-3 py-2 font-medium">Price</th>
+                        <th scope="col" className="px-3 py-2 font-medium">Move</th>
+                        <th scope="col" className="px-3 py-2 font-medium">Z-Score</th>
                       </tr>
                     </thead>
                     <tbody>
                       {recentMoves.map((m, i) => {
                         const moveUp = m.changePct >= 0;
-                        const dateStr = m.date.toISOString().split('T')[0] ?? '';
+                        const dateStr = m.date.toISOString().split('T')[0];
                         const isPremarket = m.session === 'pre';
                         const archiveLink = isPremarket
                           ? (moveUp ? `/premarket-gainers/${dateStr}` : `/premarket-losers/${dateStr}`)
@@ -825,6 +628,27 @@ export default async function AnalysisPage({ params }: PageProps) {
               </div>
             );
           })()}
+
+          {/* Cross-link to valuation and financials pages + share */}
+          <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-700 text-sm flex flex-wrap items-center gap-4">
+            <Link
+              href={`/valuation/${tickerUpper}`}
+              className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              {companyName} ({tickerUpper}) Valuation & P/E History →
+            </Link>
+            <Link
+              href={`/financials/${tickerUpper}`}
+              className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              {companyName} ({tickerUpper}) Financial Statements →
+            </Link>
+            <ShareButtons
+              url={`${baseUrl}/analysis/${tickerUpper}`}
+              title={`${companyName} (${tickerUpper}) Stock Analysis | PreMarketPrice`}
+              description={data?.description?.slice(0, 100)}
+            />
+          </div>
 
           {/* SEO: Related stocks */}
           <div className="mt-8 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
