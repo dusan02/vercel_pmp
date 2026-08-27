@@ -176,12 +176,6 @@ function formatMarketCapB(value: number | null | undefined): string {
   return `$${(value * 1000).toFixed(0)}M`;
 }
 
-interface MetricRow {
-  label: string;
-  value: string;
-  hint?: string;
-}
-
 /**
  * Server-rendered SEO summary for /analysis/[ticker].
  *
@@ -256,6 +250,7 @@ function MetricGroup({ title, rows }: { title: string; rows: MetricRow[] }) {
     </div>
   );
 }
+
 function SeoAnalysisSummary({
   ticker,
   companyName,
@@ -268,85 +263,11 @@ function SeoAnalysisSummary({
   const cache = data?.analysisCache;
   const metrics = data?.finnhubMetrics;
 
-  // Build metrics rows — grouped into 4 categories
-  const valuationRows: MetricRow[] = [];
-  const profitabilityRows: MetricRow[] = [];
-  const growthRows: MetricRow[] = [];
-  const healthRows: MetricRow[] = [];
+  // Grouped metrics removed — FinancialHealthTable (interactive) covers these
+  // with more detail. SSR section keeps Score Cards + Investment Snapshot only.
 
-  // Valuation group
-  if (metrics?.peRatio != null && metrics.peRatio > 0) {
-    valuationRows.push({ label: 'P/E (TTM)', value: metrics.peRatio.toFixed(2) });
-  }
-  if (metrics?.forwardPe != null && metrics.forwardPe > 0) {
-    valuationRows.push({ label: 'Forward P/E', value: metrics.forwardPe.toFixed(2) });
-  }
-  if (metrics?.psRatio != null && metrics.psRatio > 0) {
-    valuationRows.push({ label: 'P/S', value: metrics.psRatio.toFixed(2) });
-  }
-  if (metrics?.pbRatio != null && metrics.pbRatio > 0) {
-    valuationRows.push({ label: 'P/B', value: metrics.pbRatio.toFixed(2) });
-  }
-  if (metrics?.evEbitda != null && metrics.evEbitda > 0) {
-    valuationRows.push({ label: 'EV/EBITDA', value: metrics.evEbitda.toFixed(2) });
-  }
-  if (metrics?.dividendYield != null && metrics.dividendYield > 0) {
-    valuationRows.push({ label: 'Div Yield', value: formatPct(metrics.dividendYield * 100) });
-  }
-
-  // Profitability group
-  if (metrics?.roe != null) {
-    profitabilityRows.push({ label: 'ROE', value: formatPct(metrics.roe) });
-  }
-  if (metrics?.roa != null) {
-    profitabilityRows.push({ label: 'ROA', value: formatPct(metrics.roa) });
-  }
-  if (metrics?.grossMargin != null) {
-    profitabilityRows.push({ label: 'Gross Margin', value: formatPct(metrics.grossMargin) });
-  }
-  if (metrics?.netMargin != null) {
-    profitabilityRows.push({ label: 'Net Margin', value: formatPct(metrics.netMargin) });
-  }
-  if (cache?.fcfMargin != null) {
-    profitabilityRows.push({ label: 'FCF Margin', value: formatPct(cache.fcfMargin * 100) });
-  }
-
-  // Growth group
-  if (metrics?.revenueGrowth != null) {
-    growthRows.push({ label: 'Revenue YoY', value: formatPct(metrics.revenueGrowth) });
-  }
-  if (metrics?.earningsGrowth != null) {
-    growthRows.push({ label: 'Earnings YoY', value: formatPct(metrics.earningsGrowth) });
-  }
-  if (cache?.revenueCagr != null) {
-    growthRows.push({ label: 'Revenue CAGR', value: formatPct(cache.revenueCagr) });
-  }
-  if (cache?.netIncomeCagr != null) {
-    growthRows.push({ label: 'Net Income CAGR', value: formatPct(cache.netIncomeCagr) });
-  }
-
-  // Financial Health group
-  if (cache?.altmanZ != null) {
-    const zone = cache.altmanZ > 3 ? 'safe' : cache.altmanZ > 1.8 ? 'grey' : 'distressed';
-    healthRows.push({ label: 'Altman Z', value: cache.altmanZ.toFixed(2), hint: zone });
-  }
-  if (cache?.piotroskiScore != null) {
-    healthRows.push({ label: 'Piotroski F', value: `${cache.piotroskiScore}/9` });
-  }
-  if (metrics?.currentRatio != null) {
-    healthRows.push({ label: 'Current Ratio', value: formatRatio(metrics.currentRatio, '') });
-  }
-  if (metrics?.debtEquityRatio != null) {
-    healthRows.push({ label: 'Debt/Equity', value: formatRatio(metrics.debtEquityRatio, '') });
-  }
-  if (metrics?.beta != null) {
-    healthRows.push({ label: 'Beta', value: metrics.beta.toFixed(2) });
-  }
-
-  const rows = [...valuationRows, ...profitabilityRows, ...growthRows, ...healthRows];
-
-  // If we have no metrics at all, don't render the section
-  if (rows.length === 0 && !data?.description) {
+  // If we have no scores or description, don't render the section
+  if (!data?.description && cache?.healthScore == null && cache?.profitabilityScore == null && cache?.valuationScore == null) {
     return null;
   }
 
@@ -476,27 +397,10 @@ function SeoAnalysisSummary({
         </div>
       )}
 
-      {/* ── Grouped Financial Metrics ── */}
-      {rows.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Valuation group */}
-          {valuationRows.length > 0 && (
-            <MetricGroup title="Valuation" rows={valuationRows} />
-          )}
-          {/* Profitability group */}
-          {profitabilityRows.length > 0 && (
-            <MetricGroup title="Profitability" rows={profitabilityRows} />
-          )}
-          {/* Growth group */}
-          {growthRows.length > 0 && (
-            <MetricGroup title="Growth" rows={growthRows} />
-          )}
-          {/* Financial Health group */}
-          {healthRows.length > 0 && (
-            <MetricGroup title="Financial Health" rows={healthRows} />
-          )}
-        </div>
-      )}
+      {/* Grouped Financial Metrics removed — duplicated by interactive
+          FinancialHealthTable below which has more detail (labels, extra ratios).
+          Score Cards + Investment Snapshot provide the quick-glance summary;
+          FinancialHealthTable provides the full breakdown. */}
 
       {/* SEO: natural-language summary (hidden visually, for crawlers) */}
       {summaryParts.length > 0 && (
