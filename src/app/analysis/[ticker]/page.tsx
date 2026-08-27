@@ -190,13 +190,72 @@ interface MetricRow {
  * sees only breadcrumbs, schema.org, and loading placeholders.
  *
  * The summary includes:
- *   - Company description (if available)
- *   - Key metrics table (scores, ratios, growth)
- *   - Natural-language summary paragraph (ticker-specific, not template)
+ *   - Stock header (name, price, change, market cap, sector)
+ *   - Score cards (Financial Health, Profitability, Valuation, Verdict)
+ *   - Investment snapshot (key signals: valuation, quality, growth, risk)
+ *   - Grouped metrics (Valuation / Profitability / Growth / Financial Health)
+ *   - Natural-language summary paragraph (for crawlers, visually hidden)
  *
  * All values are pulled from AnalysisCache + FinnhubMetrics + Ticker.
  * Missing values are omitted — no fake/default data.
  */
+
+function scoreColor(score: number): string {
+  if (score >= 75) return 'text-emerald-600 dark:text-emerald-400';
+  if (score >= 50) return 'text-yellow-600 dark:text-yellow-400';
+  return 'text-rose-600 dark:text-rose-400';
+}
+
+function scoreBg(score: number): string {
+  if (score >= 75) return 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800/50';
+  if (score >= 50) return 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800/50';
+  return 'bg-rose-50 dark:bg-rose-900/20 border-rose-200 dark:border-rose-800/50';
+}
+
+function ScoreCard({ label, value, max, tier, compact }: { label: string; value: string; max: string; tier: string; compact?: boolean }) {
+  return (
+    <div className={`rounded-xl border p-3 ${compact ? 'bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-700' : 'border-gray-200 dark:border-gray-700'}`}>
+      <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">{label}</div>
+      {compact ? (
+        <div className="text-base font-bold text-gray-900 dark:text-white">{value}</div>
+      ) : (
+        <>
+          <div className={`text-2xl font-bold tabular-nums ${scoreColor(parseFloat(value))}`}>{value}<span className="text-sm text-gray-400">{max}</span></div>
+          {tier && <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{tier}</div>}
+        </>
+      )}
+    </div>
+  );
+}
+
+function SnapshotTile({ label, primary, secondary }: { label: string; primary: string; secondary?: string }) {
+  return (
+    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3 border border-gray-100 dark:border-gray-700/50">
+      <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">{label}</div>
+      <div className="text-base font-bold text-gray-900 dark:text-white tabular-nums">{primary}</div>
+      {secondary && <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 tabular-nums">{secondary}</div>}
+    </div>
+  );
+}
+
+function MetricGroup({ title, rows }: { title: string; rows: MetricRow[] }) {
+  return (
+    <div>
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">{title}</h3>
+      <div className="space-y-1">
+        {rows.map((row, i) => (
+          <div key={i} className="flex items-center justify-between text-sm py-1 border-b border-gray-50 dark:border-gray-700/30">
+            <span className="text-gray-600 dark:text-gray-400">{row.label}</span>
+            <span className="flex items-center gap-2">
+              <span className="tabular-nums text-gray-900 dark:text-gray-100 font-semibold">{row.value}</span>
+              {row.hint && <span className="text-xs text-gray-400 dark:text-gray-500 italic">{row.hint}</span>}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 function SeoAnalysisSummary({
   ticker,
   companyName,
@@ -209,79 +268,82 @@ function SeoAnalysisSummary({
   const cache = data?.analysisCache;
   const metrics = data?.finnhubMetrics;
 
-  // Build metrics rows — only include if value exists
-  const rows: MetricRow[] = [];
+  // Build metrics rows — grouped into 4 categories
+  const valuationRows: MetricRow[] = [];
+  const profitabilityRows: MetricRow[] = [];
+  const growthRows: MetricRow[] = [];
+  const healthRows: MetricRow[] = [];
 
-  if (cache?.healthScore != null) {
-    rows.push({ label: 'Financial Health Score', value: `${cache.healthScore.toFixed(0)}/100`, hint: scoreLabel(cache.healthScore) });
-  }
-  if (cache?.profitabilityScore != null) {
-    rows.push({ label: 'Profitability Score', value: `${cache.profitabilityScore.toFixed(0)}/100`, hint: scoreLabel(cache.profitabilityScore) });
-  }
-  if (cache?.valuationScore != null) {
-    rows.push({ label: 'Valuation Score', value: `${cache.valuationScore.toFixed(0)}/100`, hint: scoreLabel(cache.valuationScore) });
-  }
-  if (cache?.altmanZ != null) {
-    const zone = cache.altmanZ > 3 ? 'safe' : cache.altmanZ > 1.8 ? 'grey' : 'distressed';
-    rows.push({ label: 'Altman Z-Score', value: cache.altmanZ.toFixed(2), hint: zone });
-  }
-  if (cache?.piotroskiScore != null) {
-    rows.push({ label: 'Piotroski F-Score', value: `${cache.piotroskiScore}/9` });
-  }
+  // Valuation group
   if (metrics?.peRatio != null && metrics.peRatio > 0) {
-    rows.push({ label: 'P/E Ratio (TTM)', value: metrics.peRatio.toFixed(2) });
+    valuationRows.push({ label: 'P/E (TTM)', value: metrics.peRatio.toFixed(2) });
   }
   if (metrics?.forwardPe != null && metrics.forwardPe > 0) {
-    rows.push({ label: 'Forward P/E', value: metrics.forwardPe.toFixed(2) });
+    valuationRows.push({ label: 'Forward P/E', value: metrics.forwardPe.toFixed(2) });
   }
   if (metrics?.psRatio != null && metrics.psRatio > 0) {
-    rows.push({ label: 'P/S Ratio', value: metrics.psRatio.toFixed(2) });
+    valuationRows.push({ label: 'P/S', value: metrics.psRatio.toFixed(2) });
   }
   if (metrics?.pbRatio != null && metrics.pbRatio > 0) {
-    rows.push({ label: 'P/B Ratio', value: metrics.pbRatio.toFixed(2) });
+    valuationRows.push({ label: 'P/B', value: metrics.pbRatio.toFixed(2) });
   }
   if (metrics?.evEbitda != null && metrics.evEbitda > 0) {
-    rows.push({ label: 'EV/EBITDA', value: metrics.evEbitda.toFixed(2) });
-  }
-  if (metrics?.roe != null) {
-    rows.push({ label: 'ROE', value: formatPct(metrics.roe) });
-  }
-  if (metrics?.roa != null) {
-    rows.push({ label: 'ROA', value: formatPct(metrics.roa) });
-  }
-  if (metrics?.grossMargin != null) {
-    rows.push({ label: 'Gross Margin', value: formatPct(metrics.grossMargin) });
-  }
-  if (metrics?.netMargin != null) {
-    rows.push({ label: 'Net Margin', value: formatPct(metrics.netMargin) });
-  }
-  if (cache?.revenueCagr != null) {
-    rows.push({ label: 'Revenue CAGR', value: formatPct(cache.revenueCagr) });
-  }
-  if (cache?.netIncomeCagr != null) {
-    rows.push({ label: 'Net Income CAGR', value: formatPct(cache.netIncomeCagr) });
-  }
-  if (metrics?.revenueGrowth != null) {
-    rows.push({ label: 'Revenue Growth (YoY)', value: formatPct(metrics.revenueGrowth) });
-  }
-  if (metrics?.earningsGrowth != null) {
-    rows.push({ label: 'Earnings Growth (YoY)', value: formatPct(metrics.earningsGrowth) });
-  }
-  if (metrics?.currentRatio != null) {
-    rows.push({ label: 'Current Ratio', value: formatRatio(metrics.currentRatio, '') });
-  }
-  if (metrics?.debtEquityRatio != null) {
-    rows.push({ label: 'Debt/Equity', value: formatRatio(metrics.debtEquityRatio, '') });
-  }
-  if (cache?.fcfMargin != null) {
-    rows.push({ label: 'FCF Margin', value: formatPct(cache.fcfMargin * 100) });
+    valuationRows.push({ label: 'EV/EBITDA', value: metrics.evEbitda.toFixed(2) });
   }
   if (metrics?.dividendYield != null && metrics.dividendYield > 0) {
-    rows.push({ label: 'Dividend Yield', value: formatPct(metrics.dividendYield * 100) });
+    valuationRows.push({ label: 'Div Yield', value: formatPct(metrics.dividendYield * 100) });
+  }
+
+  // Profitability group
+  if (metrics?.roe != null) {
+    profitabilityRows.push({ label: 'ROE', value: formatPct(metrics.roe) });
+  }
+  if (metrics?.roa != null) {
+    profitabilityRows.push({ label: 'ROA', value: formatPct(metrics.roa) });
+  }
+  if (metrics?.grossMargin != null) {
+    profitabilityRows.push({ label: 'Gross Margin', value: formatPct(metrics.grossMargin) });
+  }
+  if (metrics?.netMargin != null) {
+    profitabilityRows.push({ label: 'Net Margin', value: formatPct(metrics.netMargin) });
+  }
+  if (cache?.fcfMargin != null) {
+    profitabilityRows.push({ label: 'FCF Margin', value: formatPct(cache.fcfMargin * 100) });
+  }
+
+  // Growth group
+  if (metrics?.revenueGrowth != null) {
+    growthRows.push({ label: 'Revenue YoY', value: formatPct(metrics.revenueGrowth) });
+  }
+  if (metrics?.earningsGrowth != null) {
+    growthRows.push({ label: 'Earnings YoY', value: formatPct(metrics.earningsGrowth) });
+  }
+  if (cache?.revenueCagr != null) {
+    growthRows.push({ label: 'Revenue CAGR', value: formatPct(cache.revenueCagr) });
+  }
+  if (cache?.netIncomeCagr != null) {
+    growthRows.push({ label: 'Net Income CAGR', value: formatPct(cache.netIncomeCagr) });
+  }
+
+  // Financial Health group
+  if (cache?.altmanZ != null) {
+    const zone = cache.altmanZ > 3 ? 'safe' : cache.altmanZ > 1.8 ? 'grey' : 'distressed';
+    healthRows.push({ label: 'Altman Z', value: cache.altmanZ.toFixed(2), hint: zone });
+  }
+  if (cache?.piotroskiScore != null) {
+    healthRows.push({ label: 'Piotroski F', value: `${cache.piotroskiScore}/9` });
+  }
+  if (metrics?.currentRatio != null) {
+    healthRows.push({ label: 'Current Ratio', value: formatRatio(metrics.currentRatio, '') });
+  }
+  if (metrics?.debtEquityRatio != null) {
+    healthRows.push({ label: 'Debt/Equity', value: formatRatio(metrics.debtEquityRatio, '') });
   }
   if (metrics?.beta != null) {
-    rows.push({ label: 'Beta', value: metrics.beta.toFixed(2) });
+    healthRows.push({ label: 'Beta', value: metrics.beta.toFixed(2) });
   }
+
+  const rows = [...valuationRows, ...profitabilityRows, ...growthRows, ...healthRows];
 
   // If we have no metrics at all, don't render the section
   if (rows.length === 0 && !data?.description) {
@@ -357,84 +419,115 @@ function SeoAnalysisSummary({
       className="mb-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6"
       aria-label={`${companyName} stock analysis summary`}
     >
-      <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
-        {companyName} ({ticker}) Stock Analysis
-      </h2>
+      {/* ── Stock Header ── */}
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
+        <div className="flex-1">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+            {companyName} ({ticker})
+          </h2>
+          {data?.description && (
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 leading-relaxed max-w-2xl">
+              {data.description.length > 200
+                ? data.description.slice(0, 197).trim() + '...'
+                : data.description}
+            </p>
+          )}
+          <div className="flex flex-wrap items-center gap-3 mt-3 text-sm">
+            {data?.sector && (
+              <Link href={`/sectors/${encodeURIComponent(data.sector)}`} className="text-blue-600 dark:text-blue-400 hover:underline font-medium">
+                {data.sector}
+              </Link>
+            )}
+            {data?.lastMarketCap != null && data.lastMarketCap > 0 && (
+              <span className="text-gray-500 dark:text-gray-400">
+                · {formatMarketCapB(data.lastMarketCap)} Market Cap
+              </span>
+            )}
+          </div>
+        </div>
+        {/* Price block */}
+        {data?.lastPrice != null && (
+          <div className="flex flex-col items-end">
+            <div className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
+              {formatPrice(data.lastPrice)}
+            </div>
+            {data?.lastChangePct != null && (
+              <div className={`text-lg font-bold tabular-nums ${data.lastChangePct >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                {formatPercent(data.lastChangePct)}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
-      {/* Natural-language summary */}
-      {summaryParts.length > 0 && (
-        <div className="text-sm text-gray-700 dark:text-gray-300 space-y-2 mb-4 leading-relaxed max-w-3xl">
-          {summaryParts.map((p, i) => (
-            <p key={i}>{p}</p>
-          ))}
+      {/* ── Score Cards (4 prominent) ── */}
+      {(cache?.healthScore != null || cache?.profitabilityScore != null || cache?.valuationScore != null) && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          {cache?.healthScore != null && (
+            <ScoreCard label="Financial Health" value={cache.healthScore.toFixed(0)} max="/100" tier={scoreLabel(cache.healthScore)} />
+          )}
+          {cache?.profitabilityScore != null && (
+            <ScoreCard label="Profitability" value={cache.profitabilityScore.toFixed(0)} max="/100" tier={scoreLabel(cache.profitabilityScore)} />
+          )}
+          {cache?.valuationScore != null && (
+            <ScoreCard label="Valuation" value={cache.valuationScore.toFixed(0)} max="/100" tier={scoreLabel(cache.valuationScore)} />
+          )}
+          {cache?.verdictText && (
+            <ScoreCard label="Overall Verdict" value={cache.verdictText} max="" tier="" compact />
+          )}
         </div>
       )}
 
-      {/* Key metrics table */}
-      {rows.length > 0 && (
-        <>
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2 mt-4">
-            Key Financial Metrics
-          </h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <tbody>
-                {rows.map((row, i) => (
-                  <tr key={i} className="border-b border-gray-100 dark:border-gray-700/50">
-                    <td className="py-2 pr-4 text-gray-600 dark:text-gray-400 font-medium">
-                      {row.label}
-                    </td>
-                    <td className="py-2 pr-4 tabular-nums text-gray-900 dark:text-gray-100 font-semibold">
-                      {row.value}
-                    </td>
-                    {row.hint && (
-                      <td className="py-2 text-xs text-gray-500 dark:text-gray-500 italic">
-                        {row.hint}
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
+      {/* ── Investment Snapshot (key signals grid) ── */}
+      {(metrics?.peRatio != null || cache?.piotroskiScore != null || metrics?.revenueGrowth != null || cache?.altmanZ != null) && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          {/* Valuation signal */}
+          {metrics?.peRatio != null && metrics.peRatio > 0 && (
+            <SnapshotTile label="Valuation" primary={`P/E ${metrics.peRatio.toFixed(1)}`} secondary={metrics?.forwardPe != null && metrics.forwardPe > 0 ? `Fwd ${metrics.forwardPe.toFixed(1)}` : undefined} />
+          )}
+          {/* Quality signal */}
+          {cache?.piotroskiScore != null && (
+            <SnapshotTile label="Quality" primary={`F-Score ${cache.piotroskiScore}/9`} secondary={metrics?.roe != null ? `ROE ${formatPct(metrics.roe)}` : undefined} />
+          )}
+          {/* Growth signal */}
+          {metrics?.revenueGrowth != null && (
+            <SnapshotTile label="Growth" primary={`Rev ${formatPct(metrics.revenueGrowth)}`} secondary={cache?.revenueCagr != null ? `CAGR ${formatPct(cache.revenueCagr)}` : undefined} />
+          )}
+          {/* Risk signal */}
+          {cache?.altmanZ != null && (
+            <SnapshotTile label="Risk" primary={`Z ${cache.altmanZ.toFixed(2)}`} secondary={cache.altmanZ > 3 ? 'Safe' : cache.altmanZ > 1.8 ? 'Grey zone' : 'Distressed'} />
+          )}
+        </div>
       )}
 
-      {/* Price + market cap quick stats */}
-      {(data?.lastPrice != null || data?.lastMarketCap != null) && (
-        <div className="mt-4 flex flex-wrap gap-4 text-sm">
-          {data?.lastPrice != null && (
-            <div>
-              <span className="text-gray-500 dark:text-gray-400">Current Price: </span>
-              <span className="font-semibold text-gray-900 dark:text-gray-100 tabular-nums">
-                {formatPrice(data.lastPrice)}
-              </span>
-            </div>
+      {/* ── Grouped Financial Metrics ── */}
+      {rows.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Valuation group */}
+          {valuationRows.length > 0 && (
+            <MetricGroup title="Valuation" rows={valuationRows} />
           )}
-          {data?.lastChangePct != null && (
-            <div>
-              <span className="text-gray-500 dark:text-gray-400">Change: </span>
-              <span className={`font-semibold tabular-nums ${data.lastChangePct >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
-                {formatPercent(data.lastChangePct)}
-              </span>
-            </div>
+          {/* Profitability group */}
+          {profitabilityRows.length > 0 && (
+            <MetricGroup title="Profitability" rows={profitabilityRows} />
           )}
-          {data?.lastMarketCap != null && data.lastMarketCap > 0 && (
-            <div>
-              <span className="text-gray-500 dark:text-gray-400">Market Cap: </span>
-              <span className="font-semibold text-gray-900 dark:text-gray-100 tabular-nums">
-                {formatMarketCapB(data.lastMarketCap)}
-              </span>
-            </div>
+          {/* Growth group */}
+          {growthRows.length > 0 && (
+            <MetricGroup title="Growth" rows={growthRows} />
           )}
-          {data?.sector && (
-            <div>
-              <span className="text-gray-500 dark:text-gray-400">Sector: </span>
-              <Link href={`/sectors/${encodeURIComponent(data.sector)}`} className="font-semibold text-blue-600 dark:text-blue-400 hover:underline">
-                {data.sector}
-              </Link>
-            </div>
+          {/* Financial Health group */}
+          {healthRows.length > 0 && (
+            <MetricGroup title="Financial Health" rows={healthRows} />
           )}
+        </div>
+      )}
+
+      {/* SEO: natural-language summary (hidden visually, for crawlers) */}
+      {summaryParts.length > 0 && (
+        <div className="sr-only" aria-hidden="false">
+          {summaryParts.map((p, i) => (
+            <p key={i}>{p}</p>
+          ))}
         </div>
       )}
 
@@ -556,172 +649,6 @@ export default async function AnalysisPage({ params }: PageProps) {
 
           {/* Full interactive analysis (client-side) */}
           <AnalysisTabClient ticker={tickerUpper} hideSearch />
-
-          {/* Recent Market Moves — from SessionPrice data */}
-          {await (async () => {
-            const recentMoves = await getRecentSignificantMoves(tickerUpper);
-            if (recentMoves.length === 0) return null;
-
-            return (
-              <div className="mt-8 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    Recent Market Moves
-                  </h2>
-                  <Link
-                    href={`/movers/${tickerUpper}`}
-                    className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
-                  >
-                    See all {tickerUpper} moves →
-                  </Link>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
-                        <th className="px-3 py-2 font-medium">Date</th>
-                        <th className="px-3 py-2 font-medium">Session</th>
-                        <th className="px-3 py-2 font-medium">Price</th>
-                        <th className="px-3 py-2 font-medium">Move</th>
-                        <th className="px-3 py-2 font-medium">Z-Score</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {recentMoves.map((m, i) => {
-                        const moveUp = m.changePct >= 0;
-                        const dateStr = m.date.toISOString().split('T')[0] ?? '';
-                        const isPremarket = m.session === 'pre';
-                        const archiveLink = isPremarket
-                          ? (moveUp ? `/premarket-gainers/${dateStr}` : `/premarket-losers/${dateStr}`)
-                          : null;
-                        return (
-                          <tr key={i} className="border-b border-gray-50 dark:border-gray-700/50">
-                            <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">
-                              {archiveLink ? (
-                                <Link href={archiveLink} className="hover:text-blue-600 dark:hover:text-blue-400 hover:underline">
-                                  {m.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                </Link>
-                              ) : (
-                                m.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                              )}
-                            </td>
-                            <td className="px-3 py-2 text-gray-700 dark:text-gray-300">
-                              {formatSessionLabel(m.session)}
-                            </td>
-                            <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">
-                              {formatPrice(m.lastPrice)}
-                            </td>
-                            <td className={`px-3 py-2 tabular-nums font-semibold ${moveUp ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
-                              {formatPercent(m.changePct)}
-                            </td>
-                            <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">
-                              {m.zScore?.toFixed(2) ?? '—'}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            );
-          })()}
-
-          {/* Earnings section — SSR from EarningsCalendar DB */}
-          {await (async () => {
-            const { upcoming, recent } = await getEarningsForTicker(tickerUpper);
-            if (upcoming.length === 0 && recent.length === 0) return null;
-
-            const formatEpsShort = (v: number | null) => v == null ? '—' : `$${v.toFixed(2)}`;
-            const formatRevShort = (v: number | null) => {
-              if (v == null) return '—';
-              if (v >= 1e9) return `$${(v / 1e9).toFixed(1)}B`;
-              if (v >= 1e6) return `$${(v / 1e6).toFixed(0)}M`;
-              return `$${v.toFixed(0)}`;
-            };
-            const timeLabel = (t: string) => t === 'bmo' ? 'Pre-Mkt' : t === 'amc' ? 'After-Hrs' : t === 'dmt' ? 'During' : 'TBD';
-            const formatDateShort = (d: string) => new Date(d + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-
-            return (
-              <div className="mt-8 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    Earnings Schedule
-                  </h2>
-                  <Link href="/earnings" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
-                    View earnings calendar →
-                  </Link>
-                </div>
-
-                {upcoming.length > 0 && (
-                  <div className="mb-4">
-                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Upcoming Earnings</h3>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
-                            <th className="px-3 py-2 font-medium">Date</th>
-                            <th className="px-3 py-2 font-medium">Time</th>
-                            <th className="px-3 py-2 font-medium">EPS Est.</th>
-                            <th className="px-3 py-2 font-medium">Rev Est.</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {upcoming.map((e, i) => (
-                            <tr key={i} className="border-b border-gray-50 dark:border-gray-700/50">
-                              <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">{formatDateShort(e.date)}</td>
-                              <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{timeLabel(e.time)}</td>
-                              <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">{formatEpsShort(e.epsEstimate)}</td>
-                              <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">{formatRevShort(e.revenueEstimate)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-
-                {recent.length > 0 && (
-                  <div>
-                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Recent Earnings Results</h3>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
-                            <th className="px-3 py-2 font-medium">Date</th>
-                            <th className="px-3 py-2 font-medium">Time</th>
-                            <th className="px-3 py-2 font-medium">EPS Est.</th>
-                            <th className="px-3 py-2 font-medium">EPS Actual</th>
-                            <th className="px-3 py-2 font-medium">Surprise</th>
-                            <th className="px-3 py-2 font-medium">Rev Est.</th>
-                            <th className="px-3 py-2 font-medium">Rev Actual</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {recent.map((e, i) => {
-                            const surprise = e.epsSurprisePercent;
-                            return (
-                              <tr key={i} className="border-b border-gray-50 dark:border-gray-700/50">
-                                <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">{formatDateShort(e.date)}</td>
-                                <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{timeLabel(e.time)}</td>
-                                <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">{formatEpsShort(e.epsEstimate)}</td>
-                                <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">{formatEpsShort(e.epsActual)}</td>
-                                <td className={`px-3 py-2 tabular-nums font-semibold ${surprise != null ? (surprise >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400') : 'text-gray-400'}`}>
-                                  {surprise != null ? formatPercent(surprise) : '—'}
-                                </td>
-                                <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">{formatRevShort(e.revenueEstimate)}</td>
-                                <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">{formatRevShort(e.revenueActual)}</td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })()}
 
           {/* Analyst Consensus section — SSR from FinnhubPriceTarget + FinnhubRecommendation DB */}
           {(() => {
@@ -862,6 +789,172 @@ export default async function AnalysisPage({ params }: PageProps) {
                     </div>
                   </div>
                 )}
+              </div>
+            );
+          })()}
+
+          {/* Earnings section — SSR from EarningsCalendar DB */}
+          {await (async () => {
+            const { upcoming, recent } = await getEarningsForTicker(tickerUpper);
+            if (upcoming.length === 0 && recent.length === 0) return null;
+
+            const formatEpsShort = (v: number | null) => v == null ? '—' : `$${v.toFixed(2)}`;
+            const formatRevShort = (v: number | null) => {
+              if (v == null) return '—';
+              if (v >= 1e9) return `$${(v / 1e9).toFixed(1)}B`;
+              if (v >= 1e6) return `$${(v / 1e6).toFixed(0)}M`;
+              return `$${v.toFixed(0)}`;
+            };
+            const timeLabel = (t: string) => t === 'bmo' ? 'Pre-Mkt' : t === 'amc' ? 'After-Hrs' : t === 'dmt' ? 'During' : 'TBD';
+            const formatDateShort = (d: string) => new Date(d + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+            return (
+              <div className="mt-8 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Earnings Schedule
+                  </h2>
+                  <Link href="/earnings" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
+                    View earnings calendar →
+                  </Link>
+                </div>
+
+                {upcoming.length > 0 && (
+                  <div className="mb-4">
+                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Upcoming Earnings</h3>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
+                            <th className="px-3 py-2 font-medium">Date</th>
+                            <th className="px-3 py-2 font-medium">Time</th>
+                            <th className="px-3 py-2 font-medium">EPS Est.</th>
+                            <th className="px-3 py-2 font-medium">Rev Est.</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {upcoming.map((e, i) => (
+                            <tr key={i} className="border-b border-gray-50 dark:border-gray-700/50">
+                              <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">{formatDateShort(e.date)}</td>
+                              <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{timeLabel(e.time)}</td>
+                              <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">{formatEpsShort(e.epsEstimate)}</td>
+                              <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">{formatRevShort(e.revenueEstimate)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {recent.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Recent Earnings Results</h3>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
+                            <th className="px-3 py-2 font-medium">Date</th>
+                            <th className="px-3 py-2 font-medium">Time</th>
+                            <th className="px-3 py-2 font-medium">EPS Est.</th>
+                            <th className="px-3 py-2 font-medium">EPS Actual</th>
+                            <th className="px-3 py-2 font-medium">Surprise</th>
+                            <th className="px-3 py-2 font-medium">Rev Est.</th>
+                            <th className="px-3 py-2 font-medium">Rev Actual</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {recent.map((e, i) => {
+                            const surprise = e.epsSurprisePercent;
+                            return (
+                              <tr key={i} className="border-b border-gray-50 dark:border-gray-700/50">
+                                <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">{formatDateShort(e.date)}</td>
+                                <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{timeLabel(e.time)}</td>
+                                <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">{formatEpsShort(e.epsEstimate)}</td>
+                                <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">{formatEpsShort(e.epsActual)}</td>
+                                <td className={`px-3 py-2 tabular-nums font-semibold ${surprise != null ? (surprise >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400') : 'text-gray-400'}`}>
+                                  {surprise != null ? formatPercent(surprise) : '—'}
+                                </td>
+                                <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">{formatRevShort(e.revenueEstimate)}</td>
+                                <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">{formatRevShort(e.revenueActual)}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
+          {/* Recent Market Moves — from SessionPrice data */}
+          {await (async () => {
+            const recentMoves = await getRecentSignificantMoves(tickerUpper);
+            if (recentMoves.length === 0) return null;
+
+            return (
+              <div className="mt-8 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Recent Market Moves
+                  </h2>
+                  <Link
+                    href={`/movers/${tickerUpper}`}
+                    className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    See all {tickerUpper} moves →
+                  </Link>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
+                        <th className="px-3 py-2 font-medium">Date</th>
+                        <th className="px-3 py-2 font-medium">Session</th>
+                        <th className="px-3 py-2 font-medium">Price</th>
+                        <th className="px-3 py-2 font-medium">Move</th>
+                        <th className="px-3 py-2 font-medium">Z-Score</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recentMoves.map((m, i) => {
+                        const moveUp = m.changePct >= 0;
+                        const dateStr = m.date.toISOString().split('T')[0] ?? '';
+                        const isPremarket = m.session === 'pre';
+                        const archiveLink = isPremarket
+                          ? (moveUp ? `/premarket-gainers/${dateStr}` : `/premarket-losers/${dateStr}`)
+                          : null;
+                        return (
+                          <tr key={i} className="border-b border-gray-50 dark:border-gray-700/50">
+                            <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">
+                              {archiveLink ? (
+                                <Link href={archiveLink} className="hover:text-blue-600 dark:hover:text-blue-400 hover:underline">
+                                  {m.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                </Link>
+                              ) : (
+                                m.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                              )}
+                            </td>
+                            <td className="px-3 py-2 text-gray-700 dark:text-gray-300">
+                              {formatSessionLabel(m.session)}
+                            </td>
+                            <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">
+                              {formatPrice(m.lastPrice)}
+                            </td>
+                            <td className={`px-3 py-2 tabular-nums font-semibold ${moveUp ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                              {formatPercent(m.changePct)}
+                            </td>
+                            <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">
+                              {m.zScore?.toFixed(2) ?? '—'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             );
           })()}
