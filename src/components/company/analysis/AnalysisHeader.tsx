@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import CompanyLogo from '@/components/CompanyLogo';
 import type { AnalysisData } from './types';
 import { formatMarketCap as fmtMcap, formatPrice, formatPercent, formatMarketCapDiff } from '@/lib/utils/format';
@@ -88,15 +89,6 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
         ?? t?.lastPrice
         ?? null;
     const hasFreshPrice = !!realTimeData?.currentPrice || !isDbPriceStale;
-
-    const stats = t ? [
-        { label: 'Sector',      value: t.sector },
-        { label: 'Industry',    value: t.industry?.replace('SIC: ', '') },
-        { label: 'Market Cap',  value: formatMarketCap(t.lastMarketCap) },
-        { label: 'Price',       value: bestPrice ? `$${bestPrice.toFixed(2)}` : null },
-        { label: 'Employees',   value: t.employees ? t.employees.toLocaleString() : null },
-        { label: 'HQ',          value: t.headquarters },
-    ] : [];
 
     const companyName = (t?.name && t.name !== ticker) ? t.name : ticker;
 
@@ -206,16 +198,79 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
                     {/* ── BOTTOM: Clean horizontal stats grid ── */}
                     <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-5">
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-x-4 gap-y-3">
-                            {stats.map(({ label, value }) => (
-                                <div key={label}>
-                                    <p className="text-[10px] uppercase tracking-widest font-semibold text-gray-400 dark:text-gray-500">
-                                        {label}
-                                    </p>
-                                    <p className={`text-sm font-semibold mt-0.5 ${value ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-gray-600'}`}>
-                                        {value || 'N/A'}
-                                    </p>
-                                </div>
-                            ))}
+                            {/* Sector — clickable link to /sectors/[sector] */}
+                            <div>
+                                <p className="text-[10px] uppercase tracking-widest font-semibold text-gray-400 dark:text-gray-500">
+                                    Sector
+                                </p>
+                                {t.sector ? (
+                                    <Link
+                                        href={`/sectors/${encodeURIComponent(t.sector)}`}
+                                        className="text-sm font-semibold mt-0.5 text-blue-600 dark:text-blue-400 hover:underline inline-block"
+                                    >
+                                        {t.sector}
+                                    </Link>
+                                ) : (
+                                    <p className="text-sm font-semibold mt-0.5 text-gray-300 dark:text-gray-600">N/A</p>
+                                )}
+                            </div>
+
+                            {/* Industry — clickable link to /stocks?industry=[industry] */}
+                            <div>
+                                <p className="text-[10px] uppercase tracking-widest font-semibold text-gray-400 dark:text-gray-500">
+                                    Industry
+                                </p>
+                                {t.industry ? (
+                                    <Link
+                                        href={`/stocks?industry=${encodeURIComponent(t.industry.replace('SIC: ', ''))}`}
+                                        className="text-sm font-semibold mt-0.5 text-blue-600 dark:text-blue-400 hover:underline inline-block"
+                                    >
+                                        {t.industry.replace('SIC: ', '')}
+                                    </Link>
+                                ) : (
+                                    <p className="text-sm font-semibold mt-0.5 text-gray-300 dark:text-gray-600">N/A</p>
+                                )}
+                            </div>
+
+                            {/* Market Cap */}
+                            <div>
+                                <p className="text-[10px] uppercase tracking-widest font-semibold text-gray-400 dark:text-gray-500">
+                                    Market Cap
+                                </p>
+                                <p className={`text-sm font-semibold mt-0.5 ${formatMarketCap(t.lastMarketCap) ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-gray-600'}`}>
+                                    {formatMarketCap(t.lastMarketCap) || 'N/A'}
+                                </p>
+                            </div>
+
+                            {/* Price */}
+                            <div>
+                                <p className="text-[10px] uppercase tracking-widest font-semibold text-gray-400 dark:text-gray-500">
+                                    Price
+                                </p>
+                                <p className={`text-sm font-semibold mt-0.5 ${bestPrice ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-gray-600'}`}>
+                                    {bestPrice ? `$${bestPrice.toFixed(2)}` : 'N/A'}
+                                </p>
+                            </div>
+
+                            {/* Employees */}
+                            <div>
+                                <p className="text-[10px] uppercase tracking-widest font-semibold text-gray-400 dark:text-gray-500">
+                                    Employees
+                                </p>
+                                <p className={`text-sm font-semibold mt-0.5 ${t.employees ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-gray-600'}`}>
+                                    {t.employees ? t.employees.toLocaleString() : 'N/A'}
+                                </p>
+                            </div>
+
+                            {/* HQ */}
+                            <div>
+                                <p className="text-[10px] uppercase tracking-widest font-semibold text-gray-400 dark:text-gray-500">
+                                    HQ
+                                </p>
+                                <p className={`text-sm font-semibold mt-0.5 ${t.headquarters ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-gray-600'}`}>
+                                    {t.headquarters || 'N/A'}
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </>

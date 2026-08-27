@@ -35,7 +35,7 @@ interface StockRow {
   hasValuation: boolean;
 }
 
-async function getAllStocks(): Promise<StockRow[]> {
+async function getAllStocks(industryFilter?: string): Promise<StockRow[]> {
   const eligibleAnalysis = new Set(await getEligibleAnalysisTickers());
   const eligibleValuation = new Set(await getEligibleValuationTickers());
 
@@ -43,6 +43,7 @@ async function getAllStocks(): Promise<StockRow[]> {
     where: {
       symbol: { in: [...eligibleAnalysis] },
       lastPrice: { gt: 0 },
+      ...(industryFilter ? { industry: industryFilter } : {}),
     },
     select: {
       symbol: true,
@@ -89,8 +90,21 @@ function scoreColor(score: number | null): string {
   return 'text-rose-600 dark:text-rose-400';
 }
 
-export default async function StocksHubPage() {
-  const stocks = await getAllStocks();
+interface StocksPageProps {
+  searchParams: Promise<{ industry?: string; sector?: string }>;
+}
+
+export default async function StocksHubPage({ searchParams }: StocksPageProps) {
+  const { industry: industryParam, sector: sectorParam } = await searchParams;
+  const industryFilter = industryParam ? decodeURIComponent(industryParam) : undefined;
+  const sectorFilter = sectorParam ? decodeURIComponent(sectorParam) : undefined;
+
+  let stocks = await getAllStocks(industryFilter);
+
+  // Additional client-side sector filter (if sector param present and no industry filter)
+  if (sectorFilter && !industryFilter) {
+    stocks = stocks.filter(s => s.sector === sectorFilter);
+  }
 
   // Group by sector for sector filter chips
   const sectorCounts = new Map<string, number>();
@@ -122,11 +136,24 @@ export default async function StocksHubPage() {
         <div className="container mx-auto py-8 px-4">
           {/* Header */}
           <div className="mb-6">
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">All Stocks</h1>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+              {industryFilter || sectorFilter ? `${industryFilter || sectorFilter} Stocks` : 'All Stocks'}
+            </h1>
             <p className="mt-2 text-slate-600 dark:text-slate-300 max-w-3xl">
-              Browse all {stocks.length} US stocks covered by PreMarketPrice. Each ticker links to
-              detailed stock analysis, historical valuation, and market movement pages.
+              {(industryFilter || sectorFilter)
+                ? `Showing ${stocks.length} ${industryFilter ? `stocks in the ${industryFilter} industry` : `stocks in the ${sectorFilter} sector`}. Each ticker links to detailed analysis.`
+                : <>Browse all {stocks.length} US stocks covered by PreMarketPrice. Each ticker links to detailed stock analysis, historical valuation, and market movement pages.</>}
             </p>
+            {(industryFilter || sectorFilter) && (
+              <div className="mt-3">
+                <Link
+                  href="/stocks"
+                  className="inline-flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  ← Back to All Stocks
+                </Link>
+              </div>
+            )}
             <div className="mt-3 text-sm text-slate-600 dark:text-slate-400">
               Related:{' '}
               <Link className="hover:underline" href="/premarket-movers">Premarket Movers</Link>

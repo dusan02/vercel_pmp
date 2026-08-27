@@ -1,5 +1,5 @@
 import React from 'react';
-import { getColorClass, getStrokeColor } from './ScoreCard';
+import { getColorClass } from './ScoreCard';
 
 interface ScoreRingsProps {
   healthScore: number | null;
@@ -8,40 +8,45 @@ interface ScoreRingsProps {
   verdictText: string | null;
 }
 
-function MiniScoreRing({ label, score }: { label: string; score: number | null }) {
-  const radius = 26;
-  const circumference = 2 * Math.PI * radius;
+function ScoreBar({ label, score }: { label: string; score: number | null }) {
   const hasScore = score != null && !isNaN(score);
-  const displayScore = hasScore ? score : 0;
-  const strokeDashoffset = hasScore ? circumference - (displayScore / 100) * circumference : circumference;
+  const pct = hasScore ? Math.max(0, Math.min(100, score)) : 0;
   const color = getColorClass(score);
-  const stroke = getStrokeColor(score);
+
+  // Bar fill color based on score
+  const barColor = !hasScore ? '#d1d5db' : score! <= 40 ? '#ef4444' : score! <= 70 ? '#eab308' : '#22c55e';
 
   return (
-    <div className="flex flex-col items-center gap-1.5" title={`${label}: ${score ?? 'N/A'}/100`}>
-      <div className="relative w-[64px] h-[64px]">
-        <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100" aria-hidden="true">
-          <circle cx="50" cy="50" r={radius} fill="transparent" stroke="currentColor" strokeWidth="8" className="text-gray-100 dark:text-gray-700" />
-          {hasScore && (
-            <circle
-              cx="50" cy="50" r={radius} fill="transparent"
-              stroke={stroke} strokeWidth="8" strokeLinecap="round"
-              strokeDasharray={circumference} strokeDashoffset={strokeDashoffset}
-              className="transition-all duration-700 ease-out"
-              role="progressbar"
-              aria-valuenow={score ?? 0}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-label={`${label} score`}
-            />
-          )}
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className={`text-lg font-bold leading-none ${color}`}>{score ?? '—'}</span>
-          <span className="text-[7px] text-gray-400 mt-0.5">/ 100</span>
-        </div>
+    <div className="flex items-center gap-2 w-full">
+      <span className="text-[10px] uppercase tracking-wider font-semibold text-gray-400 dark:text-gray-500 w-[52px] shrink-0">{label}</span>
+      <div className="relative flex-1 h-5 bg-gray-100 dark:bg-gray-700/50 rounded-full overflow-hidden min-w-[80px]">
+        <div
+          className="absolute inset-y-0 left-0 rounded-full transition-all duration-700 ease-out"
+          style={{ width: `${pct}%`, backgroundColor: barColor }}
+          role="progressbar"
+          aria-valuenow={score ?? 0}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={`${label} score`}
+        />
+        <span className={`absolute inset-0 flex items-center justify-center text-[11px] font-bold ${hasScore ? color : 'text-gray-400'}`}>
+          {score ?? '—'}
+          {hasScore && <span className="text-[8px] text-gray-400 ml-0.5">/100</span>}
+        </span>
       </div>
-      <span className="text-[10px] uppercase tracking-wider font-semibold text-gray-400 dark:text-gray-500">{label}</span>
+    </div>
+  );
+}
+
+function VerdictBar({ verdict }: { verdict: string }) {
+  return (
+    <div className="flex items-center gap-2 w-full">
+      <span className="text-[10px] uppercase tracking-wider font-semibold text-gray-400 dark:text-gray-500 w-[52px] shrink-0">Verdict</span>
+      <div className="flex-1 h-5 bg-gray-50 dark:bg-gray-700/50 rounded-full flex items-center justify-center min-w-[80px] border border-gray-100 dark:border-gray-700">
+        <span className="text-[11px] font-bold text-gray-600 dark:text-gray-300 px-2 truncate">
+          {verdict}
+        </span>
+      </div>
     </div>
   );
 }
@@ -51,20 +56,11 @@ export function ScoreRings({ healthScore, profitabilityScore, valuationScore, ve
   if (!hasAnyScore && !verdictText) return null;
 
   return (
-    <div className="hidden md:flex items-center gap-4 lg:gap-5 px-4 lg:px-6 border-l border-gray-100 dark:border-gray-700/60">
-      {healthScore != null && <MiniScoreRing label="Health" score={healthScore} />}
-      {profitabilityScore != null && <MiniScoreRing label="Profit" score={profitabilityScore} />}
-      {valuationScore != null && <MiniScoreRing label="Value" score={valuationScore} />}
-      {verdictText && (
-        <div className="flex flex-col items-center gap-1.5 min-w-[64px]">
-          <div className="flex items-center justify-center w-[64px] h-[64px] rounded-full bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-700">
-            <span className="text-xs font-bold text-gray-600 dark:text-gray-300 text-center leading-tight px-1">
-              {verdictText.length > 10 ? verdictText.slice(0, 9) + '…' : verdictText}
-            </span>
-          </div>
-          <span className="text-[10px] uppercase tracking-wider font-semibold text-gray-400 dark:text-gray-500">AI Verdict</span>
-        </div>
-      )}
+    <div className="hidden md:flex flex-col gap-2 px-4 lg:px-6 border-l border-gray-100 dark:border-gray-700/60 w-[240px] lg:w-[280px] shrink-0">
+      {healthScore != null && <ScoreBar label="Health" score={healthScore} />}
+      {profitabilityScore != null && <ScoreBar label="Profit" score={profitabilityScore} />}
+      {valuationScore != null && <ScoreBar label="Value" score={valuationScore} />}
+      {verdictText && <VerdictBar verdict={verdictText} />}
     </div>
   );
 }
