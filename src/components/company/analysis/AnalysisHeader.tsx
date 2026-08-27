@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import CompanyLogo from '@/components/CompanyLogo';
 import type { AnalysisData } from './types';
 import { formatMarketCap as fmtMcap, formatPrice, formatPercent, formatMarketCapDiff } from '@/lib/utils/format';
+import { ScoreRings } from './ScoreRings';
 
 /** Wraps shared formatMarketCap — adds $ prefix, returns null for empty */
 export function formatMarketCap(val: number | null | undefined): string | null {
@@ -141,6 +142,14 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
                                 )}
                             </div>
                         </div>
+
+                        {/* Score Rings — Health / Profitability / Valuation / AI Verdict */}
+                        <ScoreRings
+                            healthScore={data.healthScore}
+                            profitabilityScore={data.profitabilityScore}
+                            valuationScore={data.valuationScore}
+                            verdictText={data.verdictText}
+                        />
 
                         {/* Real-time Price & Movement — desktop */}
                         <div className="hidden sm:flex flex-col ml-4 lg:ml-8 border-l border-gray-100 dark:border-gray-700/60 pl-4 lg:pl-8 min-w-[120px]">

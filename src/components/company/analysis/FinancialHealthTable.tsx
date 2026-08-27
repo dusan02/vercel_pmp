@@ -1,41 +1,12 @@
 import React, { useMemo } from 'react';
 import { AnalysisData } from './types';
 import { CompactMetricRow, MetricCardDef, StatusType, StatusBadge } from '../shared/MetricCard';
-import { getColorClass, getStrokeColor } from './ScoreCard';
 
 interface Props {
     ticker: string;
     data: AnalysisData;
     compareWith: string;
     secondaryData: AnalysisData | null;
-}
-
-// ── Score Ring (redesigned for Summary Card) ────────────────────────────────
-function ScoreRing({ label, score }: { label: string; score: number | null }) {
-    const radius = 38;
-    const circumference = 2 * Math.PI * radius;
-    const hasScore = score != null && !isNaN(score);
-    const displayScore = hasScore ? score : 0;
-    const strokeDashoffset = hasScore ? circumference - (displayScore / 100) * circumference : circumference;
-    const color = getColorClass(score);
-    const stroke = getStrokeColor(score);
-    return (
-        <div className="flex flex-col items-center gap-1.5">
-            <p className="text-[9px] sm:text-[10px] uppercase tracking-widest font-semibold text-gray-400 dark:text-gray-500">{label}</p>
-            <div className="relative w-[76px] h-[76px] sm:w-[100px] sm:h-[100px]">
-                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                    <circle cx="50" cy="50" r={radius} fill="transparent" stroke="currentColor" strokeWidth="8" className="text-gray-100 dark:text-gray-700" />
-                    {hasScore && (
-                        <circle cx="50" cy="50" r={radius} fill="transparent" stroke={stroke} strokeWidth="8" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} className="transition-all duration-700 ease-out" />
-                    )}
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className={`text-lg sm:text-2xl font-bold ${color}`}>{score ?? '—'}</span>
-                    <span className="text-[8px] sm:text-[9px] text-gray-400 mt-0.5">/ 100</span>
-                </div>
-            </div>
-        </div>
-    );
 }
 
 // ── Build all metrics ────────────────────────────────────────────────────────
@@ -224,29 +195,26 @@ export function FinancialHealthTable({ ticker, data, compareWith, secondaryData 
                 </div>
             </div>
 
-            {/* Summary Card: Scores + AI Verdict */}
-            <div className="bg-white dark:bg-[#15171e] rounded-2xl p-4 sm:p-6 shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-gray-100 dark:border-gray-800/80 mb-6">
-                <div className="flex flex-col lg:flex-row items-center gap-4 sm:gap-6">
-                    <div className="flex items-center justify-center gap-4 sm:gap-8 shrink-0 flex-wrap">
-                        <ScoreRing label="Health" score={data.healthScore} />
-                        <ScoreRing label="Profitability" score={data.profitabilityScore} />
-                        <ScoreRing label="Valuation" score={data.valuationScore} />
-                    </div>
-                    <div className="flex-1 min-w-0 w-full">
-                        {data.verdictText && (
-                            <div className="mb-3">
-                                <p className="text-[10px] uppercase tracking-widest font-bold text-blue-500 dark:text-blue-400 mb-2">AI Verdict</p>
-                                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{data.verdictText}</p>
+            {/* AI Verdict + Legend (score rings moved to AnalysisHeader) */}
+            {(data.verdictText || data.healthScore != null || data.profitabilityScore != null || data.valuationScore != null) && (
+                <div className="bg-white dark:bg-[#15171e] rounded-2xl p-4 sm:p-6 shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-gray-100 dark:border-gray-800/80 mb-6">
+                    <div className="flex flex-col lg:flex-row items-start gap-4 sm:gap-6">
+                        <div className="flex-1 min-w-0 w-full">
+                            {data.verdictText && (
+                                <div className="mb-3">
+                                    <p className="text-[10px] uppercase tracking-widest font-bold text-blue-500 dark:text-blue-400 mb-2">AI Verdict</p>
+                                    <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{data.verdictText}</p>
+                                </div>
+                            )}
+                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-gray-400 dark:text-gray-500">
+                                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500"></span>80-100 Excellent</span>
+                                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500"></span>50-79 Average</span>
+                                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500"></span>0-49 Weak</span>
                             </div>
-                        )}
-                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-gray-400 dark:text-gray-500">
-                            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500"></span>80-100 Excellent</span>
-                            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500"></span>50-79 Average</span>
-                            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500"></span>0-49 Weak</span>
                         </div>
                     </div>
                 </div>
-            </div>
+            )}
 
             {/* Sections */}
             <div className="columns-1 sm:columns-2 xl:columns-3 gap-4 sm:gap-6">
