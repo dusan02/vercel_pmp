@@ -9,7 +9,7 @@ interface ScoreRingsProps {
 }
 
 function MiniScoreRing({ label, score }: { label: string; score: number | null }) {
-  const radius = 22;
+  const radius = 26;
   const circumference = 2 * Math.PI * radius;
   const hasScore = score != null && !isNaN(score);
   const displayScore = hasScore ? score : 0;
@@ -18,14 +18,14 @@ function MiniScoreRing({ label, score }: { label: string; score: number | null }
   const stroke = getStrokeColor(score);
 
   return (
-    <div className="flex flex-col items-center gap-1" title={`${label}: ${score ?? 'N/A'}/100`}>
-      <div className="relative w-[48px] h-[48px]">
+    <div className="flex flex-col items-center gap-1.5" title={`${label}: ${score ?? 'N/A'}/100`}>
+      <div className="relative w-[64px] h-[64px]">
         <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100" aria-hidden="true">
-          <circle cx="50" cy="50" r={radius} fill="transparent" stroke="currentColor" strokeWidth="10" className="text-gray-100 dark:text-gray-700" />
+          <circle cx="50" cy="50" r={radius} fill="transparent" stroke="currentColor" strokeWidth="8" className="text-gray-100 dark:text-gray-700" />
           {hasScore && (
             <circle
               cx="50" cy="50" r={radius} fill="transparent"
-              stroke={stroke} strokeWidth="10" strokeLinecap="round"
+              stroke={stroke} strokeWidth="8" strokeLinecap="round"
               strokeDasharray={circumference} strokeDashoffset={strokeDashoffset}
               className="transition-all duration-700 ease-out"
               role="progressbar"
@@ -36,11 +36,12 @@ function MiniScoreRing({ label, score }: { label: string; score: number | null }
             />
           )}
         </svg>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className={`text-sm font-bold ${color}`}>{score ?? '—'}</span>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className={`text-lg font-bold leading-none ${color}`}>{score ?? '—'}</span>
+          <span className="text-[7px] text-gray-400 mt-0.5">/ 100</span>
         </div>
       </div>
-      <span className="text-[9px] uppercase tracking-wider font-semibold text-gray-400 dark:text-gray-500">{label}</span>
+      <span className="text-[10px] uppercase tracking-wider font-semibold text-gray-400 dark:text-gray-500">{label}</span>
     </div>
   );
 }
@@ -55,13 +56,13 @@ export function ScoreRings({ healthScore, profitabilityScore, valuationScore, ve
       {profitabilityScore != null && <MiniScoreRing label="Profit" score={profitabilityScore} />}
       {valuationScore != null && <MiniScoreRing label="Value" score={valuationScore} />}
       {verdictText && (
-        <div className="flex flex-col items-center gap-1 min-w-[60px]">
-          <div className="flex items-center justify-center w-[48px] h-[48px] rounded-full bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-700">
-            <span className="text-[10px] font-bold text-gray-600 dark:text-gray-300 text-center leading-tight px-1">
-              {verdictText.length > 8 ? verdictText.slice(0, 7) + '…' : verdictText}
+        <div className="flex flex-col items-center gap-1.5 min-w-[64px]">
+          <div className="flex items-center justify-center w-[64px] h-[64px] rounded-full bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-700">
+            <span className="text-xs font-bold text-gray-600 dark:text-gray-300 text-center leading-tight px-1">
+              {verdictText.length > 10 ? verdictText.slice(0, 9) + '…' : verdictText}
             </span>
           </div>
-          <span className="text-[9px] uppercase tracking-wider font-semibold text-gray-400 dark:text-gray-500">AI Verdict</span>
+          <span className="text-[10px] uppercase tracking-wider font-semibold text-gray-400 dark:text-gray-500">AI Verdict</span>
         </div>
       )}
     </div>

@@ -195,24 +195,12 @@ export function FinancialHealthTable({ ticker, data, compareWith, secondaryData 
                 </div>
             </div>
 
-            {/* AI Verdict + Legend (score rings moved to AnalysisHeader) */}
-            {(data.verdictText || data.healthScore != null || data.profitabilityScore != null || data.valuationScore != null) && (
-                <div className="bg-white dark:bg-[#15171e] rounded-2xl p-4 sm:p-6 shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-gray-100 dark:border-gray-800/80 mb-6">
-                    <div className="flex flex-col lg:flex-row items-start gap-4 sm:gap-6">
-                        <div className="flex-1 min-w-0 w-full">
-                            {data.verdictText && (
-                                <div className="mb-3">
-                                    <p className="text-[10px] uppercase tracking-widest font-bold text-blue-500 dark:text-blue-400 mb-2">AI Verdict</p>
-                                    <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{data.verdictText}</p>
-                                </div>
-                            )}
-                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-gray-400 dark:text-gray-500">
-                                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500"></span>80-100 Excellent</span>
-                                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500"></span>50-79 Average</span>
-                                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500"></span>0-49 Weak</span>
-                            </div>
-                        </div>
-                    </div>
+            {/* Score legend (score rings + AI Verdict are in AnalysisHeader) */}
+            {(data.healthScore != null || data.profitabilityScore != null || data.valuationScore != null) && (
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-gray-400 dark:text-gray-500 mb-6 px-1">
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500"></span>80-100 Excellent</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500"></span>50-79 Average</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500"></span>0-49 Weak</span>
                 </div>
             )}
 
