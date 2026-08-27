@@ -374,9 +374,6 @@ export default async function AnalysisPage({ params }: PageProps) {
             </section>
           )}
 
-          {/* Latest news — client-side fetch from Finnhub, cached 30min */}
-          <NewsSection ticker={tickerUpper} />
-
           {/* Full interactive analysis (client-side) */}
           <AnalysisTabClient ticker={tickerUpper} hideSearch />
 
@@ -742,6 +739,9 @@ export default async function AnalysisPage({ params }: PageProps) {
               </Link>
             </div>
           </div>
+
+          {/* Latest news — at the very bottom, client-side fetch from Finnhub, cached 30min */}
+          <NewsSection ticker={tickerUpper} />
         </main>
       </div>
     </>

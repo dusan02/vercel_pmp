@@ -205,7 +205,7 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
                                 </p>
                                 {t.sector ? (
                                     <Link
-                                        href={`/sectors/${encodeURIComponent(t.sector)}`}
+                                        href={`/?tab=allStocks&sector=${encodeURIComponent(t.sector)}`}
                                         className="text-sm font-semibold mt-0.5 text-blue-600 dark:text-blue-400 hover:underline inline-block"
                                     >
                                         {t.sector}
@@ -222,7 +222,7 @@ export function AnalysisHeader({ ticker, hideSearch, data }: AnalysisHeaderProps
                                 </p>
                                 {t.industry ? (
                                     <Link
-                                        href={`/stocks?industry=${encodeURIComponent(t.industry.replace('SIC: ', ''))}`}
+                                        href={`/?tab=allStocks&industry=${encodeURIComponent(t.industry.replace('SIC: ', ''))}`}
                                         className="text-sm font-semibold mt-0.5 text-blue-600 dark:text-blue-400 hover:underline inline-block"
                                     >
                                         {t.industry.replace('SIC: ', '')}

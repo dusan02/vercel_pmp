@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { StockData } from '@/lib/types';
 import { useSortableData } from '@/hooks/useSortableData';
 import { getCompanyName } from '@/lib/companyNames';
@@ -16,6 +16,16 @@ export function useStockFilter({ stockData, favorites, isFavorite }: UseStockFil
   const [filterCategory, setFilterCategory] = useState<'all' | 'gainers' | 'losers' | 'movers' | 'bigMovers'>('all');
   const [selectedSectors, setSelectedSectors] = useState<string[]>([]);
   const [selectedIndustries, setSelectedIndustries] = useState<string[]>([]);
+
+  // Initialize sector/industry filter from URL (?sector= or ?industry=)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const sector = params.get('sector');
+    const industry = params.get('industry');
+    if (sector) setSelectedSectors([decodeURIComponent(sector)]);
+    if (industry) setSelectedIndustries([decodeURIComponent(industry)]);
+  }, []);
 
   // Debounce search term to reduce filtering computations
   const debouncedSearchTerm = useDebounce(searchTerm, 200);
