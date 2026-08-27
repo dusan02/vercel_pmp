@@ -5,6 +5,7 @@ import { AnalysisHeader } from './analysis/AnalysisHeader';
 import { FinancialHealthTable } from './analysis/FinancialHealthTable';
 import { CompanyDescription } from './analysis/CompanyDescription';
 import { AnalysisControlsBar } from './analysis/AnalysisControlsBar';
+import { CompareToolbar } from './analysis/CompareToolbar';
 import { AnalysisCharts } from './AnalysisCharts';
 import { useAnalysis } from '../../hooks/useAnalysis';
 import { LoadingSkeleton } from './analysis/LoadingSkeleton';
@@ -29,9 +30,14 @@ export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabP
         analyzing,
         error,
         compareWith,
+        compareInput,
         secondaryData,
-        runDeepAnalysis,
+        loadingCompare,
         analysisStep,
+        setCompareInput,
+        runDeepAnalysis,
+        handleAddComparison,
+        handleRemoveComparison,
     } = useAnalysis(ticker);
 
     if (loading) return <LoadingSkeleton analysisStep={analysisStep} />;
@@ -52,6 +58,18 @@ export default function AnalysisTab({ ticker, hideSearch = false }: AnalysisTabP
                 updatedAt={data.updatedAt ?? null}
                 analyzing={analyzing}
                 onRefresh={runDeepAnalysis}
+            />
+
+            {/* ── Compare with another ticker ── */}
+            <CompareToolbar
+                ticker={ticker}
+                compareWith={compareWith}
+                compareInput={compareInput}
+                loadingCompare={loadingCompare}
+                peers={data.peers}
+                onCompareInput={setCompareInput}
+                onAddComparison={handleAddComparison}
+                onRemoveComparison={handleRemoveComparison}
             />
 
             {/* ── Price History — full width, prominent ── */}
