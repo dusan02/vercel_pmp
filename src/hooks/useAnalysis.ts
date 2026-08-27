@@ -44,18 +44,25 @@ export function useAnalysis(ticker: string) {
         const controller = new AbortController();
         // Track the latest request so stale responses are discarded
         const reqId = ++fetchIdRef.current;
+        const isCompare = !!compare;
         try {
-            setLoading(true);
+            // Only show full-page loading skeleton for primary fetches,
+            // not for compare requests (which use loadingCompare instead)
+            if (!isCompare) {
+                setLoading(true);
+            }
             setError(null);
             const url = compare
                 ? `/api/analysis/${ticker}?compare=${compare}`
                 : `/api/analysis/${ticker}`;
 
             // Fetch main analysis + history (for correlation/valuation charts) in parallel
-            const [res, histRes] = await Promise.all([
-                fetch(url, { signal: controller.signal }),
-                fetch(`/api/analysis/${ticker}/history`, { signal: controller.signal }),
-            ]);
+            // Skip history fetch for compare requests — secondary data doesn't need charts
+            const fetches: Promise<Response>[] = [fetch(url, { signal: controller.signal })];
+            if (!isCompare) {
+                fetches.push(fetch(`/api/analysis/${ticker}/history`, { signal: controller.signal }));
+            }
+            const [res, histRes] = await Promise.all(fetches);
 
             if (!res.ok) {
                 if (reqId !== fetchIdRef.current) return; // stale
@@ -69,7 +76,7 @@ export function useAnalysis(ticker: string) {
                 return;
             }
             const json = await res.json();
-            const histJson = histRes.ok ? await histRes.json().catch(() => ({})) : {};
+            const histJson = !isCompare && histRes && histRes.ok ? await histRes.json().catch(() => ({})) : {};
 
             // Discard if a newer request was started
             if (reqId !== fetchIdRef.current) return;
@@ -109,10 +116,14 @@ export function useAnalysis(ticker: string) {
             if (err instanceof DOMException && err.name === 'AbortError') return;
             if (reqId !== fetchIdRef.current) return; // stale
             console.error(err);
-            setError('Could not load analysis data. Please try again later.');
+            if (!isCompare) {
+                setError('Could not load analysis data. Please try again later.');
+            }
         } finally {
             if (reqId === fetchIdRef.current) {
-                setLoading(false);
+                if (!isCompare) {
+                    setLoading(false);
+                }
             }
         }
     }, [ticker]);
