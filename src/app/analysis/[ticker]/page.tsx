@@ -228,7 +228,7 @@ function ScoreCard({ label, value, max, tier, compact }: { label: string; value:
   );
 }
 
-function SnapshotTile({ label, primary, secondary }: { label: string; primary: string; secondary?: string }) {
+function SnapshotTile({ label, primary, secondary }: { label: string; primary: string; secondary?: string | undefined }) {
   return (
     <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3 border border-gray-100 dark:border-gray-700/50">
       <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">{label}</div>
