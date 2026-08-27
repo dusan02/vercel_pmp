@@ -5,7 +5,7 @@ import { useState } from 'react';
 interface ShareButtonsProps {
   url: string;
   title: string;
-  description?: string;
+  description?: string | undefined;
 }
 
 export default function ShareButtons({ url, title, description }: ShareButtonsProps) {
