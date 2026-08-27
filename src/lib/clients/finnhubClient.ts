@@ -109,6 +109,16 @@ export interface FinnhubPriceTarget {
     currentPrice: number | null;
 }
 
+export interface FinnhubRecommendation {
+    symbol: string;
+    period: string; // YYYY-MM-DD
+    strongBuy: number;
+    buy: number;
+    hold: number;
+    sell: number;
+    strongSell: number;
+}
+
 export interface FinnhubEarningsItem {
     symbol: string;
     date: string;
@@ -316,6 +326,7 @@ export class FinnhubClient {
     /**
      * Fetch price target (analyst consensus)
      * Endpoint: /stock/price-target
+     * NOTE: Requires Finnhub paid plan — returns 403 on free tier.
      */
     async fetchPriceTarget(symbol: string, options: FetchOptions = {}): Promise<FinnhubPriceTarget | null> {
         const url = `https://finnhub.io/api/v1/stock/price-target?symbol=${symbol}&token=${this.apiKey}`;
@@ -324,6 +335,24 @@ export class FinnhubClient {
             options.timeout || this.timeout,
             options.signal
         );
+    }
+
+    /**
+     * Fetch analyst recommendation trends (latest period)
+     * Endpoint: /stock/recommendation
+     * Returns array of monthly recommendation counts, sorted by period desc.
+     * Free tier: available.
+     */
+    async fetchRecommendation(symbol: string, options: FetchOptions = {}): Promise<FinnhubRecommendation | null> {
+        const url = `https://finnhub.io/api/v1/stock/recommendation?symbol=${symbol}&token=${this.apiKey}`;
+        const arr = await this.fetchWithRetry<FinnhubRecommendation[]>(
+            url,
+            options.timeout || this.timeout,
+            options.signal
+        );
+        if (!arr || arr.length === 0) return null;
+        // Return the most recent period
+        return arr[0] ?? null;
     }
 
     /**

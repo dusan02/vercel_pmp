@@ -31,10 +31,11 @@ async function main() {
   console.log(`📊 Found ${symbols.length} active tickers to sync`);
 
   // Serial processing with 2s delay → ~30 calls/min (safe for Finnhub free tier 60/min)
-  // Each ticker makes 2 API calls (metrics + price target) → 1s delay between calls
+  // Each ticker makes 2 API calls (metrics + recommendation) → 1s delay between calls
   const DELAY_MS = 2000;
   let metricsSuccess = 0;
   let ptSuccess = 0;
+  let recSuccess = 0;
   let failed = 0;
   let skipped = 0;
 
@@ -48,12 +49,12 @@ async function main() {
         });
         const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
         if (existing?.fetchedAt && existing.fetchedAt > twelveHoursAgo) {
-          // Also check price target freshness
-          const ptExisting = await prisma.finnhubPriceTarget.findFirst({
+          // Also check recommendation freshness
+          const recExisting = await prisma.finnhubRecommendation.findFirst({
             where: { symbol },
             select: { fetchedAt: true },
           });
-          if (ptExisting?.fetchedAt && ptExisting.fetchedAt > twelveHoursAgo) {
+          if (recExisting?.fetchedAt && recExisting.fetchedAt > twelveHoursAgo) {
             skipped++;
             idx++;
             continue;
@@ -70,13 +71,23 @@ async function main() {
       // Small delay between the two API calls for the same symbol
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Fetch price target
-      const priceTarget = await FinnhubService.getPriceTarget(symbol, true);
-      if (priceTarget) {
-        ptSuccess++;
+      // Fetch recommendation (free tier — always works)
+      const rec = await FinnhubService.getRecommendation(symbol, true);
+      if (rec) {
+        recSuccess++;
       }
 
-      if (!metrics && !priceTarget) {
+      // Try price target (paid tier — will 403 on free, that's OK)
+      try {
+        const priceTarget = await FinnhubService.getPriceTarget(symbol, true);
+        if (priceTarget) {
+          ptSuccess++;
+        }
+      } catch {
+        // Price target is premium-only, 403 is expected on free tier
+      }
+
+      if (!metrics && !rec) {
         failed++;
       }
     } catch {
@@ -85,7 +96,7 @@ async function main() {
 
     idx++;
     if (idx % 50 === 0) {
-      console.log(`📈 Progress: ${idx}/${symbols.length} (✅ ${metricsSuccess} metrics, ✅ ${ptSuccess} price targets, ⏭️ ${skipped} skipped, ❌ ${failed} failed)`);
+      console.log(`📈 Progress: ${idx}/${symbols.length} (✅ ${metricsSuccess} metrics, ✅ ${recSuccess} recommendations, ✅ ${ptSuccess} price targets, ⏭️ ${skipped} skipped, ❌ ${failed} failed)`);
     }
 
     if (idx < symbols.length) {
@@ -93,7 +104,7 @@ async function main() {
     }
   }
 
-  console.log(`✅ Sync complete: ${metricsSuccess} metrics, ${ptSuccess} price targets, ${skipped} skipped (fresh), ${failed} failed`);
+  console.log(`✅ Sync complete: ${metricsSuccess} metrics, ${recSuccess} recommendations, ${ptSuccess} price targets, ${skipped} skipped (fresh), ${failed} failed`);
 
   await prisma.$disconnect();
 }

@@ -157,6 +157,7 @@ model Ticker {
   finnhubMetrics       FinnhubMetrics?
   finnhubProfile       FinnhubProfile?
   finnhubPriceTarget   FinnhubPriceTarget?
+  finnhubRecommendation FinnhubRecommendation?
   finnhubInsiderTransactions FinnhubInsiderTransaction[]
 
   @@index([sector])
@@ -521,19 +522,41 @@ model FinnhubPriceTarget {
 model FinnhubInsiderTransaction {
   id              String   @id @default(cuid())
   symbol          String
-  
+
   change          Float
   filingDate      String
   transactionDate String
   transactionCode String
-  
+
   // Metadata
   fetchedAt       DateTime @default(now())
-  
+
   ticker    Ticker   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
-  
+
   @@index([symbol])
   @@index([transactionDate])
+  @@index([fetchedAt])
+}
+
+model FinnhubRecommendation {
+  id          String   @id @default(cuid())
+  symbol      String   @unique
+
+  // Latest recommendation period counts
+  period        String?
+  strongBuy     Int?
+  buy           Int?
+  hold          Int?
+  sell          Int?
+  strongSell    Int?
+
+  // Metadata
+  fetchedAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  ticker    Ticker   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+
+  @@index([symbol])
   @@index([fetchedAt])
 }
 

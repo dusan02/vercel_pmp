@@ -10,7 +10,7 @@
 
 import { prisma } from '@/lib/db/prisma';
 import { redisOps } from '@/lib/redis/enhancedOperations';
-import { getFinnhubClient, FinnhubMetric, FinnhubProfile, FinnhubPriceTarget, FinnhubInsiderTransaction } from '@/lib/clients/finnhubClient';
+import { getFinnhubClient, FinnhubMetric, FinnhubProfile, FinnhubPriceTarget, FinnhubRecommendation, FinnhubInsiderTransaction } from '@/lib/clients/finnhubClient';
 import { Prisma } from '@prisma/client';
 
 // Cache TTL configuration (in seconds)
@@ -322,6 +322,56 @@ async function savePriceTarget(symbol: string, priceTarget: FinnhubPriceTarget):
     await redisOps.setEx(redisKey, CACHE_TTL.PRICE_TARGET, JSON.stringify(priceTarget));
 }
 
+/**
+ * Get recommendation from database (no Redis — SSR-friendly)
+ */
+async function getCachedRecommendation(symbol: string): Promise<FinnhubRecommendation | null> {
+    const dbRecord = await prisma.finnhubRecommendation.findUnique({
+        where: { symbol },
+    });
+
+    if (dbRecord && !isStale(dbRecord.fetchedAt, 24)) {
+        return {
+            symbol: dbRecord.symbol,
+            period: dbRecord.period ?? '',
+            strongBuy: dbRecord.strongBuy ?? 0,
+            buy: dbRecord.buy ?? 0,
+            hold: dbRecord.hold ?? 0,
+            sell: dbRecord.sell ?? 0,
+            strongSell: dbRecord.strongSell ?? 0,
+        };
+    }
+
+    return null;
+}
+
+/**
+ * Save recommendation to database
+ */
+async function saveRecommendation(symbol: string, rec: FinnhubRecommendation): Promise<void> {
+    await prisma.finnhubRecommendation.upsert({
+        where: { symbol },
+        update: {
+            period: rec.period,
+            strongBuy: rec.strongBuy,
+            buy: rec.buy,
+            hold: rec.hold,
+            sell: rec.sell,
+            strongSell: rec.strongSell,
+            fetchedAt: new Date(),
+        },
+        create: {
+            symbol,
+            period: rec.period,
+            strongBuy: rec.strongBuy,
+            buy: rec.buy,
+            hold: rec.hold,
+            sell: rec.sell,
+            strongSell: rec.strongSell,
+        },
+    });
+}
+
 // ============================================================================
 // Public Service Methods
 // ============================================================================
@@ -399,6 +449,30 @@ export class FinnhubService {
         }
 
         return priceTarget;
+    }
+
+    /**
+     * Get analyst recommendation (strongBuy/buy/hold/sell/strongSell)
+     * Free-tier Finnhub endpoint — available without paid plan.
+     */
+    static async getRecommendation(symbol: string, forceRefresh = false): Promise<FinnhubRecommendation | null> {
+        symbol = symbol.toUpperCase().trim();
+
+        if (!forceRefresh) {
+            const cached = await getCachedRecommendation(symbol);
+            if (cached) {
+                return cached;
+            }
+        }
+
+        const client = getFinnhubClient();
+        const rec = await client.fetchRecommendation(symbol);
+
+        if (rec) {
+            await saveRecommendation(symbol, rec);
+        }
+
+        return rec;
     }
 
     /**

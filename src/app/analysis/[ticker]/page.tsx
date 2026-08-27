@@ -84,6 +84,17 @@ async function getTickerData(symbol: string) {
             fetchedAt: true,
           },
         },
+        finnhubRecommendation: {
+          select: {
+            period: true,
+            strongBuy: true,
+            buy: true,
+            hold: true,
+            sell: true,
+            strongSell: true,
+            fetchedAt: true,
+          },
+        },
       },
     });
   } catch {
@@ -701,82 +712,143 @@ export default async function AnalysisPage({ params }: PageProps) {
             );
           })()}
 
-          {/* Analyst Price Target section — SSR from FinnhubPriceTarget DB */}
+          {/* Analyst Consensus section — SSR from FinnhubPriceTarget + FinnhubRecommendation DB */}
           {(() => {
             const pt = data?.finnhubPriceTarget;
-            if (!pt || (pt.targetMean == null && pt.targetMedian == null)) return null;
+            const rec = data?.finnhubRecommendation;
+            const hasPt = pt && (pt.targetMean != null || pt.targetMedian != null);
+            const hasRec = rec && (rec.strongBuy != null || rec.buy != null || rec.hold != null);
+            if (!hasPt && !hasRec) return null;
 
-            const target = pt.targetMean ?? pt.targetMedian;
-            const currentPrice = pt.currentPrice ?? data?.lastPrice ?? null;
+            const target = pt?.targetMean ?? pt?.targetMedian ?? null;
+            const currentPrice = pt?.currentPrice ?? data?.lastPrice ?? null;
             const upside = target != null && currentPrice != null && currentPrice > 0
               ? ((target / currentPrice - 1) * 100)
               : null;
-            const freshness = pt.fetchedAt
-              ? pt.fetchedAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            const freshness = pt?.fetchedAt ?? rec?.fetchedAt;
+            const freshnessStr = freshness
+              ? freshness.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+              : null;
+
+            // Recommendation consensus
+            const sb = rec?.strongBuy ?? 0;
+            const b = rec?.buy ?? 0;
+            const h = rec?.hold ?? 0;
+            const s = rec?.sell ?? 0;
+            const ss = rec?.strongSell ?? 0;
+            const totalAnalysts = sb + b + h + s + ss;
+            const buyPct = totalAnalysts > 0 ? Math.round(((sb + b) / totalAnalysts) * 100) : null;
+            const consensusLabel = totalAnalysts > 0
+              ? buyPct != null && buyPct >= 70 ? 'Strong Buy'
+                : buyPct != null && buyPct >= 50 ? 'Buy'
+                : buyPct != null && buyPct >= 30 ? 'Hold'
+                : 'Sell'
               : null;
 
             return (
               <div className="mt-8 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
                 <div className="flex items-center justify-between mb-1">
                   <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    Analyst Price Target
+                    Analyst Consensus
                   </h2>
+                  {consensusLabel && (
+                    <span className={`px-3 py-1 rounded-full text-sm font-bold ${
+                      consensusLabel === 'Strong Buy' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+                      : consensusLabel === 'Buy' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                      : consensusLabel === 'Hold' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
+                      : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300'
+                    }`}>
+                      {consensusLabel}
+                    </span>
+                  )}
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-                  Wall Street consensus estimates — not a PMP forecast{freshness ? ` · Updated ${freshness}` : ''}
+                  Wall Street consensus estimates — not a PMP forecast{freshnessStr ? ` · Updated ${freshnessStr}` : ''}
                 </p>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                  {currentPrice != null && (
-                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3">
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Current Price</div>
-                      <div className="text-lg font-bold text-gray-900 dark:text-white tabular-nums">{formatPrice(currentPrice)}</div>
-                    </div>
-                  )}
-                  {target != null && (
-                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
-                      <div className="text-xs text-blue-600 dark:text-blue-400 mb-1">Consensus Target</div>
-                      <div className="text-lg font-bold text-blue-700 dark:text-blue-300 tabular-nums">{formatPrice(target)}</div>
-                    </div>
-                  )}
-                  {upside != null && (
-                    <div className={`rounded-lg p-3 ${upside >= 0 ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'bg-rose-50 dark:bg-rose-900/20'}`}>
-                      <div className={`text-xs mb-1 ${upside >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
-                        {upside >= 0 ? 'Upside' : 'Downside'}
+                {/* Price target cards */}
+                {hasPt && (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                    {currentPrice != null && (
+                      <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3">
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Current Price</div>
+                        <div className="text-lg font-bold text-gray-900 dark:text-white tabular-nums">{formatPrice(currentPrice)}</div>
                       </div>
-                      <div className={`text-lg font-bold tabular-nums ${upside >= 0 ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300'}`}>
-                        {formatPercent(upside)}
+                    )}
+                    {target != null && (
+                      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
+                        <div className="text-xs text-blue-600 dark:text-blue-400 mb-1">Consensus Target</div>
+                        <div className="text-lg font-bold text-blue-700 dark:text-blue-300 tabular-nums">{formatPrice(target)}</div>
                       </div>
-                    </div>
-                  )}
-                  {pt.numberOfAnalysts != null && pt.numberOfAnalysts > 0 && (
-                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3">
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Analysts</div>
-                      <div className="text-lg font-bold text-gray-900 dark:text-white tabular-nums">{pt.numberOfAnalysts}</div>
-                    </div>
-                  )}
-                </div>
+                    )}
+                    {upside != null && (
+                      <div className={`rounded-lg p-3 ${upside >= 0 ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'bg-rose-50 dark:bg-rose-900/20'}`}>
+                        <div className={`text-xs mb-1 ${upside >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                          {upside >= 0 ? 'Upside' : 'Downside'}
+                        </div>
+                        <div className={`text-lg font-bold tabular-nums ${upside >= 0 ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300'}`}>
+                          {formatPercent(upside)}
+                        </div>
+                      </div>
+                    )}
+                    {pt?.numberOfAnalysts != null && pt.numberOfAnalysts > 0 && (
+                      <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3">
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Analysts</div>
+                        <div className="text-lg font-bold text-gray-900 dark:text-white tabular-nums">{pt.numberOfAnalysts}</div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
-                {(pt.targetHigh != null || pt.targetLow != null) && (
-                  <div className="flex flex-wrap gap-4 text-sm pt-3 border-t border-gray-100 dark:border-gray-700">
-                    {pt.targetHigh != null && (
+                {/* Price target range */}
+                {hasPt && (pt?.targetHigh != null || pt?.targetLow != null) && (
+                  <div className="flex flex-wrap gap-4 text-sm pt-3 border-t border-gray-100 dark:border-gray-700 mb-4">
+                    {pt?.targetHigh != null && (
                       <div>
                         <span className="text-gray-500 dark:text-gray-400">High Target: </span>
                         <span className="font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums">{formatPrice(pt.targetHigh)}</span>
                       </div>
                     )}
-                    {pt.targetLow != null && (
+                    {pt?.targetLow != null && (
                       <div>
                         <span className="text-gray-500 dark:text-gray-400">Low Target: </span>
                         <span className="font-semibold text-rose-600 dark:text-rose-400 tabular-nums">{formatPrice(pt.targetLow)}</span>
                       </div>
                     )}
-                    {pt.targetMedian != null && pt.targetMean != null && pt.targetMedian !== pt.targetMean && (
+                    {pt?.targetMedian != null && pt?.targetMean != null && pt.targetMedian !== pt.targetMean && (
                       <div>
                         <span className="text-gray-500 dark:text-gray-400">Median: </span>
                         <span className="font-semibold text-gray-900 dark:text-gray-100 tabular-nums">{formatPrice(pt.targetMedian)}</span>
                       </div>
                     )}
+                  </div>
+                )}
+
+                {/* Recommendation breakdown bar */}
+                {hasRec && totalAnalysts > 0 && (
+                  <div className={hasPt ? 'pt-4 border-t border-gray-100 dark:border-gray-700' : ''}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        Analyst Recommendations
+                      </span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        {totalAnalysts} analyst{totalAnalysts !== 1 ? 's' : ''}{rec?.period ? ` · ${rec.period}` : ''}
+                      </span>
+                    </div>
+                    <div className="flex h-6 rounded-lg overflow-hidden">
+                      {sb > 0 && <div className="bg-emerald-600 flex items-center justify-center text-xs text-white font-medium" style={{ width: `${(sb / totalAnalysts) * 100}%` }} title={`Strong Buy: ${sb}`}>{sb > 1 ? sb : ''}</div>}
+                      {b > 0 && <div className="bg-green-500 flex items-center justify-center text-xs text-white font-medium" style={{ width: `${(b / totalAnalysts) * 100}%` }} title={`Buy: ${b}`}>{b > 1 ? b : ''}</div>}
+                      {h > 0 && <div className="bg-yellow-500 flex items-center justify-center text-xs text-white font-medium" style={{ width: `${(h / totalAnalysts) * 100}%` }} title={`Hold: ${h}`}>{h > 1 ? h : ''}</div>}
+                      {s > 0 && <div className="bg-orange-500 flex items-center justify-center text-xs text-white font-medium" style={{ width: `${(s / totalAnalysts) * 100}%` }} title={`Sell: ${s}`}>{s > 1 ? s : ''}</div>}
+                      {ss > 0 && <div className="bg-rose-600 flex items-center justify-center text-xs text-white font-medium" style={{ width: `${(ss / totalAnalysts) * 100}%` }} title={`Strong Sell: ${ss}`}>{ss > 1 ? ss : ''}</div>}
+                    </div>
+                    <div className="flex flex-wrap gap-3 mt-2 text-xs text-gray-500 dark:text-gray-400">
+                      <span><span className="inline-block w-2 h-2 rounded-full bg-emerald-600 mr-1"></span>Strong Buy {sb}</span>
+                      <span><span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-1"></span>Buy {b}</span>
+                      <span><span className="inline-block w-2 h-2 rounded-full bg-yellow-500 mr-1"></span>Hold {h}</span>
+                      <span><span className="inline-block w-2 h-2 rounded-full bg-orange-500 mr-1"></span>Sell {s}</span>
+                      <span><span className="inline-block w-2 h-2 rounded-full bg-rose-600 mr-1"></span>Strong Sell {ss}</span>
+                    </div>
                   </div>
                 )}
               </div>
