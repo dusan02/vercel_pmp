@@ -589,10 +589,21 @@ export default async function AnalysisPage({ params }: PageProps) {
                     <tbody>
                       {recentMoves.map((m, i) => {
                         const moveUp = m.changePct >= 0;
+                        const dateStr = m.date.toISOString().split('T')[0] ?? '';
+                        const isPremarket = m.session === 'pre';
+                        const archiveLink = isPremarket
+                          ? (moveUp ? `/premarket-gainers/${dateStr}` : `/premarket-losers/${dateStr}`)
+                          : null;
                         return (
                           <tr key={i} className="border-b border-gray-50 dark:border-gray-700/50">
                             <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">
-                              {m.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                              {archiveLink ? (
+                                <Link href={archiveLink} className="hover:text-blue-600 dark:hover:text-blue-400 hover:underline">
+                                  {m.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                </Link>
+                              ) : (
+                                m.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                              )}
                             </td>
                             <td className="px-3 py-2 text-gray-700 dark:text-gray-300">
                               {formatSessionLabel(m.session)}
