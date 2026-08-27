@@ -7,6 +7,7 @@ import { getCompanyName } from '@/lib/companyNames';
 import { formatPercent, formatPrice, formatMarketCapDiff } from '@/lib/utils/heatmapFormat';
 import { formatSectorName } from '@/lib/utils/format';
 import { getEligibleAnalysisTickers } from '@/lib/seo/eligibleTickers';
+import ShareButtons from '@/components/ShareButtons';
 
 // Revalidate every 5 minutes — mover data is fairly stable post-session
 export const revalidate = 300;
@@ -265,9 +266,15 @@ export default async function MoverSymbolPage({ params }: PageProps) {
         <main className="max-w-5xl mx-auto px-4 py-8">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-              {companyName} ({tickerUpper}) Market Moves
-            </h1>
+            <div className="flex items-start justify-between gap-4">
+              <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+                {companyName} ({tickerUpper}) Market Moves
+              </h1>
+              <ShareButtons
+                url={`${baseUrl}/movers/${tickerUpper}`}
+                title={`${companyName} (${tickerUpper}) Market Moves | PreMarketPrice`}
+              />
+            </div>
             <p className="mt-3 text-slate-600 dark:text-slate-300 max-w-3xl leading-relaxed">
               Unusual price movements and significant market activity for {companyName} ({tickerUpper}).
               {' '}Each move is flagged by Z-score statistical significance — showing when {tickerUpper} moved

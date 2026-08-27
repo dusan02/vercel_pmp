@@ -2,6 +2,7 @@
 
 import React, { useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import ResponsiveMarketHeatmap from '@/components/ResponsiveMarketHeatmap';
 import type { CompanyNode } from '@/lib/heatmap/types';
 import { HeatmapLegend } from '@/components/HeatmapLegend';
@@ -65,11 +66,39 @@ export default function HeatmapPage() {
   }, [router]);
 
   return (
-    <div 
-      className="h-screen w-screen bg-black overflow-hidden flex flex-col" 
-      style={{ overflow: 'hidden' }} 
+    <div
+      className="h-screen w-screen bg-black overflow-hidden flex flex-col"
+      style={{ overflow: 'hidden' }}
       suppressHydrationWarning
     >
+      {/* SEO: sr-only summary for crawlers (page is client-only, no SSR content) */}
+      <div className="sr-only" aria-hidden="false">
+        <h2>US Stock Market Heatmap</h2>
+        <p>
+          Interactive treemap visualization of US stock market performance.
+          View market movers by percentage change or market capitalization change
+          across all major sectors: Technology, Healthcare, Financial Services,
+          Consumer Cyclical, Industrials, Energy, Communication Services,
+          Consumer Defensive, Utilities, Real Estate, and Basic Materials.
+        </p>
+        <p>
+          Each tile represents a publicly traded company. Tile size corresponds
+          to market capitalization. Tile color indicates the percentage price
+          change — green for gains, red for losses. Click any tile to view
+          detailed stock analysis including financial health scores, valuation
+          metrics, analyst consensus, earnings calendar, and recent market moves.
+        </p>
+        <nav aria-label="Related pages">
+          <a href="/premarket-movers">Pre-market movers</a>
+          <a href="/gainers">Top gainers</a>
+          <a href="/losers">Top losers</a>
+          <a href="/stocks">All stocks</a>
+          <a href="/sectors">Sector performance</a>
+          <a href="/screener">Stock screener</a>
+          <a href="/earnings">Earnings calendar</a>
+        </nav>
+      </div>
+
       <div className="relative px-2 py-1 z-[100] text-white flex-shrink-0 flex items-center justify-between bg-black border-b border-gray-800" style={{ pointerEvents: 'auto' }}>
         <div className="flex items-center gap-4">
           <div>

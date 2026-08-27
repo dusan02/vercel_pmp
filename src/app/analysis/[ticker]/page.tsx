@@ -8,6 +8,7 @@ import { AnalysisTabClient } from '@/components/company/AnalysisTabClient';
 import { formatPercent, formatPrice } from '@/lib/utils/heatmapFormat';
 import { getEligibleAnalysisTickers, hasAnalysisCache } from '@/lib/seo/eligibleTickers';
 import { getEarningsForTicker } from '@/lib/seo/earningsSSR';
+import ShareButtons from '@/components/ShareButtons';
 
 export const revalidate = 60;
 
@@ -392,8 +393,8 @@ function SeoAnalysisSummary({
         </div>
       )}
 
-      {/* Cross-link to valuation and financials pages */}
-      <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 text-sm flex flex-wrap gap-4">
+      {/* Cross-link to valuation and financials pages + share */}
+      <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 text-sm flex flex-wrap items-center gap-4">
         <Link
           href={`/valuation/${ticker}`}
           className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
@@ -406,6 +407,11 @@ function SeoAnalysisSummary({
         >
           {companyName} ({ticker}) Financial Statements →
         </Link>
+        <ShareButtons
+          url={`${baseUrl}/analysis/${ticker}`}
+          title={`${companyName} (${ticker}) Stock Analysis | PreMarketPrice`}
+          description={data?.description?.slice(0, 100)}
+        />
       </div>
     </section>
   );

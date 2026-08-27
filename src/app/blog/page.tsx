@@ -9,6 +9,9 @@ export const metadata: Metadata = {
   description: 'Daily premarket reports with top gainers, losers, biggest market cap movers, and earnings calendar. Free stock market analysis updated every trading day.',
   alternates: {
     canonical: 'https://premarketprice.com/blog',
+    types: {
+      'application/rss+xml': 'https://premarketprice.com/api/rss',
+    },
   },
   openGraph: {
     title: 'Premarket Reports & Market Insights | PreMarketPrice',
