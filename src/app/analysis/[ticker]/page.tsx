@@ -232,25 +232,6 @@ function SnapshotTile({ label, primary, secondary }: { label: string; primary: s
   );
 }
 
-function MetricGroup({ title, rows }: { title: string; rows: MetricRow[] }) {
-  return (
-    <div>
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">{title}</h3>
-      <div className="space-y-1">
-        {rows.map((row, i) => (
-          <div key={i} className="flex items-center justify-between text-sm py-1 border-b border-gray-50 dark:border-gray-700/30">
-            <span className="text-gray-600 dark:text-gray-400">{row.label}</span>
-            <span className="flex items-center gap-2">
-              <span className="tabular-nums text-gray-900 dark:text-gray-100 font-semibold">{row.value}</span>
-              {row.hint && <span className="text-xs text-gray-400 dark:text-gray-500 italic">{row.hint}</span>}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function SeoAnalysisSummary({
   ticker,
   companyName,
