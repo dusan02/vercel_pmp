@@ -1,6 +1,6 @@
 /**
- * Sync FinnhubMetrics for all tracked tickers
- * Fetches metrics from Finnhub API and saves to DB + Redis cache.
+ * Sync FinnhubMetrics + FinnhubPriceTarget for all tracked tickers
+ * Fetches metrics and analyst price targets from Finnhub API and saves to DB + Redis cache.
  * Skips tickers updated within the last 12 hours.
  *
  * Run: npx tsx scripts/sync-finnhub-metrics.ts [--force] [--limit=50]
@@ -31,8 +31,10 @@ async function main() {
   console.log(`📊 Found ${symbols.length} active tickers to sync`);
 
   // Serial processing with 2s delay → ~30 calls/min (safe for Finnhub free tier 60/min)
+  // Each ticker makes 2 API calls (metrics + price target) → 1s delay between calls
   const DELAY_MS = 2000;
-  let success = 0;
+  let metricsSuccess = 0;
+  let ptSuccess = 0;
   let failed = 0;
   let skipped = 0;
 
@@ -46,16 +48,35 @@ async function main() {
         });
         const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
         if (existing?.fetchedAt && existing.fetchedAt > twelveHoursAgo) {
-          skipped++;
-          idx++;
-          continue;
+          // Also check price target freshness
+          const ptExisting = await prisma.finnhubPriceTarget.findFirst({
+            where: { symbol },
+            select: { fetchedAt: true },
+          });
+          if (ptExisting?.fetchedAt && ptExisting.fetchedAt > twelveHoursAgo) {
+            skipped++;
+            idx++;
+            continue;
+          }
         }
       }
 
+      // Fetch metrics
       const metrics = await FinnhubService.getMetrics(symbol, true);
       if (metrics) {
-        success++;
-      } else {
+        metricsSuccess++;
+      }
+
+      // Small delay between the two API calls for the same symbol
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Fetch price target
+      const priceTarget = await FinnhubService.getPriceTarget(symbol, true);
+      if (priceTarget) {
+        ptSuccess++;
+      }
+
+      if (!metrics && !priceTarget) {
         failed++;
       }
     } catch {
@@ -64,7 +85,7 @@ async function main() {
 
     idx++;
     if (idx % 50 === 0) {
-      console.log(`📈 Progress: ${idx}/${symbols.length} (✅ ${success} saved, ⏭️ ${skipped} skipped, ❌ ${failed} failed)`);
+      console.log(`📈 Progress: ${idx}/${symbols.length} (✅ ${metricsSuccess} metrics, ✅ ${ptSuccess} price targets, ⏭️ ${skipped} skipped, ❌ ${failed} failed)`);
     }
 
     if (idx < symbols.length) {
@@ -72,7 +93,7 @@ async function main() {
     }
   }
 
-  console.log(`✅ Sync complete: ${success} saved, ${skipped} skipped (fresh), ${failed} failed`);
+  console.log(`✅ Sync complete: ${metricsSuccess} metrics, ${ptSuccess} price targets, ${skipped} skipped (fresh), ${failed} failed`);
 
   await prisma.$disconnect();
 }

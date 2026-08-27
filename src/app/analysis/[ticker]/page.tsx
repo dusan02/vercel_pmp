@@ -73,6 +73,17 @@ async function getTickerData(symbol: string) {
             beta: true,
           },
         },
+        finnhubPriceTarget: {
+          select: {
+            targetHigh: true,
+            targetLow: true,
+            targetMean: true,
+            targetMedian: true,
+            numberOfAnalysts: true,
+            currentPrice: true,
+            fetchedAt: true,
+          },
+        },
       },
     });
   } catch {
@@ -684,6 +695,88 @@ export default async function AnalysisPage({ params }: PageProps) {
                         </tbody>
                       </table>
                     </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
+          {/* Analyst Price Target section — SSR from FinnhubPriceTarget DB */}
+          {(() => {
+            const pt = data?.finnhubPriceTarget;
+            if (!pt || (pt.targetMean == null && pt.targetMedian == null)) return null;
+
+            const target = pt.targetMean ?? pt.targetMedian;
+            const currentPrice = pt.currentPrice ?? data?.lastPrice ?? null;
+            const upside = target != null && currentPrice != null && currentPrice > 0
+              ? ((target / currentPrice - 1) * 100)
+              : null;
+            const freshness = pt.fetchedAt
+              ? pt.fetchedAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+              : null;
+
+            return (
+              <div className="mt-8 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+                <div className="flex items-center justify-between mb-1">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Analyst Price Target
+                  </h2>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                  Wall Street consensus estimates — not a PMP forecast{freshness ? ` · Updated ${freshness}` : ''}
+                </p>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                  {currentPrice != null && (
+                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3">
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Current Price</div>
+                      <div className="text-lg font-bold text-gray-900 dark:text-white tabular-nums">{formatPrice(currentPrice)}</div>
+                    </div>
+                  )}
+                  {target != null && (
+                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
+                      <div className="text-xs text-blue-600 dark:text-blue-400 mb-1">Consensus Target</div>
+                      <div className="text-lg font-bold text-blue-700 dark:text-blue-300 tabular-nums">{formatPrice(target)}</div>
+                    </div>
+                  )}
+                  {upside != null && (
+                    <div className={`rounded-lg p-3 ${upside >= 0 ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'bg-rose-50 dark:bg-rose-900/20'}`}>
+                      <div className={`text-xs mb-1 ${upside >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                        {upside >= 0 ? 'Upside' : 'Downside'}
+                      </div>
+                      <div className={`text-lg font-bold tabular-nums ${upside >= 0 ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300'}`}>
+                        {formatPercent(upside)}
+                      </div>
+                    </div>
+                  )}
+                  {pt.numberOfAnalysts != null && pt.numberOfAnalysts > 0 && (
+                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3">
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Analysts</div>
+                      <div className="text-lg font-bold text-gray-900 dark:text-white tabular-nums">{pt.numberOfAnalysts}</div>
+                    </div>
+                  )}
+                </div>
+
+                {(pt.targetHigh != null || pt.targetLow != null) && (
+                  <div className="flex flex-wrap gap-4 text-sm pt-3 border-t border-gray-100 dark:border-gray-700">
+                    {pt.targetHigh != null && (
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">High Target: </span>
+                        <span className="font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums">{formatPrice(pt.targetHigh)}</span>
+                      </div>
+                    )}
+                    {pt.targetLow != null && (
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">Low Target: </span>
+                        <span className="font-semibold text-rose-600 dark:text-rose-400 tabular-nums">{formatPrice(pt.targetLow)}</span>
+                      </div>
+                    )}
+                    {pt.targetMedian != null && pt.targetMean != null && pt.targetMedian !== pt.targetMean && (
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">Median: </span>
+                        <span className="font-semibold text-gray-900 dark:text-gray-100 tabular-nums">{formatPrice(pt.targetMedian)}</span>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
