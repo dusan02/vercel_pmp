@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dbHelpers } from '@/lib/database';
+import { dbHelpers } from '@/lib/db/database';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const ticker = searchParams.get('ticker');
-    const limit = parseInt(searchParams.get('limit') || '100');
+    const limit = parseInt(searchParams.get('limit') || '100', 10);
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
 
@@ -17,13 +17,13 @@ export async function GET(request: NextRequest) {
     }
 
     let history;
-    
+
     if (startDate && endDate) {
       // Get history for specific date range
-      history = dbHelpers.getPriceHistoryRange.all(ticker, startDate, endDate);
+      history = await dbHelpers.getPriceHistoryRange.all(ticker, startDate, endDate);
     } else {
       // Get recent history
-      history = dbHelpers.getPriceHistory.all(ticker, limit);
+      history = await dbHelpers.getPriceHistory.all(ticker, limit);
     }
 
     return NextResponse.json({

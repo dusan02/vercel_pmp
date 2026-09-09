@@ -1,0 +1,590 @@
+{
+  "fja": {
+    "totalDates": 2718,
+    "dateRange": "1996-01-02 to 2026-06-30",
+    "uniqueTickers": 1206,
+    "adds": 772,
+    "removes": 756,
+    "largestChurn": [
+      "2002-07-22: 14",
+      "2000-12-11: 10",
+      "2009-12-21: 10"
+    ],
+    "membersDeviation": "Min: 487 (1996-01-02), Max: 507 (2017-08-07)",
+    "conservationFails": 0,
+    "stats": {
+      "duplicateDates": 0,
+      "nonMonotonic": 0,
+      "emptySnapshots": 0,
+      "duplicateTickers": 0,
+      "total": 2718
+    }
+  },
+  "chinobing": {
+    "totalDates": 3853,
+    "dateRange": "1996-01-02 to 2026-09-02",
+    "uniqueTickers": 1154,
+    "adds": 744,
+    "removes": 710,
+    "largestChurn": [
+      "2002-07-22: 14",
+      "2000-12-11: 10",
+      "2009-12-21: 10"
+    ],
+    "membersDeviation": "Min: 442 (2009-02-26), Max: 505 (2024-04-03)",
+    "conservationFails": 0,
+    "stats": {
+      "duplicateDates": 18,
+      "nonMonotonic": 0,
+      "emptySnapshots": 0,
+      "duplicateTickers": 0,
+      "total": 3853
+    }
+  },
+  "discrepancies": {
+    "coverageMismatches": 1139,
+    "membershipMismatches": 2707,
+    "examples": [
+      {
+        "date": "1996-01-02",
+        "onlyIn1": [
+          "AGN",
+          "ARNC",
+          "BEAM",
+          "BF.B",
+          "BHGE",
+          "CEG",
+          "DOW",
+          "GAS",
+          "HSH",
+          "IR",
+          "JAVA",
+          "MIL",
+          "NSM",
+          "PGN",
+          "PLL",
+          "PX",
+          "RSHCQ",
+          "S",
+          "SUN"
+        ],
+        "onlyIn2": [
+          "BF-B"
+        ]
+      },
+      {
+        "date": "1996-01-03",
+        "onlyIn1": [
+          "AGN",
+          "ARNC",
+          "BEAM",
+          "BF.B",
+          "BHGE",
+          "CEG",
+          "DOW",
+          "GAS",
+          "HSH",
+          "IR",
+          "JAVA",
+          "MIL",
+          "NSM",
+          "PGN",
+          "PLL",
+          "PX",
+          "RSHCQ",
+          "S",
+          "SUN"
+        ],
+        "onlyIn2": [
+          "BF-B"
+        ]
+      },
+      {
+        "date": "1996-01-04",
+        "onlyIn1": [
+          "AGN",
+          "ARNC",
+          "BEAM",
+          "BF.B",
+          "BHGE",
+          "CEG",
+          "DOW",
+          "GAS",
+          "HSH",
+          "IR",
+          "JAVA",
+          "MIL",
+          "NSM",
+          "PGN",
+          "PLL",
+          "PX",
+          "RSHCQ",
+          "S",
+          "SUN"
+        ],
+        "onlyIn2": [
+          "BF-B"
+        ]
+      },
+      {
+        "date": "1996-01-10",
+        "onlyIn1": [
+          "AGN",
+          "ARNC",
+          "BEAM",
+          "BF.B",
+          "BHGE",
+          "CEG",
+          "DOW",
+          "GAS",
+          "HSH",
+          "IR",
+          "JAVA",
+          "MIL",
+          "NSM",
+          "PGN",
+          "PLL",
+          "PX",
+          "RSHCQ",
+          "S",
+          "SUN"
+        ],
+        "onlyIn2": [
+          "BF-B"
+        ]
+      },
+      {
+        "date": "1996-01-11",
+        "onlyIn1": [
+          "AGN",
+          "ARNC",
+          "BEAM",
+          "BF.B",
+          "BHGE",
+          "CEG",
+          "DOW",
+          "GAS",
+          "HSH",
+          "IR",
+          "JAVA",
+          "MIL",
+          "NSM",
+          "PGN",
+          "PLL",
+          "PX",
+          "RSHCQ",
+          "S",
+          "SUN"
+        ],
+        "onlyIn2": [
+          "BF-B"
+        ]
+      },
+      {
+        "date": "1996-01-12",
+        "onlyIn1": [
+          "AGN",
+          "ARNC",
+          "BEAM",
+          "BF.B",
+          "BHGE",
+          "CEG",
+          "DOW",
+          "GAS",
+          "HSH",
+          "IR",
+          "JAVA",
+          "MIL",
+          "NSM",
+          "PGN",
+          "PLL",
+          "PX",
+          "RSHCQ",
+          "S",
+          "SUN"
+        ],
+        "onlyIn2": [
+          "BF-B"
+        ]
+      },
+      {
+        "date": "1996-01-22",
+        "onlyIn1": [
+          "AGN",
+          "ARNC",
+          "BEAM",
+          "BF.B",
+          "BHGE",
+          "CEG",
+          "DOW",
+          "GAS",
+          "HSH",
+          "IR",
+          "JAVA",
+          "MIL",
+          "NSM",
+          "PGN",
+          "PLL",
+          "PX",
+          "RSHCQ",
+          "S",
+          "SUN"
+        ],
+        "onlyIn2": [
+          "BF-B"
+        ]
+      },
+      {
+        "date": "1996-01-23",
+        "onlyIn1": [
+          "AGN",
+          "ARNC",
+          "BEAM",
+          "BF.B",
+          "BHGE",
+          "CEG",
+          "DOW",
+          "GAS",
+          "HSH",
+          "IR",
+          "JAVA",
+          "MIL",
+          "NSM",
+          "PGN",
+          "PLL",
+          "PX",
+          "RSHCQ",
+          "S",
+          "SUN"
+        ],
+        "onlyIn2": [
+          "BF-B"
+        ]
+      },
+      {
+        "date": "1996-01-24",
+        "onlyIn1": [
+          "AGN",
+          "ARNC",
+          "BEAM",
+          "BF.B",
+          "BHGE",
+          "CEG",
+          "DOW",
+          "GAS",
+          "HSH",
+          "IR",
+          "JAVA",
+          "MIL",
+          "NSM",
+          "PGN",
+          "PLL",
+          "PX",
+          "RSHCQ",
+          "S",
+          "SUN"
+        ],
+        "onlyIn2": [
+          "BF-B"
+        ]
+      },
+      {
+        "date": "1996-01-30",
+        "onlyIn1": [
+          "AGN",
+          "ARNC",
+          "BEAM",
+          "BF.B",
+          "BHGE",
+          "CEG",
+          "DOW",
+          "GAS",
+          "HSH",
+          "IR",
+          "JAVA",
+          "MIL",
+          "NSM",
+          "PGN",
+          "PLL",
+          "PX",
+          "RSHCQ",
+          "S",
+          "SUN"
+        ],
+        "onlyIn2": [
+          "BF-B"
+        ]
+      },
+      {
+        "date": "1996-01-31",
+        "onlyIn1": [
+          "AGN",
+          "ARNC",
+          "BEAM",
+          "BF.B",
+          "BHGE",
+          "CEG",
+          "DOW",
+          "GAS",
+          "HSH",
+          "IR",
+          "JAVA",
+          "MIL",
+          "NSM",
+          "PGN",
+          "PLL",
+          "PX",
+          "RSHCQ",
+          "S",
+          "SUN"
+        ],
+        "onlyIn2": [
+          "BF-B"
+        ]
+      },
+      {
+        "date": "1996-02-01",
+        "onlyIn1": [
+          "AGN",
+          "ARNC",
+          "BEAM",
+          "BF.B",
+          "BHGE",
+          "CEG",
+          "DOW",
+          "GAS",
+          "HSH",
+          "IR",
+          "JAVA",
+          "MIL",
+          "NSM",
+          "PGN",
+          "PLL",
+          "PX",
+          "RSHCQ",
+          "S",
+          "SUN"
+        ],
+        "onlyIn2": [
+          "BF-B"
+        ]
+      },
+      {
+        "date": "1996-02-12",
+        "onlyIn1": [
+          "AGN",
+          "ARNC",
+          "BEAM",
+          "BF.B",
+          "BHGE",
+          "CEG",
+          "DOW",
+          "GAS",
+          "HSH",
+          "IR",
+          "JAVA",
+          "MIL",
+          "NSM",
+          "PGN",
+          "PLL",
+          "PX",
+          "RSHCQ",
+          "S",
+          "SUN"
+        ],
+        "onlyIn2": [
+          "BF-B"
+        ]
+      },
+      {
+        "date": "1996-02-13",
+        "onlyIn1": [
+          "AGN",
+          "ARNC",
+          "BEAM",
+          "BF.B",
+          "BHGE",
+          "CEG",
+          "DOW",
+          "GAS",
+          "HSH",
+          "IR",
+          "JAVA",
+          "MIL",
+          "NSM",
+          "PGN",
+          "PLL",
+          "PX",
+          "RSHCQ",
+          "S",
+          "SUN"
+        ],
+        "onlyIn2": [
+          "BF-B"
+        ]
+      },
+      {
+        "date": "1996-02-15",
+        "onlyIn1": [
+          "AGN",
+          "ARNC",
+          "BEAM",
+          "BF.B",
+          "BHGE",
+          "CEG",
+          "DOW",
+          "GAS",
+          "HSH",
+          "IR",
+          "JAVA",
+          "MIL",
+          "NSM",
+          "PGN",
+          "PLL",
+          "PX",
+          "RSHCQ",
+          "S",
+          "SUN"
+        ],
+        "onlyIn2": [
+          "BF-B"
+        ]
+      },
+      {
+        "date": "1996-02-20",
+        "onlyIn1": [
+          "AGN",
+          "ARNC",
+          "BEAM",
+          "BF.B",
+          "BHGE",
+          "CEG",
+          "DOW",
+          "GAS",
+          "HSH",
+          "IR",
+          "JAVA",
+          "MIL",
+          "NSM",
+          "PGN",
+          "PLL",
+          "PX",
+          "RSHCQ",
+          "S",
+          "SUN"
+        ],
+        "onlyIn2": [
+          "BF-B"
+        ]
+      },
+      {
+        "date": "1996-02-21",
+        "onlyIn1": [
+          "AGN",
+          "ARNC",
+          "BEAM",
+          "BF.B",
+          "BHGE",
+          "CEG",
+          "DOW",
+          "GAS",
+          "HSH",
+          "IR",
+          "JAVA",
+          "MIL",
+          "NSM",
+          "PGN",
+          "PLL",
+          "PX",
+          "RSHCQ",
+          "S",
+          "SUN"
+        ],
+        "onlyIn2": [
+          "BF-B"
+        ]
+      },
+      {
+        "date": "1996-02-22",
+        "onlyIn1": [
+          "AGN",
+          "ARNC",
+          "BEAM",
+          "BF.B",
+          "BHGE",
+          "CEG",
+          "DOW",
+          "GAS",
+          "HSH",
+          "IR",
+          "JAVA",
+          "MIL",
+          "NSM",
+          "PGN",
+          "PLL",
+          "PX",
+          "RSHCQ",
+          "S",
+          "SUN"
+        ],
+        "onlyIn2": [
+          "BF-B"
+        ]
+      },
+      {
+        "date": "1996-03-05",
+        "onlyIn1": [
+          "AGN",
+          "ARNC",
+          "BEAM",
+          "BF.B",
+          "BHGE",
+          "CEG",
+          "DOW",
+          "GAS",
+          "HSH",
+          "IR",
+          "JAVA",
+          "MIL",
+          "NSM",
+          "PGN",
+          "PLL",
+          "PX",
+          "RSHCQ",
+          "S",
+          "SUN"
+        ],
+        "onlyIn2": [
+          "BF-B"
+        ]
+      },
+      {
+        "date": "1996-03-08",
+        "onlyIn1": [
+          "AGN",
+          "ARNC",
+          "BEAM",
+          "BF.B",
+          "BHGE",
+          "CEG",
+          "DOW",
+          "GAS",
+          "HSH",
+          "IR",
+          "JAVA",
+          "MIL",
+          "NSM",
+          "PGN",
+          "PLL",
+          "PX",
+          "RSHCQ",
+          "S",
+          "SUN"
+        ],
+        "onlyIn2": [
+          "BF-B"
+        ]
+      }
+    ]
+  }
+}

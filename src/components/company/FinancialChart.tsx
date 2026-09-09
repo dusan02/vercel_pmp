@@ -1,0 +1,133 @@
+import React, { useState, useMemo } from 'react';
+import {
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    ResponsiveContainer,
+    ReferenceLine
+} from 'recharts';
+import { filterStatementsByViewMode, formatChartYAxis, buildPeriodLabel } from '@/lib/utils/chartUtils';
+import { ChartViewToggle } from './shared/ChartViewToggle';
+import { ChartQuarterTick } from './shared/ChartQuarterTick';
+import { ChartTooltip } from './shared/ChartTooltip';
+import { MetricToggleButtons, toggleMetric } from './shared/MetricToggleButtons';
+import type { FinancialStatement } from './analysis/types';
+
+// Re-export for backward compatibility (many files import from here)
+export type { FinancialStatement };
+
+interface FinancialChartProps {
+    statements: FinancialStatement[];
+}
+
+const AVAILABLE_METRICS = [
+    { key: 'revenue', label: 'Revenue', color: '#3B82F6' },
+    { key: 'netIncome', label: 'Net Income', color: '#10B981' },
+    { key: 'ebit', label: 'EBIT', color: '#F59E0B' },
+] as const;
+
+
+export default function FinancialChart({ statements }: FinancialChartProps) {
+    const [viewMode, setViewMode] = useState<'annual' | 'quarterly'>('annual');
+    const [selectedMetrics, setSelectedMetrics] = useState(['revenue', 'netIncome', 'ebit']);
+
+    const chartData = useMemo(() => {
+        if (!statements || statements.length === 0) return [];
+        const filtered = filterStatementsByViewMode(statements, viewMode);
+        const sorted = [...filtered].sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime());
+        return sorted.map(s => {
+            const ebitValue = s.ebit ?? 0;
+            const label = buildPeriodLabel(s.fiscalPeriod, s.fiscalYear);
+            return {
+                name: label,
+                date: label,
+                // null (not 0) for missing values — a missing quarter must not
+                // render as a zero bar (indistinguishable from a real zero)
+                revenue: s.revenue != null ? s.revenue / 1e6 : null,
+                netIncome: s.netIncome != null ? s.netIncome / 1e6 : null,
+                ebit: ebitValue / 1e6,
+            };
+        });
+    }, [statements, viewMode]);
+
+    const yMin = useMemo(() => {
+        // Consider ALL selected metrics — clipping only netIncome hid negative
+        // EBIT bars when netIncome was deselected.
+        const values = chartData.flatMap(d =>
+            selectedMetrics.map(k => (k === 'revenue' || k === 'netIncome' || k === 'ebit' ? d[k] : null) as number | null)
+        );
+        const min = Math.min(0, ...(values.filter((v): v is number => v != null)));
+        return min < 0 ? Math.floor(min * 1.1) : 0;
+    }, [chartData, selectedMetrics]);
+
+
+    if (!statements || statements.length === 0) {
+        return <div className="text-gray-500 text-sm">No financial statement data available.</div>;
+    }
+
+    if (chartData.length === 0) {
+        return (
+            <div className="text-gray-500 text-sm p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                <p className="font-medium">No {viewMode} data available</p>
+                <p className="text-xs mt-1">Try switching to {viewMode === 'annual' ? 'quarterly' : 'annual'} view or check data availability.</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="w-full h-full flex flex-col">
+            <div className="flex flex-wrap gap-2 items-center justify-between mb-4">
+                <ChartViewToggle viewMode={viewMode} onChange={setViewMode} />
+                <MetricToggleButtons
+                    metrics={AVAILABLE_METRICS}
+                    selected={selectedMetrics}
+                    onToggle={k => setSelectedMetrics(prev => toggleMetric(prev, k))}
+                />
+            </div>
+
+            {/* Chart */}
+            <div className="w-full" style={{ minHeight: 260 }}>
+                <ResponsiveContainer width="100%" height={320}>
+                    <BarChart
+                        data={chartData}
+                        margin={{ top: 10, right: 10, left: 10, bottom: viewMode === 'quarterly' ? 8 : 5 }}
+                        barGap={2}
+                    >
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" className="dark:stroke-gray-700" />
+                        <XAxis 
+                            dataKey="date"
+                            tick={viewMode === 'quarterly' ? <ChartQuarterTick chartData={chartData} /> : { fontSize: 11, fill: '#6B7280', fontWeight: 500 }}
+                            axisLine={false}
+                            tickLine={false}
+                            interval={0}
+                            dy={viewMode === 'annual' ? 6 : 0}
+                            height={viewMode === 'quarterly' ? 44 : 24}
+                        />
+                        <YAxis 
+                            tickFormatter={formatChartYAxis} 
+                            tick={{ fontSize: 12, fill: '#6B7280' }} 
+                            axisLine={false}
+                            tickLine={false}
+                            width={50}
+                            domain={[yMin, 'auto']}
+                        />
+                        <Tooltip content={<ChartTooltip metrics={AVAILABLE_METRICS} />} cursor={{ fill: 'rgba(107, 114, 128, 0.05)' }} />
+                        <ReferenceLine y={0} stroke="#9CA3AF" />
+                        
+                        {/* Dynamické renderovanie vybraných metrík */}
+                        <Bar dataKey="revenue" name="Revenue" fill="#3B82F6" radius={[2, 2, 0, 0]} maxBarSize={40}
+                            hide={!selectedMetrics.includes('revenue')} isAnimationActive={false} />
+                        <Bar dataKey="netIncome" name="Net Income" fill="#10B981" radius={[2, 2, 0, 0]} maxBarSize={40}
+                            hide={!selectedMetrics.includes('netIncome')} isAnimationActive={false} />
+                        <Bar dataKey="ebit" name="EBIT" fill="#F59E0B" radius={[2, 2, 0, 0]} maxBarSize={40}
+                            hide={!selectedMetrics.includes('ebit')} isAnimationActive={false} />
+                    </BarChart>
+                </ResponsiveContainer>
+            </div>
+
+        </div>
+    );
+}

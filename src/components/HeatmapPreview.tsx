@@ -1,0 +1,116 @@
+'use client';
+
+import React, { useCallback, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
+import { SectionIcon } from './SectionIcon';
+import { useHeatmapMetric } from '@/hooks/useHeatmapMetric';
+import { HeatmapMetricButtons } from './HeatmapMetricButtons';
+import { HeatmapViewButton } from './HeatmapViewButton';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { GlobalStockSearch } from './GlobalStockSearch';
+import { StockData } from '@/lib/types';
+
+// OPTIMIZATION: Enable SSR for desktop (faster initial load)
+// Mobile uses different components, so SSR is safe for desktop
+const ResponsiveMarketHeatmap = dynamic(
+  () => import('@/components/ResponsiveMarketHeatmap').then(mod => ({ default: mod.default })),
+  {
+    ssr: true, // Enable SSR for faster desktop loading
+    loading: () => (
+      <div className="w-full h-full flex items-center justify-center bg-black text-white text-sm">
+        Loading heatmap preview...
+      </div>
+    )
+  }
+);
+
+/**
+ * Komponent pre miniaturu heatmapy na hlavnej stránke
+ * Zobrazuje zmenšenú verziu heatmapy, ktorá pri kliknutí presmeruje na plnú stránku
+ * Prepínacie buttony (% Change / Mcap Change) sú vedľa nadpisu
+ */
+export function HeatmapPreview({ activeView, wrapperClass, onTileClick, stockData, onSelectTicker }: { activeView?: string | undefined; wrapperClass?: string; onTileClick?: (ticker: string) => void; stockData?: StockData[]; onSelectTicker?: (ticker: string) => void }) {
+  const router = useRouter();
+  // Centralized metric state with localStorage persistence
+  const { metric, setMetric } = useHeatmapMetric('percent');
+
+  // Use hook for reliable desktop/mobile detection
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
+
+  // Handler pre klik na pozadí (nie na buttonoch)
+  const handleBackgroundClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    // Na mobile (ak sme v heatmap tabe), nechceme redirect, aby fungoval bottom sheet
+    if (!isDesktop && activeView === 'heatmap') {
+      return;
+    }
+
+    // Skontroluj, či klik nebol na button alebo interaktívnom elemente
+    const target = e.target as HTMLElement;
+    const isInteractive = target.closest('button') ||
+      target.closest('a') ||
+      target.closest('[role="button"]') ||
+      target.closest('.no-redirect');
+
+    if (!isInteractive) {
+      router.push('/heatmap');
+    }
+  }, [router, isDesktop, activeView]);
+
+  return (
+    <section className={`heatmap-preview ${wrapperClass || ''} ${!isDesktop ? 'h-full flex flex-col' : ''}`}>
+      {/* Header - hide on mobile (MobileTreemap has its own) */}
+      {isDesktop && (
+        <div className="flex items-center gap-4 mb-4 px-4 border-none outline-none">
+          <div className="flex items-center shrink-0">
+            <h2 className="flex items-center gap-3 text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white m-0 relative -top-1.5">
+              <SectionIcon type="heatmap" size={28} className="text-gray-900 dark:text-white shrink-0" />
+              <span>Heatmap</span>
+            </h2>
+          </div>
+          {stockData && onSelectTicker && (
+            <div className="flex-1 max-w-md">
+              <GlobalStockSearch
+                stockData={stockData}
+                onSelectTicker={onSelectTicker}
+                placeholder="Search stocks..."
+              />
+            </div>
+          )}
+          <div className="flex items-center gap-3 ml-auto shrink-0">
+            <HeatmapMetricButtons
+              metric={metric}
+              onMetricChange={setMetric}
+            />
+            <HeatmapViewButton />
+          </div>
+        </div>
+      )}
+
+      {/* Content Wrapper - simplified: removed unnecessary inner div */}
+      <div
+        className={`relative w-full bg-black overflow-hidden group heatmap-preview-container border-none outline-none ${isDesktop ? 'heatmap-preview-desktop h-[600px]' : 'flex-1'
+          }`}
+        style={isDesktop ? { cursor: 'pointer', border: 'none', outline: 'none' } : { cursor: 'pointer', border: 'none', outline: 'none' }}
+        onClick={handleBackgroundClick}
+      >
+        <ResponsiveMarketHeatmap
+          apiEndpoint="/api/heatmap"
+          autoRefresh={true}
+          refreshInterval={60000}
+          initialTimeframe="day"
+          controlledMetric={metric}
+          onMetricChange={setMetric}
+          hideMetricButtons={true}
+          sectorLabelVariant="compact"
+          activeView={activeView}
+          onTileClick={(company) => {
+            if (onTileClick) {
+              onTileClick(company.symbol);
+            }
+          }}
+        />
+      </div>
+    </section>
+  );
+}

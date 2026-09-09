@@ -1,0 +1,118 @@
+/**
+ * Cron Job Authorization Utilities
+ * Shared authorization logic for cron job endpoints
+ */
+
+import { NextRequest, NextResponse } from 'next/server';
+import { handleCronError } from './cronErrorHandler';
+import { acquireLock, releaseLock } from './redisLocks';
+
+/**
+ * Wraps a cron handler with: auth check → try/catch → standardized error response.
+ *
+ * Usage:
+ *   export const POST = withCronHandler('my-job', async (req) => {
+ *     // business logic only — auth and error handling are automatic
+ *     return createCronSuccessResponse({ message: 'Done' });
+ *   });
+ */
+export function withCronHandler(
+  jobName: string,
+  handler: (request: NextRequest) => Promise<NextResponse>
+): (request: NextRequest) => Promise<NextResponse> {
+  return async (request: NextRequest) => {
+    const authError = verifyCronAuth(request);
+    if (authError) return authError;
+    try {
+      return await handler(request);
+    } catch (error) {
+      return handleCronError(error, jobName);
+    }
+  };
+}
+
+/**
+ * Verify cron job authorization
+ * Returns null if authorized, or error response if unauthorized
+ */
+export function verifyCronAuth(request: NextRequest): NextResponse | null {
+  const authHeader = request.headers.get('authorization');
+  // Support both env var names:
+  // - CRON_SECRET_KEY (preferred)
+  // - CRON_SECRET (legacy / used by some routes)
+  const secret = process.env.CRON_SECRET_KEY || process.env.CRON_SECRET;
+  const expectedAuth = `Bearer ${secret}`;
+  
+  if (authHeader !== expectedAuth) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  
+  return null;
+}
+
+/**
+ * Verify cron job authorization with optional production check
+ * In production, requires auth. In development, allows without auth if allowDevWithoutAuth is true
+ */
+export function verifyCronAuthOptional(
+  request: NextRequest,
+  allowDevWithoutAuth: boolean = false
+): NextResponse | null {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const authHeader = request.headers.get('authorization');
+  const secret = process.env.CRON_SECRET_KEY || process.env.CRON_SECRET;
+  const expectedAuth = `Bearer ${secret}`;
+  
+  // In production, always require auth
+  if (isProduction) {
+    if (authHeader !== expectedAuth) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    return null;
+  }
+  
+  // In development, check if auth is required
+  if (!allowDevWithoutAuth) {
+    if (authHeader !== expectedAuth) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * Run a long-running cron job under a Redis distributed lock.
+ * Prevents overlapping runs when a job is triggered manually while a
+ * scheduled run (or another instance) is still in progress.
+ *
+ * Fail-closed: if Redis is unavailable, the lock cannot be acquired and the
+ * job is skipped with 409 — consistent with the fail-closed posture of
+ * acquireLock() in redisLocks.ts.
+ *
+ * Usage:
+ *   export const POST = (req: NextRequest) =>
+ *     withCronLock('refresh-all', 7200, async () => { ... });
+ */
+export async function withCronLock(
+  jobName: string,
+  ttlSeconds: number,
+  handler: () => Promise<NextResponse>
+): Promise<NextResponse> {
+  const lockToken = await acquireLock(`cron:${jobName}`, ttlSeconds);
+  if (!lockToken) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Job already running',
+        message: `Another '${jobName}' run is still in progress (lock held). Try again later.`,
+      },
+      { status: 409 }
+    );
+  }
+  try {
+    return await handler();
+  } finally {
+    await releaseLock(`cron:${jobName}`, lockToken);
+  }
+}

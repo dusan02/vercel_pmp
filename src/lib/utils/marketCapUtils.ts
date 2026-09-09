@@ -1,0 +1,383 @@
+import Decimal from 'decimal.js';
+import { calculatePercentChange } from './priceResolver';
+
+// Cache for share counts (24-hour TTL)
+// NOTE: This is a module-level Map — it only lives within a single Node.js process.
+// In serverless (Vercel) or PM2 cluster mode each request may get a new process,
+// so this cache is effectively always empty in production.
+// Kept for long-running dev/PM2 single-process scenarios only.
+const shareCountCache = new Map<string, { shares: number; timestamp: number }>();
+const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
+/**
+ * Shared outlier threshold for percent change validation.
+ * Used by both stockService and heatmap to ensure consistent filtering.
+ * Values above this are almost certainly due to a stale/bad prevClose,
+ * NOT legitimate market moves.
+ */
+export const OUTLIER_CHANGE_PCT_THRESHOLD = 50; // 50%
+
+/**
+ * Get market status from Polygon API
+ */
+export async function getMarketStatus(): Promise<{ market: string; serverTime: string }> {
+  try {
+    const apiKey = process.env.POLYGON_API_KEY;
+    if (!apiKey) {
+      throw new Error('Polygon API key not configured');
+    }
+
+    const url = `https://api.polygon.io/v1/marketstatus/now?apiKey=${apiKey}`;
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(10000) // 10 second timeout
+    });
+
+    if (!response.ok) {
+      throw new Error(`Polygon API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return {
+      market: data.market,
+      serverTime: data.serverTime
+    };
+
+  } catch (error) {
+    console.error('❌ Error fetching market status:', error);
+    // Default to closed if API fails
+    return { market: 'closed', serverTime: new Date().toISOString() };
+  }
+}
+
+/**
+ * Fetch share count from Polygon API with caching
+ */
+export async function getSharesOutstanding(ticker: string, currentPrice?: number): Promise<number> {
+  const now = Date.now();
+  const cached = shareCountCache.get(ticker);
+
+  // Return cached value if still valid (24-hour cache)
+  if (cached && (now - cached.timestamp) < CACHE_TTL) {
+    console.log(`📊 Using cached shares for ${ticker}: ${cached.shares.toLocaleString()}`);
+    return cached.shares;
+  }
+
+  try {
+    const apiKey = process.env.POLYGON_API_KEY;
+    if (!apiKey) {
+      throw new Error('Polygon API key not configured');
+    }
+
+    const url = `https://api.polygon.io/v3/reference/tickers/${ticker}?apiKey=${apiKey}`;
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(10000) // 10 second timeout
+    });
+
+    if (!response.ok) {
+      console.warn(`⚠️ Polygon API error for ${ticker} shares: ${response.status} ${response.statusText}`);
+      return 0;
+    }
+
+    const data = await response.json();
+
+    const results = data.results;
+
+    // Prefer weighted shares, but fall back to share_class_shares_outstanding when missing (common for ADRs/OTC/etc).
+    let shares: number =
+      results?.weighted_shares_outstanding ||
+      results?.share_class_shares_outstanding ||
+      0;
+
+    // Best-effort fallback: if shares are missing but Polygon provides market_cap,
+    // estimate shares = market_cap / currentPrice (only when currentPrice is provided and valid).
+    if ((!shares || shares <= 0) && results?.market_cap && currentPrice && currentPrice > 0) {
+      const estimated = results.market_cap / currentPrice;
+      if (Number.isFinite(estimated) && estimated > 0) {
+        shares = estimated;
+        console.log(`🧮 Estimated shares for ${ticker} from market_cap: ${Math.round(shares).toLocaleString()}`);
+      }
+    }
+
+    // If shares are missing or zero, try to fetch from DB
+    if (!shares || shares <= 0) {
+      try {
+        const { prisma } = await import('@/lib/db/prisma');
+        const dbTicker = await prisma.ticker.findUnique({
+          where: { symbol: ticker },
+          select: { sharesOutstanding: true }
+        });
+
+        if (dbTicker?.sharesOutstanding && dbTicker.sharesOutstanding > 0) {
+          shares = dbTicker.sharesOutstanding;
+          console.log(`🧮 Using DB fallback shares for ${ticker}: ${shares.toLocaleString()}`);
+        }
+      } catch (dbError) {
+        console.warn(`⚠️ Failed to fetch DB fallback shares for ${ticker}:`, dbError);
+      }
+    }
+
+    if (!shares || shares <= 0) {
+      console.warn(`⚠️ All fallbacks failed for ${ticker} shares, using 0`);
+      return 0;
+    }
+
+    // Cache the result for 24 hours
+    shareCountCache.set(ticker, { shares, timestamp: now });
+
+    console.log(`✅ Fetched shares for ${ticker}: ${shares.toLocaleString()}`);
+    return shares;
+  } catch (error) {
+    console.error(`❌ Error fetching shares for ${ticker}:`, error);
+    return 0;
+  }
+}
+
+/**
+ * Get previous close from Polygon aggregates with adjusted=true.
+ * NOTE: The in-memory prevCloseCache was removed (it doesn't work in serverless/cluster).
+ * Real caching is handled by Redis in onDemandPrevClose.ts.
+ */
+export async function getPreviousClose(ticker: string): Promise<number> {
+  try {
+    const apiKey = process.env.POLYGON_API_KEY;
+    if (!apiKey) {
+      throw new Error('Polygon API key not configured');
+    }
+
+    // Use /v2/aggs/prev?adjusted=true as single source of truth
+    const url = `https://api.polygon.io/v2/aggs/ticker/${ticker}/prev?adjusted=true&apiKey=${apiKey}`;
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(10000) // 10 second timeout
+    });
+
+    if (!response.ok) {
+      throw new Error(`Polygon API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    if (!data?.results?.[0]?.c) {
+      throw new Error(`No previous close found for ${ticker}`);
+    }
+
+    const prevClose = data.results[0].c;
+
+    // Log only when not in silent mode
+    if (process.env.SILENT_PREVCLOSE_LOGS !== 'true') {
+      console.log(`✅ Fetched prevClose for ${ticker}: $${prevClose}`);
+    }
+    return prevClose;
+  } catch (error) {
+    console.error(`❌ Error fetching previous close for ${ticker}:`, error);
+    return 0;
+  }
+}
+
+
+/**
+ * Get current price from Polygon snapshot data with robust fallbacks
+ */
+export function getCurrentPrice(snapshotData: unknown): number {
+  const data = snapshotData as { ticker?: { lastTrade?: { p?: number }; min?: { c?: number }; day?: { c?: number }; prevDay?: { c?: number } } };
+
+  // Priority 1: lastTrade.p (most current)
+  if (data?.ticker?.lastTrade?.p && data.ticker.lastTrade.p > 0) {
+    return data.ticker.lastTrade.p;
+  }
+
+  // Priority 2: min.c (current minute data)
+  if (data?.ticker?.min?.c && data.ticker.min.c > 0) {
+    return data.ticker.min.c;
+  }
+
+  // Priority 3: day.c (day close - most reliable fallback)
+  if (data?.ticker?.day?.c && data.ticker.day.c > 0) {
+    return data.ticker.day.c;
+  }
+
+  // Priority 4: prevDay.c (previous day close)
+  if (data?.ticker?.prevDay?.c && data.ticker.prevDay.c > 0) {
+    return data.ticker.prevDay.c;
+  }
+
+  // Log the full snapshot data for debugging
+  console.error('❌ No valid price found in snapshot data:', JSON.stringify(snapshotData, null, 2));
+  throw new Error('No valid price found in snapshot data - all fallbacks exhausted');
+}
+
+/**
+ * Compute market cap in billions USD using Decimal.js for precision
+ */
+export function computeMarketCap(price: number, shares: number): number {
+  try {
+    const result = new Decimal(price)
+      .mul(shares)
+      .div(1_000_000_000) // Convert to billions
+      .toNumber();
+
+    return Math.round(result * 100) / 100; // Round to 2 decimal places
+  } catch (error) {
+    console.error('Error computing market cap:', error);
+    throw error;
+  }
+}
+
+/**
+ * Compute market cap difference in billions USD using Decimal.js for precision
+ */
+export function computeMarketCapDiff(currentPrice: number, prevClose: number, shares: number): number {
+  try {
+    const result = new Decimal(currentPrice)
+      .minus(prevClose)
+      .mul(shares)
+      .div(1_000_000_000) // Convert to billions
+      .toNumber();
+
+    return Math.round(result * 100) / 100; // Round to 2 decimal places
+  } catch (error) {
+    console.error('Error computing market cap diff:', error);
+    throw error;
+  }
+}
+
+/**
+ * Compute percent change using Decimal.js for precision
+ * 
+ * If session and regularClose are provided, uses session-aware logic:
+ * - Pre-market/Live: vs previousClose (D-1)
+ * - After-hours/Closed: vs previousClose (D-1) if available, else regularClose (D)
+ * 
+ * Otherwise, uses simple calculation vs previousClose (backward compatibility)
+ */
+export function computePercentChange(
+  currentPrice: number,
+  prevClose: number,
+  session?: 'pre' | 'live' | 'after' | 'closed',
+  regularClose?: number | null
+): number {
+  // If session-aware parameters are provided, use calculatePercentChange logic
+  if (session !== undefined) {
+    try {
+      const result = calculatePercentChange(currentPrice, session, prevClose, regularClose || null);
+      return Math.round(result.changePct * 100) / 100; // Round to 2 decimal places
+    } catch (error) {
+      console.error('Error in session-aware percent change calculation:', error);
+      // Fallback to simple calculation
+    }
+  }
+
+  // Simple calculation (backward compatibility)
+  try {
+    if (!prevClose || prevClose <= 0) {
+      return 0;
+    }
+
+    const result = new Decimal(currentPrice)
+      .minus(prevClose)
+      .div(prevClose)
+      .times(100)
+      .toNumber();
+
+    return Math.round(result * 100) / 100; // Round to 2 decimal places
+  } catch (error) {
+    console.error('Error computing percent change:', error);
+    throw error;
+  }
+}
+
+/**
+ * Validate price data for extreme changes (possible splits)
+ */
+export function validatePriceChange(currentPrice: number, prevClose: number): void {
+  // Check for zero or negative values
+  if (currentPrice <= 0 || prevClose <= 0) {
+    console.warn(`⚠️ Invalid price data detected - current: $${currentPrice}, prev: $${prevClose}`);
+    return;
+  }
+
+  const percentChange = Math.abs((currentPrice - prevClose) / prevClose) * 100;
+
+  // Check for extreme changes (possible splits or data errors)
+  if (percentChange > 100) {
+    console.warn(`⚠️ Extreme price change detected: ${percentChange.toFixed(2)}% - possible stock split or data error`);
+  }
+
+  if (currentPrice < 0.01 || prevClose < 0.01) {
+    throw new Error('Suspiciously low price detected - possible data error');
+  }
+}
+
+/**
+ * Validate market cap values and filter out invalid data
+ */
+export function validateMarketCap(marketCap: number, ticker: string): boolean {
+  // Filter out zero or negative market caps
+  if (marketCap <= 0) {
+    console.warn(`⚠️ Zero or negative market cap detected for ${ticker}: ${marketCap}B - filtering out`);
+    return false;
+  }
+
+  // Filter out extremely high market caps (possible data errors)
+  if (marketCap > 10000) { // > $10 trillion
+    console.warn(`⚠️ Extremely high market cap detected for ${ticker}: ${marketCap}B - possible data error`);
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Validate percent change and filter out extreme values.
+ * Uses OUTLIER_CHANGE_PCT_THRESHOLD (50%) as the shared limit — consistent with stockService.
+ */
+export function validatePercentChange(percentChange: number, ticker: string): boolean {
+  if (Math.abs(percentChange) > OUTLIER_CHANGE_PCT_THRESHOLD) {
+    console.warn(`⚠️ Extreme percent change for ${ticker}: ${percentChange.toFixed(2)}% (threshold ±${OUTLIER_CHANGE_PCT_THRESHOLD}%) — filtering out (likely stale prevClose)`);
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Log detailed calculation data for debugging
+ */
+export function logCalculationData(ticker: string, currentPrice: number, prevClose: number, shares: number, marketCap: number, marketCapDiff: number, percentChange: number): void {
+  console.log(`📊 ${ticker} Calculation Details:`);
+  console.log(`   Current Price: $${currentPrice}`);
+  console.log(`   Previous Close: $${prevClose}`);
+  console.log(`   Shares Outstanding: ${shares.toLocaleString()}`);
+  console.log(`   Market Cap: $${marketCap}B`);
+  console.log(`   Market Cap Diff: $${marketCapDiff}B`);
+  console.log(`   Percent Change: ${percentChange >= 0 ? '+' : ''}${percentChange}%`);
+  console.log(`   Formula: ($${currentPrice} - $${prevClose}) × ${shares.toLocaleString()} ÷ 1,000,000,000 = $${marketCapDiff}B`);
+}
+
+/**
+ * Clear all caches (useful for testing)
+ */
+export function clearAllCaches(): void {
+  shareCountCache.clear();
+  console.log('🧹 Share count cache cleared');
+}
+
+/**
+ * Get cache status for debugging
+ */
+export function getCacheStatus(): {
+  shareCounts: { size: number; entries: Array<{ ticker: string; shares: number; age: number }> };
+} {
+  const now = Date.now();
+
+  const shareEntries = Array.from(shareCountCache.entries()).map(([ticker, data]) => ({
+    ticker,
+    shares: data.shares,
+    age: Math.round((now - data.timestamp) / 1000 / 60) // Age in minutes
+  }));
+
+  return {
+    shareCounts: {
+      size: shareCountCache.size,
+      entries: shareEntries
+    }
+  };
+}

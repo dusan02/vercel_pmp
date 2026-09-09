@@ -1,0 +1,42 @@
+[
+  {
+    "id": "fja05680_main",
+    "url": "https://raw.githubusercontent.com/fja05680/sp500/master/S%26P%20500%20Historical%20Components%20%26%20Changes.csv",
+    "provider": "fja05680",
+    "tier": "TIER_2",
+    "filename": "fja05680_historical_components.csv",
+    "downloadedAt": "2026-09-02T19:47:28.921Z",
+    "sha256": "bd2745939a709f316a74a550253d21f3fd5b72aa223e3a0137c790d2e54b7d5e",
+    "rowCount": 2596
+  },
+  {
+    "id": "fja05680_updated",
+    "url": "https://raw.githubusercontent.com/fja05680/sp500/master/S%26P%20500%20Historical%20Components%20%26%20Changes%20(Updated).csv",
+    "provider": "fja05680",
+    "tier": "TIER_2",
+    "filename": "fja05680_historical_components_updated.csv",
+    "downloadedAt": "2026-09-02T19:47:28.921Z",
+    "sha256": "39a9202c9ef69a74c0ff07e2113ad41fb6da7c8c5b6cd9541f0185fb4391e717",
+    "rowCount": 2719
+  },
+  {
+    "id": "chinobing_components",
+    "url": "https://raw.githubusercontent.com/chinobing/historical_sp500_constituents/main/sp_500_historical_components.csv",
+    "provider": "chinobing",
+    "tier": "TIER_2_ORACLE",
+    "filename": "chinobing_historical_components.csv",
+    "downloadedAt": "2026-09-02T19:47:28.921Z",
+    "sha256": "bbdcb4c50047bb209d6ed12ac5f367b7ae5dce779d88d9e6ef85a8e0e303c69c",
+    "rowCount": 3872
+  },
+  {
+    "id": "chinobing_changes",
+    "url": "https://raw.githubusercontent.com/chinobing/historical_sp500_constituents/main/sp500_changes_since_1996.csv",
+    "provider": "chinobing",
+    "tier": "TIER_2_ORACLE",
+    "filename": "chinobing_changes.csv",
+    "downloadedAt": "2026-09-02T19:47:28.921Z",
+    "sha256": "483c7fb8572607e3ffb6d7818b6613ea50f3b6a2c8005c88d780e417c56046e4",
+    "rowCount": 702
+  }
+]

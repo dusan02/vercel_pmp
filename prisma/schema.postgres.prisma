@@ -1,0 +1,551 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String           @id @default(cuid())
+  name          String?
+  email         String?          @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  portfolio     PortfolioItem[]
+  sessions      Session[]
+  favorites     UserFavorite[]
+  preferences   UserPreferences?
+}
+
+model PortfolioItem {
+  id        String   @id @default(cuid())
+  userId    String
+  ticker    String
+  quantity  Float
+  avgPrice  Float?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tickerRef Ticker   @relation(fields: [ticker], references: [symbol], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, ticker])
+  @@index([userId])
+  @@index([ticker])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model UserPreferences {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  favorites       String
+  theme           String   @default("auto")
+  defaultTab      String   @default("all")
+  autoRefresh     Boolean  @default(true)
+  refreshInterval Int      @default(30)
+  showEarnings    Boolean  @default(true)
+  showNews        Boolean  @default(true)
+  tableColumns    String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model EarningsCalendar {
+  id                     String   @id @default(cuid())
+  ticker                 String
+  companyName            String
+  date                   DateTime
+  time                   String
+  epsEstimate            Float?
+  epsActual              Float?
+  revenueEstimate        Float?
+  revenueActual          Float?
+  epsSurprisePercent     Float?
+  revenueSurprisePercent Float?
+  marketCap              Float?
+  percentChange          Float?
+  marketCapDiff          Float?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@unique([ticker, date])
+  @@index([date])
+  @@index([ticker])
+}
+
+model Ticker {
+  symbol               String                  @id
+  name                 String?
+  sector               String?
+  industry             String?
+  sharesOutstanding    Float?
+  adrRatio             Float?
+  isAdr                Boolean                 @default(false)
+  updatedAt            DateTime                @updatedAt
+  latestPrevClose      Float?
+  latestPrevCloseDate  DateTime?
+  lastChangePct        Float?
+  lastMarketCap        Float?
+  lastMarketCapDiff    Float?
+  lastPrice            Float?
+  lastPriceUpdated     DateTime?
+  lastVolume           Float?
+  logoUrl              String?
+  avgVolume20d         Float?
+  stdDevReturn20d      Float?
+  avgReturn20d         Float?
+  latestMoversZScore   Float?
+  latestMoversRVOL     Float?
+  moversReason         String?
+  moversCategory       String?
+  socialCopy           String?
+  isSbcAlert           Boolean                 @default(false)
+  aiConfidence         Int?
+  description          String?
+  employees            Int?
+  websiteUrl           String?
+  headquarters         String?
+  analysisCache        AnalysisCache?
+  dailyRefs            DailyRef[]
+  dailyValuations      DailyValuationHistory[]
+  financialStatements  FinancialStatement[]
+  moverEvents          MoverEvent[]
+  portfolio            PortfolioItem[]
+  sessionPrices        SessionPrice[]
+  userFavorites        UserFavorite[]
+  valuationHistories   ValuationHistory[]
+  valuationPercentiles ValuationPercentiles[]
+  volumeBuckets        VolumeBucket[]
+  
+  // Finnhub data
+  finnhubMetrics       FinnhubMetrics?
+  finnhubProfile       FinnhubProfile?
+  finnhubPriceTarget   FinnhubPriceTarget?
+  finnhubInsiderTransactions FinnhubInsiderTransaction[]
+
+  @@index([sector])
+  @@index([sharesOutstanding])
+  @@index([latestPrevCloseDate])
+  @@index([lastPrice])
+  @@index([lastChangePct])
+  @@index([lastMarketCap])
+  @@index([lastMarketCapDiff])
+  @@index([sector, lastMarketCap])
+  @@index([industry, lastMarketCap])
+}
+
+model MoverEvent {
+  id            String   @id @default(cuid())
+  symbol        String
+  timestamp     DateTime @default(now())
+  date          DateTime
+  priceAtEvent  Float
+  zScore        Float
+  rvol          Float
+  changePct     Float
+  category      String?
+  reason        String?
+  sentiment     Float?
+  impact1h      Float?
+  impactEndDay  Float?
+  impactNextDay Float?
+  ticker        Ticker   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+
+  @@index([date])
+  @@index([category])
+  @@index([symbol])
+}
+
+model DailyRef {
+  id            String   @id @default(cuid())
+  symbol        String
+  date          DateTime
+  previousClose Float
+  todayOpen     Float?
+  regularClose  Float?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  ticker        Ticker   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+
+  @@unique([symbol, date])
+  @@index([date])
+  @@index([symbol])
+}
+
+model SessionPrice {
+  id        String   @id @default(cuid())
+  symbol    String
+  date      DateTime
+  session   String
+  lastPrice Float
+  lastTs    DateTime
+  changePct Float
+  source    String
+  quality   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  zScore    Float?
+  rvol      Float?
+  ticker    Ticker   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+
+  @@unique([symbol, date, session])
+  @@index([date, session])
+  @@index([symbol, session])
+  @@index([lastTs])
+  @@index([changePct])
+}
+
+model UserFavorite {
+  id        String   @id @default(cuid())
+  userId    String
+  ticker    String
+  createdAt DateTime @default(now())
+  tickerRef Ticker   @relation(fields: [ticker], references: [symbol], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, ticker])
+  @@index([userId])
+  @@index([ticker])
+}
+
+model VolumeBucket {
+  id        String   @id @default(cuid())
+  symbol    String
+  bucket    String
+  avgVolume Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ticker    Ticker   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+
+  @@unique([symbol, bucket])
+  @@index([symbol])
+}
+
+model FinancialStatement {
+  id                 String   @id @default(cuid())
+  symbol             String
+  period             String
+  endDate            DateTime
+  fiscalYear         Int
+  fiscalPeriod       String
+  revenue            Float?
+  netIncome          Float?
+  ebit               Float?
+  grossProfit        Float?
+  operatingCashFlow  Float?
+  capex              Float?
+  totalAssets        Float?
+  totalLiabilities   Float?
+  currentAssets      Float?
+  currentLiabilities Float?
+  retainedEarnings   Float?
+  totalEquity        Float?
+  sharesOutstanding  Float?
+  sbc                Float?
+  interestExpense    Float?
+  totalDebt          Float?
+  cashAndEquivalents Float?
+  netPPE             Float?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  ticker             Ticker   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+
+  @@unique([symbol, fiscalYear, fiscalPeriod])
+  @@index([symbol])
+  @@index([fiscalYear, fiscalPeriod])
+  @@index([endDate])
+}
+
+model DailyValuationHistory {
+  id                String   @id @default(cuid())
+  symbol            String
+  date              DateTime
+  closePrice        Float?
+  marketCap         Float?
+  peRatio           Float?
+  psRatio           Float?
+  evEbitda          Float?
+  fcfYield          Float?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  currentRatio      Float?
+  debtToEquity      Float?
+  dividendYield     Float?
+  evFcf             Float?
+  evRevenue         Float?
+  pbRatio           Float?
+  pegRatio          Float?
+  priceTangibleBook Float?
+  quickRatio        Float?
+  roe               Float?
+  roic              Float?
+  ticker            Ticker   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+
+  @@unique([symbol, date])
+  @@index([symbol])
+  @@index([date])
+  @@index([symbol, date, peRatio])
+  @@index([symbol, date, pbRatio])
+}
+
+model AnalysisCache {
+  id                  String    @id @default(cuid())
+  symbol              String    @unique
+  healthScore         Float?
+  profitabilityScore  Float?
+  valuationScore      Float?
+  verdictText         String?
+  piotroskiScore      Int?
+  beneishScore        Float?
+  interestCoverage    Float?
+  revenueCagr         Float?
+  netIncomeCagr       Float?
+  updatedAt           DateTime  @updatedAt
+  altmanZ             Float?
+  debtRepaymentYears  Float?
+  fcfConversion       Float?
+  fcfMargin           Float?
+  humanDebtInfo       String?
+  humanPeInfo         String?
+  lastQualitySignalAt DateTime?
+  marginStability     Float?
+  negativeNiYears     Int?
+  ticker              Ticker    @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+
+  @@index([healthScore])
+  @@index([valuationScore])
+}
+
+model Subscription {
+  id        String   @id @default(cuid())
+  symbol    String?
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  email     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ValuationHistory {
+  id         String   @id @default(cuid())
+  symbol     String
+  date       DateTime
+  metric     String
+  value      Float
+  percentile Float?
+  period     String
+  createdAt  DateTime @default(now())
+  ticker     Ticker   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+
+  @@unique([symbol, date, metric, period])
+  @@index([symbol, date])
+  @@index([date])
+  @@index([symbol, metric])
+}
+
+model ValuationPercentiles {
+  id          String   @id @default(cuid())
+  symbol      String
+  metric      String
+  period      String
+  p10         Float
+  p25         Float
+  p50         Float
+  p75         Float
+  p90         Float
+  mean        Float
+  stdDev      Float
+  sampleSize  Int
+  lastUpdated DateTime @default(now())
+  ticker      Ticker   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+
+  @@unique([symbol, metric, period])
+  @@index([symbol, metric])
+}
+
+// ============================================================================
+// Finnhub Data Models
+// ============================================================================
+
+model FinnhubMetrics {
+  id        String   @id @default(cuid())
+  symbol    String   @unique
+  
+  // Valuation ratios
+  peRatio               Float?
+  forwardPe             Float?
+  pbRatio               Float?
+  psRatio               Float?
+  evEbitda              Float?
+  evSales               Float?
+  pegRatio              Float?
+  priceCashFlow         Float?
+  priceFreeCashFlow     Float?
+  
+  // Profitability
+  grossMargin           Float?
+  operatingMargin       Float?
+  netMargin             Float?
+  roe                   Float?
+  roa                   Float?
+  roic                  Float?
+  rote                  Float?
+  
+  // Growth
+  revenueGrowth         Float?
+  earningsGrowth        Float?
+  bookValueGrowth       Float?
+  debtGrowth            Float?
+  
+  // Financial Health
+  currentRatio          Float?
+  quickRatio            Float?
+  debtEquityRatio       Float?
+  interestCoverage      Float?
+  totalDebtToCapitalization Float?
+  
+  // Per Share
+  revenuePerShare       Float?
+  netIncomePerShare     Float?
+  bookValuePerShare     Float?
+  cashPerShare          Float?
+  freeCashFlowPerShare  Float?
+  
+  // Other
+  beta                  Float?
+  dividendYield         Float?
+  payoutRatio           Float?
+  employees             Int?
+  revenuePerEmployee    Float?
+  assetTurnover         Float?
+  inventoryTurnover     Float?
+  receivablesTurnover   Float?
+  
+  // Metadata
+  fetchedAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  ticker    Ticker   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+  
+  @@index([symbol])
+  @@index([fetchedAt])
+}
+
+model FinnhubProfile {
+  id          String   @id @default(cuid())
+  symbol      String   @unique
+  
+  name               String?
+  isin               String?
+  cusip              String?
+  exchange           String?
+  currency           String?
+  country            String?
+  ipoDate            String?
+  marketCap          Float?
+  shareOutstanding   Float?
+  logo               String?
+  phone              String?
+  weburl             String?
+  finnhubIndustry    String?
+  finnhubSector      String?
+  
+  // Metadata
+  fetchedAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  ticker    Ticker   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+  
+  @@index([symbol])
+  @@index([fetchedAt])
+}
+
+model FinnhubPriceTarget {
+  id          String   @id @default(cuid())
+  symbol      String   @unique
+  
+  targetHigh       Float?
+  targetLow        Float?
+  targetMean       Float?
+  targetMedian     Float?
+  numberOfAnalysts Int?
+  currentPrice     Float?
+  
+  // Metadata
+  fetchedAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  ticker    Ticker   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+  
+  @@index([symbol])
+  @@index([fetchedAt])
+}
+
+model FinnhubInsiderTransaction {
+  id              String   @id @default(cuid())
+  symbol          String
+  
+  change          Float
+  filingDate      String
+  transactionDate String
+  transactionCode String
+  
+  // Metadata
+  fetchedAt       DateTime @default(now())
+  
+  ticker    Ticker   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+  
+  @@index([symbol])
+  @@index([transactionDate])
+  @@index([fetchedAt])
+}
+
+model DailyBlogSnapshot {
+  date          String   @id               // "2026-05-30" — ET date
+  gainersJson   String                     // JSON array of top gainers
+  losersJson    String                     // JSON array of top losers
+  mcapMoversJson String                    // JSON array of biggest market cap movers
+  overviewJson  String                     // JSON: totalStocks, gainers, losers, avgChange, totalMcapChange, sentiment
+  earningsJson  String   @default("[]")    // JSON array of earnings today (from Finnhub)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([date])
+}

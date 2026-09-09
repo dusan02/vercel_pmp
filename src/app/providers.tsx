@@ -13,4 +13,4 @@ export function Providers({ children }: ProvidersProps) {
       {children}
     </ThemeProvider>
   );
-} 
+}

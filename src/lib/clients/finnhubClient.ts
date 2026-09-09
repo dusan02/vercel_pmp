@@ -1,0 +1,474 @@
+/**
+ * Centralized Finnhub API client
+ * Provides unified interface for all Finnhub API calls with caching support
+ */
+
+import { withRetry, circuitBreaker } from '@/lib/api/rateLimiter';
+
+// Circuit breaker for Finnhub API
+const finnhubCircuitBreaker = circuitBreaker('finnhub', 5, 2, 60000);
+
+export const FINNHUB_API_KEY = process.env.FINNHUB_API_KEY || '';
+if (!FINNHUB_API_KEY && process.env.NODE_ENV === 'production') {
+    throw new Error('FINNHUB_API_KEY env variable is required in production');
+}
+
+export interface FinnhubClientConfig {
+    apiKey?: string;
+    timeout?: number;
+    retries?: number;
+    retryDelay?: number;
+}
+
+export interface FetchOptions {
+    timeout?: number;
+    signal?: AbortSignal;
+}
+
+// --- Finnhub Response Types ---
+
+export interface FinnhubMetric {
+    // Valuation ratios
+    peRatio: number | null;
+    forwardPe: number | null;
+    pbRatio: number | null;
+    psRatio: number | null;
+    evEbitda: number | null;
+    evSales: number | null;
+    pegRatio: number | null;
+    priceCashFlow: number | null;
+    priceFreeCashFlow: number | null;
+    
+    // Profitability
+    grossMargin: number | null;
+    operatingMargin: number | null;
+    netMargin: number | null;
+    roe: number | null;
+    roa: number | null;
+    roic: number | null;
+    rote: number | null;
+    
+    // Growth
+    revenueGrowth: number | null;
+    earningsGrowth: number | null;
+    bookValueGrowth: number | null;
+    debtGrowth: number | null;
+    
+    // Financial Health
+    currentRatio: number | null;
+    quickRatio: number | null;
+    debtEquityRatio: number | null;
+    interestCoverage: number | null;
+    totalDebtToCapitalization: number | null;
+    
+    // Per Share
+    revenuePerShare: number | null;
+    netIncomePerShare: number | null;
+    bookValuePerShare: number | null;
+    cashPerShare: number | null;
+    freeCashFlowPerShare: number | null;
+    
+    // Other
+    beta: number | null;
+    dividendYield: number | null;
+    payoutRatio: number | null;
+    employees: number | null;
+    revenuePerEmployee: number | null;
+    assetTurnover: number | null;
+    inventoryTurnover: number | null;
+    receivablesTurnover: number | null;
+}
+
+export interface FinnhubProfile {
+    name: string | null;
+    ticker: string;
+    isin: string | null;
+    cusip: string | null;
+    exchange: string | null;
+    currency: string | null;
+    country: string | null;
+    ipo: string | null;
+    marketCap: number | null;
+    shareOutstanding: number | null;
+    logo: string | null;
+    phone: string | null;
+    weburl: string | null;
+    finnhubIndustry: string | null;
+    finnhubSector: string | null;
+    ipoDate: string | null;
+}
+
+export interface FinnhubPriceTarget {
+    symbol: string;
+    targetHigh: number | null;
+    targetLow: number | null;
+    targetMean: number | null;
+    targetMedian: number | null;
+    numberOfAnalysts: number | null;
+    currentPrice: number | null;
+}
+
+export interface FinnhubRecommendation {
+    symbol: string;
+    period: string; // YYYY-MM-DD
+    strongBuy: number;
+    buy: number;
+    hold: number;
+    sell: number;
+    strongSell: number;
+}
+
+export interface FinnhubEarningsItem {
+    symbol: string;
+    date: string;
+    epsActual: number | null;
+    epsEstimate: number | null;
+    revenueActual: number | null;
+    revenueEstimate: number | null;
+    time: string;
+    surprise: number | null;
+    surprisePercent: number | null;
+}
+
+export interface FinnhubEarningsResponse {
+    earningsCalendar: FinnhubEarningsItem[];
+}
+
+export interface FinnhubInsiderTransaction {
+    symbol: string;
+    change: number;
+    filingDate: string;
+    transactionDate: string;
+    transactionCode: string;
+}
+
+export interface FinnhubInstitutionalOwnership {
+    symbol: string;
+    atDate: string;
+    holdings: Array<{
+        name: string;
+        shares: number;
+        change: number;
+        percentPortfolio: number;
+    }>;
+}
+
+/**
+ * Centralized Finnhub API client
+ */
+export class FinnhubClient {
+    private apiKey: string;
+    private timeout: number;
+    private retries: number;
+    private retryDelay: number;
+
+    constructor(config: FinnhubClientConfig = {}) {
+        this.apiKey = config.apiKey || FINNHUB_API_KEY;
+        this.timeout = config.timeout || 10000;
+        this.retries = config.retries || 3;
+        this.retryDelay = config.retryDelay || 1000;
+    }
+
+    /**
+     * Fetch with retry and circuit breaker
+     */
+    private async fetchWithRetry<T>(
+        url: string,
+        timeout: number,
+        signal?: AbortSignal
+    ): Promise<T | null> {
+        // Check circuit breaker
+        if (finnhubCircuitBreaker.isOpen) {
+            console.warn('⚠️ Finnhub circuit breaker is OPEN, skipping API call');
+            return null;
+        }
+
+        try {
+            const response = await withRetry(async () => {
+                const res = await fetch(url, {
+                    signal: signal || AbortSignal.timeout(timeout),
+                    headers: {
+                        'Accept': 'application/json',
+                    },
+                });
+
+                if (!res.ok) {
+                    if (res.status === 429) {
+                        throw new Error(`Rate limited: ${res.status}`);
+                    }
+                    // For 4xx errors (except 429), don't retry - it's a client error
+                    if (res.status >= 400 && res.status < 500 && res.status !== 429) {
+                        console.warn(`⚠️ Finnhub client error ${res.status}: ${url}`);
+                        return null;
+                    }
+                    throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+                }
+
+                return res;
+            }, this.retries, this.retryDelay);
+
+            if (!response) {
+                return null;
+            }
+
+            finnhubCircuitBreaker.recordSuccess();
+            return await response.json() as T;
+        } catch (error) {
+            finnhubCircuitBreaker.recordFailure();
+            console.error(`❌ Finnhub API error for ${url}:`, error);
+            return null;
+        }
+    }
+
+    /**
+     * Fetch stock metrics (60+ financial ratios)
+     * Endpoint: /stock/metric
+     */
+    async fetchMetrics(symbol: string, options: FetchOptions = {}): Promise<FinnhubMetric | null> {
+        const url = `https://finnhub.io/api/v1/stock/metric?symbol=${symbol}&metric=all&token=${this.apiKey}`;
+        const data = await this.fetchWithRetry<{ metric: Record<string, number | null> }>(
+            url,
+            options.timeout || this.timeout,
+            options.signal
+        );
+
+        if (!data?.metric) return null;
+
+        const m = data.metric;
+        return {
+            // Valuation
+            peRatio: m['peNormalizedAnnual'] ?? m['peBasicExclExtraTTM'] ?? m['peExclExtraAnnual'] ?? null,
+            forwardPe: m['forwardPE'] ?? m['peNormalizedAnnual'] ?? null,
+            pbRatio: m['pbAnnual'] ?? m['pbQuarterly'] ?? null,
+            psRatio: m['psTTM'] ?? m['psAnnual'] ?? null,
+            evEbitda: m['enterpriseValueOverEbitda'] ?? null,
+            evSales: m['evSales'] ?? m['evSalesAnnual'] ?? null,
+            pegRatio: m['pegRatio'] ?? null,
+            // Bug #1 fix: corrected metric keys (was payoutRatioTTM and ptbv — wrong!)
+            priceCashFlow: m['priceCFTTM'] ?? m['priceCFAnnual'] ?? null,
+            priceFreeCashFlow: m['priceToFreeCashFlowTTM'] ?? m['pfcfShareTTM'] ?? null,
+            
+            // Profitability
+            grossMargin: m['grossMarginAnnual'] ?? m['grossMarginTTM'] ?? null,
+            operatingMargin: m['operatingMarginAnnual'] ?? m['operatingMarginTTM'] ?? null,
+            netMargin: m['netProfitMarginAnnual'] ?? m['netProfitMarginTTM'] ?? null,
+            roe: m['roeTTM'] ?? m['roeAnnual'] ?? null,
+            roa: m['roaTTM'] ?? m['roaAnnual'] ?? null,
+            roic: m['roicTTM'] ?? null,
+            rote: m['roteTTM'] ?? null,
+            
+            // Growth
+            revenueGrowth: m['revenueGrowth3Y'] ?? m['revenueGrowth5Y'] ?? null,
+            earningsGrowth: m['epsGrowth3Y'] ?? m['epsGrowth5Y'] ?? null,
+            bookValueGrowth: m['bookValuePerShareGrowth5Y'] ?? null,
+            debtGrowth: m['totalDebtToEquityGrowth5Y'] ?? null,
+            
+            // Financial Health
+            currentRatio: m['currentRatioAnnual'] ?? m['currentRatioQuarterly'] ?? null,
+            quickRatio: m['quickRatioAnnual'] ?? m['quickRatioQuarterly'] ?? null,
+            debtEquityRatio: m['totalDebtToEquityAnnual'] ?? m['totalDebtToEquityQuarterly'] ?? null,
+            interestCoverage: m['interestCoverage'] ?? null,
+            totalDebtToCapitalization: m['totalDebtToCapitalizationAnnual'] ?? null,
+            
+            // Per Share
+            revenuePerShare: m['revenuePerShareTTM'] ?? null,
+            netIncomePerShare: m['netIncomePerShareTTM'] ?? null,
+            bookValuePerShare: m['bookValuePerShareAnnual'] ?? m['bookValuePerShareQuarterly'] ?? null,
+            cashPerShare: m['cashPerShareAnnual'] ?? m['cashPerShareQuarterly'] ?? null,
+            freeCashFlowPerShare: m['freeCashFlowPerShareTTM'] ?? null,
+            
+            // Other
+            beta: m['beta'] ?? null,
+            dividendYield: m['dividendYieldIndicatedAnnual'] ?? m['dividendYield5Y'] ?? null,
+            payoutRatio: m['payoutRatioAnnual'] ?? m['payoutRatioTTM'] ?? null,
+            employees: m['employees'] ?? null,
+            revenuePerEmployee: m['revenuePerEmployee'] ?? null,
+            assetTurnover: m['assetTurnoverAnnual'] ?? m['assetTurnoverTTM'] ?? null,
+            inventoryTurnover: m['inventoryTurnoverAnnual'] ?? null,
+            receivablesTurnover: m['receivablesTurnoverAnnual'] ?? null,
+        };
+    }
+
+    /**
+     * Fetch reported financials (XBRL data)
+     * Endpoint: /stock/financials-reported
+     */
+    async fetchFinancials(symbol: string, freq: 'annual' | 'quarterly' = 'annual', options: FetchOptions = {}): Promise<{ data: any[] } | null> {
+        const url = `https://finnhub.io/api/v1/stock/financials-reported?symbol=${symbol}&freq=${freq}&token=${this.apiKey}`;
+        return await this.fetchWithRetry<{ data: any[] }>(
+            url,
+            options.timeout || this.timeout,
+            options.signal
+        );
+    }
+
+    /**
+     * Fetch company profile
+     * Endpoint: /stock/profile2
+     */
+    async fetchProfile(symbol: string, options: FetchOptions = {}): Promise<FinnhubProfile | null> {
+        const url = `https://finnhub.io/api/v1/stock/profile2?symbol=${symbol}&token=${this.apiKey}`;
+        const data = await this.fetchWithRetry<FinnhubProfile>(
+            url,
+            options.timeout || this.timeout,
+            options.signal
+        );
+
+        if (!data) return null;
+
+        return {
+            ...data,
+            ticker: symbol,
+        };
+    }
+
+    /**
+     * Fetch price target (analyst consensus)
+     * Endpoint: /stock/price-target
+     * NOTE: Requires Finnhub paid plan — returns 403 on free tier.
+     */
+    async fetchPriceTarget(symbol: string, options: FetchOptions = {}): Promise<FinnhubPriceTarget | null> {
+        const url = `https://finnhub.io/api/v1/stock/price-target?symbol=${symbol}&token=${this.apiKey}`;
+        return await this.fetchWithRetry<FinnhubPriceTarget>(
+            url,
+            options.timeout || this.timeout,
+            options.signal
+        );
+    }
+
+    /**
+     * Fetch analyst recommendation trends (latest period)
+     * Endpoint: /stock/recommendation
+     * Returns array of monthly recommendation counts, sorted by period desc.
+     * Free tier: available.
+     */
+    async fetchRecommendation(symbol: string, options: FetchOptions = {}): Promise<FinnhubRecommendation | null> {
+        const url = `https://finnhub.io/api/v1/stock/recommendation?symbol=${symbol}&token=${this.apiKey}`;
+        const arr = await this.fetchWithRetry<FinnhubRecommendation[]>(
+            url,
+            options.timeout || this.timeout,
+            options.signal
+        );
+        if (!arr || arr.length === 0) return null;
+        // Return the most recent period
+        return arr[0] ?? null;
+    }
+
+    /**
+     * Fetch earnings calendar
+     * Endpoint: /calendar/earnings
+     */
+    async fetchEarningsCalendar(from: string, to: string, symbol?: string, options: FetchOptions = {}): Promise<FinnhubEarningsResponse | null> {
+        let url = `https://finnhub.io/api/v1/calendar/earnings?from=${from}&to=${to}&token=${this.apiKey}`;
+        if (symbol) {
+            url += `&symbol=${symbol}`;
+        }
+
+        const data = await this.fetchWithRetry<FinnhubEarningsResponse>(
+            url,
+            options.timeout || this.timeout,
+            options.signal
+        );
+
+        if (!data) return { earningsCalendar: [] };
+
+        return data;
+    }
+
+    /**
+     * Fetch insider transactions
+     * Endpoint: /stock/insider-transactions
+     */
+    async fetchInsiderTransactions(symbol: string, from: string, to: string, options: FetchOptions = {}): Promise<FinnhubInsiderTransaction[] | null> {
+        const url = `https://finnhub.io/api/v1/stock/insider-transactions?symbol=${symbol}&from=${from}&to=${to}&token=${this.apiKey}`;
+        const data = await this.fetchWithRetry<{ data: FinnhubInsiderTransaction[] }>(
+            url,
+            options.timeout || this.timeout,
+            options.signal
+        );
+
+        return data?.data || null;
+    }
+
+    /**
+     * Fetch institutional ownership
+     * Endpoint: /stock/institutional-ownership
+     */
+    async fetchInstitutionalOwnership(symbol: string, options: FetchOptions = {}): Promise<FinnhubInstitutionalOwnership | null> {
+        const url = `https://finnhub.io/api/v1/stock/institutional-ownership?symbol=${symbol}&token=${this.apiKey}`;
+        const data = await this.fetchWithRetry<FinnhubInstitutionalOwnership>(
+            url,
+            options.timeout || this.timeout,
+            options.signal
+        );
+
+        return data;
+    }
+
+    /**
+     * Fetch real-time quote (price, change, prev close).
+     * Endpoint: /quote — used as the price-provider failover when Polygon
+     * is unavailable (free tier: 60 calls/min, so only for small batches).
+     */
+    async fetchQuote(symbol: string, options: FetchOptions = {}): Promise<FinnhubQuote | null> {
+        const url = `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${this.apiKey}`;
+        const data = await this.fetchWithRetry<FinnhubQuoteRaw>(
+            url,
+            options.timeout || this.timeout,
+            options.signal
+        );
+
+        // Finnhub returns {c: 0, d: null, ...} for unknown symbols — treat as null
+        if (!data || (data.c === 0 && data.pc === 0)) return null;
+
+        return {
+            symbol,
+            currentPrice: data.c ?? null,
+            change: data.d ?? null,
+            percentChange: data.dp ?? null,
+            previousClose: data.pc ?? null,
+            open: data.o ?? null,
+            high: data.h ?? null,
+            low: data.l ?? null,
+            timestamp: data.t ? data.t * 1000 : null,
+        };
+    }
+}
+
+/** Raw Finnhub /quote response */
+interface FinnhubQuoteRaw {
+    c: number | null;   // current price
+    d: number | null;   // change
+    dp: number | null;  // percent change
+    h: number | null;   // high of the day
+    l: number | null;   // low of the day
+    o: number | null;   // open of the day
+    pc: number | null;  // previous close
+    t: number | null;   // timestamp (unix seconds)
+}
+
+export interface FinnhubQuote {
+    symbol: string;
+    currentPrice: number | null;
+    change: number | null;
+    percentChange: number | null;
+    previousClose: number | null;
+    open: number | null;
+    high: number | null;
+    low: number | null;
+    timestamp: number | null;
+}
+
+// Singleton instance for convenience
+let globalClient: FinnhubClient | null = null;
+
+export function getFinnhubClient(config?: FinnhubClientConfig): FinnhubClient {
+    if (!globalClient || config) {
+        globalClient = new FinnhubClient(config);
+    }
+    return globalClient;
+}
+
+export function resetFinnhubClient(): void {
+    globalClient = null;
+}

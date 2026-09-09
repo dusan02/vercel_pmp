@@ -1,0 +1,133 @@
+{
+  "cik": 886158,
+  "taxonomy": "us-gaap",
+  "tag": "Revenues",
+  "label": "Revenues",
+  "description": "Amount of revenue recognized from goods sold, services rendered, insurance premiums, or other activities that constitute an earning process. Includes, but is not limited to, investment and interest income before deduction of interest expense when recognized as a component of revenue, and sales and trading gain (loss).",
+  "entityName": "20230930-DK-BUTTERFLY-1, INC.",
+  "units": {
+    "USD": [
+      {
+        "start": "2015-03-01",
+        "end": "2016-02-27",
+        "val": 12103887000,
+        "accn": "0001171843-18-003340",
+        "fy": 2017,
+        "fp": "FY",
+        "form": "10-K",
+        "filed": "2018-05-02",
+        "frame": "CY2015"
+      },
+      {
+        "start": "2016-02-28",
+        "end": "2016-05-28",
+        "val": 2738084000,
+        "accn": "0001171843-18-003340",
+        "fy": 2017,
+        "fp": "FY",
+        "form": "10-K",
+        "filed": "2018-05-02",
+        "frame": "CY2016Q2"
+      },
+      {
+        "start": "2016-05-29",
+        "end": "2016-08-27",
+        "val": 2988235000,
+        "accn": "0001171843-18-003340",
+        "fy": 2017,
+        "fp": "FY",
+        "form": "10-K",
+        "filed": "2018-05-02",
+        "frame": "CY2016Q3"
+      },
+      {
+        "start": "2016-08-28",
+        "end": "2016-11-26",
+        "val": 2955484000,
+        "accn": "0001171843-18-003340",
+        "fy": 2017,
+        "fp": "FY",
+        "form": "10-K",
+        "filed": "2018-05-02",
+        "frame": "CY2016Q4"
+      },
+      {
+        "start": "2016-02-28",
+        "end": "2017-02-25",
+        "val": 12215757000,
+        "accn": "0001171843-18-003340",
+        "fy": 2017,
+        "fp": "FY",
+        "form": "10-K",
+        "filed": "2018-05-02",
+        "frame": "CY2016"
+      },
+      {
+        "start": "2016-11-27",
+        "end": "2017-02-25",
+        "val": 3533954000,
+        "accn": "0001171843-18-003340",
+        "fy": 2017,
+        "fp": "FY",
+        "form": "10-K",
+        "filed": "2018-05-02",
+        "frame": "CY2017Q1"
+      },
+      {
+        "start": "2017-02-26",
+        "end": "2017-05-27",
+        "val": 3716264000,
+        "accn": "0001171843-18-003340",
+        "fy": 2017,
+        "fp": "FY",
+        "form": "10-K",
+        "filed": "2018-05-02",
+        "frame": "CY2017Q2"
+      },
+      {
+        "start": "2017-05-28",
+        "end": "2017-08-26",
+        "val": 2954539000,
+        "accn": "0001171843-18-003340",
+        "fy": 2017,
+        "fp": "FY",
+        "form": "10-K",
+        "filed": "2018-05-02",
+        "frame": "CY2017Q3"
+      },
+      {
+        "start": "2017-08-27",
+        "end": "2017-11-25",
+        "val": 2936357000,
+        "accn": "0001171843-18-003340",
+        "fy": 2017,
+        "fp": "FY",
+        "form": "10-K",
+        "filed": "2018-05-02",
+        "frame": "CY2017Q4"
+      },
+      {
+        "start": "2017-02-26",
+        "end": "2018-03-03",
+        "val": 12349301000,
+        "accn": "0001171843-18-003340",
+        "fy": 2017,
+        "fp": "FY",
+        "form": "10-K",
+        "filed": "2018-05-02",
+        "frame": "CY2017"
+      },
+      {
+        "start": "2017-11-26",
+        "end": "2018-03-03",
+        "val": 2742141000,
+        "accn": "0001171843-18-003340",
+        "fy": 2017,
+        "fp": "FY",
+        "form": "10-K",
+        "filed": "2018-05-02",
+        "frame": "CY2018Q1"
+      }
+    ]
+  }
+}

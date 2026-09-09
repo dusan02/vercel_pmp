@@ -1,467 +1,237 @@
-'use client';
+import { Suspense } from 'react';
+import { Metadata } from 'next';
+import HomePage from './HomePage';
+import { getStocksData } from '@/services/stockService';
+import { getEarningsForDate } from '@/services/earningsService';
+import { getProjectTickers } from '@/data/defaultTickers';
+import { getCompanyName } from '@/lib/companyNames';
+import { logger } from '@/lib/utils/logger';
+import { getDateET, createETDate } from '@/lib/utils/dateET';
+import Link from 'next/link';
+import { getEligibleAnalysisTickers } from '@/lib/seo/eligibleTickers';
 
-import React, { useState, useEffect } from 'react';
-import { ChevronUp, ChevronDown, Download, Table, User, LogOut } from 'lucide-react';
-import { useSortableData } from '@/hooks/useSortableData';
-import { formatBillions } from '@/lib/format';
-// Remove cache import - it's server-side only
+const baseUrl = 'https://premarketprice.com';
 
-import CompanyLogo from '@/components/CompanyLogo';
-import MarketIndicators from '@/components/MarketIndicators';
-import { useFavorites } from '@/hooks/useFavorites';
-import { useAuth } from '@/hooks/useAuth';
-import AuthModal from '@/components/AuthModal';
-import { Activity } from 'lucide-react';
+// ─── Per-tab metadata for SEO ──────────────────────────────────────────────
+const TAB_META: Record<string, { title: string; description: string; canonical: string }> = {
+  movers: {
+    title: 'Premarket Movers — Top Gainers & Losers | PreMarketPrice',
+    description: 'Track the biggest pre-market stock movers today. See top gainers and losers ranked by % change across NYSE and NASDAQ before the market opens.',
+    canonical: `${baseUrl}/premarket-movers`,
+  },
+  heatmap: {
+    title: 'Market Heatmap — Real-Time Pre-Market Visualization | PreMarketPrice',
+    description: 'Interactive market heatmap showing real-time pre-market % change and market cap shifts for 300+ US stocks, organized by sector.',
+    canonical: `${baseUrl}/heatmap`,
+  },
+  earnings: {
+    title: 'Earnings Calendar — Upcoming & Past US Stock Earnings | PreMarketPrice',
+    description: 'Track upcoming earnings reports for US companies on NYSE and NASDAQ. Filter by date to see EPS estimates, revenue forecasts, and past earnings results.',
+    canonical: `${baseUrl}/earnings`,
+  },
+  allStocks: {
+    title: 'All US Stocks — Real-Time Pre-Market Prices | PreMarketPrice',
+    description: 'Browse 300+ US stocks with real-time pre-market prices, % change, market cap, and sector data. Sort and filter by any metric.',
+    canonical: `${baseUrl}/stocks`,
+  },
+  screener: {
+    title: 'Stock Screener — Filter by Financial Health & Valuation | PreMarketPrice',
+    description: 'Screen 700+ US stocks by financial health score, profitability, valuation, Altman Z-score, and sector. Sort and filter to find the best investment opportunities.',
+    canonical: `${baseUrl}/screener`,
+  },
+  analysis: {
+    title: 'Stock Analysis — Technical & Fundamental Data | PreMarketPrice',
+    description: 'Deep-dive stock analysis including pre-market price, technical indicators, earnings history, valuation scores, and financial health metrics.',
+    canonical: `${baseUrl}/stocks`,
+  },
+  portfolio: {
+    title: 'My Portfolio — Track Your Pre-Market Holdings | PreMarketPrice',
+    description: 'Track your personalized portfolio with real-time pre-market prices, % change, and market cap data for your favorite US stocks.',
+    canonical: `${baseUrl}/?tab=portfolio`,
+  },
+  favorites: {
+    title: 'My Favorites — Track Your Watchlist | PreMarketPrice',
+    description: 'Track your favorite US stocks with real-time pre-market prices and % change.',
+    canonical: baseUrl,
+  },
+  blog: {
+    title: 'Daily Market Blog — Pre-Market Analysis & Insights | PreMarketPrice',
+    description: 'Daily pre-market analysis, stock movers, earnings recaps, and market insights.',
+    canonical: `${baseUrl}/blog`,
+  },
+};
 
-interface StockData {
-  ticker: string;
-  preMarketPrice: number;
-  percentChange: number;
-  marketCapDiff: number;
-  marketCap: number;
+interface PageProps {
+  searchParams: Promise<{ tab?: string; ticker?: string }>;
 }
 
-type SortKey = 'ticker' | 'marketCap' | 'preMarketPrice' | 'percentChange' | 'marketCapDiff';
+export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
+  const params = await searchParams;
+  const tab = params?.tab;
+  const ticker = params?.ticker?.toUpperCase();
 
-export default function HomePage() {
-  const [stockData, setStockData] = useState<StockData[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [backgroundStatus, setBackgroundStatus] = useState<{
-    isRunning: boolean;
-    lastUpdate: string;
-    nextUpdate: string;
-  } | null>(null);
-  
-  // Authentication
-  const { user, loading: authLoading, logout } = useAuth();
-  
-  // Use database-backed favorites with user ID
-  const { favorites, toggleFavorite, isFavorite } = useFavorites(user?.id || 'default');
-
-  // Fetch background service status
-  useEffect(() => {
-    const fetchBackgroundStatus = async () => {
-      try {
-        const response = await fetch('/api/background/status');
-        const data = await response.json();
-        if (data.success && data.data.status) {
-          setBackgroundStatus(data.data.status);
-        }
-      } catch (error) {
-        console.error('Failed to fetch background status:', error);
-      }
+  // /?tab=analysis&ticker=MSFT — highest-value SEO pages
+  if (tab === 'analysis' && ticker) {
+    const companyName = getCompanyName(ticker);
+    const title = `${companyName} (${ticker}) Pre-Market Analysis | PreMarketPrice`;
+    const description = `Real-time pre-market price, technical analysis, earnings history, and valuation metrics for ${companyName} (${ticker}). Track ${ticker} before the NYSE/NASDAQ opens.`;
+    return {
+      title,
+      description,
+      alternates: { canonical: `${baseUrl}/analysis/${ticker}` },
+      openGraph: {
+        title,
+        description,
+        url: `${baseUrl}/analysis/${ticker}`,
+        siteName: 'PreMarketPrice',
+        images: [{ url: `${baseUrl}/og-image.png`, width: 1200, height: 630 }],
+        locale: 'en_US',
+        type: 'website',
+      },
+      twitter: { card: 'summary_large_image', title, description, images: [`${baseUrl}/og-image.png`] },
+      robots: { index: true, follow: true },
     };
+  }
 
-    fetchBackgroundStatus();
-    const interval = setInterval(fetchBackgroundStatus, 30000); // Check every 30 seconds
-    return () => clearInterval(interval);
-  }, []);
+  // Other tabs
+  if (tab && TAB_META[tab]) {
+    const { title, description, canonical } = TAB_META[tab];
+    const isNoIndex = tab === 'portfolio' || tab === 'favorites'; // User-specific content — don't index
+    return {
+      title,
+      description,
+      alternates: { canonical },
+      openGraph: {
+        title,
+        description,
+        url: canonical,
+        siteName: 'PreMarketPrice',
+        images: [{ url: `${baseUrl}/og-image.png`, width: 1200, height: 630 }],
+        locale: 'en_US',
+        type: 'website',
+      },
+      twitter: { card: 'summary_large_image', title, description, images: [`${baseUrl}/og-image.png`] },
+      robots: isNoIndex ? { index: false, follow: true } : { index: true, follow: true },
+    };
+  }
 
+  // Default homepage metadata (no tab param)
+  return {
+    title: 'PreMarketPrice — Real-Time Pre-Market Stock Prices & Market Data',
+    description: 'Track real-time pre-market stock prices, market movers, earnings calendar, and interactive heatmap for 300+ US stocks on NYSE and NASDAQ.',
+    alternates: { canonical: baseUrl },
+    openGraph: {
+      title: 'PreMarketPrice — Real-Time Pre-Market Stock Prices & Market Data',
+      description: 'Track real-time pre-market stock prices, market movers, earnings calendar, and interactive heatmap for 300+ US stocks on NYSE and NASDAQ.',
+      url: baseUrl,
+      siteName: 'PreMarketPrice',
+      images: [{ url: `${baseUrl}/og-image.png`, width: 1200, height: 630 }],
+      locale: 'en_US',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: 'PreMarketPrice — Real-Time Pre-Market Stock Prices',
+      description: 'Track real-time pre-market stock prices for 300+ US stocks.',
+      images: [`${baseUrl}/og-image.png`],
+    },
+    robots: { index: true, follow: true },
+  };
+}
 
-  // Mock data for demonstration
-  const mockStocks: StockData[] = [
-    { ticker: 'NVDA', preMarketPrice: 176.36, percentChange: -0.22, marketCapDiff: -9.52, marketCap: 4231 },
-    { ticker: 'MSFT', preMarketPrice: 512.09, percentChange: -0.08, marketCapDiff: -3.06, marketCap: 3818 },
-    { ticker: 'AAPL', preMarketPrice: 212.14, percentChange: -0.89, marketCapDiff: -28.60, marketCap: 3194 },
-    { ticker: 'AMZN', preMarketPrice: 231.47, percentChange: -0.57, marketCapDiff: -14.01, marketCap: 2457 },
-    { ticker: 'GOOGL', preMarketPrice: 195.13, percentChange: 1.32, marketCapDiff: 14.84, marketCap: 2336 },
-    { ticker: 'META', preMarketPrice: 709.81, percentChange: -1.09, marketCapDiff: -16.98, marketCap: 1792 },
-    { ticker: 'AVGO', preMarketPrice: 298.67, percentChange: 1.48, marketCapDiff: 20.55, marketCap: 1365 },
-    { ticker: 'BRK.B', preMarketPrice: 380.40, percentChange: 0.40, marketCapDiff: 1.6, marketCap: 300 }
-  ];
+// Enable ISR (Incremental Static Regeneration) for better performance
+// Page is cached and regenerated every 30 seconds (was 10s — too aggressive, causes frequent cold SSR)
+export const revalidate = 30;
 
-  useEffect(() => {
-    // Fetch real data on startup
-    fetchStockData(false);
-  }, []);
+/** Race a promise against a timeout. Returns fallback on timeout. */
+function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
+  ]);
+}
 
-  const fetchStockData = async (refresh = false) => {
-    setLoading(true);
-    setError(null);
+export default async function Page() {
+  // Server-side data fetching for initial render (SSR)
+  // OPTIMIZATION: Prefetch len top 20 pre mobile (rýchlejšie načítanie)
+  // Heatmap má vlastné API, takže stocks API môže byť menší
+  const project = 'pmp'; // Default project, could be dynamic based on headers/host
+  const topTickers = getProjectTickers(project, 20); // Reduced from 30 to 20 for faster mobile load
 
-    try {
-      // Use cached API endpoint
-      const response = await fetch(`/api/prices/cached?refresh=${refresh}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch data');
-      }
-      const result = await response.json();
-      console.log('API response:', result);
-      console.log('Stock data length:', result.data?.length);
-      
-      // Check if we have valid data
-      if (result.data && result.data.length > 0) {
-        setStockData(result.data);
+  let initialData: any[] = [];
+  let initialEarningsData = null;
+
+  try {
+    const todayET = getDateET(new Date());
+
+    logger.ssr('Fetching initial data for Top 20 tickers and Earnings...');
+
+    // Parallel fetch with 3-second timeout — prevents blocking HTML for 10+ seconds
+    // when DB is slow (cold connection, revalidation after ISR expiry).
+    // Client-side hooks will fetch the data anyway, so empty initial data is safe.
+    const SSR_TIMEOUT_MS = 3000;
+
+    const [stocksResult, earningsResult] = await Promise.allSettled([
+      withTimeout(getStocksData(topTickers, project), SSR_TIMEOUT_MS, { data: [], errors: ['SSR timeout'] }),
+      withTimeout(getEarningsForDate(todayET), SSR_TIMEOUT_MS, null)
+    ]);
+
+    if (stocksResult.status === 'fulfilled' && stocksResult.value) {
+      const res = stocksResult.value as { data: any[]; errors?: string[] };
+      initialData = res.data;
+      if (initialData.length > 0) {
+        logger.ssr(`Loaded ${initialData.length} stocks`);
       } else {
-        // No data from API, use mock data
-        console.log('No data from API, using mock data');
-        setStockData(mockStocks);
-        setError('Using demo data - API temporarily unavailable. To get live data, please set up your Polygon.io API key in .env.local file.');
+        logger.ssr('SSR stocks: timeout or empty — client will fetch');
       }
-      
-      // Log cache status
-      if (result.cacheStatus) {
-        console.log('Cache status:', result.cacheStatus);
+    } else {
+      logger.error('SSR Error fetching stocks', stocksResult.status === 'rejected' ? stocksResult.reason : 'unknown');
+    }
+
+    if (earningsResult.status === 'fulfilled') {
+      initialEarningsData = earningsResult.value;
+      if (initialEarningsData) {
+        logger.ssr(`Loaded Earnings for ${todayET}`);
       }
-    } catch (err) {
-      console.log('API error, using mock data:', err);
-      setError('Using demo data - API temporarily unavailable. To get live data, please set up your Polygon.io API key in .env.local file.');
-      // Fallback to mock data
-      setStockData(mockStocks);
-    } finally {
-      setLoading(false);
+    } else {
+      logger.error('SSR Error fetching earnings', earningsResult.reason);
     }
-  };
 
-  const favoriteStocks = stockData.filter(stock => favorites.some(fav => fav.ticker === stock.ticker));
-  
-  // Company name mapping for search
-  const getCompanyName = (ticker: string): string => {
-    const companyNames: Record<string, string> = {
-      'NVDA': 'NVIDIA', 'MSFT': 'Microsoft', 'AAPL': 'Apple', 'AMZN': 'Amazon', 'GOOGL': 'Alphabet', 'GOOG': 'Alphabet',
-      'META': 'Meta', 'AVGO': 'Broadcom', 'BRK.A': 'Berkshire Hathaway', 'BRK.B': 'Berkshire Hathaway', 'TSLA': 'Tesla', 'JPM': 'JPMorgan Chase',
-      'WMT': 'Walmart', 'LLY': 'Eli Lilly', 'ORCL': 'Oracle', 'V': 'Visa', 'MA': 'Mastercard', 'NFLX': 'Netflix',
-      'XOM': 'ExxonMobil', 'COST': 'Costco', 'JNJ': 'Johnson & Johnson', 'HD': 'Home Depot', 'PLTR': 'Palantir',
-      'PG': 'Procter & Gamble', 'BAC': 'Bank of America', 'ABBV': 'AbbVie', 'CVX': 'Chevron', 'KO': 'Coca-Cola',
-      'AMD': 'Advanced Micro Devices', 'GE': 'General Electric', 'CSCO': 'Cisco', 'TMUS': 'T-Mobile', 'WFC': 'Wells Fargo',
-      'CRM': 'Salesforce', 'PM': 'Philip Morris', 'IBM': 'IBM', 'UNH': 'UnitedHealth', 'MS': 'Morgan Stanley',
-      'GS': 'Goldman Sachs', 'INTU': 'Intuit', 'LIN': 'Linde', 'ABT': 'Abbott', 'AXP': 'American Express',
-      'BX': 'Blackstone', 'DIS': 'Disney', 'MCD': 'McDonald\'s', 'RTX': 'Raytheon', 'NOW': 'ServiceNow',
-      'MRK': 'Merck', 'CAT': 'Caterpillar', 'T': 'AT&T', 'PEP': 'PepsiCo', 'UBER': 'Uber', 'BKNG': 'Booking',
-      'TMO': 'Thermo Fisher', 'VZ': 'Verizon', 'SCHW': 'Charles Schwab', 'ISRG': 'Intuitive Surgical',
-      'QCOM': 'Qualcomm', 'C': 'Citigroup', 'TXN': 'Texas Instruments', 'BA': 'Boeing', 'BLK': 'BlackRock',
-      'GEV': 'GE Vernova', 'ACN': 'Accenture', 'SPGI': 'S&P Global', 'AMGN': 'Amgen', 'ADBE': 'Adobe',
-      'BSX': 'Boston Scientific', 'SYK': 'Stryker', 'ETN': 'Eaton', 'AMAT': 'Applied Materials', 'ANET': 'Arista Networks',
-      'NEE': 'NextEra Energy', 'DHR': 'Danaher', 'HON': 'Honeywell', 'TJX': 'TJX Companies', 'PGR': 'Progressive',
-      'GILD': 'Gilead Sciences', 'DE': 'Deere', 'PFE': 'Pfizer', 'COF': 'Capital One', 'KKR': 'KKR',
-      'PANW': 'Palo Alto Networks', 'UNP': 'Union Pacific', 'APH': 'Amphenol', 'LOW': 'Lowe\'s', 'LRCX': 'Lam Research',
-      'MU': 'Micron Technology', 'ADP': 'Automatic Data Processing', 'CMCSA': 'Comcast', 'COP': 'ConocoPhillips',
-      'KLAC': 'KLA Corporation', 'VRTX': 'Vertex Pharmaceuticals', 'MDT': 'Medtronic', 'SNPS': 'Synopsys',
-      'NKE': 'Nike', 'CRWD': 'CrowdStrike', 'ADI': 'Analog Devices', 'WELL': 'Welltower', 'CB': 'Chubb',
-      'ICE': 'Intercontinental Exchange', 'SBUX': 'Starbucks', 'TT': 'Trane Technologies', 'SO': 'Southern Company',
-      'CEG': 'Constellation Energy', 'PLD': 'Prologis', 'DASH': 'DoorDash', 'AMT': 'American Tower',
-      'MO': 'Altria', 'MMC': 'Marsh & McLennan', 'CME': 'CME Group', 'CDNS': 'Cadence Design Systems',
-      'LMT': 'Lockheed Martin', 'BMY': 'Bristol-Myers Squibb', 'WM': 'Waste Management', 'PH': 'Parker-Hannifin',
-      'COIN': 'Coinbase', 'DUK': 'Duke Energy', 'RCL': 'Royal Caribbean', 'MCO': 'Moody\'s', 'MDLZ': 'Mondelez',
-      'DELL': 'Dell Technologies', 'TDG': 'TransDigm', 'CTAS': 'Cintas', 'INTC': 'Intel', 'MCK': 'McKesson',
-      'ABNB': 'Airbnb', 'GD': 'General Dynamics', 'ORLY': 'O\'Reilly Automotive', 'APO': 'Apollo Global Management',
-      'SHW': 'Sherwin-Williams', 'HCA': 'HCA Healthcare', 'EMR': 'Emerson Electric', 'NOC': 'Northrop Grumman',
-      'MMM': '3M', 'FTNT': 'Fortinet', 'EQIX': 'Equinix', 'CI': 'Cigna', 'UPS': 'United Parcel Service',
-      'FI': 'Fiserv', 'HWM': 'Howmet Aerospace', 'AON': 'Aon', 'PNC': 'PNC Financial', 'CVS': 'CVS Health',
-      'RSG': 'Republic Services', 'AJG': 'Arthur J. Gallagher', 'ITW': 'Illinois Tool Works', 'MAR': 'Marriott',
-      'ECL': 'Ecolab', 'MSI': 'Motorola Solutions', 'USB': 'U.S. Bancorp', 'WMB': 'Williams Companies',
-      'BK': 'Bank of New York Mellon', 'CL': 'Colgate-Palmolive', 'NEM': 'Newmont', 'PYPL': 'PayPal',
-      'JCI': 'Johnson Controls', 'ZTS': 'Zoetis', 'VST': 'Vistra', 'EOG': 'EOG Resources', 'CSX': 'CSX',
-      'ELV': 'Elevance Health', 'ADSK': 'Autodesk', 'APD': 'Air Products', 'AZO': 'AutoZone', 'HLT': 'Hilton',
-      'WDAY': 'Workday', 'SPG': 'Simon Property Group', 'NSC': 'Norfolk Southern', 'KMI': 'Kinder Morgan',
-      'TEL': 'TE Connectivity', 'FCX': 'Freeport-McMoRan', 'CARR': 'Carrier Global', 'PWR': 'Quanta Services',
-      'REGN': 'Regeneron Pharmaceuticals', 'ROP': 'Roper Technologies', 'CMG': 'Chipotle Mexican Grill',
-      'DLR': 'Digital Realty Trust', 'MNST': 'Monster Beverage', 'TFC': 'Truist Financial', 'TRV': 'Travelers',
-      'AEP': 'American Electric Power', 'NXPI': 'NXP Semiconductors', 'AXON': 'Axon Enterprise', 'URI': 'United Rentals',
-      'COR': 'Cencora', 'FDX': 'FedEx', 'NDAQ': 'Nasdaq', 'AFL': 'Aflac', 'GLW': 'Corning', 'FAST': 'Fastenal',
-      'MPC': 'Marathon Petroleum', 'SLB': 'Schlumberger', 'SRE': 'Sempra Energy', 'PAYX': 'Paychex',
-      'PCAR': 'PACCAR', 'MET': 'MetLife', 'BDX': 'Becton Dickinson', 'OKE': 'ONEOK', 'DDOG': 'Datadog',
-      // International companies
-      'TSM': 'Taiwan Semiconductor', 'SAP': 'SAP SE', 'ASML': 'ASML Holding', 'BABA': 'Alibaba Group', 'TM': 'Toyota Motor',
-      'AZN': 'AstraZeneca', 'HSBC': 'HSBC Holdings', 'NVS': 'Novartis', 'SHEL': 'Shell',
-      'HDB': 'HDFC Bank', 'RY': 'Royal Bank of Canada', 'NVO': 'Novo Nordisk', 'ARM': 'ARM Holdings',
-      'SHOP': 'Shopify', 'MUFG': 'Mitsubishi UFJ Financial', 'PDD': 'Pinduoduo', 'UL': 'Unilever',
-      'SONY': 'Sony Group', 'TTE': 'TotalEnergies', 'BHP': 'BHP Group', 'SAN': 'Banco Santander', 'TD': 'Toronto-Dominion Bank',
-      'SPOT': 'Spotify', 'UBS': 'UBS Group', 'IBN': 'ICICI Bank', 'SNY': 'Sanofi',
-      'BUD': 'Anheuser-Busch InBev', 'BTI': 'British American Tobacco', 'BN': 'Brookfield',
-      'SMFG': 'Sumitomo Mitsui Financial', 'ENB': 'Enbridge', 'RELX': 'RELX Group', 'TRI': 'Thomson Reuters', 'RACE': 'Ferrari',
-      'BBVA': 'Banco Bilbao Vizcaya', 'SE': 'Sea Limited', 'BP': 'BP', 'NTES': 'NetEase', 'BMO': 'Bank of Montreal',
-      'RIO': 'Rio Tinto', 'GSK': 'GlaxoSmithKline', 'MFG': 'Mizuho Financial', 'INFY': 'Infosys',
-      'CP': 'Canadian Pacific', 'BCS': 'Barclays', 'NGG': 'National Grid', 'BNS': 'Bank of Nova Scotia', 'ING': 'ING Group',
-      'EQNR': 'Equinor', 'CM': 'Canadian Imperial Bank', 'CNQ': 'Canadian Natural Resources', 'LYG': 'Lloyds Banking Group',
-      'AEM': 'Agnico Eagle Mines', 'DB': 'Deutsche Bank', 'NU': 'Nu Holdings', 'CNI': 'Canadian National Railway',
-      'DEO': 'Diageo', 'NWG': 'NatWest Group', 'AMX': 'America Movil', 'MFC': 'Manulife Financial',
-      'E': 'Eni', 'WCN': 'Waste Connections', 'SU': 'Suncor Energy', 'TRP': 'TC Energy', 'PBR': 'Petrobras',
-      'HMC': 'Honda Motor', 'GRMN': 'Garmin', 'CCEP': 'Coca-Cola Europacific', 'ALC': 'Alcon', 'TAK': 'Takeda Pharmaceutical'
-    };
-    return companyNames[ticker] || ticker;
-  };
+  } catch (error) {
+    logger.error('SSR Error fetching initial data', error, { project, tickerCount: topTickers.length });
+    // Continue with empty initialData - client side will handle fallback
+  }
 
-  // Filter by search term
-  const filteredStocks = stockData.filter(stock => 
-    stock.ticker.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    getCompanyName(stock.ticker).toLowerCase().includes(searchTerm.toLowerCase())
-  );
-  
-  const { sorted: favoriteStocksSorted, sortKey: favSortKey, ascending: favAscending, requestSort: requestFavSort } = 
-    useSortableData(favoriteStocks, "marketCap", false);
-  const { sorted: allStocksSorted, sortKey: allSortKey, ascending: allAscending, requestSort: requestAllSort } = 
-    useSortableData(filteredStocks, "marketCap", false);
-
-
-
-  const renderSortIcon = (key: SortKey, currentSortKey: SortKey, ascending: boolean) => {
-    if (key === currentSortKey) {
-      return ascending ? <ChevronUp size={14} className="inline ml-1" /> : <ChevronDown size={14} className="inline ml-1" />;
-    }
-    return null;
-  };
-
-  const exportToCSV = () => {
-    const headers = ['Ticker', 'Company', 'Market Cap (B)', 'Current Price ($)', '% Change', 'Market Cap Diff (B $)'];
-    const csvContent = [
-      headers.join(','),
-      ...allStocksSorted.map(stock => [
-        stock.ticker,
-        getCompanyName(stock.ticker),
-        stock.marketCap,
-        stock.preMarketPrice?.toFixed(2) || '0.00',
-        stock.percentChange?.toFixed(2) || '0.00',
-        stock.marketCapDiff?.toFixed(2) || '0.00'
-      ].join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `premarket-stocks-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-  };
+  // All eligible tickers for crawlable internal links (SEO discovery)
+  const allTickersForNav = await getEligibleAnalysisTickers();
+  // Only include top 50 by hardcoded priority in sr-only nav.
+  // Full discovery is handled by /stocks hub page (server-rendered, 700 tickers).
+  const topTickersForNav = allTickersForNav.slice(0, 50);
 
   return (
-    <div className="container">
-      <div className="header">
-        {/* Top Row: Brand + Market Indicators */}
-        <div className="header-top" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '2rem' }}>
-          <div className="brand-section" style={{ flex: 1, maxWidth: '60%' }}>
-            <h1 className="brand-heading">
-              <span className="brand-dark">Pre</span>
-              <span className="brand-gradient">Market</span>
-              <span className="brand-dark">Price</span><span className="brand-dark">.com</span>
-            </h1>
-            <div className="trading-hours-info">
-              <p><strong>Live prices available from 4:00 AM to 8:00 PM EST daily</strong> • Pre-market (4:00-9:30 AM) • Market hours (9:30 AM-4:00 PM) • After-hours (4:00-8:00 PM)</p>
-            </div>
-            <div className="description-section">
-              <p>Track real-time pre-market movements of the top 300 largest companies traded globally. Monitor percentage changes, market cap fluctuations, and build your personalized watchlist.</p>
-            </div>
-          </div>
-          <div className="actions-section">
-            {/* Auth Section */}
-            <div className="header-actions" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-              {user ? (
-                <div className="user-info">
-                  <div className="user-details">
-                    <p className="user-name">{user.name || user.email}</p>
-                    <p className="user-status">Signed in</p>
-                  </div>
-                  <button onClick={logout} className="header-btn">
-                    <LogOut size={16} />
-                    Logout
-                  </button>
-                </div>
-              ) : (
-                <button onClick={() => setShowAuthModal(true)} className="header-btn">
-                  <User size={16} />
-                  Sign In
-                </button>
-              )}
-              {/* Action Buttons */}
-              <button onClick={() => fetchStockData(false)} disabled={loading} className="header-btn">
-                {loading ? 'Refreshing...' : 'Refresh Data'}
-              </button>
-              <button onClick={exportToCSV} className="header-btn export-btn">
-                <Table size={16} />
-                Export CSV
-              </button>
-            </div>
-            {/* Background Status */}
-            {backgroundStatus && (
-              <div className="background-status">
-                <Activity size={14} className={backgroundStatus.isRunning ? 'text-green-600' : 'text-red-600'} />
-                <span className="text-xs text-gray-600">
-                  {backgroundStatus.isRunning ? 'Auto-updating' : 'Manual mode'}
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {error && (
-        <div className="error">
-          <strong>Error:</strong> {error}
-          <br />
-          <small>Showing demo data for testing purposes.</small>
-        </div>
-      )}
-
-      {favoriteStocks.length > 0 && (
-        <section className="favorites">
-          <h2 data-icon="⭐">Favorites</h2>
-                  <table>
-          <thead>
-            <tr>
-              <th>Logo</th>
-              <th onClick={() => requestFavSort("ticker" as SortKey)} className="sortable">
-                Ticker
-                {renderSortIcon("ticker", favSortKey, favAscending)}
-              </th>
-              <th>Company Name</th>
-              <th onClick={() => requestFavSort("marketCap" as SortKey)} className="sortable">
-                Market Cap&nbsp;(B)
-                {renderSortIcon("marketCap", favSortKey, favAscending)}
-              </th>
-              <th onClick={() => requestFavSort("preMarketPrice" as SortKey)} className="sortable">
-                Current Price ($)
-                {renderSortIcon("preMarketPrice", favSortKey, favAscending)}
-              </th>
-              <th onClick={() => requestFavSort("percentChange" as SortKey)} className="sortable">
-                % Change
-                {renderSortIcon("percentChange", favSortKey, favAscending)}
-              </th>
-              <th onClick={() => requestFavSort("marketCapDiff" as SortKey)} className="sortable">
-                Market Cap Diff (B $)
-                {renderSortIcon("marketCapDiff", favSortKey, favAscending)}
-              </th>
-              <th>Favorites</th>
-              </tr>
-            </thead>
-            <tbody>
-              {favoriteStocksSorted.map((stock) => (
-                <tr key={stock.ticker}>
-                  <td>
-                    <CompanyLogo ticker={stock.ticker} size={32} />
-                  </td>
-                  <td><strong>{stock.ticker}</strong></td>
-                  <td className="company-name">{getCompanyName(stock.ticker)}</td>
-                  <td>{formatBillions(stock.marketCap)}</td>
-                  <td>{stock.preMarketPrice?.toFixed(2) || '0.00'}</td>
-                  <td className={stock.percentChange >= 0 ? 'positive' : 'negative'}>
-                    {stock.percentChange >= 0 ? '+' : ''}{stock.percentChange?.toFixed(2) || '0.00'}%
-                  </td>
-                  <td className={stock.marketCapDiff >= 0 ? 'positive' : 'negative'}>
-                    {stock.marketCapDiff >= 0 ? '+' : ''}{stock.marketCapDiff?.toFixed(2) || '0.00'}
-                  </td>
-                  <td>
-                    <button 
-                      className={`favorite-btn ${isFavorite(stock.ticker) ? 'favorited' : ''}`}
-                      onClick={() => toggleFavorite(stock.ticker)}
-                      title={isFavorite(stock.ticker) ? "Remove from favorites" : "Add to favorites"}
-                    >
-                      {isFavorite(stock.ticker) ? '★' : '☆'}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
-      )}
-
-      <section className="all-stocks">
-        <div className="section-header">
-          <h2 data-icon="📊">All Stocks</h2>
-          <div className="search-container">
-            <input
-              type="text"
-              placeholder="Find company"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="search-input"
-            />
-          </div>
-        </div>
-
-
-
-        <table>
-          <thead>
-            <tr>
-              <th>Logo</th>
-              <th onClick={() => requestAllSort("ticker" as SortKey)} className="sortable">
-                Ticker
-                {renderSortIcon("ticker", allSortKey, allAscending)}
-              </th>
-              <th>Company Name</th>
-              <th onClick={() => requestAllSort("marketCap" as SortKey)} className="sortable">
-                Market Cap&nbsp;(B)
-                {renderSortIcon("marketCap", allSortKey, allAscending)}
-              </th>
-              <th onClick={() => requestAllSort("preMarketPrice" as SortKey)} className="sortable">
-                Current Price ($)
-                {renderSortIcon("preMarketPrice", allSortKey, allAscending)}
-              </th>
-              <th onClick={() => requestAllSort("percentChange" as SortKey)} className="sortable">
-                % Change
-                {renderSortIcon("percentChange", allSortKey, allAscending)}
-              </th>
-              <th onClick={() => requestAllSort("marketCapDiff" as SortKey)} className="sortable">
-                Market Cap Diff (B $)
-                {renderSortIcon("marketCapDiff", allSortKey, allAscending)}
-              </th>
-              <th>Favorites</th>
-            </tr>
-          </thead>
-          <tbody>
-            {allStocksSorted.map((stock) => {
-              const isFavorited = isFavorite(stock.ticker);
-              return (
-                <tr key={stock.ticker}>
-                  <td>
-                    <CompanyLogo ticker={stock.ticker} size={32} />
-                  </td>
-                  <td><strong>{stock.ticker}</strong></td>
-                  <td className="company-name">{getCompanyName(stock.ticker)}</td>
-                  <td>{formatBillions(stock.marketCap)}</td>
-                  <td>{stock.preMarketPrice?.toFixed(2) || '0.00'}</td>
-                  <td className={stock.percentChange >= 0 ? 'positive' : 'negative'}>
-                    {stock.percentChange >= 0 ? '+' : ''}{stock.percentChange?.toFixed(2) || '0.00'}%
-                  </td>
-                  <td className={stock.marketCapDiff >= 0 ? 'positive' : 'negative'}>
-                    {stock.marketCapDiff >= 0 ? '+' : ''}{stock.marketCapDiff?.toFixed(2) || '0.00'}
-                  </td>
-                  <td>
-                    <button 
-                      className={`favorite-btn ${isFavorited ? 'favorited' : ''}`}
-                      onClick={() => toggleFavorite(stock.ticker)}
-                      title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
-                    >
-                      {isFavorited ? '★' : '☆'}
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-
-
-      </section>
-
-      <div className="footer">
-        <p>Data provided by Polygon.io • Powered by Next.js</p>
-        <p>
-          <a
-            href="https://kiddobank.com"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Visit Kiddobank.com
-          </a>
-        </p>
-      </div>
-      
-      {/* Auth Modal */}
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-        onSuccess={(user) => {
-          setShowAuthModal(false);
-          // Refresh favorites after login
-          window.location.reload();
-        }}
-      />
-    </div>
+    <>
+      {/* Server-rendered internal links (helps crawl/discovery even if the main UI is client-heavy) */}
+      <nav className="sr-only" aria-label="Primary navigation">
+        <Link href="/premarket-movers">Premarket Movers</Link>
+        <Link href="/?tab=movers">Top Gainers</Link>
+        <Link href="/?tab=movers">Top Losers</Link>
+        <Link href="/sectors">Sectors</Link>
+        <Link href="/stocks">All Stocks</Link>
+        <Link href="/heatmap">Market Heatmap</Link>
+        <Link href="/earnings">Earnings Calendar</Link>
+        {/* Top 50 tickers for crawl priority. Remaining 650 are discoverable via /stocks hub. */}
+        {topTickersForNav.map((ticker) => (
+          <span key={ticker}>
+            <Link href={`/analysis/${ticker}`}>
+              {getCompanyName(ticker)} ({ticker}) Analysis
+            </Link>
+          </span>
+        ))}
+      </nav>
+      <Suspense fallback={<div className="min-h-screen bg-white dark:bg-gray-950"></div>}>
+        <HomePage initialData={initialData} initialEarningsData={initialEarningsData} />
+      </Suspense>
+    </>
   );
-} 
+}
+

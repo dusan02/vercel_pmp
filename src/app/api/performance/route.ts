@@ -6,6 +6,12 @@ interface PerformanceMetric {
   timestamp: number;
   userAgent: string;
   url: string;
+  id?: string;
+  label?: string;
+  rating?: string;
+  startTime?: number;
+  delta?: number;
+  path?: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -21,11 +27,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Log performance metrics (in production, send to analytics service)
-    console.log('Performance metrics received:', {
-      sessionId,
-      metricsCount: metrics.length,
-      timestamp: new Date().toISOString(),
-    });
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('Performance metrics received:', {
+        sessionId,
+        metricsCount: metrics.length,
+        timestamp: new Date().toISOString(),
+      });
+    }
 
     // Process and store metrics
     const processedMetrics = metrics.map((metric: PerformanceMetric) => ({

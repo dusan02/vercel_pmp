@@ -1,0 +1,7970 @@
+[
+  {
+    "terminalTicker": "A",
+    "source": "SEC_ACTIVE",
+    "cik": "0001090872",
+    "name": "AGILENT TECHNOLOGIES, INC."
+  },
+  {
+    "terminalTicker": "AAL",
+    "source": "SEC_ACTIVE",
+    "cik": "0000006201",
+    "name": "American Airlines Group Inc."
+  },
+  {
+    "terminalTicker": "AAP",
+    "source": "SEC_ACTIVE",
+    "cik": "0001158449",
+    "name": "ADVANCE AUTO PARTS INC"
+  },
+  {
+    "terminalTicker": "AAPL",
+    "source": "SEC_ACTIVE",
+    "cik": "0000320193",
+    "name": "Apple Inc."
+  },
+  {
+    "terminalTicker": "ABBV",
+    "source": "SEC_ACTIVE",
+    "cik": "0001551152",
+    "name": "AbbVie Inc."
+  },
+  {
+    "terminalTicker": "ABNB",
+    "source": "SEC_ACTIVE",
+    "cik": "0001559720",
+    "name": "Airbnb, Inc."
+  },
+  {
+    "terminalTicker": "ABT",
+    "source": "SEC_ACTIVE",
+    "cik": "0000001800",
+    "name": "ABBOTT LABORATORIES"
+  },
+  {
+    "terminalTicker": "ABX",
+    "source": "SEC_ACTIVE",
+    "cik": "0001814287",
+    "name": "Abacus Global Management, Inc."
+  },
+  {
+    "terminalTicker": "ACGL",
+    "source": "SEC_ACTIVE",
+    "cik": "0000947484",
+    "name": "ARCH CAPITAL GROUP LTD."
+  },
+  {
+    "terminalTicker": "ACN",
+    "source": "SEC_ACTIVE",
+    "cik": "0001467373",
+    "name": "Accenture plc"
+  },
+  {
+    "terminalTicker": "ACV",
+    "source": "SEC_ACTIVE",
+    "cik": "0001636289",
+    "name": "Virtus Diversified Income & Convertible Fund"
+  },
+  {
+    "terminalTicker": "ADBE",
+    "source": "SEC_ACTIVE",
+    "cik": "0000796343",
+    "name": "ADOBE INC."
+  },
+  {
+    "terminalTicker": "ADCT",
+    "source": "SEC_ACTIVE",
+    "cik": "0001771910",
+    "name": "ADC Therapeutics SA"
+  },
+  {
+    "terminalTicker": "ADI",
+    "source": "SEC_ACTIVE",
+    "cik": "0000006281",
+    "name": "ANALOG DEVICES INC"
+  },
+  {
+    "terminalTicker": "ADM",
+    "source": "SEC_ACTIVE",
+    "cik": "0000007084",
+    "name": "Archer-Daniels-Midland Co"
+  },
+  {
+    "terminalTicker": "ADP",
+    "source": "SEC_ACTIVE",
+    "cik": "0000008670",
+    "name": "AUTOMATIC DATA PROCESSING INC"
+  },
+  {
+    "terminalTicker": "ADSK",
+    "source": "SEC_ACTIVE",
+    "cik": "0000769397",
+    "name": "Autodesk, Inc."
+  },
+  {
+    "terminalTicker": "ADT",
+    "source": "SEC_ACTIVE",
+    "cik": "0001703056",
+    "name": "ADT Inc."
+  },
+  {
+    "terminalTicker": "AEE",
+    "source": "SEC_ACTIVE",
+    "cik": "0001002910",
+    "name": "AMEREN CORP"
+  },
+  {
+    "terminalTicker": "AEP",
+    "source": "SEC_ACTIVE",
+    "cik": "0000004904",
+    "name": "AMERICAN ELECTRIC POWER CO INC"
+  },
+  {
+    "terminalTicker": "AES",
+    "source": "SEC_ACTIVE",
+    "cik": "0000874761",
+    "name": "AES CORP"
+  },
+  {
+    "terminalTicker": "AFL",
+    "source": "SEC_ACTIVE",
+    "cik": "0000004977",
+    "name": "AFLAC INC"
+  },
+  {
+    "terminalTicker": "AIG",
+    "source": "MANUAL_OVERRIDE",
+    "cik": "0000005272",
+    "name": null
+  },
+  {
+    "terminalTicker": "AIT",
+    "source": "SEC_ACTIVE",
+    "cik": "0000109563",
+    "name": "APPLIED INDUSTRIAL TECHNOLOGIES INC"
+  },
+  {
+    "terminalTicker": "AIV",
+    "source": "SEC_ACTIVE",
+    "cik": "0000922864",
+    "name": "APARTMENT INVESTMENT & MANAGEMENT CO"
+  },
+  {
+    "terminalTicker": "AIZ",
+    "source": "SEC_ACTIVE",
+    "cik": "0001267238",
+    "name": "ASSURANT, INC."
+  },
+  {
+    "terminalTicker": "AJG",
+    "source": "SEC_ACTIVE",
+    "cik": "0000354190",
+    "name": "Arthur J. Gallagher & Co."
+  },
+  {
+    "terminalTicker": "AKAM",
+    "source": "SEC_ACTIVE",
+    "cik": "0001086222",
+    "name": "AKAMAI TECHNOLOGIES INC"
+  },
+  {
+    "terminalTicker": "ALB",
+    "source": "SEC_ACTIVE",
+    "cik": "0000915913",
+    "name": "ALBEMARLE CORP"
+  },
+  {
+    "terminalTicker": "ALGN",
+    "source": "SEC_ACTIVE",
+    "cik": "0001097149",
+    "name": "ALIGN TECHNOLOGY INC"
+  },
+  {
+    "terminalTicker": "ALK",
+    "source": "SEC_ACTIVE",
+    "cik": "0000766421",
+    "name": "ALASKA AIR GROUP, INC."
+  },
+  {
+    "terminalTicker": "ALL",
+    "source": "SEC_ACTIVE",
+    "cik": "0000899051",
+    "name": "ALLSTATE CORP"
+  },
+  {
+    "terminalTicker": "ALLE",
+    "source": "SEC_ACTIVE",
+    "cik": "0001579241",
+    "name": "Allegion plc"
+  },
+  {
+    "terminalTicker": "AM",
+    "source": "SEC_ACTIVE",
+    "cik": "0001623925",
+    "name": "Antero Midstream Corp"
+  },
+  {
+    "terminalTicker": "AMAT",
+    "source": "SEC_ACTIVE",
+    "cik": "0000006951",
+    "name": "APPLIED MATERIALS INC /DE"
+  },
+  {
+    "terminalTicker": "AMCR",
+    "source": "SEC_ACTIVE",
+    "cik": "0001748790",
+    "name": "Amcor plc"
+  },
+  {
+    "terminalTicker": "AMD",
+    "source": "SEC_ACTIVE",
+    "cik": "0000002488",
+    "name": "ADVANCED MICRO DEVICES INC"
+  },
+  {
+    "terminalTicker": "AME",
+    "source": "SEC_ACTIVE",
+    "cik": "0001037868",
+    "name": "AMETEK INC/"
+  },
+  {
+    "terminalTicker": "AMG",
+    "source": "SEC_ACTIVE",
+    "cik": "0001004434",
+    "name": "AFFILIATED MANAGERS GROUP, INC."
+  },
+  {
+    "terminalTicker": "AMGN",
+    "source": "SEC_ACTIVE",
+    "cik": "0000318154",
+    "name": "AMGEN INC"
+  },
+  {
+    "terminalTicker": "AMH",
+    "source": "SEC_ACTIVE",
+    "cik": "0001562401",
+    "name": "American Homes 4 Rent"
+  },
+  {
+    "terminalTicker": "AMP",
+    "source": "SEC_ACTIVE",
+    "cik": "0000820027",
+    "name": "AMERIPRISE FINANCIAL INC"
+  },
+  {
+    "terminalTicker": "AMT",
+    "source": "SEC_ACTIVE",
+    "cik": "0001053507",
+    "name": "AMERICAN TOWER CORP /MA/"
+  },
+  {
+    "terminalTicker": "AMTM",
+    "source": "SEC_ACTIVE",
+    "cik": "0002011286",
+    "name": "Amentum Holdings, Inc."
+  },
+  {
+    "terminalTicker": "AMZN",
+    "source": "SEC_ACTIVE",
+    "cik": "0001018724",
+    "name": "AMAZON COM INC"
+  },
+  {
+    "terminalTicker": "AN",
+    "source": "SEC_ACTIVE",
+    "cik": "0000350698",
+    "name": "AUTONATION, INC."
+  },
+  {
+    "terminalTicker": "ANET",
+    "source": "SEC_ACTIVE",
+    "cik": "0001596532",
+    "name": "Arista Networks, Inc."
+  },
+  {
+    "terminalTicker": "ANF",
+    "source": "SEC_ACTIVE",
+    "cik": "0001018840",
+    "name": "ABERCROMBIE & FITCH CO /DE/"
+  },
+  {
+    "terminalTicker": "AON",
+    "source": "SEC_ACTIVE",
+    "cik": "0000315293",
+    "name": "Aon plc"
+  },
+  {
+    "terminalTicker": "AOS",
+    "source": "SEC_ACTIVE",
+    "cik": "0000091142",
+    "name": "SMITH A O CORP"
+  },
+  {
+    "terminalTicker": "APA",
+    "source": "SEC_ACTIVE",
+    "cik": "0001841666",
+    "name": "APA Corp"
+  },
+  {
+    "terminalTicker": "APC",
+    "source": "SEC_ACTIVE",
+    "cik": "0002080921",
+    "name": "ARKO Petroleum Corp."
+  },
+  {
+    "terminalTicker": "APD",
+    "source": "SEC_ACTIVE",
+    "cik": "0000002969",
+    "name": "Air Products & Chemicals, Inc."
+  },
+  {
+    "terminalTicker": "APH",
+    "source": "SEC_ACTIVE",
+    "cik": "0000820313",
+    "name": "AMPHENOL CORP /DE/"
+  },
+  {
+    "terminalTicker": "APO",
+    "source": "SEC_ACTIVE",
+    "cik": "0001858681",
+    "name": "Apollo Global Management, Inc."
+  },
+  {
+    "terminalTicker": "APP",
+    "source": "SEC_ACTIVE",
+    "cik": "0001751008",
+    "name": "AppLovin Corp"
+  },
+  {
+    "terminalTicker": "APTV",
+    "source": "SEC_ACTIVE",
+    "cik": "0001521332",
+    "name": "Aptiv PLC"
+  },
+  {
+    "terminalTicker": "AR",
+    "source": "SEC_ACTIVE",
+    "cik": "0001433270",
+    "name": "ANTERO RESOURCES Corp"
+  },
+  {
+    "terminalTicker": "ARE",
+    "source": "SEC_ACTIVE",
+    "cik": "0001035443",
+    "name": "ALEXANDRIA REAL ESTATE EQUITIES, INC."
+  },
+  {
+    "terminalTicker": "ARES",
+    "source": "SEC_ACTIVE",
+    "cik": "0001176948",
+    "name": "Ares Management Corp"
+  },
+  {
+    "terminalTicker": "AS",
+    "source": "SEC_ACTIVE",
+    "cik": "0001988894",
+    "name": "Amer Sports, Inc."
+  },
+  {
+    "terminalTicker": "ASC",
+    "source": "SEC_ACTIVE",
+    "cik": "0001577437",
+    "name": "Ardmore Shipping Corp"
+  },
+  {
+    "terminalTicker": "ASH",
+    "source": "SEC_ACTIVE",
+    "cik": "0001674862",
+    "name": "ASHLAND INC."
+  },
+  {
+    "terminalTicker": "ASND",
+    "source": "SEC_ACTIVE",
+    "cik": "0001612042",
+    "name": "Ascendis Pharma A/S"
+  },
+  {
+    "terminalTicker": "ASO",
+    "source": "SEC_ACTIVE",
+    "cik": "0001817358",
+    "name": "Academy Sports & Outdoors, Inc."
+  },
+  {
+    "terminalTicker": "ATI",
+    "source": "SEC_ACTIVE",
+    "cik": "0001018963",
+    "name": "ATI INC"
+  },
+  {
+    "terminalTicker": "ATO",
+    "source": "SEC_ACTIVE",
+    "cik": "0000731802",
+    "name": "ATMOS ENERGY CORP"
+  },
+  {
+    "terminalTicker": "AVGO",
+    "source": "SEC_ACTIVE",
+    "cik": "0001730168",
+    "name": "Broadcom Inc."
+  },
+  {
+    "terminalTicker": "AVY",
+    "source": "SEC_ACTIVE",
+    "cik": "0000008818",
+    "name": "Avery Dennison Corp"
+  },
+  {
+    "terminalTicker": "AWK",
+    "source": "SEC_ACTIVE",
+    "cik": "0001410636",
+    "name": "American Water Works Company, Inc."
+  },
+  {
+    "terminalTicker": "AXON",
+    "source": "SEC_ACTIVE",
+    "cik": "0001069183",
+    "name": "AXON ENTERPRISE, INC."
+  },
+  {
+    "terminalTicker": "AXP",
+    "source": "SEC_ACTIVE",
+    "cik": "0000004962",
+    "name": "AMERICAN EXPRESS CO"
+  },
+  {
+    "terminalTicker": "AYI",
+    "source": "SEC_ACTIVE",
+    "cik": "0001144215",
+    "name": "ACUITY INC. (DE)"
+  },
+  {
+    "terminalTicker": "AZO",
+    "source": "SEC_ACTIVE",
+    "cik": "0000866787",
+    "name": "AUTOZONE INC"
+  },
+  {
+    "terminalTicker": "BA",
+    "source": "SEC_ACTIVE",
+    "cik": "0000012927",
+    "name": "BOEING CO"
+  },
+  {
+    "terminalTicker": "BAC",
+    "source": "SEC_ACTIVE",
+    "cik": "0000070858",
+    "name": "BANK OF AMERICA CORP /DE/"
+  },
+  {
+    "terminalTicker": "BALL",
+    "source": "SEC_ACTIVE",
+    "cik": "0000009389",
+    "name": "BALL Corp"
+  },
+  {
+    "terminalTicker": "BAX",
+    "source": "SEC_ACTIVE",
+    "cik": "0000010456",
+    "name": "BAXTER INTERNATIONAL INC"
+  },
+  {
+    "terminalTicker": "BBT",
+    "source": "SEC_ACTIVE",
+    "cik": "0001108134",
+    "name": "Beacon Financial Corp"
+  },
+  {
+    "terminalTicker": "BBWI",
+    "source": "SEC_ACTIVE",
+    "cik": "0000701985",
+    "name": "Bath & Body Works, Inc."
+  },
+  {
+    "terminalTicker": "BBY",
+    "source": "SEC_ACTIVE",
+    "cik": "0000764478",
+    "name": "BEST BUY CO INC"
+  },
+  {
+    "terminalTicker": "BC",
+    "source": "SEC_ACTIVE",
+    "cik": "0000014930",
+    "name": "BRUNSWICK CORP"
+  },
+  {
+    "terminalTicker": "BCO",
+    "source": "SEC_ACTIVE",
+    "cik": "0000078890",
+    "name": "BRINKS CO"
+  },
+  {
+    "terminalTicker": "BDX",
+    "source": "SEC_ACTIVE",
+    "cik": "0000010795",
+    "name": "BECTON DICKINSON & CO"
+  },
+  {
+    "terminalTicker": "BEAM",
+    "source": "SEC_ACTIVE",
+    "cik": "0001745999",
+    "name": "Beam Therapeutics Inc."
+  },
+  {
+    "terminalTicker": "BEN",
+    "source": "SEC_ACTIVE",
+    "cik": "0000038777",
+    "name": "FRANKLIN RESOURCES INC"
+  },
+  {
+    "terminalTicker": "BF-B",
+    "source": "SEC_ACTIVE",
+    "cik": "0000014693",
+    "name": "BROWN FORMAN CORP"
+  },
+  {
+    "terminalTicker": "BG",
+    "source": "SEC_ACTIVE",
+    "cik": "0001996862",
+    "name": "Bunge Global SA"
+  },
+  {
+    "terminalTicker": "BHF",
+    "source": "SEC_ACTIVE",
+    "cik": "0001685040",
+    "name": "Brighthouse Financial, Inc."
+  },
+  {
+    "terminalTicker": "BIIB",
+    "source": "SEC_ACTIVE",
+    "cik": "0000875045",
+    "name": "BIOGEN INC."
+  },
+  {
+    "terminalTicker": "BIO",
+    "source": "SEC_ACTIVE",
+    "cik": "0000012208",
+    "name": "BIO-RAD LABORATORIES, INC."
+  },
+  {
+    "terminalTicker": "BKNG",
+    "source": "SEC_ACTIVE",
+    "cik": "0001075531",
+    "name": "Booking Holdings Inc."
+  },
+  {
+    "terminalTicker": "BKR",
+    "source": "SEC_ACTIVE",
+    "cik": "0001701605",
+    "name": "Baker Hughes Co"
+  },
+  {
+    "terminalTicker": "BLDR",
+    "source": "SEC_ACTIVE",
+    "cik": "0001316835",
+    "name": "Builders FirstSource, Inc."
+  },
+  {
+    "terminalTicker": "BLK",
+    "source": "SEC_ACTIVE",
+    "cik": "0002012383",
+    "name": "BlackRock, Inc."
+  },
+  {
+    "terminalTicker": "BMY",
+    "source": "SEC_ACTIVE",
+    "cik": "0000014272",
+    "name": "BRISTOL MYERS SQUIBB CO"
+  },
+  {
+    "terminalTicker": "BNL",
+    "source": "SEC_ACTIVE",
+    "cik": "0001424182",
+    "name": "Broadstone Net Lease, Inc."
+  },
+  {
+    "terminalTicker": "BNY",
+    "source": "SEC_ACTIVE",
+    "cik": "0001390777",
+    "name": "Bank of New York Mellon Corp"
+  },
+  {
+    "terminalTicker": "BR",
+    "source": "SEC_ACTIVE",
+    "cik": "0001383312",
+    "name": "BROADRIDGE FINANCIAL SOLUTIONS, INC."
+  },
+  {
+    "terminalTicker": "BRK-B",
+    "source": "SEC_ACTIVE",
+    "cik": "0001067983",
+    "name": "BERKSHIRE HATHAWAY INC"
+  },
+  {
+    "terminalTicker": "BRO",
+    "source": "SEC_ACTIVE",
+    "cik": "0000079282",
+    "name": "BROWN & BROWN, INC."
+  },
+  {
+    "terminalTicker": "BSC",
+    "source": "MANUAL_OVERRIDE",
+    "cik": "0000777001",
+    "name": null
+  },
+  {
+    "terminalTicker": "BSX",
+    "source": "SEC_ACTIVE",
+    "cik": "0000885725",
+    "name": "BOSTON SCIENTIFIC CORP"
+  },
+  {
+    "terminalTicker": "BUD",
+    "source": "SEC_ACTIVE",
+    "cik": "0001668717",
+    "name": "Anheuser-Busch InBev SA/NV"
+  },
+  {
+    "terminalTicker": "BWA",
+    "source": "SEC_ACTIVE",
+    "cik": "0000908255",
+    "name": "BORGWARNER INC"
+  },
+  {
+    "terminalTicker": "BX",
+    "source": "SEC_ACTIVE",
+    "cik": "0001393818",
+    "name": "Blackstone Inc."
+  },
+  {
+    "terminalTicker": "BXP",
+    "source": "SEC_ACTIVE",
+    "cik": "0001037540",
+    "name": "BXP, Inc."
+  },
+  {
+    "terminalTicker": "C",
+    "source": "SEC_ACTIVE",
+    "cik": "0000831001",
+    "name": "CITIGROUP INC"
+  },
+  {
+    "terminalTicker": "CAG",
+    "source": "SEC_ACTIVE",
+    "cik": "0000023217",
+    "name": "CONAGRA BRANDS INC."
+  },
+  {
+    "terminalTicker": "CAH",
+    "source": "SEC_ACTIVE",
+    "cik": "0000721371",
+    "name": "CARDINAL HEALTH INC"
+  },
+  {
+    "terminalTicker": "CAL",
+    "source": "SEC_ACTIVE",
+    "cik": "0000014707",
+    "name": "CALERES INC"
+  },
+  {
+    "terminalTicker": "CAR",
+    "source": "SEC_ACTIVE",
+    "cik": "0000723612",
+    "name": "AVIS BUDGET GROUP, INC."
+  },
+  {
+    "terminalTicker": "CARR",
+    "source": "SEC_ACTIVE",
+    "cik": "0001783180",
+    "name": "CARRIER GLOBAL Corp"
+  },
+  {
+    "terminalTicker": "CASY",
+    "source": "SEC_ACTIVE",
+    "cik": "0000726958",
+    "name": "CASEYS GENERAL STORES INC"
+  },
+  {
+    "terminalTicker": "CAT",
+    "source": "SEC_ACTIVE",
+    "cik": "0000018230",
+    "name": "CATERPILLAR INC"
+  },
+  {
+    "terminalTicker": "CB",
+    "source": "SEC_ACTIVE",
+    "cik": "0000896159",
+    "name": "Chubb Ltd"
+  },
+  {
+    "terminalTicker": "CBOE",
+    "source": "SEC_ACTIVE",
+    "cik": "0001374310",
+    "name": "Cboe Global Markets, Inc."
+  },
+  {
+    "terminalTicker": "CBRE",
+    "source": "SEC_ACTIVE",
+    "cik": "0001138118",
+    "name": "CBRE GROUP, INC."
+  },
+  {
+    "terminalTicker": "CCB",
+    "source": "SEC_ACTIVE",
+    "cik": "0001437958",
+    "name": "COASTAL FINANCIAL CORP"
+  },
+  {
+    "terminalTicker": "CCEP",
+    "source": "SEC_ACTIVE",
+    "cik": "0001650107",
+    "name": "COCA-COLA EUROPACIFIC PARTNERS plc"
+  },
+  {
+    "terminalTicker": "CCI",
+    "source": "SEC_ACTIVE",
+    "cik": "0001051470",
+    "name": "CROWN CASTLE INC."
+  },
+  {
+    "terminalTicker": "CCK",
+    "source": "SEC_ACTIVE",
+    "cik": "0001219601",
+    "name": "CROWN HOLDINGS, INC."
+  },
+  {
+    "terminalTicker": "CCL",
+    "source": "SEC_ACTIVE",
+    "cik": "0000815097",
+    "name": "Carnival Corp Ltd."
+  },
+  {
+    "terminalTicker": "CCU",
+    "source": "SEC_ACTIVE",
+    "cik": "0000888746",
+    "name": "UNITED BREWERIES CO INC"
+  },
+  {
+    "terminalTicker": "CDNS",
+    "source": "SEC_ACTIVE",
+    "cik": "0000813672",
+    "name": "CADENCE DESIGN SYSTEMS INC"
+  },
+  {
+    "terminalTicker": "CDW",
+    "source": "SEC_ACTIVE",
+    "cik": "0001402057",
+    "name": "CDW Corp"
+  },
+  {
+    "terminalTicker": "CE",
+    "source": "SEC_ACTIVE",
+    "cik": "0001306830",
+    "name": "Celanese Corp"
+  },
+  {
+    "terminalTicker": "CEG",
+    "source": "SEC_ACTIVE",
+    "cik": "0001868275",
+    "name": "Constellation Energy Corp"
+  },
+  {
+    "terminalTicker": "CF",
+    "source": "SEC_ACTIVE",
+    "cik": "0001324404",
+    "name": "CF Industries Holdings, Inc."
+  },
+  {
+    "terminalTicker": "CFG",
+    "source": "SEC_ACTIVE",
+    "cik": "0000759944",
+    "name": "CITIZENS FINANCIAL GROUP INC/RI"
+  },
+  {
+    "terminalTicker": "CG",
+    "source": "SEC_ACTIVE",
+    "cik": "0001527166",
+    "name": "Carlyle Group Inc."
+  },
+  {
+    "terminalTicker": "CHA",
+    "source": "SEC_ACTIVE",
+    "cik": "0002013649",
+    "name": "Chagee Holdings Ltd."
+  },
+  {
+    "terminalTicker": "CHD",
+    "source": "SEC_ACTIVE",
+    "cik": "0000313927",
+    "name": "CHURCH & DWIGHT CO INC /DE/"
+  },
+  {
+    "terminalTicker": "CHRS",
+    "source": "SEC_ACTIVE",
+    "cik": "0001512762",
+    "name": "Coherus Oncology, Inc."
+  },
+  {
+    "terminalTicker": "CHRW",
+    "source": "SEC_ACTIVE",
+    "cik": "0001043277",
+    "name": "C. H. ROBINSON WORLDWIDE, INC."
+  },
+  {
+    "terminalTicker": "CHTR",
+    "source": "SEC_ACTIVE",
+    "cik": "0001091667",
+    "name": "CHARTER COMMUNICATIONS, INC. /MO/"
+  },
+  {
+    "terminalTicker": "CI",
+    "source": "SEC_ACTIVE",
+    "cik": "0001739940",
+    "name": "Cigna Group"
+  },
+  {
+    "terminalTicker": "CIEN",
+    "source": "SEC_ACTIVE",
+    "cik": "0000936395",
+    "name": "CIENA CORP"
+  },
+  {
+    "terminalTicker": "CINF",
+    "source": "SEC_ACTIVE",
+    "cik": "0000020286",
+    "name": "CINCINNATI FINANCIAL CORP"
+  },
+  {
+    "terminalTicker": "CL",
+    "source": "SEC_ACTIVE",
+    "cik": "0000021665",
+    "name": "COLGATE PALMOLIVE CO"
+  },
+  {
+    "terminalTicker": "CLF",
+    "source": "SEC_ACTIVE",
+    "cik": "0000764065",
+    "name": "CLEVELAND-CLIFFS INC."
+  },
+  {
+    "terminalTicker": "CLX",
+    "source": "SEC_ACTIVE",
+    "cik": "0000021076",
+    "name": "CLOROX CO /DE/"
+  },
+  {
+    "terminalTicker": "CMCSA",
+    "source": "SEC_ACTIVE",
+    "cik": "0001166691",
+    "name": "COMCAST CORP"
+  },
+  {
+    "terminalTicker": "CME",
+    "source": "SEC_ACTIVE",
+    "cik": "0001156375",
+    "name": "CME GROUP INC."
+  },
+  {
+    "terminalTicker": "CMG",
+    "source": "SEC_ACTIVE",
+    "cik": "0001058090",
+    "name": "CHIPOTLE MEXICAN GRILL INC"
+  },
+  {
+    "terminalTicker": "CMI",
+    "source": "SEC_ACTIVE",
+    "cik": "0000026172",
+    "name": "CUMMINS INC"
+  },
+  {
+    "terminalTicker": "CMS",
+    "source": "SEC_ACTIVE",
+    "cik": "0000811156",
+    "name": "CMS ENERGY CORP"
+  },
+  {
+    "terminalTicker": "CNC",
+    "source": "SEC_ACTIVE",
+    "cik": "0001071739",
+    "name": "CENTENE CORP"
+  },
+  {
+    "terminalTicker": "CNP",
+    "source": "SEC_ACTIVE",
+    "cik": "0001130310",
+    "name": "CENTERPOINT ENERGY INC"
+  },
+  {
+    "terminalTicker": "CNX",
+    "source": "SEC_ACTIVE",
+    "cik": "0001070412",
+    "name": "CNX Resources Corp"
+  },
+  {
+    "terminalTicker": "COF",
+    "source": "SEC_ACTIVE",
+    "cik": "0000927628",
+    "name": "CAPITAL ONE FINANCIAL CORP"
+  },
+  {
+    "terminalTicker": "COHR",
+    "source": "SEC_ACTIVE",
+    "cik": "0000820318",
+    "name": "COHERENT CORP."
+  },
+  {
+    "terminalTicker": "COIN",
+    "source": "SEC_ACTIVE",
+    "cik": "0001679788",
+    "name": "Coinbase Global, Inc."
+  },
+  {
+    "terminalTicker": "COO",
+    "source": "SEC_ACTIVE",
+    "cik": "0000711404",
+    "name": "COOPER COMPANIES, INC."
+  },
+  {
+    "terminalTicker": "COP",
+    "source": "SEC_ACTIVE",
+    "cik": "0001163165",
+    "name": "CONOCOPHILLIPS"
+  },
+  {
+    "terminalTicker": "COR",
+    "source": "SEC_ACTIVE",
+    "cik": "0001140859",
+    "name": "Cencora, Inc."
+  },
+  {
+    "terminalTicker": "COST",
+    "source": "SEC_ACTIVE",
+    "cik": "0000909832",
+    "name": "COSTCO WHOLESALE CORP /NEW"
+  },
+  {
+    "terminalTicker": "COTY",
+    "source": "SEC_ACTIVE",
+    "cik": "0001024305",
+    "name": "COTY INC."
+  },
+  {
+    "terminalTicker": "CPAY",
+    "source": "SEC_ACTIVE",
+    "cik": "0001175454",
+    "name": "CORPAY, INC."
+  },
+  {
+    "terminalTicker": "CPB",
+    "source": "SEC_ACTIVE",
+    "cik": "0000016732",
+    "name": "CAMPBELL'S Co"
+  },
+  {
+    "terminalTicker": "CPRI",
+    "source": "SEC_ACTIVE",
+    "cik": "0001530721",
+    "name": "Capri Holdings Ltd"
+  },
+  {
+    "terminalTicker": "CPRT",
+    "source": "SEC_ACTIVE",
+    "cik": "0000900075",
+    "name": "COPART INC"
+  },
+  {
+    "terminalTicker": "CPT",
+    "source": "SEC_ACTIVE",
+    "cik": "0000906345",
+    "name": "CAMDEN PROPERTY TRUST"
+  },
+  {
+    "terminalTicker": "CPWR",
+    "source": "SEC_ACTIVE",
+    "cik": "0000827099",
+    "name": "Ocean Thermal Energy Corp"
+  },
+  {
+    "terminalTicker": "CR",
+    "source": "SEC_ACTIVE",
+    "cik": "0001944013",
+    "name": "Crane Co"
+  },
+  {
+    "terminalTicker": "CRH",
+    "source": "SEC_ACTIVE",
+    "cik": "0000849395",
+    "name": "CRH PUBLIC LTD CO"
+  },
+  {
+    "terminalTicker": "CRL",
+    "source": "SEC_ACTIVE",
+    "cik": "0001100682",
+    "name": "CHARLES RIVER LABORATORIES INTERNATIONAL, INC."
+  },
+  {
+    "terminalTicker": "CRM",
+    "source": "SEC_ACTIVE",
+    "cik": "0001108524",
+    "name": "Salesforce, Inc."
+  },
+  {
+    "terminalTicker": "CRWD",
+    "source": "SEC_ACTIVE",
+    "cik": "0001535527",
+    "name": "CrowdStrike Holdings, Inc."
+  },
+  {
+    "terminalTicker": "CSCO",
+    "source": "SEC_ACTIVE",
+    "cik": "0000858877",
+    "name": "CISCO SYSTEMS, INC."
+  },
+  {
+    "terminalTicker": "CSGP",
+    "source": "SEC_ACTIVE",
+    "cik": "0001057352",
+    "name": "COSTAR GROUP, INC."
+  },
+  {
+    "terminalTicker": "CSR",
+    "source": "SEC_ACTIVE",
+    "cik": "0000798359",
+    "name": "CENTERSPACE"
+  },
+  {
+    "terminalTicker": "CSX",
+    "source": "SEC_ACTIVE",
+    "cik": "0000277948",
+    "name": "CSX CORP"
+  },
+  {
+    "terminalTicker": "CTAS",
+    "source": "SEC_ACTIVE",
+    "cik": "0000723254",
+    "name": "CINTAS CORP"
+  },
+  {
+    "terminalTicker": "CTSH",
+    "source": "SEC_ACTIVE",
+    "cik": "0001058290",
+    "name": "COGNIZANT TECHNOLOGY SOLUTIONS CORP"
+  },
+  {
+    "terminalTicker": "CTVA",
+    "source": "SEC_ACTIVE",
+    "cik": "0001755672",
+    "name": "Corteva, Inc."
+  },
+  {
+    "terminalTicker": "CVNA",
+    "source": "SEC_ACTIVE",
+    "cik": "0001690820",
+    "name": "CARVANA CO."
+  },
+  {
+    "terminalTicker": "CVS",
+    "source": "SEC_ACTIVE",
+    "cik": "0000064803",
+    "name": "CVS HEALTH Corp"
+  },
+  {
+    "terminalTicker": "CVX",
+    "source": "SEC_ACTIVE",
+    "cik": "0000093410",
+    "name": "CHEVRON CORP"
+  },
+  {
+    "terminalTicker": "CZR",
+    "source": "SEC_ACTIVE",
+    "cik": "0001590895",
+    "name": "Caesars Entertainment, Inc."
+  },
+  {
+    "terminalTicker": "D",
+    "source": "SEC_ACTIVE",
+    "cik": "0000715957",
+    "name": "DOMINION ENERGY, INC"
+  },
+  {
+    "terminalTicker": "DAL",
+    "source": "SEC_ACTIVE",
+    "cik": "0000027904",
+    "name": "DELTA AIR LINES, INC."
+  },
+  {
+    "terminalTicker": "DASH",
+    "source": "SEC_ACTIVE",
+    "cik": "0001792789",
+    "name": "DoorDash, Inc."
+  },
+  {
+    "terminalTicker": "DD",
+    "source": "SEC_ACTIVE",
+    "cik": "0001666700",
+    "name": "DuPont de Nemours, Inc."
+  },
+  {
+    "terminalTicker": "DDOG",
+    "source": "SEC_ACTIVE",
+    "cik": "0001561550",
+    "name": "Datadog, Inc."
+  },
+  {
+    "terminalTicker": "DDS",
+    "source": "SEC_ACTIVE",
+    "cik": "0000028917",
+    "name": "DILLARD'S, INC."
+  },
+  {
+    "terminalTicker": "DE",
+    "source": "SEC_ACTIVE",
+    "cik": "0000315189",
+    "name": "DEERE & CO"
+  },
+  {
+    "terminalTicker": "DEC",
+    "source": "SEC_ACTIVE",
+    "cik": "0001922446",
+    "name": "Diversified Energy Co"
+  },
+  {
+    "terminalTicker": "DECK",
+    "source": "SEC_ACTIVE",
+    "cik": "0000910521",
+    "name": "DECKERS OUTDOOR CORP"
+  },
+  {
+    "terminalTicker": "DELL",
+    "source": "SEC_ACTIVE",
+    "cik": "0001571996",
+    "name": "Dell Technologies Inc."
+  },
+  {
+    "terminalTicker": "DG",
+    "source": "SEC_ACTIVE",
+    "cik": "0000029534",
+    "name": "DOLLAR GENERAL CORP"
+  },
+  {
+    "terminalTicker": "DGX",
+    "source": "SEC_ACTIVE",
+    "cik": "0001022079",
+    "name": "QUEST DIAGNOSTICS INC"
+  },
+  {
+    "terminalTicker": "DHI",
+    "source": "SEC_ACTIVE",
+    "cik": "0000882184",
+    "name": "HORTON D R INC /DE/"
+  },
+  {
+    "terminalTicker": "DHR",
+    "source": "SEC_ACTIVE",
+    "cik": "0000313616",
+    "name": "DANAHER CORP /DE/"
+  },
+  {
+    "terminalTicker": "DIS",
+    "source": "SEC_ACTIVE",
+    "cik": "0001744489",
+    "name": "Walt Disney Co"
+  },
+  {
+    "terminalTicker": "DLR",
+    "source": "SEC_ACTIVE",
+    "cik": "0001297996",
+    "name": "DIGITAL REALTY TRUST, INC."
+  },
+  {
+    "terminalTicker": "DLTR",
+    "source": "SEC_ACTIVE",
+    "cik": "0000935703",
+    "name": "DOLLAR TREE, INC."
+  },
+  {
+    "terminalTicker": "DLX",
+    "source": "SEC_ACTIVE",
+    "cik": "0000027996",
+    "name": "DELUXE CORP"
+  },
+  {
+    "terminalTicker": "DOC",
+    "source": "SEC_ACTIVE",
+    "cik": "0000765880",
+    "name": "HEALTHPEAK PROPERTIES, INC."
+  },
+  {
+    "terminalTicker": "DOV",
+    "source": "SEC_ACTIVE",
+    "cik": "0000029905",
+    "name": "DOVER Corp"
+  },
+  {
+    "terminalTicker": "DOW",
+    "source": "SEC_ACTIVE",
+    "cik": "0001751788",
+    "name": "DOW INC."
+  },
+  {
+    "terminalTicker": "DPZ",
+    "source": "SEC_ACTIVE",
+    "cik": "0001286681",
+    "name": "DOMINOS PIZZA INC"
+  },
+  {
+    "terminalTicker": "DRI",
+    "source": "SEC_ACTIVE",
+    "cik": "0000940944",
+    "name": "DARDEN RESTAURANTS INC"
+  },
+  {
+    "terminalTicker": "DTE",
+    "source": "SEC_ACTIVE",
+    "cik": "0000936340",
+    "name": "DTE ENERGY CO"
+  },
+  {
+    "terminalTicker": "DUK",
+    "source": "SEC_ACTIVE",
+    "cik": "0001326160",
+    "name": "Duke Energy CORP"
+  },
+  {
+    "terminalTicker": "DVA",
+    "source": "SEC_ACTIVE",
+    "cik": "0000927066",
+    "name": "DAVITA INC."
+  },
+  {
+    "terminalTicker": "DVN",
+    "source": "SEC_ACTIVE",
+    "cik": "0001090012",
+    "name": "DEVON ENERGY CORP/DE"
+  },
+  {
+    "terminalTicker": "DXC",
+    "source": "SEC_ACTIVE",
+    "cik": "0001688568",
+    "name": "DXC Technology Co"
+  },
+  {
+    "terminalTicker": "DXCM",
+    "source": "SEC_ACTIVE",
+    "cik": "0001093557",
+    "name": "DEXCOM INC"
+  },
+  {
+    "terminalTicker": "DYN",
+    "source": "SEC_ACTIVE",
+    "cik": "0001818794",
+    "name": "Dyne Therapeutics, Inc."
+  },
+  {
+    "terminalTicker": "EBAY",
+    "source": "SEC_ACTIVE",
+    "cik": "0001065088",
+    "name": "EBAY INC"
+  },
+  {
+    "terminalTicker": "EC",
+    "source": "SEC_ACTIVE",
+    "cik": "0001444406",
+    "name": "ECOPETROL S.A."
+  },
+  {
+    "terminalTicker": "ECHO",
+    "source": "SEC_ACTIVE",
+    "cik": "0001415404",
+    "name": "EchoStar CORP"
+  },
+  {
+    "terminalTicker": "ECL",
+    "source": "SEC_ACTIVE",
+    "cik": "0000031462",
+    "name": "ECOLAB INC."
+  },
+  {
+    "terminalTicker": "ECO",
+    "source": "SEC_ACTIVE",
+    "cik": "0001964954",
+    "name": "Okeanis Eco Tankers Corp."
+  },
+  {
+    "terminalTicker": "ED",
+    "source": "SEC_ACTIVE",
+    "cik": "0001047862",
+    "name": "CONSOLIDATED EDISON INC"
+  },
+  {
+    "terminalTicker": "EFX",
+    "source": "SEC_ACTIVE",
+    "cik": "0000033185",
+    "name": "EQUIFAX INC"
+  },
+  {
+    "terminalTicker": "EG",
+    "source": "SEC_ACTIVE",
+    "cik": "0001095073",
+    "name": "EVEREST GROUP, LTD."
+  },
+  {
+    "terminalTicker": "EHC",
+    "source": "SEC_ACTIVE",
+    "cik": "0000785161",
+    "name": "Encompass Health Corp"
+  },
+  {
+    "terminalTicker": "EIX",
+    "source": "SEC_ACTIVE",
+    "cik": "0000827052",
+    "name": "EDISON INTERNATIONAL"
+  },
+  {
+    "terminalTicker": "EL",
+    "source": "SEC_ACTIVE",
+    "cik": "0001001250",
+    "name": "ESTEE LAUDER COMPANIES INC"
+  },
+  {
+    "terminalTicker": "ELV",
+    "source": "SEC_ACTIVE",
+    "cik": "0001156039",
+    "name": "Elevance Health, Inc."
+  },
+  {
+    "terminalTicker": "EME",
+    "source": "SEC_ACTIVE",
+    "cik": "0000105634",
+    "name": "EMCOR Group, Inc."
+  },
+  {
+    "terminalTicker": "EMN",
+    "source": "SEC_ACTIVE",
+    "cik": "0000915389",
+    "name": "EASTMAN CHEMICAL CO"
+  },
+  {
+    "terminalTicker": "EMR",
+    "source": "SEC_ACTIVE",
+    "cik": "0000032604",
+    "name": "EMERSON ELECTRIC CO"
+  },
+  {
+    "terminalTicker": "ENPH",
+    "source": "SEC_ACTIVE",
+    "cik": "0001463101",
+    "name": "Enphase Energy, Inc."
+  },
+  {
+    "terminalTicker": "ENS",
+    "source": "SEC_ACTIVE",
+    "cik": "0001289308",
+    "name": "EnerSys"
+  },
+  {
+    "terminalTicker": "EOG",
+    "source": "SEC_ACTIVE",
+    "cik": "0000821189",
+    "name": "EOG RESOURCES INC"
+  },
+  {
+    "terminalTicker": "EP",
+    "source": "SEC_ACTIVE",
+    "cik": "0000887396",
+    "name": "EMPIRE PETROLEUM CORP"
+  },
+  {
+    "terminalTicker": "EPAM",
+    "source": "SEC_ACTIVE",
+    "cik": "0001352010",
+    "name": "EPAM Systems, Inc."
+  },
+  {
+    "terminalTicker": "EQ",
+    "source": "SEC_ACTIVE",
+    "cik": "0001746466",
+    "name": "Equillium, Inc."
+  },
+  {
+    "terminalTicker": "EQIX",
+    "source": "SEC_ACTIVE",
+    "cik": "0001101239",
+    "name": "EQUINIX INC"
+  },
+  {
+    "terminalTicker": "EQT",
+    "source": "SEC_ACTIVE",
+    "cik": "0000033213",
+    "name": "EQT Corp"
+  },
+  {
+    "terminalTicker": "ERIE",
+    "source": "SEC_ACTIVE",
+    "cik": "0000922621",
+    "name": "ERIE INDEMNITY CO"
+  },
+  {
+    "terminalTicker": "ES",
+    "source": "SEC_ACTIVE",
+    "cik": "0000072741",
+    "name": "EVERSOURCE ENERGY"
+  },
+  {
+    "terminalTicker": "ESS",
+    "source": "SEC_ACTIVE",
+    "cik": "0000920522",
+    "name": "ESSEX PROPERTY TRUST, INC."
+  },
+  {
+    "terminalTicker": "ETN",
+    "source": "SEC_ACTIVE",
+    "cik": "0001551182",
+    "name": "Eaton Corp plc"
+  },
+  {
+    "terminalTicker": "ETR",
+    "source": "SEC_ACTIVE",
+    "cik": "0000065984",
+    "name": "ENTERGY CORP /DE/"
+  },
+  {
+    "terminalTicker": "ETS",
+    "source": "SEC_ACTIVE",
+    "cik": "0002053641",
+    "name": "Elite Express Holding Inc."
+  },
+  {
+    "terminalTicker": "ETSY",
+    "source": "SEC_ACTIVE",
+    "cik": "0001370637",
+    "name": "ETSY INC"
+  },
+  {
+    "terminalTicker": "EVRG",
+    "source": "SEC_ACTIVE",
+    "cik": "0001711269",
+    "name": "Evergy, Inc."
+  },
+  {
+    "terminalTicker": "EW",
+    "source": "SEC_ACTIVE",
+    "cik": "0001099800",
+    "name": "Edwards Lifesciences Corp"
+  },
+  {
+    "terminalTicker": "EXC",
+    "source": "SEC_ACTIVE",
+    "cik": "0001109357",
+    "name": "EXELON CORP"
+  },
+  {
+    "terminalTicker": "EXE",
+    "source": "SEC_ACTIVE",
+    "cik": "0000895126",
+    "name": "EXPAND ENERGY Corp"
+  },
+  {
+    "terminalTicker": "EXPD",
+    "source": "SEC_ACTIVE",
+    "cik": "0000746515",
+    "name": "EXPEDITORS INTERNATIONAL OF WASHINGTON INC"
+  },
+  {
+    "terminalTicker": "EXPE",
+    "source": "SEC_ACTIVE",
+    "cik": "0001324424",
+    "name": "Expedia Group, Inc."
+  },
+  {
+    "terminalTicker": "EXR",
+    "source": "SEC_ACTIVE",
+    "cik": "0001289490",
+    "name": "Extra Space Storage Inc."
+  },
+  {
+    "terminalTicker": "F",
+    "source": "SEC_ACTIVE",
+    "cik": "0000037996",
+    "name": "FORD MOTOR CO"
+  },
+  {
+    "terminalTicker": "FANG",
+    "source": "SEC_ACTIVE",
+    "cik": "0001539838",
+    "name": "Diamondback Energy, Inc."
+  },
+  {
+    "terminalTicker": "FAST",
+    "source": "SEC_ACTIVE",
+    "cik": "0000815556",
+    "name": "FASTENAL CO"
+  },
+  {
+    "terminalTicker": "FCN",
+    "source": "SEC_ACTIVE",
+    "cik": "0000887936",
+    "name": "FTI CONSULTING, INC"
+  },
+  {
+    "terminalTicker": "FCPT",
+    "source": "SEC_ACTIVE",
+    "cik": "0001650132",
+    "name": "Four Corners Property Trust, Inc."
+  },
+  {
+    "terminalTicker": "FCX",
+    "source": "SEC_ACTIVE",
+    "cik": "0000831259",
+    "name": "FREEPORT-MCMORAN INC"
+  },
+  {
+    "terminalTicker": "FDS",
+    "source": "SEC_ACTIVE",
+    "cik": "0001013237",
+    "name": "FACTSET RESEARCH SYSTEMS INC"
+  },
+  {
+    "terminalTicker": "FDX",
+    "source": "SEC_ACTIVE",
+    "cik": "0001048911",
+    "name": "FEDEX CORP"
+  },
+  {
+    "terminalTicker": "FDXF",
+    "source": "SEC_ACTIVE",
+    "cik": "0002082247",
+    "name": "FedEx Freight Holding Company, Inc."
+  },
+  {
+    "terminalTicker": "FE",
+    "source": "SEC_ACTIVE",
+    "cik": "0001031296",
+    "name": "FIRSTENERGY CORP"
+  },
+  {
+    "terminalTicker": "FFIV",
+    "source": "SEC_ACTIVE",
+    "cik": "0001048695",
+    "name": "F5, INC."
+  },
+  {
+    "terminalTicker": "FG",
+    "source": "SEC_ACTIVE",
+    "cik": "0001934850",
+    "name": "F&G Annuities & Life, Inc."
+  },
+  {
+    "terminalTicker": "FHN",
+    "source": "SEC_ACTIVE",
+    "cik": "0000036966",
+    "name": "FIRST HORIZON CORP"
+  },
+  {
+    "terminalTicker": "FICO",
+    "source": "SEC_ACTIVE",
+    "cik": "0000814547",
+    "name": "FAIR ISAAC CORP"
+  },
+  {
+    "terminalTicker": "FIS",
+    "source": "SEC_ACTIVE",
+    "cik": "0001136893",
+    "name": "Fidelity National Information Services, Inc."
+  },
+  {
+    "terminalTicker": "FISV",
+    "source": "SEC_ACTIVE",
+    "cik": "0000798354",
+    "name": "FISERV INC"
+  },
+  {
+    "terminalTicker": "FITB",
+    "source": "SEC_ACTIVE",
+    "cik": "0000035527",
+    "name": "FIFTH THIRD BANCORP"
+  },
+  {
+    "terminalTicker": "FIX",
+    "source": "SEC_ACTIVE",
+    "cik": "0001035983",
+    "name": "COMFORT SYSTEMS USA INC"
+  },
+  {
+    "terminalTicker": "FLEX",
+    "source": "SEC_ACTIVE",
+    "cik": "0000866374",
+    "name": "FLEX LTD."
+  },
+  {
+    "terminalTicker": "FLR",
+    "source": "SEC_ACTIVE",
+    "cik": "0001124198",
+    "name": "FLUOR CORP"
+  },
+  {
+    "terminalTicker": "FLS",
+    "source": "SEC_ACTIVE",
+    "cik": "0000030625",
+    "name": "FLOWSERVE CORP"
+  },
+  {
+    "terminalTicker": "FMC",
+    "source": "SEC_ACTIVE",
+    "cik": "0000037785",
+    "name": "FMC CORP"
+  },
+  {
+    "terminalTicker": "FMCC",
+    "source": "SEC_ACTIVE",
+    "cik": "0001026214",
+    "name": "FEDERAL HOME LOAN MORTGAGE CORP"
+  },
+  {
+    "terminalTicker": "FMY",
+    "source": "SEC_ACTIVE",
+    "cik": "0001319183",
+    "name": "FIRST TRUST MORTGAGE INCOME FUND"
+  },
+  {
+    "terminalTicker": "FNMA",
+    "source": "SEC_ACTIVE",
+    "cik": "0000310522",
+    "name": "FEDERAL NATIONAL MORTGAGE ASSOCIATION FANNIE MAE"
+  },
+  {
+    "terminalTicker": "FOSL",
+    "source": "SEC_ACTIVE",
+    "cik": "0000883569",
+    "name": "Fossil Group, Inc."
+  },
+  {
+    "terminalTicker": "FOX",
+    "source": "SEC_ACTIVE",
+    "cik": "0001754301",
+    "name": "Fox Corp"
+  },
+  {
+    "terminalTicker": "FOXA",
+    "source": "SEC_ACTIVE",
+    "cik": "0001754301",
+    "name": "Fox Corp"
+  },
+  {
+    "terminalTicker": "FRO",
+    "source": "SEC_ACTIVE",
+    "cik": "0000913290",
+    "name": "Frontline plc"
+  },
+  {
+    "terminalTicker": "FRT",
+    "source": "SEC_ACTIVE",
+    "cik": "0000034903",
+    "name": "FEDERAL REALTY INVESTMENT TRUST"
+  },
+  {
+    "terminalTicker": "FSLR",
+    "source": "SEC_ACTIVE",
+    "cik": "0001274494",
+    "name": "FIRST SOLAR, INC."
+  },
+  {
+    "terminalTicker": "FTI",
+    "source": "SEC_ACTIVE",
+    "cik": "0001681459",
+    "name": "TechnipFMC plc"
+  },
+  {
+    "terminalTicker": "FTNT",
+    "source": "SEC_ACTIVE",
+    "cik": "0001262039",
+    "name": "Fortinet, Inc."
+  },
+  {
+    "terminalTicker": "FTV",
+    "source": "SEC_ACTIVE",
+    "cik": "0001659166",
+    "name": "Fortive Corp"
+  },
+  {
+    "terminalTicker": "G",
+    "source": "SEC_ACTIVE",
+    "cik": "0001398659",
+    "name": "Genpact LTD"
+  },
+  {
+    "terminalTicker": "GD",
+    "source": "SEC_ACTIVE",
+    "cik": "0000040533",
+    "name": "GENERAL DYNAMICS CORP"
+  },
+  {
+    "terminalTicker": "GDDY",
+    "source": "SEC_ACTIVE",
+    "cik": "0001609711",
+    "name": "GoDaddy Inc."
+  },
+  {
+    "terminalTicker": "GE",
+    "source": "SEC_ACTIVE",
+    "cik": "0000040545",
+    "name": "GENERAL ELECTRIC CO"
+  },
+  {
+    "terminalTicker": "GEHC",
+    "source": "SEC_ACTIVE",
+    "cik": "0001932393",
+    "name": "GE HealthCare Technologies Inc."
+  },
+  {
+    "terminalTicker": "GEN",
+    "source": "SEC_ACTIVE",
+    "cik": "0000849399",
+    "name": "Gen Digital Inc."
+  },
+  {
+    "terminalTicker": "GEV",
+    "source": "SEC_ACTIVE",
+    "cik": "0001996810",
+    "name": "GE Vernova Inc."
+  },
+  {
+    "terminalTicker": "GHC",
+    "source": "SEC_ACTIVE",
+    "cik": "0000104889",
+    "name": "Graham Holdings Co"
+  },
+  {
+    "terminalTicker": "GILD",
+    "source": "SEC_ACTIVE",
+    "cik": "0000882095",
+    "name": "GILEAD SCIENCES, INC."
+  },
+  {
+    "terminalTicker": "GIS",
+    "source": "SEC_ACTIVE",
+    "cik": "0000040704",
+    "name": "GENERAL MILLS INC"
+  },
+  {
+    "terminalTicker": "GL",
+    "source": "SEC_ACTIVE",
+    "cik": "0000320335",
+    "name": "GLOBE LIFE INC."
+  },
+  {
+    "terminalTicker": "GLD",
+    "source": "SEC_ACTIVE",
+    "cik": "0001222333",
+    "name": "SPDR GOLD TRUST"
+  },
+  {
+    "terminalTicker": "GLW",
+    "source": "SEC_ACTIVE",
+    "cik": "0000024741",
+    "name": "CORNING INC /NY"
+  },
+  {
+    "terminalTicker": "GM",
+    "source": "SEC_ACTIVE",
+    "cik": "0001467858",
+    "name": "General Motors Co"
+  },
+  {
+    "terminalTicker": "GME",
+    "source": "SEC_ACTIVE",
+    "cik": "0001326380",
+    "name": "GameStop Corp."
+  },
+  {
+    "terminalTicker": "GNRC",
+    "source": "SEC_ACTIVE",
+    "cik": "0001474735",
+    "name": "GENERAC HOLDINGS INC."
+  },
+  {
+    "terminalTicker": "GNT",
+    "source": "SEC_ACTIVE",
+    "cik": "0001438893",
+    "name": "GAMCO Natural Resources, Gold & Income Trust"
+  },
+  {
+    "terminalTicker": "GNW",
+    "source": "SEC_ACTIVE",
+    "cik": "0001276520",
+    "name": "GENWORTH FINANCIAL INC"
+  },
+  {
+    "terminalTicker": "GOOG",
+    "source": "SEC_ACTIVE",
+    "cik": "0001652044",
+    "name": "Alphabet Inc."
+  },
+  {
+    "terminalTicker": "GOOGL",
+    "source": "SEC_ACTIVE",
+    "cik": "0001652044",
+    "name": "Alphabet Inc."
+  },
+  {
+    "terminalTicker": "GP",
+    "source": "SEC_ACTIVE",
+    "cik": "0001584547",
+    "name": "GREENPOWER MOTOR Co INC."
+  },
+  {
+    "terminalTicker": "GPC",
+    "source": "SEC_ACTIVE",
+    "cik": "0000040987",
+    "name": "GENUINE PARTS CO"
+  },
+  {
+    "terminalTicker": "GPN",
+    "source": "SEC_ACTIVE",
+    "cik": "0001123360",
+    "name": "GLOBAL PAYMENTS INC"
+  },
+  {
+    "terminalTicker": "GRMN",
+    "source": "SEC_ACTIVE",
+    "cik": "0001121788",
+    "name": "GARMIN LTD"
+  },
+  {
+    "terminalTicker": "GRN",
+    "source": "SEC_ACTIVE",
+    "cik": "0000312070",
+    "name": "BARCLAYS BANK PLC"
+  },
+  {
+    "terminalTicker": "GS",
+    "source": "SEC_ACTIVE",
+    "cik": "0000886982",
+    "name": "GOLDMAN SACHS GROUP INC"
+  },
+  {
+    "terminalTicker": "GT",
+    "source": "SEC_ACTIVE",
+    "cik": "0000042582",
+    "name": "GOODYEAR TIRE & RUBBER CO /OH/"
+  },
+  {
+    "terminalTicker": "GTE",
+    "source": "SEC_ACTIVE",
+    "cik": "0001273441",
+    "name": "GRAN TIERRA ENERGY INC."
+  },
+  {
+    "terminalTicker": "GWW",
+    "source": "SEC_ACTIVE",
+    "cik": "0000277135",
+    "name": "W.W. GRAINGER, INC."
+  },
+  {
+    "terminalTicker": "H",
+    "source": "SEC_ACTIVE",
+    "cik": "0001468174",
+    "name": "Hyatt Hotels Corp"
+  },
+  {
+    "terminalTicker": "HAL",
+    "source": "SEC_ACTIVE",
+    "cik": "0000045012",
+    "name": "HALLIBURTON CO"
+  },
+  {
+    "terminalTicker": "HAS",
+    "source": "SEC_ACTIVE",
+    "cik": "0000046080",
+    "name": "HASBRO, INC."
+  },
+  {
+    "terminalTicker": "HBAN",
+    "source": "SEC_ACTIVE",
+    "cik": "0000049196",
+    "name": "HUNTINGTON BANCSHARES INC /MD/"
+  },
+  {
+    "terminalTicker": "HCA",
+    "source": "SEC_ACTIVE",
+    "cik": "0000860730",
+    "name": "HCA Healthcare, Inc."
+  },
+  {
+    "terminalTicker": "HD",
+    "source": "SEC_ACTIVE",
+    "cik": "0000354950",
+    "name": "HOME DEPOT, INC."
+  },
+  {
+    "terminalTicker": "HIG",
+    "source": "SEC_ACTIVE",
+    "cik": "0000874766",
+    "name": "HARTFORD INSURANCE GROUP, INC."
+  },
+  {
+    "terminalTicker": "HII",
+    "source": "SEC_ACTIVE",
+    "cik": "0001501585",
+    "name": "HUNTINGTON INGALLS INDUSTRIES, INC."
+  },
+  {
+    "terminalTicker": "HLT",
+    "source": "SEC_ACTIVE",
+    "cik": "0001585689",
+    "name": "Hilton Worldwide Holdings Inc."
+  },
+  {
+    "terminalTicker": "HOG",
+    "source": "SEC_ACTIVE",
+    "cik": "0000793952",
+    "name": "HARLEY-DAVIDSON, INC."
+  },
+  {
+    "terminalTicker": "HON",
+    "source": "SEC_ACTIVE",
+    "cik": "0000773840",
+    "name": "HONEYWELL INTERNATIONAL INC"
+  },
+  {
+    "terminalTicker": "HONA",
+    "source": "SEC_ACTIVE",
+    "cik": "0002089271",
+    "name": "Honeywell Aerospace Inc."
+  },
+  {
+    "terminalTicker": "HOOD",
+    "source": "SEC_ACTIVE",
+    "cik": "0001783879",
+    "name": "Robinhood Markets, Inc."
+  },
+  {
+    "terminalTicker": "HP",
+    "source": "SEC_ACTIVE",
+    "cik": "0000046765",
+    "name": "Helmerich & Payne, Inc."
+  },
+  {
+    "terminalTicker": "HPE",
+    "source": "SEC_ACTIVE",
+    "cik": "0001645590",
+    "name": "Hewlett Packard Enterprise Co"
+  },
+  {
+    "terminalTicker": "HPQ",
+    "source": "SEC_ACTIVE",
+    "cik": "0000047217",
+    "name": "HP INC"
+  },
+  {
+    "terminalTicker": "HRB",
+    "source": "SEC_ACTIVE",
+    "cik": "0000012659",
+    "name": "H&R BLOCK INC"
+  },
+  {
+    "terminalTicker": "HRL",
+    "source": "SEC_ACTIVE",
+    "cik": "0000048465",
+    "name": "HORMEL FOODS CORP /DE/"
+  },
+  {
+    "terminalTicker": "HSIC",
+    "source": "SEC_ACTIVE",
+    "cik": "0001000228",
+    "name": "HENRY SCHEIN INC"
+  },
+  {
+    "terminalTicker": "HST",
+    "source": "SEC_ACTIVE",
+    "cik": "0001070750",
+    "name": "HOST HOTELS & RESORTS, INC."
+  },
+  {
+    "terminalTicker": "HSY",
+    "source": "SEC_ACTIVE",
+    "cik": "0000047111",
+    "name": "HERSHEY CO"
+  },
+  {
+    "terminalTicker": "HUBB",
+    "source": "SEC_ACTIVE",
+    "cik": "0000048898",
+    "name": "HUBBELL INC"
+  },
+  {
+    "terminalTicker": "HUM",
+    "source": "SEC_ACTIVE",
+    "cik": "0000049071",
+    "name": "HUMANA INC"
+  },
+  {
+    "terminalTicker": "HWM",
+    "source": "SEC_ACTIVE",
+    "cik": "0000004281",
+    "name": "Howmet Aerospace Inc."
+  },
+  {
+    "terminalTicker": "IBKR",
+    "source": "SEC_ACTIVE",
+    "cik": "0001381197",
+    "name": "Interactive Brokers Group, Inc."
+  },
+  {
+    "terminalTicker": "IBM",
+    "source": "SEC_ACTIVE",
+    "cik": "0000051143",
+    "name": "INTERNATIONAL BUSINESS MACHINES CORP"
+  },
+  {
+    "terminalTicker": "ICE",
+    "source": "SEC_ACTIVE",
+    "cik": "0001571949",
+    "name": "Intercontinental Exchange, Inc."
+  },
+  {
+    "terminalTicker": "IDXX",
+    "source": "SEC_ACTIVE",
+    "cik": "0000874716",
+    "name": "IDEXX LABORATORIES INC /DE"
+  },
+  {
+    "terminalTicker": "IEX",
+    "source": "SEC_ACTIVE",
+    "cik": "0000832101",
+    "name": "IDEX CORP /DE/"
+  },
+  {
+    "terminalTicker": "IFF",
+    "source": "SEC_ACTIVE",
+    "cik": "0000051253",
+    "name": "INTERNATIONAL FLAVORS & FRAGRANCES INC"
+  },
+  {
+    "terminalTicker": "ILMN",
+    "source": "SEC_ACTIVE",
+    "cik": "0001110803",
+    "name": "ILLUMINA, INC."
+  },
+  {
+    "terminalTicker": "INCY",
+    "source": "SEC_ACTIVE",
+    "cik": "0000879169",
+    "name": "INCYTE CORP"
+  },
+  {
+    "terminalTicker": "INGR",
+    "source": "SEC_ACTIVE",
+    "cik": "0001046257",
+    "name": "Ingredion Inc"
+  },
+  {
+    "terminalTicker": "INTC",
+    "source": "SEC_ACTIVE",
+    "cik": "0000050863",
+    "name": "INTEL CORP"
+  },
+  {
+    "terminalTicker": "INTU",
+    "source": "SEC_ACTIVE",
+    "cik": "0000896878",
+    "name": "INTUIT INC."
+  },
+  {
+    "terminalTicker": "INVH",
+    "source": "SEC_ACTIVE",
+    "cik": "0001687229",
+    "name": "Invitation Homes Inc."
+  },
+  {
+    "terminalTicker": "IP",
+    "source": "SEC_ACTIVE",
+    "cik": "0000051434",
+    "name": "INTERNATIONAL PAPER CO /NEW/"
+  },
+  {
+    "terminalTicker": "IPGP",
+    "source": "SEC_ACTIVE",
+    "cik": "0001111928",
+    "name": "IPG PHOTONICS CORP"
+  },
+  {
+    "terminalTicker": "IQV",
+    "source": "SEC_ACTIVE",
+    "cik": "0001478242",
+    "name": "IQVIA HOLDINGS INC."
+  },
+  {
+    "terminalTicker": "IR",
+    "source": "SEC_ACTIVE",
+    "cik": "0001699150",
+    "name": "Ingersoll Rand Inc."
+  },
+  {
+    "terminalTicker": "IRM",
+    "source": "SEC_ACTIVE",
+    "cik": "0001020569",
+    "name": "IRON MOUNTAIN INC"
+  },
+  {
+    "terminalTicker": "ISRG",
+    "source": "SEC_ACTIVE",
+    "cik": "0001035267",
+    "name": "INTUITIVE SURGICAL INC"
+  },
+  {
+    "terminalTicker": "IT",
+    "source": "SEC_ACTIVE",
+    "cik": "0000749251",
+    "name": "GARTNER INC"
+  },
+  {
+    "terminalTicker": "ITT",
+    "source": "SEC_ACTIVE",
+    "cik": "0000216228",
+    "name": "ITT INC."
+  },
+  {
+    "terminalTicker": "ITW",
+    "source": "SEC_ACTIVE",
+    "cik": "0000049826",
+    "name": "ILLINOIS TOOL WORKS INC"
+  },
+  {
+    "terminalTicker": "IVZ",
+    "source": "SEC_ACTIVE",
+    "cik": "0000914208",
+    "name": "Invesco Ltd."
+  },
+  {
+    "terminalTicker": "J",
+    "source": "SEC_ACTIVE",
+    "cik": "0000052988",
+    "name": "JACOBS SOLUTIONS INC."
+  },
+  {
+    "terminalTicker": "JBHT",
+    "source": "SEC_ACTIVE",
+    "cik": "0000728535",
+    "name": "HUNT J B TRANSPORT SERVICES INC"
+  },
+  {
+    "terminalTicker": "JBL",
+    "source": "SEC_ACTIVE",
+    "cik": "0000898293",
+    "name": "JABIL INC"
+  },
+  {
+    "terminalTicker": "JCI",
+    "source": "SEC_ACTIVE",
+    "cik": "0000833444",
+    "name": "Johnson Controls International plc"
+  },
+  {
+    "terminalTicker": "JEF",
+    "source": "SEC_ACTIVE",
+    "cik": "0000096223",
+    "name": "Jefferies Financial Group Inc."
+  },
+  {
+    "terminalTicker": "JKHY",
+    "source": "SEC_ACTIVE",
+    "cik": "0000779152",
+    "name": "JACK HENRY & ASSOCIATES INC"
+  },
+  {
+    "terminalTicker": "JNJ",
+    "source": "SEC_ACTIVE",
+    "cik": "0000200406",
+    "name": "JOHNSON & JOHNSON"
+  },
+  {
+    "terminalTicker": "JPM",
+    "source": "SEC_ACTIVE",
+    "cik": "0000019617",
+    "name": "JPMORGAN CHASE & CO"
+  },
+  {
+    "terminalTicker": "KBH",
+    "source": "SEC_ACTIVE",
+    "cik": "0000795266",
+    "name": "KB HOME"
+  },
+  {
+    "terminalTicker": "KDP",
+    "source": "SEC_ACTIVE",
+    "cik": "0001418135",
+    "name": "Keurig Dr Pepper Inc."
+  },
+  {
+    "terminalTicker": "KEY",
+    "source": "SEC_ACTIVE",
+    "cik": "0000091576",
+    "name": "KEYCORP /NEW/"
+  },
+  {
+    "terminalTicker": "KEYS",
+    "source": "SEC_ACTIVE",
+    "cik": "0001601046",
+    "name": "Keysight Technologies, Inc."
+  },
+  {
+    "terminalTicker": "KG",
+    "source": "SEC_ACTIVE",
+    "cik": "0002055116",
+    "name": "Kestrel Group Ltd"
+  },
+  {
+    "terminalTicker": "KHC",
+    "source": "SEC_ACTIVE",
+    "cik": "0001637459",
+    "name": "Kraft Heinz Co"
+  },
+  {
+    "terminalTicker": "KIM",
+    "source": "SEC_ACTIVE",
+    "cik": "0000879101",
+    "name": "KIMCO REALTY CORP"
+  },
+  {
+    "terminalTicker": "KKR",
+    "source": "SEC_ACTIVE",
+    "cik": "0001404912",
+    "name": "KKR & Co. Inc."
+  },
+  {
+    "terminalTicker": "KLAC",
+    "source": "SEC_ACTIVE",
+    "cik": "0000319201",
+    "name": "KLA CORP"
+  },
+  {
+    "terminalTicker": "KMB",
+    "source": "SEC_ACTIVE",
+    "cik": "0000055785",
+    "name": "KIMBERLY CLARK CORP"
+  },
+  {
+    "terminalTicker": "KMI",
+    "source": "SEC_ACTIVE",
+    "cik": "0001506307",
+    "name": "KINDER MORGAN, INC."
+  },
+  {
+    "terminalTicker": "KMX",
+    "source": "SEC_ACTIVE",
+    "cik": "0001170010",
+    "name": "CARMAX INC"
+  },
+  {
+    "terminalTicker": "KO",
+    "source": "SEC_ACTIVE",
+    "cik": "0000021344",
+    "name": "COCA COLA CO"
+  },
+  {
+    "terminalTicker": "KR",
+    "source": "SEC_ACTIVE",
+    "cik": "0000056873",
+    "name": "KROGER CO"
+  },
+  {
+    "terminalTicker": "KSS",
+    "source": "SEC_ACTIVE",
+    "cik": "0000885639",
+    "name": "KOHLS Corp"
+  },
+  {
+    "terminalTicker": "KVUE",
+    "source": "SEC_ACTIVE",
+    "cik": "0001944048",
+    "name": "Kenvue Inc."
+  },
+  {
+    "terminalTicker": "L",
+    "source": "SEC_ACTIVE",
+    "cik": "0000060086",
+    "name": "LOEWS CORP"
+  },
+  {
+    "terminalTicker": "LB",
+    "source": "SEC_ACTIVE",
+    "cik": "0001995807",
+    "name": "LandBridge Co LLC"
+  },
+  {
+    "terminalTicker": "LDOS",
+    "source": "SEC_ACTIVE",
+    "cik": "0001336920",
+    "name": "Leidos Holdings, Inc."
+  },
+  {
+    "terminalTicker": "LEG",
+    "source": "SEC_ACTIVE",
+    "cik": "0000058492",
+    "name": "LEGGETT & PLATT INC"
+  },
+  {
+    "terminalTicker": "LEHMQ",
+    "source": "MANUAL_OVERRIDE",
+    "cik": "0000806085",
+    "name": null
+  },
+  {
+    "terminalTicker": "LEN",
+    "source": "SEC_ACTIVE",
+    "cik": "0000920760",
+    "name": "LENNAR CORP /NEW/"
+  },
+  {
+    "terminalTicker": "LH",
+    "source": "SEC_ACTIVE",
+    "cik": "0000920148",
+    "name": "LABCORP HOLDINGS INC."
+  },
+  {
+    "terminalTicker": "LHX",
+    "source": "SEC_ACTIVE",
+    "cik": "0000202058",
+    "name": "L3HARRIS TECHNOLOGIES, INC. /DE/"
+  },
+  {
+    "terminalTicker": "LIFE",
+    "source": "SEC_ACTIVE",
+    "cik": "0001788451",
+    "name": "Ethos Technologies Inc."
+  },
+  {
+    "terminalTicker": "LII",
+    "source": "SEC_ACTIVE",
+    "cik": "0001069202",
+    "name": "LENNOX INTERNATIONAL INC"
+  },
+  {
+    "terminalTicker": "LIN",
+    "source": "SEC_ACTIVE",
+    "cik": "0001707925",
+    "name": "LINDE PLC"
+  },
+  {
+    "terminalTicker": "LITE",
+    "source": "SEC_ACTIVE",
+    "cik": "0001633978",
+    "name": "Lumentum Holdings Inc."
+  },
+  {
+    "terminalTicker": "LKQ",
+    "source": "SEC_ACTIVE",
+    "cik": "0001065696",
+    "name": "LKQ CORP"
+  },
+  {
+    "terminalTicker": "LLY",
+    "source": "SEC_ACTIVE",
+    "cik": "0000059478",
+    "name": "ELI LILLY & Co"
+  },
+  {
+    "terminalTicker": "LMT",
+    "source": "SEC_ACTIVE",
+    "cik": "0000936468",
+    "name": "LOCKHEED MARTIN CORP"
+  },
+  {
+    "terminalTicker": "LNC",
+    "source": "SEC_ACTIVE",
+    "cik": "0000059558",
+    "name": "LINCOLN NATIONAL CORP"
+  },
+  {
+    "terminalTicker": "LNT",
+    "source": "SEC_ACTIVE",
+    "cik": "0000352541",
+    "name": "ALLIANT ENERGY CORP"
+  },
+  {
+    "terminalTicker": "LOW",
+    "source": "SEC_ACTIVE",
+    "cik": "0000060667",
+    "name": "LOWES COMPANIES INC"
+  },
+  {
+    "terminalTicker": "LPX",
+    "source": "SEC_ACTIVE",
+    "cik": "0000060519",
+    "name": "LOUISIANA-PACIFIC CORP"
+  },
+  {
+    "terminalTicker": "LRCX",
+    "source": "SEC_ACTIVE",
+    "cik": "0000707549",
+    "name": "LAM RESEARCH CORP"
+  },
+  {
+    "terminalTicker": "LU",
+    "source": "SEC_ACTIVE",
+    "cik": "0001816007",
+    "name": "Lufax Holding Ltd"
+  },
+  {
+    "terminalTicker": "LULU",
+    "source": "SEC_ACTIVE",
+    "cik": "0001397187",
+    "name": "lululemon athletica inc."
+  },
+  {
+    "terminalTicker": "LUMN",
+    "source": "SEC_ACTIVE",
+    "cik": "0000018926",
+    "name": "Lumen Technologies, Inc."
+  },
+  {
+    "terminalTicker": "LUV",
+    "source": "SEC_ACTIVE",
+    "cik": "0000092380",
+    "name": "SOUTHWEST AIRLINES CO"
+  },
+  {
+    "terminalTicker": "LVS",
+    "source": "SEC_ACTIVE",
+    "cik": "0001300514",
+    "name": "LAS VEGAS SANDS CORP"
+  },
+  {
+    "terminalTicker": "LW",
+    "source": "SEC_ACTIVE",
+    "cik": "0001679273",
+    "name": "Lamb Weston Holdings, Inc."
+  },
+  {
+    "terminalTicker": "LYB",
+    "source": "SEC_ACTIVE",
+    "cik": "0001489393",
+    "name": "LyondellBasell Industries N.V."
+  },
+  {
+    "terminalTicker": "LYV",
+    "source": "SEC_ACTIVE",
+    "cik": "0001335258",
+    "name": "Live Nation Entertainment, Inc."
+  },
+  {
+    "terminalTicker": "M",
+    "source": "SEC_ACTIVE",
+    "cik": "0000794367",
+    "name": "Macy's, Inc."
+  },
+  {
+    "terminalTicker": "MA",
+    "source": "SEC_ACTIVE",
+    "cik": "0001141391",
+    "name": "Mastercard Inc"
+  },
+  {
+    "terminalTicker": "MAA",
+    "source": "SEC_ACTIVE",
+    "cik": "0000912595",
+    "name": "MID AMERICA APARTMENT COMMUNITIES INC."
+  },
+  {
+    "terminalTicker": "MAC",
+    "source": "SEC_ACTIVE",
+    "cik": "0000912242",
+    "name": "MACERICH CO"
+  },
+  {
+    "terminalTicker": "MAR",
+    "source": "SEC_ACTIVE",
+    "cik": "0001048286",
+    "name": "MARRIOTT INTERNATIONAL INC /MD/"
+  },
+  {
+    "terminalTicker": "MAS",
+    "source": "SEC_ACTIVE",
+    "cik": "0000062996",
+    "name": "MASCO CORP /DE/"
+  },
+  {
+    "terminalTicker": "MAT",
+    "source": "SEC_ACTIVE",
+    "cik": "0000063276",
+    "name": "MATTEL INC /DE/"
+  },
+  {
+    "terminalTicker": "MBI",
+    "source": "SEC_ACTIVE",
+    "cik": "0000814585",
+    "name": "MBIA INC"
+  },
+  {
+    "terminalTicker": "MCD",
+    "source": "SEC_ACTIVE",
+    "cik": "0000063908",
+    "name": "MCDONALDS CORP"
+  },
+  {
+    "terminalTicker": "MCHP",
+    "source": "SEC_ACTIVE",
+    "cik": "0000827054",
+    "name": "MICROCHIP TECHNOLOGY INC"
+  },
+  {
+    "terminalTicker": "MCK",
+    "source": "SEC_ACTIVE",
+    "cik": "0000927653",
+    "name": "MCKESSON CORP"
+  },
+  {
+    "terminalTicker": "MCO",
+    "source": "SEC_ACTIVE",
+    "cik": "0001059556",
+    "name": "MOODYS CORP /DE/"
+  },
+  {
+    "terminalTicker": "MD",
+    "source": "SEC_ACTIVE",
+    "cik": "0000893949",
+    "name": "Pediatrix Medical Group, Inc."
+  },
+  {
+    "terminalTicker": "MDLZ",
+    "source": "SEC_ACTIVE",
+    "cik": "0001103982",
+    "name": "Mondelez International, Inc."
+  },
+  {
+    "terminalTicker": "MDT",
+    "source": "SEC_ACTIVE",
+    "cik": "0001613103",
+    "name": "Medtronic plc"
+  },
+  {
+    "terminalTicker": "MET",
+    "source": "SEC_ACTIVE",
+    "cik": "0001099219",
+    "name": "METLIFE INC"
+  },
+  {
+    "terminalTicker": "META",
+    "source": "SEC_ACTIVE",
+    "cik": "0001326801",
+    "name": "Meta Platforms, Inc."
+  },
+  {
+    "terminalTicker": "MGM",
+    "source": "SEC_ACTIVE",
+    "cik": "0000789570",
+    "name": "MGM Resorts International"
+  },
+  {
+    "terminalTicker": "MHK",
+    "source": "SEC_ACTIVE",
+    "cik": "0000851968",
+    "name": "MOHAWK INDUSTRIES INC"
+  },
+  {
+    "terminalTicker": "MI",
+    "source": "SEC_ACTIVE",
+    "cik": "0001958713",
+    "name": "NFT Ltd"
+  },
+  {
+    "terminalTicker": "MIR",
+    "source": "SEC_ACTIVE",
+    "cik": "0001809987",
+    "name": "Mirion Technologies, Inc."
+  },
+  {
+    "terminalTicker": "MKC",
+    "source": "SEC_ACTIVE",
+    "cik": "0000063754",
+    "name": "MCCORMICK & CO INC"
+  },
+  {
+    "terminalTicker": "MKTX",
+    "source": "SEC_ACTIVE",
+    "cik": "0001278021",
+    "name": "MARKETAXESS HOLDINGS INC"
+  },
+  {
+    "terminalTicker": "MLM",
+    "source": "SEC_ACTIVE",
+    "cik": "0000916076",
+    "name": "MARTIN MARIETTA MATERIALS INC"
+  },
+  {
+    "terminalTicker": "MMI",
+    "source": "SEC_ACTIVE",
+    "cik": "0001578732",
+    "name": "Marcus & Millichap, Inc."
+  },
+  {
+    "terminalTicker": "MMM",
+    "source": "SEC_ACTIVE",
+    "cik": "0000066740",
+    "name": "3M CO"
+  },
+  {
+    "terminalTicker": "MNR",
+    "source": "SEC_ACTIVE",
+    "cik": "0001980088",
+    "name": "MACH NATURAL RESOURCES LP"
+  },
+  {
+    "terminalTicker": "MNST",
+    "source": "SEC_ACTIVE",
+    "cik": "0000865752",
+    "name": "Monster Beverage Corp"
+  },
+  {
+    "terminalTicker": "MO",
+    "source": "SEC_ACTIVE",
+    "cik": "0000764180",
+    "name": "ALTRIA GROUP, INC."
+  },
+  {
+    "terminalTicker": "MOB",
+    "source": "SEC_ACTIVE",
+    "cik": "0001898643",
+    "name": "Mobilicom Ltd"
+  },
+  {
+    "terminalTicker": "MOH",
+    "source": "SEC_ACTIVE",
+    "cik": "0001179929",
+    "name": "MOLINA HEALTHCARE, INC."
+  },
+  {
+    "terminalTicker": "MOS",
+    "source": "SEC_ACTIVE",
+    "cik": "0001285785",
+    "name": "MOSAIC CO"
+  },
+  {
+    "terminalTicker": "MPC",
+    "source": "SEC_ACTIVE",
+    "cik": "0001510295",
+    "name": "Marathon Petroleum Corp"
+  },
+  {
+    "terminalTicker": "MPWR",
+    "source": "SEC_ACTIVE",
+    "cik": "0001280452",
+    "name": "MONOLITHIC POWER SYSTEMS, INC."
+  },
+  {
+    "terminalTicker": "MRK",
+    "source": "SEC_ACTIVE",
+    "cik": "0000310158",
+    "name": "Merck & Co., Inc."
+  },
+  {
+    "terminalTicker": "MRNA",
+    "source": "SEC_ACTIVE",
+    "cik": "0001682852",
+    "name": "Moderna, Inc."
+  },
+  {
+    "terminalTicker": "MRSH",
+    "source": "SEC_ACTIVE",
+    "cik": "0000062709",
+    "name": "MARSH & MCLENNAN COMPANIES, INC."
+  },
+  {
+    "terminalTicker": "MRVL",
+    "source": "SEC_ACTIVE",
+    "cik": "0001835632",
+    "name": "Marvell Technology, Inc."
+  },
+  {
+    "terminalTicker": "MS",
+    "source": "SEC_ACTIVE",
+    "cik": "0000895421",
+    "name": "MORGAN STANLEY"
+  },
+  {
+    "terminalTicker": "MSCI",
+    "source": "SEC_ACTIVE",
+    "cik": "0001408198",
+    "name": "MSCI Inc."
+  },
+  {
+    "terminalTicker": "MSFT",
+    "source": "SEC_ACTIVE",
+    "cik": "0000789019",
+    "name": "MICROSOFT CORP"
+  },
+  {
+    "terminalTicker": "MSI",
+    "source": "SEC_ACTIVE",
+    "cik": "0000068505",
+    "name": "Motorola Solutions, Inc."
+  },
+  {
+    "terminalTicker": "MTB",
+    "source": "SEC_ACTIVE",
+    "cik": "0000036270",
+    "name": "M&T BANK CORP"
+  },
+  {
+    "terminalTicker": "MTCH",
+    "source": "SEC_ACTIVE",
+    "cik": "0000891103",
+    "name": "Match Group, Inc."
+  },
+  {
+    "terminalTicker": "MTD",
+    "source": "SEC_ACTIVE",
+    "cik": "0001037646",
+    "name": "METTLER TOLEDO INTERNATIONAL INC/"
+  },
+  {
+    "terminalTicker": "MTG",
+    "source": "SEC_ACTIVE",
+    "cik": "0000876437",
+    "name": "MGIC INVESTMENT CORP"
+  },
+  {
+    "terminalTicker": "MTW",
+    "source": "SEC_ACTIVE",
+    "cik": "0000061986",
+    "name": "MANITOWOC CO INC"
+  },
+  {
+    "terminalTicker": "MU",
+    "source": "SEC_ACTIVE",
+    "cik": "0000723125",
+    "name": "MICRON TECHNOLOGY INC"
+  },
+  {
+    "terminalTicker": "MUR",
+    "source": "SEC_ACTIVE",
+    "cik": "0000717423",
+    "name": "MURPHY OIL CORP"
+  },
+  {
+    "terminalTicker": "NAVI",
+    "source": "SEC_ACTIVE",
+    "cik": "0001593538",
+    "name": "NAVIENT CORP"
+  },
+  {
+    "terminalTicker": "NBR",
+    "source": "SEC_ACTIVE",
+    "cik": "0001163739",
+    "name": "NABORS INDUSTRIES LTD"
+  },
+  {
+    "terminalTicker": "NC",
+    "source": "SEC_ACTIVE",
+    "cik": "0000789933",
+    "name": "NACCO INDUSTRIES INC"
+  },
+  {
+    "terminalTicker": "NCLH",
+    "source": "SEC_ACTIVE",
+    "cik": "0001513761",
+    "name": "Norwegian Cruise Line Holdings Ltd."
+  },
+  {
+    "terminalTicker": "NDAQ",
+    "source": "SEC_ACTIVE",
+    "cik": "0001120193",
+    "name": "NASDAQ, INC."
+  },
+  {
+    "terminalTicker": "NDSN",
+    "source": "SEC_ACTIVE",
+    "cik": "0000072331",
+    "name": "NORDSON CORP"
+  },
+  {
+    "terminalTicker": "NE",
+    "source": "SEC_ACTIVE",
+    "cik": "0001895262",
+    "name": "Noble Corp plc"
+  },
+  {
+    "terminalTicker": "NEE",
+    "source": "SEC_ACTIVE",
+    "cik": "0000753308",
+    "name": "NEXTERA ENERGY INC"
+  },
+  {
+    "terminalTicker": "NEM",
+    "source": "SEC_ACTIVE",
+    "cik": "0001164727",
+    "name": "NEWMONT Corp /DE/"
+  },
+  {
+    "terminalTicker": "NFLX",
+    "source": "SEC_ACTIVE",
+    "cik": "0001065280",
+    "name": "NETFLIX INC"
+  },
+  {
+    "terminalTicker": "NI",
+    "source": "SEC_ACTIVE",
+    "cik": "0001111711",
+    "name": "NISOURCE INC."
+  },
+  {
+    "terminalTicker": "NKE",
+    "source": "SEC_ACTIVE",
+    "cik": "0000320187",
+    "name": "NIKE, Inc."
+  },
+  {
+    "terminalTicker": "NKTR",
+    "source": "SEC_ACTIVE",
+    "cik": "0000906709",
+    "name": "NEKTAR THERAPEUTICS"
+  },
+  {
+    "terminalTicker": "NOC",
+    "source": "SEC_ACTIVE",
+    "cik": "0001133421",
+    "name": "NORTHROP GRUMMAN CORP /DE/"
+  },
+  {
+    "terminalTicker": "NOV",
+    "source": "SEC_ACTIVE",
+    "cik": "0001021860",
+    "name": "NOV Inc."
+  },
+  {
+    "terminalTicker": "NOW",
+    "source": "SEC_ACTIVE",
+    "cik": "0001373715",
+    "name": "ServiceNow, Inc."
+  },
+  {
+    "terminalTicker": "NRG",
+    "source": "SEC_ACTIVE",
+    "cik": "0001013871",
+    "name": "NRG ENERGY, INC."
+  },
+  {
+    "terminalTicker": "NSC",
+    "source": "SEC_ACTIVE",
+    "cik": "0000702165",
+    "name": "NORFOLK SOUTHERN CORP"
+  },
+  {
+    "terminalTicker": "NTAP",
+    "source": "SEC_ACTIVE",
+    "cik": "0001002047",
+    "name": "NetApp, Inc."
+  },
+  {
+    "terminalTicker": "NTRS",
+    "source": "SEC_ACTIVE",
+    "cik": "0000073124",
+    "name": "NORTHERN TRUST CORP"
+  },
+  {
+    "terminalTicker": "NUE",
+    "source": "SEC_ACTIVE",
+    "cik": "0000073309",
+    "name": "NUCOR CORP"
+  },
+  {
+    "terminalTicker": "NVDA",
+    "source": "SEC_ACTIVE",
+    "cik": "0001045810",
+    "name": "NVIDIA CORP"
+  },
+  {
+    "terminalTicker": "NVR",
+    "source": "SEC_ACTIVE",
+    "cik": "0000906163",
+    "name": "NVR INC"
+  },
+  {
+    "terminalTicker": "NWL",
+    "source": "SEC_ACTIVE",
+    "cik": "0000814453",
+    "name": "NEWELL BRANDS INC."
+  },
+  {
+    "terminalTicker": "NWS",
+    "source": "SEC_ACTIVE",
+    "cik": "0001564708",
+    "name": "NEWS CORP"
+  },
+  {
+    "terminalTicker": "NWSA",
+    "source": "SEC_ACTIVE",
+    "cik": "0001564708",
+    "name": "NEWS CORP"
+  },
+  {
+    "terminalTicker": "NXPI",
+    "source": "SEC_ACTIVE",
+    "cik": "0001413447",
+    "name": "NXP Semiconductors N.V."
+  },
+  {
+    "terminalTicker": "NYT",
+    "source": "SEC_ACTIVE",
+    "cik": "0000071691",
+    "name": "NEW YORK TIMES CO"
+  },
+  {
+    "terminalTicker": "O",
+    "source": "SEC_ACTIVE",
+    "cik": "0000726728",
+    "name": "REALTY INCOME CORP"
+  },
+  {
+    "terminalTicker": "ODFL",
+    "source": "SEC_ACTIVE",
+    "cik": "0000878927",
+    "name": "OLD DOMINION FREIGHT LINE, INC."
+  },
+  {
+    "terminalTicker": "OGN",
+    "source": "SEC_ACTIVE",
+    "cik": "0001821825",
+    "name": "Organon & Co."
+  },
+  {
+    "terminalTicker": "OI",
+    "source": "SEC_ACTIVE",
+    "cik": "0000812074",
+    "name": "O-I Glass, Inc. /DE/"
+  },
+  {
+    "terminalTicker": "OKE",
+    "source": "SEC_ACTIVE",
+    "cik": "0001039684",
+    "name": "ONEOK INC /NEW/"
+  },
+  {
+    "terminalTicker": "OM",
+    "source": "SEC_ACTIVE",
+    "cik": "0001484612",
+    "name": "Outset Medical, Inc."
+  },
+  {
+    "terminalTicker": "OMC",
+    "source": "SEC_ACTIVE",
+    "cik": "0000029989",
+    "name": "OMNICOM GROUP INC."
+  },
+  {
+    "terminalTicker": "ON",
+    "source": "SEC_ACTIVE",
+    "cik": "0001097864",
+    "name": "ON SEMICONDUCTOR CORP"
+  },
+  {
+    "terminalTicker": "ORCL",
+    "source": "SEC_ACTIVE",
+    "cik": "0001341439",
+    "name": "ORACLE CORP"
+  },
+  {
+    "terminalTicker": "ORLY",
+    "source": "SEC_ACTIVE",
+    "cik": "0000898173",
+    "name": "O REILLY AUTOMOTIVE INC"
+  },
+  {
+    "terminalTicker": "OTIS",
+    "source": "SEC_ACTIVE",
+    "cik": "0001781335",
+    "name": "Otis Worldwide Corp"
+  },
+  {
+    "terminalTicker": "OXY",
+    "source": "SEC_ACTIVE",
+    "cik": "0000797468",
+    "name": "OCCIDENTAL PETROLEUM CORP /DE/"
+  },
+  {
+    "terminalTicker": "PAC",
+    "source": "SEC_ACTIVE",
+    "cik": "0001347557",
+    "name": "Pacific Airport Group"
+  },
+  {
+    "terminalTicker": "PANW",
+    "source": "SEC_ACTIVE",
+    "cik": "0001327567",
+    "name": "Palo Alto Networks Inc"
+  },
+  {
+    "terminalTicker": "PARA",
+    "source": "SEC_ACTIVE",
+    "cik": "0001826011",
+    "name": "Banzai International, Inc."
+  },
+  {
+    "terminalTicker": "PAYC",
+    "source": "SEC_ACTIVE",
+    "cik": "0001590955",
+    "name": "Paycom Software, Inc."
+  },
+  {
+    "terminalTicker": "PAYX",
+    "source": "SEC_ACTIVE",
+    "cik": "0000723531",
+    "name": "PAYCHEX INC"
+  },
+  {
+    "terminalTicker": "PBI",
+    "source": "SEC_ACTIVE",
+    "cik": "0000078814",
+    "name": "PITNEY BOWES INC /DE/"
+  },
+  {
+    "terminalTicker": "PCAR",
+    "source": "SEC_ACTIVE",
+    "cik": "0000075362",
+    "name": "PACCAR INC"
+  },
+  {
+    "terminalTicker": "PCG",
+    "source": "SEC_ACTIVE",
+    "cik": "0001004980",
+    "name": "PG&E Corp"
+  },
+  {
+    "terminalTicker": "PD",
+    "source": "SEC_ACTIVE",
+    "cik": "0001568100",
+    "name": "PagerDuty, Inc."
+  },
+  {
+    "terminalTicker": "PEG",
+    "source": "SEC_ACTIVE",
+    "cik": "0000788784",
+    "name": "PUBLIC SERVICE ENTERPRISE GROUP INC"
+  },
+  {
+    "terminalTicker": "PENN",
+    "source": "SEC_ACTIVE",
+    "cik": "0000921738",
+    "name": "PENN Entertainment, Inc."
+  },
+  {
+    "terminalTicker": "PEP",
+    "source": "SEC_ACTIVE",
+    "cik": "0000077476",
+    "name": "PEPSICO INC"
+  },
+  {
+    "terminalTicker": "PFE",
+    "source": "SEC_ACTIVE",
+    "cik": "0000078003",
+    "name": "PFIZER INC"
+  },
+  {
+    "terminalTicker": "PFG",
+    "source": "SEC_ACTIVE",
+    "cik": "0001126328",
+    "name": "PRINCIPAL FINANCIAL GROUP INC"
+  },
+  {
+    "terminalTicker": "PG",
+    "source": "SEC_ACTIVE",
+    "cik": "0000080424",
+    "name": "PROCTER & GAMBLE Co"
+  },
+  {
+    "terminalTicker": "PGR",
+    "source": "SEC_ACTIVE",
+    "cik": "0000080661",
+    "name": "PROGRESSIVE CORP/OH/"
+  },
+  {
+    "terminalTicker": "PH",
+    "source": "SEC_ACTIVE",
+    "cik": "0000076334",
+    "name": "Parker-Hannifin Corp"
+  },
+  {
+    "terminalTicker": "PHM",
+    "source": "SEC_ACTIVE",
+    "cik": "0000822416",
+    "name": "PULTEGROUP INC/MI/"
+  },
+  {
+    "terminalTicker": "PKG",
+    "source": "SEC_ACTIVE",
+    "cik": "0000075677",
+    "name": "PACKAGING CORP OF AMERICA"
+  },
+  {
+    "terminalTicker": "PLD",
+    "source": "SEC_ACTIVE",
+    "cik": "0001045609",
+    "name": "Prologis, Inc."
+  },
+  {
+    "terminalTicker": "PLTR",
+    "source": "SEC_ACTIVE",
+    "cik": "0001321655",
+    "name": "Palantir Technologies Inc."
+  },
+  {
+    "terminalTicker": "PM",
+    "source": "SEC_ACTIVE",
+    "cik": "0001413329",
+    "name": "Philip Morris International Inc."
+  },
+  {
+    "terminalTicker": "PMI",
+    "source": "SEC_ACTIVE",
+    "cik": "0002030617",
+    "name": "Picard Medical, Inc."
+  },
+  {
+    "terminalTicker": "PNC",
+    "source": "SEC_ACTIVE",
+    "cik": "0000713676",
+    "name": "PNC FINANCIAL SERVICES GROUP, INC."
+  },
+  {
+    "terminalTicker": "PNR",
+    "source": "SEC_ACTIVE",
+    "cik": "0000077360",
+    "name": "PENTAIR plc"
+  },
+  {
+    "terminalTicker": "PNW",
+    "source": "SEC_ACTIVE",
+    "cik": "0000764622",
+    "name": "PINNACLE WEST CAPITAL CORP"
+  },
+  {
+    "terminalTicker": "PODD",
+    "source": "SEC_ACTIVE",
+    "cik": "0001145197",
+    "name": "INSULET CORP"
+  },
+  {
+    "terminalTicker": "POM",
+    "source": "SEC_ACTIVE",
+    "cik": "0001877971",
+    "name": "POMDOCTOR Ltd"
+  },
+  {
+    "terminalTicker": "POOL",
+    "source": "SEC_ACTIVE",
+    "cik": "0000945841",
+    "name": "POOL CORP"
+  },
+  {
+    "terminalTicker": "PPG",
+    "source": "SEC_ACTIVE",
+    "cik": "0000079879",
+    "name": "PPG INDUSTRIES INC"
+  },
+  {
+    "terminalTicker": "PPL",
+    "source": "SEC_ACTIVE",
+    "cik": "0000922224",
+    "name": "PPL Corp"
+  },
+  {
+    "terminalTicker": "PRGO",
+    "source": "SEC_ACTIVE",
+    "cik": "0001585364",
+    "name": "PERRIGO Co plc"
+  },
+  {
+    "terminalTicker": "PRU",
+    "source": "SEC_ACTIVE",
+    "cik": "0001137774",
+    "name": "PRUDENTIAL FINANCIAL INC"
+  },
+  {
+    "terminalTicker": "PSA",
+    "source": "SEC_ACTIVE",
+    "cik": "0001393311",
+    "name": "Public Storage"
+  },
+  {
+    "terminalTicker": "PSKY",
+    "source": "SEC_ACTIVE",
+    "cik": "0002041610",
+    "name": "Paramount Skydance Corp"
+  },
+  {
+    "terminalTicker": "PSX",
+    "source": "SEC_ACTIVE",
+    "cik": "0001534701",
+    "name": "Phillips 66"
+  },
+  {
+    "terminalTicker": "PTC",
+    "source": "SEC_ACTIVE",
+    "cik": "0000857005",
+    "name": "PTC INC."
+  },
+  {
+    "terminalTicker": "PVH",
+    "source": "SEC_ACTIVE",
+    "cik": "0000078239",
+    "name": "PVH CORP. /DE/"
+  },
+  {
+    "terminalTicker": "PWR",
+    "source": "SEC_ACTIVE",
+    "cik": "0001050915",
+    "name": "QUANTA SERVICES, INC."
+  },
+  {
+    "terminalTicker": "PYPL",
+    "source": "SEC_ACTIVE",
+    "cik": "0001633917",
+    "name": "PayPal Holdings, Inc."
+  },
+  {
+    "terminalTicker": "Q",
+    "source": "SEC_ACTIVE",
+    "cik": "0002058873",
+    "name": "Qnity Electronics, Inc."
+  },
+  {
+    "terminalTicker": "QCOM",
+    "source": "SEC_ACTIVE",
+    "cik": "0000804328",
+    "name": "QUALCOMM INC/DE"
+  },
+  {
+    "terminalTicker": "QRVO",
+    "source": "SEC_ACTIVE",
+    "cik": "0001604778",
+    "name": "Qorvo, Inc."
+  },
+  {
+    "terminalTicker": "R",
+    "source": "SEC_ACTIVE",
+    "cik": "0000085961",
+    "name": "RYDER SYSTEM INC"
+  },
+  {
+    "terminalTicker": "RAL",
+    "source": "SEC_ACTIVE",
+    "cik": "0002041385",
+    "name": "Ralliant Corp"
+  },
+  {
+    "terminalTicker": "RCL",
+    "source": "SEC_ACTIVE",
+    "cik": "0000884887",
+    "name": "ROYAL CARIBBEAN CRUISES LTD"
+  },
+  {
+    "terminalTicker": "REG",
+    "source": "SEC_ACTIVE",
+    "cik": "0000910606",
+    "name": "REGENCY CENTERS CORP"
+  },
+  {
+    "terminalTicker": "REGN",
+    "source": "SEC_ACTIVE",
+    "cik": "0000872589",
+    "name": "REGENERON PHARMACEUTICALS, INC."
+  },
+  {
+    "terminalTicker": "RF",
+    "source": "SEC_ACTIVE",
+    "cik": "0001281761",
+    "name": "REGIONS FINANCIAL CORP"
+  },
+  {
+    "terminalTicker": "RHI",
+    "source": "SEC_ACTIVE",
+    "cik": "0000315213",
+    "name": "ROBERT HALF INC."
+  },
+  {
+    "terminalTicker": "RIG",
+    "source": "SEC_ACTIVE",
+    "cik": "0001451505",
+    "name": "Transocean Ltd."
+  },
+  {
+    "terminalTicker": "RJF",
+    "source": "SEC_ACTIVE",
+    "cik": "0000720005",
+    "name": "RAYMOND JAMES FINANCIAL INC"
+  },
+  {
+    "terminalTicker": "RL",
+    "source": "SEC_ACTIVE",
+    "cik": "0001037038",
+    "name": "RALPH LAUREN CORP"
+  },
+  {
+    "terminalTicker": "RMD",
+    "source": "SEC_ACTIVE",
+    "cik": "0000943819",
+    "name": "RESMED INC"
+  },
+  {
+    "terminalTicker": "RML",
+    "source": "SEC_ACTIVE",
+    "cik": "0002102907",
+    "name": "Resolution Minerals Ltd"
+  },
+  {
+    "terminalTicker": "ROK",
+    "source": "SEC_ACTIVE",
+    "cik": "0001024478",
+    "name": "ROCKWELL AUTOMATION, INC"
+  },
+  {
+    "terminalTicker": "ROL",
+    "source": "SEC_ACTIVE",
+    "cik": "0000084839",
+    "name": "ROLLINS INC"
+  },
+  {
+    "terminalTicker": "ROP",
+    "source": "SEC_ACTIVE",
+    "cik": "0000882835",
+    "name": "ROPER TECHNOLOGIES INC"
+  },
+  {
+    "terminalTicker": "ROST",
+    "source": "SEC_ACTIVE",
+    "cik": "0000745732",
+    "name": "ROSS STORES, INC."
+  },
+  {
+    "terminalTicker": "RRC",
+    "source": "SEC_ACTIVE",
+    "cik": "0000315852",
+    "name": "RANGE RESOURCES CORP"
+  },
+  {
+    "terminalTicker": "RSG",
+    "source": "SEC_ACTIVE",
+    "cik": "0001060391",
+    "name": "REPUBLIC SERVICES, INC."
+  },
+  {
+    "terminalTicker": "RTX",
+    "source": "SEC_ACTIVE",
+    "cik": "0000101829",
+    "name": "RTX Corp"
+  },
+  {
+    "terminalTicker": "RVTY",
+    "source": "SEC_ACTIVE",
+    "cik": "0000031791",
+    "name": "REVVITY, INC."
+  },
+  {
+    "terminalTicker": "RYAN",
+    "source": "SEC_ACTIVE",
+    "cik": "0001849253",
+    "name": "RYAN SPECIALTY HOLDINGS, INC."
+  },
+  {
+    "terminalTicker": "S",
+    "source": "SEC_ACTIVE",
+    "cik": "0001583708",
+    "name": "SentinelOne, Inc."
+  },
+  {
+    "terminalTicker": "SANM",
+    "source": "SEC_ACTIVE",
+    "cik": "0000897723",
+    "name": "SANMINA CORP"
+  },
+  {
+    "terminalTicker": "SB",
+    "source": "SEC_ACTIVE",
+    "cik": "0001434754",
+    "name": "SAFE BULKERS, INC."
+  },
+  {
+    "terminalTicker": "SBAC",
+    "source": "SEC_ACTIVE",
+    "cik": "0001034054",
+    "name": "SBA COMMUNICATIONS CORP"
+  },
+  {
+    "terminalTicker": "SBUX",
+    "source": "SEC_ACTIVE",
+    "cik": "0000829224",
+    "name": "STARBUCKS CORP"
+  },
+  {
+    "terminalTicker": "SCHW",
+    "source": "SEC_ACTIVE",
+    "cik": "0000316709",
+    "name": "SCHWAB CHARLES CORP"
+  },
+  {
+    "terminalTicker": "SCI",
+    "source": "SEC_ACTIVE",
+    "cik": "0000089089",
+    "name": "SERVICE CORP INTERNATIONAL"
+  },
+  {
+    "terminalTicker": "SE",
+    "source": "SEC_ACTIVE",
+    "cik": "0001703399",
+    "name": "Sea Ltd"
+  },
+  {
+    "terminalTicker": "SEDG",
+    "source": "SEC_ACTIVE",
+    "cik": "0001419612",
+    "name": "SOLAREDGE TECHNOLOGIES, INC."
+  },
+  {
+    "terminalTicker": "SEG",
+    "source": "SEC_ACTIVE",
+    "cik": "0002009684",
+    "name": "Seaport Entertainment Group Inc."
+  },
+  {
+    "terminalTicker": "SGP",
+    "source": "SEC_ACTIVE",
+    "cik": "0001778922",
+    "name": "SpyGlass Pharma, Inc."
+  },
+  {
+    "terminalTicker": "SHW",
+    "source": "SEC_ACTIVE",
+    "cik": "0000089800",
+    "name": "SHERWIN WILLIAMS CO"
+  },
+  {
+    "terminalTicker": "SIG",
+    "source": "SEC_ACTIVE",
+    "cik": "0000832988",
+    "name": "SIGNET JEWELERS LTD"
+  },
+  {
+    "terminalTicker": "SII",
+    "source": "SEC_ACTIVE",
+    "cik": "0001512920",
+    "name": "SPROTT INC."
+  },
+  {
+    "terminalTicker": "SJM",
+    "source": "SEC_ACTIVE",
+    "cik": "0000091419",
+    "name": "J M SMUCKER Co"
+  },
+  {
+    "terminalTicker": "SLB",
+    "source": "SEC_ACTIVE",
+    "cik": "0000087347",
+    "name": "SLB LIMITED/NV"
+  },
+  {
+    "terminalTicker": "SLG",
+    "source": "SEC_ACTIVE",
+    "cik": "0001040971",
+    "name": "SL GREEN REALTY CORP"
+  },
+  {
+    "terminalTicker": "SLM",
+    "source": "SEC_ACTIVE",
+    "cik": "0001032033",
+    "name": "SLM Corp"
+  },
+  {
+    "terminalTicker": "SMCI",
+    "source": "SEC_ACTIVE",
+    "cik": "0001375365",
+    "name": "Super Micro Computer, Inc."
+  },
+  {
+    "terminalTicker": "SNA",
+    "source": "SEC_ACTIVE",
+    "cik": "0000091440",
+    "name": "Snap-on Inc"
+  },
+  {
+    "terminalTicker": "SNDK",
+    "source": "SEC_ACTIVE",
+    "cik": "0002023554",
+    "name": "Sandisk Corp"
+  },
+  {
+    "terminalTicker": "SNPS",
+    "source": "SEC_ACTIVE",
+    "cik": "0000883241",
+    "name": "SYNOPSYS INC"
+  },
+  {
+    "terminalTicker": "SNT",
+    "source": "SEC_ACTIVE",
+    "cik": "0001993727",
+    "name": "Senstar Technologies Corp"
+  },
+  {
+    "terminalTicker": "SO",
+    "source": "SEC_ACTIVE",
+    "cik": "0000092122",
+    "name": "SOUTHERN CO"
+  },
+  {
+    "terminalTicker": "SOLS",
+    "source": "SEC_ACTIVE",
+    "cik": "0002064953",
+    "name": "Solstice Advanced Materials Inc."
+  },
+  {
+    "terminalTicker": "SOLV",
+    "source": "SEC_ACTIVE",
+    "cik": "0001964738",
+    "name": "Solventum Corp"
+  },
+  {
+    "terminalTicker": "SPG",
+    "source": "SEC_ACTIVE",
+    "cik": "0001063761",
+    "name": "SIMON PROPERTY GROUP INC."
+  },
+  {
+    "terminalTicker": "SPGI",
+    "source": "SEC_ACTIVE",
+    "cik": "0000064040",
+    "name": "S&P Global Inc."
+  },
+  {
+    "terminalTicker": "SRE",
+    "source": "SEC_ACTIVE",
+    "cik": "0001032208",
+    "name": "SEMPRA"
+  },
+  {
+    "terminalTicker": "SSP",
+    "source": "SEC_ACTIVE",
+    "cik": "0000832428",
+    "name": "E.W. SCRIPPS Co"
+  },
+  {
+    "terminalTicker": "STE",
+    "source": "SEC_ACTIVE",
+    "cik": "0001757898",
+    "name": "STERIS plc"
+  },
+  {
+    "terminalTicker": "STI",
+    "source": "SEC_ACTIVE",
+    "cik": "0001881551",
+    "name": "Solidion Technology Inc."
+  },
+  {
+    "terminalTicker": "STLD",
+    "source": "SEC_ACTIVE",
+    "cik": "0001022671",
+    "name": "STEEL DYNAMICS INC"
+  },
+  {
+    "terminalTicker": "STT",
+    "source": "SEC_ACTIVE",
+    "cik": "0000093751",
+    "name": "STATE STREET CORP"
+  },
+  {
+    "terminalTicker": "STX",
+    "source": "SEC_ACTIVE",
+    "cik": "0001137789",
+    "name": "Seagate Technology Holdings plc"
+  },
+  {
+    "terminalTicker": "STZ",
+    "source": "SEC_ACTIVE",
+    "cik": "0000016918",
+    "name": "CONSTELLATION BRANDS, INC."
+  },
+  {
+    "terminalTicker": "SUN",
+    "source": "SEC_ACTIVE",
+    "cik": "0001552275",
+    "name": "Sunoco LP"
+  },
+  {
+    "terminalTicker": "SW",
+    "source": "SEC_ACTIVE",
+    "cik": "0002005951",
+    "name": "Smurfit Westrock plc"
+  },
+  {
+    "terminalTicker": "SWK",
+    "source": "SEC_ACTIVE",
+    "cik": "0000093556",
+    "name": "STANLEY BLACK & DECKER, INC."
+  },
+  {
+    "terminalTicker": "SWKS",
+    "source": "SEC_ACTIVE",
+    "cik": "0000004127",
+    "name": "SKYWORKS SOLUTIONS, INC."
+  },
+  {
+    "terminalTicker": "SYF",
+    "source": "SEC_ACTIVE",
+    "cik": "0001601712",
+    "name": "Synchrony Financial"
+  },
+  {
+    "terminalTicker": "SYK",
+    "source": "SEC_ACTIVE",
+    "cik": "0000310764",
+    "name": "STRYKER CORP"
+  },
+  {
+    "terminalTicker": "SYY",
+    "source": "SEC_ACTIVE",
+    "cik": "0000096021",
+    "name": "SYSCO CORP"
+  },
+  {
+    "terminalTicker": "T",
+    "source": "SEC_ACTIVE",
+    "cik": "0000732717",
+    "name": "AT&T INC."
+  },
+  {
+    "terminalTicker": "TAP",
+    "source": "SEC_ACTIVE",
+    "cik": "0000024545",
+    "name": "MOLSON COORS BEVERAGE CO"
+  },
+  {
+    "terminalTicker": "TDC",
+    "source": "SEC_ACTIVE",
+    "cik": "0000816761",
+    "name": "TERADATA CORP /DE/"
+  },
+  {
+    "terminalTicker": "TDG",
+    "source": "SEC_ACTIVE",
+    "cik": "0001260221",
+    "name": "TransDigm Group INC"
+  },
+  {
+    "terminalTicker": "TDY",
+    "source": "SEC_ACTIVE",
+    "cik": "0001094285",
+    "name": "TELEDYNE TECHNOLOGIES INC"
+  },
+  {
+    "terminalTicker": "TE",
+    "source": "SEC_ACTIVE",
+    "cik": "0001992243",
+    "name": "T1 Energy Inc."
+  },
+  {
+    "terminalTicker": "TECH",
+    "source": "SEC_ACTIVE",
+    "cik": "0000842023",
+    "name": "BIO-TECHNE Corp"
+  },
+  {
+    "terminalTicker": "TEL",
+    "source": "SEC_ACTIVE",
+    "cik": "0001385157",
+    "name": "TE Connectivity plc"
+  },
+  {
+    "terminalTicker": "TEN",
+    "source": "SEC_ACTIVE",
+    "cik": "0001166663",
+    "name": "TSAKOS ENERGY NAVIGATION LTD"
+  },
+  {
+    "terminalTicker": "TER",
+    "source": "SEC_ACTIVE",
+    "cik": "0000097210",
+    "name": "TERADYNE, INC"
+  },
+  {
+    "terminalTicker": "TEX",
+    "source": "SEC_ACTIVE",
+    "cik": "0000097216",
+    "name": "TEREX CORP"
+  },
+  {
+    "terminalTicker": "TFC",
+    "source": "SEC_ACTIVE",
+    "cik": "0000092230",
+    "name": "TRUIST FINANCIAL CORP"
+  },
+  {
+    "terminalTicker": "TFX",
+    "source": "SEC_ACTIVE",
+    "cik": "0000096943",
+    "name": "TELEFLEX INC"
+  },
+  {
+    "terminalTicker": "TGT",
+    "source": "SEC_ACTIVE",
+    "cik": "0000027419",
+    "name": "TARGET CORP"
+  },
+  {
+    "terminalTicker": "THC",
+    "source": "SEC_ACTIVE",
+    "cik": "0000070318",
+    "name": "TENET HEALTHCARE CORP"
+  },
+  {
+    "terminalTicker": "TJX",
+    "source": "SEC_ACTIVE",
+    "cik": "0000109198",
+    "name": "TJX COMPANIES INC /DE/"
+  },
+  {
+    "terminalTicker": "TKO",
+    "source": "SEC_ACTIVE",
+    "cik": "0001973266",
+    "name": "TKO Group Holdings, Inc."
+  },
+  {
+    "terminalTicker": "TKR",
+    "source": "SEC_ACTIVE",
+    "cik": "0000098362",
+    "name": "TIMKEN CO"
+  },
+  {
+    "terminalTicker": "TMC",
+    "source": "SEC_ACTIVE",
+    "cik": "0001798562",
+    "name": "TMC the metals Co Inc."
+  },
+  {
+    "terminalTicker": "TMO",
+    "source": "SEC_ACTIVE",
+    "cik": "0000097745",
+    "name": "THERMO FISHER SCIENTIFIC INC."
+  },
+  {
+    "terminalTicker": "TMUS",
+    "source": "SEC_ACTIVE",
+    "cik": "0001283699",
+    "name": "T-Mobile US, Inc."
+  },
+  {
+    "terminalTicker": "TPL",
+    "source": "SEC_ACTIVE",
+    "cik": "0001811074",
+    "name": "Texas Pacific Land Corp"
+  },
+  {
+    "terminalTicker": "TPR",
+    "source": "SEC_ACTIVE",
+    "cik": "0001116132",
+    "name": "TAPESTRY, INC."
+  },
+  {
+    "terminalTicker": "TRGP",
+    "source": "SEC_ACTIVE",
+    "cik": "0001389170",
+    "name": "Targa Resources Corp."
+  },
+  {
+    "terminalTicker": "TRIP",
+    "source": "SEC_ACTIVE",
+    "cik": "0001526520",
+    "name": "TripAdvisor, Inc."
+  },
+  {
+    "terminalTicker": "TRMB",
+    "source": "SEC_ACTIVE",
+    "cik": "0000864749",
+    "name": "TRIMBLE INC."
+  },
+  {
+    "terminalTicker": "TROW",
+    "source": "SEC_ACTIVE",
+    "cik": "0001113169",
+    "name": "PRICE T ROWE GROUP INC"
+  },
+  {
+    "terminalTicker": "TRV",
+    "source": "SEC_ACTIVE",
+    "cik": "0000086312",
+    "name": "TRAVELERS COMPANIES, INC."
+  },
+  {
+    "terminalTicker": "TSCO",
+    "source": "SEC_ACTIVE",
+    "cik": "0000916365",
+    "name": "TRACTOR SUPPLY CO /DE/"
+  },
+  {
+    "terminalTicker": "TSLA",
+    "source": "SEC_ACTIVE",
+    "cik": "0001318605",
+    "name": "Tesla, Inc."
+  },
+  {
+    "terminalTicker": "TSN",
+    "source": "SEC_ACTIVE",
+    "cik": "0000100493",
+    "name": "TYSON FOODS, INC."
+  },
+  {
+    "terminalTicker": "TT",
+    "source": "SEC_ACTIVE",
+    "cik": "0001466258",
+    "name": "Trane Technologies plc"
+  },
+  {
+    "terminalTicker": "TTD",
+    "source": "SEC_ACTIVE",
+    "cik": "0001671933",
+    "name": "Trade Desk, Inc."
+  },
+  {
+    "terminalTicker": "TTWO",
+    "source": "SEC_ACTIVE",
+    "cik": "0000946581",
+    "name": "TAKE TWO INTERACTIVE SOFTWARE INC"
+  },
+  {
+    "terminalTicker": "TX",
+    "source": "SEC_ACTIVE",
+    "cik": "0001342874",
+    "name": "Ternium S.A."
+  },
+  {
+    "terminalTicker": "TXN",
+    "source": "SEC_ACTIVE",
+    "cik": "0000097476",
+    "name": "TEXAS INSTRUMENTS INC"
+  },
+  {
+    "terminalTicker": "TXT",
+    "source": "SEC_ACTIVE",
+    "cik": "0000217346",
+    "name": "TEXTRON INC"
+  },
+  {
+    "terminalTicker": "TYL",
+    "source": "SEC_ACTIVE",
+    "cik": "0000860731",
+    "name": "TYLER TECHNOLOGIES INC"
+  },
+  {
+    "terminalTicker": "UA",
+    "source": "SEC_ACTIVE",
+    "cik": "0001336917",
+    "name": "Under Armour, Inc."
+  },
+  {
+    "terminalTicker": "UAA",
+    "source": "SEC_ACTIVE",
+    "cik": "0001336917",
+    "name": "Under Armour, Inc."
+  },
+  {
+    "terminalTicker": "UAL",
+    "source": "SEC_ACTIVE",
+    "cik": "0000100517",
+    "name": "United Airlines Holdings, Inc."
+  },
+  {
+    "terminalTicker": "UBER",
+    "source": "SEC_ACTIVE",
+    "cik": "0001543151",
+    "name": "Uber Technologies, Inc"
+  },
+  {
+    "terminalTicker": "UCL",
+    "source": "SEC_ACTIVE",
+    "cik": "0001775898",
+    "name": "uCloudlink Group Inc."
+  },
+  {
+    "terminalTicker": "UDR",
+    "source": "SEC_ACTIVE",
+    "cik": "0000074208",
+    "name": "UDR, Inc."
+  },
+  {
+    "terminalTicker": "UHS",
+    "source": "SEC_ACTIVE",
+    "cik": "0000352915",
+    "name": "UNIVERSAL HEALTH SERVICES INC"
+  },
+  {
+    "terminalTicker": "UIS",
+    "source": "SEC_ACTIVE",
+    "cik": "0000746838",
+    "name": "UNISYS CORP"
+  },
+  {
+    "terminalTicker": "UK",
+    "source": "SEC_ACTIVE",
+    "cik": "0001821424",
+    "name": "Ucommune International Ltd"
+  },
+  {
+    "terminalTicker": "ULTA",
+    "source": "SEC_ACTIVE",
+    "cik": "0001403568",
+    "name": "Ulta Beauty, Inc."
+  },
+  {
+    "terminalTicker": "UNH",
+    "source": "SEC_ACTIVE",
+    "cik": "0000731766",
+    "name": "UNITEDHEALTH GROUP INC"
+  },
+  {
+    "terminalTicker": "UNM",
+    "source": "SEC_ACTIVE",
+    "cik": "0000005513",
+    "name": "Unum Group"
+  },
+  {
+    "terminalTicker": "UNP",
+    "source": "SEC_ACTIVE",
+    "cik": "0000100885",
+    "name": "UNION PACIFIC CORP"
+  },
+  {
+    "terminalTicker": "UPC",
+    "source": "SEC_ACTIVE",
+    "cik": "0001809616",
+    "name": "Universe Pharmaceuticals INC"
+  },
+  {
+    "terminalTicker": "UPS",
+    "source": "SEC_ACTIVE",
+    "cik": "0001090727",
+    "name": "UNITED PARCEL SERVICE INC"
+  },
+  {
+    "terminalTicker": "URBN",
+    "source": "SEC_ACTIVE",
+    "cik": "0000912615",
+    "name": "URBAN OUTFITTERS INC"
+  },
+  {
+    "terminalTicker": "URI",
+    "source": "SEC_ACTIVE",
+    "cik": "0001067701",
+    "name": "UNITED RENTALS, INC."
+  },
+  {
+    "terminalTicker": "USB",
+    "source": "SEC_ACTIVE",
+    "cik": "0000036104",
+    "name": "US BANCORP \\DE\\"
+  },
+  {
+    "terminalTicker": "USBC",
+    "source": "SEC_ACTIVE",
+    "cik": "0001074828",
+    "name": "USBC, Inc."
+  },
+  {
+    "terminalTicker": "V",
+    "source": "SEC_ACTIVE",
+    "cik": "0001403161",
+    "name": "VISA INC."
+  },
+  {
+    "terminalTicker": "VAT",
+    "source": "SEC_ACTIVE",
+    "cik": "0002109801",
+    "name": "VARSAL TECH, INC."
+  },
+  {
+    "terminalTicker": "VEEV",
+    "source": "SEC_ACTIVE",
+    "cik": "0001393052",
+    "name": "VEEVA SYSTEMS INC"
+  },
+  {
+    "terminalTicker": "VFC",
+    "source": "SEC_ACTIVE",
+    "cik": "0000103379",
+    "name": "V F CORP"
+  },
+  {
+    "terminalTicker": "VIAV",
+    "source": "SEC_ACTIVE",
+    "cik": "0000912093",
+    "name": "VIAVI SOLUTIONS INC."
+  },
+  {
+    "terminalTicker": "VICI",
+    "source": "SEC_ACTIVE",
+    "cik": "0001705696",
+    "name": "VICI PROPERTIES INC."
+  },
+  {
+    "terminalTicker": "VLO",
+    "source": "SEC_ACTIVE",
+    "cik": "0001035002",
+    "name": "VALERO ENERGY CORP/TX"
+  },
+  {
+    "terminalTicker": "VLTO",
+    "source": "SEC_ACTIVE",
+    "cik": "0001967680",
+    "name": "Veralto Corp"
+  },
+  {
+    "terminalTicker": "VMC",
+    "source": "SEC_ACTIVE",
+    "cik": "0001396009",
+    "name": "Vulcan Materials CO"
+  },
+  {
+    "terminalTicker": "VNO",
+    "source": "SEC_ACTIVE",
+    "cik": "0000899689",
+    "name": "VORNADO REALTY TRUST"
+  },
+  {
+    "terminalTicker": "VNT",
+    "source": "SEC_ACTIVE",
+    "cik": "0001786842",
+    "name": "Vontier Corp"
+  },
+  {
+    "terminalTicker": "VRSK",
+    "source": "SEC_ACTIVE",
+    "cik": "0001442145",
+    "name": "Verisk Analytics, Inc."
+  },
+  {
+    "terminalTicker": "VRSN",
+    "source": "SEC_ACTIVE",
+    "cik": "0001014473",
+    "name": "VERISIGN INC/CA"
+  },
+  {
+    "terminalTicker": "VRT",
+    "source": "SEC_ACTIVE",
+    "cik": "0001674101",
+    "name": "Vertiv Holdings Co"
+  },
+  {
+    "terminalTicker": "VRTS",
+    "source": "SEC_ACTIVE",
+    "cik": "0000883237",
+    "name": "VIRTUS INVESTMENT PARTNERS, INC."
+  },
+  {
+    "terminalTicker": "VRTX",
+    "source": "SEC_ACTIVE",
+    "cik": "0000875320",
+    "name": "VERTEX PHARMACEUTICALS INC / MA"
+  },
+  {
+    "terminalTicker": "VST",
+    "source": "SEC_ACTIVE",
+    "cik": "0001692819",
+    "name": "Vistra Corp."
+  },
+  {
+    "terminalTicker": "VTR",
+    "source": "SEC_ACTIVE",
+    "cik": "0000740260",
+    "name": "Ventas, Inc."
+  },
+  {
+    "terminalTicker": "VTRS",
+    "source": "SEC_ACTIVE",
+    "cik": "0001792044",
+    "name": "Viatris Inc"
+  },
+  {
+    "terminalTicker": "VZ",
+    "source": "SEC_ACTIVE",
+    "cik": "0000732712",
+    "name": "VERIZON COMMUNICATIONS INC"
+  },
+  {
+    "terminalTicker": "WAB",
+    "source": "SEC_ACTIVE",
+    "cik": "0000943452",
+    "name": "WESTINGHOUSE AIR BRAKE TECHNOLOGIES CORP"
+  },
+  {
+    "terminalTicker": "WAMUQ",
+    "source": "MANUAL_OVERRIDE",
+    "cik": "0000933136",
+    "name": null
+  },
+  {
+    "terminalTicker": "WAT",
+    "source": "SEC_ACTIVE",
+    "cik": "0001000697",
+    "name": "WATERS CORP /DE/"
+  },
+  {
+    "terminalTicker": "WB",
+    "source": "SEC_ACTIVE",
+    "cik": "0001595761",
+    "name": "WEIBO Corp"
+  },
+  {
+    "terminalTicker": "WBD",
+    "source": "SEC_ACTIVE",
+    "cik": "0001437107",
+    "name": "Warner Bros. Discovery, Inc."
+  },
+  {
+    "terminalTicker": "WDAY",
+    "source": "SEC_ACTIVE",
+    "cik": "0001327811",
+    "name": "Workday, Inc."
+  },
+  {
+    "terminalTicker": "WDC",
+    "source": "SEC_ACTIVE",
+    "cik": "0000106040",
+    "name": "WESTERN DIGITAL CORP"
+  },
+  {
+    "terminalTicker": "WEC",
+    "source": "SEC_ACTIVE",
+    "cik": "0000783325",
+    "name": "WEC ENERGY GROUP, INC."
+  },
+  {
+    "terminalTicker": "WELL",
+    "source": "SEC_ACTIVE",
+    "cik": "0000766704",
+    "name": "WELLTOWER INC."
+  },
+  {
+    "terminalTicker": "WEN",
+    "source": "SEC_ACTIVE",
+    "cik": "0000030697",
+    "name": "Wendy's Co"
+  },
+  {
+    "terminalTicker": "WFC",
+    "source": "SEC_ACTIVE",
+    "cik": "0000072971",
+    "name": "WELLS FARGO & COMPANY/MN"
+  },
+  {
+    "terminalTicker": "WHR",
+    "source": "SEC_ACTIVE",
+    "cik": "0000106640",
+    "name": "WHIRLPOOL CORP /DE/"
+  },
+  {
+    "terminalTicker": "WM",
+    "source": "SEC_ACTIVE",
+    "cik": "0000823768",
+    "name": "WASTE MANAGEMENT INC"
+  },
+  {
+    "terminalTicker": "WMB",
+    "source": "SEC_ACTIVE",
+    "cik": "0000107263",
+    "name": "WILLIAMS COMPANIES, INC."
+  },
+  {
+    "terminalTicker": "WMT",
+    "source": "SEC_ACTIVE",
+    "cik": "0000104169",
+    "name": "Walmart Inc."
+  },
+  {
+    "terminalTicker": "WOR",
+    "source": "SEC_ACTIVE",
+    "cik": "0000108516",
+    "name": "WORTHINGTON ENTERPRISES, INC."
+  },
+  {
+    "terminalTicker": "WRB",
+    "source": "SEC_ACTIVE",
+    "cik": "0000011544",
+    "name": "BERKLEY W R CORP"
+  },
+  {
+    "terminalTicker": "WSM",
+    "source": "SEC_ACTIVE",
+    "cik": "0000719955",
+    "name": "WILLIAMS SONOMA INC"
+  },
+  {
+    "terminalTicker": "WST",
+    "source": "SEC_ACTIVE",
+    "cik": "0000105770",
+    "name": "WEST PHARMACEUTICAL SERVICES INC"
+  },
+  {
+    "terminalTicker": "WTW",
+    "source": "SEC_ACTIVE",
+    "cik": "0001140536",
+    "name": "WILLIS TOWERS WATSON PLC"
+  },
+  {
+    "terminalTicker": "WU",
+    "source": "SEC_ACTIVE",
+    "cik": "0001365135",
+    "name": "Western Union CO"
+  },
+  {
+    "terminalTicker": "WY",
+    "source": "SEC_ACTIVE",
+    "cik": "0000106535",
+    "name": "WEYERHAEUSER CO"
+  },
+  {
+    "terminalTicker": "WYNN",
+    "source": "SEC_ACTIVE",
+    "cik": "0001174922",
+    "name": "WYNN RESORTS LTD"
+  },
+  {
+    "terminalTicker": "XEL",
+    "source": "SEC_ACTIVE",
+    "cik": "0000072903",
+    "name": "XCEL ENERGY INC"
+  },
+  {
+    "terminalTicker": "XOM",
+    "source": "SEC_ACTIVE",
+    "cik": "0002115436",
+    "name": "ExxonMobil Holdings Corp"
+  },
+  {
+    "terminalTicker": "XRAY",
+    "source": "SEC_ACTIVE",
+    "cik": "0000818479",
+    "name": "DENTSPLY SIRONA Inc."
+  },
+  {
+    "terminalTicker": "XRX",
+    "source": "SEC_ACTIVE",
+    "cik": "0001770450",
+    "name": "Xerox Holdings Corp"
+  },
+  {
+    "terminalTicker": "XYL",
+    "source": "SEC_ACTIVE",
+    "cik": "0001524472",
+    "name": "Xylem Inc."
+  },
+  {
+    "terminalTicker": "XYZ",
+    "source": "SEC_ACTIVE",
+    "cik": "0001512673",
+    "name": "Block, Inc."
+  },
+  {
+    "terminalTicker": "YUM",
+    "source": "SEC_ACTIVE",
+    "cik": "0001041061",
+    "name": "YUM BRANDS INC"
+  },
+  {
+    "terminalTicker": "ZBH",
+    "source": "SEC_ACTIVE",
+    "cik": "0001136869",
+    "name": "ZIMMER BIOMET HOLDINGS, INC."
+  },
+  {
+    "terminalTicker": "ZBRA",
+    "source": "SEC_ACTIVE",
+    "cik": "0000877212",
+    "name": "ZEBRA TECHNOLOGIES CORP"
+  },
+  {
+    "terminalTicker": "ZION",
+    "source": "SEC_ACTIVE",
+    "cik": "0000109380",
+    "name": "ZIONS BANCORPORATION, NATIONAL ASSOCIATION /UT/"
+  },
+  {
+    "terminalTicker": "ZTS",
+    "source": "SEC_ACTIVE",
+    "cik": "0001555280",
+    "name": "Zoetis Inc."
+  },
+  {
+    "terminalTicker": "AABA",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001011006",
+    "name": "Altaba Inc. Common Stock",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2019-10-07T04:00:00Z"
+  },
+  {
+    "terminalTicker": "ABC",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001140859",
+    "name": "AmerisourceBergen Corp.",
+    "primaryExchange": "XNYS"
+  },
+  {
+    "terminalTicker": "ABI",
+    "source": "POLYGON_ACTIVE",
+    "cik": "0001547580",
+    "name": "VictoryShares Pioneer Asset-Based Income ETF",
+    "primaryExchange": "XNAS"
+  },
+  {
+    "terminalTicker": "ABMD",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000815094",
+    "name": "Abiomed Inc",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2022-12-23T05:00:00Z"
+  },
+  {
+    "terminalTicker": "ABS",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000003333",
+    "name": "ALBERTSON'S INC",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2006-06-02T04:00:00Z"
+  },
+  {
+    "terminalTicker": "ACAS",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000817473",
+    "name": "American Capital Ltd",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2017-01-04T05:00:00Z"
+  },
+  {
+    "terminalTicker": "ACS",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000002135",
+    "name": "AFFILIATED COMPUTER SERVS CL-A",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2010-02-08T05:00:00Z"
+  },
+  {
+    "terminalTicker": "AET",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000002648",
+    "name": "Aetna Inc",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2018-11-29T05:00:00Z"
+  },
+  {
+    "terminalTicker": "AGC",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001401680",
+    "name": "Altimeter Growth Corp. Class A Ordinary Shares",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2021-12-02T05:00:00Z"
+  },
+  {
+    "terminalTicker": "AGN",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001578845",
+    "name": "Allergan plc",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2020-05-11T04:00:00Z"
+  },
+  {
+    "terminalTicker": "AHM",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001047884",
+    "name": "AMERICAN HOME MTG INVESTMENT CRP",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2007-08-07T04:00:00Z"
+  },
+  {
+    "terminalTicker": "AKS",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000918192",
+    "name": "AK Steel Holding Corp.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2020-03-16T04:00:00Z"
+  },
+  {
+    "terminalTicker": "AL",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001487712",
+    "name": "Air Lease Corporation",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2026-04-09T00:00:00Z"
+  },
+  {
+    "terminalTicker": "ALTR",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001701732",
+    "name": "Altair Engineering Inc. Class A Common Stock",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2025-03-27T00:00:00Z"
+  },
+  {
+    "terminalTicker": "ALXN",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001347178",
+    "name": "Alexion Pharmaceuticals Inc",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2021-07-22T04:00:00Z"
+  },
+  {
+    "terminalTicker": "AMCC",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000711065",
+    "name": "Applied Micro Circuits Corporation New",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2017-01-27T05:00:00Z"
+  },
+  {
+    "terminalTicker": "ANDV",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000050104",
+    "name": "Andeavor",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2018-10-02T04:00:00Z"
+  },
+  {
+    "terminalTicker": "ANDW",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000317093",
+    "name": "ANDREW CORP",
+    "delistedUtc": "2007-12-28T05:00:00Z"
+  },
+  {
+    "terminalTicker": "ANSS",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001013462",
+    "name": "Ansys Inc",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2025-07-18T00:00:00Z"
+  },
+  {
+    "terminalTicker": "ANV",
+    "source": "POLYGON_ACTIVE",
+    "cik": null,
+    "name": "GraniteShares Autocallable NVDA ETF",
+    "primaryExchange": "XNAS"
+  },
+  {
+    "terminalTicker": "APCC",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000835910",
+    "name": "AMERICAN POWER CONVERSION CORP",
+    "delistedUtc": "2007-02-15T05:00:00Z"
+  },
+  {
+    "terminalTicker": "APOL",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000815094",
+    "name": "Apollo Education Group Inc Class A",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2017-02-02T05:00:00Z"
+  },
+  {
+    "terminalTicker": "ARC",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001305168",
+    "name": "ARC Document Solutions, Inc.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2024-11-25T05:00:00Z"
+  },
+  {
+    "terminalTicker": "ARG",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000804212",
+    "name": "AIRGAS INC",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2016-05-24T04:00:00Z"
+  },
+  {
+    "terminalTicker": "ARNC",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001790982",
+    "name": "Arconic Corporation",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2023-08-21T04:00:00Z"
+  },
+  {
+    "terminalTicker": "ASN",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001156826",
+    "name": "ARCHSTONE-SMITH TRUST",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2007-10-08T04:00:00Z"
+  },
+  {
+    "terminalTicker": "AT",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001419242",
+    "name": "Atlantic Power Corporation",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2021-05-17T04:00:00Z"
+  },
+  {
+    "terminalTicker": "ATGE",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000730464",
+    "name": "Adtalem Global Education Inc. Common Shares",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2026-02-24T00:00:00Z"
+  },
+  {
+    "terminalTicker": "ATVI",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000718877",
+    "name": "Activision Blizzard Inc.",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2023-10-16T04:00:00Z"
+  },
+  {
+    "terminalTicker": "AV",
+    "source": "POLYGON_ACTIVE",
+    "cik": "0002078265",
+    "name": "Corgi Aerospace & Commercial Aviation ETF",
+    "primaryExchange": "BATS"
+  },
+  {
+    "terminalTicker": "AVB",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000915912",
+    "name": "AvalonBay Communities, Inc.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2026-08-18T00:00:00Z"
+  },
+  {
+    "terminalTicker": "AVP",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000008868",
+    "name": "Avon Products, Inc.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2020-01-06T05:00:00Z"
+  },
+  {
+    "terminalTicker": "AW",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000848865",
+    "name": "ALLIED WASTE INDUSTRIES INC",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2008-12-08T05:00:00Z"
+  },
+  {
+    "terminalTicker": "AWE",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001138234",
+    "name": "AT&T WIRELESS SERVICES INC.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2004-10-27T04:00:00Z"
+  },
+  {
+    "terminalTicker": "AYE",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000003673",
+    "name": "ALLEGHENY ENERGY INC",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2011-02-28T05:00:00Z"
+  },
+  {
+    "terminalTicker": "BAY",
+    "source": "POLYGON_ACTIVE",
+    "cik": "0002078265",
+    "name": "Corgi Bay Area Based ETF",
+    "primaryExchange": "BATS"
+  },
+  {
+    "terminalTicker": "BBBY",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001130713",
+    "name": "Bed Bath & Beyond, Inc.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2026-08-17T00:00:00Z"
+  },
+  {
+    "terminalTicker": "BBI",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000819050",
+    "name": "Brickell Biotech, Inc. Common Stock",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2022-09-08T04:00:00Z"
+  },
+  {
+    "terminalTicker": "BCR",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000275110",
+    "name": "CR Bard Inc.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2018-01-02T05:00:00Z"
+  },
+  {
+    "terminalTicker": "BDK",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000012355",
+    "name": "BLACK & DECKER CORP",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2010-03-15T04:00:00Z"
+  },
+  {
+    "terminalTicker": "BEV",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001040441",
+    "name": "BEVERLY ENTERPRISES INC(NEW)",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2006-03-16T05:00:00Z"
+  },
+  {
+    "terminalTicker": "BFI",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001723580",
+    "name": "BurgerFi International, Inc. Common Stock",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2024-09-23T04:00:00Z"
+  },
+  {
+    "terminalTicker": "BFO",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001181249",
+    "name": "Blackrock Florida Municipal 2020 Term Trust",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2020-12-16T05:00:00Z"
+  },
+  {
+    "terminalTicker": "BGEN",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000714655",
+    "name": "BIOGEN INC",
+    "delistedUtc": "2003-11-13T05:00:00Z"
+  },
+  {
+    "terminalTicker": "BGG",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001162663",
+    "name": "Briggs & Stratton Corp.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2020-07-21T04:00:00Z"
+  },
+  {
+    "terminalTicker": "BIG",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000768835",
+    "name": "Big Lots, Inc.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2024-09-10T04:00:00Z"
+  },
+  {
+    "terminalTicker": "BJS",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000864328",
+    "name": "BJ SERVICES CO",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2010-04-30T04:00:00Z"
+  },
+  {
+    "terminalTicker": "BK",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001390777",
+    "name": "Bank of New York Mellon Corporation",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2026-05-21T00:00:00Z"
+  },
+  {
+    "terminalTicker": "BLS",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000732713",
+    "name": "BELLSOUTH CORPORATION",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2007-01-04T05:00:00Z"
+  },
+  {
+    "terminalTicker": "BMC",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000835729",
+    "name": "BMC SOFTWARE, INC",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2013-09-11T04:00:00Z"
+  },
+  {
+    "terminalTicker": "BMET",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000351346",
+    "name": "BIOMET INC",
+    "delistedUtc": "2007-09-26T04:00:00Z"
+  },
+  {
+    "terminalTicker": "BMS",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000011199",
+    "name": "Bemis",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2019-06-12T04:00:00Z"
+  },
+  {
+    "terminalTicker": "BNI",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000934612",
+    "name": "BURLINGTON NRTHRN SANTA FE(COM",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2010-02-16T05:00:00Z"
+  },
+  {
+    "terminalTicker": "BOAT",
+    "source": "POLYGON_ACTIVE",
+    "cik": "0001387131",
+    "name": "SonicShares Global Shipping ETF",
+    "primaryExchange": "ARCX"
+  },
+  {
+    "terminalTicker": "BOL",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000010427",
+    "name": "BAUSCH & LOMB INC",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2007-10-29T04:00:00Z"
+  },
+  {
+    "terminalTicker": "BRCM",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001054374",
+    "name": "BROADCOM CORP CL-A",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2016-02-02T05:00:00Z"
+  },
+  {
+    "terminalTicker": "BRL",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000010081",
+    "name": "BARR PHARMACEUTICALS, INC.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2008-12-24T05:00:00Z"
+  },
+  {
+    "terminalTicker": "BT",
+    "source": "POLYGON_INACTIVE",
+    "cik": null,
+    "name": "BT Group plc (ADR)",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2019-09-16T04:00:00Z"
+  },
+  {
+    "terminalTicker": "BVSN",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000920448",
+    "name": "Broadvision Inc Com",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2020-05-20T04:00:00Z"
+  },
+  {
+    "terminalTicker": "BXLT",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001620546",
+    "name": "BAXALTA INC COM STK (DE)",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2016-06-06T04:00:00Z"
+  },
+  {
+    "terminalTicker": "CA",
+    "source": "POLYGON_INACTIVE",
+    "cik": null,
+    "name": "Xtrackers California Municipal Bonds ETF",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2026-05-08T00:00:00Z"
+  },
+  {
+    "terminalTicker": "CAM",
+    "source": "POLYGON_ACTIVE",
+    "cik": null,
+    "name": "AB California Intermediate Municipal ETF",
+    "primaryExchange": "ARCX"
+  },
+  {
+    "terminalTicker": "CBB",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000716133",
+    "name": "Cincinnati Bell Inc.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2021-09-08T04:00:00Z"
+  },
+  {
+    "terminalTicker": "CBE",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001141982",
+    "name": "COOPER INDUSTRIES ,PLC ORDINARY SHS (IRELAND)",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2012-12-03T05:00:00Z"
+  },
+  {
+    "terminalTicker": "CBH",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001701809",
+    "name": "Virtus Convertible & Income 2024 Target Term Fund",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2024-08-27T04:00:00Z"
+  },
+  {
+    "terminalTicker": "CBS",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000813828",
+    "name": "CBS Corporation Class B",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2019-12-05T05:00:00Z"
+  },
+  {
+    "terminalTicker": "CBSS",
+    "source": "POLYGON_INACTIVE",
+    "cik": null,
+    "name": "COMPASS BANCSHARES INC",
+    "delistedUtc": "2007-09-07T04:00:00Z"
+  },
+  {
+    "terminalTicker": "CDAY",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001725057",
+    "name": "Ceridian HCM Holding",
+    "primaryExchange": "XNYS"
+  },
+  {
+    "terminalTicker": "CELG",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000816284",
+    "name": "Celgene Corp",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2019-11-21T05:00:00Z"
+  },
+  {
+    "terminalTicker": "CEN",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001576340",
+    "name": "Center Coast Brookfield MLP & Energy Infrastructure Fund",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2023-10-09T04:00:00Z"
+  },
+  {
+    "terminalTicker": "CEPH",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000873364",
+    "name": "CEPHALON INC",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2011-10-17T04:00:00Z"
+  },
+  {
+    "terminalTicker": "CERN",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000804753",
+    "name": "Cerner Corp",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2022-06-09T04:00:00Z"
+  },
+  {
+    "terminalTicker": "CFC",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000025191",
+    "name": "COUNTRYWIDE FINANCIAL CORPORATION",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2008-07-02T04:00:00Z"
+  },
+  {
+    "terminalTicker": "CFL",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001436040",
+    "name": "BRINK'S HOME SECURITY HOLDINGS, INC.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2010-05-17T04:00:00Z"
+  },
+  {
+    "terminalTicker": "CFN",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001457543",
+    "name": "CAREFUSION CORPORATION",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2015-03-18T04:00:00Z"
+  },
+  {
+    "terminalTicker": "CHIR",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001432353",
+    "name": "Global X MSCI China Real Estate ETF",
+    "primaryExchange": "ARCX",
+    "delistedUtc": "2024-02-20T05:00:00Z"
+  },
+  {
+    "terminalTicker": "CHK",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000895126",
+    "name": "Chesapeake Energy Corporation Common Stock",
+    "primaryExchange": "XNAS"
+  },
+  {
+    "terminalTicker": "CIN",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000899652",
+    "name": "CINERGY CORP",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2006-04-03T04:00:00Z"
+  },
+  {
+    "terminalTicker": "CMA",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000028412",
+    "name": "Comerica Incorporated",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2026-02-02T00:00:00Z"
+  },
+  {
+    "terminalTicker": "CMCSK",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001166691",
+    "name": "COMCAST CORP SPL A (NEW)",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2012-12-14T05:00:00Z"
+  },
+  {
+    "terminalTicker": "CMVT",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000803014",
+    "name": "COMVERSE TECH INC",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2013-02-05T05:00:00Z"
+  },
+  {
+    "terminalTicker": "CMX",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001000736",
+    "name": "CAREMARK RX, INC",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2007-03-22T04:00:00Z"
+  },
+  {
+    "terminalTicker": "CNW",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000023675",
+    "name": "CON-WAY INC.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2015-11-02T05:00:00Z"
+  },
+  {
+    "terminalTicker": "CNXT",
+    "source": "POLYGON_ACTIVE",
+    "cik": "0001137360",
+    "name": "VanEck ChiNext Innovators ETF",
+    "primaryExchange": "ARCX"
+  },
+  {
+    "terminalTicker": "COL",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001137411",
+    "name": "Rockwell Collins",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2018-11-27T05:00:00Z"
+  },
+  {
+    "terminalTicker": "COMS",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001178727",
+    "name": "COMSovereign Holding Corp. Common Stock",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2024-01-31T05:00:00Z"
+  },
+  {
+    "terminalTicker": "COV",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001385187",
+    "name": "COVIDIEN PLC  COM SHS NEW (IRELAND)",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2015-01-27T05:00:00Z"
+  },
+  {
+    "terminalTicker": "CPGX",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001629995",
+    "name": "COLUMBIA PIPELINE GROUP IN COM STK  (DE)",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2016-07-01T04:00:00Z"
+  },
+  {
+    "terminalTicker": "CPQ",
+    "source": "POLYGON_INACTIVE",
+    "cik": null,
+    "name": "MORGAN STLY 10%  SPARQS LKD TO CHESAPEAKE ENERGY CP 2/20/07",
+    "primaryExchange": "XASE",
+    "delistedUtc": "2007-02-21T05:00:00Z"
+  },
+  {
+    "terminalTicker": "CRR",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001009672",
+    "name": "Carbo Ceramics Inc.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2019-12-23T05:00:00Z"
+  },
+  {
+    "terminalTicker": "CSE",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001241199",
+    "name": "CAPITALSOURCE INC",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2014-04-08T04:00:00Z"
+  },
+  {
+    "terminalTicker": "CSRA",
+    "source": "POLYGON_ACTIVE",
+    "cik": null,
+    "name": "Cohen & Steers Real Assets Active ETF",
+    "primaryExchange": "ARCX"
+  },
+  {
+    "terminalTicker": "CTB",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000024491",
+    "name": "Cooper Tire & Rubber Co.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2021-06-08T04:00:00Z"
+  },
+  {
+    "terminalTicker": "CTL",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000018926",
+    "name": "CenturyLink, Inc.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2020-09-18T04:00:00Z"
+  },
+  {
+    "terminalTicker": "CTLT",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001596783",
+    "name": "CATALENT, INC.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2024-12-19T00:00:00Z"
+  },
+  {
+    "terminalTicker": "CTRA",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000858470",
+    "name": "Coterra Energy Inc.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2026-05-08T00:00:00Z"
+  },
+  {
+    "terminalTicker": "CTX",
+    "source": "POLYGON_INACTIVE",
+    "cik": null,
+    "name": "Qwest Corporation",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2018-08-21T04:00:00Z"
+  },
+  {
+    "terminalTicker": "CTXS",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000877890",
+    "name": "Citrix Systems Inc",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2022-10-03T04:00:00Z"
+  },
+  {
+    "terminalTicker": "CVC",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000784681",
+    "name": "CABLEVISION SYS CP NY GRP CL-A",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2016-06-22T04:00:00Z"
+  },
+  {
+    "terminalTicker": "CVG",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001062047",
+    "name": "Convergys",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2018-10-08T04:00:00Z"
+  },
+  {
+    "terminalTicker": "CVH",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001054833",
+    "name": "COVENTRY HEALTH CARE INC",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2013-05-08T04:00:00Z"
+  },
+  {
+    "terminalTicker": "CXO",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001358071",
+    "name": "CONCHO RESOURCES INC.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2021-01-19T05:00:00Z"
+  },
+  {
+    "terminalTicker": "CYM",
+    "source": "POLYGON_INACTIVE",
+    "cik": null,
+    "name": "CITIGROUP GLOBAL MARKETS % SEQUINS BASED ON COM STK MOTOROLA",
+    "primaryExchange": "XASE",
+    "delistedUtc": "2005-06-29T04:00:00Z"
+  },
+  {
+    "terminalTicker": "CYR",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001267753",
+    "name": "LEHMAN CORP BKED CRT SR 2001-9",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2007-02-23T05:00:00Z"
+  },
+  {
+    "terminalTicker": "DAY",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001725057",
+    "name": "Dayforce, Inc.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2026-02-05T00:00:00Z"
+  },
+  {
+    "terminalTicker": "DDR",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000894315",
+    "name": "DDR Corp.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2018-10-12T04:00:00Z"
+  },
+  {
+    "terminalTicker": "DF",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000931336",
+    "name": "Dean Foods Company",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2019-11-14T05:00:00Z"
+  },
+  {
+    "terminalTicker": "DFS",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001393612",
+    "name": "Discover Financial Services",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2025-05-19T00:00:00Z"
+  },
+  {
+    "terminalTicker": "DI",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001450011",
+    "name": "PIMCO Diversified Income Active Exchange-Traded Fund",
+    "primaryExchange": "ARCX",
+    "delistedUtc": "2017-04-03T04:00:00Z"
+  },
+  {
+    "terminalTicker": "DIGI",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001095105",
+    "name": "DIGITAL IMPACT INC (DEL)",
+    "delistedUtc": "2005-05-09T04:00:00Z"
+  },
+  {
+    "terminalTicker": "DISCA",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001024333",
+    "name": "Discovery, Inc. Series A Common Stock",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2022-04-11T04:00:00Z"
+  },
+  {
+    "terminalTicker": "DISCK",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001024333",
+    "name": "Discovery, Inc. Series C Common Stock",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2022-04-11T04:00:00Z"
+  },
+  {
+    "terminalTicker": "DISH",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001001082",
+    "name": "DISH Network Corp.",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2024-01-02T05:00:00Z"
+  },
+  {
+    "terminalTicker": "DJ",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000029924",
+    "name": "DOW JONES COMPANY INC",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2007-12-14T05:00:00Z"
+  },
+  {
+    "terminalTicker": "DNB",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001799208",
+    "name": "Dun & Bradstreet Holdings, Inc.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2025-08-27T00:00:00Z"
+  },
+  {
+    "terminalTicker": "DNR",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000945764",
+    "name": "Denbury Resources, Inc.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2020-08-03T04:00:00Z"
+  },
+  {
+    "terminalTicker": "DO",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000949039",
+    "name": "Diamond Offshore Drilling, Inc.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2024-09-05T04:00:00Z"
+  },
+  {
+    "terminalTicker": "DRE",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000783280",
+    "name": "Duke Realty Corp.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2022-10-04T04:00:00Z"
+  },
+  {
+    "terminalTicker": "DTV",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000936340",
+    "name": "DTE Energy Company 2016 Corporate Units",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2019-10-01T04:00:00Z"
+  },
+  {
+    "terminalTicker": "DWDP",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001666700",
+    "name": "DowDuPont Inc.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2019-06-03T04:00:00Z"
+  },
+  {
+    "terminalTicker": "EA",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000712515",
+    "name": "Electronic Arts Inc",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2026-08-05T00:00:00Z"
+  },
+  {
+    "terminalTicker": "ECH",
+    "source": "POLYGON_ACTIVE",
+    "cik": "0000930667",
+    "name": "iShares MSCI Chile ETF",
+    "primaryExchange": "BATS"
+  },
+  {
+    "terminalTicker": "EDS",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001396016",
+    "name": "EXCEED COMPANY LTD ORD SHS",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2015-04-30T04:00:00Z"
+  },
+  {
+    "terminalTicker": "EFU",
+    "source": "POLYGON_ACTIVE",
+    "cik": "0001576151",
+    "name": "ProShares Trust UltraShort MSCI EAFE",
+    "primaryExchange": "ARCX"
+  },
+  {
+    "terminalTicker": "EMC",
+    "source": "POLYGON_ACTIVE",
+    "cik": null,
+    "name": "Global X Emerging Markets Great Consumer ETF",
+    "primaryExchange": "ARCX"
+  },
+  {
+    "terminalTicker": "ENDP",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001593034",
+    "name": "Endo International plc",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2022-08-26T04:00:00Z"
+  },
+  {
+    "terminalTicker": "EOP",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001038339",
+    "name": "EQUITY OFFICE PROPS TRUST",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2007-02-12T05:00:00Z"
+  },
+  {
+    "terminalTicker": "EQR",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000931182",
+    "name": "Equity Residential",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2026-08-18T00:00:00Z"
+  },
+  {
+    "terminalTicker": "ESRX",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001532063",
+    "name": "Express Scripts Holding Company",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2018-12-21T05:00:00Z"
+  },
+  {
+    "terminalTicker": "ESV",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000314808",
+    "name": "Ensco Rowan plc",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2019-07-31T04:00:00Z"
+  },
+  {
+    "terminalTicker": "ETFC",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001015780",
+    "name": "E*Trade Financial Corporation",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2020-10-05T04:00:00Z"
+  },
+  {
+    "terminalTicker": "EVHC",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001678531",
+    "name": "Envision Healthcare Holdings Inc",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2018-10-12T04:00:00Z"
+  },
+  {
+    "terminalTicker": "FB",
+    "source": "POLYGON_ACTIVE",
+    "cik": "0001174610",
+    "name": "ProShares S&P 500 Dynamic Buffer ETF",
+    "primaryExchange": "BATS"
+  },
+  {
+    "terminalTicker": "FBF",
+    "source": "POLYGON_INACTIVE",
+    "cik": null,
+    "name": "FLEETBOSTON FINANCIAL",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2004-04-01T05:00:00Z"
+  },
+  {
+    "terminalTicker": "FDC",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000883980",
+    "name": "First Data Corporation",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2019-07-30T04:00:00Z"
+  },
+  {
+    "terminalTicker": "FDO",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000034408",
+    "name": "FAMILY DOLLAR STORES",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2015-07-07T04:00:00Z"
+  },
+  {
+    "terminalTicker": "FI",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000798354",
+    "name": "Fiserv, Inc.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2025-11-11T00:00:00Z"
+  },
+  {
+    "terminalTicker": "FL",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000850209",
+    "name": "Foot Locker, Inc.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2025-09-08T00:00:00Z"
+  },
+  {
+    "terminalTicker": "FLIR",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000354908",
+    "name": "FLIR Systems, Inc. (DE) Common Stock",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2021-05-17T04:00:00Z"
+  },
+  {
+    "terminalTicker": "FLMIQ",
+    "source": "POLYGON_STRIPPED_Q",
+    "cik": "0001655589",
+    "name": "Franklin Dynamic Municipal Bond ETF",
+    "primaryExchange": "ARCX"
+  },
+  {
+    "terminalTicker": "FLT",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001175454",
+    "name": "FleetCor Technologies, Inc.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2024-03-25T04:00:00Z"
+  },
+  {
+    "terminalTicker": "FLTWQ",
+    "source": "POLYGON_STRIPPED_Q",
+    "cik": "0001655589",
+    "name": "Franklin FTSE Taiwan ETF",
+    "primaryExchange": "ARCX"
+  },
+  {
+    "terminalTicker": "FRC",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001132979",
+    "name": "First Republic Bank",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2023-05-03T04:00:00Z"
+  },
+  {
+    "terminalTicker": "FRX",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001826889",
+    "name": "Forest Road Acquisition Corp.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2021-06-28T04:00:00Z"
+  },
+  {
+    "terminalTicker": "FSH",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000880430",
+    "name": "FISHER SCIENTIFIC INTL INC(NEW",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2006-11-10T05:00:00Z"
+  },
+  {
+    "terminalTicker": "FSL",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001392522",
+    "name": "FREESCALE SEMICONDUCTOR LTD",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2015-12-08T05:00:00Z"
+  },
+  {
+    "terminalTicker": "FTR",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000020520",
+    "name": "Frontier Communications Corp.",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2020-04-24T04:00:00Z"
+  },
+  {
+    "terminalTicker": "FWLT",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001130385",
+    "name": "FOSTER WHEELER AG (SWITZERLAND)",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2014-12-04T05:00:00Z"
+  },
+  {
+    "terminalTicker": "GAS",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001004155",
+    "name": "AGL RESOURCES INC (HOLDING CO)",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2016-07-01T04:00:00Z"
+  },
+  {
+    "terminalTicker": "GDT",
+    "source": "POLYGON_ACTIVE",
+    "cik": "0001350487",
+    "name": "WisdomTree Efficient TIPS Plus Gold Fund",
+    "primaryExchange": "BATS"
+  },
+  {
+    "terminalTicker": "GDW",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000042293",
+    "name": "GOLDEN WEST FINANCIAL CORP",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2006-10-02T04:00:00Z"
+  },
+  {
+    "terminalTicker": "GENZ",
+    "source": "POLYGON_ACTIVE",
+    "cik": "0001137360",
+    "name": "VanEck ETF Trust VanEck Digital Native Economy ETF",
+    "primaryExchange": "XNAS"
+  },
+  {
+    "terminalTicker": "GGP",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001496048",
+    "name": "GGP Inc.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2018-08-29T04:00:00Z"
+  },
+  {
+    "terminalTicker": "GLK",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001217730",
+    "name": "GREAT LAKES BANCORP, INC.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2008-02-19T05:00:00Z"
+  },
+  {
+    "terminalTicker": "GMCR",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000909954",
+    "name": "KEURIG GREEN MTN INC",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2016-03-04T05:00:00Z"
+  },
+  {
+    "terminalTicker": "GPS",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000039911",
+    "name": "The Gap, Inc.",
+    "primaryExchange": "XNYS"
+  },
+  {
+    "terminalTicker": "GPU",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000041091",
+    "name": "GEORGIA POWER COMPANY PREF SERIES W",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2010-08-27T04:00:00Z"
+  },
+  {
+    "terminalTicker": "GR",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000042542",
+    "name": "GOODRICH CORP",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2012-07-27T04:00:00Z"
+  },
+  {
+    "terminalTicker": "GRA",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000899647",
+    "name": "W.R. Grace & Co.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2021-09-23T04:00:00Z"
+  },
+  {
+    "terminalTicker": "GSX",
+    "source": "POLYGON_INACTIVE",
+    "cik": null,
+    "name": "Tradr 2X Long GS Daily ETF",
+    "primaryExchange": "BATS",
+    "delistedUtc": "2026-02-20T00:00:00Z"
+  },
+  {
+    "terminalTicker": "GTW",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000895812",
+    "name": "GATEWAY,INC",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2007-10-17T04:00:00Z"
+  },
+  {
+    "terminalTicker": "GWF",
+    "source": "POLYGON_INACTIVE",
+    "cik": null,
+    "name": "WELLS FARGO CAP VIII 5.625% TST PFD SECS",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2013-01-03T05:00:00Z"
+  },
+  {
+    "terminalTicker": "HAR",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000800459",
+    "name": "Harman International Industries",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2017-03-13T04:00:00Z"
+  },
+  {
+    "terminalTicker": "HBI",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001359841",
+    "name": "Hanesbrands, Inc.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2025-12-02T00:00:00Z"
+  },
+  {
+    "terminalTicker": "HCBK",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000921847",
+    "name": "HUDSON CITY BANCORP INC",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2015-11-02T05:00:00Z"
+  },
+  {
+    "terminalTicker": "HCP",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001720671",
+    "name": "HashiCorp, Inc. Class A Common Stock",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2025-02-28T00:00:00Z"
+  },
+  {
+    "terminalTicker": "HCR",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001549848",
+    "name": "Hi-Crush Inc. Common Stock",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2020-07-14T04:00:00Z"
+  },
+  {
+    "terminalTicker": "HES",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000004447",
+    "name": "Hess Corporation",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2025-07-21T00:00:00Z"
+  },
+  {
+    "terminalTicker": "HET",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000858339",
+    "name": "HARRAHS ENTERTAINMENT INC",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2008-01-29T05:00:00Z"
+  },
+  {
+    "terminalTicker": "HFC",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000048039",
+    "name": "HOLLYFRONTIER CORP",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2022-03-15T04:00:00Z"
+  },
+  {
+    "terminalTicker": "HI",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001417398",
+    "name": "Hillenbrand, Inc.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2026-02-11T00:00:00Z"
+  },
+  {
+    "terminalTicker": "HMA",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001850529",
+    "name": "Heartland Media Acquisition Corp.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2023-07-26T04:00:00Z"
+  },
+  {
+    "terminalTicker": "HNZ",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000046640",
+    "name": "HEINZ H.J. CO",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2013-06-10T04:00:00Z"
+  },
+  {
+    "terminalTicker": "HOLX",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000859737",
+    "name": "Hologic Inc",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2026-04-08T00:00:00Z"
+  },
+  {
+    "terminalTicker": "HOT",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000316206",
+    "name": "STARWOOD HOTELS & RESORTS WORLDWIDE, INC.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2016-09-26T04:00:00Z"
+  },
+  {
+    "terminalTicker": "HPC",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000046989",
+    "name": "HERCULES INC",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2008-11-17T05:00:00Z"
+  },
+  {
+    "terminalTicker": "HPH",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001750264",
+    "name": "Highest Performances Holdings Inc. American Depository Shares",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2025-05-05T00:00:00Z"
+  },
+  {
+    "terminalTicker": "HRS",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000216374",
+    "name": "Harris",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2019-07-01T04:00:00Z"
+  },
+  {
+    "terminalTicker": "HSH",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000023666",
+    "name": "HILLSHIRE BRANDS CO",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2014-08-29T04:00:00Z"
+  },
+  {
+    "terminalTicker": "HSP",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001274057",
+    "name": "HOSPIRA INC",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2015-09-04T04:00:00Z"
+  },
+  {
+    "terminalTicker": "I",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001525773",
+    "name": "INTELSAT S. A.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2020-05-20T04:00:00Z"
+  },
+  {
+    "terminalTicker": "IAC",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001800227",
+    "name": "IAC Inc. Common Stock",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2026-06-04T00:00:00Z"
+  },
+  {
+    "terminalTicker": "IGT",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001619762",
+    "name": "International Game Technology PLC",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2025-07-02T00:00:00Z"
+  },
+  {
+    "terminalTicker": "IKN",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000003370",
+    "name": "IKON OFFICE SOLUTIONS INC.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2008-11-03T05:00:00Z"
+  },
+  {
+    "terminalTicker": "INFO",
+    "source": "POLYGON_ACTIVE",
+    "cik": "0001860434",
+    "name": "Harbor PanAgora Dynamic Large Cap Core ETF",
+    "primaryExchange": "XNYS"
+  },
+  {
+    "terminalTicker": "IPG",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000051644",
+    "name": "The Interpublic Group of Companies, Inc.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2025-11-28T00:00:00Z"
+  },
+  {
+    "terminalTicker": "JAVA",
+    "source": "POLYGON_ACTIVE",
+    "cik": "0001485894",
+    "name": "JPMorgan Active Value ETF",
+    "primaryExchange": "ARCX"
+  },
+  {
+    "terminalTicker": "JCP",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001166126",
+    "name": "J.C. Penney Company, Inc.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2020-05-20T04:00:00Z"
+  },
+  {
+    "terminalTicker": "JEC",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000052988",
+    "name": "Jacobs Engineering Group",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2019-12-10T05:00:00Z"
+  },
+  {
+    "terminalTicker": "JH",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001014473",
+    "name": "JOHN H HARLAND",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2007-05-02T04:00:00Z"
+  },
+  {
+    "terminalTicker": "JHF",
+    "source": "POLYGON_INACTIVE",
+    "cik": null,
+    "name": "JOHN HANCOCK FIN'L SVC'S INC",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2004-04-29T04:00:00Z"
+  },
+  {
+    "terminalTicker": "JNPR",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001043604",
+    "name": "Juniper Networks Inc",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2025-07-03T00:00:00Z"
+  },
+  {
+    "terminalTicker": "JNS",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001065865",
+    "name": "Janus Capital Group Inc",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2017-05-31T04:00:00Z"
+  },
+  {
+    "terminalTicker": "JNY",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000874016",
+    "name": "JONES GROUP INC COM STK (PA)",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2014-04-09T04:00:00Z"
+  },
+  {
+    "terminalTicker": "JOY",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000801898",
+    "name": "Joy Global Inc",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2017-04-06T04:00:00Z"
+  },
+  {
+    "terminalTicker": "JP",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001616291",
+    "name": "Jupai Holdings Limited American depositary shares, each representing six ordinary shares",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2022-06-27T04:00:00Z"
+  },
+  {
+    "terminalTicker": "JWN",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000072333",
+    "name": "Nordstrom, Inc.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2025-05-21T00:00:00Z"
+  },
+  {
+    "terminalTicker": "K",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000055067",
+    "name": "Kellanova",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2025-12-12T00:00:00Z"
+  },
+  {
+    "terminalTicker": "KATE",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000352363",
+    "name": "Kate Spade & Company",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2017-07-12T04:00:00Z"
+  },
+  {
+    "terminalTicker": "KMG",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001028215",
+    "name": "KMG Chemicals Inc",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2018-11-16T05:00:00Z"
+  },
+  {
+    "terminalTicker": "KORS",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001530721",
+    "name": "Michael Kors Holding Lmtd",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2019-01-02T05:00:00Z"
+  },
+  {
+    "terminalTicker": "KRB",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000870517",
+    "name": "M B N A CORP",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2006-01-03T05:00:00Z"
+  },
+  {
+    "terminalTicker": "KRFT",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001545158",
+    "name": "KRAFT FOODS GROUP INC COM STK (VA)",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2015-07-07T04:00:00Z"
+  },
+  {
+    "terminalTicker": "KRI",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000205520",
+    "name": "KNIGHT-RIDDER INC",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2006-06-28T04:00:00Z"
+  },
+  {
+    "terminalTicker": "KSE",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001012393",
+    "name": "KEYSPAN CORP",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2007-08-27T04:00:00Z"
+  },
+  {
+    "terminalTicker": "KSU",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000054480",
+    "name": "Kansas City Southern",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2021-12-15T05:00:00Z"
+  },
+  {
+    "terminalTicker": "LDG",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000764762",
+    "name": "LONGS DRUG STORES CORP",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2008-10-31T04:00:00Z"
+  },
+  {
+    "terminalTicker": "LLL",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001546383",
+    "name": "JX Luxventure Limited Common Stock",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2022-10-10T04:00:00Z"
+  },
+  {
+    "terminalTicker": "LLTC",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000791907",
+    "name": "Linear Technology Corp",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2017-03-13T04:00:00Z"
+  },
+  {
+    "terminalTicker": "LM",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000704051",
+    "name": "Legg Mason, Inc.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2020-08-03T04:00:00Z"
+  },
+  {
+    "terminalTicker": "LO",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001424847",
+    "name": "LORILLARD INC COM STK",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2015-06-15T04:00:00Z"
+  },
+  {
+    "terminalTicker": "LOR",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001323206",
+    "name": "Lazard World Dividend & Income Fund, Inc.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2019-12-04T05:00:00Z"
+  },
+  {
+    "terminalTicker": "LSI",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000944314",
+    "name": "Life Storage, Inc.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2023-07-20T04:00:00Z"
+  },
+  {
+    "terminalTicker": "LUB",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000016099",
+    "name": "Luby's Inc.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2022-05-31T04:00:00Z"
+  },
+  {
+    "terminalTicker": "LVLT",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000746515",
+    "name": "Level 3 Communications Inc",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2017-11-02T04:00:00Z"
+  },
+  {
+    "terminalTicker": "LXK",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001001288",
+    "name": "Lexmark Intl Inc",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2016-11-30T05:00:00Z"
+  },
+  {
+    "terminalTicker": "MAY",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000811797",
+    "name": "MALAYSIA FUND INC",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2012-08-20T04:00:00Z"
+  },
+  {
+    "terminalTicker": "MCIC",
+    "source": "POLYGON_ACTIVE",
+    "cik": null,
+    "name": "MULTICORP INTL INC",
+    "primaryExchange": "OTC Link"
+  },
+  {
+    "terminalTicker": "MDP",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000923338",
+    "name": "Meredith Corporation",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2021-12-02T05:00:00Z"
+  },
+  {
+    "terminalTicker": "MDR",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000708819",
+    "name": "McDermott International",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2020-01-23T05:00:00Z"
+  },
+  {
+    "terminalTicker": "MEA",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001048685",
+    "name": "METALICO INC",
+    "primaryExchange": "XASE",
+    "delistedUtc": "2015-09-14T04:00:00Z"
+  },
+  {
+    "terminalTicker": "MEDI",
+    "source": "POLYGON_ACTIVE",
+    "cik": "0001860434",
+    "name": "Harbor Health Care ETF",
+    "primaryExchange": "ARCX"
+  },
+  {
+    "terminalTicker": "MEE",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000037748",
+    "name": "MASSEY ENERGY COMPANY",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2011-06-02T04:00:00Z"
+  },
+  {
+    "terminalTicker": "MEL",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000064782",
+    "name": "MELLON FINANCIAL CORP",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2007-07-02T04:00:00Z"
+  },
+  {
+    "terminalTicker": "MER",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000065100",
+    "name": "MERRILL, LYNCH & CO INC",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2009-01-02T05:00:00Z"
+  },
+  {
+    "terminalTicker": "MERQ",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000867058",
+    "name": "MERCURY INTERACTIVE CORP",
+    "delistedUtc": "2005-08-15T04:00:00Z"
+  },
+  {
+    "terminalTicker": "MFE",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000890801",
+    "name": "MCAFEE, INC.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2011-03-01T05:00:00Z"
+  },
+  {
+    "terminalTicker": "MHS",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001170650",
+    "name": "MEDCO HEALTH SOLUTIONS,INC.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2012-04-03T04:00:00Z"
+  },
+  {
+    "terminalTicker": "MII",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001092050",
+    "name": "MICROISLET INC.",
+    "primaryExchange": "XASE",
+    "delistedUtc": "2007-05-07T04:00:00Z"
+  },
+  {
+    "terminalTicker": "MIL",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000016859",
+    "name": "MFC INDL LTD COM (CDA)",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2016-02-16T05:00:00Z"
+  },
+  {
+    "terminalTicker": "MJN",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001452575",
+    "name": "Mead Johnson Nutrition Company",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2017-06-16T04:00:00Z"
+  },
+  {
+    "terminalTicker": "MMC",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000062709",
+    "name": "Marsh & McLennan Companies, Inc.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2026-01-14T00:00:00Z"
+  },
+  {
+    "terminalTicker": "MNK",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001567892",
+    "name": "Mallinckrodt plc",
+    "primaryExchange": "XASE",
+    "delistedUtc": "2023-08-29T04:00:00Z"
+  },
+  {
+    "terminalTicker": "MOLX",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000067472",
+    "name": "MOLEX INC",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2013-12-10T05:00:00Z"
+  },
+  {
+    "terminalTicker": "MON",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001828325",
+    "name": "Monument Circle Acquisition Corp. Class A Common Stock",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2022-12-27T05:00:00Z"
+  },
+  {
+    "terminalTicker": "MRO",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000101778",
+    "name": "Marathon Oil Corporation",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2024-11-25T05:00:00Z"
+  },
+  {
+    "terminalTicker": "MST",
+    "source": "POLYGON_ACTIVE",
+    "cik": null,
+    "name": "Defiance Leveraged Long Income MSTR ETF",
+    "primaryExchange": "XNAS"
+  },
+  {
+    "terminalTicker": "MTL",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001302362",
+    "name": "Mechel PAO American Depository Shares, each representing two ordinary shares (ADSs)",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2022-12-07T05:00:00Z"
+  },
+  {
+    "terminalTicker": "MWI",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000067931",
+    "name": "MOORE WALLACE INCORPORATED",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2004-03-01T05:00:00Z"
+  },
+  {
+    "terminalTicker": "MWV",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000106498",
+    "name": "MEADWESTVACO CORP",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2015-07-02T04:00:00Z"
+  },
+  {
+    "terminalTicker": "MWW",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000895421",
+    "name": "Monster Worldwide Inc",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2016-11-02T04:00:00Z"
+  },
+  {
+    "terminalTicker": "MXIM",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000743316",
+    "name": "Maxim Integrated Products",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2021-08-27T04:00:00Z"
+  },
+  {
+    "terminalTicker": "MYG",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000063541",
+    "name": "MAYTAG CORPORATION",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2006-04-03T04:00:00Z"
+  },
+  {
+    "terminalTicker": "MYL",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001623613",
+    "name": "Mylan N.V. Ordinary Shares",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2020-11-17T05:00:00Z"
+  },
+  {
+    "terminalTicker": "NAV",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000808450",
+    "name": "Navistar International",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2021-07-02T04:00:00Z"
+  },
+  {
+    "terminalTicker": "NBL",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000072207",
+    "name": "Noble Energy, Inc.",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2020-10-06T04:00:00Z"
+  },
+  {
+    "terminalTicker": "NCC",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001010247",
+    "name": "NATIONAL CITY CORP",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2009-01-02T05:00:00Z"
+  },
+  {
+    "terminalTicker": "NCR",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000070866",
+    "name": "NCR Corporation",
+    "primaryExchange": "XNYS"
+  },
+  {
+    "terminalTicker": "NFB",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000352510",
+    "name": "NORTH FORK BANCORPORATION,INC",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2006-12-01T05:00:00Z"
+  },
+  {
+    "terminalTicker": "NFX",
+    "source": "POLYGON_ACTIVE",
+    "cik": null,
+    "name": "Corgi NFLX 2x Daily ETF",
+    "primaryExchange": "BATS"
+  },
+  {
+    "terminalTicker": "NLC",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001298341",
+    "name": "NALCO HOLDING COMPANY",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2011-12-02T05:00:00Z"
+  },
+  {
+    "terminalTicker": "NLSN",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001492633",
+    "name": "Nielsen Holdings plc",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2022-10-12T04:00:00Z"
+  },
+  {
+    "terminalTicker": "NOVL",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000758004",
+    "name": "NOVELL INC",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2011-04-28T04:00:00Z"
+  },
+  {
+    "terminalTicker": "NSI",
+    "source": "POLYGON_ACTIVE",
+    "cik": null,
+    "name": "National Security Emerging Markets Index ETF",
+    "primaryExchange": "XNAS"
+  },
+  {
+    "terminalTicker": "NSM",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001507951",
+    "name": "Nationstar Mortgage Holdings",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2018-08-01T04:00:00Z"
+  },
+  {
+    "terminalTicker": "NVLS",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001626199",
+    "name": "Nivalis Therapeutics, Inc. Common Stock",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2017-07-25T04:00:00Z"
+  },
+  {
+    "terminalTicker": "NXTL",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000824169",
+    "name": "NEXTEL COMMUNICTIONS INC CL-A",
+    "delistedUtc": "2005-08-15T04:00:00Z"
+  },
+  {
+    "terminalTicker": "NYX",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001679379",
+    "name": "NYIAX, Inc. Common Stock",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2023-03-03T05:00:00Z"
+  },
+  {
+    "terminalTicker": "ODP",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000800240",
+    "name": "The ODP Corporation Common Stock",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2025-12-11T00:00:00Z"
+  },
+  {
+    "terminalTicker": "OMX",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000012978",
+    "name": "OFFICEMAX INCORPORATED",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2013-11-07T05:00:00Z"
+  },
+  {
+    "terminalTicker": "ONE",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001722380",
+    "name": "OneSmart International Education Group Limited American Depositary Shares, each representing 1,000 C",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2022-05-02T04:00:00Z"
+  },
+  {
+    "terminalTicker": "PALM",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001100389",
+    "name": "PALM, INC.",
+    "delistedUtc": "2010-07-02T04:00:00Z"
+  },
+  {
+    "terminalTicker": "PAS",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001084230",
+    "name": "PEPSIAMERICAS INC",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2010-03-01T05:00:00Z"
+  },
+  {
+    "terminalTicker": "PBCT",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001378946",
+    "name": "People's United Financial Inc",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2022-04-05T04:00:00Z"
+  },
+  {
+    "terminalTicker": "PBG",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001076405",
+    "name": "PEPSI BOTTLING GROUP",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2010-03-01T05:00:00Z"
+  },
+  {
+    "terminalTicker": "PBY",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001287032",
+    "name": "Prospect Capital Corporaton 6.25% Notes due 2028",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2021-06-15T04:00:00Z"
+  },
+  {
+    "terminalTicker": "PCH",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001338749",
+    "name": "PotlatchDeltic Corporation Common Stock",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2026-02-03T00:00:00Z"
+  },
+  {
+    "terminalTicker": "PCL",
+    "source": "POLYGON_ACTIVE",
+    "cik": "0001727074",
+    "name": "PGIM Corporate Bond 10+ Year ETF",
+    "primaryExchange": "BATS"
+  },
+  {
+    "terminalTicker": "PCP",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000079958",
+    "name": "PRECISION CASTPARTS CORP",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2016-02-01T05:00:00Z"
+  },
+  {
+    "terminalTicker": "PCS",
+    "source": "POLYGON_ACTIVE",
+    "cik": "0001727074",
+    "name": "PGIM Corporate Bond 0-5 Year ETF",
+    "primaryExchange": "BATS"
+  },
+  {
+    "terminalTicker": "PDCO",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000891024",
+    "name": "Patterson Companies, Inc.",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2025-04-21T00:00:00Z"
+  },
+  {
+    "terminalTicker": "PDG",
+    "source": "POLYGON_INACTIVE",
+    "cik": null,
+    "name": "PLACER DOME INC",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2006-03-09T05:00:00Z"
+  },
+  {
+    "terminalTicker": "PEAK",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000765880",
+    "name": "Healthpeak Properties, Inc.",
+    "primaryExchange": "XNYS"
+  },
+  {
+    "terminalTicker": "PEL",
+    "source": "POLYGON_INACTIVE",
+    "cik": null,
+    "name": "MORGAN STANLEY PROPELS VAL OF S&P 500 INDEX",
+    "primaryExchange": "ARCX",
+    "delistedUtc": "2011-12-30T05:00:00Z"
+  },
+  {
+    "terminalTicker": "PET",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001842356",
+    "name": "Wag! Group Co. Common Stock",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2025-07-30T00:00:00Z"
+  },
+  {
+    "terminalTicker": "PETM",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001056288",
+    "name": "PETSMART INC",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2015-03-12T04:00:00Z"
+  },
+  {
+    "terminalTicker": "PGL",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000077385",
+    "name": "PEOPLES ENERGY CORP",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2007-02-22T05:00:00Z"
+  },
+  {
+    "terminalTicker": "PGN",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001594590",
+    "name": "PARAGON OFFSHORE PLC (GBR)",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2015-12-18T05:00:00Z"
+  },
+  {
+    "terminalTicker": "PHA",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000822416",
+    "name": "PULTEGROUP, INC 7.375% SENIOR NOTES DUE 6/01/2046",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2014-02-24T05:00:00Z"
+  },
+  {
+    "terminalTicker": "PHB",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001378872",
+    "name": "Invesco Fundamental High Yield Corporate Bond ETF",
+    "primaryExchange": "ARCX",
+    "delistedUtc": "2026-02-23T00:00:00Z"
+  },
+  {
+    "terminalTicker": "PLL",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001728205",
+    "name": "Piedmont Lithium Inc. Common Stock",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2025-09-02T00:00:00Z"
+  },
+  {
+    "terminalTicker": "PMCS",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000767920",
+    "name": "P M C SIERRA INC",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2016-01-19T05:00:00Z"
+  },
+  {
+    "terminalTicker": "PNU",
+    "source": "POLYGON_INACTIVE",
+    "cik": null,
+    "name": "PNC FINL SVCS GRP PN CAP TR D CAP SECS",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2012-03-23T04:00:00Z"
+  },
+  {
+    "terminalTicker": "PRD",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001170593",
+    "name": "Primus Guaranty, LTD. Sr Nt (Bermuda)",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2011-12-20T05:00:00Z"
+  },
+  {
+    "terminalTicker": "PSFT",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000875570",
+    "name": "PEOPLESOFT INC",
+    "delistedUtc": "2005-01-10T05:00:00Z"
+  },
+  {
+    "terminalTicker": "PTV",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001089976",
+    "name": "PACTIV CORPORATION",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2010-11-17T05:00:00Z"
+  },
+  {
+    "terminalTicker": "PVN",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001035713",
+    "name": "PROVIDIAN FINANCIAL BANCORP",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2005-10-03T04:00:00Z"
+  },
+  {
+    "terminalTicker": "PVT",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001752474",
+    "name": "Pivotal Acquisition Corp.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2019-12-20T05:00:00Z"
+  },
+  {
+    "terminalTicker": "PWER",
+    "source": "POLYGON_ACTIVE",
+    "cik": "0001969995",
+    "name": "Nomura Energy Transition ETF",
+    "primaryExchange": "ARCX"
+  },
+  {
+    "terminalTicker": "PWJ",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001209466",
+    "name": "POWERSHARES DYNAMIC MID CAP GRTH PORTFOLIO",
+    "primaryExchange": "ARCX",
+    "delistedUtc": "2011-06-16T04:00:00Z"
+  },
+  {
+    "terminalTicker": "PX",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001841968",
+    "name": "P10, Inc.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2026-02-11T00:00:00Z"
+  },
+  {
+    "terminalTicker": "PXD",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001038357",
+    "name": "Pioneer Natural Resource Co.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2024-05-06T04:00:00Z"
+  },
+  {
+    "terminalTicker": "PZE",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001449877",
+    "name": "Petrobras Argentina S A",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2018-05-21T04:00:00Z"
+  },
+  {
+    "terminalTicker": "QEP",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001108827",
+    "name": "QEP RESOURCES, INC.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2021-03-18T04:00:00Z"
+  },
+  {
+    "terminalTicker": "QLGC",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000918386",
+    "name": "QLOGIC CORP",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2016-08-17T04:00:00Z"
+  },
+  {
+    "terminalTicker": "QTRN",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000919623",
+    "name": "QUINTILES TRANSNATIONAL CORP",
+    "delistedUtc": "2003-09-26T04:00:00Z"
+  },
+  {
+    "terminalTicker": "RAD",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000084129",
+    "name": "Rite Aid Corporation",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2023-10-17T04:00:00Z"
+  },
+  {
+    "terminalTicker": "RAI",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001275283",
+    "name": "Reynolds American Inc",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2017-07-26T04:00:00Z"
+  },
+  {
+    "terminalTicker": "RBK",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000770949",
+    "name": "REEBOK INTERNATIONAL LTD",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2006-02-01T05:00:00Z"
+  },
+  {
+    "terminalTicker": "RDC",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000085408",
+    "name": "Rowan Companies Plc",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2019-04-15T04:00:00Z"
+  },
+  {
+    "terminalTicker": "RE",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001095073",
+    "name": "Everest Re Group, Ltd.",
+    "primaryExchange": "XNYS"
+  },
+  {
+    "terminalTicker": "RHT",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001087423",
+    "name": "Red Hat Inc",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2019-07-10T04:00:00Z"
+  },
+  {
+    "terminalTicker": "RLM",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001718903",
+    "name": "Realm Therapeutics plc American Depositary Shares",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2019-08-01T04:00:00Z"
+  },
+  {
+    "terminalTicker": "ROH",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000084792",
+    "name": "ROHM AND HASS COMPANY",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2009-04-02T04:00:00Z"
+  },
+  {
+    "terminalTicker": "RRD",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000029669",
+    "name": "RR Donnelley & Sons Co.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2022-02-28T05:00:00Z"
+  },
+  {
+    "terminalTicker": "RTN",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000082267",
+    "name": "Raytheon Company",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2020-04-06T04:00:00Z"
+  },
+  {
+    "terminalTicker": "RX",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001058083",
+    "name": "IMS HEALTH INC",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2010-03-01T05:00:00Z"
+  },
+  {
+    "terminalTicker": "RYI",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001481582",
+    "name": "RYERSON HOLDING CORPORATION",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2026-02-24T00:00:00Z"
+  },
+  {
+    "terminalTicker": "SAF",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001377936",
+    "name": "Saratoga Investment Corp. 6.25% Notes due 2025",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2021-08-31T04:00:00Z"
+  },
+  {
+    "terminalTicker": "SAI",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001847075",
+    "name": "SAI.TECH Global Corporation Class A Ordinary Shares",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2024-09-11T04:00:00Z"
+  },
+  {
+    "terminalTicker": "SAPE",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001008817",
+    "name": "SAPIENT CORP",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2015-02-09T05:00:00Z"
+  },
+  {
+    "terminalTicker": "SATS",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001415404",
+    "name": "EchoStar Corporation",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2026-06-24T00:00:00Z"
+  },
+  {
+    "terminalTicker": "SBL",
+    "source": "POLYGON_INACTIVE",
+    "cik": null,
+    "name": "MERRILL LYNCH & CO INC UNITS ACCELERATED RETURN BEAR MKT NT",
+    "primaryExchange": "ARCX",
+    "delistedUtc": "2009-10-30T04:00:00Z"
+  },
+  {
+    "terminalTicker": "SBNY",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001288784",
+    "name": "Signature Bank",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2023-03-28T04:00:00Z"
+  },
+  {
+    "terminalTicker": "SCG",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000754737",
+    "name": "Scana",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2019-01-02T05:00:00Z"
+  },
+  {
+    "terminalTicker": "SDS",
+    "source": "POLYGON_ACTIVE",
+    "cik": "0001174610",
+    "name": "ProShares UltraShort S&P500",
+    "primaryExchange": "ARCX"
+  },
+  {
+    "terminalTicker": "SEBL",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001006835",
+    "name": "SIEBEL SYSTEMS INC",
+    "delistedUtc": "2006-02-01T05:00:00Z"
+  },
+  {
+    "terminalTicker": "SEE",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001012100",
+    "name": "Sealed Air Corp.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2026-04-10T00:00:00Z"
+  },
+  {
+    "terminalTicker": "SFA",
+    "source": "POLYGON_INACTIVE",
+    "cik": null,
+    "name": "MERRILL LYNCH & CO STRATEGIC ACCELERATED REDEMPTION SECS LKD",
+    "primaryExchange": "ARCX",
+    "delistedUtc": "2010-10-05T04:00:00Z"
+  },
+  {
+    "terminalTicker": "SFS",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001563407",
+    "name": "Smart & Final Stores, Inc.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2019-06-21T04:00:00Z"
+  },
+  {
+    "terminalTicker": "SHLD",
+    "source": "POLYGON_ACTIVE",
+    "cik": null,
+    "name": "Global X Defense Tech ETF",
+    "primaryExchange": "ARCX"
+  },
+  {
+    "terminalTicker": "SHN",
+    "source": "POLYGON_INACTIVE",
+    "cik": null,
+    "name": "BANK AMERICA CORP MKT INDEX TARGET TM SEC (MITTS) LKD DJ IND",
+    "primaryExchange": "ARCX",
+    "delistedUtc": "2015-02-02T05:00:00Z"
+  },
+  {
+    "terminalTicker": "SIAL",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000090185",
+    "name": "SIGMA - ALDRICH CORP",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2015-11-19T05:00:00Z"
+  },
+  {
+    "terminalTicker": "SIVB",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000719739",
+    "name": "SVB Financial Group",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2023-03-28T04:00:00Z"
+  },
+  {
+    "terminalTicker": "SK",
+    "source": "POLYGON_ACTIVE",
+    "cik": null,
+    "name": "Corgi SK hynix 2x Daily ETF",
+    "primaryExchange": "BATS"
+  },
+  {
+    "terminalTicker": "SLR",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000835541",
+    "name": "SOLECTRON CORP",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2007-10-02T04:00:00Z"
+  },
+  {
+    "terminalTicker": "SMI",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001137360",
+    "name": "VanEck HIP Sustainable Muni ETF",
+    "primaryExchange": "BATS"
+  },
+  {
+    "terminalTicker": "SMS",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000928366",
+    "name": "SIMS METAL MANAGEMENT LTD ADS (EA REPSTG 1 ORD SHS)",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2013-10-11T04:00:00Z"
+  },
+  {
+    "terminalTicker": "SNI",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000924168",
+    "name": "Scripps Networks Interactive, Inc Common Class A",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2018-03-07T05:00:00Z"
+  },
+  {
+    "terminalTicker": "SNV",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000018349",
+    "name": "Synovus Financial Corp.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2026-01-02T00:00:00Z"
+  },
+  {
+    "terminalTicker": "SOTR",
+    "source": "POLYGON_INACTIVE",
+    "cik": null,
+    "name": "SOUTHRUST CORP",
+    "delistedUtc": "2004-11-01T05:00:00Z"
+  },
+  {
+    "terminalTicker": "SOV",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000811830",
+    "name": "SOVEREIGN BANCORP INC",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2009-01-30T05:00:00Z"
+  },
+  {
+    "terminalTicker": "SPLS",
+    "source": "POLYGON_ACTIVE",
+    "cik": "0001450011",
+    "name": "PIMCO US Stocks PLUS Active Bond Exchange-Traded Fund",
+    "primaryExchange": "BATS"
+  },
+  {
+    "terminalTicker": "SRCL",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000861878",
+    "name": "Stericycle Inc",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2024-11-05T05:00:00Z"
+  },
+  {
+    "terminalTicker": "SRR",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000094887",
+    "name": "STRIDE-RITE CORP",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2007-08-20T04:00:00Z"
+  },
+  {
+    "terminalTicker": "STJ",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000203077",
+    "name": "St Jude Medical",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2017-01-05T05:00:00Z"
+  },
+  {
+    "terminalTicker": "STO",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001140625",
+    "name": "Statoil Asa",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2018-05-17T04:00:00Z"
+  },
+  {
+    "terminalTicker": "STR",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001949543",
+    "name": "Sitio Royalties Corp.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2025-08-19T00:00:00Z"
+  },
+  {
+    "terminalTicker": "SUB",
+    "source": "POLYGON_ACTIVE",
+    "cik": "0001100663",
+    "name": "iShares Short-Term National Muni Bond ETF",
+    "primaryExchange": "ARCX"
+  },
+  {
+    "terminalTicker": "SUNEQ",
+    "source": "POLYGON_STRIPPED_Q",
+    "cik": "0000022701",
+    "name": "SUNation Energy, Inc. Common Stock",
+    "primaryExchange": "XNAS"
+  },
+  {
+    "terminalTicker": "SVU",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000095521",
+    "name": "SUPERVALU Inc.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2018-10-23T04:00:00Z"
+  },
+  {
+    "terminalTicker": "SWN",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000007332",
+    "name": "Southwestern Energy Company",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2024-10-02T04:00:00Z"
+  },
+  {
+    "terminalTicker": "SWY",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000086144",
+    "name": "SAFEWAY INC",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2015-02-02T05:00:00Z"
+  },
+  {
+    "terminalTicker": "SXCL",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000709804",
+    "name": "STEEL EXCEL INC. COMMON STOCK",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2016-04-01T04:00:00Z"
+  },
+  {
+    "terminalTicker": "SYMC",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001011722",
+    "name": "Symantec Corp",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2019-11-05T05:00:00Z"
+  },
+  {
+    "terminalTicker": "TA",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001378453",
+    "name": "TravelCenters of America LLC",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2023-05-16T04:00:00Z"
+  },
+  {
+    "terminalTicker": "TEG",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000916863",
+    "name": "INTEGRYS ENERGY GROUP INC COM (USA)",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2015-06-30T04:00:00Z"
+  },
+  {
+    "terminalTicker": "TEK",
+    "source": "POLYGON_ACTIVE",
+    "cik": "0001761055",
+    "name": "iShares Technology Opportunities Active ETF",
+    "primaryExchange": "ARCX"
+  },
+  {
+    "terminalTicker": "TGNA",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000039899",
+    "name": "TEGNA Inc.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2026-03-23T00:00:00Z"
+  },
+  {
+    "terminalTicker": "THY",
+    "source": "POLYGON_ACTIVE",
+    "cik": null,
+    "name": "Toews Agility Shares Dynamic Tactical Income ETF",
+    "primaryExchange": "ARCX"
+  },
+  {
+    "terminalTicker": "TIE",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001011657",
+    "name": "TITANIUM METALS CORP(NEW)",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2013-01-09T05:00:00Z"
+  },
+  {
+    "terminalTicker": "TIF",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000098246",
+    "name": "Tiffany & Co.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2021-01-08T05:00:00Z"
+  },
+  {
+    "terminalTicker": "TIN",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000731939",
+    "name": "TEMPLE INLAND INC",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2012-02-14T05:00:00Z"
+  },
+  {
+    "terminalTicker": "TLAB",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000317771",
+    "name": "TELLABS INC",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2013-12-05T05:00:00Z"
+  },
+  {
+    "terminalTicker": "TMK",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000320335",
+    "name": "Torchmark",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2019-08-09T04:00:00Z"
+  },
+  {
+    "terminalTicker": "TNB",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000097854",
+    "name": "THOMAS & BETTS CORPORATION",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2012-05-17T04:00:00Z"
+  },
+  {
+    "terminalTicker": "TOS",
+    "source": "POLYGON_ACTIVE",
+    "cik": null,
+    "name": "Twin Oak Strategic Solutions ETF",
+    "primaryExchange": "BATS"
+  },
+  {
+    "terminalTicker": "TOY",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001005414",
+    "name": "TOYS R US INC (HLDG CO)",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2005-07-22T04:00:00Z"
+  },
+  {
+    "terminalTicker": "TRB",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000726513",
+    "name": "TRIBUNE COMPANY",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2007-12-21T05:00:00Z"
+  },
+  {
+    "terminalTicker": "TRW",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001267097",
+    "name": "TRW AUTOMOTIVE HOLDINGS CORP",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2015-05-18T04:00:00Z"
+  },
+  {
+    "terminalTicker": "TSG",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001635327",
+    "name": "The Stars Group Inc.",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2020-05-06T04:00:00Z"
+  },
+  {
+    "terminalTicker": "TSS",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000721683",
+    "name": "Total System Services, Inc.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2019-09-19T04:00:00Z"
+  },
+  {
+    "terminalTicker": "TUP",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001008654",
+    "name": "Tupperware Brands Corporation",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2024-09-19T04:00:00Z"
+  },
+  {
+    "terminalTicker": "TWC",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001377013",
+    "name": "TIME WARNER CABLE INC NEW COM STK",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2016-05-19T04:00:00Z"
+  },
+  {
+    "terminalTicker": "TWTR",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001418091",
+    "name": "Twitter, Inc.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2022-10-31T04:00:00Z"
+  },
+  {
+    "terminalTicker": "TWX",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001105705",
+    "name": "Time Warner Inc",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2018-06-18T04:00:00Z"
+  },
+  {
+    "terminalTicker": "TXU",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001023291",
+    "name": "TXU CORP",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2007-10-11T04:00:00Z"
+  },
+  {
+    "terminalTicker": "UCC",
+    "source": "POLYGON_ACTIVE",
+    "cik": "0001174610",
+    "name": "ProShares Ultra Consumer Discretionary",
+    "primaryExchange": "ARCX"
+  },
+  {
+    "terminalTicker": "UN",
+    "source": "POLYGON_ACTIVE",
+    "cik": null,
+    "name": "Corgi UNH 2x Daily ETF",
+    "primaryExchange": "BATS"
+  },
+  {
+    "terminalTicker": "USS",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001299716",
+    "name": "U.S. SHIPPING PARTNERS L.P. COM UTS REPTG LTD PARTNERS L.P.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2008-11-06T05:00:00Z"
+  },
+  {
+    "terminalTicker": "UST",
+    "source": "POLYGON_ACTIVE",
+    "cik": "0001174610",
+    "name": "ProShares Ultra 7-10 Year Treasury",
+    "primaryExchange": "ARCX"
+  },
+  {
+    "terminalTicker": "UTX",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000101829",
+    "name": "United Technologies Corporation",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2020-04-03T04:00:00Z"
+  },
+  {
+    "terminalTicker": "UVN",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001017008",
+    "name": "UNIVISION COMMUNICATIONS CL-A",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2007-03-30T04:00:00Z"
+  },
+  {
+    "terminalTicker": "VAR",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000203527",
+    "name": "Varian Medical Systems, Inc.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2021-04-16T04:00:00Z"
+  },
+  {
+    "terminalTicker": "VIAB",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001339947",
+    "name": "Viacom Inc. Class B",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2019-12-05T05:00:00Z"
+  },
+  {
+    "terminalTicker": "VO",
+    "source": "POLYGON_ACTIVE",
+    "cik": "0000036405",
+    "name": "Vanguard Morningstar Mid-Cap ETF",
+    "primaryExchange": "ARCX"
+  },
+  {
+    "terminalTicker": "VSTNQ",
+    "source": "POLYGON_STRIPPED_Q",
+    "cik": null,
+    "name": "VESTIN GROUP INC NEW",
+    "delistedUtc": "2005-02-07T05:00:00Z"
+  },
+  {
+    "terminalTicker": "VTSS",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000880446",
+    "name": "VITESSE SEMICONDUCTOR CORPORATION COMMON STOCK",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2015-04-29T04:00:00Z"
+  },
+  {
+    "terminalTicker": "WAI",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001938865",
+    "name": "Top KingWin Ltd Class A Ordinary Shares",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2026-07-16T00:00:00Z"
+  },
+  {
+    "terminalTicker": "WBA",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001618921",
+    "name": "Walgreens Boots Alliance, Inc",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2025-08-29T00:00:00Z"
+  },
+  {
+    "terminalTicker": "WCG",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001279363",
+    "name": "Wellcare Health Plans, Inc.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2020-01-24T05:00:00Z"
+  },
+  {
+    "terminalTicker": "WFM",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000865436",
+    "name": "Whole Foods Market Inc",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2017-08-29T04:00:00Z"
+  },
+  {
+    "terminalTicker": "WFT",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001603923",
+    "name": "Weatherford International plc",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2019-05-14T04:00:00Z"
+  },
+  {
+    "terminalTicker": "WIN",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001282266",
+    "name": "Windstream Holdings Inc",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2019-03-06T05:00:00Z"
+  },
+  {
+    "terminalTicker": "WLL",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001255474",
+    "name": "Whiting Petroleum Corporation",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2022-07-05T04:00:00Z"
+  },
+  {
+    "terminalTicker": "WLP",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001156039",
+    "name": "WELLPOINT HEALTH NETWORKS INC (NEW)",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2014-12-03T05:00:00Z"
+  },
+  {
+    "terminalTicker": "WPX",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001518832",
+    "name": "WPX Energy, Inc.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2021-01-08T05:00:00Z"
+  },
+  {
+    "terminalTicker": "WRK",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001732845",
+    "name": "WestRock Company",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2024-07-08T04:00:00Z"
+  },
+  {
+    "terminalTicker": "WWY",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000108601",
+    "name": "WRIGLEY WILLIAM JR",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2008-10-07T04:00:00Z"
+  },
+  {
+    "terminalTicker": "WYE",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000005187",
+    "name": "WYETH",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2009-10-16T04:00:00Z"
+  },
+  {
+    "terminalTicker": "WYND",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001361658",
+    "name": "Wyndham Destinations, Inc. Common Stock",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2021-02-17T05:00:00Z"
+  },
+  {
+    "terminalTicker": "X",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001163302",
+    "name": "United States Steel Corporation",
+    "primaryExchange": "XNYS"
+  },
+  {
+    "terminalTicker": "XEC",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001168054",
+    "name": "CIMAREX ENERGY CO",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2021-10-04T04:00:00Z"
+  },
+  {
+    "terminalTicker": "XL",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001772720",
+    "name": "XL Fleet Corp.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2022-11-14T05:00:00Z"
+  },
+  {
+    "terminalTicker": "XLNX",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000743988",
+    "name": "Xilinx Inc",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2022-02-15T05:00:00Z"
+  },
+  {
+    "terminalTicker": "XTO",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0000868809",
+    "name": "XTO ENERGY INC.",
+    "primaryExchange": "XNYS",
+    "delistedUtc": "2010-06-28T04:00:00Z"
+  },
+  {
+    "terminalTicker": "YRCW",
+    "source": "POLYGON_INACTIVE",
+    "cik": "0001683182",
+    "name": "YRC Worldwide, Inc.",
+    "primaryExchange": "XNAS",
+    "delistedUtc": "2021-02-08T05:00:00Z"
+  },
+  {
+    "terminalTicker": "AAMRQ",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "ABKFQ",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "ACKH",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "ADS",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "AFS-A",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "ANRZQ",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "ANTM",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "AZA-A",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "BHGE",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "BHMSQ",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "BKB",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "BLL",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "BLY",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "BMGCA",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "BTUUQ",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "CCE",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "CCTYQ",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "CGP",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "CIT-A",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "CITGQ",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "CMB",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "CNG",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "COC-B",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "COG",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "CPNLQ",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "DALRQ",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "DCNAQ",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "DGN",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "DPHIQ",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "DWD",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "EKDKQ",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "ENRNQ",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "FBHS",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "FBO",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "FII",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "FJ",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "FPC",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "FTL-A",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "GAPTQ",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "GFS-A",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "GIDL",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "GX",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "HBOC",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "HDLM",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "HFS",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "HM",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "IMNX",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "INCLF",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "JOS",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "KM",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "KWP",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "LDW-B",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "LLX",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "MKG",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "MTLQQ",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "MZIAQ",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "NAE",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "NCE",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "NGH",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "NLOK",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "NLV",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "NMK",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "NRTLQ",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "NYN",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "OAT",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "OK",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "ORX",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "OWENQ",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "PKI",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "PPW",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "RATL",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "RBD",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "RDS-A",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "RNB",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "RSHCQ",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "RYC",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "SGID",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "TCOMA",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "TDM",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "TMC-A",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "UAWGQ",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "UCM",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "UMG",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "UPR",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "USH",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "USHC",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "USW",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "VIAC",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "WCOEQ",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "WLA",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "WLTW",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "WMX",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "WNDXQ",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  },
+  {
+    "terminalTicker": "YNR",
+    "source": "FAILED",
+    "cik": null,
+    "name": null
+  }
+]

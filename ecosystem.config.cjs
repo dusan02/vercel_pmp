@@ -1,0 +1,310 @@
+// Load environment variables from .env file manually
+const fs = require('fs');
+const path = require('path');
+const envPath = path.join(__dirname, '.env');
+const envVars = {};
+
+if (fs.existsSync(envPath)) {
+  const envContent = fs.readFileSync(envPath, 'utf8');
+  envContent.split('\n').forEach(line => {
+    const trimmedLine = line.trim();
+    if (trimmedLine && !trimmedLine.startsWith('#')) {
+      const [key, ...valueParts] = trimmedLine.split('=');
+      if (key && valueParts.length > 0) {
+        let value = valueParts.join('=');
+        // Remove quotes if present
+        if ((value.startsWith('"') && value.endsWith('"')) || 
+            (value.startsWith("'") && value.endsWith("'"))) {
+          value = value.slice(1, -1);
+        }
+        envVars[key.trim()] = value.trim();
+      }
+    }
+  });
+}
+
+module.exports = {
+  apps: [
+    {
+      name: "premarketprice",
+      script: "server.ts",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
+      cwd: __dirname,
+      
+      // Fork mode - cluster mode causes crashes with Next.js custom server
+      instances: 1,
+      exec_mode: "fork",
+      
+      // Resource management - prevent memory leaks and ensure restarts
+      max_memory_restart: "2G",
+      kill_timeout: 5000,
+
+      // Wait for app to signal ready before routing traffic (prevents 502 during restart)
+      wait_ready: true,
+      listen_timeout: 30000,
+
+      // Restart strategy — unlimited restarts prevents permanent 502
+      max_restarts: 9999,
+      restart_delay: 10000,
+      min_uptime: "10s",
+      autorestart: true,
+      
+      env_production: {
+        NODE_ENV: "production",
+        PORT: 3001,
+        // Ensure the custom server binds on IPv4 loopback (matches nginx + monitors)
+        LISTEN_HOST: "127.0.0.1",
+        ENABLE_WEBSOCKET: "true",
+        DATABASE_URL: envVars.DATABASE_URL || process.env.DATABASE_URL,
+        // Redis - ENABLED for production
+        // REDIS_URL: "", // Removed override to allow .env or default fallback
+        USE_LOCAL_REDIS: "true",
+        // Google OAuth
+        GOOGLE_CLIENT_ID: envVars.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID,
+        GOOGLE_CLIENT_SECRET: envVars.GOOGLE_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET,
+        // NextAuth
+        AUTH_SECRET: envVars.AUTH_SECRET || envVars.NEXTAUTH_SECRET || process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
+        NEXTAUTH_URL: envVars.NEXTAUTH_URL || process.env.NEXTAUTH_URL || "https://premarketprice.com",
+        // Single source of truth: scheduled jobs run via PM2 cron processes (below).
+        ENABLE_INTERNAL_SECTOR_INDUSTRY_SCHEDULER: "false",
+      },
+      error_file: path.join(__dirname, "logs", "pm2", "premarketprice-error.log"),
+      out_file: path.join(__dirname, "logs", "pm2", "premarketprice-out.log"),
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      merge_logs: true,
+    },
+    {
+      name: "pmp-polygon-worker",
+      script: "src/workers/polygonWorker.ts",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
+      cwd: __dirname,
+      instances: 1,
+      exec_mode: "fork",
+      env_production: {
+        NODE_ENV: "production",
+        MODE: "snapshot",
+        ENABLE_WEBSOCKET: "true", // Websocket needs Redis
+        DATABASE_URL: envVars.DATABASE_URL || process.env.DATABASE_URL,
+        POLYGON_API_KEY: envVars.POLYGON_API_KEY || process.env.POLYGON_API_KEY,
+        POLYGON_MAX_BATCH_SIZE: "100",
+        POLYGON_BATCH_DELAY_MS: envVars.POLYGON_BATCH_DELAY_MS || "1000",
+        // Redis - DISABLED
+        REDIS_URL: "",
+        USE_LOCAL_REDIS: "true",
+      },
+      error_file: path.join(__dirname, "logs", "pm2", "polygon-worker-error.log"),
+      out_file: path.join(__dirname, "logs", "pm2", "polygon-worker-out.log"),
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      autorestart: true,
+      max_restarts: 10,
+      min_uptime: "10s",
+    },
+    {
+      // Background Preloader Worker
+      name: "pmp-bulk-preloader",
+      script: "src/workers/backgroundPreloader.ts",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
+      cwd: __dirname,
+      instances: 1,
+      exec_mode: "fork",
+      env_production: {
+        NODE_ENV: "production",
+        DATABASE_URL: envVars.DATABASE_URL || process.env.DATABASE_URL,
+        POLYGON_API_KEY: envVars.POLYGON_API_KEY || process.env.POLYGON_API_KEY,
+      },
+      error_file: path.join(__dirname, "logs", "pm2", "bulk-preloader-error.log"),
+      out_file: path.join(__dirname, "logs", "pm2", "bulk-preloader-out.log"),
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      // ZMENA: Nereštartovať každých 5 minút (tento skript trvá bežať >10 minút,
+      // čo spôsobovalo nekonečné reštarty a zahltenie SQLite databázy).
+      // Namiesto toho ho pustíme len raz za hodinu.
+      cron_restart: "0 * * * *", 
+      autorestart: false,
+    },
+    {
+      name: "daily-ticker-validator",
+      script: "scripts/daily-ticker-validator.ts",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
+      cwd: __dirname,
+      instances: 1,
+      exec_mode: "fork",
+      env_production: {
+        NODE_ENV: "production",
+        DATABASE_URL: envVars.DATABASE_URL || process.env.DATABASE_URL,
+      },
+      error_file: path.join(__dirname, "logs", "pm2", "daily-ticker-validator-error.log"),
+      out_file: path.join(__dirname, "logs", "pm2", "daily-ticker-validator-out.log"),
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      cron_restart: "0 2 * * *", // Raz denne o 02:00 UTC
+      autorestart: false,
+    },
+    {
+      name: "daily-integrity-check",
+      script: "scripts/daily-integrity-check.ts",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
+      cwd: __dirname,
+      instances: 1,
+      exec_mode: "fork",
+      env_production: {
+        NODE_ENV: "production",
+        DATABASE_URL: envVars.DATABASE_URL || process.env.DATABASE_URL,
+        POLYGON_API_KEY: envVars.POLYGON_API_KEY || process.env.POLYGON_API_KEY,
+      },
+      error_file: path.join(__dirname, "logs", "pm2", "daily-integrity-check-error.log"),
+      out_file: path.join(__dirname, "logs", "pm2", "daily-integrity-check-out.log"),
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      cron_restart: "0 10 * * *",
+      autorestart: false,
+    },
+    {
+      name: "cron-refresh-all",
+      script: "scripts/trigger-refresh-all.ts",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
+      cwd: __dirname,
+      instances: 1,
+      exec_mode: "fork",
+      env_production: {
+        NODE_ENV: "production",
+        BASE_URL: "http://127.0.0.1:3001",
+        CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || envVars.CRON_SECRET || process.env.CRON_SECRET_KEY || process.env.CRON_SECRET,
+      },
+      error_file: path.join(__dirname, "logs", "pm2", "cron-refresh-all-error.log"),
+      out_file: path.join(__dirname, "logs", "pm2", "cron-refresh-all-out.log"),
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      cron_restart: "0 4 * * 0", // Raz týždenne (nedeľa 04:00 UTC)
+      autorestart: false,
+    },
+    {
+      name: "cron-update-ticker-stats",
+      script: "scripts/trigger-update-ticker-stats.ts",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
+      cwd: __dirname,
+      instances: 1,
+      exec_mode: "fork",
+      env_production: {
+        NODE_ENV: "production",
+        BASE_URL: "http://127.0.0.1:3001",
+        CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || envVars.CRON_SECRET || process.env.CRON_SECRET_KEY || process.env.CRON_SECRET,
+      },
+      error_file: path.join(__dirname, "logs", "pm2", "cron-update-ticker-stats-error.log"),
+      out_file: path.join(__dirname, "logs", "pm2", "cron-update-ticker-stats-out.log"),
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      // Daily at 06:00 UTC (02:00 ET) — before pre-market open (4:00 ET)
+      cron_restart: "0 6 * * *",
+      autorestart: false,
+    },
+    {
+      name: "post-market-daily-reset",
+      script: "scripts/post-market-reset.ts",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
+      cwd: __dirname,
+      instances: 1,
+      exec_mode: "fork",
+      env_production: {
+        NODE_ENV: "production",
+        BASE_URL: "http://127.0.0.1:3001",
+        CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || envVars.CRON_SECRET || process.env.CRON_SECRET_KEY || process.env.CRON_SECRET,
+      },
+      error_file: path.join(__dirname, "logs", "pm2", "post-market-daily-reset-error.log"),
+      out_file: path.join(__dirname, "logs", "pm2", "post-market-daily-reset-out.log"),
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      cron_restart: "30 21 * * *",
+      autorestart: false,
+    },
+    {
+      name: "cron-verify-prevclose",
+      script: "scripts/trigger-verify-prevclose.ts",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
+      cwd: __dirname,
+      instances: 1,
+      exec_mode: "fork",
+      env_production: {
+        NODE_ENV: "production",
+        BASE_URL: "http://127.0.0.1:3001",
+        CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || envVars.CRON_SECRET || process.env.CRON_SECRET_KEY || process.env.CRON_SECRET,
+      },
+      error_file: path.join(__dirname, "logs", "pm2", "cron-verify-prevclose-error.log"),
+      out_file: path.join(__dirname, "logs", "pm2", "cron-verify-prevclose-out.log"),
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      cron_restart: "0 22 * * *",
+      autorestart: false,
+    },
+    {
+      name: "cron-verify-sector-industry",
+      script: "scripts/trigger-verify-sector-industry.ts",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
+      cwd: __dirname,
+      instances: 1,
+      exec_mode: "fork",
+      env_production: {
+        NODE_ENV: "production",
+        BASE_URL: "http://127.0.0.1:3001",
+        CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || envVars.CRON_SECRET || process.env.CRON_SECRET_KEY || process.env.CRON_SECRET,
+      },
+      error_file: path.join(__dirname, "logs", "pm2", "cron-verify-sector-industry-error.log"),
+      out_file: path.join(__dirname, "logs", "pm2", "cron-verify-sector-industry-out.log"),
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      cron_restart: "0 2 * * *",
+      autorestart: false,
+    },
+    {
+      name: "cron-earnings-calendar",
+      script: "scripts/trigger-earnings-calendar.ts",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
+      cwd: __dirname,
+      instances: 1,
+      exec_mode: "fork",
+      env_production: {
+        NODE_ENV: "production",
+        BASE_URL: "http://127.0.0.1:3001",
+        CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || envVars.CRON_SECRET || process.env.CRON_SECRET_KEY || process.env.CRON_SECRET,
+      },
+      error_file: path.join(__dirname, "logs", "pm2", "cron-earnings-calendar-error.log"),
+      out_file: path.join(__dirname, "logs", "pm2", "cron-earnings-calendar-out.log"),
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      cron_restart: "0 8 * * *", // Každý deň o 08:00 UTC (pred otvorením trhu)
+      autorestart: false,
+    },
+    {
+      name: "cron-finnhub-metrics-sync",
+      script: "scripts/sync-finnhub-metrics.ts",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
+      cwd: __dirname,
+      instances: 1,
+      exec_mode: "fork",
+      env_production: {
+        NODE_ENV: "production",
+        DATABASE_URL: envVars.DATABASE_URL || process.env.DATABASE_URL,
+        FINNHUB_API_KEY: envVars.FINNHUB_API_KEY || process.env.FINNHUB_API_KEY,
+        USE_LOCAL_REDIS: "true",
+      },
+      error_file: path.join(__dirname, "logs", "pm2", "cron-finnhub-metrics-sync-error.log"),
+      out_file: path.join(__dirname, "logs", "pm2", "cron-finnhub-metrics-sync-out.log"),
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      cron_restart: "0 3 * * *", // Každý deň o 03:00 UTC (po zatvorení trhu)
+      autorestart: false,
+    },
+    {
+      name: "pmp-health-monitor",
+      script: "scripts/health-monitor.ts",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
+      cwd: __dirname,
+      instances: 1,
+      exec_mode: "fork",
+      env_production: {
+        NODE_ENV: "production",
+        BASE_URL: "http://127.0.0.1:3001",
+        ALERT_WEBHOOK_URL: envVars.ALERT_WEBHOOK_URL || process.env.ALERT_WEBHOOK_URL,
+        HEALTH_ALERT_COOLDOWN_MIN: envVars.HEALTH_ALERT_COOLDOWN_MIN || process.env.HEALTH_ALERT_COOLDOWN_MIN || "10",
+      },
+      error_file: path.join(__dirname, "logs", "pm2", "pmp-health-monitor-error.log"),
+      out_file: path.join(__dirname, "logs", "pm2", "pmp-health-monitor-out.log"),
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      // ZMENA: Monitor bežal každých 5 minút, ale ak bola appka spomalená z predchádzajúcich DB záťaží, 
+      // monitor mohol eskalovať chybu a PM2 občas resetol veci.
+      // Health monitor znížime na beh každých 15 minút
+      cron_restart: "*/15 * * * *", 
+      autorestart: false,
+    },
+  ],
+};

@@ -1,121 +1,148 @@
-import { useState, useEffect, useCallback } from 'react';
+'use client';
 
-interface Favorite {
-  id: number;
-  user_id: string;
-  ticker: string;
-  added_at: string;
-  company_name?: string;
-  market_cap?: number;
-}
+import { useCallback, useMemo, useEffect } from 'react';
+import { useUserPreferences } from './useUserPreferences';
+import { useSession } from 'next-auth/react';
+import { event } from '@/lib/ga';
 
-export function useFavorites(userId?: string) {
-  const effectiveUserId = userId || 'default';
-  const [favorites, setFavorites] = useState<Favorite[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export function useFavorites() {
+  const { data: session } = useSession();
+  const {
+    preferences,
+    hasConsent,
+    addFavorite: addPrefFavorite,
+    removeFavorite: removePrefFavorite,
+    toggleFavorite: togglePrefFavorite,
+    savePreferences
+  } = useUserPreferences();
 
-    // Load favorites from database
-  const loadFavorites = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  // Sync with DB on login
+  useEffect(() => {
+    async function syncFavorites() {
+      if (session?.user?.id && preferences.favorites.length > 0) {
+        // Check if we need to sync local favorites to DB (first time login)
+        // We will do a 'sync' call which merges
+        try {
+          await fetch('/api/user/favorites', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'sync',
+              favorites: preferences.favorites
+            })
+          });
 
-    try {
-      const response = await fetch('/api/favorites');
-      const data = await response.json();
-
-      if (data.success) {
-        setFavorites(data.data);
-      } else {
-        setError(data.error || 'Failed to load favorites');
+          // Then fetch the merged list
+          const res = await fetch('/api/user/favorites');
+          if (res.ok) {
+            const data = await res.json();
+            if (data.favorites && Array.isArray(data.favorites)) {
+              // Update local preferences to match DB
+              savePreferences({ favorites: data.favorites });
+            }
+          }
+        } catch (e) {
+          console.error('Error syncing favorites:', e);
+        }
+      } else if (session?.user?.id && preferences.favorites.length === 0) {
+        // Just fetch from DB
+        try {
+          const res = await fetch('/api/user/favorites');
+          if (res.ok) {
+            const data = await res.json();
+            if (data.favorites && Array.isArray(data.favorites) && data.favorites.length > 0) {
+              savePreferences({ favorites: data.favorites });
+            }
+          }
+        } catch (e) {
+          console.error('Error fetching favorites:', e);
+        }
       }
-    } catch (err) {
-      setError('Failed to load favorites');
-      console.error('Error loading favorites:', err);
-    } finally {
-      setLoading(false);
     }
-  }, []);
 
-    // Add favorite to database
+    // Run sync when session becomes available
+    if (session?.user?.id) {
+      syncFavorites();
+    }
+  }, [session?.user?.id]); // Only run on session change/login
+
+  // Add favorite
   const addFavorite = useCallback(async (ticker: string) => {
-    try {
-      const response = await fetch('/api/favorites', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ ticker }),
-      });
+    // Update local state immediately (optimistic)
+    addPrefFavorite(ticker);
 
-      const data = await response.json();
-
-      if (data.success) {
-        // Reload favorites to get updated list
-        await loadFavorites();
-        return true;
-      } else {
-        setError(data.error || 'Failed to add favorite');
-        return false;
+    // If logged in, update DB
+    if (session?.user?.id) {
+      try {
+        await fetch('/api/user/favorites', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'add', ticker })
+        });
+      } catch (e) {
+        console.error('Failed to add favorite to DB:', e);
+        // Could revert local state here if strict consistency needed
       }
-    } catch (err) {
-      setError('Failed to add favorite');
-      console.error('Error adding favorite:', err);
-      return false;
     }
-  }, [loadFavorites]);
+    return true;
+  }, [hasConsent, addPrefFavorite, session?.user?.id]);
 
-    // Remove favorite from database
+  // Remove favorite
   const removeFavorite = useCallback(async (ticker: string) => {
-    try {
-      const response = await fetch(`/api/favorites?ticker=${ticker}`, {
-        method: 'DELETE',
-      });
+    // Update local state immediately
+    removePrefFavorite(ticker);
 
-      const data = await response.json();
-
-      if (data.success) {
-        // Reload favorites to get updated list
-        await loadFavorites();
-        return true;
-      } else {
-        setError(data.error || 'Failed to remove favorite');
-        return false;
+    // If logged in, update DB
+    if (session?.user?.id) {
+      try {
+        await fetch('/api/user/favorites', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'remove', ticker })
+        });
+      } catch (e) {
+        console.error('Failed to remove favorite from DB:', e);
       }
-    } catch (err) {
-      setError('Failed to remove favorite');
-      console.error('Error removing favorite:', err);
-      return false;
     }
-  }, [loadFavorites]);
-
-  // Check if ticker is in favorites
-  const isFavorite = useCallback((ticker: string) => {
-    return favorites.some(fav => fav.ticker === ticker);
-  }, [favorites]);
+    return true;
+  }, [hasConsent, removePrefFavorite, session?.user?.id]);
 
   // Toggle favorite status
   const toggleFavorite = useCallback(async (ticker: string) => {
-    if (isFavorite(ticker)) {
-      return await removeFavorite(ticker);
-    } else {
-      return await addFavorite(ticker);
-    }
-  }, [isFavorite, addFavorite, removeFavorite]);
+    const isFav = preferences.favorites.includes(ticker);
+    const enabled = !isFav;
+    
+    // Track favorite toggle event
+    event('favorite_toggle', {
+      ticker,
+      enabled,
+      source: 'favorites_section'
+    });
 
-  // Load favorites on mount
-  useEffect(() => {
-    loadFavorites();
-  }, [loadFavorites]);
+    if (isFav) {
+      return removeFavorite(ticker);
+    } else {
+      return addFavorite(ticker);
+    }
+  }, [hasConsent, preferences.favorites, addFavorite, removeFavorite]);
+
+  // Convert string array to objects for backward compatibility if needed by consumers
+  const favorites = useMemo(() =>
+    preferences.favorites.map(ticker => ({
+      ticker,
+      added_at: new Date().toISOString()
+    })),
+    [preferences.favorites]
+  );
 
   return {
-    favorites,
-    loading,
-    error,
+    favorites, // Returns array of objects { ticker, added_at }
+    favoriteTickers: preferences.favorites, // Returns string array
+    loading: false,
     addFavorite,
     removeFavorite,
     toggleFavorite,
-    isFavorite,
-    refresh: loadFavorites,
+    isFavorite: (ticker: string) => preferences.favorites.includes(ticker),
+    refresh: () => { },
   };
 } 

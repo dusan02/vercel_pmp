@@ -16,7 +16,7 @@ export default function FavoriteCard({ stock }: { stock: any }) {
         Close: ${stock.closePrice?.toFixed(2) || '0.00'}
       </p>
       <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-        Pre-Market: ${stock.preMarketPrice?.toFixed(2) || '0.00'}
+        Pre-Market: ${stock.currentPrice?.toFixed(2) || '0.00'}
       </p>
 
       <div className="flex items-center justify-between">

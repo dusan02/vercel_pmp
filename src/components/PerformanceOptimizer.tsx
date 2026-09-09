@@ -1,148 +1,252 @@
 'use client';
+import React, { useEffect, useRef, useState } from 'react';
 
-import React, { useEffect, useState } from 'react';
-import { usePerformance } from '@/hooks/usePerformance';
+interface PerformanceMetrics {
+  fcp: number | null;
+  lcp: number | null;
+  fid: number | null;
+  cls: number | null;
+  ttfb: number | null;
+}
 
 interface PerformanceOptimizerProps {
   children: React.ReactNode;
+  enableMonitoring?: boolean;
+  enableLazyLoading?: boolean;
+  enableImageOptimization?: boolean;
 }
 
-export default function PerformanceOptimizer({ children }: PerformanceOptimizerProps) {
-  const [isClient, setIsClient] = useState(false);
-  const { reportMetric } = usePerformance();
+export function PerformanceOptimizer({
+  children,
+  enableMonitoring = true,
+  enableLazyLoading = true,
+  enableImageOptimization = true
+}: PerformanceOptimizerProps) {
+  const [metrics, setMetrics] = useState<PerformanceMetrics>({
+    fcp: null,
+    lcp: null,
+    fid: null,
+    cls: null,
+    ttfb: null
+  });
+  const [isOptimized, setIsOptimized] = useState(false);
+  const observerRef = useRef<PerformanceObserver | null>(null);
+  const clsRef = useRef(0);
+  const lastClsUpdateRef = useRef(0);
 
+  // Performance monitoring
   useEffect(() => {
-    setIsClient(true);
-    
-    // Report initial load performance
-    if (typeof window !== 'undefined') {
-      const loadTime = performance.now();
-      reportMetric('Initial Load', loadTime);
-      
-      // Report DOM content loaded
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-          const domReadyTime = performance.now();
-          reportMetric('DOM Ready', domReadyTime);
-        });
-      } else {
-        const domReadyTime = performance.now();
-        reportMetric('DOM Ready', domReadyTime);
-      }
-      
-      // Report window load
-      window.addEventListener('load', () => {
-        const windowLoadTime = performance.now();
-        reportMetric('Window Load', windowLoadTime);
-      });
+    if (!enableMonitoring || typeof window === 'undefined') return;
+
+    // Measure TTFB
+    const navigationEntry = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+    if (navigationEntry) {
+      setMetrics(prev => ({
+        ...prev,
+        ttfb: navigationEntry.responseStart - navigationEntry.requestStart
+      }));
     }
-  }, [reportMetric]);
 
-  // Optimize images when they come into view
-  useEffect(() => {
-    if (!isClient) return;
-
-    const imageObserver = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const img = entry.target as HTMLImageElement;
-            if (img.dataset.src) {
-              img.src = img.dataset.src;
-              img.removeAttribute('data-src');
-              imageObserver.unobserve(img);
+    // Set up Performance Observer for Core Web Vitals
+    if ('PerformanceObserver' in window) {
+      try {
+        observerRef.current = new PerformanceObserver((list) => {
+          for (const entry of list.getEntries()) {
+            switch (entry.entryType) {
+              case 'paint':
+                if (entry.name === 'first-contentful-paint') {
+                  setMetrics(prev => ({ ...prev, fcp: entry.startTime }));
+                }
+                break;
+              case 'largest-contentful-paint':
+                setMetrics(prev => ({ ...prev, lcp: entry.startTime }));
+                break;
+              case 'first-input':
+                setMetrics(prev => ({ ...prev, fid: (entry as any).processingStart - (entry as any).startTime }));
+                break;
+              case 'layout-shift':
+                const layoutShiftEntry = entry as any;
+                if (!layoutShiftEntry.hadRecentInput) {
+                  // Use ref to accumulate CLS and throttle setState to prevent infinite loop
+                  clsRef.current += layoutShiftEntry.value;
+                  const now = Date.now();
+                  // Only update state every 1000ms to prevent re-render loop
+                  if (now - lastClsUpdateRef.current > 1000) {
+                    lastClsUpdateRef.current = now;
+                    setMetrics(prev => ({ ...prev, cls: clsRef.current }));
+                  }
+                }
+                break;
             }
           }
         });
-      },
-      {
-        rootMargin: '50px',
-        threshold: 0.1,
-      }
-    );
 
-    // Observe all images with data-src attribute
-    const lazyImages = document.querySelectorAll('img[data-src]');
-    lazyImages.forEach((img) => imageObserver.observe(img));
+        observerRef.current.observe({ entryTypes: ['paint', 'largest-contentful-paint', 'first-input', 'layout-shift'] });
+      } catch (error) {
+        console.warn('Performance monitoring not supported:', error);
+      }
+    }
 
     return () => {
-      imageObserver.disconnect();
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
     };
-  }, [isClient]);
+  }, [enableMonitoring]);
 
-  // Optimize table rendering for large datasets
+  // Image optimization
   useEffect(() => {
-    if (!isClient) return;
+    if (!enableImageOptimization || typeof window === 'undefined') return;
 
-    const tableObserver = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
+    const optimizeImages = () => {
+      const images = document.querySelectorAll('img[data-src]');
+      const imageObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
           if (entry.isIntersecting) {
-            const table = entry.target as HTMLTableElement;
-            table.classList.add('table-loaded');
-            tableObserver.unobserve(table);
+            const img = entry.target as HTMLImageElement;
+            const dataSrc = img.dataset.src;
+            // Only set src if dataSrc exists and is not empty
+            if (dataSrc && dataSrc.trim() !== '') {
+              img.src = dataSrc;
+              img.classList.remove('lazy');
+            }
+            imageObserver.unobserve(img);
           }
         });
-      },
-      {
-        rootMargin: '100px',
-        threshold: 0.1,
-      }
-    );
+      });
 
-    // Observe all tables
-    const tables = document.querySelectorAll('table');
-    tables.forEach((table) => tableObserver.observe(table));
+      images.forEach(img => imageObserver.observe(img));
+    };
+
+    // Run after DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', optimizeImages);
+    } else {
+      optimizeImages();
+    }
 
     return () => {
-      tableObserver.disconnect();
+      document.removeEventListener('DOMContentLoaded', optimizeImages);
     };
-  }, [isClient]);
+  }, [enableImageOptimization]);
 
-  // Add CSS for performance optimizations
+  // Lazy loading optimization
   useEffect(() => {
-    if (!isClient) return;
+    if (!enableLazyLoading || typeof window === 'undefined') return;
 
-    const style = document.createElement('style');
-    style.textContent = `
-      /* Performance optimizations */
-      .table-loaded {
-        opacity: 1;
-        transform: translateY(0);
-        transition: opacity 0.3s ease, transform 0.3s ease;
-      }
-      
-      table {
-        opacity: 0.8;
-        transform: translateY(10px);
-        transition: opacity 0.3s ease, transform 0.3s ease;
-      }
-      
-      /* Optimize animations */
-      * {
-        will-change: auto;
-      }
-      
-      .animate-pulse {
-        will-change: opacity;
-      }
-      
-      /* Reduce layout thrashing */
-      .company-logo {
-        contain: layout style paint;
-      }
-      
-      /* Optimize scrolling */
-      .container {
-        contain: layout style;
-      }
-    `;
-    document.head.appendChild(style);
+    const lazyLoadElements = () => {
+      const lazyElements = document.querySelectorAll('[data-lazy]');
+      const lazyObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const element = entry.target as HTMLElement;
+            element.classList.remove('lazy-hidden');
+            element.classList.add('lazy-loaded');
+            lazyObserver.unobserve(element);
+          }
+        });
+      });
+
+      lazyElements.forEach(element => lazyObserver.observe(element));
+    };
+
+    // Run after DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', lazyLoadElements);
+    } else {
+      lazyLoadElements();
+    }
 
     return () => {
-      document.head.removeChild(style);
+      document.removeEventListener('DOMContentLoaded', lazyLoadElements);
     };
-  }, [isClient]);
+  }, [enableLazyLoading]);
 
-  return <>{children}</>;
+  // Performance optimization complete
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsOptimized(true);
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Log performance metrics in development
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development' && metrics.fcp !== null) {
+      console.log('🚀 Performance Metrics:', {
+        FCP: `${metrics.fcp.toFixed(2)}ms`,
+        LCP: metrics.lcp ? `${metrics.lcp.toFixed(2)}ms` : 'Pending',
+        FID: metrics.fid ? `${metrics.fid.toFixed(2)}ms` : 'Pending',
+        CLS: metrics.cls ? metrics.cls.toFixed(4) : 'Pending',
+        TTFB: metrics.ttfb ? `${metrics.ttfb.toFixed(2)}ms` : 'Pending'
+      });
+    }
+  }, [metrics]);
+
+  return (
+    <div className={`performance-optimizer ${isOptimized ? 'optimized' : ''}`}>
+      {children}
+      
+    </div>
+  );
+}
+
+// Hook for performance monitoring
+export function usePerformanceMonitoring() {
+  const [metrics, setMetrics] = useState<PerformanceMetrics>({
+    fcp: null,
+    lcp: null,
+    fid: null,
+    cls: null,
+    ttfb: null
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    // Get initial metrics
+    const navigationEntry = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+    if (navigationEntry) {
+      setMetrics(prev => ({
+        ...prev,
+        ttfb: navigationEntry.responseStart - navigationEntry.requestStart
+      }));
+    }
+
+    // Monitor for paint events
+    const paintEntries = performance.getEntriesByType('paint');
+    const fcpEntry = paintEntries.find(entry => entry.name === 'first-contentful-paint');
+    if (fcpEntry) {
+      setMetrics(prev => ({ ...prev, fcp: fcpEntry.startTime }));
+    }
+
+    // Set up observer for dynamic metrics
+    if ('PerformanceObserver' in window) {
+      const observer = new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+          switch (entry.entryType) {
+            case 'largest-contentful-paint':
+              setMetrics(prev => ({ ...prev, lcp: entry.startTime }));
+              break;
+            case 'first-input':
+              setMetrics(prev => ({ ...prev, fid: (entry as any).processingStart - (entry as any).startTime }));
+              break;
+            case 'layout-shift':
+              const layoutShiftEntry = entry as any;
+              if (!layoutShiftEntry.hadRecentInput) {
+                setMetrics(prev => ({ ...prev, cls: (prev.cls || 0) + layoutShiftEntry.value }));
+              }
+              break;
+          }
+        }
+      });
+
+      observer.observe({ entryTypes: ['largest-contentful-paint', 'first-input', 'layout-shift'] });
+
+      return () => observer.disconnect();
+    }
+  }, []);
+
+  return metrics;
 } 

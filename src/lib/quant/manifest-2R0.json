@@ -1,0 +1,33 @@
+{
+  "runId": "EXP_8b5a444ea3ac628a",
+  "config": {
+    "dataset": "SPY",
+    "period": "2010-01-01/2025-01-01",
+    "engineVersion": "1.0-FROZEN",
+    "slippageModel": "toy-sqrt-v1-FROZEN",
+    "calendarVersion": "1.0",
+    "dataContractVersion": "1.0",
+    "benchmark": "OHLC-MID-v1",
+    "strategyVersion": "BASELINE_WHALE_BUY",
+    "seed": "DETERMINISTIC_NO_RANDOM",
+    "participationRate": 0.1,
+    "datasetHash": "0bf61c4012af4838001522095022e540af45761337496fb034f7d3fadb051a86"
+  },
+  "configHash": "9a828e8568fb6059b1aa6ff666a8f9b1395ce1535b012413be4aa9f0f5086dc0",
+  "results": {
+    "executionDays": 43,
+    "finalState": {
+      "closingCash": 51546539801.09233,
+      "feesPaid": 0,
+      "realizedPnL": 0,
+      "positions": [
+        {
+          "symbol": "SPY",
+          "shares": 889917215,
+          "costBasis": 110.63215604713042
+        }
+      ]
+    },
+    "outputHash": "f1ecf6a6cb80f1dd8713c314857e3fa9b05405c30440c2452d88a44618a057cf"
+  }
+}

@@ -1,0 +1,257 @@
+/**
+ * Favorites Section Component
+ */
+
+import React from 'react';
+import { useRouter } from 'next/navigation';
+import { SortKey } from '@/hooks/useSortableData';
+import { SectionIcon } from './SectionIcon';
+import { UniversalTable, ColumnDef } from './UniversalTable';
+import { StockCardMobile } from './StockCardMobile';
+import { SectionLoader } from './SectionLoader';
+import { StockData } from '@/lib/types';
+import { formatSectorName, formatBillions, formatMarketCapDiff, formatPrice, formatPercent } from '@/lib/utils/format';
+import CompanyLogo from './CompanyLogo';
+import { getCompanyName } from '@/lib/companyNames';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { Star } from 'lucide-react';
+import { AddFavoriteSearch } from './AddFavoriteSearch';
+
+interface FavoritesSectionProps {
+  favoriteStocks: StockData[];
+  loading: boolean;
+  sortKey: SortKey | null;
+  ascending: boolean;
+  onSort: (key: SortKey) => void;
+  onToggleFavorite: (ticker: string) => void;
+  isFavorite: (ticker: string) => boolean;
+  allStocks: StockData[];
+}
+
+export function FavoritesSection({
+  favoriteStocks,
+  loading,
+  sortKey,
+  ascending,
+  onSort,
+  onToggleFavorite,
+  isFavorite,
+  allStocks
+}: FavoritesSectionProps) {
+  const router = useRouter();
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
+
+  const handleBrowseStocks = () => {
+    // On mobile: trigger tab change via custom event
+    if (typeof window !== 'undefined') {
+      // Trigger navigation via custom event for both mobile and desktop (since both use tab-based navigation)
+      window.dispatchEvent(new CustomEvent('mobile-nav-change', { detail: 'allStocks' }));
+
+      // Update URL
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', 'allStocks');
+      window.history.pushState({}, '', url.toString());
+    }
+  };
+
+  const handleRowClick = (stock: StockData) => {
+    if (typeof window !== 'undefined') {
+      // Dispatch unified event with both tab and ticker
+      window.dispatchEvent(new CustomEvent('mobile-nav-change', {
+        detail: { tab: 'analysis', ticker: stock.ticker }
+      }));
+    }
+  };
+
+  // Column Definitions for UniversalTable (Identical to AllStocksSection for consistency)
+  const columns: ColumnDef<StockData>[] = React.useMemo(() => [
+    {
+      key: 'logo',
+      header: 'Logo',
+      align: 'left',
+      className: 'hidden md:table-cell', // Changed from lg to md for better responsive behavior
+      width: '72px',
+      render: (stock) => (
+        <div className="flex justify-center items-center w-full">
+          <CompanyLogo ticker={stock.ticker} size={44} />
+        </div>
+      )
+    },
+    {
+      key: 'ticker',
+      header: 'Stock', // Renamed from 'Ticker'
+      sortable: true,
+      align: 'left',
+      showInMobileSort: true,
+      mobileWidth: 'w-28',
+      render: (stock) => <strong>{stock.ticker}</strong>
+    },
+    {
+      key: 'companyName',
+      header: 'Company',
+      className: 'hidden md:table-cell', // Consistent with logo visibility
+      render: (stock) => <span className="block truncate max-w-[180px]">{getCompanyName(stock.ticker)}</span>
+    },
+    {
+      key: 'sector',
+      header: 'Sector',
+      sortable: true,
+      className: 'hidden md:table-cell', // Consistent responsive behavior
+      render: (stock) => formatSectorName(stock.sector)
+    },
+    {
+      key: 'industry',
+      header: 'Industry',
+      sortable: true,
+      className: 'hidden md:table-cell', // Consistent responsive behavior
+      render: (stock) => stock.industry || 'N/A'
+    },
+    {
+      key: isDesktop ? 'marketCap' : 'marketCapDiffMobile',
+      header: isDesktop ? 'Market Cap' : 'M Cap',
+      sortable: true,
+      align: 'right',
+      className: 'whitespace-nowrap hidden md:table-cell', // Consistent responsive behavior
+      showInMobileSort: true,
+      mobileWidth: 'flex-1',
+      render: (stock) => <span className="tabular-nums block w-full text-right">{formatBillions(stock.marketCap)}</span>
+    },
+    {
+      key: 'marketCapDiffDesktop',
+      header: 'Cap Diff',
+      sortable: isDesktop,
+      align: 'center',
+      className: 'hidden md:table-cell', // Consistent responsive behavior
+      render: (stock) => {
+        const diff = stock.marketCapDiff ?? 0;
+        return (
+          <span className={`tabular-nums block w-full text-right ${diff >= 0 ? 'positive' : 'negative'}`}>
+            {formatMarketCapDiff(diff)}
+          </span>
+        );
+      }
+    },
+    {
+      key: 'currentPrice',
+      header: 'Price',
+      sortable: true,
+      align: 'right',
+      showInMobileSort: true,
+      mobileWidth: 'w-20',
+      render: (stock) => {
+        const price = stock.currentPrice ?? 0;
+        return (
+          <span className="tabular-nums block w-full text-right">
+            {isFinite(price) ? formatPrice(price) : '—'}
+          </span>
+        );
+      }
+    },
+    {
+      key: 'percentChange',
+      header: '% Change',
+      sortable: isDesktop,
+      align: 'center',
+      width: '100px',
+      render: (stock) => {
+        const pct = stock.percentChange ?? 0;
+        return (
+          <span className={`tabular-nums block w-full text-right ${pct >= 0 ? 'positive' : 'negative'}`}>
+            {formatPercent(pct)}
+          </span>
+        );
+      }
+    },
+    {
+      key: 'favorites',
+      header: <Star size={18} />,
+      align: 'center',
+      width: '88px',
+      showInMobileSort: true,
+      mobileWidth: 'w-10',
+      render: (stock) => {
+        const fav = isFavorite(stock.ticker);
+        return (
+          <button
+            className={`favorite-btn ${fav ? 'favorited' : ''} flex justify-center w-full`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleFavorite(stock.ticker); // Changed from toggleFavorite to onToggleFavorite to match prop
+            }}
+            aria-label={fav ? `Remove ${stock.ticker} from favorites` : `Add ${stock.ticker} to favorites`}
+          >
+            <Star size={20} fill={fav ? "currentColor" : "none"} strokeWidth={2} />
+          </button>
+        );
+      }
+    }
+  ], [isFavorite, onToggleFavorite]);
+
+  const emptyState = (
+    <div
+      className="flex flex-col items-center justify-center gap-3 py-16 px-4 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10"
+    >
+      <div className="text-6xl mb-2 opacity-30 grayscale">
+        ⭐
+      </div>
+      <span className="text-base font-semibold text-gray-900 dark:text-gray-100">
+        No favorites yet
+      </span>
+      <span className="text-sm text-center max-w-xs text-gray-500 dark:text-gray-400">
+        Tap ☆ next to a stock to add it here
+      </span>
+      <button
+        onClick={handleBrowseStocks}
+        className="mt-2 px-5 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold transition-colors hover:bg-blue-700"
+        style={{
+          WebkitTapHighlightColor: 'transparent',
+          touchAction: 'manipulation',
+        }}
+        onTouchStart={(e) => { e.currentTarget.style.opacity = '0.8'; }}
+        onTouchEnd={(e) => { e.currentTarget.style.opacity = '1'; }}
+      >
+        Browse stocks →
+      </button>
+    </div>
+  );
+
+  return (
+    <section className="favorites">
+      <div className="flex items-center justify-between mb-4 px-4 relative z-50">
+        <div className="flex items-center">
+          <h2 className="flex items-center gap-3 text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white m-0 relative -top-1.5">
+            <SectionIcon type="star" size={28} className="text-gray-900 dark:text-white shrink-0" />
+            <span>Favorites</span>
+          </h2>
+        </div>
+        <div className="flex-1 max-w-sm ml-auto relative">
+          <AddFavoriteSearch
+            onToggleFavorite={onToggleFavorite}
+            isFavorite={isFavorite}
+            allStocks={allStocks}
+          />
+        </div>
+      </div>
+
+      <UniversalTable
+        data={favoriteStocks}
+        columns={columns}
+        keyExtractor={(item) => item.ticker}
+        isLoading={loading}
+        sortKey={sortKey}
+        ascending={ascending}
+        onSort={onSort}
+        emptyMessage={emptyState}
+        onRowClick={handleRowClick}
+        renderMobileCard={(stock) => (
+          <StockCardMobile
+            stock={stock}
+            isFavorite={isFavorite(stock.ticker)}
+            onToggleFavorite={() => onToggleFavorite(stock.ticker)}
+            onClick={() => handleRowClick(stock)}
+          />
+        )}
+      />
+    </section>
+  );
+}

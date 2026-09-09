@@ -1,0 +1,250 @@
+/**
+ * Heatmap Component Styles
+ * CSS Module for consistent styling across heatmap components
+ */
+
+/* Container */
+.heatmapContainer {
+  @apply relative w-full h-full;
+  background-color: #111827;
+  /* Force dark background */
+  color: #ffffff;
+  /* Force white text */
+}
+
+.heatmapLoading {
+  @apply absolute inset-0 flex items-center justify-center text-gray-500 z-50;
+}
+
+/* Controls */
+.heatmapControls {
+  @apply absolute top-4 right-4 z-50 flex gap-2;
+}
+
+.heatmapControlButton {
+  @apply px-3 py-1 bg-slate-700 text-white text-xs font-medium rounded hover:bg-slate-600 transition-colors opacity-80 hover:opacity-100;
+}
+
+.heatmapZoomButton {
+  @apply absolute top-4 left-4 z-40 px-3 py-1 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 transition-colors shadow-lg backdrop-blur-sm bg-opacity-90;
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Tiles */
+.heatmapTile {
+  @apply absolute flex flex-col items-center justify-center box-border cursor-pointer;
+  border: 1px solid rgba(0, 0, 0, 0.4);
+  border-radius: 3px;
+  transition: background-color 0.4s ease;
+}
+
+.heatmapTile:hover {
+  z-index: 20;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9), 0 0 14px rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+}
+
+/* Zoom Entry Animation */
+@keyframes zoomEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.heatmapZoomEnter {
+  animation: zoomEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.heatmapTileContent {
+  @apply relative z-10 flex flex-col w-full h-full items-center justify-center transition-opacity opacity-90 group-hover:opacity-100;
+}
+
+.heatmapTileSymbol {
+  @apply font-bold text-white;
+  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 0 2px rgba(0, 0, 0, 0.8);
+}
+
+.heatmapTilePercent {
+  @apply font-medium text-white;
+  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 0 2px rgba(0, 0, 0, 0.8);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Sector Labels - Compact variant (homepage) */
+.sectorLabelWrap {
+  @apply absolute pointer-events-none;
+  display: flex;
+  align-items: center;
+  /* Above normal tiles (z:1) AND hover tiles (z:20) so labels always win */
+  z-index: 30;
+}
+
+.sectorLabelWrapCompact {
+  padding-left: 6px;
+  height: 16px;
+}
+
+.sectorLabelPillCompact {
+  font-weight: 700;
+  color: #FFFFFF !important;
+  /* Force white text */
+  padding: 2px 8px;
+  border-radius: 4px;
+  /* Sharper corners */
+  background: rgba(0, 0, 0, 0.85) !important;
+  /* Force dark background */
+  /* High opacity for better readability */
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  text-transform: uppercase;
+  text-shadow: none;
+  /* Removed shadow for cleaner look */
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  display: inline-block;
+  pointer-events: auto;
+  /* Enable hover */
+  cursor: pointer;
+}
+
+.sectorLabelPillCompact:hover {
+  background: rgba(0, 0, 0, 0.95) !important;
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+/* Sector Labels - Full variant (heatmap page) */
+.sectorLabelWrapFull {
+  padding-left: 2px;
+  /* Reduced padding for full width header feel */
+  height: 24px;
+}
+
+.sectorLabelStripFull {
+  font-weight: 700;
+  color: #FFFFFF !important;
+  /* Force white text */
+  padding: 3px 8px;
+  border-radius: 2px;
+  /* Very sharp corners for header look */
+  background: rgba(0, 0, 0, 0.85) !important;
+  /* Force dark background */
+  /* Solid dark background */
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom: none;
+  /* Connect to sector content */
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  text-transform: uppercase;
+  text-shadow: none;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  /* Full width */
+  min-width: 0;
+  pointer-events: auto;
+  /* Enable hover */
+  cursor: pointer;
+}
+
+.sectorLabelStripFull:hover {
+  background: #000000 !important;
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.sectorLabelSummary {
+  font-weight: 500;
+  font-size: 0.85em;
+  opacity: 0.9;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Sector Overlay */
+.heatmapSectorOverlay {
+  @apply absolute overflow-hidden cursor-pointer;
+}
+
+.heatmapSectorHover {
+  @apply absolute inset-0 pointer-events-none transition-opacity duration-200;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.05);
+  z-index: 15;
+}
+
+/* Tooltip */
+.heatmapTooltip {
+  @apply fixed bg-gray-900/95 backdrop-blur-md text-white text-xs rounded-lg shadow-2xl pointer-events-none overflow-hidden border border-gray-700;
+  /* Must be above sector labels (which use z-index: 100). */
+  z-index: 1000;
+  max-width: 250px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+}
+
+.heatmapTooltipAccent {
+  @apply absolute left-0 top-0 bottom-0 w-1;
+}
+
+/* Content wrapper to shift content right due to accent strip */
+.heatmapTooltipContent {
+  @apply p-3 pl-4;
+}
+
+.heatmapTooltipTitle {
+  @apply font-bold text-sm mb-2 pb-2 border-b border-gray-700 flex justify-between items-center;
+}
+
+.heatmapTooltipRow {
+  @apply flex justify-between gap-6 mb-1.5 items-center;
+}
+
+.heatmapTooltipLabel {
+  @apply text-gray-400 font-medium;
+}
+
+.heatmapTooltipValue {
+  @apply font-mono font-semibold tracking-tight;
+}
+
+/* Legend */
+.heatmapLegend {
+  @apply flex items-center gap-2 px-3 py-2 bg-black/70 backdrop-blur-sm rounded-lg;
+}
+
+.heatmapLegendLabel {
+  @apply text-xs text-gray-300 font-medium;
+}
+
+.heatmapLegendGradient {
+  @apply h-4 w-32 rounded;
+  background: linear-gradient(to right, #dc2626, #f87171, #1f2937, #22c55e, #16a34a);
+}
+
+.heatmapLegendValues {
+  @apply flex justify-between text-xs text-gray-400 w-32;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}

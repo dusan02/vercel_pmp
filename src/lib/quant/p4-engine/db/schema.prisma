@@ -1,0 +1,271 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "./client"
+}
+datasource db {
+  provider = "postgresql"
+  url      = env("QUANT_DB_URL")
+}
+
+model PitEntity {
+  id          String        @id @default(uuid())
+  cik         String?       @unique 
+  name        String
+  securities  PitSecurity[]
+}
+
+model PitSecurity {
+  indexEvents PitIndexConstituent[]
+
+  lifecycleFacts PitLifecycleFact[]
+
+  id             String            @id @default(uuid())
+  entityId       String
+  entity         PitEntity         @relation(fields: [entityId], references: [id])
+  figi           String?           @unique 
+  issueType      String            
+  tickers        PitTickerHistory[]
+  lifecycle      PitSecurityLifecycleFact[]
+  fundamentals   PitFundamentalFact[]
+  actions        PitCorporateAction[]
+  prices         PitPriceFact[]
+  consensusFacts PitConsensusFact[]
+  consensusRevisions PitConsensusRevision[]
+}
+
+model PitTickerHistory {
+  id           String      @id @default(uuid())
+  securityId   String
+  security     PitSecurity @relation(fields: [securityId], references: [id])
+  ticker       String
+  exchange     String?
+  startDate    DateTime
+  endDate      DateTime?   
+  @@unique([ticker, startDate, securityId])
+}
+
+model PitSecurityLifecycleFact {
+  id               String      @id @default(uuid())
+  securityId       String
+  security         PitSecurity @relation(fields: [securityId], references: [id])
+  eventType        String      
+  effectiveDate    DateTime    
+  recordDate       DateTime?
+  payDate          DateTime?
+
+  publishedAt      DateTime?
+  availableAt      DateTime    
+  supersededAt     DateTime    @default(dbgenerated("'9999-12-31 23:59:59'::timestamp"))
+  
+  sourceRecordHash String
+  sourceProvider   String
+  sourceType       String
+  sourceTicker     String?
+
+
+  @@index([securityId, effectiveDate])
+  @@index([securityId, availableAt, supersededAt])
+}
+
+model PitFundamentalFact {
+  id                 String      @id @default(uuid())
+  securityId         String
+  security           PitSecurity @relation(fields: [securityId], references: [id])
+  fiscalYear         Int
+  fiscalPeriod       String      
+  periodEndDate      DateTime    
+  publishedAt        DateTime    
+  availableAt        DateTime    
+  supersededAt       DateTime    @default(dbgenerated("'9999-12-31 23:59:59'::timestamp"))
+  accessionNum       String?
+  sourceForm         String?
+  isRestatement      Boolean     @default(false)
+  
+  // 20 Canonical Concepts (SEC Concept Dictionary)
+  revenue            Float?
+  costOfRevenue      Float?
+  grossProfit        Float?
+  operatingExpenses  Float?
+  operatingIncome    Float?
+  netIncome          Float?
+  epsDiluted         Float?
+  epsBasic           Float?
+  sharesDiluted      Float?
+  sharesBasic        Float?
+  totalAssets        Float?
+  currentAssets      Float?
+  totalLiabilities   Float?
+  currentLiabilities Float?
+  cashAndEquivalents Float?
+  totalDebt          Float?
+  stockholdersEquity Float?
+  operatingCashFlow  Float?
+  capitalExpenditures Float?
+  freeCashFlow       Float?
+
+  // COMPOSITE LINEAGE
+  sourceRecordHashes String[]
+  sourceProvider     String
+  sourceType         String
+
+  @@index([securityId, periodEndDate])
+  @@index([securityId, availableAt, supersededAt])
+}
+
+model PitCorporateAction {
+  id               String      @id @default(uuid())
+  securityId       String
+  security         PitSecurity @relation(fields: [securityId], references: [id])
+  economicActionId String      
+  version          Int         @default(1)
+  actionType       String      
+  effectiveDate    DateTime    
+  recordDate       DateTime?
+  payDate          DateTime?
+
+  publishedAt      DateTime?
+  availableAt      DateTime
+  supersededAt     DateTime    @default(dbgenerated("'9999-12-31 23:59:59'::timestamp"))
+  splitFactor      Float?      
+  dividendAmount   Float?      
+  currency         String?
+
+  sourceRecordHash String
+  sourceProvider   String
+  sourceType       String
+  sourceTicker     String?
+
+
+  @@index([securityId, effectiveDate])
+  @@index([securityId, availableAt, supersededAt])
+}
+
+model PitPriceFact {
+  id               String      @id @default(uuid())
+  securityId       String
+  security         PitSecurity @relation(fields: [securityId], references: [id])
+  tradeDate        DateTime
+  availableAt      DateTime
+  supersededAt     DateTime    @default(dbgenerated("'9999-12-31 23:59:59'::timestamp"))
+  open             Float
+  high             Float
+  low             Float
+  close            Float
+  adjustedClose    Float?
+  volume           BigInt
+
+  sourceRecordHash String
+  sourceProvider   String
+  sourceType       String
+  sourceTicker     String?
+
+
+  @@index([securityId, tradeDate])
+  @@index([securityId, availableAt, supersededAt])
+}
+
+model PitLifecycleFact {
+  id           String   @id @default(uuid())
+  securityId   String
+  status       String   // e.g. LISTED, DELISTED
+  effectiveDate DateTime
+  publishedAt  DateTime?
+  availableAt  DateTime
+  supersededAt DateTime @default(dbgenerated("'9999-12-31 23:59:59'::timestamp without time zone"))
+  security     PitSecurity @relation(fields: [securityId], references: [id])
+
+  @@index([securityId, effectiveDate])
+}
+
+model PitIndexConstituent {
+  id               String   @id @default(uuid())
+  indexId          String   // e.g. 'SP500'
+  securityId       String
+  eventType        String   // 'ADD' or 'REMOVE'
+  effectiveDate    DateTime
+  publishedAt      DateTime?
+  availableAt      DateTime
+  supersededAt     DateTime @default(dbgenerated("'9999-12-31 23:59:59'::timestamp without time zone"))
+  sourceRecordHash String
+  sourceProvider   String
+  sourceType       String
+  sourceTicker     String?
+
+
+  security         PitSecurity @relation(fields: [securityId], references: [id])
+
+  @@index([securityId, effectiveDate])
+}
+
+// ─── Consensus / Estimates (Zacks, Estimize, etc.) ──────────────────────────
+// PIT-correct historical analyst consensus snapshots.
+// Each row = one consensus snapshot as-of observationDate for a fiscal period.
+// Immutable: supersededAt tracks when a newer snapshot replaced this one.
+
+model PitConsensusFact {
+  id                 String      @id @default(uuid())
+  securityId         String
+  security           PitSecurity @relation(fields: [securityId], references: [id])
+
+  // Fiscal period identification
+  fiscalYear         Int
+  fiscalPeriod       String      // e.g. 'Q1', 'Q2', 'FY'
+  periodEndDate      DateTime    // fiscal period end
+
+  // PIT timestamps
+  observationDate    DateTime    // date the consensus was known/available
+  availableAt        DateTime    // when this snapshot became available to us
+  supersededAt       DateTime    @default(dbgenerated("'9999-12-31 23:59:59'::timestamp"))
+
+  // Metric type: 'EPS' or 'REVENUE'
+  metricType         String      // 'EPS' | 'REVENUE'
+
+  // Consensus values
+  consensusMean      Float?
+  consensusMedian    Float?
+  consensusHigh      Float?
+  consensusLow       Float?
+  consensusStdDev    Float?
+  analystCount       Int?
+
+  // Actual reported value (only on the snapshot closest to earnings report)
+  actualValue        Float?
+  actualReportDate   DateTime?
+
+  // Source lineage
+  sourceProvider     String      // 'ZACKS' | 'ESTIMIZE' | 'NASDAQ_DL'
+  sourceType         String      // 'ZEE' | 'ESTIMATES_CSV' | 'API'
+  sourceRecordHash   String
+
+  @@index([securityId, fiscalYear, fiscalPeriod, metricType, observationDate])
+  @@index([securityId, availableAt, supersededAt])
+  @@index([securityId, periodEndDate, metricType])
+}
+
+// Individual analyst estimate revisions (broker-level detail)
+model PitConsensusRevision {
+  id                 String      @id @default(uuid())
+  securityId         String
+  security           PitSecurity @relation(fields: [securityId], references: [id])
+
+  fiscalYear         Int
+  fiscalPeriod       String
+  periodEndDate      DateTime
+
+  // Revision details
+  revisionDate       DateTime    // when the revision was published
+  availableAt        DateTime    // when we received it
+  analystId          String?     // broker/analyst identifier
+  analystName        String?     // broker name (e.g. "Morgan Stanley")
+
+  metricType         String      // 'EPS' | 'REVENUE'
+  priorEstimate      Float?      // previous estimate by this analyst
+  newEstimate        Float?      // revised estimate
+
+  sourceProvider     String
+  sourceType         String
+  sourceRecordHash   String
+
+  @@index([securityId, fiscalYear, fiscalPeriod, metricType, revisionDate])
+  @@index([securityId, availableAt])
+}

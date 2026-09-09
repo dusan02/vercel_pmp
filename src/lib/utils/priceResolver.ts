@@ -1,0 +1,592 @@
+/**
+ * Price Resolver - Session-aware price resolution
+ * 
+ * This module provides a single source of truth for resolving effective prices
+ * from Polygon snapshots based on market session and timestamp validation.
+ * 
+ * CRITICAL: This prevents stale data from overwriting good prices.
+ */
+
+import { isMarketHoliday } from './timeUtils';
+import { getPricingState, PriceState } from './pricingStateMachine';
+import { isWeekendET, nowET, toET, isSameETDay, isInSessionET, nsToMs, createETDate, getDateET } from './dateET';
+
+export type PriceSource = 'min' | 'lastTrade' | 'day' | 'frozen' | 'regularClose';
+
+export interface EffectivePrice {
+  price: number;
+  source: PriceSource;
+  timestamp: Date;
+  isStale: boolean;
+  staleReason?: string;
+}
+
+export interface PercentChangeResult {
+  changePct: number;
+  reference: {
+    used: 'previousClose' | 'regularClose' | null;
+    price: number | null;
+  };
+}
+
+export interface PolygonSnapshot {
+  ticker: string;
+  day?: {
+    o: number;
+    h: number;
+    l: number;
+    c: number;
+    v: number;
+  };
+  prevDay?: {
+    c: number;
+  };
+  min?: {
+    av: number;
+    t: number;
+    c?: number;
+    o?: number;
+    h?: number;
+    l?: number;
+    v?: number;
+  };
+  lastQuote?: {
+    p: number; // bid price (Polygon schema: lowercase p = bid)
+    P?: number; // ask price (uppercase P = ask)
+    t: number;
+  };
+  lastTrade?: {
+    p: number;
+    t: number;
+  };
+}
+
+/**
+ * Check if timestamp is valid (ET timezone, DST-safe)
+ * 
+ * CRITICAL: For frozen states (OVERNIGHT_FROZEN, WEEKEND_FROZEN),
+ * we allow timestamps from the last trading day, not just "today"
+ * 
+ * Also handles nanosecond timestamps from Polygon API
+ */
+function isTimestampValid(
+  timestamp: number,
+  etNow: Date,
+  pricingState: PriceState
+): boolean {
+  // Convert nanoseconds to milliseconds if needed
+  const tsMs = nsToMs(timestamp);
+  const tsDate = new Date(tsMs);
+  
+  // For frozen states, allow last trading day (not just today)
+  if (pricingState === PriceState.OVERNIGHT_FROZEN || pricingState === PriceState.WEEKEND_FROZEN) {
+    // Allow timestamps from last 3 days (covers weekend + holiday)
+    const threeDaysAgo = new Date(etNow);
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+    return tsDate >= threeDaysAgo;
+  }
+  
+  // For live states, must be from today (DST-safe)
+  return isSameETDay(tsDate, etNow);
+}
+
+/**
+ * Check if timestamp is from today (ET timezone)
+ * @deprecated Use isTimestampValid with pricingState instead
+ */
+function isTimestampFromToday(timestamp: number, etNow: Date): boolean {
+  const tsMs = nsToMs(timestamp);
+  return isSameETDay(new Date(tsMs), etNow);
+}
+
+/**
+ * Check if timestamp is within session window (DST-safe)
+ */
+function isTimestampInSession(timestamp: number, session: 'pre' | 'live' | 'after', etNow: Date): boolean {
+  // Convert nanoseconds to milliseconds if needed
+  const tsMs = nsToMs(timestamp);
+  
+  // Use DST-safe helper
+  return isInSessionET(tsMs, session, etNow);
+}
+
+/**
+ * Check if price is stale (older than threshold)
+ * Handles nanosecond timestamps from Polygon API
+ */
+function isStale(timestamp: number, thresholdMinutes: number, nowMs: number): boolean {
+  const tsMs = nsToMs(timestamp);
+  const ageMs = nowMs - tsMs;
+  if (ageMs <= 0) return false; // future timestamps are not stale
+  // Stale ONLY if strictly older than threshold (not >=)
+  return ageMs > thresholdMinutes * 60_000;
+}
+
+/**
+ * Resolve effective price from Polygon snapshot based on session
+ * 
+ * This is the SINGLE SOURCE OF TRUTH for price resolution.
+ * All other code should use this function instead of directly accessing snapshot fields.
+ * 
+ * INVARIANTS:
+ * - Never returns price <= 0 (returns null instead)
+ * - Frozen prices are never overwritten by zero/null snapshots
+ * - Timestamp validation is state-aware (frozen states allow last trading day)
+ */
+export function resolveEffectivePrice(
+  snapshot: PolygonSnapshot,
+  session: 'pre' | 'live' | 'after' | 'closed',
+  etNow?: Date,
+  frozenAfterHoursPrice?: { price: number; timestamp: Date },
+  force: boolean = false,
+  fallbackPreviousClose?: number | null
+): EffectivePrice | null {
+  const now = etNow || nowET();
+  const nowMs = now.getTime();
+  const isWeekendOrHoliday = isWeekendET(now) || isMarketHoliday(now);
+  const pricingState = getPricingState(now);
+
+  // OVERNIGHT (20:00-04:00 ET) or WEEKEND: Use frozen price if available
+  if (session === 'closed' && !isWeekendOrHoliday) {
+    // Overnight: Use frozen after-hours price
+    if (frozenAfterHoursPrice) {
+      return {
+        price: frozenAfterHoursPrice.price,
+        source: 'frozen',
+        timestamp: frozenAfterHoursPrice.timestamp,
+        isStale: false
+      };
+    }
+    // If no frozen price, use regular close (day.c) as fallback
+    // This handles edge case where worker runs before 20:00 ET freeze or frozen price not available
+    // CRITICAL: Use day.c (regular close) instead of null to prevent showing zero/incorrect prices
+    if (snapshot.day?.c && snapshot.day.c > 0) {
+      return {
+        price: snapshot.day.c,
+        source: 'day',
+        timestamp: now,
+        isStale: true, // Mark as stale since it's regular close, not after-hours
+        staleReason: 'No frozen after-hours price; using regular close'
+      };
+    }
+    // No price available
+    return null;
+  }
+
+  if (session === 'closed' && isWeekendOrHoliday) {
+    // Weekend/Holiday: Always use frozen price, never fetch new data
+    // UNLESS force=true (for manual ingest)
+    if (frozenAfterHoursPrice) {
+      return {
+        price: frozenAfterHoursPrice.price,
+        source: 'frozen',
+        timestamp: frozenAfterHoursPrice.timestamp,
+        isStale: false
+      };
+    }
+    // If no frozen price available and force=false, return null (don't use stale data)
+    // If force=true, accept prices from snapshot (for manual catch-up)
+    if (!force) {
+      return null;
+    }
+    // Force ingest: Accept day.c or min.c from snapshot (even if from previous trading day)
+    if (snapshot.day?.c && snapshot.day.c > 0) {
+      return {
+        price: snapshot.day.c,
+        source: 'day',
+        timestamp: now,
+        isStale: true // Mark as stale since it's from previous trading day
+      };
+    }
+    if (snapshot.min?.c && snapshot.min.c > 0) {
+      const minTMs = snapshot.min.t ? nsToMs(snapshot.min.t) : nowMs;
+      return {
+        price: snapshot.min.c,
+        source: 'min',
+        timestamp: new Date(minTMs),
+        isStale: true
+      };
+    }
+    // No price available even with force
+    return null;
+  }
+
+  // PRE-MARKET (04:00-09:30 ET)
+  if (session === 'pre') {
+    // Priority 1: min.c (pre-market minute bar) - MUST be from today and in pre-market window
+    if (snapshot.min?.c && snapshot.min.c > 0 && snapshot.min.t) {
+      const minT = snapshot.min.t;
+      const minTMs = nsToMs(minT);
+      const isValid = isTimestampValid(minT, now, pricingState.state);
+      const isInPreMarket = isTimestampInSession(minT, 'pre', now);
+      
+      if (isValid && isInPreMarket) {
+        const stale = isStale(minT, 5, nowMs); // 5 min threshold for pre-market
+        return {
+          price: snapshot.min.c,
+          source: 'min',
+          timestamp: new Date(minTMs),
+          isStale: stale,
+          ...(stale ? { staleReason: 'Pre-market price older than 5 minutes' } : {})
+        };
+      }
+    }
+
+    // Priority 2: lastTrade.p - ONLY if from today and in pre-market window
+    if (snapshot.lastTrade?.p && snapshot.lastTrade.p > 0 && snapshot.lastTrade.t) {
+      const lastTradeT = snapshot.lastTrade.t;
+      const lastTradeTMs = nsToMs(lastTradeT);
+      const isValid = isTimestampValid(lastTradeT, now, pricingState.state);
+      const isInPreMarket = isTimestampInSession(lastTradeT, 'pre', now);
+      
+      if (isValid && isInPreMarket) {
+        const stale = isStale(lastTradeT, 5, nowMs);
+        return {
+          price: snapshot.lastTrade.p,
+          source: 'lastTrade',
+          timestamp: new Date(lastTradeTMs),
+          isStale: stale,
+          ...(stale ? { staleReason: 'Last trade older than 5 minutes' } : {})
+        };
+      }
+    }
+
+    // Priority 3: lastQuote (if no trade available).
+    // Polygon schema: p = bid, P = ask. Prefer mid-price; fall back to bid.
+    if (snapshot.lastQuote?.t) {
+      const bid = snapshot.lastQuote.p;
+      const ask = snapshot.lastQuote.P;
+      const mid = bid > 0 && (ask ?? 0) > 0 ? (bid + (ask as number)) / 2 : bid;
+      if (mid > 0) {
+        const lastQuoteT = snapshot.lastQuote.t;
+        const lastQuoteTMs = nsToMs(lastQuoteT);
+        const isValid = isTimestampValid(lastQuoteT, now, pricingState.state);
+        const isInPreMarket = isTimestampInSession(lastQuoteT, 'pre', now);
+
+        if (isValid && isInPreMarket) {
+          return {
+            price: mid,
+            source: 'lastTrade', // Using same source type for quotes
+            timestamp: new Date(lastQuoteTMs),
+            isStale: isStale(lastQuoteT, 5, nowMs)
+          };
+        }
+      }
+    }
+
+    // Fallback: if Polygon has no pre-market prints/quotes yet, use prevDay.c (previous close)
+    // This prevents extremely stale DB prices (e.g. from days ago) from showing up as "current" in our UI.
+    //
+    // NOTE: This is intentionally marked stale and uses an old timestamp (best-effort from snapshot),
+    // so it won't be treated as a fresh tick.
+    if (snapshot.prevDay?.c && snapshot.prevDay.c > 0) {
+      const candidateTs =
+        snapshot.lastTrade?.t ||
+        snapshot.lastQuote?.t ||
+        snapshot.min?.t ||
+        null;
+
+      const candidateTsMs = candidateTs ? nsToMs(candidateTs) : nowMs;
+      return {
+        price: snapshot.prevDay.c,
+        source: 'regularClose',
+        timestamp: new Date(candidateTsMs),
+        isStale: true,
+        staleReason: 'No valid pre-market price; falling back to previous close'
+      };
+    }
+
+    // Final fallback: Polygon snapshot may be EMPTY around the daily 03:30 ET clear
+    // (Polygon clears snapshots at 03:30 ET and repopulates "as early as 04:00 ET" —
+    // the actual repopulation time varies day to day). In that window both prevDay.c
+    // and pre-market prints are missing. Use OUR OWN previousClose (from Redis/DB
+    // bootstrap) so the site consistently shows previous close at 0% from 04:00 ET
+    // instead of stale yesterday data or nothing at all.
+    //
+    // Timestamp is pinned to today's 04:00 ET pre-market start (NOT `now`): the
+    // upsert staleness guard rejects data older than lastPriceUpdated, so a "now"
+    // timestamp would block real pre-market prints from overwriting this fallback.
+    // Pinning to 04:00 ET lets any real pre-market print (even a delayed one) win.
+    if (fallbackPreviousClose && fallbackPreviousClose > 0) {
+      const preMarketStartTs = createETDate(getDateET(now)).getTime() + 4 * 60 * 60 * 1000;
+      return {
+        price: fallbackPreviousClose,
+        source: 'regularClose',
+        timestamp: new Date(Math.min(preMarketStartTs, nowMs)),
+        isStale: true,
+        staleReason: 'Polygon snapshot empty (daily 03:30 ET clear); using our previousClose'
+      };
+    }
+
+    // No valid pre-market price found
+    return null;
+  }
+
+  // LIVE (09:30-16:00 ET)
+  if (session === 'live') {
+    // Priority 1: lastTrade.p (most current)
+    if (snapshot.lastTrade?.p && snapshot.lastTrade.p > 0 && snapshot.lastTrade.t) {
+      const lastTradeT = snapshot.lastTrade.t;
+      const lastTradeTMs = nsToMs(lastTradeT);
+      const isValid = isTimestampValid(lastTradeT, now, pricingState.state);
+      const isInLive = isTimestampInSession(lastTradeT, 'live', now);
+      
+      if (isValid && isInLive) {
+        return {
+          price: snapshot.lastTrade.p,
+          source: 'lastTrade',
+          timestamp: new Date(lastTradeTMs),
+          isStale: isStale(lastTradeT, 1, nowMs) // 1 min threshold for live
+        };
+      }
+    }
+
+    // Priority 2: day.c (regular trading day close)
+    // For force ingest on weekend, accept day.c even if it's from previous trading day
+    if (snapshot.day?.c && snapshot.day.c > 0) {
+      // If lastTrade exists but is NOT from today, and day.c exists, day.c is likely better
+      const lastTradeT = snapshot.lastTrade?.t;
+      const isLastTradeFromToday = lastTradeT && isTimestampInSession(lastTradeT, 'live', now);
+      
+      if (!isLastTradeFromToday || !snapshot.lastTrade?.p) {
+        return {
+          price: snapshot.day.c,
+          source: 'day',
+          timestamp: now,
+          isStale: false
+        };
+      }
+    }
+
+    // Priority 3: min.c (fallback)
+    if (snapshot.min?.c && snapshot.min.c > 0 && snapshot.min.t) {
+      const minT = snapshot.min.t;
+      const minTMs = nsToMs(minT);
+      const isValid = isTimestampValid(minT, now, pricingState.state);
+      // For force ingest, be more lenient with timestamp validation
+      if (isValid || force) {
+        return {
+          price: snapshot.min.c,
+          source: 'min',
+          timestamp: new Date(minTMs),
+          isStale: isStale(minT, 1, nowMs)
+        };
+      }
+    }
+
+    // For force ingest, try lastTrade as last resort
+    if (force && snapshot.lastTrade?.p && snapshot.lastTrade.p > 0) {
+      const lastTradeT = snapshot.lastTrade.t;
+      const lastTradeTMs = lastTradeT ? nsToMs(lastTradeT) : nowMs;
+      return {
+        price: snapshot.lastTrade.p,
+        source: 'lastTrade',
+        timestamp: new Date(lastTradeTMs),
+        isStale: true // Mark as stale since it's from previous trading day
+      };
+    }
+
+    return null;
+  }
+
+  // AFTER-HOURS (16:00-20:00 ET)
+  if (session === 'after') {
+    type Candidate = {
+      price: number;
+      source: PriceSource;
+      tsMs: number;
+      stale: boolean;
+      staleReason?: string;
+    };
+
+    const candidates: Candidate[] = [];
+
+    // Candidate: min.c
+    if (snapshot.min?.c && snapshot.min.c > 0 && snapshot.min.t) {
+      const t = snapshot.min.t;
+      const tsMs = nsToMs(t);
+      const isValid = isTimestampValid(t, now, pricingState.state);
+      const isInAfterHours = isTimestampInSession(t, 'after', now);
+      if (isValid && isInAfterHours) {
+        const stale = isStale(t, 5, nowMs);
+        candidates.push({
+          price: snapshot.min.c,
+          source: 'min',
+          tsMs,
+          stale,
+          ...(stale ? { staleReason: 'After-hours price older than 5 minutes' } : {})
+        });
+      }
+    }
+
+    // Candidate: lastTrade.p
+    if (snapshot.lastTrade?.p && snapshot.lastTrade.p > 0 && snapshot.lastTrade.t) {
+      const t = snapshot.lastTrade.t;
+      const tsMs = nsToMs(t);
+      const isValid = isTimestampValid(t, now, pricingState.state);
+      const isInAfterHours = isTimestampInSession(t, 'after', now);
+      if (isValid && isInAfterHours) {
+        const stale = isStale(t, 5, nowMs);
+        candidates.push({
+          price: snapshot.lastTrade.p,
+          source: 'lastTrade',
+          tsMs,
+          stale,
+          ...(stale ? { staleReason: 'Last trade older than 5 minutes' } : {})
+        });
+      }
+    }
+
+    // Candidate: lastQuote (fallback) — use mid-price (bid/ask) when available
+    if (snapshot.lastQuote?.t) {
+      const bid = snapshot.lastQuote.p;
+      const ask = snapshot.lastQuote.P;
+      const mid = bid > 0 && (ask ?? 0) > 0 ? (bid + (ask as number)) / 2 : bid;
+      if (mid > 0) {
+        const t = snapshot.lastQuote.t;
+        const tsMs = nsToMs(t);
+        const isValid = isTimestampValid(t, now, pricingState.state);
+        const isInAfterHours = isTimestampInSession(t, 'after', now);
+        if (isValid && isInAfterHours) {
+          const stale = isStale(t, 5, nowMs);
+          candidates.push({
+            price: mid,
+            source: 'lastTrade', // keep compat: quotes treated like lastTrade
+            tsMs,
+            stale,
+            ...(stale ? { staleReason: 'Last quote older than 5 minutes' } : {})
+          });
+        }
+      }
+    }
+
+    // Pick best: prefer non-stale, then newest timestamp
+    const best = candidates.reduce<Candidate | null>((acc, cur) => {
+      if (!acc) return cur;
+      if (acc.stale !== cur.stale) return acc.stale ? cur : acc;
+      return cur.tsMs >= acc.tsMs ? cur : acc;
+    }, null);
+
+    if (best) {
+      return {
+        price: best.price,
+        source: best.source,
+        timestamp: new Date(best.tsMs),
+        isStale: best.stale,
+        ...(best.staleReason ? { staleReason: best.staleReason } : {})
+      };
+    }
+
+    // Fallback: If no after-hours price available, use day.c (regular close) as fallback
+    // This prevents showing null/zero prices when after-hours data is not available
+    // CRITICAL: This should only be used when there's truly no after-hours data
+    // The UI should still show this as "regular close" price, not "current after-hours price"
+    if (snapshot.day?.c && snapshot.day.c > 0) {
+      return {
+        price: snapshot.day.c,
+        source: 'day',
+        timestamp: now,
+        isStale: true, // Mark as stale since it's regular close, not after-hours
+        staleReason: 'No after-hours price available; using regular close'
+      };
+    }
+
+    // No price available at all
+    return null;
+  }
+
+  // Should not reach here
+  return null;
+}
+
+/**
+ * Calculate percent change based on session rules
+ * 
+ * Rules:
+ * - Pre-market: vs previousClose (D-1)
+ * - Live: vs previousClose (D-1)
+ * - After-hours: vs previousClose (D-1) if available, else regularClose (D)
+ * - Overnight: vs previousClose (D-1) if available, else regularClose (D)
+ * - Weekend: vs previousClose (D-1) if available, else regularClose (last trading day)
+ * 
+ * Returns both the percentage and which reference was used (for UI display)
+ */
+export function calculatePercentChange(
+  currentPrice: number,
+  session: 'pre' | 'live' | 'after' | 'closed',
+  previousClose: number | null,
+  regularClose: number | null
+): PercentChangeResult {
+  if (!currentPrice || currentPrice <= 0) {
+    return {
+      changePct: 0,
+      reference: { used: null, price: null }
+    };
+  }
+
+  // Weekend % change is now handled by Solution B:
+  // - pricingStateMachine: WEEKEND_FROZEN has canIngest:true, canOverwrite:false
+  // - upsertToDB: skips DB write on WEEKEND_FROZEN, returns changePct for Redis
+  // No guard needed here — calculate normally for all sessions.
+
+  let referencePrice: number | null = null;
+  let referenceUsed: 'previousClose' | 'regularClose' | null = null;
+
+  switch (session) {
+    case 'pre':
+    case 'live':
+      // Always vs previousClose (D-1)
+      referencePrice = previousClose;
+      referenceUsed = previousClose ? 'previousClose' : null;
+      break;
+
+    case 'after':
+    case 'closed':
+      // Always use previousClose (D-1) as reference — same as Finviz.
+      // This shows the total daily move, not just the after-hours delta.
+      // Falls back to regularClose (D) only if previousClose is missing.
+      if (previousClose && previousClose > 0) {
+        referencePrice = previousClose;
+        referenceUsed = 'previousClose';
+      } else if (regularClose && regularClose > 0) {
+        referencePrice = regularClose;
+        referenceUsed = 'regularClose';
+      }
+      break;
+
+    default:
+      referencePrice = previousClose;
+      referenceUsed = previousClose ? 'previousClose' : null;
+  }
+
+  if (!referencePrice || referencePrice <= 0) {
+    return {
+      changePct: 0,
+      reference: { used: null, price: null }
+    };
+  }
+
+  const changePct = ((currentPrice / referencePrice) - 1) * 100;
+
+  // Validate for extreme changes (possible data errors or splits)
+  if (Math.abs(changePct) > 1000) {
+    console.warn(`⚠️ Extreme percent change detected: ${changePct.toFixed(2)}% - possible data error or stock split`);
+    // Cap at reasonable bounds to prevent UI issues
+    return {
+      changePct: Math.max(-999.99, Math.min(999.99, changePct)),
+      reference: {
+        used: referenceUsed,
+        price: referencePrice
+      }
+    };
+  }
+
+  return {
+    changePct,
+    reference: {
+      used: referenceUsed,
+      price: referencePrice
+    }
+  };
+}
+

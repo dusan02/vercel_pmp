@@ -1,25 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getBackgroundService } from '@/lib/backgroundService';
 
 export async function GET(request: NextRequest) {
   try {
-    const service = getBackgroundService();
-    
-    if (!service) {
-      return NextResponse.json({
-        success: false,
-        error: 'Background service not initialized'
-      }, { status: 404 });
-    }
+    // In Edge Runtime, background service is not available
+    // Return a simplified status response
+    const status = {
+      isRunning: false,
+      lastUpdate: new Date().toISOString(),
+      nextUpdate: new Date(Date.now() + 2 * 60 * 1000).toISOString(), // 2 minutes from now
+      updateInterval: 2 * 60 * 1000, // 2 minutes
+      message: 'Background service not available in Edge Runtime'
+    };
 
-    const status = await service.getStatus();
-    const stats = service.getStats();
+    const stats = {
+      totalUpdates: 0,
+      successfulUpdates: 0,
+      failedUpdates: 0,
+      lastError: null,
+      averageUpdateTime: 0,
+      cacheHitRate: 0
+    };
 
     return NextResponse.json({
       success: true,
       data: {
         status,
-        stats
+        stats,
+        environment: 'Edge Runtime',
+        note: 'Background service runs in Node.js environment only'
       }
     });
 
@@ -27,7 +35,8 @@ export async function GET(request: NextRequest) {
     console.error('Error getting background service status:', error);
     return NextResponse.json({
       success: false,
-      error: 'Failed to get background service status'
+      error: 'Failed to get background service status',
+      details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 } 

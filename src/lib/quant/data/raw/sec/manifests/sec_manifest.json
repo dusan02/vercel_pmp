@@ -1,0 +1,93 @@
+[
+  {
+    "cik": "0000320193",
+    "artifactType": "SUBMISSIONS",
+    "url": "https://data.sec.gov/submissions/CIK0000320193.json",
+    "fetchedAt": "2026-09-03T06:33:58.187Z",
+    "byteLength": 164326,
+    "artifactHash": "a8517ecc03287acf416567cbdf7c167dd729a4e5a6bcbce9a0e3ff1087f37b08",
+    "filePath": "/Users/dusanbaran/Desktop/Projects/PMP/src/lib/quant/data/raw/sec/submissions/CIK0000320193_submissions_a8517ecc03287acf.json",
+    "status": "FETCHED"
+  },
+  {
+    "cik": "0000320193",
+    "artifactType": "COMPANYFACTS",
+    "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000320193.json",
+    "fetchedAt": "2026-09-03T06:33:58.575Z",
+    "byteLength": 3789099,
+    "artifactHash": "73a86c6aedc31f77cac2ea4df5f80f0b3bd7e6eb58bb4e01444fbedf3afb9c43",
+    "filePath": "/Users/dusanbaran/Desktop/Projects/PMP/src/lib/quant/data/raw/sec/companyfacts/CIK0000320193_companyfacts_73a86c6aedc31f77.json",
+    "status": "FETCHED"
+  },
+  {
+    "cik": "9999999999",
+    "artifactType": "SUBMISSIONS",
+    "url": "https://data.sec.gov/submissions/CIK9999999999_NONEXISTENT.json",
+    "fetchedAt": "2026-09-03T20:30:30.969Z",
+    "byteLength": 0,
+    "artifactHash": "",
+    "filePath": "",
+    "status": "FAILED",
+    "errorMessage": "HTTP 404 Not Found"
+  },
+  {
+    "cik": "0000093410",
+    "artifactType": "SUBMISSIONS",
+    "url": "https://data.sec.gov/submissions/CIK0000093410.json",
+    "fetchedAt": "2026-09-03T07:36:40.755Z",
+    "byteLength": 157822,
+    "artifactHash": "bf057bef16c6300d706fb699e86f92dd43d87751031d5080aa54aae61fdd54c3",
+    "filePath": "/Users/dusanbaran/Desktop/Projects/PMP/src/lib/quant/data/raw/sec/submissions/CIK0000093410_submissions_bf057bef16c6300d.json",
+    "status": "FETCHED"
+  },
+  {
+    "cik": "0000789019",
+    "artifactType": "SUBMISSIONS",
+    "url": "https://data.sec.gov/submissions/CIK0000789019.json",
+    "fetchedAt": "2026-09-03T09:54:27.411Z",
+    "byteLength": 183869,
+    "artifactHash": "1aa98e15dc1b22c59389f1c460daa1fc94388a045e609fe1f5c7079e9345a5d2",
+    "filePath": "/Users/dusanbaran/Desktop/Projects/PMP/src/lib/quant/data/raw/sec/submissions/CIK0000789019_submissions_1aa98e15dc1b22c5.json",
+    "status": "FETCHED"
+  },
+  {
+    "cik": "0001326801",
+    "artifactType": "SUBMISSIONS",
+    "url": "https://data.sec.gov/submissions/CIK0001326801.json",
+    "fetchedAt": "2026-09-03T09:54:27.625Z",
+    "byteLength": 157733,
+    "artifactHash": "2c11151eea83ce390d096daf3245c56c421ab3695af2cc6e1f59a218fbe6e645",
+    "filePath": "/Users/dusanbaran/Desktop/Projects/PMP/src/lib/quant/data/raw/sec/submissions/CIK0001326801_submissions_2c11151eea83ce39.json",
+    "status": "FETCHED"
+  },
+  {
+    "cik": "0001045810",
+    "artifactType": "SUBMISSIONS",
+    "url": "https://data.sec.gov/submissions/CIK0001045810.json",
+    "fetchedAt": "2026-09-03T09:54:27.655Z",
+    "byteLength": 159927,
+    "artifactHash": "f26fcb9dd562b3a0c407a9771c64d6e6089593de177a5375ef2ab200eafdfaa3",
+    "filePath": "/Users/dusanbaran/Desktop/Projects/PMP/src/lib/quant/data/raw/sec/submissions/CIK0001045810_submissions_f26fcb9dd562b3a0.json",
+    "status": "FETCHED"
+  },
+  {
+    "cik": "0000886158",
+    "artifactType": "SUBMISSIONS",
+    "url": "https://data.sec.gov/submissions/CIK0000886158.json",
+    "fetchedAt": "2026-09-03T09:54:28.018Z",
+    "byteLength": 162692,
+    "artifactHash": "21b1179f6f667f9004c0b1d352eb0bdcaba0f4d80dd234c767f944307c08d0ca",
+    "filePath": "/Users/dusanbaran/Desktop/Projects/PMP/src/lib/quant/data/raw/sec/submissions/CIK0000886158_submissions_21b1179f6f667f90.json",
+    "status": "FETCHED"
+  },
+  {
+    "cik": "0000093410",
+    "artifactType": "COMPANYFACTS",
+    "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000093410.json",
+    "fetchedAt": "2026-09-03T09:54:34.262Z",
+    "byteLength": 4810683,
+    "artifactHash": "c09b160603412cb45acf1bb9bf3732e531dedfb548afa0e275fd8aefd7ab397e",
+    "filePath": "/Users/dusanbaran/Desktop/Projects/PMP/src/lib/quant/data/raw/sec/companyfacts/CIK0000093410_companyfacts_c09b160603412cb4.json",
+    "status": "FETCHED"
+  }
+]

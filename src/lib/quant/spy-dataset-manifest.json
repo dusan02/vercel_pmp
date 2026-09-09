@@ -1,0 +1,22 @@
+{
+  "datasetId": "SPY_DAILY_2010_2025",
+  "symbol": "SPY",
+  "source": "YahooFinance_API_v8",
+  "interval": "1d",
+  "requestedStart": "2010-01-01T00:00:00Z",
+  "requestedEnd": "2025-01-01T00:00:00Z",
+  "rawSha256": "0bf61c4012af4838001522095022e540af45761337496fb034f7d3fadb051a86",
+  "canonicalSha256": "ebb9fc6cd1a54393df7a0f6413008da5ed2128418ae4d82dd65dfe0ee13dc522",
+  "rowCount": 3774,
+  "firstTimestamp": "2010-01-04T14:30:00.000Z",
+  "lastTimestamp": "2024-12-31T14:30:00.000Z",
+  "timezone": "America/New_York",
+  "calendarVersion": "1.0",
+  "adjustmentMode": "UNADJUSTED_PRICES",
+  "corporateActionSource": "YahooFinance_Events",
+  "validation": {
+    "accepted": true,
+    "errors": 0,
+    "warnings": 0
+  }
+}

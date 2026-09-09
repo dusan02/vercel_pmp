@@ -1,0 +1,42 @@
+{
+  "UUID123:LEHMQ:2000:2010": {
+    "id": "UUID123:LEHMQ:2000:2010",
+    "securityId": "UUID123",
+    "sourceSymbol": "LEHMQ",
+    "startDate": "2000-01-01",
+    "endDate": "2010-01-01",
+    "artifactHash": "abc123hash",
+    "status": "INGESTED",
+    "updatedAt": "2026-09-03T05:37:36.575Z"
+  },
+  "72869972-a35f-4f16-9e23-8ecc799563ca:CRASH:2020:2021": {
+    "id": "72869972-a35f-4f16-9e23-8ecc799563ca:CRASH:2020:2021",
+    "securityId": "72869972-a35f-4f16-9e23-8ecc799563ca",
+    "sourceSymbol": "CRASH",
+    "startDate": "2020",
+    "endDate": "2021",
+    "artifactHash": "hash",
+    "status": "INGESTED",
+    "updatedAt": "2026-09-03T06:14:18.275Z"
+  },
+  "7e936d44-6b9a-4641-93c8-92889818b436:REALCRASH:2020:2021": {
+    "id": "7e936d44-6b9a-4641-93c8-92889818b436:REALCRASH:2020:2021",
+    "securityId": "7e936d44-6b9a-4641-93c8-92889818b436",
+    "sourceSymbol": "CRASH",
+    "startDate": "2020",
+    "endDate": "2021",
+    "artifactHash": "hash_worker",
+    "status": "FETCHED",
+    "updatedAt": "2026-09-03T06:26:28.002Z"
+  },
+  "b88d1c55-445b-440b-b516-65eab6fa7ae6:REALCRASH:2020:2021": {
+    "id": "b88d1c55-445b-440b-b516-65eab6fa7ae6:REALCRASH:2020:2021",
+    "securityId": "b88d1c55-445b-440b-b516-65eab6fa7ae6",
+    "sourceSymbol": "CRASH",
+    "startDate": "2020",
+    "endDate": "2021",
+    "artifactHash": "hash_worker",
+    "status": "INGESTED",
+    "updatedAt": "2026-09-03T06:26:36.384Z"
+  }
+}

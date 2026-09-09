@@ -1,16 +1,70 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
+import Script from 'next/script'
+import { Inter, Space_Grotesk } from 'next/font/google'
 import './globals.css'
-import { initializePreloading } from '@/lib/preload'
-import { initializePWA } from '@/lib/sw-register'
-import PerformanceOptimizer from '@/components/PerformanceOptimizer'
+import '../styles/mobile-optimizations.css'
+import ErrorBoundaryWrapper from '@/components/ErrorBoundaryWrapper'
+import ScrollToTopButton from '@/components/ScrollToTopButton'
+import { Providers } from './providers'
+import { AuthProvider } from '@/components/AuthProvider'
+import { GAListener } from '@/components/GAListener'
+import { ChunkLoadRecovery } from '@/components/ChunkLoadRecovery'
+import { WebVitalsReporter } from '@/components/WebVitalsReporter'
+import { GA_ID } from '@/lib/ga'
+import { ThemeEffect } from '@/components/ThemeEffect'
+import { DevCacheClear } from '@/components/DevCacheClear'
+import { Footer } from '@/components/layout/Footer'
+
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+})
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-space-grotesk',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
-  title: 'PreMarketPrice.com - Real-Time Pre-Market Stock Tracking | Top 200 US Companies',
-  description: 'Track real-time pre-market movements of the top 200 US companies. Monitor percentage changes, market cap fluctuations, and build your personalized watchlist. Get live stock data before market opens.',
-  keywords: 'pre-market stocks, stock tracking, market cap, stock prices, US stocks, stock portfolio, real-time stock data, pre-market trading, stock analysis, market movements',
-  authors: [{ name: 'PreMarketPrice.com' }],
-  creator: 'PreMarketPrice.com',
-  publisher: 'PreMarketPrice.com',
+  title: {
+    default: 'PreMarketPrice - Real-time Stock Data & Earnings Calendar',
+    template: '%s | PreMarketPrice',
+  },
+  description: 'Real-time pre-market live stock prices for US stocks traded on NYSE, NASDAQ, and other US exchanges. Track pre-market movements, earnings calendar, and market analysis for 300+ US companies. Get live stock prices, market cap changes, and earnings reports for S&P 500 companies.',
+  keywords: [
+    'US stocks',
+    'NYSE stocks',
+    'NASDAQ stocks',
+    'pre-market',
+    'premarket',
+    'pre-market live prices',
+    'US stock market',
+    'earnings',
+    'earnings calendar',
+    'stock market',
+    'trading',
+    'portfolio',
+    'real-time data',
+    'stock prices',
+    'live stock prices',
+    'market cap',
+    'S&P 500',
+    'stock analysis',
+    'financial data',
+    'stock tracker',
+    'market movers',
+    'stock screener',
+    'investment',
+    'trading tools',
+    'stock quotes',
+    'US exchanges',
+  ].join(', '),
+  authors: [{ name: 'PreMarketPrice Team' }],
+  creator: 'PreMarketPrice',
+  publisher: 'PreMarketPrice',
   formatDetection: {
     email: false,
     address: false,
@@ -19,18 +73,21 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://premarketprice.com'),
   alternates: {
     canonical: '/',
+    languages: {
+      'en': '/',
+    },
   },
   openGraph: {
-    title: 'PreMarketPrice.com - Real-Time Pre-Market Stock Tracking',
-    description: 'Track real-time pre-market movements of the top 200 US companies. Monitor percentage changes, market cap fluctuations, and build your personalized watchlist.',
+    title: 'PreMarketPrice - Real-time Stock Data & Earnings Calendar',
+    description: 'Real-time pre-market live stock prices for US stocks traded on NYSE, NASDAQ, and other US exchanges. Track pre-market movements, earnings calendar, and market analysis for 300+ US companies.',
     url: 'https://premarketprice.com',
-    siteName: 'PreMarketPrice.com',
+    siteName: 'PreMarketPrice',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'PreMarketPrice.com - Stock Tracking Dashboard',
+        alt: 'PreMarketPrice - Real-time Stock Data & Earnings Calendar Platform',
       },
     ],
     locale: 'en_US',
@@ -38,9 +95,10 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'PreMarketPrice.com - Real-Time Pre-Market Stock Tracking',
-    description: 'Track real-time pre-market movements of the top 200 US companies.',
+    title: 'PreMarketPrice - Real-time Stock Data & Earnings Calendar',
+    description: 'Real-time pre-market live stock prices for US stocks traded on NYSE, NASDAQ, and other US exchanges. Track pre-market movements, earnings calendar, and market analysis for 300+ US companies.',
     images: ['/og-image.png'],
+    creator: '@premarketprice',
   },
   robots: {
     index: true,
@@ -53,9 +111,44 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
+  // Google verification - Google Search Console
   verification: {
-    google: 'your-google-verification-code',
+    google: 'dmxIfnpvrtoVo9gNUq_eNM64TH7W7yUM4FnBpOL6vIs',
   },
+  // PWA specific metadata
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'PreMarketPrice',
+  },
+  applicationName: 'PreMarketPrice',
+  icons: {
+    icon: [
+      { url: '/favicon.svg?v=4', type: 'image/svg+xml' },
+      // favicon.ico removed - using SVG only to avoid 404 errors
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
+  category: 'finance',
+  classification: 'Business',
+  referrer: 'origin-when-cross-origin',
+  other: {
+    'geo.region': 'US',
+    'geo.placename': 'United States',
+  },
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5, // Allow zoom for accessibility
+  userScalable: true, // Allow zoom for accessibility
+  viewportFit: 'cover',
+  themeColor: '#2563eb',
+  colorScheme: 'light dark',
 }
 
 export default function RootLayout({
@@ -63,65 +156,126 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  // Initialize preloading optimizations and PWA features
-  if (typeof window !== 'undefined') {
-    initializePreloading();
-    initializePWA();
-  }
-
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Preload critical resources */}
-        <link rel="preload" href="/favicon.ico" as="image" />
-        <link rel="preload" href="/og-image.png" as="image" />
-        <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" as="style" />
-        
-        {/* Preconnect to external domains */}
-        <link rel="preconnect" href="https://logo.clearbit.com" />
-        <link rel="preconnect" href="https://ui-avatars.com" />
-        <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
-        <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
-        
-        {/* Standard meta tags */}
-        <link rel="icon" href="/favicon.ico" />
+        {/* PWA Meta Tags */}
+        <meta name="application-name" content="PreMarketPrice" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="PreMarketPrice" />
+        {/* description meta tag is set by Next.js metadata API per page — do NOT hardcode here */}
+        <meta name="format-detection" content="telephone=no" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="msapplication-config" content="/browserconfig.xml" />
+        <meta name="msapplication-TileColor" content="#2563eb" />
+        <meta name="msapplication-tap-highlight" content="no" />
+        <meta name="theme-color" content="#2563eb" />
+
+        {/* Apple Touch Icons */}
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-        <link rel="manifest" href="/manifest.json" />
-        
-        {/* Structured Data - JSON-LD */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "WebApplication",
-              "name": "PreMarketPrice.com",
-              "description": "Real-time pre-market stock tracking for top 200 US companies",
-              "url": "https://premarketprice.com",
-              "applicationCategory": "FinanceApplication",
-              "operatingSystem": "Web Browser",
-              "offers": {
-                "@type": "Offer",
-                "price": "0",
-                "priceCurrency": "USD"
-              },
-              "author": {
-                "@type": "Organization",
-                "name": "PreMarketPrice.com"
-              },
-              "publisher": {
-                "@type": "Organization",
-                "name": "PreMarketPrice.com"
-              }
-            })
-          }}
-        />
+        <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon.png" />
+
+        {/* Favicons - SVG only (modern browsers support SVG favicons) */}
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4" />
+
+        {/* Resource Hints - Preconnect to external APIs */}
+        <link rel="preconnect" href="https://api.polygon.io" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://finnhub.io" crossOrigin="anonymous" />
+        {/* Preconnect to Google Analytics for faster loading */}
+        <link rel="preconnect" href="https://www.googletagmanager.com" crossOrigin="anonymous" />
+        {/* DNS prefetch pre API endpoints (rýchlejšie načítanie) */}
+        <link rel="dns-prefetch" href="/api" />
+        {/* Prefetch heatmap API for faster desktop loading */}
+        <link rel="prefetch" href="/api/heatmap?timeframe=day&metric=percent" as="fetch" crossOrigin="anonymous" />
       </head>
-      <body>
-        <PerformanceOptimizer>
-          {children}
-        </PerformanceOptimizer>
+      <body className={`${inter.variable} ${spaceGrotesk.variable} ${inter.className} lg:mb-0 mb-16`}>
+        {/* Global recovery for deploy-time chunk 404s (stale cached HTML/SW) */}
+        <ChunkLoadRecovery />
+        {/* RUM: Core Web Vitals reporting (sampled) */}
+        <WebVitalsReporter />
+        {/* Development cache clear utility */}
+        <DevCacheClear />
+        {/* Google Analytics 4 — only when NEXT_PUBLIC_GA_ID is configured */}
+        {GA_ID && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="google-analytics" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                const debugMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('debug');
+                gtag('config', '${GA_ID}', {
+                  send_page_view: false,
+                  anonymize_ip: true,
+                  debug_mode: debugMode
+                });
+              `}
+            </Script>
+          </>
+        )}
+        <GAListener />
+        <Providers>
+          <AuthProvider>
+            <ThemeEffect />
+            {/* Structured Data - Organization */}
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{
+                __html: JSON.stringify({
+                  '@context': 'https://schema.org',
+                  '@type': 'Organization',
+                  name: 'PreMarketPrice',
+                  url: 'https://premarketprice.com',
+                  logo: 'https://premarketprice.com/og-image.png',
+                  description: 'Real-time pre-market live stock prices for US stocks traded on NYSE, NASDAQ, and other US exchanges. Track pre-market movements, earnings calendar, and market analysis for 300+ US companies.',
+                  sameAs: [
+                    'https://twitter.com/premarketprice',
+                    'https://www.linkedin.com/company/premarketprice',
+                  ],
+                  contactPoint: {
+                    '@type': 'ContactPoint',
+                    contactType: 'Customer Service',
+                    email: 'info@verifa.sk',
+                  },
+                }),
+              }}
+            />
+            {/* Structured Data - WebSite */}
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{
+                __html: JSON.stringify({
+                  '@context': 'https://schema.org',
+                  '@type': 'WebSite',
+                  name: 'PreMarketPrice',
+                  url: 'https://premarketprice.com',
+                  description: 'Real-time pre-market live stock prices for US stocks traded on NYSE, NASDAQ, and other US exchanges. Track pre-market movements, earnings calendar, and market analysis for 300+ US companies.',
+                  potentialAction: {
+                    '@type': 'SearchAction',
+                    target: {
+                      '@type': 'EntryPoint',
+                      urlTemplate: 'https://premarketprice.com/?search={search_term_string}',
+                    },
+                    'query-input': 'required name=search_term_string',
+                  },
+                }),
+              }}
+            />
+            <ErrorBoundaryWrapper>
+              {children}
+            </ErrorBoundaryWrapper>
+            <Footer />
+            <ScrollToTopButton />
+          </AuthProvider>
+        </Providers>
       </body>
     </html>
   )
-} 
+}

@@ -1,0 +1,40 @@
+{
+  "totalEvents": 1528,
+  "canonicalizations": 13,
+  "stateMachineFailures": 0,
+  "failures": [],
+  "churnResults": [
+    {
+      "target": "LEHMQ",
+      "T": "2008-09-17",
+      "tMinus1": "2008-09-15",
+      "tPlus1": "2008-09-22",
+      "stateTMinus1": "MEMBER",
+      "stateT": "ABSENT",
+      "stateTPlus1": "ABSENT"
+    },
+    {
+      "target": "BSC",
+      "T": "2008-06-02",
+      "tMinus1": "2008-03-31",
+      "tPlus1": "2008-06-06",
+      "stateTMinus1": "MEMBER",
+      "stateT": "ABSENT",
+      "stateTPlus1": "ABSENT"
+    },
+    {
+      "target": "WAMUQ",
+      "T": "2008-09-30",
+      "tMinus1": "2008-09-24",
+      "tPlus1": "2008-10-02",
+      "stateTMinus1": "MEMBER",
+      "stateT": "ABSENT",
+      "stateTPlus1": "ABSENT"
+    },
+    {
+      "target": "AIG",
+      "events": [],
+      "dates": {}
+    }
+  ]
+}

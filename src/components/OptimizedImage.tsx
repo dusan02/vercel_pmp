@@ -25,7 +25,7 @@ export default function OptimizedImage({
   fallback,
   onError
 }: OptimizedImageProps) {
-  const [imageSrc, setImageSrc] = useState(src);
+  const [imageSrc, setImageSrc] = useState<string | null>(src && src.trim() !== '' ? src : null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [isInView, setIsInView] = useState(priority);
@@ -36,8 +36,9 @@ export default function OptimizedImage({
     if (priority) return;
 
     const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
+      (entries) => {
+        const entry = entries[0];
+        if (entry && entry.isIntersecting) {
           setIsInView(true);
           observer.disconnect();
         }
@@ -77,14 +78,14 @@ export default function OptimizedImage({
     return (
       <div
         ref={imgRef}
-        className={`bg-gray-200 animate-pulse rounded ${className}`}
+        className={`bg-gray-200 rounded ${className}`}
         style={{ width, height }}
       />
     );
   }
 
-  // Show error fallback
-  if (hasError && !fallback) {
+  // Show error fallback or if no src
+  if ((hasError && !fallback) || !imageSrc) {
     return (
       <div
         className={`bg-gray-100 flex items-center justify-center rounded ${className}`}
@@ -99,7 +100,7 @@ export default function OptimizedImage({
   return (
     <div className={`relative ${className}`} style={{ width, height }}>
       {isLoading && (
-        <div className="absolute inset-0 bg-gray-200 animate-pulse rounded" />
+        <div className="absolute inset-0 bg-gray-200 rounded" />
       )}
       
       <Image
