@@ -109,4 +109,8 @@ export async function setCacheStatus(status: any) {
   }
 }
 
-export default redisClient; 
+export default redisClient;
+export { redisClient };
+
+// Re-export from redis/client.ts for backward compatibility
+export { checkRedisHealth, getRedisSubscriber } from '@/lib/redis/client';
