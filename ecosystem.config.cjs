@@ -61,8 +61,9 @@ module.exports = {
         AUTH_SECRET: envVars.AUTH_SECRET || envVars.NEXTAUTH_SECRET || process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
         NEXTAUTH_URL: envVars.NEXTAUTH_URL || process.env.NEXTAUTH_URL || "https://premarketprice.com",
         ENABLE_INTERNAL_SECTOR_INDUSTRY_SCHEDULER: "false",
+        CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || envVars.CRON_SECRET || process.env.CRON_SECRET_KEY || process.env.CRON_SECRET,
       },
-      env_production: {
+      env: {
         NODE_ENV: "production",
         PORT: 3001,
         // Ensure the custom server binds on IPv4 loopback (matches nginx + monitors)
@@ -93,7 +94,7 @@ module.exports = {
       cwd: __dirname,
       instances: 1,
       exec_mode: "fork",
-      env_production: {
+      env: {
         NODE_ENV: "production",
         MODE: "snapshot",
         ENABLE_WEBSOCKET: "true", // Websocket needs Redis
@@ -120,7 +121,7 @@ module.exports = {
       cwd: __dirname,
       instances: 1,
       exec_mode: "fork",
-      env_production: {
+      env: {
         NODE_ENV: "production",
         DATABASE_URL: envVars.DATABASE_URL || process.env.DATABASE_URL,
         POLYGON_API_KEY: envVars.POLYGON_API_KEY || process.env.POLYGON_API_KEY,
@@ -141,7 +142,7 @@ module.exports = {
       cwd: __dirname,
       instances: 1,
       exec_mode: "fork",
-      env_production: {
+      env: {
         NODE_ENV: "production",
         DATABASE_URL: envVars.DATABASE_URL || process.env.DATABASE_URL,
       },
@@ -158,7 +159,7 @@ module.exports = {
       cwd: __dirname,
       instances: 1,
       exec_mode: "fork",
-      env_production: {
+      env: {
         NODE_ENV: "production",
         DATABASE_URL: envVars.DATABASE_URL || process.env.DATABASE_URL,
         POLYGON_API_KEY: envVars.POLYGON_API_KEY || process.env.POLYGON_API_KEY,
@@ -176,7 +177,7 @@ module.exports = {
       cwd: __dirname,
       instances: 1,
       exec_mode: "fork",
-      env_production: {
+      env: {
         NODE_ENV: "production",
         BASE_URL: "http://127.0.0.1:3001",
         CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || envVars.CRON_SECRET || process.env.CRON_SECRET_KEY || process.env.CRON_SECRET,
@@ -194,7 +195,7 @@ module.exports = {
       cwd: __dirname,
       instances: 1,
       exec_mode: "fork",
-      env_production: {
+      env: {
         NODE_ENV: "production",
         BASE_URL: "http://127.0.0.1:3001",
         CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || envVars.CRON_SECRET || process.env.CRON_SECRET_KEY || process.env.CRON_SECRET,
@@ -213,7 +214,7 @@ module.exports = {
       cwd: __dirname,
       instances: 1,
       exec_mode: "fork",
-      env_production: {
+      env: {
         NODE_ENV: "production",
         BASE_URL: "http://127.0.0.1:3001",
         CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || envVars.CRON_SECRET || process.env.CRON_SECRET_KEY || process.env.CRON_SECRET,
@@ -231,7 +232,7 @@ module.exports = {
       cwd: __dirname,
       instances: 1,
       exec_mode: "fork",
-      env_production: {
+      env: {
         NODE_ENV: "production",
         BASE_URL: "http://127.0.0.1:3001",
         CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || envVars.CRON_SECRET || process.env.CRON_SECRET_KEY || process.env.CRON_SECRET,
@@ -249,7 +250,7 @@ module.exports = {
       cwd: __dirname,
       instances: 1,
       exec_mode: "fork",
-      env_production: {
+      env: {
         NODE_ENV: "production",
         BASE_URL: "http://127.0.0.1:3001",
         CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || envVars.CRON_SECRET || process.env.CRON_SECRET_KEY || process.env.CRON_SECRET,
@@ -267,7 +268,7 @@ module.exports = {
       cwd: __dirname,
       instances: 1,
       exec_mode: "fork",
-      env_production: {
+      env: {
         NODE_ENV: "production",
         BASE_URL: "http://127.0.0.1:3001",
         CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || envVars.CRON_SECRET || process.env.CRON_SECRET_KEY || process.env.CRON_SECRET,
@@ -285,7 +286,7 @@ module.exports = {
       cwd: __dirname,
       instances: 1,
       exec_mode: "fork",
-      env_production: {
+      env: {
         NODE_ENV: "production",
         DATABASE_URL: envVars.DATABASE_URL || process.env.DATABASE_URL,
         FINNHUB_API_KEY: envVars.FINNHUB_API_KEY || process.env.FINNHUB_API_KEY,
@@ -304,7 +305,7 @@ module.exports = {
       cwd: __dirname,
       instances: 1,
       exec_mode: "fork",
-      env_production: {
+      env: {
         NODE_ENV: "production",
         BASE_URL: "http://127.0.0.1:3001",
         ALERT_WEBHOOK_URL: envVars.ALERT_WEBHOOK_URL || process.env.ALERT_WEBHOOK_URL,
