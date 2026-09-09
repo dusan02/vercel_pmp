@@ -49,6 +49,19 @@ module.exports = {
       min_uptime: "10s",
       autorestart: true,
       
+      env_development: {
+        NODE_ENV: "development",
+        PORT: 3001,
+        LISTEN_HOST: "127.0.0.1",
+        ENABLE_WEBSOCKET: "true",
+        DATABASE_URL: envVars.DATABASE_URL || process.env.DATABASE_URL,
+        USE_LOCAL_REDIS: "true",
+        GOOGLE_CLIENT_ID: envVars.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID,
+        GOOGLE_CLIENT_SECRET: envVars.GOOGLE_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET,
+        AUTH_SECRET: envVars.AUTH_SECRET || envVars.NEXTAUTH_SECRET || process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
+        NEXTAUTH_URL: envVars.NEXTAUTH_URL || process.env.NEXTAUTH_URL || "https://premarketprice.com",
+        ENABLE_INTERNAL_SECTOR_INDUSTRY_SCHEDULER: "false",
+      },
       env_production: {
         NODE_ENV: "production",
         PORT: 3001,
