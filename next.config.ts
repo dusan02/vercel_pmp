@@ -42,14 +42,6 @@ const nextConfig: NextConfig = {
   experimental: {
     // optimizeCss: true, // Temporarily disabled due to critters module issue
     optimizePackageImports: ['lucide-react'],
-    turbo: {
-      rules: {
-        '*.svg': {
-          loaders: ['@svgr/webpack'],
-          as: '*.js',
-        },
-      },
-    },
   },
 
   // Compression and optimization

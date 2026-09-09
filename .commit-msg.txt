@@ -1,4 +1,4 @@
-Add GitHub Actions workflows (CI + Deploy)
+Fix next.config.ts turbo key + deploy script
 
 Generated with [Devin](https://devin.ai)
 
