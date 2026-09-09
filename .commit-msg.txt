@@ -1,4 +1,4 @@
-Fix next.config.ts turbo key + deploy script
+Fix turbopack config + use --webpack flag for build
 
 Generated with [Devin](https://devin.ai)
 

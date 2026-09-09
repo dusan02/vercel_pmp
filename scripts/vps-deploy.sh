@@ -21,7 +21,7 @@ echo "=== Prisma generate ==="
 npx prisma generate 2>&1 | tail -3
 
 echo "=== Building ==="
-npx next build 2>&1 | tail -20
+npx next build --webpack 2>&1 | tail -20
 
 echo "=== Build complete ==="
 cat .next/BUILD_ID

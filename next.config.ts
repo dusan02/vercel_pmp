@@ -44,6 +44,9 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ['lucide-react'],
   },
 
+  // Turbopack config (empty — silences Next.js 16 warning when webpack config is present)
+  turbopack: {},
+
   // Compression and optimization
   compress: true,
   poweredByHeader: false,
