@@ -111,13 +111,12 @@ export async function GET(req: NextRequest) {
       }
 
       if (!cursor) {
-        // First page: use ZRANGE (desc uses negated scores, so always ZRANGE)
-        const result = await redisClient.zRange(zKey, 0, limit - 1, { WITHSCORES: true });
-        // Result format: array of objects with value and score, or flat array
+        // First page: use ZRANGE WITHSCORES (desc uses negated scores, so always ZRANGE)
+        const result = await redisClient.zRangeWithScores(zKey, 0, limit - 1);
         withScores = result.flatMap((r: any) => {
           if (typeof r === 'string') return [r];
           if (r && typeof r === 'object') {
-            return [r.value || String(r), String(r.score || r)];
+            return [r.value || String(r), String(r.score ?? 0)];
           }
           return [String(r)];
         });
@@ -129,27 +128,25 @@ export async function GET(req: NextRequest) {
 
         if (isDesc) {
           // For desc with negated scores: cursor.score is negative, so we need <= cursor.score (more negative)
-          const result = await redisClient.zRangeByScore(zKey, s, '-inf', {
+          const result = await redisClient.zRangeByScoreWithScores(zKey, s, '-inf', {
             LIMIT: { offset: 0, count: extra },
-            WITHSCORES: true
           });
           withScores = result.flatMap((r: any) => {
             if (typeof r === 'string') return [r];
             if (r && typeof r === 'object') {
-              return [r.value || String(r), String(r.score || r)];
+              return [r.value || String(r), String(r.score ?? 0)];
             }
             return [String(r)];
           });
         } else {
           // For asc: scores >= cursor.score
-          const result = await redisClient.zRangeByScore(zKey, s, '+inf', {
+          const result = await redisClient.zRangeByScoreWithScores(zKey, s, '+inf', {
             LIMIT: { offset: 0, count: extra },
-            WITHSCORES: true
           });
           withScores = result.flatMap((r: any) => {
             if (typeof r === 'string') return [r];
             if (r && typeof r === 'object') {
-              return [r.value || String(r), String(r.score || r)];
+              return [r.value || String(r), String(r.score ?? 0)];
             }
             return [String(r)];
           });
