@@ -1,0 +1,123 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    name: Unit & Integration Tests (TZ=${{ matrix.timezone }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        timezone: ["UTC", "America/New_York", "Europe/Prague"]
+    env:
+      DATABASE_URL: "file:./test.db"
+      TZ: ${{ matrix.timezone }}
+    services:
+      redis:
+        image: redis
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Apply database migrations
+        run: npx prisma migrate deploy
+
+      - name: Run tests
+        run: npm test
+
+      - name: Run coverage
+        if: matrix.timezone == 'UTC'
+        run: npm run test:coverage
+
+      - name: Upload coverage
+        if: matrix.timezone == 'UTC'
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage/coverage-final.json
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+  smoke-test:
+    name: Build & Smoke Test
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: "file:./prisma/data/dev.db"
+      POLYGON_API_KEY: "dummy_key_for_ci_build"
+      FINNHUB_API_KEY: "dummy_key_for_ci_build"  # finnhubClient throws at import in production builds without it
+    services:
+      redis:
+        image: redis
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build application
+        run: mkdir -p prisma/data && npx prisma migrate deploy && npm run build
+      
+      - name: Run pre-deploy specific tests
+        run: npm test -- src/__tests__/pre-deploy.test.ts
+
+      - name: Start app & verify endpoints
+        run: |
+          npm run dev &
+          DEV_PID=$!
+          # Wait for the server to accept connections (on-demand compile can be slow)
+          for i in $(seq 1 45); do
+            curl -sf -o /dev/null http://localhost:3000/api/health && break
+            sleep 2
+          done
+          curl -f http://localhost:3000/api/stocks || exit 1
+          curl -f http://localhost:3000/api/health || exit 1
+          kill $DEV_PID 2>/dev/null || true
+          sleep 3
+
+      - name: Verify Redis fallback (unreachable Redis, DB only)
+        run: |
+          REDIS_URL=redis://127.0.0.1:6390 npm run dev &
+          DEV_PID=$!
+          # Reconnect strategy caps at 10 retries; app must still serve from DB
+          for i in $(seq 1 30); do
+            curl -sf -o /dev/null http://localhost:3000/api/health && break
+            sleep 2
+          done
+          curl -f http://localhost:3000/api/health || exit 1
+          kill $DEV_PID 2>/dev/null || true
