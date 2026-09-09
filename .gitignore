@@ -77,3 +77,24 @@ jspm_packages/
 
 # TernJS port file
 .tern-port
+
+# SQLite databases
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+prisma/data/
+prisma/prisma/
+prisma/dev.db*
+
+# SSH keys (should never be committed)
+CcO15gcCwu
+CcO15gcCwu.pub
+*.pem
+id_rsa
+id_rsa.pub
+
+# Scratch/temp
+scratch/
+tmp/
+tsconfig.tsbuildinfo
