@@ -55,6 +55,7 @@ module.exports = {
         LISTEN_HOST: "127.0.0.1",
         ENABLE_WEBSOCKET: "true",
         DATABASE_URL: envVars.DATABASE_URL || process.env.DATABASE_URL,
+        REDIS_URL: envVars.REDIS_URL || "redis://127.0.0.1:6380",
         USE_LOCAL_REDIS: "true",
         GOOGLE_CLIENT_ID: envVars.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID,
         GOOGLE_CLIENT_SECRET: envVars.GOOGLE_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET,
@@ -70,6 +71,7 @@ module.exports = {
         LISTEN_HOST: "127.0.0.1",
         ENABLE_WEBSOCKET: "true",
         DATABASE_URL: envVars.DATABASE_URL || process.env.DATABASE_URL,
+        REDIS_URL: envVars.REDIS_URL || "redis://127.0.0.1:6380",
         // Redis - ENABLED for production
         // REDIS_URL: "", // Removed override to allow .env or default fallback
         USE_LOCAL_REDIS: "true",
@@ -102,8 +104,8 @@ module.exports = {
         POLYGON_API_KEY: envVars.POLYGON_API_KEY || process.env.POLYGON_API_KEY,
         POLYGON_MAX_BATCH_SIZE: "100",
         POLYGON_BATCH_DELAY_MS: envVars.POLYGON_BATCH_DELAY_MS || "1000",
-        // Redis - DISABLED
-        REDIS_URL: "",
+        // Redis — must match the API's Redis (port 6380 in production)
+        REDIS_URL: envVars.REDIS_URL || "redis://127.0.0.1:6380",
         USE_LOCAL_REDIS: "true",
       },
       error_file: path.join(__dirname, "logs", "pm2", "polygon-worker-error.log"),
@@ -124,6 +126,7 @@ module.exports = {
       env: {
         NODE_ENV: "production",
         DATABASE_URL: envVars.DATABASE_URL || process.env.DATABASE_URL,
+        REDIS_URL: envVars.REDIS_URL || "redis://127.0.0.1:6380",
         POLYGON_API_KEY: envVars.POLYGON_API_KEY || process.env.POLYGON_API_KEY,
       },
       error_file: path.join(__dirname, "logs", "pm2", "bulk-preloader-error.log"),
@@ -145,6 +148,7 @@ module.exports = {
       env: {
         NODE_ENV: "production",
         DATABASE_URL: envVars.DATABASE_URL || process.env.DATABASE_URL,
+        REDIS_URL: envVars.REDIS_URL || "redis://127.0.0.1:6380",
       },
       error_file: path.join(__dirname, "logs", "pm2", "daily-ticker-validator-error.log"),
       out_file: path.join(__dirname, "logs", "pm2", "daily-ticker-validator-out.log"),
@@ -162,6 +166,7 @@ module.exports = {
       env: {
         NODE_ENV: "production",
         DATABASE_URL: envVars.DATABASE_URL || process.env.DATABASE_URL,
+        REDIS_URL: envVars.REDIS_URL || "redis://127.0.0.1:6380",
         POLYGON_API_KEY: envVars.POLYGON_API_KEY || process.env.POLYGON_API_KEY,
       },
       error_file: path.join(__dirname, "logs", "pm2", "daily-integrity-check-error.log"),
@@ -289,6 +294,7 @@ module.exports = {
       env: {
         NODE_ENV: "production",
         DATABASE_URL: envVars.DATABASE_URL || process.env.DATABASE_URL,
+        REDIS_URL: envVars.REDIS_URL || "redis://127.0.0.1:6380",
         FINNHUB_API_KEY: envVars.FINNHUB_API_KEY || process.env.FINNHUB_API_KEY,
         USE_LOCAL_REDIS: "true",
       },
