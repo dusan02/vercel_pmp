@@ -32,11 +32,11 @@ const SectionNavigation = dynamic(
 // --- NEW HOME COMPONENTS (Dynamically Imported) ---
 const HomePortfolio = dynamic(
   () => import('@/components/home/HomePortfolio').then((mod) => mod.HomePortfolio),
-  { ssr: false, loading: () => null }
+  { ssr: true, loading: () => null }
 );
 const HomeFavorites = dynamic(
   () => import('@/components/home/HomeFavorites').then((mod) => mod.HomeFavorites),
-  { ssr: false, loading: () => null }
+  { ssr: true, loading: () => null }
 );
 const HomeAllStocks = dynamic(
   () => import('@/components/home/HomeAllStocks').then((mod) => mod.HomeAllStocks),
@@ -48,11 +48,11 @@ const HomeEarnings = dynamic(
 );
 const HomeBlog = dynamic(
   () => import('@/components/home/HomeBlog').then((mod) => mod.HomeBlog),
-  { ssr: false, loading: () => null }
+  { ssr: true, loading: () => null }
 );
 const HomePricing = dynamic(
   () => import('@/components/home/HomePricing').then((mod) => mod.HomePricing),
-  { ssr: false, loading: () => null }
+  { ssr: true, loading: () => null }
 );
 const HomeMovers = dynamic(
   () => import('@/components/home/HomeMovers').then((mod) => mod.HomeMovers),
@@ -69,14 +69,14 @@ const HomeHeatmap = dynamic(
 );
 const HomeAnalysis = dynamic(
   () => import('@/components/home/HomeAnalysis').then((mod) => mod.HomeAnalysis),
-  { ssr: false, loading: () => null }
+  { ssr: true, loading: () => null }
 );
 const GlobalScreener = dynamic(
   () => import('@/components/analysis/GlobalScreener').then((mod) => {
     // If it's a named export, we use mod.GlobalScreener
     return mod.GlobalScreener;
   }),
-  { ssr: false, loading: () => null }
+  { ssr: true, loading: () => null }
 );
 
 const CookieConsent = dynamic(
@@ -121,9 +121,11 @@ import { useHomeData } from '@/hooks/useHomeData';
 interface HomePageProps {
   initialData?: StockData[];
   initialEarningsData?: any;
+  initialMoversData?: any[];
+  initialBlogSnapshots?: any[];
 }
 
-export default function HomePage({ initialData = [], initialEarningsData }: HomePageProps) {
+export default function HomePage({ initialData = [], initialEarningsData, initialMoversData, initialBlogSnapshots }: HomePageProps) {
   useEffect(() => { autoRepairLocalStorage(); }, []);
 
   const [isMounted, setIsMounted] = useState(false);
@@ -208,7 +210,7 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
                 skeleton={<MobileSkeleton type="list" count={1} />}
               >
                 {(preferences.showMoversSection ?? true) && (
-                  <HomeMovers onTileClick={(ticker) => handleMobileNavChange('analysis', ticker)} />
+                  <HomeMovers onTileClick={(ticker) => handleMobileNavChange('analysis', ticker)} initialData={initialMoversData} />
                 )}
               </MobileScreen>
               <MobileScreen
@@ -402,7 +404,7 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
 
                         {activeSection === 'movers' && (
                           <div className="tab-content fade-in">
-                            <HomeMovers onTileClick={(ticker) => handleMobileNavChange('analysis', ticker)} />
+                            <HomeMovers onTileClick={(ticker) => handleMobileNavChange('analysis', ticker)} initialData={initialMoversData} />
                           </div>
                         )}
 
@@ -478,7 +480,7 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
 
                         {activeSection === 'blog' && (
                           <div className="tab-content fade-in">
-                            <HomeBlog />
+                            <HomeBlog initialSnapshots={initialBlogSnapshots} />
                           </div>
                         )}
 

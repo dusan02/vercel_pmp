@@ -76,8 +76,8 @@ export const securityHeaders = {
 // Request validation middleware for Next.js API routes
 export function validateRequest(request: NextRequest): {
   isValid: boolean;
-  error?: string;
-  apiKey?: string;
+  error?: string | undefined;
+  apiKey?: string | undefined;
 } {
   const apiKey = request.headers.get('X-API-Key') || request.headers.get('Authorization')?.replace('Bearer ', '');
   
@@ -87,7 +87,7 @@ export function validateRequest(request: NextRequest): {
                              url.pathname.startsWith('/api/admin/') ||
                              url.pathname.includes('/control');
 
-  if (isProtectedEndpoint && !validateApiKey(apiKey)) {
+  if (isProtectedEndpoint && !validateApiKey(apiKey ?? null)) {
     return {
       isValid: false,
       error: 'Invalid or missing API key',
@@ -96,7 +96,7 @@ export function validateRequest(request: NextRequest): {
 
   return {
     isValid: true,
-    apiKey,
+    apiKey: apiKey ?? undefined,
   };
 }
 
@@ -108,7 +108,7 @@ export function getClientIP(request: NextRequest): string {
   
   if (cfConnectingIP) return cfConnectingIP;
   if (realIP) return realIP;
-  if (forwarded) return forwarded.split(',')[0].trim();
+  if (forwarded) return forwarded.split(',')[0]?.trim() ?? 'unknown';
   
   return 'unknown';
 }
@@ -118,7 +118,7 @@ export function logSecurityEvent(event: {
   type: 'rate_limit_exceeded' | 'invalid_api_key' | 'suspicious_activity' | 'auth_failure';
   ip: string;
   endpoint: string;
-  userAgent?: string;
+  userAgent?: string | undefined;
   details?: any;
 }) {
   const timestamp = new Date().toISOString();

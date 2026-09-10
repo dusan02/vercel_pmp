@@ -11,7 +11,7 @@ const baseUrl = 'https://premarketprice.com';
 export const revalidate = 300;
 
 interface PageProps {
-  params: { date: string };
+  params: Promise<{ date: string }>;
 }
 
 function isValidDate(dateStr: string): boolean {
@@ -19,7 +19,7 @@ function isValidDate(dateStr: string): boolean {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { date } = params;
+  const { date } = await params;
   if (!isValidDate(date)) return {};
 
   const d = new Date(date + 'T12:00:00Z');
@@ -76,7 +76,7 @@ function timeColor(time: string): string {
 }
 
 export default async function EarningsDatePage({ params }: PageProps) {
-  const { date } = params;
+  const { date } = await params;
   if (!isValidDate(date)) notFound();
 
   const groups = await getEarningsRange(date, date);

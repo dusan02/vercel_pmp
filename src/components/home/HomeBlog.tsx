@@ -40,9 +40,9 @@ function formatBillions(n: number): string {
   return `${n.toFixed(0)}B`;
 }
 
-export function HomeBlog() {
-  const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
-  const [loading, setLoading] = useState(true);
+export function HomeBlog({ initialSnapshots }: { initialSnapshots?: Snapshot[] | undefined }) {
+  const [snapshots, setSnapshots] = useState<Snapshot[]>(initialSnapshots ?? []);
+  const [loading, setLoading] = useState(!initialSnapshots || initialSnapshots.length === 0);
 
   useEffect(() => {
     fetch('/api/blog/snapshots')

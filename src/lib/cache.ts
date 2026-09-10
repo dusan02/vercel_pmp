@@ -287,7 +287,7 @@ class StockDataCache {
              const prevClose = prevData.results[0].c;
 
              // Get current price (including pre-market)
-             const lastUrl = `https://api.polygon.io/v1/last/stocks/${ticker}?apiKey=${apiKey}`;
+             const lastUrl = `https://api.polygon.io/v2/snapshot/locale/us/markets/stocks/tickers/${ticker}?apikey=${apiKey}`;
              const lastResponse = await fetch(lastUrl);
 
              if (!lastResponse.ok) {
@@ -303,14 +303,14 @@ class StockDataCache {
              const lastData = await lastResponse.json();
              console.log(`📊 Last data for ${ticker}:`, JSON.stringify(lastData, null, 2));
 
-             if (!lastData?.last?.price) {
+             if (!lastData?.ticker?.day?.c) {
                console.warn(`❌ No valid last data for ${ticker} - missing required fields`);
                console.warn(`   lastData?.last?.price: ${lastData?.last?.price}`);
                console.warn(`   Full response:`, JSON.stringify(lastData, null, 2));
                return null;
              }
 
-             const currentPrice = lastData.last.price;
+             const currentPrice = lastData.ticker?.day?.c ?? 0;
             const percentChange = ((currentPrice - prevClose) / prevClose) * 100;
             
             // Use Polygon's market cap if available, otherwise calculate
@@ -452,7 +452,7 @@ class StockDataCache {
       
       // Fallback to in-memory cache
       const stocks = await this.getAllStocks();
-      const lastUpdated = stocks.length > 0 ? stocks[0].lastUpdated : null;
+      const lastUpdated: Date | null = stocks.length > 0 ? (stocks[0]?.lastUpdated ?? null) : null;
       
       return {
         count: stocks.length,

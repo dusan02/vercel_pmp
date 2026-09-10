@@ -192,7 +192,47 @@ export async function GET(request: NextRequest) {
     };
   }
 
-  // 5. Aggregate external health checks (canary sanity check)
+  // 5. Validate actual data availability (not just connectivity)
+  // This catches the scenario where Redis/DB are connected but empty
+  let dataCheck: { status: 'healthy' | 'degraded'; stocksCount: number; message: string } = {
+    status: 'healthy',
+    stocksCount: 0,
+    message: 'Not checked yet'
+  };
+
+  try {
+    // Check if /api/stocks/optimized returns actual data
+    const stocksResponse = await fetch(`http://127.0.0.1:${process.env.PORT || 3001}/api/stocks/optimized?limit=5`, {
+      headers: { 'Cache-Control': 'no-cache' }
+    });
+    if (stocksResponse.ok) {
+      const stocksData = await stocksResponse.json();
+      const count = stocksData?.rows?.length || 0;
+      if (count === 0) {
+        dataCheck = {
+          status: 'degraded',
+          stocksCount: 0,
+          message: 'API returns 0 stock rows — data may be missing'
+        };
+        healthStatus.status = healthStatus.status === 'unhealthy' ? 'unhealthy' : 'degraded';
+      } else {
+        dataCheck = {
+          status: 'healthy',
+          stocksCount: count,
+          message: `API returns ${count}+ stock rows`
+        };
+      }
+    }
+  } catch (error) {
+    dataCheck = {
+      status: 'degraded',
+      stocksCount: 0,
+      message: `Data check failed: ${error instanceof Error ? error.message : 'unknown'}`
+    };
+    healthStatus.status = healthStatus.status === 'unhealthy' ? 'unhealthy' : 'degraded';
+  }
+
+  // 6. Aggregate external health checks (canary sanity check)
   let workerHealth: any = null;
   let redisHealth: any = null;
   let freshnessMetrics: any = null;
@@ -268,6 +308,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.json(
     {
       ...healthStatus,
+      data: dataCheck,
       canary: {
         status: canaryStatus,
         checks: {

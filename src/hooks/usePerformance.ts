@@ -5,7 +5,7 @@ import { useEffect, useCallback } from 'react';
 // Extend Window interface for gtag
 declare global {
   interface Window {
-    gtag?: (...args: any[]) => void;
+    gtag: (...args: any[]) => void;
   }
 }
 

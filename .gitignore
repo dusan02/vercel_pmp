@@ -98,3 +98,7 @@ id_rsa.pub
 scratch/
 tmp/
 tsconfig.tsbuildinfo
+
+# Quant research data (large SEC/vendored datasets, not source)
+src/lib/quant/data/
+src/lib/heatmap/data/

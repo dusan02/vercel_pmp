@@ -29,12 +29,13 @@ interface MoverData {
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-export function MoversSection({ onTileClick }: { onTileClick?: (ticker: string) => void }) {
+export function MoversSection({ onTileClick, initialData }: { onTileClick?: (ticker: string) => void; initialData?: any[] | undefined }) {
     const [selectedSector, setSelectedSector] = React.useState<string | null>(null);
     const isDesktop = useMediaQuery('(min-width: 1024px)');
     const { data, error, isLoading, mutate } = useSWR('/api/stocks/movers?limit=50', fetcher, {
         refreshInterval: 30000, // Refresh every 30 seconds for better real-time experience
-        revalidateOnFocus: true
+        revalidateOnFocus: true,
+        fallbackData: initialData ? { movers: initialData } : undefined,
     });
 
     const movers: MoverData[] = data?.movers || [];

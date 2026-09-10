@@ -13,7 +13,7 @@ class BackgroundDataService {
   private cache: typeof stockDataCache;
   private config: BackgroundServiceConfig;
   private isRunning: boolean = false;
-  private updateTimer?: NodeJS.Timeout;
+  private updateTimer?: NodeJS.Timeout | undefined;
   private lastUpdateTime: Date = new Date();
   private updateCount: number = 0;
   private errorCount: number = 0;

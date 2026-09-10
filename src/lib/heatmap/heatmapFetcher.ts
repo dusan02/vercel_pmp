@@ -5,6 +5,7 @@ import { normalizeSectorIndustryPair } from '@/lib/utils/sectorIndustryValidator
 import { getCacheKey } from '@/lib/redis/keys';
 import { getDateET, createETDate, toET } from '@/lib/utils/dateET';
 import { getLastTradingDay } from '@/lib/utils/timeUtils';
+import { mGetJsonMap } from '@/lib/redis/operations';
 
 export interface TickerInfo {
   name: string;
@@ -143,7 +144,6 @@ export async function fetchCachedStockData(
 
   const cachedStockDataMap = new Map<string, any>();
   try {
-    const { mGetJsonMap } = await import('@/lib/redis');
     if (cacheKeys.length > 0) {
       const cachedData = await mGetJsonMap<any>(cacheKeys);
       validTickers.forEach((ticker, index) => {

@@ -47,8 +47,12 @@ async function runResetMovers(): Promise<NextResponse> {
         try {
             const keys: string[] = [];
             const scanIterator = redisClient.scanIterator({ MATCH: 'stock:*', COUNT: 200 });
-            for await (const key of scanIterator) {
-                keys.push(key);
+            for await (const keyBatch of scanIterator) {
+                if (Array.isArray(keyBatch)) {
+                    keys.push(...keyBatch);
+                } else {
+                    keys.push(keyBatch);
+                }
             }
 
             if (keys.length > 0) {

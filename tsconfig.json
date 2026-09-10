@@ -15,7 +15,7 @@
     "incremental": true,
     "module": "esnext",
     "esModuleInterop": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
@@ -42,6 +42,8 @@
     "node_modules",
     "scripts",
     "tmp",
-    "src/lib/quant"
+    "src/lib/quant",
+    "src/__tests__",
+    "src/app/api/__tests__"
   ]
 }

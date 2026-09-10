@@ -440,7 +440,7 @@ export const companyColors: Record<string, string> = {
 };
 
 export function getLogoUrl(ticker: string): string {
-  const domain = tickerDomains[ticker];
+  const domain = tickerDomains[ticker] ?? '';
   
   // If no domain mapping exists, return ui-avatars directly
   if (!domain) {
@@ -461,7 +461,7 @@ export function getLogoUrl(ticker: string): string {
   ];
   
   // Return the first source (Clearbit) - fallback logic is in the component
-  return logoSources[0];
+  return logoSources[0] ?? '';
 }
 
 // Helper function to get just the domain

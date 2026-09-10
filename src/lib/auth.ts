@@ -9,7 +9,7 @@ const SESSION_DURATION = 30 * 24 * 60 * 60 * 1000; // 30 days
 export interface User {
   id: string;
   email: string;
-  name?: string;
+  name?: string | undefined;
   createdAt: string;
 }
 

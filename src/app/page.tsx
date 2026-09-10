@@ -9,6 +9,7 @@ import { logger } from '@/lib/utils/logger';
 import { getDateET, createETDate } from '@/lib/utils/dateET';
 import Link from 'next/link';
 import { getEligibleAnalysisTickers } from '@/lib/seo/eligibleTickers';
+import { prisma } from '@/lib/db/prisma';
 
 const baseUrl = 'https://premarketprice.com';
 
@@ -160,20 +161,45 @@ export default async function Page() {
 
   let initialData: any[] = [];
   let initialEarningsData = null;
+  let initialMoversData: any[] = [];
+  let initialBlogSnapshots: any[] = [];
 
   try {
     const todayET = getDateET(new Date());
 
-    logger.ssr('Fetching initial data for Top 20 tickers and Earnings...');
+    logger.ssr('Fetching initial data for Top 20 tickers, Earnings, Movers, Blog...');
 
     // Parallel fetch with 3-second timeout — prevents blocking HTML for 10+ seconds
     // when DB is slow (cold connection, revalidation after ISR expiry).
     // Client-side hooks will fetch the data anyway, so empty initial data is safe.
     const SSR_TIMEOUT_MS = 3000;
 
-    const [stocksResult, earningsResult] = await Promise.allSettled([
+    const [stocksResult, earningsResult, moversResult, blogResult] = await Promise.allSettled([
       withTimeout(getStocksData(topTickers, project), SSR_TIMEOUT_MS, { data: [], errors: ['SSR timeout'] }),
-      withTimeout(getEarningsForDate(todayET), SSR_TIMEOUT_MS, null)
+      withTimeout(getEarningsForDate(todayET), SSR_TIMEOUT_MS, null),
+      // SSR fetch for movers — used by HomeMovers as SWR fallbackData
+      withTimeout(
+        (async () => {
+          const res = await fetch(`http://127.0.0.1:${process.env.PORT || 3001}/api/stocks/movers?limit=50`);
+          if (!res.ok) return [];
+          const data = await res.json();
+          return data.movers || data.rows || data || [];
+        })(),
+        SSR_TIMEOUT_MS,
+        []
+      ),
+      // SSR fetch for blog snapshots — used by HomeBlog
+      withTimeout(
+        (async () => {
+          const snapshots = await prisma.dailyBlogSnapshot.findMany({
+            orderBy: { date: 'desc' },
+            take: 10,
+          });
+          return snapshots;
+        })(),
+        SSR_TIMEOUT_MS,
+        []
+      ),
     ]);
 
     if (stocksResult.status === 'fulfilled' && stocksResult.value) {
@@ -195,6 +221,24 @@ export default async function Page() {
       }
     } else {
       logger.error('SSR Error fetching earnings', earningsResult.reason);
+    }
+
+    if (moversResult.status === 'fulfilled') {
+      initialMoversData = moversResult.value as any[];
+      if (initialMoversData.length > 0) {
+        logger.ssr(`Loaded ${initialMoversData.length} movers`);
+      }
+    } else {
+      logger.error('SSR Error fetching movers', moversResult.reason);
+    }
+
+    if (blogResult.status === 'fulfilled') {
+      initialBlogSnapshots = blogResult.value as any[];
+      if (initialBlogSnapshots.length > 0) {
+        logger.ssr(`Loaded ${initialBlogSnapshots.length} blog snapshots`);
+      }
+    } else {
+      logger.error('SSR Error fetching blog snapshots', blogResult.reason);
     }
 
   } catch (error) {
@@ -229,7 +273,12 @@ export default async function Page() {
         ))}
       </nav>
       <Suspense fallback={<div className="min-h-screen bg-white dark:bg-gray-950"></div>}>
-        <HomePage initialData={initialData} initialEarningsData={initialEarningsData} />
+        <HomePage
+          initialData={initialData}
+          initialEarningsData={initialEarningsData}
+          initialMoversData={initialMoversData}
+          initialBlogSnapshots={initialBlogSnapshots}
+        />
       </Suspense>
     </>
   );
