@@ -31,7 +31,7 @@ interface WeeklyEarningsResponse {
   data: Record<string, DayEarnings>;
 }
 
-export default function WeeklyEarningsCalendar() {
+export default function WeeklyEarningsCalendar({ initialWeeklyData }: { initialWeeklyData?: Record<string, DayEarnings> | null }) {
   // Start week at Monday for the given current time
   const [currentDate, setCurrentDate] = useState(() => {
     const et = getETDate();
@@ -39,8 +39,8 @@ export default function WeeklyEarningsCalendar() {
   });
 
   const [selectedDate, setSelectedDate] = useState<Date>(getETDate());
-  const [weeklyData, setWeeklyData] = useState<Record<string, DayEarnings>>({});
-  const [loading, setLoading] = useState(true);
+  const [weeklyData, setWeeklyData] = useState<Record<string, DayEarnings>>(() => initialWeeklyData ?? {});
+  const [loading, setLoading] = useState(() => !initialWeeklyData);
   const [error, setError] = useState<string | null>(null);
 
   // Compute the 5 days of the selected week (Mon-Fri)
@@ -51,7 +51,17 @@ export default function WeeklyEarningsCalendar() {
   const startDateStr = format(weekDays[0]!, 'yyyy-MM-dd');
   const endDateStr = format(weekDays[4]!, 'yyyy-MM-dd');
 
+  // Track if initial SSR data was for this week (skip redundant fetch)
+  const ssrWeekStart = useMemo(() => {
+    if (!initialWeeklyData) return null;
+    const et = getETDate();
+    return format(startOfWeek(et, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+  }, [initialWeeklyData]);
+
   useEffect(() => {
+    // Skip fetch if SSR data matches current week
+    if (ssrWeekStart === startDateStr && initialWeeklyData) return;
+
     const fetchWeekData = async () => {
       setLoading(true);
       setError(null);
@@ -73,7 +83,7 @@ export default function WeeklyEarningsCalendar() {
     };
 
     fetchWeekData();
-  }, [startDateStr]);
+  }, [startDateStr]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handlePrevWeek = () => setCurrentDate(prev => subWeeks(prev, 1));
   const handleNextWeek = () => setCurrentDate(prev => addWeeks(prev, 1));

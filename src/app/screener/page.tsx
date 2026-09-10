@@ -135,7 +135,7 @@ export default async function ScreenerPage() {
           </div>
         )}
 
-        <StockScreener />
+        <StockScreener initialData={defaultResults} />
       </div>
     </div>
   );

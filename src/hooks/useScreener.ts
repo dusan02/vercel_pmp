@@ -8,6 +8,7 @@ interface UseScreenerOptions {
     defaultMinHealth?: number;
     defaultMinProfit?: number;
     defaultMinValue?: number;
+    initialData?: any[] | undefined;
 }
 
 export function useScreener({
@@ -15,10 +16,42 @@ export function useScreener({
     defaultMinHealth = 50,
     defaultMinProfit = 50,
     defaultMinValue = 50,
+    initialData,
 }: UseScreenerOptions = {}) {
-    const [results, setResults] = useState<ScreenerResult[]>([]);
-    const [pagination, setPagination] = useState<ScreenerPagination | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [results, setResults] = useState<ScreenerResult[]>(() => {
+        if (!initialData || !Array.isArray(initialData)) return [];
+        // Transform SSR data to ScreenerResult format (matches API response)
+        return initialData.map((r: any): ScreenerResult => ({
+            symbol: r.ticker?.symbol ?? r.symbol ?? '',
+            healthScore: r.healthScore ?? null,
+            profitabilityScore: r.profitabilityScore ?? null,
+            valuationScore: r.valuationScore ?? null,
+            altmanZ: r.altmanZ ?? null,
+            piotroskiScore: r.piotroskiScore ?? null,
+            beneishScore: null,
+            fcfMargin: null,
+            fcfConversion: null,
+            debtRepaymentYears: null,
+            interestCoverage: null,
+            revenueCagr: null,
+            netIncomeCagr: null,
+            marginStability: null,
+            lastQualitySignalAt: null,
+            ticker: r.ticker ? {
+                name: r.ticker.name ?? null,
+                sector: r.ticker.sector ?? null,
+                industry: null,
+                logoUrl: null,
+                lastPrice: r.ticker.lastPrice ?? null,
+                lastMarketCap: r.ticker.lastMarketCap ?? null,
+            } : null,
+        }));
+    });
+    const [pagination, setPagination] = useState<ScreenerPagination | null>(() => {
+        if (!initialData || !Array.isArray(initialData)) return null;
+        return { total: initialData.length, page: 1, limit: initialLimit, totalPages: 1 };
+    });
+    const [loading, setLoading] = useState(() => !initialData || initialData.length === 0);
     const [page, setPage] = useState(1);
 
     // Filters

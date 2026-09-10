@@ -13,9 +13,9 @@ import {
 } from '@/lib/utils/screener';
 import { formatBillions } from '@/lib/utils/format';
 
-export default function StockScreener() {
+export default function StockScreener({ initialData }: { initialData?: any[] }) {
   const router = useRouter();
-  const screener = useScreener({ initialLimit: 25, defaultMinHealth: 0, defaultMinProfit: 0, defaultMinValue: 0 });
+  const screener = useScreener({ initialLimit: 25, defaultMinHealth: 0, defaultMinProfit: 0, defaultMinValue: 0, initialData });
   const {
     results, pagination, loading, page, setPage,
     minHealth, maxHealth, setMinHealth, setMaxHealth,

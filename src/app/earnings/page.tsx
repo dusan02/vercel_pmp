@@ -143,7 +143,36 @@ export default async function EarningsPage() {
   end.setUTCDate(end.getUTCDate() + 7);
   const endStr = end.toISOString().split('T')[0] ?? '';
 
-  const groups = await getEarningsRange(todayStr, endStr);
+  // Compute current week Monday for weekly calendar SSR pre-fetch
+  const etNow = new Date(today.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+  const weekStart = new Date(etNow);
+  const dayOfWeek = etNow.getDay();
+  const offset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Monday = 0
+  weekStart.setDate(etNow.getDate() + offset);
+  const weekStartStr = weekStart.toISOString().split('T')[0] ?? '';
+
+  // Parallel SSR fetch: DB earnings + API endpoints for client components
+  const [groups, dateCountsData, weeklyData] = await Promise.all([
+    getEarningsRange(todayStr, endStr),
+    // SSR pre-fetch for MonthCalendar — date counts
+    (async () => {
+      try {
+        const res = await fetch(`http://127.0.0.1:${process.env.PORT || 3001}/api/earnings/dates`, { signal: AbortSignal.timeout(3000) });
+        if (!res.ok) return null;
+        const json = await res.json();
+        return json.success ? json.data : null;
+      } catch { return null; }
+    })(),
+    // SSR pre-fetch for WeeklyEarningsCalendar — weekly data
+    (async () => {
+      try {
+        const res = await fetch(`http://127.0.0.1:${process.env.PORT || 3001}/api/earnings/week?start=${weekStartStr}`, { signal: AbortSignal.timeout(3000) });
+        if (!res.ok) return null;
+        const json = await res.json();
+        return json.success ? json.data : null;
+      } catch { return null; }
+    })(),
+  ]);
   const totalEarnings = groups.reduce((sum, g) => sum + g.total, 0);
   const reportedCount = groups.reduce(
     (sum, g) => sum + [...g.preMarket, ...g.afterMarket, ...g.timeTbd].filter((r) => r.hasReported).length,
@@ -187,12 +216,12 @@ export default async function EarningsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
           {/* Month Calendar (left sidebar on desktop) */}
           <div className="lg:col-span-1">
-            <MonthCalendar />
+            <MonthCalendar initialDateCounts={dateCountsData} />
           </div>
 
           {/* Interactive weekly calendar (right, wider) */}
           <div className="lg:col-span-2">
-            <WeeklyEarningsCalendar />
+            <WeeklyEarningsCalendar initialWeeklyData={weeklyData} />
           </div>
         </div>
 

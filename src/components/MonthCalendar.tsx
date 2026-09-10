@@ -11,6 +11,7 @@ interface DateCount {
 interface MonthCalendarProps {
   onDateSelect?: (date: string) => void;
   selectedDate?: string;
+  initialDateCounts?: { date: string; count: number }[] | null;
 }
 
 const MONTH_NAMES = [
@@ -29,16 +30,22 @@ function formatDate(d: Date): string {
   return d.toISOString().split('T')[0] ?? '';
 }
 
-export default function MonthCalendar({ onDateSelect, selectedDate }: MonthCalendarProps) {
+export default function MonthCalendar({ onDateSelect, selectedDate, initialDateCounts }: MonthCalendarProps) {
   const [viewDate, setViewDate] = useState(() => {
     const et = getETDate();
     return new Date(et.getFullYear(), et.getMonth(), 1);
   });
-  const [dateCounts, setDateCounts] = useState<Record<string, number>>({});
-  const [loading, setLoading] = useState(true);
+  const [dateCounts, setDateCounts] = useState<Record<string, number>>(() => {
+    if (!initialDateCounts || !Array.isArray(initialDateCounts)) return {};
+    const map: Record<string, number> = {};
+    for (const d of initialDateCounts) map[d.date] = d.count;
+    return map;
+  });
+  const [loading, setLoading] = useState(() => !initialDateCounts);
 
-  // Fetch available dates with counts
+  // Fetch available dates with counts (skip if SSR data provided)
   useEffect(() => {
+    if (initialDateCounts) return; // SSR data already provided
     let cancelled = false;
     const fetchDates = async () => {
       setLoading(true);
