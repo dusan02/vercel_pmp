@@ -17,7 +17,7 @@ const MobileTester = isDev ? dynamic(
 ) : ({ children }: { children: React.ReactNode }) => <>{children}</>;
 const PullToRefresh = dynamic(
   () => import('@/components/PullToRefresh').then((mod) => mod.PullToRefresh),
-  { ssr: false, loading: () => null }
+  { ssr: true, loading: () => null }
 );
 // Critical components - enable SSR for better initial load
 const PageHeader = dynamic(
