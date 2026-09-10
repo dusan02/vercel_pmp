@@ -21,6 +21,8 @@ import type { MarketSession } from '@/lib/types';
 import { calculateExpectedVolume } from './snapshotFetcher';
 import type { NormalizedSnapshot } from './snapshotNormalizer';
 import { computeMarketCap, computeMarketCapDiff } from '@/lib/utils/marketCapUtils';
+import { getSectorFromSic, toTitleCase } from '@/lib/utils/sectorMapping';
+import { normalizeIndustry } from '@/lib/utils/sectorIndustryValidator';
 
 export async function upsertToDB(
   symbol: string,
@@ -88,6 +90,14 @@ export async function upsertToDB(
               name: details.name || undefined,
               sharesOutstanding: details.weighted_shares_outstanding || details.share_class_shares_outstanding || undefined,
             };
+
+            // Extract sector/industry from SIC code + description
+            const sectorFromSic = getSectorFromSic(details.sic_code);
+            const industryFromSic = details.sic_description ? toTitleCase(details.sic_description) : null;
+            if (sectorFromSic) {
+              metadataUpdate.sector = sectorFromSic;
+              metadataUpdate.industry = normalizeIndustry(sectorFromSic, industryFromSic) || industryFromSic || sectorFromSic;
+            }
           }
         }
       } catch (err) {
