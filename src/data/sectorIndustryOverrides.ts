@@ -959,4 +959,9 @@ export const SECTOR_INDUSTRY_OVERRIDES: Record<string, SectorIndustryOverride> =
       industry: "Telecom Services",
       name: "America Movil S.A.B. de C.V.",
     },
+    ASML: {
+      sector: "Technology",
+      industry: "Semiconductor Equipment",
+      name: "ASML Holding NV",
+    },
   };
