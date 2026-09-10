@@ -964,4 +964,124 @@ export const SECTOR_INDUSTRY_OVERRIDES: Record<string, SectorIndustryOverride> =
       industry: "Semiconductor Equipment",
       name: "ASML Holding NV",
     },
+    AZN: {
+      sector: "Healthcare",
+      industry: "Drug Manufacturers - General",
+      name: "AstraZeneca PLC",
+    },
+    GSK: {
+      sector: "Healthcare",
+      industry: "Drug Manufacturers - General",
+      name: "GSK plc",
+    },
+    SNY: {
+      sector: "Healthcare",
+      industry: "Drug Manufacturers - General",
+      name: "Sanofi",
+    },
+    TAK: {
+      sector: "Healthcare",
+      industry: "Drug Manufacturers - General",
+      name: "Takeda Pharmaceutical Company Limited",
+    },
+    ABNB: {
+      sector: "Consumer Cyclical",
+      industry: "Internet Retail",
+      name: "Airbnb, Inc.",
+    },
+    TD: {
+      sector: "Financial Services",
+      industry: "Banks",
+      name: "Toronto Dominion Bank",
+    },
+    SAN: {
+      sector: "Financial Services",
+      industry: "Banks",
+      name: "Banco Santander S.A.",
+    },
+    HDB: {
+      sector: "Financial Services",
+      industry: "Banks",
+      name: "HDFC Bank Limited",
+    },
+    VALE: {
+      sector: "Basic Materials",
+      industry: "Other Industrial Metals & Mining",
+      name: "Vale S.A.",
+    },
+    URI: {
+      sector: "Industrials",
+      industry: "Farm & Heavy Construction Machinery",
+      name: "United Rentals, Inc.",
+    },
+    CTVA: {
+      sector: "Basic Materials",
+      industry: "Chemicals",
+      name: "Corteva, Inc.",
+    },
+    IQV: {
+      sector: "Healthcare",
+      industry: "Diagnostics & Research",
+      name: "IQVIA Holdings Inc.",
+    },
+    PAYX: {
+      sector: "Technology",
+      industry: "Software",
+      name: "Paychex Inc",
+    },
+    INCY: {
+      sector: "Healthcare",
+      industry: "Biotechnology",
+      name: "Incyte Corporation",
+    },
+    TPR: {
+      sector: "Consumer Cyclical",
+      industry: "Footwear & Accessories",
+      name: "Tapestry, Inc.",
+    },
+    SQM: {
+      sector: "Basic Materials",
+      industry: "Specialty Chemicals",
+      name: "Sociedad Quimica y Minera de Chile SA",
+    },
+    OMC: {
+      sector: "Communication Services",
+      industry: "Entertainment",
+      name: "Omnicom Group Inc",
+    },
+    EFX: {
+      sector: "Technology",
+      industry: "Information Technology Services",
+      name: "Equifax, Inc.",
+    },
+    NWS: {
+      sector: "Communication Services",
+      industry: "Entertainment",
+      name: "News Corporation Class B",
+    },
+    NWSA: {
+      sector: "Communication Services",
+      industry: "Entertainment",
+      name: "News Corporation Class A",
+    },
+    CRL: {
+      sector: "Healthcare",
+      industry: "Diagnostics & Research",
+      name: "Charles River Laboratories",
+    },
+    HAS: {
+      sector: "Consumer Cyclical",
+      industry: "Specialty Retail",
+      name: "Hasbro, Inc.",
+    },
+    DECK: {
+      sector: "Consumer Cyclical",
+      industry: "Footwear & Accessories",
+      name: "Deckers Outdoor Corp",
+    },
+    IT: {
+      sector: "Technology",
+      industry: "Information Technology Services",
+      name: "Gartner, Inc.",
+    },
   };
