@@ -903,4 +903,60 @@ export const SECTOR_INDUSTRY_OVERRIDES: Record<string, SectorIndustryOverride> =
       industry: "Integrated Freight & Logistics",
       name: "ZTO Express (Cayman) Inc.",
     },
+    // ── ADR / International tickers without Polygon SIC codes (not in original overrides) ──
+    NVS: {
+      sector: "Healthcare",
+      industry: "Drug Manufacturers - General",
+      name: "Novartis AG",
+    },
+    NVO: {
+      sector: "Healthcare",
+      industry: "Drug Manufacturers - General",
+      name: "Novo-Nordisk A/S",
+    },
+    BNTX: {
+      sector: "Healthcare",
+      industry: "Biotechnology",
+      name: "BioNTech SE",
+    },
+    SMFG: {
+      sector: "Financial Services",
+      industry: "Banks",
+      name: "Sumitomo Mitsui Financial Group, Inc.",
+    },
+    ITUB: {
+      sector: "Financial Services",
+      industry: "Banks",
+      name: "Itau Unibanco Holding S.A.",
+    },
+    LYG: {
+      sector: "Financial Services",
+      industry: "Banks",
+      name: "Lloyds Banking Group PLC",
+    },
+    SPGI: {
+      sector: "Financial Services",
+      industry: "Capital Markets",
+      name: "S&P Global Inc.",
+    },
+    MCO: {
+      sector: "Financial Services",
+      industry: "Capital Markets",
+      name: "Moody's Corporation",
+    },
+    CNQ: {
+      sector: "Energy",
+      industry: "Oil & Gas E&P",
+      name: "Canadian Natural Resources Limited",
+    },
+    RIO: {
+      sector: "Basic Materials",
+      industry: "Other Industrial Metals & Mining",
+      name: "Rio Tinto plc",
+    },
+    AMX: {
+      sector: "Communication Services",
+      industry: "Telecom Services",
+      name: "America Movil S.A.B. de C.V.",
+    },
   };
