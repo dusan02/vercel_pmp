@@ -11,6 +11,7 @@ import { getDateET } from '@/lib/redis/ranking';
 import { logger } from '@/lib/utils/logger';
 import { detectSession } from '@/lib/utils/timeUtils';
 import { nowET } from '@/lib/utils/dateET';
+import { prisma } from '@/lib/db/prisma';
 
 
 export const dynamic = 'force-dynamic'; // Allow dynamic rendering
@@ -154,11 +155,8 @@ export async function GET(req: NextRequest) {
       }
     } catch (error) {
       logger.error('Error getting ranked symbols from ZSET', error, { zKey });
-      // Fallback: return empty with error
-      return NextResponse.json(
-        { rows: [], nextCursor: null, error: 'Redis unavailable' },
-        { status: 503 }
-      );
+      // Fallback: try DB directly (Redis ranking keys may be empty in off-hours)
+      return await dbFallback(sort, dir, limit, q, startTime);
     }
 
     // Parse pairs: [symbol, score, symbol, score, ...]
@@ -178,6 +176,12 @@ export async function GET(req: NextRequest) {
     let sliced = pairs;
     if (cursor?.sym) {
       sliced = pairs.filter(p => !(p.score === cursor.score && p.sym === cursor.sym));
+    }
+
+    // DB fallback: if Redis ranking keys are empty (off-hours, worker not running),
+    // fetch directly from DB (Ticker table has lastPrice, lastMarketCap, etc.)
+    if (sliced.length === 0 && !cursor) {
+      return await dbFallback(sort, dir, limit, q, startTime);
     }
 
     // Prefix filter for search (q)
@@ -317,6 +321,84 @@ export async function GET(req: NextRequest) {
           'Cache-Control': 'no-store'
         }
       }
+    );
+  }
+}
+
+/**
+ * DB fallback: fetch stocks directly from Ticker table when Redis ranking keys are empty.
+ * Used during off-hours when the Polygon worker is in OVERNIGHT_FROZEN state.
+ */
+async function dbFallback(
+  sort: 'mcap' | 'chgPct' | 'price',
+  dir: 'asc' | 'desc',
+  limit: number,
+  q: string,
+  startTime: number
+): Promise<NextResponse> {
+  try {
+    const orderBy = sort === 'mcap'
+      ? { lastMarketCap: dir === 'desc' ? 'desc' as const : 'asc' as const }
+      : sort === 'chgPct'
+      ? { lastChangePct: dir === 'desc' ? 'desc' as const : 'asc' as const }
+      : { lastPrice: dir === 'desc' ? 'desc' as const : 'asc' as const };
+
+    const where = q
+      ? { symbol: { startsWith: q } }
+      : {
+          lastPrice: { not: null },
+          lastMarketCap: { not: null }
+        };
+
+    const tickers = await prisma.ticker.findMany({
+      where,
+      orderBy,
+      take: limit,
+      select: {
+        symbol: true,
+        lastPrice: true,
+        lastChangePct: true,
+        lastMarketCap: true,
+        lastMarketCapDiff: true,
+      }
+    });
+
+    const rows: MinimalRow[] = tickers
+      .filter(t => t.lastPrice !== null && t.lastMarketCap !== null)
+      .map(t => {
+        const row: MinimalRow = {
+          t: t.symbol,
+          p: Number(t.lastPrice || 0),
+          c: Number(t.lastChangePct || 0),
+          m: Number(t.lastMarketCap || 0)
+        };
+        if (t.lastMarketCapDiff !== null && t.lastMarketCapDiff !== undefined) {
+          row.d = Number(t.lastMarketCapDiff);
+        }
+        return row;
+      });
+
+    const duration = Date.now() - startTime;
+    const etag = createHash('sha1').update(`db-${rows.length}-${rows[0]?.t || ''}`).digest('hex');
+
+    return NextResponse.json(
+      { rows, nextCursor: null },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+          'ETag': etag,
+          'Content-Type': 'application/json',
+          'X-Query-Duration-ms': duration.toString(),
+          'X-Data-Source': 'db-fallback',
+          'X-Data-Count': rows.length.toString()
+        }
+      }
+    );
+  } catch (error) {
+    logger.error('DB fallback failed', error);
+    return NextResponse.json(
+      { rows: [], nextCursor: null, error: 'DB fallback failed' },
+      { status: 503 }
     );
   }
 }
