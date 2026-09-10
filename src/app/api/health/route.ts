@@ -18,10 +18,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkRedisHealth } from '@/lib/redis';
 import { prisma } from '@/lib/db/prisma';
+import { detectSession } from '@/lib/utils/timeUtils';
 
 // Health check thresholds
 const WORKER_STALE_THRESHOLD = 5 * 60 * 1000; // 5 minutes
 const CRON_STALE_THRESHOLD = 24 * 60 * 60 * 1000; // 24 hours
+// During off-hours (closed/weekend/holiday), worker loops take ~144s and run
+// every ~3.5 min. Use a wider threshold so the heartbeat isn't falsely stale.
+const WORKER_STALE_THRESHOLD_OFF_HOURS = 10 * 60 * 1000; // 10 minutes
 
 interface HealthStatus {
   status: 'healthy' | 'degraded' | 'unhealthy';
@@ -101,6 +105,9 @@ export async function GET(request: NextRequest) {
   }
 
   // 3. Check worker status (last success timestamp from Redis)
+  const marketSession = detectSession(new Date());
+  const isOffHours = marketSession === 'closed';
+  const workerThreshold = isOffHours ? WORKER_STALE_THRESHOLD_OFF_HOURS : WORKER_STALE_THRESHOLD;
   try {
     const { redisClient } = await import('@/lib/redis');
     if (redisClient && redisClient.isOpen) {
@@ -110,7 +117,7 @@ export async function GET(request: NextRequest) {
         const ageMs = Date.now() - lastSuccessTs;
         const ageMinutes = Math.floor(ageMs / 60000);
 
-        if (ageMs < WORKER_STALE_THRESHOLD) {
+        if (ageMs < workerThreshold) {
           healthStatus.checks.worker = {
             status: 'healthy',
             message: `Worker is running (last success: ${ageMinutes} min ago)`,
@@ -274,11 +281,16 @@ export async function GET(request: NextRequest) {
   }
 
   // Determine overall canary status
+  // During off-hours (market closed), freshness is expected to be stale —
+  // don't let it degrade the canary status.
+  const freshnessOk = isOffHours
+    ? (freshnessMetrics?.success === true || freshnessMetrics?.success === undefined)
+    : freshnessMetrics?.success === true;
   const canaryStatus = (
     healthStatus.status === 'healthy' &&
     workerHealth?.status === 'healthy' &&
     redisHealth?.status === 'healthy' &&
-    freshnessMetrics?.success === true
+    freshnessOk
   ) ? 'healthy' : 'degraded';
 
   // 6. Check worker operations health (saveRegularClose, bootstrapPreviousCloses)
@@ -309,6 +321,7 @@ export async function GET(request: NextRequest) {
     {
       ...healthStatus,
       data: dataCheck,
+      marketSession: isOffHours ? 'closed' : marketSession,
       canary: {
         status: canaryStatus,
         checks: {

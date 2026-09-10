@@ -257,9 +257,10 @@ export async function ingestLoop(apiKey: string): Promise<void> {
 
     await recordSuccess('ingestLoop', totalIngestSuccess);
 
-    if (totalIngestSuccess > 0) {
-      await updateWorkerStatus();
-    }
+    // Always update worker status on successful loop completion.
+    // During off-hours (market closed), 0 tickers may be "updated" because
+    // snapshot data is unchanged — the worker is still alive and healthy.
+    await updateWorkerStatus();
   } catch (error) {
     console.error('❌ Ingest loop failed:', error);
     await recordFailure('ingestLoop', error instanceof Error ? error.message : String(error));
