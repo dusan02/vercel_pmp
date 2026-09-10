@@ -142,5 +142,15 @@
     },
     "prisma": {
         "seed": "tsx prisma/seed.ts"
+    },
+    "pnpm": {
+        "onlyBuiltDependencies": [
+            "better-sqlite3",
+            "@prisma/client",
+            "@prisma/engines",
+            "prisma",
+            "esbuild",
+            "sqlite3"
+        ]
     }
 }
