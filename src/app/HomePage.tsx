@@ -26,7 +26,7 @@ const PageHeader = dynamic(
 );
 const SectionNavigation = dynamic(
   () => import('@/components/SectionNavigation').then((mod) => mod.SectionNavigation),
-  { ssr: false, loading: () => null }
+  { ssr: true, loading: () => null }
 );
 
 // --- NEW HOME COMPONENTS (Dynamically Imported) ---
@@ -40,11 +40,11 @@ const HomeFavorites = dynamic(
 );
 const HomeAllStocks = dynamic(
   () => import('@/components/home/HomeAllStocks').then((mod) => mod.HomeAllStocks),
-  { ssr: false, loading: () => null }
+  { ssr: true, loading: () => null }
 );
 const HomeEarnings = dynamic(
   () => import('@/components/home/HomeEarnings').then((mod) => mod.HomeEarnings),
-  { ssr: false, loading: () => null }
+  { ssr: true, loading: () => null }
 );
 const HomeBlog = dynamic(
   () => import('@/components/home/HomeBlog').then((mod) => mod.HomeBlog),
@@ -56,7 +56,7 @@ const HomePricing = dynamic(
 );
 const HomeMovers = dynamic(
   () => import('@/components/home/HomeMovers').then((mod) => mod.HomeMovers),
-  { ssr: false, loading: () => null }
+  { ssr: true, loading: () => null }
 );
 // OPTIMIZATION: Enable SSR for desktop (faster initial load), keep ssr: false for mobile
 // Desktop heatmap can be server-rendered, mobile uses different components
@@ -156,7 +156,7 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
 
   return (
     <>
-      {/* Modern Mobile Layout */}
+      {/* Modern Mobile Layout — only after mount + only on mobile */}
       {(isMounted && !isDesktop) && (
         <MobileApp>
           {/* MobileHeader - viditeľný vo všetkých sekciách okrem heatmap (heatmap má svoj vlastný header) */}
@@ -314,8 +314,8 @@ export default function HomePage({ initialData = [], initialEarningsData }: Home
         </MobileApp>
       )}
 
-      {/* Desktop Layout - Traditional scroll-based */}
-      {(isMounted && isDesktop) && (
+      {/* Desktop Layout — render on SSR (default) + after mount on desktop */}
+      {(!isMounted || isDesktop) && (
         <div className="homepage-container" data-debug="desktop-layout">
           <div className="pwa-status-bar"></div>
 
