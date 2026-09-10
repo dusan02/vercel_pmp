@@ -31,7 +31,7 @@ const PriceCandlestickChart = lazy(() => import('./PriceCandlestickChart'));
  * interpreted Key Financial Metrics table (with compare column) and the
  * charts grid.
  */
-export default function AnalysisTab({ ticker }: AnalysisTabProps) {
+export default function AnalysisTab({ ticker, initialAnalysisData, initialHistoryData }: AnalysisTabProps & { initialAnalysisData?: any; initialHistoryData?: any }) {
     const {
         data,
         loading,
@@ -47,7 +47,7 @@ export default function AnalysisTab({ ticker }: AnalysisTabProps) {
         runDeepAnalysis,
         handleAddComparison,
         handleRemoveComparison,
-    } = useAnalysis(ticker);
+    } = useAnalysis(ticker, initialAnalysisData, initialHistoryData);
 
     if (loading) return <LoadingSkeleton analysisStep={analysisStep} />;
 

@@ -245,11 +245,32 @@ export default async function AnalysisPage({ params }: PageProps) {
   const companyName = data?.name || getCompanyName(tickerUpper) || tickerUpper;
 
   // Fetch everything in parallel (independent queries)
-  const [earningsData, recentMoves, sectorPeers, sparkline] = await Promise.all([
+  // Includes SSR pre-fetch of analysis API + history for instant client hydration
+  const [earningsData, recentMoves, sectorPeers, sparkline, analysisData, historyData] = await Promise.all([
     getEarningsForTicker(tickerUpper),
     getRecentSignificantMoves(tickerUpper),
     getSectorPeers(data?.sector, tickerUpper),
     getSparklineCloses(tickerUpper),
+    // SSR pre-fetch analysis API — eliminates client-side fetch waterfall
+    (async () => {
+      try {
+        const res = await fetch(`http://127.0.0.1:${process.env.PORT || 3001}/api/analysis/${tickerUpper}`, {
+          signal: AbortSignal.timeout(3000),
+        });
+        if (!res.ok) return null;
+        return await res.json();
+      } catch { return null; }
+    })(),
+    // SSR pre-fetch history API — chart data for valuation, price, per-share
+    (async () => {
+      try {
+        const res = await fetch(`http://127.0.0.1:${process.env.PORT || 3001}/api/analysis/${tickerUpper}/history`, {
+          signal: AbortSignal.timeout(3000),
+        });
+        if (!res.ok) return null;
+        return await res.json();
+      } catch { return null; }
+    })(),
   ]);
 
   const marketSession = detectSession(nowET());
@@ -340,7 +361,7 @@ export default async function AnalysisPage({ params }: PageProps) {
           {/* Full interactive analysis — SSR sections above cover the header,
               overview and score summary; this renders controls, compare,
               price chart, interpreted Key Financial Metrics and the chart grid */}
-          <AnalysisTabClient ticker={tickerUpper} />
+          <AnalysisTabClient ticker={tickerUpper} initialAnalysisData={analysisData} initialHistoryData={historyData} />
 
           <AnalystConsensusSection
             priceTarget={data?.finnhubPriceTarget ?? null}

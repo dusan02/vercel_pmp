@@ -17,10 +17,10 @@ const AnalysisTab = dynamic(
   }
 );
 
-export function AnalysisTabClient({ ticker }: { ticker: string }) {
+export function AnalysisTabClient({ ticker, initialAnalysisData, initialHistoryData }: { ticker: string; initialAnalysisData?: any; initialHistoryData?: any }) {
   useEffect(() => {
     event('analysis_view', { ticker });
   }, [ticker]);
 
-  return <AnalysisTab ticker={ticker} />;
+  return <AnalysisTab ticker={ticker} initialAnalysisData={initialAnalysisData} initialHistoryData={initialHistoryData} />;
 }

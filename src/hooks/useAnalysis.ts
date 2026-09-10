@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { AnalysisData } from '../components/company/analysis/types';
 
 const ANALYSIS_STEPS = [
@@ -11,9 +11,41 @@ const ANALYSIS_STEPS = [
     'Finalizing AI Verdict...',
 ] as const;
 
-export function useAnalysis(ticker: string) {
-    const [data, setData] = useState<AnalysisData | null>(null);
-    const [loading, setLoading] = useState(true);
+export function useAnalysis(ticker: string, initialAnalysisData?: any, initialHistoryData?: any) {
+    // Build initial data from SSR pre-fetched API responses
+    const ssrData = useMemo(() => {
+        if (!initialAnalysisData) return null;
+        const json = initialAnalysisData;
+        const histJson = initialHistoryData ?? {};
+        const historyExtras = {
+            priceHistory: histJson.priceHistory ?? [],
+            impliedPricePS: histJson.impliedPricePS ?? [],
+            impliedPricePE: histJson.impliedPricePE ?? [],
+            correlation: histJson.correlation ?? undefined,
+            valuationHistory: histJson.valuationHistory ?? [],
+            valuationHistoryPE: histJson.valuationHistoryPE ?? [],
+            valuationHistoryPS: histJson.valuationHistoryPS ?? [],
+            valuationSummary: histJson.valuationSummary ?? null,
+            valuationSummaryPE: histJson.valuationSummaryPE ?? null,
+            valuationSummaryPS: histJson.valuationSummaryPS ?? null,
+            valuationForecast: histJson.valuationForecast ?? [],
+            valuationForecastPE: histJson.valuationForecastPE ?? [],
+            valuationForecastPS: histJson.valuationForecastPS ?? [],
+            peHistory: histJson.peHistory ?? [],
+            psHistory: histJson.psHistory ?? [],
+            valuationCurrent: histJson.current ?? null,
+            valuationStats: histJson.stats ?? null,
+            epsCagr3y: histJson.epsCagr3y ?? null,
+            epsCagr5y: histJson.epsCagr5y ?? null,
+        };
+        if (json && json.primary) {
+            return { ...json.primary, ...historyExtras, peers: json.peers || [], finnhub: json.primary.finnhub ?? null } as AnalysisData;
+        }
+        return { ...json, ...historyExtras, finnhub: json.finnhub ?? null } as AnalysisData;
+    }, [initialAnalysisData, initialHistoryData]);
+
+    const [data, setData] = useState<AnalysisData | null>(() => ssrData);
+    const [loading, setLoading] = useState(() => !ssrData);
     const [analyzing, setAnalyzing] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -176,6 +208,12 @@ export function useAnalysis(ticker: string) {
         setCompareInput('');
         setSecondaryData(null);
         autoTriggered.current = null;
+        // Skip initial fetch if we have SSR data — it will be refreshed in background
+        if (ssrData) {
+            // Delay background refresh so SSR data shows immediately
+            const timer = setTimeout(() => fetchAnalysis(), 5000);
+            return () => clearTimeout(timer);
+        }
         fetchAnalysis();
     }, [ticker, fetchAnalysis]);
 
