@@ -163,18 +163,19 @@ export default async function Page() {
   let initialEarningsData = null;
   let initialMoversData: any[] = [];
   let initialBlogSnapshots: any[] = [];
+  let initialHeatmapData: any[] = [];
 
   try {
     const todayET = getDateET(new Date());
 
-    logger.ssr('Fetching initial data for Top 20 tickers, Earnings, Movers, Blog...');
+    logger.ssr('Fetching initial data for Top 20 tickers, Earnings, Movers, Blog, Heatmap...');
 
     // Parallel fetch with 3-second timeout — prevents blocking HTML for 10+ seconds
     // when DB is slow (cold connection, revalidation after ISR expiry).
     // Client-side hooks will fetch the data anyway, so empty initial data is safe.
     const SSR_TIMEOUT_MS = 3000;
 
-    const [stocksResult, earningsResult, moversResult, blogResult] = await Promise.allSettled([
+    const [stocksResult, earningsResult, moversResult, blogResult, heatmapResult] = await Promise.allSettled([
       withTimeout(getStocksData(topTickers, project), SSR_TIMEOUT_MS, { data: [], errors: ['SSR timeout'] }),
       withTimeout(getEarningsForDate(todayET), SSR_TIMEOUT_MS, null),
       // SSR fetch for movers — used by HomeMovers as SWR fallbackData
@@ -196,6 +197,18 @@ export default async function Page() {
             take: 10,
           });
           return snapshots;
+        })(),
+        SSR_TIMEOUT_MS,
+        []
+      ),
+      // SSR fetch for heatmap — eliminates client-side fetch waterfall
+      // Fetches compact rows format (same as API) for instant hydration
+      withTimeout(
+        (async () => {
+          const res = await fetch(`http://127.0.0.1:${process.env.PORT || 3001}/api/heatmap`);
+          if (!res.ok) return [];
+          const data = await res.json();
+          return data.rows || data.data || [];
         })(),
         SSR_TIMEOUT_MS,
         []
@@ -241,6 +254,15 @@ export default async function Page() {
       logger.error('SSR Error fetching blog snapshots', blogResult.reason);
     }
 
+    if (heatmapResult.status === 'fulfilled') {
+      initialHeatmapData = heatmapResult.value as any[];
+      if (initialHeatmapData.length > 0) {
+        logger.ssr(`Loaded ${initialHeatmapData.length} heatmap rows`);
+      }
+    } else {
+      logger.error('SSR Error fetching heatmap', heatmapResult.reason);
+    }
+
   } catch (error) {
     logger.error('SSR Error fetching initial data', error, { project, tickerCount: topTickers.length });
     // Continue with empty initialData - client side will handle fallback
@@ -278,6 +300,7 @@ export default async function Page() {
           initialEarningsData={initialEarningsData}
           initialMoversData={initialMoversData}
           initialBlogSnapshots={initialBlogSnapshots}
+          initialHeatmapData={initialHeatmapData}
         />
       </Suspense>
     </>

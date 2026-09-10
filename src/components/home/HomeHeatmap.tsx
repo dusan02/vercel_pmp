@@ -14,14 +14,15 @@ const HeatmapPreview = dynamic(
 );
 
 interface HomeHeatmapProps {
-    wrapperClass?: string;
+    wrapperClass?: string | undefined;
     activeView?: string | undefined;
-    onTileClick?: (ticker: string) => void;
-    stockData?: StockData[];
-    onSelectTicker?: (ticker: string) => void;
+    onTileClick?: (ticker: string) => void | undefined;
+    stockData?: StockData[] | undefined;
+    onSelectTicker?: (ticker: string) => void | undefined;
+    initialHeatmapData?: any[] | undefined;
 }
 
-export function HomeHeatmap({ wrapperClass, activeView, onTileClick, stockData, onSelectTicker }: HomeHeatmapProps) {
+export function HomeHeatmap({ wrapperClass, activeView, onTileClick, stockData, onSelectTicker, initialHeatmapData }: HomeHeatmapProps) {
     return (
         <SectionErrorBoundary sectionName="Heatmap">
             <div className="screen-heatmap-content flex flex-col h-full w-full">
@@ -32,6 +33,7 @@ export function HomeHeatmap({ wrapperClass, activeView, onTileClick, stockData, 
                         {...(onTileClick !== undefined ? { onTileClick } : {})}
                         {...(stockData !== undefined ? { stockData } : {})}
                         {...(onSelectTicker !== undefined ? { onSelectTicker } : {})}
+                        {...(initialHeatmapData !== undefined ? { initialHeatmapData } : {})}
                     />
                 </div>
             </div>

@@ -58,6 +58,8 @@ export type ResponsiveMarketHeatmapProps = {
   sectorLabelVariant?: 'compact' | 'full';
   /** Signalizuje, či je heatmap aktívny view (pre automatické zatvorenie sheetu) */
   activeView?: string | undefined;
+  /** SSR pre-fetched heatmap data (compact rows format from API) */
+  initialHeatmapData?: any[] | undefined;
 };
 
 /**
@@ -76,6 +78,7 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
   hideMetricButtons = false,
   sectorLabelVariant = 'compact',
   activeView,
+  initialHeatmapData,
 }) => {
   // Resize hook
   const { ref, size } = useElementResize();
@@ -112,7 +115,8 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
     refreshInterval: mobileRefreshInterval,
     initialTimeframe,
     initialMetric: controlledMetric ?? centralizedMetric, // Sync with centralized or controlled metric
-    autoRefresh: autoRefresh && isMounted // Only auto-refresh after mount
+    autoRefresh: autoRefresh && isMounted, // Only auto-refresh after mount
+    initialHeatmapData,
   });
 
   // Use controlled metric if provided, otherwise use centralized metric, fallback to hook metric

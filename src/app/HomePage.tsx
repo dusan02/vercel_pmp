@@ -123,9 +123,10 @@ interface HomePageProps {
   initialEarningsData?: any;
   initialMoversData?: any[];
   initialBlogSnapshots?: any[];
+  initialHeatmapData?: any[];
 }
 
-export default function HomePage({ initialData = [], initialEarningsData, initialMoversData, initialBlogSnapshots }: HomePageProps) {
+export default function HomePage({ initialData = [], initialEarningsData, initialMoversData, initialBlogSnapshots, initialHeatmapData }: HomePageProps) {
   useEffect(() => { autoRepairLocalStorage(); }, []);
 
   const [isMounted, setIsMounted] = useState(false);
@@ -187,6 +188,7 @@ export default function HomePage({ initialData = [], initialEarningsData, initia
                     onTileClick={(ticker) => handleMobileNavChange('analysis', ticker)}
                     stockData={stockData}
                     onSelectTicker={(ticker) => handleMobileNavChange('analysis', ticker)}
+                    initialHeatmapData={initialHeatmapData}
                   />
                 )}
               </MobileScreen>
@@ -389,6 +391,7 @@ export default function HomePage({ initialData = [], initialEarningsData, initia
                               onTileClick={(ticker) => handleMobileNavChange('analysis', ticker)}
                               stockData={stockData}
                               onSelectTicker={(ticker) => handleMobileNavChange('analysis', ticker)}
+                              initialHeatmapData={initialHeatmapData}
                             />
                           </div>
                         )}

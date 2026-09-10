@@ -326,5 +326,23 @@ module.exports = {
       cron_restart: "*/15 * * * *", 
       autorestart: false,
     },
+    {
+      name: "heatmap-keep-warm",
+      script: "scripts/heatmap-keep-warm.ts",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
+      cwd: __dirname,
+      instances: 1,
+      exec_mode: "fork",
+      env: {
+        NODE_ENV: "production",
+        BASE_URL: "http://127.0.0.1:3001",
+      },
+      error_file: path.join(__dirname, "logs", "pm2", "heatmap-keep-warm-error.log"),
+      out_file: path.join(__dirname, "logs", "pm2", "heatmap-keep-warm-out.log"),
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      // Every 5 minutes — keeps Redis cache warm (TTL is 15min)
+      cron_restart: "*/5 * * * *",
+      autorestart: false,
+    },
   ],
 };

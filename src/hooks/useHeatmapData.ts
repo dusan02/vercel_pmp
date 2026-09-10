@@ -1,15 +1,16 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { StockData, PriceUpdate } from '@/lib/types';
 import type { CompanyNode, HeatmapMetric } from '@/lib/heatmap/types';
 import { useHeatmapCache } from './useHeatmapCache';
 import { useMediaQuery } from './useMediaQuery';
 
 interface UseHeatmapDataProps {
-  apiEndpoint?: string;
-  refreshInterval?: number;
-  initialTimeframe?: 'day' | 'week' | 'month';
-  initialMetric?: HeatmapMetric;
-  autoRefresh?: boolean;
+  apiEndpoint?: string | undefined;
+  refreshInterval?: number | undefined;
+  initialTimeframe?: 'day' | 'week' | 'month' | undefined;
+  initialMetric?: HeatmapMetric | undefined;
+  autoRefresh?: boolean | undefined;
+  initialHeatmapData?: any[] | undefined;
 }
 
 /**
@@ -43,16 +44,39 @@ export function useHeatmapData({
   refreshInterval = 30000,
   initialTimeframe = 'day',
   initialMetric = 'percent',
-  autoRefresh = true
+  autoRefresh = true,
+  initialHeatmapData
 }: UseHeatmapDataProps = {}) {
   // Cache hook FIRST — so cachedData is available for synchronous state init below
   const { cachedData, isLoading: cacheLoading, saveCache } = useHeatmapCache();
 
-  // State — initialized from cache synchronously (no useEffect needed for initial data)
-  const [data, setData] = useState<CompanyNode[] | null>(() => cachedData?.data ?? null);
-  const [loading, setLoading] = useState<boolean>(() => !cachedData);
+  // Transform SSR initial data (compact rows format) to CompanyNode[]
+  const ssrData = useMemo(() => {
+    if (!initialHeatmapData || !Array.isArray(initialHeatmapData) || initialHeatmapData.length === 0) return null;
+    const companies: CompanyNode[] = [];
+    for (const row of initialHeatmapData) {
+      if (!row.t || !row.s || !row.i) continue;
+      const marketCapDiff = row.d || 0;
+      companies.push({
+        symbol: row.t,
+        name: row.n || row.t,
+        sector: row.s,
+        industry: row.i,
+        marketCap: row.m || 0,
+        changePercent: row.c || 0,
+        marketCapDiff,
+        marketCapDiffAbs: Math.abs(marketCapDiff),
+        currentPrice: row.p,
+      });
+    }
+    return companies.length > 0 ? companies : null;
+  }, [initialHeatmapData]);
+
+  // State — initialized from SSR data or cache synchronously (no useEffect needed for initial data)
+  const [data, setData] = useState<CompanyNode[] | null>(() => ssrData ?? cachedData?.data ?? null);
+  const [loading, setLoading] = useState<boolean>(() => !ssrData && !cachedData);
   const [error, setError] = useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<string | null>(() => cachedData?.lastUpdated ?? null);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(() => ssrData ? new Date().toISOString() : cachedData?.lastUpdated ?? null);
   const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month'>(initialTimeframe);
   const [metric, setMetric] = useState<HeatmapMetric>(initialMetric);
   const [lastEtag, setLastEtag] = useState<string | null>(() => cachedData?.etag ?? null);
@@ -62,10 +86,10 @@ export function useHeatmapData({
 
   // Refs
   const abortControllerRef = useRef<AbortController | null>(null);
-  const isInitialLoadRef = useRef(!cachedData);
+  const isInitialLoadRef = useRef(!ssrData && !cachedData);
   const isLoadingRef = useRef(false);
   const lastLoadTimeRef = useRef<number>(0);
-  const currentDataRef = useRef<CompanyNode[]>(cachedData?.data ?? []);
+  const currentDataRef = useRef<CompanyNode[]>(ssrData ?? cachedData?.data ?? []);
 
   // Update ref when data changes
   useEffect(() => {
@@ -291,14 +315,19 @@ export function useHeatmapData({
 
   // Initial load and auto-refresh
   useEffect(() => {
-    // Single initial fetch — no duplicate 100ms background refresh.
-    // If we have cached data it will show immediately; this fetch updates in the background.
-    fetchDataRef.current(false);
+    // If we have SSR data, delay the first fetch — the user already sees data.
+    // This avoids an immediate API call that would compete with other resources.
+    const initialDelay = (ssrData || cachedData) ? 2000 : 0;
+    const timer = setTimeout(() => fetchDataRef.current(false), initialDelay);
 
+    let interval: ReturnType<typeof setInterval> | undefined;
     if (autoRefresh && refreshInterval > 0) {
-      const interval = setInterval(() => fetchDataRef.current(false), refreshInterval);
-      return () => clearInterval(interval);
+      interval = setInterval(() => fetchDataRef.current(false), refreshInterval);
     }
+    return () => {
+      clearTimeout(timer);
+      if (interval) clearInterval(interval);
+    };
   }, [autoRefresh, refreshInterval]); // Remove fetchData from deps
 
   // Sync internal state with props if props change
