@@ -49,6 +49,24 @@ export async function middleware(request: NextRequest) {
 
   const response = NextResponse.next();
 
+  // Redirect /company/[ticker] → /analysis/[ticker] (301)
+  // Old sitemap had /company/ URLs; Google still has them in index → 404s.
+  if (pathname.startsWith('/company/')) {
+    const ticker = pathname.replace('/company/', '');
+    const url = request.nextUrl.clone();
+    url.pathname = `/analysis/${ticker}`;
+    url.search = '';
+    return NextResponse.redirect(url, 301);
+  }
+
+  // Redirect trailing slash → no slash (301) for non-root paths
+  // Prevents /stocks/ vs /stocks duplicate-content issues.
+  if (pathname.length > 1 && pathname.endsWith('/')) {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname.replace(/\/+$/, '');
+    return NextResponse.redirect(url, 301);
+  }
+
   // CORS headers
   // Note: In Edge Runtime, we can't use process.env at module level
   // For dynamic origins, we'd need to use Edge Config or similar

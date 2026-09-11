@@ -10,6 +10,7 @@ import {
   hasValuationData,
   getValuationHistory,
 } from '@/lib/seo/eligibleValuation';
+import { ValuationSeoText } from '@/components/company/ValuationSeoText';
 
 export const revalidate = 3600; // 1 hour — valuation history updates daily
 
@@ -378,6 +379,27 @@ export default async function ValuationPage({ params }: PageProps) {
                 {tickerUpper} Market Moves →
               </Link>
             </div>
+
+            {/* SEO text */}
+            <ValuationSeoText
+              ticker={tickerUpper}
+              companyName={companyName}
+              sector={data?.sector ?? null}
+              industry={data?.industry ?? null}
+              price={data?.lastPrice ?? null}
+              marketCap={data?.lastMarketCap ?? null}
+              dataPoints={history.length}
+              dateRange={dateRangeStr}
+              peCurrent={peStats?.current ?? null}
+              peMedian={peStats?.median ?? null}
+              pePercentile={peStats?.currentPercentile ?? null}
+              psCurrent={psStats?.current ?? null}
+              psMedian={psStats?.median ?? null}
+              avgPercentile={avgPercentile}
+              verdict={verdict}
+              hasAnalysis={true}
+              hasFinancials={true}
+            />
           </section>
         </main>
       </div>

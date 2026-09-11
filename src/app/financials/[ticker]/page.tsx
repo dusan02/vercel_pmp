@@ -9,6 +9,7 @@ import {
   hasFinancialsData,
   getFinancialStatements,
 } from '@/lib/seo/eligibleFinancials';
+import { FinancialsSeoText } from '@/components/company/FinancialsSeoText';
 
 export const revalidate = 3600; // 1 hour
 
@@ -451,6 +452,38 @@ export default async function FinancialsPage({ params }: PageProps) {
                 {tickerUpper} Market Moves →
               </Link>
             </div>
+
+            {/* SEO text */}
+            {(() => {
+              const latest = trendData[trendData.length - 1];
+              const prev = trendData.length >= 2 ? trendData[trendData.length - 2] : null;
+              const revGrowth = latest && prev && latest.revenue && prev.revenue
+                ? yoyChange(latest.revenue, prev.revenue)
+                : null;
+              const netMargin = latest && latest.revenue && latest.revenue > 0 && latest.netIncome != null
+                ? (latest.netIncome / latest.revenue) * 100
+                : null;
+              const deRatio = latest && latest.totalDebt != null && latest.totalEquity != null && latest.totalEquity > 0
+                ? latest.totalDebt / latest.totalEquity
+                : null;
+              return (
+                <FinancialsSeoText
+                  ticker={tickerUpper}
+                  companyName={companyName}
+                  sector={data?.sector ?? null}
+                  industry={data?.industry ?? null}
+                  price={data?.lastPrice ?? null}
+                  marketCap={data?.lastMarketCap ?? null}
+                  statementsCount={statements.length}
+                  revenueLatest={latest?.revenue ?? null}
+                  revenueGrowth={revGrowth}
+                  netMargin={netMargin}
+                  debtToEquity={deRatio}
+                  hasAnalysis={true}
+                  hasValuation={true}
+                />
+              );
+            })()}
           </section>
         </main>
       </div>
