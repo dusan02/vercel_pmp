@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { getEarningsRange, type EarningsSSRRow, type EarningsSSRGroup } from '@/lib/seo/earningsSSR';
 import { formatPercent } from '@/lib/utils/heatmapFormat';
 import { notFound } from 'next/navigation';
+import { getEligibleAnalysisSet } from '@/lib/seo/eligibleTickers';
 
 const baseUrl = 'https://premarketprice.com';
 
@@ -24,6 +25,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const d = new Date(date + 'T12:00:00Z');
   const dateDisplay = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+
+  const groups = await getEarningsRange(date, date);
+  const group = groups[0];
+  if (!group || group.total === 0) {
+    return {
+      title: `Earnings for ${dateDisplay}`,
+      description: `Earnings reports and announcements for ${dateDisplay}. See EPS estimates, actual results, revenue forecasts, and earnings surprises for companies reporting on this date.`,
+      robots: { index: false, follow: true },
+    };
+  }
 
   return generatePageMetadata({
     title: `Earnings for ${dateDisplay}`,
@@ -114,6 +125,7 @@ export default async function EarningsDatePage({ params }: PageProps) {
   const allRows = [...group.preMarket, ...group.afterMarket, ...group.timeTbd];
   const reportedCount = allRows.filter(r => r.hasReported).length;
   const upcomingCount = allRows.length - reportedCount;
+  const eligibleAnalysis = await getEligibleAnalysisSet();
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -168,7 +180,11 @@ export default async function EarningsDatePage({ params }: PageProps) {
                   return (
                     <tr key={`${row.ticker}-${row.date}`} className="border-t border-slate-100 dark:border-slate-800 hover:bg-slate-50/60 dark:hover:bg-slate-950/60">
                       <td className="px-3 py-2 font-semibold">
-                        <Link href={`/analysis/${row.ticker}`} className="hover:underline">{row.ticker}</Link>
+                        {eligibleAnalysis.has(row.ticker) ? (
+                          <Link href={`/analysis/${row.ticker}`} className="hover:underline">{row.ticker}</Link>
+                        ) : (
+                          <span>{row.ticker}</span>
+                        )}
                       </td>
                       <td className="px-3 py-2 text-slate-700 dark:text-slate-300 max-w-[200px] truncate">{row.companyName}</td>
                       <td className={`px-3 py-2 text-xs font-medium ${timeColor(row.time)}`}>{timeLabel(row.time)}</td>

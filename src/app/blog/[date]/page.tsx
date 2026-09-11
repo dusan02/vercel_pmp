@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/db/prisma';
+import { getEligibleAnalysisSet } from '@/lib/seo/eligibleTickers';
 
 export const revalidate = 3600;
 
@@ -122,15 +123,13 @@ function ChangeTag({ value, suffix = '%' }: { value: number; suffix?: string }) 
   );
 }
 
-function TickerRow({ stock, rank }: { stock: TickerSnapshot; rank: number }) {
-  return (
-    <Link
-      href={`/analysis/${stock.ticker}`}
-      className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group"
-    >
+function TickerRow({ stock, rank, eligible }: { stock: TickerSnapshot; rank: number; eligible: Set<string> }) {
+  const isEligible = eligible.has(stock.ticker);
+  const content = (
+    <>
       <span className="w-6 text-center text-sm text-gray-400 font-mono">{rank}</span>
       <div className="flex-1 min-w-0">
-        <span className="font-bold text-blue-600 dark:text-blue-400 group-hover:underline">{stock.ticker}</span>
+        <span className={`font-bold ${isEligible ? 'text-blue-600 dark:text-blue-400 group-hover:underline' : 'text-gray-700 dark:text-gray-300'}`}>{stock.ticker}</span>
         {stock.name && <span className="ml-2 text-sm text-gray-500 dark:text-gray-400 truncate">{stock.name}</span>}
       </div>
       <div className="text-right shrink-0">
@@ -141,7 +140,23 @@ function TickerRow({ stock, rank }: { stock: TickerSnapshot; rank: number }) {
         <div className="text-xs text-gray-400">MCap Δ</div>
         <ChangeTag value={stock.marketCapDiff} suffix="B" />
       </div>
-    </Link>
+    </>
+  );
+
+  if (isEligible) {
+    return (
+      <Link
+        href={`/analysis/${stock.ticker}`}
+        className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group"
+      >
+        {content}
+      </Link>
+    );
+  }
+  return (
+    <div className="flex items-center gap-3 p-3 rounded-lg">
+      {content}
+    </div>
   );
 }
 
@@ -161,6 +176,7 @@ export default async function BlogDatePage({ params }: { params: Promise<{ date:
   const mcapMovers: TickerSnapshot[] = JSON.parse(snapshot.mcapMoversJson);
   const earnings: EarningsItem[] = JSON.parse(snapshot.earningsJson);
   const isWeekly = isWeeklyDate(date) || overview.type === 'weekly-earnings';
+  const eligibleAnalysis = await getEligibleAnalysisSet();
 
   // Parse weekly earnings breakdown if applicable
   let weeklyBreakdown: Array<{ date: string; total: number; preMarket: number; afterMarket: number; timeTbd: number; notable: Array<{ ticker: string; companyName: string | null; time: string; epsEstimate: number | null }> }> = [];
@@ -306,7 +322,7 @@ export default async function BlogDatePage({ params }: { params: Promise<{ date:
           <section className="mb-6 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">🚀 Top Gainers</h2>
             <div className="divide-y divide-gray-100 dark:divide-gray-800">
-              {gainers.slice(0, 10).map((s, i) => <TickerRow key={s.ticker} stock={s} rank={i + 1} />)}
+              {gainers.slice(0, 10).map((s, i) => <TickerRow key={s.ticker} stock={s} rank={i + 1} eligible={eligibleAnalysis} />)}
             </div>
           </section>
         )}
@@ -316,7 +332,7 @@ export default async function BlogDatePage({ params }: { params: Promise<{ date:
           <section className="mb-6 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">📉 Top Losers</h2>
             <div className="divide-y divide-gray-100 dark:divide-gray-800">
-              {losers.slice(0, 10).map((s, i) => <TickerRow key={s.ticker} stock={s} rank={i + 1} />)}
+              {losers.slice(0, 10).map((s, i) => <TickerRow key={s.ticker} stock={s} rank={i + 1} eligible={eligibleAnalysis} />)}
             </div>
           </section>
         )}
@@ -326,7 +342,7 @@ export default async function BlogDatePage({ params }: { params: Promise<{ date:
           <section className="mb-6 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">💰 Biggest Market Cap Movers</h2>
             <div className="divide-y divide-gray-100 dark:divide-gray-800">
-              {mcapMovers.slice(0, 10).map((s, i) => <TickerRow key={s.ticker} stock={s} rank={i + 1} />)}
+              {mcapMovers.slice(0, 10).map((s, i) => <TickerRow key={s.ticker} stock={s} rank={i + 1} eligible={eligibleAnalysis} />)}
             </div>
           </section>
         )}
@@ -336,24 +352,30 @@ export default async function BlogDatePage({ params }: { params: Promise<{ date:
           <section className="mb-6 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">📅 Earnings This Day</h2>
             <div className="space-y-2">
-              {earnings.map(e => (
-                <Link
-                  key={e.ticker}
-                  href={`/analysis/${e.ticker}`}
-                  className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group"
-                >
-                  <div>
-                    <span className="font-bold text-blue-600 dark:text-blue-400 group-hover:underline">{e.ticker}</span>
-                    {e.name && <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">{e.name}</span>}
-                  </div>
-                  <div className="text-right text-sm">
-                    <span className="text-gray-400">{e.hour === 'bmo' ? 'Before Open' : e.hour === 'amc' ? 'After Close' : 'During Market'}</span>
-                    {e.epsEstimate !== null && (
-                      <span className="ml-3 text-gray-600 dark:text-gray-300">EPS est. ${e.epsEstimate.toFixed(2)}</span>
-                    )}
-                  </div>
-                </Link>
-              ))}
+              {earnings.map(e => {
+                const isEligible = eligibleAnalysis.has(e.ticker);
+                const content = (
+                  <>
+                    <div>
+                      <span className={`font-bold ${isEligible ? 'text-blue-600 dark:text-blue-400 group-hover:underline' : 'text-gray-700 dark:text-gray-300'}`}>{e.ticker}</span>
+                      {e.name && <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">{e.name}</span>}
+                    </div>
+                    <div className="text-right text-sm">
+                      <span className="text-gray-400">{e.hour === 'bmo' ? 'Before Open' : e.hour === 'amc' ? 'After Close' : 'During Market'}</span>
+                      {e.epsEstimate !== null && (
+                        <span className="ml-3 text-gray-600 dark:text-gray-300">EPS est. ${e.epsEstimate.toFixed(2)}</span>
+                      )}
+                    </div>
+                  </>
+                );
+                return isEligible ? (
+                  <Link key={e.ticker} href={`/analysis/${e.ticker}`} className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group">
+                    {content}
+                  </Link>
+                ) : (
+                  <div key={e.ticker} className="flex items-center justify-between p-3 rounded-lg">{content}</div>
+                );
+              })}
             </div>
           </section>
         )}

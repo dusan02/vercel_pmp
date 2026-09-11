@@ -9,6 +9,7 @@ import {
   getAdjacentPremarketDates,
   type PremarketArchiveRow,
 } from '@/lib/seo/premarketArchive';
+import { getEligibleAnalysisSet } from '@/lib/seo/eligibleTickers';
 
 export const revalidate = 3600; // 1 hour — archive pages are less volatile
 
@@ -31,6 +32,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return { title: 'Invalid Date' };
   }
   const display = formatDateDisplay(date);
+  const rows: PremarketArchiveRow[] = await getPremarketMoversFromDB(date, 'desc', 1);
+  if (rows.length === 0) {
+    return {
+      title: `Premarket Gainers for ${display}`,
+      description: `Top gaining US stocks in pre-market trading on ${display}. See which stocks surged before the opening bell — live prices, percentage changes, and sector breakdown.`,
+      robots: { index: false, follow: true },
+    };
+  }
   return generatePageMetadata({
     title: `Premarket Gainers for ${display}`,
     description: `Top gaining US stocks in pre-market trading on ${display}. See which stocks surged before the opening bell — live prices, percentage changes, and sector breakdown.`,
@@ -61,6 +70,7 @@ export default async function PremarketGainersDatePage({ params }: PageProps) {
   // PostgreSQL is the source of truth — no Redis dependency
   const rows: PremarketArchiveRow[] = await getPremarketMoversFromDB(date, 'desc', 50);
   const { prev, next } = await getAdjacentPremarketDates(date);
+  const eligibleAnalysis = await getEligibleAnalysisSet();
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-900">
@@ -149,7 +159,11 @@ export default async function PremarketGainersDatePage({ params }: PageProps) {
                   return (
                     <tr key={r.symbol} className="border-t border-slate-100 dark:border-slate-800 hover:bg-slate-50/60 dark:hover:bg-slate-950/60">
                       <td className="px-4 py-2 font-semibold">
-                        <Link className="hover:underline" href={`/analysis/${r.symbol}`}>{r.symbol}</Link>
+                        {eligibleAnalysis.has(r.symbol) ? (
+                          <Link className="hover:underline" href={`/analysis/${r.symbol}`}>{r.symbol}</Link>
+                        ) : (
+                          <span>{r.symbol}</span>
+                        )}
                       </td>
                       <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{r.name ?? ''}</td>
                       <td className="px-4 py-2">

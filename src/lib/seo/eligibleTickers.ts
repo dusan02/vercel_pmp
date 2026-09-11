@@ -52,3 +52,27 @@ export async function hasAnalysisCache(symbol: string): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Returns a Set of eligible ticker symbols for O(1) lookup.
+ * Use this in SSR pages to filter <Link href="/analysis/[ticker]"> elements
+ * so Google doesn't discover thin/noindex pages.
+ *
+ * Example:
+ *   const eligible = await getEligibleAnalysisSet();
+ *   {tickers.map(t => eligible.has(t.symbol) && <Link href={`/analysis/${t.symbol}`}>...)}
+ */
+export async function getEligibleAnalysisSet(): Promise<Set<string>> {
+  const tickers = await getEligibleAnalysisTickers();
+  return new Set(tickers);
+}
+
+/**
+ * Filter an array of ticker symbols to only include eligible ones.
+ * Use this when you have a list of tickers from Redis/DB and need to
+ * only link to those with AnalysisCache.
+ */
+export async function filterEligibleTickers(symbols: string[]): Promise<string[]> {
+  const eligible = await getEligibleAnalysisSet();
+  return symbols.filter((s) => eligible.has(s));
+}

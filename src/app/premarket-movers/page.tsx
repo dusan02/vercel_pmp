@@ -7,6 +7,7 @@ import { formatSectorName } from '@/lib/utils/format';
 import { getDateET, getManyLastWithDate, getRankedSymbols } from '@/lib/redis/ranking';
 import { SsrMoverLinksCombined } from '@/components/seo/SsrMoverLinks';
 import { getPremarketDateSummaries } from '@/lib/seo/premarketArchive';
+import { getEligibleAnalysisSet } from '@/lib/seo/eligibleTickers';
 
 export const revalidate = 60;
 
@@ -67,7 +68,7 @@ async function getTopMovers(order: 'asc' | 'desc', limit: number): Promise<Mover
   }).filter(r => order === 'desc' ? (r.changePct ?? 0) > 0.01 : (r.changePct ?? 0) < -0.01);
 }
 
-function MoversTable({ title, rows }: { title: string; rows: MoverRow[] }) {
+function MoversTable({ title, rows, eligibleAnalysis }: { title: string; rows: MoverRow[]; eligibleAnalysis: Set<string> }) {
   return (
     <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
       <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800">
@@ -106,9 +107,13 @@ function MoversTable({ title, rows }: { title: string; rows: MoverRow[] }) {
                   className="border-t border-slate-100 dark:border-slate-800 hover:bg-slate-50/60 dark:hover:bg-slate-950/60"
                 >
                   <td className="px-4 py-2 font-semibold">
-                    <Link className="hover:underline" href={`/analysis/${r.symbol}`}>
-                      {r.symbol}
-                    </Link>
+                    {eligibleAnalysis.has(r.symbol) ? (
+                      <Link className="hover:underline" href={`/analysis/${r.symbol}`}>
+                        {r.symbol}
+                      </Link>
+                    ) : (
+                      <span>{r.symbol}</span>
+                    )}
                   </td>
                   <td className="px-4 py-2 text-slate-700 dark:text-slate-300">
                     {r.name ?? ''}
@@ -161,10 +166,11 @@ function MoversTable({ title, rows }: { title: string; rows: MoverRow[] }) {
 }
 
 export default async function PremarketMoversPage() {
-  const [gainers, losers, archiveDates] = await Promise.all([
+  const [gainers, losers, archiveDates, eligibleAnalysis] = await Promise.all([
     getTopMovers('desc', 50),
     getTopMovers('asc', 50),
     getPremarketDateSummaries(7),
+    getEligibleAnalysisSet(),
   ]);
   const today = getTodayFormatted();
   const topGainer = gainers[0];
@@ -204,8 +210,8 @@ export default async function PremarketMoversPage() {
         <SsrMoverLinksCombined />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <MoversTable title="Top Gainers" rows={gainers} />
-          <MoversTable title="Top Losers" rows={losers} />
+          <MoversTable title="Top Gainers" rows={gainers} eligibleAnalysis={eligibleAnalysis} />
+          <MoversTable title="Top Losers" rows={losers} eligibleAnalysis={eligibleAnalysis} />
         </div>
 
         {/* Historical premarket archive — links to past dates from PostgreSQL */}
@@ -238,7 +244,11 @@ export default async function PremarketMoversPage() {
                         <td className="px-3 py-2">
                           {d.topGainer ? (
                             <span className="tabular-nums">
-                              <Link href={`/analysis/${d.topGainer.symbol}`} className="font-semibold text-slate-700 dark:text-slate-300 hover:underline">{d.topGainer.symbol}</Link>
+                              {eligibleAnalysis.has(d.topGainer.symbol) ? (
+                                <Link href={`/analysis/${d.topGainer.symbol}`} className="font-semibold text-slate-700 dark:text-slate-300 hover:underline">{d.topGainer.symbol}</Link>
+                              ) : (
+                                <span className="font-semibold text-slate-700 dark:text-slate-300">{d.topGainer.symbol}</span>
+                              )}
                               <span className="ml-2 text-emerald-600 dark:text-emerald-400">{formatPercent(d.topGainer.changePct)}</span>
                             </span>
                           ) : '—'}
@@ -246,7 +256,11 @@ export default async function PremarketMoversPage() {
                         <td className="px-3 py-2">
                           {d.topLoser ? (
                             <span className="tabular-nums">
-                              <Link href={`/analysis/${d.topLoser.symbol}`} className="font-semibold text-slate-700 dark:text-slate-300 hover:underline">{d.topLoser.symbol}</Link>
+                              {eligibleAnalysis.has(d.topLoser.symbol) ? (
+                                <Link href={`/analysis/${d.topLoser.symbol}`} className="font-semibold text-slate-700 dark:text-slate-300 hover:underline">{d.topLoser.symbol}</Link>
+                              ) : (
+                                <span className="font-semibold text-slate-700 dark:text-slate-300">{d.topLoser.symbol}</span>
+                              )}
                               <span className="ml-2 text-rose-600 dark:text-rose-400">{formatPercent(d.topLoser.changePct)}</span>
                             </span>
                           ) : '—'}

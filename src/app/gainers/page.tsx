@@ -6,6 +6,7 @@ import { formatMarketCapDiff, formatPercent, formatPrice } from '@/lib/utils/hea
 import { formatSectorName } from '@/lib/utils/format';
 import { getDateET, getManyLastWithDate, getRankedSymbols } from '@/lib/redis/ranking';
 import { SsrMoverLinks } from '@/components/seo/SsrMoverLinks';
+import { getEligibleAnalysisSet } from '@/lib/seo/eligibleTickers';
 
 export const revalidate = 60;
 
@@ -58,6 +59,7 @@ async function getRows(limit: number): Promise<Row[]> {
 
 export default async function GainersPage() {
   const rows = await getRows(100);
+  const eligibleAnalysis = await getEligibleAnalysisSet();
   const today = getTodayFormatted();
   const topGainer = rows[0];
 
@@ -120,9 +122,13 @@ export default async function GainersPage() {
                       className="border-t border-slate-100 dark:border-slate-800 hover:bg-slate-50/60 dark:hover:bg-slate-950/60"
                     >
                       <td className="px-4 py-2 font-semibold">
-                        <Link className="hover:underline" href={`/analysis/${r.symbol}`}>
-                          {r.symbol}
-                        </Link>
+                        {eligibleAnalysis.has(r.symbol) ? (
+                          <Link className="hover:underline" href={`/analysis/${r.symbol}`}>
+                            {r.symbol}
+                          </Link>
+                        ) : (
+                          <span>{r.symbol}</span>
+                        )}
                       </td>
                       <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{r.name ?? ''}</td>
                       <td className="px-4 py-2">

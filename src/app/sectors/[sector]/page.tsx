@@ -6,6 +6,7 @@ import { generatePageMetadata } from '@/lib/seo/metadata';
 import { formatSectorName } from '@/lib/utils/format';
 import { StructuredData } from '@/components/StructuredData';
 import { sectorDescriptions, defaultSectorDescription } from '@/lib/seo/sectorDescriptions';
+import { getEligibleAnalysisSet } from '@/lib/seo/eligibleTickers';
 
 // Revalidate every hour
 export const revalidate = 3600;
@@ -70,6 +71,7 @@ export default async function SectorPage({ params }: PageProps) {
     }
 
     const formattedSector = formatSectorName(sectorName);
+    const eligibleAnalysis = await getEligibleAnalysisSet();
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -137,12 +139,21 @@ export default async function SectorPage({ params }: PageProps) {
                                     return (
                                         <tr key={ticker.symbol} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <Link href={`/analysis/${ticker.symbol}`} className="flex flex-col">
-                                                    <span className="font-medium text-gray-900 dark:text-white">{ticker.symbol}</span>
-                                                    <span className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[150px]">
-                                                        {ticker.name}
-                                                    </span>
-                                                </Link>
+                                                {eligibleAnalysis.has(ticker.symbol) ? (
+                                                    <Link href={`/analysis/${ticker.symbol}`} className="flex flex-col">
+                                                        <span className="font-medium text-gray-900 dark:text-white">{ticker.symbol}</span>
+                                                        <span className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[150px]">
+                                                            {ticker.name}
+                                                        </span>
+                                                    </Link>
+                                                ) : (
+                                                    <div className="flex flex-col">
+                                                        <span className="font-medium text-gray-900 dark:text-white">{ticker.symbol}</span>
+                                                        <span className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[150px]">
+                                                            {ticker.name}
+                                                        </span>
+                                                    </div>
+                                                )}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-gray-900 dark:text-white">
                                                 ${ticker.lastPrice?.toFixed(2)}
