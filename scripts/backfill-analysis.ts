@@ -29,26 +29,38 @@ async function main() {
   const dryRun = args.includes('--dry-run');
 
   // Find top tickers by market cap WITHOUT AnalysisCache
+  // Use a low threshold ($100M) to catch mid-caps, then fall back to any ticker without analysis
   const tickers = await prisma.ticker.findMany({
     where: {
       analysisCache: null,
-      lastMarketCap: { gt: 1_000_000_000 }, // > $1B market cap
+      lastMarketCap: { gt: 100_000_000 }, // > $100M market cap
     },
     orderBy: { lastMarketCap: 'desc' },
     take: limit,
     select: { symbol: true, name: true, lastMarketCap: true },
   });
 
-  console.log(`Found ${tickers.length} tickers without AnalysisCache (limit: ${limit}, min market cap: $1B)`);
-
+  // If still empty, fall back to ANY ticker without AnalysisCache (regardless of market cap)
+  let finalTickers = tickers;
   if (tickers.length === 0) {
+    finalTickers = await prisma.ticker.findMany({
+      where: { analysisCache: null },
+      orderBy: { symbol: 'asc' },
+      take: limit,
+      select: { symbol: true, name: true, lastMarketCap: true },
+    });
+  }
+
+  console.log(`Found ${finalTickers.length} tickers without AnalysisCache (limit: ${limit}, min market cap: $100M)`);
+
+  if (finalTickers.length === 0) {
     console.log('All eligible tickers already have AnalysisCache. Nothing to do.');
     return;
   }
 
   if (dryRun) {
     console.log('\n[DRY RUN] Would backfill:');
-    for (const t of tickers) {
+    for (const t of finalTickers) {
       console.log(`  ${t.symbol} — ${t.name} (mcap: $${((t.lastMarketCap ?? 0) / 1e9).toFixed(1)}B)`);
     }
     return;
@@ -57,9 +69,9 @@ async function main() {
   let success = 0;
   let failed = 0;
 
-  for (let i = 0; i < tickers.length; i++) {
-    const t = tickers[i]!;
-    const progress = `[${i + 1}/${tickers.length}]`;
+  for (let i = 0; i < finalTickers.length; i++) {
+    const t = finalTickers[i]!;
+    const progress = `[${i + 1}/${finalTickers.length}]`;
     console.log(`${progress} Backfilling ${t.symbol} (${t.name})...`);
 
     try {
@@ -89,12 +101,12 @@ async function main() {
     }
 
     // Delay between requests
-    if (i < tickers.length - 1) {
+    if (i < finalTickers.length - 1) {
       await sleep(DELAY_MS);
     }
   }
 
-  console.log(`\nDone: ${success} succeeded, ${failed} failed out of ${tickers.length}`);
+  console.log(`\nDone: ${success} succeeded, ${failed} failed out of ${finalTickers.length}`);
 }
 
 main()

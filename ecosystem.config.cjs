@@ -83,6 +83,9 @@ module.exports = {
         NEXTAUTH_URL: envVars.NEXTAUTH_URL || process.env.NEXTAUTH_URL || "https://premarketprice.com",
         // Single source of truth: scheduled jobs run via PM2 cron processes (below).
         ENABLE_INTERNAL_SECTOR_INDUSTRY_SCHEDULER: "false",
+        // Cron auth — both CRON_SECRET and CRON_SECRET_KEY for compatibility
+        CRON_SECRET: envVars.CRON_SECRET_KEY || envVars.CRON_SECRET || process.env.CRON_SECRET_KEY || process.env.CRON_SECRET,
+        CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || envVars.CRON_SECRET || process.env.CRON_SECRET_KEY || process.env.CRON_SECRET,
       },
       error_file: path.join(__dirname, "logs", "pm2", "premarketprice-error.log"),
       out_file: path.join(__dirname, "logs", "pm2", "premarketprice-out.log"),
