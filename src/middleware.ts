@@ -53,18 +53,16 @@ export async function middleware(request: NextRequest) {
   // Old sitemap had /company/ URLs; Google still has them in index → 404s.
   if (pathname.startsWith('/company/')) {
     const ticker = pathname.replace('/company/', '');
-    const url = request.nextUrl.clone();
-    url.pathname = `/analysis/${ticker}`;
-    url.search = '';
-    return NextResponse.redirect(url, 301);
+    const redirectUrl = new URL(`/analysis/${ticker}`, request.url);
+    return NextResponse.redirect(redirectUrl, 301);
   }
 
   // Redirect trailing slash → no slash (301) for non-root paths
   // Prevents /stocks/ vs /stocks duplicate-content issues.
   if (pathname.length > 1 && pathname.endsWith('/')) {
-    const url = request.nextUrl.clone();
-    url.pathname = pathname.replace(/\/+$/, '');
-    return NextResponse.redirect(url, 301);
+    const newPath = pathname.replace(/\/+$/, '');
+    const redirectUrl = new URL(newPath, request.url);
+    return NextResponse.redirect(redirectUrl, 301);
   }
 
   // CORS headers
