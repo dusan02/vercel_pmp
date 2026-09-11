@@ -17,13 +17,13 @@ const baseUrl = 'https://premarketprice.com';
 // ─── Per-tab metadata for SEO ──────────────────────────────────────────────
 const TAB_META: Record<string, { title: string; description: string; canonical: string }> = {
   movers: {
-    title: 'Premarket Movers — Top Gainers & Losers | PreMarketPrice',
-    description: 'Track the biggest pre-market stock movers today. See top gainers and losers ranked by % change across NYSE and NASDAQ before the market opens.',
+    title: 'Premarket Movers Today: Top Gainers & Losers (Live) | PreMarketPrice',
+    description: 'See which stocks are moving the most in pre-market trading today. Top gainers and losers ranked by % change across NYSE and NASDAQ, updated live before the market opens.',
     canonical: `${baseUrl}/premarket-movers`,
   },
   heatmap: {
-    title: 'Market Heatmap — Real-Time Pre-Market Visualization | PreMarketPrice',
-    description: 'Interactive market heatmap showing real-time pre-market % change and market cap shifts for 300+ US stocks, organized by sector.',
+    title: 'Stock Market Heatmap — Live Pre-Market % Change by Sector | PreMarketPrice',
+    description: 'Interactive market heatmap showing real-time pre-market % change and market cap shifts for 700+ US stocks, organized by sector. Spot trends at a glance.',
     canonical: `${baseUrl}/heatmap`,
   },
   earnings: {
@@ -32,8 +32,8 @@ const TAB_META: Record<string, { title: string; description: string; canonical: 
     canonical: `${baseUrl}/earnings`,
   },
   allStocks: {
-    title: 'All US Stocks — Real-Time Pre-Market Prices | PreMarketPrice',
-    description: 'Browse 300+ US stocks with real-time pre-market prices, % change, market cap, and sector data. Sort and filter by any metric.',
+    title: 'All US Stocks — Real-Time Pre-Market Prices & Market Cap | PreMarketPrice',
+    description: 'Browse 700+ US stocks with real-time pre-market prices, % change, market cap, and sector data. Sort and filter by any metric.',
     canonical: `${baseUrl}/stocks`,
   },
   screener: {
@@ -75,8 +75,8 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   // /?tab=analysis&ticker=MSFT — highest-value SEO pages
   if (tab === 'analysis' && ticker) {
     const companyName = getCompanyName(ticker);
-    const title = `${companyName} (${ticker}) Pre-Market Analysis | PreMarketPrice`;
-    const description = `Real-time pre-market price, technical analysis, earnings history, and valuation metrics for ${companyName} (${ticker}). Track ${ticker} before the NYSE/NASDAQ opens.`;
+    const title = `${ticker} Stock Price & Analysis — ${companyName} | PreMarketPrice`;
+    const description = `${companyName} (${ticker}) stock price, pre-market data, earnings, financial health score, valuation metrics, and analyst estimates. Free real-time stock analysis.`;
     return {
       title,
       description,

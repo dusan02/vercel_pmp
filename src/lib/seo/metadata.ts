@@ -44,25 +44,36 @@ export function generateCompanyMetadata({
     ? `Market Cap: $${marketCap.toFixed(1)}B`
     : '';
 
-  const title = `${displayName} (${ticker}) Stock Price & Analysis`;
+  // CTR-optimized title: include price + change for search intent match
+  // "AAPL Stock Price Today: $182.45 (+1.23%) — Apple Analysis & Valuation"
+  const title = priceText
+    ? `${ticker} Stock Price Today: ${priceText}${changeText ? ` (${changeText})` : ''} — ${displayName} Analysis`
+    : `${displayName} (${ticker}) Stock Price, Analysis & Valuation`;
   const fullTitle = `${title} | ${siteName}`;
-  const parts = [
-    `Get real-time pre-market data for ${displayName} (${ticker}).`,
-    priceText ? `Price: ${priceText}` : '',
-    changeText ? `(${changeText})` : '',
+
+  // Keyword-rich description matching search intent
+  const descParts = [
+    `${displayName} (${ticker}) stock price${priceText ? `: ${priceText}` : ''}${changeText ? ` ${changeText}` : ''}.`,
     marketCapText ? `${marketCapText}.` : '',
     sector ? `Sector: ${sector}.` : '',
-    industry ? `Industry: ${industry}.` : '',
-    'Live quotes, earnings calendar, financial analysis & valuation scores.',
+    'Real-time pre-market price, earnings calendar, financial health score, valuation metrics (P/E, P/S, Altman Z-Score),',
+    'and analyst estimates. Free stock analysis for NYSE & NASDAQ.',
   ].filter(Boolean);
-  const description = parts.join(' ').replace(/\s+/g, ' ').trim();
+  const description = descParts.join(' ').replace(/\s+/g, ' ').trim();
 
   const keywords = [
     ticker,
     displayName,
     `${ticker} stock`,
-    `${ticker} price`,
+    `${ticker} stock price`,
+    `${ticker} stock price today`,
     `${displayName} stock price`,
+    `${ticker} premarket`,
+    `${ticker} pre market`,
+    `${ticker} analysis`,
+    `${ticker} earnings`,
+    `${ticker} valuation`,
+    `${ticker} financial health`,
     'stock market',
     'pre-market',
     'earnings',

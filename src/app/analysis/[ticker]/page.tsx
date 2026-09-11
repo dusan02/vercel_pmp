@@ -20,6 +20,7 @@ import { EarningsSection } from '@/components/company/analysis/sections/Earnings
 import { RecentMovesSection } from '@/components/company/analysis/sections/RecentMovesSection';
 import { RelatedStocksSection } from '@/components/company/analysis/sections/RelatedStocksSection';
 import { PmpScoreSection } from '@/components/company/analysis/sections/PmpScoreSection';
+import { SeoTextSection } from '@/components/company/SeoTextSection';
 
 export const revalidate = 60;
 
@@ -397,6 +398,22 @@ export default async function AnalysisPage({ params }: PageProps) {
           <PmpScoreSection />
 
           <RelatedStocksSection ticker={tickerUpper} sector={data?.sector} peers={sectorPeers} />
+
+          {/* SEO text section — unique keyword-rich content for Google indexing */}
+          <SeoTextSection
+            ticker={tickerUpper}
+            companyName={companyName}
+            price={data?.lastPrice ?? null}
+            changePct={data?.lastChangePct ?? null}
+            marketCap={data?.lastMarketCap ?? null}
+            sector={data?.sector ?? null}
+            industry={data?.industry ?? null}
+            healthScore={data?.analysisCache?.healthScore ?? null}
+            hasEarnings={earningsData.upcoming.length > 0 || earningsData.recent.length > 0}
+            hasValuation={!!data?.analysisCache}
+            hasFinancials={!!data?.analysisCache}
+            peersCount={sectorPeers.length}
+          />
 
           {/* Latest news — at the very bottom, client-side fetch from Finnhub, cached 30min */}
           <NewsSection ticker={tickerUpper} />
