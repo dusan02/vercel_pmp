@@ -60,29 +60,35 @@ export default async function Image({ params }: { params: Promise<{ ticker: stri
       >
         {/* Logo + brand */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '40px' }}>
-          <div style={{ fontSize: '28px', fontWeight: 700, color: '#3b82f6' }}>PreMarketPrice</div>
+          <div style={{ fontSize: '28px', fontWeight: 700, color: '#3b82f6', display: 'flex' }}>
+            PreMarketPrice
+          </div>
         </div>
 
         {/* Ticker */}
         <div style={{ display: 'flex', alignItems: 'baseline', gap: '20px', marginBottom: '12px' }}>
-          <div style={{ fontSize: '72px', fontWeight: 800, color: '#ffffff' }}>{symbol}</div>
+          <div style={{ fontSize: '72px', fontWeight: 800, color: '#ffffff', display: 'flex' }}>
+            {symbol}
+          </div>
           {sector && (
-            <div style={{ fontSize: '24px', color: '#94a3b8' }}>{sector}</div>
+            <div style={{ fontSize: '24px', color: '#94a3b8', display: 'flex' }}>{sector}</div>
           )}
         </div>
 
         {/* Company name */}
-        <div style={{ fontSize: '32px', color: '#cbd5e1', marginBottom: '40px' }}>
+        <div style={{ fontSize: '32px', color: '#cbd5e1', marginBottom: '40px', display: 'flex' }}>
           {companyName}
         </div>
 
         {/* Price + change */}
         <div style={{ display: 'flex', alignItems: 'baseline', gap: '24px', marginBottom: '30px' }}>
           {priceStr && (
-            <div style={{ fontSize: '48px', fontWeight: 700, color: '#ffffff' }}>{priceStr}</div>
+            <div style={{ fontSize: '48px', fontWeight: 700, color: '#ffffff', display: 'flex' }}>
+              {priceStr}
+            </div>
           )}
           {changeStr && (
-            <div style={{ fontSize: '36px', fontWeight: 600, color: changeColor }}>
+            <div style={{ fontSize: '36px', fontWeight: 600, color: changeColor, display: 'flex' }}>
               {isPositive ? '▲' : '▼'} {changeStr}
             </div>
           )}
@@ -119,8 +125,8 @@ export default async function Image({ params }: { params: Promise<{ ticker: stri
           fontSize: '20px',
           color: '#64748b',
         }}>
-          <div>premarketprice.com/analysis/{symbol}</div>
-          <div>Real-time pre-market data & analysis</div>
+          <div style={{ display: 'flex' }}>premarketprice.com/analysis/{symbol}</div>
+          <div style={{ display: 'flex' }}>Real-time pre-market data & analysis</div>
         </div>
       </div>
     ),
