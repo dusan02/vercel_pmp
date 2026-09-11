@@ -45,6 +45,10 @@ interface Overview {
   avgChange: number;
   totalMcapChange: number;
   sentiment: 'Bullish' | 'Bearish' | 'Mixed';
+  type?: string;
+  title?: string;
+  summary?: string;
+  totalEarnings?: number;
 }
 
 export default async function BlogIndexPage() {
@@ -87,6 +91,32 @@ export default async function BlogIndexPage() {
           <div className="space-y-4">
             {snapshots.map((snap: { date: string; overviewJson: string }) => {
               const overview: Overview = JSON.parse(snap.overviewJson);
+              const isWeeklyEarnings = overview.type === 'weekly-earnings' || snap.date.startsWith('weekly-');
+
+              if (isWeeklyEarnings) {
+                return (
+                  <Link
+                    key={snap.date}
+                    href={`/blog/${snap.date}`}
+                    className="block bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-xl border border-blue-200 dark:border-blue-800 p-6 hover:border-blue-400 dark:hover:border-blue-600 hover:shadow-md transition-all group"
+                  >
+                    <div className="flex items-start justify-between gap-4 flex-wrap">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/40 px-2 py-0.5 rounded-full">Weekly Earnings</span>
+                        </div>
+                        <h2 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                          {overview.title || `Earnings This Week — ${snap.date}`}
+                        </h2>
+                        {overview.summary && (
+                          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{overview.summary}</p>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                );
+              }
+
               const sentimentColor =
                 overview.sentiment === 'Bullish' ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' :
                 overview.sentiment === 'Bearish' ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' :

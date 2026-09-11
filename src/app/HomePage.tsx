@@ -124,9 +124,10 @@ interface HomePageProps {
   initialMoversData?: any[];
   initialBlogSnapshots?: any[];
   initialHeatmapData?: any[];
+  upcomingEarnings?: any[];
 }
 
-export default function HomePage({ initialData = [], initialEarningsData, initialMoversData, initialBlogSnapshots, initialHeatmapData }: HomePageProps) {
+export default function HomePage({ initialData = [], initialEarningsData, initialMoversData, initialBlogSnapshots, initialHeatmapData, upcomingEarnings = [] }: HomePageProps) {
   useEffect(() => { autoRepairLocalStorage(); }, []);
 
   const [isMounted, setIsMounted] = useState(false);
@@ -265,7 +266,7 @@ export default function HomePage({ initialData = [], initialEarningsData, initia
                 skeleton={<MobileSkeleton type="earnings" count={1} />}
               >
                 {(preferences.showEarningsSection ?? true) && (
-                  <HomeEarnings initialData={initialEarningsData} />
+                  <HomeEarnings initialData={initialEarningsData} upcomingEarnings={upcomingEarnings} />
                 )}
               </MobileScreen>
               <MobileScreen
@@ -445,7 +446,7 @@ export default function HomePage({ initialData = [], initialEarningsData, initia
 
                         {activeSection === 'earnings' && (
                           <div className="tab-content fade-in">
-                            <HomeEarnings initialData={initialEarningsData} />
+                            <HomeEarnings initialData={initialEarningsData} upcomingEarnings={upcomingEarnings} />
                           </div>
                         )}
 

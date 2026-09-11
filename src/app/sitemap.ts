@@ -240,7 +240,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       date.setDate(date.getDate() + i);
       const dateStr = date.toISOString().split('T')[0];
       earningsPages.push({
-        url: `${baseUrl}/earnings/${dateStr}`,
+        url: `${baseUrl}/earnings/date/${dateStr}`,
         lastModified: currentDate,
         changeFrequency: 'daily' as const,
         priority: 0.6,
@@ -271,7 +271,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         url: `${baseUrl}/blog/${snap.date}`,
         lastModified: new Date(snap.date).toISOString(),
         changeFrequency: 'monthly' as const,
-        priority: 0.7,
+        priority: snap.date.startsWith('weekly-') ? 0.75 : 0.7,
       });
     }
   } catch {

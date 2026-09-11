@@ -3,6 +3,7 @@ import { Metadata } from 'next';
 import HomePage from './HomePage';
 import { getStocksData } from '@/services/stockService';
 import { getEarningsForDate } from '@/services/earningsService';
+import { getEarningsRange } from '@/lib/seo/earningsSSR';
 import { getProjectTickers } from '@/data/defaultTickers';
 import { getCompanyName } from '@/lib/companyNames';
 import { logger } from '@/lib/utils/logger';
@@ -164,6 +165,7 @@ export default async function Page() {
   let initialMoversData: any[] = [];
   let initialBlogSnapshots: any[] = [];
   let initialHeatmapData: any[] = [];
+  let upcomingEarnings: any[] = [];
 
   try {
     const todayET = getDateET(new Date());
@@ -175,7 +177,7 @@ export default async function Page() {
     // Client-side hooks will fetch the data anyway, so empty initial data is safe.
     const SSR_TIMEOUT_MS = 3000;
 
-    const [stocksResult, earningsResult, moversResult, blogResult, heatmapResult] = await Promise.allSettled([
+    const [stocksResult, earningsResult, moversResult, blogResult, heatmapResult, upcomingEarningsResult] = await Promise.allSettled([
       withTimeout(getStocksData(topTickers, project), SSR_TIMEOUT_MS, { data: [], errors: ['SSR timeout'] }),
       withTimeout(getEarningsForDate(todayET), SSR_TIMEOUT_MS, null),
       // SSR fetch for movers — used by HomeMovers as SWR fallbackData
@@ -209,6 +211,18 @@ export default async function Page() {
           if (!res.ok) return [];
           const data = await res.json();
           return data.rows || data.data || [];
+        })(),
+        SSR_TIMEOUT_MS,
+        []
+      ),
+      // SSR fetch for upcoming earnings (today + tomorrow) — Next Earnings widget
+      withTimeout(
+        (async () => {
+          const tomorrow = new Date(todayET + 'T12:00:00Z');
+          tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+          const tomorrowStr = tomorrow.toISOString().split('T')[0] ?? '';
+          const groups = await getEarningsRange(todayET, tomorrowStr);
+          return groups.flatMap((g) => [...g.preMarket, ...g.afterMarket, ...g.timeTbd]).slice(0, 20);
         })(),
         SSR_TIMEOUT_MS,
         []
@@ -263,6 +277,13 @@ export default async function Page() {
       logger.error('SSR Error fetching heatmap', heatmapResult.reason);
     }
 
+    if (upcomingEarningsResult.status === 'fulfilled') {
+      upcomingEarnings = upcomingEarningsResult.value as any[];
+      if (upcomingEarnings.length > 0) {
+        logger.ssr(`Loaded ${upcomingEarnings.length} upcoming earnings`);
+      }
+    }
+
   } catch (error) {
     logger.error('SSR Error fetching initial data', error, { project, tickerCount: topTickers.length });
     // Continue with empty initialData - client side will handle fallback
@@ -301,6 +322,7 @@ export default async function Page() {
           initialMoversData={initialMoversData}
           initialBlogSnapshots={initialBlogSnapshots}
           initialHeatmapData={initialHeatmapData}
+          upcomingEarnings={upcomingEarnings}
         />
       </Suspense>
     </>
