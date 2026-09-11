@@ -6,8 +6,9 @@ export const alt = 'Stock Analysis';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
-export default async function Image({ params }: { params: { ticker: string } }) {
-  const symbol = params.ticker.toUpperCase();
+export default async function Image({ params }: { params: Promise<{ ticker: string }> }) {
+  const { ticker: rawTicker } = await params;
+  const symbol = rawTicker.toUpperCase();
 
   let companyName = symbol;
   let price: number | null = null;
