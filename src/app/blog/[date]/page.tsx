@@ -29,10 +29,23 @@ interface Overview {
   avgChange: number;
   totalMcapChange: number;
   sentiment: 'Bullish' | 'Bearish' | 'Mixed';
+  type?: string;
+  title?: string;
+  summary?: string;
+  totalEarnings?: number;
+}
+
+function isWeeklyDate(dateStr: string): boolean {
+  return dateStr.startsWith('weekly-');
+}
+
+function extractDateFromWeekly(dateStr: string): string {
+  return dateStr.replace('weekly-', '');
 }
 
 function parseLocalDate(dateStr: string): Date {
-  const parts = dateStr.split('-');
+  const cleanDate = isWeeklyDate(dateStr) ? extractDateFromWeekly(dateStr) : dateStr;
+  const parts = cleanDate.split('-');
   return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
 }
 
@@ -48,6 +61,25 @@ export async function generateMetadata({ params }: { params: Promise<{ date: str
   if (!snapshot) return { title: 'Report Not Found | PreMarketPrice' };
 
   const overview: Overview = JSON.parse(snapshot.overviewJson);
+  const isWeekly = isWeeklyDate(date);
+
+  if (isWeekly) {
+    const title = overview.title || `Earnings This Week — ${date} | PreMarketPrice`;
+    const description = overview.summary || `Weekly earnings report for ${formatDateLong(date)}.`;
+    return {
+      title,
+      description,
+      alternates: { canonical: `https://premarketprice.com/blog/${date}` },
+      openGraph: {
+        title,
+        description,
+        url: `https://premarketprice.com/blog/${date}`,
+        type: 'article',
+        publishedTime: new Date(extractDateFromWeekly(date)).toISOString(),
+      },
+    };
+  }
+
   const gainers: TickerSnapshot[] = JSON.parse(snapshot.gainersJson);
   const top3 = gainers.slice(0, 3).map(g => `${g.ticker} ${g.percentChange > 0 ? '+' : ''}${g.percentChange.toFixed(1)}%`).join(', ');
 
@@ -116,7 +148,9 @@ function TickerRow({ stock, rank }: { stock: TickerSnapshot; rank: number }) {
 export default async function BlogDatePage({ params }: { params: Promise<{ date: string }> }) {
   const { date } = await params;
 
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) notFound();
+  // Allow both YYYY-MM-DD and weekly-YYYY-MM-DD
+  const cleanDate = isWeeklyDate(date) ? extractDateFromWeekly(date) : date;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(cleanDate)) notFound();
 
   const snapshot = await prisma.dailyBlogSnapshot.findUnique({ where: { date } });
   if (!snapshot) notFound();
@@ -126,6 +160,16 @@ export default async function BlogDatePage({ params }: { params: Promise<{ date:
   const losers: TickerSnapshot[] = JSON.parse(snapshot.losersJson);
   const mcapMovers: TickerSnapshot[] = JSON.parse(snapshot.mcapMoversJson);
   const earnings: EarningsItem[] = JSON.parse(snapshot.earningsJson);
+  const isWeekly = isWeeklyDate(date) || overview.type === 'weekly-earnings';
+
+  // Parse weekly earnings breakdown if applicable
+  let weeklyBreakdown: Array<{ date: string; total: number; preMarket: number; afterMarket: number; timeTbd: number; notable: Array<{ ticker: string; companyName: string | null; time: string; epsEstimate: number | null }> }> = [];
+  if (isWeekly) {
+    try {
+      const parsed = JSON.parse(snapshot.earningsJson);
+      weeklyBreakdown = parsed.dayBreakdown || [];
+    } catch { /* ignore */ }
+  }
 
   const sentimentColor =
     overview.sentiment === 'Bullish' ? 'text-green-600 dark:text-green-400' :
@@ -139,9 +183,9 @@ export default async function BlogDatePage({ params }: { params: Promise<{ date:
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'NewsArticle',
-    headline: `Premarket Report ${formatDateLong(date)}`,
-    description: `${overview.sentiment} premarket session. ${overview.gainers} gainers, ${overview.losers} losers out of ${overview.totalStocks} tracked stocks.`,
-    datePublished: new Date(date).toISOString(),
+    headline: isWeekly ? (overview.title || `Earnings This Week — ${formatDateLong(date)}`) : `Premarket Report ${formatDateLong(date)}`,
+    description: isWeekly ? (overview.summary || '') : `${overview.sentiment} premarket session. ${overview.gainers} gainers, ${overview.losers} losers out of ${overview.totalStocks} tracked stocks.`,
+    datePublished: new Date(isWeekly ? extractDateFromWeekly(date) : date).toISOString(),
     publisher: { '@type': 'Organization', name: 'PreMarketPrice', url: 'https://premarketprice.com' },
     url: `https://premarketprice.com/blog/${date}`,
   };
@@ -165,18 +209,67 @@ export default async function BlogDatePage({ params }: { params: Promise<{ date:
         <div className="mb-8">
           <div className="flex items-center gap-3 flex-wrap mb-2">
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-              Premarket Report — {formatDateLong(date)}
+              {isWeekly ? (overview.title || `Earnings This Week — ${formatDateLong(date)}`) : `Premarket Report — ${formatDateLong(date)}`}
             </h1>
-            <span className={`text-sm font-semibold px-3 py-1 rounded-full border ${sentimentColor} ${sentimentBg}`}>
-              {overview.sentiment}
-            </span>
+            {isWeekly ? (
+              <span className="text-sm font-semibold px-3 py-1 rounded-full border text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+                Weekly Earnings
+              </span>
+            ) : (
+              <span className={`text-sm font-semibold px-3 py-1 rounded-full border ${sentimentColor} ${sentimentBg}`}>
+                {overview.sentiment}
+              </span>
+            )}
           </div>
-          <p className="text-gray-500 dark:text-gray-400 text-sm">
+          {isWeekly && overview.summary && (
+            <p className="text-gray-600 dark:text-gray-400 text-base">{overview.summary}</p>
+          )}
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
             Published by PreMarketPrice · Data from Polygon.io & Finnhub
           </p>
         </div>
 
-        {/* Market Overview */}
+        {/* Weekly earnings breakdown */}
+        {isWeekly && weeklyBreakdown.length > 0 && (
+          <section className="mb-8 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Earnings by Day</h2>
+            <div className="space-y-4">
+              {weeklyBreakdown.map((day) => (
+                <div key={day.date} className="border-l-4 border-blue-400 dark:border-blue-600 pl-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Link href={`/earnings/date/${day.date}`} className="font-semibold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400">
+                      {formatDateLong(day.date)}
+                    </Link>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      {day.total} reports
+                      {day.preMarket > 0 && ` · ${day.preMarket} pre-market`}
+                      {day.afterMarket > 0 && ` · ${day.afterMarket} after-hours`}
+                    </span>
+                  </div>
+                  {day.notable.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {day.notable.map((n) => (
+                        <Link
+                          key={`${day.date}-${n.ticker}`}
+                          href={`/analysis/${n.ticker}`}
+                          className="inline-flex items-center gap-1 text-sm bg-gray-100 dark:bg-gray-800 rounded-lg px-2 py-1 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                        >
+                          <span className="font-semibold text-blue-600 dark:text-blue-400">{n.ticker}</span>
+                          {n.epsEstimate != null && (
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">EPS ${n.epsEstimate.toFixed(2)}</span>
+                          )}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Market Overview — daily posts only */}
+        {!isWeekly && (
         <section className="mb-8 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">📈 Market Overview</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -206,9 +299,10 @@ export default async function BlogDatePage({ params }: { params: Promise<{ date:
             </span>
           </div>
         </section>
+        )}
 
-        {/* Top Gainers */}
-        {gainers.length > 0 && (
+        {/* Top Gainers — daily posts only */}
+        {!isWeekly && gainers.length > 0 && (
           <section className="mb-6 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">🚀 Top Gainers</h2>
             <div className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -217,8 +311,8 @@ export default async function BlogDatePage({ params }: { params: Promise<{ date:
           </section>
         )}
 
-        {/* Top Losers */}
-        {losers.length > 0 && (
+        {/* Top Losers — daily posts only */}
+        {!isWeekly && losers.length > 0 && (
           <section className="mb-6 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">📉 Top Losers</h2>
             <div className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -227,8 +321,8 @@ export default async function BlogDatePage({ params }: { params: Promise<{ date:
           </section>
         )}
 
-        {/* Biggest Market Cap Movers */}
-        {mcapMovers.length > 0 && (
+        {/* Biggest Market Cap Movers — daily posts only */}
+        {!isWeekly && mcapMovers.length > 0 && (
           <section className="mb-6 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">💰 Biggest Market Cap Movers</h2>
             <div className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -237,8 +331,8 @@ export default async function BlogDatePage({ params }: { params: Promise<{ date:
           </section>
         )}
 
-        {/* Earnings Today */}
-        {earnings.length > 0 && (
+        {/* Earnings This Day — daily posts only */}
+        {!isWeekly && earnings.length > 0 && (
           <section className="mb-6 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">📅 Earnings This Day</h2>
             <div className="space-y-2">
