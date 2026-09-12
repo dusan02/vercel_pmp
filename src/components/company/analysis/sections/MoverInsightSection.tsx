@@ -21,7 +21,7 @@ export function MoverInsightSection({
   const moveUp = changePct >= 0;
 
   return (
-    <section className="mb-6 max-w-4xl">
+    <section className="mb-6">
       <div
         className={`rounded-2xl border p-5 sm:p-6 ${
           isSbcAlert

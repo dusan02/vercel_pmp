@@ -61,7 +61,7 @@ export function EarningsSection({ upcoming, recent }: EarningsSectionProps) {
   };
 
   return (
-    <div className="mt-8 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+    <div className="mb-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Earnings</h2>
         <Link href="/earnings" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">

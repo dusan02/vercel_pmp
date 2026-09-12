@@ -28,7 +28,7 @@ export function RecentMovesSection({ ticker, moves }: RecentMovesSectionProps) {
   if (moves.length === 0) return null;
 
   return (
-    <div className="mt-8 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+    <div className="mb-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Market Moves</h2>
         <Link href={`/movers/${ticker}`} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">

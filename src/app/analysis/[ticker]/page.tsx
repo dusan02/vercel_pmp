@@ -18,7 +18,6 @@ import { MoverInsightSection } from '@/components/company/analysis/sections/Move
 import { AnalystConsensusSection } from '@/components/company/analysis/sections/AnalystConsensusSection';
 import { EarningsSection } from '@/components/company/analysis/sections/EarningsSection';
 import { RecentMovesSection } from '@/components/company/analysis/sections/RecentMovesSection';
-import { AddToWatchlist } from '@/components/company/AddToWatchlist';
 import { RelatedStocksSection } from '@/components/company/analysis/sections/RelatedStocksSection';
 import { PmpScoreSection } from '@/components/company/analysis/sections/PmpScoreSection';
 import { SeoTextSection } from '@/components/company/SeoTextSection';
@@ -338,17 +337,6 @@ export default async function AnalysisPage({ params }: PageProps) {
             sparkline={sparkline}
           />
 
-          {/* Watchlist button — no sign-up needed */}
-          <div className="flex items-center gap-3 mb-4">
-            <AddToWatchlist ticker={tickerUpper} />
-            <Link
-              href="/?tab=favorites"
-              className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
-            >
-              View watchlist →
-            </Link>
-          </div>
-
           <CompanyOverviewSection
             description={data?.description}
             headquarters={data?.headquarters}
@@ -387,7 +375,7 @@ export default async function AnalysisPage({ params }: PageProps) {
           <RecentMovesSection ticker={tickerUpper} moves={recentMoves} />
 
           {/* Cross-link to valuation and financials pages + share */}
-          <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-700 text-sm flex flex-wrap items-center gap-4">
+          <div className="mb-6 pt-6 border-t border-gray-100 dark:border-gray-700 text-sm flex flex-wrap items-center gap-4">
             <Link
               href={`/valuation/${tickerUpper}`}
               className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
@@ -407,9 +395,9 @@ export default async function AnalysisPage({ params }: PageProps) {
             />
           </div>
 
-          <PmpScoreSection />
-
           <RelatedStocksSection ticker={tickerUpper} sector={data?.sector} peers={sectorPeers} />
+
+          <PmpScoreSection />
 
           {/* SEO text section — unique keyword-rich content for Google indexing */}
           <SeoTextSection

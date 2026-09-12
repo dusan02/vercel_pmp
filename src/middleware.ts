@@ -65,6 +65,16 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl, 301);
   }
 
+  // Redirect /?tab=analysis&ticker=X → /analysis/X (301)
+  // Homepage tab variant duplicates the standalone analysis page.
+  if (pathname === '/' && request.nextUrl.searchParams.get('tab') === 'analysis') {
+    const ticker = request.nextUrl.searchParams.get('ticker');
+    if (ticker) {
+      const redirectUrl = new URL(`/analysis/${ticker.toUpperCase()}`, request.url);
+      return NextResponse.redirect(redirectUrl, 301);
+    }
+  }
+
   // Redirect trailing slash → no slash (301) for non-root paths
   // Prevents /stocks/ vs /stocks duplicate-content issues.
   if (pathname.length > 1 && pathname.endsWith('/')) {

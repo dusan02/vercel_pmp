@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { formatPrice, formatPercent, formatMarketCap } from '@/lib/utils/format';
+import { AddToWatchlist } from '@/components/company/AddToWatchlist';
 
 interface AnalysisHeroProps {
   ticker: string;
@@ -81,9 +82,12 @@ export function AnalysisHero({
   return (
     <div className="mb-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
-          {companyName} ({ticker}) Stock Analysis
-        </h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
+            {companyName} ({ticker}) Stock Analysis
+          </h1>
+          <AddToWatchlist ticker={ticker} />
+        </div>
         {sparkline.length >= 2 && (
           <div className="flex items-center gap-2" title="Last 30 trading days (regular session)">
             <Sparkline points={sparkline} />
@@ -93,6 +97,7 @@ export function AnalysisHero({
           </div>
         )}
       </div>
+      {/* Price line — separate row */}
       <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 flex flex-wrap items-center gap-x-1">
         {price != null && (
           <>
@@ -124,9 +129,12 @@ export function AnalysisHero({
             </span>
           </>
         )}
+      </p>
+      {/* Sector + Industry — separate line */}
+      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
         {sector && (
           <>
-            {' · '}Sector:{' '}
+            Sector:{' '}
             <Link
               href={`/sectors/${encodeURIComponent(sector)}`}
               className="text-blue-600 dark:text-blue-400 hover:underline"
