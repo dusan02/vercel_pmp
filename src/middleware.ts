@@ -121,6 +121,13 @@ export async function middleware(request: NextRequest) {
           ip === 'unknown' ||
           request.nextUrl.hostname === 'localhost';
 
+        // Skip rate limiting for localhost (SSR pre-fetch, keep-warm scripts)
+        if (isLocalhost) {
+          return NextResponse.next({
+            headers: response.headers,
+          });
+        }
+
         // Heatmap endpoint has higher limits (DB-heavy, but no external API calls)
         const isHeatmapEndpoint = path === '/api/heatmap';
 
