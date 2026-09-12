@@ -75,6 +75,10 @@ const WhatMovedSidebar = dynamic(
   () => import('@/components/home/WhatMovedSidebar').then((mod) => mod.WhatMovedSidebar),
   { ssr: true, loading: () => null }
 );
+const WhatMovedToday = dynamic(
+  () => import('@/components/home/WhatMovedToday').then((mod) => mod.WhatMovedToday),
+  { ssr: true, loading: () => null }
+);
 const GlobalScreener = dynamic(
   () => import('@/components/analysis/GlobalScreener').then((mod) => {
     // If it's a named export, we use mod.GlobalScreener
@@ -391,17 +395,15 @@ export default function HomePage({ initialData = [], initialEarningsData, initia
                       {/* --- DESKTOP LAYOUT (Tab Based) --- */}
                       <div className="desktop-layout-wrapper">
                         {activeSection === 'heatmap' && (
-                          <div className="tab-content relative fade-in flex gap-4">
-                            <div className="flex-1 min-w-0">
-                              <HomeHeatmap
-                                wrapperClass="desktop-heatmap-wrapper"
-                                onTileClick={(ticker) => handleMobileNavChange('analysis', ticker)}
-                                stockData={stockData}
-                                onSelectTicker={(ticker) => handleMobileNavChange('analysis', ticker)}
-                                initialHeatmapData={initialHeatmapData}
-                              />
-                            </div>
-                            <WhatMovedSidebar movers={initialMoversData} eligibleTickers={eligibleTickers} />
+                          <div className="tab-content relative fade-in">
+                            <HomeHeatmap
+                              wrapperClass="desktop-heatmap-wrapper"
+                              onTileClick={(ticker) => handleMobileNavChange('analysis', ticker)}
+                              stockData={stockData}
+                              onSelectTicker={(ticker) => handleMobileNavChange('analysis', ticker)}
+                              initialHeatmapData={initialHeatmapData}
+                            />
+                            <WhatMovedToday movers={initialMoversData} eligibleTickers={eligibleTickers} />
                           </div>
                         )}
 

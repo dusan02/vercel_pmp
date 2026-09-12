@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 
 interface MoverData {
@@ -11,7 +13,7 @@ interface MoverData {
 }
 
 interface WhatMovedTodayProps {
-  movers: MoverData[];
+  movers: MoverData[] | undefined;
   eligibleTickers: Set<string>;
 }
 
