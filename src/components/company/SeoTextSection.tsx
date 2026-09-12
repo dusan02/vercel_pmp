@@ -16,10 +16,11 @@ interface SeoTextSectionProps {
 }
 
 function formatMarketCap(value: number | null): string {
-  if (value == null) return '';
-  if (value >= 1e12) return `$${(value / 1e12).toFixed(2)} trillion`;
-  if (value >= 1e9) return `$${(value / 1e9).toFixed(1)} billion`;
-  if (value >= 1e6) return `$${(value / 1e6).toFixed(0)} million`;
+  if (value == null || value === 0) return '';
+  // lastMarketCap is stored in billions in the DB
+  if (value >= 1000) return `$${(value / 1000).toFixed(2)} trillion`;
+  if (value >= 1) return `$${value.toFixed(1)} billion`;
+  if (value >= 0.001) return `$${(value * 1000).toFixed(0)} million`;
   return `$${value.toFixed(0)}`;
 }
 

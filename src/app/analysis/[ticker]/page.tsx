@@ -18,6 +18,7 @@ import { MoverInsightSection } from '@/components/company/analysis/sections/Move
 import { AnalystConsensusSection } from '@/components/company/analysis/sections/AnalystConsensusSection';
 import { EarningsSection } from '@/components/company/analysis/sections/EarningsSection';
 import { RecentMovesSection } from '@/components/company/analysis/sections/RecentMovesSection';
+import { AddToWatchlist } from '@/components/company/AddToWatchlist';
 import { RelatedStocksSection } from '@/components/company/analysis/sections/RelatedStocksSection';
 import { PmpScoreSection } from '@/components/company/analysis/sections/PmpScoreSection';
 import { SeoTextSection } from '@/components/company/SeoTextSection';
@@ -336,6 +337,17 @@ export default async function AnalysisPage({ params }: PageProps) {
             prevClose={data?.latestPrevClose ?? null}
             sparkline={sparkline}
           />
+
+          {/* Watchlist button — no sign-up needed */}
+          <div className="flex items-center gap-3 mb-4">
+            <AddToWatchlist ticker={tickerUpper} />
+            <Link
+              href="/?tab=favorites"
+              className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
+            >
+              View watchlist →
+            </Link>
+          </div>
 
           <CompanyOverviewSection
             description={data?.description}

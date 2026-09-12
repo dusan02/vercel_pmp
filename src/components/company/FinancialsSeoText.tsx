@@ -18,6 +18,7 @@ interface FinancialsSeoTextProps {
 
 function formatLarge(value: number | null): string {
   if (value == null) return 'N/A';
+  // lastMarketCap is stored in billions; financial statement values are in raw dollars
   if (value >= 1e12) return `$${(value / 1e12).toFixed(2)} trillion`;
   if (value >= 1e9) return `$${(value / 1e9).toFixed(1)} billion`;
   if (value >= 1e6) return `$${(value / 1e6).toFixed(0)} million`;

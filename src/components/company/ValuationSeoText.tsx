@@ -53,7 +53,7 @@ export function ValuationSeoText({
     : '';
   const priceText = price != null ? ` currently trading at $${price.toFixed(2)}` : '';
   const mcapText = marketCap != null
-    ? ` with a market capitalization of ${marketCap >= 1e12 ? `$${(marketCap / 1e12).toFixed(2)} trillion` : `$${(marketCap / 1e9).toFixed(1)} billion`}`
+    ? ` with a market capitalization of ${marketCap >= 1000 ? `$${(marketCap / 1000).toFixed(2)} trillion` : `$${marketCap.toFixed(1)} billion`}`
     : '';
   const peText = peCurrent != null && peMedian != null
     ? ` The P/E ratio of ${formatRatio(peCurrent)} is ${peCurrent > peMedian ? 'above' : 'below'} the historical median of ${formatRatio(peMedian)}, placing ${ticker} at the ${pePercentile ?? 50}th percentile of its valuation range`

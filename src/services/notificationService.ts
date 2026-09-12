@@ -8,7 +8,7 @@ const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || '';
 
 if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
     webpush.setVapidDetails(
-        'mailto:info@verifa.sk',
+        'mailto:info@premarketprice.com',
         VAPID_PUBLIC_KEY,
         VAPID_PRIVATE_KEY
     );

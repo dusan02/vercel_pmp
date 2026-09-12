@@ -71,9 +71,9 @@ function FooterContent() {
                 </Link>
               </li>
               <li>
-                <a href="https://www.earningstable.com" target="_blank" rel="noopener noreferrer" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                <Link href="/earnings" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                   All Earnings
-                </a>
+                </Link>
               </li>
               <li>
                 <Link href="/heatmap" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
@@ -126,10 +126,10 @@ function FooterContent() {
               Need help or have suggestions?
             </p>
             <a 
-              href="mailto:info@verifa.sk" 
+              href="mailto:info@premarketprice.com" 
               className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
             >
-              info@verifa.sk
+              info@premarketprice.com
             </a>
           </div>
         </div>
