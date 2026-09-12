@@ -8,7 +8,7 @@ const config = {
   testEnvironment: 'jsdom',
   roots: ['<rootDir>/src/__tests__'],
   testMatch: ['**/*.test.ts'],
-  setupFilesAfterEach: ['<rootDir>/src/__tests__/setup.ts'],
+  setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
@@ -35,6 +35,7 @@ const config = {
     '!src/__tests__/**',
   ],
   coverageDirectory: 'coverage',
+  forceExit: true,
   verbose: true,
 };
 
