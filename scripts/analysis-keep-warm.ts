@@ -16,7 +16,7 @@ const BATCH_DELAY_MS = 500;
 
 async function fetchTickerList(): Promise<string[]> {
   // Fetch the ticker list from the API (uses Redis cache internally)
-  const res = await fetch(`${BASE_URL}/api/stocks`, {
+  const res = await fetch(`${BASE_URL}/api/stocks?limit=1000`, {
     signal: AbortSignal.timeout(10000),
   });
   if (!res.ok) throw new Error(`Failed to fetch ticker list: ${res.status}`);
