@@ -5,6 +5,7 @@ import { getDateET } from '@/lib/utils/dateET';
 
 const INDICES = ['SPY', 'QQQ'];
 
+export const dynamic = 'force-dynamic';
 export const revalidate = 300; // 5 min
 
 export async function GET(_req: NextRequest) {
