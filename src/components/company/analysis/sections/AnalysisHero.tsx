@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { formatPrice, formatPercent, formatMarketCap } from '@/lib/utils/format';
 import { AddToWatchlist } from '@/components/company/AddToWatchlist';
-import CompanyLogo from '@/components/CompanyLogo';
 
 interface AnalysisHeroProps {
   ticker: string;
@@ -84,7 +83,15 @@ export function AnalysisHero({
     <div className="mb-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="flex items-center gap-3">
-          <CompanyLogo ticker={ticker} size={48} priority />
+          <img
+            src={`/api/logo/${encodeURIComponent(ticker)}?s=64&prefer=icon`}
+            alt={`${ticker} logo`}
+            width={48}
+            height={48}
+            className="rounded shrink-0 bg-gray-100 dark:bg-gray-800"
+            style={{ objectFit: 'contain' }}
+            loading="eager"
+          />
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
               {companyName} ({ticker}) Stock Analysis
