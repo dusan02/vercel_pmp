@@ -1,6 +1,9 @@
-'use client';
+import type { Metadata } from 'next';
 
-import { useState } from 'react';
+export const metadata: Metadata = {
+  title: 'Test Page',
+  robots: { index: false, follow: false },
+};
 
 export default function TestPage() {
   return (
@@ -20,4 +23,4 @@ export default function TestPage() {
       </a>
     </div>
   );
-} 
+}

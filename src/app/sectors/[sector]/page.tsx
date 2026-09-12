@@ -7,6 +7,7 @@ import { formatSectorName } from '@/lib/utils/format';
 import { StructuredData } from '@/components/StructuredData';
 import { sectorDescriptions, defaultSectorDescription } from '@/lib/seo/sectorDescriptions';
 import { getEligibleAnalysisSet } from '@/lib/seo/eligibleTickers';
+import { getEligibleValuationTickers } from '@/lib/seo/eligibleValuation';
 
 // Revalidate every hour
 export const revalidate = 3600;
@@ -72,6 +73,8 @@ export default async function SectorPage({ params }: PageProps) {
 
     const formattedSector = formatSectorName(sectorName);
     const eligibleAnalysis = await getEligibleAnalysisSet();
+    const eligibleValuation = await getEligibleValuationTickers();
+    const eligibleValuationSet = new Set(eligibleValuation);
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -130,6 +133,9 @@ export default async function SectorPage({ params }: PageProps) {
                                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell">
                                         Industry
                                     </th>
+                                    <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        Links
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -166,6 +172,25 @@ export default async function SectorPage({ params }: PageProps) {
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden md:table-cell">
                                                 {ticker.industry}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-center text-xs">
+                                                {eligibleAnalysis.has(ticker.symbol) && (
+                                                    <Link href={`/analysis/${ticker.symbol}`} className="text-blue-600 dark:text-blue-400 hover:underline">
+                                                        Analysis
+                                                    </Link>
+                                                )}
+                                                {eligibleValuationSet.has(ticker.symbol) && (
+                                                    <>
+                                                        {' · '}
+                                                        <Link href={`/valuation/${ticker.symbol}`} className="text-blue-600 dark:text-blue-400 hover:underline">
+                                                            Valuation
+                                                        </Link>
+                                                    </>
+                                                )}
+                                                {' · '}
+                                                <Link href={`/financials/${ticker.symbol}`} className="text-blue-600 dark:text-blue-400 hover:underline">
+                                                    Financials
+                                                </Link>
                                             </td>
                                         </tr>
                                     );

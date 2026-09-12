@@ -7,6 +7,7 @@ import { formatSectorName } from '@/lib/utils/format';
 import { getDateET, getManyLastWithDate, getRankedSymbols } from '@/lib/redis/ranking';
 import { SsrMoverLinks } from '@/components/seo/SsrMoverLinks';
 import { getEligibleAnalysisSet } from '@/lib/seo/eligibleTickers';
+import { getPremarketDateSummaries } from '@/lib/seo/premarketArchive';
 
 export const revalidate = 60;
 
@@ -60,6 +61,7 @@ async function getRows(limit: number): Promise<Row[]> {
 export default async function LosersPage() {
   const rows = await getRows(100);
   const eligibleAnalysis = await getEligibleAnalysisSet();
+  const archiveDates = await getPremarketDateSummaries(7);
   const today = getTodayFormatted();
   const topLoser = rows[0];
 
@@ -163,6 +165,37 @@ export default async function LosersPage() {
             </table>
           </div>
         </div>
+
+        {/* Historical premarket losers archive */}
+        {archiveDates.length > 0 && (
+          <section className="mt-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-3">
+              Historical Premarket Losers
+            </h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+              Browse pre-market losers from previous trading days.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {archiveDates.map((d) => {
+                const dateDisplay = new Date(d.date + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                return (
+                  <Link
+                    key={d.date}
+                    href={`/premarket-losers/${d.date}`}
+                    className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-rose-50 dark:hover:bg-rose-900/30 hover:text-rose-600 dark:hover:text-rose-400 transition-colors"
+                  >
+                    {dateDisplay}
+                    {d.topLoser && (
+                      <span className="ml-1.5 text-slate-400">
+                        {d.topLoser.symbol} {formatPercent(d.topLoser.changePct)}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* Internal linking section */}
         <nav className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800">

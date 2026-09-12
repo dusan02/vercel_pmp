@@ -8,6 +8,7 @@ import { getDateET, getManyLastWithDate, getRankedSymbols } from '@/lib/redis/ra
 import { SsrMoverLinksCombined } from '@/components/seo/SsrMoverLinks';
 import { getPremarketDateSummaries } from '@/lib/seo/premarketArchive';
 import { getEligibleAnalysisSet } from '@/lib/seo/eligibleTickers';
+import { prisma } from '@/lib/db/prisma';
 
 export const revalidate = 60;
 
@@ -172,6 +173,39 @@ export default async function PremarketMoversPage() {
     getPremarketDateSummaries(7),
     getEligibleAnalysisSet(),
   ]);
+
+  // Fetch tickers with significant moves for /movers/[symbol] links
+  let moverTickers: { symbol: string; name: string | null }[] = [];
+  try {
+    const since = new Date();
+    since.setDate(since.getDate() - 30);
+    const moveCounts = await prisma.sessionPrice.groupBy({
+      by: ['symbol'],
+      where: {
+        date: { gte: since },
+        OR: [
+          { zScore: { gte: 2.0 } },
+          { zScore: { lte: -2.0 } },
+        ],
+      },
+      _count: { _all: true },
+      orderBy: { symbol: 'asc' },
+      take: 30,
+    });
+    const eligibleMovers = moveCounts
+      .filter(r => r._count._all >= 3)
+      .map(r => r.symbol);
+    if (eligibleMovers.length > 0) {
+      moverTickers = await prisma.ticker.findMany({
+        where: { symbol: { in: eligibleMovers } },
+        select: { symbol: true, name: true },
+        orderBy: { symbol: 'asc' },
+      });
+    }
+  } catch {
+    // DB unavailable — skip silently
+  }
+
   const today = getTodayFormatted();
   const topGainer = gainers[0];
   const topLoser = losers[0];
@@ -208,6 +242,30 @@ export default async function PremarketMoversPage() {
 
         {/* SSR discovery section — ticker links from DB (independent of Redis) */}
         <SsrMoverLinksCombined />
+
+        {/* Mover insight pages — /movers/[symbol] */}
+        {moverTickers.length > 0 && (
+          <section className="mb-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
+              Mover Insight Pages
+            </h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">
+              Stocks with significant pre-market moves (Z-Score ≥ 2.0) in the last 30 days. Each links to a dedicated mover analysis page.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {moverTickers.map((t) => (
+                <Link
+                  key={t.symbol}
+                  href={`/movers/${t.symbol}`}
+                  className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                >
+                  {t.symbol}
+                  {t.name && <span className="ml-1 text-slate-400 hidden sm:inline">{t.name}</span>}
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <MoversTable title="Top Gainers" rows={gainers} eligibleAnalysis={eligibleAnalysis} />

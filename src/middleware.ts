@@ -57,6 +57,13 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl, 301);
   }
 
+  // Redirect /movers → /premarket-movers (301)
+  // /movers is a tab-only concept; the canonical standalone page is /premarket-movers.
+  if (pathname === '/movers') {
+    const redirectUrl = new URL('/premarket-movers', request.url);
+    return NextResponse.redirect(redirectUrl, 301);
+  }
+
   // Redirect /sector/[name] → /sectors/[name] (301)
   // Singular form is not a valid route; redirect to plural.
   if (pathname.startsWith('/sector/') && !pathname.startsWith('/sectors/')) {

@@ -242,6 +242,13 @@ export default async function StocksHubPage({ searchParams }: StocksPageProps) {
                       >
                         Analysis
                       </Link>
+                      {' · '}
+                      <Link
+                        href={`/financials/${s.symbol}`}
+                        className="text-blue-600 dark:text-blue-400 hover:underline"
+                      >
+                        Financials
+                      </Link>
                       {s.hasValuation && (
                         <>
                           {' · '}

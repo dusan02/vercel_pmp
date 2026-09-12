@@ -7,6 +7,7 @@ import { formatSectorName } from '@/lib/utils/format';
 import { getDateET, getManyLastWithDate, getRankedSymbols } from '@/lib/redis/ranking';
 import { SsrMoverLinks } from '@/components/seo/SsrMoverLinks';
 import { getEligibleAnalysisSet } from '@/lib/seo/eligibleTickers';
+import { getPremarketDateSummaries } from '@/lib/seo/premarketArchive';
 
 export const revalidate = 60;
 
@@ -60,6 +61,7 @@ async function getRows(limit: number): Promise<Row[]> {
 export default async function GainersPage() {
   const rows = await getRows(100);
   const eligibleAnalysis = await getEligibleAnalysisSet();
+  const archiveDates = await getPremarketDateSummaries(7);
   const today = getTodayFormatted();
   const topGainer = rows[0];
 
@@ -163,6 +165,37 @@ export default async function GainersPage() {
             </table>
           </div>
         </div>
+
+        {/* Historical premarket gainers archive */}
+        {archiveDates.length > 0 && (
+          <section className="mt-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-3">
+              Historical Premarket Gainers
+            </h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+              Browse pre-market gainers from previous trading days.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {archiveDates.map((d) => {
+                const dateDisplay = new Date(d.date + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                return (
+                  <Link
+                    key={d.date}
+                    href={`/premarket-gainers/${d.date}`}
+                    className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+                  >
+                    {dateDisplay}
+                    {d.topGainer && (
+                      <span className="ml-1.5 text-slate-400">
+                        {d.topGainer.symbol} {formatPercent(d.topGainer.changePct)}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* Internal linking section */}
         <nav className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800">
