@@ -5,6 +5,8 @@ interface MoverData {
   name?: string;
   price?: number;
   changePct?: number;
+  lastPrice?: number;
+  lastChangePct?: number;
   marketCap?: number;
 }
 
@@ -24,11 +26,18 @@ export function WhatMovedToday({ movers, eligibleTickers }: WhatMovedTodayProps)
 
   // Sort by absolute change to get biggest movers
   const sorted = [...movers]
-    .filter((m) => m.changePct != null && m.symbol)
-    .sort((a, b) => Math.abs(b.changePct!) - Math.abs(a.changePct!));
+    .filter((m) => {
+      const pct = m.changePct ?? m.lastChangePct;
+      return pct != null && m.symbol;
+    })
+    .sort((a, b) => {
+      const aPct = Math.abs(a.changePct ?? a.lastChangePct ?? 0);
+      const bPct = Math.abs(b.changePct ?? b.lastChangePct ?? 0);
+      return bPct - aPct;
+    });
 
-  const gainers = sorted.filter((m) => (m.changePct ?? 0) > 0).slice(0, 5);
-  const losers = sorted.filter((m) => (m.changePct ?? 0) < 0).slice(0, 5);
+  const gainers = sorted.filter((m) => (m.changePct ?? m.lastChangePct ?? 0) > 0).slice(0, 5);
+  const losers = sorted.filter((m) => (m.changePct ?? m.lastChangePct ?? 0) < 0).slice(0, 5);
 
   if (gainers.length === 0 && losers.length === 0) return null;
 
@@ -98,8 +107,8 @@ export function WhatMovedToday({ movers, eligibleTickers }: WhatMovedTodayProps)
 function MoverRow({ mover, eligible, positive }: { mover: MoverData; eligible: Set<string>; positive: boolean }) {
   const symbol = mover.symbol;
   const name = mover.name || symbol;
-  const changePct = mover.changePct ?? 0;
-  const price = mover.price;
+  const changePct = mover.changePct ?? mover.lastChangePct ?? 0;
+  const price = mover.price ?? mover.lastPrice;
   const isEligible = eligible.has(symbol);
 
   const content = (
