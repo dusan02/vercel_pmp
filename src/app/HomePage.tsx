@@ -71,6 +71,10 @@ const HomeAnalysis = dynamic(
   () => import('@/components/home/HomeAnalysis').then((mod) => mod.HomeAnalysis),
   { ssr: true, loading: () => null }
 );
+const WhatMovedSidebar = dynamic(
+  () => import('@/components/home/WhatMovedSidebar').then((mod) => mod.WhatMovedSidebar),
+  { ssr: true, loading: () => null }
+);
 const GlobalScreener = dynamic(
   () => import('@/components/analysis/GlobalScreener').then((mod) => {
     // If it's a named export, we use mod.GlobalScreener
@@ -125,9 +129,10 @@ interface HomePageProps {
   initialBlogSnapshots?: any[];
   initialHeatmapData?: any[];
   upcomingEarnings?: any[];
+  eligibleTickers?: Set<string>;
 }
 
-export default function HomePage({ initialData = [], initialEarningsData, initialMoversData, initialBlogSnapshots, initialHeatmapData, upcomingEarnings = [] }: HomePageProps) {
+export default function HomePage({ initialData = [], initialEarningsData, initialMoversData, initialBlogSnapshots, initialHeatmapData, upcomingEarnings = [], eligibleTickers = new Set() }: HomePageProps) {
   useEffect(() => { autoRepairLocalStorage(); }, []);
 
   const [isMounted, setIsMounted] = useState(false);
@@ -386,14 +391,17 @@ export default function HomePage({ initialData = [], initialEarningsData, initia
                       {/* --- DESKTOP LAYOUT (Tab Based) --- */}
                       <div className="desktop-layout-wrapper">
                         {activeSection === 'heatmap' && (
-                          <div className="tab-content relative fade-in">
-                            <HomeHeatmap
-                              wrapperClass="desktop-heatmap-wrapper"
-                              onTileClick={(ticker) => handleMobileNavChange('analysis', ticker)}
-                              stockData={stockData}
-                              onSelectTicker={(ticker) => handleMobileNavChange('analysis', ticker)}
-                              initialHeatmapData={initialHeatmapData}
-                            />
+                          <div className="tab-content relative fade-in flex gap-4">
+                            <div className="flex-1 min-w-0">
+                              <HomeHeatmap
+                                wrapperClass="desktop-heatmap-wrapper"
+                                onTileClick={(ticker) => handleMobileNavChange('analysis', ticker)}
+                                stockData={stockData}
+                                onSelectTicker={(ticker) => handleMobileNavChange('analysis', ticker)}
+                                initialHeatmapData={initialHeatmapData}
+                              />
+                            </div>
+                            <WhatMovedSidebar movers={initialMoversData} eligibleTickers={eligibleTickers} />
                           </div>
                         )}
 

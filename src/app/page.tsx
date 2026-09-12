@@ -10,7 +10,6 @@ import { logger } from '@/lib/utils/logger';
 import { getDateET, createETDate } from '@/lib/utils/dateET';
 import Link from 'next/link';
 import { getEligibleAnalysisTickers } from '@/lib/seo/eligibleTickers';
-import { WhatMovedToday } from '@/components/home/WhatMovedToday';
 import { prisma } from '@/lib/db/prisma';
 
 const baseUrl = 'https://premarketprice.com';
@@ -327,35 +326,33 @@ export default async function Page() {
           </span>
         ))}
       </nav>
-      {/* Hero positioning text — visible immediately, improves dwell time + SEO */}
+      {/* Hero positioning text — compact, one line */}
       <section className="bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
-            Track US Stocks Before the Market Opens
-          </h1>
-          <p className="mt-3 text-base text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            Real-time pre-market prices, earnings calendar, financial health scores, and valuation
-            analysis for 700+ NYSE and NASDAQ stocks. See what moved today, track your watchlist,
-            and make data-driven decisions — no sign-up needed.
-          </p>
-          <div className="mt-4 flex flex-wrap justify-center gap-3 text-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <h1 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">
+              Track US Stocks Before the Market Opens
+            </h1>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Real-time pre-market prices, earnings, analysis for 700+ NYSE & NASDAQ stocks — no sign-up needed
+            </p>
+          </div>
+          <div className="flex gap-3 text-sm">
             <Link href="/premarket-movers" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
-              Premarket Movers →
+              Movers →
             </Link>
             <Link href="/heatmap" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
-              Market Heatmap →
+              Heatmap →
             </Link>
             <Link href="/earnings" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
-              Earnings Calendar →
+              Earnings →
             </Link>
             <Link href="/screener" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
-              Stock Screener →
+              Screener →
             </Link>
           </div>
         </div>
       </section>
-      {/* Server-rendered "What moved today" — visible immediately, improves dwell time */}
-      <WhatMovedToday movers={initialMoversData} eligibleTickers={eligibleSet} />
       <Suspense fallback={<div className="min-h-screen bg-white dark:bg-gray-950"></div>}>
         <HomePage
           initialData={initialData}
@@ -364,6 +361,7 @@ export default async function Page() {
           initialBlogSnapshots={initialBlogSnapshots}
           initialHeatmapData={initialHeatmapData}
           upcomingEarnings={upcomingEarnings}
+          eligibleTickers={eligibleSet}
         />
       </Suspense>
     </>
