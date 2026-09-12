@@ -24,12 +24,12 @@ interface EarningsItem {
 }
 
 interface Overview {
-  totalStocks: number;
-  gainers: number;
-  losers: number;
-  avgChange: number;
-  totalMcapChange: number;
-  sentiment: 'Bullish' | 'Bearish' | 'Mixed';
+  totalStocks?: number;
+  gainers?: number;
+  losers?: number;
+  avgChange?: number;
+  totalMcapChange?: number;
+  sentiment?: 'Bullish' | 'Bearish' | 'Mixed';
   type?: string;
   title?: string;
   summary?: string;
@@ -81,11 +81,11 @@ export async function generateMetadata({ params }: { params: Promise<{ date: str
     };
   }
 
-  const gainers: TickerSnapshot[] = JSON.parse(snapshot.gainersJson);
-  const top3 = gainers.slice(0, 3).map(g => `${g.ticker} ${g.percentChange > 0 ? '+' : ''}${g.percentChange.toFixed(1)}%`).join(', ');
+  const gainers: TickerSnapshot[] = JSON.parse(snapshot.gainersJson || '[]');
+  const top3 = gainers.slice(0, 3).map(g => `${g.ticker} ${g.percentChange > 0 ? '+' : ''}${(g.percentChange ?? 0).toFixed(1)}%`).join(', ');
 
   const title = `Premarket Report ${formatDateLong(date)} | PreMarketPrice`;
-  const description = `${overview.sentiment} market: ${overview.gainers} gainers, ${overview.losers} losers. Top movers: ${top3}. Total market cap change: ${overview.totalMcapChange >= 0 ? '+' : ''}$${overview.totalMcapChange.toFixed(0)}B.`;
+  const description = `${overview.sentiment ?? 'Mixed'} market: ${overview.gainers ?? 0} gainers, ${overview.losers ?? 0} losers. Top movers: ${top3}. Total market cap change: ${(overview.totalMcapChange ?? 0) >= 0 ? '+' : ''}$${(overview.totalMcapChange ?? 0).toFixed(0)}B.`;
 
   return {
     title,
@@ -171,10 +171,11 @@ export default async function BlogDatePage({ params }: { params: Promise<{ date:
   if (!snapshot) notFound();
 
   const overview: Overview = JSON.parse(snapshot.overviewJson);
-  const gainers: TickerSnapshot[] = JSON.parse(snapshot.gainersJson);
-  const losers: TickerSnapshot[] = JSON.parse(snapshot.losersJson);
-  const mcapMovers: TickerSnapshot[] = JSON.parse(snapshot.mcapMoversJson);
-  const earnings: EarningsItem[] = JSON.parse(snapshot.earningsJson);
+  const gainers: TickerSnapshot[] = JSON.parse(snapshot.gainersJson || '[]');
+  const losers: TickerSnapshot[] = JSON.parse(snapshot.losersJson || '[]');
+  const mcapMovers: TickerSnapshot[] = JSON.parse(snapshot.mcapMoversJson || '[]');
+  const earningsParsed = JSON.parse(snapshot.earningsJson || '[]');
+  const earnings: EarningsItem[] = Array.isArray(earningsParsed) ? earningsParsed : [];
   const isWeekly = isWeeklyDate(date) || overview.type === 'weekly-earnings';
   const eligibleAnalysis = await getEligibleAnalysisSet();
 
@@ -302,16 +303,16 @@ export default async function BlogDatePage({ params }: { params: Promise<{ date:
               <div className="text-xs text-gray-400 mt-1">Losers</div>
             </div>
             <div className="text-center">
-              <div className={`text-2xl font-bold ${overview.avgChange >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
-                {overview.avgChange >= 0 ? '+' : ''}{overview.avgChange.toFixed(2)}%
+              <div className={`text-2xl font-bold ${(overview.avgChange ?? 0) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
+                {(overview.avgChange ?? 0) >= 0 ? '+' : ''}{(overview.avgChange ?? 0).toFixed(2)}%
               </div>
               <div className="text-xs text-gray-400 mt-1">Avg. Change</div>
             </div>
           </div>
           <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 text-sm">
             <span className="text-gray-500 dark:text-gray-400">Total Market Cap Change: </span>
-            <span className={`font-semibold ${overview.totalMcapChange >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
-              {overview.totalMcapChange >= 0 ? '+' : ''}${overview.totalMcapChange.toFixed(0)}B
+            <span className={`font-semibold ${(overview.totalMcapChange ?? 0) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
+              {(overview.totalMcapChange ?? 0) >= 0 ? '+' : ''}${(overview.totalMcapChange ?? 0).toFixed(0)}B
             </span>
           </div>
         </section>

@@ -39,12 +39,12 @@ function formatDateShort(dateStr: string): string {
 }
 
 interface Overview {
-  totalStocks: number;
-  gainers: number;
-  losers: number;
-  avgChange: number;
-  totalMcapChange: number;
-  sentiment: 'Bullish' | 'Bearish' | 'Mixed';
+  totalStocks?: number;
+  gainers?: number;
+  losers?: number;
+  avgChange?: number;
+  totalMcapChange?: number;
+  sentiment?: 'Bullish' | 'Bearish' | 'Mixed';
   type?: string;
   title?: string;
   summary?: string;
@@ -121,7 +121,7 @@ export default async function BlogIndexPage() {
                 overview.sentiment === 'Bullish' ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' :
                 overview.sentiment === 'Bearish' ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' :
                 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800';
-              const mcapColor = overview.totalMcapChange >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400';
+              const mcapColor = (overview.totalMcapChange ?? 0) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400';
 
               return (
                 <Link
@@ -154,14 +154,14 @@ export default async function BlogIndexPage() {
                     </div>
                     <div>
                       <span className="text-gray-400 dark:text-gray-500">Avg move</span>
-                      <span className={`ml-2 font-medium ${overview.avgChange >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
-                        {overview.avgChange >= 0 ? '+' : ''}{overview.avgChange.toFixed(2)}%
+                      <span className={`ml-2 font-medium ${(overview.avgChange ?? 0) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
+                        {(overview.avgChange ?? 0) >= 0 ? '+' : ''}{(overview.avgChange ?? 0).toFixed(2)}%
                       </span>
                     </div>
                     <div>
                       <span className="text-gray-400 dark:text-gray-500">Market cap Δ</span>
                       <span className={`ml-2 font-medium ${mcapColor}`}>
-                        {overview.totalMcapChange >= 0 ? '+' : ''}${overview.totalMcapChange.toFixed(0)}B
+                        {(overview.totalMcapChange ?? 0) >= 0 ? '+' : ''}${(overview.totalMcapChange ?? 0).toFixed(0)}B
                       </span>
                     </div>
                   </div>

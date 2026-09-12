@@ -28,6 +28,26 @@ async function fetchTickerList(): Promise<string[]> {
     .filter((s: string | undefined): s is string => !!s);
 }
 
+/**
+ * Filter to only tickers that have AnalysisCache in the database.
+ * Avoids 589 wasted requests for tickers without analysis data.
+ */
+async function filterEligibleTickers(tickers: string[]): Promise<string[]> {
+  try {
+    const { PrismaClient } = await import('@prisma/client');
+    const prisma = new PrismaClient();
+    const eligible = await prisma.analysisCache.findMany({
+      select: { symbol: true },
+    });
+    await prisma.$disconnect();
+    const eligibleSet = new Set(eligible.map(e => e.symbol));
+    return tickers.filter(t => eligibleSet.has(t));
+  } catch {
+    // If DB query fails, fall back to all tickers
+    return tickers;
+  }
+}
+
 async function warmTicker(symbol: string): Promise<{ ok: boolean; cached: boolean; ms: number }> {
   const start = Date.now();
   try {
@@ -57,6 +77,7 @@ async function main() {
 
   try {
     tickers = await fetchTickerList();
+    tickers = await filterEligibleTickers(tickers);
   } catch (err) {
     console.error(`❌ Analysis keep-warm: failed to fetch ticker list:`, err instanceof Error ? err.message : err);
     process.exit(1);
