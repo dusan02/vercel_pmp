@@ -5,12 +5,15 @@ import Link from 'next/link';
 import { SectionIcon } from '@/components/SectionIcon';
 
 interface Overview {
-  totalStocks: number;
-  gainers: number;
-  losers: number;
-  avgChange: number;
-  totalMcapChange: number;
-  sentiment: 'Bullish' | 'Bearish' | 'Mixed';
+  totalStocks?: number;
+  gainers?: number;
+  losers?: number;
+  avgChange?: number;
+  totalMcapChange?: number;
+  sentiment?: 'Bullish' | 'Bearish' | 'Mixed';
+  type?: string;
+  title?: string;
+  summary?: string;
 }
 
 interface Snapshot {
@@ -99,11 +102,21 @@ export function HomeBlog({ initialSnapshots }: { initialSnapshots?: Snapshot[] |
                     </p>
                     {overview && (
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
-                        <span>Stocks tracked <strong className="text-gray-700 dark:text-gray-300">{overview.totalStocks}</strong></span>
-                        <span className="text-green-600 dark:text-green-400">▲ {overview.gainers} gainers</span>
-                        <span className="text-red-500 dark:text-red-400">▼ {overview.losers} losers</span>
-                        <span>Avg move <strong className={overview.avgChange >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}>{overview.avgChange >= 0 ? '+' : ''}{overview.avgChange.toFixed(2)}%</strong></span>
-                        <span>Market cap Δ <strong className={mcap >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}>{mcap >= 0 ? '+' : ''}{formatBillions(mcap)}</strong></span>
+                        {overview.totalStocks != null && (
+                          <span>Stocks tracked <strong className="text-gray-700 dark:text-gray-300">{overview.totalStocks}</strong></span>
+                        )}
+                        {overview.gainers != null && (
+                          <span className="text-green-600 dark:text-green-400">▲ {overview.gainers} gainers</span>
+                        )}
+                        {overview.losers != null && (
+                          <span className="text-red-500 dark:text-red-400">▼ {overview.losers} losers</span>
+                        )}
+                        {overview.avgChange != null && (
+                          <span>Avg move <strong className={overview.avgChange >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}>{overview.avgChange >= 0 ? '+' : ''}{overview.avgChange.toFixed(2)}%</strong></span>
+                        )}
+                        {overview.totalMcapChange != null && (
+                          <span>Market cap Δ <strong className={mcap >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}>{mcap >= 0 ? '+' : ''}{formatBillions(mcap)}</strong></span>
+                        )}
                       </p>
                     )}
                   </div>
