@@ -6,9 +6,9 @@
  *   - /api/analysis/[ticker]/history (chart data)
  *
  * This populates the Redis cache so the SSR page's internal fetch
- * (3s timeout) hits cache instead of computing from scratch.
+ * (5s timeout) hits cache instead of computing from scratch.
  *
- * Run as PM2 cron: every 30 minutes
+ * Run as PM2 cron: every 4 minutes
  */
 const BASE_URL = process.env.BASE_URL || 'http://127.0.0.1:3001';
 const BATCH_SIZE = 10;
@@ -21,11 +21,11 @@ async function fetchTickerList(): Promise<string[]> {
   });
   if (!res.ok) throw new Error(`Failed to fetch ticker list: ${res.status}`);
   const data = await res.json();
-  const stocks = Array.isArray(data) ? data : data.stocks ?? [];
-  // Only tickers that have analysis data (have a sector + market cap)
+  const stocks = data.data ?? data.stocks ?? (Array.isArray(data) ? data : []);
+  // Extract ticker symbol from each stock entry
   return stocks
-    .filter((s: any) => s.symbol && s.sector && s.sector !== 'Unknown')
-    .map((s: any) => s.symbol as string);
+    .map((s: any) => (typeof s === 'string' ? s : s.ticker ?? s.symbol))
+    .filter((s: string | undefined): s is string => !!s);
 }
 
 async function warmTicker(symbol: string): Promise<{ ok: boolean; cached: boolean; ms: number }> {
@@ -93,7 +93,7 @@ async function main() {
 
   const totalMs = Date.now() - startTotal;
   console.log(
-    `✅ Analysis keep-warm: ${warmed} tickers (${cachedHits} cache hits, ${failed} failed) in ${totalMs}ms`
+    `✅ Analysis keep-warm: ${warmed} tickers warmed (${cachedHits} cache hits, ${failed} failed) in ${totalMs}ms`
   );
 }
 
