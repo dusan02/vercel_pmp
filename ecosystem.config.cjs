@@ -348,6 +348,24 @@ module.exports = {
       autorestart: false,
     },
     {
+      name: "analysis-keep-warm",
+      script: "scripts/analysis-keep-warm.ts",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
+      cwd: __dirname,
+      instances: 1,
+      exec_mode: "fork",
+      env: {
+        NODE_ENV: "production",
+        BASE_URL: "http://127.0.0.1:3001",
+      },
+      error_file: path.join(__dirname, "logs", "pm2", "analysis-keep-warm-error.log"),
+      out_file: path.join(__dirname, "logs", "pm2", "analysis-keep-warm-out.log"),
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      // Every 4 minutes — keeps analysis Redis cache warm (TTL is 5min)
+      cron_restart: "*/4 * * * *",
+      autorestart: false,
+    },
+    {
       name: "cron-backfill-analysis",
       script: "scripts/backfill-analysis.ts",
       interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",

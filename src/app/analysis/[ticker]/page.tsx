@@ -256,7 +256,7 @@ export default async function AnalysisPage({ params }: PageProps) {
     (async () => {
       try {
         const res = await fetch(`http://127.0.0.1:${process.env.PORT || 3001}/api/analysis/${tickerUpper}`, {
-          signal: AbortSignal.timeout(3000),
+          signal: AbortSignal.timeout(5000),
         });
         if (!res.ok) return null;
         return await res.json();
@@ -266,7 +266,7 @@ export default async function AnalysisPage({ params }: PageProps) {
     (async () => {
       try {
         const res = await fetch(`http://127.0.0.1:${process.env.PORT || 3001}/api/analysis/${tickerUpper}/history`, {
-          signal: AbortSignal.timeout(3000),
+          signal: AbortSignal.timeout(5000),
         });
         if (!res.ok) return null;
         return await res.json();
