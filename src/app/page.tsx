@@ -62,6 +62,16 @@ const TAB_META: Record<string, { title: string; description: string; canonical: 
     description: 'Daily pre-market analysis, stock movers, earnings recaps, and market insights.',
     canonical: `${baseUrl}/blog`,
   },
+  gainers: {
+    title: 'Premarket Gainers Today — Top Stock Gainers (Live) | PreMarketPrice',
+    description: 'See which stocks are gaining the most in pre-market trading today. Top gainers ranked by % change across NYSE and NASDAQ.',
+    canonical: `${baseUrl}/gainers`,
+  },
+  losers: {
+    title: 'Premarket Losers Today — Top Stock Losers (Live) | PreMarketPrice',
+    description: 'See which stocks are losing the most in pre-market trading today. Top losers ranked by % change across NYSE and NASDAQ.',
+    canonical: `${baseUrl}/losers`,
+  },
 };
 
 interface PageProps {

@@ -27,10 +27,12 @@ jobs:
             npm ci --production=false
             npx prisma generate
             npx prisma db push --accept-data-loss
+            rm -rf .next
             npm run build
             pm2 restart premarketprice || pm2 start ecosystem.config.cjs --only premarketprice --env development
             sleep 10
             curl -s -o /dev/null -w 'homepage=%{http_code}\n' http://localhost:3001/
             curl -s -o /dev/null -w 'health=%{http_code}\n' http://localhost:3001/api/health
-            curl -s -o /dev/null -w 'stocks=%{http_code}\n' http://localhost:3001/api/stocks/optimized
+            curl -s -o /dev/null -w 'stocks=%{http_code}\n' http://localhost:3001/stocks
+            curl -s -o /dev/null -w 'sectors=%{http_code}\n' http://localhost:3001/sectors
             curl -s -o /dev/null -w 'earnings=%{http_code}\n' http://localhost:3001/api/earnings/dates

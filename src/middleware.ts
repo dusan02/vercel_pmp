@@ -57,6 +57,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl, 301);
   }
 
+  // Redirect /sector/[name] → /sectors/[name] (301)
+  // Singular form is not a valid route; redirect to plural.
+  if (pathname.startsWith('/sector/') && !pathname.startsWith('/sectors/')) {
+    const rest = pathname.replace('/sector/', '');
+    const redirectUrl = new URL(`/sectors/${rest}`, request.url);
+    return NextResponse.redirect(redirectUrl, 301);
+  }
+
   // Redirect trailing slash → no slash (301) for non-root paths
   // Prevents /stocks/ vs /stocks duplicate-content issues.
   if (pathname.length > 1 && pathname.endsWith('/')) {
