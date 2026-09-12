@@ -18,7 +18,7 @@ interface WhatMovedSidebarProps {
 
 /**
  * Sidebar "What Moved Today" for desktop heatmap layout.
- * Shows top gainers and losers in a narrow vertical column
+ * Shows top 3 gainers and losers in a vertical column
  * next to the heatmap.
  */
 export function WhatMovedSidebar({ movers, eligibleTickers }: WhatMovedSidebarProps) {
@@ -35,13 +35,13 @@ export function WhatMovedSidebar({ movers, eligibleTickers }: WhatMovedSidebarPr
       return bPct - aPct;
     });
 
-  const gainers = sorted.filter((m) => (m.changePct ?? m.lastChangePct ?? 0) > 0).slice(0, 5);
-  const losers = sorted.filter((m) => (m.changePct ?? m.lastChangePct ?? 0) < 0).slice(0, 5);
+  const gainers = sorted.filter((m) => (m.changePct ?? m.lastChangePct ?? 0) > 0).slice(0, 3);
+  const losers = sorted.filter((m) => (m.changePct ?? m.lastChangePct ?? 0) < 0).slice(0, 3);
 
   if (gainers.length === 0 && losers.length === 0) return null;
 
   return (
-    <aside className="w-64 shrink-0 hidden xl:block">
+    <aside className="w-80 shrink-0 hidden xl:block">
       <div className="sticky top-2 space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-900 dark:text-white">
@@ -51,17 +51,17 @@ export function WhatMovedSidebar({ movers, eligibleTickers }: WhatMovedSidebarPr
             href="/premarket-movers"
             className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
           >
-            All →
+            All movers →
           </Link>
         </div>
 
         {gainers.length > 0 && (
-          <div className="bg-green-50 dark:bg-green-900/10 rounded-lg border border-green-100 dark:border-green-900/30 p-2.5">
+          <div className="bg-green-50 dark:bg-green-900/10 rounded-lg border border-green-100 dark:border-green-900/30 p-3">
             <h3 className="text-xs font-semibold text-green-700 dark:text-green-400 mb-2 flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
               Top Gainers
             </h3>
-            <div className="space-y-0.5">
+            <div className="space-y-1">
               {gainers.map((m) => (
                 <SidebarMoverRow key={m.symbol} mover={m} eligible={eligibleTickers} positive />
               ))}
@@ -70,12 +70,12 @@ export function WhatMovedSidebar({ movers, eligibleTickers }: WhatMovedSidebarPr
         )}
 
         {losers.length > 0 && (
-          <div className="bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-100 dark:border-red-900/30 p-2.5">
+          <div className="bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-100 dark:border-red-900/30 p-3">
             <h3 className="text-xs font-semibold text-red-700 dark:text-red-400 mb-2 flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
               Top Losers
             </h3>
-            <div className="space-y-0.5">
+            <div className="space-y-1">
               {losers.map((m) => (
                 <SidebarMoverRow key={m.symbol} mover={m} eligible={eligibleTickers} positive={false} />
               ))}
@@ -95,19 +95,21 @@ function SidebarMoverRow({ mover, eligible, positive }: { mover: MoverData; elig
   const isEligible = eligible.has(symbol);
 
   const content = (
-    <div className="flex items-center justify-between py-1">
-      <div className="min-w-0">
-        <span className="font-bold text-gray-900 dark:text-white text-xs">{symbol}</span>
-        <span className="text-[10px] text-gray-400 dark:text-gray-500 truncate block leading-tight">{name}</span>
-      </div>
-      <div className="flex items-center gap-2 shrink-0">
-        {price != null && (
-          <span className="text-[10px] text-gray-400 dark:text-gray-500 tabular-nums">${price.toFixed(2)}</span>
-        )}
-        <span className={`text-xs font-semibold tabular-nums ${positive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-          {positive ? '+' : ''}{changePct.toFixed(2)}%
+    <div className="flex items-center gap-2 py-1.5">
+      {/* Ticker — fixed width */}
+      <span className="font-bold text-gray-900 dark:text-white text-sm w-14 shrink-0">{symbol}</span>
+
+      {/* Price — fixed width, right-aligned */}
+      {price != null && (
+        <span className="text-xs text-gray-500 dark:text-gray-400 tabular-nums w-16 text-right shrink-0">
+          ${price.toFixed(2)}
         </span>
-      </div>
+      )}
+
+      {/* % change — right-aligned, colored */}
+      <span className={`text-sm font-semibold tabular-nums text-right ml-auto ${positive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+        {positive ? '+' : ''}{changePct.toFixed(2)}%
+      </span>
     </div>
   );
 
