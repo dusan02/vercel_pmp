@@ -29,7 +29,7 @@ jobs:
             npx prisma db push --accept-data-loss
             rm -rf .next
             npm run build
-            pm2 restart premarketprice || pm2 start ecosystem.config.cjs --only premarketprice --env development
+            pm2 restart premarketprice || pm2 start ecosystem.config.cjs --only premarketprice
             sleep 10
             curl -s -o /dev/null -w 'homepage=%{http_code}\n' http://localhost:3001/
             curl -s -o /dev/null -w 'health=%{http_code}\n' http://localhost:3001/api/health
