@@ -4,7 +4,8 @@ set -e
 cd /var/www/premarketprice
 
 echo "=== Killing stale build processes ==="
-pkill -f "next build" 2>/dev/null || true
+# [n] bracket trick — never match this script's own command line
+pkill -f "[n]ext build" 2>/dev/null || true
 sleep 2
 
 echo "=== Updating git remote ==="

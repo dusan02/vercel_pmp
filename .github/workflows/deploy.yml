@@ -31,7 +31,10 @@ jobs:
             cd /var/www/premarketprice
 
             echo "=== Killing stale build processes ==="
-            pkill -f "next build" 2>/dev/null || true
+            # [n] bracket trick: the pattern must not match this script's own
+            # command line (ssh-action passes the whole script as argv, so a
+            # literal "next build" here would SIGTERM the shell itself → exit 143).
+            pkill -f "[n]ext build" 2>/dev/null || true
             sleep 2
 
             echo "=== Pulling code ==="
