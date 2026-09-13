@@ -1,22 +1,55 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
+import Link from 'next/link';
 import AnalysisTab from '../company/AnalysisTab';
-import { Search } from 'lucide-react';
+import { Search, ExternalLink } from 'lucide-react';
 import { SectionIcon } from '../SectionIcon';
+import { formatPrice, formatPercent, formatMarketCap } from '@/lib/utils/format';
 
 interface HomeAnalysisProps {
     activeTicker?: string;
     onTickerChange?: (ticker: string) => void;
 }
 
+interface TickerHeaderData {
+    ticker: string;
+    companyName: string | null;
+    currentPrice: number | null;
+    closePrice: number | null;
+    percentChange: number | null;
+    marketCap: number | null;
+    sector: string | null;
+    industry: string | null;
+}
+
 export function HomeAnalysis({ activeTicker: propTicker, onTickerChange }: HomeAnalysisProps) {
     // Input field state (what's in the text box)
     const [inputValue, setInputValue] = useState<string>('');
 
+    // Company header data (name, logo context, price) for the active ticker
+    const [headerData, setHeaderData] = useState<TickerHeaderData | null>(null);
+    const [headerLoading, setHeaderLoading] = useState(false);
+
     // The currently displayed ticker — derived from prop, no local copy that can diverge
     // We always use propTicker (controlled by parent). Local-only fallback = 'NVDA'
     const activeTicker = propTicker || 'NVDA';
+
+    useEffect(() => {
+        let cancelled = false;
+        setHeaderLoading(true);
+        setHeaderData(null);
+        fetch(`/api/stocks?tickers=${encodeURIComponent(activeTicker)}`)
+            .then(r => r.json())
+            .then(d => {
+                if (cancelled) return;
+                const row = (d?.data ?? [])[0];
+                setHeaderData(row ?? null);
+            })
+            .catch(() => { if (!cancelled) setHeaderData(null); })
+            .finally(() => { if (!cancelled) setHeaderLoading(false); });
+        return () => { cancelled = true; };
+    }, [activeTicker]);
 
     const setTicker = useCallback((t: string) => {
         if (!t) return;
@@ -88,6 +121,82 @@ export function HomeAnalysis({ activeTicker: propTicker, onTickerChange }: HomeA
                         </button>
                     ))}
                 </div>
+            </div>
+
+            {/* Company header — name, logo, price (the AnalysisTab below is
+                charts-only; without this the tab shows no company context) */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 px-5 py-4">
+                {headerLoading ? (
+                    <div className="flex items-center gap-3 animate-pulse">
+                        <div className="w-12 h-12 rounded-lg bg-gray-200 dark:bg-gray-700 shrink-0" />
+                        <div className="flex-1">
+                            <div className="h-5 w-48 bg-gray-200 dark:bg-gray-700 rounded mb-2" />
+                            <div className="h-3 w-64 bg-gray-100 dark:bg-gray-800 rounded" />
+                        </div>
+                    </div>
+                ) : headerData ? (
+                    <div>
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div className="flex items-center gap-3 min-w-0">
+                                <img
+                                    src={`/api/logo/${encodeURIComponent(activeTicker)}?s=64&prefer=icon`}
+                                    alt={`${activeTicker} logo`}
+                                    width={48}
+                                    height={48}
+                                    className="rounded shrink-0 bg-gray-100 dark:bg-gray-800"
+                                    style={{ objectFit: 'contain' }}
+                                    loading="eager"
+                                />
+                                <div className="min-w-0">
+                                    <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white tracking-tight truncate">
+                                        {headerData.companyName || activeTicker}{' '}
+                                        <span className="text-gray-400 dark:text-gray-500 font-semibold">({activeTicker})</span>
+                                    </h2>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 flex flex-wrap items-center gap-x-1 mt-0.5">
+                                        {headerData.currentPrice != null && <span className="font-semibold text-gray-900 dark:text-white">${formatPrice(headerData.currentPrice)}</span>}
+                                        {headerData.percentChange != null && (
+                                            <span className={headerData.percentChange > 0 ? 'text-green-600 dark:text-green-400' : headerData.percentChange < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}>
+                                                {' · '}{formatPercent(headerData.percentChange)}
+                                            </span>
+                                        )}
+                                        {headerData.marketCap != null && headerData.marketCap > 0 && (
+                                            <span className="text-gray-500 dark:text-gray-400"> · Mkt Cap: ${formatMarketCap(headerData.marketCap)}</span>
+                                        )}
+                                    </p>
+                                    {headerData.sector && (
+                                        <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                                            {headerData.sector}{headerData.industry ? ` · ${headerData.industry}` : ''}
+                                        </p>
+                                    )}
+                                </div>
+                                <Link
+                                    href={`/analysis/${activeTicker}`}
+                                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline shrink-0"
+                                >
+                                    Full analysis <ExternalLink size={14} />
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="flex items-center gap-3">
+                        <img
+                            src={`/api/logo/${encodeURIComponent(activeTicker)}?s=64&prefer=icon`}
+                            alt={`${activeTicker} logo`}
+                            width={48}
+                            height={48}
+                            className="rounded shrink-0 bg-gray-100 dark:bg-gray-800"
+                            style={{ objectFit: 'contain' }}
+                        />
+                        <div>
+                            <div className="text-lg font-bold text-gray-900 dark:text-white">{activeTicker}</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                                Limited data available — see the{' '}
+                                <Link href={`/analysis/${activeTicker}`} className="text-blue-600 dark:text-blue-400 hover:underline">full analysis page</Link>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Analysis Tab Content */}
