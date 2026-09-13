@@ -13,10 +13,17 @@
 
 - **pnpm v10 blokuje native build skripty** (better-sqlite3) → build padá na "Failed to collect page data". Server má byť na npm; `vps-deploy.sh` maže `node_modules/.pnpm` pri detekcii (one-time migration guard)
 - **`pkill -f "next build"` v ssh-action skripte SA ZABÍJA** — ssh-action posiela celý skript ako argv shellu, takže literal pattern matchne vlastný shell → exit 143. Používaj bracket trick `[n]ext buil[d]` a nikdy nepíš process name do komentárov inline skriptu
-- **Deploy beží detached (setsid+nohup)** a Actions job poll-uje — SSH session môže počas buildu padnúť (server je pod masívnym SSH brute-force floodom); detached model to prežije
+- **Deploy beží detached (setsid+nohup)** a Actions job poll-uje — SSH session môže počas buildu padnúť; detached model to prežije
 - `prisma db push` NIKDY s `--accept-data-loss` na produkcii
 - Sitemap aj blog majú ISR (`revalidate`) — po pridaní nových URL type over, či sitemap nie je statická
 - Docs-only push: pridaj `[skip ci]` do commit message, inak spustí plný rebuild na VPS
+
+## Server hardening (89.185.250.213, Debian 12)
+
+- **fail2ban aktívny** (od 2026-09-13): sshd jail, systemd backend, `banaction = ufw`, maxretry 5 / findtime 10 m / bantime 1 h. Config: `/etc/fail2ban/jail.local`. Whitelist: `95.102.193.78` (userova dynamic IP — pri zmene IP sa ban self-heals po 1 h). Status: `fail2ban-client status sshd`
+- GitHub Actions runner IP sa nikdy nezabanujú — auth je cez kľúč, žiadne failed attempts
+- **OTVORENÉ: sshd povolené `PasswordAuthentication yes` + `PermitRootLogin yes`** — odporúčané zmeniť na `prohibit-password` (vyžaduje potvrdenie vlastníka — riziko lockoutu)
+- **Artifact-based deploy (build v CI)** je blokovaný: `NEXT_PUBLIC_GA_ID` / `NEXT_PUBLIC_VAPID_PUBLIC_KEY` / `NEXT_PUBLIC_BASE_URL` sa bake-ujú do bundle pri builde — CI by potreboval tieto hodnoty ako GitHub secrets, inak by sa na produkcii potichu rozbil GA tracking a push notifikácie. Kým sa nepridajú secrets, VPS build (detached model) je správny prístup
 
 ## Verifikácia po deplloy
 
