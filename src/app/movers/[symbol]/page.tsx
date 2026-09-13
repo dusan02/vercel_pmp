@@ -8,6 +8,7 @@ import { formatPercent, formatPrice, formatMarketCapDiff } from '@/lib/utils/hea
 import { formatSectorName } from '@/lib/utils/format';
 import { getEligibleAnalysisTickers } from '@/lib/seo/eligibleTickers';
 import ShareButtons from '@/components/ShareButtons';
+import { IntradayChart } from '@/components/company/IntradayChart';
 
 // Revalidate every 5 minutes — mover data is fairly stable post-session
 export const revalidate = 300;
@@ -282,6 +283,9 @@ export default async function MoverSymbolPage({ params }: PageProps) {
               {moves.length > 0 && ` ${moves.length} significant move${moves.length === 1 ? '' : 's'} detected in the last ${LOOKBACK_DAYS} days.`}
             </p>
           </div>
+
+          {/* Today's intraday — pre-market + regular (5-min bars) */}
+          <IntradayChart ticker={tickerUpper} />
 
           {/* Current state */}
           {(currentPrice != null || currentChangePct != null) && (

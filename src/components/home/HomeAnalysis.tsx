@@ -3,6 +3,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import AnalysisTab from '../company/AnalysisTab';
+import { IntradayChart } from '../company/IntradayChart';
 import { Search, ExternalLink } from 'lucide-react';
 import { SectionIcon } from '../SectionIcon';
 import { formatPrice, formatPercent, formatMarketCap } from '@/lib/utils/format';
@@ -198,6 +199,9 @@ export function HomeAnalysis({ activeTicker: propTicker, onTickerChange }: HomeA
                     </div>
                 )}
             </div>
+
+            {/* Today's intraday — pre-market + regular (5-min bars) */}
+            <IntradayChart ticker={activeTicker} />
 
             {/* Analysis Tab Content */}
             <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl min-h-[600px]">
