@@ -14,6 +14,7 @@ import { GA_ID } from '@/lib/ga'
 import { ThemeEffect } from '@/components/ThemeEffect'
 import { DevCacheClear } from '@/components/DevCacheClear'
 import { Footer } from '@/components/layout/Footer'
+import { GlobalBottomNav } from '@/components/GlobalBottomNav'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -188,7 +189,7 @@ export default function RootLayout({
         {/* Prefetch heatmap API for faster desktop loading */}
         <link rel="prefetch" href="/api/heatmap?timeframe=day&metric=percent" as="fetch" crossOrigin="anonymous" />
       </head>
-      <body className={`${inter.variable} ${spaceGrotesk.variable} ${inter.className} lg:mb-0 mb-16`}>
+      <body className={`${inter.variable} ${spaceGrotesk.variable} ${inter.className} lg:mb-0 mb-20`}>
         {/* Global recovery for deploy-time chunk 404s (stale cached HTML/SW) */}
         <ChunkLoadRecovery />
         {/* RUM: Core Web Vitals reporting (sampled) */}
@@ -269,6 +270,7 @@ export default function RootLayout({
               {children}
             </ErrorBoundaryWrapper>
             <Footer />
+            <GlobalBottomNav />
             <ScrollToTopButton />
           </AuthProvider>
         </Providers>
