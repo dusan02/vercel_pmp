@@ -29,9 +29,11 @@ cat .next/BUILD_ID
 echo
 
 echo "=== Restarting PM2 ==="
-pm2 delete premarketprice 2>&1 || true
-sleep 2
-pm2 start ecosystem.config.cjs --only premarketprice 2>&1 | tail -3
+if pm2 describe premarketprice > /dev/null 2>&1; then
+  pm2 restart premarketprice --update-env 2>&1 | tail -3
+else
+  pm2 start ecosystem.config.cjs --only premarketprice 2>&1 | tail -3
+fi
 # Register cron apps that are new in this release (idempotent)
 pm2 start ecosystem.config.cjs --only cron-blog-snapshot 2>/dev/null || pm2 restart cron-blog-snapshot
 pm2 save
