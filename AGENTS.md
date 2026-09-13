@@ -12,8 +12,11 @@
 ## Známe pasti
 
 - **pnpm v10 blokuje native build skripty** (better-sqlite3) → build padá na "Failed to collect page data". Server má byť na npm; `vps-deploy.sh` maže `node_modules/.pnpm` pri detekcii (one-time migration guard)
+- **`pkill -f "next build"` v ssh-action skripte SA ZABÍJA** — ssh-action posiela celý skript ako argv shellu, takže literal pattern matchne vlastný shell → exit 143. Používaj bracket trick `[n]ext buil[d]` a nikdy nepíš process name do komentárov inline skriptu
+- **Deploy beží detached (setsid+nohup)** a Actions job poll-uje — SSH session môže počas buildu padnúť (server je pod masívnym SSH brute-force floodom); detached model to prežije
 - `prisma db push` NIKDY s `--accept-data-loss` na produkcii
 - Sitemap aj blog majú ISR (`revalidate`) — po pridaní nových URL type over, či sitemap nie je statická
+- Docs-only push: pridaj `[skip ci]` do commit message, inak spustí plný rebuild na VPS
 
 ## Verifikácia po deplloy
 
