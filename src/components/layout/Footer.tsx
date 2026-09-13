@@ -114,6 +114,11 @@ function FooterContent() {
                   Disclaimer
                 </Link>
               </li>
+              <li>
+                <a href="/api/rss" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                  RSS Feed
+                </a>
+              </li>
             </ul>
           </div>
 

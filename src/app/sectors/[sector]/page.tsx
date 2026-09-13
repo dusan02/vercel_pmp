@@ -168,7 +168,9 @@ export default async function SectorPage({ params }: PageProps) {
                                                 {(ticker.lastChangePct ?? 0) >= 0 ? '+' : ''}{(ticker.lastChangePct ?? 0).toFixed(2)}%
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500 dark:text-gray-400 hidden sm:table-cell">
-                                                ${((ticker.lastMarketCap ?? 0) / 1e9).toFixed(2)}B
+                                                {ticker.lastMarketCap && ticker.lastMarketCap > 0
+                                                    ? `$${(ticker.lastMarketCap / 1e9).toFixed(2)}B`
+                                                    : '—'}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden md:table-cell">
                                                 {ticker.industry}

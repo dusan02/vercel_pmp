@@ -152,6 +152,56 @@ export function useScreener({
         setPage(1);
     }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minAltman, minPiotroski, maxBeneish, minFcfMargin, maxDebtRepayment, selectedSector, marketCapPreset, sortField, sortOrder]);
 
+    // Restore filters from URL on mount (shareable screener state)
+    useEffect(() => {
+        const sp = new URLSearchParams(window.location.search);
+        if (sp.size === 0) return;
+        const num = (k: string, fb: number) => {
+            const v = parseFloat(sp.get(k) ?? '');
+            return Number.isFinite(v) ? v : fb;
+        };
+        setMinHealth(num('minHealth', 0));
+        if (sp.has('maxHealth')) setMaxHealth(num('maxHealth', 100));
+        if (sp.has('minProfit')) setMinProfit(num('minProfit', 0));
+        if (sp.has('maxProfit')) setMaxProfit(num('maxProfit', 100));
+        if (sp.has('minValue')) setMinValue(num('minValue', 0));
+        if (sp.has('maxValue')) setMaxValue(num('maxValue', 100));
+        if (sp.has('minAltman')) setMinAltman(num('minAltman', 0));
+        if (sp.has('minPiotroski')) setMinPiotroski(num('minPiotroski', 0));
+        if (sp.has('maxBeneish')) setMaxBeneish(num('maxBeneish', 10));
+        if (sp.has('minFcfMargin')) setMinFcfMargin(num('minFcfMargin', -100));
+        if (sp.has('maxDebtRepayment')) setMaxDebtRepayment(num('maxDebtRepayment', 350));
+        if (sp.has('sector')) setSelectedSector(sp.get('sector') ?? '');
+        if (sp.has('mcap')) setMarketCapPreset(sp.get('mcap') ?? 'all');
+        const sort = sp.get('sort');
+        if (sort) {
+            const [f, o] = sort.split(':');
+            if (f) setSortField(f);
+            if (o === 'asc' || o === 'desc') setSortOrder(o);
+        }
+    }, []);
+
+    // Sync filters → URL (replaceState: shareable, no history pollution)
+    useEffect(() => {
+        const sp = new URLSearchParams();
+        if (minHealth !== 0) sp.set('minHealth', minHealth.toString());
+        if (maxHealth !== 100) sp.set('maxHealth', maxHealth.toString());
+        if (minProfit !== 0) sp.set('minProfit', minProfit.toString());
+        if (maxProfit !== 100) sp.set('maxProfit', maxProfit.toString());
+        if (minValue !== 0) sp.set('minValue', minValue.toString());
+        if (maxValue !== 100) sp.set('maxValue', maxValue.toString());
+        if (minAltman !== 0) sp.set('minAltman', minAltman.toString());
+        if (minPiotroski > 0) sp.set('minPiotroski', minPiotroski.toString());
+        if (maxBeneish < 10) sp.set('maxBeneish', maxBeneish.toString());
+        if (minFcfMargin > -100) sp.set('minFcfMargin', minFcfMargin.toString());
+        if (maxDebtRepayment < 350) sp.set('maxDebtRepayment', maxDebtRepayment.toString());
+        if (selectedSector) sp.set('sector', selectedSector);
+        if (marketCapPreset !== 'all') sp.set('mcap', marketCapPreset);
+        if (sortField !== 'healthScore' || sortOrder !== 'desc') sp.set('sort', `${sortField}:${sortOrder}`);
+        const qs = sp.toString();
+        window.history.replaceState(null, '', qs ? `${window.location.pathname}?${qs}` : window.location.pathname);
+    }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minAltman, minPiotroski, maxBeneish, minFcfMargin, maxDebtRepayment, selectedSector, marketCapPreset, sortField, sortOrder]);
+
     const handleSort = (field: string) => {
         if (sortField === field) {
             setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');

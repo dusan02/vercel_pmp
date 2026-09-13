@@ -49,6 +49,14 @@ export async function middleware(request: NextRequest) {
 
   const response = NextResponse.next();
 
+  // Redirect www → non-www (301)
+  // www.premarketprice.com served 200 → duplicate host diluting ranking signals.
+  const hostHeader = (request.headers.get('x-forwarded-host') || request.headers.get('host') || request.nextUrl.hostname || '').split(':')[0];
+  if (hostHeader === 'www.premarketprice.com') {
+    const canonicalUrl = new URL(request.nextUrl.pathname + request.nextUrl.search, 'https://premarketprice.com');
+    return NextResponse.redirect(canonicalUrl, 301);
+  }
+
   // Redirect /company/[ticker] → /analysis/[ticker] (301)
   // Old sitemap had /company/ URLs; Google still has them in index → 404s.
   if (pathname.startsWith('/company/')) {

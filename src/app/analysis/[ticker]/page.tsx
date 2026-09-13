@@ -20,6 +20,7 @@ import { EarningsSection } from '@/components/company/analysis/sections/Earnings
 import { RecentMovesSection } from '@/components/company/analysis/sections/RecentMovesSection';
 import { RelatedStocksSection } from '@/components/company/analysis/sections/RelatedStocksSection';
 import { PmpScoreSection } from '@/components/company/analysis/sections/PmpScoreSection';
+import { TickerFaqSection, buildTickerFaq } from '@/components/company/analysis/sections/TickerFaqSection';
 import { SeoTextSection } from '@/components/company/SeoTextSection';
 
 export const revalidate = 60;
@@ -304,10 +305,35 @@ export default async function AnalysisPage({ params }: PageProps) {
     },
   };
 
+  const faqProps = {
+    ticker: tickerUpper,
+    companyName,
+    price: data?.lastPrice ?? null,
+    changePct: data?.lastChangePct ?? null,
+    marketCap: data?.lastMarketCap ?? null,
+    sector: data?.sector ?? null,
+    industry: data?.industry ?? null,
+    healthScore: data?.analysisCache?.healthScore ?? null,
+    nextEarningsDate: earningsData.upcoming.length > 0
+      ? (earningsData.upcoming[earningsData.upcoming.length - 1]?.date ?? null)
+      : null,
+  };
+
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: buildTickerFaq(faqProps).map((item) => ({
+      '@type': 'Question',
+      name: item.question,
+      acceptedAnswer: { '@type': 'Answer', text: item.answer },
+    })),
+  };
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(breadcrumbSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(stockSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(faqSchema) }} />
 
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Breadcrumb */}
@@ -398,6 +424,9 @@ export default async function AnalysisPage({ params }: PageProps) {
           <RelatedStocksSection ticker={tickerUpper} sector={data?.sector} peers={sectorPeers} />
 
           <PmpScoreSection />
+
+          {/* FAQ — visible Q&A with concrete numbers + matching FAQPage JSON-LD (GEO) */}
+          <TickerFaqSection {...faqProps} />
 
           {/* SEO text section — unique keyword-rich content for Google indexing */}
           <SeoTextSection

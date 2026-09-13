@@ -73,9 +73,6 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://premarketprice.com'),
   alternates: {
     canonical: '/',
-    languages: {
-      'en': '/',
-    },
   },
   openGraph: {
     title: 'PreMarketPrice - Real-time Stock Data & Earnings Calendar',

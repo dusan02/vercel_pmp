@@ -404,5 +404,24 @@ module.exports = {
       cron_restart: "0 9 * * 1",
       autorestart: false,
     },
+    {
+      name: "cron-blog-snapshot",
+      script: "scripts/trigger-blog-snapshot.ts",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
+      cwd: __dirname,
+      instances: 1,
+      exec_mode: "fork",
+      env: {
+        NODE_ENV: "production",
+        BASE_URL: "http://127.0.0.1:3001",
+        CRON_SECRET: envVars.CRON_SECRET_KEY || envVars.CRON_SECRET || process.env.CRON_SECRET_KEY || process.env.CRON_SECRET,
+      },
+      error_file: path.join(__dirname, "logs", "pm2", "cron-blog-snapshot-error.log"),
+      out_file: path.join(__dirname, "logs", "pm2", "cron-blog-snapshot-out.log"),
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      // Daily at 22:30 UTC — after post-market sync; saves daily blog snapshot for /blog archive
+      cron_restart: "30 22 * * *",
+      autorestart: false,
+    },
   ],
 };

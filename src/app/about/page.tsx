@@ -36,6 +36,20 @@ export default function AboutPage() {
             <p className="text-gray-600 dark:text-gray-300 mb-6">
               Built on modern web technologies, PreMarketPrice offers a seamless experience across desktop and mobile devices. Our proprietary heatmaps and ranking algorithms help you spot opportunities at a glance.
             </p>
+
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">Our Data &amp; Methodology</h2>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">
+              We source market data from established financial data providers, including Finnhub and Yahoo Finance, and refresh prices continuously during the pre-market session (4:00 AM – 9:30 AM ET).
+            </p>
+            <ul className="list-disc list-inside text-gray-600 dark:text-gray-300 space-y-2 mb-6">
+              <li><strong>Prices &amp; market cap:</strong> refreshed throughout the pre-market session; every page shows a &quot;last updated&quot; timestamp.</li>
+              <li><strong>Movers ranking:</strong> ranked by percentage change with statistical significance filtering (z-score) to separate real momentum from noise.</li>
+              <li><strong>Analysis scores:</strong> financial health, profitability, and valuation scores computed from reported fundamentals (revenue, net income, assets, liabilities).</li>
+              <li><strong>Valuation context:</strong> P/E and P/S ratios compared against each company&apos;s own 5-year history, not just sector averages.</li>
+            </ul>
+            <p className="text-gray-600 dark:text-gray-300 mb-6">
+              We are an independent data platform — we do not execute trades, hold positions, or accept payment for rankings. For details, see our <Link href="/disclaimer" className="text-blue-600 dark:text-blue-400 hover:underline">disclaimer</Link>.
+            </p>
             
             <div className="mt-12 p-6 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
               <h3 className="text-blue-800 dark:text-blue-300 font-semibold mb-2">Need to reach us?</h3>
