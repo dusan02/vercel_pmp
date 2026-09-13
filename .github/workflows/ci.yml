@@ -99,6 +99,9 @@ jobs:
         continue-on-error: true
         run: npm test -- src/__tests__/pre-deploy.test.ts
 
+      - name: Run quant (EarlyWinner) tests
+        run: npm run test:quant
+
       - name: Start app & verify endpoints
         run: |
           npm run dev &

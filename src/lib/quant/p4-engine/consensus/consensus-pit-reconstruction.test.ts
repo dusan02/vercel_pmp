@@ -330,11 +330,15 @@ function runTests(): void {
   // ════════════════════════════════════════════════════════════════════════════
   console.log(`\n=== Results: ${passed} passed, ${failed} failed ===`);
   if (failed > 0) {
-    console.error('❌ SOME TESTS FAILED');
-    process.exit(1);
-  } else {
-    console.log('✅ ALL TESTS PASSED');
+    throw new Error(`❌ SOME TESTS FAILED: ${failed} failed assertions`);
   }
+  console.log('✅ ALL TESTS PASSED');
 }
 
-runTests();
+// Vitest wrapper — the original self-running script is preserved as one
+// suite; assert failures throw, so a broken reconstruction fails this test.
+import { it, expect } from 'vitest';
+it('Consensus PIT Reconstruction — synthetic suite (28 cases)', () => {
+  runTests();
+  expect(failed).toBe(0);
+});

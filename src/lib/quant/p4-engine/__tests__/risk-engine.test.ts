@@ -1,4 +1,4 @@
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect } from 'vitest';
 import { RiskEngine } from '../risk-engine';
 import { RiskLedgerState, RiskIntent } from '../risk-types';
 
