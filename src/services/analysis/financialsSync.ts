@@ -10,6 +10,7 @@ interface SAData {
     datekey: string[];
     fiscalYear: string[];
     fiscalQuarter: string[];
+    currency?: string;
     [key: string]: any;
 }
 
@@ -41,12 +42,35 @@ function extractSAArray(html: string, key: string): any[] | null {
     }
 }
 
+/** All statement arrays the SA fallback maps, across income/BS/CF pages. */
+const SA_ARRAY_KEYS = [
+    // income (new short keys + legacy)
+    'revenue', 'gp', 'opinc', 'netinccmn', 'epsdil', 'netIncome', 'ebit', 'operatingIncome', 'grossProfit',
+    'sharesDiluted', 'sharesBasic', 'sbc', 'income_statement_interest_expense', 'interestexpense',
+    // balance sheet
+    'assets', 'liabilities', 'assetsc', 'currentLiabilities', 'liabilitiesc',
+    'retearn', 'balance_sheet_retained_earnings', 'equity', 'debt', 'totalcash', 'cashneq',
+    'netPPE', 'balance_sheet_net_property_plant_and_equipment', 'sharesOutTotalCommon',
+    // cash flow
+    'ncfo', 'cfo', 'capex', 'cash_flow_statement_capital_expenditure', 'sbcomp',
+];
+
+function extractSACurrency(html: string): string | null {
+    return html.match(/currency:"([A-Z]{3})"/)?.[1] ?? null;
+}
+
 function extractSAFinancialData(html: string): SAData | null {
     const datekey = extractSAArray(html, 'datekey');
     if (!datekey || datekey.length === 0) return null;
     const data: SAData = { datekey, fiscalYear: [], fiscalQuarter: [] };
     data.fiscalYear = extractSAArray(html, 'fiscalYear') ?? [];
     data.fiscalQuarter = extractSAArray(html, 'fiscalQuarter') ?? [];
+    const saCurrency = extractSACurrency(html);
+    if (saCurrency) data.currency = saCurrency;
+    for (const key of SA_ARRAY_KEYS) {
+        const arr = extractSAArray(html, key);
+        if (arr) data[key] = arr;
+    }
     return data;
 }
 
@@ -84,6 +108,15 @@ async function syncFromStockAnalysis(symbol: string): Promise<number> {
         fetchSAData(symbol, 'cash-flow-statement'),
     ]);
     if (!income) return 0;
+
+    // SA serves statements in the company's reporting currency (e.g. TSM in
+    // TWD). FinancialStatement rows imply USD — skip non-USD companies
+    // rather than store mislabeled numbers.
+    const currency = income.currency;
+    if (currency && currency !== 'USD') {
+        console.log(`[syncFinancials] ${symbol}: SA statements are ${currency}, skipping (USD-only storage)`);
+        return 0;
+    }
 
     await prisma.ticker.upsert({
         where: { symbol },
@@ -444,10 +477,13 @@ export async function syncFinancials(symbol: string): Promise<void> {
         throw error;
     }
 
-    // Fallback: if Finnhub returned 0 statements (ADR/foreign tickers),
-    // try stockanalysis.com scraper
-    const stmtCount = await prisma.financialStatement.count({ where: { symbol } });
-    if (stmtCount === 0) {
+    // Fallback: if Finnhub produced no usable statements (ADR/foreign
+    // tickers, or rows that exist but carry no revenue at all), try the
+    // stockanalysis.com scraper. Upserts then fill/refresh the rows.
+    const stmtsWithRevenue = await prisma.financialStatement.count({
+        where: { symbol, revenue: { not: null } },
+    });
+    if (stmtsWithRevenue === 0) {
         const saCount = await syncFromStockAnalysis(symbol);
         console.log(`[syncFinancials] ${symbol}: SA fallback rows=${saCount}`);
         if (saCount > 0) {
