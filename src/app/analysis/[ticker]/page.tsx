@@ -21,6 +21,7 @@ import { RecentMovesSection } from '@/components/company/analysis/sections/Recen
 import { RelatedStocksSection } from '@/components/company/analysis/sections/RelatedStocksSection';
 import { PmpScoreSection } from '@/components/company/analysis/sections/PmpScoreSection';
 import { TickerFaqSection, buildTickerFaq } from '@/components/company/analysis/sections/TickerFaqSection';
+import { IntradayChart } from '@/components/company/IntradayChart';
 import { SeoTextSection } from '@/components/company/SeoTextSection';
 
 export const revalidate = 60;
@@ -389,6 +390,9 @@ export default async function AnalysisPage({ params }: PageProps) {
             prevClose={data?.latestPrevClose ?? null}
             sparkline={sparkline}
           />
+
+          {/* Today's intraday (pre-market + regular, 5-min bars) — client-fetch */}
+          <IntradayChart ticker={tickerUpper} />
 
           <CompanyOverviewSection
             description={data?.description}
