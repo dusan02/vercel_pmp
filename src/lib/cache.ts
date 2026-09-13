@@ -197,12 +197,12 @@ class StockDataCache {
 
     try {
              const apiKey = process.env.POLYGON_API_KEY;
-       console.log('API Key found:', apiKey ? 'Yes' : 'No');
-       console.log('API Key length:', apiKey?.length);
-       console.log('API Key (first 10 chars):', apiKey?.substring(0, 10) + '...');
-       
-       if (!apiKey) {
-         console.error('POLYGON_API_KEY not found in environment variables');
+
+       // CI/dev builds run with a dummy key (ci.yml) — every Polygon call
+       // would 401. ~360 tickers × 3 endpoints + batch delays wasted minutes
+       // of CI time per build, so short-circuit before any network I/O.
+       if (!apiKey || apiKey.startsWith('dummy')) {
+         console.log('[cache] POLYGON_API_KEY missing or dummy (CI/dev build) — skipping Polygon update');
          return;
        }
              const batchSize = 20; // Process in batches to avoid rate limits
