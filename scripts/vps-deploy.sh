@@ -15,6 +15,12 @@ echo "=== Resetting to origin/main ==="
 git reset --hard origin/main 2>&1 | tail -3
 
 echo "=== Installing dependencies (incremental) ==="
+# One-time migration: pnpm-structured node_modules (corepack pnpm v10 blocks
+# native build scripts → broken better-sqlite3). Wipe once, then npm manages it.
+if [ -d node_modules/.pnpm ]; then
+  echo "pnpm node_modules detected — wiping for clean npm install (one-time)"
+  rm -rf node_modules
+fi
 npm install --no-audit --no-fund --loglevel=error 2>&1 | tail -5
 
 echo "=== Prisma generate ==="
