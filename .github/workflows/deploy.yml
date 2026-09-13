@@ -32,9 +32,10 @@ jobs:
 
             echo "=== Killing stale build processes ==="
             # [n] bracket trick: the pattern must not match this script's own
-            # command line (ssh-action passes the whole script as argv, so a
-            # literal "next build" here would SIGTERM the shell itself → exit 143).
-            pkill -f "[n]ext build" 2>/dev/null || true
+            # command line (ssh-action passes the whole script as argv, so ANY
+            # plain occurrence of the build-process name below would SIGTERM
+            # this shell → exit 143). Keep the name out of all comments too.
+            pkill -f "[n]ext buil[d]" 2>/dev/null || true
             sleep 2
 
             echo "=== Pulling code ==="
