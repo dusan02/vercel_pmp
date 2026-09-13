@@ -4,14 +4,14 @@ interface RelatedStocksSectionProps {
   ticker: string;
   sector: string | null | undefined;
   /** Up to 10 same-sector peers, market-cap sorted, current ticker excluded */
-  peers: Array<{ symbol: string; name: string | null }>;
+  peers: Array<{ symbol: string; name: string | null; lastChangePct?: number | null }>;
 }
 
 export function RelatedStocksSection({ ticker, sector, peers }: RelatedStocksSectionProps) {
   return (
     <div className="mb-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
       <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-        {sector ? `${sector} Stocks` : 'Explore More Stocks'}
+        {sector ? `${sector} Stocks — Moving Today` : 'Explore More Stocks'}
       </h2>
       <div className="flex flex-wrap gap-2">
         {peers.length > 0 ? (
@@ -23,6 +23,20 @@ export function RelatedStocksSection({ ticker, sector, peers }: RelatedStocksSec
               title={p.name || p.symbol}
             >
               {p.symbol}
+              {p.lastChangePct != null && (
+                <span
+                  className={`ml-1.5 text-xs font-semibold tabular-nums ${
+                    p.lastChangePct > 0
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : p.lastChangePct < 0
+                        ? 'text-red-600 dark:text-red-400'
+                        : 'text-gray-400 dark:text-gray-500'
+                  }`}
+                >
+                  {p.lastChangePct >= 0 ? '+' : ''}
+                  {p.lastChangePct.toFixed(1)}%
+                </span>
+              )}
               {p.name && (
                 <span className="ml-1.5 text-xs text-gray-400 dark:text-gray-500 hidden sm:inline">
                   {p.name.length > 20 ? p.name.slice(0, 18) + '…' : p.name}
@@ -47,7 +61,7 @@ export function RelatedStocksSection({ ticker, sector, peers }: RelatedStocksSec
           href="/premarket-movers"
           className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30 text-sm font-medium text-blue-700 dark:text-blue-300 hover:bg-blue-100 transition-colors"
         >
-          View all stocks →
+          View all movers →
         </Link>
         {sector && (
           <Link

@@ -176,7 +176,7 @@ async function getSectorPeers(sector: string | null | undefined, excludeSymbol: 
       },
       orderBy: { lastMarketCap: 'desc' },
       take: 10,
-      select: { symbol: true, name: true },
+      select: { symbol: true, name: true, lastChangePct: true },
     });
     return peers;
   } catch {
@@ -319,6 +319,15 @@ export default async function AnalysisPage({ params }: PageProps) {
       : null,
   };
 
+  // Earnings countdown — next scheduled report within 14 days
+  const nextEarnings = earningsData.upcoming.length > 0
+    ? earningsData.upcoming[earningsData.upcoming.length - 1]
+    : null;
+  const earningsDays = nextEarnings
+    ? Math.ceil((new Date(nextEarnings.date + 'T12:00:00Z').getTime() - Date.now()) / 86_400_000)
+    : null;
+  const earningsTimeLabel = nextEarnings?.time === 'bmo' ? 'before market open' : nextEarnings?.time === 'amc' ? 'after market close' : '';
+
   const faqSchema = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
@@ -350,6 +359,24 @@ export default async function AnalysisPage({ params }: PageProps) {
         </nav>
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          {nextEarnings && earningsDays != null && earningsDays <= 14 && (
+            <div className="mb-4 flex flex-wrap items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 text-sm">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-200">
+                Earnings
+              </span>
+              <span className="text-gray-700 dark:text-gray-300">
+                {companyName} ({tickerUpper}) reports{' '}
+                <strong className="font-semibold">
+                  {earningsDays === 0 ? 'today' : earningsDays === 1 ? 'tomorrow' : `in ${earningsDays} days`}
+                </strong>{' '}
+                ({nextEarnings.date}{earningsTimeLabel ? `, ${earningsTimeLabel}` : ''}).
+              </span>
+              <Link href="/earnings" className="text-blue-600 dark:text-blue-400 hover:underline font-medium">
+                Full calendar →
+              </Link>
+            </div>
+          )}
+
           <AnalysisHero
             ticker={tickerUpper}
             companyName={companyName}

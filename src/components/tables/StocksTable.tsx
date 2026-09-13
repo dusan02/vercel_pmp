@@ -11,6 +11,7 @@ import { CustomDropdown } from '../CustomDropdown';
 import { StockData } from '@/lib/types';
 import { formatSectorName, formatBillions, formatMarketCapDiff, formatPrice, formatPercent } from '@/lib/utils/format';
 import CompanyLogo from '../CompanyLogo';
+import { LivePrice } from '../LivePrice';
 import { getCompanyName } from '@/lib/companyNames';
 import { Star, TrendingUp, TrendingDown, DollarSign, Building } from 'lucide-react';
 
@@ -239,11 +240,8 @@ export const StocksTable = React.memo(function StocksTable({
       showInMobileSort: true,
       mobileWidth: 'w-20',
       cell: (stock) => {
-        const price = stock.currentPrice ?? 0;
         return (
-          <span className="font-mono tabular-nums font-semibold">
-            {isFinite(price) ? formatPrice(price) : '—'}
-          </span>
+          <LivePrice value={stock.currentPrice ?? null} format={formatPrice} />
         );
       }
     },

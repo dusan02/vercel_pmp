@@ -72,6 +72,48 @@ export async function getPremarketMoversFromDB(
 }
 
 /**
+ * Fetch today's pre-market stocks with unusual relative volume (rvol >= minRvol).
+ * Used by the /unusual-volume page — stocks trading on far more volume than
+ * their time-of-day expectation often precede significant moves.
+ */
+export async function getUnusualVolumeStocks(
+  dateStr: string,
+  minRvol: number = 2,
+  limit: number = 50,
+): Promise<PremarketArchiveRow[]> {
+  try {
+    const dayStart = new Date(dateStr + 'T00:00:00Z');
+    const dayEnd = new Date(dateStr + 'T23:59:59Z');
+
+    const rows = await prisma.sessionPrice.findMany({
+      where: {
+        session: 'pre',
+        date: { gte: dayStart, lte: dayEnd },
+        rvol: { gte: minRvol },
+      },
+      include: {
+        ticker: { select: { name: true, sector: true } },
+      },
+      orderBy: { rvol: 'desc' },
+      take: limit,
+    });
+
+    return rows.map((r) => ({
+      symbol: r.symbol,
+      name: r.ticker?.name ?? null,
+      sector: r.ticker?.sector ?? null,
+      price: r.lastPrice ?? null,
+      changePct: r.changePct ?? null,
+      zScore: r.zScore ?? null,
+      rvol: r.rvol ?? null,
+    }));
+  } catch (error) {
+    console.error(`[premarketArchive] Failed to fetch unusual volume for ${dateStr}:`, error);
+    return [];
+  }
+}
+
+/**
  * Get available pre-market dates from SessionPrice (for navigation/linking).
  * Returns sorted array of YYYY-MM-DD strings (most recent first).
  */
