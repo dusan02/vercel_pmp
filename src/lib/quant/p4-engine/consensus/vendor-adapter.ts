@@ -244,18 +244,156 @@ export class ZacksConsensusAdapter extends BaseConsensusAdapter {
   }
 }
 
-// ─── Estimize Adapter (Skeleton) ─────────────────────────────────────────────
+// ─── Estimize Adapter ─────────────────────────────────────────────────────────
 
 /**
  * Estimize consensus adapter.
  *
- * ⚠️  SKELETON ONLY — do not implement until a real Estimize sample is received.
+ * Supports two input formats:
+ *   1. CSV (historical testing files — Consensus.csv, Estimates.csv)
+ *   2. API JSON response (/releases/:id/consensus, /releases/:id/estimates)
  *
- * Estimize API endpoints (from docs):
- *   GET /releases/:id/consensus — revisions array with updated_at
- *   GET /releases/:id/estimates — individual estimates with created_at
- *   GET /releases — list releases by ticker/date
+ * PIT timestamp mapping:
+ *   - Consensus.csv::Date → knownAt (daily PIT snapshot date)
+ *   - API consensus::updated_at → knownAt (revision timestamp)
+ *   - Estimates.csv::created_at → revisionDate (individual estimate creation)
+ *   - API estimates::created_at → revisionDate
+ *
+ * Estimize guarantees PIT integrity (from FAQ):
+ *   "We keep point-in-time data for all estimates. We never delete estimates
+ *    or change estimates."
+ *
+ * History: January 2012+
+ * Coverage: 3,000+ US equities and ADRs
+ *
+ * See: docs/v5-consensus-vendor-gate.md
  */
+
+import * as crypto from 'crypto';
+
+// ─── Estimize CSV Types ──────────────────────────────────────────────────────
+
+/**
+ * Row from Estimize Consensus.csv (historical file).
+ * Each row is a daily PIT snapshot of the consensus for a ticker/fiscal period.
+ */
+interface EstimizeConsensusCsvRow {
+  Date: string;                    // PIT snapshot date (YYYY-MM-DD) → knownAt
+  Ticker: string;
+  Cusip: string;
+  Instrument_id: string;
+  Instrument_name: string;
+  Fiscal_year: number;
+  Fiscal_quarter: number;          // 1-4
+  Reports_at: string;              // expected/actual report datetime
+  'Estimize.eps.weighted': number | null;
+  'Estimize.eps.high': number | null;
+  'Estimize.eps.low': number | null;
+  'Estimize.eps.sd': number | null;
+  'Estimize.eps.count': number | null;
+  'Estimize.revenue.weighted': number | null;
+  'Estimize.revenue.high': number | null;
+  'Estimize.revenue.low': number | null;
+  'Estimize.revenue.sd': number | null;
+  'Estimize.revenue.count': number | null;
+  'Wallstreet.eps.mean': number | null;
+  'Wallstreet.eps.count': number | null;
+  'Wallstreet.revenue.mean': number | null;
+  'Wallstreet.revenue.count': number | null;
+  'Reported.eps': number | null;
+  'Reported.revenue': number | null;
+}
+
+/**
+ * Row from Estimize Estimates.csv (historical file).
+ * Each row is an individual analyst estimate with a creation timestamp.
+ */
+interface EstimizeEstimateCsvRow {
+  Estimate_id: string;
+  Eps: number | null;
+  Revenue: number | null;
+  Created_at: string;              // ISO 8601 → revisionDate / knownAt
+  Flagged: boolean;
+  Release_id: string;
+  Fiscal_quarter: number;
+  Fiscal_year: number;
+  Reported_eps: number | null;
+  Reported_revenue: number | null;
+  Reports_at: string;
+  Point_in_time_ticker: string;
+  Point_in_time_cusip: string;
+  Analyst_id: string;
+  Username: string;
+}
+
+// ─── Estimize API Types ──────────────────────────────────────────────────────
+
+interface EstimizeApiConsensusRevision {
+  mean: number;
+  high: number;
+  low: number;
+  standard_deviation: number;
+  count: number;
+  updated_at: string;              // ISO 8601 → knownAt
+}
+
+interface EstimizeApiConsensusResponse {
+  estimize: {
+    eps: {
+      revisions: EstimizeApiConsensusRevision[];
+      mean: number;
+      high: number;
+      low: number;
+      standard_deviation: number;
+      count: number;
+      updated_at: string;
+    };
+    revenue: {
+      revisions: EstimizeApiConsensusRevision[];
+      mean: number;
+      high: number;
+      low: number;
+      standard_deviation: number;
+      count: number;
+      updated_at: string;
+    };
+  };
+  wallstreet: {
+    eps: {
+      revisions: EstimizeApiConsensusRevision[];
+      mean: number;
+      high: number;
+      low: number;
+      standard_deviation: number;
+      count: number;
+      updated_at: string;
+    };
+    revenue: {
+      revisions: EstimizeApiConsensusRevision[];
+      mean: number;
+      high: number;
+      low: number;
+      standard_deviation: number;
+      count: number;
+      updated_at: string;
+    };
+  };
+}
+
+interface EstimizeApiEstimate {
+  id: string;
+  eps: number | null;
+  revenue: number | null;
+  created_at: string;              // ISO 8601 → revisionDate
+  analyst_id: string;
+  username: string;
+  release_id: string;
+  fiscal_year: number;
+  fiscal_quarter: number;
+}
+
+// ─── Estimize Adapter Implementation ──────────────────────────────────────────
+
 export class EstimizeConsensusAdapter extends BaseConsensusAdapter {
   readonly vendorName = 'ESTIMIZE';
 
@@ -267,18 +405,303 @@ export class EstimizeConsensusAdapter extends BaseConsensusAdapter {
     if (process.env.ESTIMIZE_API_KEY) {
       return 'Estimize: API key configured';
     }
-    return 'Estimize: NO API KEY — set ESTIMIZE_API_KEY in .env';
+    return 'Estimize: NO API KEY — set ESTIMIZE_API_KEY in .env (or use CSV mode for historical files)';
   }
 
-  parseSnapshots(_rawData: unknown): CanonicalConsensusSnapshot[] | null {
-    // ⚠️ NOT IMPLEMENTED — awaiting real vendor sample
-    // Estimize uses created_at for estimates and updated_at for consensus revisions.
-    // These need to be mapped to knownAt in the canonical schema.
-    throw new Error('EstimizeConsensusAdapter.parseSnapshots: NOT IMPLEMENTED — awaiting vendor sample');
+  /**
+   * Parse Estimize data into canonical consensus snapshots.
+   *
+   * Accepts:
+   *   - Parsed CSV rows (EstimizeConsensusCsvRow[]) from Consensus.csv
+   *   - API JSON response (EstimizeApiConsensusResponse) from /releases/:id/consensus
+   *
+   * The caller must provide securityId/ticker/fiscalPeriod context when using
+   * the API format (single-release response). For CSV, each row is self-contained.
+   */
+  parseSnapshots(rawData: unknown): CanonicalConsensusSnapshot[] | null {
+    if (Array.isArray(rawData)) {
+      return this.parseConsensusCsv(rawData as EstimizeConsensusCsvRow[]);
+    }
+    if (typeof rawData === 'object' && rawData !== null) {
+      return this.parseConsensusApiResponse(
+        rawData as EstimizeApiConsensusResponse & {
+          _securityId?: string; _ticker?: string; _cik?: string | null;
+          _fiscalYear?: number; _fiscalQuarter?: number; _periodEndDate?: string;
+          _actualEps?: number | null; _actualRevenue?: number | null;
+          _actualReportDate?: string | null;
+        }
+      );
+    }
+    return null;
   }
 
-  parseRevisions(_rawData: unknown): CanonicalRevisionEvent[] | null {
-    throw new Error('EstimizeConsensusAdapter.parseRevisions: NOT IMPLEMENTED — awaiting vendor sample');
+  /**
+   * Parse Estimize data into canonical revision events.
+   *
+   * Accepts:
+   *   - Parsed CSV rows (EstimizeEstimateCsvRow[]) from Estimates.csv
+   *   - API JSON array (EstimizeApiEstimate[]) from /releases/:id/estimates
+   */
+  parseRevisions(rawData: unknown): CanonicalRevisionEvent[] | null {
+    if (!Array.isArray(rawData)) return null;
+
+    // Detect format: API estimates have `created_at` + `analyst_id`
+    // CSV estimates have `Created_at` + `Analyst_id`
+    const sample = rawData[0] as Record<string, unknown>;
+    if (!sample) return null;
+
+    if ('Created_at' in sample) {
+      return this.parseEstimatesCsv(rawData as EstimizeEstimateCsvRow[]);
+    }
+    if ('created_at' in sample) {
+      return this.parseEstimatesApi(rawData as EstimizeApiEstimate[]);
+    }
+    return null;
+  }
+
+  // ─── CSV Parsing ───────────────────────────────────────────────────────────
+
+  private parseConsensusCsv(rows: EstimizeConsensusCsvRow[]): CanonicalConsensusSnapshot[] | null {
+    const snapshots: CanonicalConsensusSnapshot[] = [];
+
+    for (const row of rows) {
+      const knownAt = new Date(row.Date);
+      if (isNaN(knownAt.getTime())) continue;
+
+      const fiscalPeriod = `Q${row.Fiscal_quarter}`;
+      const periodEndDate = row.Reports_at ? new Date(row.Reports_at) : knownAt;
+      const actualReportDate = row.Reports_at ? new Date(row.Reports_at) : null;
+
+      // EPS snapshot
+      if (row['Estimize.eps.weighted'] !== null && row['Estimize.eps.weighted'] !== undefined) {
+        snapshots.push(this.makeSnapshot(
+          row.Instrument_id, row.Ticker, null,
+          row.Fiscal_year, fiscalPeriod, periodEndDate,
+          knownAt, 'EPS',
+          row['Estimize.eps.weighted'], null,
+          row['Estimize.eps.high'], row['Estimize.eps.low'],
+          row['Estimize.eps.sd'], row['Estimize.eps.count'],
+          row['Reported.eps'] ?? null, actualReportDate,
+          row
+        ));
+      }
+
+      // Revenue snapshot
+      if (row['Estimize.revenue.weighted'] !== null && row['Estimize.revenue.weighted'] !== undefined) {
+        snapshots.push(this.makeSnapshot(
+          row.Instrument_id, row.Ticker, null,
+          row.Fiscal_year, fiscalPeriod, periodEndDate,
+          knownAt, 'REVENUE',
+          row['Estimize.revenue.weighted'], null,
+          row['Estimize.revenue.high'], row['Estimize.revenue.low'],
+          row['Estimize.revenue.sd'], row['Estimize.revenue.count'],
+          row['Reported.revenue'] ?? null, actualReportDate,
+          row
+        ));
+      }
+    }
+
+    return snapshots.length > 0 ? snapshots : null;
+  }
+
+  private parseEstimatesCsv(rows: EstimizeEstimateCsvRow[]): CanonicalRevisionEvent[] | null {
+    const revisions: CanonicalRevisionEvent[] = [];
+
+    for (const row of rows) {
+      if (row.Flagged) continue; // Skip flagged/unreliable estimates
+
+      const revisionDate = new Date(row.Created_at);
+      if (isNaN(revisionDate.getTime())) continue;
+
+      const fiscalPeriod = `Q${row.Fiscal_quarter}`;
+      const periodEndDate = row.Reports_at ? new Date(row.Reports_at) : revisionDate;
+
+      // EPS revision
+      if (row.Eps !== null && row.Eps !== undefined) {
+        revisions.push(this.makeRevision(
+          row.Point_in_time_ticker, row.Fiscal_year, fiscalPeriod, periodEndDate,
+          revisionDate, row.Analyst_id, row.Username, 'EPS',
+          null, row.Eps, row
+        ));
+      }
+
+      // Revenue revision
+      if (row.Revenue !== null && row.Revenue !== undefined) {
+        revisions.push(this.makeRevision(
+          row.Point_in_time_ticker, row.Fiscal_year, fiscalPeriod, periodEndDate,
+          revisionDate, row.Analyst_id, row.Username, 'REVENUE',
+          null, row.Revenue, row
+        ));
+      }
+    }
+
+    return revisions.length > 0 ? revisions : null;
+  }
+
+  // ─── API Parsing ────────────────────────────────────────────────────────────
+
+  private parseConsensusApiResponse(
+    data: EstimizeApiConsensusResponse & {
+      _securityId?: string; _ticker?: string; _cik?: string | null;
+      _fiscalYear?: number; _fiscalQuarter?: number; _periodEndDate?: string;
+      _actualEps?: number | null; _actualRevenue?: number | null;
+      _actualReportDate?: string | null;
+    }
+  ): CanonicalConsensusSnapshot[] | null {
+    // Caller must provide context fields (prefixed with _)
+    const securityId = data._securityId ?? '';
+    const ticker = data._ticker ?? '';
+    const cik = data._cik ?? null;
+    const fiscalYear = data._fiscalYear ?? 0;
+    const fiscalPeriod = data._fiscalQuarter ? `Q${data._fiscalQuarter}` : '';
+    const periodEndDate = data._periodEndDate ? new Date(data._periodEndDate) : new Date(0);
+    const actualReportDate = data._actualReportDate ? new Date(data._actualReportDate) : null;
+
+    if (!securityId || !fiscalPeriod) return null;
+
+    const snapshots: CanonicalConsensusSnapshot[] = [];
+
+    // Use Estimize consensus (not Wall Street) — Estimize is the crowdsourced
+    // consensus that the platform is built on
+    const estimizeEps = data.estimize?.eps;
+    if (estimizeEps) {
+      // Current snapshot
+      const knownAt = new Date(estimizeEps.updated_at);
+      if (!isNaN(knownAt.getTime())) {
+        snapshots.push(this.makeSnapshot(
+          securityId, ticker, cik, fiscalYear, fiscalPeriod, periodEndDate,
+          knownAt, 'EPS',
+          estimizeEps.mean, null,
+          estimizeEps.high, estimizeEps.low,
+          estimizeEps.standard_deviation, estimizeEps.count,
+          data._actualEps ?? null, actualReportDate,
+          { source: 'estimize-api', metric: 'eps', ...estimizeEps }
+        ));
+      }
+
+      // Historical revisions — each revision is a PIT snapshot
+      for (const rev of estimizeEps.revisions ?? []) {
+        const revKnownAt = new Date(rev.updated_at);
+        if (isNaN(revKnownAt.getTime())) continue;
+
+        snapshots.push(this.makeSnapshot(
+          securityId, ticker, cik, fiscalYear, fiscalPeriod, periodEndDate,
+          revKnownAt, 'EPS',
+          rev.mean, null,
+          rev.high, rev.low,
+          rev.standard_deviation, rev.count,
+          null, null, // Actuals only in the final snapshot
+          { source: 'estimize-api-revision', metric: 'eps', ...rev }
+        ));
+      }
+    }
+
+    const estimizeRev = data.estimize?.revenue;
+    if (estimizeRev) {
+      const knownAt = new Date(estimizeRev.updated_at);
+      if (!isNaN(knownAt.getTime())) {
+        snapshots.push(this.makeSnapshot(
+          securityId, ticker, cik, fiscalYear, fiscalPeriod, periodEndDate,
+          knownAt, 'REVENUE',
+          estimizeRev.mean, null,
+          estimizeRev.high, estimizeRev.low,
+          estimizeRev.standard_deviation, estimizeRev.count,
+          data._actualRevenue ?? null, actualReportDate,
+          { source: 'estimize-api', metric: 'revenue', ...estimizeRev }
+        ));
+      }
+
+      for (const rev of estimizeRev.revisions ?? []) {
+        const revKnownAt = new Date(rev.updated_at);
+        if (isNaN(revKnownAt.getTime())) continue;
+
+        snapshots.push(this.makeSnapshot(
+          securityId, ticker, cik, fiscalYear, fiscalPeriod, periodEndDate,
+          revKnownAt, 'REVENUE',
+          rev.mean, null,
+          rev.high, rev.low,
+          rev.standard_deviation, rev.count,
+          null, null,
+          { source: 'estimize-api-revision', metric: 'revenue', ...rev }
+        ));
+      }
+    }
+
+    return snapshots.length > 0 ? snapshots : null;
+  }
+
+  private parseEstimatesApi(estimates: EstimizeApiEstimate[]): CanonicalRevisionEvent[] | null {
+    const revisions: CanonicalRevisionEvent[] = [];
+
+    for (const est of estimates) {
+      const revisionDate = new Date(est.created_at);
+      if (isNaN(revisionDate.getTime())) continue;
+
+      const fiscalPeriod = `Q${est.fiscal_quarter}`;
+
+      if (est.eps !== null && est.eps !== undefined) {
+        revisions.push(this.makeRevision(
+          '', est.fiscal_year, fiscalPeriod, revisionDate,
+          revisionDate, est.analyst_id, est.username, 'EPS',
+          null, est.eps, est
+        ));
+      }
+
+      if (est.revenue !== null && est.revenue !== undefined) {
+        revisions.push(this.makeRevision(
+          '', est.fiscal_year, fiscalPeriod, revisionDate,
+          revisionDate, est.analyst_id, est.username, 'REVENUE',
+          null, est.revenue, est
+        ));
+      }
+    }
+
+    return revisions.length > 0 ? revisions : null;
+  }
+
+  // ─── Helpers ───────────────────────────────────────────────────────────────
+
+  private makeSnapshot(
+    securityId: string, ticker: string, cik: string | null,
+    fiscalYear: number, fiscalPeriod: string, periodEndDate: Date,
+    knownAt: Date, metricType: string,
+    consensusMean: number | null, consensusMedian: number | null,
+    consensusHigh: number | null, consensusLow: number | null,
+    consensusStdDev: number | null, analystCount: number | null,
+    actualValue: number | null, actualReportDate: Date | null,
+    sourceRecord: unknown
+  ): CanonicalConsensusSnapshot {
+    return {
+      securityId, ticker, cik,
+      fiscalYear, fiscalPeriod, periodEndDate,
+      knownAt,
+      metricType,
+      consensusMean, consensusMedian,
+      consensusHigh, consensusLow,
+      consensusStdDev, analystCount,
+      actualValue, actualReportDate,
+      sourceProvider: 'ESTIMIZE',
+      sourceType: 'CSV',
+      sourceRecordHash: crypto.createHash('sha256').update(JSON.stringify(sourceRecord)).digest('hex'),
+    };
+  }
+
+  private makeRevision(
+    ticker: string, fiscalYear: number, fiscalPeriod: string, periodEndDate: Date,
+    revisionDate: Date, analystId: string | null, analystName: string | null,
+    metricType: string, priorEstimate: number | null, newEstimate: number | null,
+    sourceRecord: unknown
+  ): CanonicalRevisionEvent {
+    return {
+      securityId: '', // Resolved during ingest from ticker mapping
+      ticker,
+      fiscalYear, fiscalPeriod, periodEndDate,
+      revisionDate, analystId, analystName,
+      metricType, priorEstimate, newEstimate,
+      sourceProvider: 'ESTIMIZE',
+      sourceType: 'CSV',
+      sourceRecordHash: crypto.createHash('sha256').update(JSON.stringify(sourceRecord)).digest('hex'),
+    };
   }
 }
 

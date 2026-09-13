@@ -1,13 +1,20 @@
 /**
- * Consensus Earnings Feature Provider — STUB (BLOCKED)
- * ======================================================
+ * Consensus Earnings Feature Provider — BLOCKED (adapter ready, awaiting ingest)
+ * ===========================================================================
  *
- * This provider is BLOCKED until vendor consensus data is available.
- * It returns BLOCKED features for all Earnings category slots.
+ * The EstimizeConsensusAdapter is IMPLEMENTED (see p4-engine/consensus/vendor-adapter.ts)
+ * and can parse both CSV (historical files) and API JSON responses.
  *
- * When vendor data arrives (3P.4.2 → 3P.6-E), replace this stub
- * with a real implementation using the EarningsVendorAdapter interface
- * from src/lib/quant/p5/earnings-contract.ts.
+ * This provider remains BLOCKED until:
+ *   1. Estimize data is obtained (free trial CSV or API access)
+ *   2. Ingest pipeline writes canonical snapshots to PIT DB
+ *   3. consensusAt(T) reconstruction is verified
+ *
+ * Once data is ingested, replace computeFeatures() with real implementation
+ * using ConsensusFeatureCalculators from p4-engine/consensus/consensus-feature-calculators.ts.
+ *
+ * Vendor decision: Estimize (see docs/v5-consensus-vendor-gate.md)
+ * Adapter: EstimizeConsensusAdapter (parseSnapshots + parseRevisions implemented)
  *
  * DO NOT use free/current consensus APIs as a historical PIT source.
  */
@@ -33,16 +40,16 @@ export class ConsensusEarningsProvider implements FeatureProvider {
   readonly version = PROVIDER_VERSION;
 
   isAvailable(): boolean {
-    return false; // BLOCKED
+    return false; // BLOCKED — adapter ready, awaiting data ingest
   }
 
   describeStatus(): string {
-    return `${PROVIDER_VERSION}: BLOCKED — awaiting vendor consensus data (3P.4.2)`;
+    return `${PROVIDER_VERSION}: BLOCKED — Estimize adapter implemented, awaiting data ingest (see docs/v5-consensus-vendor-gate.md)`;
   }
 
   async computeFeatures(_securityId: string, asOfTime: string): Promise<EwFeature[]> {
     return EARNINGS_FEATURE_KEYS.map(key =>
-      makeBlockedFeature(key, 'EARNINGS', asOfTime, 'Consensus provider not available — awaiting vendor data (3P.4.2)')
+      makeBlockedFeature(key, 'EARNINGS', asOfTime, 'Consensus data not ingested — awaiting Estimize ingest pipeline')
     );
   }
 }
