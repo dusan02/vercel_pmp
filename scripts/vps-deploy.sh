@@ -47,6 +47,18 @@ pm2 save
 sleep 15
 
 echo "=== Testing ==="
+code=000
+for i in $(seq 1 12); do
+  code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3001/ || true)
+  [ "$code" = "200" ] && break
+  echo "waiting for app ($i/12), got $code"
+  sleep 5
+done
+if [ "$code" != "200" ]; then
+  echo "❌ App did not become healthy after deploy"
+  pm2 logs premarketprice --lines 30 --nostream || true
+  exit 1
+fi
 curl -s -o /dev/null -w 'root=%{http_code}\n' http://localhost:3001/
 curl -s -o /dev/null -w 'earnings=%{http_code}\n' http://localhost:3001/earnings
 curl -s -o /dev/null -w 'dates=%{http_code}\n' http://localhost:3001/api/earnings/dates

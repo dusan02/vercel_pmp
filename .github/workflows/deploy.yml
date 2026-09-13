@@ -17,7 +17,7 @@ jobs:
     # Only deploy if CI succeeded (not if it failed/cancelled)
     if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
 
     steps:
       - name: Deploy to VPS
@@ -26,60 +26,35 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          command_timeout: 40m
           script: |
             set -e
             cd /var/www/premarketprice
 
-            echo "=== Killing stale build processes ==="
-            # [n] bracket trick: the pattern must not match this script's own
-            # command line (ssh-action passes the whole script as argv, so ANY
-            # plain occurrence of the build-process name below would SIGTERM
-            # this shell → exit 143). Keep the name out of all comments too.
-            pkill -f "[n]ext buil[d]" 2>/dev/null || true
-            sleep 2
+            # Run the deploy DETACHED (setsid + nohup): if this SSH session
+            # drops mid-build (flaky network, server-side connection cleanup),
+            # the deploy keeps running on the VPS and we simply poll for it.
+            LOG=/tmp/pmp-deploy-$(date +%Y%m%d-%H%M%S).log
+            setsid nohup bash scripts/vps-deploy.sh > "$LOG" 2>&1 &
+            DPID=$!
+            echo "deploy PID $DPID, log $LOG"
 
-            echo "=== Pulling code ==="
-            git fetch origin main
-            git reset --hard origin/main
-
-            echo "=== Installing dependencies (incremental) ==="
-            npm install --no-audit --no-fund --loglevel=error
-
-            echo "=== Prisma ==="
-            npx prisma generate
-            # No --accept-data-loss: a destructive schema change must fail the
-            # deploy loudly, never silently drop production data.
-            npx prisma db push --skip-generate
-
-            echo "=== Building (heap capped for shared 4GB VPS) ==="
-            export NODE_OPTIONS="--max-old-space-size=1536"
-            npm run build
-
-            echo "=== Restarting app ==="
-            pm2 restart premarketprice --update-env || pm2 start ecosystem.config.cjs --only premarketprice
-
-            # Register PM2 apps that are new in this release (idempotent).
-            # `pm2 restart premarketprice` alone never picks up new cron jobs.
-            pm2 start ecosystem.config.cjs --only cron-blog-snapshot 2>/dev/null || pm2 restart cron-blog-snapshot
-            pm2 save
-
-            echo "=== Health checks ==="
-            code=000
-            for i in $(seq 1 12); do
-              code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3001/ || true)
-              [ "$code" = "200" ] && break
-              echo "waiting for app ($i/12), got $code"
-              sleep 5
+            # Poll up to ~25 min for the detached deploy to finish
+            FINISHED=0
+            for i in $(seq 1 150); do
+              sleep 10
+              if ! kill -0 "$DPID" 2>/dev/null; then FINISHED=1; break; fi
             done
-            if [ "$code" != "200" ]; then
-              echo "❌ App did not become healthy after deploy"
-              pm2 logs premarketprice --lines 30 --nostream
+            if [ "$FINISHED" != "1" ]; then
+              echo "deploy still running after 25 min — dumping log tail"
+              tail -40 "$LOG"
               exit 1
             fi
 
-            curl -s -o /dev/null -w 'homepage=%{http_code}\n' http://localhost:3001/
-            curl -s -o /dev/null -w 'health=%{http_code}\n' http://localhost:3001/api/health
-            curl -s -o /dev/null -w 'stocks=%{http_code}\n' http://localhost:3001/stocks
-            curl -s -o /dev/null -w 'sectors=%{http_code}\n' http://localhost:3001/sectors
-            curl -s -o /dev/null -w 'llms=%{http_code}\n' http://localhost:3001/llms.txt
-            curl -s -o /dev/null -w 'earnings=%{http_code}\n' http://localhost:3001/api/earnings/dates
+            echo "=== deploy log (tail) ==="
+            tail -40 "$LOG"
+            grep -q "=== Done ===" "$LOG" || {
+              echo "deploy script failed — see log above"
+              exit 1
+            }
+            echo "deploy finished OK"
