@@ -1,3 +1,5 @@
+import { formatMarketCap } from '@/lib/utils/format';
+
 interface FaqItem {
   question: string;
   answer: string;
@@ -25,14 +27,6 @@ function fmtPct(value: number | null): string {
   return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
 }
 
-function fmtMcap(value: number | null): string {
-  if (value == null || !Number.isFinite(value) || value <= 0) return '—';
-  if (value >= 1e12) return `$${(value / 1e12).toFixed(2)}T`;
-  if (value >= 1e9) return `$${(value / 1e9).toFixed(1)}B`;
-  if (value >= 1e6) return `$${(value / 1e6).toFixed(1)}M`;
-  return `$${value.toFixed(0)}`;
-}
-
 /**
  * Builds the FAQ items shared by the visible section and the FAQPage JSON-LD.
  * Answers are direct, factual and number-rich so AI engines (ChatGPT,
@@ -51,7 +45,9 @@ export function buildTickerFaq(p: TickerFaqProps): FaqItem[] {
   if (p.marketCap != null && p.marketCap > 0) {
     items.push({
       question: `What is ${p.ticker}'s market capitalization?`,
-      answer: `${p.companyName} (${p.ticker}) has a market capitalization of approximately ${fmtMcap(p.marketCap)}, based on the latest available share price and shares outstanding.`,
+      // Ticker.lastMarketCap is stored in BILLIONS — formatMarketCap
+      // auto-detects units (4853.3 → "4.85T", 82.37 → "82.37B").
+      answer: `${p.companyName} (${p.ticker}) has a market capitalization of approximately $${formatMarketCap(p.marketCap)}, based on the latest available share price and shares outstanding.`,
     });
   }
 

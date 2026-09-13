@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { prisma } from '@/lib/db/prisma';
 import { generatePageMetadata } from '@/lib/seo/metadata';
-import { formatSectorName } from '@/lib/utils/format';
+import { formatSectorName, formatMarketCap } from '@/lib/utils/format';
 import { StructuredData } from '@/components/StructuredData';
 import { sectorDescriptions, defaultSectorDescription } from '@/lib/seo/sectorDescriptions';
 import { getEligibleAnalysisSet } from '@/lib/seo/eligibleTickers';
@@ -168,8 +168,11 @@ export default async function SectorPage({ params }: PageProps) {
                                                 {(ticker.lastChangePct ?? 0) >= 0 ? '+' : ''}{(ticker.lastChangePct ?? 0).toFixed(2)}%
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500 dark:text-gray-400 hidden sm:table-cell">
+                                                {/* Ticker.lastMarketCap is stored in BILLIONS — formatMarketCap
+                                                    auto-detects units (82.37 → "82.37B", 4853.3 → "4.85T").
+                                                    Never divide by 1e9 here — that rendered "$0.00B". */}
                                                 {ticker.lastMarketCap && ticker.lastMarketCap > 0
-                                                    ? `$${(ticker.lastMarketCap / 1e9).toFixed(2)}B`
+                                                    ? `$${formatMarketCap(ticker.lastMarketCap)}`
                                                     : '—'}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden md:table-cell">
