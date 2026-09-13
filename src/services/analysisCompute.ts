@@ -148,8 +148,12 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
 
     // Forward P/E & implied forward EPS (market-implied next-year earnings)
     const forwardPeRaw = finnhubMetrics?.forwardPe ?? null;
-    // 0/negative forward P/E is meaningless (also guards the forwardEps division)
-    const forwardPe = forwardPeRaw !== null && forwardPeRaw > 0 ? forwardPeRaw : null;
+    // Garbage guard: Finnhub sometimes returns tiny positive forward P/E
+    // (e.g. 1.5e-05 for illiquid foreign names) — forwardEps = price/forwardPe
+    // would explode. A forward P/E < 1 implies next-year earnings exceed the
+    // whole market cap — not a real market expectation. Floor at 1 also bounds
+    // forwardEps <= price.
+    const forwardPe = forwardPeRaw !== null && forwardPeRaw >= 1 ? forwardPeRaw : null;
     const forwardEps = (forwardPe !== null && forwardPe > 0 && effectivePrice > 0)
         ? effectivePrice / forwardPe
         : null;
