@@ -123,6 +123,8 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
     const effectivePrice = tickerRecord?.lastPrice || latestValuation?.closePrice || 0;
     const effectiveNI = ttmNetIncome ?? latestStmt?.netIncome ?? null;
     let currentPe: number | null = finnhubMetrics?.peRatio ?? null;
+    // Finnhub returns 0 (not null) for loss-makers — 0x P/E is meaningless
+    if (currentPe !== null && currentPe <= 0) currentPe = null;
     if (currentPe === null && effectivePrice > 0 && sharesOutstanding && sharesOutstanding > 0 && effectiveNI && effectiveNI > 0) {
         currentPe = (effectivePrice * sharesOutstanding) / effectiveNI;
     }
@@ -136,8 +138,18 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
         currentEps = ttmNetIncome / sharesOutstanding;
     }
 
+    // P/E is meaningless for loss-making companies (negative TTM EPS).
+    // Finnhub's "normalized" P/E can be a large positive number while the
+    // reported TTM EPS is negative — showing "568x" next to "EPS −$3.55"
+    // is a contradiction. Industry convention: no P/E for loss-makers.
+    if (currentPe !== null && currentEps !== null && currentEps <= 0) {
+        currentPe = null;
+    }
+
     // Forward P/E & implied forward EPS (market-implied next-year earnings)
-    const forwardPe = finnhubMetrics?.forwardPe ?? null;
+    const forwardPeRaw = finnhubMetrics?.forwardPe ?? null;
+    // 0/negative forward P/E is meaningless (also guards the forwardEps division)
+    const forwardPe = forwardPeRaw !== null && forwardPeRaw > 0 ? forwardPeRaw : null;
     const forwardEps = (forwardPe !== null && forwardPe > 0 && effectivePrice > 0)
         ? effectivePrice / forwardPe
         : null;
