@@ -6,6 +6,8 @@ import { getEligibleAnalysisTickers } from '@/lib/seo/eligibleTickers';
 import { getEligibleValuationTickers } from '@/lib/seo/eligibleValuation';
 import { getEligibleFinancialsTickers } from '@/lib/seo/eligibleFinancials';
 
+export const revalidate = 3600;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://premarketprice.com';
   const currentDate = new Date().toISOString().split('T')[0];
