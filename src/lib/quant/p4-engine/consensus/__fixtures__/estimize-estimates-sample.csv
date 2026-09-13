@@ -1,0 +1,7 @@
+Estimate_id,Eps,Revenue,Created_at,Flagged,Release_id,Fiscal_quarter,Fiscal_year,Reported_eps,Reported_revenue,Reports_at,Point_in_time_ticker,Point_in_time_cusip,Analyst_id,Username
+est-1001,2.30,,2024-01-05T14:30:00.000Z,false,rel-146-2024q1,1,2024,,,2024-02-01T21:30:00.000Z,AAPL,037833100,an-77,quant_alice
+est-1002,2.40,,2024-01-20T10:00:00.000Z,false,rel-146-2024q1,1,2024,,,2024-02-01T21:30:00.000Z,AAPL,037833100,an-88,buy_side_bob
+est-1003,2.35,,2024-01-25T09:15:00.000Z,false,rel-146-2024q1,1,2024,,,2024-02-01T21:30:00.000Z,AAPL,037833100,an-91,sell_side_sue
+est-1004,2.50,,2024-01-26T16:45:00.000Z,true,rel-146-2024q1,1,2024,,,2024-02-01T21:30:00.000Z,AAPL,037833100,an-95,outlier_oliver
+est-2001,2.70,,2024-01-10T11:00:00.000Z,false,rel-773-2024q3,3,2024,,,2024-01-23T21:30:00.000Z,MSFT,078901949,an-101,macro_mike
+est-2002,2.75,,2024-01-21T13:30:00.000Z,false,rel-773-2024q3,3,2024,,,2024-01-23T21:30:00.000Z,MSFT,078901949,an-102,value_vera

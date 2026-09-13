@@ -671,6 +671,17 @@ export class EstimizeConsensusAdapter extends BaseConsensusAdapter {
     actualValue: number | null, actualReportDate: Date | null,
     sourceRecord: unknown
   ): CanonicalConsensusSnapshot {
+    // Hash over snapshot CONTENT (not raw row) so EPS and REVENUE snapshots
+    // from the same CSV row get distinct hashes — otherwise dedup would drop
+    // the second metric of each row.
+    const hashInput = {
+      securityId, ticker, fiscalYear, fiscalPeriod,
+      periodEndDate: periodEndDate.toISOString(),
+      knownAt: knownAt.toISOString(),
+      metricType,
+      consensusMean, consensusHigh, consensusLow, consensusStdDev, analystCount,
+      actualValue, actualReportDate,
+    };
     return {
       securityId, ticker, cik,
       fiscalYear, fiscalPeriod, periodEndDate,
@@ -682,7 +693,7 @@ export class EstimizeConsensusAdapter extends BaseConsensusAdapter {
       actualValue, actualReportDate,
       sourceProvider: 'ESTIMIZE',
       sourceType: 'CSV',
-      sourceRecordHash: crypto.createHash('sha256').update(JSON.stringify(sourceRecord)).digest('hex'),
+      sourceRecordHash: crypto.createHash('sha256').update(JSON.stringify(hashInput)).digest('hex'),
     };
   }
 
@@ -690,8 +701,14 @@ export class EstimizeConsensusAdapter extends BaseConsensusAdapter {
     ticker: string, fiscalYear: number, fiscalPeriod: string, periodEndDate: Date,
     revisionDate: Date, analystId: string | null, analystName: string | null,
     metricType: string, priorEstimate: number | null, newEstimate: number | null,
-    sourceRecord: unknown
+    _sourceRecord: unknown
   ): CanonicalRevisionEvent {
+    // Hash over revision CONTENT (not raw row) — EPS and REVENUE revisions
+    // from the same estimate row must get distinct hashes.
+    const hashInput = {
+      ticker, fiscalYear, fiscalPeriod, periodEndDate,
+      revisionDate, analystId, metricType, priorEstimate, newEstimate,
+    };
     return {
       securityId: '', // Resolved during ingest from ticker mapping
       ticker,
@@ -700,7 +717,7 @@ export class EstimizeConsensusAdapter extends BaseConsensusAdapter {
       metricType, priorEstimate, newEstimate,
       sourceProvider: 'ESTIMIZE',
       sourceType: 'CSV',
-      sourceRecordHash: crypto.createHash('sha256').update(JSON.stringify(sourceRecord)).digest('hex'),
+      sourceRecordHash: crypto.createHash('sha256').update(JSON.stringify(hashInput)).digest('hex'),
     };
   }
 }

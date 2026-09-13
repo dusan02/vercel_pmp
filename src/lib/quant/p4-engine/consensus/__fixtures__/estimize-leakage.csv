@@ -1,0 +1,2 @@
+Date,Ticker,Cusip,Instrument_id,Instrument_name,Fiscal_year,Fiscal_quarter,Reports_at,Estimize.eps.weighted,Estimize.eps.high,Estimize.eps.low,Estimize.eps.sd,Estimize.eps.count,Estimize.revenue.weighted,Estimize.revenue.high,Estimize.revenue.low,Estimize.revenue.sd,Estimize.revenue.count,Reported.eps,Reported.revenue
+2024-01-05,LEAK,000000001,est-leak,Leak Corp,2024,1,2024-02-01T21:30:00.000Z,2.00,2.10,1.90,0.05,8,100000000.00,102000000.00,98000000.00,1200000.00,6,1.90,98000000.00
