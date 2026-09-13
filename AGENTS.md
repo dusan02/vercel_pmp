@@ -1,5 +1,9 @@
 # PMP — PreMarketPrice (premarketprice.com)
 
+## Súvisiace projekty
+
+- **StockCV** (`~/Projects/stockcv`, budúce stockcv.com, port 3011): samostatná Next.js appka, ktorá **read-only** číta PMP produkčnú DB (`better-sqlite3 readonly:true`, cesta cez `STOCKCV_DB`, na VPS `/var/www/premarketprice/prisma/data/premarket.db`). Nemá vlastnú pipeline ani secrets — PMP crony udržiavajú dáta čerstvé. Detaily v `stockcv/README.md`. Pri zmenách schémy PMP DB (rename/drop tabuliek `Ticker`, `FinancialStatement`, `AnalysisCache`, `FinnhubMetrics`, `EarningsCalendar`) skontrolovať aj `stockcv/src/lib/db.ts`.
+
 ## Deployment
 
 - **VPS**: `root@89.185.250.213` (SSH key: `~/.ssh/id_ed25519`), app v `/var/www/premarketprice`, port 3001, PM2

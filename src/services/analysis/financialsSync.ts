@@ -13,37 +13,59 @@ interface SAData {
     [key: string]: any;
 }
 
-function extractSAFinancialData(html: string): SAData | null {
-    const idx = html.indexOf('financialData:{');
-    if (idx < 0) return null;
-    const start = idx + 'financialData:'.length;
-    let depth = 0;
-    for (let i = start; i < html.length; i++) {
-        if (html[i] === '{') depth++;
-        else if (html[i] === '}') depth--;
-        if (depth === 0) {
-            const objStr = html[start] + html.slice(start + 1, i + 1);
-            let jsonStr = objStr.replace(/([{,])([a-zA-Z_][a-zA-Z0-9_]*):/g, '$1"$2":');
-            jsonStr = jsonStr.replace(/void 0/g, 'null');
-            jsonStr = jsonStr.replace(/([\[:,\[])(-?)\.(\d)/g, '$1$20.$3');
-            try {
-                return JSON.parse(jsonStr);
-            } catch {
-                return null;
-            }
-        }
+/**
+ * Extracts statement arrays from a stockanalysis.com page.
+ *
+ * SA changed their page structure (2026): the income statement page no
+ * longer embeds `financialData:{...}` (it is `void 0` there) and serves the
+ * arrays under a new table payload with short keys (gp, opinc, netinccmn,
+ * epsdil), while balance-sheet / cash-flow pages still embed
+ * `financialData:{...}` but renamed several fields (retearn, netPPE,
+ * currentLiabilities, ncfo, sbcomp).
+ *
+ * Instead of brace-matching one JSON object (fragile — chart config
+ * strings contain braces), each array is pulled independently via a
+ * `key:[...]` regex anchored on a word boundary. Scalar values inside
+ * `ttm:{...}` / `prior:{...}` objects don't match because they are not
+ * arrays.
+ */
+function extractSAArray(html: string, key: string): any[] | null {
+    const re = new RegExp(`(?<![a-zA-Z0-9_])${key}:\\[([^\\]]*)\\]`);
+    const m = html.match(re);
+    if (!m) return null;
+    try {
+        const parsed = JSON.parse(`[${m[1]}]`);
+        return Array.isArray(parsed) ? parsed : null;
+    } catch {
+        return null;
     }
-    return null;
+}
+
+function extractSAFinancialData(html: string): SAData | null {
+    const datekey = extractSAArray(html, 'datekey');
+    if (!datekey || datekey.length === 0) return null;
+    const data: SAData = { datekey, fiscalYear: [], fiscalQuarter: [] };
+    data.fiscalYear = extractSAArray(html, 'fiscalYear') ?? [];
+    data.fiscalQuarter = extractSAArray(html, 'fiscalQuarter') ?? [];
+    return data;
 }
 
 async function fetchSAData(symbol: string, statement: string): Promise<SAData | null> {
     const url = `${SA_BASE}/${symbol.toLowerCase()}/financials/${statement}/`;
     try {
         const resp = await fetch(url, { headers: SA_HEADERS });
-        if (!resp.ok) return null;
+        if (!resp.ok) {
+            console.log(`[syncFinancials] SA ${symbol}/${statement || 'income'}: HTTP ${resp.status}`);
+            return null;
+        }
         const html = await resp.text();
-        return extractSAFinancialData(html);
-    } catch {
+        const data = extractSAFinancialData(html);
+        if (!data) {
+            console.log(`[syncFinancials] SA ${symbol}/${statement || 'income'}: no arrays extracted (${html.length} bytes)`);
+        }
+        return data;
+    } catch (e: any) {
+        console.log(`[syncFinancials] SA ${symbol}/${statement || 'income'}: fetch error: ${e?.message}`);
         return null;
     }
 }
@@ -73,31 +95,39 @@ async function syncFromStockAnalysis(symbol: string): Promise<number> {
     for (let i = 0; i < income.datekey.length; i++) {
         const dateStr = income.datekey[i]!;
         if (dateStr === 'TTM') continue;
-        const fiscalYear = parseInt(income.fiscalYear[i]!, 10);
-        const fiscalQuarter = income.fiscalQuarter[i]!;
+        const fiscalYear = parseInt(income.fiscalYear[i] ?? '', 10);
+        const fiscalQuarter = income.fiscalQuarter[i] ?? 'FY';
+        if (!fiscalYear) continue;
         const fiscalPeriod = (fiscalQuarter === 'Q4' || fiscalQuarter === 'FY') ? 'FY' : fiscalQuarter;
         const endDate = new Date(dateStr + 'T00:00:00Z');
+
+        // Diluted shares from net income / diluted EPS when both are valid.
+        const ni = saNumArr(income, 'netinccmn', i);
+        const epsdil = saNumArr(income, 'epsdil', i);
+        const sharesFromEps = ni !== null && epsdil !== null && epsdil > 0 ? ni / epsdil : null;
+        const sharesOutstanding =
+            sharesFromEps ?? (balance ? saNumArr(balance, 'sharesOutTotalCommon', i) : null);
 
         const stmtData = {
             endDate,
             revenue: saNumArr(income, 'revenue', i),
-            netIncome: saNumArr(income, 'netIncome', i),
-            ebit: saNumArr(income, 'ebit', i) ?? saNumArr(income, 'operatingIncome', i),
-            grossProfit: saNumArr(income, 'grossProfit', i),
-            operatingCashFlow: cashflow ? (saNumArr(cashflow, 'cash_flow_statement_net_cash_from_operating_activities', i) ?? saNumArr(cashflow, 'cfo', i)) : null,
-            capex: cashflow ? (saNumArr(cashflow, 'cash_flow_statement_capital_expenditure', i) ?? saNumArr(cashflow, 'capex', i)) : null,
+            netIncome: ni,
+            ebit: saNumArr(income, 'opinc', i),
+            grossProfit: saNumArr(income, 'gp', i),
+            operatingCashFlow: cashflow ? (saNumArr(cashflow, 'ncfo', i) ?? saNumArr(cashflow, 'cfo', i)) : null,
+            capex: cashflow ? (saNumArr(cashflow, 'capex', i) ?? saNumArr(cashflow, 'cash_flow_statement_capital_expenditure', i)) : null,
             totalAssets: balance ? saNumArr(balance, 'assets', i) : null,
             totalLiabilities: balance ? saNumArr(balance, 'liabilities', i) : null,
             currentAssets: balance ? saNumArr(balance, 'assetsc', i) : null,
-            currentLiabilities: balance ? saNumArr(balance, 'liabilitiesc', i) : null,
-            retainedEarnings: balance ? saNumArr(balance, 'balance_sheet_retained_earnings', i) : null,
+            currentLiabilities: balance ? (saNumArr(balance, 'currentLiabilities', i) ?? saNumArr(balance, 'liabilitiesc', i)) : null,
+            retainedEarnings: balance ? (saNumArr(balance, 'retearn', i) ?? saNumArr(balance, 'balance_sheet_retained_earnings', i)) : null,
             totalEquity: balance ? saNumArr(balance, 'equity', i) : null,
-            sharesOutstanding: saNumArr(income, 'sharesDiluted', i) ?? saNumArr(income, 'sharesBasic', i),
-            sbc: saNumArr(income, 'sbc', i),
-            interestExpense: saNumArr(income, 'income_statement_interest_expense', i),
+            sharesOutstanding,
+            sbc: cashflow ? (saNumArr(cashflow, 'sbcomp', i) ?? saNumArr(cashflow, 'sbc', i)) : null,
+            interestExpense: saNumArr(income, 'interestexpense', i),
             totalDebt: balance ? saNumArr(balance, 'debt', i) : null,
             cashAndEquivalents: balance ? (saNumArr(balance, 'totalcash', i) ?? saNumArr(balance, 'cashneq', i)) : null,
-            netPPE: balance ? saNumArr(balance, 'balance_sheet_net_property_plant_and_equipment', i) : null,
+            netPPE: balance ? (saNumArr(balance, 'netPPE', i) ?? saNumArr(balance, 'balance_sheet_net_property_plant_and_equipment', i)) : null,
         };
 
         await prisma.financialStatement.upsert({
@@ -419,6 +449,7 @@ export async function syncFinancials(symbol: string): Promise<void> {
     const stmtCount = await prisma.financialStatement.count({ where: { symbol } });
     if (stmtCount === 0) {
         const saCount = await syncFromStockAnalysis(symbol);
+        console.log(`[syncFinancials] ${symbol}: SA fallback rows=${saCount}`);
         if (saCount > 0) {
             console.log(`[syncFinancials] ${symbol}: Finnhub had 0 statements, scraped ${saCount} from stockanalysis.com`);
         }
