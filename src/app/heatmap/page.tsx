@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ResponsiveMarketHeatmap from '@/components/ResponsiveMarketHeatmap';
 import type { CompanyNode } from '@/lib/heatmap/types';
-import { HeatmapLegend } from '@/components/HeatmapLegend';
 import { useHeatmapMetric } from '@/hooks/useHeatmapMetric';
 import { HeatmapMetricButtons } from '@/components/HeatmapMetricButtons';
 import { logger } from '@/lib/utils/logger';
@@ -121,10 +120,8 @@ export default function HeatmapPage() {
         </div>
         
         <div className="flex items-center gap-4">
-          {/* Legenda (farebná škála) */}
-          <div className="hidden sm:block">
-            <HeatmapLegend timeframe={timeframe} />
-          </div>
+          {/* Legenda je teraz overlay priamo v heatmap (MarketHeatmap) — vždy
+              zodpovedá adaptívnej farebnej škále tileov */}
           
           {/* Exit fullscreen button - moved to top right */}
           <button

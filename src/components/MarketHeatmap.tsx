@@ -152,9 +152,16 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
   );
 
   // -- Color scale ----------------------------------------------------------
+  // Adaptive mcap domain: anchor the $ scale on the visible data's own
+  // distribution — a fixed ±$100B renders a normal session almost black.
   const colorScale = useMemo(
-    () => createHeatmapColorScale(timeframe, metric === 'mcap' ? 'mcap' : 'percent'),
-    [timeframe, metric],
+    () =>
+      createHeatmapColorScale(
+        timeframe,
+        metric === 'mcap' ? 'mcap' : 'percent',
+        metric === 'mcap' ? (data ?? []).map((d) => d.marketCapDiff ?? 0) : undefined,
+      ),
+    [timeframe, metric, data],
   );
 
   // -- Render mode (DOM on mobile, Canvas on desktop) -----------------------
@@ -351,6 +358,20 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
           metric={metric}
         />
       )}
+
+      {/* Legend overlay — derived from the same adaptive scale as the tiles,
+          so it always matches what the map actually shows */}
+      <div className="absolute bottom-2 left-2 z-20 pointer-events-none">
+        {metric === 'mcap' ? (
+          <HeatmapLegend
+            timeframe={timeframe}
+            metric={metric}
+            values={(data ?? []).map((d) => d.marketCapDiff ?? 0)}
+          />
+        ) : (
+          <HeatmapLegend timeframe={timeframe} metric={metric} />
+        )}
+      </div>
     </div>
   );
 };

@@ -126,8 +126,13 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   const sortedData = useMemo(() => prepareMobileTreemapData(data), [data]);
 
   const colorScale = useMemo(
-    () => createHeatmapColorScale(timeframe, metric === 'mcap' ? 'mcap' : 'percent'),
-    [timeframe, metric],
+    () =>
+      createHeatmapColorScale(
+        timeframe,
+        metric === 'mcap' ? 'mcap' : 'percent',
+        metric === 'mcap' ? sortedData.map((d) => d.marketCapDiff ?? 0) : undefined,
+      ),
+    [timeframe, metric, sortedData],
   );
 
   const getColor = useCallback(

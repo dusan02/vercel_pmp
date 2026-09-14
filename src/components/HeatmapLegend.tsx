@@ -2,22 +2,35 @@
 
 import React from 'react';
 import type { HeatmapMetric } from '@/lib/heatmap/types';
-import { createHeatmapColorScale } from '@/lib/utils/heatmapColors';
+import { createHeatmapColorScale, getHeatmapScaleExtent } from '@/lib/utils/heatmapColors';
 
-export const HeatmapLegend: React.FC<{ timeframe: 'day' | 'week' | 'month'; metric?: HeatmapMetric }> = ({ timeframe, metric = 'percent' }) => {
-  const colorScale = createHeatmapColorScale(timeframe, metric === 'mcap' ? 'mcap' : 'percent');
-  const scales = {
+interface HeatmapLegendProps {
+  timeframe: 'day' | 'week' | 'month';
+  metric?: HeatmapMetric;
+  /**
+   * marketCapDiff values (in $B) of the visible dataset — when provided with
+   * metric='mcap', the legend derives its ticks from the same adaptive domain
+   * the tiles use, so it always matches the map.
+   */
+  values?: number[];
+}
+
+export const HeatmapLegend: React.FC<HeatmapLegendProps> = ({ timeframe, metric = 'percent', values }) => {
+  const isMcap = metric === 'mcap';
+  const colorScale = createHeatmapColorScale(timeframe, isMcap ? 'mcap' : 'percent', values);
+
+  const percentTicks = {
     day: [-5, -3, -1, 0, 1, 3, 5],
     week: [-10, -6, -3, 0, 3, 6, 10],
     month: [-20, -12, -6, 0, 6, 12, 20],
   };
-  const scalesB = {
-    day: [-100, -30, -10, 0, 10, 30, 100],
-    week: [-30, -10, -3, 0, 3, 10, 30],
-    month: [-60, -20, -6, 0, 6, 20, 60],
-  };
-  const points = metric === 'mcap' ? scalesB[timeframe] : scales[timeframe];
-  const unit = metric === 'mcap' ? 'B$' : '%';
+
+  // Adaptive mcap ticks come from the same domain the tiles use
+  const extent = getHeatmapScaleExtent(timeframe, isMcap ? 'mcap' : 'percent', values);
+  const mcapTicks = [extent[0] ?? 0, extent[1] ?? 0, 0, extent[3] ?? 0, extent[4] ?? 0].map((v) => Math.round(v));
+
+  const points = isMcap ? mcapTicks : percentTicks[timeframe];
+  const unit = isMcap ? 'B$' : '%';
   const formatTick = (v: number) => `${v}${unit}`;
   const labelIndices = points.length >= 7 ? [0, 2, 3, 4, 6] : points.map((_, i) => i);
 
@@ -26,7 +39,7 @@ export const HeatmapLegend: React.FC<{ timeframe: 'day' | 'week' | 'month'; metr
       <div className="flex items-stretch">
         {points.map((p, idx) => (
           <div
-            key={p}
+            key={`${p}-${idx}`}
             className="h-3 w-5 border-y border-gray-700"
             style={{
               backgroundColor: colorScale(p),
