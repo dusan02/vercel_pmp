@@ -195,7 +195,7 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
           )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-x-4 gap-y-4">
           {/* Search — symbol or company name */}
           <div className="flex flex-col gap-1.5">
             <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Search</label>
