@@ -6,7 +6,6 @@ import { generateCompanyMetadata } from '@/lib/seo/metadata';
 import { getCompanyName } from '@/lib/companyNames';
 import { AnalysisTabClient } from '@/components/company/AnalysisTabClient';
 import { NewsSection } from '@/components/company/analysis/NewsSection';
-import { getEligibleAnalysisTickers } from '@/lib/seo/eligibleTickers';
 import { getEarningsForTicker } from '@/lib/seo/earningsSSR';
 import ShareButtons from '@/components/ShareButtons';
 import { detectSession } from '@/lib/utils/timeUtils';
@@ -122,10 +121,14 @@ async function getTickerData(symbol: string) {
   }
 }
 
-export async function generateStaticParams() {
-  const tickers = await getEligibleAnalysisTickers();
-  return tickers.map((t) => ({ ticker: t.toLowerCase() }));
-}
+/**
+ * NOTE: deliberately NO generateStaticParams here. This is the heaviest page
+ * (6 parallel data fetches incl. 2 HTTP self-calls); prerendering ~200 tickers
+ * at build time made the build fragile — one slow DB window during export
+ * (Next retries 3× at 60 s per page) failed the whole build and took
+ * production down. With ISR (revalidate = 60) pages render on demand and are
+ * cached — same SEO output, no build-time export risk.
+ */
 
 /**
  * Fetch recent significant moves from SessionPrice for the "Recent Market Moves"

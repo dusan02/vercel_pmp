@@ -1,6 +1,10 @@
 #!/bin/bash
 # Manual fallback deploy — the normal path is GitHub Actions (.github/workflows/deploy.yml).
 set -e
+# CRITICAL: `npm run build 2>&1 | tail -20` masks the build's exit code
+# (pipeline status = tail's status). Without pipefail a FAILED build fell
+# through to `pm2 restart` → app crash-looped on an incomplete .next → 502.
+set -o pipefail
 cd /var/www/premarketprice
 
 echo "=== Killing stale build processes ==="
