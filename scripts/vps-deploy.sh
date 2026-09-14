@@ -33,7 +33,24 @@ npx prisma generate 2>&1 | tail -3
 
 echo "=== Building (heap capped for shared 4GB VPS) ==="
 export NODE_OPTIONS="--max-old-space-size=1536"
-npm run build 2>&1 | tail -20
+# Retry loop: the RUNNING app writes ISR cache files into .next during the
+# build's cleanup — an occasional ENOTEMPTY race kills one attempt; a retry
+# almost always succeeds. With pipefail + set -e, 3 failed attempts stop the
+# deploy safely BEFORE pm2 restart (the previous build keeps serving).
+BUILD_OK=0
+for attempt in 1 2 3; do
+  echo "--- build attempt $attempt/3 ---"
+  if npm run build 2>&1 | tail -20; then
+    BUILD_OK=1
+    break
+  fi
+  echo "build attempt $attempt failed"
+  sleep 5
+done
+if [ "$BUILD_OK" != "1" ]; then
+  echo "❌ Build failed 3× — keeping the previous build live, aborting deploy"
+  exit 1
+fi
 
 echo "=== Build complete ==="
 cat .next/BUILD_ID
