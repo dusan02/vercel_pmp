@@ -58,9 +58,12 @@ export async function GET(request: Request) {
         if (sector) tickerWhere.sector = sector;
         if (industry) tickerWhere.industry = industry;
         if (q) {
+            // SQLite has no `mode: 'insensitive'` — match the raw, lower and
+            // upper variants instead (covers ticker symbols and names).
+            const variants = [...new Set([q, q.toLowerCase(), q.toUpperCase()])];
             tickerWhere.OR = [
-                { symbol: { contains: q, mode: 'insensitive' } },
-                { name: { contains: q, mode: 'insensitive' } },
+                ...variants.map((v) => ({ symbol: { contains: v } })),
+                ...variants.map((v) => ({ name: { contains: v } })),
             ];
         }
         // Market Cap filter (stored in billions on Ticker)
