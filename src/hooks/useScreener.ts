@@ -152,8 +152,12 @@ export function useScreener({
         setPage(1);
     }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minAltman, minPiotroski, maxBeneish, minFcfMargin, maxDebtRepayment, selectedSector, marketCapPreset, sortField, sortOrder]);
 
-    // Restore filters from URL on mount (shareable screener state)
+    // Restore filters from URL on mount (shareable screener state).
+    // ONLY on the standalone /screener page — the homepage embed lives under
+    // /?tab=screener and its URL belongs to the tab navigation; rewriting it
+    // here strips ?tab=... and snaps the homepage back to the heatmap tab.
     useEffect(() => {
+        if (window.location.pathname !== '/screener') return;
         const sp = new URLSearchParams(window.location.search);
         if (sp.size === 0) return;
         const num = (k: string, fb: number) => {
@@ -181,8 +185,10 @@ export function useScreener({
         }
     }, []);
 
-    // Sync filters → URL (replaceState: shareable, no history pollution)
+    // Sync filters → URL (replaceState: shareable, no history pollution).
+    // Standalone /screener page only — see the restore effect above.
     useEffect(() => {
+        if (window.location.pathname !== '/screener') return;
         const sp = new URLSearchParams();
         if (minHealth !== 0) sp.set('minHealth', minHealth.toString());
         if (maxHealth !== 100) sp.set('maxHealth', maxHealth.toString());

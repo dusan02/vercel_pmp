@@ -305,6 +305,9 @@ export const AllStocksSection = React.memo(function AllStocksSection({
               <Filter size={14} />
               Screener
             </Link>
+            <Link href="/stocks" className="ml-2 inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+              Full list →
+            </Link>
           </div>
           <div className="flex flex-1 items-center justify-end gap-3 min-w-0">
             <div className="w-80 xl:w-96">
@@ -349,6 +352,9 @@ export const AllStocksSection = React.memo(function AllStocksSection({
           <Link href="/screener" className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
             <Filter size={12} />
             Screener
+          </Link>
+          <Link href="/stocks" className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+            Full list →
           </Link>
         </div>
         <div className="flex-1 min-w-0">
