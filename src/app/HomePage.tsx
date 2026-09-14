@@ -54,6 +54,12 @@ const HomeMovers = dynamic(
   () => import('@/components/home/HomeMovers').then((mod) => mod.HomeMovers),
   { ssr: true, loading: () => null }
 );
+// Screener — rendered as a client-side tab on the homepage (avoids full page
+// transition to /screener route, which caused layout shift/flicker).
+const StockScreener = dynamic(
+  () => import('@/components/StockScreener'),
+  { ssr: false, loading: () => null }
+);
 // OPTIMIZATION: Enable SSR for desktop (faster initial load), keep ssr: false for mobile
 // Desktop heatmap can be server-rendered, mobile uses different components
 const HomeHeatmap = dynamic(
@@ -268,6 +274,15 @@ export default function HomePage({ initialData = [], initialEarningsData, initia
                 )}
               </MobileScreen>
               <MobileScreen
+                active={activeSection === 'screener'}
+                className="screen-screener"
+                prefetch={false}
+                screenName="Screener"
+                skeleton={<MobileSkeleton type="list" count={1} />}
+              >
+                <StockScreener />
+              </MobileScreen>
+              <MobileScreen
                 active={activeSection === 'pricing'}
                 className="screen-pricing"
                 prefetch={false}
@@ -415,6 +430,12 @@ export default function HomePage({ initialData = [], initialEarningsData, initia
                         {activeSection === 'earnings' && (
                           <div className="tab-content fade-in">
                             <HomeEarnings initialData={initialEarningsData} upcomingEarnings={upcomingEarnings} />
+                          </div>
+                        )}
+
+                        {activeSection === 'screener' && (
+                          <div className="tab-content fade-in">
+                            <StockScreener />
                           </div>
                         )}
 

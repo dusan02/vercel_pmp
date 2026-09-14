@@ -53,7 +53,16 @@ export function SectionNavigation({ onTabChange }: SectionNavigationProps) {
             <Link
               key={tab.id}
               href={tab.href}
-              onClick={() => onTabChange?.(tab.id)}
+              onClick={(e) => {
+                // When onTabChange is provided (homepage), do client-side tab
+                // switching via pushState instead of a full Next.js navigation.
+                // This avoids re-rendering HomePage + re-loading dynamic imports
+                // (the source of the flicker/blink on tab switch).
+                if (onTabChange) {
+                  e.preventDefault();
+                  onTabChange(tab.id);
+                }
+              }}
               className={`
                 flex-1 flex items-center justify-center gap-1.5 px-2 py-3 text-xs sm:text-sm font-medium whitespace-nowrap transition-colors relative
                 ${isActive
