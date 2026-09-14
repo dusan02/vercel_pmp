@@ -9,7 +9,7 @@ import { SectionIcon } from '../SectionIcon';
 import { formatPrice, formatPercent, formatMarketCap } from '@/lib/utils/format';
 
 interface HomeAnalysisProps {
-    activeTicker?: string;
+    activeTicker?: string | null;
     onTickerChange?: (ticker: string) => void;
 }
 
@@ -32,11 +32,13 @@ export function HomeAnalysis({ activeTicker: propTicker, onTickerChange }: HomeA
     const [headerData, setHeaderData] = useState<TickerHeaderData | null>(null);
     const [headerLoading, setHeaderLoading] = useState(false);
 
-    // The currently displayed ticker — derived from prop, no local copy that can diverge
-    // We always use propTicker (controlled by parent). Local-only fallback = 'NVDA'
-    const activeTicker = propTicker || 'NVDA';
+    // The currently displayed ticker — null means "empty" (just search bar,
+    // like Google's homepage). A ticker is set when navigating from Heatmap,
+    // Screener, or searching.
+    const activeTicker = propTicker || null;
 
     useEffect(() => {
+        if (!activeTicker) return; // empty state — no fetch
         let cancelled = false;
         setHeaderLoading(true);
         setHeaderData(null);
@@ -124,6 +126,27 @@ export function HomeAnalysis({ activeTicker: propTicker, onTickerChange }: HomeA
                 </div>
             </div>
 
+            {/* Empty state — just search bar (Google-like). Shown when no ticker
+                is selected (direct tab click). When a ticker is selected (from
+                Heatmap, Screener, or search), the full analysis renders below. */}
+            {!activeTicker && (
+                <div className="flex flex-col items-center justify-center py-20 lg:py-32 text-center">
+                    <div className="mb-6">
+                        <Search size={64} className="text-gray-300 dark:text-gray-600 mx-auto" strokeWidth={1.5} />
+                    </div>
+                    <h3 className="text-xl sm:text-2xl font-bold text-gray-700 dark:text-gray-300 mb-2">
+                        Search for a stock to analyze
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md">
+                        Enter a ticker symbol above or pick a trending stock to see real-time
+                        pre-market prices, charts, financial health, and more.
+                    </p>
+                </div>
+            )}
+
+            {/* Full analysis — only when a ticker is selected */}
+            {activeTicker && (
+                <>
             {/* Company header — name, logo, price (the AnalysisTab below is
                 charts-only; without this the tab shows no company context) */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 px-5 py-4">
@@ -209,6 +232,8 @@ export function HomeAnalysis({ activeTicker: propTicker, onTickerChange }: HomeA
                     <AnalysisTab ticker={activeTicker} />
                 </div>
             </div>
+                </>
+            )}
         </div>
     );
 }

@@ -26,7 +26,7 @@ interface UseHomeNavigationOptions {
 
 export function useHomeNavigation({ isMounted }: UseHomeNavigationOptions) {
   const [activeSection, setActiveSection] = useState<ActiveSection>('heatmap');
-  const [analysisTicker, setAnalysisTicker] = useState<string>('NVDA');
+  const [analysisTicker, setAnalysisTicker] = useState<string | null>(null);
   const searchParams = useSearchParams();
 
   const setActiveTab = useCallback((tab: string): boolean => {
@@ -96,10 +96,12 @@ export function useHomeNavigation({ isMounted }: UseHomeNavigationOptions) {
   const handleMobileNavChange = useCallback((section: ActiveSection, ticker?: string) => {
     setActiveSection(section);
     if (ticker) setAnalysisTicker(ticker.toUpperCase());
+    else if (section === 'analysis') setAnalysisTicker(null); // priamy klik na Analysis tab = prázdny search
     const url = new URL(window.location.href);
     url.searchParams.set('tab', section);
     if (ticker && section === 'analysis') url.searchParams.set('ticker', ticker.toUpperCase());
     else if (section !== 'analysis') url.searchParams.delete('ticker');
+    else url.searchParams.delete('ticker'); // analysis bez tickeru = žiadny ticker param
     window.history.pushState({}, '', url.toString());
   }, []);
 
