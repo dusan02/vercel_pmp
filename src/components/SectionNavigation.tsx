@@ -37,6 +37,7 @@ export function SectionNavigation({ onTabChange }: SectionNavigationProps) {
 
   const getActiveId = (): string => {
     if (pathname === '/blog' || pathname.startsWith('/blog/')) return 'blog';
+    if (pathname === '/screener' || pathname.startsWith('/screener/')) return 'screener';
     if (pathname === '/') return tabParam ?? 'heatmap';
     return '';
   };
