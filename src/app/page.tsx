@@ -314,7 +314,7 @@ export default async function Page() {
         <Link href="/?tab=movers">Top Gainers</Link>
         <Link href="/?tab=movers">Top Losers</Link>
         <Link href="/sectors">Sectors</Link>
-        <Link href="/stocks">All Stocks</Link>
+        <Link href="/screener">All Stocks</Link>
         <Link href="/heatmap">Market Heatmap</Link>
         <Link href="/earnings">Earnings Calendar</Link>
         {/* Top 50 tickers for crawl priority. Remaining 650 are discoverable via /stocks hub. */}

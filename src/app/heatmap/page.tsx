@@ -91,7 +91,7 @@ export default function HeatmapPage() {
           <a href="/premarket-movers">Pre-market movers</a>
           <a href="/gainers">Top gainers</a>
           <a href="/losers">Top losers</a>
-          <a href="/stocks">All stocks</a>
+          <a href="/screener">All stocks</a>
           <a href="/sectors">Sector performance</a>
           <a href="/screener">Stock screener</a>
           <a href="/earnings">Earnings calendar</a>

@@ -235,7 +235,7 @@ export default async function PremarketMoversPage() {
               The <strong>Z-Score</strong> column measures how unusual each stock's move is relative to its recent history — a Z-Score above 2.5 indicates a statistically significant deviation. The <strong>Insight</strong> column provides context on why each stock is moving, drawn from earnings reports, analyst actions, and news catalysts.
             </p>
             <p>
-              Use this page alongside the <Link className="text-blue-600 dark:text-blue-400 hover:underline" href="/heatmap">Market Heatmap</Link> for sector-level context, or dive into individual <Link className="text-blue-600 dark:text-blue-400 hover:underline" href="/stocks">stock pages</Link> for comprehensive analysis including valuation scores and financial health metrics. Check the <Link className="text-blue-600 dark:text-blue-400 hover:underline" href="/earnings">Earnings Calendar</Link> to see if today's movers are earnings-related.
+              Use this page alongside the <Link className="text-blue-600 dark:text-blue-400 hover:underline" href="/heatmap">Market Heatmap</Link> for sector-level context, or dive into individual <Link className="text-blue-600 dark:text-blue-400 hover:underline" href="/screener">stock pages</Link> for comprehensive analysis including valuation scores and financial health metrics. Check the <Link className="text-blue-600 dark:text-blue-400 hover:underline" href="/earnings">Earnings Calendar</Link> to see if today's movers are earnings-related.
             </p>
           </div>
         </section>
@@ -346,7 +346,7 @@ export default async function PremarketMoversPage() {
             <Link className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" href="/heatmap">Market Heatmap</Link>
             <Link className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" href="/sectors">Sectors</Link>
             <Link className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" href="/earnings">Earnings Calendar</Link>
-            <Link className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" href="/stocks">All Stocks</Link>
+            <Link className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" href="/screener">All Stocks</Link>
           </div>
         </nav>
       </div>

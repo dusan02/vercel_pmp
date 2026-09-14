@@ -40,9 +40,10 @@ export function useScreener({
             ticker: r.ticker ? {
                 name: r.ticker.name ?? null,
                 sector: r.ticker.sector ?? null,
-                industry: null,
-                logoUrl: null,
+                industry: r.ticker.industry ?? null,
+                logoUrl: r.ticker.logoUrl ?? null,
                 lastPrice: r.ticker.lastPrice ?? null,
+                lastChangePct: r.ticker.lastChangePct ?? null,
                 lastMarketCap: r.ticker.lastMarketCap ?? null,
             } : null,
         }));
@@ -67,8 +68,11 @@ export function useScreener({
     const [minFcfMargin, setMinFcfMargin] = useState<number>(-100); // -100% = effectively no filter
     const [maxDebtRepayment, setMaxDebtRepayment] = useState<number>(350); // 350 = effectively no filter
     const [selectedSector, setSelectedSector] = useState<string>('');
+    const [selectedIndustry, setSelectedIndustry] = useState<string>('');
+    const [searchQuery, setSearchQuery] = useState<string>('');
+    const [industries, setIndustries] = useState<string[]>([]);
     const [marketCapPreset, setMarketCapPreset] = useState<string>('all');
-    const [sortField, setSortField] = useState<string>('healthScore');
+    const [sortField, setSortField] = useState<string>('ticker.lastMarketCap');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
     // Debounced filter values
@@ -80,8 +84,10 @@ export function useScreener({
         minPiotroski: 0, maxBeneish: 10,
         minFcfMargin: -100, maxDebtRepayment: 350,
         selectedSector: '',
+        selectedIndustry: '',
+        searchQuery: '',
         marketCapPreset: 'all',
-        sortField: 'healthScore', sortOrder: 'desc' as 'asc' | 'desc',
+        sortField: 'ticker.lastMarketCap', sortOrder: 'desc' as 'asc' | 'desc',
     });
 
     useEffect(() => {
@@ -94,12 +100,14 @@ export function useScreener({
                 minPiotroski, maxBeneish,
                 minFcfMargin, maxDebtRepayment,
                 selectedSector,
+                selectedIndustry,
+                searchQuery,
                 marketCapPreset,
                 sortField, sortOrder,
             });
         }, 400);
         return () => clearTimeout(timer);
-    }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minAltman, minPiotroski, maxBeneish, minFcfMargin, maxDebtRepayment, selectedSector, marketCapPreset, sortField, sortOrder]);
+    }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minAltman, minPiotroski, maxBeneish, minFcfMargin, maxDebtRepayment, selectedSector, selectedIndustry, searchQuery, marketCapPreset, sortField, sortOrder]);
 
     const fetchResults = useCallback(async () => {
         setLoading(true);
@@ -117,6 +125,8 @@ export function useScreener({
                 page: page.toString()
             });
             if (debouncedFilters.selectedSector) params.append('sector', debouncedFilters.selectedSector);
+            if (debouncedFilters.selectedIndustry) params.append('industry', debouncedFilters.selectedIndustry);
+            if (debouncedFilters.searchQuery) params.append('q', debouncedFilters.searchQuery);
 
             // Advanced filters — only send if user has changed from defaults
             if (debouncedFilters.minPiotroski > 0) params.append('minPiotroski', debouncedFilters.minPiotroski.toString());
@@ -135,6 +145,9 @@ export function useScreener({
             const data = await res.json();
             setResults(data.results || []);
             setPagination(data.pagination || null);
+            if (Array.isArray(data.industries) && data.industries.length > 0) {
+                setIndustries(data.industries);
+            }
         } catch (error) {
             console.error('Failed to fetch screener results:', error);
             setResults([]);
@@ -176,7 +189,8 @@ export function useScreener({
         if (sp.has('minFcfMargin')) setMinFcfMargin(num('minFcfMargin', -100));
         if (sp.has('maxDebtRepayment')) setMaxDebtRepayment(num('maxDebtRepayment', 350));
         if (sp.has('sector')) setSelectedSector(sp.get('sector') ?? '');
-        if (sp.has('mcap')) setMarketCapPreset(sp.get('mcap') ?? 'all');
+        if (sp.has('industry')) setSelectedIndustry(sp.get('industry') ?? '');
+        if (sp.has('q')) setSearchQuery(sp.get('q') ?? '');
         const sort = sp.get('sort');
         if (sort) {
             const [f, o] = sort.split(':');
@@ -202,6 +216,8 @@ export function useScreener({
         if (minFcfMargin > -100) sp.set('minFcfMargin', minFcfMargin.toString());
         if (maxDebtRepayment < 350) sp.set('maxDebtRepayment', maxDebtRepayment.toString());
         if (selectedSector) sp.set('sector', selectedSector);
+        if (selectedIndustry) sp.set('industry', selectedIndustry);
+        if (searchQuery) sp.set('q', searchQuery);
         if (marketCapPreset !== 'all') sp.set('mcap', marketCapPreset);
         if (sortField !== 'healthScore' || sortOrder !== 'desc') sp.set('sort', `${sortField}:${sortOrder}`);
         const qs = sp.toString();
@@ -232,8 +248,10 @@ export function useScreener({
         setMinFcfMargin(-100);
         setMaxDebtRepayment(350);
         setSelectedSector('');
+        setSelectedIndustry('');
+        setSearchQuery('');
         setMarketCapPreset('all');
-        setSortField('healthScore');
+        setSortField('ticker.lastMarketCap');
         setSortOrder('desc');
     };
 
@@ -256,6 +274,9 @@ export function useScreener({
         minFcfMargin, setMinFcfMargin,
         maxDebtRepayment, setMaxDebtRepayment,
         selectedSector, setSelectedSector,
+        selectedIndustry, setSelectedIndustry,
+        searchQuery, setSearchQuery,
+        industries,
         marketCapPreset, setMarketCapPreset,
         // sort
         sortField, sortOrder, handleSort, setSort,

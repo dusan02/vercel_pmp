@@ -93,7 +93,7 @@ export default async function GainersPage() {
               Tracking premarket gainers gives traders a head start on the trading day. Stocks that gap up significantly in pre-market often continue their momentum into the regular session, though low pre-market volume can also lead to reversals. Use the Z-Score and relative volume columns on our <Link className="text-blue-600 dark:text-blue-400 hover:underline" href="/premarket-movers">Movers page</Link> to distinguish genuine momentum from noise.
             </p>
             <p>
-              This page updates every 60 seconds with real-time data from US exchanges (NYSE, NASDAQ). Each ticker links to a detailed <Link className="text-blue-600 dark:text-blue-400 hover:underline" href="/stocks">stock page</Link> with comprehensive analysis, valuation scores, and earnings history. Check the <Link className="text-blue-600 dark:text-blue-400 hover:underline" href="/heatmap">Market Heatmap</Link> for a visual overview of sector performance.
+              This page updates every 60 seconds with real-time data from US exchanges (NYSE, NASDAQ). Each ticker links to a detailed <Link className="text-blue-600 dark:text-blue-400 hover:underline" href="/screener">stock page</Link> with comprehensive analysis, valuation scores, and earnings history. Check the <Link className="text-blue-600 dark:text-blue-400 hover:underline" href="/heatmap">Market Heatmap</Link> for a visual overview of sector performance.
             </p>
           </div>
         </section>
@@ -207,7 +207,7 @@ export default async function GainersPage() {
             <Link className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" href="/heatmap">Market Heatmap</Link>
             <Link className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" href="/sectors">Sectors</Link>
             <Link className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" href="/earnings">Earnings Calendar</Link>
-            <Link className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" href="/stocks">All Stocks</Link>
+            <Link className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" href="/screener">All Stocks</Link>
           </div>
         </nav>
       </div>

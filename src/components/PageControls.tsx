@@ -33,7 +33,6 @@ export function PageControls({ preferences, onToggleSection, onThemeChange }: Pa
     { key: 'showPortfolioSection', label: 'Portfolio', icon: 'pie' },
     { key: 'showFavoritesSection', label: 'Favorites', icon: 'star' },
     { key: 'showEarningsSection', label: 'Earnings', icon: 'calendar' },
-    { key: 'showAllStocksSection', label: 'All Stocks', icon: 'globe' },
   ] as const;
 
   return (

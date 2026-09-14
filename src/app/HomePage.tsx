@@ -38,10 +38,6 @@ const HomeFavorites = dynamic(
   () => import('@/components/home/HomeFavorites').then((mod) => mod.HomeFavorites),
   { ssr: true, loading: () => null }
 );
-const HomeAllStocks = dynamic(
-  () => import('@/components/home/HomeAllStocks').then((mod) => mod.HomeAllStocks),
-  { ssr: true, loading: () => null }
-);
 const HomeEarnings = dynamic(
   () => import('@/components/home/HomeEarnings').then((mod) => mod.HomeEarnings),
   { ssr: true, loading: () => null }
@@ -77,13 +73,6 @@ const WhatMovedSidebar = dynamic(
 );
 const WhatMovedToday = dynamic(
   () => import('@/components/home/WhatMovedToday').then((mod) => mod.WhatMovedToday),
-  { ssr: true, loading: () => null }
-);
-const GlobalScreener = dynamic(
-  () => import('@/components/analysis/GlobalScreener').then((mod) => {
-    // If it's a named export, we use mod.GlobalScreener
-    return mod.GlobalScreener;
-  }),
   { ssr: true, loading: () => null }
 );
 
@@ -279,37 +268,6 @@ export default function HomePage({ initialData = [], initialEarningsData, initia
                 )}
               </MobileScreen>
               <MobileScreen
-                active={activeSection === 'allStocks'}
-                className="screen-all-stocks"
-                prefetch={false}
-                screenName="All Stocks"
-                skeleton={<MobileSkeleton type="list" count={2} />}
-              >
-                {(preferences.showAllStocksSection ?? true) && (
-                  <HomeAllStocks
-                    displayedStocks={displayedStocks}
-                    loading={loadingStates.top50Stocks}
-                    sortKey={allSortKey}
-                    ascending={allAscending}
-                    onSort={requestAllSort}
-                    onToggleFavorite={toggleFavorite}
-                    isFavorite={isFavorite}
-                    searchTerm={searchTerm}
-                    onSearchChange={setSearchTerm}
-                    hasMore={hasMore}
-                    onLoadMore={loadMore}
-                    isLoadingMore={isLoadingMore}
-                    totalCount={optimizedAllStocks.length}
-                    selectedSectors={selectedSectors}
-                    selectedIndustries={selectedIndustries}
-                    onSectorsChange={setSelectedSectors}
-                    onIndustriesChange={setSelectedIndustries}
-                    uniqueSectors={uniqueSectors}
-                    availableIndustries={availableIndustries}
-                  />
-                )}
-              </MobileScreen>
-              <MobileScreen
                 active={activeSection === 'pricing'}
                 className="screen-pricing"
                 prefetch={false}
@@ -457,38 +415,6 @@ export default function HomePage({ initialData = [], initialEarningsData, initia
                         {activeSection === 'earnings' && (
                           <div className="tab-content fade-in">
                             <HomeEarnings initialData={initialEarningsData} upcomingEarnings={upcomingEarnings} />
-                          </div>
-                        )}
-
-                        {activeSection === 'allStocks' && (
-                          <div className="tab-content fade-in">
-                            <HomeAllStocks
-                              displayedStocks={displayedStocks}
-                              loading={loadingStates.top50Stocks}
-                              sortKey={allSortKey}
-                              ascending={allAscending}
-                              onSort={requestAllSort}
-                              onToggleFavorite={toggleFavorite}
-                              isFavorite={isFavorite}
-                              searchTerm={searchTerm}
-                              onSearchChange={setSearchTerm}
-                              hasMore={hasMore}
-                              onLoadMore={loadMore}
-                              isLoadingMore={isLoadingMore}
-                              totalCount={optimizedAllStocks.length}
-                              selectedSectors={selectedSectors}
-                              selectedIndustries={selectedIndustries}
-                              onSectorsChange={setSelectedSectors}
-                              onIndustriesChange={setSelectedIndustries}
-                              uniqueSectors={uniqueSectors}
-                              availableIndustries={availableIndustries}
-                            />
-                          </div>
-                        )}
-
-                        {activeSection === 'screener' && (
-                          <div className="tab-content fade-in container mx-auto py-8">
-                            <GlobalScreener />
                           </div>
                         )}
 

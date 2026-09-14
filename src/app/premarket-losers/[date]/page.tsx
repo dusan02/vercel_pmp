@@ -134,7 +134,7 @@ export default async function PremarketLosersDatePage({ params }: PageProps) {
             <p>
               Significant pre-market declines can present either warning signs or buying opportunities depending on the catalyst. Cross-reference with the{' '}
               <Link className="text-blue-600 dark:text-blue-400 hover:underline" href="/earnings">earnings calendar</Link>{' '}
-              and individual <Link className="text-blue-600 dark:text-blue-400 hover:underline" href="/stocks">stock analysis pages</Link> for deeper context.
+              and individual <Link className="text-blue-600 dark:text-blue-400 hover:underline" href="/screener">stock analysis pages</Link> for deeper context.
             </p>
           </div>
         </section>
@@ -197,7 +197,7 @@ export default async function PremarketLosersDatePage({ params }: PageProps) {
             <Link className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" href="/screener">Stock Screener</Link>
             <Link className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" href="/heatmap">Market Heatmap</Link>
             <Link className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" href="/earnings">Earnings Calendar</Link>
-            <Link className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" href="/stocks">All Stocks</Link>
+            <Link className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" href="/screener">All Stocks</Link>
           </div>
         </nav>
       </div>

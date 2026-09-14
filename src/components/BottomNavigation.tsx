@@ -62,7 +62,7 @@ export function BottomNavigation({ activeSection, onSectionChange }: BottomNavig
       id: 'allStocks',
       label: 'Stocks',
       icon: Globe,
-      path: '/#allStocks',
+      path: '/screener',
       isActive: (section?: string) => section === 'allStocks'
     }
   ];

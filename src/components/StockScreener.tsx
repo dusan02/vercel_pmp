@@ -7,6 +7,7 @@ import CompanyLogo from './CompanyLogo';
 import { UniversalTable, ColumnDef } from './UniversalTable';
 import { DualRangeSlider } from './analysis/DualRangeSlider';
 import { useScreener } from '@/hooks/useScreener';
+import { LivePrice } from './LivePrice';
 import {
   ScreenerResult, scoreColor, altmanZLabel, piotroskiLabel, beneishLabel, fcfMarginLabel, debtRepayLabel,
   SORT_OPTIONS, SECTORS, MARKET_CAP_PRESETS,
@@ -27,6 +28,9 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
     minFcfMargin, setMinFcfMargin,
     maxDebtRepayment, setMaxDebtRepayment,
     selectedSector, setSelectedSector,
+    selectedIndustry, setSelectedIndustry,
+    searchQuery, setSearchQuery,
+    industries,
     marketCapPreset, setMarketCapPreset,
     sortField, sortOrder, handleSort, setSort,
     resetFilters, hasActiveFilters,
@@ -75,7 +79,21 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
       header: <>Price <SortIcon field="ticker.lastPrice" /></>,
       align: 'right',
       sortable: true,
-      render: (r) => <span className="text-gray-700 dark:text-gray-200">{r.ticker?.lastPrice ? `$${r.ticker.lastPrice.toFixed(2)}` : '-'}</span>
+      render: (r) => <LivePrice value={r.ticker?.lastPrice ?? null} format={(v) => `$${v.toFixed(2)}`} />
+    },
+    {
+      key: 'ticker.lastChangePct',
+      header: <>Change % <SortIcon field="ticker.lastChangePct" /></>,
+      align: 'right',
+      sortable: true,
+      render: (r) => {
+        const pct = r.ticker?.lastChangePct ?? null;
+        return (
+          <span className={`text-sm font-semibold tabular-nums ${pct == null ? 'text-gray-400' : pct >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+            {pct != null ? `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%` : '-'}
+          </span>
+        );
+      }
     },
     {
       key: 'ticker.lastMarketCap',
@@ -178,6 +196,20 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-4">
+          {/* Search — symbol or company name */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Search</label>
+            <div className="relative">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value.toUpperCase())}
+                placeholder="Ticker or company…"
+                className="w-full h-10 pl-9 pr-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all"
+              />
+            </div>
+          </div>
           <DualRangeSlider
             label="Health Score"
             min={0} max={100}
@@ -230,6 +262,19 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
               <option value="">All Sectors</option>
               {SECTORS.map((s) => (
                 <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Industry</label>
+            <select
+              value={selectedIndustry}
+              onChange={(e) => setSelectedIndustry(e.target.value)}
+              className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all cursor-pointer"
+            >
+              <option value="">All Industries</option>
+              {industries.map((ind) => (
+                <option key={ind} value={ind}>{ind}</option>
               ))}
             </select>
           </div>

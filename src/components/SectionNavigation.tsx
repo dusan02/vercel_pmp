@@ -25,9 +25,8 @@ const TABS: TabConfig[] = [
   { id: 'movers',    label: 'Movers',     icon: 'zap',      href: '/?tab=movers' },
   { id: 'portfolio', label: 'Portfolio',  icon: 'pie',      href: '/?tab=portfolio' },
   { id: 'favorites', label: 'Favorites',  icon: 'star',     href: '/?tab=favorites' },
-  { id: 'earnings',  label: 'Earnings',   icon: 'calendar', href: '/?tab=earnings' },
-  { id: 'allStocks', label: 'All Stocks', icon: 'globe',    href: '/?tab=allStocks' },
-  { id: 'screener',  label: 'Screener',   icon: 'screener',   href: '/?tab=screener' },
+  { id: 'earnings',   label: 'Earnings',   icon: 'calendar', href: '/?tab=earnings' },
+  { id: 'screener',   label: 'Screener',   icon: 'screener', href: '/screener' },
   { id: 'blog',      label: 'Blog',       icon: 'book',     href: '/?tab=blog' },
 ];
 

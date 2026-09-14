@@ -20,6 +20,7 @@ export interface ScreenerResult {
         industry: string | null;
         logoUrl: string | null;
         lastPrice: number | null;
+        lastChangePct: number | null;
         lastMarketCap: number | null;
     } | null;
 }

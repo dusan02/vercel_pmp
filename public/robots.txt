@@ -1,0 +1,21 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://premarketprice.com/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 1
+
+# Disallow admin areas (if any)
+Disallow: /api/
+Disallow: /_next/
+Disallow: /admin/
+
+# Allow important pages
+Allow: /
+Allow: /stocks/
+Allow: /company/
+Allow: /blog/
+Allow: /faq/
+Allow: /glossary/ 

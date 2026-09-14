@@ -135,11 +135,6 @@ export default function UserPreferencesManager({ isOpen, onClose }: UserPreferen
                 checked={localPrefs.showEarningsSection ?? true}
                 onChange={(val) => setLocalPrefs(prev => ({ ...prev, showEarningsSection: val }))}
               />
-              <ToggleRow
-                label="Všetky akcie (All Stocks)"
-                checked={localPrefs.showAllStocksSection ?? true}
-                onChange={(val) => setLocalPrefs(prev => ({ ...prev, showAllStocksSection: val }))}
-              />
             </div>
           </div>
 

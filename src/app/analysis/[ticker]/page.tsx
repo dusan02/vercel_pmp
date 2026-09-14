@@ -355,7 +355,7 @@ export default async function AnalysisPage({ params }: PageProps) {
             <ol className="flex items-center space-x-2 text-sm">
               <li><Link href="/" className="text-gray-500 hover:text-blue-600 dark:text-gray-400">Home</Link></li>
               <li className="text-gray-400" aria-hidden="true">/</li>
-              <li><Link href="/stocks" className="text-gray-500 hover:text-blue-600 dark:text-gray-400">Stocks</Link></li>
+              <li><Link href="/screener" className="text-gray-500 hover:text-blue-600 dark:text-gray-400">Stocks</Link></li>
               <li className="text-gray-400" aria-hidden="true">/</li>
               <li className="text-gray-900 dark:text-gray-100 font-medium" aria-current="page">{tickerUpper}</li>
             </ol>

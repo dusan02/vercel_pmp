@@ -56,7 +56,7 @@ export default async function SectorsPage() {
               Premarket Movers
             </Link>
             {' · '}
-            <Link className="hover:underline" href="/stocks">
+            <Link className="hover:underline" href="/screener">
               All Stocks
             </Link>
             {' · '}

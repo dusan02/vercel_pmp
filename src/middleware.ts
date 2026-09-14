@@ -90,6 +90,15 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // Unified Stocks & Screener: /stocks and the old homepage tabs now live
+  // on /screener (301 — preserves the indexed /stocks SEO equity).
+  if (pathname === '/stocks') {
+    return NextResponse.redirect(new URL('/screener', request.url), 301);
+  }
+  if (pathname === '/' && ['allStocks', 'screener'].includes(request.nextUrl.searchParams.get('tab') ?? '')) {
+    return NextResponse.redirect(new URL('/screener', request.url), 301);
+  }
+
   // Redirect trailing slash → no slash (301) for non-root paths
   // Prevents /stocks/ vs /stocks duplicate-content issues.
   if (pathname.length > 1 && pathname.endsWith('/')) {

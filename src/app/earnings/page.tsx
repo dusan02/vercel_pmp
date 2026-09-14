@@ -240,7 +240,7 @@ export default async function EarningsPage() {
           {totalEarnings === 0 && (
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-8 text-center text-slate-500">
               No earnings scheduled in the next 7 days. Check back later or browse{' '}
-              <Link href="/stocks" className="text-blue-600 dark:text-blue-400 hover:underline">all tracked stocks</Link>.
+              <Link href="/screener" className="text-blue-600 dark:text-blue-400 hover:underline">all tracked stocks</Link>.
             </div>
           )}
         </section>
@@ -278,7 +278,7 @@ export default async function EarningsPage() {
             <Link href="/gainers" className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Top Gainers</Link>
             <Link href="/losers" className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Top Losers</Link>
             <Link href="/heatmap" className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Market Heatmap</Link>
-            <Link href="/stocks" className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">All Stocks</Link>
+            <Link href="/screener" className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">All Stocks</Link>
           </div>
         </nav>
       </main>
