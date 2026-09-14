@@ -111,7 +111,8 @@ export async function GET(request: Request) {
         let orderBy: any;
         if (sortField.startsWith('ticker.')) {
             const field = sortField.slice('ticker.'.length);
-            orderBy = { ticker: { [field]: { sort: sortOrder, nulls: 'last' } } };
+            // Base query is ticker.findMany — ticker fields are direct columns
+            orderBy = { [field]: { sort: sortOrder, nulls: 'last' } };
         } else if (SCORE_FIELDS.has(sortField)) {
             orderBy = { analysisCache: { [sortField]: { sort: sortOrder, nulls: 'last' } } };
         } else {
