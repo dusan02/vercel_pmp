@@ -3,10 +3,13 @@ import { getCachedData, setCachedData } from '@/lib/redis/operations';
 import { detectSession } from '@/lib/utils/timeUtils';
 import { getDateET } from '@/lib/utils/dateET';
 
-export const revalidate = 300;
+// The response is time-dependent (session detection + "today" resolution) —
+// it must NEVER be prerendered at build time. A build-time snapshot served
+// from the full-route cache showed Friday's bars during Monday pre-market.
+export const dynamic = 'force-dynamic';
 
 const CACHE_TTL_SESSION = 300; // 5 min while a session is active
-const CACHE_TTL_CLOSED = 3600; // 1 hour when market is closed
+const CACHE_TTL_CLOSED = 900; // 15 min when market is closed (session flips at 4:00 ET)
 
 interface Point {
   ts: string;
