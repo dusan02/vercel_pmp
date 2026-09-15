@@ -29,10 +29,10 @@ export function useHomeData({ initialData, activeSection }: UseHomeDataOptions) 
     loadData,
   } = useStockData({ initialData, favorites });
 
-  // Auto-load all stocks when user navigates to All Stocks section
+  // Auto-load all stocks when user navigates to the Screener section
   const allStocksLoadedRef = useRef(false);
   useEffect(() => {
-    if (activeSection === 'allStocks' && !allStocksLoadedRef.current && !loadingStates.remainingStocks) {
+    if (activeSection === 'screener' && !allStocksLoadedRef.current && !loadingStates.remainingStocks) {
       fetchRemainingStocksData();
       allStocksLoadedRef.current = true;
     }

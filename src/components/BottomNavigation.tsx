@@ -4,7 +4,7 @@ import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { LayoutGrid, PieChart, Star, Calendar, Globe, BarChart3, Zap } from 'lucide-react';
 
-type NavSection = 'heatmap' | 'analysis' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks' | 'movers';
+type NavSection = 'heatmap' | 'analysis' | 'portfolio' | 'favorites' | 'earnings' | 'screener' | 'movers';
 
 interface BottomNavigationProps {
   activeSection?: string;
@@ -59,11 +59,11 @@ export function BottomNavigation({ activeSection, onSectionChange }: BottomNavig
       isActive: (section?: string) => section === 'movers'
     },
     {
-      id: 'allStocks',
-      label: 'Stocks',
+      id: 'screener',
+      label: 'Screener',
       icon: Globe,
       path: '/screener',
-      isActive: (section?: string) => section === 'allStocks'
+      isActive: (section?: string) => section === 'screener'
     }
   ];
 

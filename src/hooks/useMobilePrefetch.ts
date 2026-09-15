@@ -9,7 +9,7 @@ import { useEffect } from 'react';
 export function useMobilePrefetch(activeView: string) {
   useEffect(() => {
     const prefetchAPIs = () => {
-      if (activeView !== 'allStocks') {
+      if (activeView !== 'screener') {
         fetch('/api/stocks?getAll=true&limit=50', {
           cache: 'force-cache',
           priority: 'low' as RequestPriority

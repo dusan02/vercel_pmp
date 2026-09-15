@@ -10,15 +10,17 @@ export type ActiveSection =
   | 'portfolio'
   | 'favorites'
   | 'earnings'
-  | 'allStocks'
   | 'screener'
   | 'blog'
   | 'pricing';
 
 const VALID_SECTIONS: ActiveSection[] = [
   'heatmap', 'analysis', 'movers', 'portfolio', 'favorites',
-  'earnings', 'allStocks', 'screener', 'blog', 'pricing',
+  'earnings', 'screener', 'blog', 'pricing',
 ];
+
+// Legacy 'allStocks' tab id → 'screener' (kept for old ?tab= URLs and events)
+const normalizeTab = (tab: string): string => (tab === 'allStocks' ? 'screener' : tab);
 
 interface UseHomeNavigationOptions {
   isMounted: boolean;
@@ -30,8 +32,9 @@ export function useHomeNavigation({ isMounted }: UseHomeNavigationOptions) {
   const searchParams = useSearchParams();
 
   const setActiveTab = useCallback((tab: string): boolean => {
-    if (VALID_SECTIONS.includes(tab as ActiveSection)) {
-      setActiveSection(tab as ActiveSection);
+    const normalized = normalizeTab(tab);
+    if (VALID_SECTIONS.includes(normalized as ActiveSection)) {
+      setActiveSection(normalized as ActiveSection);
       return true;
     }
     return false;

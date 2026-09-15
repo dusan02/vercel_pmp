@@ -28,9 +28,9 @@ const NAV_ITEMS = [
   },
   { label: 'Earnings', icon: Calendar, path: '/earnings', match: (p: string) => p.startsWith('/earnings') },
   {
-    label: 'Stocks',
+    label: 'Screener',
     icon: Globe,
-    path: '/stocks',
+    path: '/screener',
     match: (p: string) => p.startsWith('/stocks') || p.startsWith('/screener') || p.startsWith('/sectors'),
   },
 ];

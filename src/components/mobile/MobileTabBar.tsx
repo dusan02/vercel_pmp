@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useRef } from 'react';
 import { PieChart, Star, Calendar, Globe } from 'lucide-react';
 import { SectionIcon } from '@/components/SectionIcon';
 
-export type MobileTab = 'heatmap' | 'portfolio' | 'favorites' | 'earnings' | 'allStocks';
+export type MobileTab = 'heatmap' | 'portfolio' | 'favorites' | 'earnings' | 'screener';
 
 interface MobileTabBarProps {
   activeTab: MobileTab;
@@ -48,10 +48,10 @@ const tabs: TabItem[] = [
     ariaDescription: 'View today\'s earnings calendar'
   },
   {
-    id: 'allStocks',
-    label: 'Stocks',
+    id: 'screener',
+    label: 'Screener',
     icon: Globe,
-    ariaDescription: 'Browse all available stocks'
+    ariaDescription: 'Browse and filter all stocks'
   },
 ];
 

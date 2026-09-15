@@ -45,11 +45,11 @@ export function FavoritesSection({
     // On mobile: trigger tab change via custom event
     if (typeof window !== 'undefined') {
       // Trigger navigation via custom event for both mobile and desktop (since both use tab-based navigation)
-      window.dispatchEvent(new CustomEvent('mobile-nav-change', { detail: 'allStocks' }));
+      window.dispatchEvent(new CustomEvent('mobile-nav-change', { detail: 'screener' }));
 
       // Update URL
       const url = new URL(window.location.href);
-      url.searchParams.set('tab', 'allStocks');
+      url.searchParams.set('tab', 'screener');
       window.history.pushState({}, '', url.toString());
     }
   };
