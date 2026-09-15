@@ -20,10 +20,13 @@ type OverlaySession = 'pre' | 'live' | 'after';
 
 const UA =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
-const AUTH_TTL_MS = 30 * 60 * 1000;
-const COOLDOWN_MS = 10 * 60 * 1000;
+// Yahoo A1/A3 cookies + crumbs live for many hours — refresh rarely.
+// Re-authenticating on every failure trips Yahoo's per-minute getcrumb
+// limiter, so we keep using the previous auth until it 401/403s.
+const AUTH_TTL_MS = 12 * 60 * 60 * 1000;
+const COOLDOWN_MS = 5 * 60 * 1000;
 const BATCH_SIZE = 80;
-const MAX_CONSECUTIVE_FAILURES = 3;
+const MAX_CONSECUTIVE_FAILURES = 5;
 
 const FIELDS: Record<OverlaySession, { price: string; time: string }> = {
   pre: { price: 'preMarketPrice', time: 'preMarketTime' },
@@ -43,6 +46,22 @@ let consecutiveFailures = 0;
 
 async function getAuth(forceRefresh = false): Promise<YahooAuth | null> {
   if (!forceRefresh && auth && Date.now() - auth.ts < AUTH_TTL_MS) return auth;
+
+  // Persisted auth survives worker restarts/deploys — avoids re-hitting
+  // fc.yahoo.com + getcrumb (which Yahoo rate-limits per minute).
+  if (!forceRefresh && !auth) {
+    try {
+      const { redisClient } = await import('@/lib/redis');
+      const raw = await redisClient.get('yahoo:auth');
+      if (raw) {
+        const parsed = JSON.parse(raw) as YahooAuth;
+        if (parsed.cookie && parsed.crumb) {
+          auth = parsed;
+          return auth;
+        }
+      }
+    } catch { /* redis optional */ }
+  }
   try {
     // fc.yahoo.com sets the A1/A3 cookies needed for the crumb
     const cookieRes = await fetch('https://fc.yahoo.com', {
@@ -62,12 +81,18 @@ async function getAuth(forceRefresh = false): Promise<YahooAuth | null> {
       signal: AbortSignal.timeout(8000),
     });
     const crumb = (await crumbRes.text()).trim();
-    if (!crumb || crumb.startsWith('{') || crumb.startsWith('<')) return null;
+    if (!crumb || crumb.startsWith('{') || crumb.startsWith('<')) {
+      return auth; // transient getcrumb failure (e.g. 429) — keep previous auth
+    }
 
     auth = { cookie, crumb, ts: Date.now() };
+    try {
+      const { redisClient } = await import('@/lib/redis');
+      await redisClient.setEx('yahoo:auth', 24 * 60 * 60, JSON.stringify(auth));
+    } catch { /* redis optional */ }
     return auth;
   } catch {
-    return null;
+    return auth; // network error — keep previous auth
   }
 }
 
