@@ -20,7 +20,9 @@ import {
 const CACHE_KEY = `heatmap-data:${process.env.NEXT_PUBLIC_BUILD_ID || 'dev'}`;
 const CACHE_TTL = 900;
 const ETAG_BUCKET_SIZE = 5000;
-const MAX_DATA_AGE_FOR_ETAG = 5 * 60 * 1000;
+// With the Yahoo real-time overlay, DB prices update every ~60s during
+// active sessions — a 5-min cache age cap would double the visible lag.
+const MAX_DATA_AGE_FOR_ETAG = 60 * 1000;
 
 const DATE_RANGE = {
   DAYS_BACK: 1,
