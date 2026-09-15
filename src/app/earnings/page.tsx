@@ -69,7 +69,7 @@ function timeColor(time: string): string {
   }
 }
 
-function EarningsRow({ row }: { row: EarningsSSRRow }) {
+function EarningsRow({ row, eligible }: { row: EarningsSSRRow; eligible: Set<string> }) {
   const surprise = row.epsSurprisePercent;
   const surpriseClass =
     surprise != null
@@ -81,7 +81,11 @@ function EarningsRow({ row }: { row: EarningsSSRRow }) {
   return (
     <tr className="border-t border-slate-100 dark:border-slate-800 hover:bg-slate-50/60 dark:hover:bg-slate-950/60">
       <td className="px-3 py-2 font-semibold">
-        <Link href={`/analysis/${row.ticker}`} className="hover:underline">{row.ticker}</Link>
+        {eligible.has(row.ticker) ? (
+          <Link href={`/analysis/${row.ticker}`} className="hover:underline">{row.ticker}</Link>
+        ) : (
+          <span className="text-slate-400 dark:text-slate-500">{row.ticker}</span>
+        )}
       </td>
       <td className="px-3 py-2 text-slate-700 dark:text-slate-300 max-w-[200px] truncate">{row.companyName}</td>
       <td className={`px-3 py-2 text-xs font-medium ${timeColor(row.time)}`}>{timeLabel(row.time)}</td>
@@ -100,7 +104,7 @@ function EarningsRow({ row }: { row: EarningsSSRRow }) {
   );
 }
 
-function EarningsDaySection({ group }: { group: EarningsSSRGroup }) {
+function EarningsDaySection({ group, eligible }: { group: EarningsSSRGroup; eligible: Set<string> }) {
   if (group.total === 0) return null;
   const allRows = [...group.preMarket, ...group.afterMarket, ...group.timeTbd];
 
@@ -128,7 +132,7 @@ function EarningsDaySection({ group }: { group: EarningsSSRGroup }) {
               </tr>
             </thead>
             <tbody>
-              {allRows.map((r) => <EarningsRow key={`${r.ticker}-${r.date}`} row={r} />)}
+              {allRows.map((r) => <EarningsRow key={`${r.ticker}-${r.date}`} row={r} eligible={eligible} />)}
             </tbody>
           </table>
         </div>
@@ -241,7 +245,7 @@ export default async function EarningsPage() {
             Pre-market (BMO) earnings are reported before 9:30 AM ET; after-hours (AMC) earnings are reported after 4:00 PM ET.
           </p>
 
-          {groups.map((g) => <EarningsDaySection key={g.date} group={g} />)}
+          {groups.map((g) => <EarningsDaySection key={g.date} group={g} eligible={eligibleSet} />)}
 
           {totalEarnings === 0 && (
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-8 text-center text-slate-500">
