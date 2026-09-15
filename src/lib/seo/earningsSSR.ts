@@ -11,6 +11,8 @@ export interface EarningsSSRRow {
   revenueActual: number | null;
   epsSurprisePercent: number | null;
   revenueSurprisePercent: number | null;
+  marketCap: number | null;
+  percentChange: number | null;
   hasReported: boolean;
 }
 
@@ -41,6 +43,8 @@ function rowFromDB(e: {
   revenueActual: number | null;
   epsSurprisePercent: number | null;
   revenueSurprisePercent: number | null;
+  marketCap: number | null;
+  percentChange: number | null;
 }): EarningsSSRRow {
   const dateStr = new Date(e.date).toISOString().split('T')[0] ?? '';
   return {
@@ -54,8 +58,66 @@ function rowFromDB(e: {
     revenueActual: e.revenueActual ?? null,
     epsSurprisePercent: e.epsSurprisePercent ?? null,
     revenueSurprisePercent: e.revenueSurprisePercent ?? null,
+    marketCap: e.marketCap ?? null,
+    percentChange: e.percentChange ?? null,
     hasReported: e.epsActual != null || e.revenueActual != null,
   };
+}
+
+export interface EarningsWeekDay {
+  date: string;
+  preMarket: EarningsSSRRow[];
+  afterMarket: EarningsSSRRow[];
+  timeTbd: EarningsSSRRow[];
+}
+
+/**
+ * Get earnings for a Mon-Sun week as a date-keyed map.
+ * Shared by homepage SSR and /api/earnings/week — one data shape for both.
+ * weekStartStr: YYYY-MM-DD of Monday.
+ */
+export async function getEarningsWeekMap(
+  weekStartStr: string,
+): Promise<Record<string, EarningsWeekDay>> {
+  try {
+    const weekDates: string[] = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(weekStartStr + 'T12:00:00Z');
+      d.setUTCDate(d.getUTCDate() + i);
+      weekDates.push(d.toISOString().split('T')[0] ?? '');
+    }
+
+    const start = new Date(weekDates[0] + 'T00:00:00Z');
+    const end = new Date(weekDates[6] + 'T23:59:59Z');
+
+    const rows = await prisma.earningsCalendar.findMany({
+      where: { date: { gte: start, lte: end } },
+      orderBy: [{ date: 'asc' }, { time: 'asc' }, { ticker: 'asc' }],
+    });
+
+    const byDate = new Map<string, EarningsSSRRow[]>();
+    for (const r of rows) {
+      const parsed = rowFromDB(r);
+      const existing = byDate.get(parsed.date) ?? [];
+      existing.push(parsed);
+      byDate.set(parsed.date, existing);
+    }
+
+    const map: Record<string, EarningsWeekDay> = {};
+    for (const dateStr of weekDates) {
+      const dayRows = byDate.get(dateStr) ?? [];
+      map[dateStr] = {
+        date: dateStr,
+        preMarket: dayRows.filter((r) => r.time === 'bmo'),
+        afterMarket: dayRows.filter((r) => r.time === 'amc' || r.time === 'dmt'),
+        timeTbd: dayRows.filter((r) => r.time === 'tbd'),
+      };
+    }
+    return map;
+  } catch (error) {
+    console.error('[earningsSSR] Failed to fetch week map:', error);
+    return {};
+  }
 }
 
 /**

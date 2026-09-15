@@ -1,27 +1,24 @@
 import React from 'react';
 import { SectionErrorBoundary } from '../SectionErrorBoundary';
 import WeeklyEarningsCalendar from '../WeeklyEarningsCalendar';
-import { NextEarningsWidget } from './NextEarningsWidget';
+import type { EarningsWeekDay } from '@/lib/seo/earningsSSR';
 
 interface HomeEarningsProps {
-  initialData?: any;
-  upcomingEarnings?: any[];
-  weeklyEarningsGroups?: any[];
+  weeklyEarningsData?: Record<string, EarningsWeekDay> | undefined;
+  todayStr: string;
+  weekStartStr: string;
   eligibleTickers?: Set<string>;
-  marketCapMap?: Map<string, number | null>;
 }
 
-export function HomeEarnings({ initialData, upcomingEarnings, weeklyEarningsGroups, eligibleTickers, marketCapMap }: HomeEarningsProps) {
+export function HomeEarnings({ weeklyEarningsData, todayStr, weekStartStr, eligibleTickers }: HomeEarningsProps) {
     return (
         <SectionErrorBoundary sectionName="Earnings">
             <div className="bg-transparent mt-2">
-                {upcomingEarnings && upcomingEarnings.length > 0 && (
-                    <NextEarningsWidget earnings={upcomingEarnings} />
-                )}
                 <WeeklyEarningsCalendar
-                    initialEarningsGroups={weeklyEarningsGroups ?? null}
+                    initialWeekData={weeklyEarningsData ?? null}
+                    todayStr={todayStr}
+                    initialWeekStartStr={weekStartStr}
                     eligibleTickers={eligibleTickers ?? new Set()}
-                    marketCapMap={marketCapMap ?? new Map()}
                 />
             </div>
         </SectionErrorBoundary>

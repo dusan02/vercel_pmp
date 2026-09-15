@@ -5,6 +5,7 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { getEarningsRange, type EarningsSSRRow, type EarningsSSRGroup } from '@/lib/seo/earningsSSR';
 import { getEligibleAnalysisSet } from '@/lib/seo/eligibleTickers';
+import { getDateET } from '@/lib/utils/dateET';
 import { formatPercent } from '@/lib/utils/heatmapFormat';
 import MonthCalendar from '@/components/MonthCalendar';
 
@@ -137,19 +138,17 @@ function EarningsDaySection({ group }: { group: EarningsSSRGroup }) {
 }
 
 export default async function EarningsPage() {
-  // SSR: fetch earnings for today + next 7 days
-  const today = new Date();
-  const todayStr = today.toISOString().split('T')[0] ?? '';
-  const end = new Date(today);
+  // SSR: fetch earnings for today + next 7 days (ET trading days)
+  const todayStr = getDateET(new Date());
+  const todayNoonUTC = new Date(todayStr + 'T12:00:00Z');
+  const end = new Date(todayNoonUTC);
   end.setUTCDate(end.getUTCDate() + 7);
   const endStr = end.toISOString().split('T')[0] ?? '';
 
-  // Compute current week Monday for weekly calendar SSR pre-fetch
-  const etNow = new Date(today.toLocaleString('en-US', { timeZone: 'America/New_York' }));
-  const weekStart = new Date(etNow);
-  const dayOfWeek = etNow.getDay();
-  const offset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Monday = 0
-  weekStart.setDate(etNow.getDate() + offset);
+  // Monday of the current ET week — deterministic noon-UTC math (DST-safe)
+  const dow = todayNoonUTC.getUTCDay(); // 0=Sun..6=Sat
+  const weekStart = new Date(todayNoonUTC);
+  weekStart.setUTCDate(todayNoonUTC.getUTCDate() + (dow === 0 ? -6 : 1 - dow));
   const weekStartStr = weekStart.toISOString().split('T')[0] ?? '';
 
   // Parallel SSR fetch: DB earnings + API endpoints for client components
@@ -224,8 +223,9 @@ export default async function EarningsPage() {
           {/* Interactive weekly calendar (right, wider) */}
           <div className="lg:col-span-2">
             <WeeklyEarningsCalendar
-              initialWeeklyData={weeklyData}
-              initialEarningsGroups={groups}
+              initialWeekData={weeklyData}
+              todayStr={todayStr}
+              initialWeekStartStr={weekStartStr}
               eligibleTickers={eligibleSet}
             />
           </div>

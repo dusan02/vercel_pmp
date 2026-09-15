@@ -2,34 +2,24 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
-import { format, addDays, subWeeks, addWeeks, startOfWeek, isSameDay, isWeekend } from 'date-fns';
+import { addDays, subWeeks, addWeeks } from 'date-fns';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Coffee, Search, X, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import CompanyLogo from './CompanyLogo';
 import { isMarketHoliday } from '@/lib/utils/timeUtils';
-import type { EarningsSSRRow, EarningsSSRGroup } from '@/lib/seo/earningsSSR';
+import type { EarningsSSRRow, EarningsWeekDay } from '@/lib/seo/earningsSSR';
 
-// Helper to get ET current date
-const getETDate = () => {
-  const now = new Date();
-  return new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
-};
+// Parse YYYY-MM-DD as noon-UTC — deterministic across server/client timezones
+const parseDate = (s: string) => new Date(`${s}T12:00:00Z`);
+const dateStr = (d: Date) => d.toISOString().split('T')[0] ?? '';
 
-interface EarningsData {
-  ticker: string;
-  companyName: string;
-  time: string;
-}
-
-interface DayEarnings {
-  date: string;
-  preMarket: EarningsData[];
-  afterMarket: EarningsData[];
-  timeTbd: EarningsData[];
-}
+// Timezone-safe formatters — always read UTC fields of the noon-UTC instant
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const formatDayLong = (d: Date) => `${DAY_NAMES[d.getUTCDay()]}, ${MONTH_NAMES[d.getUTCMonth()]} ${d.getUTCDate()}`;
 
 interface WeeklyEarningsResponse {
   success: boolean;
-  data: Record<string, DayEarnings>;
+  data: Record<string, EarningsWeekDay>;
 }
 
 // ─── Formatting helpers ──────────────────────────────────────────────────────
@@ -54,8 +44,8 @@ function formatPercent(value: number | null): string {
 
 function timeLabel(time: string): string {
   switch (time) {
-    case 'bmo': return 'Pre';
-    case 'amc': return 'After';
+    case 'bmo': case 'before': return 'Pre';
+    case 'amc': case 'after': return 'After';
     case 'dmt': return 'During';
     default: return 'TBD';
   }
@@ -63,8 +53,8 @@ function timeLabel(time: string): string {
 
 function timeColor(time: string): string {
   switch (time) {
-    case 'bmo': return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400';
-    case 'amc': return 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400';
+    case 'bmo': case 'before': return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400';
+    case 'amc': case 'after': return 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400';
     default: return 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400';
   }
 }
@@ -87,7 +77,7 @@ function marketCapColor(category: string): string {
   }
 }
 
-// ─── Sortable column definition ──────────────────────────────────────────────
+// ─── Sortable columns ─────────────────────────────────────────────────────────
 
 type SortKey = 'ticker' | 'companyName' | 'marketCap' | 'epsEstimate' | 'epsActual' | 'epsSurprisePercent' | 'revenueEstimate' | 'revenueActual' | 'time';
 type SortDir = 'asc' | 'desc';
@@ -97,32 +87,22 @@ interface ColumnDef {
   label: string;
   align: 'left' | 'right';
   className?: string;
-  mobileHidden?: boolean;
 }
 
+// Compact columns — no horizontal scroll. EPS and Revenue each combine est+act in one cell.
 const COLUMNS: ColumnDef[] = [
   { key: 'ticker', label: 'Ticker', align: 'left' },
-  { key: 'companyName', label: 'Company', align: 'left', className: 'hidden md:table-cell' },
+  { key: 'companyName', label: 'Company', align: 'left', className: 'hidden lg:table-cell' },
   { key: 'time', label: 'Time', align: 'left' },
-  { key: 'epsEstimate', label: 'EPS Est.', align: 'right' },
-  { key: 'epsActual', label: 'EPS Act.', align: 'right' },
+  { key: 'epsEstimate', label: 'EPS', align: 'right' },
   { key: 'epsSurprisePercent', label: 'Surprise', align: 'right' },
-  { key: 'revenueEstimate', label: 'Rev Est.', align: 'right', className: 'hidden lg:table-cell' },
-  { key: 'revenueActual', label: 'Rev Act.', align: 'right', className: 'hidden lg:table-cell' },
-  { key: 'marketCap', label: 'Mkt Cap', align: 'right', className: 'hidden sm:table-cell' },
+  { key: 'revenueEstimate', label: 'Revenue', align: 'right' },
+  { key: 'marketCap', label: 'Mkt Cap', align: 'right', className: 'hidden md:table-cell' },
 ];
 
-// ─── Earnings detail table row ───────────────────────────────────────────────
+// ─── Table row ────────────────────────────────────────────────────────────────
 
-function EarningsDetailRow({
-  row,
-  eligible,
-  marketCap,
-}: {
-  row: EarningsSSRRow;
-  eligible: Set<string>;
-  marketCap?: number | null;
-}) {
+function EarningsDetailRow({ row, eligible }: { row: EarningsSSRRow; eligible: Set<string> }) {
   const surprise = row.epsSurprisePercent;
   const surpriseClass =
     surprise != null
@@ -131,62 +111,68 @@ function EarningsDetailRow({
         : 'text-rose-600 dark:text-rose-400'
       : '';
   const isEligible = eligible.has(row.ticker);
-  const capCat = marketCapCategory(marketCap ?? null);
+  const capCat = marketCapCategory(row.marketCap);
 
   return (
     <tr className="border-t border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/40 transition-colors">
-      <td className="px-3 py-2.5">
+      <td className="px-2 py-2">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 shrink-0 flex items-center justify-center">
-            <CompanyLogo ticker={row.ticker} size={28} />
+          <div className="w-7 h-7 shrink-0 flex items-center justify-center">
+            <CompanyLogo ticker={row.ticker} size={26} />
           </div>
           <div className="min-w-0">
             {isEligible ? (
-              <Link href={`/analysis/${row.ticker}`} className="font-semibold text-neutral-900 dark:text-white hover:underline">
+              <Link href={`/analysis/${row.ticker}`} className="font-semibold text-neutral-900 dark:text-white hover:underline text-sm">
                 {row.ticker}
               </Link>
             ) : (
-              <span className="font-semibold text-neutral-500 dark:text-neutral-400">{row.ticker}</span>
+              <span className="font-semibold text-neutral-500 dark:text-neutral-400 text-sm">{row.ticker}</span>
             )}
             {capCat && (
-              <span className={`ml-1.5 text-[9px] font-bold px-1 py-0.5 rounded ${marketCapColor(capCat)}`}>
+              <span className={`ml-1 text-[9px] font-bold px-1 py-0.5 rounded ${marketCapColor(capCat)}`}>
                 {capCat}
               </span>
             )}
           </div>
         </div>
       </td>
-      <td className="px-3 py-2.5 text-neutral-700 dark:text-neutral-300 max-w-[200px] truncate hidden md:table-cell">
+      <td className="px-2 py-2 text-xs text-neutral-700 dark:text-neutral-300 max-w-[180px] truncate hidden lg:table-cell">
         {row.companyName}
       </td>
-      <td className="px-3 py-2.5">
+      <td className="px-2 py-2">
         <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${timeColor(row.time)}`}>
           {timeLabel(row.time)}
         </span>
       </td>
-      <td className="px-3 py-2.5 text-right tabular-nums text-neutral-600 dark:text-neutral-400">
-        {formatEps(row.epsEstimate)}
+      {/* EPS: actual (reported) bold on top, estimate muted below */}
+      <td className="px-2 py-1.5 text-right">
+        <div className="tabular-nums text-xs font-semibold text-neutral-800 dark:text-neutral-200">
+          {row.hasReported ? formatEps(row.epsActual) : '—'}
+        </div>
+        <div className="tabular-nums text-[10px] text-neutral-400 dark:text-neutral-500">
+          est {formatEps(row.epsEstimate)}
+        </div>
       </td>
-      <td className="px-3 py-2.5 text-right tabular-nums text-neutral-700 dark:text-neutral-300">
-        {row.hasReported ? formatEps(row.epsActual) : '-'}
-      </td>
-      <td className={`px-3 py-2.5 text-right tabular-nums font-semibold ${surpriseClass}`}>
+      <td className={`px-2 py-2 text-right tabular-nums text-xs font-semibold ${surpriseClass}`}>
         {surprise != null ? formatPercent(surprise) : '-'}
       </td>
-      <td className="px-3 py-2.5 text-right tabular-nums text-neutral-600 dark:text-neutral-400 hidden lg:table-cell">
-        {formatRevenue(row.revenueEstimate)}
+      {/* Revenue: actual bold on top, estimate muted below */}
+      <td className="px-2 py-1.5 text-right">
+        <div className="tabular-nums text-xs font-semibold text-neutral-800 dark:text-neutral-200">
+          {row.hasReported ? formatRevenue(row.revenueActual) : '—'}
+        </div>
+        <div className="tabular-nums text-[10px] text-neutral-400 dark:text-neutral-500">
+          est {formatRevenue(row.revenueEstimate)}
+        </div>
       </td>
-      <td className="px-3 py-2.5 text-right tabular-nums text-neutral-700 dark:text-neutral-300 hidden lg:table-cell">
-        {row.hasReported ? formatRevenue(row.revenueActual) : '-'}
-      </td>
-      <td className="px-3 py-2.5 text-right tabular-nums text-neutral-600 dark:text-neutral-400 hidden sm:table-cell">
-        {marketCap != null ? formatRevenue(marketCap) : '-'}
+      <td className="px-2 py-2 text-right tabular-nums text-xs text-neutral-600 dark:text-neutral-400 hidden md:table-cell">
+        {row.marketCap != null ? formatRevenue(row.marketCap) : '-'}
       </td>
     </tr>
   );
 }
 
-// ─── Sortable header cell ────────────────────────────────────────────────────
+// ─── Sortable header ─────────────────────────────────────────────────────────
 
 function SortableHeader({
   col,
@@ -206,30 +192,28 @@ function SortableHeader({
     <th
       scope="col"
       onClick={() => onSort(col.key)}
-      className={`px-3 py-2.5 ${alignClass} text-[11px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors select-none ${col.className ?? ''}`}
+      className={`px-2 py-2 ${alignClass} text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors select-none whitespace-nowrap ${col.className ?? ''}`}
     >
-      <span className={`inline-flex items-center gap-1 ${col.align === 'right' ? 'flex-row-reverse' : ''}`}>
+      <span className={`inline-flex items-center gap-0.5 ${col.align === 'right' ? 'flex-row-reverse' : ''}`}>
         {col.label}
         {isActive ? (
-          sortDir === 'asc' ? <ArrowUp size={11} /> : <ArrowDown size={11} />
+          sortDir === 'asc' ? <ArrowUp size={10} /> : <ArrowDown size={10} />
         ) : (
-          <ArrowUpDown size={11} className="opacity-30" />
+          <ArrowUpDown size={10} className="opacity-30" />
         )}
       </span>
     </th>
   );
 }
 
-// ─── Earnings detail table with search + sort ────────────────────────────────
+// ─── Detail table for selected date ──────────────────────────────────────────
 
 function EarningsDetailTable({
-  group,
+  day,
   eligible,
-  marketCapMap,
 }: {
-  group: EarningsSSRGroup | null;
+  day: EarningsWeekDay | undefined;
   eligible: Set<string>;
-  marketCapMap: Map<string, number | null>;
 }) {
   const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('marketCap');
@@ -245,9 +229,9 @@ function EarningsDetailTable({
   }, [sortKey]);
 
   const allRows = useMemo(() => {
-    if (!group) return [];
-    return [...group.preMarket, ...group.afterMarket, ...group.timeTbd];
-  }, [group]);
+    if (!day) return [];
+    return [...day.preMarket, ...day.afterMarket, ...day.timeTbd];
+  }, [day]);
 
   const filteredRows = useMemo(() => {
     if (!search.trim()) return allRows;
@@ -261,36 +245,24 @@ function EarningsDetailTable({
   const sortedRows = useMemo(() => {
     const sorted = [...filteredRows];
     sorted.sort((a, b) => {
-      let aVal: any;
-      let bVal: any;
-
-      // For marketCap, use the map
-      if (sortKey === 'marketCap') {
-        aVal = marketCapMap.get(a.ticker) ?? null;
-        bVal = marketCapMap.get(b.ticker) ?? null;
-      } else {
-        aVal = a[sortKey as keyof EarningsSSRRow];
-        bVal = b[sortKey as keyof EarningsSSRRow];
-      }
-
-      // Nulls always go to the end
+      const aVal = a[sortKey];
+      const bVal = b[sortKey];
       if (aVal == null) return 1;
       if (bVal == null) return -1;
-
       if (typeof aVal === 'string' && typeof bVal === 'string') {
         return sortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
       }
-
       if (typeof aVal === 'number' && typeof bVal === 'number') {
         return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
       }
-
       return 0;
     });
     return sorted;
-  }, [filteredRows, sortKey, sortDir, marketCapMap]);
+  }, [filteredRows, sortKey, sortDir]);
 
-  if (!group || group.total === 0) {
+  const total = allRows.length;
+
+  if (!day || total === 0) {
     return (
       <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-8 text-center">
         <CalendarIcon size={32} className="mx-auto mb-3 text-neutral-300 dark:text-neutral-600" />
@@ -302,15 +274,15 @@ function EarningsDetailTable({
 
   return (
     <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm border border-neutral-200 dark:border-neutral-800 overflow-hidden">
-      {/* Search bar — sticky */}
-      <div className="sticky top-0 z-20 flex items-center gap-2 px-3 py-2.5 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800">
+      {/* Search bar */}
+      <div className="flex items-center gap-2 px-3 py-2.5 border-b border-neutral-200 dark:border-neutral-800">
         <Search size={14} className="text-neutral-400 shrink-0" />
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder={`Search ${group.total} earnings...`}
-          className="flex-1 text-sm bg-transparent text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none"
+          placeholder={`Search ${total} earnings...`}
+          className="flex-1 text-sm bg-transparent text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none min-w-0"
         />
         {search && (
           <button
@@ -321,15 +293,15 @@ function EarningsDetailTable({
             <X size={14} />
           </button>
         )}
-        <span className="text-xs text-neutral-400 whitespace-nowrap shrink-0">
-          {sortedRows.length} / {group.total}
+        <span className="text-xs text-neutral-400 whitespace-nowrap shrink-0 tabular-nums">
+          {sortedRows.length} / {total}
         </span>
       </div>
 
-      {/* Desktop table */}
-      <div className="hidden md:block overflow-auto max-h-[calc(100vh-280px)]">
-        <table className="w-full text-sm">
-          <thead className="sticky top-0 z-10">
+      {/* Desktop table — compact, no horizontal scroll */}
+      <div className="hidden sm:block">
+        <table className="w-full text-sm table-fixed">
+          <thead>
             <tr className="bg-neutral-50 dark:bg-neutral-950/50">
               {COLUMNS.map(col => (
                 <SortableHeader
@@ -342,21 +314,16 @@ function EarningsDetailTable({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+          <tbody>
             {sortedRows.map(r => (
-              <EarningsDetailRow
-                key={`${r.ticker}-${r.date}`}
-                row={r}
-                eligible={eligible}
-                marketCap={marketCapMap.get(r.ticker) ?? null}
-              />
+              <EarningsDetailRow key={r.ticker} row={r} eligible={eligible} />
             ))}
           </tbody>
         </table>
       </div>
 
       {/* Mobile cards */}
-      <div className="md:hidden divide-y divide-neutral-100 dark:divide-neutral-800">
+      <div className="sm:hidden divide-y divide-neutral-100 dark:divide-neutral-800">
         {sortedRows.map(r => {
           const isEligible = eligible.has(r.ticker);
           const surprise = r.epsSurprisePercent;
@@ -364,48 +331,48 @@ function EarningsDetailTable({
             ? surprise >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
             : '';
           return (
-            <div key={`${r.ticker}-${r.date}`} className="p-3 hover:bg-neutral-50 dark:hover:bg-neutral-800/40 transition-colors">
-              <div className="flex items-center gap-2 mb-1.5">
+            <div key={r.ticker} className="p-3">
+              <div className="flex items-center gap-2 mb-1">
                 <div className="w-8 h-8 shrink-0 flex items-center justify-center">
                   <CompanyLogo ticker={r.ticker} size={28} />
                 </div>
                 <div className="min-w-0 flex-1">
                   {isEligible ? (
-                    <Link href={`/analysis/${r.ticker}`} className="font-semibold text-neutral-900 dark:text-white hover:underline">
+                    <Link href={`/analysis/${r.ticker}`} className="font-semibold text-neutral-900 dark:text-white hover:underline text-sm">
                       {r.ticker}
                     </Link>
                   ) : (
-                    <span className="font-semibold text-neutral-500 dark:text-neutral-400">{r.ticker}</span>
+                    <span className="font-semibold text-neutral-500 dark:text-neutral-400 text-sm">{r.ticker}</span>
                   )}
                   <span className={`ml-1.5 text-[9px] font-bold px-1 py-0.5 rounded ${timeColor(r.time)}`}>
                     {timeLabel(r.time)}
                   </span>
                 </div>
-                {marketCapMap.get(r.ticker) != null && (
-                  <span className="text-xs font-medium tabular-nums text-neutral-600 dark:text-neutral-400">
-                    {formatRevenue(marketCapMap.get(r.ticker) ?? null)}
+                {r.marketCap != null && (
+                  <span className="text-xs tabular-nums text-neutral-500 dark:text-neutral-400">
+                    {formatRevenue(r.marketCap)}
                   </span>
                 )}
               </div>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate mb-2">{r.companyName}</p>
-              <div className="grid grid-cols-4 gap-2 text-xs">
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate mb-2 pl-10">{r.companyName}</p>
+              <div className="grid grid-cols-3 gap-2 pl-10">
                 <div>
-                  <div className="text-[10px] text-neutral-400 uppercase">EPS Est</div>
-                  <div className="tabular-nums text-neutral-700 dark:text-neutral-300">{formatEps(r.epsEstimate)}</div>
+                  <div className="text-[9px] text-neutral-400 uppercase tracking-wider">EPS est / act</div>
+                  <div className="tabular-nums text-xs text-neutral-700 dark:text-neutral-300">
+                    {formatEps(r.epsEstimate)} <span className="text-neutral-300 dark:text-neutral-600">/</span> {r.hasReported ? formatEps(r.epsActual) : '—'}
+                  </div>
                 </div>
                 <div>
-                  <div className="text-[10px] text-neutral-400 uppercase">EPS Act</div>
-                  <div className="tabular-nums text-neutral-700 dark:text-neutral-300">{r.hasReported ? formatEps(r.epsActual) : '-'}</div>
-                </div>
-                <div>
-                  <div className="text-[10px] text-neutral-400 uppercase">Surprise</div>
-                  <div className={`tabular-nums font-semibold ${surpriseClass}`}>
+                  <div className="text-[9px] text-neutral-400 uppercase tracking-wider">Surprise</div>
+                  <div className={`tabular-nums text-xs font-semibold ${surpriseClass}`}>
                     {surprise != null ? formatPercent(surprise) : '-'}
                   </div>
                 </div>
                 <div>
-                  <div className="text-[10px] text-neutral-400 uppercase">Rev Est</div>
-                  <div className="tabular-nums text-neutral-700 dark:text-neutral-300">{formatRevenue(r.revenueEstimate)}</div>
+                  <div className="text-[9px] text-neutral-400 uppercase tracking-wider">Rev est / act</div>
+                  <div className="tabular-nums text-xs text-neutral-700 dark:text-neutral-300">
+                    {formatRevenue(r.revenueEstimate)} <span className="text-neutral-300 dark:text-neutral-600">/</span> {r.hasReported ? formatRevenue(r.revenueActual) : '—'}
+                  </div>
                 </div>
               </div>
             </div>
@@ -419,6 +386,7 @@ function EarningsDetailTable({
 // ─── Calendar day cell ────────────────────────────────────────────────────────
 
 function CalendarDayCell({
+  dayDateStr,
   date,
   dayData,
   isToday,
@@ -426,21 +394,21 @@ function CalendarDayCell({
   isHoliday,
   onClick,
 }: {
+  dayDateStr: string;
   date: Date;
-  dayData: DayEarnings | undefined;
+  dayData: EarningsWeekDay | undefined;
   isToday: boolean;
   isSelected: boolean;
   isHoliday: boolean;
   onClick: () => void;
 }) {
-  const dateStr = format(date, 'yyyy-MM-dd');
-  const totalForDay = dayData ? (dayData.preMarket?.length + dayData.afterMarket?.length + dayData.timeTbd?.length) : 0;
-  const weekend = isWeekend(date);
+  const totalForDay = dayData ? (dayData.preMarket.length + dayData.afterMarket.length + dayData.timeTbd.length) : 0;
+  const weekend = date.getUTCDay() === 0 || date.getUTCDay() === 6;
 
   return (
     <button
       onClick={onClick}
-      className={`relative flex flex-col items-center justify-center rounded-lg sm:rounded-xl py-1.5 sm:py-3 px-0.5 sm:px-2 transition-all min-h-[40px] sm:min-h-[72px] ${
+      className={`relative flex flex-col items-center justify-center rounded-lg sm:rounded-xl py-1.5 sm:py-3 px-0.5 sm:px-2 transition-all min-h-[44px] sm:min-h-[72px] ${
         isSelected
           ? 'bg-blue-600 text-white shadow-md'
           : isToday
@@ -453,10 +421,10 @@ function CalendarDayCell({
       }`}
     >
       <span className="text-xs sm:text-sm font-semibold">
-        {format(date, 'd')}
+        {date.getUTCDate()}
       </span>
       {totalForDay > 0 && (
-        <span className={`mt-1 text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+        <span className={`mt-1 text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-full tabular-nums ${
           isSelected
             ? 'bg-white/20 text-white'
             : isToday
@@ -473,103 +441,83 @@ function CalendarDayCell({
 // ─── Main component ──────────────────────────────────────────────────────────
 
 export default function WeeklyEarningsCalendar({
-  initialWeeklyData,
-  initialEarningsGroups,
+  initialWeekData,
+  todayStr,
+  initialWeekStartStr,
   eligibleTickers = new Set(),
-  marketCapMap: initialMarketCapMap,
 }: {
-  initialWeeklyData?: Record<string, DayEarnings> | null;
-  initialEarningsGroups?: EarningsSSRGroup[] | null;
+  initialWeekData?: Record<string, EarningsWeekDay> | null;
+  todayStr: string;
+  initialWeekStartStr: string;
   eligibleTickers?: Set<string>;
-  marketCapMap?: Map<string, number | null>;
 }) {
-  const [currentDate, setCurrentDate] = useState(() => {
-    const et = getETDate();
-    return startOfWeek(et, { weekStartsOn: 1 });
-  });
-
-  const [selectedDate, setSelectedDate] = useState<Date>(getETDate());
-  const [weeklyData, setWeeklyData] = useState<Record<string, DayEarnings>>(() => initialWeeklyData ?? {});
-  const [loading, setLoading] = useState(() => !initialWeeklyData);
+  // All dates handled as YYYY-MM-DD strings — deterministic SSR, no hydration mismatch
+  const [weekStartStr, setWeekStartStr] = useState(initialWeekStartStr);
+  const [selectedDateStr, setSelectedDateStr] = useState(todayStr);
+  const [weeklyData, setWeeklyData] = useState<Record<string, EarningsWeekDay>>(() => initialWeekData ?? {});
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // SSR earnings groups — keyed by date for O(1) lookup
-  const [earningsGroupsMap, setEarningsGroupsMap] = useState<Record<string, EarningsSSRGroup>>(() => {
-    const map: Record<string, EarningsSSRGroup> = {};
-    if (initialEarningsGroups) {
-      for (const g of initialEarningsGroups) {
-        map[g.date] = g;
-      }
-    }
-    return map;
-  });
-
-  // Market cap map (passed from SSR or empty)
-  const [marketCapMap] = useState<Map<string, number | null>>(() => initialMarketCapMap ?? new Map());
-
-  // 7 days of the selected week (Mon-Sun, includes weekends like earningstable.com)
+  // 7 days of the selected week (Mon-Sun)
   const weekDays = useMemo(() => {
-    return Array.from({ length: 7 }).map((_, i) => addDays(currentDate, i));
-  }, [currentDate]);
+    const start = parseDate(weekStartStr);
+    return Array.from({ length: 7 }).map((_, i) => addDays(start, i));
+  }, [weekStartStr]);
 
-  const startDateStr = format(weekDays[0]!, 'yyyy-MM-dd');
-  const endDateStr = format(weekDays[6]!, 'yyyy-MM-dd');
+  const startLabel = weekStartStr;
+  const endLabel = dateStr(weekDays[6]!);
 
-  // Track if initial SSR data was for this week
-  const ssrWeekStart = useMemo(() => {
-    if (!initialWeeklyData) return null;
-    const et = getETDate();
-    return format(startOfWeek(et, { weekStartsOn: 1 }), 'yyyy-MM-dd');
-  }, [initialWeeklyData]);
-
+  // Fetch week data when week changes (skip if it's the SSR-provided initial week)
   useEffect(() => {
-    if (ssrWeekStart === startDateStr && initialWeeklyData) return;
+    if (weekStartStr === initialWeekStartStr) return;
 
+    let cancelled = false;
     const fetchWeekData = async () => {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`/api/earnings/week?start=${startDateStr}`);
+        const res = await fetch(`/api/earnings/week?start=${weekStartStr}`);
         if (!res.ok) throw new Error('Failed to fetch data');
         const json: WeeklyEarningsResponse = await res.json();
+        if (cancelled) return;
         if (json.success) {
           setWeeklyData(json.data);
         } else {
           throw new Error('API returned unsuccessful response');
         }
       } catch (err) {
+        if (cancelled) return;
         console.error(err);
         setError('Failed to load weekly earnings');
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     fetchWeekData();
-  }, [startDateStr]); // eslint-disable-line react-hooks/exhaustive-deps
+    return () => { cancelled = true; };
+  }, [weekStartStr, initialWeekStartStr]);
 
-  const handlePrevWeek = () => setCurrentDate(prev => subWeeks(prev, 1));
-  const handleNextWeek = () => setCurrentDate(prev => addWeeks(prev, 1));
-  const handleThisWeek = () => setCurrentDate(startOfWeek(getETDate(), { weekStartsOn: 1 }));
+  const handlePrevWeek = () => setWeekStartStr(prev => dateStr(subWeeks(parseDate(prev), 1)));
+  const handleNextWeek = () => setWeekStartStr(prev => dateStr(addWeeks(parseDate(prev), 1)));
+  const handleThisWeek = () => {
+    setWeekStartStr(initialWeekStartStr);
+    setSelectedDateStr(todayStr);
+  };
 
-  // Calculate totals
+  // Week totals
   const totals = useMemo(() => {
-    let total = 0;
-    let pre = 0;
-    let after = 0;
-
-    Object.values(weeklyData).forEach(day => {
-      pre += day.preMarket?.length || 0;
-      after += day.afterMarket?.length || 0;
-      total += (day.preMarket?.length || 0) + (day.afterMarket?.length || 0) + (day.timeTbd?.length || 0);
-    });
-
+    let total = 0, pre = 0, after = 0;
+    for (const day of Object.values(weeklyData)) {
+      pre += day.preMarket.length;
+      after += day.afterMarket.length;
+      total += day.preMarket.length + day.afterMarket.length + day.timeTbd.length;
+    }
     return { total, pre, after };
   }, [weeklyData]);
 
-  const todayET = getETDate();
-  const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
-  const selectedGroup = earningsGroupsMap[selectedDateStr] ?? null;
+  const selectedDay = weeklyData[selectedDateStr];
+  const selectedDateObj = parseDate(selectedDateStr);
   const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   return (
@@ -579,12 +527,11 @@ export default function WeeklyEarningsCalendar({
         <div className="flex items-center gap-2">
           <h2 className="text-lg font-bold text-neutral-900 dark:text-white">Earnings Calendar</h2>
           <span className="text-sm text-neutral-500 dark:text-neutral-400 tabular-nums">
-            {startDateStr} — {endDateStr}
+            {startLabel} — {endLabel}
           </span>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {/* Stats */}
           <div className="flex items-center gap-1.5 text-xs font-medium">
             <span className="px-2 py-1 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 rounded-md tabular-nums">
               {totals.total} total
@@ -597,7 +544,6 @@ export default function WeeklyEarningsCalendar({
             </span>
           </div>
 
-          {/* Navigation */}
           <div className="flex items-center gap-1 bg-neutral-100 dark:bg-neutral-800 rounded-lg p-0.5">
             <button
               onClick={handlePrevWeek}
@@ -623,47 +569,44 @@ export default function WeeklyEarningsCalendar({
         </div>
       </div>
 
-      {/* Two-column layout: calendar sidebar + earnings table */}
-      <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4">
+      {/* Two-column layout: calendar left, table right */}
+      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4">
         {/* Calendar sidebar */}
-        <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm border border-neutral-200 dark:border-neutral-800 p-3">
-          {/* Day name headers */}
-          <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-2">
+        <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm border border-neutral-200 dark:border-neutral-800 p-3 self-start">
+          <div className="grid grid-cols-7 gap-1 mb-1.5">
             {dayNames.map(d => (
-              <div key={d} className="text-center text-[10px] sm:text-xs font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
+              <div key={d} className="text-center text-[10px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
                 {d}
               </div>
             ))}
           </div>
 
-          {/* Calendar grid */}
           {loading ? (
-            <div className="grid grid-cols-7 gap-1 sm:gap-2">
+            <div className="grid grid-cols-7 gap-1">
               {Array.from({ length: 7 }).map((_, i) => (
-                <div key={i} className="min-h-[40px] sm:min-h-[72px] rounded-lg sm:rounded-xl bg-neutral-100 dark:bg-neutral-800 animate-pulse" />
+                <div key={i} className="min-h-[44px] sm:min-h-[72px] rounded-lg sm:rounded-xl bg-neutral-100 dark:bg-neutral-800 animate-pulse" />
               ))}
             </div>
           ) : error ? (
-            <div className="py-10 text-center text-red-500 text-sm">{error}</div>
+            <div className="py-8 text-center text-red-500 text-sm">{error}</div>
           ) : (
-            <div className="grid grid-cols-7 gap-1 sm:gap-2">
+            <div className="grid grid-cols-7 gap-1">
               {weekDays.map((date) => {
-                const dateStr = format(date, 'yyyy-MM-dd');
-                const dayData = weeklyData[dateStr];
-                const isToday = isSameDay(date, todayET);
-                const isSelected = isSameDay(date, selectedDate);
-                const noonUTC = new Date(`${dateStr}T12:00:00Z`);
-                const isHoliday = isMarketHoliday(noonUTC);
+                const ds = dateStr(date);
+                const isToday = ds === todayStr;
+                const isSelected = ds === selectedDateStr;
+                const isHoliday = isMarketHoliday(date);
 
                 return (
                   <CalendarDayCell
-                    key={dateStr}
+                    key={ds}
+                    dayDateStr={ds}
                     date={date}
-                    dayData={dayData}
+                    dayData={weeklyData[ds]}
                     isToday={isToday}
                     isSelected={isSelected}
                     isHoliday={isHoliday}
-                    onClick={() => setSelectedDate(date)}
+                    onClick={() => setSelectedDateStr(ds)}
                   />
                 );
               })}
@@ -671,44 +614,36 @@ export default function WeeklyEarningsCalendar({
           )}
 
           {/* Legend */}
-          <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] sm:text-xs text-neutral-400 dark:text-neutral-500">
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-neutral-400 dark:text-neutral-500">
             <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-blue-600" />
+              <div className="w-2.5 h-2.5 rounded-full bg-blue-600" />
               <span>Selected</span>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-blue-50 dark:bg-blue-900/30 ring-2 ring-blue-500/40" />
+              <div className="w-2.5 h-2.5 rounded-full bg-blue-50 dark:bg-blue-900/30 ring-1 ring-blue-500/40" />
               <span>Today</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-neutral-200 dark:bg-neutral-700" />
-              <span>Has earnings</span>
             </div>
           </div>
 
           {/* Selected date info */}
-          <div className="mt-4 pt-3 border-t border-neutral-200 dark:border-neutral-800">
-            <div className="text-[10px] text-neutral-400 dark:text-neutral-500 uppercase tracking-wider font-semibold mb-1">
+          <div className="mt-3 pt-3 border-t border-neutral-200 dark:border-neutral-800">
+            <div className="text-[10px] text-neutral-400 dark:text-neutral-500 uppercase tracking-wider font-semibold mb-0.5">
               Selected Date
             </div>
             <div className="text-sm font-bold text-neutral-900 dark:text-white">
-              {format(selectedDate, 'EEEE, MMMM d')}
+              {formatDayLong(selectedDateObj)}
             </div>
-            {selectedGroup && (
-              <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                {selectedGroup.total} earnings scheduled
+            {selectedDay && (
+              <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5 tabular-nums">
+                {selectedDay.preMarket.length + selectedDay.afterMarket.length + selectedDay.timeTbd.length} earnings scheduled
               </div>
             )}
           </div>
         </div>
 
-        {/* Earnings table */}
-        <div>
-          <EarningsDetailTable
-            group={selectedGroup}
-            eligible={eligibleTickers}
-            marketCapMap={marketCapMap}
-          />
+        {/* Detail table — updates with selected calendar day */}
+        <div className="min-w-0">
+          <EarningsDetailTable day={selectedDay} eligible={eligibleTickers} />
         </div>
       </div>
     </div>

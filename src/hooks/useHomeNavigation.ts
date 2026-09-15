@@ -27,9 +27,21 @@ interface UseHomeNavigationOptions {
 }
 
 export function useHomeNavigation({ isMounted }: UseHomeNavigationOptions) {
-  const [activeSection, setActiveSection] = useState<ActiveSection>('heatmap');
-  const [analysisTicker, setAnalysisTicker] = useState<string | null>(null);
   const searchParams = useSearchParams();
+  // Initialize from ?tab= synchronously — makes SSR render the correct section
+  // (previously activeSection was always 'heatmap' on the server, so tabbed
+  // content like earnings was never in SSR HTML)
+  const [activeSection, setActiveSection] = useState<ActiveSection>(() => {
+    const tab = searchParams.get('tab');
+    const normalized = tab ? normalizeTab(tab) : 'heatmap';
+    return VALID_SECTIONS.includes(normalized as ActiveSection)
+      ? (normalized as ActiveSection)
+      : 'heatmap';
+  });
+  const [analysisTicker, setAnalysisTicker] = useState<string | null>(() => {
+    const t = searchParams.get('ticker');
+    return t ? t.toUpperCase() : null;
+  });
 
   const setActiveTab = useCallback((tab: string): boolean => {
     const normalized = normalizeTab(tab);

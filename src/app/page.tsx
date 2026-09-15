@@ -2,8 +2,7 @@ import { Suspense } from 'react';
 import { Metadata } from 'next';
 import HomePage from './HomePage';
 import { getStocksData } from '@/services/stockService';
-import { getEarningsForDate } from '@/services/earningsService';
-import { getEarningsRange } from '@/lib/seo/earningsSSR';
+import { getEarningsWeekMap, type EarningsWeekDay } from '@/lib/seo/earningsSSR';
 import { getProjectTickers } from '@/data/defaultTickers';
 import { getCompanyName } from '@/lib/companyNames';
 import { logger } from '@/lib/utils/logger';
@@ -171,16 +170,21 @@ export default async function Page() {
   const topTickers = getProjectTickers(project, 20); // Reduced from 30 to 20 for faster mobile load
 
   let initialData: any[] = [];
-  let initialEarningsData = null;
   let initialMoversData: any[] = [];
   let initialBlogSnapshots: any[] = [];
   let initialHeatmapData: any[] = [];
-  let upcomingEarnings: any[] = [];
-  let weeklyEarningsGroups: any[] = [];
+  let weeklyEarningsData: Record<string, EarningsWeekDay> = {};
+
+  // ET dates computed unconditionally — deterministic SSR props for the calendar
+  const todayET = getDateET(new Date());
+  const todayNoonUTC = new Date(todayET + 'T12:00:00Z');
+  const dow = todayNoonUTC.getUTCDay(); // 0=Sun..6=Sat
+  const weekStartDate = new Date(todayNoonUTC);
+  weekStartDate.setUTCDate(weekStartDate.getUTCDate() + (dow === 0 ? -6 : 1 - dow));
+  const earningsTodayStr = todayET;
+  const earningsWeekStartStr = weekStartDate.toISOString().split('T')[0] ?? todayET;
 
   try {
-    const todayET = getDateET(new Date());
-
     logger.ssr('Fetching initial data for Top 20 tickers, Earnings, Movers, Blog, Heatmap...');
 
     // Parallel fetch with 3-second timeout — prevents blocking HTML for 10+ seconds
@@ -188,9 +192,8 @@ export default async function Page() {
     // Client-side hooks will fetch the data anyway, so empty initial data is safe.
     const SSR_TIMEOUT_MS = 3000;
 
-    const [stocksResult, earningsResult, moversResult, blogResult, heatmapResult, upcomingEarningsResult, weeklyEarningsResult] = await Promise.allSettled([
+    const [stocksResult, moversResult, blogResult, heatmapResult, weeklyEarningsResult] = await Promise.allSettled([
       withTimeout(getStocksData(topTickers, project), SSR_TIMEOUT_MS, { data: [], errors: ['SSR timeout'] }),
-      withTimeout(getEarningsForDate(todayET), SSR_TIMEOUT_MS, null),
       // SSR fetch for movers — used by HomeMovers as SWR fallbackData
       withTimeout(
         (async () => {
@@ -226,29 +229,8 @@ export default async function Page() {
         SSR_TIMEOUT_MS,
         []
       ),
-      // SSR fetch for upcoming earnings (today + tomorrow) — Next Earnings widget
-      withTimeout(
-        (async () => {
-          const tomorrow = new Date(todayET + 'T12:00:00Z');
-          tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
-          const tomorrowStr = tomorrow.toISOString().split('T')[0] ?? '';
-          const groups = await getEarningsRange(todayET, tomorrowStr);
-          return groups.flatMap((g) => [...g.preMarket, ...g.afterMarket, ...g.timeTbd]).slice(0, 20);
-        })(),
-        SSR_TIMEOUT_MS,
-        []
-      ),
-      // SSR fetch for weekly earnings groups — detailed table in Earnings tab
-      withTimeout(
-        (async () => {
-          const weekEnd = new Date(todayET + 'T12:00:00Z');
-          weekEnd.setUTCDate(weekEnd.getUTCDate() + 6);
-          const weekEndStr = weekEnd.toISOString().split('T')[0] ?? '';
-          return await getEarningsRange(todayET, weekEndStr);
-        })(),
-        SSR_TIMEOUT_MS,
-        []
-      ),
+      // SSR fetch for weekly earnings — full Mon-Sun week map with EPS/revenue details
+      withTimeout(getEarningsWeekMap(earningsWeekStartStr), SSR_TIMEOUT_MS, {}),
     ]);
 
     if (stocksResult.status === 'fulfilled' && stocksResult.value) {
@@ -261,15 +243,6 @@ export default async function Page() {
       }
     } else {
       logger.error('SSR Error fetching stocks', stocksResult.status === 'rejected' ? stocksResult.reason : 'unknown');
-    }
-
-    if (earningsResult.status === 'fulfilled') {
-      initialEarningsData = earningsResult.value;
-      if (initialEarningsData) {
-        logger.ssr(`Loaded Earnings for ${todayET}`);
-      }
-    } else {
-      logger.error('SSR Error fetching earnings', earningsResult.reason);
     }
 
     if (moversResult.status === 'fulfilled') {
@@ -299,18 +272,11 @@ export default async function Page() {
       logger.error('SSR Error fetching heatmap', heatmapResult.reason);
     }
 
-    if (upcomingEarningsResult.status === 'fulfilled') {
-      upcomingEarnings = upcomingEarningsResult.value as any[];
-      if (upcomingEarnings.length > 0) {
-        logger.ssr(`Loaded ${upcomingEarnings.length} upcoming earnings`);
-      }
-    }
-
     if (weeklyEarningsResult.status === 'fulfilled') {
-      weeklyEarningsGroups = weeklyEarningsResult.value as any[];
-      if (weeklyEarningsGroups.length > 0) {
-        const total = weeklyEarningsGroups.reduce((s, g) => s + g.total, 0);
-        logger.ssr(`Loaded ${total} weekly earnings across ${weeklyEarningsGroups.length} days`);
+      weeklyEarningsData = weeklyEarningsResult.value as Record<string, EarningsWeekDay>;
+      const total = Object.values(weeklyEarningsData).reduce((s, d) => s + d.preMarket.length + d.afterMarket.length + d.timeTbd.length, 0);
+      if (total > 0) {
+        logger.ssr(`Loaded ${total} weekly earnings across ${Object.keys(weeklyEarningsData).length} days`);
       }
     }
 
@@ -376,12 +342,12 @@ export default async function Page() {
       <Suspense fallback={<div className="min-h-screen bg-white dark:bg-gray-950"></div>}>
         <HomePage
           initialData={initialData}
-          initialEarningsData={initialEarningsData}
           initialMoversData={initialMoversData}
           initialBlogSnapshots={initialBlogSnapshots}
           initialHeatmapData={initialHeatmapData}
-          upcomingEarnings={upcomingEarnings}
-          weeklyEarningsGroups={weeklyEarningsGroups}
+          weeklyEarningsData={weeklyEarningsData}
+          earningsTodayStr={earningsTodayStr}
+          earningsWeekStartStr={earningsWeekStartStr}
           eligibleTickers={eligibleSet}
         />
       </Suspense>

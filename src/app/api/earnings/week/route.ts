@@ -61,30 +61,33 @@ export async function GET(request: NextRequest) {
     });
     
     if (dbEarnings.length > 0) {
-      // Build week data from DB records
+      // Build week data from DB records — full detail fields (same shape as SSR)
+      const toRow = (e: any) => ({
+        ticker: e.ticker,
+        companyName: e.companyName,
+        date: e.date.toISOString().split('T')[0],
+        time: e.time,
+        epsEstimate: e.epsEstimate ?? null,
+        epsActual: e.epsActual ?? null,
+        revenueEstimate: e.revenueEstimate ?? null,
+        revenueActual: e.revenueActual ?? null,
+        epsSurprisePercent: e.epsSurprisePercent ?? null,
+        revenueSurprisePercent: e.revenueSurprisePercent ?? null,
+        marketCap: e.marketCap ?? null,
+        percentChange: e.percentChange ?? null,
+        hasReported: e.epsActual != null || e.revenueActual != null,
+      });
       const weekData: Record<string, any> = {};
       for (const dateStr of weekDates) {
-        const dayEarnings = dbEarnings.filter(e => 
+        const dayEarnings = dbEarnings.filter(e =>
           e.date.toISOString().split('T')[0] === dateStr
         );
-        
+
         weekData[dateStr] = {
           date: dateStr,
-          preMarket: dayEarnings.filter(e => e.time === 'bmo' || e.time === 'before').map(e => ({
-            ticker: e.ticker,
-            companyName: e.companyName,
-            time: e.time,
-          })),
-          afterMarket: dayEarnings.filter(e => e.time === 'amc' || e.time === 'after').map(e => ({
-            ticker: e.ticker,
-            companyName: e.companyName,
-            time: e.time,
-          })),
-          timeTbd: dayEarnings.filter(e => e.time !== 'bmo' && e.time !== 'amc' && e.time !== 'before' && e.time !== 'after').map(e => ({
-            ticker: e.ticker,
-            companyName: e.companyName,
-            time: e.time,
-          })),
+          preMarket: dayEarnings.filter(e => e.time === 'bmo' || e.time === 'before').map(toRow),
+          afterMarket: dayEarnings.filter(e => e.time === 'amc' || e.time === 'after').map(toRow),
+          timeTbd: dayEarnings.filter(e => e.time !== 'bmo' && e.time !== 'amc' && e.time !== 'before' && e.time !== 'after').map(toRow),
         };
       }
       
@@ -111,10 +114,26 @@ export async function GET(request: NextRequest) {
           // earningsService pushes everything not 'bmo' to afterMarket, so we check 'time'
           
           const allEarnings = [...result.data.preMarket, ...result.data.afterMarket];
-          
-          const preMarket = allEarnings.filter(e => e.time === 'bmo');
-          const afterMarket = allEarnings.filter(e => e.time === 'amc' || e.time === 'after');
-          const timeTbd = allEarnings.filter(e => e.time !== 'bmo' && e.time !== 'amc' && e.time !== 'after');
+
+          const toRow = (e: any) => ({
+            ticker: e.ticker,
+            companyName: e.companyName || e.ticker,
+            date,
+            time: e.time,
+            epsEstimate: e.epsEstimate ?? null,
+            epsActual: e.epsActual ?? null,
+            revenueEstimate: e.revenueEstimate ?? null,
+            revenueActual: e.revenueActual ?? null,
+            epsSurprisePercent: e.epsSurprisePercent ?? null,
+            revenueSurprisePercent: e.revenueSurprisePercent ?? null,
+            marketCap: e.marketCap ?? null,
+            percentChange: e.percentChange ?? null,
+            hasReported: e.epsActual != null || e.revenueActual != null,
+          });
+
+          const preMarket = allEarnings.filter(e => e.time === 'bmo').map(toRow);
+          const afterMarket = allEarnings.filter(e => e.time === 'amc' || e.time === 'after').map(toRow);
+          const timeTbd = allEarnings.filter(e => e.time !== 'bmo' && e.time !== 'amc' && e.time !== 'after').map(toRow);
           
           return {
             date,
