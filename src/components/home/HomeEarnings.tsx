@@ -8,9 +8,10 @@ interface HomeEarningsProps {
   upcomingEarnings?: any[];
   weeklyEarningsGroups?: any[];
   eligibleTickers?: Set<string>;
+  marketCapMap?: Map<string, number | null>;
 }
 
-export function HomeEarnings({ initialData, upcomingEarnings, weeklyEarningsGroups, eligibleTickers }: HomeEarningsProps) {
+export function HomeEarnings({ initialData, upcomingEarnings, weeklyEarningsGroups, eligibleTickers, marketCapMap }: HomeEarningsProps) {
     return (
         <SectionErrorBoundary sectionName="Earnings">
             <div className="bg-transparent mt-2">
@@ -20,6 +21,7 @@ export function HomeEarnings({ initialData, upcomingEarnings, weeklyEarningsGrou
                 <WeeklyEarningsCalendar
                     initialEarningsGroups={weeklyEarningsGroups ?? null}
                     eligibleTickers={eligibleTickers ?? new Set()}
+                    marketCapMap={marketCapMap ?? new Map()}
                 />
             </div>
         </SectionErrorBoundary>

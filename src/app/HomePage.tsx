@@ -2,7 +2,7 @@
 
 // Client component containing all page logic
 // This is imported by page.tsx (server component)
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import dynamic from 'next/dynamic';
 
 // All component imports moved to dynamic imports - fixed pattern for named exports
@@ -141,6 +141,17 @@ export default function HomePage({ initialData = [], initialEarningsData, initia
   const isDesktop = useMediaQuery('(min-width: 1024px)');
   const { preferences, setConsent } = useUserPreferences();
   const { isOnline } = usePWA();
+
+  // Build market cap map from initial stock data for earnings table sorting
+  const marketCapMap = useMemo(() => {
+    const map = new Map<string, number | null>();
+    for (const s of initialData) {
+      if (s?.ticker) {
+        map.set(s.ticker, s.marketCap ?? null);
+      }
+    }
+    return map;
+  }, [initialData]);
 
   const { activeSection, analysisTicker, setAnalysisTicker, handleMobileNavChange } =
     useHomeNavigation({ isMounted });
@@ -297,7 +308,7 @@ export default function HomePage({ initialData = [], initialEarningsData, initia
                 skeleton={<MobileSkeleton type="earnings" count={1} />}
               >
                 {(preferences.showEarningsSection ?? true) && (
-                  <HomeEarnings initialData={initialEarningsData} upcomingEarnings={upcomingEarnings} weeklyEarningsGroups={weeklyEarningsGroups} eligibleTickers={eligibleTickers} />
+                  <HomeEarnings initialData={initialEarningsData} upcomingEarnings={upcomingEarnings} weeklyEarningsGroups={weeklyEarningsGroups} eligibleTickers={eligibleTickers} marketCapMap={marketCapMap} />
                 )}
               </MobileScreen>
               <MobileScreen
@@ -456,7 +467,7 @@ export default function HomePage({ initialData = [], initialEarningsData, initia
 
                         {activeSection === 'earnings' && (
                           <div className="tab-content fade-in">
-                            <HomeEarnings initialData={initialEarningsData} upcomingEarnings={upcomingEarnings} weeklyEarningsGroups={weeklyEarningsGroups} eligibleTickers={eligibleTickers} />
+                            <HomeEarnings initialData={initialEarningsData} upcomingEarnings={upcomingEarnings} weeklyEarningsGroups={weeklyEarningsGroups} eligibleTickers={eligibleTickers} marketCapMap={marketCapMap} />
                           </div>
                         )}
 
