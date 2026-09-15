@@ -16,7 +16,6 @@ export interface UserPreferences {
   showPortfolioSection?: boolean;
   showFavoritesSection?: boolean;
   showEarningsSection?: boolean;
-  showAllStocksSection?: boolean;
   showHeatmapSection?: boolean;
   showMoversSection?: boolean;
 }
@@ -34,7 +33,6 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   showPortfolioSection: true,
   showFavoritesSection: true,
   showEarningsSection: true,
-  showAllStocksSection: true,
   showHeatmapSection: true,
   showMoversSection: true
 };

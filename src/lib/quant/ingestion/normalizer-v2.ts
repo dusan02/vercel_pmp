@@ -4,8 +4,8 @@ import * as crypto from 'crypto';
 import { PrismaClient } from '../p4-engine/db/client';
 
 const prisma = new PrismaClient({ datasources: { db: { url: process.env.PIT_DATABASE_URL || "postgresql://postgres:postgres@localhost:54320/postgres?schema=public" } } });
-const RAW_DIR = path.resolve(process.cwd(), 'src/lib/quant/data/raw');
-const QUARANTINE_DIR = path.resolve(process.cwd(), 'src/lib/quant/data/quarantine');
+const RAW_DIR = path.resolve(process.cwd(), 'data/quant/raw');
+const QUARANTINE_DIR = path.resolve(process.cwd(), 'data/quant/quarantine');
 
 // Ensure quarantine dir exists
 if (!fs.existsSync(QUARANTINE_DIR)) fs.mkdirSync(QUARANTINE_DIR, { recursive: true });

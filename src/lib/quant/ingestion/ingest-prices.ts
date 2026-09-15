@@ -4,7 +4,7 @@ import * as crypto from 'crypto';
 import { PrismaClient } from '../p4-engine/db/client';
 
 const prisma = new PrismaClient({ datasources: { db: { url: process.env.PIT_DATABASE_URL || "postgresql://postgres:postgres@localhost:54320/postgres?schema=public" } } });
-const RAW_DIR = path.resolve(process.cwd(), 'src/lib/quant/data/raw/polygon/prices');
+const RAW_DIR = path.resolve(process.cwd(), 'data/quant/raw/polygon/prices');
 
 function hashRecord(record: any): string {
     return crypto.createHash('sha256').update(JSON.stringify(record)).digest('hex');

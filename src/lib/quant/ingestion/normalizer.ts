@@ -3,7 +3,7 @@ import * as path from 'path';
 import { PrismaClient } from '../p4-engine/db/client';
 
 const prisma = new PrismaClient({ datasources: { db: { url: process.env.PIT_DATABASE_URL || "postgresql://postgres:postgres@localhost:54320/postgres?schema=public" } } });
-const RAW_DIR = path.resolve(process.cwd(), 'src/lib/quant/data/raw');
+const RAW_DIR = path.resolve(process.cwd(), 'data/quant/raw');
 
 const SYSTEM_LATENCY_MS = 2 * 60 * 60 * 1000; // 2 hours latency for System PIT policy
 

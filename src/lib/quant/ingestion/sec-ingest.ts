@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-const RAW_DIR = path.resolve(process.cwd(), 'src/lib/quant/data/raw/sec');
+const RAW_DIR = path.resolve(process.cwd(), 'data/quant/raw/sec');
 
 // SEC EDGAR requires a User-Agent in the format: "AppName UserEmail"
 const USER_AGENT = 'PreMarketPrice quant@premarketprice.com';

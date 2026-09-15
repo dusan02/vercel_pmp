@@ -35,7 +35,7 @@ export class SecAcquisitionWorker {
     private manifestMutationQueue: Promise<void> = Promise.resolve();
 
     constructor(options: SecAcquisitionOptions = {}) {
-        this.rawBaseDir = options.rawBaseDir || path.resolve(process.cwd(), 'src/lib/quant/data/raw/sec');
+        this.rawBaseDir = options.rawBaseDir || path.resolve(process.cwd(), 'data/quant/raw/sec');
         this.userAgent = options.userAgent || 'PreMarketPrice quant@premarketprice.com';
         // SEC max is 10 req/s. We enforce min 120ms between requests (<= 8.3 req/s)
         this.minRequestIntervalMs = options.minRequestIntervalMs ?? 120;

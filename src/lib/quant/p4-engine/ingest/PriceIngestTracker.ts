@@ -21,7 +21,7 @@ export class PriceIngestTracker {
     private checkpointFile: string;
     private state: Map<string, CheckpointRecord>;
 
-    constructor(baseDir: string = path.join(process.cwd(), 'src/lib/quant/data')) {
+    constructor(baseDir: string = path.join(process.cwd(), 'data/quant')) {
         this.rawDir = path.join(baseDir, 'raw', 'eodhd');
         const stateDir = path.join(baseDir, 'processed', 'state');
         

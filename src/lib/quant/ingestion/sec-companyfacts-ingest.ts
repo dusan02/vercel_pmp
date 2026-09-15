@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-const RAW_DIR = path.resolve(process.cwd(), 'src/lib/quant/data/raw/sec/companyfacts');
+const RAW_DIR = path.resolve(process.cwd(), 'data/quant/raw/sec/companyfacts');
 const USER_AGENT = 'PreMarketPrice quant@premarketprice.com';
 
 const CANARY_CIKS = {

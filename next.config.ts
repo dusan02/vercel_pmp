@@ -38,6 +38,13 @@ const nextConfig: NextConfig = {
     minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
   },
 
+  // Strip console.log/info/debug from production client+server bundles.
+  // The codebase has ~580 console.log calls in 100+ files — removing them at
+  // build time avoids a noisy sweep while keeping console.error/warn.
+  compiler: {
+    removeConsole: { exclude: ['error', 'warn'] },
+  },
+
   // Experimental features for better performance
   experimental: {
     // optimizeCss: true, // Temporarily disabled due to critters module issue

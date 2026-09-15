@@ -6,7 +6,7 @@ const API_KEY = process.env.POLYGON_API_KEY;
 if (!API_KEY) {
     throw new Error('POLYGON_API_KEY env variable is required. Set it in .env.local or export it before running ingestion.');
 }
-const RAW_DIR = path.resolve(process.cwd(), 'src/lib/quant/data/raw/polygon');
+const RAW_DIR = path.resolve(process.cwd(), 'data/quant/raw/polygon');
 
 const CANARY_UNIVERSE = ['AAPL', 'MSFT', 'META', 'NVDA', 'LEHMQ']; 
 // Note: LEHMQ (Lehman) might not be in Polygon's active dataset depending on history depth, 
