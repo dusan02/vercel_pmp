@@ -176,6 +176,7 @@ export default async function Page() {
   let initialBlogSnapshots: any[] = [];
   let initialHeatmapData: any[] = [];
   let upcomingEarnings: any[] = [];
+  let weeklyEarningsGroups: any[] = [];
 
   try {
     const todayET = getDateET(new Date());
@@ -187,7 +188,7 @@ export default async function Page() {
     // Client-side hooks will fetch the data anyway, so empty initial data is safe.
     const SSR_TIMEOUT_MS = 3000;
 
-    const [stocksResult, earningsResult, moversResult, blogResult, heatmapResult, upcomingEarningsResult] = await Promise.allSettled([
+    const [stocksResult, earningsResult, moversResult, blogResult, heatmapResult, upcomingEarningsResult, weeklyEarningsResult] = await Promise.allSettled([
       withTimeout(getStocksData(topTickers, project), SSR_TIMEOUT_MS, { data: [], errors: ['SSR timeout'] }),
       withTimeout(getEarningsForDate(todayET), SSR_TIMEOUT_MS, null),
       // SSR fetch for movers — used by HomeMovers as SWR fallbackData
@@ -233,6 +234,17 @@ export default async function Page() {
           const tomorrowStr = tomorrow.toISOString().split('T')[0] ?? '';
           const groups = await getEarningsRange(todayET, tomorrowStr);
           return groups.flatMap((g) => [...g.preMarket, ...g.afterMarket, ...g.timeTbd]).slice(0, 20);
+        })(),
+        SSR_TIMEOUT_MS,
+        []
+      ),
+      // SSR fetch for weekly earnings groups — detailed table in Earnings tab
+      withTimeout(
+        (async () => {
+          const weekEnd = new Date(todayET + 'T12:00:00Z');
+          weekEnd.setUTCDate(weekEnd.getUTCDate() + 6);
+          const weekEndStr = weekEnd.toISOString().split('T')[0] ?? '';
+          return await getEarningsRange(todayET, weekEndStr);
         })(),
         SSR_TIMEOUT_MS,
         []
@@ -291,6 +303,14 @@ export default async function Page() {
       upcomingEarnings = upcomingEarningsResult.value as any[];
       if (upcomingEarnings.length > 0) {
         logger.ssr(`Loaded ${upcomingEarnings.length} upcoming earnings`);
+      }
+    }
+
+    if (weeklyEarningsResult.status === 'fulfilled') {
+      weeklyEarningsGroups = weeklyEarningsResult.value as any[];
+      if (weeklyEarningsGroups.length > 0) {
+        const total = weeklyEarningsGroups.reduce((s, g) => s + g.total, 0);
+        logger.ssr(`Loaded ${total} weekly earnings across ${weeklyEarningsGroups.length} days`);
       }
     }
 
@@ -361,6 +381,7 @@ export default async function Page() {
           initialBlogSnapshots={initialBlogSnapshots}
           initialHeatmapData={initialHeatmapData}
           upcomingEarnings={upcomingEarnings}
+          weeklyEarningsGroups={weeklyEarningsGroups}
           eligibleTickers={eligibleSet}
         />
       </Suspense>

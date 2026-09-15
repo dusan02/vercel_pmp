@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import Link from 'next/link';
 import { format, addDays, subWeeks, addWeeks, startOfWeek, isSameDay } from 'date-fns';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Coffee } from 'lucide-react';
 import CompanyLogo from './CompanyLogo';
 import { isMarketHoliday } from '@/lib/utils/timeUtils';
-import TodaysEarningsFinnhub from './TodaysEarningsFinnhub';
+import type { EarningsSSRRow, EarningsSSRGroup } from '@/lib/seo/earningsSSR';
 
 // Helper to get ET current date
 const getETDate = () => {
@@ -31,7 +32,122 @@ interface WeeklyEarningsResponse {
   data: Record<string, DayEarnings>;
 }
 
-export default function WeeklyEarningsCalendar({ initialWeeklyData }: { initialWeeklyData?: Record<string, DayEarnings> | null }) {
+function formatEps(value: number | null): string {
+  if (value == null) return '-';
+  return `$${value.toFixed(2)}`;
+}
+
+function formatRevenue(value: number | null): string {
+  if (value == null) return '-';
+  if (value >= 1e12) return `$${(value / 1e12).toFixed(2)}T`;
+  if (value >= 1e9) return `$${(value / 1e9).toFixed(2)}B`;
+  if (value >= 1e6) return `$${(value / 1e6).toFixed(0)}M`;
+  return `$${value.toFixed(0)}`;
+}
+
+function formatPercent(value: number | null): string {
+  if (value == null) return '-';
+  return `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`;
+}
+
+function timeLabel(time: string): string {
+  switch (time) {
+    case 'bmo': return 'Pre-Mkt';
+    case 'amc': return 'After-Hrs';
+    case 'dmt': return 'During';
+    default: return 'TBD';
+  }
+}
+
+function timeColor(time: string): string {
+  switch (time) {
+    case 'bmo': return 'text-yellow-600 dark:text-yellow-400';
+    case 'amc': return 'text-purple-600 dark:text-purple-400';
+    default: return 'text-gray-500';
+  }
+}
+
+// Detailed table row for the selected date
+function EarningsDetailRow({ row, eligible }: { row: EarningsSSRRow; eligible: Set<string> }) {
+  const surprise = row.epsSurprisePercent;
+  const surpriseClass =
+    surprise != null
+      ? surprise >= 0
+        ? 'text-emerald-600 dark:text-emerald-400'
+        : 'text-rose-600 dark:text-rose-400'
+      : '';
+  const isEligible = eligible.has(row.ticker);
+
+  return (
+    <tr className="border-t border-slate-100 dark:border-slate-800 hover:bg-slate-50/60 dark:hover:bg-slate-950/60">
+      <td className="px-3 py-2 font-semibold">
+        {isEligible ? (
+          <Link href={`/analysis/${row.ticker}`} className="hover:underline">{row.ticker}</Link>
+        ) : (
+          <span className="text-gray-500 dark:text-gray-400">{row.ticker}</span>
+        )}
+      </td>
+      <td className="px-3 py-2 text-slate-700 dark:text-slate-300 max-w-[200px] truncate">{row.companyName}</td>
+      <td className={`px-3 py-2 text-xs font-medium ${timeColor(row.time)}`}>{timeLabel(row.time)}</td>
+      <td className="px-3 py-2 tabular-nums text-slate-600 dark:text-slate-400">{formatEps(row.epsEstimate)}</td>
+      <td className="px-3 py-2 tabular-nums text-slate-700 dark:text-slate-300">
+        {row.hasReported ? formatEps(row.epsActual) : '-'}
+      </td>
+      <td className={`px-3 py-2 tabular-nums font-semibold ${surpriseClass}`}>
+        {surprise != null ? formatPercent(surprise) : '-'}
+      </td>
+      <td className="px-3 py-2 tabular-nums text-slate-600 dark:text-slate-400">{formatRevenue(row.revenueEstimate)}</td>
+      <td className="px-3 py-2 tabular-nums text-slate-700 dark:text-slate-300">
+        {row.hasReported ? formatRevenue(row.revenueActual) : '-'}
+      </td>
+    </tr>
+  );
+}
+
+function EarningsDetailTable({ group, eligible }: { group: EarningsSSRGroup | null; eligible: Set<string> }) {
+  if (!group || group.total === 0) {
+    return (
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-8 text-center text-slate-500">
+        No earnings scheduled for this date.
+      </div>
+    );
+  }
+  const allRows = [...group.preMarket, ...group.afterMarket, ...group.timeTbd];
+
+  return (
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-slate-50 dark:bg-slate-950">
+            <tr className="text-left text-slate-600 dark:text-slate-400">
+              <th className="px-3 py-2">Ticker</th>
+              <th className="px-3 py-2">Company</th>
+              <th className="px-3 py-2">Time</th>
+              <th className="px-3 py-2">EPS Est.</th>
+              <th className="px-3 py-2">EPS Actual</th>
+              <th className="px-3 py-2">Surprise</th>
+              <th className="px-3 py-2">Rev Est.</th>
+              <th className="px-3 py-2">Rev Actual</th>
+            </tr>
+          </thead>
+          <tbody>
+            {allRows.map((r) => <EarningsDetailRow key={`${r.ticker}-${r.date}`} row={r} eligible={eligible} />)}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+export default function WeeklyEarningsCalendar({
+  initialWeeklyData,
+  initialEarningsGroups,
+  eligibleTickers = new Set(),
+}: {
+  initialWeeklyData?: Record<string, DayEarnings> | null;
+  initialEarningsGroups?: EarningsSSRGroup[] | null;
+  eligibleTickers?: Set<string>;
+}) {
   // Start week at Monday for the given current time
   const [currentDate, setCurrentDate] = useState(() => {
     const et = getETDate();
@@ -42,6 +158,17 @@ export default function WeeklyEarningsCalendar({ initialWeeklyData }: { initialW
   const [weeklyData, setWeeklyData] = useState<Record<string, DayEarnings>>(() => initialWeeklyData ?? {});
   const [loading, setLoading] = useState(() => !initialWeeklyData);
   const [error, setError] = useState<string | null>(null);
+
+  // SSR earnings groups (with EPS/revenue) — keyed by date for O(1) lookup
+  const [earningsGroupsMap, setEarningsGroupsMap] = useState<Record<string, EarningsSSRGroup>>(() => {
+    const map: Record<string, EarningsSSRGroup> = {};
+    if (initialEarningsGroups) {
+      for (const g of initialEarningsGroups) {
+        map[g.date] = g;
+      }
+    }
+    return map;
+  });
 
   // Compute the 5 days of the selected week (Mon-Fri)
   const weekDays = useMemo(() => {
@@ -85,6 +212,32 @@ export default function WeeklyEarningsCalendar({ initialWeeklyData }: { initialW
     fetchWeekData();
   }, [startDateStr]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Fetch detailed earnings groups when week changes (if not in SSR data)
+  useEffect(() => {
+    const weekEndStr = format(weekDays[4]!, 'yyyy-MM-dd');
+    // Check if we already have all 5 days in SSR data
+    const hasAllDays = weekDays.every((d) => {
+      const ds = format(d, 'yyyy-MM-dd');
+      return earningsGroupsMap[ds] !== undefined;
+    });
+    if (hasAllDays) return;
+
+    const fetchDetailed = async () => {
+      try {
+        const res = await fetch(`/api/earnings/dates?start=${startDateStr}&end=${weekEndStr}`);
+        if (!res.ok) return;
+        const json = await res.json();
+        if (json.success && json.data) {
+          // json.data is an array of { date, count } — not full groups
+          // We need the full groups with EPS data. Fetch from a different endpoint.
+        }
+      } catch {
+        // Silent fail — SSR data is the primary source
+      }
+    };
+    fetchDetailed();
+  }, [startDateStr]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handlePrevWeek = () => setCurrentDate(prev => subWeeks(prev, 1));
   const handleNextWeek = () => setCurrentDate(prev => addWeeks(prev, 1));
   const handleThisWeek = () => setCurrentDate(startOfWeek(getETDate(), { weekStartsOn: 1 }));
@@ -105,6 +258,8 @@ export default function WeeklyEarningsCalendar({ initialWeeklyData }: { initialW
   }, [weeklyData]);
 
   const todayET = getETDate();
+  const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
+  const selectedGroup = earningsGroupsMap[selectedDateStr] ?? null;
 
   return (
     <div className="w-full flex flex-col gap-4">
@@ -261,16 +416,19 @@ export default function WeeklyEarningsCalendar({ initialWeeklyData }: { initialW
                         title="PRE-MARKET" 
                         color="bg-yellow-400" 
                         data={dayData.preMarket} 
+                        eligible={eligibleTickers}
                       />
                       <EarningsSection 
                         title="AFTER-HOURS" 
                         color="bg-purple-500" 
                         data={dayData.afterMarket} 
+                        eligible={eligibleTickers}
                       />
                       <EarningsSection 
                         title="TIME TBD" 
                         color="bg-gray-400" 
                         data={dayData.timeTbd} 
+                        eligible={eligibleTickers}
                       />
                     </div>
                   )}
@@ -286,7 +444,7 @@ export default function WeeklyEarningsCalendar({ initialWeeklyData }: { initialW
         <h3 className="text-base font-bold text-gray-900 dark:text-white mb-3">
           Details for {format(selectedDate, 'EEEE, MMMM d')}
         </h3>
-        <TodaysEarningsFinnhub selectedDate={format(selectedDate, 'yyyy-MM-dd')} hideHeader={true} />
+        <EarningsDetailTable group={selectedGroup} eligible={eligibleTickers} />
       </div>
 
     </div>
@@ -294,11 +452,11 @@ export default function WeeklyEarningsCalendar({ initialWeeklyData }: { initialW
 }
 
 // Subcomponent for each time section
-function EarningsSection({ title, color, data }: { title: string, color: string, data?: EarningsData[] }) {
+function EarningsSection({ title, color, data, eligible }: { title: string, color: string, data?: EarningsData[], eligible: Set<string> }) {
   if (!data || data.length === 0) return null;
 
   const handleTickerClick = (ticker: string) => {
-    // Dispatch custom event if we want to integrate with sidebar or standard navigation
+    if (!eligible.has(ticker)) return; // Don't navigate if not eligible
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('mobile-nav-change', {
         detail: { tab: 'analysis', ticker }
@@ -313,22 +471,32 @@ function EarningsSection({ title, color, data }: { title: string, color: string,
         <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400 tracking-wider uppercase">{title}</span>
       </div>
       <div className="flex flex-wrap gap-2">
-        {data.map((item, idx) => (
-          <button
-            key={`${item.ticker}-${idx}`}
-            onClick={() => handleTickerClick(item.ticker)}
-            className="w-11 h-11 flex items-center justify-center bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 shadow-sm transition-all hover:shadow-md group relative overflow-hidden"
-            title={item.companyName || item.ticker}
-          >
-            <div className="w-7 h-7 flex items-center justify-center relative z-10">
-              <CompanyLogo ticker={item.ticker} size={28} />
-            </div>
-            {/* Ticker fallback visible if logo fails or on hover */}
-            <div className="absolute inset-0 bg-gray-900/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20">
-              <span className="text-[10px] font-bold text-white px-1 truncate">{item.ticker}</span>
-            </div>
-          </button>
-        ))}
+        {data.map((item, idx) => {
+          const isEligible = eligible.has(item.ticker);
+          return (
+            <button
+              key={`${item.ticker}-${idx}`}
+              onClick={() => handleTickerClick(item.ticker)}
+              disabled={!isEligible}
+              className={`w-11 h-11 flex items-center justify-center bg-white dark:bg-gray-800 rounded-lg border shadow-sm transition-all group relative overflow-hidden ${
+                isEligible
+                  ? 'border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md cursor-pointer'
+                  : 'border-gray-100 dark:border-gray-800 opacity-60 cursor-default'
+              }`}
+              title={item.companyName || item.ticker}
+            >
+              <div className="w-7 h-7 flex items-center justify-center relative z-10">
+                <CompanyLogo ticker={item.ticker} size={28} />
+              </div>
+              {/* Ticker fallback visible if logo fails or on hover (only for eligible) */}
+              {isEligible && (
+                <div className="absolute inset-0 bg-gray-900/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                  <span className="text-[10px] font-bold text-white px-1 truncate">{item.ticker}</span>
+                </div>
+              )}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

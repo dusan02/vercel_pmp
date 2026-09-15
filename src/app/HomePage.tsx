@@ -128,10 +128,11 @@ interface HomePageProps {
   initialBlogSnapshots?: any[];
   initialHeatmapData?: any[];
   upcomingEarnings?: any[];
+  weeklyEarningsGroups?: any[];
   eligibleTickers?: Set<string>;
 }
 
-export default function HomePage({ initialData = [], initialEarningsData, initialMoversData, initialBlogSnapshots, initialHeatmapData, upcomingEarnings = [], eligibleTickers = new Set() }: HomePageProps) {
+export default function HomePage({ initialData = [], initialEarningsData, initialMoversData, initialBlogSnapshots, initialHeatmapData, upcomingEarnings = [], weeklyEarningsGroups = [], eligibleTickers = new Set() }: HomePageProps) {
   useEffect(() => { autoRepairLocalStorage(); }, []);
 
   const [isMounted, setIsMounted] = useState(false);
@@ -296,7 +297,7 @@ export default function HomePage({ initialData = [], initialEarningsData, initia
                 skeleton={<MobileSkeleton type="earnings" count={1} />}
               >
                 {(preferences.showEarningsSection ?? true) && (
-                  <HomeEarnings initialData={initialEarningsData} upcomingEarnings={upcomingEarnings} />
+                  <HomeEarnings initialData={initialEarningsData} upcomingEarnings={upcomingEarnings} weeklyEarningsGroups={weeklyEarningsGroups} eligibleTickers={eligibleTickers} />
                 )}
               </MobileScreen>
               <MobileScreen
@@ -455,7 +456,7 @@ export default function HomePage({ initialData = [], initialEarningsData, initia
 
                         {activeSection === 'earnings' && (
                           <div className="tab-content fade-in">
-                            <HomeEarnings initialData={initialEarningsData} upcomingEarnings={upcomingEarnings} />
+                            <HomeEarnings initialData={initialEarningsData} upcomingEarnings={upcomingEarnings} weeklyEarningsGroups={weeklyEarningsGroups} eligibleTickers={eligibleTickers} />
                           </div>
                         )}
 
