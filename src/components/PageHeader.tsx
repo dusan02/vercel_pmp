@@ -25,12 +25,12 @@ export function PageHeader({ navigation, onLogoClick }: PageHeaderProps) {
             onClick={onLogoClick}
           >
             <BrandLogo size={40} className="flex-shrink-0" />
-            <h1 className="font-sans font-extrabold text-[1.05rem] leading-[1.125rem] tracking-tight m-0 text-gray-900 dark:text-white whitespace-nowrap">
+            <div className="font-sans font-extrabold text-[1.05rem] leading-[1.125rem] tracking-tight m-0 text-gray-900 dark:text-white whitespace-nowrap">
               <span className="flex flex-col sm:block justify-center gap-0">
                 <span>PreMarket</span>
                 <span className="text-gray-500 dark:text-gray-400"> Price</span>
               </span>
-            </h1>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
@@ -50,12 +50,12 @@ export function PageHeader({ navigation, onLogoClick }: PageHeaderProps) {
               >
                 <div className="flex items-center gap-3">
                   <BrandLogo size={42} className="flex-shrink-0" />
-                  <h1 className="font-sans font-extrabold text-2xl leading-none tracking-tight m-0 text-gray-900 dark:text-white whitespace-nowrap">
+                  <div className="font-sans font-extrabold text-2xl leading-none tracking-tight m-0 text-gray-900 dark:text-white whitespace-nowrap">
                     <span className="flex items-center gap-1">
                       <span>PreMarket</span>
                       <span className="text-gray-500 dark:text-gray-400">Price</span>
                     </span>
-                  </h1>
+                  </div>
                 </div>
                 
               </div>

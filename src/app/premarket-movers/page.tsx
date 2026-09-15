@@ -16,10 +16,14 @@ function getTodayFormatted(): string {
   return new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 }
 
+function getTodayShort(): string {
+  return new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
 export async function generateMetadata(): Promise<Metadata> {
   const today = getTodayFormatted();
   return generatePageMetadata({
-    title: `Stocks Moving in Premarket Today (${today})`,
+    title: `Stocks Moving in Premarket Today (${getTodayShort()})`,
     description:
       `Biggest pre-market stock movers for ${today} — top gainers and losers ranked by % change with Z-scores and momentum insights. Real-time data from NYSE & NASDAQ.`,
     path: '/premarket-movers',

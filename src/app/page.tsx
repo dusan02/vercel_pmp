@@ -129,7 +129,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
 
   // Default homepage metadata (no tab param)
   return {
-    title: 'PreMarketPrice — Real-Time Pre-Market Stock Prices & Market Data',
+    title: 'PreMarketPrice — Real-Time Pre-Market Stock Prices',
     description: 'Track real-time pre-market stock prices, market movers, earnings calendar, and interactive heatmap for 300+ US stocks on NYSE and NASDAQ.',
     alternates: { canonical: baseUrl },
     openGraph: {

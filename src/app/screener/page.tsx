@@ -6,7 +6,7 @@ import StockScreener from '@/components/StockScreener';
 export const revalidate = 600;
 
 export const metadata: Metadata = generatePageMetadata({
-  title: 'Stock Screener — All US Stocks List & Fundamentals',
+  title: 'Stock Screener — All US Stocks',
   description:
     'Browse all US stocks and filter by financial health score, profitability, valuation, Altman Z-score, Piotroski F-Score, Beneish M-Score, FCF margin, debt and sector. Search 600+ companies and find the best investment opportunities.',
   path: '/screener',
