@@ -9,7 +9,7 @@ const SECTION_DESCRIPTIONS: Record<string, string> = {
   analysis:  'Drill into any stock with valuation scores, Altman Z-Score, debt ratios, and earnings history. Data-driven insights for smarter decisions.',
   movers:    'The biggest pre-market movers ranked by % change, with z-score and relative volume to separate real momentum from noise.',
   portfolio: 'Monitor your holdings in real-time. Track pre-market price changes, total portfolio value, and daily P&L before the opening bell.',
-  favorites: 'Your personal watchlist — instant pre-market price updates on the stocks that matter most to you.',
+  favorites: 'Your personal favorites list — instant pre-market price updates on the stocks that matter most to you.',
   earnings:  'Never miss a market-moving event. Earnings dates, EPS estimates, and revenue forecasts for S&P 500 companies — all in one place.',
   allStocks: 'Browse 600+ US stocks sorted by price, % change, market cap, and market cap diff. Search and filter by sector to find opportunities fast.',
   default:   'Real-time pre-market stock data, earnings calendar, and market analysis for US stocks. Track market movers before the bell.',

@@ -73,7 +73,7 @@ export default async function ScreenerPage() {
               each company&apos;s P/E and P/S against its own 5-year history; the Altman Z-Score
               estimates bankruptcy risk; the Piotroski F-Score measures financial strength; and the
               Beneish M-Score flags potential earnings manipulation. Combine them with sector,
-              industry and market-cap filters to build precisely the watchlist you need.
+              industry and market-cap filters to build precisely the favorites list you need.
             </p>
             <p className="mt-3">
               Every stock links to a full analysis page with pre-market prices, intraday charts,

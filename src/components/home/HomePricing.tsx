@@ -25,7 +25,7 @@ const PLANS: Plan[] = [
       'Top gainers & losers',
       'Earnings calendar',
       'Portfolio tracking (up to 10 stocks)',
-      'Favorites / watchlist',
+      'Favorites list',
     ],
     cta: 'Start Using Free',
     ctaHref: '/?tab=heatmap',

@@ -52,7 +52,7 @@ const TAB_META: Record<string, { title: string; description: string; canonical: 
     canonical: `${baseUrl}/?tab=portfolio`,
   },
   favorites: {
-    title: 'My Favorites — Track Your Watchlist | PreMarketPrice',
+    title: 'My Favorites — Track Your Favorite Stocks | PreMarketPrice',
     description: 'Track your favorite US stocks with real-time pre-market prices and % change.',
     canonical: baseUrl,
   },

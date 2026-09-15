@@ -3,18 +3,18 @@
 import { useState, useEffect } from 'react';
 import { Star } from 'lucide-react';
 
-interface AddToWatchlistProps {
+interface AddToFavoritesProps {
   ticker: string;
 }
 
 const FAVORITES_KEY = 'pmp-favorites';
 
 /**
- * Client-side "Add to Watchlist" button for analysis pages.
+ * Client-side "Add to Favorites" button for analysis pages.
  * Uses localStorage — no registration required.
  * Renders a star button that toggles the ticker in the user's favorites.
  */
-export function AddToWatchlist({ ticker }: AddToWatchlistProps) {
+export function AddToWatchlist({ ticker }: AddToFavoritesProps) {
   const [isFavorite, setIsFavorite] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -51,10 +51,10 @@ export function AddToWatchlist({ ticker }: AddToWatchlistProps) {
     return (
       <button
         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700"
-        aria-label="Add to watchlist"
+        aria-label="Add to favorites"
       >
         <Star className="w-4 h-4" />
-        <span className="hidden sm:inline">Watchlist</span>
+        <span className="hidden sm:inline">Favorites</span>
       </button>
     );
   }
@@ -67,11 +67,11 @@ export function AddToWatchlist({ ticker }: AddToWatchlistProps) {
           ? 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
           : 'text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:text-yellow-600 dark:hover:text-yellow-400 hover:border-yellow-200 dark:hover:border-yellow-800'
       }`}
-      aria-label={isFavorite ? 'Remove from watchlist' : 'Add to watchlist'}
-      title={isFavorite ? 'Remove from watchlist' : 'Add to watchlist — no sign-up needed'}
+      aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+      title={isFavorite ? 'Remove from favorites' : 'Add to favorites — no sign-up needed'}
     >
       <Star className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
-      <span className="hidden sm:inline">{isFavorite ? 'In Watchlist' : 'Add to Watchlist'}</span>
+      <span className="hidden sm:inline">{isFavorite ? 'In Favorites' : 'Add to Favorites'}</span>
     </button>
   );
 }
