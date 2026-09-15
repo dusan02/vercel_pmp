@@ -5,10 +5,13 @@ import { HeatmapSkeleton } from '../SectionSkeleton';
 import { StockData } from '@/lib/types';
 
 // CRITICAL: Heatmap je prvá obrazovka na mobile - prioritizuj načítanie
+// ssr: true — HeatmapPreview je SSR-safe (browser APIs len v effects/handlers).
+// SSR renderuje "Measuring container..." state a zahŕňa chunk v HTML →
+// odstráni waterfall: užívateľ vidí loading stav hneď a hydratácia je rýchla.
 const HeatmapPreview = dynamic(
     () => import('../HeatmapPreview').then((mod) => mod.HeatmapPreview),
     {
-        ssr: false,
+        ssr: true,
         loading: () => <HeatmapSkeleton />,
     }
 );

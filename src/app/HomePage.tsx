@@ -161,6 +161,32 @@ export default function HomePage({ initialData = [], initialEarningsData, initia
   // Prefetch inactive screens and prioritize heatmap on mobile
   useMobilePrefetch(activeSection);
 
+  // Warm up lazy tab chunks on idle so tab switches don't trigger a
+  // sequential chunk-download waterfall (each dynamic() is a separate fetch).
+  useEffect(() => {
+    const warmup = () => {
+      void import('@/components/home/HomeMovers');
+      void import('@/components/home/HomeAnalysis');
+      void import('@/components/home/HomeEarnings');
+      void import('@/components/home/HomePortfolio');
+      void import('@/components/home/HomeFavorites');
+      void import('@/components/home/HomeBlog');
+      void import('@/components/home/HomePricing');
+      void import('@/components/StockScreener');
+      // Heatmap inner chunks (the heaviest waterfall: 4 nested dynamic levels)
+      void import('@/components/HeatmapPreview');
+      void import('@/components/ResponsiveMarketHeatmap');
+      void import('@/components/MarketHeatmap');
+      void import('@/components/MobileTreemapNew');
+    };
+    if ('requestIdleCallback' in window) {
+      const id = requestIdleCallback(warmup, { timeout: 5000 });
+      return () => cancelIdleCallback(id);
+    }
+    const t = setTimeout(warmup, 3000);
+    return () => clearTimeout(t);
+  }, []);
+
 
   return (
     <>

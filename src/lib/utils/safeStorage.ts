@@ -6,17 +6,23 @@
  * - SSR (server-side rendering)
  */
 
+// Cache the availability result — the localStorage write/remove probe is
+// synchronous and expensive when called on every safeGetItem/safeSetItem.
+let storageAvailable: boolean | null = null;
+
 const isStorageAvailable = (): boolean => {
   if (typeof window === 'undefined') return false;
-  
+  if (storageAvailable !== null) return storageAvailable;
+
   try {
     const testKey = '__storage_test__';
     localStorage.setItem(testKey, testKey);
     localStorage.removeItem(testKey);
+    storageAvailable = true;
     return true;
   } catch (e) {
     const error = e as Error | DOMException;
-    return (
+    storageAvailable = (
       error instanceof DOMException &&
       (error.code === 22 || // QuotaExceededError
        error.code === 1014 || // NS_ERROR_DOM_QUOTA_REACHED
@@ -25,6 +31,7 @@ const isStorageAvailable = (): boolean => {
       // Safari in private mode throws SecurityError
       (error instanceof Error && error.name === 'SecurityError')
     );
+    return storageAvailable;
   }
 };
 
