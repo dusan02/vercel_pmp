@@ -75,17 +75,17 @@ export async function ingestBatch(
   console.log(`✅ Received ${snapshots.length} snapshots`);
 
   // Polygon Starter is ~15min delayed and omits lastTrade/lastQuote.
-  // Overlay Yahoo's real-time session price so fresh pre-market/live
-  // prints reach the UI instead of yesterday's close.
+  // Overlay TradingView's real-time session price so fresh
+  // pre-market/live prints reach the UI instead of yesterday's close.
   if (session === 'pre' || session === 'live' || session === 'after') {
     try {
-      const { applyYahooOverlay } = await import('./yahooOverlay');
-      const overlaid = await applyYahooOverlay(snapshots, tickers, session, prevCloseMap);
+      const { applyRealtimeOverlay } = await import('./tradingviewOverlay');
+      const overlaid = await applyRealtimeOverlay(snapshots, tickers, session, prevCloseMap);
       if (overlaid > 0) {
-        console.log(`⚡ Yahoo overlay: real-time prices for ${overlaid}/${tickers.length} tickers`);
+        console.log(`⚡ TV overlay: real-time prices for ${overlaid}/${tickers.length} tickers`);
       }
     } catch (err) {
-      console.warn('⚠️ Yahoo overlay failed (continuing with Polygon):', err);
+      console.warn('⚠️ TV overlay failed (continuing with Polygon):', err);
     }
   }
 
