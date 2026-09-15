@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/db/prisma';
-import { generatePageMetadata } from '@/lib/seo/metadata';
+import { generatePageMetadata, shortName } from '@/lib/seo/metadata';
 import { getCompanyName } from '@/lib/companyNames';
 import { formatPercent, formatPrice, formatMarketCapDiff } from '@/lib/utils/heatmapFormat';
 import { formatSectorName } from '@/lib/utils/format';
@@ -164,11 +164,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   const companyName = data?.name || getCompanyName(tickerUpper);
+  const short = shortName(companyName);
   const moves = await getRecentMoves(tickerUpper);
   const hasEnoughData = moves.length >= MIN_MOVES_FOR_INDEX;
 
-  const title = `${tickerUpper} Stock Movers & Unusual Moves | ${companyName}`;
-  const description = `${companyName} (${tickerUpper}) unusual market moves — pre-market, regular session, and after-hours price action with Z-scores and relative volume. ${moves.length} significant moves in the last 30 days.`;
+  const title = `${tickerUpper} Movers — ${short}`;
+  const description = `${short} (${tickerUpper}) unusual market moves — pre-market, regular session, and after-hours price action with Z-scores and relative volume. ${moves.length} significant moves in the last 30 days.`;
 
   const metadata = generatePageMetadata({
     title,

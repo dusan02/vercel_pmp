@@ -4,6 +4,27 @@ import { getCompanyName } from '@/lib/companyNames';
 const baseUrl = 'https://premarketprice.com';
 const siteName = 'PreMarketPrice';
 
+/**
+ * Shorten a company name for use in <title> and OG metadata.
+ * Strips ADS/share descriptions and common legal suffixes.
+ * "Meta Platforms, Inc. Class A Common Stock" → "Meta Platforms"
+ * "British American Tobacco p.l.c. American Depositary Shares…" → "British American Tobacco"
+ */
+export function shortName(name: string): string {
+  // Remove everything from "American Depositary" onwards
+  let s = name.replace(/\s*American Depositary[\s\S]*$/i, '');
+  // Remove parenthetical share descriptions
+  s = s.replace(/\s*\(.*(?:Share|Stock|Ordinary|Unit|Depositary)[^)]*\)\s*/gi, ' ');
+  // Remove trailing share class / type descriptions
+  s = s.replace(/[\s,]+(Class\s+[A-Z]\s+)?(Common\s+(Stock|Units?|Shares?)|Ordinary\s+Shares?|Preferred\s+Stock|Common\s+Units?[\s\S]*|Shares?[\s\S]*|Depositary\s+Units?)[\s.]*$/i, '');
+  // Remove legal entity suffixes at the end
+  s = s.replace(/[\s,]+(Inc\.?|Corp\.?|Corporation|Ltd\.?|Limited|LLC|L\.L\.C\.|PLC|P\.L\.C\.|plc|S\.A\.?|N\.V\.?|AG|SE|Co\.?|Company|Group|Holdings?|Holding)\s*$/i, '');
+  // Clean up leftover punctuation
+  s = s.replace(/[\s,.]+$/, '').trim();
+  // If we stripped too much, return the original
+  return s.length >= 2 ? s : name.trim();
+}
+
 interface CompanyMetadataParams {
   ticker: string;
   companyName?: string;
@@ -36,6 +57,7 @@ export function generateCompanyMetadata({
   industry,
 }: CompanyMetadataParams): Metadata {
   const displayName = companyName || getCompanyName(ticker);
+  const short = shortName(displayName);
   const priceText = price ? `$${price.toFixed(2)}` : '';
   const changeText = percentChange !== undefined 
     ? `${percentChange >= 0 ? '+' : ''}${percentChange.toFixed(2)}%`
@@ -45,15 +67,18 @@ export function generateCompanyMetadata({
     : '';
 
   // CTR-optimized title: include price + change for search intent match
-  // "AAPL Stock Price Today: $182.45 (+1.23%) — Apple Analysis & Valuation"
+  // Uses shortName to keep full title (incl. " | PreMarketPrice") under ~60 chars
+  const maxTitleLen = 60 - ` | ${siteName}`.length; // 60 total incl. suffix
+  const withChange = `${ticker} Stock ${priceText}${changeText ? ` (${changeText})` : ''} — ${short}`;
+  const withoutChange = `${ticker} Stock ${priceText} — ${short}`;
   const title = priceText
-    ? `${ticker} Stock Price Today: ${priceText}${changeText ? ` (${changeText})` : ''} — ${displayName} Analysis`
-    : `${displayName} (${ticker}) Stock Price, Analysis & Valuation`;
+    ? (withChange.length <= maxTitleLen ? withChange : withoutChange)
+    : `${ticker} Stock Price — ${short}`;
   const fullTitle = `${title} | ${siteName}`;
 
   // Keyword-rich description matching search intent
   const descParts = [
-    `${displayName} (${ticker}) stock price${priceText ? `: ${priceText}` : ''}${changeText ? ` ${changeText}` : ''}.`,
+    `${short} (${ticker}) stock price${priceText ? `: ${priceText}` : ''}${changeText ? ` ${changeText}` : ''}.`,
     marketCapText ? `${marketCapText}.` : '',
     sector ? `Sector: ${sector}.` : '',
     'Real-time pre-market price, earnings calendar, financial health score, valuation metrics (P/E, P/S, Altman Z-Score),',
@@ -103,7 +128,7 @@ export function generateCompanyMetadata({
           url: ogImage,
           width: 1200,
           height: 630,
-          alt: `${displayName} (${ticker}) Stock Data`,
+          alt: `${short} (${ticker}) Stock Data`,
         },
       ],
       locale: 'en_US',

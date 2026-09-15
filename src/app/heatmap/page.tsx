@@ -95,6 +95,14 @@ export default function HeatmapPage() {
           <a href="/sectors">Sector performance</a>
           <a href="/screener">Stock screener</a>
           <a href="/earnings">Earnings calendar</a>
+          <a href="/analysis/AAPL">AAPL Analysis</a>
+          <a href="/analysis/MSFT">MSFT Analysis</a>
+          <a href="/analysis/NVDA">NVDA Analysis</a>
+          <a href="/analysis/GOOGL">GOOGL Analysis</a>
+          <a href="/analysis/AMZN">AMZN Analysis</a>
+          <a href="/analysis/META">META Analysis</a>
+          <a href="/analysis/TSLA">TSLA Analysis</a>
+          <a href="/analysis/JPM">JPM Analysis</a>
         </nav>
       </div>
 

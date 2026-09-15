@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { prisma } from '@/lib/db/prisma';
-import { generatePageMetadata } from '@/lib/seo/metadata';
+import { generatePageMetadata, shortName } from '@/lib/seo/metadata';
 import { getCompanyName } from '@/lib/companyNames';
 import {
   getEligibleFinancialsTickers,
@@ -80,11 +80,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const tickerUpper = ticker.toUpperCase();
   const data = await getTickerBasicData(tickerUpper);
   const companyName = data?.name || getCompanyName(tickerUpper);
+  const short = shortName(companyName);
 
   const eligible = await hasFinancialsData(tickerUpper);
 
-  const title = `${companyName} (${tickerUpper}) Financial Statements & Revenue History`;
-  const description = `${companyName} (${tickerUpper}) financial statements — revenue, net income, balance sheet, and cash flow trends. Historical quarterly and annual financials with YoY growth analysis.`;
+  const title = `${tickerUpper} Financials — ${short}`;
+  const description = `${short} (${tickerUpper}) financial statements — revenue, net income, balance sheet, and cash flow trends. Historical quarterly and annual financials with YoY growth analysis.`;
 
   const metadata = generatePageMetadata({
     title,

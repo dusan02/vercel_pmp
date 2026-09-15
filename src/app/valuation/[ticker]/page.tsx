@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { prisma } from '@/lib/db/prisma';
-import { generatePageMetadata } from '@/lib/seo/metadata';
+import { generatePageMetadata, shortName } from '@/lib/seo/metadata';
 import { getCompanyName } from '@/lib/companyNames';
 import { formatPercent, formatPrice } from '@/lib/utils/heatmapFormat';
 import {
@@ -87,11 +87,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const tickerUpper = ticker.toUpperCase();
   const data = await getTickerBasicData(tickerUpper);
   const companyName = data?.name || getCompanyName(tickerUpper);
+  const short = shortName(companyName);
 
   const eligible = await hasValuationData(tickerUpper);
 
-  const title = `${companyName} (${tickerUpper}) Valuation & P/E History`;
-  const description = `${companyName} (${tickerUpper}) stock valuation analysis — historical P/E, P/S, EV/EBITDA ranges and percentiles. Is ${tickerUpper} overvalued or undervalued?`;
+  const title = `${tickerUpper} Valuation — ${short}`;
+  const description = `${short} (${tickerUpper}) stock valuation analysis — historical P/E, P/S, EV/EBITDA ranges and percentiles. Is ${tickerUpper} overvalued or undervalued?`;
 
   const metadata = generatePageMetadata({
     title,
