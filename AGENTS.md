@@ -28,6 +28,13 @@
 - GitHub Actions runner IP sa nikdy nezabanujú — auth je cez kľúč, žiadne failed attempts
 - **OTVORENÉ: sshd povolené `PasswordAuthentication yes` + `PermitRootLogin yes`** — odporúčané zmeniť na `prohibit-password` (vyžaduje potvrdenie vlastníka — riziko lockoutu)
 - **Artifact-based deploy (build v CI)** je blokovaný: `NEXT_PUBLIC_GA_ID` / `NEXT_PUBLIC_VAPID_PUBLIC_KEY` / `NEXT_PUBLIC_BASE_URL` sa bake-ujú do bundle pri builde — CI by potreboval tieto hodnoty ako GitHub secrets, inak by sa na produkcii potichu rozbil GA tracking a push notifikácie. Kým sa nepridajú secrets, VPS build (detached model) je správny prístup
+- **`vps-deploy.sh` nereštartuje `pmp-polygon-worker`** — po zmene `src/workers/**` treba manuálne `ssh root@89.185.250.213 'pm2 restart pmp-polygon-worker'` (worker beží cez tsx, nepotrebuje Next build)
+
+## Dátové zdroje cien
+
+- **Polygon Starter ($29/mo) = 15-min delayed** — `lastTrade`/`lastQuote` v snapshotoch sú prázdné, len `min` bary oneskorené ~15 min. Real-time vyžaduje Advanced ($199/mo)
+- **TradingView scanner overlay** (`src/workers/polygon/tradingviewOverlay.ts`): počas pre/live/after session merge-uje real-time `premarket_close`/`close`/`postmarket_close` do Polygon snapshotov pred normalize→upsert. Batch ~100 tickerov/POST, bez auth. Opt-out: `TV_OVERLAY=0`. Pri 429/chybách automaticky degraduje na Polygon-only (5min cooldown)
+- **Yahoo neoficiálne API NEPOUŽÍVAŤ pre polling** — v7 quote aj v8 chart 429-ujú datacenter IP po ~10 requestoch (testované 2026-09-15)
 
 ## Verifikácia po deplloy
 
