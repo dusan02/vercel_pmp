@@ -2,184 +2,110 @@
  * Yahoo Finance real-time overlay.
  *
  * The Polygon Starter plan serves ~15-minute delayed snapshots and omits
- * lastTrade/lastQuote entirely. Yahoo's unofficial quote endpoint returns
- * real-time session prices (preMarketPrice / regularMarketPrice /
- * postMarketPrice). During active sessions we merge Yahoo quotes into the
+ * lastTrade/lastQuote entirely. Yahoo's v8 chart endpoint (no auth needed,
+ * tolerant of batch polling) returns real-time 1m bars including pre/post
+ * market. During active sessions we merge the freshest Yahoo bar into the
  * fetched Polygon snapshots so the existing normalize→upsert pipeline picks
- * the fresher price. Existing timestamp validation (same ET day, in-session,
- * staleness guard) still applies — Yahoo data that fails validation is simply
- * ignored and the pipeline degrades to Polygon-only behavior.
+ * the fresher price. All timestamp validation still applies — data that
+ * fails validation is ignored and the pipeline degrades to Polygon-only.
  *
  * Opt-out: YAHOO_OVERLAY=0
  */
 
 import { nsToMs } from '@/lib/utils/dateET';
 import type { PolygonSnapshot } from './shared';
-
-type OverlaySession = 'pre' | 'live' | 'after';
+import { processBatchWithConcurrency } from '@/lib/batchProcessor';
 
 const UA =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
-// Yahoo A1/A3 cookies + crumbs live for many hours — refresh rarely.
-// Re-authenticating on every failure trips Yahoo's per-minute getcrumb
-// limiter, so we keep using the previous auth until it 401/403s.
-const AUTH_TTL_MS = 12 * 60 * 60 * 1000;
 const COOLDOWN_MS = 5 * 60 * 1000;
-const BATCH_SIZE = 80;
+const CONCURRENCY = 10;
 const MAX_CONSECUTIVE_FAILURES = 5;
 
-const FIELDS: Record<OverlaySession, { price: string; time: string }> = {
-  pre: { price: 'preMarketPrice', time: 'preMarketTime' },
-  live: { price: 'regularMarketPrice', time: 'regularMarketTime' },
-  after: { price: 'postMarketPrice', time: 'postMarketTime' },
-};
-
-interface YahooAuth {
-  cookie: string;
-  crumb: string;
-  ts: number;
-}
-
-let auth: YahooAuth | null = null;
 let cooldownUntil = 0;
 let consecutiveFailures = 0;
 
-async function getAuth(forceRefresh = false): Promise<YahooAuth | null> {
-  if (!forceRefresh && auth && Date.now() - auth.ts < AUTH_TTL_MS) return auth;
-
-  // Persisted auth survives worker restarts/deploys — avoids re-hitting
-  // fc.yahoo.com + getcrumb (which Yahoo rate-limits per minute).
-  if (!forceRefresh && !auth) {
-    try {
-      const { redisClient } = await import('@/lib/redis');
-      const raw = await redisClient.get('yahoo:auth');
-      if (raw) {
-        const parsed = JSON.parse(raw) as YahooAuth;
-        if (parsed.cookie && parsed.crumb) {
-          auth = parsed;
-          return auth;
-        }
-      }
-    } catch { /* redis optional */ }
-  }
-  try {
-    // fc.yahoo.com sets the A1/A3 cookies needed for the crumb
-    const cookieRes = await fetch('https://fc.yahoo.com', {
-      headers: { 'User-Agent': UA },
-      signal: AbortSignal.timeout(8000),
-      redirect: 'manual',
-    });
-    const setCookies = cookieRes.headers.getSetCookie();
-    const cookie = setCookies
-      .map(c => c.split(';')[0])
-      .filter(Boolean)
-      .join('; ');
-    if (!cookie) return null;
-
-    const crumbRes = await fetch('https://query1.finance.yahoo.com/v1/test/getcrumb', {
-      headers: { 'User-Agent': UA, Cookie: cookie },
-      signal: AbortSignal.timeout(8000),
-    });
-    const crumb = (await crumbRes.text()).trim();
-    if (!crumb || crumb.startsWith('{') || crumb.startsWith('<')) {
-      return auth; // transient getcrumb failure (e.g. 429) — keep previous auth
-    }
-
-    auth = { cookie, crumb, ts: Date.now() };
-    try {
-      const { redisClient } = await import('@/lib/redis');
-      await redisClient.setEx('yahoo:auth', 24 * 60 * 60, JSON.stringify(auth));
-    } catch { /* redis optional */ }
-    return auth;
-  } catch {
-    return auth; // network error — keep previous auth
-  }
+interface YahooBar {
+  price: number;
+  tsMs: number;
+  volume?: number;
 }
 
-async function fetchQuoteBatch(
-  symbols: string[],
-  priceField: string,
-  timeField: string,
-  out: Map<string, { price: number; tsMs: number }>
-): Promise<'ok' | 'rate_limited' | 'error'> {
-  const doFetch = async (a: YahooAuth) =>
-    fetch(
-      `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbols.join(',')}&crumb=${encodeURIComponent(a.crumb)}`,
-      {
-        headers: { 'User-Agent': UA, Cookie: a.cookie },
-        signal: AbortSignal.timeout(10000),
-      }
-    );
-
-  let a = await getAuth();
-  if (!a) return 'error';
-
+async function fetchYahooBar(symbol: string): Promise<YahooBar | 'rate_limited' | null> {
   try {
-    let res = await doFetch(a);
-    if (res.status === 401 || res.status === 403) {
-      const a2 = await getAuth(true);
-      if (!a2) return 'error';
-      res = await doFetch(a2);
-    }
+    const res = await fetch(
+      `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1m&range=1d&includePrePost=true`,
+      { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(8000) }
+    );
     if (res.status === 429) return 'rate_limited';
-    if (!res.ok) return 'error';
+    if (!res.ok) return null;
 
     const data = await res.json();
-    const rows: any[] = data?.quoteResponse?.result ?? [];
-    for (const q of rows) {
-      const price = q?.[priceField];
-      const t = q?.[timeField];
-      if (q?.symbol && typeof price === 'number' && price > 0 && typeof t === 'number' && t > 0) {
-        out.set(q.symbol, { price, tsMs: t * 1000 });
+    const result = data?.chart?.result?.[0];
+    const ts: number[] | undefined = result?.timestamp;
+    const closes: (number | null)[] | undefined = result?.indicators?.quote?.[0]?.close;
+    const volumes: (number | null)[] | undefined = result?.indicators?.quote?.[0]?.volume;
+    if (!ts || !closes) return null;
+
+    for (let i = ts.length - 1; i >= 0; i--) {
+      const c = closes[i];
+      const t = ts[i];
+      if (c != null && c > 0 && t != null && t > 0) {
+        const v = volumes?.[i];
+        return { price: c, tsMs: t * 1000, ...(v != null && v > 0 ? { volume: v } : {}) };
       }
     }
-    return 'ok';
+    return null;
   } catch {
-    return 'error';
+    return null;
   }
 }
 
 /**
- * Fetch Yahoo real-time quotes and merge them into the Polygon snapshots
+ * Fetch Yahoo real-time bars and merge them into the Polygon snapshots
  * (mutates `snapshots` in place). Returns the number of tickers overlaid.
  */
 export async function applyYahooOverlay(
   snapshots: PolygonSnapshot[],
   tickers: string[],
-  session: OverlaySession,
+  session: 'pre' | 'live' | 'after',
   prevCloseMap: Map<string, number>
 ): Promise<number> {
   if (process.env.YAHOO_OVERLAY === '0') return 0;
   if (Date.now() < cooldownUntil) return 0;
 
-  const { price: priceField, time: timeField } = FIELDS[session];
-  const quotes = new Map<string, { price: number; tsMs: number }>();
-
+  const quotes = new Map<string, YahooBar>();
   let sawRateLimit = false;
-  for (let i = 0; i < tickers.length; i += BATCH_SIZE) {
-    const batch = tickers.slice(i, i + BATCH_SIZE);
-    const status = await fetchQuoteBatch(batch, priceField, timeField, quotes);
-    if (status === 'rate_limited') {
-      sawRateLimit = true;
-      break;
-    }
-    if (status === 'error') {
-      consecutiveFailures++;
-      if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
-        cooldownUntil = Date.now() + COOLDOWN_MS;
-        console.warn(`⚠️ Yahoo overlay: ${consecutiveFailures} consecutive failures, cooling down ${COOLDOWN_MS / 60000}min`);
-        return 0;
+
+  await processBatchWithConcurrency(
+    tickers,
+    async (symbol) => {
+      if (sawRateLimit) return;
+      const bar = await fetchYahooBar(symbol);
+      if (bar === 'rate_limited') {
+        sawRateLimit = true;
+        return;
       }
-    }
-  }
+      if (bar) quotes.set(symbol, bar);
+    },
+    CONCURRENCY
+  );
 
   if (sawRateLimit) {
+    consecutiveFailures++;
     cooldownUntil = Date.now() + COOLDOWN_MS;
-    console.warn(`⚠️ Yahoo overlay: rate limited (429), cooling down ${COOLDOWN_MS / 60000}min`);
-    return 0;
+    console.warn(`⚠️ Yahoo overlay: rate limited (429), cooling down ${COOLDOWN_MS / 60000}min (${quotes.size} partial)`);
+    if (quotes.size === 0) return 0;
   }
 
-  if (quotes.size === 0) return 0;
+  if (quotes.size === 0) {
+    consecutiveFailures++;
+    if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+      cooldownUntil = Date.now() + COOLDOWN_MS;
+      console.warn(`⚠️ Yahoo overlay: ${consecutiveFailures} empty fetches, cooling down ${COOLDOWN_MS / 60000}min`);
+    }
+    return 0;
+  }
   consecutiveFailures = 0;
 
   const byTicker = new Map(snapshots.map(s => [s.ticker, s]));
@@ -191,14 +117,19 @@ export async function applyYahooOverlay(
       const existingMinTs = existing.min?.t ? nsToMs(existing.min.t) : 0;
       const existingTradeTs = existing.lastTrade?.t ? nsToMs(existing.lastTrade.t) : 0;
       if (q.tsMs <= Math.max(existingMinTs, existingTradeTs)) continue;
-      existing.min = { ...(existing.min ?? { av: q.price }), c: q.price, t: q.tsMs };
+      existing.min = {
+        ...(existing.min ?? { av: q.price }),
+        c: q.price,
+        t: q.tsMs,
+        ...(q.volume ? { v: q.volume } : {}),
+      };
       existing.lastTrade = { p: q.price, t: q.tsMs };
       applied++;
     } else {
       const prevClose = prevCloseMap.get(symbol);
       const synthetic: PolygonSnapshot = {
         ticker: symbol,
-        min: { av: q.price, t: q.tsMs, c: q.price },
+        min: { av: q.price, t: q.tsMs, c: q.price, ...(q.volume ? { v: q.volume } : {}) },
         lastTrade: { p: q.price, t: q.tsMs },
         ...(prevClose ? { prevDay: { c: prevClose } } : {}),
       };
