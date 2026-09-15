@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import Link from 'next/link';
 import { SortKey } from '@/hooks/useSortableData';
 import { formatBillions } from '@/lib/utils/format';
 import { getCompanyName } from '@/lib/companyNames';
@@ -309,12 +308,14 @@ const EarningsEmpty = ({ hideHeader }: { hideHeader?: boolean | undefined }) => 
       </span>
       <p className="text-sm max-w-xs text-gray-500 dark:text-gray-400">
         For the full list, visit{' '}
-        <Link
-          href="/earnings"
+        <a
+          href="https://earningstable.com/"
+          target="_blank"
+          rel="noopener noreferrer"
           className="underline font-semibold text-blue-600 hover:text-blue-700"
         >
-          Earnings Calendar
-        </Link>
+          Earnings Table
+        </a>
       </p>
     </div>
   </section>
