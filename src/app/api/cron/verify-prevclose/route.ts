@@ -17,7 +17,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { getPreviousClose } from '@/lib/utils/marketCapUtils';
-import { getLastTradingDay, detectSession } from '@/lib/utils/timeUtils';
+import { getLastTradingDay, getTradingDay, detectSession } from '@/lib/utils/timeUtils';
 import { getDateET, createETDate, nowET } from '@/lib/utils/dateET';
 import { verifyCronAuth, withCronLock } from '@/lib/utils/cronAuth';
 import { writePrevClose } from '@/lib/heatmap/prevCloseService';
@@ -39,6 +39,7 @@ async function verifyAndFixTicker(
   dbPrevClose: number,
   lastTradingDay: Date,
   todayStr: string,
+  todayDate: Date,
   dryRun: boolean
 ): Promise<{ needsFix: boolean; fixed: boolean; diff: number; correctValue?: number; error?: string }> {
   try {
@@ -59,8 +60,11 @@ async function verifyAndFixTicker(
     if (!dryRun) {
       try {
         // Use centralized prevCloseService: updates Redis + DailyRef + Ticker atomically
-        // INVARIANT: Only update prevClose for lastTradingDay (todayTradingDay), never nextTradingDay
-        await writePrevClose(todayStr, lastTradingDay, ticker, correctPrevClose);
+        // INVARIANT: Only update prevClose for today, never nextTradingDay.
+        // Redis key + DailyRef row are keyed by TODAY (the day this prevClose is
+        // for); lastTradingDay only applies to Ticker.latestPrevCloseDate (the
+        // date of the close itself).
+        await writePrevClose(todayStr, lastTradingDay, ticker, correctPrevClose, { dailyRefDate: todayDate });
 
         return { needsFix: true, fixed: true, diff, correctValue: correctPrevClose };
       } catch (error) {
@@ -109,9 +113,10 @@ async function runVerifyPrevClose(request: NextRequest): Promise<NextResponse> {
     const etNow = nowET();
     const calendarDateETStr = getDateET(etNow); // Calendar date in ET
     const calendarDateET = createETDate(calendarDateETStr);
-    const todayTradingDay = getLastTradingDay(calendarDateET); // Today's trading day (or last if today is not trading day)
-    const todayTradingDateStr = getDateET(todayTradingDay); // Trading date string for prevClose lookup
-    const yesterdayTradingDay = getLastTradingDay(todayTradingDay);
+    // getLastTradingDay is strictly-before: on Tue this returns Mon — i.e. the
+    // trading day whose close serves as today's prevClose.
+    const prevCloseRefDay = getLastTradingDay(calendarDateET);
+    const prevCloseRefDateStr = getDateET(prevCloseRefDay);
     
     // CRITICAL: Include tickers with lastPrice > 0, even if prevClose is missing/null
     // This fixes "broken" tickers that were reset or never had prevClose set
@@ -120,12 +125,12 @@ async function runVerifyPrevClose(request: NextRequest): Promise<NextResponse> {
     // 2. Tickers with lastPrice > 0 but prevClose is null/0 or stale date (broken case)
     // 
     // NOTE: latestPrevCloseDate comparison uses date range to handle timezone correctly
-    // yesterdayTradingDay is Date object (ET midnight), but DB stores DateTime (UTC)
-    // We compare by date range: >= start of yesterdayTradingDay UTC, < start of next day UTC
-    const yesterdayTradingDayStart = new Date(yesterdayTradingDay);
-    yesterdayTradingDayStart.setUTCHours(0, 0, 0, 0);
-    const yesterdayTradingDayEnd = new Date(yesterdayTradingDayStart);
-    yesterdayTradingDayEnd.setUTCDate(yesterdayTradingDayEnd.getUTCDate() + 1);
+    // prevCloseRefDay is a Date object (ET midnight), but DB stores DateTime (UTC)
+    // We compare by date range: >= start of prevCloseRefDay UTC, < start of next day UTC
+    const prevCloseRefDayStart = new Date(prevCloseRefDay);
+    prevCloseRefDayStart.setUTCHours(0, 0, 0, 0);
+    const prevCloseRefDayEnd = new Date(prevCloseRefDayStart);
+    prevCloseRefDayEnd.setUTCDate(prevCloseRefDayEnd.getUTCDate() + 1);
     
     const tickers = await prisma.ticker.findMany({
       where: {
@@ -142,8 +147,8 @@ async function runVerifyPrevClose(request: NextRequest): Promise<NextResponse> {
               {
                 OR: [
                   { latestPrevCloseDate: null },
-                  { latestPrevCloseDate: { lt: yesterdayTradingDayStart } },
-                  { latestPrevCloseDate: { gt: yesterdayTradingDayEnd } }
+                  { latestPrevCloseDate: { lt: prevCloseRefDayStart } },
+                  { latestPrevCloseDate: { gt: prevCloseRefDayEnd } }
                 ]
               }
             ]
@@ -171,29 +176,30 @@ async function runVerifyPrevClose(request: NextRequest): Promise<NextResponse> {
       issues: []
     };
     
-    // INVARIANT: verify-prevclose only fixes prevClose for todayTradingDay, never nextTradingDay
-    // This prevents overwriting future prevClose values prepared by saveRegularClose
+    // INVARIANT: verify-prevclose only fixes prevClose for today, never the
+    // next trading day — saveRegularClose prepares those forward-looking values.
     const { getNextTradingDay } = await import('@/lib/utils/pricingStateMachine');
-    const nextTradingDay = getNextTradingDay(todayTradingDay);
+    const nextTradingDay = getNextTradingDay(calendarDateET);
     const nextTradingDateStr = getDateET(nextTradingDay);
-    
+
     // Log context for debugging
     const session = detectSession(etNow);
-    const isTradingDay = getDateET(todayTradingDay) === calendarDateETStr;
-    console.log(`📅 verify-prevclose context: calendarET=${calendarDateETStr}, tradingDayET=${todayTradingDateStr}, nextTradingDayET=${nextTradingDateStr}, isTradingDay=${isTradingDay}, session=${session}`);
-    console.log(`📅 verify-prevclose target: prevClose(${todayTradingDateStr}) = close(yesterdayTradingDay), will NOT touch prevClose(${nextTradingDateStr})`);
+    const isTradingDay = getDateET(getTradingDay(calendarDateET)) === calendarDateETStr;
+    console.log(`📅 verify-prevclose context: calendarET=${calendarDateETStr}, prevCloseRefDayET=${prevCloseRefDateStr}, nextTradingDayET=${nextTradingDateStr}, isTradingDay=${isTradingDay}, session=${session}`);
+    console.log(`📅 verify-prevclose target: prevClose(${calendarDateETStr}) = close(${prevCloseRefDateStr}), will NOT touch prevClose(${nextTradingDateStr})`);
 
     // Process in batches with rate limiting
     for (let i = 0; i < tickers.length; i += MAX_CONCURRENT) {
       const batch = tickers.slice(i, i + MAX_CONCURRENT);
       
       const batchResults = await Promise.all(
-        batch.map(t => 
+        batch.map(t =>
           verifyAndFixTicker(
             t.symbol,
             t.latestPrevClose!,
-            todayTradingDay,
-            todayTradingDateStr, // Pass trading date string
+            prevCloseRefDay,   // Ticker.latestPrevCloseDate = date of the close
+            calendarDateETStr, // Redis key is the CALENDAR today (what getPrevClose reads)
+            calendarDateET,    // DailyRef row is today's row
             dryRun
           )
         )

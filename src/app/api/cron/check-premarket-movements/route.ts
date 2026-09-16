@@ -232,9 +232,10 @@ export async function POST(request: NextRequest) {
     
     console.log(`📊 Checking ${tickersToCheck.length} tickers for pre-market movements > ±${MOVEMENT_THRESHOLD}%...`);
 
-    const today = getDateET(etNow);
-    const todayTradingDay = getLastTradingDay(createETDate(today));
-    const todayTradingDateStr = getDateET(todayTradingDay);
+    // Redis prevClose keys + Polygon prevClose lookups are keyed by the
+    // CALENDAR today (the session date). getLastTradingDay() inside the
+    // helpers derives the trading day whose close is today's prevClose.
+    const todayTradingDateStr = getDateET(etNow);
 
     const movementResults: MovementCheckResult[] = [];
     const verificationResults: Array<{ ticker: string; verified: boolean; issues: string[] }> = [];

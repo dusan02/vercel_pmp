@@ -89,10 +89,14 @@ function upsertDailyRefRegularClose(
  * - Ticker: updates `latestPrevClose` + `latestPrevCloseDate` (optional, default true)
  *
  * @param dateStr   Calendar date (YYYY-MM-DD) for Redis key
- * @param tradingDay Date object for DailyRef row
+ * @param tradingDay Date object for DailyRef row (the day this is the prevClose FOR)
  * @param symbol    Ticker symbol
  * @param prevClose Previous close price
- * @param opts      Optional: skipTickerUpdate, dbRetry wrapper
+ * @param opts      Optional: skipTickerUpdate, dbRetry wrapper,
+ *                  dailyRefDate — overrides the DailyRef row date when it
+ *                  differs from `tradingDay` (e.g. tradingDay = date of the
+ *                  close for Ticker.latestPrevCloseDate, but the DailyRef row
+ *                  must be keyed by the day it serves as prevClose for)
  */
 export async function writePrevClose(
   dateStr: string,
@@ -103,6 +107,7 @@ export async function writePrevClose(
     skipTickerUpdate?: boolean;
     skipRedis?: boolean;
     dbRetry?: DbRetryFn;
+    dailyRefDate?: Date;
   }
 ): Promise<PrevCloseWriteResult> {
   const skipTicker = opts?.skipTickerUpdate ?? false;
@@ -126,7 +131,7 @@ export async function writePrevClose(
 
   // 2. DailyRef — only update previousClose, preserve existing regularClose
   const drResult = await retry(
-    () => upsertDailyRefPrevClose(symbol, tradingDay, prevClose),
+    () => upsertDailyRefPrevClose(symbol, opts?.dailyRefDate ?? tradingDay, prevClose),
     `prevCloseService.dailyRef:${symbol}`
   );
   result.dailyRef = drResult !== null;

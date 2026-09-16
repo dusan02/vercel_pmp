@@ -13,14 +13,71 @@
 import { redisClient } from '@/lib/redis';
 import { getUniverse, getPrevClose } from '@/lib/redis/operations';
 import { recordSuccess, recordFailure } from '../healthMonitor';
-import { detectSession, isMarketHoliday } from '@/lib/utils/timeUtils';
-import { nowET, getDateET, isWeekendET, toET } from '@/lib/utils/dateET';
+import { detectSession, isMarketHoliday, getTradingDay } from '@/lib/utils/timeUtils';
+import { nowET, getDateET, isWeekendET, toET, createETDate } from '@/lib/utils/dateET';
+import { prisma } from '@/lib/db/prisma';
 import { ingestBatch } from './ingestBatch';
 import { bootstrapPreviousCloses } from './bootstrapPrevClose';
+import { saveRegularClose } from './saveRegularClose';
 import { scheduleBulkPreload } from './bulkPreloadScheduler';
 
 const PREMIUM_INTERVAL = 60 * 1000; // 60s for all sessions
 const REST_INTERVAL = 5 * 60 * 1000; // 5min for rest
+
+let saveCloseInFlight = false;
+let lastSaveCloseAttempt = 0;
+
+/**
+ * Self-healing regular close capture.
+ *
+ * The official daily close (snapshot day.c) becomes final on the Polygon
+ * Starter plan ~15 min after the 16:00 ET close. From 16:20 ET onward during
+ * the 'after' session, if DailyRef.regularClose is still missing for today's
+ * trading day we run saveRegularClose directly — independent of the
+ * post-market-reset PM2 cron (which is a fragile external trigger and has
+ * silently died before). saveRegularClose is per-ticker idempotent, so
+ * retries only process tickers still missing a close.
+ *
+ * Runs detached so the ~30-60s of batched fetches + writes never stalls the
+ * ingest loop; retried at most every 10 min while data is still missing.
+ */
+async function maybeSaveRegularClose(
+  tickers: string[],
+  apiKey: string,
+  etNow: Date,
+  session: string
+): Promise<void> {
+  if (session !== 'after') return;
+
+  const etParts = toET(etNow);
+  const afterSettle = etParts.hour > 16 || (etParts.hour === 16 && etParts.minute >= 20);
+  if (!afterSettle) return;
+
+  if (saveCloseInFlight || Date.now() - lastSaveCloseAttempt < 10 * 60 * 1000) return;
+
+  const calendarDateETStr = getDateET(etNow);
+  const todayTradingDay = getTradingDay(createETDate(calendarDateETStr));
+
+  // Cheap sample check: if the first few tickers already have regularClose,
+  // saveRegularClose already ran today — skip.
+  try {
+    const sample = tickers.slice(0, 10);
+    const withClose = await prisma.dailyRef.count({
+      where: { date: todayTradingDay, symbol: { in: sample }, regularClose: { not: null } }
+    });
+    if (withClose >= sample.length) return;
+  } catch (error) {
+    console.warn('regularClose sample check failed:', error);
+    return;
+  }
+
+  console.log('💾 regularClose missing after 16:20 ET — running saveRegularClose (self-heal)...');
+  saveCloseInFlight = true;
+  lastSaveCloseAttempt = Date.now();
+  saveRegularClose(apiKey, calendarDateETStr, `worker-${Date.now().toString(36)}`)
+    .catch(err => console.error('❌ self-heal saveRegularClose failed:', err))
+    .finally(() => { saveCloseInFlight = false; });
+}
 
 /**
  * Update worker status in Redis (1h TTL).
@@ -187,6 +244,9 @@ export async function ingestLoop(apiKey: string): Promise<void> {
 
     // Bootstrap prevCloses if needed
     await maybeBootstrap(tickers, apiKey, etNow, session, isWeekendOrHoliday);
+
+    // Capture today's regular close once it is final (≥16:20 ET, 'after' session)
+    await maybeSaveRegularClose(tickers, apiKey, etNow, session);
 
     // Session logging
     if (session === 'pre' || session === 'after') {

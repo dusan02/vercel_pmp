@@ -419,12 +419,15 @@ export async function runDailyIntegrityCheck(
                   }
                 });
 
-                // Update DailyRef table
+                // Update DailyRef table — the row for TODAY (the day this
+                // prevClose is for), not lastTradingDay (the day the close
+                // belongs to). Writing to lastTradingDay corrupted historical
+                // previousClose values with that day's own close.
                 await prisma.dailyRef.upsert({
                   where: {
                     symbol_date: {
                       symbol,
-                      date: lastTradingDay
+                      date: todayDateObj
                     }
                   },
                   update: {
@@ -433,7 +436,7 @@ export async function runDailyIntegrityCheck(
                   },
                   create: {
                     symbol,
-                    date: lastTradingDay,
+                    date: todayDateObj,
                     previousClose: correctPrevClose
                   }
                 });

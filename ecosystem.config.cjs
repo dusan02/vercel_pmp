@@ -230,7 +230,10 @@ module.exports = {
       error_file: path.join(__dirname, "logs", "pm2", "post-market-daily-reset-error.log"),
       out_file: path.join(__dirname, "logs", "pm2", "post-market-daily-reset-out.log"),
       log_date_format: "YYYY-MM-DD HH:mm:ss Z",
-      cron_restart: "30 21 * * *",
+      // 22:20 server time (Europe/Prague) = 16:20 ET — after Polygon Starter's
+      // ~15min delay settles so day.c holds the final regular close.
+      // (Previously "30 21" fired at 15:30 ET — BEFORE market close.)
+      cron_restart: "20 22 * * *",
       autorestart: false,
     },
     {
@@ -248,7 +251,9 @@ module.exports = {
       error_file: path.join(__dirname, "logs", "pm2", "cron-verify-prevclose-error.log"),
       out_file: path.join(__dirname, "logs", "pm2", "cron-verify-prevclose-out.log"),
       log_date_format: "YYYY-MM-DD HH:mm:ss Z",
-      cron_restart: "0 22 * * *",
+      // 22:45 server time (Europe/Prague) = 16:45 ET (CEST) / 17:45 ET (CET) —
+      // runs ~25min after post-market-daily-reset so it can catch its misses.
+      cron_restart: "45 22 * * *",
       autorestart: false,
     },
     {
