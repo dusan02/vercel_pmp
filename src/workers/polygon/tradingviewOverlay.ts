@@ -11,6 +11,13 @@
  * normalize→upsert pipeline picks the fresher price. All timestamp
  * validation still applies; failures degrade to Polygon-only behavior.
  *
+ * Caveat: the free scanner feed is ~15min delayed for DAILY bar fields.
+ * Right after a session opens (live: ~9:30-9:45 ET, after: ~16:00-16:15),
+ * `close`/`postmarket_close` still returns the PREVIOUS session's close
+ * because today's bar doesn't exist yet. Overlaying that stamps prevClose
+ * as the "live" price and produces fake 0% moves, so we skip quotes that
+ * match prevClose and let Polygon's delayed minute bar through instead.
+ *
  * Opt-out: TV_OVERLAY=0
  */
 
@@ -127,6 +134,13 @@ export async function applyRealtimeOverlay(
   let applied = 0;
 
   for (const [symbol, q] of quotes) {
+    // Stale-bar guard: TV's session field still shows the previous close
+    // until the new bar appears (~15min into the session for the free feed).
+    // A quote identical to prevClose is indistinguishable from that stale
+    // state — skip it so Polygon's delayed min.c provides the real price.
+    const prevClose = prevCloseMap.get(symbol);
+    if (prevClose && Math.abs(q.price - prevClose) / prevClose < 0.0001) continue;
+
     const existing = byTicker.get(symbol);
     if (existing) {
       const existingMinTs = existing.min?.t ? nsToMs(existing.min.t) : 0;
