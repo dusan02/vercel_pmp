@@ -19,6 +19,7 @@ import { withRetry } from '@/lib/api/rateLimiter';
 import { polygonCircuitBreaker, __IS_TEST__, sleep, PolygonSnapshot } from './shared';
 import { fetchPolygonSnapshot } from './core';
 import { writePrevClose, writeRegularClose, writePrevCloseForToday } from '@/lib/heatmap/prevCloseService';
+import { dbWriteRetry as sharedDbWriteRetry } from '@/lib/db/writeRetry';
 
 export async function bootstrapPreviousCloses(
   tickers: string[],
@@ -28,32 +29,8 @@ export async function bootstrapPreviousCloses(
   console.log(`🔄 Bootstrapping previous closes for ${tickers.length} tickers (Optimized: Snapshot API)...`);
 
   const isLikelySqlite = (process.env.DATABASE_URL || '').startsWith('file:');
-  const dbWriteRetry = async <T>(fn: () => Promise<T>, label: string): Promise<T | null> => {
-    const maxAttempts = isLikelySqlite ? 10 : 3;
-    let delayMs = 100;
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      try {
-        return await fn();
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        const code = (err as any)?.code as string | undefined;
-        const isDbBusy =
-          code === 'P1008' ||
-          msg.includes('SQLITE_BUSY') ||
-          msg.includes('database is locked') ||
-          msg.includes('failed to respond to a query within the configured timeout');
-
-        if (!isDbBusy || attempt === maxAttempts) {
-          console.warn(`⚠️ DB write failed (${label}) after ${attempt}/${maxAttempts}:`, err);
-          return null;
-        }
-
-        await sleep(delayMs);
-        delayMs = Math.min(2000, Math.floor(delayMs * 2));
-      }
-    }
-    return null;
-  };
+  const dbWriteRetry = <T>(fn: () => Promise<T>, label: string) =>
+    sharedDbWriteRetry(fn, label, isLikelySqlite ? 10 : 3);
 
   const calendarDateET = createETDate(date);
   const todayTradingDay = getTradingDay(calendarDateET);

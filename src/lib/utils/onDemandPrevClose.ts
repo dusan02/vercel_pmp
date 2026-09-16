@@ -7,6 +7,7 @@ import { redisClient } from '../redis/client';
 import { acquireLock, releaseLock, checkTokenBucket } from './redisLocks';
 import { getDateET, createETDate } from './dateET';
 import { getLastTradingDay } from './timeUtils';
+import { getPrevCloseContext } from './prevCloseDates';
 import { logger } from './logger';
 import { setPrevClose } from '../redis/operations';
 import { writePrevClose } from '../heatmap/prevCloseService';
@@ -342,8 +343,9 @@ export async function fetchPreviousClosesBatchAndPersist(
     const isLikelySqlite = (process.env.DATABASE_URL || '').startsWith('file:');
     
     try {
-      const dateObj = createETDate(today);
-      const lastTradingDay = getLastTradingDay(dateObj);
+      const ctx = getPrevCloseContext(today);
+      const dateObj = ctx.sessionDate;
+      const lastTradingDay = ctx.closeRefDay;
       const entries = Array.from(results.entries());
 
       const persistOne = async (ticker: string, prevClose: number) => {

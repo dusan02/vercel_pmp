@@ -20,9 +20,10 @@ import { loadEnvFromFiles } from './_utils/loadEnv';
 loadEnvFromFiles();
 
 import { prisma } from '../src/lib/db/prisma';
-import { createETDate, getDateET } from '../src/lib/utils/dateET';
+import { getDateET } from '../src/lib/utils/dateET';
 import { getLastTradingDay, isMarketHoliday } from '../src/lib/utils/timeUtils';
 import { toET } from '../src/lib/utils/dateET';
+import { dbWriteRetry as dbWrite } from '../src/lib/db/writeRetry';
 
 const POLYGON_API_KEY = process.env.POLYGON_API_KEY || '';
 const dryRun = process.argv.includes('--dry-run');
@@ -31,27 +32,8 @@ const LOOKBACK_DAYS = daysArg ? parseInt(daysArg.split('=')[1], 10) : 15;
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
-async function dbWrite<T>(fn: () => Promise<T>, label: string): Promise<T | null> {
-  let delayMs = 100;
-  for (let attempt = 1; attempt <= 10; attempt++) {
-    try {
-      return await fn();
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      const busy = msg.includes('SQLITE_BUSY') || msg.includes('database is locked');
-      if (!busy || attempt === 10) {
-        console.warn(`⚠️ DB write failed (${label}):`, msg);
-        return null;
-      }
-      await sleep(delayMs);
-      delayMs = Math.min(2000, delayMs * 2);
-    }
-  }
-  return null;
-}
-
 async function fetchGroupedClose(dateStr: string): Promise<Map<string, number>> {
-  const url = `https://api.polygon.io/v2/aggs/grouped/locale/us/market/stocks/${dateStr}?adjusted=false&apiKey=${POLYGON_API_KEY}`;
+  const url = `https://api.polygon.io/v2/aggs/grouped/locale/us/market/stocks/${dateStr}?adjusted=true&apiKey=${POLYGON_API_KEY}`;
   const res = await fetch(url);
   const map = new Map<string, number>();
   if (!res.ok) {

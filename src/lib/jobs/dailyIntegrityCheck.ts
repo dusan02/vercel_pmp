@@ -395,7 +395,7 @@ export async function runDailyIntegrityCheck(
     const incorrectPrevCloseToFix = Array.from(new Set(incorrectPrevCloseSymbols)).slice(0, fixIncorrectPrevCloseMaxTickers);
     if (incorrectPrevCloseToFix.length > 0) {
       const { getPreviousClose } = await import('@/lib/utils/marketCapUtils');
-      const { setPrevClose } = await import('@/lib/redis/operations');
+      const { writePrevClose } = await import('@/lib/heatmap/prevCloseService');
       const lastTradingDay = getLastTradingDay(createETDate(etDate));
       const todayStr = getDateET(etNow);
       
@@ -409,46 +409,11 @@ export async function runDailyIntegrityCheck(
             try {
               const correctPrevClose = await getPreviousClose(symbol);
               if (correctPrevClose && correctPrevClose > 0) {
-                // Update Ticker table
-                await prisma.ticker.update({
-                  where: { symbol },
-                  data: {
-                    latestPrevClose: correctPrevClose,
-                    latestPrevCloseDate: lastTradingDay,
-                    updatedAt: new Date()
-                  }
-                });
-
-                // Update DailyRef table — the row for TODAY (the day this
-                // prevClose is for), not lastTradingDay (the day the close
-                // belongs to). Writing to lastTradingDay corrupted historical
-                // previousClose values with that day's own close.
-                await prisma.dailyRef.upsert({
-                  where: {
-                    symbol_date: {
-                      symbol,
-                      date: todayDateObj
-                    }
-                  },
-                  update: {
-                    previousClose: correctPrevClose,
-                    updatedAt: new Date()
-                  },
-                  create: {
-                    symbol,
-                    date: todayDateObj,
-                    previousClose: correctPrevClose
-                  }
-                });
-
-                // Update Redis cache
-                try {
-                  await setPrevClose(todayStr, symbol, correctPrevClose);
-                } catch (error) {
-                  // Non-fatal
-                }
-
-                return true;
+                // Centralized write: Redis key + DailyRef row under TODAY
+                // (the day this prevClose is for), Ticker.latestPrevCloseDate
+                // under lastTradingDay (the day the close belongs to).
+                const res = await writePrevClose(todayStr, lastTradingDay, symbol, correctPrevClose, { dailyRefDate: todayDateObj });
+                return res.dailyRef || res.ticker;
               }
               return false;
             } catch (error) {

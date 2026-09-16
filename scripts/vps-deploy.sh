@@ -16,6 +16,17 @@ echo "=== Updating git remote ==="
 git remote set-url origin https://github.com/dusan02/vercel_pmp.git
 git fetch origin main 2>&1 | tail -3
 
+# Unpushed local commits are discarded by the reset below — that is how the
+# post-market cron scripts were silently lost (Sep 2026). Warn loudly so a
+# human can abort and push them first if this ever happens again.
+UNPUSHED=$(git rev-list --count origin/main..HEAD 2>/dev/null || echo 0)
+if [ "$UNPUSHED" != "0" ]; then
+  echo "⚠️  WARNING: $UNPUSHED unpushed local commit(s) will be DISCARDED:"
+  git log --oneline origin/main..HEAD | head -10
+  echo "⚠️  If any of these matter, abort now (Ctrl-C) and push them first."
+  sleep 5
+fi
+
 echo "=== Resetting to origin/main ==="
 git reset --hard origin/main 2>&1 | tail -3
 
@@ -62,8 +73,16 @@ if pm2 describe premarketprice > /dev/null 2>&1; then
 else
   pm2 start ecosystem.config.cjs --only premarketprice 2>&1 | tail -3
 fi
-# Register cron apps that are new in this release (idempotent)
-pm2 start ecosystem.config.cjs --only cron-blog-snapshot 2>/dev/null || pm2 restart cron-blog-snapshot
+# Register any ecosystem app missing from PM2 (idempotent). pm2 start alone
+# does NOT register newly added apps — a silent gap is how the post-market
+# cron died. Note: starting a cron app also runs it once immediately, so
+# cron routes must be safe to invoke at any time (or self-guard).
+for app in $(grep -o 'name: "[^"]*"' ecosystem.config.cjs | cut -d'"' -f2); do
+  if ! pm2 describe "$app" > /dev/null 2>&1; then
+    echo "registering missing PM2 app: $app"
+    pm2 start ecosystem.config.cjs --only "$app" 2>&1 | tail -2
+  fi
+done
 pm2 save
 sleep 15
 

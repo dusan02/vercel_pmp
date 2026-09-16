@@ -18,11 +18,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkRedisHealth } from '@/lib/redis';
 import { prisma } from '@/lib/db/prisma';
-import { detectSession } from '@/lib/utils/timeUtils';
+import { detectSession, getLastTradingDay } from '@/lib/utils/timeUtils';
+import { getDateET } from '@/lib/utils/dateET';
 
 // Health check thresholds
 const WORKER_STALE_THRESHOLD = 5 * 60 * 1000; // 5 minutes
-const CRON_STALE_THRESHOLD = 24 * 60 * 60 * 1000; // 24 hours
 // During off-hours (closed/weekend/holiday), worker loops take ~144s and run
 // every ~3.5 min. Use a wider threshold so the heartbeat isn't falsely stale.
 const WORKER_STALE_THRESHOLD_OFF_HOURS = 10 * 60 * 1000; // 10 minutes
@@ -157,34 +157,35 @@ export async function GET(request: NextRequest) {
   try {
     const { redisClient } = await import('@/lib/redis');
     if (redisClient && redisClient.isOpen) {
-      const cronLastSuccess = await redisClient.get('cron:static_data:last_success_ts');
-      if (cronLastSuccess) {
-        const lastSuccessTs = parseInt(cronLastSuccess, 10);
+      // saveRegularClose is the critical daily job — the healthMonitor hash is
+      // written by both the post-market-reset cron and the worker self-heal.
+      // Healthy iff the last success is on/after the last completed trading day.
+      const saveCloseHealth = await redisClient.hGetAll('worker:health:saveRegularClose');
+      const lastSuccessAt = saveCloseHealth?.lastSuccessAt;
+      if (lastSuccessAt) {
+        const lastSuccessTs = Date.parse(lastSuccessAt);
         const ageMs = Date.now() - lastSuccessTs;
         const ageHours = Math.floor(ageMs / 3600000);
+        const lastSuccessDateET = getDateET(new Date(lastSuccessTs));
+        const expectedDateET = getDateET(getLastTradingDay());
+        const fresh = lastSuccessDateET >= expectedDateET;
 
-        if (ageMs < CRON_STALE_THRESHOLD) {
-          healthStatus.checks.cron = {
-            status: 'healthy',
-            message: `Cron is running (last success: ${ageHours} hours ago)`,
-            lastSuccess: new Date(lastSuccessTs).toISOString(),
-            ageHours,
-          };
-        } else {
-          healthStatus.checks.cron = {
-            status: 'stale',
-            message: `Cron may be stale (last success: ${ageHours} hours ago)`,
-            lastSuccess: new Date(lastSuccessTs).toISOString(),
-            ageHours,
-          };
+        healthStatus.checks.cron = {
+          status: fresh ? 'healthy' : 'stale',
+          message: fresh
+            ? `saveRegularClose ran on ${lastSuccessDateET} (${ageHours}h ago)`
+            : `saveRegularClose last ran ${lastSuccessDateET}, expected ${expectedDateET}${saveCloseHealth.lastError ? ` — lastError: ${saveCloseHealth.lastError}` : ''}`,
+          lastSuccess: lastSuccessAt,
+          ageHours,
+        };
+        if (!fresh) {
           healthStatus.status = healthStatus.status === 'unhealthy' ? 'unhealthy' : 'degraded';
         }
       } else {
         healthStatus.checks.cron = {
           status: 'unknown',
-          message: 'Cron status not available (no timestamp found)',
+          message: 'Cron status not available (saveRegularClose has never succeeded)',
         };
-        // Cron is not critical for immediate operation, so don't degrade status
       }
     } else {
       healthStatus.checks.cron = {

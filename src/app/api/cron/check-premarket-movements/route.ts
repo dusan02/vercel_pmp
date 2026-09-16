@@ -12,8 +12,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
-import { detectSession, getLastTradingDay } from '@/lib/utils/timeUtils';
-import { getDateET, createETDate, nowET } from '@/lib/utils/dateET';
+import { detectSession } from '@/lib/utils/timeUtils';
+import { getDateET, nowET } from '@/lib/utils/dateET';
+import { getPrevCloseRefDay } from '@/lib/utils/prevCloseDates';
 import { calculatePercentChange } from '@/lib/utils/priceResolver';
 import { getAllTrackedTickers } from '@/lib/utils/universeHelpers';
 import { getPrevClose } from '@/lib/redis/operations';
@@ -39,7 +40,7 @@ interface MovementCheckResult {
 async function checkTickerMovement(
   ticker: string,
   apiKey: string,
-  todayTradingDateStr: string
+  sessionDateStr: string
 ): Promise<MovementCheckResult | null> {
   try {
     const etNow = nowET();
@@ -69,7 +70,7 @@ async function checkTickerMovement(
     }
 
     // 2. Get previous close from Redis (more reliable)
-    const redisPrevCloseMap = await getPrevClose(todayTradingDateStr, [ticker]);
+    const redisPrevCloseMap = await getPrevClose(sessionDateStr, [ticker]);
     const redisPreviousClose = redisPrevCloseMap.get(ticker) || dbTicker.latestPrevClose;
 
     // 3. Calculate percent change
@@ -105,7 +106,7 @@ async function checkTickerMovement(
 async function verifyTickerPrice(
   ticker: string,
   apiKey: string,
-  todayTradingDateStr: string
+  sessionDateStr: string
 ): Promise<{ verified: boolean; issues: string[] }> {
   const issues: string[] = [];
 
@@ -121,7 +122,7 @@ async function verifyTickerPrice(
     });
 
     // 2. Get data from Redis
-    const redisPrevCloseMap = await getPrevClose(todayTradingDateStr, [ticker]);
+    const redisPrevCloseMap = await getPrevClose(sessionDateStr, [ticker]);
     const redisPreviousClose = redisPrevCloseMap.get(ticker) || null;
 
     // 3. Get data from Polygon API
@@ -132,8 +133,9 @@ async function verifyTickerPrice(
                                  polygonSnapshot?.prevDay?.c ||
                                  null;
 
-    // 4. Get previous close from Polygon
-    const yesterdayTradingDay = getLastTradingDay(createETDate(todayTradingDateStr));
+    // 4. Get previous close from Polygon — the trading day whose close is
+    // the session's prevClose (strictly before the session date).
+    const yesterdayTradingDay = getPrevCloseRefDay(sessionDateStr);
     const yesterdayDateStr = getDateET(yesterdayTradingDay);
     const polygonPrevCloseData = await fetchPolygonPreviousClose(ticker, apiKey, yesterdayDateStr);
     const polygonPreviousClose = polygonPrevCloseData.close;
@@ -235,21 +237,21 @@ export async function POST(request: NextRequest) {
     // Redis prevClose keys + Polygon prevClose lookups are keyed by the
     // CALENDAR today (the session date). getLastTradingDay() inside the
     // helpers derives the trading day whose close is today's prevClose.
-    const todayTradingDateStr = getDateET(etNow);
+    const sessionDateStr = getDateET(etNow);
 
     const movementResults: MovementCheckResult[] = [];
     const verificationResults: Array<{ ticker: string; verified: boolean; issues: string[] }> = [];
 
     // Check movements for all tickers
     for (const ticker of tickersToCheck) {
-      const result = await checkTickerMovement(ticker, apiKey, todayTradingDateStr);
+      const result = await checkTickerMovement(ticker, apiKey, sessionDateStr);
       if (result) {
         movementResults.push(result);
         
         // If movement exceeds threshold, verify price
         if (result.needsVerification) {
           console.log(`⚠️  Large movement detected for ${ticker}: ${result.percentChange.toFixed(2)}% - verifying price...`);
-          const verification = await verifyTickerPrice(ticker, apiKey, todayTradingDateStr);
+          const verification = await verifyTickerPrice(ticker, apiKey, sessionDateStr);
           verificationResults.push({
             ticker,
             ...verification

@@ -10,12 +10,37 @@ import { getUniverse } from '@/lib/redis/operations';
 import { recordSuccess, recordFailure } from '../healthMonitor';
 import { isMarketHoliday, getTradingDay } from '@/lib/utils/timeUtils';
 import { getDateET, createETDate, toET } from '@/lib/utils/dateET';
-import { polygonCircuitBreaker, __IS_TEST__, sleep, PolygonSnapshot } from './shared';
-import { fetchPolygonSnapshot } from './core';
 import { writePrevClose, writeRegularClose } from '@/lib/heatmap/prevCloseService';
 import { prisma } from '@/lib/db/prisma';
 
-const SNAPSHOT_BATCH_SIZE = 80;
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+/**
+ * Official close for every US ticker on a given trading day via Polygon
+ * grouped daily aggs (one request covers the whole market).
+ */
+async function fetchGroupedCloses(dateStr: string, apiKey: string): Promise<Map<string, number>> {
+  const url = `https://api.polygon.io/v2/aggs/grouped/locale/us/market/stocks/${dateStr}?adjusted=true&apiKey=${apiKey}`;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) {
+        console.warn(`⚠️ grouped aggs ${dateStr}: HTTP ${res.status} (attempt ${attempt}/3)`);
+      } else {
+        const data = await res.json();
+        const map = new Map<string, number>();
+        for (const r of data?.results ?? []) {
+          if (r?.T && typeof r.c === 'number' && r.c > 0) map.set(r.T, r.c);
+        }
+        if (map.size > 0) return map;
+      }
+    } catch (err) {
+      console.warn(`⚠️ grouped aggs ${dateStr} failed (attempt ${attempt}/3):`, err);
+    }
+    if (attempt < 3) await sleep(2000 * attempt);
+  }
+  return new Map();
+}
 
 export async function saveRegularClose(apiKey: string, date: string, runId?: string): Promise<void> {
   const correlationId = runId || Date.now().toString(36);
@@ -70,17 +95,15 @@ export async function saveRegularClose(apiKey: string, date: string, runId?: str
 
     console.log(`📊 [runId:${correlationId}] ${tickersToSave.length}/${tickers.length} tickers need regular close (already saved: ${alreadySavedSymbols.size})`);
 
-    // Fetch snapshots in batches to avoid API limits
-    const allSnapshots: PolygonSnapshot[] = [];
-    for (let i = 0; i < tickersToSave.length; i += SNAPSHOT_BATCH_SIZE) {
-      const batch = tickersToSave.slice(i, i + SNAPSHOT_BATCH_SIZE);
-      const snapshots = await fetchPolygonSnapshot(batch, apiKey);
-      allSnapshots.push(...snapshots);
-      if (i + SNAPSHOT_BATCH_SIZE < tickersToSave.length) {
-        await sleep(200);
-      }
+    // Grouped daily aggs: ONE request returns the official close for every
+    // US ticker for this specific trading day — simpler and more reliable
+    // than ~9 batched snapshot calls, and unambiguous about which session
+    // the close belongs to (snapshot.day.c is whatever session is current).
+    const closeByTicker = await fetchGroupedCloses(tradingDayStr, apiKey);
+    console.log(`✅ [runId:${correlationId}] Grouped aggs returned ${closeByTicker.size} closes for ${tradingDayStr}`);
+    if (closeByTicker.size === 0) {
+      throw new Error(`Grouped aggs returned no data for ${tradingDayStr}`);
     }
-    console.log(`✅ [runId:${correlationId}] Received ${allSnapshots.length} snapshots`);
 
     const { getNextTradingDay } = await import('@/lib/utils/pricingStateMachine');
     const nextTradingDay = getNextTradingDay(todayTradingDay);
@@ -100,12 +123,9 @@ export async function saveRegularClose(apiKey: string, date: string, runId?: str
 
     let saved = 0;
     let prevCloseUpdated = 0;
-    for (const snapshot of allSnapshots) {
+    for (const symbol of tickersToSave) {
       try {
-        const symbol = snapshot.ticker;
-        if (alreadySavedSymbols.has(symbol)) continue;
-
-        const regularClose = snapshot.day?.c;
+        const regularClose = closeByTicker.get(symbol);
         if (regularClose && regularClose > 0) {
           // 1. Write regularClose for today's trading day
           await writeRegularClose(todayTradingDay, symbol, regularClose);
@@ -120,11 +140,11 @@ export async function saveRegularClose(apiKey: string, date: string, runId?: str
           }
         }
       } catch (error) {
-        console.error(`Error saving regular close for ${snapshot.ticker}:`, error);
+        console.error(`Error saving regular close for ${symbol}:`, error);
       }
     }
 
-    console.log(`✅ [runId:${correlationId}] Saved regular close for ${saved}/${allSnapshots.length} tickers`);
+    console.log(`✅ [runId:${correlationId}] Saved regular close for ${saved}/${tickersToSave.length} tickers`);
     console.log(`✅ [runId:${correlationId}] Updated previousClose for ${prevCloseUpdated} tickers (nextTradingDay: ${nextTradingDateStr}, todayTradingDay: ${getDateET(todayTradingDay)})`);
     await recordSuccess('saveRegularClose', saved);
   } catch (error) {

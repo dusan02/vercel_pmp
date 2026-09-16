@@ -16,6 +16,7 @@
 import { prisma } from '@/lib/db/prisma';
 import { setPrevClose } from '@/lib/redis/operations';
 import { getDateET } from '@/lib/utils/dateET';
+import { dbWriteRetry } from '@/lib/db/writeRetry';
 
 type DbRetryFn = <T>(fn: () => Promise<T>, label: string) => Promise<T | null>;
 
@@ -25,9 +26,8 @@ export type PrevCloseWriteResult = {
   ticker: boolean;
 };
 
-const defaultRetry: DbRetryFn = async <T>(fn: () => Promise<T>): Promise<T | null> => {
-  try { return await fn(); } catch { return null; }
-};
+const defaultRetry: DbRetryFn = <T>(fn: () => Promise<T>, label: string) =>
+  dbWriteRetry(fn, label, 5);
 
 const DEFAULT_TICKER_CREATE = {
   lastPrice: 0,

@@ -17,8 +17,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { getPreviousClose } from '@/lib/utils/marketCapUtils';
-import { getLastTradingDay, getTradingDay, detectSession } from '@/lib/utils/timeUtils';
-import { getDateET, createETDate, nowET } from '@/lib/utils/dateET';
+import { getTradingDay, detectSession } from '@/lib/utils/timeUtils';
+import { getDateET, nowET } from '@/lib/utils/dateET';
+import { getPrevCloseContext } from '@/lib/utils/prevCloseDates';
 import { verifyCronAuth, withCronLock } from '@/lib/utils/cronAuth';
 import { writePrevClose } from '@/lib/heatmap/prevCloseService';
 
@@ -111,12 +112,13 @@ async function runVerifyPrevClose(request: NextRequest): Promise<NextResponse> {
     // Model A: prevCloseKey(todayTradingDay) = close(yesterdayTradingDay)
     // verify-prevclose opravuje prevClose pre dnešný trading session
     const etNow = nowET();
-    const calendarDateETStr = getDateET(etNow); // Calendar date in ET
-    const calendarDateET = createETDate(calendarDateETStr);
-    // getLastTradingDay is strictly-before: on Tue this returns Mon — i.e. the
-    // trading day whose close serves as today's prevClose.
-    const prevCloseRefDay = getLastTradingDay(calendarDateET);
-    const prevCloseRefDateStr = getDateET(prevCloseRefDay);
+    // Centralized date semantics: sessionDate = the day prevClose is FOR,
+    // closeRefDay = the trading day whose close IS the prevClose.
+    const ctx = getPrevCloseContext(etNow);
+    const calendarDateETStr = ctx.sessionDateStr;
+    const calendarDateET = ctx.sessionDate;
+    const prevCloseRefDay = ctx.closeRefDay;
+    const prevCloseRefDateStr = ctx.closeRefDateStr;
     
     // CRITICAL: Include tickers with lastPrice > 0, even if prevClose is missing/null
     // This fixes "broken" tickers that were reset or never had prevClose set
@@ -132,27 +134,17 @@ async function runVerifyPrevClose(request: NextRequest): Promise<NextResponse> {
     const prevCloseRefDayEnd = new Date(prevCloseRefDayStart);
     prevCloseRefDayEnd.setUTCDate(prevCloseRefDayEnd.getUTCDate() + 1);
     
-    const tickers = await prisma.ticker.findMany({
+    // Stale set: missing prevClose or latestPrevCloseDate outside the ref day.
+    // These get a full Polygon verification every run.
+    const staleTickers = await prisma.ticker.findMany({
       where: {
         lastPrice: { gt: 0 },
         OR: [
-          // Normal case: has prevClose
-          { latestPrevClose: { gt: 0 } },
-          // Broken case: missing or stale prevClose
-          {
-            OR: [
-              { latestPrevClose: null },
-              { latestPrevClose: 0 },
-              // Stale date: not within yesterdayTradingDay (date range comparison for timezone safety)
-              {
-                OR: [
-                  { latestPrevCloseDate: null },
-                  { latestPrevCloseDate: { lt: prevCloseRefDayStart } },
-                  { latestPrevCloseDate: { gt: prevCloseRefDayEnd } }
-                ]
-              }
-            ]
-          }
+          { latestPrevClose: null },
+          { latestPrevClose: 0 },
+          { latestPrevCloseDate: null },
+          { latestPrevCloseDate: { lt: prevCloseRefDayStart } },
+          { latestPrevCloseDate: { gt: prevCloseRefDayEnd } }
         ]
       },
       select: {
@@ -160,13 +152,39 @@ async function runVerifyPrevClose(request: NextRequest): Promise<NextResponse> {
         latestPrevClose: true,
         latestPrevCloseDate: true
       },
-      orderBy: {
-        symbol: 'asc'
-      },
-      ...(limit ? { take: limit } : {}) // Only apply limit if specified
+      orderBy: { symbol: 'asc' },
+      ...(limit ? { take: limit } : {})
     });
 
-    console.log(`📊 Found ${tickers.length} tickers to verify`);
+    // Rotating deterministic sample of nominally-fresh tickers — catches value
+    // drift (right date, wrong price) without paying ~700 Polygon calls/run.
+    // The window slides daily so the full universe is covered over ~2 weeks.
+    const freshTickers = limit ? [] : await prisma.ticker.findMany({
+      where: {
+        lastPrice: { gt: 0 },
+        latestPrevClose: { gt: 0 },
+        latestPrevCloseDate: { gte: prevCloseRefDayStart, lt: prevCloseRefDayEnd }
+      },
+      select: {
+        symbol: true,
+        latestPrevClose: true,
+        latestPrevCloseDate: true
+      },
+      orderBy: { symbol: 'asc' }
+    });
+    const FRESH_SAMPLE_SIZE = 50;
+    let freshSample: typeof freshTickers = [];
+    if (freshTickers.length > 0) {
+      const seed = parseInt(calendarDateETStr.replaceAll('-', ''), 10);
+      const start = seed % freshTickers.length;
+      freshSample = freshTickers.slice(start, start + FRESH_SAMPLE_SIZE);
+      if (freshSample.length < FRESH_SAMPLE_SIZE) {
+        freshSample = freshSample.concat(freshTickers.slice(0, FRESH_SAMPLE_SIZE - freshSample.length));
+      }
+    }
+
+    const tickers = [...staleTickers, ...freshSample];
+    console.log(`📊 Found ${tickers.length} tickers to verify (stale: ${staleTickers.length}, fresh sample: ${freshSample.length}/${freshTickers.length})`);
 
     const result: VerifyResult = {
       checked: 0,
