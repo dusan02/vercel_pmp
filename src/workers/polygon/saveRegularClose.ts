@@ -26,6 +26,25 @@ export async function saveRegularClose(apiKey: string, date: string, runId?: str
     const calendarDateET = createETDate(calendarDateETStr);
     const todayTradingDay = getTradingDay(calendarDateET);
 
+    // Guard: refuse to run while the target trading day is still in progress.
+    // snapshot.day.c during 'pre'/'live' is either the previous session's
+    // close or a partial-day value — persisting it would corrupt both
+    // regularClose(today) and prevClose(next trading day). Safe only when:
+    //   - the trading day is a PAST calendar day (weekend/holiday backfill), or
+    //   - it is the trading day itself and ET >= 16:15 (Polygon Starter's
+    //     ~15min delay has settled so day.c is the final close).
+    // This makes stray invocations (early cron, manual GET, `pm2 start`
+    // immediate run) a safe no-op.
+    const tradingDayStr = getDateET(todayTradingDay);
+    const { hour: etHour, minute: etMinute } = toET(new Date());
+    const minutesET = etHour * 60 + etMinute;
+    const isLaterCalendarDay = calendarDateETStr > tradingDayStr;
+    const isPostClose = calendarDateETStr === tradingDayStr && minutesET >= 16 * 60 + 15;
+    if (!isLaterCalendarDay && !isPostClose) {
+      console.log(`⏸️  [runId:${correlationId}] Skipping regular close save — trading day ${tradingDayStr} not closed yet (ET ${String(etHour).padStart(2, '0')}:${String(etMinute).padStart(2, '0')})`);
+      return;
+    }
+
     const tickers = await getUniverse('sp500');
     if (tickers.length === 0) {
       console.warn('⚠️ No tickers in universe, skipping regular close save');
