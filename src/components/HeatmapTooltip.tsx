@@ -8,7 +8,7 @@
 import React from 'react';
 import type { CompanyNode, HeatmapMetric } from '@/lib/heatmap/types';
 import { formatPrice, formatMarketCap } from '@/lib/utils/heatmapFormat';
-import { getCompanyMetricValue, formatMetricValue } from '@/lib/heatmap/metricValue';
+import { getCompanyMetricValue, formatMetricValue, isInvertedMetric } from '@/lib/heatmap/metricValue';
 import { formatSectorName } from '@/lib/utils/format';
 import styles from '@/styles/heatmap.module.css';
 import CompanyLogo from './CompanyLogo';
@@ -74,7 +74,11 @@ export function HeatmapTooltip({ company, position, timeframe, metric }: Heatmap
   // Calculate sentiment color
   const changeValue = getCompanyMetricValue(company, metric) ?? 0;
   const isPositive = changeValue >= 0;
-  const sentimentColor = isPositive ? '#22c55e' : '#ef4444';
+  // Inverted metrics (P/E, PEG, beta, Beneish): sign doesn't mean good/bad —
+  // use a neutral color instead of implying sentiment.
+  const sentimentColor = isInvertedMetric(metric)
+    ? '#94a3b8'
+    : (isPositive ? '#22c55e' : '#ef4444');
 
   // Use custom display value if available (e.g. for Dollar mode P&L)
   const displayValue = company.displayValue;

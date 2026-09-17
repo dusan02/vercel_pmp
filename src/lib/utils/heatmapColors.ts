@@ -27,6 +27,37 @@ const zscoreScale = {
   range: ['#dc2626', '#f87171', '#1f2937', '#22c55e', '#16a34a'],
 };
 
+// Altman Z: <1.8 distress, 1.8-3 grey zone, >3 safe
+const altmanScale = {
+  domain: [0, 1.8, 3, 6, 10],
+  range: ['#dc2626', '#f87171', '#1f2937', '#22c55e', '#16a34a'],
+};
+
+// RVOL: relative volume — >2× heavy trading
+const rvolScale = {
+  domain: [0.3, 0.7, 1, 2, 5],
+  range: ['#dc2626', '#f87171', '#1f2937', '#22c55e', '#16a34a'],
+};
+
+// Fundamentals % (higher = better)
+const makeFundamentalScale = (domain: number[]) => ({
+  domain,
+  range: ['#dc2626', '#f87171', '#1f2937', '#22c55e', '#16a34a'],
+});
+
+// Inverted scales — lower value = better = green (cheap valuation, low risk).
+// Domain ascending, range goes green→red.
+const makeInvertedScale = (domain: number[]) => ({
+  domain,
+  range: ['#16a34a', '#22c55e', '#1f2937', '#f87171', '#dc2626'],
+});
+
+// Beneish M-score: > -1.78 = likely manipulator (red), < -2.22 = clean (green)
+const beneishScale = {
+  domain: [-4.5, -3.5, -2.5, -2, -1.5],
+  range: ['#16a34a', '#22c55e', '#1f2937', '#f87171', '#dc2626'],
+};
+
 function scaleConfig(
   metric: HeatmapColorMetric,
   timeframe: Timeframe,
@@ -34,10 +65,29 @@ function scaleConfig(
   switch (metric) {
     case 'mcap':          return mcapScales[timeframe];
     case 'week':          return percentScales.week;
+    case 'month':         return { domain: [-15, -8, 0, 8, 15], range: percentScales.week.range };
+    case 'ytd':           return { domain: [-30, -15, 0, 15, 30], range: percentScales.month.range };
+    case 'year':          return { domain: [-40, -20, 0, 20, 40], range: percentScales.month.range };
     case 'health':
     case 'valuation':
     case 'profitability': return scoreScale;
     case 'piotroski':     return piotroskiScale;
+    case 'altman':        return altmanScale;
+    case 'beneish':       return beneishScale;
+    case 'pe':
+    case 'fpe':           return makeInvertedScale([5, 15, 25, 40, 80]);
+    case 'ps':            return makeInvertedScale([0.5, 2, 5, 10, 25]);
+    case 'pb':            return makeInvertedScale([0.5, 1.5, 3, 8, 20]);
+    case 'peg':           return makeInvertedScale([0.5, 1, 1.5, 2.5, 5]);
+    case 'evebitda':      return makeInvertedScale([5, 10, 15, 25, 50]);
+    case 'roe':           return makeFundamentalScale([-20, 0, 10, 20, 40]);
+    case 'netmargin':     return makeFundamentalScale([-20, 0, 10, 20, 40]);
+    case 'revgrowth':     return makeFundamentalScale([-20, 0, 10, 25, 50]);
+    case 'epsgrowth':     return makeFundamentalScale([-30, 0, 10, 25, 60]);
+    case 'divyield':      return makeFundamentalScale([0, 1, 2, 3.5, 6]);
+    case 'fcfmargin':     return makeFundamentalScale([-10, 0, 10, 20, 35]);
+    case 'rvol':          return rvolScale;
+    case 'beta':          return makeInvertedScale([0.3, 0.8, 1.0, 1.5, 2.5]);
     case 'zscore':        return zscoreScale;
     case 'percent':
     default:              return percentScales[timeframe];

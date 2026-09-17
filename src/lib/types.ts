@@ -30,11 +30,30 @@ export interface StockData {
 
   // Extended heatmap metrics (from /api/heatmap payload)
   weekChange?: number;
+  monthChange?: number;
+  ytdChange?: number;
+  yearChange?: number;
   healthScore?: number;
   valuationScore?: number;
   profitabilityScore?: number;
   piotroskiScore?: number;
+  altmanZ?: number;
+  beneishScore?: number;
+  fcfMargin?: number;
   zScore?: number;
+  rvol?: number;
+  peRatio?: number;
+  forwardPe?: number;
+  psRatio?: number;
+  pbRatio?: number;
+  pegRatio?: number;
+  evEbitda?: number;
+  roe?: number;
+  netMargin?: number;
+  revenueGrowth?: number;
+  earningsGrowth?: number;
+  dividendYield?: number;
+  beta?: number;
 
   /**
    * Optional pricing metadata for UX (labels/badges).

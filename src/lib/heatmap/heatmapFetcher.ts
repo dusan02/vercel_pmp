@@ -20,10 +20,26 @@ export interface TickerInfo {
   lastMarketCap: number | null;
   lastMarketCapDiff: number | null;
   latestMoversZScore: number | null;
+  latestMoversRVOL: number | null;
   healthScore: number | null;
   valuationScore: number | null;
   profitabilityScore: number | null;
   piotroskiScore: number | null;
+  altmanZ: number | null;
+  beneishScore: number | null;
+  fcfMargin: number | null;
+  peRatio: number | null;
+  forwardPe: number | null;
+  psRatio: number | null;
+  pbRatio: number | null;
+  pegRatio: number | null;
+  evEbitda: number | null;
+  roe: number | null;
+  netMargin: number | null;
+  revenueGrowth: number | null;
+  earningsGrowth: number | null;
+  dividendYield: number | null;
+  beta: number | null;
 }
 
 export interface HeatmapFetchResult {
@@ -63,12 +79,32 @@ export async function fetchTickers(maxTickers: number): Promise<{
       lastMarketCap: true,
       lastMarketCapDiff: true,
       latestMoversZScore: true,
+      latestMoversRVOL: true,
       analysisCache: {
         select: {
           healthScore: true,
           valuationScore: true,
           profitabilityScore: true,
           piotroskiScore: true,
+          altmanZ: true,
+          beneishScore: true,
+          fcfMargin: true,
+        },
+      },
+      finnhubMetrics: {
+        select: {
+          peRatio: true,
+          forwardPe: true,
+          psRatio: true,
+          pbRatio: true,
+          pegRatio: true,
+          evEbitda: true,
+          roe: true,
+          netMargin: true,
+          revenueGrowth: true,
+          earningsGrowth: true,
+          dividendYield: true,
+          beta: true,
         },
       },
     },
@@ -98,10 +134,26 @@ export async function fetchTickers(maxTickers: number): Promise<{
       lastMarketCap: t.lastMarketCap,
       lastMarketCapDiff: t.lastMarketCapDiff,
       latestMoversZScore: t.latestMoversZScore,
+      latestMoversRVOL: t.latestMoversRVOL,
       healthScore: t.analysisCache?.healthScore ?? null,
       valuationScore: t.analysisCache?.valuationScore ?? null,
       profitabilityScore: t.analysisCache?.profitabilityScore ?? null,
       piotroskiScore: t.analysisCache?.piotroskiScore ?? null,
+      altmanZ: t.analysisCache?.altmanZ ?? null,
+      beneishScore: t.analysisCache?.beneishScore ?? null,
+      fcfMargin: t.analysisCache?.fcfMargin ?? null,
+      peRatio: t.finnhubMetrics?.peRatio ?? null,
+      forwardPe: t.finnhubMetrics?.forwardPe ?? null,
+      psRatio: t.finnhubMetrics?.psRatio ?? null,
+      pbRatio: t.finnhubMetrics?.pbRatio ?? null,
+      pegRatio: t.finnhubMetrics?.pegRatio ?? null,
+      evEbitda: t.finnhubMetrics?.evEbitda ?? null,
+      roe: t.finnhubMetrics?.roe ?? null,
+      netMargin: t.finnhubMetrics?.netMargin ?? null,
+      revenueGrowth: t.finnhubMetrics?.revenueGrowth ?? null,
+      earningsGrowth: t.finnhubMetrics?.earningsGrowth ?? null,
+      dividendYield: t.finnhubMetrics?.dividendYield ?? null,
+      beta: t.finnhubMetrics?.beta ?? null,
     });
   }
 
@@ -168,6 +220,53 @@ export async function fetchWeekRefCloses(
     select: { symbol: true, date: true, regularClose: true },
     orderBy: { date: 'desc' },
   });
+}
+
+export interface PerfRefCloses {
+  month: Map<string, number>;
+  ytd: Map<string, number>;
+  year: Map<string, number>;
+}
+
+/**
+ * Reference closes from DailyValuationHistory for longer-term performance
+ * metrics (1M, YTD, 1Y). For each target date we fetch a small trailing
+ * window and take the latest close on/before the target.
+ */
+export async function fetchPerfRefCloses(
+  tickerSymbols: string[],
+  now: Date,
+  todayYMD: string
+): Promise<PerfRefCloses> {
+  const DAY = 24 * 60 * 60 * 1000;
+  const targets: { key: keyof PerfRefCloses; target: Date }[] = [
+    { key: 'month', target: new Date(now.getTime() - 30 * DAY) },
+    { key: 'ytd', target: createETDate(`${todayYMD.slice(0, 4)}-01-01`) },
+    { key: 'year', target: new Date(now.getTime() - 365 * DAY) },
+  ];
+
+  const result: PerfRefCloses = { month: new Map(), ytd: new Map(), year: new Map() };
+
+  await Promise.all(targets.map(async ({ key, target }) => {
+    const lo = new Date(target.getTime() - 7 * DAY);
+    const hi = new Date(target.getTime() + 1 * DAY);
+    const rows = await prisma.dailyValuationHistory.findMany({
+      where: {
+        symbol: { in: tickerSymbols },
+        date: { gte: lo, lte: hi },
+        closePrice: { not: null, gt: 0 },
+      },
+      select: { symbol: true, date: true, closePrice: true },
+      orderBy: { date: 'asc' },
+    });
+    const map = result[key];
+    for (const r of rows) {
+      if (r.closePrice == null || r.date > target) continue;
+      map.set(r.symbol, r.closePrice); // ascending → last write wins = closest ≤ target
+    }
+  }));
+
+  return result;
 }
 
 /**

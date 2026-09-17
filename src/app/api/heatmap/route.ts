@@ -6,6 +6,7 @@ import {
   fetchCachedStockData,
   fetchPrevCloseOnDemand,
   fetchWeekRefCloses,
+  fetchPerfRefCloses,
   computeDateBoundaries,
   deduplicateSessionPrices,
   deduplicateDailyRefs,
@@ -88,8 +89,15 @@ export async function GET(request: NextRequest) {
             const compactRows = limited.map((s: any) => ({
               t: s.ticker, n: s.companyName, s: s.sector, i: s.industry,
               m: s.marketCap, c: s.percentChange, d: s.marketCapDiff, p: s.currentPrice,
-              w: s.weekChange ?? null, hs: s.healthScore ?? null, vs: s.valuationScore ?? null,
+              w: s.weekChange ?? null, m1: s.monthChange ?? null, ytd: s.ytdChange ?? null, y1: s.yearChange ?? null,
+              hs: s.healthScore ?? null, vs: s.valuationScore ?? null,
               ps: s.profitabilityScore ?? null, pi: s.piotroskiScore ?? null, z: s.zScore ?? null,
+              az: s.altmanZ ?? null, be: s.beneishScore ?? null, fcfm: s.fcfMargin ?? null,
+              rv: s.rvol ?? null, pe: s.peRatio ?? null, fpe: s.forwardPe ?? null,
+              psr: s.psRatio ?? null, pb: s.pbRatio ?? null, peg: s.pegRatio ?? null,
+              eve: s.evEbitda ?? null, roe: s.roe ?? null, nm: s.netMargin ?? null,
+              rg: s.revenueGrowth ?? null, eg: s.earningsGrowth ?? null,
+              dy: s.dividendYield ?? null, bt: s.beta ?? null,
             }));
             return NextResponse.json({
               success: true,
@@ -180,6 +188,11 @@ export async function GET(request: NextRequest) {
       canUseFastPath ? fetchWeekRefCloses(tickerSymbols, oneWeekAgo, today) : Promise.resolve(null),
     ]);
 
+    // Longer-term perf refs (1M/YTD/1Y) from DailyValuationHistory — always
+    // fetched (3 small windowed queries) so the shared cache payload carries
+    // all metrics regardless of which one the requesting client selected.
+    const perfRefs = await fetchPerfRefCloses(tickerSymbols, now, todayYMD);
+
     const sessionPrices = deduplicateSessionPrices(rawSessionPrices);
     const dailyRefs = deduplicateDailyRefs(rawDailyRefs);
 
@@ -221,7 +234,7 @@ export async function GET(request: NextRequest) {
     const transformResult = transformToHeatmap(
       tickerSymbols, tickerMap, sessionPrices, rawDailyRefs,
       cachedStockDataMap, prevCloseBatchMap, ctx, now, debug,
-      slimWeekRefs ?? undefined,
+      slimWeekRefs ?? undefined, perfRefs,
       { previousCloseMap: prelimPrevCloseMaps.previousCloseMap, regularCloseMap: prelimPrevCloseMaps.regularCloseMap, priceMap }
     );
 

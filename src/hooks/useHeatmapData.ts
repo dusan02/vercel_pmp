@@ -35,11 +35,72 @@ export function transformStockDataToCompanyNode(stock: StockData): CompanyNode |
     marketCapDiffAbs: marketCapDiffAbs,
     currentPrice: stock.currentPrice,
     weekChange: stock.weekChange ?? undefined,
+    monthChange: stock.monthChange ?? undefined,
+    ytdChange: stock.ytdChange ?? undefined,
+    yearChange: stock.yearChange ?? undefined,
     healthScore: stock.healthScore ?? undefined,
     valuationScore: stock.valuationScore ?? undefined,
     profitabilityScore: stock.profitabilityScore ?? undefined,
     piotroskiScore: stock.piotroskiScore ?? undefined,
+    altmanZ: stock.altmanZ ?? undefined,
+    beneishScore: stock.beneishScore ?? undefined,
+    fcfMargin: stock.fcfMargin ?? undefined,
     zScore: stock.zScore ?? undefined,
+    rvol: stock.rvol ?? undefined,
+    peRatio: stock.peRatio ?? undefined,
+    forwardPe: stock.forwardPe ?? undefined,
+    psRatio: stock.psRatio ?? undefined,
+    pbRatio: stock.pbRatio ?? undefined,
+    pegRatio: stock.pegRatio ?? undefined,
+    evEbitda: stock.evEbitda ?? undefined,
+    roe: stock.roe ?? undefined,
+    netMargin: stock.netMargin ?? undefined,
+    revenueGrowth: stock.revenueGrowth ?? undefined,
+    earningsGrowth: stock.earningsGrowth ?? undefined,
+    dividendYield: stock.dividendYield ?? undefined,
+    beta: stock.beta ?? undefined,
+  };
+}
+
+/** Map API compact row format (t/n/s/i/m/c/d/p/...) to CompanyNode */
+function mapCompactRow(row: any): CompanyNode | null {
+  if (!row.t || !row.s || !row.i) return null;
+  const marketCapDiff = row.d || 0;
+  return {
+    symbol: row.t,
+    name: row.n || row.t,
+    sector: row.s,
+    industry: row.i,
+    marketCap: row.m || 0,
+    changePercent: row.c || 0,
+    marketCapDiff,
+    marketCapDiffAbs: Math.abs(marketCapDiff),
+    currentPrice: row.p,
+    weekChange: row.w ?? undefined,
+    monthChange: row.m1 ?? undefined,
+    ytdChange: row.ytd ?? undefined,
+    yearChange: row.y1 ?? undefined,
+    healthScore: row.hs ?? undefined,
+    valuationScore: row.vs ?? undefined,
+    profitabilityScore: row.ps ?? undefined,
+    piotroskiScore: row.pi ?? undefined,
+    altmanZ: row.az ?? undefined,
+    beneishScore: row.be ?? undefined,
+    fcfMargin: row.fcfm ?? undefined,
+    zScore: row.z ?? undefined,
+    rvol: row.rv ?? undefined,
+    peRatio: row.pe ?? undefined,
+    forwardPe: row.fpe ?? undefined,
+    psRatio: row.psr ?? undefined,
+    pbRatio: row.pb ?? undefined,
+    pegRatio: row.peg ?? undefined,
+    evEbitda: row.eve ?? undefined,
+    roe: row.roe ?? undefined,
+    netMargin: row.nm ?? undefined,
+    revenueGrowth: row.rg ?? undefined,
+    earningsGrowth: row.eg ?? undefined,
+    dividendYield: row.dy ?? undefined,
+    beta: row.bt ?? undefined,
   };
 }
 
@@ -61,25 +122,8 @@ export function useHeatmapData({
     if (!initialHeatmapData || !Array.isArray(initialHeatmapData) || initialHeatmapData.length === 0) return null;
     const companies: CompanyNode[] = [];
     for (const row of initialHeatmapData) {
-      if (!row.t || !row.s || !row.i) continue;
-      const marketCapDiff = row.d || 0;
-      companies.push({
-        symbol: row.t,
-        name: row.n || row.t,
-        sector: row.s,
-        industry: row.i,
-        marketCap: row.m || 0,
-        changePercent: row.c || 0,
-        marketCapDiff,
-        marketCapDiffAbs: Math.abs(marketCapDiff),
-        currentPrice: row.p,
-        weekChange: row.w ?? undefined,
-        healthScore: row.hs ?? undefined,
-        valuationScore: row.vs ?? undefined,
-        profitabilityScore: row.ps ?? undefined,
-        piotroskiScore: row.pi ?? undefined,
-        zScore: row.z ?? undefined,
-      });
+      const node = mapCompactRow(row);
+      if (node) companies.push(node);
     }
     return companies.length > 0 ? companies : null;
   }, [initialHeatmapData]);
@@ -232,26 +276,8 @@ export function useHeatmapData({
       if (result.rows && Array.isArray(result.rows)) {
         // FAST PATH: Optimized format from API
         for (const row of result.rows) {
-          if (!row.t || !row.s || !row.i) continue;
-          
-          const marketCapDiff = row.d || 0;
-          companies.push({
-            symbol: row.t,
-            name: row.n || row.t,
-            sector: row.s,
-            industry: row.i,
-            marketCap: row.m || 0,
-            changePercent: row.c || 0,
-            marketCapDiff: marketCapDiff,
-            marketCapDiffAbs: Math.abs(marketCapDiff),
-            currentPrice: row.p,
-            weekChange: row.w ?? undefined,
-            healthScore: row.hs ?? undefined,
-            valuationScore: row.vs ?? undefined,
-            profitabilityScore: row.ps ?? undefined,
-            piotroskiScore: row.pi ?? undefined,
-            zScore: row.z ?? undefined,
-          });
+          const node = mapCompactRow(row);
+          if (node) companies.push(node);
         }
       } else if (result.data && Array.isArray(result.data)) {
         // SLOW PATH: Legacy format

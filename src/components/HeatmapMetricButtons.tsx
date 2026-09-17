@@ -8,7 +8,7 @@
 
 import React, { useState, useEffect } from 'react';
 import type { HeatmapMetric } from '@/lib/heatmap/types';
-import { HEATMAP_METRICS } from '@/lib/heatmap/metricValue';
+import { HEATMAP_METRICS, HEATMAP_METRIC_GROUPS } from '@/lib/heatmap/metricValue';
 import { event } from '@/lib/ga';
 
 interface HeatmapMetricButtonsProps {
@@ -74,10 +74,14 @@ export function HeatmapMetricButtons({
           backgroundPosition: 'right 8px center',
         }}
       >
-        {HEATMAP_METRICS.map((m) => (
-          <option key={m.id} value={m.id} className="text-slate-800 bg-white">
-            {m.label}
-          </option>
+        {HEATMAP_METRIC_GROUPS.map((g) => (
+          <optgroup key={g} label={g}>
+            {HEATMAP_METRICS.filter((m) => m.group === g).map((m) => (
+              <option key={m.id} value={m.id} className="text-slate-800 bg-white">
+                {m.label}
+              </option>
+            ))}
+          </optgroup>
         ))}
       </select>
     </div>

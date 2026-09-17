@@ -241,11 +241,11 @@ export class FinnhubClient {
             forwardPe: m['forwardPE'] ?? m['peNormalizedAnnual'] ?? null,
             pbRatio: m['pbAnnual'] ?? m['pbQuarterly'] ?? null,
             psRatio: m['psTTM'] ?? m['psAnnual'] ?? null,
-            evEbitda: m['enterpriseValueOverEbitda'] ?? null,
-            evSales: m['evSales'] ?? m['evSalesAnnual'] ?? null,
-            pegRatio: m['pegRatio'] ?? null,
+            evEbitda: m['evEbitdaTTM'] ?? null,
+            evSales: m['evRevenueTTM'] ?? null,
+            pegRatio: m['pegTTM'] ?? m['forwardPEG'] ?? null,
             // Bug #1 fix: corrected metric keys (was payoutRatioTTM and ptbv — wrong!)
-            priceCashFlow: m['priceCFTTM'] ?? m['priceCFAnnual'] ?? null,
+            priceCashFlow: m['pcfShareTTM'] ?? m['pcfShareAnnual'] ?? null,
             priceFreeCashFlow: m['priceToFreeCashFlowTTM'] ?? m['pfcfShareTTM'] ?? null,
             
             // Profitability
@@ -260,29 +260,29 @@ export class FinnhubClient {
             // Growth
             revenueGrowth: m['revenueGrowth3Y'] ?? m['revenueGrowth5Y'] ?? null,
             earningsGrowth: m['epsGrowth3Y'] ?? m['epsGrowth5Y'] ?? null,
-            bookValueGrowth: m['bookValuePerShareGrowth5Y'] ?? null,
+            bookValueGrowth: m['bookValueShareGrowth5Y'] ?? null,
             debtGrowth: m['totalDebtToEquityGrowth5Y'] ?? null,
-            
+
             // Financial Health
             currentRatio: m['currentRatioAnnual'] ?? m['currentRatioQuarterly'] ?? null,
             quickRatio: m['quickRatioAnnual'] ?? m['quickRatioQuarterly'] ?? null,
-            debtEquityRatio: m['totalDebtToEquityAnnual'] ?? m['totalDebtToEquityQuarterly'] ?? null,
-            interestCoverage: m['interestCoverage'] ?? null,
+            debtEquityRatio: m['totalDebt/totalEquityAnnual'] ?? m['totalDebt/totalEquityQuarterly'] ?? null,
+            interestCoverage: m['netInterestCoverageTTM'] ?? m['netInterestCoverageAnnual'] ?? null,
             totalDebtToCapitalization: m['totalDebtToCapitalizationAnnual'] ?? null,
             
             // Per Share
             revenuePerShare: m['revenuePerShareTTM'] ?? null,
             netIncomePerShare: m['netIncomePerShareTTM'] ?? null,
             bookValuePerShare: m['bookValuePerShareAnnual'] ?? m['bookValuePerShareQuarterly'] ?? null,
-            cashPerShare: m['cashPerShareAnnual'] ?? m['cashPerShareQuarterly'] ?? null,
+            cashPerShare: m['cashPerSharePerShareAnnual'] ?? m['cashPerSharePerShareQuarterly'] ?? null,
             freeCashFlowPerShare: m['freeCashFlowPerShareTTM'] ?? null,
             
             // Other
             beta: m['beta'] ?? null,
-            dividendYield: m['dividendYieldIndicatedAnnual'] ?? m['dividendYield5Y'] ?? null,
+            dividendYield: m['currentDividendYieldTTM'] ?? m['dividendYieldIndicatedAnnual'] ?? null,
             payoutRatio: m['payoutRatioAnnual'] ?? m['payoutRatioTTM'] ?? null,
             employees: m['employees'] ?? null,
-            revenuePerEmployee: m['revenuePerEmployee'] ?? null,
+            revenuePerEmployee: m['revenueEmployeeTTM'] ?? m['revenueEmployeeAnnual'] ?? null,
             assetTurnover: m['assetTurnoverAnnual'] ?? m['assetTurnoverTTM'] ?? null,
             inventoryTurnover: m['inventoryTurnoverAnnual'] ?? null,
             receivablesTurnover: m['receivablesTurnoverAnnual'] ?? null,

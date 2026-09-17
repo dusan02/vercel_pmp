@@ -15,29 +15,21 @@ interface HeatmapLegendProps {
   values?: number[] | undefined;
 }
 
+const PERCENT_METRICS = new Set(['percent', 'week', 'month', 'ytd', 'year', 'roe', 'netmargin', 'revgrowth', 'epsgrowth', 'fcfmargin', 'divyield']);
+
 export const HeatmapLegend: React.FC<HeatmapLegendProps> = ({ timeframe, metric = 'percent', values }) => {
   const colorScale = createHeatmapColorScale(timeframe, metric, values);
 
-  const percentTicks = {
-    day: [-5, -3, -1, 0, 1, 3, 5],
-    week: [-10, -6, -3, 0, 3, 6, 10],
-    month: [-20, -12, -6, 0, 6, 12, 20],
-  };
-
-  // Adaptive mcap ticks come from the same domain the tiles use
+  // Ticks = the scale domain stops — always consistent with tile colors
+  // (mcap uses the same adaptive domain the tiles use).
   const extent = getHeatmapScaleExtent(timeframe, metric, values);
-  const mcapTicks = [extent[0] ?? 0, extent[1] ?? 0, 0, extent[3] ?? 0, extent[4] ?? 0].map((v) => Math.round(v));
+  const points = metric === 'mcap' ? extent.map((v) => Math.round(v)) : extent;
 
-  const isScore = metric === 'health' || metric === 'valuation' || metric === 'profitability';
-  const points =
-    metric === 'mcap' ? mcapTicks :
-    metric === 'week' ? percentTicks.week :
-    metric === 'piotroski' ? [0, 3, 5, 7, 9] :
-    metric === 'zscore' ? [-3, -1.5, 0, 1.5, 3] :
-    isScore ? [0, 35, 50, 65, 100] :
-    percentTicks[timeframe];
-
-  const unit = metric === 'mcap' ? 'B$' : (metric === 'percent' || metric === 'week') ? '%' : metric === 'zscore' ? 'σ' : '';
+  const unit = metric === 'mcap' ? 'B$'
+    : PERCENT_METRICS.has(metric) ? '%'
+    : metric === 'zscore' ? 'σ'
+    : metric === 'rvol' ? '×'
+    : '';
   const formatTick = (v: number) => `${v}${unit}`;
   const labelIndices = points.length >= 7 ? [0, 2, 3, 4, 6] : points.map((_, i) => i);
 

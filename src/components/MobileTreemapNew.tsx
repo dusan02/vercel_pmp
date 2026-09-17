@@ -4,7 +4,7 @@ import React, { useMemo, useCallback, useState, useEffect, useRef } from 'react'
 import { AnimatePresence } from 'framer-motion';
 import type { CompanyNode, HeatmapMetric } from '@/lib/heatmap/types';
 import { createHeatmapColorScale } from '@/lib/utils/heatmapColors';
-import { getCompanyMetricValue, NEUTRAL_TILE_COLOR } from '@/lib/heatmap/metricValue';
+import { getTileColor } from '@/lib/heatmap/metricValue';
 import { computeMobileTreemapSectors, prepareMobileTreemapData, SECTOR_CHROME_PX } from '@/lib/heatmap/mobileTreemap';
 import { MobileHeatmapHeader } from './mobile/MobileHeatmapHeader';
 import { MobileHeatmapSheet } from './mobile/MobileHeatmapSheet';
@@ -139,8 +139,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   const getColor = useCallback(
     (company: CompanyNode): string => {
       if (!company) return '#1a1a1a';
-      const value = getCompanyMetricValue(company, metric);
-      return value === null ? NEUTRAL_TILE_COLOR : colorScale(value);
+      return getTileColor(company, metric, colorScale);
     },
     [metric, colorScale],
   );

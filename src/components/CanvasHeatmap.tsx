@@ -3,7 +3,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import type { TreemapLeaf, CompanyNode, HeatmapMetric } from '@/lib/heatmap/types';
 import { createHeatmapColorScale } from '@/lib/utils/heatmapColors';
-import { getCompanyMetricValue, formatMetricValue, NEUTRAL_TILE_COLOR } from '@/lib/heatmap/metricValue';
+import { getTileColor, formatMetricValue } from '@/lib/heatmap/metricValue';
 import { TILE_SIZE_THRESHOLDS, FONT_SIZE_CONFIG } from '@/lib/utils/heatmapConfig';
 import { getTileLabelConfig, calculateFontSizeFromArea, TileLabelConfig, clampNumber } from '@/lib/utils/heatmapLabelUtils';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
@@ -164,8 +164,7 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
             if (tileX + tileW < 0 || tileX > width || tileY + tileH < 0 || tileY > height) return;
 
             // Fill with rounded corners
-            const v = getCompanyMetricValue(company, metric);
-            ctx.fillStyle = v === null ? NEUTRAL_TILE_COLOR : colorScale(v);
+            ctx.fillStyle = getTileColor(company, metric, colorScale);
             drawRoundedTile(tileX, tileY, tileW, tileH);
             ctx.fill();
 

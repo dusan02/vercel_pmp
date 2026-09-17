@@ -5,7 +5,7 @@ import { HeatmapTile } from '../HeatmapTile';
 import { SectorLabel } from './SectorLabel';
 import type { CompanyNode, HeatmapMetric, SectorLabelVariant, HierarchyData, TreemapLeaf, TreemapNode } from '@/lib/heatmap/types';
 import { getTileLabelConfig } from '@/lib/utils/heatmapLabelUtils';
-import { getCompanyMetricValue, NEUTRAL_TILE_COLOR } from '@/lib/heatmap/metricValue';
+import { getTileColor } from '@/lib/heatmap/metricValue';
 import styles from '@/styles/heatmap.module.css';
 
 interface HeatmapDomViewProps {
@@ -53,8 +53,7 @@ export function HeatmapDomView({
             {filteredLeaves.map((leaf) => {
                 const { x0, y0, x1, y1 } = leaf;
                 const company = leaf.data.meta.companyData;
-                const v = getCompanyMetricValue(company, metric);
-                const tileColor = v === null ? NEUTRAL_TILE_COLOR : colorScale(v);
+                const tileColor = getTileColor(company, metric, colorScale);
                 const scaledWidth = (x1 - x0) * scale;
                 const scaledHeight = (y1 - y0) * scale;
                 const labelConfig = getTileLabelConfig(scaledWidth, scaledHeight);

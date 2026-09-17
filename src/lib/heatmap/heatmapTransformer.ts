@@ -5,7 +5,7 @@ import { getDateET, createETDate } from '@/lib/utils/dateET';
 import { detectSession, nowET, isMarketHoliday, getTradingDay, getLastTradingDay } from '@/lib/utils/timeUtils';
 import { isWeekendET } from '@/lib/utils/dateET';
 import { resolvePrevClose, buildPrevCloseFromDailyRefs } from '@/lib/heatmap/resolvePrevClose';
-import type { TickerInfo } from './heatmapFetcher';
+import type { TickerInfo, PerfRefCloses } from './heatmapFetcher';
 
 export interface HeatmapPayloadRow {
   ticker: string;
@@ -20,11 +20,30 @@ export interface HeatmapPayloadRow {
   isStale?: boolean;
   priceSource?: string;
   weekChange?: number;
+  monthChange?: number;
+  ytdChange?: number;
+  yearChange?: number;
   healthScore?: number;
   valuationScore?: number;
   profitabilityScore?: number;
   piotroskiScore?: number;
+  altmanZ?: number;
+  beneishScore?: number;
+  fcfMargin?: number;
   zScore?: number;
+  rvol?: number;
+  peRatio?: number;
+  forwardPe?: number;
+  psRatio?: number;
+  pbRatio?: number;
+  pegRatio?: number;
+  evEbitda?: number;
+  roe?: number;
+  netMargin?: number;
+  revenueGrowth?: number;
+  earningsGrowth?: number;
+  dividendYield?: number;
+  beta?: number;
   _timestamp?: string;
 }
 
@@ -189,6 +208,7 @@ export function transformToHeatmap(
   now: Date,
   debug: boolean,
   weekRefs?: Pick<DailyRef, 'symbol' | 'date' | 'regularClose'>[],
+  perfRefs?: PerfRefCloses,
   precomputedMaps?: {
     previousCloseMap: Map<string, number>;
     regularCloseMap: Map<string, number>;
@@ -375,6 +395,12 @@ export function transformToHeatmap(
       ? ((currentPrice / weekRef) - 1) * 100
       : undefined;
 
+    const perfFrom = (ref: number | undefined) =>
+      (ref && currentPrice > 0) ? ((currentPrice / ref) - 1) * 100 : undefined;
+    const monthChange = perfFrom(perfRefs?.month.get(ticker));
+    const ytdChange = perfFrom(perfRefs?.ytd.get(ticker));
+    const yearChange = perfFrom(perfRefs?.year.get(ticker));
+
     results.push({
       ticker,
       companyName: tickerInfo.name || ticker,
@@ -388,11 +414,30 @@ export function transformToHeatmap(
       ...(isStale ? { isStale } : {}),
       ...(priceSource !== 'unknown' ? { priceSource } : {}),
       ...(weekChange !== undefined && isFinite(weekChange) ? { weekChange } : {}),
+      ...(monthChange !== undefined && isFinite(monthChange) ? { monthChange } : {}),
+      ...(ytdChange !== undefined && isFinite(ytdChange) ? { ytdChange } : {}),
+      ...(yearChange !== undefined && isFinite(yearChange) ? { yearChange } : {}),
       ...(tickerInfo.healthScore != null ? { healthScore: tickerInfo.healthScore } : {}),
       ...(tickerInfo.valuationScore != null ? { valuationScore: tickerInfo.valuationScore } : {}),
       ...(tickerInfo.profitabilityScore != null ? { profitabilityScore: tickerInfo.profitabilityScore } : {}),
       ...(tickerInfo.piotroskiScore != null ? { piotroskiScore: tickerInfo.piotroskiScore } : {}),
+      ...(tickerInfo.altmanZ != null ? { altmanZ: tickerInfo.altmanZ } : {}),
+      ...(tickerInfo.beneishScore != null ? { beneishScore: tickerInfo.beneishScore } : {}),
+      ...(tickerInfo.fcfMargin != null ? { fcfMargin: tickerInfo.fcfMargin } : {}),
       ...(tickerInfo.latestMoversZScore != null ? { zScore: tickerInfo.latestMoversZScore } : {}),
+      ...(tickerInfo.latestMoversRVOL != null ? { rvol: tickerInfo.latestMoversRVOL } : {}),
+      ...(tickerInfo.peRatio != null ? { peRatio: tickerInfo.peRatio } : {}),
+      ...(tickerInfo.forwardPe != null ? { forwardPe: tickerInfo.forwardPe } : {}),
+      ...(tickerInfo.psRatio != null ? { psRatio: tickerInfo.psRatio } : {}),
+      ...(tickerInfo.pbRatio != null ? { pbRatio: tickerInfo.pbRatio } : {}),
+      ...(tickerInfo.pegRatio != null ? { pegRatio: tickerInfo.pegRatio } : {}),
+      ...(tickerInfo.evEbitda != null ? { evEbitda: tickerInfo.evEbitda } : {}),
+      ...(tickerInfo.roe != null ? { roe: tickerInfo.roe } : {}),
+      ...(tickerInfo.netMargin != null ? { netMargin: tickerInfo.netMargin } : {}),
+      ...(tickerInfo.revenueGrowth != null ? { revenueGrowth: tickerInfo.revenueGrowth } : {}),
+      ...(tickerInfo.earningsGrowth != null ? { earningsGrowth: tickerInfo.earningsGrowth } : {}),
+      ...(tickerInfo.dividendYield != null ? { dividendYield: tickerInfo.dividendYield } : {}),
+      ...(tickerInfo.beta != null ? { beta: tickerInfo.beta } : {}),
     });
 
     processed++;
@@ -445,11 +490,30 @@ export function buildPayload(
     ...(s.isStale ? { isStale: s.isStale } : {}),
     ...(s.priceSource ? { priceSource: s.priceSource } : {}),
     ...(s.weekChange !== undefined ? { weekChange: s.weekChange } : {}),
+    ...(s.monthChange !== undefined ? { monthChange: s.monthChange } : {}),
+    ...(s.ytdChange !== undefined ? { ytdChange: s.ytdChange } : {}),
+    ...(s.yearChange !== undefined ? { yearChange: s.yearChange } : {}),
     ...(s.healthScore !== undefined ? { healthScore: s.healthScore } : {}),
     ...(s.valuationScore !== undefined ? { valuationScore: s.valuationScore } : {}),
     ...(s.profitabilityScore !== undefined ? { profitabilityScore: s.profitabilityScore } : {}),
     ...(s.piotroskiScore !== undefined ? { piotroskiScore: s.piotroskiScore } : {}),
+    ...(s.altmanZ !== undefined ? { altmanZ: s.altmanZ } : {}),
+    ...(s.beneishScore !== undefined ? { beneishScore: s.beneishScore } : {}),
+    ...(s.fcfMargin !== undefined ? { fcfMargin: s.fcfMargin } : {}),
     ...(s.zScore !== undefined ? { zScore: s.zScore } : {}),
+    ...(s.rvol !== undefined ? { rvol: s.rvol } : {}),
+    ...(s.peRatio !== undefined ? { peRatio: s.peRatio } : {}),
+    ...(s.forwardPe !== undefined ? { forwardPe: s.forwardPe } : {}),
+    ...(s.psRatio !== undefined ? { psRatio: s.psRatio } : {}),
+    ...(s.pbRatio !== undefined ? { pbRatio: s.pbRatio } : {}),
+    ...(s.pegRatio !== undefined ? { pegRatio: s.pegRatio } : {}),
+    ...(s.evEbitda !== undefined ? { evEbitda: s.evEbitda } : {}),
+    ...(s.roe !== undefined ? { roe: s.roe } : {}),
+    ...(s.netMargin !== undefined ? { netMargin: s.netMargin } : {}),
+    ...(s.revenueGrowth !== undefined ? { revenueGrowth: s.revenueGrowth } : {}),
+    ...(s.earningsGrowth !== undefined ? { earningsGrowth: s.earningsGrowth } : {}),
+    ...(s.dividendYield !== undefined ? { dividendYield: s.dividendYield } : {}),
+    ...(s.beta !== undefined ? { beta: s.beta } : {}),
     _timestamp: dataTimestamp,
   }));
 
@@ -463,11 +527,30 @@ export function buildPayload(
     d: s.marketCapDiff,
     p: s.currentPrice,
     w: s.weekChange ?? null,
+    m1: s.monthChange ?? null,
+    ytd: s.ytdChange ?? null,
+    y1: s.yearChange ?? null,
     hs: s.healthScore ?? null,
     vs: s.valuationScore ?? null,
     ps: s.profitabilityScore ?? null,
     pi: s.piotroskiScore ?? null,
+    az: s.altmanZ ?? null,
+    be: s.beneishScore ?? null,
+    fcfm: s.fcfMargin ?? null,
     z: s.zScore ?? null,
+    rv: s.rvol ?? null,
+    pe: s.peRatio ?? null,
+    fpe: s.forwardPe ?? null,
+    psr: s.psRatio ?? null,
+    pb: s.pbRatio ?? null,
+    peg: s.pegRatio ?? null,
+    eve: s.evEbitda ?? null,
+    roe: s.roe ?? null,
+    nm: s.netMargin ?? null,
+    rg: s.revenueGrowth ?? null,
+    eg: s.earningsGrowth ?? null,
+    dy: s.dividendYield ?? null,
+    bt: s.beta ?? null,
   }));
 
   return { payload, rows };

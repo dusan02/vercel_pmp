@@ -2,13 +2,37 @@ import type { HierarchyNode } from 'd3-hierarchy';
 
 export type HeatmapTimeframe = 'day' | 'week' | 'month';
 export type HeatmapMetric =
+  // Performance
   | 'percent'        // day change % vs prevClose
   | 'mcap'           // market cap change ($B)
   | 'week'           // 1-week change % (price vs close 5 sessions back)
+  | 'month'          // 1-month change % (DailyValuationHistory close ~30d back)
+  | 'ytd'            // year-to-date change %
+  | 'year'           // 1-year change %
+  // Scores (own computations, AnalysisCache)
   | 'health'         // AnalysisCache.healthScore (0-100)
   | 'valuation'      // AnalysisCache.valuationScore (0-100)
   | 'profitability'  // AnalysisCache.profitabilityScore (0-100)
   | 'piotroski'      // AnalysisCache.piotroskiScore (0-9)
+  | 'altman'         // AnalysisCache.altmanZ (higher = safer)
+  | 'beneish'        // AnalysisCache.beneishScore (lower = better, inverted)
+  // Valuation ratios (FinnhubMetrics — lower = cheaper = green)
+  | 'pe'             // P/E TTM
+  | 'fpe'            // forward P/E
+  | 'ps'             // P/S TTM
+  | 'pb'             // P/B
+  | 'peg'            // PEG TTM
+  | 'evebitda'       // EV/EBITDA TTM
+  // Fundamentals (FinnhubMetrics / AnalysisCache — higher = better)
+  | 'roe'            // ROE TTM %
+  | 'netmargin'      // net margin %
+  | 'revgrowth'      // revenue growth %
+  | 'epsgrowth'      // EPS growth %
+  | 'divyield'       // dividend yield %
+  | 'fcfmargin'      // FCF margin %
+  // Activity / risk
+  | 'rvol'           // relative volume
+  | 'beta'           // beta (lower = safer, inverted)
   | 'zscore';        // Ticker.latestMoversZScore
 export type SectorLabelVariant = 'compact' | 'full';
 
@@ -39,6 +63,27 @@ export type CompanyNode = {
   profitabilityScore?: number | undefined;
   piotroskiScore?: number | undefined;
   zScore?: number | undefined;
+  /** 1-month / YTD / 1-year % change (DailyValuationHistory closes) */
+  monthChange?: number | undefined;
+  ytdChange?: number | undefined;
+  yearChange?: number | undefined;
+  altmanZ?: number | undefined;
+  beneishScore?: number | undefined;
+  fcfMargin?: number | undefined;
+  rvol?: number | undefined;
+  // FinnhubMetrics
+  peRatio?: number | undefined;
+  forwardPe?: number | undefined;
+  psRatio?: number | undefined;
+  pbRatio?: number | undefined;
+  pegRatio?: number | undefined;
+  evEbitda?: number | undefined;
+  roe?: number | undefined;
+  netMargin?: number | undefined;
+  revenueGrowth?: number | undefined;
+  earningsGrowth?: number | undefined;
+  dividendYield?: number | undefined;
+  beta?: number | undefined;
 };
 
 /**
