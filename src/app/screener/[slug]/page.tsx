@@ -7,11 +7,10 @@ import { formatPrice, formatPercent } from '@/lib/utils/heatmapFormat';
 import { formatSectorName } from '@/lib/utils/format';
 import { toJsonLd } from '@/lib/seo/jsonLd';
 
+// NOTE: deliberately NO generateStaticParams — in this deployment (custom
+// server + standalone output) prerendered params end up missing from the
+// runtime manifest and 404. With ISR the pages render on demand instead.
 export const revalidate = 3600; // 1 hour — underlying data refreshes daily anyway
-
-export function generateStaticParams() {
-  return LEADERBOARDS.map((l) => ({ slug: l.slug }));
-}
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
