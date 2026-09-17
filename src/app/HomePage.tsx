@@ -403,7 +403,7 @@ export default function HomePage({ initialData = [], initialMoversData, initialB
 
                   </div>
 
-                  <main className="container min-h-[calc(100dvh-130px)]" role="main">
+                  <main className={`${activeSection === 'screener' ? 'container-wide' : 'container'} min-h-[calc(100dvh-130px)]`} role="main">
                     <div className="flex-1 min-w-0">
                       {error && (
                         <div className="error" role="alert">

@@ -477,6 +477,13 @@
     /* box-shadow: var(--shadow); -> REMOVED */
   }
 
+  /* Wider variant for the stock screener — its 13-column table overflows 72rem */
+  .container-wide {
+    max-width: 90rem;
+    margin-inline: auto;
+    padding: 1.5rem;
+  }
+
   .header {
     text-align: center;
     margin-bottom: 2rem;
