@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { generatePageMetadata } from '@/lib/seo/metadata';
+import { LEADERBOARDS } from '@/lib/seo/leaderboards';
 import StockScreener from '@/components/StockScreener';
 
 export const revalidate = 600;
@@ -56,6 +57,22 @@ export default async function ScreenerPage() {
         </div>
 
 <StockScreener />
+
+        {/* Curated leaderboard screens — internal links for the SEO pages */}
+        <div className="mt-8">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-3">Popular stock screens</h2>
+          <div className="flex flex-wrap gap-2 text-sm">
+            {LEADERBOARDS.map((l) => (
+              <Link
+                key={l.slug}
+                href={`/screener/${l.slug}`}
+                className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+              >
+                {l.h1}
+              </Link>
+            ))}
+          </div>
+        </div>
 
         {/* SEO text — covers both the screener and the all-stocks-list intent */}
         <div className="mt-10 p-6 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-800">

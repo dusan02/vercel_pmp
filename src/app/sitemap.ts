@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db/prisma';
 import { getEligibleAnalysisTickers } from '@/lib/seo/eligibleTickers';
 import { getEligibleValuationTickers } from '@/lib/seo/eligibleValuation';
 import { getEligibleFinancialsTickers } from '@/lib/seo/eligibleFinancials';
+import { LEADERBOARDS } from '@/lib/seo/leaderboards';
 
 export const revalidate = 3600;
 
@@ -70,6 +71,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'daily',
       priority: 0.8,
     },
+    // Curated leaderboard screens — /screener/[slug]
+    ...LEADERBOARDS.map((l) => ({
+      url: `${baseUrl}/screener/${l.slug}`,
+      lastModified: currentDate,
+      changeFrequency: 'daily' as const,
+      priority: 0.7,
+    })),
     {
       url: `${baseUrl}/about`,
       lastModified: currentDate,

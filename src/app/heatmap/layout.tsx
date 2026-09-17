@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { generatePageMetadata } from '@/lib/seo/metadata';
+import { toJsonLd } from '@/lib/seo/jsonLd';
 
 export const metadata: Metadata = generatePageMetadata({
   title: 'Market Heatmap',
@@ -60,8 +61,6 @@ const faqSchema = {
     },
   ],
 };
-
-const toJsonLd = (schema: object) => JSON.stringify(schema).replace(/</g, '\\u003c');
 
 export default function HeatmapLayout({ children }: { children: React.ReactNode }) {
   return (

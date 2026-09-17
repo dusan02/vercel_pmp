@@ -33,6 +33,7 @@ PreMarketPrice tracks 300+ US stocks during the pre-market session (4:00 AM – 
 - [Premarket Losers](https://premarketprice.com/losers): Top pre-market losers today with prices and market-cap changes
 - [Earnings Calendar](https://premarketprice.com/earnings): Upcoming earnings dates, EPS and revenue estimates for US companies
 - [Stock Screener](https://premarketprice.com/screener): Filter US stocks by sector, price, market cap, and pre-market movement
+- [Curated stock screens](https://premarketprice.com/screener/most-undervalued): Ranked leaderboards — most undervalued, healthiest balance sheets, highest Piotroski score, lowest P/E, lowest PEG, highest dividend yield, highest ROE, highest FCF margin, fastest revenue growth
 - [All Stocks](https://premarketprice.com/stocks): Full list of tracked US stocks with live prices
 - [Sectors](https://premarketprice.com/sectors): Sector-level performance and top movers per sector
 - [Blog](https://premarketprice.com/blog): Daily premarket reports and weekly earnings recaps
