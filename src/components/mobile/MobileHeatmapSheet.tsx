@@ -3,12 +3,14 @@
 import React, { useRef, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Star } from 'lucide-react';
-import type { CompanyNode } from '@/lib/heatmap/types';
+import type { CompanyNode, HeatmapMetric } from '@/lib/heatmap/types';
 import { formatPrice, formatPercent, formatMarketCap, formatMarketCapDiff } from '@/lib/utils/format';
+import { getCompanyMetricValue, formatMetricValue, isInvertedMetric, HEATMAP_METRICS } from '@/lib/heatmap/metricValue';
 import CompanyLogo from '../CompanyLogo';
 
 interface MobileHeatmapSheetProps {
   company: CompanyNode;
+  metric?: HeatmapMetric | undefined;
   onClose: () => void;
   onToggleFavorite?: ((ticker: string) => void) | undefined;
   isFavorite?: ((ticker: string) => boolean) | undefined;
@@ -24,12 +26,20 @@ interface MobileHeatmapSheetProps {
  */
 export const MobileHeatmapSheet: React.FC<MobileHeatmapSheetProps> = ({
   company,
+  metric = 'percent',
   onClose,
   onToggleFavorite,
   isFavorite,
   onNavigateToAnalysis,
 }) => {
   const isFav = isFavorite?.(company.symbol) ?? false;
+  const metricLabel = HEATMAP_METRICS.find(m => m.id === metric)?.label ?? 'Day change %';
+  const metricVal = getCompanyMetricValue(company, metric);
+  const metricColor = metricVal === null
+    ? undefined
+    : isInvertedMetric(metric)
+      ? '#94a3b8'
+      : metricVal >= 0 ? '#34d399' : '#f87171';
 
   // Drag-to-dismiss: track touch delta on the handle strip only
   const dragStartY = useRef(0);
@@ -207,9 +217,13 @@ export const MobileHeatmapSheet: React.FC<MobileHeatmapSheetProps> = ({
           />
           <DataCell label="Market Cap" value={formatMarketCap(company.marketCap ?? 0)} />
           <DataCell
-            label="Mcap Δ"
-            value={company.marketCapDiff == null ? '—' : formatMarketCapDiff(company.marketCapDiff)}
-            color={(company.marketCapDiff ?? 0) >= 0 ? '#34d399' : '#f87171'}
+            label={metric !== 'percent' ? metricLabel : 'Mcap Δ'}
+            value={metric !== 'percent'
+              ? (metricVal === null ? '—' : formatMetricValue(company, metric))
+              : (company.marketCapDiff == null ? '—' : formatMarketCapDiff(company.marketCapDiff))}
+            color={metric !== 'percent'
+              ? metricColor
+              : (company.marketCapDiff ?? 0) >= 0 ? '#34d399' : '#f87171'}
           />
         </div>
 
@@ -241,7 +255,7 @@ export const MobileHeatmapSheet: React.FC<MobileHeatmapSheetProps> = ({
 
 // Small helper to keep grid cells DRY
 function DataCell({ label, value, color, large }: {
-  label: string; value: string; color?: string; large?: boolean;
+  label: string; value: string; color?: string | undefined; large?: boolean | undefined;
 }) {
   return (
     <div style={{ padding: '12px 14px', background: large ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.03)' }}>

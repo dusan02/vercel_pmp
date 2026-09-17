@@ -22,7 +22,7 @@ const TAB_META: Record<string, { title: string; description: string; canonical: 
   },
   heatmap: {
     title: 'Stock Market Heatmap — Live Pre-Market % Change by Sector | PreMarketPrice',
-    description: 'Interactive market heatmap showing real-time pre-market % change and market cap shifts for 700+ US stocks, organized by sector. Spot trends at a glance.',
+    description: 'Interactive market heatmap for 700+ US stocks by sector. Color tiles by day/week/year performance, P/E, PEG, dividend yield, health scores and 20+ metrics.',
     canonical: `${baseUrl}/heatmap`,
   },
   earnings: {

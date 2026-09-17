@@ -83,10 +83,15 @@ export default function HeatmapPage() {
         </p>
         <p>
           Each tile represents a publicly traded company. Tile size corresponds
-          to market capitalization. Tile color indicates the percentage price
-          change — green for gains, red for losses. Click any tile to view
-          detailed stock analysis including financial health scores, valuation
-          metrics, analyst consensus, earnings calendar, and recent market moves.
+          to market capitalization. Tile color indicates the selected metric —
+          choose from day, week, month, YTD or 1-year performance, P/E, forward
+          P/E, P/S, P/B, PEG and EV/EBITDA valuation ratios, dividend yield, ROE,
+          net margin, revenue and EPS growth, free cash flow margin, Piotroski
+          F-score, Altman Z-score, Beneish M-score, relative volume, beta and
+          movers Z-score — green for favorable values, red for unfavorable ones.
+          Click any tile to view detailed stock analysis including financial
+          health scores, valuation metrics, analyst consensus, earnings
+          calendar, and recent market moves.
         </p>
         <nav aria-label="Related pages">
           <a href="/premarket-movers">Pre-market movers</a>

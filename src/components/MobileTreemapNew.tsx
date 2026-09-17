@@ -219,6 +219,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
         {selectedCompany && (
           <MobileHeatmapSheet
             company={selectedCompany}
+            metric={metric}
             onClose={closeSheet}
             onToggleFavorite={onToggleFavorite}
             isFavorite={isFavorite}

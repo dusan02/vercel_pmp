@@ -148,13 +148,18 @@ export function buildPriceMap(
 
 /**
  * Map symbol → regular close from ~5 sessions back (1-week reference).
- * dailyRefs arrive ordered by date desc, so the 5th non-null regularClose
- * is the close from 5 trading days ago.
+ * dailyRefs arrive ordered by date desc; we exclude today's row (its
+ * regularClose only exists post-close and would shift the window by a
+ * day), so the 5th non-null regularClose is the close 5 sessions ago.
  */
-function buildWeekRefCloseMap(dailyRefs: Pick<DailyRef, 'symbol' | 'date' | 'regularClose'>[]): Map<string, number> {
+function buildWeekRefCloseMap(
+  dailyRefs: Pick<DailyRef, 'symbol' | 'date' | 'regularClose'>[],
+  todayStart?: Date
+): Map<string, number> {
   const bySymbol = new Map<string, number[]>();
   for (const ref of dailyRefs) {
     if (ref.regularClose == null || ref.regularClose <= 0) continue;
+    if (todayStart && ref.date >= todayStart) continue;
     const arr = bySymbol.get(ref.symbol);
     if (arr) arr.push(ref.regularClose); else bySymbol.set(ref.symbol, [ref.regularClose]);
   }
@@ -221,7 +226,7 @@ export function transformToHeatmap(
   const previousCloseMap = precomputedMaps?.previousCloseMap ?? prevCloseResult!.previousCloseMap;
   const regularCloseMap = precomputedMaps?.regularCloseMap ?? prevCloseResult!.regularCloseMap;
   const priceMap = precomputedMaps?.priceMap ?? buildPriceMap(tickerMap, sessionPrices);
-  const weekRefCloseMap = buildWeekRefCloseMap(weekRefs ?? dailyRefs);
+  const weekRefCloseMap = buildWeekRefCloseMap(weekRefs ?? dailyRefs, ctx.todayDateObj);
   const debugStats = prevCloseResult?.debugStats ?? { totalDailyRefs: 0, dailyRefsUsedConfig: {}, counts: { totalTickers: 0, dailyRefToday: 0, dailyRefOlder: 0, tickerFallback: 0, missing: 0 } };
   debugStats.counts.totalTickers = tickerSymbols.length;
 

@@ -179,19 +179,19 @@ export async function GET(request: NextRequest) {
     const [
       { sessionPrices: rawSessionPrices, dailyRefs: rawDailyRefs },
       cachedStockDataMap,
-      slimWeekRefs
+      slimWeekRefs,
+      perfRefs
     ] = await Promise.all([
       fetchPriceData(tickerSymbols, canUseFastPath, timeframe, dayAgo, tomorrow, oneWeekAgo, today),
       fetchCachedStockData(tickerSymbols, tickerMap),
       // Fast path skips the full DailyRef query — fetch a slim week-reference
       // projection so the 'week' metric still has data.
       canUseFastPath ? fetchWeekRefCloses(tickerSymbols, oneWeekAgo, today) : Promise.resolve(null),
+      // Longer-term perf refs (1M/YTD/1Y) from DailyValuationHistory — always
+      // fetched (3 small windowed queries) so the shared cache payload carries
+      // all metrics regardless of which one the requesting client selected.
+      fetchPerfRefCloses(tickerSymbols, now, todayYMD),
     ]);
-
-    // Longer-term perf refs (1M/YTD/1Y) from DailyValuationHistory — always
-    // fetched (3 small windowed queries) so the shared cache payload carries
-    // all metrics regardless of which one the requesting client selected.
-    const perfRefs = await fetchPerfRefCloses(tickerSymbols, now, todayYMD);
 
     const sessionPrices = deduplicateSessionPrices(rawSessionPrices);
     const dailyRefs = deduplicateDailyRefs(rawDailyRefs);
