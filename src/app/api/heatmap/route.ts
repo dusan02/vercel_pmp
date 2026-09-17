@@ -249,7 +249,9 @@ export async function GET(request: NextRequest) {
       if (ageMinutes > DATA_FRESHNESS.OLD_DATA_THRESHOLD) {
         console.warn(`⚠️ Data is ${ageMinutes} minutes old - may need worker update`);
       }
-    } else {
+    } else if (sessionPrices.length > 0) {
+      // Fast path returns no SessionPrice rows by design — only warn when
+      // a real fetch happened and none carried a timestamp.
       console.warn('⚠️ No valid timestamps found in SessionPrice records');
     }
 
