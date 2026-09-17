@@ -13,6 +13,7 @@ import { nowET } from '@/lib/utils/dateET';
 import { AnalysisHero } from '@/components/company/analysis/sections/AnalysisHero';
 import { CompanyOverviewSection } from '@/components/company/analysis/sections/CompanyOverviewSection';
 import { HealthScoresSection } from '@/components/company/analysis/sections/HealthScoresSection';
+import { KeyInsightsSection } from '@/components/company/analysis/sections/KeyInsightsSection';
 import { MoverInsightSection } from '@/components/company/analysis/sections/MoverInsightSection';
 import { AnalystConsensusSection } from '@/components/company/analysis/sections/AnalystConsensusSection';
 import { EarningsSection } from '@/components/company/analysis/sections/EarningsSection';
@@ -62,6 +63,9 @@ async function getTickerData(symbol: string) {
             verdictText: true,
             piotroskiScore: true,
             altmanZ: true,
+            beneishScore: true,
+            interestCoverage: true,
+            negativeNiYears: true,
             revenueCagr: true,
             netIncomeCagr: true,
             fcfMargin: true,
@@ -407,6 +411,22 @@ export default async function AnalysisPage({ params }: PageProps) {
           />
 
           <HealthScoresSection cache={data?.analysisCache ?? null} />
+
+          {/* Data-driven prose unique per ticker — the differentiator that gets
+              pages out of "Crawled – currently not indexed" */}
+          <KeyInsightsSection
+            ticker={tickerUpper}
+            companyName={companyName}
+            changePct={data?.lastChangePct ?? null}
+            marketSession={marketSession}
+            cache={data?.analysisCache ?? null}
+            peRatio={data?.finnhubMetrics?.peRatio ?? null}
+            roe={data?.finnhubMetrics?.roe ?? null}
+            dividendYield={data?.finnhubMetrics?.dividendYield ?? null}
+            earningsDays={earningsDays}
+            moversReason={data?.moversReason ?? null}
+            moversCategory={data?.moversCategory ?? null}
+          />
 
           {/* Fundamental metrics render client-side in FinancialHealthTable
               (interpreted cards with thresholds + compare column) — the raw SSR

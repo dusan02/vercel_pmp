@@ -174,7 +174,7 @@ export default async function PremarketMoversPage() {
   const [gainers, losers, archiveDates, eligibleAnalysis] = await Promise.all([
     getTopMovers('desc', 50),
     getTopMovers('asc', 50),
-    getPremarketDateSummaries(7),
+    getPremarketDateSummaries(14),
     getEligibleAnalysisSet(),
   ]);
 
@@ -214,8 +214,78 @@ export default async function PremarketMoversPage() {
   const topGainer = gainers[0];
   const topLoser = losers[0];
 
+  // JSON-LD must escape "</" so names can't break out of the script tag (XSS).
+  const toJsonLd = (schema: object) => JSON.stringify(schema).replace(/</g, '\\u003c');
+  const baseUrl = 'https://premarketprice.com';
+
+  const itemListSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: `Premarket stock movers — ${today}`,
+    description: `Top pre-market gainers and losers for ${today}, ranked by percentage change.`,
+    itemListOrder: 'https://schema.org/ItemListOrderDescending',
+    numberOfItems: Math.min(20, gainers.length + losers.length),
+    itemListElement: [
+      ...gainers.slice(0, 10).map((r, i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        name: `${r.name ?? r.symbol} (${r.symbol}) — ${formatPercent(r.changePct ?? 0)}`,
+        url: `${baseUrl}/analysis/${r.symbol}`,
+      })),
+      ...losers.slice(0, 10).map((r, i) => ({
+        '@type': 'ListItem',
+        position: 11 + i,
+        name: `${r.name ?? r.symbol} (${r.symbol}) — ${formatPercent(r.changePct ?? 0)}`,
+        url: `${baseUrl}/analysis/${r.symbol}`,
+      })),
+    ],
+  };
+
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: 'What are premarket stock movers?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Premarket movers are stocks with the largest price changes during the pre-market session (4:00 AM – 9:30 AM ET), before regular US trading begins. Moves are usually driven by earnings reports, analyst actions, or overnight news.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'Which stocks are moving the most in premarket today?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: topGainer && topLoser
+            ? `As of ${today}, the top pre-market gainer is ${topGainer.name ?? topGainer.symbol} (${topGainer.symbol}) at ${formatPercent(topGainer.changePct ?? 0)}, and the biggest decliner is ${topLoser.name ?? topLoser.symbol} (${topLoser.symbol}) at ${formatPercent(topLoser.changePct ?? 0)}.`
+            : 'Premarket rankings update continuously during the 4:00–9:30 AM ET session.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'What does the Z-Score on this page mean?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'The Z-Score measures how unusual a stock’s move is relative to its recent history. A Z-Score above 2.5 marks a statistically significant deviation, filtering out routine noise.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'How often is this page updated?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Premarket prices and rankings refresh continuously throughout the pre-market session and are archived after the close, so every trading day has a permanent dated page.',
+        },
+      },
+    ],
+  };
+
   return (
     <div className="min-h-screen bg-white dark:bg-slate-900">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(itemListSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(faqSchema) }} />
       <div className="container mx-auto py-8 px-4">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
@@ -284,6 +354,9 @@ export default async function PremarketMoversPage() {
             </h2>
             <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
               Browse pre-market gainers and losers from previous trading days. Each date shows the top mover in each direction.
+              {' '}<Link href="/premarket-gainers" className="text-emerald-600 dark:text-emerald-400 hover:underline">Full gainers archive</Link>
+              {' · '}
+              <Link href="/premarket-losers" className="text-rose-600 dark:text-rose-400 hover:underline">Full losers archive</Link>
             </p>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -339,6 +412,33 @@ export default async function PremarketMoversPage() {
             </div>
           </section>
         )}
+
+        {/* Visible FAQ — mirrors the FAQPage JSON-LD (required by Google guidelines) */}
+        <section className="mt-8 max-w-4xl">
+          <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-4">Premarket Movers FAQ</h2>
+          <div className="space-y-4 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+            <div>
+              <h3 className="font-semibold text-slate-700 dark:text-slate-300">What are premarket stock movers?</h3>
+              <p>Premarket movers are stocks with the largest price changes during the pre-market session (4:00 AM – 9:30 AM ET), before regular US trading begins. Moves are usually driven by earnings reports, analyst actions, or overnight news.</p>
+            </div>
+            <div>
+              <h3 className="font-semibold text-slate-700 dark:text-slate-300">Which stocks are moving the most in premarket today?</h3>
+              <p>
+                {topGainer && topLoser
+                  ? `As of ${today}, the top pre-market gainer is ${topGainer.name ?? topGainer.symbol} (${topGainer.symbol}) at ${formatPercent(topGainer.changePct ?? 0)}, and the biggest decliner is ${topLoser.name ?? topLoser.symbol} (${topLoser.symbol}) at ${formatPercent(topLoser.changePct ?? 0)}.`
+                  : 'Premarket rankings update continuously during the 4:00–9:30 AM ET session.'}
+              </p>
+            </div>
+            <div>
+              <h3 className="font-semibold text-slate-700 dark:text-slate-300">What does the Z-Score on this page mean?</h3>
+              <p>The Z-Score measures how unusual a stock’s move is relative to its recent history. A Z-Score above 2.5 marks a statistically significant deviation, filtering out routine noise.</p>
+            </div>
+            <div>
+              <h3 className="font-semibold text-slate-700 dark:text-slate-300">How often is this page updated?</h3>
+              <p>Premarket prices and rankings refresh continuously throughout the pre-market session and are archived after the close, so every trading day has a permanent dated page.</p>
+            </div>
+          </div>
+        </section>
 
         {/* Internal linking */}
         <nav className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800">
