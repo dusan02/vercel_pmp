@@ -168,6 +168,7 @@ export function Footer() {
       <footer className="bg-white dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800 pt-12 pb-8 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <p className="text-sm text-gray-500 dark:text-gray-400">PreMarketPrice</p>
+          <a href="/zh" hrefLang="zh-CN" className="text-xs text-gray-400 dark:text-gray-500">中文版</a>
         </div>
       </footer>
     }>
