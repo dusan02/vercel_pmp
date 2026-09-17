@@ -73,7 +73,7 @@ export const HeatmapTile = React.memo<HeatmapTileProps>(({
   return (
     <div
       key={`${company.symbol}-${x0}-${y0}`}
-      className={`${styles.heatmapTile} group`}
+      className={`${styles.heatmapTile} group no-redirect`}
       style={{
         left: x0 * scale + offset.x,
         top: y0 * scale + offset.y,

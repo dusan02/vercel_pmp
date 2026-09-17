@@ -361,7 +361,7 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
                 e.stopPropagation();
                 handleClick();
             }}
-            className="block cursor-pointer"
+            className="block cursor-pointer no-redirect"
             style={{ width, height }}
         />
     );
