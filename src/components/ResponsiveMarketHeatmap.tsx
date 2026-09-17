@@ -70,7 +70,7 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
   apiEndpoint = '/api/heatmap',
   onTileClick,
   autoRefresh = true,
-  refreshInterval = 30000,
+  refreshInterval = 60000,
   initialTimeframe = 'day',
   initialMetric,
   controlledMetric,
@@ -98,7 +98,7 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
 
   // Data fetching hook
   // OPTIMIZATION: On mobile, use same refresh interval but ensure minimum 30s for battery
-  const mobileRefreshInterval = isMobile ? Math.max(refreshInterval, 30000) : refreshInterval; // Min 30s on mobile
+  const mobileRefreshInterval = isMobile ? Math.max(refreshInterval, 60000) : refreshInterval; // Min 60s on mobile (battery)
 
   const {
     data,

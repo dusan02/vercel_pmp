@@ -107,7 +107,7 @@ function mapCompactRow(row: any): CompanyNode | null {
 
 export function useHeatmapData({ 
   apiEndpoint = '/api/heatmap',
-  refreshInterval = 30000,
+  refreshInterval = 60000,
   initialTimeframe = 'day',
   autoRefresh = true,
   initialHeatmapData

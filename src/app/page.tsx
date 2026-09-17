@@ -13,142 +13,32 @@ import { prisma } from '@/lib/db/prisma';
 
 const baseUrl = 'https://premarketprice.com';
 
-// ─── Per-tab metadata for SEO ──────────────────────────────────────────────
-const TAB_META: Record<string, { title: string; description: string; canonical: string }> = {
-  movers: {
-    title: 'Premarket Movers Today: Top Gainers & Losers (Live) | PreMarketPrice',
-    description: 'See which stocks are moving the most in pre-market trading today. Top gainers and losers ranked by % change across NYSE and NASDAQ, updated live before the market opens.',
-    canonical: `${baseUrl}/premarket-movers`,
-  },
-  heatmap: {
-    title: 'Stock Market Heatmap — Live Pre-Market % Change by Sector | PreMarketPrice',
-    description: 'Interactive market heatmap for 700+ US stocks by sector. Color tiles by day/week/year performance, P/E, PEG, dividend yield, health scores and 20+ metrics.',
-    canonical: `${baseUrl}/heatmap`,
-  },
-  earnings: {
-    title: 'Earnings Calendar — Upcoming & Past US Stock Earnings | PreMarketPrice',
-    description: 'Track upcoming earnings reports for US companies on NYSE and NASDAQ. Filter by date to see EPS estimates, revenue forecasts, and past earnings results.',
-    canonical: `${baseUrl}/earnings`,
-  },
-  allStocks: {
-    title: 'All US Stocks — Real-Time Pre-Market Prices & Market Cap | PreMarketPrice',
-    description: 'Browse 700+ US stocks with real-time pre-market prices, % change, market cap, and sector data. Sort and filter by any metric.',
-    canonical: `${baseUrl}/stocks`,
-  },
-  screener: {
-    title: 'Stock Screener — Filter by Financial Health & Valuation | PreMarketPrice',
-    description: 'Screen 700+ US stocks by financial health score, profitability, valuation, Altman Z-score, and sector. Sort and filter to find the best investment opportunities.',
-    canonical: `${baseUrl}/screener`,
-  },
-  analysis: {
-    title: 'Stock Analysis — Technical & Fundamental Data | PreMarketPrice',
-    description: 'Deep-dive stock analysis including pre-market price, technical indicators, earnings history, valuation scores, and financial health metrics.',
-    canonical: `${baseUrl}/stocks`,
-  },
-  portfolio: {
-    title: 'My Portfolio — Track Your Pre-Market Holdings | PreMarketPrice',
-    description: 'Track your personalized portfolio with real-time pre-market prices, % change, and market cap data for your favorite US stocks.',
-    canonical: `${baseUrl}/?tab=portfolio`,
-  },
-  favorites: {
-    title: 'My Favorites — Track Your Favorite Stocks | PreMarketPrice',
-    description: 'Track your favorite US stocks with real-time pre-market prices and % change.',
-    canonical: baseUrl,
-  },
-  blog: {
-    title: 'Daily Market Blog — Pre-Market Analysis & Insights | PreMarketPrice',
-    description: 'Daily pre-market analysis, stock movers, earnings recaps, and market insights.',
-    canonical: `${baseUrl}/blog`,
-  },
-  gainers: {
-    title: 'Premarket Gainers Today — Top Stock Gainers (Live) | PreMarketPrice',
-    description: 'See which stocks are gaining the most in pre-market trading today. Top gainers ranked by % change across NYSE and NASDAQ.',
-    canonical: `${baseUrl}/gainers`,
-  },
-  losers: {
-    title: 'Premarket Losers Today — Top Stock Losers (Live) | PreMarketPrice',
-    description: 'See which stocks are losing the most in pre-market trading today. Top losers ranked by % change across NYSE and NASDAQ.',
-    canonical: `${baseUrl}/losers`,
-  },
-};
 
-interface PageProps {
-  searchParams: Promise<{ tab?: string; ticker?: string }>;
-}
-
-export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
-  const params = await searchParams;
-  const tab = params?.tab;
-  const ticker = params?.ticker?.toUpperCase();
-
-  // /?tab=analysis&ticker=MSFT — highest-value SEO pages
-  if (tab === 'analysis' && ticker) {
-    const companyName = getCompanyName(ticker);
-    const title = `${ticker} Stock Price & Analysis — ${companyName} | PreMarketPrice`;
-    const description = `${companyName} (${ticker}) stock price, pre-market data, earnings, financial health score, valuation metrics, and analyst estimates. Free real-time stock analysis.`;
-    return {
-      title,
-      description,
-      alternates: { canonical: `${baseUrl}/analysis/${ticker}` },
-      openGraph: {
-        title,
-        description,
-        url: `${baseUrl}/analysis/${ticker}`,
-        siteName: 'PreMarketPrice',
-        images: [{ url: `${baseUrl}/og-image.png`, width: 1200, height: 630 }],
-        locale: 'en_US',
-        type: 'website',
-      },
-      twitter: { card: 'summary_large_image', title, description, images: [`${baseUrl}/og-image.png`] },
-      robots: { index: true, follow: true },
-    };
-  }
-
-  // Other tabs
-  if (tab && TAB_META[tab]) {
-    const { title, description, canonical } = TAB_META[tab];
-    const isNoIndex = tab === 'portfolio' || tab === 'favorites'; // User-specific content — don't index
-    return {
-      title,
-      description,
-      alternates: { canonical },
-      openGraph: {
-        title,
-        description,
-        url: canonical,
-        siteName: 'PreMarketPrice',
-        images: [{ url: `${baseUrl}/og-image.png`, width: 1200, height: 630 }],
-        locale: 'en_US',
-        type: 'website',
-      },
-      twitter: { card: 'summary_large_image', title, description, images: [`${baseUrl}/og-image.png`] },
-      robots: isNoIndex ? { index: false, follow: true } : { index: true, follow: true },
-    };
-  }
-
-  // Default homepage metadata (no tab param)
-  return {
-    title: 'PreMarketPrice — Real-Time Pre-Market Stock Prices',
+// NOTE: no searchParams in generateMetadata — reading it makes the route
+// dynamic and kills ISR (revalidate=30). High-value tab variants
+// (?tab=analysis&ticker=X, ?tab=allStocks) are 301-redirected by middleware
+// to canonical URLs, so per-tab metadata here added little SEO value anyway.
+export const metadata: Metadata = {
+  title: 'PreMarketPrice — Real-Time Pre-Market Stock Prices',
+  description: 'Track real-time pre-market stock prices, market movers, earnings calendar, and interactive heatmap for 300+ US stocks on NYSE and NASDAQ.',
+  alternates: { canonical: baseUrl },
+  openGraph: {
+    title: 'PreMarketPrice — Real-Time Pre-Market Stock Prices & Market Data',
     description: 'Track real-time pre-market stock prices, market movers, earnings calendar, and interactive heatmap for 300+ US stocks on NYSE and NASDAQ.',
-    alternates: { canonical: baseUrl },
-    openGraph: {
-      title: 'PreMarketPrice — Real-Time Pre-Market Stock Prices & Market Data',
-      description: 'Track real-time pre-market stock prices, market movers, earnings calendar, and interactive heatmap for 300+ US stocks on NYSE and NASDAQ.',
-      url: baseUrl,
-      siteName: 'PreMarketPrice',
-      images: [{ url: `${baseUrl}/og-image.png`, width: 1200, height: 630 }],
-      locale: 'en_US',
-      type: 'website',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: 'PreMarketPrice — Real-Time Pre-Market Stock Prices',
-      description: 'Track real-time pre-market stock prices for 300+ US stocks.',
-      images: [`${baseUrl}/og-image.png`],
-    },
-    robots: { index: true, follow: true },
-  };
-}
+    url: baseUrl,
+    siteName: 'PreMarketPrice',
+    images: [{ url: `${baseUrl}/og-image.png`, width: 1200, height: 630 }],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'PreMarketPrice — Real-Time Pre-Market Stock Prices',
+    description: 'Track real-time pre-market stock prices for 300+ US stocks.',
+    images: [`${baseUrl}/og-image.png`],
+  },
+  robots: { index: true, follow: true },
+};
 
 // Enable ISR (Incremental Static Regeneration) for better performance
 // Page is cached and regenerated every 30 seconds (was 10s — too aggressive, causes frequent cold SSR)
@@ -197,7 +87,7 @@ export default async function Page() {
       // SSR fetch for movers — used by HomeMovers as SWR fallbackData
       withTimeout(
         (async () => {
-          const res = await fetch(`http://127.0.0.1:${process.env.PORT || 3001}/api/stocks/movers?limit=50`);
+          const res = await fetch(`http://127.0.0.1:${process.env.PORT || 3001}/api/stocks/movers?limit=50`, { next: { revalidate: 30 } });
           if (!res.ok) return [];
           const data = await res.json();
           return data.movers || data.rows || data || [];
@@ -221,7 +111,7 @@ export default async function Page() {
       // Fetches compact rows format (same as API) for instant hydration
       withTimeout(
         (async () => {
-          const res = await fetch(`http://127.0.0.1:${process.env.PORT || 3001}/api/heatmap`);
+          const res = await fetch(`http://127.0.0.1:${process.env.PORT || 3001}/api/heatmap`, { next: { revalidate: 30 } });
           if (!res.ok) return [];
           const data = await res.json();
           return data.rows || data.data || [];

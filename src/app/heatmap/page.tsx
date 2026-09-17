@@ -186,7 +186,7 @@ export default function HeatmapPage() {
           apiEndpoint="/api/heatmap"
           onTileClick={handleTileClick}
           autoRefresh={true}
-          refreshInterval={30000} // 30s - zladené s CACHE_TTL v /api/heatmap
+          refreshInterval={60000} // 60s — zladené s MAX_DATA_AGE_FOR_ETAG (60s) v /api/heatmap
           initialTimeframe={timeframe}
           controlledMetric={metric}
           onMetricChange={setMetric}

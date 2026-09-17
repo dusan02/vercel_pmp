@@ -1,6 +1,9 @@
 import { createServer } from 'http';
 import { parse } from 'url';
 import next from 'next';
+// Next's built-in `compress` option is ignored when using a custom server —
+// gzip must be applied here (API JSON payloads are ~1MB uncompressed).
+import compression from 'compression';
 import { Server as SocketIOServer } from 'socket.io';
 import { WebSocketPriceServer } from './src/lib/websocket-server';
 import { initializeSectorIndustryScheduler } from './src/lib/jobs/sectorIndustryScheduler';
@@ -26,26 +29,34 @@ const handle = app.getRequestHandler();
 app
   .prepare()
   .then(() => {
-    // Create HTTP server
-    const server = createServer(async (req, res) => {
-      try {
-        const parsedUrl = parse(req.url!, true);
-        const start = Date.now();
-        await handle(req, res, parsedUrl);
+    // gzip/brotli-free compression middleware (gzip + deflate)
+    const compress = compression();
 
-        // Log request duration after response is finished
-        res.on('finish', () => {
-          const duration = Date.now() - start;
-          // Log only if duration > 500ms or if it was an error
-          if (duration > 500 || res.statusCode >= 400) {
-            console.log(`[HTTP] ${req.method} ${req.url} ${res.statusCode} ${duration}ms`);
+    // Create HTTP server
+    const server = createServer((req, res) => {
+      compress(req as any, res as any, () => {
+        void (async () => {
+          try {
+            const parsedUrl = parse(req.url!, true);
+            const start = Date.now();
+
+            // Register before handle() — the response may finish inside it.
+            res.on('finish', () => {
+              const duration = Date.now() - start;
+              // Log only if duration > 500ms or if it was an error
+              if (duration > 500 || res.statusCode >= 400) {
+                console.log(`[HTTP] ${req.method} ${req.url} ${res.statusCode} ${duration}ms`);
+              }
+            });
+
+            await handle(req, res, parsedUrl);
+          } catch (err) {
+            console.error('Error occurred handling request:', err);
+            res.statusCode = 500;
+            res.end('Internal Server Error');
           }
-        });
-      } catch (err) {
-        console.error('Error occurred handling request:', err);
-        res.statusCode = 500;
-        res.end('Internal Server Error');
-      }
+        })();
+      });
     });
 
     // Create Socket.io server

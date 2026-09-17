@@ -70,7 +70,9 @@
     "pm2:logs": "pm2 logs",
     "pm2:status": "pm2 status",
     "cron:measure": "tsx scripts/run-crons-and-measure.ts",
-    "test:quant": "vitest run --config vitest.quant.config.mts"
+    "test:quant": "vitest run --config vitest.quant.config.mts",
+    "quant:profile": "tsx src/lib/quant/p4-engine/consensus/eeh-profiler-cli.ts",
+    "quant:e2e": "tsx src/lib/quant/p4-engine/consensus/synthetic-e2e-cli.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
@@ -82,6 +84,7 @@
     "@use-gesture/react": "^10.3.1",
     "bcryptjs": "^3.0.2",
     "better-sqlite3": "^11.10.0",
+    "compression": "^1.8.1",
     "cors": "^2.8.5",
     "csv-parse": "^7.0.2",
     "d3-hierarchy": "^3.1.2",
@@ -123,6 +126,7 @@
     "@eslint/eslintrc": "^3",
     "@playwright/test": "^1.54.2",
     "@svgr/webpack": "^8.1.0",
+    "@types/compression": "^1.8.1",
     "@types/d3-hierarchy": "^3.1.7",
     "@types/d3-scale": "^4.0.9",
     "@types/jest": "^30.0.0",
