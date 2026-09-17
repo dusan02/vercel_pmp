@@ -139,6 +139,7 @@
     "cross-env": "^7.0.3",
     "eslint": "^9",
     "eslint-config-next": "15.4.4",
+    "google-auth-library": "^11.1.0",
     "jest": "^30.0.5",
     "jest-environment-jsdom": "^30.5.1",
     "pino-pretty": "^13.1.2",

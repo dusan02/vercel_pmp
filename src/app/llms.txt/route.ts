@@ -46,7 +46,7 @@ Each trading day gets permanent dated pages — useful for "what moved on [date]
 - /premarket-gainers/[YYYY-MM-DD]: top pre-market gainers for that date (e.g. [latest](https://premarketprice.com/premarket-gainers))
 - /premarket-losers/[YYYY-MM-DD]: top pre-market losers for that date (e.g. [latest](https://premarketprice.com/premarket-losers))
 - /gainers and /losers: today's regular-session leaders
-- /movers/[TICKER]: per-stock history of significant pre-market moves with catalysts (e.g. [AAPL](https://premarketprice.com/movers/AAPL))
+- /movers/[TICKER]: per-stock history of significant pre-market moves with catalysts (e.g. [AAPL](https://premarketprice.com/premarket/AAPL))
 
 ## Chinese version (中文版)
 

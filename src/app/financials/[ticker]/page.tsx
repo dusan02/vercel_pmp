@@ -447,7 +447,7 @@ export default async function FinancialsPage({ params }: PageProps) {
                 {tickerUpper} Valuation & P/E History →
               </Link>
               <Link
-                href={`/movers/${tickerUpper}`}
+                href={`/premarket/${tickerUpper}`}
                 className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
               >
                 {tickerUpper} Market Moves →

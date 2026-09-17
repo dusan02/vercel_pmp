@@ -168,13 +168,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const moves = await getRecentMoves(tickerUpper);
   const hasEnoughData = moves.length >= MIN_MOVES_FOR_INDEX;
 
-  const title = `${tickerUpper} Movers — ${short}`;
-  const description = `${short} (${tickerUpper}) unusual market moves — pre-market, regular session, and after-hours price action with Z-scores and relative volume. ${moves.length} significant moves in the last 30 days.`;
+  const title = `${tickerUpper} Premarket Movers — ${short}`;
+  const description = `${short} (${tickerUpper}) pre-market movers — unusual pre-market, regular session, and after-hours price action with Z-scores and relative volume. ${moves.length} significant moves in the last 30 days.`;
 
   const metadata = generatePageMetadata({
     title,
     description,
-    path: `/movers/${tickerUpper}`,
+    path: `/premarket/${tickerUpper}`,
     keywords: [
       `${tickerUpper} movers`,
       `${tickerUpper} premarket`,
@@ -228,7 +228,7 @@ export default async function MoverSymbolPage({ params }: PageProps) {
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Home', item: baseUrl },
       { '@type': 'ListItem', position: 2, name: 'Premarket Movers', item: `${baseUrl}/premarket-movers` },
-      { '@type': 'ListItem', position: 3, name: `${companyName} (${tickerUpper}) Moves`, item: `${baseUrl}/movers/${tickerUpper}` },
+      { '@type': 'ListItem', position: 3, name: `${companyName} (${tickerUpper}) Premarket Movers`, item: `${baseUrl}/premarket/${tickerUpper}` },
     ],
   };
 
@@ -270,16 +270,16 @@ export default async function MoverSymbolPage({ params }: PageProps) {
           <div className="mb-8">
             <div className="flex items-start justify-between gap-4">
               <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-                {companyName} ({tickerUpper}) Market Moves
+                {companyName} ({tickerUpper}) Premarket Movers
               </h1>
               <ShareButtons
-                url={`${baseUrl}/movers/${tickerUpper}`}
-                title={`${companyName} (${tickerUpper}) Market Moves | PreMarketPrice`}
+                url={`${baseUrl}/premarket/${tickerUpper}`}
+                title={`${companyName} (${tickerUpper}) Premarket Movers | PreMarketPrice`}
               />
             </div>
             <p className="mt-3 text-slate-600 dark:text-slate-300 max-w-3xl leading-relaxed">
-              Unusual price movements and significant market activity for {companyName} ({tickerUpper}).
-              {' '}Each move is flagged by Z-score statistical significance — showing when {tickerUpper} moved
+              Pre-market price movements and significant market activity for {companyName} ({`$${tickerUpper}`}).
+              {' '}Each move is flagged by Z-score statistical significance — showing when ${tickerUpper} moved
               {' '}beyond its typical daily range.
               {moves.length > 0 && ` ${moves.length} significant move${moves.length === 1 ? '' : 's'} detected in the last ${LOOKBACK_DAYS} days.`}
             </p>
@@ -421,7 +421,7 @@ export default async function MoverSymbolPage({ params }: PageProps) {
           {/* SEO content */}
           <section className="mb-8 max-w-3xl">
             <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-3">
-              About {tickerUpper} Market Moves
+              About {tickerUpper} Premarket Movers
             </h2>
             <div className="text-sm text-slate-600 dark:text-slate-400 space-y-3 leading-relaxed">
               <p>

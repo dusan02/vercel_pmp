@@ -43,7 +43,7 @@ async function buildDailyUrls(): Promise<string[]> {
       take: 40,
     });
     for (const m of movers) {
-      urls.push(`${BASE}/movers/${m.symbol}`, `${BASE}/analysis/${m.symbol}`);
+      urls.push(`${BASE}/premarket/${m.symbol}`, `${BASE}/analysis/${m.symbol}`);
     }
   } catch {
     // DB unavailable — submit the core URLs only

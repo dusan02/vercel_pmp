@@ -211,7 +211,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     for (const row of moveCounts) {
       if (row._count._all >= 3) {
         moverPages.push({
-          url: `${baseUrl}/movers/${row.symbol}`,
+          url: `${baseUrl}/premarket/${row.symbol}`,
           lastModified: currentDate,
           changeFrequency: 'daily' as const,
           priority: 0.75,

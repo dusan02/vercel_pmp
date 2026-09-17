@@ -374,7 +374,7 @@ export default async function ValuationPage({ params }: PageProps) {
                 ← {tickerUpper} Stock Analysis
               </Link>
               <Link
-                href={`/movers/${tickerUpper}`}
+                href={`/premarket/${tickerUpper}`}
                 className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
               >
                 {tickerUpper} Market Moves →

@@ -19,7 +19,7 @@ const baseUrl = 'https://premarketprice.com';
 // (?tab=analysis&ticker=X, ?tab=allStocks) are 301-redirected by middleware
 // to canonical URLs, so per-tab metadata here added little SEO value anyway.
 export const metadata: Metadata = {
-  title: 'PreMarketPrice — Real-Time Pre-Market Stock Prices',
+  title: 'Premarket Movers Today — Real-Time Pre-Market Prices | PreMarketPrice',
   description: 'Track real-time pre-market stock prices, market movers, earnings calendar, and interactive heatmap for 300+ US stocks on NYSE and NASDAQ.',
   alternates: { canonical: baseUrl },
   openGraph: {

@@ -336,7 +336,7 @@ export default async function PremarketMoversPage() {
               {moverTickers.map((t) => (
                 <Link
                   key={t.symbol}
-                  href={`/movers/${t.symbol}`}
+                  href={`/premarket/${t.symbol}`}
                   className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 >
                   {t.symbol}

@@ -76,10 +76,18 @@ export async function middleware(request: NextRequest) {
 
   // Redirect bare /movers (and /movers/null junk) → /premarket-movers (301)
   // /movers is a tab-only concept; the canonical standalone page is
-  // /premarket-movers. /movers/[symbol] insight pages are REAL routes — do not
-  // blanket-redirect the whole subtree.
+  // /premarket-movers.
   if (pathname === '/movers' || pathname === '/movers/null') {
     const redirectUrl = new URL('/premarket-movers', request.url);
+    return NextResponse.redirect(redirectUrl, 301);
+  }
+
+  // Redirect /movers/[symbol] → /premarket/[symbol] (301)
+  // Insight pages moved to the keyword-matching /premarket/* namespace —
+  // GSC shows "{ticker} premarket" is our top query class.
+  if (pathname.startsWith('/movers/')) {
+    const symbol = pathname.replace('/movers/', '');
+    const redirectUrl = new URL(`/premarket/${symbol.toUpperCase()}`, request.url);
     return NextResponse.redirect(redirectUrl, 301);
   }
 
