@@ -340,34 +340,48 @@ export async function calculateScores(symbol: string): Promise<void> {
         const lRev = lA.revenue!;
         const pRev = pA.revenue!;
 
-        // Days Sales in Receivables Index
-        const dsri = ((lA.currentAssets || 0) / lRev) / ((pA.currentAssets || 0) / pRev);
+        // Indices clamped to [0, 10] — near-zero denominators otherwise produce
+        // finite-but-huge values (observed M-scores in the millions). Missing
+        // denominators → NaN → neutral 1.
+        const idx = (num: number, den: number) => {
+            if (den === 0) return 1;
+            const v = num / den;
+            return isFinite(v) ? Math.min(Math.max(v, 0), 10) : 1;
+        };
+
+        // Days Sales in Receivables Index (currentAssets proxy — no receivables field)
+        const dsri = idx((lA.currentAssets || 0) / lRev, (pA.currentAssets || 0) / pRev);
         // Gross Margin Index (higher = worse, i.e. margins deteriorating)
-        const gmIndex = ((pA.grossProfit || 0) / pRev) / ((lA.grossProfit || 0) / lRev);
+        const gmIndex = idx((pA.grossProfit || 0) / pRev, (lA.grossProfit || 0) / lRev);
         // Asset Quality Index (non-current assets excluding PPE as proportion of total assets)
         const lNonCurrentNonPPE = Math.max(0, (lTA - (lA.currentAssets || 0)) - (lA.netPPE || 0));
         const pNonCurrentNonPPE = Math.max(0, (pTA - (pA.currentAssets || 0)) - (pA.netPPE || 0));
-        const aqi = (lNonCurrentNonPPE / lTA) / (pNonCurrentNonPPE / pTA || 1);
+        const aqi = idx(lNonCurrentNonPPE / lTA, pNonCurrentNonPPE / pTA);
         // Sales Growth Index
-        const sgi = lRev / pRev;
-        // Depreciation Index (higher = worse — decreasing depreciation relative to assets)
-        const depi = ((pA.netPPE || 0) / ((pA.netPPE || 0) + (lA.netPPE || 0))) / (((pA.netPPE || 0) + (lA.netPPE || 0)) / (lTA + pTA));
-        // SG&A Expense Index (SGA as % of sales — higher = worse)
-        const sgai = ((pA.grossProfit || 0) - (pA.ebit || 0)) / pRev / (((lA.grossProfit || 0) - (lA.ebit || 0)) / lRev || 1);
-        // Leverage Index (debt-to-assets — higher = worse)
-        const lvgi = ((lA.totalDebt || 0) / lTA) / ((pA.totalDebt || 0) / pTA || 1);
-        // Total Accruals to Total Assets
-        const tata = ((lA.netIncome || 0) - (lA.operatingCashFlow || 0)) / lTA;
+        const sgi = idx(lRev, pRev);
+        // Depreciation Index — no depreciation field in schema, neutral
+        const depi = 1;
+        // SG&A Expense Index — current/prev ratio of opex-to-sales (opex ≈ grossProfit − ebit)
+        const sgai = idx(((lA.grossProfit || 0) - (lA.ebit || 0)) / lRev, ((pA.grossProfit || 0) - (pA.ebit || 0)) / pRev);
+        // Leverage Index (debt-to-assets ratio current vs. previous)
+        const lvgi = idx((lA.totalDebt || 0) / lTA, (pA.totalDebt || 0) / pTA);
+        // Total Accruals to Total Assets — clamped; coefficient 4.679 dominates the model
+        const tataRaw = ((lA.netIncome || 0) - (lA.operatingCashFlow || 0)) / lTA;
+        const tata = isFinite(tataRaw) ? Math.min(Math.max(tataRaw, -1), 1) : 0;
 
+        // Standard Beneish (1999) 8-variable model: -1.78 = manipulation threshold.
+        // TATA and LVGI signs matter — both were inverted in a previous version.
         beneishScore = -4.84
-            + 0.92 * (isFinite(dsri) ? dsri : 1)
-            + 0.528 * (isFinite(gmIndex) ? gmIndex : 1)
-            + 0.404 * (isFinite(aqi) ? aqi : 1)
-            + 0.892 * (isFinite(sgi) ? sgi : 1)
-            + 0.115 * (isFinite(depi) ? depi : 1)
-            - 0.173 * (isFinite(sgai) ? sgai : 1)
-            + 0.352 * (isFinite(lvgi) ? lvgi : 1)
-            - 0.44 * (isFinite(tata) ? tata : 0);
+            + 0.92 * dsri
+            + 0.528 * gmIndex
+            + 0.404 * aqi
+            + 0.892 * sgi
+            + 0.115 * depi
+            - 0.172 * sgai
+            + 4.679 * tata
+            - 0.327 * lvgi;
+        // Bound the final score to the plausible range
+        beneishScore = Math.min(Math.max(beneishScore, -8), 8);
     }
 
     // ─── AI Verdict ────────────────────────────────────────────────
