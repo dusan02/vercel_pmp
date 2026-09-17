@@ -17,6 +17,8 @@ export type { CompanyNode, HeatmapMetric, SectorLabelVariant, HierarchyData, Tre
 export type MarketHeatmapProps = {
   data: CompanyNode[];
   onTileClick?: (company: CompanyNode) => void;
+  /** Fires on tile hover (null on leave) — used to prefetch analysis data. */
+  onTileHover?: (company: CompanyNode | null) => void;
   width: number;
   height: number;
   timeframe?: 'day' | 'week' | 'month';
@@ -41,6 +43,7 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
   width,
   height,
   onTileClick,
+  onTileHover,
   timeframe = 'day',
   metric = 'percent',
   layoutMetric,
@@ -180,8 +183,9 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
 
   const handleCanvasHover = useCallback((company: CompanyNode | null, x: number, y: number) => {
     setHoveredNode(company);
+    onTileHover?.(company);
     if (company) setMousePosition({ x, y });
-  }, []);
+  }, [onTileHover]);
 
   // -- Pan & Zoom -----------------------------------------------------------
   const panZoom = usePanZoom({
@@ -341,7 +345,7 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
             isMobile={isMobile}
             zoomedSector={zoomedSector}
             onTileClick={onTileClick}
-            onTileHover={setHoveredNode}
+            onTileHover={(company) => { setHoveredNode(company); onTileHover?.(company); }}
             onMobileTap={handleMobileTap}
             onSectorMouseEnter={setHoveredSector}
             onSectorMouseLeave={() => setHoveredSector(null)}

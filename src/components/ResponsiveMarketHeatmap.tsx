@@ -40,6 +40,8 @@ export type ResponsiveMarketHeatmapProps = {
   apiEndpoint?: string;
   /** Callback pri kliknutí na dlaždicu */
   onTileClick?: (company: CompanyNode) => void;
+  /** Callback pri hover na dlaždicu (null pri odchode) — používa sa na prefetch analysis dát */
+  onTileHover?: (company: CompanyNode | null) => void;
   /** Automatické obnovovanie dát */
   autoRefresh?: boolean;
   /** Interval obnovovania v ms (default: 30000 = 30s) */
@@ -69,6 +71,7 @@ export type ResponsiveMarketHeatmapProps = {
 export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = ({
   apiEndpoint = '/api/heatmap',
   onTileClick,
+  onTileHover,
   autoRefresh = true,
   refreshInterval = 60000,
   initialTimeframe = 'day',
@@ -113,6 +116,9 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
     initialTimeframe,
     autoRefresh: autoRefresh && isMounted, // Only auto-refresh after mount
     initialHeatmapData,
+    // Keep-alive tabs stay mounted while hidden — pause polling then.
+    // undefined activeView (e.g. /heatmap page) = always active.
+    active: activeView === undefined || activeView === 'heatmap',
   });
 
   // Single source of truth: controlled prop, else the centralized (localStorage) hook
@@ -256,6 +262,7 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
           width={width}
           height={height}
           {...(onTileClick ? { onTileClick } : {})}
+          {...(onTileHover ? { onTileHover } : {})}
           timeframe={timeframe}
           metric={metric}
           sectorLabelVariant={sectorLabelVariant}

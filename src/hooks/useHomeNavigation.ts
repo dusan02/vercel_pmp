@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, startTransition } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 export type ActiveSection =
@@ -109,9 +109,13 @@ export function useHomeNavigation({ isMounted }: UseHomeNavigationOptions) {
   }, [isMounted, setActiveTab]);
 
   const handleMobileNavChange = useCallback((section: ActiveSection, ticker?: string) => {
-    setActiveSection(section);
-    if (ticker) setAnalysisTicker(ticker.toUpperCase());
-    else if (section === 'analysis') setAnalysisTicker(null); // priamy klik na Analysis tab = prázdny search
+    // startTransition keeps the UI responsive — first-activation mounts of
+    // heavy tabs (heatmap, analysis) are non-blocking, input stays snappy.
+    startTransition(() => {
+      setActiveSection(section);
+      if (ticker) setAnalysisTicker(ticker.toUpperCase());
+      else if (section === 'analysis') setAnalysisTicker(null); // priamy klik na Analysis tab = prázdny search
+    });
     const url = new URL(window.location.href);
     url.searchParams.set('tab', section);
     if (ticker && section === 'analysis') url.searchParams.set('ticker', ticker.toUpperCase());

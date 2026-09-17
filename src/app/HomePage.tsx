@@ -2,7 +2,7 @@
 
 // Client component containing all page logic
 // This is imported by page.tsx (server component)
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import dynamic from 'next/dynamic';
 
 // All component imports moved to dynamic imports - fixed pattern for named exports
@@ -122,6 +122,7 @@ import { detectSession } from '@/lib/utils/timeUtils';
 import { useMobilePrefetch } from '@/hooks/useMobilePrefetch';
 import { useHomeNavigation } from '@/hooks/useHomeNavigation';
 import { useHomeData } from '@/hooks/useHomeData';
+import { KeepAliveTab } from '@/components/KeepAliveTab';
 
 interface HomePageProps {
   initialData?: StockData[];
@@ -198,6 +199,26 @@ export default function HomePage({ initialData = [], initialMoversData, initialB
     return () => clearTimeout(t);
   }, []);
 
+  // Warm the analysis endpoints when the user hovers a heatmap tile — by the
+  // time they click, /api/stocks + /api/analysis/{t} + /history are already
+  // in-flight or cached server-side, so the tab switch renders fast.
+  // 150ms debounce skips fast mouse sweeps; per-symbol Set dedupes.
+  const analysisPrefetchRef = useRef<{ timer?: ReturnType<typeof setTimeout>; done: Set<string> }>({ done: new Set() });
+  const handleAnalysisPrefetch = useCallback((ticker: string | null) => {
+    const ref = analysisPrefetchRef.current;
+    clearTimeout(ref.timer);
+    if (!ticker) return;
+    const symbol = ticker.toUpperCase();
+    if (ref.done.has(symbol)) return;
+    ref.timer = setTimeout(() => {
+      ref.done.add(symbol);
+      const s = encodeURIComponent(symbol);
+      void fetch(`/api/stocks?tickers=${s}`).catch(() => {});
+      void fetch(`/api/analysis/${s}`).catch(() => {});
+      void fetch(`/api/analysis/${s}/history`).catch(() => {});
+    }, 150);
+  }, []);
+
 
   return (
     <>
@@ -226,7 +247,7 @@ export default function HomePage({ initialData = [], initialMoversData, initialB
                 {(preferences.showHeatmapSection ?? true) && (
                   <HomeHeatmap
                     wrapperClass="mobile-heatmap-wrapper"
-                    activeView={activeSection === 'heatmap' ? 'heatmap' : undefined}
+                    activeView={activeSection === 'heatmap' ? 'heatmap' : 'inactive'}
                     onTileClick={(ticker) => handleMobileNavChange('analysis', ticker)}
                     stockData={stockData}
                     onSelectTicker={(ticker) => handleMobileNavChange('analysis', ticker)}
@@ -412,90 +433,77 @@ export default function HomePage({ initialData = [], initialMoversData, initialB
                       )}
 
                       {/* --- DESKTOP LAYOUT (Tab Based) --- */}
+                      {/* KeepAliveTab: mount on first activation, then stay mounted
+                          (display:none) — switching tabs no longer remounts the
+                          whole subtree (heatmap ~600 tiles) or refetches data. */}
                       <div className="desktop-layout-wrapper">
-                        {activeSection === 'heatmap' && (
-                          <div className="tab-content relative fade-in">
-                            <HomeHeatmap
-                              wrapperClass="desktop-heatmap-wrapper"
-                              onTileClick={(ticker) => handleMobileNavChange('analysis', ticker)}
-                              stockData={stockData}
-                              onSelectTicker={(ticker) => handleMobileNavChange('analysis', ticker)}
-                              initialHeatmapData={initialHeatmapData}
-                            />
-                            <WhatMovedToday movers={initialMoversData} eligibleTickers={eligibleTickers} />
-                          </div>
-                        )}
+                        <KeepAliveTab active={activeSection === 'heatmap'} className="tab-content relative fade-in">
+                          <HomeHeatmap
+                            wrapperClass="desktop-heatmap-wrapper"
+                            activeView={activeSection === 'heatmap' ? 'heatmap' : 'inactive'}
+                            onTileClick={(ticker) => handleMobileNavChange('analysis', ticker)}
+                            onTileHover={handleAnalysisPrefetch}
+                            stockData={stockData}
+                            onSelectTicker={(ticker) => handleMobileNavChange('analysis', ticker)}
+                            initialHeatmapData={initialHeatmapData}
+                          />
+                          <WhatMovedToday movers={initialMoversData} eligibleTickers={eligibleTickers} />
+                        </KeepAliveTab>
 
-                        {activeSection === 'analysis' && (
-                          <div className="tab-content fade-in">
-                            <HomeAnalysis
-                              activeTicker={analysisTicker}
-                              onTickerChange={setAnalysisTicker}
-                            />
-                          </div>
-                        )}
+                        <KeepAliveTab active={activeSection === 'analysis'} className="tab-content fade-in">
+                          <HomeAnalysis
+                            activeTicker={analysisTicker}
+                            onTickerChange={setAnalysisTicker}
+                          />
+                        </KeepAliveTab>
 
-                        {activeSection === 'movers' && (
-                          <div className="tab-content fade-in">
-                            <HomeMovers onTileClick={(ticker) => handleMobileNavChange('analysis', ticker)} initialData={initialMoversData} />
-                          </div>
-                        )}
+                        <KeepAliveTab active={activeSection === 'movers'} className="tab-content fade-in">
+                          <HomeMovers onTileClick={(ticker) => handleMobileNavChange('analysis', ticker)} initialData={initialMoversData} />
+                        </KeepAliveTab>
 
-                        {activeSection === 'portfolio' && (
-                          <div className="tab-content fade-in">
-                            <HomePortfolio
-                              portfolioStocks={portfolioStocks}
-                              portfolioHoldings={portfolioHoldings}
-                              allStocks={stockData}
-                              loading={loadingStates.top50Stocks}
-                              onUpdateQuantity={updateQuantity}
-                              onRemoveStock={removeStock}
-                              onAddStock={addStock}
-                              calculatePortfolioValue={calculateDailyChange}
-                              calculateTotalValue={calculateTotalStockValue}
-                              totalPortfolioValue={totalPortfolioValue}
-                            />
-                          </div>
-                        )}
+                        <KeepAliveTab active={activeSection === 'portfolio'} className="tab-content fade-in">
+                          <HomePortfolio
+                            portfolioStocks={portfolioStocks}
+                            portfolioHoldings={portfolioHoldings}
+                            allStocks={stockData}
+                            loading={loadingStates.top50Stocks}
+                            onUpdateQuantity={updateQuantity}
+                            onRemoveStock={removeStock}
+                            onAddStock={addStock}
+                            calculatePortfolioValue={calculateDailyChange}
+                            calculateTotalValue={calculateTotalStockValue}
+                            totalPortfolioValue={totalPortfolioValue}
+                          />
+                        </KeepAliveTab>
 
-                        {activeSection === 'favorites' && (
-                          <div className="tab-content fade-in">
-                            <HomeFavorites
-                              favoriteStocks={favoriteStocksSorted}
-                              loading={loadingStates.favorites}
-                              sortKey={favSortKey}
-                              ascending={favAscending}
-                              onSort={requestFavSort}
-                              onToggleFavorite={toggleFavorite}
-                              isFavorite={isFavorite}
-                              allStocks={stockData}
-                            />
-                          </div>
-                        )}
+                        <KeepAliveTab active={activeSection === 'favorites'} className="tab-content fade-in">
+                          <HomeFavorites
+                            favoriteStocks={favoriteStocksSorted}
+                            loading={loadingStates.favorites}
+                            sortKey={favSortKey}
+                            ascending={favAscending}
+                            onSort={requestFavSort}
+                            onToggleFavorite={toggleFavorite}
+                            isFavorite={isFavorite}
+                            allStocks={stockData}
+                          />
+                        </KeepAliveTab>
 
-                        {activeSection === 'earnings' && (
-                          <div className="tab-content fade-in">
-                            <HomeEarnings weeklyEarningsData={weeklyEarningsData} todayStr={earningsTodayStr} weekStartStr={earningsWeekStartStr} eligibleTickers={eligibleTickers} />
-                          </div>
-                        )}
+                        <KeepAliveTab active={activeSection === 'earnings'} className="tab-content fade-in">
+                          <HomeEarnings weeklyEarningsData={weeklyEarningsData} todayStr={earningsTodayStr} weekStartStr={earningsWeekStartStr} eligibleTickers={eligibleTickers} />
+                        </KeepAliveTab>
 
-                        {activeSection === 'screener' && (
-                          <div className="tab-content fade-in">
-                            <StockScreener />
-                          </div>
-                        )}
+                        <KeepAliveTab active={activeSection === 'screener'} className="tab-content fade-in">
+                          <StockScreener />
+                        </KeepAliveTab>
 
-                        {activeSection === 'blog' && (
-                          <div className="tab-content fade-in">
-                            <HomeBlog initialSnapshots={initialBlogSnapshots} />
-                          </div>
-                        )}
+                        <KeepAliveTab active={activeSection === 'blog'} className="tab-content fade-in">
+                          <HomeBlog initialSnapshots={initialBlogSnapshots} />
+                        </KeepAliveTab>
 
-                        {activeSection === 'pricing' && (
-                          <div className="tab-content fade-in">
-                            <HomePricing />
-                          </div>
-                        )}
+                        <KeepAliveTab active={activeSection === 'pricing'} className="tab-content fade-in">
+                          <HomePricing />
+                        </KeepAliveTab>
                       </div>
 
                     </div>

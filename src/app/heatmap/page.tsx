@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ResponsiveMarketHeatmap from '@/components/ResponsiveMarketHeatmap';
@@ -64,6 +64,22 @@ export default function HeatmapPage() {
     logger.debug('Heatmap tile clicked', { symbol: company.symbol });
     event('ticker_click', { ticker: company.symbol, source: 'heatmap' });
     router.push(`/analysis/${company.symbol.toUpperCase()}`);
+  }, [router]);
+
+  // Prefetch the analysis route + warm the API on persistent tile hover
+  // (150ms debounce skips mouse sweeps; per-symbol Set dedupes).
+  const prefetchRef = useRef<{ timer?: ReturnType<typeof setTimeout>; done: Set<string> }>({ done: new Set() });
+  const handleTileHover = useCallback((company: CompanyNode | null) => {
+    const ref = prefetchRef.current;
+    clearTimeout(ref.timer);
+    if (!company) return;
+    const symbol = company.symbol.toUpperCase();
+    if (ref.done.has(symbol)) return;
+    ref.timer = setTimeout(() => {
+      ref.done.add(symbol);
+      router.prefetch(`/analysis/${symbol}`);
+      void fetch(`/api/analysis/${encodeURIComponent(symbol)}`).catch(() => {});
+    }, 150);
   }, [router]);
 
   return (
@@ -185,6 +201,7 @@ export default function HeatmapPage() {
           sectorLabelVariant="full"
           apiEndpoint="/api/heatmap"
           onTileClick={handleTileClick}
+          onTileHover={handleTileHover}
           autoRefresh={true}
           refreshInterval={60000} // 60s — zladené s MAX_DATA_AGE_FOR_ETAG (60s) v /api/heatmap
           initialTimeframe={timeframe}

@@ -20,12 +20,13 @@ interface HomeHeatmapProps {
     wrapperClass?: string | undefined;
     activeView?: string | undefined;
     onTileClick?: (ticker: string) => void | undefined;
+    onTileHover?: (ticker: string | null) => void | undefined;
     stockData?: StockData[] | undefined;
     onSelectTicker?: (ticker: string) => void | undefined;
     initialHeatmapData?: any[] | undefined;
 }
 
-export function HomeHeatmap({ wrapperClass, activeView, onTileClick, stockData, onSelectTicker, initialHeatmapData }: HomeHeatmapProps) {
+export function HomeHeatmap({ wrapperClass, activeView, onTileClick, onTileHover, stockData, onSelectTicker, initialHeatmapData }: HomeHeatmapProps) {
     return (
         <SectionErrorBoundary sectionName="Heatmap">
             <div className="screen-heatmap-content flex flex-col h-full w-full">
@@ -34,6 +35,7 @@ export function HomeHeatmap({ wrapperClass, activeView, onTileClick, stockData, 
                         {...(activeView !== undefined ? { activeView } : {})}
                         {...(wrapperClass !== undefined ? { wrapperClass } : {})}
                         {...(onTileClick !== undefined ? { onTileClick } : {})}
+                        {...(onTileHover !== undefined ? { onTileHover } : {})}
                         {...(stockData !== undefined ? { stockData } : {})}
                         {...(onSelectTicker !== undefined ? { onSelectTicker } : {})}
                         {...(initialHeatmapData !== undefined ? { initialHeatmapData } : {})}

@@ -10,6 +10,8 @@ interface UseHeatmapDataProps {
   initialTimeframe?: 'day' | 'week' | 'month' | undefined;
   autoRefresh?: boolean | undefined;
   initialHeatmapData?: any[] | undefined;
+  /** False = keep-alive tab is hidden — skip interval ticks, refetch on reactivation. */
+  active?: boolean | undefined;
 }
 
 /**
@@ -105,12 +107,13 @@ function mapCompactRow(row: any): CompanyNode | null {
 
 // Cache management moved to useHeatmapCache hook
 
-export function useHeatmapData({ 
+export function useHeatmapData({
   apiEndpoint = '/api/heatmap',
   refreshInterval = 60000,
   initialTimeframe = 'day',
   autoRefresh = true,
-  initialHeatmapData
+  initialHeatmapData,
+  active = true
 }: UseHeatmapDataProps = {}) {
   // Cache hook FIRST — so cachedData is available for synchronous state init below
   const { cachedData, isLoading: cacheLoading, saveCache } = useHeatmapCache();
@@ -362,13 +365,26 @@ export function useHeatmapData({
 
     let interval: ReturnType<typeof setInterval> | undefined;
     if (autoRefresh && refreshInterval > 0) {
-      interval = setInterval(() => fetchDataRef.current(false), refreshInterval);
+      // Skip ticks while the tab is hidden (keep-alive tabs stay mounted) —
+      // the effect below refetches once when the tab becomes active again.
+      interval = setInterval(() => { if (activeRef.current) fetchDataRef.current(false); }, refreshInterval);
     }
     return () => {
       clearTimeout(timer);
       if (interval) clearInterval(interval);
     };
   }, [autoRefresh, refreshInterval]); // Remove fetchData from deps
+
+  const activeRef = useRef(active);
+  useEffect(() => { activeRef.current = active; }, [active]);
+
+  // Refetch once when a keep-alive-hidden tab becomes visible again —
+  // its data is stale by at least one refresh interval.
+  const wasActiveRef = useRef(active);
+  useEffect(() => {
+    if (active && !wasActiveRef.current) fetchDataRef.current(false);
+    wasActiveRef.current = active;
+  }, [active]);
 
   // Sync internal state with props if props change
   useEffect(() => {

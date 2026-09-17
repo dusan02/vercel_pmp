@@ -31,7 +31,7 @@ const ResponsiveMarketHeatmap = dynamic(
  * Zobrazuje zmenšenú verziu heatmapy, ktorá pri kliknutí presmeruje na plnú stránku
  * Prepínacie buttony (% Change / Mcap Change) sú vedľa nadpisu
  */
-export function HeatmapPreview({ activeView, wrapperClass, onTileClick, stockData, onSelectTicker, initialHeatmapData }: { activeView?: string | undefined; wrapperClass?: string | undefined; onTileClick?: (ticker: string) => void | undefined; stockData?: StockData[] | undefined; onSelectTicker?: (ticker: string) => void | undefined; initialHeatmapData?: any[] | undefined }) {
+export function HeatmapPreview({ activeView, wrapperClass, onTileClick, onTileHover, stockData, onSelectTicker, initialHeatmapData }: { activeView?: string | undefined; wrapperClass?: string | undefined; onTileClick?: (ticker: string) => void | undefined; onTileHover?: (ticker: string | null) => void | undefined; stockData?: StockData[] | undefined; onSelectTicker?: (ticker: string) => void | undefined; initialHeatmapData?: any[] | undefined }) {
   const router = useRouter();
   // Centralized metric state with localStorage persistence
   const { metric, setMetric } = useHeatmapMetric('percent');
@@ -111,6 +111,7 @@ export function HeatmapPreview({ activeView, wrapperClass, onTileClick, stockDat
               onTileClick(company.symbol);
             }
           }}
+          onTileHover={(company) => onTileHover?.(company ? company.symbol : null)}
         />
       </div>
 
