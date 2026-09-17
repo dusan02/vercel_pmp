@@ -30,7 +30,14 @@ app
   .prepare()
   .then(() => {
     // gzip/brotli-free compression middleware (gzip + deflate)
-    const compress = compression();
+    const compress = compression({
+      // App-router route handlers may not expose Content-Type to
+      // res.getHeader() when compression's on-headers hook fires, which makes
+      // the default filter skip JSON responses. All /api/ routes return JSON,
+      // so force them through the filter.
+      filter: (req, res) =>
+        (req.url ?? '').startsWith('/api/') || compression.filter(req as any, res as any),
+    });
 
     // Create HTTP server
     const server = createServer((req, res) => {
