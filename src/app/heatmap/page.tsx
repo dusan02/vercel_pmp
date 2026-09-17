@@ -8,6 +8,7 @@ import type { CompanyNode } from '@/lib/heatmap/types';
 import { useHeatmapMetric } from '@/hooks/useHeatmapMetric';
 import { HeatmapMetricButtons } from '@/components/HeatmapMetricButtons';
 import { HEATMAP_METRICS } from '@/lib/heatmap/metricValue';
+import { HeatmapMethodology } from '@/components/HeatmapMethodology';
 import { logger } from '@/lib/utils/logger';
 import { event } from '@/lib/ga';
 
@@ -131,6 +132,20 @@ export default function HeatmapPage() {
               variant="dark"
             />
           </div>
+
+          {/* Score methodology — ⓘ opens a floating panel; content stays in DOM for crawlers */}
+          <details className="relative group">
+            <summary
+              className="list-none cursor-pointer w-5 h-5 flex items-center justify-center rounded-full border border-gray-600 text-gray-400 hover:text-white hover:border-gray-400 transition-colors text-[10px] font-bold italic"
+              title="How are the scores calculated?"
+              aria-label="How are the scores calculated?"
+            >
+              i
+            </summary>
+            <div className="absolute left-0 sm:left-auto sm:right-0 top-full mt-2 w-[320px] sm:w-[420px] max-h-[70vh] overflow-y-auto bg-gray-900 border border-gray-700 rounded-lg p-3 shadow-xl z-[200]">
+              <HeatmapMethodology />
+            </div>
+          </details>
         </div>
         
         <div className="flex items-center gap-4">

@@ -9,6 +9,7 @@ import { HeatmapMetricButtons } from './HeatmapMetricButtons';
 import { HeatmapViewButton } from './HeatmapViewButton';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { GlobalStockSearch } from './GlobalStockSearch';
+import { HeatmapMethodology } from './HeatmapMethodology';
 import { StockData } from '@/lib/types';
 
 // OPTIMIZATION: Enable SSR for desktop (faster initial load)
@@ -112,6 +113,9 @@ export function HeatmapPreview({ activeView, wrapperClass, onTileClick, stockDat
           }}
         />
       </div>
+
+      {/* Score methodology — small print under the map; crawlable via <details> */}
+      <HeatmapMethodology className="px-4 pt-1.5 pb-1 flex-shrink-0" />
     </section>
   );
 }
