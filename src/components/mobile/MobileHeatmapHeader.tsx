@@ -2,6 +2,7 @@
 
 import React from 'react';
 import type { HeatmapMetric } from '@/lib/heatmap/types';
+import { HEATMAP_METRICS } from '@/lib/heatmap/metricValue';
 import { BrandLogo } from '../BrandLogo';
 import { LoginButton } from '../LoginButton';
 
@@ -44,18 +45,31 @@ export const MobileHeatmapHeader: React.FC<MobileHeatmapHeaderProps> = ({
 
     <div className="flex-1" />
 
-    {/* Metric toggle */}
+    {/* Metric dropdown */}
     {onMetricChange && (
-      <div
+      <select
+        value={metric}
+        onChange={(e) => onMetricChange(e.target.value as HeatmapMetric)}
+        aria-label="Heatmap metric"
         style={{
-          display: 'flex', alignItems: 'center',
-          background: 'rgba(255,255,255,0.06)', borderRadius: '8px',
-          padding: '3px', border: '1px solid rgba(255,255,255,0.1)', gap: 2,
+          height: 28, paddingLeft: 10, paddingRight: 22, borderRadius: 8,
+          fontSize: 11, fontWeight: 700, cursor: 'pointer',
+          background: 'rgba(255,255,255,0.06)',
+          border: '1px solid rgba(255,255,255,0.1)',
+          color: 'rgba(255,255,255,0.85)',
+          appearance: 'none',
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='5' viewBox='0 0 9 5'%3E%3Cpath d='M1 1l3.5 3.5L8 1' stroke='%23ffffff' stroke-opacity='0.6' stroke-width='1.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`,
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'right 7px center',
+          WebkitTapHighlightColor: 'transparent',
         }}
       >
-        <MetricButton label="%" active={metric === 'percent'} onClick={() => onMetricChange('percent')} />
-        <MetricButton label="$" active={metric === 'mcap'} onClick={() => onMetricChange('mcap')} />
-      </div>
+        {HEATMAP_METRICS.map((m) => (
+          <option key={m.id} value={m.id} style={{ color: '#1e293b', background: '#fff' }}>
+            {m.label}
+          </option>
+        ))}
+      </select>
     )}
 
     {/* Login */}
@@ -64,23 +78,3 @@ export const MobileHeatmapHeader: React.FC<MobileHeatmapHeaderProps> = ({
     </div>
   </div>
 );
-
-function MetricButton({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        padding: '4px 12px', height: '28px', borderRadius: '6px',
-        fontSize: '11px', fontWeight: 700, border: 'none', cursor: 'pointer',
-        transition: 'all 0.15s ease',
-        background: active ? 'linear-gradient(135deg, #2563eb, #1d4ed8)' : 'transparent',
-        color: active ? '#ffffff' : 'rgba(255,255,255,0.5)',
-        boxShadow: active ? '0 2px 8px rgba(37,99,235,0.4)' : 'none',
-        WebkitTapHighlightColor: 'transparent',
-      }}
-    >
-      {label}
-    </button>
-  );
-}

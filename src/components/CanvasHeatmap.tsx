@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import type { TreemapLeaf, CompanyNode } from '@/lib/heatmap/types';
-import { formatMarketCapDiff, formatPercent } from '@/lib/utils/heatmapFormat';
+import type { TreemapLeaf, CompanyNode, HeatmapMetric } from '@/lib/heatmap/types';
 import { createHeatmapColorScale } from '@/lib/utils/heatmapColors';
+import { getCompanyMetricValue, formatMetricValue, NEUTRAL_TILE_COLOR } from '@/lib/heatmap/metricValue';
 import { TILE_SIZE_THRESHOLDS, FONT_SIZE_CONFIG } from '@/lib/utils/heatmapConfig';
 import { getTileLabelConfig, calculateFontSizeFromArea, TileLabelConfig, clampNumber } from '@/lib/utils/heatmapLabelUtils';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
@@ -21,7 +21,7 @@ interface CanvasHeatmapProps {
     offset: { x: number; y: number };
     onTileClick?: (company: CompanyNode) => void;
     onHover?: (company: CompanyNode | null, x: number, y: number) => void;
-    metric: 'percent' | 'mcap';
+    metric: HeatmapMetric;
     timeframe: 'day' | 'week' | 'month';
 }
 
@@ -127,7 +127,7 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
         ctx.fillRect(0, 0, width, height);
 
 
-        const colorScale = createHeatmapColorScale(timeframe, metric === 'mcap' ? 'mcap' : 'percent');
+        const colorScale = createHeatmapColorScale(timeframe, metric);
 
         const TILE_RADIUS = 3;
         const drawRoundedTile = (x: number, y: number, w: number, h: number) => {
@@ -164,8 +164,8 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
             if (tileX + tileW < 0 || tileX > width || tileY + tileH < 0 || tileY > height) return;
 
             // Fill with rounded corners
-            const v = metric === 'mcap' ? (company.marketCapDiff ?? 0) : (company.changePercent ?? 0);
-            ctx.fillStyle = colorScale(v);
+            const v = getCompanyMetricValue(company, metric);
+            ctx.fillStyle = v === null ? NEUTRAL_TILE_COLOR : colorScale(v);
             drawRoundedTile(tileX, tileY, tileW, tileH);
             ctx.fill();
 
@@ -230,9 +230,7 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
                     );
                     if (!fittedSymbol) return;
 
-                    const text = company.displayValue || (metric === 'mcap'
-                        ? formatMarketCapDiff(company.marketCapDiff)
-                        : formatPercent(company.changePercent));
+                    const text = company.displayValue || formatMetricValue(company, metric);
 
                     const fittedValue = fitFontPxToBox(
                         ctx,

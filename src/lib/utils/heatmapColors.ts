@@ -4,9 +4,45 @@
  */
 
 import { scaleLinear } from 'd3-scale';
+import type { HeatmapMetric } from '@/lib/heatmap/types';
 
 export type Timeframe = 'day' | 'week' | 'month';
-export type HeatmapColorMetric = 'percent' | 'mcap';
+export type HeatmapColorMetric = HeatmapMetric;
+
+// Scores (0-100): <35 red, ~50 neutral, >65 green
+const scoreScale = {
+  domain: [0, 35, 50, 65, 100],
+  range: ['#dc2626', '#f87171', '#1f2937', '#22c55e', '#16a34a'],
+};
+
+// Piotroski F-Score (0-9): <=3 weak, 4-6 neutral, >=7 strong
+const piotroskiScale = {
+  domain: [0, 3, 5, 7, 9],
+  range: ['#dc2626', '#f87171', '#1f2937', '#22c55e', '#16a34a'],
+};
+
+// Movers Z-score: |z| > 3 = extreme mover
+const zscoreScale = {
+  domain: [-3, -1.5, 0, 1.5, 3],
+  range: ['#dc2626', '#f87171', '#1f2937', '#22c55e', '#16a34a'],
+};
+
+function scaleConfig(
+  metric: HeatmapColorMetric,
+  timeframe: Timeframe,
+): { domain: number[]; range: string[] } {
+  switch (metric) {
+    case 'mcap':          return mcapScales[timeframe];
+    case 'week':          return percentScales.week;
+    case 'health':
+    case 'valuation':
+    case 'profitability': return scoreScale;
+    case 'piotroski':     return piotroskiScale;
+    case 'zscore':        return zscoreScale;
+    case 'percent':
+    default:              return percentScales[timeframe];
+  }
+}
 
 /**
  * Adaptive domain for the market-cap metric from the visible dataset.
@@ -69,7 +105,7 @@ export function getHeatmapScaleExtent(
   metric: HeatmapColorMetric = 'percent',
   values?: number[],
 ): number[] {
-  const config = metric === 'mcap' ? mcapScales[timeframe] : percentScales[timeframe];
+  const config = scaleConfig(metric, timeframe);
   return metric === 'mcap' ? adaptiveMcapDomain(values, config.domain) : config.domain;
 }
 
@@ -86,7 +122,7 @@ export function createHeatmapColorScale(
   metric: HeatmapColorMetric = 'percent',
   values?: number[],
 ) {
-  const config = metric === 'mcap' ? mcapScales[timeframe] : percentScales[timeframe];
+  const config = scaleConfig(metric, timeframe);
   const domain = metric === 'mcap' ? adaptiveMcapDomain(values, config.domain) : config.domain;
   return scaleLinear<string>()
     .domain(domain)

@@ -2,8 +2,9 @@
 
 import React, { useMemo, useCallback, useState, useEffect, useRef } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import type { CompanyNode } from '@/lib/heatmap/types';
+import type { CompanyNode, HeatmapMetric } from '@/lib/heatmap/types';
 import { createHeatmapColorScale } from '@/lib/utils/heatmapColors';
+import { getCompanyMetricValue, NEUTRAL_TILE_COLOR } from '@/lib/heatmap/metricValue';
 import { computeMobileTreemapSectors, prepareMobileTreemapData, SECTOR_CHROME_PX } from '@/lib/heatmap/mobileTreemap';
 import { MobileHeatmapHeader } from './mobile/MobileHeatmapHeader';
 import { MobileHeatmapSheet } from './mobile/MobileHeatmapSheet';
@@ -16,9 +17,9 @@ import { MobileHeatmapSector } from './mobile/MobileHeatmapSector';
 interface MobileTreemapNewProps {
   data: CompanyNode[];
   timeframe?: 'day' | 'week' | 'month';
-  metric?: 'percent' | 'mcap';
+  metric?: HeatmapMetric;
   layoutMetric?: 'percent' | 'mcap';
-  onMetricChange?: (metric: 'percent' | 'mcap') => void;
+  onMetricChange?: (metric: HeatmapMetric) => void;
   onTileClick?: (company: CompanyNode) => void;
   onToggleFavorite?: (ticker: string) => void;
   isFavorite?: (ticker: string) => boolean;
@@ -129,7 +130,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
     () =>
       createHeatmapColorScale(
         timeframe,
-        metric === 'mcap' ? 'mcap' : 'percent',
+        metric,
         metric === 'mcap' ? sortedData.map((d) => d.marketCapDiff ?? 0) : undefined,
       ),
     [timeframe, metric, sortedData],
@@ -138,8 +139,8 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   const getColor = useCallback(
     (company: CompanyNode): string => {
       if (!company) return '#1a1a1a';
-      const value = metric === 'percent' ? (company.changePercent ?? 0) : (company.marketCapDiff ?? 0);
-      return colorScale(value);
+      const value = getCompanyMetricValue(company, metric);
+      return value === null ? NEUTRAL_TILE_COLOR : colorScale(value);
     },
     [metric, colorScale],
   );

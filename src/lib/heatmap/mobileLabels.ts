@@ -1,5 +1,5 @@
 import type { CompanyNode, HeatmapMetric } from '@/lib/heatmap/types';
-import { formatMarketCapDiff, formatPercent } from '@/lib/utils/format';
+import { formatMetricValue } from './metricValue';
 
 export type MobileTileLabel = {
   showSymbol: boolean;
@@ -51,9 +51,7 @@ export function getMobileTileLabel(
   const symbolText = (company.symbol ?? '').toUpperCase();
   if (!symbolText) return EMPTY;
 
-  const valueText = metric === 'percent'
-    ? formatPercent(company.changePercent ?? 0)
-    : (company.marketCapDiff == null ? '' : formatMarketCapDiff(company.marketCapDiff));
+  const valueText = formatMetricValue(company, metric);
 
   // ── Tier 1: symbol sizing ──────────────────────────────────────────
   // Ideal font scales with tile size, capped by the box height (single line).

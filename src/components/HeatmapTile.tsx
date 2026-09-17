@@ -6,8 +6,8 @@
 'use client';
 
 import React from 'react';
-import type { CompanyNode, TreemapLeaf } from '@/lib/heatmap/types';
-import { formatPercent, formatMarketCapDiff } from '@/lib/utils/heatmapFormat';
+import type { CompanyNode, TreemapLeaf, HeatmapMetric } from '@/lib/heatmap/types';
+import { formatMetricValue } from '@/lib/heatmap/metricValue';
 import styles from '@/styles/heatmap.module.css';
 
 interface HeatmapTileProps {
@@ -22,7 +22,7 @@ interface HeatmapTileProps {
     percentFontPx?: number;
     align: 'center' | 'top-left';
   };
-  metric: 'percent' | 'mcap';
+  metric: HeatmapMetric;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
   onClick: (e: React.MouseEvent) => void;
@@ -100,9 +100,7 @@ export const HeatmapTile = React.memo<HeatmapTileProps>(({
               className={styles.heatmapTilePercent}
               style={{ fontSize: `${labelConfig.percentFontPx}px` }}
             >
-              {company.displayValue || (metric === 'mcap'
-                ? formatMarketCapDiff(company.marketCapDiff)
-                : formatPercent(company.changePercent))}
+              {company.displayValue || formatMetricValue(company, metric)}
             </div>
           )}
         </div>

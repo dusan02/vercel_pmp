@@ -1,12 +1,14 @@
 /**
- * Heatmap Metric Toggle Switch Component
- * Minimal segmented control for metric selection (mobile-friendly, no knob)
+ * Heatmap Metric Selector — dropdown for choosing what colors the tiles
+ * (day %, week %, mcap Δ, health/valuation/profitability scores, Piotroski,
+ * Z-score). Mobile-friendly native <select>.
  */
 
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import type { HeatmapMetric } from '@/lib/heatmap/types';
+import { HEATMAP_METRICS } from '@/lib/heatmap/metricValue';
 import { event } from '@/lib/ga';
 
 interface HeatmapMetricButtonsProps {
@@ -21,7 +23,7 @@ export function HeatmapMetricButtons({
   metric,
   onMetricChange,
   className = '',
-  variant = 'light', // Default to light for homepage
+  variant = 'light',
   size = 'md',
 }: HeatmapMetricButtonsProps) {
   const [mounted, setMounted] = useState(false);
@@ -39,15 +41,11 @@ export function HeatmapMetricButtons({
     );
   }
 
-  const isPercent = metric === 'percent';
   const isDark = variant === 'dark';
 
-  const handleToggle = (e?: React.MouseEvent | React.KeyboardEvent) => {
-    if (e) {
-      e.stopPropagation();
-      e.preventDefault();
-    }
-    const newMetric = isPercent ? 'mcap' : 'percent';
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newMetric = e.target.value as HeatmapMetric;
+    if (newMetric === metric) return;
     onMetricChange(newMetric);
 
     // Track heatmap metric change event
@@ -57,56 +55,31 @@ export function HeatmapMetricButtons({
     });
   };
 
-  // Colors (segmented control)
-  // Requirement: inactive must be clearly gray; only active is blue.
-  const surface = isDark ? 'bg-white/10' : 'bg-slate-100';
-  const border = isDark ? 'border-white/15' : 'border-slate-200';
-  const active = 'bg-blue-600 text-white';
-  const inactive = isDark ? 'bg-white/10 text-white/75' : 'bg-slate-200 text-slate-700';
-
-  // Size classes
-  const btnClasses = size === 'sm'
-    ? 'min-w-[28px] px-2 py-0.5 text-[10px]'
-    : 'min-w-[32px] px-2.5 py-1 text-xs';
+  const surface = isDark
+    ? 'bg-white/10 text-white border-white/15'
+    : 'bg-slate-100 text-slate-800 border-slate-200';
+  const sizeClasses = size === 'sm'
+    ? 'h-7 px-2 text-[11px]'
+    : 'h-8 px-2.5 text-xs';
 
   return (
-    <div
-      className={`inline-flex items-center ${className}`}
-      role="tablist"
-      aria-label="Heatmap metric"
-    >
-      <div className={`inline-flex items-center rounded-lg border ${surface} ${border} p-0.5`}>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={isPercent}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (!isPercent) onMetricChange('percent');
-          }}
-          className={`${btnClasses} font-bold rounded-md transition-all duration-200 ${isPercent ? active : inactive}`}
-          aria-label="Percent Change"
-          title="Percentage Change"
-        >
-          %
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={!isPercent}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (isPercent) onMetricChange('mcap');
-          }}
-          className={`${btnClasses} font-bold rounded-md transition-all duration-200 ${!isPercent ? active : inactive}`}
-          aria-label="Market Cap Change"
-          title="Market Cap Change"
-        >
-          $
-        </button>
-      </div>
+    <div className={`inline-flex items-center ${className}`}>
+      <select
+        value={metric}
+        onChange={handleChange}
+        aria-label="Heatmap metric"
+        className={`${sizeClasses} font-bold rounded-lg border ${surface} cursor-pointer appearance-none pr-6 bg-no-repeat`}
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='${isDark ? '%23ffffff' : '%23334155'}' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`,
+          backgroundPosition: 'right 8px center',
+        }}
+      >
+        {HEATMAP_METRICS.map((m) => (
+          <option key={m.id} value={m.id} className="text-slate-800 bg-white">
+            {m.label}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }

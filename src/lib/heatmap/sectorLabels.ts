@@ -1,6 +1,7 @@
 import type { CompanyNode, HeatmapMetric, TreemapNode } from '@/lib/heatmap/types';
 import { formatMarketCapDiff, formatPercent } from '@/lib/utils/heatmapFormat';
 import { formatSectorName } from '@/lib/utils/format';
+import { getCompanyMetricValue } from './metricValue';
 
 /**
  * Calculate sector summary (weighted avg % change or total mcap delta).
@@ -22,13 +23,31 @@ export function calculateSectorSummary(sectorNode: TreemapNode, metric: HeatmapM
 
   if (sectorCompanies.length === 0) return null;
 
-  const totalDelta = sectorCompanies.reduce((sum, c) => {
-    if (!c || typeof c.marketCapDiff !== 'number') return sum;
-    return sum + c.marketCapDiff;
-  }, 0);
+  if (metric === 'mcap') {
+    const totalDelta = sectorCompanies.reduce((sum, c) => sum + (c.marketCapDiff ?? 0), 0);
+    if (Math.abs(totalDelta) < 0.01) return null;
+    return formatMarketCapDiff(totalDelta);
+  }
 
-  if (Math.abs(totalDelta) < 0.01) return null;
-  return formatMarketCapDiff(totalDelta);
+  // Other metrics: market-cap-weighted average of the selected metric value.
+  let totalMcap = 0;
+  let weighted = 0;
+  for (const c of sectorCompanies) {
+    const v = getCompanyMetricValue(c, metric);
+    if (v === null || !isFinite(v)) continue;
+    const w = c.marketCap || 0;
+    weighted += v * w;
+    totalMcap += w;
+  }
+  if (totalMcap <= 0) return null;
+  const avg = weighted / totalMcap;
+
+  switch (metric) {
+    case 'week':      return formatPercent(avg);
+    case 'piotroski': return `${avg.toFixed(1)}/9`;
+    case 'zscore':    return `${avg > 0 ? '+' : ''}${avg.toFixed(1)}σ`;
+    default:          return `${Math.round(avg)}`;
+  }
 }
 
 /**

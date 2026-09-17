@@ -34,6 +34,12 @@ export function transformStockDataToCompanyNode(stock: StockData): CompanyNode |
     marketCapDiff: marketCapDiff,
     marketCapDiffAbs: marketCapDiffAbs,
     currentPrice: stock.currentPrice,
+    weekChange: stock.weekChange ?? undefined,
+    healthScore: stock.healthScore ?? undefined,
+    valuationScore: stock.valuationScore ?? undefined,
+    profitabilityScore: stock.profitabilityScore ?? undefined,
+    piotroskiScore: stock.piotroskiScore ?? undefined,
+    zScore: stock.zScore ?? undefined,
   };
 }
 
@@ -67,6 +73,12 @@ export function useHeatmapData({
         marketCapDiff,
         marketCapDiffAbs: Math.abs(marketCapDiff),
         currentPrice: row.p,
+        weekChange: row.w ?? undefined,
+        healthScore: row.hs ?? undefined,
+        valuationScore: row.vs ?? undefined,
+        profitabilityScore: row.ps ?? undefined,
+        piotroskiScore: row.pi ?? undefined,
+        zScore: row.z ?? undefined,
       });
     }
     return companies.length > 0 ? companies : null;
@@ -233,6 +245,12 @@ export function useHeatmapData({
             marketCapDiff: marketCapDiff,
             marketCapDiffAbs: Math.abs(marketCapDiff),
             currentPrice: row.p,
+            weekChange: row.w ?? undefined,
+            healthScore: row.hs ?? undefined,
+            valuationScore: row.vs ?? undefined,
+            profitabilityScore: row.ps ?? undefined,
+            piotroskiScore: row.pi ?? undefined,
+            zScore: row.z ?? undefined,
           });
         }
       } else if (result.data && Array.isArray(result.data)) {

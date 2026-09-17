@@ -6,9 +6,10 @@
 import { useState, useEffect } from 'react';
 import type { HeatmapMetric } from '@/lib/heatmap/types';
 import { safeGetItem, safeSetItem } from '@/lib/utils/safeStorage';
+import { DEFAULT_HEATMAP_METRIC, isHeatmapMetric } from '@/lib/heatmap/metricValue';
 
 const METRIC_STORAGE_KEY = 'heatmap-metric-preference';
-const DEFAULT_METRIC: HeatmapMetric = 'percent';
+const DEFAULT_METRIC: HeatmapMetric = DEFAULT_HEATMAP_METRIC;
 
 /**
  * Hook for managing heatmap metric state with localStorage persistence
@@ -20,8 +21,8 @@ export function useHeatmapMetric(initialMetric: HeatmapMetric = DEFAULT_METRIC) 
   // Load from localStorage after hydration
   useEffect(() => {
     const stored = safeGetItem(METRIC_STORAGE_KEY);
-    if (stored && (stored === 'percent' || stored === 'mcap')) {
-      setMetricState(stored as HeatmapMetric);
+    if (stored && isHeatmapMetric(stored)) {
+      setMetricState(stored);
     }
     setIsHydrated(true);
   }, []);

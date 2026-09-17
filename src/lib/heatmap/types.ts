@@ -1,7 +1,15 @@
 import type { HierarchyNode } from 'd3-hierarchy';
 
 export type HeatmapTimeframe = 'day' | 'week' | 'month';
-export type HeatmapMetric = 'percent' | 'mcap';
+export type HeatmapMetric =
+  | 'percent'        // day change % vs prevClose
+  | 'mcap'           // market cap change ($B)
+  | 'week'           // 1-week change % (price vs close 5 sessions back)
+  | 'health'         // AnalysisCache.healthScore (0-100)
+  | 'valuation'      // AnalysisCache.valuationScore (0-100)
+  | 'profitability'  // AnalysisCache.profitabilityScore (0-100)
+  | 'piotroski'      // AnalysisCache.piotroskiScore (0-9)
+  | 'zscore';        // Ticker.latestMoversZScore
 export type SectorLabelVariant = 'compact' | 'full';
 
 /**
@@ -24,6 +32,13 @@ export type CompanyNode = {
   lastUpdated?: string;
   /** Custom formatted value to display (overrides default formatting) */
   displayValue?: string;
+  /** 1-week % change (current price vs close ~5 sessions back) */
+  weekChange?: number | undefined;
+  healthScore?: number | undefined;
+  valuationScore?: number | undefined;
+  profitabilityScore?: number | undefined;
+  piotroskiScore?: number | undefined;
+  zScore?: number | undefined;
 };
 
 /**

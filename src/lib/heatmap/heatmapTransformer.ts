@@ -19,6 +19,12 @@ export interface HeatmapPayloadRow {
   lastUpdated?: string;
   isStale?: boolean;
   priceSource?: string;
+  weekChange?: number;
+  healthScore?: number;
+  valuationScore?: number;
+  profitabilityScore?: number;
+  piotroskiScore?: number;
+  zScore?: number;
   _timestamp?: string;
 }
 
@@ -122,6 +128,26 @@ export function buildPriceMap(
 }
 
 /**
+ * Map symbol → regular close from ~5 sessions back (1-week reference).
+ * dailyRefs arrive ordered by date desc, so the 5th non-null regularClose
+ * is the close from 5 trading days ago.
+ */
+function buildWeekRefCloseMap(dailyRefs: Pick<DailyRef, 'symbol' | 'date' | 'regularClose'>[]): Map<string, number> {
+  const bySymbol = new Map<string, number[]>();
+  for (const ref of dailyRefs) {
+    if (ref.regularClose == null || ref.regularClose <= 0) continue;
+    const arr = bySymbol.get(ref.symbol);
+    if (arr) arr.push(ref.regularClose); else bySymbol.set(ref.symbol, [ref.regularClose]);
+  }
+  const map = new Map<string, number>();
+  for (const [sym, closes] of bySymbol) {
+    const ref = closes[4] ?? closes[closes.length - 1];
+    if (ref) map.set(sym, ref);
+  }
+  return map;
+}
+
+/**
  * Compute transform context (session, ET dates, trading day references).
  */
 export function computeTransformContext(): TransformContext {
@@ -162,6 +188,7 @@ export function transformToHeatmap(
   ctx: TransformContext,
   now: Date,
   debug: boolean,
+  weekRefs?: Pick<DailyRef, 'symbol' | 'date' | 'regularClose'>[],
   precomputedMaps?: {
     previousCloseMap: Map<string, number>;
     regularCloseMap: Map<string, number>;
@@ -174,6 +201,7 @@ export function transformToHeatmap(
   const previousCloseMap = precomputedMaps?.previousCloseMap ?? prevCloseResult!.previousCloseMap;
   const regularCloseMap = precomputedMaps?.regularCloseMap ?? prevCloseResult!.regularCloseMap;
   const priceMap = precomputedMaps?.priceMap ?? buildPriceMap(tickerMap, sessionPrices);
+  const weekRefCloseMap = buildWeekRefCloseMap(weekRefs ?? dailyRefs);
   const debugStats = prevCloseResult?.debugStats ?? { totalDailyRefs: 0, dailyRefsUsedConfig: {}, counts: { totalTickers: 0, dailyRefToday: 0, dailyRefOlder: 0, tickerFallback: 0, missing: 0 } };
   debugStats.counts.totalTickers = tickerSymbols.length;
 
@@ -342,6 +370,11 @@ export function transformToHeatmap(
     const isStale = currentPrice > 0 && priceTsMs > 0 && (nowMs - priceTsMs) > thresholdMin * 60_000;
     const lastUpdatedIso = priceTsMs ? new Date(priceTsMs).toISOString() : undefined;
 
+    const weekRef = weekRefCloseMap.get(ticker);
+    const weekChange = (weekRef && currentPrice > 0)
+      ? ((currentPrice / weekRef) - 1) * 100
+      : undefined;
+
     results.push({
       ticker,
       companyName: tickerInfo.name || ticker,
@@ -354,6 +387,12 @@ export function transformToHeatmap(
       ...(lastUpdatedIso ? { lastUpdated: lastUpdatedIso } : {}),
       ...(isStale ? { isStale } : {}),
       ...(priceSource !== 'unknown' ? { priceSource } : {}),
+      ...(weekChange !== undefined && isFinite(weekChange) ? { weekChange } : {}),
+      ...(tickerInfo.healthScore != null ? { healthScore: tickerInfo.healthScore } : {}),
+      ...(tickerInfo.valuationScore != null ? { valuationScore: tickerInfo.valuationScore } : {}),
+      ...(tickerInfo.profitabilityScore != null ? { profitabilityScore: tickerInfo.profitabilityScore } : {}),
+      ...(tickerInfo.piotroskiScore != null ? { piotroskiScore: tickerInfo.piotroskiScore } : {}),
+      ...(tickerInfo.latestMoversZScore != null ? { zScore: tickerInfo.latestMoversZScore } : {}),
     });
 
     processed++;
@@ -405,6 +444,12 @@ export function buildPayload(
     ...(s.lastUpdated ? { lastUpdated: s.lastUpdated } : {}),
     ...(s.isStale ? { isStale: s.isStale } : {}),
     ...(s.priceSource ? { priceSource: s.priceSource } : {}),
+    ...(s.weekChange !== undefined ? { weekChange: s.weekChange } : {}),
+    ...(s.healthScore !== undefined ? { healthScore: s.healthScore } : {}),
+    ...(s.valuationScore !== undefined ? { valuationScore: s.valuationScore } : {}),
+    ...(s.profitabilityScore !== undefined ? { profitabilityScore: s.profitabilityScore } : {}),
+    ...(s.piotroskiScore !== undefined ? { piotroskiScore: s.piotroskiScore } : {}),
+    ...(s.zScore !== undefined ? { zScore: s.zScore } : {}),
     _timestamp: dataTimestamp,
   }));
 
@@ -417,6 +462,12 @@ export function buildPayload(
     c: s.percentChange,
     d: s.marketCapDiff,
     p: s.currentPrice,
+    w: s.weekChange ?? null,
+    hs: s.healthScore ?? null,
+    vs: s.valuationScore ?? null,
+    ps: s.profitabilityScore ?? null,
+    pi: s.piotroskiScore ?? null,
+    z: s.zScore ?? null,
   }));
 
   return { payload, rows };

@@ -5,6 +5,7 @@ import {
   fetchPriceData,
   fetchCachedStockData,
   fetchPrevCloseOnDemand,
+  fetchWeekRefCloses,
   computeDateBoundaries,
   deduplicateSessionPrices,
   deduplicateDailyRefs,
@@ -87,6 +88,8 @@ export async function GET(request: NextRequest) {
             const compactRows = limited.map((s: any) => ({
               t: s.ticker, n: s.companyName, s: s.sector, i: s.industry,
               m: s.marketCap, c: s.percentChange, d: s.marketCapDiff, p: s.currentPrice,
+              w: s.weekChange ?? null, hs: s.healthScore ?? null, vs: s.valuationScore ?? null,
+              ps: s.profitabilityScore ?? null, pi: s.piotroskiScore ?? null, z: s.zScore ?? null,
             }));
             return NextResponse.json({
               success: true,
@@ -167,10 +170,14 @@ export async function GET(request: NextRequest) {
     // 5. Fetch SessionPrice + DailyRef AND cached stock data in parallel
     const [
       { sessionPrices: rawSessionPrices, dailyRefs: rawDailyRefs },
-      cachedStockDataMap
+      cachedStockDataMap,
+      slimWeekRefs
     ] = await Promise.all([
       fetchPriceData(tickerSymbols, canUseFastPath, timeframe, dayAgo, tomorrow, oneWeekAgo, today),
       fetchCachedStockData(tickerSymbols, tickerMap),
+      // Fast path skips the full DailyRef query — fetch a slim week-reference
+      // projection so the 'week' metric still has data.
+      canUseFastPath ? fetchWeekRefCloses(tickerSymbols, oneWeekAgo, today) : Promise.resolve(null),
     ]);
 
     const sessionPrices = deduplicateSessionPrices(rawSessionPrices);
@@ -214,6 +221,7 @@ export async function GET(request: NextRequest) {
     const transformResult = transformToHeatmap(
       tickerSymbols, tickerMap, sessionPrices, rawDailyRefs,
       cachedStockDataMap, prevCloseBatchMap, ctx, now, debug,
+      slimWeekRefs ?? undefined,
       { previousCloseMap: prelimPrevCloseMaps.previousCloseMap, regularCloseMap: prelimPrevCloseMaps.regularCloseMap, priceMap }
     );
 

@@ -19,6 +19,11 @@ export interface TickerInfo {
   lastChangePct: number | null;
   lastMarketCap: number | null;
   lastMarketCapDiff: number | null;
+  latestMoversZScore: number | null;
+  healthScore: number | null;
+  valuationScore: number | null;
+  profitabilityScore: number | null;
+  piotroskiScore: number | null;
 }
 
 export interface HeatmapFetchResult {
@@ -57,6 +62,15 @@ export async function fetchTickers(maxTickers: number): Promise<{
       lastChangePct: true,
       lastMarketCap: true,
       lastMarketCapDiff: true,
+      latestMoversZScore: true,
+      analysisCache: {
+        select: {
+          healthScore: true,
+          valuationScore: true,
+          profitabilityScore: true,
+          piotroskiScore: true,
+        },
+      },
     },
     take: maxTickers,
   });
@@ -83,6 +97,11 @@ export async function fetchTickers(maxTickers: number): Promise<{
       lastChangePct: t.lastChangePct,
       lastMarketCap: t.lastMarketCap,
       lastMarketCapDiff: t.lastMarketCapDiff,
+      latestMoversZScore: t.latestMoversZScore,
+      healthScore: t.analysisCache?.healthScore ?? null,
+      valuationScore: t.analysisCache?.valuationScore ?? null,
+      profitabilityScore: t.analysisCache?.profitabilityScore ?? null,
+      piotroskiScore: t.analysisCache?.piotroskiScore ?? null,
     });
   }
 
@@ -129,6 +148,26 @@ export async function fetchPriceData(
 
   console.log('🚀 Fast Path: Using denormalized Ticker data (skipping SessionPrice/DailyRef)');
   return { sessionPrices: [], dailyRefs: [] };
+}
+
+/**
+ * Slim DailyRef fetch for the 1-week metric on the fast path
+ * (where the full DailyRef query is skipped). Returns only the
+ * fields buildWeekRefCloseMap needs, ordered newest first.
+ */
+export async function fetchWeekRefCloses(
+  tickerSymbols: string[],
+  oneWeekAgo: Date,
+  today: Date
+): Promise<Pick<DailyRef, 'symbol' | 'date' | 'regularClose'>[]> {
+  return prisma.dailyRef.findMany({
+    where: {
+      symbol: { in: tickerSymbols },
+      date: { gte: oneWeekAgo, lte: today },
+    },
+    select: { symbol: true, date: true, regularClose: true },
+    orderBy: { date: 'desc' },
+  });
 }
 
 /**

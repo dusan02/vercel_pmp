@@ -28,6 +28,14 @@ export interface StockData {
   source?: DataSource;
   as_of?: string;
 
+  // Extended heatmap metrics (from /api/heatmap payload)
+  weekChange?: number;
+  healthScore?: number;
+  valuationScore?: number;
+  profitabilityScore?: number;
+  piotroskiScore?: number;
+  zScore?: number;
+
   /**
    * Optional pricing metadata for UX (labels/badges).
    * - referenceUsed/referencePrice explain what the % change is computed against.

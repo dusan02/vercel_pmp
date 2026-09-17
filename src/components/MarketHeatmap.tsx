@@ -158,7 +158,7 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
     () =>
       createHeatmapColorScale(
         timeframe,
-        metric === 'mcap' ? 'mcap' : 'percent',
+        metric,
         metric === 'mcap' ? (data ?? []).map((d) => d.marketCapDiff ?? 0) : undefined,
       ),
     [timeframe, metric, data],
@@ -362,15 +362,11 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
       {/* Legend overlay — derived from the same adaptive scale as the tiles,
           so it always matches what the map actually shows */}
       <div className="absolute bottom-2 left-2 z-20 pointer-events-none">
-        {metric === 'mcap' ? (
-          <HeatmapLegend
-            timeframe={timeframe}
-            metric={metric}
-            values={(data ?? []).map((d) => d.marketCapDiff ?? 0)}
-          />
-        ) : (
-          <HeatmapLegend timeframe={timeframe} metric={metric} />
-        )}
+        <HeatmapLegend
+          timeframe={timeframe}
+          metric={metric}
+          values={metric === 'mcap' ? (data ?? []).map((d) => d.marketCapDiff ?? 0) : undefined}
+        />
       </div>
     </div>
   );

@@ -3,6 +3,7 @@
 import React, { useMemo } from 'react';
 import type { HeatmapMetric, SectorLabelVariant, TreemapNode, HierarchyData } from '@/lib/heatmap/types';
 import { LAYOUT_CONFIG } from '@/lib/utils/heatmapConfig';
+import { getCompanyMetricValue } from '@/lib/heatmap/metricValue';
 import { calculateMaxCharsForWidth, calculateSectorSummary, truncateSectorName } from '@/lib/heatmap/sectorLabels';
 import styles from '@/styles/heatmap.module.css';
 
@@ -77,7 +78,7 @@ export function SectorLabel({
             const company = leaf.data?.meta?.companyData;
             if (!company) continue;
             const w = company.marketCap || 0;
-            const v = metric === 'mcap' ? (company.marketCapDiff ?? 0) : (company.changePercent || 0);
+            const v = getCompanyMetricValue(company, metric) ?? 0;
             weightedChange += v * w;
             totalMcap += w;
         }

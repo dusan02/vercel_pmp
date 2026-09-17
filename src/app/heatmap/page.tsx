@@ -7,6 +7,7 @@ import ResponsiveMarketHeatmap from '@/components/ResponsiveMarketHeatmap';
 import type { CompanyNode } from '@/lib/heatmap/types';
 import { useHeatmapMetric } from '@/hooks/useHeatmapMetric';
 import { HeatmapMetricButtons } from '@/components/HeatmapMetricButtons';
+import { HEATMAP_METRICS } from '@/lib/heatmap/metricValue';
 import { logger } from '@/lib/utils/logger';
 import { event } from '@/lib/ga';
 
@@ -110,7 +111,7 @@ export default function HeatmapPage() {
         <div className="flex items-center gap-4">
           <div>
             <h1 className="text-xl font-bold mb-0 leading-none">
-              Heatmap<span className="text-green-500">.{metric === 'percent' ? '% Change' : 'Mcap Change'}</span>
+              Heatmap<span className="text-green-500">.{HEATMAP_METRICS.find(m => m.id === metric)?.label ?? 'Day change %'}</span>
             </h1>
             <p className="text-[9px] text-gray-400 hidden sm:block">
               Interactive visualization

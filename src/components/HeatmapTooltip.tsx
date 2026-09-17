@@ -6,8 +6,9 @@
 'use client';
 
 import React from 'react';
-import type { CompanyNode } from '@/lib/heatmap/types';
-import { formatPrice, formatMarketCap, formatPercent, formatMarketCapDiff } from '@/lib/utils/heatmapFormat';
+import type { CompanyNode, HeatmapMetric } from '@/lib/heatmap/types';
+import { formatPrice, formatMarketCap } from '@/lib/utils/heatmapFormat';
+import { getCompanyMetricValue, formatMetricValue } from '@/lib/heatmap/metricValue';
 import { formatSectorName } from '@/lib/utils/format';
 import styles from '@/styles/heatmap.module.css';
 import CompanyLogo from './CompanyLogo';
@@ -16,7 +17,7 @@ interface HeatmapTooltipProps {
   company: CompanyNode;
   position: { x: number; y: number };
   timeframe: 'day' | 'week' | 'month';
-  metric: 'percent' | 'mcap';
+  metric: HeatmapMetric;
 }
 
 export function HeatmapTooltip({ company, position, timeframe, metric }: HeatmapTooltipProps) {
@@ -71,7 +72,7 @@ export function HeatmapTooltip({ company, position, timeframe, metric }: Heatmap
   };
 
   // Calculate sentiment color
-  const changeValue = metric === 'mcap' ? (company.marketCapDiff || 0) : company.changePercent;
+  const changeValue = getCompanyMetricValue(company, metric) ?? 0;
   const isPositive = changeValue >= 0;
   const sentimentColor = isPositive ? '#22c55e' : '#ef4444';
 
@@ -102,7 +103,7 @@ export function HeatmapTooltip({ company, position, timeframe, metric }: Heatmap
             </div>
           </div>
           <span style={{ color: sentimentColor, fontSize: '0.9em' }}>
-            {metric === 'percent' ? formatPercent(company.changePercent) : formatMarketCapDiff(company.marketCapDiff)}
+            {formatMetricValue(company, metric)}
           </span>
         </div>
 
