@@ -123,6 +123,10 @@ export async function updateRankIndexes(
     const capKeyDesc = getRankKey('cap', date, session) + ':desc';
     const capdiffKeyAsc = getRankKey('capdiff', date, session) + ':asc';
     const capdiffKeyDesc = getRankKey('capdiff', date, session) + ':desc';
+    const zscoreKeyAsc = getRankKey('zscore', date, session) + ':asc';
+    const zscoreKeyDesc = getRankKey('zscore', date, session) + ':desc';
+    const rvolKeyAsc = getRankKey('rvol', date, session) + ':asc';
+    const rvolKeyDesc = getRankKey('rvol', date, session) + ':desc';
 
     // Asc: positive scores, Desc: negated scores (for simpler ZRANGE)
     multi.zAdd(chgKeyAsc, { score: scoreChg, value: symbol });
@@ -133,6 +137,10 @@ export async function updateRankIndexes(
     multi.zAdd(capKeyDesc, { score: -scoreCap, value: symbol });
     multi.zAdd(capdiffKeyAsc, { score: scoreCapDiff, value: symbol });
     multi.zAdd(capdiffKeyDesc, { score: -scoreCapDiff, value: symbol });
+    multi.zAdd(zscoreKeyAsc, { score: scoreZScore, value: symbol });
+    multi.zAdd(zscoreKeyDesc, { score: -scoreZScore, value: symbol });
+    multi.zAdd(rvolKeyAsc, { score: scoreRVOL, value: symbol });
+    multi.zAdd(rvolKeyDesc, { score: -scoreRVOL, value: symbol });
 
     // Set TTL on ZSETs
     multi.expire(chgKeyAsc, ttl);
@@ -143,6 +151,10 @@ export async function updateRankIndexes(
     multi.expire(capKeyDesc, ttl);
     multi.expire(capdiffKeyAsc, ttl);
     multi.expire(capdiffKeyDesc, ttl);
+    multi.expire(zscoreKeyAsc, ttl);
+    multi.expire(zscoreKeyDesc, ttl);
+    multi.expire(rvolKeyAsc, ttl);
+    multi.expire(rvolKeyDesc, ttl);
 
     // Increment version for ETag (one per sort field)
     multi.incr(`meta:${chgKeyAsc}:v`);
@@ -153,6 +165,10 @@ export async function updateRankIndexes(
     multi.incr(`meta:${capKeyDesc}:v`);
     multi.incr(`meta:${capdiffKeyAsc}:v`);
     multi.incr(`meta:${capdiffKeyDesc}:v`);
+    multi.incr(`meta:${zscoreKeyAsc}:v`);
+    multi.incr(`meta:${zscoreKeyDesc}:v`);
+    multi.incr(`meta:${rvolKeyAsc}:v`);
+    multi.incr(`meta:${rvolKeyDesc}:v`);
 
     // Update stats cache if needed (min/max tracking)
     if (updateStats) {
@@ -210,8 +226,12 @@ export async function incUpdateRanks(
     // Update ZSET scores (both asc and desc variants)
     for (const u of updates) {
       if (u.mcap !== undefined) {
-        multi.zAdd(`rank:capdiff:${date}:${session}:asc`, { score: u.mcap, value: u.sym });
-        multi.zAdd(`rank:capdiff:${date}:${session}:desc`, { score: -u.mcap, value: u.sym });
+        multi.zAdd(`rank:cap:${date}:${session}:asc`, { score: u.mcap, value: u.sym });
+        multi.zAdd(`rank:cap:${date}:${session}:desc`, { score: -u.mcap, value: u.sym });
+      }
+      if (u.mcapDiff !== undefined) {
+        multi.zAdd(`rank:capdiff:${date}:${session}:asc`, { score: u.mcapDiff, value: u.sym });
+        multi.zAdd(`rank:capdiff:${date}:${session}:desc`, { score: -u.mcapDiff, value: u.sym });
       }
       if (u.chg !== undefined) {
         const scoreChg = Math.round(u.chg * 10000);
@@ -225,6 +245,8 @@ export async function incUpdateRanks(
     }
 
     // Increment versions for ETag (once per batch, not per symbol)
+    multi.incr(`meta:rank:cap:${date}:${session}:asc:v`);
+    multi.incr(`meta:rank:cap:${date}:${session}:desc:v`);
     multi.incr(`meta:rank:capdiff:${date}:${session}:asc:v`);
     multi.incr(`meta:rank:capdiff:${date}:${session}:desc:v`);
     multi.incr(`meta:rank:chg:${date}:${session}:asc:v`);
@@ -355,16 +377,13 @@ export async function getRankedSymbols(
       return [];
     }
 
-    const key = getRankKey(field, date, session);
+    // Writer stores per-direction ZSETs: `:asc` raw scores, `:desc` negated.
+    // Ascending scan on each returns the correct order — no REV needed.
+    const key = getRankKey(field, date, session) + (order === 'desc' ? ':desc' : ':asc');
     const end = cursor + limit - 1;
 
-    if (order === 'desc') {
-      const result = await redisClient.zRange(key, cursor, end, { REV: true });
-      return result.map((r: any) => typeof r === 'string' ? r : r.value || r);
-    } else {
-      const result = await redisClient.zRange(key, cursor, end);
-      return result.map((r: any) => typeof r === 'string' ? r : r.value || r);
-    }
+    const result = await redisClient.zRange(key, cursor, end);
+    return result.map((r: any) => typeof r === 'string' ? r : r.value || r);
   } catch (error) {
     console.error(`Error getting ranked symbols:`, error);
     return [];
@@ -384,7 +403,8 @@ export async function getRankCount(
       return 0;
     }
 
-    const key = getRankKey(field, date, session);
+    // Both directional ZSETs have identical cardinality — count either.
+    const key = getRankKey(field, date, session) + ':asc';
     return await redisClient.zCard(key);
   } catch (error) {
     console.error(`Error getting rank count:`, error);
@@ -405,7 +425,8 @@ export async function getRankMinMax(
       return { min: null, max: null };
     }
 
-    const key = getRankKey(field, date, session);
+    // `:asc` holds raw scores — min is the biggest loser, max the biggest gainer.
+    const key = getRankKey(field, date, session) + ':asc';
 
     // Get min (first in ascending order)
     const minRange = await redisClient.zRangeWithScores(key, 0, 0);
