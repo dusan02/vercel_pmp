@@ -381,7 +381,9 @@ export default async function PremarketMoversPage() {
             </h2>
             <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
               Browse pre-market gainers and losers from previous trading days. Each date shows the top mover in each direction.
-              {' '}<Link href="/premarket-gainers" className="text-emerald-600 dark:text-emerald-400 hover:underline">Full gainers archive</Link>
+              {' '}<Link href="/premarket-movers/weekly" className="text-blue-600 dark:text-blue-400 hover:underline">Biggest movers this week</Link>
+              {' · '}
+              <Link href="/premarket-gainers" className="text-emerald-600 dark:text-emerald-400 hover:underline">Full gainers archive</Link>
               {' · '}
               <Link href="/premarket-losers" className="text-rose-600 dark:text-rose-400 hover:underline">Full losers archive</Link>
             </p>
