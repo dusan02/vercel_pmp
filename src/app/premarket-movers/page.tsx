@@ -23,8 +23,21 @@ function getTodayShort(): string {
 
 export async function generateMetadata(): Promise<Metadata> {
   const today = getTodayFormatted();
+  let moversSnippet = '';
+  try {
+    const [gainers, losers] = await Promise.all([
+      getTopMovers('desc', 1),
+      getTopMovers('asc', 1),
+    ]);
+    const parts: string[] = [];
+    if (gainers[0]?.changePct != null) parts.push(`${gainers[0].symbol} +${gainers[0].changePct.toFixed(1)}%`);
+    if (losers[0]?.changePct != null) parts.push(`${losers[0].symbol} ${losers[0].changePct.toFixed(1)}%`);
+    if (parts.length > 0) moversSnippet = `: ${parts.join(', ')}`;
+  } catch {
+    // Redis unavailable at build/render — fall back to static title
+  }
   return generatePageMetadata({
-    title: `Stocks Moving in Premarket Today (${getTodayShort()})`,
+    title: `Premarket Movers Today${moversSnippet} (${getTodayShort()})`,
     description:
       `Biggest pre-market stock movers for ${today} — top gainers and losers ranked by % change with Z-scores and momentum insights. Real-time data from NYSE & NASDAQ.`,
     path: '/premarket-movers',

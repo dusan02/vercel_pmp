@@ -459,6 +459,12 @@ export default async function AnalysisPage({ params }: PageProps) {
           {/* Cross-link to valuation and financials pages + share */}
           <div className="mb-6 pt-6 border-t border-gray-100 dark:border-gray-700 text-sm flex flex-wrap items-center gap-4">
             <Link
+              href={`/premarket/${tickerUpper}`}
+              className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              {companyName} ({tickerUpper}) Premarket Movers →
+            </Link>
+            <Link
               href={`/valuation/${tickerUpper}`}
               className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
             >

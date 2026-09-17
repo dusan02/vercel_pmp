@@ -168,7 +168,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const moves = await getRecentMoves(tickerUpper);
   const hasEnoughData = moves.length >= MIN_MOVES_FOR_INDEX;
 
-  const title = `${tickerUpper} Premarket Movers — ${short}`;
+  const pct = data.lastChangePct;
+  const pctStr = pct != null ? ` (${pct >= 0 ? '+' : ''}${pct.toFixed(2)}% today)` : '';
+  const title = `${tickerUpper} Premarket Movers — ${short}${pctStr}`;
   const description = `${short} (${tickerUpper}) pre-market movers — unusual pre-market, regular session, and after-hours price action with Z-scores and relative volume. ${moves.length} significant moves in the last 30 days.`;
 
   const metadata = generatePageMetadata({
