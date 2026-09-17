@@ -127,6 +127,7 @@ export function formatSectorName(sector: string | null | undefined): string {
     'Communication Services': 'Comm Serv',
     'Consumer Cyclical': 'Cons Cyclical',
     'Consumer Defensive': 'Cons Defensive',
+    'Basic Materials': 'Materials',
   };
   
   return sectorMap[sector] || sector;

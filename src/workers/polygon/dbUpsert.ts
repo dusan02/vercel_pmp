@@ -170,9 +170,11 @@ export async function upsertToDB(
     // 3.5. Resolve Change Pct
     let changePctToUse = normalized.changePct;
     const hasValidReference = normalized.reference && normalized.reference.used !== null;
-    const isPriceFromFallback = normalized.source === 'regularClose' && normalized.isStale;
 
-    if (!hasValidReference || isPriceFromFallback) {
+    // Only reuse the cached % when we have no valid reference — a fallback
+    // price (e.g. prevDay.c for untraded pre-market names) must still show
+    // its own changePct (≈0% vs prevClose), not yesterday's stale move.
+    if (!hasValidReference) {
       if (lastChangePctFromCache !== undefined && lastChangePctFromCache !== null) {
         changePctToUse = lastChangePctFromCache;
       } else if (existingTicker?.lastChangePct !== null && existingTicker?.lastChangePct !== undefined) {
