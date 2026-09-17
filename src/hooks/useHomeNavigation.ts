@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, startTransition } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export type ActiveSection =
   | 'heatmap'
@@ -28,6 +28,7 @@ interface UseHomeNavigationOptions {
 
 export function useHomeNavigation({ isMounted }: UseHomeNavigationOptions) {
   const searchParams = useSearchParams();
+  const router = useRouter();
   // Initialize from ?tab= synchronously — makes SSR render the correct section
   // (previously activeSection was always 'heatmap' on the server, so tabbed
   // content like earnings was never in SSR HTML)
@@ -96,6 +97,12 @@ export function useHomeNavigation({ isMounted }: UseHomeNavigationOptions) {
       const detail = e.detail;
       const tab = typeof detail === 'string' ? detail : detail.tab;
       const ticker = typeof detail === 'object' ? detail.ticker : undefined;
+      // Ticker clicks navigate to the canonical /analysis/[ticker] page —
+      // matches the middleware 301 for /?tab=analysis&ticker=X.
+      if (tab === 'analysis' && ticker) {
+        router.push(`/analysis/${ticker.toUpperCase()}`);
+        return;
+      }
       if (!setActiveTab(tab)) return;
       if (ticker) setAnalysisTicker(ticker.toUpperCase());
       const url = new URL(window.location.href);
@@ -106,23 +113,26 @@ export function useHomeNavigation({ isMounted }: UseHomeNavigationOptions) {
     };
     window.addEventListener('mobile-nav-change', handleNavChange as EventListener);
     return () => window.removeEventListener('mobile-nav-change', handleNavChange as EventListener);
-  }, [isMounted, setActiveTab]);
+  }, [isMounted, setActiveTab, router]);
 
   const handleMobileNavChange = useCallback((section: ActiveSection, ticker?: string) => {
+    // Ticker clicks go straight to the canonical /analysis/[ticker] page —
+    // shareable URL + real pageview (tab variant already 301s server-side).
+    if (section === 'analysis' && ticker) {
+      router.push(`/analysis/${ticker.toUpperCase()}`);
+      return;
+    }
     // startTransition keeps the UI responsive — first-activation mounts of
     // heavy tabs (heatmap, analysis) are non-blocking, input stays snappy.
     startTransition(() => {
       setActiveSection(section);
-      if (ticker) setAnalysisTicker(ticker.toUpperCase());
-      else if (section === 'analysis') setAnalysisTicker(null); // priamy klik na Analysis tab = prázdny search
+      if (section === 'analysis') setAnalysisTicker(null); // priamy klik na Analysis tab = prázdny search
     });
     const url = new URL(window.location.href);
     url.searchParams.set('tab', section);
-    if (ticker && section === 'analysis') url.searchParams.set('ticker', ticker.toUpperCase());
-    else if (section !== 'analysis') url.searchParams.delete('ticker');
-    else url.searchParams.delete('ticker'); // analysis bez tickeru = žiadny ticker param
+    url.searchParams.delete('ticker');
     window.history.pushState({}, '', url.toString());
-  }, []);
+  }, [router]);
 
   return {
     activeSection,
