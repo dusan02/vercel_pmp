@@ -131,10 +131,10 @@ function FooterContent() {
               Need help or have suggestions?
             </p>
             <a 
-              href="mailto:info@premarketprice.com" 
+              href="mailto:info@verifa.sk" 
               className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
             >
-              info@premarketprice.com
+              info@verifa.sk
             </a>
           </div>
         </div>
