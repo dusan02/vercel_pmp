@@ -73,6 +73,12 @@ export function HeatmapDomView({
                             onTileClick?.(company);
                             if (isMobile) onMobileTap?.(company, e.clientX, e.clientY);
                         }}
+                        onDoubleClick={(e) => {
+                            // Tile dblclick = navigate; don't let it bubble to the
+                            // wrapper's zoom-reset handler.
+                            e.stopPropagation();
+                            onTileClick?.(company);
+                        }}
                     />
                 );
             })}

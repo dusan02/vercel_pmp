@@ -26,6 +26,7 @@ interface HeatmapTileProps {
   onMouseEnter: () => void;
   onMouseLeave: () => void;
   onClick: (e: React.MouseEvent) => void;
+  onDoubleClick?: (e: React.MouseEvent) => void;
 }
 
 /**
@@ -41,6 +42,7 @@ export const HeatmapTile = React.memo<HeatmapTileProps>(({
   onMouseEnter,
   onMouseLeave,
   onClick,
+  onDoubleClick,
 }) => {
   const { x0, y0, x1, y1 } = leaf;
   const tileWidth = x1 - x0;
@@ -84,6 +86,7 @@ export const HeatmapTile = React.memo<HeatmapTileProps>(({
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       onClick={onClick}
+      onDoubleClick={onDoubleClick}
     >
       {(labelConfig.showSymbol || labelConfig.showPercent) ? (
         <div className={styles.heatmapTileContent}>

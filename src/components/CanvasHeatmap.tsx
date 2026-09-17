@@ -355,6 +355,12 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
             onClick={handleClick}
+            onDoubleClick={(e) => {
+                // Tile dblclick = navigate; don't bubble to the wrapper's
+                // zoom-reset handler (active while a sector is zoomed).
+                e.stopPropagation();
+                handleClick();
+            }}
             className="block cursor-pointer"
             style={{ width, height }}
         />
