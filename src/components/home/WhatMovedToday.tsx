@@ -63,7 +63,7 @@ export function WhatMovedToday({ movers, eligibleTickers }: WhatMovedTodayProps)
             </p>
           </div>
           <Link
-            href="/?tab=movers"
+            href="/premarket-movers"
             className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
           >
             All movers →

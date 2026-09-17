@@ -14,6 +14,7 @@ import { GA_ID } from '@/lib/ga'
 import { ThemeEffect } from '@/components/ThemeEffect'
 import { DevCacheClear } from '@/components/DevCacheClear'
 import { Footer } from '@/components/layout/Footer'
+import { ZhLanguageHint } from '@/components/layout/ZhLanguageHint'
 import { GlobalBottomNav } from '@/components/GlobalBottomNav'
 
 const inter = Inter({
@@ -272,6 +273,7 @@ export default function RootLayout({
             <Footer />
             <GlobalBottomNav />
             <ScrollToTopButton />
+            <ZhLanguageHint />
           </AuthProvider>
         </Providers>
       </body>

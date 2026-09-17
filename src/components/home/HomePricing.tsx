@@ -28,7 +28,7 @@ const PLANS: Plan[] = [
       'Favorites list',
     ],
     cta: 'Start Using Free',
-    ctaHref: '/?tab=heatmap',
+    ctaHref: '/heatmap',
   },
   {
     name: 'Pro',

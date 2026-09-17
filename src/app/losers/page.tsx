@@ -65,8 +65,24 @@ export default async function LosersPage() {
   const today = getTodayFormatted();
   const topLoser = rows[0];
 
+  const itemListSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: `Top Premarket Losers — ${today}`,
+    itemListElement: rows.slice(0, 20).map((r, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: `${r.name ?? r.symbol} (${r.symbol})`,
+      url: `https://premarketprice.com/analysis/${r.symbol}`,
+    })),
+  };
+
   return (
     <div className="min-h-screen bg-white dark:bg-slate-900">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
+      />
       <div className="container mx-auto py-8 px-4">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white">

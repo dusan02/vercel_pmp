@@ -56,12 +56,12 @@ function FooterContent() {
             </h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/?tab=movers" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                <Link href="/gainers" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                   Top Gainers
                 </Link>
               </li>
               <li>
-                <Link href="/?tab=movers" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                <Link href="/losers" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                   Top Losers
                 </Link>
               </li>
@@ -144,7 +144,14 @@ function FooterContent() {
           <p className="text-xs text-gray-500 dark:text-gray-400">
             &copy; {currentYear} PreMarketPrice. All rights reserved.
           </p>
-          <div className="mt-4 md:mt-0 flex space-x-6">
+          <div className="mt-4 md:mt-0 flex items-center space-x-6">
+            <Link
+              href="/zh"
+              hrefLang="zh-CN"
+              className="text-xs text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+            >
+              中文版
+            </Link>
             <span className="text-xs text-gray-400 dark:text-gray-500">
               Data provided for informational purposes only.
             </span>

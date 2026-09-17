@@ -48,6 +48,13 @@ Each trading day gets permanent dated pages — useful for "what moved on [date]
 - /gainers and /losers: today's regular-session leaders
 - /movers/[TICKER]: per-stock history of significant pre-market moves with catalysts (e.g. [AAPL](https://premarketprice.com/movers/AAPL))
 
+## Chinese version (中文版)
+
+Simplified Chinese pilot pages — same live data, Chinese UI:
+
+- [/zh](https://premarketprice.com/zh): Chinese index / 美股盘前行情
+- [/zh/premarket-movers](https://premarketprice.com/zh/premarket-movers): 今日美股盘前异动股
+
 ## Per-ticker pages
 
 Each tracked company has three data pages:
