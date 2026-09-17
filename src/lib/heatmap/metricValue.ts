@@ -120,7 +120,8 @@ export function getCompanyMetricValue(company: CompanyNode, metric: HeatmapMetri
     case 'revgrowth':     return company.revenueGrowth ?? null;
     case 'epsgrowth':     return company.earningsGrowth ?? null;
     case 'divyield':      return company.dividendYield ?? null;
-    case 'fcfmargin':     return company.fcfMargin ?? null;
+    // fcfMargin is stored as a fraction (0.15 = 15%); scales/formatters work in percent.
+    case 'fcfmargin':     return company.fcfMargin != null ? company.fcfMargin * 100 : null;
     case 'rvol':          return company.rvol ?? null;
     case 'beta':          return company.beta ?? null;
     case 'zscore':        return company.zScore ?? null;

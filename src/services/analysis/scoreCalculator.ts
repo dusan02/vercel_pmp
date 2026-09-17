@@ -88,7 +88,9 @@ export async function calculateScores(symbol: string): Promise<void> {
 
     let fcfMargin: number | null = null;
     if (fcf !== null && latestStmt.revenue && latestStmt.revenue > 0) {
-        fcfMargin = fcf / (ttmRevenue ?? latestStmt.revenue);
+        // Clamp to ±200% — beyond that the tiny-revenue denominator makes
+        // the ratio meaningless (observed artifacts like -31,000%).
+        fcfMargin = Math.max(-2, Math.min(2, fcf / (ttmRevenue ?? latestStmt.revenue)));
     }
 
     let fcfConversion: number | null = null;
