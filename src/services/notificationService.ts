@@ -111,4 +111,94 @@ export class NotificationService {
             console.error('[NotificationService] Critical error in rollout:', error);
         }
     }
+
+    /**
+     * Daily premarket movers digest — top gainers/losers pushed to all
+     * subscribers (web push + email when SMTP is configured).
+     */
+    static async notifyMoversDigest(
+        dateLabel: string,
+        movers: { symbol: string; name?: string | null; changePct: number }[],
+    ) {
+        if (movers.length === 0) {
+            console.log('[NotificationService] Digest skipped — no movers data.');
+            return;
+        }
+
+        try {
+            const subscriptions = await (prisma as any).subscription.findMany();
+            if (subscriptions.length === 0) {
+                console.log('[NotificationService] No subscribers found.');
+                return;
+            }
+
+            const top = movers.slice(0, 5);
+            const title = `📊 Premarket Movers — ${dateLabel}`;
+            const body = top
+                .map((m) => `$${m.symbol} ${m.changePct >= 0 ? '+' : ''}${m.changePct.toFixed(1)}%`)
+                .join('  ·  ');
+            const base = process.env.NEXTAUTH_URL || 'https://premarketprice.com';
+
+            for (const sub of subscriptions) {
+                if (sub.endpoint) {
+                    try {
+                        await webpush.sendNotification(
+                            { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+                            JSON.stringify({ title, body, url: '/premarket-movers' }),
+                        );
+                        console.log(`[Push] Digest sent to ${sub.id}`);
+                    } catch (pushErr: any) {
+                        console.error(`[Push] Failed for ${sub.id}:`, pushErr?.statusCode ?? pushErr);
+                        // 404/410 = subscription expired — remove it
+                        if (pushErr?.statusCode === 404 || pushErr?.statusCode === 410) {
+                            await (prisma as any).subscription.delete({ where: { id: sub.id } }).catch(() => {});
+                        }
+                    }
+                }
+
+                if (sub.email) {
+                    try {
+                        const rows = top
+                            .map(
+                                (m) => `<tr>
+                                    <td style="padding:6px 12px;font-weight:bold;">${m.symbol}</td>
+                                    <td style="padding:6px 12px;color:#6b7280;">${m.name ?? ''}</td>
+                                    <td style="padding:6px 12px;font-weight:bold;color:${m.changePct >= 0 ? '#059669' : '#e11d48'};">${m.changePct >= 0 ? '+' : ''}${m.changePct.toFixed(2)}%</td>
+                                </tr>`,
+                            )
+                            .join('');
+                        const unsubscribeUrl = `${base}/api/notifications/unsubscribe?email=${encodeURIComponent(sub.email)}`;
+
+                        await transporter.sendMail({
+                            from: process.env.NOTIFICATIONS_FROM,
+                            to: sub.email,
+                            subject: title,
+                            headers: { 'List-Unsubscribe': `<${unsubscribeUrl}>`, 'Precedence': 'bulk' },
+                            html: `
+                                <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px; max-width: 600px; margin: 0 auto;">
+                                    <h2 style="color: #2563eb; margin-top: 0;">📊 Premarket Movers — ${dateLabel}</h2>
+                                    <table style="border-collapse: collapse; width: 100%; font-size: 14px;">${rows}</table>
+                                    <div style="margin: 24px 0;">
+                                        <a href="${base}/premarket-movers"
+                                           style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 14px;">
+                                           View all movers →
+                                        </a>
+                                    </div>
+                                    <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+                                    <p style="color: #9ca3af; font-size: 12px; text-align: center;">
+                                        You are receiving the daily premarket digest from PreMarketPrice.<br>
+                                        <a href="${unsubscribeUrl}" style="color: #9ca3af; text-decoration: underline;">Unsubscribe</a>
+                                    </p>
+                                </div>`,
+                        });
+                        console.log(`[E-mail] Digest sent to ${sub.email}`);
+                    } catch (mailErr) {
+                        console.error(`[E-mail] Failed for ${sub.email}:`, mailErr);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('[NotificationService] Critical error in digest:', error);
+        }
+    }
 }

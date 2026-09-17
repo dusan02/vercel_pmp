@@ -42,6 +42,8 @@ interface PageMetadataParams {
   keywords?: string[];
   image?: string;
   type?: 'website' | 'article';
+  /** hreflang alternates, e.g. { 'en': '/premarket-movers', 'zh-CN': '/zh/premarket-movers' } */
+  languages?: Record<string, string>;
 }
 
 /**
@@ -167,6 +169,7 @@ export function generatePageMetadata({
   keywords = [],
   image,
   type = 'website',
+  languages,
 }: PageMetadataParams): Metadata {
   const fullTitle = title;
   const url = `${baseUrl}${path}`;
@@ -192,6 +195,13 @@ export function generatePageMetadata({
     metadataBase: new URL(baseUrl),
     alternates: {
       canonical: url,
+      ...(languages
+        ? {
+            languages: Object.fromEntries(
+              Object.entries(languages).map(([k, v]) => [k, v.startsWith('http') ? v : `${baseUrl}${v}`]),
+            ),
+          }
+        : {}),
     },
     openGraph: {
       title: fullTitle,

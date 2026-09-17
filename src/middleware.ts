@@ -74,9 +74,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl, 301);
   }
 
-  // Redirect /movers (and /movers/* junk) → /premarket-movers (301)
-  // /movers is a tab-only concept; the canonical standalone page is /premarket-movers.
-  if (pathname === '/movers' || pathname.startsWith('/movers/')) {
+  // Redirect bare /movers (and /movers/null junk) → /premarket-movers (301)
+  // /movers is a tab-only concept; the canonical standalone page is
+  // /premarket-movers. /movers/[symbol] insight pages are REAL routes — do not
+  // blanket-redirect the whole subtree.
+  if (pathname === '/movers' || pathname === '/movers/null') {
     const redirectUrl = new URL('/premarket-movers', request.url);
     return NextResponse.redirect(redirectUrl, 301);
   }

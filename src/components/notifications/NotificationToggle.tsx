@@ -3,20 +3,27 @@
 import React, { useState, useEffect } from 'react';
 import { Bell, BellOff, Mail, ShieldCheck } from 'lucide-react';
 
-export function NotificationToggle() {
+export function NotificationToggle({
+    title = 'Quality Alerts',
+    subtitle = 'Never miss a Safe Zone breakout.',
+}: {
+    title?: string;
+    subtitle?: string;
+}) {
     const [isSubscribed, setIsSubscribed] = useState(false);
     const [loading, setLoading] = useState(false);
     const [email, setEmail] = useState('');
     const [showEmailInput, setShowEmailInput] = useState(false);
 
     useEffect(() => {
-        // Check current subscription status
+        // Check current subscription status — register the SW first so this
+        // works on pages that never mount the PWA hook (e.g. /premarket-movers).
         if ('serviceWorker' in navigator && 'PushManager' in window) {
-            navigator.serviceWorker.ready.then(registration => {
+            navigator.serviceWorker.register('/sw.js').then(registration => {
                 registration.pushManager.getSubscription().then(subscription => {
                     setIsSubscribed(!!subscription);
                 });
-            });
+            }).catch(() => {});
         }
     }, []);
 
@@ -97,8 +104,8 @@ export function NotificationToggle() {
                 <div className="flex items-center gap-2">
                     <ShieldCheck className="w-5 h-5 text-blue-600" />
                     <div>
-                        <div className="text-sm font-bold text-blue-900 dark:text-blue-100">Quality Alerts</div>
-                        <div className="text-[10px] text-blue-600/80">Never miss a Safe Zone breakout.</div>
+                        <div className="text-sm font-bold text-blue-900 dark:text-blue-100">{title}</div>
+                        <div className="text-[10px] text-blue-600/80">{subtitle}</div>
                     </div>
                 </div>
 

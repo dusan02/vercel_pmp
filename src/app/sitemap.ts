@@ -108,6 +108,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly',
       priority: 0.5,
     },
+    // Chinese pilot pages — target Baidu/Sogou/Bing CN queries
+    {
+      url: `${baseUrl}/zh`,
+      lastModified: currentDate,
+      changeFrequency: 'daily',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/zh/premarket-movers`,
+      lastModified: currentDate,
+      changeFrequency: 'hourly',
+      priority: 0.8,
+    },
   ];
 
   // -------------------------------------------------------

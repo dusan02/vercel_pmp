@@ -234,6 +234,46 @@ module.exports = {
       autorestart: false,
     },
     {
+      name: "cron-indexnow",
+      script: "scripts/trigger-indexnow.ts",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
+      cwd: __dirname,
+      instances: 1,
+      exec_mode: "fork",
+      env: {
+        NODE_ENV: "production",
+        BASE_URL: "http://127.0.0.1:3001",
+        CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || envVars.CRON_SECRET || process.env.CRON_SECRET_KEY || process.env.CRON_SECRET,
+      },
+      error_file: path.join(__dirname, "logs", "pm2", "cron-indexnow-error.log"),
+      out_file: path.join(__dirname, "logs", "pm2", "cron-indexnow-out.log"),
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      // 22:35 server time (Europe/Prague) — after post-market-daily-reset (22:20)
+      // so the day's archive pages are complete before submitting to IndexNow.
+      cron_restart: "35 22 * * 1-5",
+      autorestart: false,
+    },
+    {
+      name: "cron-movers-digest",
+      script: "scripts/trigger-movers-digest.ts",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
+      cwd: __dirname,
+      instances: 1,
+      exec_mode: "fork",
+      env: {
+        NODE_ENV: "production",
+        BASE_URL: "http://127.0.0.1:3001",
+        CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || envVars.CRON_SECRET || process.env.CRON_SECRET_KEY || process.env.CRON_SECRET,
+      },
+      error_file: path.join(__dirname, "logs", "pm2", "cron-movers-digest-error.log"),
+      out_file: path.join(__dirname, "logs", "pm2", "cron-movers-digest-out.log"),
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      // 14:00 server time (Europe/Prague) = 08:00 ET (CEST) — mid pre-market
+      // session, weekdays only. Sends top movers to push/email subscribers.
+      cron_restart: "0 14 * * 1-5",
+      autorestart: false,
+    },
+    {
       name: "cron-verify-sector-industry",
       script: "scripts/trigger-verify-sector-industry.ts",
       interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",

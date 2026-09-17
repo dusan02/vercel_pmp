@@ -9,6 +9,7 @@ import { SsrMoverLinksCombined } from '@/components/seo/SsrMoverLinks';
 import { getPremarketDateSummaries } from '@/lib/seo/premarketArchive';
 import { getEligibleAnalysisSet } from '@/lib/seo/eligibleTickers';
 import { prisma } from '@/lib/db/prisma';
+import { NotificationToggle } from '@/components/notifications/NotificationToggle';
 
 export const revalidate = 60;
 
@@ -28,6 +29,11 @@ export async function generateMetadata(): Promise<Metadata> {
       `Biggest pre-market stock movers for ${today} — top gainers and losers ranked by % change with Z-scores and momentum insights. Real-time data from NYSE & NASDAQ.`,
     path: '/premarket-movers',
     keywords: ['premarket movers', 'stocks moving today', 'premarket gainers and losers', 'stock movers today', 'biggest stock movers premarket', 'stocks moving premarket'],
+    languages: {
+      en: '/premarket-movers',
+      'zh-CN': '/zh/premarket-movers',
+      'x-default': '/premarket-movers',
+    },
   });
 }
 
@@ -344,6 +350,14 @@ export default async function PremarketMoversPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <MoversTable title="Top Gainers" rows={gainers} eligibleAnalysis={eligibleAnalysis} />
           <MoversTable title="Top Losers" rows={losers} eligibleAnalysis={eligibleAnalysis} />
+        </div>
+
+        {/* Push/email digest subscribe — daily premarket movers at ~08:00 ET */}
+        <div className="mt-6 max-w-md">
+          <NotificationToggle
+            title="Daily Movers Digest"
+            subtitle="Top premarket movers each weekday at 8:00 AM ET."
+          />
         </div>
 
         {/* Historical premarket archive — links to past dates from PostgreSQL */}
