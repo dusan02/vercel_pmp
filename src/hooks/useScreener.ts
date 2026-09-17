@@ -45,6 +45,7 @@ export function useScreener({
                 lastPrice: r.ticker.lastPrice ?? null,
                 lastChangePct: r.ticker.lastChangePct ?? null,
                 lastMarketCap: r.ticker.lastMarketCap ?? null,
+                marketCapDiff: r.ticker.marketCapDiff ?? null,
             } : null,
         }));
     });

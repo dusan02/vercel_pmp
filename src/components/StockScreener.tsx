@@ -12,7 +12,7 @@ import {
   ScreenerResult, scoreColor, altmanZLabel, piotroskiLabel, beneishLabel, fcfMarginLabel, debtRepayLabel,
   SORT_OPTIONS, SECTORS, MARKET_CAP_PRESETS,
 } from '@/lib/utils/screener';
-import { formatBillions } from '@/lib/utils/format';
+import { formatBillions, formatMarketCapDiff } from '@/lib/utils/format';
 
 export default function StockScreener({ initialData }: { initialData?: any[] }) {
   const router = useRouter();
@@ -102,6 +102,21 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
       sortable: true,
       className: 'hidden sm:table-cell',
       render: (r) => <span className="text-gray-700 dark:text-gray-200">{r.ticker?.lastMarketCap ? formatBillions(r.ticker.lastMarketCap) : '-'}</span>
+    },
+    {
+      key: 'ticker.marketCapDiff',
+      header: 'MCap Δ',
+      align: 'right',
+      sortable: false,
+      className: 'hidden xl:table-cell',
+      render: (r) => {
+        const d = r.ticker?.marketCapDiff ?? null;
+        return (
+          <span className={`text-sm tabular-nums ${d == null ? 'text-gray-400' : d >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+            {d != null ? formatMarketCapDiff(d) : '-'}
+          </span>
+        );
+      }
     },
     {
       key: 'healthScore',

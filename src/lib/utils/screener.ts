@@ -22,6 +22,7 @@ export interface ScreenerResult {
         lastPrice: number | null;
         lastChangePct: number | null;
         lastMarketCap: number | null;
+        marketCapDiff: number | null;
     } | null;
 }
 

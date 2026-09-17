@@ -179,6 +179,10 @@ export async function GET(request: Request) {
                 lastPrice: t.lastPrice,
                 lastChangePct: t.lastChangePct,
                 lastMarketCap: t.lastMarketCap,
+                // Derived: prevMcap = mcap / (1 + pct/100) → diff = mcap·pct/(100+pct), in $B
+                marketCapDiff: t.lastMarketCap != null && t.lastChangePct != null && (100 + t.lastChangePct) > 0
+                    ? t.lastMarketCap * t.lastChangePct / (100 + t.lastChangePct)
+                    : null,
             },
         }));
 
