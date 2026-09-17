@@ -12,6 +12,7 @@ loadEnvFromFiles();
 
 import { prisma } from '../src/lib/db/prisma';
 import { FinnhubService } from '../src/services/finnhubService';
+import { calculateScores } from '../src/services/analysis/scoreCalculator';
 
 async function main() {
   const forceRefresh = process.argv.includes('--force');
@@ -73,6 +74,22 @@ async function main() {
   }
 
   console.log(`✅ Sync complete: ${success} saved, ${skipped} skipped (fresh), ${failed} failed`);
+
+  // Recalculate AnalysisCache scores (health/valuation/profitability/Piotroski/
+  // Altman/Beneish) so they track the fresh daily metrics instead of waiting
+  // for the weekly refresh-all. DB-only — no API calls, ~a few reads per ticker.
+  const cached = await prisma.analysisCache.findMany({ select: { symbol: true } });
+  let scoresOk = 0;
+  let scoresFailed = 0;
+  for (const { symbol } of cached) {
+    try {
+      await calculateScores(symbol);
+      scoresOk++;
+    } catch {
+      scoresFailed++;
+    }
+  }
+  console.log(`📊 Scores recalculated: ${scoresOk} ok, ${scoresFailed} failed (${cached.length} cached tickers)`);
 
   await prisma.$disconnect();
   // Explicit exit — an open Redis handle would otherwise keep the process
