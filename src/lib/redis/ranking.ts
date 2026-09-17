@@ -383,7 +383,9 @@ export async function getRankedSymbols(
     const end = cursor + limit - 1;
 
     const result = await redisClient.zRange(key, cursor, end);
-    return result.map((r: any) => typeof r === 'string' ? r : r.value || r);
+    return result.map((r: unknown) =>
+      typeof r === 'string' ? r : (r as { value: string }).value,
+    );
   } catch (error) {
     console.error(`Error getting ranked symbols:`, error);
     return [];
