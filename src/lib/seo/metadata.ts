@@ -67,13 +67,15 @@ export function generateCompanyMetadata({
     : '';
 
   // CTR-optimized title: include price + change for search intent match
+  // "Premarket" is intentional: GSC shows "{ticker} premarket" queries ranking
+  // ~20-30 positions better than "{ticker} stock" — it's our differentiator.
   // Uses shortName to keep full title (incl. " | PreMarketPrice") under ~60 chars
   const maxTitleLen = 60 - ` | ${siteName}`.length; // 60 total incl. suffix
-  const withChange = `${ticker} Stock ${priceText}${changeText ? ` (${changeText})` : ''} — ${short}`;
-  const withoutChange = `${ticker} Stock ${priceText} — ${short}`;
+  const withChange = `${ticker} Premarket Stock ${priceText}${changeText ? ` (${changeText})` : ''} — ${short}`;
+  const withoutChange = `${ticker} Premarket Stock ${priceText} — ${short}`;
   const title = priceText
     ? (withChange.length <= maxTitleLen ? withChange : withoutChange)
-    : `${ticker} Stock Price — ${short}`;
+    : `${ticker} Premarket Stock Price — ${short}`;
   const fullTitle = `${title} | ${siteName}`;
 
   // Keyword-rich description matching search intent

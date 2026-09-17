@@ -65,9 +65,18 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl, 301);
   }
 
-  // Redirect /movers → /premarket-movers (301)
+  // Redirect /stock/[ticker] → /analysis/[ticker] (301)
+  // External sites link tickers via the common /stock/X pattern; Google assigned
+  // impressions to these 404s (e.g. /stock/SHEL ~365 imp). Capture the equity.
+  if (pathname.startsWith('/stock/')) {
+    const ticker = pathname.replace('/stock/', '');
+    const redirectUrl = new URL(`/analysis/${ticker}`, request.url);
+    return NextResponse.redirect(redirectUrl, 301);
+  }
+
+  // Redirect /movers (and /movers/* junk) → /premarket-movers (301)
   // /movers is a tab-only concept; the canonical standalone page is /premarket-movers.
-  if (pathname === '/movers') {
+  if (pathname === '/movers' || pathname.startsWith('/movers/')) {
     const redirectUrl = new URL('/premarket-movers', request.url);
     return NextResponse.redirect(redirectUrl, 301);
   }
@@ -97,6 +106,22 @@ export async function middleware(request: NextRequest) {
   }
   if (pathname === '/' && ['allStocks', 'screener'].includes(request.nextUrl.searchParams.get('tab') ?? '')) {
     return NextResponse.redirect(new URL('/screener', request.url), 301);
+  }
+
+  // Redirect homepage tab variants that have standalone pages (301)
+  // GSC shows /?tab=movers collecting ~650 impressions split off the canonical
+  // /premarket-movers — consolidate the signals onto the standalone URL.
+  if (pathname === '/') {
+    const tab = request.nextUrl.searchParams.get('tab');
+    const tabTarget =
+      tab === 'movers' ? '/premarket-movers'
+      : tab === 'heatmap' ? '/heatmap'
+      : tab === 'earnings' ? '/earnings'
+      : tab === 'blog' ? '/blog'
+      : null;
+    if (tabTarget) {
+      return NextResponse.redirect(new URL(tabTarget, request.url), 301);
+    }
   }
 
   // Redirect trailing slash → no slash (301) for non-root paths
