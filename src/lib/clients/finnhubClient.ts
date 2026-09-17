@@ -79,45 +79,6 @@ export interface FinnhubMetric {
     receivablesTurnover: number | null;
 }
 
-export interface FinnhubProfile {
-    name: string | null;
-    ticker: string;
-    isin: string | null;
-    cusip: string | null;
-    exchange: string | null;
-    currency: string | null;
-    country: string | null;
-    ipo: string | null;
-    marketCap: number | null;
-    shareOutstanding: number | null;
-    logo: string | null;
-    phone: string | null;
-    weburl: string | null;
-    finnhubIndustry: string | null;
-    finnhubSector: string | null;
-    ipoDate: string | null;
-}
-
-export interface FinnhubPriceTarget {
-    symbol: string;
-    targetHigh: number | null;
-    targetLow: number | null;
-    targetMean: number | null;
-    targetMedian: number | null;
-    numberOfAnalysts: number | null;
-    currentPrice: number | null;
-}
-
-export interface FinnhubRecommendation {
-    symbol: string;
-    period: string; // YYYY-MM-DD
-    strongBuy: number;
-    buy: number;
-    hold: number;
-    sell: number;
-    strongSell: number;
-}
-
 export interface FinnhubEarningsItem {
     symbol: string;
     date: string;
@@ -132,25 +93,6 @@ export interface FinnhubEarningsItem {
 
 export interface FinnhubEarningsResponse {
     earningsCalendar: FinnhubEarningsItem[];
-}
-
-export interface FinnhubInsiderTransaction {
-    symbol: string;
-    change: number;
-    filingDate: string;
-    transactionDate: string;
-    transactionCode: string;
-}
-
-export interface FinnhubInstitutionalOwnership {
-    symbol: string;
-    atDate: string;
-    holdings: Array<{
-        name: string;
-        shares: number;
-        change: number;
-        percentPortfolio: number;
-    }>;
 }
 
 /**
@@ -290,71 +232,6 @@ export class FinnhubClient {
     }
 
     /**
-     * Fetch reported financials (XBRL data)
-     * Endpoint: /stock/financials-reported
-     */
-    async fetchFinancials(symbol: string, freq: 'annual' | 'quarterly' = 'annual', options: FetchOptions = {}): Promise<{ data: any[] } | null> {
-        const url = `https://finnhub.io/api/v1/stock/financials-reported?symbol=${symbol}&freq=${freq}&token=${this.apiKey}`;
-        return await this.fetchWithRetry<{ data: any[] }>(
-            url,
-            options.timeout || this.timeout,
-            options.signal
-        );
-    }
-
-    /**
-     * Fetch company profile
-     * Endpoint: /stock/profile2
-     */
-    async fetchProfile(symbol: string, options: FetchOptions = {}): Promise<FinnhubProfile | null> {
-        const url = `https://finnhub.io/api/v1/stock/profile2?symbol=${symbol}&token=${this.apiKey}`;
-        const data = await this.fetchWithRetry<FinnhubProfile>(
-            url,
-            options.timeout || this.timeout,
-            options.signal
-        );
-
-        if (!data) return null;
-
-        return {
-            ...data,
-            ticker: symbol,
-        };
-    }
-
-    /**
-     * Fetch price target (analyst consensus)
-     * Endpoint: /stock/price-target
-     * NOTE: Requires Finnhub paid plan — returns 403 on free tier.
-     */
-    async fetchPriceTarget(symbol: string, options: FetchOptions = {}): Promise<FinnhubPriceTarget | null> {
-        const url = `https://finnhub.io/api/v1/stock/price-target?symbol=${symbol}&token=${this.apiKey}`;
-        return await this.fetchWithRetry<FinnhubPriceTarget>(
-            url,
-            options.timeout || this.timeout,
-            options.signal
-        );
-    }
-
-    /**
-     * Fetch analyst recommendation trends (latest period)
-     * Endpoint: /stock/recommendation
-     * Returns array of monthly recommendation counts, sorted by period desc.
-     * Free tier: available.
-     */
-    async fetchRecommendation(symbol: string, options: FetchOptions = {}): Promise<FinnhubRecommendation | null> {
-        const url = `https://finnhub.io/api/v1/stock/recommendation?symbol=${symbol}&token=${this.apiKey}`;
-        const arr = await this.fetchWithRetry<FinnhubRecommendation[]>(
-            url,
-            options.timeout || this.timeout,
-            options.signal
-        );
-        if (!arr || arr.length === 0) return null;
-        // Return the most recent period
-        return arr[0] ?? null;
-    }
-
-    /**
      * Fetch earnings calendar
      * Endpoint: /calendar/earnings
      */
@@ -371,36 +248,6 @@ export class FinnhubClient {
         );
 
         if (!data) return { earningsCalendar: [] };
-
-        return data;
-    }
-
-    /**
-     * Fetch insider transactions
-     * Endpoint: /stock/insider-transactions
-     */
-    async fetchInsiderTransactions(symbol: string, from: string, to: string, options: FetchOptions = {}): Promise<FinnhubInsiderTransaction[] | null> {
-        const url = `https://finnhub.io/api/v1/stock/insider-transactions?symbol=${symbol}&from=${from}&to=${to}&token=${this.apiKey}`;
-        const data = await this.fetchWithRetry<{ data: FinnhubInsiderTransaction[] }>(
-            url,
-            options.timeout || this.timeout,
-            options.signal
-        );
-
-        return data?.data || null;
-    }
-
-    /**
-     * Fetch institutional ownership
-     * Endpoint: /stock/institutional-ownership
-     */
-    async fetchInstitutionalOwnership(symbol: string, options: FetchOptions = {}): Promise<FinnhubInstitutionalOwnership | null> {
-        const url = `https://finnhub.io/api/v1/stock/institutional-ownership?symbol=${symbol}&token=${this.apiKey}`;
-        const data = await this.fetchWithRetry<FinnhubInstitutionalOwnership>(
-            url,
-            options.timeout || this.timeout,
-            options.signal
-        );
 
         return data;
     }

@@ -75,6 +75,9 @@ async function main() {
   console.log(`✅ Sync complete: ${success} saved, ${skipped} skipped (fresh), ${failed} failed`);
 
   await prisma.$disconnect();
+  // Explicit exit — an open Redis handle would otherwise keep the process
+  // alive for hours after the sync finished (observed zombie PM2 processes).
+  process.exit(0);
 }
 
 main().catch((e) => {

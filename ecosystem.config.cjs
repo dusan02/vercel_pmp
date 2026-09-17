@@ -119,29 +119,6 @@ module.exports = {
       min_uptime: "10s",
     },
     {
-      // Background Preloader Worker
-      name: "pmp-bulk-preloader",
-      script: "src/workers/backgroundPreloader.ts",
-      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
-      cwd: __dirname,
-      instances: 1,
-      exec_mode: "fork",
-      env: {
-        NODE_ENV: "production",
-        DATABASE_URL: envVars.DATABASE_URL || process.env.DATABASE_URL,
-        REDIS_URL: envVars.REDIS_URL || "redis://127.0.0.1:6380",
-        POLYGON_API_KEY: envVars.POLYGON_API_KEY || process.env.POLYGON_API_KEY,
-      },
-      error_file: path.join(__dirname, "logs", "pm2", "bulk-preloader-error.log"),
-      out_file: path.join(__dirname, "logs", "pm2", "bulk-preloader-out.log"),
-      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
-      // ZMENA: Nereštartovať každých 5 minút (tento skript trvá bežať >10 minút,
-      // čo spôsobovalo nekonečné reštarty a zahltenie SQLite databázy).
-      // Namiesto toho ho pustíme len raz za hodinu.
-      cron_restart: "0 * * * *", 
-      autorestart: false,
-    },
-    {
       name: "daily-ticker-validator",
       script: "scripts/daily-ticker-validator.ts",
       interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
