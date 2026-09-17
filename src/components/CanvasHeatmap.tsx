@@ -2,7 +2,6 @@
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import type { TreemapLeaf, CompanyNode, HeatmapMetric } from '@/lib/heatmap/types';
-import { createHeatmapColorScale } from '@/lib/utils/heatmapColors';
 import { getTileColor, formatMetricValue } from '@/lib/heatmap/metricValue';
 import { TILE_SIZE_THRESHOLDS, FONT_SIZE_CONFIG } from '@/lib/utils/heatmapConfig';
 import { getTileLabelConfig, calculateFontSizeFromArea, TileLabelConfig, clampNumber } from '@/lib/utils/heatmapLabelUtils';
@@ -23,6 +22,8 @@ interface CanvasHeatmapProps {
     onHover?: (company: CompanyNode | null, x: number, y: number) => void;
     metric: HeatmapMetric;
     timeframe: 'day' | 'week' | 'month';
+    /** Shared scale from the parent (adaptive for mcap) — keeps canvas colors identical to the DOM view + legend. */
+    colorScale: (v: number) => string;
 }
 
 export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
@@ -35,6 +36,7 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
     onHover,
     metric,
     timeframe,
+    colorScale,
 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [hoveredLeaf, setHoveredLeaf] = useState<TreemapLeaf | null>(null);
@@ -127,7 +129,7 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
         ctx.fillRect(0, 0, width, height);
 
 
-        const colorScale = createHeatmapColorScale(timeframe, metric);
+        // colorScale comes from the parent — adaptive mcap domain, shared with DOM view + legend
 
         const TILE_RADIUS = 3;
         const drawRoundedTile = (x: number, y: number, w: number, h: number) => {
@@ -273,7 +275,7 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
             }
         });
 
-    }, [leaves, width, height, scale, offset, metric, timeframe, theme]);
+    }, [leaves, width, height, scale, offset, metric, timeframe, colorScale, theme]);
 
     // Interaction Handler (throttled via rAF; updates hover state only when tile changes)
     const handleMouseMove = useCallback((e: React.MouseEvent) => {

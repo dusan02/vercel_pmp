@@ -17,6 +17,7 @@ import {
   buildPayload,
   buildPriceMap,
   buildPrevCloseMaps,
+  toCompactRow,
 } from '@/lib/heatmap/heatmapTransformer';
 
 const CACHE_KEY = `heatmap-data:${process.env.NEXT_PUBLIC_BUILD_ID || 'dev'}`;
@@ -86,19 +87,7 @@ export async function GET(request: NextRequest) {
           if (dataAgeMs < MAX_DATA_AGE_FOR_ETAG) {
             console.log(`✅ Heatmap cache hit - returning ${cachedData.length} companies (data age: ${Math.floor(dataAgeMs / 1000)}s, ${Date.now() - startTime}ms)`);
             const limited = requestedLimit ? cachedData.slice(0, requestedLimit) : cachedData;
-            const compactRows = limited.map((s: any) => ({
-              t: s.ticker, n: s.companyName, s: s.sector, i: s.industry,
-              m: s.marketCap, c: s.percentChange, d: s.marketCapDiff, p: s.currentPrice,
-              w: s.weekChange ?? null, m1: s.monthChange ?? null, ytd: s.ytdChange ?? null, y1: s.yearChange ?? null,
-              hs: s.healthScore ?? null, vs: s.valuationScore ?? null,
-              ps: s.profitabilityScore ?? null, pi: s.piotroskiScore ?? null, z: s.zScore ?? null,
-              az: s.altmanZ ?? null, be: s.beneishScore ?? null, fcfm: s.fcfMargin ?? null,
-              rv: s.rvol ?? null, pe: s.peRatio ?? null, fpe: s.forwardPe ?? null,
-              psr: s.psRatio ?? null, pb: s.pbRatio ?? null, peg: s.pegRatio ?? null,
-              eve: s.evEbitda ?? null, roe: s.roe ?? null, nm: s.netMargin ?? null,
-              rg: s.revenueGrowth ?? null, eg: s.earningsGrowth ?? null,
-              dy: s.dividendYield ?? null, bt: s.beta ?? null,
-            }));
+            const compactRows = limited.map(toCompactRow);
             return NextResponse.json({
               success: true,
               data: limited,
@@ -333,6 +322,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         success: true,
         data: payload,
+        rows,
         cached: false,
         count: payload.length,
         timestamp: new Date().toISOString(),

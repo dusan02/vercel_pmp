@@ -106,37 +106,25 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
     error,
     lastUpdated,
     timeframe,
-    setTimeframe,
-    metric: hookMetric,
-    setMetric: setHookMetric,
     refetch
   } = useHeatmapData({
     apiEndpoint,
     refreshInterval: mobileRefreshInterval,
     initialTimeframe,
-    initialMetric: controlledMetric ?? centralizedMetric, // Sync with centralized or controlled metric
     autoRefresh: autoRefresh && isMounted, // Only auto-refresh after mount
     initialHeatmapData,
   });
 
-  // Use controlled metric if provided, otherwise use centralized metric, fallback to hook metric
-  const metric = controlledMetric ?? centralizedMetric ?? hookMetric;
+  // Single source of truth: controlled prop, else the centralized (localStorage) hook
+  const metric = controlledMetric ?? centralizedMetric;
 
-  // Handle metric change - sync with all systems
+  // Handle metric change — update centralized state and notify parent
   const setMetric = (newMetric: HeatmapMetric) => {
     setMetricInternal(newMetric);
-    setHookMetric(newMetric);
     if (onMetricChange) {
       onMetricChange(newMetric);
     }
   };
-
-  // Sync hook's metric with centralized metric when not controlled
-  useEffect(() => {
-    if (controlledMetric === undefined && hookMetric !== centralizedMetric) {
-      setHookMetric(centralizedMetric);
-    }
-  }, [centralizedMetric, hookMetric, controlledMetric, setHookMetric]);
 
   // Zabezpeč, že komponent je mounted (hydration safety)
   useEffect(() => {

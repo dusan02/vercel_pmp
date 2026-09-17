@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { StockData, PriceUpdate } from '@/lib/types';
-import type { CompanyNode, HeatmapMetric } from '@/lib/heatmap/types';
+import type { CompanyNode } from '@/lib/heatmap/types';
 import { useHeatmapCache } from './useHeatmapCache';
 import { useMediaQuery } from './useMediaQuery';
 
@@ -8,7 +8,6 @@ interface UseHeatmapDataProps {
   apiEndpoint?: string | undefined;
   refreshInterval?: number | undefined;
   initialTimeframe?: 'day' | 'week' | 'month' | undefined;
-  initialMetric?: HeatmapMetric | undefined;
   autoRefresh?: boolean | undefined;
   initialHeatmapData?: any[] | undefined;
 }
@@ -110,7 +109,6 @@ export function useHeatmapData({
   apiEndpoint = '/api/heatmap',
   refreshInterval = 30000,
   initialTimeframe = 'day',
-  initialMetric = 'percent',
   autoRefresh = true,
   initialHeatmapData
 }: UseHeatmapDataProps = {}) {
@@ -134,7 +132,6 @@ export function useHeatmapData({
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(() => ssrData ? new Date().toISOString() : cachedData?.lastUpdated ?? null);
   const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month'>(initialTimeframe);
-  const [metric, setMetric] = useState<HeatmapMetric>(initialMetric);
   const [lastEtag, setLastEtag] = useState<string | null>(() => cachedData?.etag ?? null);
 
   // Use hook for consistent mobile detection
@@ -195,7 +192,6 @@ export function useHeatmapData({
 
       // Add query params
       url.searchParams.set('timeframe', timeframe);
-      url.searchParams.set('metric', metric);
 
       // OPTIMIZATION: Never bypass server cache on the first load.
       // The API already has short TTL + ETag support; forcing on first load defeats it.
@@ -220,7 +216,7 @@ export function useHeatmapData({
       }
 
       if (process.env.NODE_ENV !== 'production') {
-        console.log(`🔄 Heatmap: Fetching data...`, { timeframe, metric, hasEtag: !!etagToUse });
+        console.log(`🔄 Heatmap: Fetching data...`, { timeframe, hasEtag: !!etagToUse });
       }
 
       // CRITICAL: Prioritize heatmap API on mobile (first screen)
@@ -349,7 +345,7 @@ export function useHeatmapData({
       setLoading(false);
       isLoadingRef.current = false;
     }
-  }, [apiEndpoint, timeframe, metric, lastEtag, saveCache, isMobile]);
+  }, [apiEndpoint, timeframe, lastEtag, saveCache, isMobile]);
 
   // Store fetchData in ref to avoid infinite loop
   const fetchDataRef = useRef(fetchData);
@@ -398,8 +394,6 @@ export function useHeatmapData({
     lastUpdated,
     timeframe,
     setTimeframe,
-    metric,
-    setMetric,
     refetch: () => fetchData(true)
   };
 }

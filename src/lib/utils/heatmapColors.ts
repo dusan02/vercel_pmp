@@ -146,6 +146,20 @@ const mcapScales = {
 };
 
 /**
+ * Neutral midpoint of a metric's scale (the center stop of its domain).
+ * Values better than this point are "good", worse are "bad" — direction
+ * depends on whether the metric is inverted (see isInvertedMetric).
+ * For mcap/percent metrics this is 0; for score scales it's 50, P/E 25, etc.
+ */
+export function getMetricNeutralPoint(
+  metric: HeatmapColorMetric,
+  timeframe: Timeframe = 'day',
+): number {
+  const domain = scaleConfig(metric, timeframe).domain;
+  return domain[Math.floor(domain.length / 2)] ?? 0;
+}
+
+/**
  * Domain (extent) of the color scale for a timeframe/metric — the same
  * computation createHeatmapColorScale uses. Legends must derive their ticks
  * from this so they always match the tiles.

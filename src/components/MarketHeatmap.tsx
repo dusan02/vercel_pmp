@@ -323,6 +323,7 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
             isMobile={isMobile}
             metric={metric}
             timeframe={timeframe}
+            colorScale={colorScale}
             onTileClick={onTileClick}
             onHover={handleCanvasHover}
           />

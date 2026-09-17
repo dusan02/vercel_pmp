@@ -5,6 +5,7 @@
 
 import type { CompanyNode, HeatmapMetric } from './types';
 import { formatMarketCapDiff, formatPercent } from '@/lib/utils/heatmapFormat';
+import { getMetricNeutralPoint } from '@/lib/utils/heatmapColors';
 
 export type HeatmapMetricGroup = 'Performance' | 'Scores' | 'Valuation' | 'Fundamentals' | 'Activity';
 
@@ -61,6 +62,22 @@ const INVERTED_METRICS = new Set<HeatmapMetric>(['pe', 'fpe', 'ps', 'pb', 'peg',
 export function isInvertedMetric(metric: HeatmapMetric): boolean {
   return INVERTED_METRICS.has(metric);
 }
+
+export type MetricSentiment = 'good' | 'bad' | 'neutral';
+
+/**
+ * Is a metric value favorable or not — relative to the scale's neutral
+ * midpoint (0 for % metrics, 50 for scores, 25 for P/E, …), respecting
+ * inversion (for P/E a value of 15 is 'good' even though it's positive).
+ */
+export function getMetricSentiment(v: number, metric: HeatmapMetric): MetricSentiment {
+  if (!isFinite(v)) return 'neutral';
+  const neutral = getMetricNeutralPoint(metric);
+  if (v === neutral) return 'neutral';
+  const better = isInvertedMetric(metric) ? v < neutral : v > neutral;
+  return better ? 'good' : 'bad';
+}
+
 const BAD_COLOR = '#dc2626';
 
 /** Resolve the tile background color for a company+metric. */

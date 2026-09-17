@@ -24,6 +24,8 @@ interface HeatmapCanvasViewProps {
     isMobile: boolean;
     metric: HeatmapMetric;
     timeframe: 'day' | 'week' | 'month';
+    /** Shared color scale from MarketHeatmap (adaptive for mcap) — must match DOM view + legend. */
+    colorScale: (v: number) => string;
     onTileClick?: ((company: CompanyNode) => void) | undefined;
     onHover: (company: CompanyNode | null, x: number, y: number) => void;
 }
@@ -41,6 +43,7 @@ export function HeatmapCanvasView({
     isMobile,
     metric,
     timeframe,
+    colorScale,
     onTileClick,
     onHover,
 }: HeatmapCanvasViewProps) {
@@ -113,6 +116,7 @@ export function HeatmapCanvasView({
                 onHover={onHover}
                 metric={metric}
                 timeframe={timeframe}
+                colorScale={colorScale}
             />
 
             {/* Sector labels */}

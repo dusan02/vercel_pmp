@@ -473,6 +473,37 @@ export function transformToHeatmap(
 }
 
 /**
+ * Optional numeric metric fields — single source of truth for the
+ * payload optional-spread and the compact-row mapping, so a new metric
+ * can't be added to one path and forgotten in the other.
+ * [payloadField, compactKey]
+ */
+const METRIC_ROW_FIELDS: ReadonlyArray<readonly [keyof HeatmapPayloadRow, string]> = [
+  ['weekChange', 'w'], ['monthChange', 'm1'], ['ytdChange', 'ytd'], ['yearChange', 'y1'],
+  ['healthScore', 'hs'], ['valuationScore', 'vs'], ['profitabilityScore', 'ps'], ['piotroskiScore', 'pi'],
+  ['altmanZ', 'az'], ['beneishScore', 'be'], ['fcfMargin', 'fcfm'], ['zScore', 'z'], ['rvol', 'rv'],
+  ['peRatio', 'pe'], ['forwardPe', 'fpe'], ['psRatio', 'psr'], ['pbRatio', 'pb'], ['pegRatio', 'peg'],
+  ['evEbitda', 'eve'], ['roe', 'roe'], ['netMargin', 'nm'], ['revenueGrowth', 'rg'],
+  ['earningsGrowth', 'eg'], ['dividendYield', 'dy'], ['beta', 'bt'],
+];
+
+/**
+ * Map a payload row to the compact wire format (t/n/s/i/m/c/d/p/...).
+ * Shared by buildPayload and the route's cached path — keep the key
+ * list in sync via METRIC_ROW_FIELDS.
+ */
+export function toCompactRow(s: HeatmapPayloadRow): Record<string, unknown> {
+  const row: Record<string, unknown> = {
+    t: s.ticker, n: s.companyName, s: s.sector, i: s.industry,
+    m: s.marketCap, c: s.percentChange, d: s.marketCapDiff, p: s.currentPrice,
+  };
+  for (const [field, key] of METRIC_ROW_FIELDS) {
+    row[key] = s[field] ?? null;
+  }
+  return row;
+}
+
+/**
  * Build final payload with _timestamp and compact rows.
  */
 export function buildPayload(
@@ -482,81 +513,26 @@ export function buildPayload(
 ): { payload: HeatmapPayloadRow[]; rows: any[] } {
   const limitedResults = requestedLimit ? results.slice(0, requestedLimit) : results;
 
-  const payload = limitedResults.map((s) => ({
-    ticker: s.ticker,
-    companyName: s.companyName,
-    sector: s.sector,
-    industry: s.industry,
-    marketCap: s.marketCap,
-    percentChange: s.percentChange,
-    marketCapDiff: s.marketCapDiff,
-    currentPrice: s.currentPrice,
-    ...(s.lastUpdated ? { lastUpdated: s.lastUpdated } : {}),
-    ...(s.isStale ? { isStale: s.isStale } : {}),
-    ...(s.priceSource ? { priceSource: s.priceSource } : {}),
-    ...(s.weekChange !== undefined ? { weekChange: s.weekChange } : {}),
-    ...(s.monthChange !== undefined ? { monthChange: s.monthChange } : {}),
-    ...(s.ytdChange !== undefined ? { ytdChange: s.ytdChange } : {}),
-    ...(s.yearChange !== undefined ? { yearChange: s.yearChange } : {}),
-    ...(s.healthScore !== undefined ? { healthScore: s.healthScore } : {}),
-    ...(s.valuationScore !== undefined ? { valuationScore: s.valuationScore } : {}),
-    ...(s.profitabilityScore !== undefined ? { profitabilityScore: s.profitabilityScore } : {}),
-    ...(s.piotroskiScore !== undefined ? { piotroskiScore: s.piotroskiScore } : {}),
-    ...(s.altmanZ !== undefined ? { altmanZ: s.altmanZ } : {}),
-    ...(s.beneishScore !== undefined ? { beneishScore: s.beneishScore } : {}),
-    ...(s.fcfMargin !== undefined ? { fcfMargin: s.fcfMargin } : {}),
-    ...(s.zScore !== undefined ? { zScore: s.zScore } : {}),
-    ...(s.rvol !== undefined ? { rvol: s.rvol } : {}),
-    ...(s.peRatio !== undefined ? { peRatio: s.peRatio } : {}),
-    ...(s.forwardPe !== undefined ? { forwardPe: s.forwardPe } : {}),
-    ...(s.psRatio !== undefined ? { psRatio: s.psRatio } : {}),
-    ...(s.pbRatio !== undefined ? { pbRatio: s.pbRatio } : {}),
-    ...(s.pegRatio !== undefined ? { pegRatio: s.pegRatio } : {}),
-    ...(s.evEbitda !== undefined ? { evEbitda: s.evEbitda } : {}),
-    ...(s.roe !== undefined ? { roe: s.roe } : {}),
-    ...(s.netMargin !== undefined ? { netMargin: s.netMargin } : {}),
-    ...(s.revenueGrowth !== undefined ? { revenueGrowth: s.revenueGrowth } : {}),
-    ...(s.earningsGrowth !== undefined ? { earningsGrowth: s.earningsGrowth } : {}),
-    ...(s.dividendYield !== undefined ? { dividendYield: s.dividendYield } : {}),
-    ...(s.beta !== undefined ? { beta: s.beta } : {}),
-    _timestamp: dataTimestamp,
-  }));
+  const payload = limitedResults.map((s) => {
+    const row: Record<string, unknown> = {
+      ticker: s.ticker,
+      companyName: s.companyName,
+      sector: s.sector,
+      industry: s.industry,
+      marketCap: s.marketCap,
+      percentChange: s.percentChange,
+      marketCapDiff: s.marketCapDiff,
+      currentPrice: s.currentPrice,
+      _timestamp: dataTimestamp,
+    };
+    if (s.lastUpdated) row.lastUpdated = s.lastUpdated;
+    if (s.isStale) row.isStale = s.isStale;
+    if (s.priceSource) row.priceSource = s.priceSource;
+    for (const [field] of METRIC_ROW_FIELDS) {
+      if (s[field] !== undefined) row[field] = s[field];
+    }
+    return row as unknown as HeatmapPayloadRow & { _timestamp: string };
+  });
 
-  const rows = limitedResults.map((s) => ({
-    t: s.ticker,
-    n: s.companyName,
-    s: s.sector,
-    i: s.industry,
-    m: s.marketCap,
-    c: s.percentChange,
-    d: s.marketCapDiff,
-    p: s.currentPrice,
-    w: s.weekChange ?? null,
-    m1: s.monthChange ?? null,
-    ytd: s.ytdChange ?? null,
-    y1: s.yearChange ?? null,
-    hs: s.healthScore ?? null,
-    vs: s.valuationScore ?? null,
-    ps: s.profitabilityScore ?? null,
-    pi: s.piotroskiScore ?? null,
-    az: s.altmanZ ?? null,
-    be: s.beneishScore ?? null,
-    fcfm: s.fcfMargin ?? null,
-    z: s.zScore ?? null,
-    rv: s.rvol ?? null,
-    pe: s.peRatio ?? null,
-    fpe: s.forwardPe ?? null,
-    psr: s.psRatio ?? null,
-    pb: s.pbRatio ?? null,
-    peg: s.pegRatio ?? null,
-    eve: s.evEbitda ?? null,
-    roe: s.roe ?? null,
-    nm: s.netMargin ?? null,
-    rg: s.revenueGrowth ?? null,
-    eg: s.earningsGrowth ?? null,
-    dy: s.dividendYield ?? null,
-    bt: s.beta ?? null,
-  }));
-
-  return { payload, rows };
+  return { payload, rows: limitedResults.map(toCompactRow) };
 }

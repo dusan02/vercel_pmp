@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { Star } from 'lucide-react';
 import type { CompanyNode, HeatmapMetric } from '@/lib/heatmap/types';
 import { formatPrice, formatPercent, formatMarketCap, formatMarketCapDiff } from '@/lib/utils/format';
-import { getCompanyMetricValue, formatMetricValue, isInvertedMetric, HEATMAP_METRICS } from '@/lib/heatmap/metricValue';
+import { getCompanyMetricValue, formatMetricValue, getMetricSentiment, HEATMAP_METRICS } from '@/lib/heatmap/metricValue';
 import CompanyLogo from '../CompanyLogo';
 
 interface MobileHeatmapSheetProps {
@@ -37,9 +37,7 @@ export const MobileHeatmapSheet: React.FC<MobileHeatmapSheetProps> = ({
   const metricVal = getCompanyMetricValue(company, metric);
   const metricColor = metricVal === null
     ? undefined
-    : isInvertedMetric(metric)
-      ? '#94a3b8'
-      : metricVal >= 0 ? '#34d399' : '#f87171';
+    : { good: '#34d399', bad: '#f87171', neutral: '#94a3b8' }[getMetricSentiment(metricVal, metric)];
 
   // Drag-to-dismiss: track touch delta on the handle strip only
   const dragStartY = useRef(0);
