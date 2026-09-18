@@ -274,6 +274,27 @@ module.exports = {
       autorestart: false,
     },
     {
+      name: "cron-movers-insights",
+      script: "scripts/trigger-movers-insights.ts",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
+      cwd: __dirname,
+      instances: 1,
+      exec_mode: "fork",
+      env: {
+        NODE_ENV: "production",
+        BASE_URL: "http://127.0.0.1:3001",
+        CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || envVars.CRON_SECRET || process.env.CRON_SECRET_KEY || process.env.CRON_SECRET,
+      },
+      error_file: path.join(__dirname, "logs", "pm2", "cron-movers-insights-error.log"),
+      out_file: path.join(__dirname, "logs", "pm2", "cron-movers-insights-out.log"),
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      // Every 15 min, 13:00–22:59 server time (Europe/Prague) = 07:00–16:59 ET —
+      // fills moversReason/socialCopy for post-social. Works without an LLM key
+      // (quant fallback); GEMINI_API_KEY in .env upgrades copy quality.
+      cron_restart: "*/15 13-22 * * 1-5",
+      autorestart: false,
+    },
+    {
       name: "cron-post-social",
       script: "scripts/trigger-post-social.ts",
       interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
