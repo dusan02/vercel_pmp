@@ -1,8 +1,6 @@
 import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
 
-export const runtime = 'edge';
-
 export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
@@ -147,10 +145,10 @@ export async function GET(req: NextRequest) {
                         </div>
 
                         {/* Big Metrics */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '48px', backgroundColor: '#111', padding: '30px', borderRadius: '8px', borderLeft: `8px solid ${color}` }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', backgroundColor: '#111', padding: '24px', borderRadius: '8px', borderLeft: `8px solid ${color}` }}>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <div style={{ fontSize: '14px', color: '#666', fontWeight: 'bold', marginBottom: '4px' }}>LAST PRICE</div>
-                                <div style={{ fontSize: '72px', fontWeight: '900', color: 'white' }}>${price}</div>
+                                <div style={{ fontSize: '72px', fontWeight: '900', color: 'white', display: 'flex' }}>${price}</div>
                             </div>
 
                             <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
@@ -159,6 +157,7 @@ export async function GET(req: NextRequest) {
                                     fontSize: '72px',
                                     fontWeight: '900',
                                     color: color,
+                                    display: 'flex',
                                 }}>
                                     {isPositive ? '+' : ''}{changePct.toFixed(2)}%
                                 </div>
@@ -168,27 +167,27 @@ export async function GET(req: NextRequest) {
                         {/* Bottom Stats Grid */}
                         <div style={{ display: 'flex', gap: '20px', flex: 1 }}>
                             {/* Z-Score Box */}
-                            <div style={{ flex: 1, backgroundColor: '#111', border: '1px solid #333', padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                            <div style={{ flex: 1, backgroundColor: '#111', border: '1px solid #333', padding: '14px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                                 <div style={{ fontSize: '12px', color: '#ff9500', fontWeight: 'bold', marginBottom: '8px' }}>Z-SCORE (VOLATILITY)</div>
-                                <div style={{ fontSize: '48px', fontWeight: '900', color: 'white' }}>{zScore > 0 ? '+' : ''}{zScore.toFixed(2)}</div>
-                                <div style={{ marginTop: '8px', fontSize: '12px', color: (Math.abs(zScore) >= 3 ? '#ff3b30' : '#666'), fontWeight: 'bold' }}>
+                                <div style={{ fontSize: '34px', fontWeight: '900', color: 'white', display: 'flex' }}>{zScore > 0 ? '+' : ''}{zScore.toFixed(2)}</div>
+                                <div style={{ marginTop: '4px', fontSize: '11px', color: (Math.abs(zScore) >= 3 ? '#ff3b30' : '#666'), fontWeight: 'bold' }}>
                                     {Math.abs(zScore) >= 3 ? 'CRITICAL DEVIATION' : 'SIGNIFICANT DEVIATION'}
                                 </div>
                             </div>
 
                             {/* RVOL Box */}
-                            <div style={{ flex: 1, backgroundColor: '#111', border: '1px solid #333', padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                            <div style={{ flex: 1, backgroundColor: '#111', border: '1px solid #333', padding: '14px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                                 <div style={{ fontSize: '12px', color: '#3b82f6', fontWeight: 'bold', marginBottom: '8px' }}>RVOL (VOLUME MULT)</div>
-                                <div style={{ fontSize: '48px', fontWeight: '900', color: 'white' }}>{rvol.toFixed(1)}x</div>
-                                <div style={{ marginTop: '8px', fontSize: '12px', color: (rvol >= 2.0 ? '#00ff00' : '#666'), fontWeight: 'bold' }}>
+                                <div style={{ fontSize: '34px', fontWeight: '900', color: 'white', display: 'flex' }}>{rvol.toFixed(1)}x</div>
+                                <div style={{ marginTop: '4px', fontSize: '11px', color: (rvol >= 2.0 ? '#00ff00' : '#666'), fontWeight: 'bold' }}>
                                     {rvol >= 2.0 ? 'VOLUME CONFIRMATION' : 'NORMAL VOLUME'}
                                 </div>
                             </div>
 
                             {/* AI Reason Box (Wider) */}
-                            <div style={{ flex: 2, backgroundColor: '#111', border: '1px solid #333', padding: '20px', display: 'flex', flexDirection: 'column' }}>
+                            <div style={{ flex: 2, backgroundColor: '#111', border: '1px solid #333', padding: '14px', display: 'flex', flexDirection: 'column' }}>
                                 <div style={{ fontSize: '12px', color: '#666', fontWeight: 'bold', marginBottom: '12px' }}>AI ANALYSIS SUMMARY</div>
-                                <div style={{ fontSize: '18px', color: '#ccc', lineHeight: '1.4', fontWeight: 'bold' }}>
+                                <div style={{ fontSize: '18px', color: '#ccc', lineHeight: '1.4', fontWeight: 'bold', display: 'flex' }}>
                                     "{reason}"
                                 </div>
                             </div>
@@ -204,7 +203,7 @@ export async function GET(req: NextRequest) {
                             fontSize: '14px',
                             fontWeight: 'bold'
                         }}>
-                            <div style={{ color: 'white' }}>PREMARKET<span style={{ color: '#3b82f6' }}>PRICE</span>.PRO</div>
+                            <div style={{ color: 'white', display: 'flex' }}>PREMARKET<span style={{ color: '#3b82f6' }}>PRICE</span>.COM</div>
                             <div style={{ display: 'flex', gap: '20px' }}>
                                 <div>SOURCE: POLYGON_REAL_TIME</div>
                                 <div>COPYRIGHT © 2026 PMP_SYSTEMS</div>
