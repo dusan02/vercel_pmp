@@ -6,6 +6,7 @@ import { getEligibleAnalysisTickers } from '@/lib/seo/eligibleTickers';
 import { getEligibleValuationTickers } from '@/lib/seo/eligibleValuation';
 import { getEligibleFinancialsTickers } from '@/lib/seo/eligibleFinancials';
 import { LEADERBOARDS } from '@/lib/seo/leaderboards';
+import { METRIC_PAGES } from '@/lib/heatmap/metricPages';
 
 export const revalidate = 3600;
 
@@ -29,6 +30,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'hourly',
       priority: 0.9,
     },
+    ...METRIC_PAGES.map((p) => ({
+      url: `${baseUrl}/heatmap/${p.slug}`,
+      lastModified: currentDate,
+      changeFrequency: 'daily' as const,
+      priority: 0.7,
+    })),
     {
       url: `${baseUrl}/earnings`,
       lastModified: currentDate,

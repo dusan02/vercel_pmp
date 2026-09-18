@@ -8,6 +8,7 @@ import type { CompanyNode } from '@/lib/heatmap/types';
 import { useHeatmapMetric } from '@/hooks/useHeatmapMetric';
 import { HeatmapMetricButtons } from '@/components/HeatmapMetricButtons';
 import { HEATMAP_METRICS } from '@/lib/heatmap/metricValue';
+import { METRIC_PAGES } from '@/lib/heatmap/metricPages';
 import { HeatmapMethodology } from '@/components/HeatmapMethodology';
 import { logger } from '@/lib/utils/logger';
 import { event } from '@/lib/ga';
@@ -118,6 +119,9 @@ export default function HeatmapPage() {
           <a href="/sectors">Sector performance</a>
           <a href="/screener">Stock screener</a>
           <a href="/earnings">Earnings calendar</a>
+          {METRIC_PAGES.map((p) => (
+            <a key={p.slug} href={`/heatmap/${p.slug}`}>{p.h1}</a>
+          ))}
           <a href="/analysis/AAPL">AAPL Analysis</a>
           <a href="/analysis/MSFT">MSFT Analysis</a>
           <a href="/analysis/NVDA">NVDA Analysis</a>
