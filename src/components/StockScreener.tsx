@@ -104,10 +104,10 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
       render: (r) => <span className="text-gray-700 dark:text-gray-200">{r.ticker?.lastMarketCap ? formatBillions(r.ticker.lastMarketCap) : '-'}</span>
     },
     {
-      key: 'ticker.marketCapDiff',
-      header: 'MCap Δ',
+      key: 'ticker.lastMarketCapDiff',
+      header: <>MCap Δ <SortIcon field="ticker.lastMarketCapDiff" /></>,
       align: 'right',
-      sortable: false,
+      sortable: true,
       className: 'hidden xl:table-cell',
       render: (r) => {
         const d = r.ticker?.marketCapDiff ?? null;

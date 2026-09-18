@@ -484,6 +484,13 @@
     padding: 1.5rem;
   }
 
+  /* Extra-wide variant for the screener — 13 columns need ~95rem at xl breakpoints */
+  .container-screener {
+    max-width: 100rem;
+    margin-inline: auto;
+    padding: 1.5rem;
+  }
+
   .header {
     text-align: center;
     margin-bottom: 2rem;

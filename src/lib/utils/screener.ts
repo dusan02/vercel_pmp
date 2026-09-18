@@ -72,6 +72,8 @@ export const SORT_OPTIONS = [
     { value: 'debtRepaymentYears:desc', label: 'Debt Repay ↓ (slowest)' },
     { value: 'ticker.lastMarketCap:desc', label: 'Market Cap ↓' },
     { value: 'ticker.lastMarketCap:asc', label: 'Market Cap ↑' },
+    { value: 'ticker.lastMarketCapDiff:desc', label: 'MCap Δ ↓ (biggest gain)' },
+    { value: 'ticker.lastMarketCapDiff:asc', label: 'MCap Δ ↑ (biggest loss)' },
     { value: 'ticker.name:desc', label: 'Company Name ↓' },
     { value: 'ticker.name:asc', label: 'Company Name ↑' },
 ];
