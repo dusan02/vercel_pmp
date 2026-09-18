@@ -51,3 +51,12 @@ curl -s https://premarketprice.com/analysis/AAPL | grep -c FAQPage           # �
 
 - `npm run build` (Turbopack/webpack podľa next.config), `npx tsc --noEmit`, `npx jest`
 - Lokálne bez Redis/DB: ticker stránky vracajú 404 (environmentálny limit, nie bug)
+- **`next dev` (Turbopack) zlyháva na `globals.css`** — "Invalid empty selector" pri vnorenom `@supports` v `@media` (pre-existing, webpack build prejde). Na lokálny render smoke použi `npm run build` + `NODE_ENV=production npx tsx server.ts`
+
+## Early Winners score pipeline
+
+- **Tok**: quant engine (separátna Postgres PIT DB, `QUANT_DB_URL`) → `npm run quant:score -- --as-of <dátum> --json-out <súbor>` → JSON sa prenesie na VPS → `scripts/import-ew-scores.ts` upsertne do `EwScoreSnapshot` (SQLite) → renderuje `/screener/early-winners` + `PmpScoreSection` na `/analysis/[ticker]`
+- Engine sa **NEIMPORTUJE** do Next runtime (`src/lib/quant` je mimo app tsconfig); hranica = JSON kontrakt `ew-score-export/1` (validácia v `src/lib/earlywinners/score-import.ts`)
+- PM2: `cron-ew-score-import` denne 05:30 UTC, súbor cez `EW_EXPORT_PATH` (default `/var/www/premarketprice/data/ew-scores.json`) — importér bez súboru skončí exit 2, nič nerozbije
+- Importer je idempotentný na `(symbol, asOfDate)`; tickery mimo `Ticker` tabuľky (delisted z frozen universe) preskočí — produkt ukazuje len live tickery
+- Skóre sú **V5-B current-data** — EARNINGS stĺpec je BLOCKED (žiadne PIT consensus dáta), nikdy nie 0. Neprezentovať ako backtest ani V5-C výsledok

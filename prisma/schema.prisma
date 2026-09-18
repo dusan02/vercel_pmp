@@ -152,6 +152,7 @@ model Ticker {
   valuationHistories   ValuationHistory[]
   valuationPercentiles ValuationPercentiles[]
   volumeBuckets        VolumeBucket[]
+  ewScoreSnapshots     EwScoreSnapshot[]
 
   // Finnhub data
   finnhubMetrics             FinnhubMetrics?
@@ -571,6 +572,41 @@ model DailyBlogSnapshot {
   updatedAt      DateTime @updatedAt
 
   @@index([date])
+}
+
+// ============================================================================
+// EARLY WINNERS SCORE SNAPSHOT (product layer)
+// ----------------------------------------------------------------------------
+// Batch-exported scores from the quant engine (separate Postgres PIT DB).
+// Written only by scripts/import-ew-scores.ts from the engine JSON export.
+// V5-B current-data mode — EARNINGS is BLOCKED until verified PIT consensus
+// data exists. Do NOT confuse with a backtested V5-C result.
+// ============================================================================
+
+model EwScoreSnapshot {
+  id       String   @id @default(cuid())
+  symbol   String
+  asOfDate DateTime
+
+  totalScore         Float
+  maxPossible        Float
+  fundamentalsScore  Float?
+  momentumScore      Float?
+  qualityScore       Float?
+  earningsBlocked    Boolean @default(true)
+  earningsScore      Float?
+
+  rank          Int?
+  engineVersion String?
+  rationaleJson String? // deterministic feature evidence from engine (JSON string)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ticker Ticker @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+
+  @@unique([symbol, asOfDate])
+  @@index([asOfDate, totalScore])
 }
 
 // ============================================================================

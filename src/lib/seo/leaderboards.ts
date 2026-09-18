@@ -7,7 +7,7 @@
 
 import { prisma } from '@/lib/db/prisma';
 
-export type MetricSource = 'analysisCache' | 'finnhubMetrics';
+export type MetricSource = 'analysisCache' | 'finnhubMetrics' | 'ewScore';
 
 export interface LeaderboardDef {
   slug: string;
@@ -232,6 +232,29 @@ export const LEADERBOARDS: LeaderboardDef[] = [
       { q: 'Is high revenue growth always good?', a: 'Not alone — growth bought with discounts or heavy spending can destroy value. Check margins and cash flow alongside it.' },
     ],
   },
+  {
+    slug: 'early-winners',
+    title: 'Early Winners — Top Stocks by PMP Composite Score',
+    h1: 'Early Winners',
+    description:
+      'US stocks ranked by the Early Winners composite score (fundamentals, momentum and quality factors from SEC filings and price data). Current-data score — V5-B methodology.',
+    keywords: ['early winners stocks', 'best stocks to buy', 'stock ranking', 'composite stock score', 'top rated stocks'],
+    metricLabel: 'EW score',
+    source: 'ewScore',
+    field: 'totalScore',
+    order: 'desc',
+    format: num1,
+    intro: [
+      'Early Winners is our 0–100 composite ranking built on the frozen V5 methodology: 35% earnings, 30% fundamentals, 25% momentum and 10% quality — computed from SEC filings and market data.',
+      'This page shows the current-data (V5-B) variant: the earnings pillar is blocked until verified point-in-time analyst consensus data becomes available, so the score reflects fundamentals, momentum and quality only. It is a screening signal, not a backtested result — historical V5-C performance has not been established.',
+    ],
+    faq: [
+      { q: 'What is the Early Winners score?', a: 'A 0–100 composite ranking across four weighted pillars: earnings (35%), fundamentals (30%), momentum (25%) and quality (10%). It uses SEC-filed financials and price/volume data.' },
+      { q: 'Why does the Earnings column show BLOCKED?', a: 'The earnings pillar requires historical point-in-time analyst consensus data, which is not currently available. Rather than fabricate a value, the score is computed without it and the pillar is explicitly marked as blocked.' },
+      { q: 'Is this score backtested?', a: 'The underlying V5-B methodology has a frozen out-of-sample benchmark, but this current-data leaderboard is not itself a backtest — it is a daily snapshot for screening, not a promise of future returns.' },
+      { q: 'How often is it updated?', a: 'Scores are recomputed as a batch from the latest available filings and price data and imported daily.' },
+    ],
+  },
 ];
 
 const LEADERBOARD_MAP = new Map(LEADERBOARDS.map((l) => [l.slug, l]));
@@ -295,4 +318,74 @@ export async function getLeaderboardRows(def: LeaderboardDef, limit = 50): Promi
       metricValue: rel?.[def.field] ?? null,
     };
   });
+}
+
+// ─── Early Winners (EwScoreSnapshot source) ─────────────────────────────────
+
+export interface EwLeaderboardRow {
+  rank: number;
+  symbol: string;
+  name: string;
+  sector: string | null;
+  price: number | null;
+  changePct: number | null;
+  marketCapB: number | null;
+  totalScore: number;
+  maxPossible: number;
+  fundamentalsScore: number | null;
+  momentumScore: number | null;
+  qualityScore: number | null;
+  earningsBlocked: boolean;
+  asOfDate: Date;
+}
+
+/**
+ * Top Early Winners rows from the latest imported EwScoreSnapshot batch.
+ * Live-ticker filter: only symbols present in Ticker with a valid price —
+ * delisted securities from the frozen research universe are never shown.
+ * Returns [] when no snapshot batch has been imported yet.
+ */
+export async function getEwLeaderboardRows(limit = 50): Promise<EwLeaderboardRow[]> {
+  const latest = await prisma.ewScoreSnapshot.aggregate({
+    _max: { asOfDate: true },
+  });
+  const asOfDate = latest._max.asOfDate;
+  if (!asOfDate) return [];
+
+  const snaps = await prisma.ewScoreSnapshot.findMany({
+    where: {
+      asOfDate,
+      ticker: { lastPrice: { gt: 0 } },
+    },
+    orderBy: [{ totalScore: 'desc' }, { symbol: 'asc' }],
+    take: limit,
+    include: {
+      ticker: {
+        select: {
+          name: true,
+          sector: true,
+          lastPrice: true,
+          lastChangePct: true,
+          lastMarketCap: true,
+        },
+      },
+    },
+  });
+
+  return snaps.map((s, i) => ({
+    rank: i + 1,
+    symbol: s.symbol,
+    name: s.ticker.name || s.symbol,
+    sector: s.ticker.sector,
+    price: s.ticker.lastPrice,
+    changePct: s.ticker.lastChangePct,
+    marketCapB: s.ticker.lastMarketCap,
+    totalScore: s.totalScore,
+    maxPossible: s.maxPossible,
+    fundamentalsScore: s.fundamentalsScore,
+    momentumScore: s.momentumScore,
+    qualityScore: s.qualityScore,
+    earningsBlocked: s.earningsBlocked,
+    asOfDate: s.asOfDate,
+  }));
 }

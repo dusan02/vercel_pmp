@@ -118,6 +118,22 @@ async function getTickerData(symbol: string) {
             fetchedAt: true,
           },
         },
+        ewScoreSnapshots: {
+          orderBy: { asOfDate: 'desc' },
+          take: 1,
+          select: {
+            totalScore: true,
+            maxPossible: true,
+            fundamentalsScore: true,
+            momentumScore: true,
+            qualityScore: true,
+            earningsScore: true,
+            earningsBlocked: true,
+            rank: true,
+            asOfDate: true,
+            rationaleJson: true,
+          },
+        },
       },
     });
   } catch {
@@ -485,7 +501,7 @@ export default async function AnalysisPage({ params }: PageProps) {
 
           <RelatedStocksSection ticker={tickerUpper} sector={data?.sector} peers={sectorPeers} />
 
-          <PmpScoreSection />
+          <PmpScoreSection snapshot={data?.ewScoreSnapshots?.[0] ?? null} />
 
           {/* FAQ — visible Q&A with concrete numbers + matching FAQPage JSON-LD (GEO) */}
           <TickerFaqSection {...faqProps} />

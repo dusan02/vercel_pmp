@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { generatePageMetadata } from '@/lib/seo/metadata';
-import { getLeaderboard, getLeaderboardRows, LEADERBOARDS } from '@/lib/seo/leaderboards';
+import { getLeaderboard, getLeaderboardRows, getEwLeaderboardRows, LEADERBOARDS } from '@/lib/seo/leaderboards';
 import { formatPrice, formatPercent } from '@/lib/utils/heatmapFormat';
 import { formatSectorName } from '@/lib/utils/format';
 import { toJsonLd } from '@/lib/seo/jsonLd';
@@ -36,15 +36,18 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ sl
   const def = getLeaderboard(slug);
   if (!def) notFound();
 
-  const rows = await getLeaderboardRows(def, 50);
+  const isEw = def.source === 'ewScore';
+  const rows = isEw ? [] : await getLeaderboardRows(def, 50);
+  const ewRows = isEw ? await getEwLeaderboardRows(50) : [];
+  const listRows = isEw ? ewRows : rows;
   const baseUrl = 'https://premarketprice.com';
 
   const itemListSchema = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
     name: def.h1,
-    numberOfItems: rows.length,
-    itemListElement: rows.map((r) => ({
+    numberOfItems: listRows.length,
+    itemListElement: listRows.map((r) => ({
       '@type': 'ListItem',
       position: r.rank,
       name: `${r.name} (${r.symbol})`,
@@ -91,6 +94,22 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ sl
             </div>
           </div>
 
+          {isEw && (
+            <div className="mb-4 rounded-lg border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-900/20 px-4 py-3 text-xs text-amber-800 dark:text-amber-300 max-w-3xl">
+              <strong>Current-data score — V5-B methodology.</strong> This is a
+              screening snapshot using the validated V5-B configuration. The
+              earnings pillar is <strong>BLOCKED</strong> because verified
+              historical point-in-time consensus data is not available —
+              it is not counted as zero. Historical V5-C performance has not
+              been established.
+              {ewRows[0] && (
+                <span className="block mt-1">
+                  Scores as of {new Date(ewRows[0].asOfDate).toISOString().slice(0, 10)}.
+                </span>
+              )}
+            </div>
+          )}
+
           {/* Leaderboard table — fully server-rendered for crawlers */}
           <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
             <table className="w-full text-sm">
@@ -103,8 +122,82 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ sl
                   <th className="px-3 py-2 text-right">Day %</th>
                   <th className="px-3 py-2 text-right hidden sm:table-cell">Mkt Cap</th>
                   <th className="px-3 py-2 text-right font-bold">{def.metricLabel}</th>
+                  {isEw && (
+                    <>
+                      <th className="px-3 py-2 text-right hidden lg:table-cell">Fund.</th>
+                      <th className="px-3 py-2 text-right hidden lg:table-cell">Mom.</th>
+                      <th className="px-3 py-2 text-right hidden lg:table-cell">Qual.</th>
+                      <th className="px-3 py-2 text-right">Earnings</th>
+                    </>
+                  )}
                 </tr>
               </thead>
+              {isEw ? (
+                <tbody>
+                  {ewRows.length === 0 && (
+                    <tr>
+                      <td colSpan={11} className="px-3 py-8 text-center text-slate-500 dark:text-slate-400">
+                        No Early Winners scores imported yet — the next batch import will populate this table.
+                      </td>
+                    </tr>
+                  )}
+                  {ewRows.map((r) => (
+                    <tr
+                      key={r.symbol}
+                      className="border-t border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                    >
+                      <td className="px-3 py-2 text-slate-400">{r.rank}</td>
+                      <td className="px-3 py-2">
+                        <Link href={`/analysis/${r.symbol}`} className="group">
+                          <span className="font-semibold text-blue-600 dark:text-blue-400 group-hover:underline">
+                            {r.symbol}
+                          </span>
+                          <span className="ml-2 text-slate-500 dark:text-slate-400 text-xs hidden sm:inline">
+                            {r.name}
+                          </span>
+                        </Link>
+                      </td>
+                      <td className="px-3 py-2 hidden md:table-cell text-slate-500 dark:text-slate-400 text-xs">
+                        {r.sector ? formatSectorName(r.sector) : '—'}
+                      </td>
+                      <td className="px-3 py-2 text-right tabular-nums">
+                        {r.price != null ? formatPrice(r.price) : '—'}
+                      </td>
+                      <td
+                        className={`px-3 py-2 text-right tabular-nums ${
+                          (r.changePct ?? 0) >= 0
+                            ? 'text-emerald-600 dark:text-emerald-400'
+                            : 'text-rose-600 dark:text-rose-400'
+                        }`}
+                      >
+                        {r.changePct != null ? formatPercent(r.changePct) : '—'}
+                      </td>
+                      <td className="px-3 py-2 text-right hidden sm:table-cell text-slate-600 dark:text-slate-300 tabular-nums">
+                        {formatMarketCap(r.marketCapB)}
+                      </td>
+                      <td className="px-3 py-2 text-right font-semibold tabular-nums text-slate-900 dark:text-white">
+                        {r.totalScore.toFixed(1)}
+                      </td>
+                      <td className="px-3 py-2 text-right hidden lg:table-cell tabular-nums text-slate-600 dark:text-slate-300">
+                        {r.fundamentalsScore != null ? r.fundamentalsScore.toFixed(0) : '—'}
+                      </td>
+                      <td className="px-3 py-2 text-right hidden lg:table-cell tabular-nums text-slate-600 dark:text-slate-300">
+                        {r.momentumScore != null ? r.momentumScore.toFixed(0) : '—'}
+                      </td>
+                      <td className="px-3 py-2 text-right hidden lg:table-cell tabular-nums text-slate-600 dark:text-slate-300">
+                        {r.qualityScore != null ? r.qualityScore.toFixed(0) : '—'}
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        {r.earningsBlocked ? (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                            Blocked
+                          </span>
+                        ) : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              ) : (
               <tbody>
                 {rows.map((r) => (
                   <tr
@@ -146,6 +239,7 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ sl
                   </tr>
                 ))}
               </tbody>
+              )}
             </table>
           </div>
 
@@ -190,8 +284,9 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ sl
           </section>
 
           <p className="mt-8 text-xs text-slate-400 dark:text-slate-500 max-w-3xl">
-            Data updated daily from Finnhub fundamentals and SEC filings. Scores are simplified
-            heuristics for screening — not investment advice.
+            {isEw
+              ? 'Scores computed from SEC filings and price data under the frozen V5-B methodology and imported in a daily batch. The earnings pillar is blocked pending verified point-in-time consensus data. Screening signal — not a backtest, not investment advice.'
+              : 'Data updated daily from Finnhub fundamentals and SEC filings. Scores are simplified heuristics for screening — not investment advice.'}
           </p>
         </div>
       </div>

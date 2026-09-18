@@ -72,7 +72,9 @@
     "cron:measure": "tsx scripts/run-crons-and-measure.ts",
     "test:quant": "vitest run --config vitest.quant.config.mts",
     "quant:profile": "tsx src/lib/quant/p4-engine/consensus/eeh-profiler-cli.ts",
-    "quant:e2e": "tsx src/lib/quant/p4-engine/consensus/synthetic-e2e-cli.ts"
+    "quant:e2e": "tsx src/lib/quant/p4-engine/consensus/synthetic-e2e-cli.ts",
+    "quant:status": "tsx src/lib/quant/project-status-cli.ts",
+    "quant:score": "tsx src/lib/quant/ew-engine/current-signal-cli.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
