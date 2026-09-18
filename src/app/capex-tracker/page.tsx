@@ -88,10 +88,12 @@ async function getCapexRows(): Promise<CapexRow[]> {
 
 function fmtB(v: number | null): string {
     if (v == null) return '—';
-    if (v >= 1e12) return `$${(v / 1e12).toFixed(2)}T`;
-    if (v >= 1e9) return `$${(v / 1e9).toFixed(1)}B`;
-    if (v >= 1e6) return `$${(v / 1e6).toFixed(0)}M`;
-    return `$${v.toFixed(0)}`;
+    const abs = Math.abs(v);
+    const sign = v < 0 ? '-' : '';
+    if (abs >= 1e12) return `${sign}$${(abs / 1e12).toFixed(2)}T`;
+    if (abs >= 1e9) return `${sign}$${(abs / 1e9).toFixed(1)}B`;
+    if (abs >= 1e6) return `${sign}$${(abs / 1e6).toFixed(0)}M`;
+    return `${sign}$${abs.toFixed(0)}`;
 }
 
 export default async function CapexTrackerPage() {
