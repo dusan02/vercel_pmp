@@ -109,12 +109,13 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Unified Stocks & Screener: /stocks and the old homepage tabs now live
-  // on /screener (301 — preserves the indexed /stocks SEO equity).
-  if (pathname === '/stocks') {
-    return NextResponse.redirect(new URL('/screener', request.url), 301);
+  // Old homepage tabs → standalone pages (301). /stocks is a live SSR index
+  // hub again — it carries the internal links to every eligible /analysis
+  // and /valuation page (fixes the orphan-page gap found by the crawler).
+  if (pathname === '/' && request.nextUrl.searchParams.get('tab') === 'allStocks') {
+    return NextResponse.redirect(new URL('/stocks', request.url), 301);
   }
-  if (pathname === '/' && ['allStocks', 'screener'].includes(request.nextUrl.searchParams.get('tab') ?? '')) {
+  if (pathname === '/' && request.nextUrl.searchParams.get('tab') === 'screener') {
     return NextResponse.redirect(new URL('/screener', request.url), 301);
   }
 

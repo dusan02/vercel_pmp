@@ -96,6 +96,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'daily',
       priority: 0.8,
     },
+    {
+      url: `${baseUrl}/stocks`,
+      lastModified: currentDate,
+      changeFrequency: 'daily',
+      priority: 0.8,
+    },
     // Curated leaderboard screens — /screener/[slug]
     ...LEADERBOARDS.map((l) => ({
       url: `${baseUrl}/screener/${l.slug}`,
