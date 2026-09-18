@@ -33,8 +33,15 @@ export class AiMoversService {
         if (redisClient && redisClient.isOpen) {
             // Get top movers by absolute Z-score – both gainers AND losers
             topSymbols = await redisClient.zRange(zscoreKey, 0, 19);
-        } else {
-            console.warn('⚠️ AiMoversService: Redis not available, falling back to DB');
+        }
+
+        // Fall back to DB when Redis is unavailable OR the rank index is empty
+        if (topSymbols.length === 0) {
+            if (redisClient && redisClient.isOpen) {
+                console.warn('⚠️ AiMoversService: rank index empty, falling back to DB');
+            } else {
+                console.warn('⚠️ AiMoversService: Redis not available, falling back to DB');
+            }
             const tickers = await prisma.ticker.findMany({
                 where: {
                     OR: [
