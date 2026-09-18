@@ -6,7 +6,6 @@ import { generatePageMetadata, shortName } from '@/lib/seo/metadata';
 import { getCompanyName } from '@/lib/companyNames';
 import { formatPercent, formatPrice } from '@/lib/utils/heatmapFormat';
 import {
-  getEligibleValuationTickers,
   hasValuationData,
   getValuationHistory,
 } from '@/lib/seo/eligibleValuation';
@@ -40,10 +39,10 @@ async function getTickerBasicData(symbol: string) {
   }
 }
 
-export async function generateStaticParams() {
-  const tickers = await getEligibleValuationTickers();
-  return tickers.map((t) => ({ ticker: t.toLowerCase() }));
-}
+// NOTE: deliberately NO generateStaticParams — in this deployment (custom
+// server + standalone output) prerendered params end up missing from the
+// runtime manifest and 404, and CI builds render with no real DB so
+// degraded/empty output gets baked. ISR renders on demand instead.
 
 // --- Statistical helpers ---
 

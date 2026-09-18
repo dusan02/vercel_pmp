@@ -5,7 +5,6 @@ import { prisma } from '@/lib/db/prisma';
 import { generatePageMetadata, shortName } from '@/lib/seo/metadata';
 import { getCompanyName } from '@/lib/companyNames';
 import {
-  getEligibleFinancialsTickers,
   hasFinancialsData,
   getFinancialStatements,
 } from '@/lib/seo/eligibleFinancials';
@@ -70,10 +69,10 @@ function periodLabel(fiscalYear: number, fiscalPeriod: string): string {
   return `${fiscalPeriod} FY${fiscalYear}`;
 }
 
-export async function generateStaticParams() {
-  const tickers = await getEligibleFinancialsTickers();
-  return tickers.map((t) => ({ ticker: t.toLowerCase() }));
-}
+// NOTE: deliberately NO generateStaticParams — in this deployment (custom
+// server + standalone output) prerendered params end up missing from the
+// runtime manifest and 404, and CI builds render with no real DB so
+// degraded/empty output gets baked. ISR renders on demand instead.
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { ticker } = await params;

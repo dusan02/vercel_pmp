@@ -6,7 +6,6 @@ import { generatePageMetadata, shortName } from '@/lib/seo/metadata';
 import { getCompanyName } from '@/lib/companyNames';
 import { formatPercent, formatPrice, formatMarketCapDiff } from '@/lib/utils/heatmapFormat';
 import { formatSectorName } from '@/lib/utils/format';
-import { getEligibleAnalysisTickers } from '@/lib/seo/eligibleTickers';
 import ShareButtons from '@/components/ShareButtons';
 import { IntradayChart } from '@/components/company/IntradayChart';
 
@@ -150,13 +149,11 @@ function formatDateShort(date: Date): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-export async function generateStaticParams() {
-  // Pre-generate for the same eligible universe as analysis pages.
-  // At runtime, non-universe tickers will 404 via getTickerData() + notFound().
-  // Sitemap further filters to only tickers with enough move data.
-  const tickers = await getEligibleAnalysisTickers();
-  return tickers.map((t) => ({ symbol: t }));
-}
+// NOTE: deliberately NO generateStaticParams — in this deployment (custom
+// server + standalone output) prerendered params end up missing from the
+// runtime manifest and 404. Worse, the CI artifact build renders with no
+// real DB, so notFound() results get BAKED as permanent static 404 pages.
+// With ISR the pages render on demand against the live DB instead.
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { symbol } = await params;
