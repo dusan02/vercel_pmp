@@ -418,7 +418,7 @@ export default async function AnalysisPage({ params }: PageProps) {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Breadcrumb */}
         <nav className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700" aria-label="Breadcrumb">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 py-3">
             <ol className="flex items-center space-x-2 text-sm">
               <li><Link href="/" className="text-gray-500 hover:text-blue-600 dark:text-gray-400">Home</Link></li>
               <li className="text-gray-400" aria-hidden="true">/</li>
@@ -429,7 +429,7 @@ export default async function AnalysisPage({ params }: PageProps) {
           </div>
         </nav>
 
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <main className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {nextEarnings && earningsDays != null && earningsDays <= 14 && (
             <div className="mb-4 flex flex-wrap items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 text-sm">
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-200">

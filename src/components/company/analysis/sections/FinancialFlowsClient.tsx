@@ -354,7 +354,7 @@ export function FinancialFlowsClient({ annual, quarterly, shareChangeYoY }: { an
                 </div>
             )}
 
-            <div className="flex flex-col gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-8">
                 {income && (
                     <div>
                         <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">
@@ -376,7 +376,7 @@ export function FinancialFlowsClient({ annual, quarterly, shareChangeYoY }: { an
                     </div>
                 )}
                 {bs && (
-                    <div>
+                    <div className="lg:col-span-2">
                         <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">
                             Balance sheet — {period.label}
                         </h3>
