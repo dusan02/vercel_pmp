@@ -34,8 +34,9 @@ PreMarketPrice tracks 300+ US stocks during the pre-market session (4:00 AM – 
 - [Earnings Calendar](https://premarketprice.com/earnings): Upcoming earnings dates, EPS and revenue estimates for US companies
 - [Stock Screener](https://premarketprice.com/screener): Filter US stocks by sector, price, market cap, and pre-market movement
 - [Curated stock screens](https://premarketprice.com/screener/most-undervalued): Ranked leaderboards — most undervalued, healthiest balance sheets, highest Piotroski score, lowest P/E, lowest PEG, highest dividend yield, highest ROE, highest FCF margin, fastest revenue growth
-- [All Stocks](https://premarketprice.com/screener): Full list of tracked US stocks with live prices
+- [All Stocks](https://premarketprice.com/stocks): Full index of every tracked US stock with links to its analysis and valuation pages
 - [Sectors](https://premarketprice.com/sectors): Sector-level performance and top movers per sector
+- [Embeddable heatmap widget](https://premarketprice.com/embed/heatmap): Free iframe widget of the live heatmap for external publishers
 - [Blog](https://premarketprice.com/blog): Daily premarket reports and weekly earnings recaps
 - [RSS Feed](https://premarketprice.com/api/rss): Machine-readable feed of daily reports
 
@@ -47,7 +48,17 @@ Each trading day gets permanent dated pages — useful for "what moved on [date]
 - /premarket-losers/[YYYY-MM-DD]: top pre-market losers for that date (e.g. [latest](https://premarketprice.com/premarket-losers))
 - /gainers and /losers: today's regular-session leaders
 - [/premarket-movers/weekly](https://premarketprice.com/premarket-movers/weekly): biggest single-day pre-market moves of the current trading week
-- /movers/[TICKER]: per-stock history of significant pre-market moves with catalysts (e.g. [AAPL](https://premarketprice.com/premarket/AAPL))
+- /premarket/[TICKER]: per-stock history of significant pre-market moves with catalysts (e.g. [AAPL](https://premarketprice.com/premarket/AAPL))
+
+## Metric heatmaps (one per fundamental/valuation metric)
+
+Dedicated heatmap pages ranking the whole market by a single metric — useful for "which stocks have the lowest P/E" style questions:
+
+- [P/E ratio](https://premarketprice.com/heatmap/pe-ratio), [forward P/E](https://premarketprice.com/heatmap/forward-pe), [P/S](https://premarketprice.com/heatmap/price-to-sales), [P/B](https://premarketprice.com/heatmap/price-to-book), [PEG](https://premarketprice.com/heatmap/peg-ratio), [EV/EBITDA](https://premarketprice.com/heatmap/ev-ebitda)
+- [Dividend yield](https://premarketprice.com/heatmap/dividend-yield), [ROE](https://premarketprice.com/heatmap/roe), [net margin](https://premarketprice.com/heatmap/net-margin), [revenue growth](https://premarketprice.com/heatmap/revenue-growth), [EPS growth](https://premarketprice.com/heatmap/eps-growth), [FCF margin](https://premarketprice.com/heatmap/fcf-margin)
+- [Piotroski F-Score](https://premarketprice.com/heatmap/piotroski-score), [Altman Z-Score](https://premarketprice.com/heatmap/altman-z-score), [Beneish M-Score](https://premarketprice.com/heatmap/beneish-m-score)
+- [Relative volume](https://premarketprice.com/heatmap/relative-volume), [beta](https://premarketprice.com/heatmap/beta), [movers z-score](https://premarketprice.com/heatmap/movers-z-score)
+- [Weekly](https://premarketprice.com/heatmap/weekly-performance), [monthly](https://premarketprice.com/heatmap/monthly-performance), [YTD](https://premarketprice.com/heatmap/ytd), [1-year](https://premarketprice.com/heatmap/one-year-performance) performance, [market-cap change](https://premarketprice.com/heatmap/market-cap-change)
 
 ## Chinese version (中文版)
 

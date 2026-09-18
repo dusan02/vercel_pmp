@@ -274,6 +274,29 @@ module.exports = {
       autorestart: false,
     },
     {
+      name: "cron-post-social",
+      script: "scripts/trigger-post-social.ts",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
+      cwd: __dirname,
+      instances: 1,
+      exec_mode: "fork",
+      env: {
+        NODE_ENV: "production",
+        BASE_URL: "http://127.0.0.1:3001",
+        CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || envVars.CRON_SECRET || process.env.CRON_SECRET_KEY || process.env.CRON_SECRET,
+      },
+      error_file: path.join(__dirname, "logs", "pm2", "cron-post-social-error.log"),
+      out_file: path.join(__dirname, "logs", "pm2", "cron-post-social-out.log"),
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      // Every 30 min, 13:00–22:59 server time (Europe/Prague) = 07:00–16:59 ET —
+      // covers pre-market through regular close, weekdays only.
+      // Posting happens inside the app process (API route) — TWITTER_API_KEY,
+      // TWITTER_API_SECRET, TWITTER_ACCESS_TOKEN, TWITTER_ACCESS_SECRET must be
+      // set in .env and the app restarted. Gracefully skips when not configured.
+      cron_restart: "*/30 13-22 * * 1-5",
+      autorestart: false,
+    },
+    {
       name: "cron-verify-sector-industry",
       script: "scripts/trigger-verify-sector-industry.ts",
       interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
@@ -443,6 +466,27 @@ module.exports = {
       log_date_format: "YYYY-MM-DD HH:mm:ss Z",
       // Daily at 22:30 UTC — after post-market sync; saves daily blog snapshot for /blog archive
       cron_restart: "30 22 * * *",
+      autorestart: false,
+    },
+    {
+      name: "cron-ew-score-import",
+      script: "scripts/import-ew-scores.ts",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
+      cwd: __dirname,
+      instances: 1,
+      exec_mode: "fork",
+      env: {
+        NODE_ENV: "production",
+        DATABASE_URL: envVars.DATABASE_URL || process.env.DATABASE_URL,
+        // Engine export is produced on the quant host (separate Postgres PIT DB)
+        // and shipped to this path; the importer is idempotent — safe to re-run.
+        EW_EXPORT_PATH: envVars.EW_EXPORT_PATH || process.env.EW_EXPORT_PATH || "/var/www/premarketprice/data/ew-scores.json",
+      },
+      error_file: path.join(__dirname, "logs", "pm2", "cron-ew-score-import-error.log"),
+      out_file: path.join(__dirname, "logs", "pm2", "cron-ew-score-import-out.log"),
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      // Daily at 05:30 UTC — imports the latest Early Winners score export (V5-B mode)
+      cron_restart: "30 5 * * *",
       autorestart: false,
     },
   ],
