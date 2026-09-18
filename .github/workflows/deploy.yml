@@ -74,10 +74,11 @@ jobs:
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
           DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
         run: |
-          mkdir -p ~/.ssh
-          printf '%s' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          SSH_OPTS="-i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new"
+          mkdir -p "$HOME/.ssh"
+          printf '%s\n' "$VPS_SSH_KEY" > "$HOME/.ssh/deploy_key"
+          chmod 600 "$HOME/.ssh/deploy_key"
+          # ~ does not expand inside a quoted assignment — use $HOME.
+          SSH_OPTS="-i $HOME/.ssh/deploy_key -o StrictHostKeyChecking=accept-new"
 
           scp $SSH_OPTS artifact/next-build.tar.gz "$VPS_USER@$VPS_HOST:/tmp/next-build.tar.gz"
 
