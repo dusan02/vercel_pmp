@@ -20,6 +20,7 @@ import { EarningsSection } from '@/components/company/analysis/sections/Earnings
 import { RecentMovesSection } from '@/components/company/analysis/sections/RecentMovesSection';
 import { RelatedStocksSection } from '@/components/company/analysis/sections/RelatedStocksSection';
 import { PmpScoreSection } from '@/components/company/analysis/sections/PmpScoreSection';
+import { FinancialFlowsSection, type StatementRow } from '@/components/company/analysis/sections/FinancialFlowsSection';
 import { TickerFaqSection, buildTickerFaq } from '@/components/company/analysis/sections/TickerFaqSection';
 import { IntradayChart } from '@/components/company/IntradayChart';
 import { SeoTextSection } from '@/components/company/SeoTextSection';
@@ -188,6 +189,35 @@ async function getRecentSignificantMoves(symbol: string) {
 }
 
 /**
+ * Latest financial statements for the Financial Flows sankey section.
+ * Section-level data — degrades gracefully (section hidden) on error.
+ */
+async function getFinancialFlowsData(symbol: string): Promise<StatementRow[]> {
+  try {
+    return await prisma.financialStatement.findMany({
+      where: { symbol, revenue: { gt: 0 } },
+      orderBy: { endDate: 'desc' },
+      take: 16,
+      select: {
+        period: true,
+        fiscalYear: true,
+        fiscalPeriod: true,
+        endDate: true,
+        revenue: true,
+        grossProfit: true,
+        ebit: true,
+        netIncome: true,
+        operatingCashFlow: true,
+        capex: true,
+        sbc: true,
+      },
+    });
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Fetch sector peers for the "Related Stocks" section.
  * Returns up to 10 tickers in the same sector, sorted by market cap (desc),
  * excluding the current ticker. Falls back to an empty array on error.
@@ -276,7 +306,7 @@ export default async function AnalysisPage({ params }: PageProps) {
 
   // Fetch everything in parallel (independent queries)
   // Includes SSR pre-fetch of analysis API + history for instant client hydration
-  const [earningsData, recentMoves, sectorPeers, sparkline, analysisData, historyData] = await Promise.all([
+  const [earningsData, recentMoves, sectorPeers, sparkline, analysisData, historyData, flowStatements] = await Promise.all([
     getEarningsForTicker(tickerUpper),
     getRecentSignificantMoves(tickerUpper),
     getSectorPeers(data?.sector, tickerUpper),
@@ -303,6 +333,7 @@ export default async function AnalysisPage({ params }: PageProps) {
         return await res.json();
       } catch { return null; }
     })(),
+    getFinancialFlowsData(tickerUpper),
   ]);
 
   const marketSession = detectSession(nowET());
@@ -431,6 +462,8 @@ export default async function AnalysisPage({ params }: PageProps) {
           />
 
           <HealthScoresSection cache={data?.analysisCache ?? null} />
+
+          <FinancialFlowsSection statements={flowStatements} />
 
           {/* Data-driven prose unique per ticker — the differentiator that gets
               pages out of "Crawled – currently not indexed" */}
