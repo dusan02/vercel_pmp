@@ -210,6 +210,7 @@ async function getFinancialFlowsData(symbol: string): Promise<StatementRow[]> {
         operatingCashFlow: true,
         capex: true,
         sbc: true,
+        sharesOutstanding: true,
       },
     });
   } catch {

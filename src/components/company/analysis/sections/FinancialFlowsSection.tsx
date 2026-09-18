@@ -21,6 +21,7 @@ export interface StatementRow {
     operatingCashFlow: number | null;
     capex: number | null;
     sbc: number | null;
+    sharesOutstanding: number | null;
 }
 
 function isFy(r: StatementRow): boolean {
@@ -41,10 +42,11 @@ function toPeriod(r: StatementRow, label: string): FlowPeriod {
         ocf: num(r.operatingCashFlow),
         capex: num(r.capex),
         sbc: num(r.sbc),
+        sharesOutstanding: num(r.sharesOutstanding),
     };
 }
 
-const FLOW_FIELDS = ['revenue', 'grossProfit', 'ebit', 'netIncome', 'operatingCashFlow', 'capex', 'sbc'] as const;
+const FLOW_FIELDS = ['revenue', 'grossProfit', 'ebit', 'netIncome', 'operatingCashFlow', 'capex', 'sbc', 'sharesOutstanding'] as const;
 
 /**
  * Statement rows for quarterly periods are YTD-cumulative (Q2 row = Q1+Q2).
@@ -89,6 +91,17 @@ export function FinancialFlowsSection({ statements }: { statements: StatementRow
 
     if (!annual && !quarterly) return null;
 
+    // YoY share-count change (dilution) — latest FY vs previous FY
+    const fyRows = sorted.filter(isFy);
+    let shareChangeYoY: number | null = null;
+    if (fyRows.length >= 2) {
+        const cur = fyRows[0]!.sharesOutstanding;
+        const prev = fyRows[1]!.sharesOutstanding;
+        if (cur != null && prev != null && prev > 0 && isFinite(cur) && isFinite(prev)) {
+            shareChangeYoY = cur / prev - 1;
+        }
+    }
+
     return (
         <section className="mb-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
@@ -99,7 +112,7 @@ export function FinancialFlowsSection({ statements }: { statements: StatementRow
                 cash flow as one diagram. True FCF treats stock-based
                 compensation as a real cost.
             </p>
-            <FinancialFlowsClient annual={annual} quarterly={quarterly} />
+            <FinancialFlowsClient annual={annual} quarterly={quarterly} shareChangeYoY={shareChangeYoY} />
         </section>
     );
 }

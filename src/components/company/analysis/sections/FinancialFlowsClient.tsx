@@ -12,6 +12,7 @@ export interface FlowPeriod {
     ocf: number | null;
     capex: number | null;
     sbc: number | null;
+    sharesOutstanding?: number | null;
 }
 
 const C = {
@@ -166,7 +167,7 @@ function buildCashFlow(p: FlowPeriod): FlowSpec | null {
     return { columns: columns.filter((c) => c.length > 0), links, total: ocf };
 }
 
-export function FinancialFlowsClient({ annual, quarterly }: { annual: FlowPeriod | null; quarterly: FlowPeriod | null }) {
+export function FinancialFlowsClient({ annual, quarterly, shareChangeYoY }: { annual: FlowPeriod | null; quarterly: FlowPeriod | null; shareChangeYoY?: number | null }) {
     const [period, setPeriod] = useState<FlowPeriod | null>(annual ?? quarterly);
     if (!period) return null;
 
@@ -179,6 +180,14 @@ export function FinancialFlowsClient({ annual, quarterly }: { annual: FlowPeriod
         { label: 'Net margin', value: pctOf(period.netIncome, period.revenue) },
         { label: 'FCF margin', value: pctOf(period.ocf != null && period.capex != null ? period.ocf - Math.abs(period.capex) : null, period.revenue) },
         { label: 'True FCF margin', value: pctOf(period.ocf != null && period.capex != null ? period.ocf - Math.abs(period.capex) - (period.sbc ?? 0) : null, period.revenue) },
+        { label: 'Capex / Revenue', value: pctOf(period.capex != null ? Math.abs(period.capex) : null, period.revenue) },
+        { label: 'SBC / Revenue', value: pctOf(period.sbc, period.revenue) },
+        {
+            label: 'Shares YoY',
+            value: shareChangeYoY != null
+                ? `${shareChangeYoY >= 0 ? '+' : ''}${(shareChangeYoY * 100).toFixed(1)}%${shareChangeYoY > 0 ? ' (dilution)' : ' (buyback)'}`
+                : undefined,
+        },
     ].filter((m) => m.value != null);
 
     return (
