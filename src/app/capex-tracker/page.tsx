@@ -4,7 +4,9 @@ import { generatePageMetadata } from '@/lib/seo/metadata';
 import { toJsonLd } from '@/lib/seo/jsonLd';
 import { prisma } from '@/lib/prisma';
 
-export const revalidate = 3600;
+// Render per-request — a static prerender can bake empty rows if the DB
+// query returns nothing during build (SQLite contention/dummy build DB).
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = generatePageMetadata({
     title: 'Capex Tracker — Companies Spending the Most on Capital Expenditures',
