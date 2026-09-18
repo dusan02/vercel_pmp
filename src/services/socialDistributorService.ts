@@ -26,12 +26,15 @@ export class SocialDistributorService {
         const movers = await prisma.ticker.findMany({
             where: {
                 latestMoversZScore: { not: null },
-                latestMoversRVOL: { gte: 2.0 },
                 moversReason: { not: null },
                 socialCopy: { not: null },
                 OR: [
-                    { latestMoversZScore: { gte: 4.0 } },
-                    { latestMoversZScore: { lte: -4.0 } }
+                    // Statistical outlier with volume confirmation
+                    { latestMoversZScore: { gte: 3.0 }, latestMoversRVOL: { gte: 2.0 } },
+                    { latestMoversZScore: { lte: -3.0 }, latestMoversRVOL: { gte: 2.0 } },
+                    // Volume-driven mover without extreme z-score
+                    { latestMoversRVOL: { gte: 3.0 }, lastChangePct: { gte: 3.0 } },
+                    { latestMoversRVOL: { gte: 3.0 }, lastChangePct: { lte: -3.0 } },
                 ]
             },
             orderBy: [
