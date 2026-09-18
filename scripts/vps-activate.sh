@@ -139,7 +139,9 @@ sleep 10
 MOVERS_LINKS=0
 for i in $(seq 1 6); do
   MOVERS_HTML=$(curl -s --max-time 30 http://localhost:3001/premarket-movers || true)
-  MOVERS_LINKS=$(printf '%s' "$MOVERS_HTML" | grep -c '/analysis/' || true)
+  # grep -o | wc -l counts OCCURRENCES — grep -c would count matching LINES
+  # and Next serves minified HTML on ~2 lines, so -c always returns ~2.
+  MOVERS_LINKS=$(printf '%s' "$MOVERS_HTML" | grep -o '/analysis/' | wc -l || true)
   echo "movers analysis links (try $i/6): $MOVERS_LINKS"
   [ "$MOVERS_LINKS" -ge 15 ] && break
   [ "$i" -lt 6 ] && sleep 15
