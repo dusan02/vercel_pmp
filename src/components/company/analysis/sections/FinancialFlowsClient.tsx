@@ -13,6 +13,15 @@ export interface FlowPeriod {
     capex: number | null;
     sbc: number | null;
     sharesOutstanding?: number | null;
+    totalAssets?: number | null;
+    totalLiabilities?: number | null;
+    currentAssets?: number | null;
+    currentLiabilities?: number | null;
+    retainedEarnings?: number | null;
+    totalEquity?: number | null;
+    totalDebt?: number | null;
+    cashAndEquivalents?: number | null;
+    netPPE?: number | null;
 }
 
 const C = {
@@ -29,6 +38,18 @@ const C = {
     fcf: '#10b981',
     sbc: '#8b5cf6',       // violet-500
     trueFcf: '#047857',
+    // balance sheet
+    cash: '#38bdf8',      // sky-400
+    otherAsset: '#93c5fd',// blue-300
+    ppe: '#34d399',       // emerald-400
+    ltAssets: '#059669',  // emerald-600
+    totalAssets: '#1d4ed8',// blue-700
+    liab: '#e11d48',      // rose-600
+    ltLiab: '#f43f5e',    // rose-500
+    debt: '#be123c',      // rose-700
+    otherLiab: '#fda4af', // rose-300
+    equity: '#047857',    // emerald-700
+    otherEq: '#6ee7b7',   // emerald-300
 };
 
 function fmt$(v: number): string {
@@ -167,12 +188,125 @@ function buildCashFlow(p: FlowPeriod): FlowSpec | null {
     return { columns: columns.filter((c) => c.length > 0), links, total: ocf };
 }
 
+function buildBalanceSheet(p: FlowPeriod): FlowSpec | null {
+    const A = p.totalAssets;
+    if (A == null || A <= 0) return null;
+    const L = p.totalLiabilities ?? (p.totalEquity != null ? A - p.totalEquity : null);
+    const E = p.totalEquity ?? (L != null ? A - L : null);
+    if (L == null || E == null || L < 0) return null;
+
+    const pos = (v: number | null | undefined) => (v != null && isFinite(v) && v > 0 ? v : 0);
+    const sub = (v: number) => pctOf(v, A);
+    const links: SankeyLink[] = [];
+
+    // --- left side: asset components → [Current/LT Assets] → Total Assets
+    const leaves: SankeyNode[] = [];
+    const midAssets: SankeyNode[] = [];
+    const ca = p.currentAssets;
+    const cash = pos(p.cashAndEquivalents);
+    const ppe = pos(p.netPPE);
+    const leaf = (id: string, label: string, value: number, color: string, to: string, linkValue = value) => {
+        leaves.push({ id, label, value, color, sub: sub(value) });
+        links.push({ from: id, to, value: linkValue });
+    };
+
+    if (ca != null && ca > 0 && ca <= A) {
+        const otherCA = Math.max(0, ca - cash);
+        const lta = Math.max(0, A - ca);
+        const otherLTA = Math.max(0, lta - ppe);
+        if (cash > 0) leaf('cash', 'Cash & Equiv.', cash, C.cash, 'ca');
+        if (otherCA > 0) leaf('oca', 'Other Current Assets', otherCA, C.otherAsset, 'ca');
+        if (ppe > 0 && lta > 0) leaf('ppe', 'Net PP&E', ppe, C.ppe, 'lta', Math.min(ppe, lta));
+        if (otherLTA > 0) leaf('olta', 'Other LT Assets', otherLTA, C.otherAsset, 'lta');
+        midAssets.push({ id: 'ca', label: 'Current Assets', value: ca, color: C.revenue, sub: sub(ca) });
+        if (lta > 0) midAssets.push({ id: 'lta', label: 'Long-Term Assets', value: lta, color: C.ltAssets, sub: sub(lta) });
+        links.push({ from: 'ca', to: 'assets', value: ca });
+        if (lta > 0) links.push({ from: 'lta', to: 'assets', value: lta });
+    } else {
+        // No current/long-term split — direct leaves into Total Assets
+        if (cash > 0) leaf('cash', 'Cash & Equiv.', cash, C.cash, 'assets');
+        if (ppe > 0) leaf('ppe', 'Net PP&E', ppe, C.ppe, 'assets');
+        const other = Math.max(0, A - cash - ppe);
+        if (other > 0) leaf('oa', 'Other Assets', other, C.otherAsset, 'assets');
+    }
+
+    // --- right side: Total Assets → Liabilities + Equity → components
+    const right: SankeyNode[] = [];
+    const children: SankeyNode[] = [];
+    const debtChildren: SankeyNode[] = [];
+
+    if (L > 0) {
+        right.push({ id: 'liab', label: 'Total Liabilities', value: L, color: C.liab, sub: sub(L) });
+        links.push({ from: 'assets', to: 'liab', value: L });
+        const cl = p.currentLiabilities;
+        if (cl != null && cl > 0 && cl <= L) {
+            children.push({ id: 'cl', label: 'Current Liabilities', value: cl, color: C.intTax, sub: sub(cl) });
+            links.push({ from: 'liab', to: 'cl', value: cl });
+            const ltl = Math.max(0, L - cl);
+            if (ltl > 0) {
+                children.push({ id: 'ltl', label: 'LT Liabilities', value: ltl, color: C.ltLiab, sub: sub(ltl) });
+                links.push({ from: 'liab', to: 'ltl', value: ltl });
+                const d = Math.min(pos(p.totalDebt), ltl);
+                const otherLTL = Math.max(0, ltl - d);
+                if (d > 0) {
+                    debtChildren.push({ id: 'debt', label: 'Total Debt', value: d, color: C.debt, sub: sub(d) });
+                    links.push({ from: 'ltl', to: 'debt', value: d });
+                }
+                if (otherLTL > 0) {
+                    debtChildren.push({ id: 'oltl', label: 'Other LT Liab.', value: otherLTL, color: C.otherLiab, sub: sub(otherLTL) });
+                    links.push({ from: 'ltl', to: 'oltl', value: otherLTL });
+                }
+            }
+        }
+    }
+    if (E > 0) {
+        right.push({ id: 'eq', label: 'Total Equity', value: E, color: C.equity, sub: sub(E) });
+        links.push({ from: 'assets', to: 'eq', value: E });
+        const re = p.retainedEarnings;
+        if (re != null && re > 0) {
+            const rv = Math.min(re, E);
+            children.push({ id: 're', label: 'Retained Earnings', value: rv, color: C.ebit, sub: sub(rv) });
+            links.push({ from: 'eq', to: 're', value: rv });
+            const otherEq = Math.max(0, E - rv);
+            if (otherEq > 0) {
+                children.push({ id: 'oeq', label: 'Other Equity', value: otherEq, color: C.otherEq, sub: sub(otherEq) });
+                links.push({ from: 'eq', to: 'oeq', value: otherEq });
+            }
+        } else {
+            // Accumulated deficit (or no RE data) — deficit shown as a
+            // detached marker: it reduces equity rather than flowing out of it
+            const otherEq = re != null && re < 0 ? E + Math.abs(re) : E;
+            if (re != null && re < 0) {
+                children.push({ id: 'adef', label: 'Accumulated Deficit', value: Math.abs(re), color: C.loss, sub: sub(Math.abs(re)) });
+            }
+            if (otherEq > 0) {
+                children.push({ id: 'oeq', label: re != null && re < 0 ? 'Paid-in & Other Equity' : 'Common Equity', value: otherEq, color: C.otherEq, sub: sub(otherEq) });
+                links.push({ from: 'eq', to: 'oeq', value: Math.min(otherEq, E) });
+            }
+        }
+    } else if (E < 0) {
+        right.push({ id: 'eq', label: 'Negative Equity', value: Math.abs(E), color: C.loss, sub: sub(Math.abs(E)) });
+    }
+
+    const columns: SankeyNode[][] = [
+        leaves,
+        midAssets,
+        [{ id: 'assets', label: 'Total Assets', value: A, color: C.totalAssets }],
+        right,
+        children,
+        debtChildren,
+    ].filter((c) => c.length > 0);
+
+    return { columns, links, total: A };
+}
+
 export function FinancialFlowsClient({ annual, quarterly, shareChangeYoY }: { annual: FlowPeriod | null; quarterly: FlowPeriod | null; shareChangeYoY?: number | null }) {
     const [period, setPeriod] = useState<FlowPeriod | null>(annual ?? quarterly);
     if (!period) return null;
 
     const income = buildIncome(period);
     const cash = buildCashFlow(period);
+    const bs = buildBalanceSheet(period);
 
     const margins: { label: string; value: string | undefined }[] = [
         { label: 'Gross margin', value: pctOf(period.grossProfit, period.revenue) },
@@ -182,6 +316,18 @@ export function FinancialFlowsClient({ annual, quarterly, shareChangeYoY }: { an
         { label: 'True FCF margin', value: pctOf(period.ocf != null && period.capex != null ? period.ocf - Math.abs(period.capex) - (period.sbc ?? 0) : null, period.revenue) },
         { label: 'Capex / Revenue', value: pctOf(period.capex != null ? Math.abs(period.capex) : null, period.revenue) },
         { label: 'SBC / Revenue', value: pctOf(period.sbc, period.revenue) },
+        {
+            label: 'Current ratio',
+            value: period.currentAssets != null && period.currentLiabilities != null && period.currentLiabilities > 0
+                ? (period.currentAssets / period.currentLiabilities).toFixed(2)
+                : undefined,
+        },
+        {
+            label: 'Debt / Equity',
+            value: period.totalDebt != null && period.totalEquity != null && period.totalEquity > 0
+                ? (period.totalDebt / period.totalEquity).toFixed(2)
+                : undefined,
+        },
         {
             label: 'Shares YoY',
             value: shareChangeYoY != null
@@ -226,6 +372,16 @@ export function FinancialFlowsClient({ annual, quarterly, shareChangeYoY }: { an
                         </h3>
                         <div className="overflow-x-auto">
                             <SankeyChart columns={cash.columns} links={cash.links} total={cash.total} formatValue={fmt$} height={280} />
+                        </div>
+                    </div>
+                )}
+                {bs && (
+                    <div>
+                        <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">
+                            Balance sheet — {period.label}
+                        </h3>
+                        <div className="overflow-x-auto">
+                            <SankeyChart columns={bs.columns} links={bs.links} total={bs.total} formatValue={fmt$} height={280} />
                         </div>
                     </div>
                 )}

@@ -23,6 +23,15 @@ export interface StatementRow {
     capex: number | null;
     sbc: number | null;
     sharesOutstanding: number | null;
+    totalAssets: number | null;
+    totalLiabilities: number | null;
+    currentAssets: number | null;
+    currentLiabilities: number | null;
+    retainedEarnings: number | null;
+    totalEquity: number | null;
+    totalDebt: number | null;
+    cashAndEquivalents: number | null;
+    netPPE: number | null;
 }
 
 function isFy(r: StatementRow): boolean {
@@ -44,10 +53,22 @@ function toPeriod(r: StatementRow, label: string): FlowPeriod {
         capex: num(r.capex),
         sbc: num(r.sbc),
         sharesOutstanding: num(r.sharesOutstanding),
+        totalAssets: num(r.totalAssets),
+        totalLiabilities: num(r.totalLiabilities),
+        currentAssets: num(r.currentAssets),
+        currentLiabilities: num(r.currentLiabilities),
+        retainedEarnings: num(r.retainedEarnings),
+        totalEquity: num(r.totalEquity),
+        totalDebt: num(r.totalDebt),
+        cashAndEquivalents: num(r.cashAndEquivalents),
+        netPPE: num(r.netPPE),
     };
 }
 
-const FLOW_FIELDS = ['revenue', 'grossProfit', 'ebit', 'netIncome', 'operatingCashFlow', 'capex', 'sbc', 'sharesOutstanding'] as const;
+// Flow fields only — quarterly YTD rows are subtracted to derive the
+// standalone quarter. Balance-sheet fields (and sharesOutstanding) are
+// point-in-time values and must NOT be diffed.
+const FLOW_FIELDS = ['revenue', 'grossProfit', 'ebit', 'netIncome', 'operatingCashFlow', 'capex', 'sbc'] as const;
 
 /**
  * Statement rows for quarterly periods are YTD-cumulative (Q2 row = Q1+Q2).
@@ -109,9 +130,9 @@ export function FinancialFlowsSection({ statements }: { statements: StatementRow
                 Financial Flows
             </h2>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-                Where the money comes in — and where it goes. Income statement and
-                cash flow as one diagram. True FCF treats stock-based
-                compensation as a real cost.
+                Where the money comes in — and where it goes. Income statement,
+                cash flow and balance sheet as one diagram. True FCF treats
+                stock-based compensation as a real cost.
             </p>
             <FinancialFlowsClient annual={annual} quarterly={quarterly} shareChangeYoY={shareChangeYoY} />
             <p className="mt-3">

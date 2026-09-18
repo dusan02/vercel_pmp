@@ -211,6 +211,15 @@ async function getFinancialFlowsData(symbol: string): Promise<StatementRow[]> {
         capex: true,
         sbc: true,
         sharesOutstanding: true,
+        totalAssets: true,
+        totalLiabilities: true,
+        currentAssets: true,
+        currentLiabilities: true,
+        retainedEarnings: true,
+        totalEquity: true,
+        totalDebt: true,
+        cashAndEquivalents: true,
+        netPPE: true,
       },
     });
   } catch {
