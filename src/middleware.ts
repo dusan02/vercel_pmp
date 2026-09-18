@@ -154,7 +154,11 @@ export async function middleware(request: NextRequest) {
 
   // Security headers
   response.headers.set('X-Content-Type-Options', 'nosniff');
-  response.headers.set('X-Frame-Options', 'DENY');
+  // /embed/* is designed to be iframed by third-party sites (newsletter
+  // widgets) — sending DENY would make the widget useless.
+  if (!request.nextUrl.pathname.startsWith('/embed/')) {
+    response.headers.set('X-Frame-Options', 'DENY');
+  }
   response.headers.set('X-XSS-Protection', '1; mode=block');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   // Don't expose version info

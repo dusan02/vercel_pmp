@@ -66,7 +66,9 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: '/(.*)',
+        // /embed/* must be iframe-able — no X-Frame-Options on those routes
+        // (middleware.ts applies the same exemption).
+        source: '/((?!embed/).*)',
         headers: [
           {
             key: 'X-Content-Type-Options',
