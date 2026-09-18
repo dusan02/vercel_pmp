@@ -142,12 +142,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
+  // Retry wrapper — eligible* helpers swallow DB errors (catch→[]) and the
+  // app's single SQLite connection can time out under load. An empty result
+  // here is virtually always transient; prod always has hundreds of tickers.
+  const fill = async <T>(fn: () => Promise<T[]>, tries = 4): Promise<T[]> => {
+    for (let i = 0; i < tries; i++) {
+      const r = await fn();
+      if (r.length > 0) return r;
+      if (i < tries - 1) await new Promise((res) => setTimeout(res, 1500));
+    }
+    return [];
+  };
+
   // -------------------------------------------------------
   // 2. ANALYSIS PAGES — /analysis/[ticker] — SEO gold
   //    These are proper canonical pages (not query params!)
   //    Covers ALL eligible tickers (AnalysisCache required) for programmatic SEO.
   // -------------------------------------------------------
-  const allTickers = await getEligibleAnalysisTickers();
+  const allTickers = await fill(() => getEligibleAnalysisTickers());
 
   // Fetch lastUpdated timestamps from DB for analysis pages
   const tickerUpdates = new Map<string, string>();
@@ -179,7 +191,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   //     Only include tickers with ≥20 PE AND ≥20 PS observations.
   //     Tickers with insufficient data get noindex on the page itself.
   // -------------------------------------------------------
-  const eligibleValuationTickers = await getEligibleValuationTickers();
+  const eligibleValuationTickers = await fill(() => getEligibleValuationTickers());
   const valuationPages: MetadataRoute.Sitemap = eligibleValuationTickers.map((ticker) => ({
     url: `${baseUrl}/valuation/${ticker}`,
     lastModified: tickerUpdates.get(ticker) || currentDate,
@@ -193,7 +205,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   //     with all 5 key fields non-null (revenue, netIncome,
   //     totalAssets, totalLiabilities, totalEquity).
   // -------------------------------------------------------
-  const eligibleFinancialsTickers = await getEligibleFinancialsTickers();
+  const eligibleFinancialsTickers = await fill(() => getEligibleFinancialsTickers());
   const financialsPages: MetadataRoute.Sitemap = eligibleFinancialsTickers.map((ticker) => ({
     url: `${baseUrl}/financials/${ticker}`,
     lastModified: tickerUpdates.get(ticker) || currentDate,

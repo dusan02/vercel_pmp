@@ -35,9 +35,21 @@ interface StockRow {
   hasValuation: boolean;
 }
 
+// Retry transiently-empty eligibility — the helpers swallow DB errors
+// (catch→[]) and the single SQLite connection can time out under load.
+// An empty universe is virtually always transient, not a real empty result.
+async function fill<T>(fn: () => Promise<T[]>, tries = 4): Promise<T[]> {
+  for (let i = 0; i < tries; i++) {
+    const r = await fn();
+    if (r.length > 0) return r;
+    if (i < tries - 1) await new Promise((res) => setTimeout(res, 1500));
+  }
+  return [];
+}
+
 async function getAllStocks(industryFilter?: string): Promise<StockRow[]> {
-  const eligibleAnalysis = new Set(await getEligibleAnalysisTickers());
-  const eligibleValuation = new Set(await getEligibleValuationTickers());
+  const eligibleAnalysis = new Set(await fill(() => getEligibleAnalysisTickers()));
+  const eligibleValuation = new Set(await fill(() => getEligibleValuationTickers()));
 
   const tickers = await prisma.ticker.findMany({
     where: {
