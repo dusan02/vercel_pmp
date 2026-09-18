@@ -35,7 +35,12 @@ interface SankeyChartProps {
 
 const NODE_W = 12;
 const NODE_GAP = 14;
-const LABEL_W = 150;
+// Labels live inside the inter-column gaps (first column → right, others →
+// left), so the outer margins only need a few px — reserving a full label
+// band on each side wastes ~300px of dead space.
+const PAD_L = 10;
+const PAD_R = 10;
+const COL_GAP = 190; // inter-column spacing incl. node width
 const PAD_T = 10;
 const PAD_B = 10;
 
@@ -48,11 +53,11 @@ interface Laid {
 
 export default function SankeyChart({ columns, links, total, formatValue, height = 250 }: SankeyChartProps) {
     const colCount = columns.length;
-    const W = Math.max(560, LABEL_W * 2 + (colCount - 1) * 170 + NODE_W);
+    const W = Math.max(560, PAD_L + PAD_R + NODE_W + (colCount - 1) * COL_GAP);
     const bandH = height - PAD_T - PAD_B;
     const scale = total > 0 ? bandH / total : 0;
 
-    const colX = (i: number) => LABEL_W + i * ((W - LABEL_W * 2 - NODE_W) / Math.max(1, colCount - 1));
+    const colX = (i: number) => PAD_L + i * ((W - PAD_L - PAD_R - NODE_W) / Math.max(1, colCount - 1));
 
     // Lay out nodes per column — top-aligned, declared order
     const laid = new Map<string, Laid>();
@@ -93,7 +98,7 @@ export default function SankeyChart({ columns, links, total, formatValue, height
     return (
         <svg
             viewBox={`0 0 ${W} ${height}`}
-            className="w-full h-auto select-none"
+            className="w-full h-auto select-none min-w-[480px]"
             role="img"
             aria-label="Financial flows diagram"
         >

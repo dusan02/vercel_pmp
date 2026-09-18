@@ -208,13 +208,15 @@ export function FinancialFlowsClient({ annual, quarterly, shareChangeYoY }: { an
                 </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="flex flex-col gap-8">
                 {income && (
                     <div>
                         <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">
                             Income statement — {period.label}
                         </h3>
-                        <SankeyChart columns={income.columns} links={income.links} total={income.total} formatValue={fmt$} height={250} />
+                        <div className="overflow-x-auto">
+                            <SankeyChart columns={income.columns} links={income.links} total={income.total} formatValue={fmt$} height={280} />
+                        </div>
                     </div>
                 )}
                 {cash && (
@@ -222,7 +224,9 @@ export function FinancialFlowsClient({ annual, quarterly, shareChangeYoY }: { an
                         <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">
                             Cash flow — {period.label}
                         </h3>
-                        <SankeyChart columns={cash.columns} links={cash.links} total={cash.total} formatValue={fmt$} height={250} />
+                        <div className="overflow-x-auto">
+                            <SankeyChart columns={cash.columns} links={cash.links} total={cash.total} formatValue={fmt$} height={280} />
+                        </div>
                     </div>
                 )}
             </div>
