@@ -7,8 +7,7 @@
  * — rarely shown on free financial sites.
  */
 
-import Link from 'next/link';
-import { FinancialFlowsClient, type FlowPeriod } from './FinancialFlowsClient';
+import { type FlowPeriod } from './FinancialFlowsClient';
 
 export interface StatementRow {
     period: string | null;
@@ -94,7 +93,16 @@ function deriveQuarter(latest: StatementRow, rows: StatementRow[]): StatementRow
     return derived;
 }
 
-export function FinancialFlowsSection({ statements }: { statements: StatementRow[] }) {
+export interface FlowPeriods {
+    annual: FlowPeriod | null;
+    quarterly: FlowPeriod | null;
+}
+
+/**
+ * Latest FY + derived standalone quarter as FlowPeriods for the paired
+ * history/sankey chart grid.
+ */
+export function buildFlowPeriods(statements: StatementRow[]): FlowPeriods | null {
     if (!statements.length) return null;
 
     const sorted = [...statements].sort(
@@ -112,37 +120,5 @@ export function FinancialFlowsSection({ statements }: { statements: StatementRow
     const quarterly = qRow ? toPeriod(qRow, qLabel) : null;
 
     if (!annual && !quarterly) return null;
-
-    // YoY share-count change (dilution) — latest FY vs previous FY
-    const fyRows = sorted.filter(isFy);
-    let shareChangeYoY: number | null = null;
-    if (fyRows.length >= 2) {
-        const cur = fyRows[0]!.sharesOutstanding;
-        const prev = fyRows[1]!.sharesOutstanding;
-        if (cur != null && prev != null && prev > 0 && isFinite(cur) && isFinite(prev)) {
-            shareChangeYoY = cur / prev - 1;
-        }
-    }
-
-    return (
-        <section className="mb-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                Financial Flows
-            </h2>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-                Where the money comes in — and where it goes. Income statement,
-                cash flow and balance sheet as one diagram. True FCF treats
-                stock-based compensation as a real cost.
-            </p>
-            <FinancialFlowsClient annual={annual} quarterly={quarterly} shareChangeYoY={shareChangeYoY} />
-            <p className="mt-3">
-                <Link
-                    href="/capex-tracker"
-                    className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
-                >
-                    Compare capital spending across companies — Capex Tracker →
-                </Link>
-            </p>
-        </section>
-    );
+    return { annual, quarterly };
 }

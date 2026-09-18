@@ -1,15 +1,13 @@
 'use client';
 
-import { lazy, Suspense } from 'react';
 import { FinancialHealthTable } from './analysis/FinancialHealthTable';
 import { AnalysisControlsBar } from './analysis/AnalysisControlsBar';
 import { CompareToolbar } from './analysis/CompareToolbar';
 import { AnalysisCharts } from './AnalysisCharts';
 import { useAnalysis } from '../../hooks/useAnalysis';
 import { LoadingSkeleton } from './analysis/LoadingSkeleton';
-import { ChartSection } from './shared/ChartSection';
-import { ChartErrorBoundary } from './shared/ChartErrorBoundary';
 import type { AnalysisTabProps } from './analysis/types';
+import type { FlowPeriods } from './analysis/sections/FinancialFlowsSection';
 
 // Re-export types for backward compatibility (other files import from here)
 export type {
@@ -20,18 +18,15 @@ export type {
     FinancialStatement,
 } from './analysis/types';
 
-const PriceCandlestickChart = lazy(() => import('./PriceCandlestickChart'));
-
 /**
  * Interactive analysis body for /analysis/[ticker].
  *
- * The SSR page renders the document header, company overview, health-score
- * summary, AI insight, analyst consensus and earnings. This tab renders the
- * interactive parts only: controls, compare toolbar, price chart, the
- * interpreted Key Financial Metrics table (with compare column) and the
- * charts grid.
+ * The SSR page renders the document header, company overview, price history,
+ * analyst consensus and earnings. This tab renders the interactive parts
+ * only: controls, compare toolbar, the charts grid and the interpreted Key
+ * Financial Metrics table (with compare column).
  */
-export default function AnalysisTab({ ticker, initialAnalysisData, initialHistoryData }: AnalysisTabProps & { initialAnalysisData?: any; initialHistoryData?: any }) {
+export default function AnalysisTab({ ticker, initialAnalysisData, initialHistoryData, flowPeriods }: AnalysisTabProps & { initialAnalysisData?: any; initialHistoryData?: any; flowPeriods?: FlowPeriods | null | undefined }) {
     const {
         data,
         loading,
@@ -92,7 +87,7 @@ export default function AnalysisTab({ ticker, initialAnalysisData, initialHistor
         return (
             <div role="status" aria-live="polite" className="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 text-center">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-700 mb-4">
-                    <svg className="w-6 h-6 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <svg className="w-6 h-6 text-gray-500 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                     </svg>
                 </div>
@@ -118,14 +113,10 @@ export default function AnalysisTab({ ticker, initialAnalysisData, initialHistor
 
     return (
         <div className="space-y-6 p-4 bg-transparent dark:bg-gray-900 rounded-xl transition-all animate-fade-in">
-            {/* ── Controls: Last Updated + Refresh ── */}
-            <AnalysisControlsBar
-                updatedAt={data.updatedAt ?? null}
-                analyzing={analyzing}
-                onRefresh={runDeepAnalysis}
-            />
+            {/* ── Charts Dashboard (2-Column Grid) — core content first ── */}
+            <AnalysisCharts ticker={ticker} data={data} flowPeriods={flowPeriods} />
 
-            {/* ── Compare with another ticker ── */}
+            {/* ── Compare — sits directly above the table whose column it fills ── */}
             <CompareToolbar
                 ticker={ticker}
                 compareWith={compareWith}
@@ -138,30 +129,21 @@ export default function AnalysisTab({ ticker, initialAnalysisData, initialHistor
                 onRemoveComparison={handleRemoveComparison}
             />
 
-            {/* ── Price History — full width, prominent ── */}
-            <ChartErrorBoundary>
-                <ChartSection
-                    iconBgClass="bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400"
-                    icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>}
-                    title="Price History"
-                    subtitle="5-Year Weekly Candlestick Chart"
-                >
-                    <Suspense fallback={<div className="flex justify-center items-center" style={{ height: 360 }}><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-500" /></div>}>
-                        <PriceCandlestickChart ticker={ticker} />
-                    </Suspense>
-                </ChartSection>
-            </ChartErrorBoundary>
-
-            {/* ── Executive Summary: interpreted metrics with thresholds + compare ── */}
+            {/* ── Consolidated metrics table: scores, margins, ratios, quality
+                — sits below the charts as the detailed numbers behind them ── */}
             <FinancialHealthTable
-                ticker={ticker}
                 data={data}
                 compareWith={compareWith}
                 secondaryData={secondaryData}
+                flowPeriods={flowPeriods}
             />
 
-            {/* ── Charts Dashboard (2-Column Grid) ── */}
-            <AnalysisCharts ticker={ticker} data={data} />
+            {/* ── Controls: Last Updated + Refresh — utility chrome as footer ── */}
+            <AnalysisControlsBar
+                updatedAt={data.updatedAt ?? null}
+                analyzing={analyzing}
+                onRefresh={runDeepAnalysis}
+            />
         </div>
     );
 }

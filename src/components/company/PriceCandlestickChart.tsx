@@ -130,8 +130,12 @@ export function PriceCandlestickChart({ ticker }: PriceCandlestickChartProps) {
     [data]
   );
 
-  const yDomain = useMemo<[number, number]>(() => {
-    if (!data.length) return [0, 1];
+  // Domain is extended below the lowest price so the bottom of the plot is a
+  // dedicated volume strip — the lowest candle wick then never renders inside
+  // the volume bars and axis ticks don't land inside the strip either.
+  // volFrac = the fraction of the plot (from the bottom) reserved for volume.
+  const { yDomain, volFrac } = useMemo(() => {
+    if (!data.length) return { yDomain: [0, 1] as [number, number], volFrac: 0.16 };
     let min = Infinity;
     let max = -Infinity;
     for (const d of data) {
@@ -139,7 +143,16 @@ export function PriceCandlestickChart({ ticker }: PriceCandlestickChartProps) {
       if (d.h > max) max = d.h;
     }
     const pad = (max - min) * 0.06 || 1;
-    return [Math.max(0, min - pad), max + pad];
+    // Round to whole $10 steps — recharts otherwise adds an unrounded domain-
+    // edge tick ($522 next to $464/$314/$164) that reads as a broken scale.
+    const hi = Math.ceil((max + pad) / 10) * 10;
+    const lo = Math.floor((min - pad) / 10) * 10;
+    // Exact 16% of the domain below the price zone: (lo - d) / (hi - d) = 0.16.
+    // domMin clamps at 0 — for near-zero-priced stocks lo can also go negative,
+    // so volFrac itself is clamped (0 = no volume strip rather than inverted).
+    const domMin = Math.max(0, (lo - 0.16 * hi) / 0.84);
+    const volFrac = Math.max(0, Math.min(0.4, (lo - domMin) / (hi - domMin)));
+    return { yDomain: [domMin, hi] as [number, number], volFrac };
   }, [data]);
 
   const stats = useMemo(() => {
@@ -161,7 +174,7 @@ export function PriceCandlestickChart({ ticker }: PriceCandlestickChartProps) {
 
   if (error || !data.length) {
     return (
-      <div className="text-sm text-gray-400 dark:text-gray-500 italic py-12 text-center">
+      <div className="text-sm text-gray-500 dark:text-gray-500 italic py-12 text-center">
         {error ?? 'No price history available for this ticker.'}
       </div>
     );
@@ -181,6 +194,7 @@ export function PriceCandlestickChart({ ticker }: PriceCandlestickChartProps) {
             >
               {stats.changePct >= 0 ? '+' : ''}{stats.changePct.toFixed(2)}% ({period})
             </span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">last candle close — live price may differ</span>
           </div>
         )}
         <div className="flex items-center bg-gray-100 dark:bg-gray-700/50 rounded-lg p-0.5 gap-0.5">
@@ -210,7 +224,7 @@ export function PriceCandlestickChart({ ticker }: PriceCandlestickChartProps) {
             tickFormatter={formatXTick}
             minTickGap={40}
             tick={{ fontSize: 11, fill: 'currentColor' }}
-            className="text-gray-400 dark:text-gray-500"
+            className="text-gray-500 dark:text-gray-500"
             tickLine={false}
             axisLine={{ stroke: 'rgba(148,163,184,0.25)' }}
           />
@@ -219,7 +233,7 @@ export function PriceCandlestickChart({ ticker }: PriceCandlestickChartProps) {
             orientation="right"
             tickFormatter={(v: number) => `$${v.toFixed(0)}`}
             tick={{ fontSize: 11, fill: 'currentColor' }}
-            className="text-gray-400 dark:text-gray-500"
+            className="text-gray-500 dark:text-gray-500"
             tickLine={false}
             axisLine={false}
             width={52}
@@ -261,8 +275,9 @@ export function PriceCandlestickChart({ ticker }: PriceCandlestickChartProps) {
               const bodyTop = Math.min(yOpen, yClose);
               const bodyH = Math.max(1, Math.abs(yClose - yOpen));
               
-              // Volume bar (bottom 16%)
-              const volTop = top + plotHeight * 0.84;
+              // Volume bar — strip height matches the domain extension below
+              // the lowest price, so candles never overlap the volume zone
+              const volTop = top + plotHeight * (1 - volFrac);
               const yBottom = top + plotHeight;
               const vH = maxVolume > 0 ? ((d.v || 0) / maxVolume) * (yBottom - volTop) : 0;
               

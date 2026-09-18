@@ -30,7 +30,7 @@ export function RelatedStocksSection({ ticker, sector, peers }: RelatedStocksSec
                       ? 'text-emerald-600 dark:text-emerald-400'
                       : p.lastChangePct < 0
                         ? 'text-red-600 dark:text-red-400'
-                        : 'text-gray-400 dark:text-gray-500'
+                        : 'text-gray-500 dark:text-gray-500'
                   }`}
                 >
                   {p.lastChangePct >= 0 ? '+' : ''}
@@ -38,7 +38,7 @@ export function RelatedStocksSection({ ticker, sector, peers }: RelatedStocksSec
                 </span>
               )}
               {p.name && (
-                <span className="ml-1.5 text-xs text-gray-400 dark:text-gray-500 hidden sm:inline">
+                <span className="ml-1.5 text-xs text-gray-500 dark:text-gray-500 hidden sm:inline">
                   {p.name.length > 20 ? p.name.slice(0, 18) + '…' : p.name}
                 </span>
               )}

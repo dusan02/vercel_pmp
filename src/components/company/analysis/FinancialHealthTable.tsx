@@ -3,20 +3,18 @@ import { AnalysisData } from './types';
 import { CompactMetricRow, MetricCardDef, StatusType, StatusBadge } from '../shared/MetricCard';
 
 interface Props {
-    ticker: string;
     data: AnalysisData;
     compareWith: string;
     secondaryData: AnalysisData | null;
+    flowPeriods?: import('./sections/FinancialFlowsSection').FlowPeriods | null | undefined;
 }
 
 // ── Build all metrics ────────────────────────────────────────────────────────
-function buildMetrics(data: AnalysisData, sec: AnalysisData | null, cw: string) {
+function buildMetrics(data: AnalysisData, sec: AnalysisData | null, cw: string, flowPeriods?: Props['flowPeriods']) {
     const m = data.metrics;
     const sm = sec?.metrics;
     const bs = data.balanceSheet;
     const sbs = sec?.balanceSheet;
-    const fy = data.statements?.filter(s => s.fiscalPeriod === 'FY').sort((a, b) => new Date(b.endDate).getTime() - new Date(a.endDate).getTime())[0];
-    const sfy = sec?.statements?.filter(s => s.fiscalPeriod === 'FY').sort((a, b) => new Date(b.endDate).getTime() - new Date(a.endDate).getTime())[0];
     const mcap = data.ticker?.lastMarketCap ? data.ticker.lastMarketCap * 1e9 : null;
     const smcap = sec?.ticker?.lastMarketCap ? sec.ticker.lastMarketCap * 1e9 : null;
 
@@ -100,6 +98,17 @@ function buildMetrics(data: AnalysisData, sec: AnalysisData | null, cw: string) 
     const sbc    = bs?.sbcRatio;
     const ssbc   = sbs?.sbcRatio;
 
+    // Flow-period metrics (latest FY or derived quarter) — the same source the
+    // sankey charts use, so numbers stay consistent across the page
+    const fp = flowPeriods?.annual ?? flowPeriods?.quarterly ?? null;
+    const fpPct = (num: number | null | undefined, den: number | null | undefined) =>
+        num != null && den != null && den !== 0 ? num / den : null;
+    const opMargin  = fpPct(fp?.ebit, fp?.revenue);
+    const trueFcfM  = fp?.ocf != null && fp?.capex != null
+        ? fpPct(fp.ocf - Math.abs(fp.capex) - (fp.sbc ?? 0), fp.revenue) : null;
+    const capexRev  = fp?.capex != null ? fpPct(Math.abs(fp.capex), fp.revenue) : null;
+    const sbcRev    = fpPct(fp?.sbc, fp?.revenue);
+
     const def = (
         label: string, value: string, secondary: string | undefined,
         statusType: StatusType, statusLabel: string, hint: string,
@@ -107,7 +116,7 @@ function buildMetrics(data: AnalysisData, sec: AnalysisData | null, cw: string) 
     ): MetricCardDef => ({ label, value, secondaryValue: secondary, statusType, statusLabel, hint, ...(progress !== undefined ? { progress } : {}) });
 
     const solvency: MetricCardDef[] = [
-        def('Altman Z-Score', altZ != null ? altZ.toFixed(2) : 'N/A', s(altZ != null ? altZ.toFixed(2) : 'N/A'), altZ == null ? 'neutral' : altZ > 3 ? 'good' : altZ < 1.8 ? 'bad' : 'warn', altZ == null ? '-' : altZ > 3 ? 'Safe' : altZ < 1.8 ? 'Distress' : 'Grey', 'Bankruptcy risk. >3 Safe, <1.8 Distress', altZ != null ? (altZ / 5) * 100 : undefined),
+        def('Altman Z-Score', altZ != null ? altZ.toFixed(2) : 'N/A', s(altZ != null ? altZ.toFixed(2) : 'N/A'), altZ == null ? 'neutral' : altZ > 3 ? 'good' : altZ < 1.8 ? 'bad' : 'warn', altZ == null ? '-' : altZ > 3 ? 'Safe' : altZ < 1.8 ? 'Distress' : 'Gray zone', 'Bankruptcy risk. >3 Safe, <1.8 Distress', altZ != null ? (altZ / 5) * 100 : undefined),
         def('Debt Repayment', yr(debtRp), s(yr(sDebtRp)), debtRp == null ? 'neutral' : debtRp <= 3 ? 'good' : debtRp > 10 ? 'bad' : 'warn', debtRp == null ? '-' : debtRp <= 3 ? 'Fast' : debtRp > 10 ? 'Slow' : 'Avg', 'Years to repay net debt via FCF', debtRp != null ? (debtRp / 10) * 100 : undefined),
         def('Interest Coverage', intCov != null ? `${intCov.toFixed(1)}x` : 'N/A', s(intCov != null ? `${intCov.toFixed(1)}x` : 'N/A'), intCov == null ? 'neutral' : intCov > 10 ? 'good' : intCov > 3 ? 'warn' : 'bad', intCov == null ? '-' : intCov > 10 ? 'Strong' : intCov > 3 ? 'Ok' : 'Risky', 'EBIT/Interest. >10 Strong', intCov != null ? (intCov / 15) * 100 : undefined),
         def('Current Ratio', mul(cr), s(mul(scr)), cr == null ? 'neutral' : cr > 2 ? 'good' : cr > 1 ? 'warn' : 'bad', cr == null ? '-' : cr > 2 ? 'High' : cr > 1 ? 'Ok' : 'Low', 'Current Assets/Liabilities', cr != null ? (cr / 3) * 100 : undefined),
@@ -119,8 +128,10 @@ function buildMetrics(data: AnalysisData, sec: AnalysisData | null, cw: string) 
         def('ROE', roe != null ? pct(roe) : (hasNegEquity ? 'Neg. Equity' : 'N/A'), s(sroe != null ? pct(sroe) : (sHasNegEquity ? 'Neg. Equity' : 'N/A')), roe == null ? (hasNegEquity ? 'warn' : 'neutral') : roe > 0.20 ? 'good' : roe > 0.10 ? 'warn' : 'bad', roe == null ? (hasNegEquity ? 'Buybacks' : '-') : roe > 0.2 ? 'Strong' : roe > 0.1 ? 'Avg' : 'Weak', 'Return on Equity. Neg. equity = heavy buybacks', roe != null ? (roe / 0.3) * 100 : undefined),
         def('Net Margin', pct(netMar), s(pct(sNetMar)), netMar == null ? 'neutral' : netMar > 0.10 ? 'good' : netMar > 0.05 ? 'warn' : 'bad', netMar == null ? '-' : netMar > 0.1 ? 'High' : netMar > 0.05 ? 'Avg' : 'Low', 'Net Income / Revenue', netMar != null ? (netMar / 0.3) * 100 : undefined),
         def('Gross Margin', pct(grossMar), s(pct(sGrossMar)), grossMar == null ? 'neutral' : grossMar > 0.50 ? 'good' : grossMar > 0.30 ? 'warn' : 'bad', grossMar == null ? '-' : grossMar > 0.5 ? 'Premium' : grossMar > 0.3 ? 'Avg' : 'Low', 'Gross Profit / Revenue', grossMar != null ? (grossMar / 0.7) * 100 : undefined),
+        def('Operating Margin', pct(opMargin), undefined, opMargin == null ? 'neutral' : opMargin > 0.25 ? 'good' : opMargin > 0.10 ? 'warn' : 'bad', opMargin == null ? '-' : opMargin > 0.25 ? 'High' : opMargin > 0.10 ? 'Avg' : 'Low', 'EBIT / Revenue (latest period)', opMargin != null ? (opMargin / 0.4) * 100 : undefined),
         def('FCF Margin', pct(fcfMar), s(pct(sfcfMar)), fcfMar == null ? 'neutral' : fcfMar > 0.15 ? 'good' : fcfMar > 0.08 ? 'warn' : 'bad', fcfMar == null ? '-' : fcfMar > 0.15 ? 'High' : fcfMar > 0.08 ? 'Avg' : 'Low', 'FCF / Revenue', fcfMar != null ? (fcfMar / 0.3) * 100 : undefined),
         def('FCF Conversion', pct(fcfCon), s(pct(sfcfCon)), fcfCon == null ? 'neutral' : fcfCon > 0.80 ? 'good' : fcfCon > 0.50 ? 'warn' : 'bad', fcfCon == null ? '-' : fcfCon > 0.8 ? 'Strong' : fcfCon > 0.5 ? 'Avg' : 'Poor', 'FCF / Net Income', fcfCon != null ? (fcfCon / 1.5) * 100 : undefined),
+        def('True FCF Margin', pct(trueFcfM), undefined, trueFcfM == null ? 'neutral' : trueFcfM > 0.12 ? 'good' : trueFcfM > 0.05 ? 'warn' : 'bad', trueFcfM == null ? '-' : trueFcfM > 0.12 ? 'High' : trueFcfM > 0.05 ? 'Avg' : 'Low', '(OCF − CapEx − SBC) / Revenue — SBC treated as a real cost', trueFcfM != null ? (trueFcfM / 0.25) * 100 : undefined),
     ];
 
     const growth: MetricCardDef[] = [
@@ -139,9 +150,11 @@ function buildMetrics(data: AnalysisData, sec: AnalysisData | null, cw: string) 
 
     const quality: MetricCardDef[] = [
         def('Piotroski F-Score', pio != null ? `${pio}/9` : 'N/A', s(spio != null ? `${spio}/9` : 'N/A'), pio == null ? 'neutral' : pio >= 7 ? 'good' : pio >= 4 ? 'warn' : 'bad', pio == null ? '-' : pio >= 7 ? 'Strong' : pio >= 4 ? 'Avg' : 'Weak', 'Financial strength 0–9. >7 Strong', pio != null ? (pio / 9) * 100 : undefined),
-        def('Beneish M-Score', ben != null ? ben.toFixed(2) : 'N/A', s(sben != null ? sben.toFixed(2) : 'N/A'), ben == null ? 'neutral' : ben < -2.22 ? 'good' : ben < -1.78 ? 'warn' : 'bad', ben == null ? '-' : ben < -2.22 ? 'Safe' : ben < -1.78 ? 'Grey' : 'Risky', 'Earnings manipulation risk. < -2.22 Safe', ben != null ? Math.min(100, Math.max(0, ((ben + 3) / 1.5) * 100)) : undefined),
+        def('Beneish M-Score', ben != null ? ben.toFixed(2) : 'N/A', s(sben != null ? sben.toFixed(2) : 'N/A'), ben == null ? 'neutral' : ben < -2.22 ? 'good' : ben < -1.78 ? 'warn' : 'bad', ben == null ? '-' : ben < -2.22 ? 'Safe' : ben < -1.78 ? 'Gray zone' : 'Risky', 'Earnings manipulation risk. < -2.22 Safe', ben != null ? Math.min(100, Math.max(0, ((ben + 3) / 1.5) * 100)) : undefined),
         def('Margin Volatility', mv != null ? `${(mv * 100).toFixed(1)}%` : 'N/A', s(smv != null ? `${(smv * 100).toFixed(1)}%` : 'N/A'), mv == null ? 'neutral' : mv < 0.08 ? 'good' : mv < 0.15 ? 'warn' : 'bad', mv == null ? '-' : mv < 0.08 ? 'Stable' : mv < 0.15 ? 'Avg' : 'Volatile', 'EBIT margin std deviation. Lower = stable'),
         def('SBC / Net Income', sbc != null ? `${sbc.toFixed(1)}%` : 'N/A', s(ssbc != null ? `${ssbc.toFixed(1)}%` : 'N/A'), sbc == null ? 'neutral' : sbc < 10 ? 'good' : sbc < 20 ? 'warn' : 'bad', sbc == null ? '-' : sbc < 10 ? 'Low' : sbc < 20 ? 'Med' : 'High', 'Stock-based comp/Net income. >30% = dilution risk'),
+        def('Capex / Revenue', pct(capexRev), undefined, capexRev == null ? 'neutral' : capexRev < 0.05 ? 'good' : capexRev < 0.15 ? 'warn' : 'bad', capexRev == null ? '-' : capexRev < 0.05 ? 'Asset-light' : capexRev < 0.15 ? 'Avg' : 'Heavy', 'Capital intensity — high % = capital-hungry business'),
+        def('SBC / Revenue', pct(sbcRev), undefined, sbcRev == null ? 'neutral' : sbcRev < 0.03 ? 'good' : sbcRev < 0.08 ? 'warn' : 'bad', sbcRev == null ? '-' : sbcRev < 0.03 ? 'Low' : sbcRev < 0.08 ? 'Med' : 'High', 'Stock-based comp / Revenue (latest period)'),
     ];
 
     const balanceSheet: MetricCardDef[] = [
@@ -149,12 +162,24 @@ function buildMetrics(data: AnalysisData, sec: AnalysisData | null, cw: string) 
         def('Cash & Equiv.', fmtB(bs?.cash), s(fmtB(sbs?.cash)), 'neutral', '-', 'Cash and short-term investments'),
         def('Net Debt', fmtB(bs?.netDebt), s(fmtB(sbs?.netDebt)), bs?.netDebt != null ? (bs.netDebt < 0 ? 'good' : 'neutral') : 'neutral', bs?.netDebt != null && bs.netDebt < 0 ? 'Net Cash' : '-', 'Total Debt minus Cash. Negative = Net Cash position'),
         def('Total Equity', fmtB(bs?.totalEquity), s(fmtB(sbs?.totalEquity)), 'neutral', '-', "Shareholders' equity (book value)"),
-        def('Current Ratio', bs?.currentRatio != null ? `${bs.currentRatio.toFixed(2)}x` : 'N/A', s(sbs?.currentRatio != null ? `${sbs.currentRatio.toFixed(2)}x` : 'N/A'), bs?.currentRatio == null ? 'neutral' : bs.currentRatio >= 2 ? 'good' : bs.currentRatio >= 1 ? 'warn' : 'bad', bs?.currentRatio == null ? '-' : bs.currentRatio >= 2 ? 'Strong' : bs.currentRatio >= 1 ? 'Adequate' : 'Weak', 'Current Assets / Current Liabilities. > 2 is strong', bs?.currentRatio != null ? Math.min(100, (bs.currentRatio / 3) * 100) : undefined),
         def('Asset / Liability', bs?.assetToLiability != null ? `${bs.assetToLiability.toFixed(2)}x` : 'N/A', s(sbs?.assetToLiability != null ? `${sbs.assetToLiability.toFixed(2)}x` : 'N/A'), bs?.assetToLiability == null ? 'neutral' : bs.assetToLiability >= 2 ? 'good' : bs.assetToLiability >= 1 ? 'warn' : 'bad', bs?.assetToLiability == null ? '-' : bs.assetToLiability >= 2 ? 'Solid' : bs.assetToLiability >= 1 ? 'Adequate' : 'Risky', 'Total Assets / Total Liabilities', bs?.assetToLiability != null ? Math.min(100, (bs.assetToLiability / 3) * 100) : undefined),
     ];
 
 
-    return { solvency, profitability, growth, valuation, quality, balanceSheet, lossYears: niYrs };
+    const scoreStatus = (v: number | null | undefined): StatusType =>
+        v == null ? 'neutral' : v >= 75 ? 'good' : v >= 50 ? 'warn' : 'bad';
+    const scoreLabel = (v: number | null | undefined) =>
+        v == null ? '-' : v >= 75 ? 'Strong' : v >= 50 ? 'Moderate' : 'Weak';
+    const scoreDef = (label: string, v: number | null | undefined, hint: string): MetricCardDef =>
+        def(label, v != null ? `${v.toFixed(0)}/100` : 'N/A', undefined, scoreStatus(v), scoreLabel(v), hint, v != null ? v : undefined);
+
+    const scores: MetricCardDef[] = [
+        scoreDef('Health Score', data.healthScore, 'Composite score across profitability, solvency, growth and quality'),
+        scoreDef('Profitability Score', data.profitabilityScore, 'Margins, returns and cash-generation strength'),
+        scoreDef('Valuation Score', data.valuationScore, 'How attractively the stock is priced vs fundamentals'),
+    ];
+
+    return { scores, solvency, profitability, growth, valuation, quality, balanceSheet, lossYears: niYrs };
 }
 
 // ── Sub-component for Grid Section ───────────────────────────────────────────
@@ -166,8 +191,8 @@ function MetricGrid({ title, metrics, compareWith, children }: { title: string, 
                 {children}
             </div>
             <div className="flex flex-col">
-                {metrics.map((m, idx) => (
-                    <CompactMetricRow key={idx} card={m} compareWith={compareWith} />
+                {metrics.map((m) => (
+                    <CompactMetricRow key={m.label} card={m} compareWith={compareWith} />
                 ))}
             </div>
         </div>
@@ -175,10 +200,10 @@ function MetricGrid({ title, metrics, compareWith, children }: { title: string, 
 }
 
 // ── Main export ──────────────────────────────────────────────────────────────
-export function FinancialHealthTable({ ticker, data, compareWith, secondaryData }: Props) {
-    const { solvency, profitability, growth, valuation, quality, balanceSheet, lossYears } = useMemo(
-        () => buildMetrics(data, secondaryData, compareWith),
-        [data, secondaryData, compareWith]
+export function FinancialHealthTable({ data, compareWith, secondaryData, flowPeriods }: Props) {
+    const { scores, solvency, profitability, growth, valuation, quality, balanceSheet, lossYears } = useMemo(
+        () => buildMetrics(data, secondaryData, compareWith, flowPeriods),
+        [data, secondaryData, compareWith, flowPeriods]
     );
 
     return (
@@ -198,9 +223,10 @@ export function FinancialHealthTable({ ticker, data, compareWith, secondaryData 
                 </div>
             </div>
 
-            {/* Score legend (summary scores are rendered server-side above) */}
+            {/* Score legend — applies to the Scores group below */}
             {(data.healthScore != null || data.profitabilityScore != null || data.valuationScore != null) && (
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-gray-400 dark:text-gray-500 mb-6 px-1">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-gray-500 dark:text-gray-500 mb-6 px-1">
+                    <span className="font-semibold uppercase tracking-wider">Scores:</span>
                     <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500"></span>80-100 Excellent</span>
                     <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500"></span>50-79 Average</span>
                     <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500"></span>0-49 Weak</span>
@@ -209,6 +235,7 @@ export function FinancialHealthTable({ ticker, data, compareWith, secondaryData 
 
             {/* Sections */}
             <div className="columns-1 sm:columns-2 xl:columns-3 gap-4 sm:gap-6">
+                <MetricGrid title="Scores" metrics={scores} compareWith={compareWith} />
                 <MetricGrid title="Profitability" metrics={profitability} compareWith={compareWith}>
                     {lossYears > 0 && (
                         <StatusBadge label={`${lossYears} Loss Years (10Y)`} type={lossYears <= 2 ? 'warn' : 'bad'} />
@@ -220,6 +247,16 @@ export function FinancialHealthTable({ ticker, data, compareWith, secondaryData 
                 <MetricGrid title="Quality & Risk" metrics={quality} compareWith={compareWith} />
                 <MetricGrid title="Balance Sheet" metrics={balanceSheet} compareWith={compareWith} />
             </div>
+
+            {/* Verdict + human-readable callouts (previously the Health Scores card) */}
+            {(data.verdictText || data.humanDebtInfo || data.humanPeInfo) && (
+                <div className="mt-2 px-1 text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                    {data.verdictText && <p className="leading-relaxed">{data.verdictText}</p>}
+                    {(data.humanDebtInfo || data.humanPeInfo) && (
+                        <p>{[data.humanDebtInfo, data.humanPeInfo].filter(Boolean).join(' · ')}</p>
+                    )}
+                </div>
+            )}
         </div>
     );
 }

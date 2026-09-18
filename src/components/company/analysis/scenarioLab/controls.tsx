@@ -28,9 +28,9 @@ export function GrowthSlider({ label, value, onChange, accentColor }: { label: s
 export function StatCard({ label, value, sublabel }: { label: string; value: string; sublabel?: string }) {
     return (
         <div className="bg-white dark:bg-gray-800/50 rounded-lg p-3 border border-gray-100 dark:border-gray-700/50">
-            <p className="text-[11px] text-gray-400 dark:text-gray-500 mb-0.5">{label}</p>
+            <p className="text-[11px] text-gray-500 dark:text-gray-500 mb-0.5">{label}</p>
             <p className="font-mono tabular-nums font-semibold text-gray-900 dark:text-gray-100 text-sm">{value}</p>
-            {sublabel && <p className="text-[10px] text-gray-400 mt-0.5">{sublabel}</p>}
+            {sublabel && <p className="text-[10px] text-gray-500 mt-0.5">{sublabel}</p>}
         </div>
     );
 }
@@ -54,7 +54,7 @@ export function HorizonSlider({
                 onChange={(e) => onChange(Number(e.target.value))}
                 className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-blue-600"
             />
-            <div className="flex justify-between text-xs text-gray-400 mt-1">
+            <div className="flex justify-between text-xs text-gray-500 mt-1">
                 {[1, 2, 3, 4, 5].map(y => (
                     <span key={y} className={years === y ? 'text-blue-500 font-bold' : ''}>{y}Y</span>
                 ))}

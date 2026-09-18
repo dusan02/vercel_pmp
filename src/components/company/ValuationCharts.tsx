@@ -65,7 +65,7 @@ function StatPill({ label, value, highlight }: { label: string; value: number | 
             <span className={`text-xs sm:text-sm font-bold tabular-nums ${col}`}>
                 {value !== null ? `${value.toFixed(1)}×` : '—'}
             </span>
-            <span className="text-[9px] sm:text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">{label}</span>
+            <span className="text-[10px] sm:text-[10px] text-gray-500 dark:text-gray-500 mt-0.5">{label}</span>
         </div>
     );
 }
@@ -74,12 +74,12 @@ export default function ValuationCharts({ ticker, peHistory, psHistory, current:
     const [metric, setMetric]   = useState<MetricId>('pe');
     const [period, setPeriod]   = useState<PeriodId>('5y');
 
-    const data: HistoryData | null = (peHistory || psHistory) ? {
+    const data: HistoryData | null = useMemo(() => (peHistory || psHistory) ? {
         peHistory: peHistory ?? [],
         psHistory: psHistory ?? [],
         current: currentProp ?? { pe: null, ps: null },
         stats: propStats ?? { pe: null, ps: null },
-    } : null;
+    } : null, [peHistory, psHistory, currentProp, propStats]);
 
     // Determine which periods have data (data starts ~2021-07, so 10Y may be empty)
     const availablePeriods = useMemo(() => {
@@ -146,7 +146,7 @@ export default function ValuationCharts({ ticker, peHistory, psHistory, current:
         : [0, 'auto'];
 
     if (!data) return (
-        <div className="text-center text-gray-400 text-sm py-10">
+        <div className="text-center text-gray-500 text-sm py-10">
             No historical data. Run Deep Analysis to populate valuation history.
         </div>
     );
@@ -194,7 +194,7 @@ export default function ValuationCharts({ ticker, peHistory, psHistory, current:
             <div className="flex flex-wrap gap-1.5 sm:gap-2 items-end">
                 {/* Current value — prominent */}
                 <div className="flex flex-col mr-1 sm:mr-2">
-                    <span className="text-[10px] text-gray-400 uppercase tracking-wide">Current {cfg.label.split(' ')[0]}</span>
+                    <span className="text-[10px] text-gray-500 uppercase tracking-wide">Current {cfg.label.split(' ')[0]}</span>
                     <span className="text-xl sm:text-2xl font-bold tabular-nums" style={{ color: cfg.color }}>
                         {current !== null && current !== undefined ? `${current.toFixed(1)}×` : '—'}
                     </span>
@@ -208,12 +208,12 @@ export default function ValuationCharts({ ticker, peHistory, psHistory, current:
 
             {/* Chart */}
             {filteredHistory.length === 0 ? (
-                <div className="text-center text-gray-400 text-sm py-12 bg-gray-50 dark:bg-gray-800/30 rounded-lg">
+                <div className="text-center text-gray-500 text-sm py-12 bg-gray-50 dark:bg-gray-800/30 rounded-lg">
                     No {cfg.label} data for this period.
                 </div>
             ) : (
                 <ResponsiveContainer width="100%" height={320}>
-                    <ComposedChart data={filteredHistory} margin={{ top: 8, right: 16, left: 8, bottom: 24 }}>
+                    <ComposedChart data={filteredHistory} margin={{ top: 8, right: 56, left: 8, bottom: 24 }}>
                         <defs>
                             <linearGradient id="peGrad" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="0%" stopColor="#6366f1" stopOpacity={0.25} />
@@ -284,11 +284,11 @@ export default function ValuationCharts({ ticker, peHistory, psHistory, current:
             )}
 
             {/* Legend */}
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[9px] sm:text-[10px] text-gray-400 dark:text-gray-500">
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] sm:text-[10px] text-gray-500 dark:text-gray-500">
                 <span className="flex items-center gap-1.5"><span className="w-3 h-px border-t border-dashed border-emerald-500 inline-block" /> Cheap</span>
                 <span className="flex items-center gap-1.5"><span className="w-3 h-px border-t border-dashed border-gray-400 inline-block" /> Median</span>
                 <span className="flex items-center gap-1.5"><span className="w-3 h-px border-t border-dashed border-red-500 inline-block" /> Expensive</span>
-                <span className="flex items-center gap-1.5 sm:ml-auto text-gray-300 dark:text-gray-600">Based on {filteredHistory.length} weekly data points in selected period.</span>
+                <span className="flex items-center gap-1.5 sm:ml-auto text-gray-400 dark:text-gray-600">P10–P90 bands from {filteredHistory.length} weekly points — wide bands may reflect near-zero earnings periods.</span>
             </div>
         </div>
     );

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Lightweight dependency-free Sankey diagram for financial flows.
  * Fixed column layout (each column stacks nodes top→bottom), ribbon links
@@ -44,6 +42,12 @@ const COL_GAP = 190; // inter-column spacing incl. node width
 const PAD_T = 10;
 const PAD_B = 10;
 
+/** viewBox width the chart will use for a given column count — callers
+ *  need it to back-compute a viewBox height that fills a measured box. */
+export function sankeyViewBoxWidth(colCount: number) {
+    return Math.max(560, PAD_L + PAD_R + NODE_W + (colCount - 1) * COL_GAP);
+}
+
 interface Laid {
     node: SankeyNode;
     x: number;
@@ -53,21 +57,44 @@ interface Laid {
 
 export default function SankeyChart({ columns, links, total, formatValue, height = 250 }: SankeyChartProps) {
     const colCount = columns.length;
-    const W = Math.max(560, PAD_L + PAD_R + NODE_W + (colCount - 1) * COL_GAP);
+    const W = sankeyViewBoxWidth(colCount);
     const bandH = height - PAD_T - PAD_B;
-    const scale = total > 0 ? bandH / total : 0;
+    // Tallest column fills ~62% of the band — single-node "total" pillars
+    // (Total Assets, FCF) then render as a centered bar instead of a
+    // wall-to-wall slab; every column is additionally centered vertically.
+    const scale = total > 0 ? (bandH * 0.62) / total : 0;
 
     const colX = (i: number) => PAD_L + i * ((W - PAD_L - PAD_R - NODE_W) / Math.max(1, colCount - 1));
 
-    // Lay out nodes per column — top-aligned, declared order
+    // Lay out nodes per column — vertically centered stack, declared order
     const laid = new Map<string, Laid>();
     columns.forEach((col, ci) => {
-        let y = PAD_T;
-        col.forEach((n) => {
-            const h = Math.max(2, n.value * scale);
-            laid.set(n.id, { node: n, x: colX(ci), y, h });
-            y += h + NODE_GAP;
+        const heights = col.map((n) => Math.max(2, n.value * scale));
+        const used = heights.reduce((a, b) => a + b, 0) + NODE_GAP * Math.max(0, col.length - 1);
+        let y = PAD_T + Math.max(0, (bandH - used) / 2);
+        col.forEach((n, i) => {
+            laid.set(n.id, { node: n, x: colX(ci), y, h: heights[i]! });
+            y += heights[i]! + NODE_GAP;
         });
+    });
+
+    // Label de-overlap: two adjacent nodes in one column get centred labels a
+    // few px apart that overlap (e.g. thin CapEx right above a huge FCF block).
+    // Enforce a minimum gap between label-block edges, pushing labels down.
+    const labelCenter = new Map<string, number>();
+    columns.forEach((col) => {
+        let prevBottom = -Infinity;
+        [...col]
+            .sort((a, b) => (laid.get(a.id)?.y ?? 0) - (laid.get(b.id)?.y ?? 0))
+            .forEach((n) => {
+                const l = laid.get(n.id);
+                if (!l || l.h < 8) return;
+                const blockH = l.h >= 22 ? 26 : 13;
+                let center = l.y + l.h / 2;
+                if (center - blockH / 2 < prevBottom + 3) center = prevBottom + 3 + blockH / 2;
+                prevBottom = center + blockH / 2;
+                labelCenter.set(n.id, center);
+            });
     });
 
     // Compute link ribbons — track running offsets so flows stack inside nodes
@@ -115,31 +142,39 @@ export default function SankeyChart({ columns, links, total, formatValue, height
                     const isFirst = ci === 0;
                     const labelX = isFirst ? l.x + NODE_W + 8 : l.x - 8;
                     const anchor = isFirst ? 'start' : 'end';
-                    const labelY = l.y + Math.min(11, l.h / 2 + 4);
+                    // Dense columns (balance sheet leaves) — thin nodes can't
+                    // carry a 2-line label without colliding with neighbours.
+                    const showLabel = l.h >= 8;
+                    const showValue = l.h >= 22;
+                    const lc = labelCenter.get(n.id) ?? l.y + l.h / 2;
                     return (
                         <g key={n.id}>
                             <rect x={l.x} y={l.y} width={NODE_W} height={l.h} rx={2} fill={n.color}>
                                 <title>{`${n.label}: ${formatValue(n.value)}${n.sub ? ` (${n.sub})` : ''}`}</title>
                             </rect>
-                            <text
-                                x={labelX}
-                                y={labelY}
-                                fontSize={11}
-                                fontWeight={600}
-                                textAnchor={anchor}
-                                className="fill-gray-800 dark:fill-gray-200"
-                            >
-                                {n.label}
-                            </text>
-                            <text
-                                x={labelX}
-                                y={labelY + 12}
-                                fontSize={10}
-                                textAnchor={anchor}
-                                className="fill-gray-500 dark:fill-gray-400"
-                            >
-                                {`${formatValue(n.value)}${n.sub ? ` · ${n.sub}` : ''}`}
-                            </text>
+                            {showLabel && (
+                                <text
+                                    x={labelX}
+                                    y={showValue ? lc - 1 : lc + 4}
+                                    fontSize={11}
+                                    fontWeight={600}
+                                    textAnchor={anchor}
+                                    className="fill-gray-800 dark:fill-gray-200"
+                                >
+                                    {n.label}
+                                </text>
+                            )}
+                            {showValue && (
+                                <text
+                                    x={labelX}
+                                    y={lc + 12}
+                                    fontSize={10}
+                                    textAnchor={anchor}
+                                    className="fill-gray-500 dark:fill-gray-400"
+                                >
+                                    {`${formatValue(n.value)}${n.sub ? ` · ${n.sub}` : ''}`}
+                                </text>
+                            )}
                         </g>
                     );
                 }),

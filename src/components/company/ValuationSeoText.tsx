@@ -131,7 +131,7 @@ export function ValuationSeoText({
           for a complete picture.
         </p>
 
-        <p className="text-xs text-gray-400 dark:text-gray-500 mt-4">
+        <p className="text-xs text-gray-500 dark:text-gray-500 mt-4">
           Valuation data is computed from historical price and fundamental data via Polygon.io and Finnhub.
           {ticker} trades on {sector === 'Financial Services' ? 'NYSE' : 'NYSE/NASDAQ'}.
           This page is for informational purposes only and is not financial advice.

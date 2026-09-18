@@ -220,53 +220,53 @@ export default function RootLayout({
           </>
         )}
         <GAListener />
+        {/* Structured Data — plain server-rendered tags; must stay outside
+            the client Providers tree (React forbids <script> in client render) */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'Organization',
+              name: 'PreMarketPrice',
+              url: 'https://premarketprice.com',
+              logo: 'https://premarketprice.com/og-image.png',
+              description: 'Real-time pre-market live stock prices for US stocks traded on NYSE, NASDAQ, and other US exchanges. Track pre-market movements, earnings calendar, and market analysis for 300+ US companies.',
+              sameAs: [
+                'https://twitter.com/premarketprice',
+                'https://www.linkedin.com/company/premarketprice',
+              ],
+              contactPoint: {
+                '@type': 'ContactPoint',
+                contactType: 'Customer Service',
+                email: 'info@verifa.sk',
+              },
+            }),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'WebSite',
+              name: 'PreMarketPrice',
+              url: 'https://premarketprice.com',
+              description: 'Real-time pre-market live stock prices for US stocks traded on NYSE, NASDAQ, and other US exchanges. Track pre-market movements, earnings calendar, and market analysis for 300+ US companies.',
+              potentialAction: {
+                '@type': 'SearchAction',
+                target: {
+                  '@type': 'EntryPoint',
+                  urlTemplate: 'https://premarketprice.com/?search={search_term_string}',
+                },
+                'query-input': 'required name=search_term_string',
+              },
+            }),
+          }}
+        />
         <Providers>
           <AuthProvider>
             <ThemeEffect />
-            {/* Structured Data - Organization */}
-            <script
-              type="application/ld+json"
-              dangerouslySetInnerHTML={{
-                __html: JSON.stringify({
-                  '@context': 'https://schema.org',
-                  '@type': 'Organization',
-                  name: 'PreMarketPrice',
-                  url: 'https://premarketprice.com',
-                  logo: 'https://premarketprice.com/og-image.png',
-                  description: 'Real-time pre-market live stock prices for US stocks traded on NYSE, NASDAQ, and other US exchanges. Track pre-market movements, earnings calendar, and market analysis for 300+ US companies.',
-                  sameAs: [
-                    'https://twitter.com/premarketprice',
-                    'https://www.linkedin.com/company/premarketprice',
-                  ],
-                  contactPoint: {
-                    '@type': 'ContactPoint',
-                    contactType: 'Customer Service',
-                    email: 'info@verifa.sk',
-                  },
-                }),
-              }}
-            />
-            {/* Structured Data - WebSite */}
-            <script
-              type="application/ld+json"
-              dangerouslySetInnerHTML={{
-                __html: JSON.stringify({
-                  '@context': 'https://schema.org',
-                  '@type': 'WebSite',
-                  name: 'PreMarketPrice',
-                  url: 'https://premarketprice.com',
-                  description: 'Real-time pre-market live stock prices for US stocks traded on NYSE, NASDAQ, and other US exchanges. Track pre-market movements, earnings calendar, and market analysis for 300+ US companies.',
-                  potentialAction: {
-                    '@type': 'SearchAction',
-                    target: {
-                      '@type': 'EntryPoint',
-                      urlTemplate: 'https://premarketprice.com/?search={search_term_string}',
-                    },
-                    'query-input': 'required name=search_term_string',
-                  },
-                }),
-              }}
-            />
             <ErrorBoundaryWrapper>
               {children}
             </ErrorBoundaryWrapper>

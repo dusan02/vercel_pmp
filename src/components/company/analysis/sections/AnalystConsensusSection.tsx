@@ -60,14 +60,14 @@ function TargetRangeBar({
           <div className="absolute top-0 -translate-x-1/2 text-center" style={{ left: `${pos(low)}%` }}>
             <div className="w-0.5 h-3 mx-auto bg-rose-500" />
             <div className="text-[10px] text-rose-600 dark:text-rose-400 font-semibold tabular-nums whitespace-nowrap">{formatPrice(low)}</div>
-            <div className="text-[9px] uppercase tracking-wider text-gray-400">Low</div>
+            <div className="text-[10px] uppercase tracking-wider text-gray-500">Low</div>
           </div>
         )}
         {high != null && (
           <div className="absolute top-0 -translate-x-1/2 text-center" style={{ left: `${pos(high)}%` }}>
             <div className="w-0.5 h-3 mx-auto bg-emerald-500" />
             <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold tabular-nums whitespace-nowrap">{formatPrice(high)}</div>
-            <div className="text-[9px] uppercase tracking-wider text-gray-400">High</div>
+            <div className="text-[10px] uppercase tracking-wider text-gray-500">High</div>
           </div>
         )}
         {/* Current price marker (diamond below the bar) */}
@@ -75,7 +75,7 @@ function TargetRangeBar({
           <div className="absolute bottom-0 -translate-x-1/2 text-center" style={{ left: `${pos(current)}%` }}>
             <div className="w-2.5 h-2.5 mx-auto rotate-45 bg-gray-700 dark:bg-gray-300 border border-white dark:border-gray-900" />
             <div className="text-[10px] text-gray-600 dark:text-gray-300 font-semibold tabular-nums whitespace-nowrap">{formatPrice(current)}</div>
-            <div className="text-[9px] uppercase tracking-wider text-gray-400">Now</div>
+            <div className="text-[10px] uppercase tracking-wider text-gray-500">Now</div>
           </div>
         )}
         {/* Mean marker on the bar */}
@@ -85,7 +85,7 @@ function TargetRangeBar({
           title={`Consensus target: ${formatPrice(mean)}`}
         />
       </div>
-      <div className="text-center text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500">
+      <div className="text-center text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-500">
         52-wk analyst range · <span className="text-blue-600 dark:text-blue-400 font-semibold">Mean {formatPrice(mean)}</span>
       </div>
     </div>

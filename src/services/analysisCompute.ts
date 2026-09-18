@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db/prisma';
 import { computeTTM } from '@/lib/utils/ttm';
 import { applySplitAdjustments, applyPostSplitAdjustment } from '@/lib/utils/splitAdjustment';
+import { dedupeShareClasses } from '@/lib/companyNames';
 
 /**
  * Shared analysis computation used by both:
@@ -36,13 +37,14 @@ export const TICKER_SELECT = {
  */
 export async function fetchPeers(symbol: string, sector: string | null): Promise<string[]> {
     if (!sector) return [];
+    // Over-fetch so share-class dedup (GOOG/GOOGL, BRK.A/BRK.B) still leaves 4
     const peerTickers = await prisma.ticker.findMany({
         where: { sector, symbol: { not: symbol } },
-        select: { symbol: true },
-        take: 4,
+        select: { symbol: true, name: true },
+        take: 8,
         orderBy: { lastMarketCap: 'desc' },
     });
-    return peerTickers.map(t => t.symbol);
+    return dedupeShareClasses(peerTickers, 4).map(t => t.symbol);
 }
 
 // Helper: compute metrics for a single symbol

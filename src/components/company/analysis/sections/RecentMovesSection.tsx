@@ -4,7 +4,7 @@ import { formatPrice, formatPercent } from '@/lib/utils/format';
 interface RecentMove {
   date: Date;
   session: string;
-  changePct: number;
+  changePct: number | null;
   zScore: number | null;
   lastPrice: number | null;
 }
@@ -25,7 +25,16 @@ function formatSessionLabel(session: string): string {
 }
 
 export function RecentMovesSection({ ticker, moves }: RecentMovesSectionProps) {
-  if (moves.length === 0) return null;
+  if (moves.length === 0) {
+    return (
+      <div className="mb-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 px-6 py-4 flex items-center justify-between gap-3 flex-wrap">
+        <p className="text-sm text-gray-500 dark:text-gray-400">No significant market moves for {ticker} in the last 30 days.</p>
+        <Link href={`/premarket/${ticker}`} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
+          See {ticker} move history →
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="mb-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
@@ -47,7 +56,7 @@ export function RecentMovesSection({ ticker, moves }: RecentMovesSectionProps) {
             </tr>
           </thead>
           <tbody>
-            {moves.map((m, i) => {
+            {moves.map((m) => {
               // changePct can be null in the DB — null >= 0 is true in JS,
               // which rendered a green "0.00%" for missing data.
               const pct = m.changePct ?? null;
@@ -60,7 +69,7 @@ export function RecentMovesSection({ ticker, moves }: RecentMovesSectionProps) {
                   : `/premarket-losers/${dateStr}`
                 : null;
               return (
-                <tr key={i} className="border-b border-gray-50 dark:border-gray-700/50">
+                <tr key={`${dateStr}-${m.session}`} className="border-b border-gray-50 dark:border-gray-700/50">
                   <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">
                     {archiveLink ? (
                       <Link href={archiveLink} className="hover:text-blue-600 dark:hover:text-blue-400 hover:underline">
@@ -74,7 +83,7 @@ export function RecentMovesSection({ ticker, moves }: RecentMovesSectionProps) {
                   <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">
                     {m.lastPrice != null ? formatPrice(m.lastPrice) : '—'}
                   </td>
-                  <td className={`px-3 py-2 tabular-nums font-semibold ${pct == null ? 'text-gray-400' : moveUp ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                  <td className={`px-3 py-2 tabular-nums font-semibold ${pct == null ? 'text-gray-500' : moveUp ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                     {pct != null ? formatPercent(pct) : '—'}
                   </td>
                   <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">

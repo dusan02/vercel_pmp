@@ -69,8 +69,8 @@ export function PmpScoreSection({ snapshot }: { snapshot: EwSnapshot | null }) {
     <section className="mb-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
       <div className="flex items-center justify-between mb-1">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Early Winners Score</h2>
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/50">
-          V5-B · current data
+        <span title="V5-B · current data" className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/50 whitespace-nowrap">
+          V5-B
         </span>
       </div>
       <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
@@ -82,12 +82,12 @@ export function PmpScoreSection({ snapshot }: { snapshot: EwSnapshot | null }) {
         <span className="text-4xl font-bold tabular-nums text-gray-900 dark:text-white">
           {snapshot.totalScore.toFixed(1)}
         </span>
-        <span className="text-sm text-gray-400 dark:text-gray-500 pb-1">
+        <span className="text-sm text-gray-500 dark:text-gray-500 pb-1">
           / {snapshot.maxPossible.toFixed(0)} possible
         </span>
       </div>
 
-      <dl className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <dl className="grid grid-cols-2 gap-3">
         {pillars.map((p) => (
           <div
             key={p.name}
@@ -97,14 +97,14 @@ export function PmpScoreSection({ snapshot }: { snapshot: EwSnapshot | null }) {
                 : 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800/50'
             }`}
           >
-            <dt className="text-xs uppercase tracking-wider font-semibold text-gray-400 dark:text-gray-500 flex items-center justify-between">
+            <dt className="text-[10px] uppercase tracking-wider font-semibold text-gray-500 dark:text-gray-500 flex items-center justify-between gap-1">
               {p.name}
-              <span className="text-[10px] font-bold text-gray-400 tabular-nums">{p.weight}%</span>
+              <span className="font-bold text-gray-500 tabular-nums shrink-0">{p.weight}%</span>
             </dt>
             <dd
               className={`mt-1 text-lg font-bold tabular-nums ${
                 p.blocked
-                  ? 'text-gray-400 dark:text-gray-500'
+                  ? 'text-gray-500 dark:text-gray-500'
                   : 'text-emerald-600 dark:text-emerald-400'
               }`}
             >
@@ -132,7 +132,7 @@ export function PmpScoreSection({ snapshot }: { snapshot: EwSnapshot | null }) {
                 <span>
                   {b.label}
                   {b.value != null && (
-                    <span className="ml-1 tabular-nums text-gray-400 dark:text-gray-500">
+                    <span className="ml-1 tabular-nums text-gray-500 dark:text-gray-500">
                       ({typeof b.value === 'number' ? b.value.toFixed(1) : b.value})
                     </span>
                   )}
@@ -146,10 +146,13 @@ export function PmpScoreSection({ snapshot }: { snapshot: EwSnapshot | null }) {
               </li>
             )}
           </ul>
+          <p className="mt-1.5 text-[10px] text-gray-500 dark:text-gray-500">
+            Parenthesized numbers are the raw metric values behind each rationale.
+          </p>
         </div>
       )}
 
-      <p className="mt-4 text-[11px] text-gray-400 dark:text-gray-500 leading-relaxed">
+      <p className="mt-4 text-[11px] text-gray-500 dark:text-gray-500 leading-relaxed">
         Current-data score (V5-B methodology) as of {asOf}. This is a screening
         signal, not a backtested result — historical V5-C performance has not
         been established because verified point-in-time analyst consensus data

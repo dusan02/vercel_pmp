@@ -102,7 +102,7 @@ export default function FinancialChart({ statements }: FinancialChartProps) {
                             tick={viewMode === 'quarterly' ? <ChartQuarterTick chartData={chartData} /> : { fontSize: 11, fill: '#6B7280', fontWeight: 500 }}
                             axisLine={false}
                             tickLine={false}
-                            interval={0}
+                            interval="preserveStartEnd"
                             dy={viewMode === 'annual' ? 6 : 0}
                             height={viewMode === 'quarterly' ? 44 : 24}
                         />

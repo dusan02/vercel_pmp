@@ -1,6 +1,4 @@
 interface KeyInsightsCache {
-  healthScore: number | null;
-  profitabilityScore: number | null;
   valuationScore: number | null;
   verdictText: string | null;
   piotroskiScore: number | null;
@@ -235,11 +233,11 @@ export function KeyInsightsSection({
       <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
         Key Insights: {companyName} ({ticker})
       </h2>
-      <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{paragraph}</p>
+      <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed max-w-prose">{paragraph}</p>
       {bullets.length > 0 && (
-        <ul className="mt-3 list-disc pl-5 space-y-1.5 text-sm text-gray-600 dark:text-gray-400">
-          {bullets.map((s, i) => (
-            <li key={i}>{s}</li>
+        <ul className="mt-3 list-disc pl-5 space-y-1.5 text-sm text-gray-600 dark:text-gray-400 max-w-prose">
+          {bullets.map((s) => (
+            <li key={s.slice(0, 40)}>{s}</li>
           ))}
         </ul>
       )}

@@ -49,13 +49,13 @@ function PiotroskiGauge({ score, ticker, compareScore, compareWith }: {
     return (
         <div className="bg-gray-50 dark:bg-gray-900/40 rounded-xl p-4 border border-gray-100 dark:border-gray-700" title="Piotroski F-Score (0-9): financial strength. 7+ = Strong, 0-3 = Weak.">
             <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] uppercase tracking-widest font-semibold text-gray-400 dark:text-gray-500">Piotroski F-Score</span>
+                <span className="text-[10px] uppercase tracking-widest font-semibold text-gray-500 dark:text-gray-500">Piotroski F-Score</span>
                 <StatusBadge label={labelMap[color]} type={color === 'green' ? 'good' : color === 'yellow' ? 'warn' : 'bad'} />
             </div>
             <div className="flex items-center gap-3 mb-2">
-                <span className={`text-2xl font-bold ${textMap[color]}`}>{score ?? 'N/A'}<span className="text-sm font-normal text-gray-400">/9</span></span>
+                <span className={`text-2xl font-bold ${textMap[color]}`}>{score ?? 'N/A'}<span className="text-sm font-normal text-gray-500">/9</span></span>
                 {compareWith && compareScore !== null && compareScore !== undefined && (
-                    <span className="text-sm text-gray-400 border-l dark:border-gray-700 pl-3">
+                    <span className="text-sm text-gray-500 border-l dark:border-gray-700 pl-3">
                         {compareWith}: <span className="font-bold text-gray-600 dark:text-gray-300">{compareScore}/9</span>
                     </span>
                 )}
@@ -89,7 +89,7 @@ function MetricRow({ label, hint, value, status, statusLabel, secondaryValue, co
             </div>
             <div className="flex items-center gap-3 flex-shrink-0">
                 {compareWith && secondaryValue !== undefined && (
-                    <span className="text-xs text-gray-400 border-r dark:border-gray-700 pr-3">
+                    <span className="text-xs text-gray-500 border-r dark:border-gray-700 pr-3">
                         {compareWith}: <span className="font-semibold text-gray-500 dark:text-gray-400">{secondaryValue}</span>
                     </span>
                 )}
@@ -104,7 +104,7 @@ function MetricRow({ label, hint, value, status, statusLabel, secondaryValue, co
 function SectionTitle({ title }: { title: string }) {
     return (
         <div className="flex items-center gap-2 pt-2">
-            <span className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">{title}</span>
+            <span className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-500">{title}</span>
             <div className="flex-1 h-px bg-gray-100 dark:bg-gray-700" />
         </div>
     );
@@ -117,7 +117,7 @@ export function BalanceSheetTable({ ticker, data, compareWith, secondaryData }: 
 
     if (!bs) {
         return (
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 text-center text-gray-400 text-sm">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 text-center text-gray-500 text-sm">
                 Balance sheet data not available. Run Deep Analysis first.
             </div>
         );
@@ -175,7 +175,7 @@ export function BalanceSheetTable({ ticker, data, compareWith, secondaryData }: 
                 </div>
                 <div>
                     <h4 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Balance Sheet Insights</h4>
-                    <p className="text-xs text-gray-400">Based on latest annual financial statement</p>
+                    <p className="text-xs text-gray-500">Based on latest annual financial statement</p>
                 </div>
             </div>
 

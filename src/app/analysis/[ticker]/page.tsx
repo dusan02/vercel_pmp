@@ -1,18 +1,19 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import { cache } from 'react';
+import dynamic from 'next/dynamic';
 import { prisma } from '@/lib/db/prisma';
 import { generateCompanyMetadata } from '@/lib/seo/metadata';
-import { getCompanyName } from '@/lib/companyNames';
+import { getCompanyName, dedupeShareClasses } from '@/lib/companyNames';
 import { AnalysisTabClient } from '@/components/company/AnalysisTabClient';
-import { NewsSection } from '@/components/company/analysis/NewsSection';
 import { getEarningsForTicker } from '@/lib/seo/earningsSSR';
 import ShareButtons from '@/components/ShareButtons';
 import { detectSession } from '@/lib/utils/timeUtils';
 import { nowET } from '@/lib/utils/dateET';
 import { AnalysisHero } from '@/components/company/analysis/sections/AnalysisHero';
 import { CompanyOverviewSection } from '@/components/company/analysis/sections/CompanyOverviewSection';
-import { HealthScoresSection } from '@/components/company/analysis/sections/HealthScoresSection';
+
 import { KeyInsightsSection } from '@/components/company/analysis/sections/KeyInsightsSection';
 import { MoverInsightSection } from '@/components/company/analysis/sections/MoverInsightSection';
 import { AnalystConsensusSection } from '@/components/company/analysis/sections/AnalystConsensusSection';
@@ -20,10 +21,14 @@ import { EarningsSection } from '@/components/company/analysis/sections/Earnings
 import { RecentMovesSection } from '@/components/company/analysis/sections/RecentMovesSection';
 import { RelatedStocksSection } from '@/components/company/analysis/sections/RelatedStocksSection';
 import { PmpScoreSection } from '@/components/company/analysis/sections/PmpScoreSection';
-import { FinancialFlowsSection, type StatementRow } from '@/components/company/analysis/sections/FinancialFlowsSection';
-import { TickerFaqSection, buildTickerFaq } from '@/components/company/analysis/sections/TickerFaqSection';
-import { IntradayChart } from '@/components/company/IntradayChart';
+import { buildFlowPeriods, type StatementRow } from '@/components/company/analysis/sections/FinancialFlowsSection';
+import { PriceHistorySection } from '@/components/company/analysis/sections/PriceHistorySection';
+
 import { SeoTextSection } from '@/components/company/SeoTextSection';
+
+// Lazy client chunks — keeps recharts/finnhub-fetch code out of the initial bundle
+const IntradayChart = dynamic(() => import('@/components/company/IntradayChart').then((m) => m.IntradayChart));
+const NewsSection = dynamic(() => import('@/components/company/analysis/NewsSection').then((m) => m.NewsSection));
 
 export const revalidate = 60;
 
@@ -33,7 +38,9 @@ interface PageProps {
 
 const baseUrl = 'https://premarketprice.com';
 
-async function getTickerData(symbol: string) {
+// React cache() dedupes this ~15-relation query between generateMetadata and
+// the page render — it used to run twice per request.
+const getTickerData = cache(async function getTickerData(symbol: string) {
   try {
     return await prisma.ticker.findUnique({
       where: { symbol },
@@ -59,7 +66,6 @@ async function getTickerData(symbol: string) {
         analysisCache: {
           select: {
             healthScore: true,
-            profitabilityScore: true,
             valuationScore: true,
             verdictText: true,
             piotroskiScore: true,
@@ -73,7 +79,6 @@ async function getTickerData(symbol: string) {
             debtRepaymentYears: true,
             humanDebtInfo: true,
             humanPeInfo: true,
-            marginStability: true,
           },
         },
         finnhubMetrics: {
@@ -144,7 +149,7 @@ async function getTickerData(symbol: string) {
     if (process.env.NEXT_PHASE === 'phase-production-build') return null;
     throw e;
   }
-}
+});
 
 /**
  * NOTE: deliberately NO generateStaticParams here. This is the heaviest page
@@ -164,25 +169,16 @@ async function getRecentSignificantMoves(symbol: string) {
     const since = new Date();
     since.setDate(since.getDate() - 30);
 
-    const [positive, negative] = await Promise.all([
-      prisma.sessionPrice.findMany({
-        where: { symbol, date: { gte: since }, zScore: { gte: 2.0 } },
-        orderBy: { date: 'desc' },
-        take: 5,
-        select: { date: true, session: true, changePct: true, zScore: true, lastPrice: true },
-      }),
-      prisma.sessionPrice.findMany({
-        where: { symbol, date: { gte: since }, zScore: { lte: -2.0 } },
-        orderBy: { date: 'desc' },
-        take: 5,
-        select: { date: true, session: true, changePct: true, zScore: true, lastPrice: true },
-      }),
-    ]);
-
-    const all = [...positive, ...negative].sort(
-      (a, b) => b.date.getTime() - a.date.getTime()
-    );
-    return all.slice(0, 5);
+    return await prisma.sessionPrice.findMany({
+      where: {
+        symbol,
+        date: { gte: since },
+        OR: [{ zScore: { gte: 2.0 } }, { zScore: { lte: -2.0 } }],
+      },
+      orderBy: { date: 'desc' },
+      take: 5,
+      select: { date: true, session: true, changePct: true, zScore: true, lastPrice: true },
+    });
   } catch {
     return [];
   }
@@ -243,29 +239,11 @@ async function getSectorPeers(sector: string | null | undefined, excludeSymbol: 
         analysisCache: { isNot: null },
       },
       orderBy: { lastMarketCap: 'desc' },
-      take: 10,
+      // Over-fetch — share classes (GOOG/GOOGL) collapse to one company below
+      take: 16,
       select: { symbol: true, name: true, lastChangePct: true },
     });
-    return peers;
-  } catch {
-    return [];
-  }
-}
-
-/**
- * Last ~30 regular-session closes for the hero sparkline.
- * Light query — only date + lastPrice, no joins.
- */
-async function getSparklineCloses(symbol: string): Promise<number[]> {
-  try {
-    const since = new Date();
-    since.setDate(since.getDate() - 45); // buffer so weekends/holidays still yield ~30 points
-    const rows = await prisma.sessionPrice.findMany({
-      where: { symbol, session: 'live', date: { gte: since }, lastPrice: { gt: 0 } },
-      orderBy: { date: 'asc' },
-      select: { lastPrice: true },
-    });
-    return rows.map((r) => r.lastPrice).filter((p): p is number => p != null && p > 0).slice(-30);
+    return dedupeShareClasses(peers, 10);
   } catch {
     return [];
   }
@@ -316,11 +294,10 @@ export default async function AnalysisPage({ params }: PageProps) {
 
   // Fetch everything in parallel (independent queries)
   // Includes SSR pre-fetch of analysis API + history for instant client hydration
-  const [earningsData, recentMoves, sectorPeers, sparkline, analysisData, historyData, flowStatements] = await Promise.all([
+  const [earningsData, recentMoves, sectorPeers, analysisData, historyData, flowStatements] = await Promise.all([
     getEarningsForTicker(tickerUpper),
     getRecentSignificantMoves(tickerUpper),
     getSectorPeers(data?.sector, tickerUpper),
-    getSparklineCloses(tickerUpper),
     // SSR pre-fetch analysis API — eliminates client-side fetch waterfall
     (async () => {
       try {
@@ -376,20 +353,6 @@ export default async function AnalysisPage({ params }: PageProps) {
     },
   };
 
-  const faqProps = {
-    ticker: tickerUpper,
-    companyName,
-    price: data?.lastPrice ?? null,
-    changePct: data?.lastChangePct ?? null,
-    marketCap: data?.lastMarketCap ?? null,
-    sector: data?.sector ?? null,
-    industry: data?.industry ?? null,
-    healthScore: data?.analysisCache?.healthScore ?? null,
-    nextEarningsDate: earningsData.upcoming.length > 0
-      ? (earningsData.upcoming[earningsData.upcoming.length - 1]?.date ?? null)
-      : null,
-  };
-
   // Earnings countdown — next scheduled report within 14 days
   const nextEarnings = earningsData.upcoming.length > 0
     ? earningsData.upcoming[earningsData.upcoming.length - 1]
@@ -399,21 +362,10 @@ export default async function AnalysisPage({ params }: PageProps) {
     : null;
   const earningsTimeLabel = nextEarnings?.time === 'bmo' ? 'before market open' : nextEarnings?.time === 'amc' ? 'after market close' : '';
 
-  const faqSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: buildTickerFaq(faqProps).map((item) => ({
-      '@type': 'Question',
-      name: item.question,
-      acceptedAnswer: { '@type': 'Answer', text: item.answer },
-    })),
-  };
-
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(breadcrumbSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(stockSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(faqSchema) }} />
 
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Breadcrumb */}
@@ -421,9 +373,9 @@ export default async function AnalysisPage({ params }: PageProps) {
           <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 py-3">
             <ol className="flex items-center space-x-2 text-sm">
               <li><Link href="/" className="text-gray-500 hover:text-blue-600 dark:text-gray-400">Home</Link></li>
-              <li className="text-gray-400" aria-hidden="true">/</li>
-              <li><Link href="/screener" className="text-gray-500 hover:text-blue-600 dark:text-gray-400">Stocks</Link></li>
-              <li className="text-gray-400" aria-hidden="true">/</li>
+              <li className="text-gray-500" aria-hidden="true">/</li>
+              <li><Link href="/stocks" className="text-gray-500 hover:text-blue-600 dark:text-gray-400">Stocks</Link></li>
+              <li className="text-gray-500" aria-hidden="true">/</li>
               <li className="text-gray-900 dark:text-gray-100 font-medium" aria-current="page">{tickerUpper}</li>
             </ol>
           </div>
@@ -448,35 +400,42 @@ export default async function AnalysisPage({ params }: PageProps) {
             </div>
           )}
 
-          <AnalysisHero
-            ticker={tickerUpper}
-            companyName={companyName}
-            price={data?.lastPrice ?? null}
-            changePct={data?.lastChangePct ?? null}
-            marketCap={data?.lastMarketCap ?? null}
-            sector={data?.sector ?? null}
-            industry={data?.industry ?? null}
-            marketSession={marketSession}
-            prevClose={data?.latestPrevClose ?? null}
-            sparkline={sparkline}
-          />
-
-          {/* Today's intraday (pre-market + regular, 5-min bars) — client-fetch */}
-          <IntradayChart ticker={tickerUpper} />
-
-          {/* Why is it moving today — the most actionable insight, near the top */}
-          <MoverInsightSection
-            ticker={tickerUpper}
-            moversReason={data?.moversReason ?? null}
-            moversCategory={data?.moversCategory ?? null}
-            aiConfidence={data?.aiConfidence ?? null}
-            isSbcAlert={data?.isSbcAlert ?? null}
-            changePct={data?.lastChangePct ?? null}
-          />
+          {/* Hero + mover insight + today's intraday side by side — the "now"
+              context stays together, no dead space under the title */}
+          <div className="mb-6 lg:grid lg:grid-cols-[minmax(0,1fr)_24rem] lg:gap-6 lg:items-start">
+            <div className="min-w-0">
+              <AnalysisHero
+                ticker={tickerUpper}
+                companyName={companyName}
+                price={data?.lastPrice ?? null}
+                changePct={data?.lastChangePct ?? null}
+                marketCap={data?.lastMarketCap ?? null}
+                sector={data?.sector ?? null}
+                industry={data?.industry ?? null}
+                marketSession={marketSession}
+                prevClose={data?.latestPrevClose ?? null}
+                peRatio={data?.finnhubMetrics?.peRatio ?? null}
+                dividendYield={data?.finnhubMetrics?.dividendYield ?? null}
+                roe={data?.finnhubMetrics?.roe ?? null}
+              />
+              <MoverInsightSection
+                ticker={tickerUpper}
+                moversReason={data?.moversReason ?? null}
+                moversCategory={data?.moversCategory ?? null}
+                aiConfidence={data?.aiConfidence ?? null}
+                isSbcAlert={data?.isSbcAlert ?? null}
+                changePct={data?.lastChangePct ?? null}
+              />
+            </div>
+            <IntradayChart ticker={tickerUpper} />
+          </div>
 
           {/* Main column + right rail (consensus, scores, related) */}
           <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-8">
             <div className="min-w-0">
+
+          {/* Main price chart first — the biggest visual on the page */}
+          <PriceHistorySection ticker={tickerUpper} />
 
           <CompanyOverviewSection
             description={data?.description}
@@ -485,9 +444,35 @@ export default async function AnalysisPage({ params }: PageProps) {
             websiteUrl={data?.websiteUrl}
           />
 
-          <HealthScoresSection cache={data?.analysisCache ?? null} />
+            </div>{/* /main column */}
 
-          <FinancialFlowsSection statements={flowStatements} />
+            {/* Right rail — compact reference cards alongside the main flow */}
+            <aside className="mt-6 lg:mt-0">
+              <AnalystConsensusSection
+                priceTarget={data?.finnhubPriceTarget ?? null}
+                recommendation={data?.finnhubRecommendation ?? null}
+                fallbackPrice={data?.lastPrice ?? null}
+              />
+
+              <PmpScoreSection snapshot={data?.ewScoreSnapshots?.[0] ?? null} />
+            </aside>
+          </div>
+
+          {/* Full interactive analysis — financial statement pairs
+              (history bar + structure sankey), valuation, health table */}
+          <AnalysisTabClient
+            key={tickerUpper}
+            ticker={tickerUpper}
+            initialAnalysisData={analysisData}
+            initialHistoryData={historyData}
+            flowPeriods={buildFlowPeriods(flowStatements)}
+          />
+
+          <p className="-mt-2 mb-6 text-xs text-gray-500 dark:text-gray-500">
+            See how {tickerUpper} ranks on the{' '}
+            <Link href="/capex-tracker" className="underline hover:text-gray-600 dark:hover:text-gray-300">Capex Tracker</Link>
+            {' '}— top 50 capital spenders compared.
+          </p>
 
           {/* Data-driven prose unique per ticker — the differentiator that gets
               pages out of "Crawled – currently not indexed" */}
@@ -505,21 +490,9 @@ export default async function AnalysisPage({ params }: PageProps) {
             moversCategory={data?.moversCategory ?? null}
           />
 
-          {/* Fundamental metrics render client-side in FinancialHealthTable
-              (interpreted cards with thresholds + compare column) — the raw SSR
-              grid was removed to avoid showing the same numbers twice. */}
-
-          {/* Full interactive analysis — SSR sections above cover the header,
-              overview and score summary; this renders controls, compare,
-              price chart, interpreted Key Financial Metrics and the chart grid */}
-          <AnalysisTabClient ticker={tickerUpper} initialAnalysisData={analysisData} initialHistoryData={historyData} />
-
           <EarningsSection upcoming={earningsData.upcoming} recent={earningsData.recent} />
 
           <RecentMovesSection ticker={tickerUpper} moves={recentMoves} />
-
-          {/* FAQ — visible Q&A with concrete numbers + matching FAQPage JSON-LD (GEO) */}
-          <TickerFaqSection {...faqProps} />
 
           {/* SEO text section — unique keyword-rich content for Google indexing */}
           <SeoTextSection
@@ -537,50 +510,40 @@ export default async function AnalysisPage({ params }: PageProps) {
             peersCount={sectorPeers.length}
           />
 
+          {/* Cross-links to related report pages + share — grouped with the
+              discovery section at the bottom */}
+          <div className="mb-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 text-sm flex flex-col gap-3">
+            <Link
+              href={`/premarket/${tickerUpper}`}
+              className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              {companyName} ({tickerUpper}) Premarket Movers →
+            </Link>
+            <Link
+              href={`/valuation/${tickerUpper}`}
+              className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              {companyName} ({tickerUpper}) Valuation & P/E History →
+            </Link>
+            <Link
+              href={`/financials/${tickerUpper}`}
+              className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              {companyName} ({tickerUpper}) Financial Statements →
+            </Link>
+            <ShareButtons
+              url={`${baseUrl}/analysis/${tickerUpper}`}
+              title={`${companyName} (${tickerUpper}) Stock Analysis | PreMarketPrice`}
+              description={data?.description?.slice(0, 100)}
+            />
+          </div>
+
+          {/* Sector peers — discovery/internal links at the bottom, after the
+              analysis content */}
+          <RelatedStocksSection ticker={tickerUpper} sector={data?.sector} peers={sectorPeers} />
+
           {/* Latest news — at the very bottom, client-side fetch from Finnhub, cached 30min */}
           <NewsSection ticker={tickerUpper} />
-            </div>{/* /main column */}
-
-            {/* Right rail — compact reference cards alongside the main flow */}
-            <aside className="mt-6 lg:mt-0">
-              <AnalystConsensusSection
-                priceTarget={data?.finnhubPriceTarget ?? null}
-                recommendation={data?.finnhubRecommendation ?? null}
-                fallbackPrice={data?.lastPrice ?? null}
-              />
-
-              <PmpScoreSection snapshot={data?.ewScoreSnapshots?.[0] ?? null} />
-
-              <RelatedStocksSection ticker={tickerUpper} sector={data?.sector} peers={sectorPeers} />
-
-              {/* Cross-link to valuation and financials pages + share */}
-              <div className="mb-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 text-sm flex flex-col gap-3">
-                <Link
-                  href={`/premarket/${tickerUpper}`}
-                  className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-                >
-                  {companyName} ({tickerUpper}) Premarket Movers →
-                </Link>
-                <Link
-                  href={`/valuation/${tickerUpper}`}
-                  className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-                >
-                  {companyName} ({tickerUpper}) Valuation & P/E History →
-                </Link>
-                <Link
-                  href={`/financials/${tickerUpper}`}
-                  className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-                >
-                  {companyName} ({tickerUpper}) Financial Statements →
-                </Link>
-                <ShareButtons
-                  url={`${baseUrl}/analysis/${tickerUpper}`}
-                  title={`${companyName} (${tickerUpper}) Stock Analysis | PreMarketPrice`}
-                  description={data?.description?.slice(0, 100)}
-                />
-              </div>
-            </aside>
-          </div>
         </main>
       </div>
     </>

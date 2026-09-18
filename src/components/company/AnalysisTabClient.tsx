@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { event } from '@/lib/ga';
+import type { FlowPeriods } from './analysis/sections/FinancialFlowsSection';
 
 const AnalysisTab = dynamic(
   () => import('./AnalysisTab'),
@@ -17,10 +18,10 @@ const AnalysisTab = dynamic(
   }
 );
 
-export function AnalysisTabClient({ ticker, initialAnalysisData, initialHistoryData }: { ticker: string; initialAnalysisData?: any; initialHistoryData?: any }) {
+export function AnalysisTabClient({ ticker, initialAnalysisData, initialHistoryData, flowPeriods }: { ticker: string; initialAnalysisData?: unknown; initialHistoryData?: unknown; flowPeriods?: FlowPeriods | null }) {
   useEffect(() => {
     event('analysis_view', { ticker });
   }, [ticker]);
 
-  return <AnalysisTab ticker={ticker} initialAnalysisData={initialAnalysisData} initialHistoryData={initialHistoryData} />;
+  return <AnalysisTab ticker={ticker} initialAnalysisData={initialAnalysisData} initialHistoryData={initialHistoryData} flowPeriods={flowPeriods} />;
 }

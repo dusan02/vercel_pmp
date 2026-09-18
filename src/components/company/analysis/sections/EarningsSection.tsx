@@ -83,8 +83,8 @@ export function EarningsSection({ upcoming, recent }: EarningsSectionProps) {
                 </tr>
               </thead>
               <tbody>
-                {upcoming.map((e, i) => (
-                  <tr key={i} className="border-b border-gray-50 dark:border-gray-700/50">
+                {upcoming.map((e) => (
+                  <tr key={`${e.date}-${e.time}`} className="border-b border-gray-50 dark:border-gray-700/50">
                     <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">{formatDateShort(e.date)}</td>
                     <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{timeLabel(e.time)}</td>
                     <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">{formatEpsShort(e.epsEstimate)}</td>
@@ -114,8 +114,8 @@ export function EarningsSection({ upcoming, recent }: EarningsSectionProps) {
                 </tr>
               </thead>
               <tbody>
-                {usefulRecent.map((e, i) => (
-                  <tr key={i} className="border-b border-gray-50 dark:border-gray-700/50">
+                {usefulRecent.map((e) => (
+                  <tr key={`${e.date}-${e.time}`} className="border-b border-gray-50 dark:border-gray-700/50">
                     <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">{formatDateShort(e.date)}</td>
                     <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{timeLabel(e.time)}</td>
                     <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">{formatEpsShort(e.epsEstimate)}</td>
@@ -124,7 +124,7 @@ export function EarningsSection({ upcoming, recent }: EarningsSectionProps) {
                       {e.epsSurprisePercent != null ? (
                         <SurpriseBar surprise={e.epsSurprisePercent} />
                       ) : (
-                        <span className="text-gray-400">—</span>
+                        <span className="text-gray-500">—</span>
                       )}
                     </td>
                     <td className="px-3 py-2 tabular-nums text-gray-700 dark:text-gray-300">{formatRevShort(e.revenueEstimate)}</td>

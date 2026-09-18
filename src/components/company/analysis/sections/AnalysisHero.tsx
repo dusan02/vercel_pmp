@@ -15,45 +15,10 @@ interface AnalysisHeroProps {
   marketSession: 'pre' | 'live' | 'after' | 'closed';
   /** Close of the session before the last one — used to compute the last real move when closed */
   prevClose: number | null;
-  /** Last ~30 regular-session closes, oldest → newest (for the sparkline) */
-  sparkline: number[];
-}
-
-function Sparkline({ points }: { points: number[] }) {
-  if (points.length < 2) return null;
-  const w = 120;
-  const h = 36;
-  const min = Math.min(...points);
-  const max = Math.max(...points);
-  const range = max - min || 1;
-  const step = w / (points.length - 1);
-  const coords = points.map((p, i) => {
-    const x = i * step;
-    const y = h - 3 - ((p - min) / range) * (h - 6);
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  });
-  const up = points[points.length - 1]! >= points[0]!;
-  const stroke = up ? '#059669' : '#e11d48';
-
-  return (
-    <svg
-      width={w}
-      height={h}
-      viewBox={`0 0 ${w} ${h}`}
-      className="inline-block"
-      role="img"
-      aria-label={`30-day price trend, ${up ? 'up' : 'down'}`}
-    >
-      <polyline
-        points={coords.join(' ')}
-        fill="none"
-        stroke={stroke}
-        strokeWidth="2"
-        strokeLinejoin="round"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
+  /** Key ratios for the hero stat strip (from finnhubMetrics) */
+  peRatio?: number | null;
+  dividendYield?: number | null;
+  roe?: number | null;
 }
 
 export function AnalysisHero({
@@ -66,7 +31,9 @@ export function AnalysisHero({
   industry,
   marketSession,
   prevClose,
-  sparkline,
+  peRatio,
+  dividendYield,
+  roe,
 }: AnalysisHeroProps) {
   const isClosed = marketSession === 'closed';
 
@@ -80,7 +47,7 @@ export function AnalysisHero({
   const displayPct = isClosed ? lastSessionPct : changePct;
 
   return (
-    <div className="mb-6">
+    <div className="mb-4 lg:mb-0">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="flex items-center gap-3">
           <img
@@ -93,20 +60,12 @@ export function AnalysisHero({
             loading="eager"
           />
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
-              {companyName} ({ticker}) Stock Analysis
+            <h1 className="text-xl sm:text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
+              {companyName} ({ticker})<span className="hidden sm:inline"> Stock Analysis</span>
             </h1>
           </div>
           <AddToWatchlist ticker={ticker} />
         </div>
-        {sparkline.length >= 2 && (
-          <div className="flex items-center gap-2" title="Last 30 trading days (regular session)">
-            <Sparkline points={sparkline} />
-            <span className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">
-              30d
-            </span>
-          </div>
-        )}
       </div>
       {/* Price line — separate row */}
       <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 flex flex-wrap items-center gap-x-1">
@@ -136,7 +95,7 @@ export function AnalysisHero({
               }
             >
               {formatPercent(displayPct)}
-              {isClosed && <span className="text-gray-400 dark:text-gray-500"> at last close</span>}
+              {isClosed && <span className="text-gray-500 dark:text-gray-500"> at last close</span>}
             </span>
           </>
         )}
@@ -156,6 +115,33 @@ export function AnalysisHero({
         )}
         {industry && <> · Industry: {industry}</>}
       </p>
+      {/* Key stats strip — fills the hero cell with always-available data */}
+      <div className="mt-3 grid grid-cols-2 gap-x-5 gap-y-1.5 text-sm sm:flex sm:flex-wrap sm:gap-y-1">
+        {marketCap != null && (
+          <span className="text-gray-600 dark:text-gray-400">
+            <span className="text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-500">Mkt Cap </span>
+            <strong className="font-semibold text-gray-900 dark:text-white">{formatMarketCap(marketCap)}</strong>
+          </span>
+        )}
+        {peRatio != null && (
+          <span className="text-gray-600 dark:text-gray-400">
+            <span className="text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-500">P/E </span>
+            <strong className="font-semibold text-gray-900 dark:text-white">{peRatio.toFixed(1)}</strong>
+          </span>
+        )}
+        {dividendYield != null && dividendYield > 0 && (
+          <span className="text-gray-600 dark:text-gray-400">
+            <span className="text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-500">Div Yield </span>
+            <strong className="font-semibold text-gray-900 dark:text-white">{dividendYield.toFixed(2)}%</strong>
+          </span>
+        )}
+        {roe != null && (
+          <span className="text-gray-600 dark:text-gray-400">
+            <span className="text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-500">ROE </span>
+            <strong className="font-semibold text-gray-900 dark:text-white">{roe.toFixed(1)}%</strong>
+          </span>
+        )}
+      </div>
     </div>
   );
 }

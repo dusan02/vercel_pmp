@@ -292,7 +292,6 @@ export function useAnalysis(ticker: string, initialAnalysisData?: any, initialHi
         setCompareInput,
         runDeepAnalysis,
         handleAddComparison,
-        handleRemoveComparison,
-        setData
+        handleRemoveComparison
     };
 }

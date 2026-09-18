@@ -10,6 +10,8 @@ import { ValuationHistoryChart } from './ValuationHistoryChart';
 import { ScenarioLab } from './analysis/ScenarioLab';
 import { ChartSection } from './shared/ChartSection';
 import { ChartErrorBoundary } from './shared/ChartErrorBoundary';
+import { SankeyCell } from './analysis/sections/FinancialFlowsClient';
+import type { FlowPeriods } from './analysis/sections/FinancialFlowsSection';
 import type { AnalysisData } from './analysis/types';
 
 const ValuationCharts = lazy(() => import('./ValuationCharts'));
@@ -17,6 +19,7 @@ const ValuationCharts = lazy(() => import('./ValuationCharts'));
 interface AnalysisChartsProps {
     ticker: string;
     data: AnalysisData;
+    flowPeriods?: FlowPeriods | null | undefined;
 }
 
 const suspenseFallback = (color: string) => (
@@ -25,8 +28,9 @@ const suspenseFallback = (color: string) => (
     </div>
 );
 
-export function AnalysisCharts({ ticker, data }: AnalysisChartsProps) {
+export function AnalysisCharts({ ticker, data, flowPeriods }: AnalysisChartsProps) {
     const hasStatements = !!(data.statements && data.statements.length > 0);
+    const hasFlows = !!(flowPeriods && (flowPeriods.annual || flowPeriods.quarterly));
     const hasValuationHistory = !!(data.valuationHistory && data.valuationHistory.length);
     const hasScenarioData = !!(
         data.metrics?.currentEps != null &&
@@ -37,6 +41,104 @@ export function AnalysisCharts({ ticker, data }: AnalysisChartsProps) {
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            {/* Income Statement History */}
+            <ChartErrorBoundary>
+                <ChartSection
+                    iconBgClass="bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400"
+                    icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+                    title="Income Statement History"
+                    subtitle="Revenue, Net Income & EBIT Trends"
+                    hasData={hasStatements}
+                    emptyMessage="No financial statement data available for this ticker. Click Refresh Analysis to fetch data."
+                >
+                    <FinancialChart statements={data.statements ?? []} />
+                </ChartSection>
+            </ChartErrorBoundary>
+
+            {/* Income Statement Sankey — structure next to its trend */}
+            <ChartErrorBoundary>
+                <ChartSection
+                    iconBgClass="bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400"
+                    icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+                    title="Income Flow"
+                    subtitle="Where the revenue goes — latest period"
+                    hasData={hasFlows}
+                    emptyMessage="No income statement data available"
+                >
+                    <SankeyCell kind="income" annual={flowPeriods?.annual ?? null} quarterly={flowPeriods?.quarterly ?? null} />
+                </ChartSection>
+            </ChartErrorBoundary>
+
+            {/* Cash Flow Analysis */}
+            <ChartErrorBoundary>
+                <ChartSection
+                    iconBgClass="bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400"
+                    icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>}
+                    title="Cash Flow Analysis"
+                    subtitle="Operating Cash Flow, Free Cash Flow & Net Income"
+                    hasData={hasStatements}
+                    emptyMessage="No cash flow data available. Click Refresh Analysis to fetch data."
+                >
+                    <CashFlowChart statements={data.statements ?? []} />
+                </ChartSection>
+            </ChartErrorBoundary>
+
+            {/* Cash Flow Sankey — where operating cash goes */}
+            <ChartErrorBoundary>
+                <ChartSection
+                    iconBgClass="bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400"
+                    icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>}
+                    title="Cash Flow Breakdown"
+                    subtitle="OCF → CapEx → FCF → True FCF — latest period"
+                    hasData={hasFlows}
+                    emptyMessage="No cash flow data available"
+                >
+                    <SankeyCell kind="cashflow" annual={flowPeriods?.annual ?? null} quarterly={flowPeriods?.quarterly ?? null} />
+                </ChartSection>
+            </ChartErrorBoundary>
+
+            {/* Debt vs Cash */}
+            <ChartErrorBoundary>
+                <ChartSection
+                    iconBgClass="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400"
+                    icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>}
+                    title="Debt vs Cash"
+                    subtitle="Total Debt, Liquidity & Net Debt History"
+                    hasData={hasStatements}
+                    emptyMessage="No balance sheet data available for this ticker. Click Refresh Analysis to fetch data."
+                >
+                    <DebtCashChart statements={data.statements ?? []} />
+                </ChartSection>
+            </ChartErrorBoundary>
+
+            {/* Balance Sheet Sankey — asset funding structure */}
+            <ChartErrorBoundary>
+                <ChartSection
+                    iconBgClass="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400"
+                    icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>}
+                    title="Balance Sheet Breakdown"
+                    subtitle="Assets → Liabilities + Equity — latest period"
+                    hasData={hasFlows}
+                    emptyMessage="No balance sheet data available"
+                >
+                    <SankeyCell kind="balance" annual={flowPeriods?.annual ?? null} quarterly={flowPeriods?.quarterly ?? null} />
+                </ChartSection>
+            </ChartErrorBoundary>
+
+            {/* Shares Outstanding & Buybacks */}
+            <ChartErrorBoundary>
+                <ChartSection
+                    iconBgClass="bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
+                    icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
+                    title="Shares Outstanding & Buybacks"
+                    subtitle="Share Count History & Buyback/Dilution Ratio"
+                    hasData={hasStatements}
+                    emptyMessage="No share data available. Click Refresh Analysis to fetch data."
+                >
+                    <ShareDilutionChart statements={data.statements ?? []} />
+                </ChartSection>
+            </ChartErrorBoundary>
+
             {/* Valuation History (Intrinsic vs Price) */}
             <ChartErrorBoundary>
                 <ChartSection
@@ -59,62 +161,6 @@ export function AnalysisCharts({ ticker, data }: AnalysisChartsProps) {
                         summaryPS={data.valuationSummaryPS ?? null}
                         ticker={ticker}
                     />
-                </ChartSection>
-            </ChartErrorBoundary>
-
-            {/* Income Statement History */}
-            <ChartErrorBoundary>
-                <ChartSection
-                    iconBgClass="bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400"
-                    icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
-                    title="Income Statement History"
-                    subtitle="Revenue, Net Income & EBIT Trends"
-                    hasData={hasStatements}
-                    emptyMessage="No financial statement data available for this ticker. Click Refresh Analysis to fetch data."
-                >
-                    <FinancialChart statements={data.statements ?? []} />
-                </ChartSection>
-            </ChartErrorBoundary>
-
-            {/* Cash Flow Analysis */}
-            <ChartErrorBoundary>
-                <ChartSection
-                    iconBgClass="bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400"
-                    icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>}
-                    title="Cash Flow Analysis"
-                    subtitle="Operating Cash Flow, Free Cash Flow & Net Income"
-                    hasData={hasStatements}
-                    emptyMessage="No cash flow data available. Click Refresh Analysis to fetch data."
-                >
-                    <CashFlowChart statements={data.statements ?? []} />
-                </ChartSection>
-            </ChartErrorBoundary>
-
-            {/* Debt vs Cash */}
-            <ChartErrorBoundary>
-                <ChartSection
-                    iconBgClass="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400"
-                    icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>}
-                    title="Debt vs Cash"
-                    subtitle="Total Debt, Liquidity & Net Debt History"
-                    hasData={hasStatements}
-                    emptyMessage="No balance sheet data available for this ticker. Click Refresh Analysis to fetch data."
-                >
-                    <DebtCashChart statements={data.statements ?? []} />
-                </ChartSection>
-            </ChartErrorBoundary>
-
-            {/* Shares Outstanding & Buybacks */}
-            <ChartErrorBoundary>
-                <ChartSection
-                    iconBgClass="bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
-                    icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
-                    title="Shares Outstanding & Buybacks"
-                    subtitle="Share Count History & Buyback/Dilution Ratio"
-                    hasData={hasStatements}
-                    emptyMessage="No share data available. Click Refresh Analysis to fetch data."
-                >
-                    <ShareDilutionChart statements={data.statements ?? []} />
                 </ChartSection>
             </ChartErrorBoundary>
 
@@ -148,25 +194,24 @@ export function AnalysisCharts({ ticker, data }: AnalysisChartsProps) {
                     hasData={!!(data.priceHistory && data.priceHistory.length > 0)}
                     emptyMessage="No price history available for correlation analysis"
                 >
-                    <Suspense fallback={suspenseFallback('border-emerald-500')}>
-                        <CorrelationChart
-                            priceHistory={data.priceHistory ?? []}
-                            impliedPS={data.impliedPricePS ?? []}
-                            impliedPE={data.impliedPricePE ?? []}
-                            corrPS={data.correlation?.priceVsImpliedPS ?? null}
-                            corrPE={data.correlation?.priceVsImpliedPE ?? null}
-                        />
-                    </Suspense>
+                    <CorrelationChart
+                        priceHistory={data.priceHistory ?? []}
+                        impliedPS={data.impliedPricePS ?? []}
+                        impliedPE={data.impliedPricePE ?? []}
+                        corrPS={data.correlation?.priceVsImpliedPS ?? null}
+                        corrPE={data.correlation?.priceVsImpliedPE ?? null}
+                    />
                 </ChartSection>
             </ChartErrorBoundary>
 
-            {/* Scenario Lab */}
+            {/* Scenario Lab — interactive tool gets the full row */}
             <ChartErrorBoundary>
+                <div className="lg:col-span-2">
                 <ChartSection
                     iconBgClass="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
                     icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>}
                     title="Scenario Lab"
-                    subtitle="Interactive Investment Projection with Historical Price"
+                    subtitle="Investment Projection — Data-Driven & Manual Scenarios"
                 >
                     {hasScenarioData ? (
                         <ScenarioLab
@@ -188,6 +233,7 @@ export function AnalysisCharts({ ticker, data }: AnalysisChartsProps) {
                         </div>
                     )}
                 </ChartSection>
+                </div>
             </ChartErrorBoundary>
         </div>
     );

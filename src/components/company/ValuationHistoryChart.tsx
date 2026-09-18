@@ -246,14 +246,14 @@ export function ValuationHistoryChart({
   );
 
   if (!valuationHistory?.length) {
-    return <div className="text-center text-gray-400 text-sm py-10">No valuation data available.</div>;
+    return <div className="text-center text-gray-500 text-sm py-10">No valuation data available.</div>;
   }
 
   // Guard: activeHistory may be empty when user switches to PE/PS mode but that
   // specific series has no data (e.g. negative EPS → empty PE history).
   if (!activeHistory?.length) {
     return (
-      <div className="text-center text-gray-400 text-sm py-10">
+      <div className="text-center text-gray-500 text-sm py-10">
         No {metricMode === 'pe' ? 'P/E' : 'P/S'} valuation data available. Try switching to {metricMode === 'pe' ? 'P/S' : 'P/E'} or Auto mode.
       </div>
     );
@@ -292,7 +292,7 @@ export function ValuationHistoryChart({
     : verdict === 'Fair Value'
     ? 'text-gray-600 dark:text-gray-300 font-bold'
     : verdict === 'N/A'
-    ? 'text-gray-400 font-bold'
+    ? 'text-gray-500 font-bold'
     : verdict === 'Significantly Overvalued'
     ? 'text-red-600 dark:text-red-500 font-bold'
     : 'text-red-500 dark:text-red-400 font-bold';
@@ -316,14 +316,14 @@ export function ValuationHistoryChart({
             : `is more expensive now than it has been on average over the past 5 years.`}
         </p>
         <div className="flex items-center gap-1.5">
-          <span className="text-[9px] text-gray-400 dark:text-gray-500 hidden sm:inline">Auto = PE preferred, PS fallback</span>
+          <span className="text-[10px] text-gray-500 dark:text-gray-500 hidden sm:inline">Auto = PE preferred, PS fallback</span>
           <MetricToggle mode={metricMode} onChange={setMetricMode} />
         </div>
       </div>
 
       {/* Forecast explanation */}
       {activeForecast.length > 0 && (
-        <p className="text-[10px] text-gray-400 dark:text-gray-500 leading-relaxed">
+        <p className="text-[10px] text-gray-500 dark:text-gray-500 leading-relaxed">
           <span className="font-semibold">Forecast:</span> Forward intrinsic value projected from recent per-share trend (clamped ±10%/quarter). Dashed line = projected range.
         </p>
       )}
@@ -524,7 +524,7 @@ function EndLabels({
         </span>
       </div>
       {/* Undervaluation badge */}
-      <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${
+      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${
         isNa
           ? 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
           : isUnder

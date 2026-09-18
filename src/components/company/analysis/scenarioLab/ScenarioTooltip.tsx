@@ -5,8 +5,18 @@ import { fmtMoney } from './format';
 /** Recharts tooltip for the scenario chart — shows historical + projected values. */
 export function ScenarioTooltip({ active, payload, label }: any) {
     if (!active || !payload?.length) return null;
+    // A dataKey can appear twice in the payload (Line + gradient Area on the
+    // same series) — keep the first entry only or keys collide and the
+    // tooltip shows the same value twice.
+    const seen = new Set<string>();
     const lines = payload
         .filter((d: any) => d.value !== null && d.value !== undefined)
+        .filter((d: any) => {
+            const k = String(d.dataKey ?? d.name);
+            if (seen.has(k)) return false;
+            seen.add(k);
+            return true;
+        })
         .map((d: any) => {
             const isProjected = d?.payload?.projected;
             const name = d.name;

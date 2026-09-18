@@ -48,7 +48,7 @@ export function StatusBadge({ label, type }: { label: string; type: StatusType }
 export function SourceTag() {
     return (
         <span
-            className="text-[9px] font-bold text-blue-400 dark:text-blue-500 tracking-wide"
+            className="text-[10px] font-bold text-blue-400 dark:text-blue-500 tracking-wide"
             title="Computed from SEC filings (via Finnhub API)"
         >
             FH
@@ -72,7 +72,7 @@ export function MetricCard({ card, compareWith, bgClass = 'bg-white dark:bg-gray
             <div>
                 <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] uppercase tracking-widest font-semibold text-gray-400 dark:text-gray-500 leading-tight">
+                        <span className="text-[10px] uppercase tracking-widest font-semibold text-gray-500 dark:text-gray-500 leading-tight">
                             {card.label}
                         </span>
                         {card.source === 'finnhub' && <SourceTag />}
@@ -85,7 +85,7 @@ export function MetricCard({ card, compareWith, bgClass = 'bg-white dark:bg-gray
                     </div>
                     {compareWith && card.secondaryValue !== undefined && (
                         <div className="text-right">
-                            <div className="text-[9px] text-gray-400 mb-0.5">{compareWith}</div>
+                            <div className="text-[10px] text-gray-500 mb-0.5">{compareWith}</div>
                             <div className="text-sm font-bold text-gray-500 dark:text-gray-400">
                                 {card.secondaryValue}
                             </div>
@@ -123,7 +123,7 @@ export function CompactMetricRow({ card, compareWith }: MetricCardProps) {
                             {card.value}
                         </span>
                         {compareWith && card.secondaryValue !== undefined && (
-                            <span className="text-[10px] text-gray-400 mt-0.5">
+                            <span className="text-[10px] text-gray-500 mt-0.5">
                                 vs {compareWith}: <span className="font-medium text-gray-500 dark:text-gray-400">{card.secondaryValue}</span>
                             </span>
                         )}

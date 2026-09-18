@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import SankeyChart, { SankeyNode, SankeyLink } from '@/components/charts/SankeyChart';
+import { useEffect, useRef, useState } from 'react';
+import SankeyChart, { SankeyNode, SankeyLink, sankeyViewBoxWidth } from '@/components/charts/SankeyChart';
 
 export interface FlowPeriod {
     label: string;
@@ -300,51 +300,55 @@ function buildBalanceSheet(p: FlowPeriod): FlowSpec | null {
     return { columns, links, total: A };
 }
 
-export function FinancialFlowsClient({ annual, quarterly, shareChangeYoY }: { annual: FlowPeriod | null; quarterly: FlowPeriod | null; shareChangeYoY?: number | null }) {
+const KINDS = {
+    income: { title: 'Income Statement Flow', build: buildIncome },
+    cashflow: { title: 'Cash Flow', build: buildCashFlow },
+    balance: { title: 'Balance Sheet Breakdown', build: buildBalanceSheet },
+} as const;
+
+export type FlowKind = keyof typeof KINDS;
+
+/**
+ * Single sankey cell for the paired charts grid — same data/toggle logic as
+ * the old FinancialFlows section, but rendered as one ChartSection-sized card
+ * so it can sit next to its matching history bar chart.
+ */
+export function SankeyCell({ kind, annual, quarterly }: { kind: FlowKind; annual: FlowPeriod | null; quarterly: FlowPeriod | null }) {
     const [period, setPeriod] = useState<FlowPeriod | null>(annual ?? quarterly);
-    if (!period) return null;
-
-    const income = buildIncome(period);
-    const cash = buildCashFlow(period);
-    const bs = buildBalanceSheet(period);
-
-    const margins: { label: string; value: string | undefined }[] = [
-        { label: 'Gross margin', value: pctOf(period.grossProfit, period.revenue) },
-        { label: 'Operating margin', value: pctOf(period.ebit, period.revenue) },
-        { label: 'Net margin', value: pctOf(period.netIncome, period.revenue) },
-        { label: 'FCF margin', value: pctOf(period.ocf != null && period.capex != null ? period.ocf - Math.abs(period.capex) : null, period.revenue) },
-        { label: 'True FCF margin', value: pctOf(period.ocf != null && period.capex != null ? period.ocf - Math.abs(period.capex) - (period.sbc ?? 0) : null, period.revenue) },
-        { label: 'Capex / Revenue', value: pctOf(period.capex != null ? Math.abs(period.capex) : null, period.revenue) },
-        { label: 'SBC / Revenue', value: pctOf(period.sbc, period.revenue) },
-        {
-            label: 'Current ratio',
-            value: period.currentAssets != null && period.currentLiabilities != null && period.currentLiabilities > 0
-                ? (period.currentAssets / period.currentLiabilities).toFixed(2)
-                : undefined,
-        },
-        {
-            label: 'Debt / Equity',
-            value: period.totalDebt != null && period.totalEquity != null && period.totalEquity > 0
-                ? (period.totalDebt / period.totalEquity).toFixed(2)
-                : undefined,
-        },
-        {
-            label: 'Shares YoY',
-            value: shareChangeYoY != null
-                ? `${shareChangeYoY >= 0 ? '+' : ''}${(shareChangeYoY * 100).toFixed(1)}%${shareChangeYoY > 0 ? ' (dilution)' : ' (buyback)'}`
-                : undefined,
-        },
-    ].filter((m) => m.value != null);
-
+    const boxRef = useRef<HTMLDivElement>(null);
+    const [slot, setSlot] = useState<{ w: number; h: number } | null>(null);
+    const [overflows, setOverflows] = useState(false);
+    // The card is grid-stretched to the paired bar chart's height — measure
+    // the real leftover slot so the sankey fills it instead of leaving a
+    // dead band under a fixed-height SVG.
+    useEffect(() => {
+        const el = boxRef.current;
+        if (!el) return;
+        const ro = new ResizeObserver((entries) => {
+            const r = entries[0]?.contentRect;
+            if (r && r.height >= 200 && r.width > 0) setSlot({ w: r.width, h: r.height });
+            setOverflows(el.scrollWidth > el.clientWidth + 4);
+        });
+        ro.observe(el);
+        return () => ro.disconnect();
+    }, []);
+    if (!period) return <p className="text-sm text-gray-500 dark:text-gray-500 italic py-8 text-center">No data</p>;
+    const spec = KINDS[kind].build(period);
+    if (!spec) return <p className="text-sm text-gray-500 dark:text-gray-500 italic py-8 text-center">No data</p>;
+    // SVG is w-full h-auto → displayed height = svgW * viewH / viewW. Solve
+    // viewH so the rendered diagram exactly fills the measured slot height.
+    const viewW = sankeyViewBoxWidth(spec.columns.length);
+    const svgW = slot ? Math.max(480, slot.w) : viewW;
+    const chartH = slot ? Math.max(240, Math.floor(slot.h * (viewW / svgW))) : 300;
     return (
-        <div>
-            {(annual && quarterly) && (
-                <div className="flex gap-2 mb-4">
+        <div className="h-full flex flex-col">
+            {annual && quarterly && (
+                <div className="flex gap-1.5 mb-3 shrink-0">
                     {[annual, quarterly].map((p) => (
                         <button
                             key={p!.label}
                             onClick={() => setPeriod(p)}
-                            className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${period === p
+                            className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium border transition-colors ${period === p
                                 ? 'bg-blue-600 text-white border-blue-600'
                                 : 'bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-blue-400'}`}
                         >
@@ -353,49 +357,16 @@ export function FinancialFlowsClient({ annual, quarterly, shareChangeYoY }: { an
                     ))}
                 </div>
             )}
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-8">
-                {income && (
-                    <div>
-                        <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">
-                            Income statement — {period.label}
-                        </h3>
-                        <div className="overflow-x-auto">
-                            <SankeyChart columns={income.columns} links={income.links} total={income.total} formatValue={fmt$} height={280} />
-                        </div>
-                    </div>
-                )}
-                {cash && (
-                    <div>
-                        <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">
-                            Cash flow — {period.label}
-                        </h3>
-                        <div className="overflow-x-auto">
-                            <SankeyChart columns={cash.columns} links={cash.links} total={cash.total} formatValue={fmt$} height={280} />
-                        </div>
-                    </div>
-                )}
-                {bs && (
-                    <div className="lg:col-span-2">
-                        <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">
-                            Balance sheet — {period.label}
-                        </h3>
-                        <div className="overflow-x-auto">
-                            <SankeyChart columns={bs.columns} links={bs.links} total={bs.total} formatValue={fmt$} height={280} />
-                        </div>
+            <div className="relative flex-1 min-h-[240px]">
+                <div ref={boxRef} className="h-full overflow-x-auto">
+                    <SankeyChart columns={spec.columns} links={spec.links} total={spec.total} formatValue={fmt$} height={chartH} />
+                </div>
+                {overflows && (
+                    <div className="absolute inset-y-0 right-0 w-14 pointer-events-none bg-gradient-to-l from-white dark:from-gray-800 to-transparent flex items-center justify-end pr-1.5">
+                        <span className="text-gray-400 text-sm leading-none">→</span>
                     </div>
                 )}
             </div>
-
-            {margins.length > 0 && (
-                <div className="flex flex-wrap gap-x-6 gap-y-1 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-                    {margins.map((m) => (
-                        <span key={m.label} className="text-xs text-gray-500 dark:text-gray-400">
-                            {m.label}: <span className="font-semibold tabular-nums text-gray-800 dark:text-gray-200">{m.value}</span>
-                        </span>
-                    ))}
-                </div>
-            )}
         </div>
     );
 }

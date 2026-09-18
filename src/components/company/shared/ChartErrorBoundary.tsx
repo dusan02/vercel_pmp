@@ -34,7 +34,7 @@ export class ChartErrorBoundary extends Component<Props, State> {
         if (this.state.hasError) {
             return (
                 <div
-                    className="flex items-center justify-center text-sm text-gray-400 dark:text-gray-500"
+                    className="flex items-center justify-center text-sm text-gray-500 dark:text-gray-500"
                     style={{ minHeight: this.props.minHeight ?? '12rem' }}
                 >
                     Chart temporarily unavailable.

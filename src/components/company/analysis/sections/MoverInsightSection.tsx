@@ -57,7 +57,8 @@ export function MoverInsightSection({
               )}
               {isSbcAlert && (
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500 text-white">
-                  SBC Alert                </span>
+                  SBC Alert
+                </span>
               )}
             </div>
             <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{moversReason}</p>
@@ -70,7 +71,7 @@ export function MoverInsightSection({
                       ? 'text-green-600 dark:text-green-400'
                       : aiConfidence >= 50
                         ? 'text-amber-600 dark:text-amber-400'
-                        : 'text-gray-400'
+                        : 'text-gray-500'
                   }`}
                 >
                   {aiConfidence >= 75 ? 'High' : aiConfidence >= 50 ? 'Medium' : 'Low'} ({aiConfidence}%)

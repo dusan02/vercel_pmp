@@ -50,16 +50,16 @@ export function NewsSection({ ticker }: { ticker: string }) {
   if (news.length === 0) return null;
 
   return (
-    <section className="mb-6 max-w-4xl">
+    <section className="mb-6">
       <div className="rounded-2xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 sm:p-6">
         <div className="flex items-center gap-2 mb-4">
-          <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
           </svg>
-          <h2 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wide">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
             Latest News
           </h2>
-          <span className="text-[10px] text-gray-400 dark:text-gray-500">
+          <span className="text-[10px] text-gray-500 dark:text-gray-500">
             via Finnhub · last 3 days
           </span>
         </div>
@@ -90,7 +90,7 @@ export function NewsSection({ ticker }: { ticker: string }) {
                     {item.summary}
                   </p>
                 )}
-                <div className="flex items-center gap-2 mt-1.5 text-[10px] text-gray-400 dark:text-gray-500">
+                <div className="flex items-center gap-2 mt-1.5 text-[10px] text-gray-500 dark:text-gray-500">
                   <span className="font-medium">{item.source}</span>
                   <span>·</span>
                   <span>{formatTimeAgo(item.datetime)}</span>

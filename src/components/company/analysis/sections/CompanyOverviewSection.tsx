@@ -32,7 +32,7 @@ export function CompanyOverviewSection({
           {employees != null && <>{headquarters && ' · '}Employees: {employees.toLocaleString('en-US')}</>}
           {websiteHref && (
             <>
-              {' · '}
+              {(headquarters || employees != null) && ' · '}
               <a
                 href={websiteHref}
                 target="_blank"

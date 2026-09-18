@@ -65,3 +65,33 @@ export const companyNames: Record<string, string> = {
 export function getCompanyName(ticker: string): string {
   return companyNames[ticker] || ticker;
 }
+
+/**
+ * Canonical company key for share-class dedup — collapses GOOG/GOOGL,
+ * BRK.A/BRK.B, FOX/FOXA etc. to one company in peer lists. Uses the curated
+ * map first, then normalizes the DB name by stripping class/suffix tokens.
+ */
+export function shareClassKey(symbol: string, name?: string | null): string {
+  const base = (companyNames[symbol] ?? name ?? symbol).toLowerCase();
+  const key = base
+    .replace(/[^a-z0-9 ]/g, ' ')
+    .replace(/\b(class|cl|inc|corp|corporation|co|company|ltd|plc|adr|ads|common|ordinary|stock|shares?|group|holdings?|nv|se|ag|spa|series|a|b|c|d)\b/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return key || symbol.toLowerCase();
+}
+
+/** Keep the first row per canonical company — for peer lists where share
+ *  classes of the same company would otherwise take two slots. */
+export function dedupeShareClasses<T extends { symbol: string; name?: string | null }>(items: T[], limit = items.length): T[] {
+  const seen = new Set<string>();
+  const out: T[] = [];
+  for (const item of items) {
+    const k = shareClassKey(item.symbol, item.name);
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(item);
+    if (out.length >= limit) break;
+  }
+  return out;
+}

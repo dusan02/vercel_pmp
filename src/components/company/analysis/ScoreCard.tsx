@@ -72,7 +72,7 @@ export function ScoreCard({ title, score, colorClass, strokeColor, icon }: Score
                     <span className={`text-3xl font-bold ${colorClass}`}>
                         {score}
                     </span>
-                    <span className="text-[10px] text-gray-400 font-medium mt-0.5">/ 100</span>
+                    <span className="text-[10px] text-gray-500 font-medium mt-0.5">/ 100</span>
                 </div>
             </div>
         </div>

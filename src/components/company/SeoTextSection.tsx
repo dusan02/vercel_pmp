@@ -61,7 +61,7 @@ export function SeoTextSection({
 
   const sectorText = sector ? ` operating in the ${sector} sector${industry ? `, specifically the ${industry} industry` : ''}` : '';
   const priceText = priceStr
-    ? `As of the latest update, ${companyName} is trading at ${priceStr}${changeStr ? `, ${changeStr >= '+' ? 'up' : 'down'} ${changeStr.replace(/[+-]/, '')} on the day` : ''}`
+    ? `As of the latest update, ${companyName} is trading at ${priceStr}${changePct != null ? `, ${changePct >= 0 ? 'up' : 'down'} ${Math.abs(changePct).toFixed(2)}% on the day` : ''}`
     : `Real-time pricing data for ${companyName} is available on this page`;
   const mcapText = mcapStr ? ` with a market capitalization of ${mcapStr}` : '';
   const healthText = healthScore != null
@@ -70,7 +70,7 @@ export function SeoTextSection({
 
   return (
     <section className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-700">
-      <div className="prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-400">
+      <div className="prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-400 [&_p]:max-w-prose [&_ul]:max-w-prose">
         <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
           About {companyName} ({ticker}) Stock
         </h2>
@@ -138,7 +138,7 @@ export function SeoTextSection({
           However, this is not financial advice — always do your own research before investing.
         </p>
 
-        <p className="text-xs text-gray-400 dark:text-gray-500 mt-4">
+        <p className="text-xs text-gray-500 dark:text-gray-500 mt-4">
           Data on this page is sourced from real-time market feeds, Polygon.io, and Finnhub.
           {companyName} ({ticker}) trades on{' '}
           {sector === 'Financial Services' ? 'NYSE' : 'NYSE/NASDAQ'}.

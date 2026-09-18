@@ -53,7 +53,7 @@ export function ScenarioLab({
     });
 
     const cagrColor = (cagr: number | null) => {
-        if (cagr === null) return 'text-gray-400';
+        if (cagr === null) return 'text-gray-500';
         if (cagr > 15) return 'text-green-500';
         if (cagr > 0) return 'text-blue-500';
         return 'text-red-500';
@@ -67,6 +67,18 @@ export function ScenarioLab({
     const yMin = allPrices.length > 0 ? Math.floor(Math.min(...allPrices) * 0.85) : 0;
     const yMax = allPrices.length > 0 ? Math.ceil(Math.max(...allPrices) * 1.1) : 100;
     const hasChart = m.chartData.length > 2;
+
+    // Explicit Jan-1 ticks — recharts' auto time ticks land mid-year and two
+    // adjacent ticks can format to the same year ("2023 2023 2025 2025").
+    const yearTicks = (() => {
+        const ts = m.chartData.map(d => d.timestamp);
+        if (ts.length === 0) return [];
+        const minY = new Date(Math.min(...ts)).getUTCFullYear();
+        const maxY = new Date(Math.max(...ts)).getUTCFullYear();
+        const out: number[] = [];
+        for (let y = minY; y <= maxY; y++) out.push(Date.UTC(y, 0, 1));
+        return out;
+    })();
 
     return (
         <div className="space-y-4">
@@ -106,7 +118,7 @@ export function ScenarioLab({
                     {/* Compact summary — hero card */}
                     <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900/50 dark:to-gray-800/50 rounded-xl p-5 sm:p-6 border border-blue-100 dark:border-gray-800">
                         <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-1">
-                            Estimated {m.targetYear} Value <span className="text-gray-400 dark:text-gray-500">(base case)</span>
+                            Estimated {m.targetYear} Value <span className="text-gray-500 dark:text-gray-500">(base case)</span>
                         </p>
                         <div className="flex items-baseline gap-3 mb-2 flex-wrap">
                             <p className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white tabular-nums">
@@ -125,7 +137,7 @@ export function ScenarioLab({
                                 </span>
                             </div>
                         )}
-                        <p className="text-xs text-gray-400 dark:text-gray-500">
+                        <p className="text-xs text-gray-500 dark:text-gray-500">
                             Based on {forwardEps ? 'forward EPS' : 'current EPS'}, scenario-based EPS growth, and
                             {m.peWasNormalized ? ' mean-reverted' : ' 5Y historical'} P/E distribution
                         </p>
@@ -176,21 +188,21 @@ export function ScenarioLab({
                                         <p className="text-xs text-red-400 mb-1">Bear (P25)</p>
                                         <p className="font-mono tabular-nums font-semibold text-gray-900 dark:text-gray-100">{fmtPe(m.effectiveBearPe)}</p>
                                         {m.peWasNormalized && m.rawBearPe !== m.effectiveBearPe && (
-                                            <p className="text-[10px] text-gray-400 mt-0.5">raw: {fmtPe(m.rawBearPe)}</p>
+                                            <p className="text-[10px] text-gray-500 mt-0.5">raw: {fmtPe(m.rawBearPe)}</p>
                                         )}
                                     </div>
                                     <div className="text-center bg-blue-50 dark:bg-blue-900/10 rounded-lg py-2.5 ring-1 ring-blue-200 dark:ring-blue-800 border border-blue-100 dark:border-blue-900/20">
                                         <p className="text-xs text-blue-400 mb-1">Base (Median)</p>
                                         <p className="font-mono tabular-nums font-semibold text-gray-900 dark:text-gray-100">{fmtPe(m.effectiveBasePe)}</p>
                                         {m.peWasNormalized && m.rawBasePe !== m.effectiveBasePe && (
-                                            <p className="text-[10px] text-gray-400 mt-0.5">raw: {fmtPe(m.rawBasePe)}</p>
+                                            <p className="text-[10px] text-gray-500 mt-0.5">raw: {fmtPe(m.rawBasePe)}</p>
                                         )}
                                     </div>
                                     <div className="text-center bg-green-50 dark:bg-green-900/10 rounded-lg py-2.5 border border-green-100 dark:border-green-900/20">
                                         <p className="text-xs text-green-400 mb-1">Bull (P75)</p>
                                         <p className="font-mono tabular-nums font-semibold text-gray-900 dark:text-gray-100">{fmtPe(m.effectiveBullPe)}</p>
                                         {m.peWasNormalized && m.rawBullPe !== m.effectiveBullPe && (
-                                            <p className="text-[10px] text-gray-400 mt-0.5">raw: {fmtPe(m.rawBullPe)}</p>
+                                            <p className="text-[10px] text-gray-500 mt-0.5">raw: {fmtPe(m.rawBullPe)}</p>
                                         )}
                                     </div>
                                 </div>
@@ -209,7 +221,7 @@ export function ScenarioLab({
                                     <GrowthSlider label="Base Growth" value={m.baseGrowth} onChange={m.setBaseGrowth} accentColor="blue" />
                                     <GrowthSlider label="Bull Growth" value={m.bullGrowth} onChange={m.setBullGrowth} accentColor="green" />
                                 </div>
-                                <div className="flex justify-between text-xs text-gray-400 mt-1.5 px-1">
+                                <div className="flex justify-between text-xs text-gray-500 mt-1.5 px-1">
                                     <span>-20%</span><span>0%</span><span>+50%</span>
                                 </div>
                             </div>
@@ -222,7 +234,7 @@ export function ScenarioLab({
                                 <table className="w-full text-sm">
                                     <thead>
                                         <tr className="border-b-2 border-gray-200 dark:border-gray-700">
-                                            <th className="text-left py-2.5 px-3 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider"></th>
+                                            <th className="text-left py-2.5 px-3 text-xs font-semibold text-gray-500 dark:text-gray-500 uppercase tracking-wider"></th>
                                             <th className="text-right py-2.5 px-3 text-xs font-semibold text-red-400 uppercase tracking-wider">Bear</th>
                                             <th className="text-right py-2.5 px-3 text-xs font-semibold text-blue-400 uppercase tracking-wider">Base</th>
                                             <th className="text-right py-2.5 px-3 text-xs font-semibold text-green-400 uppercase tracking-wider">Bull</th>
@@ -318,7 +330,7 @@ export function ScenarioLab({
                                 onChange={(e) => m.setEpsGrowth(Number(e.target.value))}
                                 className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-blue-600"
                             />
-                            <div className="flex justify-between text-xs text-gray-400 mt-1">
+                            <div className="flex justify-between text-xs text-gray-500 mt-1">
                                 <span>-20%</span><span>0%</span><span>+50%</span>
                             </div>
                         </div>
@@ -333,7 +345,7 @@ export function ScenarioLab({
                                 onChange={(e) => m.setExitPe(Number(e.target.value))}
                                 className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-blue-600"
                             />
-                            <div className="flex justify-between text-xs text-gray-400 mt-1">
+                            <div className="flex justify-between text-xs text-gray-500 mt-1">
                                 <span>3×</span>
                                 <span className="text-blue-400 font-semibold">Current: {fmtPe(currentPe)}</span>
                                 <span>100×</span>
@@ -364,7 +376,7 @@ export function ScenarioLab({
                                 <p className={`text-xl sm:text-2xl font-bold flex items-center gap-2 tabular-nums ${m.manualCagr > 15 ? 'text-green-500' : m.manualCagr > 0 ? 'text-blue-500' : 'text-red-500'}`}>
                                     {fmtPct(m.manualCagr, 2)}
                                     {m.isMarketBeating && (
-                                        <span className="text-[9px] uppercase tracking-wider bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full font-semibold">
+                                        <span className="text-[10px] uppercase tracking-wider bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full font-semibold">
                                             Market Beating
                                         </span>
                                     )}
@@ -396,7 +408,8 @@ export function ScenarioLab({
                                 type="number"
                                 scale="time"
                                 domain={['dataMin', 'dataMax']}
-                                tickFormatter={(val) => new Date(val).getFullYear().toString()}
+                                ticks={yearTicks}
+                                tickFormatter={(val) => new Date(val).getUTCFullYear().toString()}
                                 tick={{ fontSize: 10, fill: '#9CA3AF' }}
                                 axisLine={false}
                                 tickLine={false}
@@ -411,7 +424,7 @@ export function ScenarioLab({
                                 tickFormatter={(v: number) => fmtCompact(v)}
                             />
                             <Tooltip content={<ScenarioTooltip />} />
-                            <ReferenceLine x={m.chartData.find(d => d.projection !== null && d.historical !== null)?.timestamp ?? m.chartData.find(d => d.bear !== null && d.historical !== null)?.timestamp ?? ''} stroke="#9CA3AF" strokeDasharray="3 3" label={{ value: 'Today', fontSize: 10, fill: '#9CA3AF', position: 'top' }} />
+                            <ReferenceLine x={m.chartData.find(d => d.projection !== null && d.historical !== null)?.timestamp ?? m.chartData.find(d => d.bear !== null && d.historical !== null)?.timestamp ?? ''} stroke="#9CA3AF" strokeDasharray="3 3" label={{ value: 'Today', fontSize: 10, fill: '#9CA3AF', position: 'insideTopLeft' }} />
                             <Line
                                 type="monotone"
                                 dataKey="historical"

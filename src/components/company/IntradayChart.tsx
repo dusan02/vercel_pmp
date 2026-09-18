@@ -62,18 +62,18 @@ export function IntradayChart({ ticker }: { ticker: string }) {
   })?.time;
 
   return (
-    <div className="mb-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
-      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+        <h2 className="text-base font-semibold text-gray-900 dark:text-white">
           Intraday — {data.date}
-          <span className="ml-2 text-xs font-medium text-gray-400 dark:text-gray-500">5-minute bars, pre-market + regular</span>
+          <span className="ml-2 text-xs font-medium text-gray-500 dark:text-gray-500">5-min, pre + regular</span>
         </h2>
         <span className={`text-sm font-bold tabular-nums ${up ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
           {up ? '+' : ''}{changePct.toFixed(2)}% since session start
         </span>
       </div>
       <div>
-        <ResponsiveContainer width="100%" height={200}>
+        <ResponsiveContainer width="100%" height={160}>
           <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id={`intradayGrad-${ticker}`} x1="0" y1="0" x2="0" y2="1">

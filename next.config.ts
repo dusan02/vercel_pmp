@@ -1,6 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Dev-only: allow the local preview proxy (127.0.0.1:*) to fetch /_next
+  // resources — Next 16 blocks cross-origin dev assets by default, which
+  // silently breaks hydration + lazy chunks when the page is viewed through
+  // any host/port other than localhost:3000.
+  allowedDevOrigins: ['127.0.0.1', 'localhost'],
+
   // Image optimization
   images: {
     remotePatterns: [

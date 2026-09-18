@@ -143,7 +143,7 @@ export function FinancialsSeoText({
           )}
         </ul>
 
-        <p className="text-xs text-gray-400 dark:text-gray-500 mt-4">
+        <p className="text-xs text-gray-500 dark:text-gray-500 mt-4">
           Financial data is sourced from {companyName}'s SEC filings (10-K, 10-Q) via Polygon.io and Finnhub.
           {ticker} trades on {sector === 'Financial Services' ? 'NYSE' : 'NYSE/NASDAQ'}.
           This page is for informational purposes only and is not financial advice.

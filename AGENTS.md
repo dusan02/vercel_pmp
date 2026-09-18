@@ -44,7 +44,7 @@
 ```bash
 curl -sI https://www.premarketprice.com/heatmap | head -1   # očakávať 301 (www → non-www)
 curl -s -o /dev/null -w '%{http_code}' https://premarketprice.com/llms.txt   # 200
-curl -s https://premarketprice.com/analysis/AAPL | grep -c FAQPage           # ≥1
+curl -s https://premarketprice.com/analysis/AAPL | grep -c FinancialProduct  # ≥1 (JSON-LD stock schema)
 ```
 
 ## Build & testy (lokálne)
