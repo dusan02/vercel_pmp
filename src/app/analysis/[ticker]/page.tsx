@@ -136,8 +136,12 @@ async function getTickerData(symbol: string) {
         },
       },
     });
-  } catch {
-    return null;
+  } catch (e) {
+    // CI build prerenders without a real DB — treat as missing rather than
+    // failing the build. At runtime a DB error must surface as 500, not be
+    // masked as a cacheable 404 (ISR caches notFound results).
+    if (process.env.NEXT_PHASE === 'phase-production-build') return null;
+    throw e;
   }
 }
 

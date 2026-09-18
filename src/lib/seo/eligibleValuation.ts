@@ -92,7 +92,11 @@ export async function getValuationHistory(symbol: string) {
       },
     });
     return rows.reverse(); // chronological order (oldest first)
-  } catch {
-    return [];
+  } catch (e) {
+    // At runtime a DB error must surface as 500 — returning [] would render a
+    // thin "not enough data" page that ISR then caches. Build phase tolerates
+    // a missing DB.
+    if (process.env.NEXT_PHASE === 'phase-production-build') return [];
+    throw e;
   }
 }
