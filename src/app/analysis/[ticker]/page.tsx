@@ -464,6 +464,20 @@ export default async function AnalysisPage({ params }: PageProps) {
           {/* Today's intraday (pre-market + regular, 5-min bars) — client-fetch */}
           <IntradayChart ticker={tickerUpper} />
 
+          {/* Why is it moving today — the most actionable insight, near the top */}
+          <MoverInsightSection
+            ticker={tickerUpper}
+            moversReason={data?.moversReason ?? null}
+            moversCategory={data?.moversCategory ?? null}
+            aiConfidence={data?.aiConfidence ?? null}
+            isSbcAlert={data?.isSbcAlert ?? null}
+            changePct={data?.lastChangePct ?? null}
+          />
+
+          {/* Main column + right rail (consensus, scores, related) */}
+          <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-8">
+            <div className="min-w-0">
+
           <CompanyOverviewSection
             description={data?.description}
             headquarters={data?.headquarters}
@@ -495,60 +509,14 @@ export default async function AnalysisPage({ params }: PageProps) {
               (interpreted cards with thresholds + compare column) — the raw SSR
               grid was removed to avoid showing the same numbers twice. */}
 
-          <MoverInsightSection
-            ticker={tickerUpper}
-            moversReason={data?.moversReason ?? null}
-            moversCategory={data?.moversCategory ?? null}
-            aiConfidence={data?.aiConfidence ?? null}
-            isSbcAlert={data?.isSbcAlert ?? null}
-            changePct={data?.lastChangePct ?? null}
-          />
-
           {/* Full interactive analysis — SSR sections above cover the header,
               overview and score summary; this renders controls, compare,
               price chart, interpreted Key Financial Metrics and the chart grid */}
           <AnalysisTabClient ticker={tickerUpper} initialAnalysisData={analysisData} initialHistoryData={historyData} />
 
-          <AnalystConsensusSection
-            priceTarget={data?.finnhubPriceTarget ?? null}
-            recommendation={data?.finnhubRecommendation ?? null}
-            fallbackPrice={data?.lastPrice ?? null}
-          />
-
           <EarningsSection upcoming={earningsData.upcoming} recent={earningsData.recent} />
 
           <RecentMovesSection ticker={tickerUpper} moves={recentMoves} />
-
-          {/* Cross-link to valuation and financials pages + share */}
-          <div className="mb-6 pt-6 border-t border-gray-100 dark:border-gray-700 text-sm flex flex-wrap items-center gap-4">
-            <Link
-              href={`/premarket/${tickerUpper}`}
-              className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              {companyName} ({tickerUpper}) Premarket Movers →
-            </Link>
-            <Link
-              href={`/valuation/${tickerUpper}`}
-              className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              {companyName} ({tickerUpper}) Valuation & P/E History →
-            </Link>
-            <Link
-              href={`/financials/${tickerUpper}`}
-              className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              {companyName} ({tickerUpper}) Financial Statements →
-            </Link>
-            <ShareButtons
-              url={`${baseUrl}/analysis/${tickerUpper}`}
-              title={`${companyName} (${tickerUpper}) Stock Analysis | PreMarketPrice`}
-              description={data?.description?.slice(0, 100)}
-            />
-          </div>
-
-          <RelatedStocksSection ticker={tickerUpper} sector={data?.sector} peers={sectorPeers} />
-
-          <PmpScoreSection snapshot={data?.ewScoreSnapshots?.[0] ?? null} />
 
           {/* FAQ — visible Q&A with concrete numbers + matching FAQPage JSON-LD (GEO) */}
           <TickerFaqSection {...faqProps} />
@@ -571,6 +539,48 @@ export default async function AnalysisPage({ params }: PageProps) {
 
           {/* Latest news — at the very bottom, client-side fetch from Finnhub, cached 30min */}
           <NewsSection ticker={tickerUpper} />
+            </div>{/* /main column */}
+
+            {/* Right rail — compact reference cards alongside the main flow */}
+            <aside className="mt-6 lg:mt-0">
+              <AnalystConsensusSection
+                priceTarget={data?.finnhubPriceTarget ?? null}
+                recommendation={data?.finnhubRecommendation ?? null}
+                fallbackPrice={data?.lastPrice ?? null}
+              />
+
+              <PmpScoreSection snapshot={data?.ewScoreSnapshots?.[0] ?? null} />
+
+              <RelatedStocksSection ticker={tickerUpper} sector={data?.sector} peers={sectorPeers} />
+
+              {/* Cross-link to valuation and financials pages + share */}
+              <div className="mb-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 text-sm flex flex-col gap-3">
+                <Link
+                  href={`/premarket/${tickerUpper}`}
+                  className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  {companyName} ({tickerUpper}) Premarket Movers →
+                </Link>
+                <Link
+                  href={`/valuation/${tickerUpper}`}
+                  className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  {companyName} ({tickerUpper}) Valuation & P/E History →
+                </Link>
+                <Link
+                  href={`/financials/${tickerUpper}`}
+                  className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  {companyName} ({tickerUpper}) Financial Statements →
+                </Link>
+                <ShareButtons
+                  url={`${baseUrl}/analysis/${tickerUpper}`}
+                  title={`${companyName} (${tickerUpper}) Stock Analysis | PreMarketPrice`}
+                  description={data?.description?.slice(0, 100)}
+                />
+              </div>
+            </aside>
+          </div>
         </main>
       </div>
     </>

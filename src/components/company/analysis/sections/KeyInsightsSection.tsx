@@ -243,12 +243,6 @@ export function KeyInsightsSection({
           ))}
         </ul>
       )}
-      {moversCategory && (
-        <p className="mt-3 text-xs text-gray-400 dark:text-gray-500">
-          Move classification: {moversCategory}. Insights are generated from the latest computed
-          metrics and refresh with each analysis run.
-        </p>
-      )}
     </section>
   );
 }
