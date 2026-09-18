@@ -125,21 +125,24 @@ curl -s -o /dev/null -w 'earnings=%{http_code}\n' http://localhost:3001/earnings
 curl -s -o /dev/null -w 'dates=%{http_code}\n' http://localhost:3001/api/earnings/dates
 curl -s -o /dev/null -w 'llms=%{http_code}\n' http://localhost:3001/llms.txt
 
-# Content regression guard: the movers page must render ranked rows — an
-# empty table means the Redis ranking pipeline is broken even though the
-# page returns 200 (Sep 2026: readers queried unsuffixed ZSET keys and every
-# ranking consumer silently returned empty).
-# Fetch and count in two steps — `grep` exits 1 on zero matches and would
-# abort the script under pipefail before the comparison even ran.
-# Retry: a cold-start render right after restart can transiently return an
-# empty table; a broken ranking pipeline will still be broken after retries.
+# Content regression guard. The artifact's SSG pages were prerendered in CI
+# WITHOUT production data (dummy API keys, no Redis/DB) — they serve an
+# empty shell until the first request triggers ISR regeneration. Trigger
+# regen for the data-heavy routes first, then poll until real content
+# arrives. Note this verifies the DB-backed render (mover links, archive
+# dates) — the rank pipeline itself is legitimately empty overnight and
+# cannot be checked here.
+for p in /premarket-movers /premarket-gainers /premarket-losers /heatmap; do
+  curl -s -o /dev/null --max-time 30 "http://localhost:3001$p" || true
+done
+sleep 10
 MOVERS_LINKS=0
-for i in 1 2 3; do
+for i in $(seq 1 6); do
   MOVERS_HTML=$(curl -s --max-time 30 http://localhost:3001/premarket-movers || true)
   MOVERS_LINKS=$(printf '%s' "$MOVERS_HTML" | grep -c '/analysis/' || true)
-  echo "movers analysis links (try $i/3): $MOVERS_LINKS"
+  echo "movers analysis links (try $i/6): $MOVERS_LINKS"
   [ "$MOVERS_LINKS" -ge 15 ] && break
-  [ "$i" -lt 3 ] && sleep 15
+  [ "$i" -lt 6 ] && sleep 15
 done
 if [ "$MOVERS_LINKS" -lt 15 ]; then
   echo "❌ /premarket-movers has only $MOVERS_LINKS analysis links — data pipeline broken"
