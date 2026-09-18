@@ -35,6 +35,7 @@ PreMarketPrice tracks 300+ US stocks during the pre-market session (4:00 AM – 
 - [Stock Screener](https://premarketprice.com/screener): Filter US stocks by sector, price, market cap, and pre-market movement
 - [Curated stock screens](https://premarketprice.com/screener/most-undervalued): Ranked leaderboards — most undervalued, healthiest balance sheets, highest Piotroski score, lowest P/E, lowest PEG, highest dividend yield, highest ROE, highest FCF margin, fastest revenue growth
 - [Early Winners](https://premarketprice.com/screener/early-winners): US stocks ranked by the PMP composite score — fundamentals, momentum and quality factors from SEC filings and price data (V5-B current-data methodology, earnings pillar blocked)
+- [Capex Tracker](https://premarketprice.com/capex-tracker): Top 50 US companies by capital expenditures — capex/revenue intensity, YoY change and FCF after capex
 - [All Stocks](https://premarketprice.com/stocks): Full index of every tracked US stock with links to its analysis and valuation pages
 - [Sectors](https://premarketprice.com/sectors): Sector-level performance and top movers per sector
 - [Embeddable heatmap widget](https://premarketprice.com/embed/heatmap): Free iframe widget of the live heatmap for external publishers

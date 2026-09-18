@@ -7,6 +7,7 @@
  * — rarely shown on free financial sites.
  */
 
+import Link from 'next/link';
 import { FinancialFlowsClient, type FlowPeriod } from './FinancialFlowsClient';
 
 export interface StatementRow {
@@ -113,6 +114,14 @@ export function FinancialFlowsSection({ statements }: { statements: StatementRow
                 compensation as a real cost.
             </p>
             <FinancialFlowsClient annual={annual} quarterly={quarterly} shareChangeYoY={shareChangeYoY} />
+            <p className="mt-3">
+                <Link
+                    href="/capex-tracker"
+                    className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                    Compare capital spending across companies — Capex Tracker →
+                </Link>
+            </p>
         </section>
     );
 }

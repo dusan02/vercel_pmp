@@ -91,6 +91,11 @@ function FooterContent() {
                 </Link>
               </li>
               <li>
+                <Link href="/capex-tracker" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                  Capex Tracker
+                </Link>
+              </li>
+              <li>
                 <Link href="/stocks" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                   All Stocks
                 </Link>
