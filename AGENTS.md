@@ -18,7 +18,7 @@
 
 - **pnpm v10 blokuje native build skripty** (better-sqlite3) → build padá na "Failed to collect page data". Server má byť na npm; `vps-deploy.sh` maže `node_modules/.pnpm` pri detekcii (one-time migration guard)
 - **`pkill -f "next build"` v ssh-action skripte SA ZABÍJA** — ssh-action posiela celý skript ako argv shellu, takže literal pattern matchne vlastný shell → exit 143. Používaj bracket trick `[n]ext buil[d]` a nikdy nepíš process name do komentárov inline skriptu
-- **Artifact deploy beží synchrónne** (scp + ssh activate ~1–2 min) — detached setsid model už nie je potrebný; zostáva len v manuálnom `vps-deploy.sh` fallbacku
+- **Aktivácia beží detached** (setsid+nohup → `/var/log/pmp-deploy.log`, Actions poll-uje `=== Done ===`/`ACTIVATION_FAILED`) — synchrónne ssh sa ukázalo ako nespoľahlivé: session dropne a zabije inak úspešný deploy
 - `prisma db push` NIKDY s `--accept-data-loss` na produkcii
 - Sitemap aj blog majú ISR (`revalidate`) — po pridaní nových URL type over, či sitemap nie je statická
 - Docs-only push: pridaj `[skip ci]` do commit message, inak spustí plný rebuild na VPS
