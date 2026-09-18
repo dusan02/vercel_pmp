@@ -3,12 +3,16 @@
  * ===============================================
  *
  * Core operation: given a set of consensus snapshots and a time T,
- * return the latest snapshot where knownAt <= T.
+ * return the latest snapshot usable at T.
  *
- *   consensusAt(T) = latest consensus observation where knownAt <= T
+ *   consensusAt(T) = latest consensus observation where
+ *                    observationDate <= T AND availableAt <= T
  *
- * This is the PIT-correct way to query consensus data. It ensures
- * we never use information that wasn't available at time T.
+ * Both knowledge timestamps must precede T: a snapshot observed earlier
+ * but delivered/available only after T (e.g. vendor publication lag)
+ * must not enter the reconstruction. This is the PIT-correct way to
+ * query consensus data — it ensures we never use information that
+ * wasn't knowable at time T.
  *
  * This module is tested with SYNTHETIC fixtures only. Synthetic tests
  * do NOT prove vendor PIT suitability — they verify our reconstruction
@@ -24,19 +28,26 @@ import { ConsensusFactRow } from './consensus-feature-calculators';
  * @param facts All consensus snapshots for a security/metric/period
  * @param metricType 'EPS' or 'REVENUE'
  * @param asOfDate T — the point-in-time we want to reconstruct
- * @returns The latest snapshot where knownAt <= T, or null if none exists
+ * @returns The latest snapshot where observationDate <= T AND
+ *          availableAt <= T, or null if none exists
  */
 export function consensusAt(
   facts: ConsensusFactRow[],
   metricType: string,
   asOfDate: Date,
 ): ConsensusFactRow | null {
+  const Tms = asOfDate.getTime();
   const eligible = facts
-    .filter(f => f.metricType === metricType && f.observationDate.getTime() <= asOfDate.getTime())
+    .filter(
+      f =>
+        f.metricType === metricType &&
+        f.observationDate.getTime() <= Tms &&
+        f.availableAt.getTime() <= Tms,
+    )
     .sort((a, b) => a.observationDate.getTime() - b.observationDate.getTime());
 
   if (eligible.length === 0) return null;
-  return eligible[eligible.length - 1];
+  return eligible[eligible.length - 1] ?? null;
 }
 
 /**

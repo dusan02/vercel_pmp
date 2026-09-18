@@ -49,7 +49,7 @@ function makeAvailableFeature(
     value,
     knownAt,
     availableAt,
-    source: 'TEST',
+    source: 'N/A',
     accession: 'test-acc',
     confidence: 1.0,
     pitValid: true,

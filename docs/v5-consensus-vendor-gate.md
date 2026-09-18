@@ -4,6 +4,10 @@
 **Status**: Decision made — Estimize selected
 **Blocks**: V5-C/D OOS test, production EarlyWinner ranking decision
 
+> **Superseded 2026-09-18:** external PIT data acquisition was ultimately
+> DECLINED. This document is retained as historical provenance of the
+> vendor evaluation. Final project state: `v5c-final-status.md`.
+
 ---
 
 ## Context

@@ -32,6 +32,7 @@ import {
 } from './vendor-adapter';
 import {
   ConsensusFactInsert,
+  ConsensusRevisionInsert,
   QuarantineEntry,
   TickerResolver,
 } from './consensus-ingest-types';
@@ -120,7 +121,7 @@ describe('buildFactRows', () => {
   it('resolves tickers to securityIds', () => {
     const snapshots = [makeSnapshot({ ticker: 'MSFT', securityId: '' })];
     const rows = buildFactRows(snapshots, resolver, []);
-    expect(rows[0].securityId).toBe('sec-msft');
+    expect(rows[0]?.securityId).toBe('sec-msft');
   });
 
   it('quarantines unresolvable tickers (DEAD from fixture)', () => {
@@ -130,7 +131,7 @@ describe('buildFactRows', () => {
 
     expect(rows.length).toBe(0);
     expect(quarantine.length).toBe(1);
-    expect(quarantine[0].reason).toBe('TICKER_UNRESOLVED');
+    expect(quarantine[0]?.reason).toBe('TICKER_UNRESOLVED');
   });
 
   it('dedups identical sourceRecordHashes', () => {
@@ -360,7 +361,7 @@ describe('buildRevisionRows', () => {
 
   it('resolves tickers and fills securityId', () => {
     const rows = buildRevisionRows([makeRevision({ ticker: 'MSFT' })], resolver, []);
-    expect(rows[0].securityId).toBe('sec-msft');
+    expect(rows[0]?.securityId).toBe('sec-msft');
   });
 
   it('quarantines unresolvable revision tickers', () => {

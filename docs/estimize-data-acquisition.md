@@ -4,6 +4,11 @@
 **Status**: Operational plan (frozen BEFORE any vendor data is received)
 **Supplements**: `docs/v5c-experiment-protocol.md`, `docs/v5c-gate-provenance.md`
 
+> **Superseded 2026-09-18:** data acquisition was DECLINED. This plan is
+> retained as provenance — the acceptance protocol it defines remains the
+> contract IF a dataset is ever reconsidered. Final state:
+> `v5c-final-status.md`.
+
 ---
 
 ## 1. Blocker statement

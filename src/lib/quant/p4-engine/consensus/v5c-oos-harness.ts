@@ -25,7 +25,7 @@
  * The harness is deterministic: same inputs → same report, bit-for-bit.
  */
 
-import { EwScore } from '../ew-engine/types';
+import type { EwScore } from '../../ew-engine/types';
 
 // ─── Frozen V5-B benchmark (from the completed OOS run — do NOT recompute) ───
 
@@ -264,5 +264,6 @@ export function decideGoNoGo(
     reasons: go ? ['V5-C improves Pearson AND spread over V5-B with sufficient consensus coverage'] : reasons,
     v5c: v5cMetrics,
     v5b: benchmark,
+    consensusCoveragePct,
   };
 }

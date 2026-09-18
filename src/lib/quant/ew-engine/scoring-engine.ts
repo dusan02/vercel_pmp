@@ -27,7 +27,7 @@
  * Partial categories are flagged but NOT renormalized.
  */
 
-import { PrismaClient } from '../../p4-engine/db/client';
+import { PrismaClient } from '../p4-engine/db/client';
 import {
   EwFeature,
   EwScore,
@@ -53,6 +53,7 @@ import {
 import { SecFundamentalsProvider } from './providers/sec-fundamentals.js';
 import { PriceMomentumProvider } from './providers/price-momentum.js';
 import { ConsensusEarningsProvider } from './providers/consensus-earnings.js';
+import { SecActualsSource } from '../p4-engine/consensus/actuals-source.js';
 
 const ENGINE_VERSION = 'EW-ENGINE-v1';
 
@@ -97,7 +98,7 @@ export class EwEngine implements EwScoringEngine {
 
   constructor(private prisma: PrismaClient) {
     this.providers = [
-      new ConsensusEarningsProvider(), // EARNINGS (blocked)
+      new ConsensusEarningsProvider(prisma, new SecActualsSource(prisma)), // EARNINGS
       new SecFundamentalsProvider(prisma), // FUNDAMENTALS + QUALITY
       new PriceMomentumProvider(prisma), // MOMENTUM
     ];

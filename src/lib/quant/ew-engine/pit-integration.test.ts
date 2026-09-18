@@ -59,7 +59,7 @@ class MockFullProvider implements FeatureProvider {
         availability: config.availability,
         evidence: Object.freeze({
           formula: entry.formula,
-          inputs: Object.freeze({ mock: true }),
+          inputs: Object.freeze({ mock: 'true' }),
           periodEnd: null,
           periodStart: null,
           notes: 'mock feature',

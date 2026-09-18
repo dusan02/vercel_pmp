@@ -161,7 +161,7 @@ export abstract class BaseConsensusAdapter implements ConsensusVendorAdapter {
     const errors: string[] = [];
 
     for (let i = 0; i < snapshots.length; i++) {
-      const s = snapshots[i];
+      const s = snapshots[i]!;
       const prefix = `Snapshot[${i}] (${s.ticker} ${s.fiscalPeriod} ${s.metricType}):`;
 
       // knownAt is MANDATORY
@@ -174,9 +174,16 @@ export abstract class BaseConsensusAdapter implements ConsensusVendorAdapter {
         errors.push(`${prefix} missing or invalid periodEndDate`);
       }
 
-      // knownAt must not be after actualReportDate (if present)
-      if (s.knownAt && s.actualReportDate && s.knownAt.getTime() > s.actualReportDate.getTime()) {
-        errors.push(`${prefix} knownAt > actualReportDate — consensus known after earnings report`);
+      // LEAKAGE: a snapshot observed BEFORE the report must not carry the
+      // actual value. Post-report snapshots (knownAt >= actualReportDate)
+      // are the legitimate way actuals enter the dataset.
+      if (
+        s.actualValue !== null &&
+        s.actualReportDate &&
+        s.knownAt &&
+        s.knownAt.getTime() < s.actualReportDate.getTime()
+      ) {
+        errors.push(`${prefix} knownAt < actualReportDate but carries actualValue — leakage`);
       }
 
       // metricType must be valid
@@ -232,15 +239,15 @@ export class ZacksConsensusAdapter extends BaseConsensusAdapter {
   }
 
   parseSnapshots(_rawData: unknown): CanonicalConsensusSnapshot[] | null {
-    // ⚠️ NOT IMPLEMENTED — awaiting real vendor sample
-    // Do NOT implement until we have inspected actual Zacks data format.
+    // ⚠️ NOT IMPLEMENTED — dormant future extension point.
+    // Do NOT implement without inspecting a real Zacks extract first —
+    // field semantics must be verified, never guessed.
     // The free NDL tier returns only current consensus (no historical snapshots).
-    // Premium/direct Zacks data format is unknown until sample arrives.
-    throw new Error('ZacksConsensusAdapter.parseSnapshots: NOT IMPLEMENTED — awaiting vendor sample');
+    throw new Error('ZacksConsensusAdapter.parseSnapshots: NOT IMPLEMENTED — requires verified vendor field semantics');
   }
 
   parseRevisions(_rawData: unknown): CanonicalRevisionEvent[] | null {
-    throw new Error('ZacksConsensusAdapter.parseRevisions: NOT IMPLEMENTED — awaiting vendor sample');
+    throw new Error('ZacksConsensusAdapter.parseRevisions: NOT IMPLEMENTED — requires verified vendor field semantics');
   }
 }
 

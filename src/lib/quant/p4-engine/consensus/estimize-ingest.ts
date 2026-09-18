@@ -78,7 +78,7 @@ export function buildSupersededChain(
   const chain = new Map<CanonicalConsensusSnapshot, Date | null>();
   for (let i = 0; i < sorted.length; i++) {
     const next = sorted[i + 1];
-    chain.set(sorted[i], next ? next.knownAt : null);
+    chain.set(sorted[i]!, next ? next.knownAt : null);
   }
   return chain;
 }
@@ -146,7 +146,7 @@ export function buildFactRows(
   for (const group of groups.values()) {
     const sortedGroup = [...group].sort((a, b) => a.knownAt.getTime() - b.knownAt.getTime());
     for (let i = 0; i < sortedGroup.length; i++) {
-      const s = sortedGroup[i];
+      const s = sortedGroup[i]!;
       const next = sortedGroup[i + 1];
       rows.push({
         securityId: s.securityId,

@@ -28,6 +28,7 @@ import {
 } from '../types.js';
 import { surpriseAt, consensusRevisionAt, consensusAt, preEarningsConsensusAt } from '../../p4-engine/consensus/consensus-pit-reconstruction';
 import { ConsensusFactRow } from '../../p4-engine/consensus/consensus-feature-calculators';
+import { PitActualsSource } from '../../p4-engine/consensus/actuals-source';
 
 const PROVIDER_VERSION = 'CONSENSUS-EARN-v1';
 
@@ -64,7 +65,10 @@ export class ConsensusEarningsProvider implements FeatureProvider {
   readonly categories: readonly FeatureCategory[] = Object.freeze(['EARNINGS']);
   readonly version = PROVIDER_VERSION;
 
-  constructor(private prisma: PrismaClient) {}
+  constructor(
+    private prisma: PrismaClient,
+    private actualsSource?: PitActualsSource,
+  ) {}
 
   isAvailable(): boolean {
     // Provider is deployed — per-security coverage is handled in computeFeatures
@@ -73,17 +77,20 @@ export class ConsensusEarningsProvider implements FeatureProvider {
   }
 
   describeStatus(): string {
-    return `${PROVIDER_VERSION}: PitConsensusFact (Estimize ingest required for coverage)`;
+    return `${PROVIDER_VERSION}: PitConsensusFact (vendor consensus ingest required for coverage)`;
   }
 
   async computeFeatures(securityId: string, asOfTime: string): Promise<EwFeature[]> {
     const asOf = new Date(asOfTime);
 
-    // Load PIT-correct facts: observationDate <= asOfTime, ordered deterministically
+    // Load PIT-correct facts: observationDate <= asOfTime AND availableAt <= asOfTime.
+    // Both knowledge timestamps must precede T — a snapshot observed earlier but
+    // only available later must not enter reconstruction at T.
     const facts = await this.prisma.pitConsensusFact.findMany({
       where: {
         securityId,
         observationDate: { lte: asOf },
+        availableAt: { lte: asOf },
       },
       select: {
         fiscalYear: true,
@@ -129,8 +136,8 @@ export class ConsensusEarningsProvider implements FeatureProvider {
     const features: EwFeature[] = [];
 
     // ─── epsSurprisePct: pre-earnings consensus vs actual (latest reported period) ───
-    features.push(this.computeSurpriseFeature(periodGroups, 'EPS', 'epsSurprisePct', asOfTime));
-    features.push(this.computeSurpriseFeature(periodGroups, 'REVENUE', 'revenueSurprisePct', asOfTime));
+    features.push(await this.computeSurpriseFeature(securityId, periodGroups, 'EPS', 'epsSurprisePct', asOfTime));
+    features.push(await this.computeSurpriseFeature(securityId, periodGroups, 'REVENUE', 'revenueSurprisePct', asOfTime));
 
     // ─── estimateRevisionsPct: consensus revision over lookback (latest period) ───
     features.push(this.computeRevisionFeature(periodGroups, asOfTime));
@@ -142,28 +149,62 @@ export class ConsensusEarningsProvider implements FeatureProvider {
   }
 
   /**
-   * Surprise feature: find the latest fiscal period with an actual value,
+   * Surprise feature: find the latest fiscal period with a reported actual,
    * compute surprise = ((actual - preEarningsConsensus) / |consensus|) * 100.
+   *
+   * The actual may come from the consensus data itself (vendor post-report
+   * snapshot) or from the configured actualsSource (SEC PitFundamentalFact)
+   * when the vendor dataset is estimates-only. The actual is only usable
+   * at T when reportDate <= T AND availableAt <= T — otherwise the report
+   * has not happened yet at T and the period is skipped.
    */
-  private computeSurpriseFeature(
+  private async computeSurpriseFeature(
+    securityId: string,
     periodGroups: Map<string, PitConsensusFactRow[]>,
-    metricType: string,
+    metricType: 'EPS' | 'REVENUE' | string,
     featureKey: string,
     asOfTime: string,
-  ): EwFeature {
+  ): Promise<EwFeature> {
+    const asOf = new Date(asOfTime);
+    const asOfMs = asOf.getTime();
+
     // Latest period first (deterministic order)
     const periods = Array.from(periodGroups.entries())
       .sort((a, b) => b[0].localeCompare(a[0]));
 
-    for (const [, groupFacts] of periods) {
-      const withActual = groupFacts.find(f => f.actualValue !== null && f.actualReportDate !== null);
+    for (const [, periodFacts] of periods) {
+      let groupFacts = periodFacts;
+      let withActual = groupFacts.find(f => f.actualValue !== null && f.actualReportDate !== null);
+
+      // Estimates-only vendor: pair with SEC actuals when configured
+      if (!withActual && this.actualsSource) {
+        const ref = groupFacts[0];
+        if (ref) {
+          const actual = await this.actualsSource.getActual(
+            securityId, ref.fiscalYear, ref.fiscalPeriod, metricType as 'EPS' | 'REVENUE',
+          );
+          // PIT guard: the report must be public AND knowable at T
+          if (
+            actual &&
+            actual.reportDate.getTime() <= asOfMs &&
+            actual.availableAt.getTime() <= asOfMs
+          ) {
+            withActual = {
+              ...ref,
+              observationDate: actual.reportDate,
+              availableAt: actual.availableAt,
+              actualValue: actual.value,
+              actualReportDate: actual.reportDate,
+            };
+            groupFacts = [...groupFacts, withActual];
+          }
+        }
+      }
       if (!withActual) continue;
 
       const rows = groupFacts.map(toFactRow);
       const surprise = surpriseAt(rows, metricType);
-      if (surprise === null) {
-        return makeMissingFeature(featureKey, 'EARNINGS', asOfTime, 'Pre-earnings consensus unavailable');
-      }
+      if (surprise === null) continue; // try an earlier reported period
 
       const preEarnings = preEarningsConsensusAt(rows, metricType);
 
@@ -173,7 +214,7 @@ export class ConsensusEarningsProvider implements FeatureProvider {
         value: surprise,
         knownAt: withActual.actualReportDate!.toISOString(),
         availableAt: withActual.availableAt.toISOString(),
-        source: 'ESTIMIZE',
+        source: 'CONSENSUS',
         accession: null,
         confidence: 1.0,
         pitValid: true,
@@ -219,7 +260,7 @@ export class ConsensusEarningsProvider implements FeatureProvider {
           value: revision,
           knownAt: current!.observationDate.toISOString(),
           availableAt: current!.availableAt.toISOString(),
-          source: 'ESTIMIZE',
+          source: 'CONSENSUS',
           accession: null,
           confidence: 1.0,
           pitValid: true,

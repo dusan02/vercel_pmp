@@ -6,7 +6,9 @@
  * PitConsensusFact and PitConsensusRevision data.
  *
  * All features are PIT-correct:
- *   - Only consensus snapshots with observationDate <= T are used
+ *   - Only consensus snapshots with observationDate <= T AND
+ *     availableAt <= T are used (both knowledge timestamps must
+ *     precede T — publication lag must not leak into reconstruction)
  *   - Only revisions with revisionDate <= T are used
  *   - No future information leaks
  *
@@ -67,7 +69,7 @@ export interface ConsensusFactRow {
 /**
  * Find the pre-earnings consensus snapshot for a fiscal period.
  * This is the snapshot closest to (but before) the actual report date.
- * PIT-correct: only snapshots with observationDate <= actualReportDate.
+ * PIT-correct: only snapshots observed AND available before the report.
  */
 export function findPreEarningsConsensus(
   facts: ConsensusFactRow[],
@@ -84,7 +86,11 @@ export function findPreEarningsConsensus(
 
   // Find the latest snapshot BEFORE the report date (pre-earnings consensus)
   const preEarnings = metricFacts
-    .filter(f => f.observationDate.getTime() < reportDate)
+    .filter(
+      f =>
+        f.observationDate.getTime() < reportDate &&
+        f.availableAt.getTime() < reportDate,
+    )
     .sort((a, b) => b.observationDate.getTime() - a.observationDate.getTime());
 
   return preEarnings[0] ?? null;
@@ -140,13 +146,18 @@ export function computeEstimateRevisionsPct(
   asOfDate: Date,
   lookbackDays: number = 30,
 ): number | null {
+  const asOfMs = asOfDate.getTime();
   const metricFacts = facts
-    .filter(f => f.metricType === metricType && f.observationDate.getTime() <= asOfDate.getTime())
+    .filter(
+      f =>
+        f.metricType === metricType &&
+        f.observationDate.getTime() <= asOfMs &&
+        f.availableAt.getTime() <= asOfMs,
+    )
     .sort((a, b) => a.observationDate.getTime() - b.observationDate.getTime());
 
   if (metricFacts.length < 2) return null;
 
-  const asOfMs = asOfDate.getTime();
   const priorMs = asOfMs - lookbackDays * 86400000;
 
   // Current: latest snapshot <= asOfDate
@@ -192,17 +203,24 @@ export function computeAnalystCountChange(
   asOfDate: Date,
   lookbackDays: number = 30,
 ): number | null {
+  const asOfMs = asOfDate.getTime();
   const metricFacts = facts
-    .filter(f => f.metricType === metricType && f.observationDate.getTime() <= asOfDate.getTime())
+    .filter(
+      f =>
+        f.metricType === metricType &&
+        f.observationDate.getTime() <= asOfMs &&
+        f.availableAt.getTime() <= asOfMs,
+    )
     .sort((a, b) => a.observationDate.getTime() - b.observationDate.getTime());
 
   if (metricFacts.length < 2) return null;
 
   const current = metricFacts[metricFacts.length - 1];
-  const priorMs = asOfDate.getTime() - lookbackDays * 86400000;
+  if (!current) return null;
+  const priorMs = asOfMs - lookbackDays * 86400000;
   const priorFacts = metricFacts.filter(f => f.observationDate.getTime() <= priorMs);
-  if (priorFacts.length === 0) return null;
   const prior = priorFacts[priorFacts.length - 1];
+  if (!prior) return null;
 
   if (current.analystCount === null || prior.analystCount === null) return null;
   return current.analystCount - prior.analystCount;
@@ -218,13 +236,19 @@ export function computeEstimateDispersionPct(
   metricType: string,
   asOfDate: Date,
 ): number | null {
+  const asOfMs = asOfDate.getTime();
   const metricFacts = facts
-    .filter(f => f.metricType === metricType && f.observationDate.getTime() <= asOfDate.getTime())
+    .filter(
+      f =>
+        f.metricType === metricType &&
+        f.observationDate.getTime() <= asOfMs &&
+        f.availableAt.getTime() <= asOfMs,
+    )
     .sort((a, b) => b.observationDate.getTime() - a.observationDate.getTime());
 
   if (metricFacts.length === 0) return null;
   const latest = metricFacts[0];
-  if (!latest.consensusMean || !latest.consensusStdDev) return null;
+  if (!latest || !latest.consensusMean || !latest.consensusStdDev) return null;
   if (Math.abs(latest.consensusMean) < 0.01) return null;
   return (latest.consensusStdDev / Math.abs(latest.consensusMean)) * 100;
 }

@@ -39,7 +39,7 @@ export interface AuditThresholds {
   /** Min % of OOS window months with >=1 observation */
   minWindowCoveragePct: number;
   /** Max allowed missingness (null consensusMean) rate in % */
-  maxNullMeanPct: number;
+  maxMissingMeanPct: number;
 }
 
 export const FROZEN_AUDIT_THRESHOLDS: AuditThresholds = {
@@ -96,6 +96,28 @@ export interface PitAuditReport {
   missingness: {
     nullConsensusMeanPct: number;
     nullAnalystCountPct: number;
+  };
+
+  /**
+   * Record classification — distinguishes WHY rows carry no usable
+   * consensus, so coverage gaps are diagnosed, not just counted:
+   *   valid                  consensusMean present
+   *   nullMeanWithCoverage   null mean but analysts > 0 → REAL missingness
+   *   zeroCoverageLike       null mean AND analystCount 0/null → looks like a
+   *                          vendor non-observation (should have been excluded
+   *                          at ingest when vendor documents zero-coverage
+   *                          semantics — flagged here, not silently excused)
+   *   futureObservation      observationDate in the future (clock-skew)
+   *   lateAvailability       availableAt > observationDate (publication lag)
+   *   malformed              structural problems (bad period, neg counts)
+   */
+  classification: {
+    valid: number;
+    nullMeanWithCoverage: number;
+    zeroCoverageLike: number;
+    futureObservation: number;
+    lateAvailability: number;
+    malformed: number;
   };
 
   tickerRenames: Array<{ securityId: string; tickers: string[] }>;
@@ -233,6 +255,31 @@ export function runPitAudit(
     );
   }
 
+  // ─── 5b. Record classification (diagnostic — does not change the gate) ───
+  const VALID_PERIODS = new Set(['Q1', 'Q2', 'Q3', 'Q4', 'FY']);
+  const cls = {
+    valid: 0, nullMeanWithCoverage: 0, zeroCoverageLike: 0,
+    futureObservation: 0, lateAvailability: 0, malformed: 0,
+  };
+  for (const f of facts) {
+    if (f.observationDate.getTime() > Date.now()) cls.futureObservation++;
+    if (f.availableAt.getTime() > f.observationDate.getTime()) cls.lateAvailability++;
+    if (
+      !VALID_PERIODS.has(f.fiscalPeriod) ||
+      !f.periodEndDate || isNaN(f.periodEndDate.getTime()) ||
+      (f.analystCount !== null && f.analystCount < 0)
+    ) {
+      cls.malformed++;
+      continue;
+    }
+    if (f.consensusMean === null || f.consensusMean === undefined) {
+      if (f.analystCount === null || f.analystCount === 0) cls.zeroCoverageLike++;
+      else cls.nullMeanWithCoverage++;
+    } else {
+      cls.valid++;
+    }
+  }
+
   // ─── 6. Ticker renames ───
   const tickerRenames: Array<{ securityId: string; tickers: string[] }> = [];
   for (const [securityId, tickers] of data.tickerHistory) {
@@ -288,6 +335,7 @@ export function runPitAudit(
       nullConsensusMeanPct: nullMeanPct,
       nullAnalystCountPct: nullCountPct,
     },
+    classification: cls,
     tickerRenames,
     validator: {
       factErrors: factValidation.errors.length,

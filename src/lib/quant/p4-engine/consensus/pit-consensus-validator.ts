@@ -37,7 +37,7 @@ export interface ValidationResult {
 /**
  * Validate consensus fact rows. Leakage → errors (hard failure).
  */
-export function validateConsensusFacts(rows: ConsensusFactInsert[]): ValidationResult {
+export function validateConsensusFacts(rows: readonly ConsensusFactInsert[]): ValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
 
@@ -123,7 +123,7 @@ export function validateConsensusFacts(rows: ConsensusFactInsert[]): ValidationR
 /**
  * Validate revision rows: monotonic chains per (security, period, metric, analyst).
  */
-export function validateConsensusRevisions(rows: ConsensusRevisionInsert[]): ValidationResult {
+export function validateConsensusRevisions(rows: readonly ConsensusRevisionInsert[]): ValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
 
@@ -140,8 +140,8 @@ export function validateConsensusRevisions(rows: ConsensusRevisionInsert[]): Val
     const sorted = [...chain].sort((a, b) => a.revisionDate.getTime() - b.revisionDate.getTime());
 
     for (let i = 1; i < sorted.length; i++) {
-      const prev = sorted[i - 1];
-      const cur = sorted[i];
+      const prev = sorted[i - 1]!;
+      const cur = sorted[i]!;
 
       // Same timestamp with different values = conflicting PIT state
       if (prev.revisionDate.getTime() === cur.revisionDate.getTime()) {
@@ -169,11 +169,11 @@ export function validateConsensusRevisions(rows: ConsensusRevisionInsert[]): Val
 
 // ─── Combined Validation (used by ingest CLI) ────────────────────────────────
 
-export function validateFactRows(rows: ConsensusFactInsert[]): ValidationResult {
+export function validateFactRows(rows: readonly ConsensusFactInsert[]): ValidationResult {
   return validateConsensusFacts(rows);
 }
 
-export function validateRevRows(rows: ConsensusRevisionInsert[]): ValidationResult {
+export function validateRevRows(rows: readonly ConsensusRevisionInsert[]): ValidationResult {
   return validateConsensusRevisions(rows);
 }
 
@@ -191,7 +191,7 @@ export interface CoverageReport {
 /**
  * Build a coverage report from fact rows (or DB query results shaped the same).
  */
-export function buildCoverageReport(rows: ConsensusFactInsert[]): CoverageReport {
+export function buildCoverageReport(rows: readonly ConsensusFactInsert[]): CoverageReport {
   if (rows.length === 0) {
     return {
       totalFacts: 0,
@@ -228,7 +228,7 @@ export function buildCoverageReport(rows: ConsensusFactInsert[]): CoverageReport
 
   const securitiesPerYear: Record<number, number> = {};
   for (const [key, set] of securitiesPerMetricYear) {
-    const year = parseInt(key.split('|')[1], 10);
+    const year = parseInt(key.split('|')[1] ?? '0', 10);
     securitiesPerYear[year] = Math.max(securitiesPerYear[year] ?? 0, set.size);
   }
 

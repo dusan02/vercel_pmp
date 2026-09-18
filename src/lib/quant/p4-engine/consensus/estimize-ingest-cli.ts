@@ -2,7 +2,9 @@
  * Estimize Ingest CLI
  * ====================
  *
- * Wires together: CSV parsing → adapter → transform → PIT validation → DB.
+ * Wires together: CSV parsing → adapter → vendor-neutral canonical ingest
+ * (normalization → PIT validation → idempotent DB write).
+ *
  * Aborts (exit 1) on any PIT leakage — hard failure, never a warning.
  *
  * Usage:
@@ -15,20 +17,8 @@
 import * as fs from 'fs';
 import { parse } from 'csv-parse/sync';
 import { EstimizeConsensusAdapter } from './vendor-adapter';
-import {
-  buildFactRows,
-  buildRevisionRows,
-  buildReport,
-} from './estimize-ingest';
-import {
-  validateConsensusFacts,
-  validateConsensusRevisions,
-  buildCoverageReport,
-} from './pit-consensus-validator';
-import {
-  QuarantineEntry,
-  TickerResolver,
-} from './consensus-ingest-types';
+import { runCanonicalIngest } from './canonical-ingest';
+import { PrismaConsensusStore, buildTickerResolver } from './prisma-consensus-store';
 
 // ─── CSV cell coercion ───────────────────────────────────────────────────────
 
@@ -102,151 +92,57 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  const { PrismaClient } = await import('./db/client');
+  const { PrismaClient } = await import('../db/client');
   const prisma = new PrismaClient();
 
   try {
-    // ─── Ticker resolver (PIT-correct over PitTickerHistory) ───
-    const tickerRows = await prisma.pitTickerHistory.findMany({
-      select: { ticker: true, securityId: true, startDate: true, endDate: true },
-    });
-    const resolver: TickerResolver = {
-      resolve(ticker: string, at: Date): string | null {
-        const t = ticker.toUpperCase();
-        const atMs = at.getTime();
-        const match = tickerRows.find(
-          r =>
-            r.ticker.toUpperCase() === t &&
-            r.startDate.getTime() <= atMs &&
-            (r.endDate === null || atMs < r.endDate.getTime()),
-        );
-        return match ? match.securityId : null;
-      },
-    };
-
+    const resolver = await buildTickerResolver(prisma);
+    const store = new PrismaConsensusStore(prisma);
     const adapter = new EstimizeConsensusAdapter();
-    const quarantine: QuarantineEntry[] = [];
 
     // ─── Step 1: Parse consensus CSV → canonical snapshots ───
-    const consensusRows = parseConsensusCsv(args[0]);
+    const consensusPath = args[0]!;
+    const consensusRows = parseConsensusCsv(consensusPath);
     const snapshots = adapter.parseSnapshots(consensusRows);
     if (!snapshots || snapshots.length === 0) {
       console.error('FATAL: parseSnapshots returned null/empty — CSV format invalid?');
       process.exit(1);
     }
 
-    // ─── Step 2: Transform → DB-ready fact rows ───
-    const factRows = buildFactRows(snapshots, resolver, quarantine);
-
-    // ─── Step 3: PIT validation — HARD FAIL on leakage ───
-    const factValidation = validateConsensusFacts(factRows);
-    if (!factValidation.passed) {
-      console.error('⛔ PIT VALIDATION FAILED — leakage detected. Ingest aborted.');
-      for (const e of factValidation.errors) console.error(`  ${e}`);
-      process.exit(1);
+    // ─── Step 2: Revisions (optional second file) ───
+    let revisionEvents = null;
+    const estimatesPath = args[1];
+    if (estimatesPath) {
+      revisionEvents = adapter.parseRevisions(parseEstimatesCsv(estimatesPath));
     }
 
-    // ─── Step 4: Write facts (idempotent by sourceRecordHash) ───
-    let factsInserted = 0;
-    let factDuplicates = 0;
-    for (const row of factRows) {
-      const existing = await prisma.pitConsensusFact.findFirst({
-        where: { sourceRecordHash: row.sourceRecordHash },
-        select: { id: true },
-      });
-      if (existing) { factDuplicates++; continue; }
-      await prisma.pitConsensusFact.create({
-        data: {
-          securityId: row.securityId,
-          fiscalYear: row.fiscalYear,
-          fiscalPeriod: row.fiscalPeriod,
-          periodEndDate: row.periodEndDate,
-          observationDate: row.observationDate,
-          availableAt: row.availableAt,
-          supersededAt: row.supersededAt ?? new Date('9999-12-31T23:59:59Z'),
-          metricType: row.metricType,
-          consensusMean: row.consensusMean,
-          consensusMedian: row.consensusMedian,
-          consensusHigh: row.consensusHigh,
-          consensusLow: row.consensusLow,
-          consensusStdDev: row.consensusStdDev,
-          analystCount: row.analystCount,
-          actualValue: row.actualValue,
-          actualReportDate: row.actualReportDate,
-          sourceProvider: row.sourceProvider,
-          sourceType: row.sourceType,
-          sourceRecordHash: row.sourceRecordHash,
-        },
-      });
-      factsInserted++;
-    }
-
-    // ─── Step 5: Revisions (optional second file) ───
-    let revisionsInserted = 0;
-    let revisionDuplicates = 0;
-    if (args[1]) {
-      const estimateRows = parseEstimatesCsv(args[1]);
-      const revisionEvents = adapter.parseRevisions(estimateRows);
-      if (revisionEvents) {
-        const revisionRows = buildRevisionRows(revisionEvents, resolver, quarantine);
-
-        const revValidation = validateConsensusRevisions(revisionRows);
-        if (!revValidation.passed) {
-          console.error('⛔ REVISION VALIDATION FAILED — ingest aborted.');
-          for (const e of revValidation.errors) console.error(`  ${e}`);
-          process.exit(1);
-        }
-
-        for (const row of revisionRows) {
-          const existing = await prisma.pitConsensusRevision.findFirst({
-            where: { sourceRecordHash: row.sourceRecordHash },
-            select: { id: true },
-          });
-          if (existing) { revisionDuplicates++; continue; }
-          await prisma.pitConsensusRevision.create({
-            data: {
-              securityId: row.securityId,
-              fiscalYear: row.fiscalYear,
-              fiscalPeriod: row.fiscalPeriod,
-              periodEndDate: row.periodEndDate,
-              revisionDate: row.revisionDate,
-              availableAt: row.availableAt,
-              analystId: row.analystId,
-              analystName: row.analystName,
-              metricType: row.metricType,
-              priorEstimate: row.priorEstimate,
-              newEstimate: row.newEstimate,
-              sourceProvider: row.sourceProvider,
-              sourceType: row.sourceType,
-              sourceRecordHash: row.sourceRecordHash,
-            },
-          });
-          revisionsInserted++;
-        }
-      }
-    }
+    // ─── Step 3: Canonical ingest (normalize → validate → write) ───
+    // runCanonicalIngest throws on PIT validation failure — hard abort.
+    const manifest = await runCanonicalIngest(snapshots, revisionEvents, resolver, store);
 
     // ─── Report ───
-    const report = buildReport(consensusRows.length, factsInserted, factDuplicates, quarantine, factRows);
+    const report = manifest.report;
     console.log('=== Estimize Consensus Ingest Report ===');
     console.log(`Raw CSV rows:          ${report.rawCount}`);
     console.log(`Canonical snapshots:   ${snapshots.length}`);
-    console.log(`Facts inserted:        ${report.acceptedCount}`);
-    console.log(`Duplicates skipped:    ${report.duplicateCount}`);
+    console.log(`Facts inserted:        ${manifest.factsInserted}`);
+    console.log(`Duplicates skipped:    ${manifest.factDuplicates}`);
     console.log(`Quarantined:           ${report.quarantinedCount}`);
     console.log(`Securities covered:    ${report.securitiesCovered}`);
     console.log(`Date range:            ${report.dateRange.min?.toISOString() ?? 'n/a'} → ${report.dateRange.max?.toISOString() ?? 'n/a'}`);
-    if (args[1]) {
-      console.log(`Revisions inserted:    ${revisionsInserted}`);
-      console.log(`Revision duplicates:   ${revisionDuplicates}`);
+    if (estimatesPath) {
+      console.log(`Revisions inserted:    ${manifest.revisionsInserted}`);
+      console.log(`Revision duplicates:   ${manifest.revisionDuplicates}`);
     }
-    if (quarantine.length > 0) {
+    if (manifest.quarantine.length > 0) {
       console.log('\nQuarantine entries (first 20):');
-      for (const q of quarantine.slice(0, 20)) console.log(`  [${q.reason}] ${q.detail}`);
-      if (quarantine.length > 20) console.log(`  ... and ${quarantine.length - 20} more`);
+      for (const q of manifest.quarantine.slice(0, 20)) console.log(`  [${q.reason}] ${q.detail}`);
+      if (manifest.quarantine.length > 20) console.log(`  ... and ${manifest.quarantine.length - 20} more`);
     }
-    console.log('\nCoverage:');
-    console.log(JSON.stringify(buildCoverageReport(factRows), null, 2));
+
+  } catch (err) {
+    console.error('⛔ INGEST FAILED:', err instanceof Error ? err.message : err);
+    process.exit(1);
   } finally {
     await prisma.$disconnect();
   }

@@ -13,6 +13,7 @@
 import { describe, it, expect } from 'vitest';
 import { ConsensusEarningsProvider } from './consensus-earnings';
 import type { PrismaClient } from '../../p4-engine/db/client';
+import type { PitActualsSource, PitActual } from '../../p4-engine/consensus/actuals-source';
 
 // ─── Fixture factory ─────────────────────────────────────────────────────────
 
@@ -38,12 +39,33 @@ function fact(overrides: Record<string, unknown> = {}) {
   };
 }
 
-function makeProvider(findManyResult: ReturnType<typeof fact>[]) {
+function makeProvider(
+  findManyResult: ReturnType<typeof fact>[],
+  actualsSource?: PitActualsSource,
+) {
   const prismaStub = {
     pitConsensusFact: { findMany: async () => findManyResult },
   } as unknown as PrismaClient;
-  return new ConsensusEarningsProvider(prismaStub);
+  return new ConsensusEarningsProvider(prismaStub, actualsSource);
 }
+
+/** Fake actuals source — returns a fixed actual or throws. */
+function fakeActuals(actual: PitActual | null | Error): PitActualsSource {
+  return {
+    getActual: async () => {
+      if (actual instanceof Error) throw actual;
+      return actual;
+    },
+  };
+}
+
+const ACTUAL = (reportDate: string, availableAt: string, value = 2.18): PitActual => ({
+  value,
+  reportDate: new Date(reportDate),
+  availableAt: new Date(availableAt),
+  sourceForm: '10-Q',
+  accessionNum: 'syn-acc-1',
+});
 
 describe('ConsensusEarningsProvider', () => {
   it('isAvailable() returns true (deployed; per-security coverage in computeFeatures)', () => {
@@ -106,6 +128,55 @@ describe('ConsensusEarningsProvider', () => {
     expect(guidance).toBeDefined();
     expect(guidance!.availability).toBe('MISSING');
     expect(guidance!.value).toBeNull();
+  });
+
+  // ─── Actuals source (opt-in): PIT boundary cases ─────────────────────────
+  // Estimates-only vendor rows (no actualValue) + SEC actuals source.
+
+  const ESTIMATE_ONLY = () => [
+    fact(), // pre-earnings consensus 2.40 @ 2024-01-31 — no actual attached
+  ];
+  const T = '2024-03-01T00:00:00.000Z';
+
+  it('actuals: report before T + available before T → surprise computed', async () => {
+    const provider = makeProvider(ESTIMATE_ONLY(), fakeActuals(ACTUAL('2024-02-01', '2024-02-01')));
+    const f = (await provider.computeFeatures('sec-aapl', T)).find(x => x.key === 'epsSurprisePct');
+    expect(f!.availability).toBe('AVAILABLE');
+    expect(f!.value).toBeCloseTo(-9.1667, 3); // (2.18-2.40)/2.40
+  });
+
+  it('actuals: report before T + available AFTER T → NOT usable (MISSING)', async () => {
+    // report happened 2024-02-01 but only entered our store 2024-03-15 (> T=03-01)
+    const provider = makeProvider(ESTIMATE_ONLY(), fakeActuals(ACTUAL('2024-02-01', '2024-03-15')));
+    const f = (await provider.computeFeatures('sec-aapl', T)).find(x => x.key === 'epsSurprisePct');
+    expect(f!.availability).not.toBe('AVAILABLE');
+    expect(f!.value).toBeNull();
+  });
+
+  it('actuals: report AFTER T → NOT usable (MISSING)', async () => {
+    const provider = makeProvider(ESTIMATE_ONLY(), fakeActuals(ACTUAL('2024-04-25', '2024-04-25')));
+    const f = (await provider.computeFeatures('sec-aapl', T)).find(x => x.key === 'epsSurprisePct');
+    expect(f!.availability).not.toBe('AVAILABLE');
+    expect(f!.value).toBeNull();
+  });
+
+  it('actuals: source returns null (no actual exists) → MISSING, not crash', async () => {
+    const provider = makeProvider(ESTIMATE_ONLY(), fakeActuals(null));
+    const f = (await provider.computeFeatures('sec-aapl', T)).find(x => x.key === 'epsSurprisePct');
+    expect(f!.availability).not.toBe('AVAILABLE');
+    expect(f!.value).toBeNull();
+  });
+
+  it('actuals: source failure propagates (distinguishable from "no actual")', async () => {
+    const provider = makeProvider(ESTIMATE_ONLY(), fakeActuals(new Error('db down')));
+    await expect(provider.computeFeatures('sec-aapl', T)).rejects.toThrow('db down');
+  });
+
+  it('actuals: without actualsSource, estimate-only rows → MISSING (unchanged)', async () => {
+    const provider = makeProvider(ESTIMATE_ONLY()); // no source
+    const f = (await provider.computeFeatures('sec-aapl', T)).find(x => x.key === 'epsSurprisePct');
+    expect(f!.availability).not.toBe('AVAILABLE');
+    expect(f!.value).toBeNull();
   });
 
   it('is deterministic — same facts produce identical features', async () => {

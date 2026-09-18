@@ -109,7 +109,7 @@ describe('EstimizeConsensusAdapter — CSV parsing', () => {
     const aaplQ1 = snapshots.filter(s => s.ticker === 'AAPL' && s.fiscalYear === 2024 && s.fiscalPeriod === 'Q1' && s.metricType === 'EPS');
     expect(aaplQ1.length).toBe(4); // 4 daily snapshots (incl. post-earnings)
 
-    const last = aaplQ1[aaplQ1.length - 1];
+    const last = aaplQ1[aaplQ1.length - 1]!;
     expect(last.consensusMean).toBe(2.40);
     expect(last.consensusHigh).toBe(2.48);
     expect(last.consensusLow).toBe(2.32);
@@ -124,8 +124,8 @@ describe('EstimizeConsensusAdapter — CSV parsing', () => {
     // AAPL Q1: reported on 2024-02-01, actual appears in the 2024-02-05 row
     const withActual = snapshots.filter(s => s.ticker === 'AAPL' && s.fiscalPeriod === 'Q1' && s.metricType === 'EPS' && s.actualValue !== null);
     expect(withActual.length).toBe(1);
-    expect(withActual[0].actualValue).toBe(2.18);
-    expect(withActual[0].actualReportDate).toEqual(new Date('2024-02-01T21:30:00.000Z'));
+    expect(withActual[0]?.actualValue).toBe(2.18);
+    expect(withActual[0]?.actualReportDate).toEqual(new Date('2024-02-01T21:30:00.000Z'));
   });
 
   it('produces stable sourceRecordHash for identical rows', () => {
@@ -151,7 +151,7 @@ describe('EstimizeConsensusAdapter — CSV parsing', () => {
     // Total: 5 EPS revisions (no revenue values in fixture)
     expect(revisions.length).toBe(5);
 
-    const first = revisions[0];
+    const first = revisions[0]!;
     expect(first.revisionDate.toISOString()).toBe(new Date('2024-01-05T14:30:00.000Z').toISOString());
     expect(first.newEstimate).toBe(2.30);
     expect(first.analystId).toBe('an-77');
