@@ -7,9 +7,10 @@
 ## Deployment
 
 - **VPS**: `root@89.185.250.213` (SSH key: `~/.ssh/id_ed25519`), app v `/var/www/premarketprice`, port 3001, PM2
-- **Auto-deploy**: push do `main` → CI → `.github/workflows/deploy.yml` (ssh-action)
-- **Manuálny deploy** (keď GitHub Actions nefungujú): `ssh root@89.185.250.213 'cd /var/www/premarketprice && bash scripts/vps-deploy.sh'`
-- Build beží na VPS s `NODE_OPTIONS="--max-old-space-size=1536"` (heap cap kvôli OOM histórii; server 8GB RAM + 4GB swap, zdieľaný s verifa.sk)
+- **Auto-deploy (artifact model)**: push do `main` → CI builduje `next build` (~2 min na runneri) a uploaduje `.next` ako artifact → `deploy.yml` ho stiahne, scp na VPS a `scripts/vps-activate.sh` atomicky swapne `.next` + `pm2 restart`. Na VPS sa NEBUILDUJE (~6–7 min end-to-end namiesto ~20 min)
+- **Rollback**: predošlý build je v `.next.prev`; pri zlyhaní health/content checku sa vráti automaticky
+- **Manuálny fallback deploy** (keď artifact pipeline zlyhá): `ssh root@89.185.250.213 'cd /var/www/premarketprice && bash scripts/vps-deploy.sh'` — builduje na VPS s `NODE_OPTIONS="--max-old-space-size=1536"` (heap cap kvôli OOM histórii)
+- **Deploy mutex**: `/var/lock/pmp-deploy.lock` (flock) — druhý súbežný deploy (manuálny aj Actions) skončí namiesto race
 - **NEUPRAVOVAŤ nginx.conf** — PMP config je v `/etc/nginx/sites-enabled/premarketprice.com`; nginx zdieľajú verifa.sk a earningstable.com
 - Po deplloy sa nové PM2 cron appky registrujú cez `pm2 start ecosystem.config.cjs --only <name>` (restart alone nové joby nezaregistruje)
 
@@ -17,7 +18,7 @@
 
 - **pnpm v10 blokuje native build skripty** (better-sqlite3) → build padá na "Failed to collect page data". Server má byť na npm; `vps-deploy.sh` maže `node_modules/.pnpm` pri detekcii (one-time migration guard)
 - **`pkill -f "next build"` v ssh-action skripte SA ZABÍJA** — ssh-action posiela celý skript ako argv shellu, takže literal pattern matchne vlastný shell → exit 143. Používaj bracket trick `[n]ext buil[d]` a nikdy nepíš process name do komentárov inline skriptu
-- **Deploy beží detached (setsid+nohup)** a Actions job poll-uje — SSH session môže počas buildu padnúť; detached model to prežije
+- **Artifact deploy beží synchrónne** (scp + ssh activate ~1–2 min) — detached setsid model už nie je potrebný; zostáva len v manuálnom `vps-deploy.sh` fallbacku
 - `prisma db push` NIKDY s `--accept-data-loss` na produkcii
 - Sitemap aj blog majú ISR (`revalidate`) — po pridaní nových URL type over, či sitemap nie je statická
 - Docs-only push: pridaj `[skip ci]` do commit message, inak spustí plný rebuild na VPS
@@ -27,7 +28,7 @@
 - **fail2ban aktívny** (od 2026-09-13): sshd jail, systemd backend, `banaction = ufw`, maxretry 5 / findtime 10 m / bantime 1 h. Config: `/etc/fail2ban/jail.local`. Whitelist: `95.102.193.78` (userova dynamic IP — pri zmene IP sa ban self-heals po 1 h). Status: `fail2ban-client status sshd`
 - GitHub Actions runner IP sa nikdy nezabanujú — auth je cez kľúč, žiadne failed attempts
 - **OTVORENÉ: sshd povolené `PasswordAuthentication yes` + `PermitRootLogin yes`** — odporúčané zmeniť na `prohibit-password` (vyžaduje potvrdenie vlastníka — riziko lockoutu)
-- **Artifact-based deploy (build v CI)** je blokovaný: `NEXT_PUBLIC_GA_ID` / `NEXT_PUBLIC_VAPID_PUBLIC_KEY` / `NEXT_PUBLIC_BASE_URL` sa bake-ujú do bundle pri builde — CI by potreboval tieto hodnoty ako GitHub secrets, inak by sa na produkcii potichu rozbil GA tracking a push notifikácie. Kým sa nepridajú secrets, VPS build (detached model) je správny prístup
+- **`NEXT_PUBLIC_*` hodnoty sa bake-ujú do bundle pri builde** — v CI ich má smoke-test job ako env (secrets `NEXT_PUBLIC_GA_ID`/`NEXT_PUBLIC_VAPID_PUBLIC_KEY` s public-literal fallbackmi — sú to verejné hodnoty z JS bundle). Pri pridaní novej `NEXT_PUBLIC_*` env treba ju doplniť aj do `ci.yml`, inak sa na produkcii potichu rozbije príslušná feature
 - **`vps-deploy.sh` nereštartuje `pmp-polygon-worker`** — po zmene `src/workers/**` treba manuálne `ssh root@89.185.250.213 'pm2 restart pmp-polygon-worker'` (worker beží cez tsx, nepotrebuje Next build)
 
 ## Dátové zdroje cien

@@ -7,7 +7,8 @@ on:
     types: [completed]
     branches: [main]
 
-# Queue deploys instead of running two overlapping builds on the small VPS
+# Queue deploys instead of running two overlapping activations on the VPS.
+# Superseded runs exit early in the gate step below.
 concurrency:
   group: production-deploy
   cancel-in-progress: false
@@ -17,44 +18,71 @@ jobs:
     # Only deploy if CI succeeded (not if it failed/cancelled)
     if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read # download-artifact from the triggering CI run
 
     steps:
-      - name: Deploy to VPS
-        uses: appleboy/ssh-action@v1.0.0
+      - name: Skip deploy if a newer main commit exists
+        id: gate
+        env:
+          TRIGGER_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          LATEST=$(git ls-remote https://github.com/${{ github.repository }}.git main | cut -f1)
+          echo "trigger=$TRIGGER_SHA latest=$LATEST"
+          if [ "$LATEST" = "$TRIGGER_SHA" ]; then
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Newer commit $LATEST on main — skipping superseded deploy"
+          fi
+
+      - name: Resolve artifact CI run
+        if: steps.gate.outputs.skip == 'false'
+        id: runid
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "workflow_run" ]; then
+            echo "id=${{ github.event.workflow_run.id }}" >> "$GITHUB_OUTPUT"
+          else
+            # Manual dispatch: use the latest successful CI run on main.
+            ID=$(gh run list --workflow=ci.yml --branch=main --status=success --limit=1 --json databaseId --jq '.[0].databaseId')
+            [ -n "$ID" ] || { echo "no successful CI run found"; exit 1; }
+            echo "id=$ID" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download build artifact from CI run
+        if: steps.gate.outputs.skip == 'false'
+        uses: actions/download-artifact@v4
         with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          command_timeout: 40m
-          script: |
-            set -e
-            cd /var/www/premarketprice
+          name: next-build
+          run-id: ${{ steps.runid.outputs.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifact
 
-            # Run the deploy DETACHED (setsid + nohup): if this SSH session
-            # drops mid-build (flaky network, server-side connection cleanup),
-            # the deploy keeps running on the VPS and we simply poll for it.
-            LOG=/tmp/pmp-deploy-$(date +%Y%m%d-%H%M%S).log
-            setsid nohup bash scripts/vps-deploy.sh > "$LOG" 2>&1 &
-            DPID=$!
-            echo "deploy PID $DPID, log $LOG"
+      - name: Upload artifact and activate on VPS
+        if: steps.gate.outputs.skip == 'false'
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          SSH_OPTS="-i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new"
 
-            # Poll up to ~25 min for the detached deploy to finish
-            FINISHED=0
-            for i in $(seq 1 150); do
-              sleep 10
-              if ! kill -0 "$DPID" 2>/dev/null; then FINISHED=1; break; fi
-            done
-            if [ "$FINISHED" != "1" ]; then
-              echo "deploy still running after 25 min — dumping log tail"
-              tail -40 "$LOG"
-              exit 1
-            fi
+          scp $SSH_OPTS artifact/next-build.tar.gz "$VPS_USER@$VPS_HOST:/tmp/next-build.tar.gz"
 
-            echo "=== deploy log (tail) ==="
-            tail -40 "$LOG"
-            grep -q "=== Done ===" "$LOG" || {
-              echo "deploy script failed — see log above"
-              exit 1
-            }
-            echo "deploy finished OK"
+          # Fetch the activation script at DEPLOY_SHA so the script version
+          # always matches the artifact — self-updating even before the file
+          # exists in the VPS checkout (covers the first run after this change).
+          ssh $SSH_OPTS "$VPS_USER@$VPS_HOST" \
+            "cd /var/www/premarketprice && git fetch origin main -q && git show '$DEPLOY_SHA:scripts/vps-activate.sh' > /tmp/vps-activate.sh && bash /tmp/vps-activate.sh '$DEPLOY_SHA' /tmp/next-build.tar.gz"

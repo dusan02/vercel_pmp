@@ -1,25 +1,26 @@
 #!/bin/bash
-# Manual fallback deploy — the normal path is GitHub Actions (.github/workflows/deploy.yml).
+# Artifact deploy activation — invoked by .github/workflows/deploy.yml.
+# CI builds the Next.js output and ships it as a tarball; this script swaps
+# it in atomically and restarts the app. No `next build` runs on the VPS.
+#
+# Usage: bash scripts/vps-activate.sh <git-sha> <tarball-path>
 set -e
-# CRITICAL: `npm run build 2>&1 | tail -20` masks the build's exit code
-# (pipeline status = tail's status). Without pipefail a FAILED build fell
-# through to `pm2 restart` → app crash-looped on an incomplete .next → 502.
+# Same pipefail rationale as vps-deploy.sh — a failing pipe stage must
+# not be masked by a later command's exit code.
 set -o pipefail
 cd /var/www/premarketprice
 
-# Deploy mutex — shared with the artifact deploy (vps-activate.sh) so a
-# second deploy exits instead of racing the build (the "another next
+SHA="${1:?missing git sha}"
+TARBALL="${2:-/tmp/next-build.tar.gz}"
+
+# Deploy mutex — artifact deploys and manual builds (vps-deploy.sh) share
+# this lock so a second deploy exits instead of racing (the "another next
 # build is already running" 3× failure mode).
 exec 9>/var/lock/pmp-deploy.lock
 if ! flock -n 9; then
   echo "⚠️  another deploy holds /var/lock/pmp-deploy.lock — exiting"
   exit 1
 fi
-
-echo "=== Killing stale build processes ==="
-# [n] bracket trick — never match this script's own command line
-pkill -f "[n]ext build" 2>/dev/null || true
-sleep 2
 
 echo "=== Updating git remote ==="
 git remote set-url origin https://github.com/dusan02/vercel_pmp.git
@@ -36,8 +37,10 @@ if [ "$UNPUSHED" != "0" ]; then
   sleep 5
 fi
 
-echo "=== Resetting to origin/main ==="
-git reset --hard origin/main 2>&1 | tail -3
+echo "=== Resetting to $SHA ==="
+# Reset to the exact SHA the artifact was built from — repo files and
+# .next output must never come from different commits.
+git reset --hard "$SHA" 2>&1 | tail -3
 
 echo "=== Installing dependencies (incremental) ==="
 # One-time migration: pnpm-structured node_modules (corepack pnpm v10 blocks
@@ -51,30 +54,33 @@ npm install --no-audit --no-fund --loglevel=error 2>&1 | tail -5
 echo "=== Prisma generate ==="
 npx prisma generate 2>&1 | tail -3
 
-echo "=== Building (heap capped for shared 4GB VPS) ==="
-export NODE_OPTIONS="--max-old-space-size=1536"
-# Retry loop: the RUNNING app writes ISR cache files into .next during the
-# build's cleanup — an occasional ENOTEMPTY race kills one attempt; a retry
-# almost always succeeds. With pipefail + set -e, 3 failed attempts stop the
-# deploy safely BEFORE pm2 restart (the previous build keeps serving).
-BUILD_OK=0
-for attempt in 1 2 3; do
-  echo "--- build attempt $attempt/3 ---"
-  if npm run build 2>&1 | tail -20; then
-    BUILD_OK=1
-    break
-  fi
-  echo "build attempt $attempt failed"
-  sleep 5
-done
-if [ "$BUILD_OK" != "1" ]; then
-  echo "❌ Build failed 3× — keeping the previous build live, aborting deploy"
+echo "=== Unpacking prebuilt .next ==="
+STAGE=/var/www/premarketprice/.deploy-stage
+rm -rf "$STAGE"
+mkdir -p "$STAGE"
+tar -xzf "$TARBALL" -C "$STAGE"
+if [ ! -f "$STAGE/.next/BUILD_ID" ]; then
+  echo "❌ artifact missing .next/BUILD_ID — refusing to deploy"
   exit 1
 fi
 
-echo "=== Build complete ==="
-cat .next/BUILD_ID
-echo
+echo "=== Swapping .next ==="
+rm -rf .next.prev
+mv .next .next.prev 2>/dev/null || true
+mv "$STAGE/.next" .next
+rm -rf "$STAGE" "$TARBALL"
+# Preserve the runtime ISR/fetch cache across swaps — hardlinks cost nothing
+# and keep revalidate windows warm instead of cold-starting every deploy.
+if [ -d .next.prev/cache ]; then
+  cp -al .next.prev/cache .next/cache
+fi
+
+rollback() {
+  echo "❌ Rolling back to previous build"
+  rm -rf .next
+  mv .next.prev .next
+  pm2 restart premarketprice --update-env 2>&1 | tail -3 || true
+}
 
 echo "=== Restarting PM2 ==="
 if pm2 describe premarketprice > /dev/null 2>&1; then
@@ -106,6 +112,7 @@ done
 if [ "$code" != "200" ]; then
   echo "❌ App did not become healthy after deploy"
   pm2 logs premarketprice --lines 30 --nostream || true
+  rollback
   exit 1
 fi
 curl -s -o /dev/null -w 'root=%{http_code}\n' http://localhost:3001/
@@ -121,6 +128,7 @@ MOVERS_LINKS=$(curl -s http://localhost:3001/premarket-movers | grep -o '/analys
 echo "movers analysis links: $MOVERS_LINKS"
 if [ "$MOVERS_LINKS" -lt 15 ]; then
   echo "❌ /premarket-movers has only $MOVERS_LINKS analysis links — data pipeline broken"
+  rollback
   exit 1
 fi
 

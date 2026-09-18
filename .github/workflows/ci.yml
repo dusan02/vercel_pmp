@@ -68,6 +68,12 @@ jobs:
       DATABASE_URL: "file:./prisma/data/dev.db"
       POLYGON_API_KEY: "dummy_key_for_ci_build"
       FINNHUB_API_KEY: "dummy_key_for_ci_build"  # finnhubClient throws at import in production builds without it
+      # Baked into the client bundle at build time — the artifact deploy in
+      # deploy.yml ships this build to production, so these must be the real
+      # public values. Secrets win when configured; the literals are public
+      # anyway (visible in every shipped JS bundle).
+      NEXT_PUBLIC_GA_ID: ${{ secrets.NEXT_PUBLIC_GA_ID || 'G-VQ1P6MDRRW' }}
+      NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${{ secrets.NEXT_PUBLIC_VAPID_PUBLIC_KEY || 'BMe8nO-gza-1hLsavi2m6t6y3Kv98WN_sajlZ2N5qJjC91jRf38JpdPiiMx2srwKya9bhJnqinG7WMOBnCefpWg' }}
     services:
       redis:
         image: redis
@@ -94,7 +100,27 @@ jobs:
       
       - name: Build application
         run: mkdir -p prisma/data && npx prisma db push && npm run build
-      
+
+      # Deployable artifact for deploy.yml — the production server runs the
+      # custom server.ts against .next/, so the artifact excludes build-time
+      # cache, the unused standalone bundle, and profiling output.
+      - name: Package deployable build
+        run: |
+          tar -czf /tmp/next-build.tar.gz \
+            --exclude='.next/cache' \
+            --exclude='.next/standalone' \
+            --exclude='.next/trace' \
+            --exclude='.next/diagnostics' \
+            .next
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: next-build
+          path: /tmp/next-build.tar.gz
+          retention-days: 1
+          if-no-files-found: error
+
       - name: Run pre-deploy specific tests
         continue-on-error: true
         run: npm test -- src/__tests__/pre-deploy.test.ts
