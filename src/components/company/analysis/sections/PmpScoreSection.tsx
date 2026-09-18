@@ -10,6 +10,8 @@
  * Renders nothing when no snapshot has been imported for the ticker.
  */
 
+import Link from 'next/link';
+
 interface EwSnapshot {
   totalScore: number;
   maxPossible: number;
@@ -152,6 +154,14 @@ export function PmpScoreSection({ snapshot }: { snapshot: EwSnapshot | null }) {
         signal, not a backtested result — historical V5-C performance has not
         been established because verified point-in-time analyst consensus data
         is not available. Scores update in a daily batch. Not investment advice.
+      </p>
+      <p className="mt-3">
+        <Link
+          href="/screener/early-winners"
+          className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
+        >
+          View the full Early Winners leaderboard →
+        </Link>
       </p>
     </section>
   );
