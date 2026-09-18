@@ -8,6 +8,9 @@ set -e
 # Same pipefail rationale as vps-deploy.sh — a failing pipe stage must
 # not be masked by a later command's exit code.
 set -o pipefail
+# deploy.yml polls this log detached — a bare `exit 1` would otherwise look
+# identical to "still running" and burn the whole poll timeout.
+trap 'rc=$?; [ "$rc" -ne 0 ] && echo "❌ ACTIVATION_FAILED rc=$rc"' EXIT
 cd /var/www/premarketprice
 
 SHA="${1:?missing git sha}"
@@ -92,10 +95,12 @@ fi
 # does NOT register newly added apps — a silent gap is how the post-market
 # cron died. Note: starting a cron app also runs it once immediately, so
 # cron routes must be safe to invoke at any time (or self-guard).
-for app in $(grep -o 'name: "[^"]*"' ecosystem.config.cjs | cut -d'"' -f2); do
+# tr normalizes single→double quotes so both quoting styles match.
+# A failed cron registration warns but must not fail the whole deploy.
+for app in $(tr "'" '"' < ecosystem.config.cjs | grep -o 'name: *"[^"]*"' | cut -d'"' -f2); do
   if ! pm2 describe "$app" > /dev/null 2>&1; then
     echo "registering missing PM2 app: $app"
-    pm2 start ecosystem.config.cjs --only "$app" 2>&1 | tail -2
+    pm2 start ecosystem.config.cjs --only "$app" 2>&1 | tail -2 || echo "⚠️  could not register $app — check manually"
   fi
 done
 pm2 save

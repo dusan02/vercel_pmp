@@ -85,5 +85,31 @@ jobs:
           # Fetch the activation script at DEPLOY_SHA so the script version
           # always matches the artifact — self-updating even before the file
           # exists in the VPS checkout (covers the first run after this change).
+          #
+          # Run it DETACHED (setsid+nohup): the SSH session can drop during
+          # long-running steps and take the deploy down with it — the exact
+          # reason vps-deploy.sh is detached. Output goes to pmp-deploy.log
+          # and is polled below; a dropped session can no longer kill the
+          # activation mid-swap.
           ssh $SSH_OPTS "$VPS_USER@$VPS_HOST" \
-            "cd /var/www/premarketprice && git fetch origin main -q && git show '$DEPLOY_SHA:scripts/vps-activate.sh' > /tmp/vps-activate.sh && bash /tmp/vps-activate.sh '$DEPLOY_SHA' /tmp/next-build.tar.gz"
+            "cd /var/www/premarketprice && git fetch origin main -q && git show '$DEPLOY_SHA:scripts/vps-activate.sh' > /tmp/vps-activate.sh && echo \"=== activate $DEPLOY_SHA \$(date -u) ===\" > /var/log/pmp-deploy.log && setsid nohup bash /tmp/vps-activate.sh '$DEPLOY_SHA' /tmp/next-build.tar.gz >> /var/log/pmp-deploy.log 2>&1 < /dev/null & echo ACTIVATION_LAUNCHED"
+
+      - name: Poll activation result
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          SSH_OPTS="-i $HOME/.ssh/deploy_key -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15"
+          STATUS=RUNNING
+          for i in $(seq 1 40); do
+            # Tolerate transient ssh drops — retry instead of failing the poll.
+            STATUS=$(ssh $SSH_OPTS "$VPS_USER@$VPS_HOST" \
+              "if grep -q '=== Done ===' /var/log/pmp-deploy.log 2>/dev/null; then echo DONE; elif grep -q 'ACTIVATION_FAILED' /var/log/pmp-deploy.log 2>/dev/null; then echo FAILED; else echo RUNNING; fi" \
+              2>/dev/null || echo SSH_RETRY)
+            [ "$STATUS" = "DONE" ] && break
+            [ "$STATUS" = "FAILED" ] && break
+            sleep 10
+          done
+          echo "--- last deploy log lines ---"
+          ssh $SSH_OPTS "$VPS_USER@$VPS_HOST" "tail -40 /var/log/pmp-deploy.log" || true
+          [ "$STATUS" = "DONE" ] || { echo "::error::VPS activation did not complete (status=$STATUS)"; exit 1; }
