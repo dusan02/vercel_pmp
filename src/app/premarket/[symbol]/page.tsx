@@ -39,7 +39,9 @@ interface RecentMove {
 }
 
 async function getTickerData(symbol: string) {
-  try {
+  // No catch — a transient DB error must surface as 500, not be masked as a
+  // cacheable 404 (ISR caches notFound results; seen in prod after deploys).
+  {
     return await prisma.ticker.findUnique({
       where: { symbol },
       select: {
@@ -60,8 +62,6 @@ async function getTickerData(symbol: string) {
         logoUrl: true,
       },
     });
-  } catch {
-    return null;
   }
 }
 

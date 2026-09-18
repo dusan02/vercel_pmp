@@ -235,6 +235,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Fallback: no mover pages if DB unavailable
   }
 
+  // Outage guard — if ALL dynamic ticker sections are empty, the DB layer is
+  // almost certainly down (prod always has hundreds of eligible tickers).
+  // Throw so ISR keeps serving the previous good sitemap instead of caching
+  // a gutted one (eligible* helpers silently fall back to [] on errors).
+  if (
+    allTickers.length === 0 ||
+    valuationPages.length === 0 ||
+    financialsPages.length === 0
+  ) {
+    throw new Error(
+      `sitemap: ticker sections empty (analysis=${allTickers.length} valuation=${valuationPages.length} financials=${financialsPages.length}) — refusing to cache a gutted sitemap`,
+    );
+  }
+
   // -------------------------------------------------------
   // 4. SECTOR PAGES — /sectors/[sector]
   // -------------------------------------------------------
