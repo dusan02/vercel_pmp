@@ -129,8 +129,18 @@ curl -s -o /dev/null -w 'llms=%{http_code}\n' http://localhost:3001/llms.txt
 # empty table means the Redis ranking pipeline is broken even though the
 # page returns 200 (Sep 2026: readers queried unsuffixed ZSET keys and every
 # ranking consumer silently returned empty).
-MOVERS_LINKS=$(curl -s http://localhost:3001/premarket-movers | grep -o '/analysis/' | wc -l)
-echo "movers analysis links: $MOVERS_LINKS"
+# Fetch and count in two steps — `grep` exits 1 on zero matches and would
+# abort the script under pipefail before the comparison even ran.
+# Retry: a cold-start render right after restart can transiently return an
+# empty table; a broken ranking pipeline will still be broken after retries.
+MOVERS_LINKS=0
+for i in 1 2 3; do
+  MOVERS_HTML=$(curl -s --max-time 30 http://localhost:3001/premarket-movers || true)
+  MOVERS_LINKS=$(printf '%s' "$MOVERS_HTML" | grep -c '/analysis/' || true)
+  echo "movers analysis links (try $i/3): $MOVERS_LINKS"
+  [ "$MOVERS_LINKS" -ge 15 ] && break
+  [ "$i" -lt 3 ] && sleep 15
+done
 if [ "$MOVERS_LINKS" -lt 15 ]; then
   echo "❌ /premarket-movers has only $MOVERS_LINKS analysis links — data pipeline broken"
   rollback
