@@ -245,10 +245,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // almost certainly down (prod always has hundreds of eligible tickers).
   // Throw so ISR keeps serving the previous good sitemap instead of caching
   // a gutted one (eligible* helpers silently fall back to [] on errors).
+  // Skip during build prerender — CI builds have no real DB, empty sections
+  // are expected there (ISR regenerates with real data on first request).
   if (
-    allTickers.length === 0 ||
-    valuationPages.length === 0 ||
-    financialsPages.length === 0
+    process.env.NEXT_PHASE !== 'phase-production-build' &&
+    (allTickers.length === 0 ||
+      valuationPages.length === 0 ||
+      financialsPages.length === 0)
   ) {
     throw new Error(
       `sitemap: ticker sections empty (analysis=${allTickers.length} valuation=${valuationPages.length} financials=${financialsPages.length}) — refusing to cache a gutted sitemap`,

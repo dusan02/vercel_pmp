@@ -39,9 +39,7 @@ interface RecentMove {
 }
 
 async function getTickerData(symbol: string) {
-  // No catch — a transient DB error must surface as 500, not be masked as a
-  // cacheable 404 (ISR caches notFound results; seen in prod after deploys).
-  {
+  try {
     return await prisma.ticker.findUnique({
       where: { symbol },
       select: {
@@ -62,6 +60,12 @@ async function getTickerData(symbol: string) {
         logoUrl: true,
       },
     });
+  } catch (e) {
+    // CI build prerenders without a real DB — treat as missing rather than
+    // failing the build. At runtime a DB error must surface as 500, not be
+    // masked as a cacheable 404 (ISR caches notFound results).
+    if (process.env.NEXT_PHASE === 'phase-production-build') return null;
+    throw e;
   }
 }
 
