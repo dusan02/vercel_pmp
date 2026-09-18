@@ -7,7 +7,7 @@ import ResponsiveMarketHeatmap from '@/components/ResponsiveMarketHeatmap';
 import type { CompanyNode } from '@/lib/heatmap/types';
 import { useHeatmapMetric } from '@/hooks/useHeatmapMetric';
 import { HeatmapMetricButtons } from '@/components/HeatmapMetricButtons';
-import { HEATMAP_METRICS } from '@/lib/heatmap/metricValue';
+import { HEATMAP_METRICS, isHeatmapMetric } from '@/lib/heatmap/metricValue';
 import { METRIC_PAGES } from '@/lib/heatmap/metricPages';
 import { HeatmapMethodology } from '@/components/HeatmapMethodology';
 import { logger } from '@/lib/utils/logger';
@@ -23,7 +23,23 @@ export default function HeatmapPage() {
   
   // Metrika heat mapy (Percent vs Mcap) - state lifting
   const { metric, setMetric } = useHeatmapMetric();
-  
+
+  // ?metric= z URL má prednosť pred localStorage — shareable linky
+  useEffect(() => {
+    const fromUrl = new URLSearchParams(window.location.search).get('metric');
+    if (fromUrl && isHeatmapMetric(fromUrl)) setMetric(fromUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Sync metriky do URL cez replaceState — /heatmap?metric=pe je zdielateľný
+  // (canonical ostáva /heatmap, SEO landing pages sú /heatmap/[slug])
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get('metric') === metric) return;
+    url.searchParams.set('metric', metric);
+    window.history.replaceState(null, '', url.toString());
+  }, [metric]);
+
   // Ensure heatmap page has normal font size
   useEffect(() => {
     document.body.classList.add('heatmap-page-wrapper');
