@@ -1,5 +1,18 @@
 import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
+import * as fs from 'fs';
+import * as path from 'path';
+import sharp from 'sharp';
+
+async function loadLogoDataUri(symbol: string): Promise<string | null> {
+    try {
+        const file = path.join(process.cwd(), 'public', 'logos', `${symbol.toLowerCase()}-64.webp`);
+        const png = await sharp(fs.readFileSync(file)).png().toBuffer();
+        return `data:image/png;base64,${png.toString('base64')}`;
+    } catch {
+        return null;
+    }
+}
 
 export async function GET(req: NextRequest) {
     try {
@@ -7,6 +20,7 @@ export async function GET(req: NextRequest) {
 
         // Parse parameters
         const symbol = searchParams.get('symbol') || 'TICKER';
+        const logoUri = symbol !== 'TICKER' ? await loadLogoDataUri(symbol) : null;
         const name = searchParams.get('name') || 'Company Name Inc.';
         const price = searchParams.get('price') || '0.00';
         const changePct = parseFloat(searchParams.get('changePct') || '0');
@@ -90,6 +104,14 @@ export async function GET(req: NextRequest) {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: '20px', marginBottom: '32px' }}>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                    {logoUri && (
+                                        <img
+                                            src={logoUri}
+                                            width={72}
+                                            height={72}
+                                            style={{ borderRadius: '12px' }}
+                                        />
+                                    )}
                                     <div style={{ fontSize: '100px', fontWeight: '900', color: 'white', letterSpacing: '-4px', lineHeight: '0.9' }}>
                                         {symbol}
                                     </div>
