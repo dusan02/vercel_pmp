@@ -234,13 +234,12 @@ export default async function AnalysisPage({ params }: PageProps) {
             />
           )}
 
-          {/* One grid for the whole top of the page. The left column spans
-              both rows so hero → news → price history flow continuously —
-              no dead space under the hero when the radar card is taller.
-              Rail: radar (top-right anchor) → intraday → about → consensus.
-              Mobile stacks in DOM order: hero, news, price history, then rail. */}
-          <div className="mb-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_24rem]">
-            <div className="min-w-0 lg:row-span-2">
+          {/* Two independent columns — no row coupling, so neither column's
+              height can leave dead space under the other. Left: hero → news →
+              price history. Rail: radar (top-right anchor) → intraday → about
+              → consensus. Mobile stacks in DOM order: left stack, then rail. */}
+          <div className="mb-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start">
+            <div className="min-w-0 space-y-6">
               <AnalysisHero
                 ticker={tickerUpper}
                 companyName={companyName}
@@ -273,20 +272,16 @@ export default async function AnalysisPage({ params }: PageProps) {
                 earningsDays={earningsDays}
                 lastMove={recentMoves[0] ?? null}
               />
-              <div className="mt-6">
-                <PriceHistorySection
-                  ticker={tickerUpper}
-                  currentPrice={data?.lastPrice ?? null}
-                  currentChangePct={displayChangePct}
-                />
-              </div>
+              <PriceHistorySection
+                ticker={tickerUpper}
+                currentPrice={data?.lastPrice ?? null}
+                currentChangePct={displayChangePct}
+              />
             </div>
-            <div className="lg:col-start-2">
+            <div className="min-w-0 space-y-6">
               {hasPillars
                 ? <PillarsRadar pillars={analysisData!.pillars!} />
                 : <IntradayChart ticker={tickerUpper} />}
-            </div>
-            <div className="lg:col-start-2 space-y-6">
               {hasPillars && <IntradayChart ticker={tickerUpper} />}
               <CompanyOverviewSection
                 companyName={companyName}
