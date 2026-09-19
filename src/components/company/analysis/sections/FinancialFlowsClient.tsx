@@ -215,11 +215,11 @@ function buildBalanceSheet(p: FlowPeriod): FlowSpec | null {
         const lta = Math.max(0, A - ca);
         const otherLTA = Math.max(0, lta - ppe);
         if (cash > 0) leaf('cash', 'Cash & Equiv.', cash, C.cash, 'ca');
-        if (otherCA > 0) leaf('oca', 'Other Current Assets', otherCA, C.otherAsset, 'ca');
+        if (otherCA > 0) leaf('oca', 'Other Current', otherCA, C.otherAsset, 'ca');
         if (ppe > 0 && lta > 0) leaf('ppe', 'Net PP&E', ppe, C.ppe, 'lta', Math.min(ppe, lta));
         if (otherLTA > 0) leaf('olta', 'Other LT Assets', otherLTA, C.otherAsset, 'lta');
-        midAssets.push({ id: 'ca', label: 'Current Assets', value: ca, color: C.revenue, sub: sub(ca) });
-        if (lta > 0) midAssets.push({ id: 'lta', label: 'Long-Term Assets', value: lta, color: C.ltAssets, sub: sub(lta) });
+        midAssets.push({ id: 'ca', label: 'Current Assets', value: ca, color: C.revenue, sub: sub(ca), labelSide: 'right' });
+        if (lta > 0) midAssets.push({ id: 'lta', label: 'LT Assets', value: lta, color: C.ltAssets, sub: sub(lta), labelSide: 'right' });
         links.push({ from: 'ca', to: 'assets', value: ca });
         if (lta > 0) links.push({ from: 'lta', to: 'assets', value: lta });
     } else {
@@ -240,7 +240,7 @@ function buildBalanceSheet(p: FlowPeriod): FlowSpec | null {
         links.push({ from: 'assets', to: 'liab', value: L });
         const cl = p.currentLiabilities;
         if (cl != null && cl > 0 && cl <= L) {
-            children.push({ id: 'cl', label: 'Current Liabilities', value: cl, color: C.intTax, sub: sub(cl) });
+            children.push({ id: 'cl', label: 'Current Liab.', value: cl, color: C.intTax, sub: sub(cl) });
             links.push({ from: 'liab', to: 'cl', value: cl });
             const ltl = Math.max(0, L - cl);
             if (ltl > 0) {
@@ -277,10 +277,10 @@ function buildBalanceSheet(p: FlowPeriod): FlowSpec | null {
             // detached marker: it reduces equity rather than flowing out of it
             const otherEq = re != null && re < 0 ? E + Math.abs(re) : E;
             if (re != null && re < 0) {
-                children.push({ id: 'adef', label: 'Accumulated Deficit', value: Math.abs(re), color: C.loss, sub: sub(Math.abs(re)) });
+                children.push({ id: 'adef', label: 'Accum. Deficit', value: Math.abs(re), color: C.loss, sub: sub(Math.abs(re)) });
             }
             if (otherEq > 0) {
-                children.push({ id: 'oeq', label: re != null && re < 0 ? 'Paid-in & Other Equity' : 'Common Equity', value: otherEq, color: C.otherEq, sub: sub(otherEq) });
+                children.push({ id: 'oeq', label: re != null && re < 0 ? 'Other Equity' : 'Common Equity', value: otherEq, color: C.otherEq, sub: sub(otherEq) });
                 links.push({ from: 'eq', to: 'oeq', value: Math.min(otherEq, E) });
             }
         }
@@ -338,7 +338,7 @@ export function SankeyCell({ kind, annual, quarterly }: { kind: FlowKind; annual
     // SVG is w-full h-auto → displayed height = svgW * viewH / viewW. Solve
     // viewH so the rendered diagram exactly fills the measured slot height.
     const viewW = sankeyViewBoxWidth(spec.columns.length);
-    const svgW = slot ? Math.max(480, slot.w) : viewW;
+    const svgW = slot ? Math.max(560, slot.w) : viewW;
     const chartH = slot ? Math.max(240, Math.floor(slot.h * (viewW / svgW))) : 300;
     return (
         <div className="h-full flex flex-col">

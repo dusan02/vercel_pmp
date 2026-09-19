@@ -10,6 +10,7 @@ import {
   Tooltip,
   Bar,
 } from 'recharts';
+import { CHART_FONT } from '@/components/charts/chartTheme';
 
 interface Candle {
   t: number; // timestamp (ms)
@@ -236,7 +237,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct }
             scale="band"
             tickFormatter={formatXTick}
             minTickGap={40}
-            tick={{ fontSize: 11, fill: 'currentColor' }}
+            tick={{ fontSize: CHART_FONT.axis, fill: 'currentColor' }}
             className="text-gray-500 dark:text-gray-500"
             tickLine={false}
             axisLine={{ stroke: 'rgba(148,163,184,0.25)' }}
@@ -245,7 +246,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct }
             domain={yDomain}
             orientation="right"
             tickFormatter={(v: number) => `$${v.toFixed(0)}`}
-            tick={{ fontSize: 11, fill: 'currentColor' }}
+            tick={{ fontSize: CHART_FONT.axis, fill: 'currentColor' }}
             className="text-gray-500 dark:text-gray-500"
             tickLine={false}
             axisLine={false}

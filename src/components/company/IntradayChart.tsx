@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { CHART_FONT } from '@/components/charts/chartTheme';
 
 interface Point {
   ts: string;
@@ -81,10 +82,10 @@ export function IntradayChart({ ticker }: { ticker: string }) {
                 <stop offset="100%" stopColor={stroke} stopOpacity={0} />
               </linearGradient>
             </defs>
-            <XAxis dataKey="time" minTickGap={48} tick={{ fontSize: 10, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
+            <XAxis dataKey="time" minTickGap={48} tick={{ fontSize: CHART_FONT.axis, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
             <YAxis
               domain={['auto', 'auto']}
-              tick={{ fontSize: 10, fill: '#9CA3AF' }}
+              tick={{ fontSize: CHART_FONT.axis, fill: '#9CA3AF' }}
               axisLine={false}
               tickLine={false}
               width={62}
@@ -92,7 +93,7 @@ export function IntradayChart({ ticker }: { ticker: string }) {
             />
             <Tooltip
               contentStyle={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 12 }}
-              labelStyle={{ color: '#6B7280', fontSize: 11 }}
+              labelStyle={{ color: '#6B7280', fontSize: CHART_FONT.axis }}
               formatter={(v: unknown) => [`$${Number(v).toFixed(2)}`, 'Price'] as [string, string]}
             />
             {openTime && (
@@ -100,7 +101,7 @@ export function IntradayChart({ ticker }: { ticker: string }) {
                 x={openTime}
                 stroke="#94A3B8"
                 strokeDasharray="4 4"
-                label={{ value: 'open 9:30', position: 'insideTopRight', fontSize: 10, fill: '#94A3B8' }}
+                label={{ value: 'open 9:30', position: 'insideTopRight', fontSize: CHART_FONT.annotation, fill: '#94A3B8' }}
               />
             )}
             <Area type="monotone" dataKey="price" stroke={stroke} strokeWidth={2} fill={`url(#intradayGrad-${ticker})`} isAnimationActive={false} />

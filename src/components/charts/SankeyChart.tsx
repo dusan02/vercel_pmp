@@ -13,7 +13,13 @@ export interface SankeyNode {
     color: string;
     /** Optional small annotation after the value, e.g. "62% of revenue" */
     sub?: string | undefined;
+    /** Force label side — 'right' renders into the following gap. Use on
+     * middle columns whose default left-side label would collide with the
+     * previous column's right-going labels (e.g. balance-sheet mid nodes). */
+    labelSide?: 'left' | 'right' | undefined;
 }
+
+import { CHART_FONT } from './chartTheme';
 
 export interface SankeyLink {
     from: string;
@@ -38,9 +44,18 @@ const NODE_GAP = 14;
 // band on each side wastes ~300px of dead space.
 const PAD_L = 10;
 const PAD_R = 10;
-const COL_GAP = 190; // inter-column spacing incl. node width
+// Inter-column spacing incl. node width. Node labels are capped ~17 chars so
+// they fit the ~115px budget a gap leaves after node + margins — narrower
+// gaps keep the viewBox tight, which keeps the rendered font effective
+// (a 6-column balance sheet at 190px gaps shrinks text to ~7px).
+const COL_GAP = 145;
 const PAD_T = 10;
 const PAD_B = 10;
+// Minimum node heights for label rows to fit without crowding
+const SHOW_LABEL_MIN_H = 10;
+const SHOW_VALUE_MIN_H = 26;
+const LABEL_BLOCK_2 = 30; // label + value rows
+const LABEL_BLOCK_1 = 16; // label only
 
 /** viewBox width the chart will use for a given column count — callers
  *  need it to back-compute a viewBox height that fills a measured box. */
@@ -88,8 +103,8 @@ export default function SankeyChart({ columns, links, total, formatValue, height
             .sort((a, b) => (laid.get(a.id)?.y ?? 0) - (laid.get(b.id)?.y ?? 0))
             .forEach((n) => {
                 const l = laid.get(n.id);
-                if (!l || l.h < 8) return;
-                const blockH = l.h >= 22 ? 26 : 13;
+                if (!l || l.h < SHOW_LABEL_MIN_H) return;
+                const blockH = l.h >= SHOW_VALUE_MIN_H ? LABEL_BLOCK_2 : LABEL_BLOCK_1;
                 let center = l.y + l.h / 2;
                 if (center - blockH / 2 < prevBottom + 3) center = prevBottom + 3 + blockH / 2;
                 prevBottom = center + blockH / 2;
@@ -125,7 +140,7 @@ export default function SankeyChart({ columns, links, total, formatValue, height
     return (
         <svg
             viewBox={`0 0 ${W} ${height}`}
-            className="w-full h-auto select-none min-w-[480px]"
+            className="w-full h-auto select-none min-w-[560px]"
             role="img"
             aria-label="Financial flows diagram"
         >
@@ -139,13 +154,13 @@ export default function SankeyChart({ columns, links, total, formatValue, height
                 col.map((n) => {
                     const l = laid.get(n.id);
                     if (!l) return null;
-                    const isFirst = ci === 0;
-                    const labelX = isFirst ? l.x + NODE_W + 8 : l.x - 8;
-                    const anchor = isFirst ? 'start' : 'end';
+                    const side = n.labelSide ?? (ci === 0 ? 'right' : 'left');
+                    const labelX = side === 'right' ? l.x + NODE_W + 8 : l.x - 8;
+                    const anchor = side === 'right' ? 'start' : 'end';
                     // Dense columns (balance sheet leaves) — thin nodes can't
                     // carry a 2-line label without colliding with neighbours.
-                    const showLabel = l.h >= 8;
-                    const showValue = l.h >= 22;
+                    const showLabel = l.h >= SHOW_LABEL_MIN_H;
+                    const showValue = l.h >= SHOW_VALUE_MIN_H;
                     const lc = labelCenter.get(n.id) ?? l.y + l.h / 2;
                     return (
                         <g key={n.id}>
@@ -155,8 +170,8 @@ export default function SankeyChart({ columns, links, total, formatValue, height
                             {showLabel && (
                                 <text
                                     x={labelX}
-                                    y={showValue ? lc - 1 : lc + 4}
-                                    fontSize={11}
+                                    y={showValue ? lc - 2 : lc + 5}
+                                    fontSize={CHART_FONT.sankeyLabel}
                                     fontWeight={600}
                                     textAnchor={anchor}
                                     className="fill-gray-800 dark:fill-gray-200"
@@ -167,8 +182,8 @@ export default function SankeyChart({ columns, links, total, formatValue, height
                             {showValue && (
                                 <text
                                     x={labelX}
-                                    y={lc + 12}
-                                    fontSize={10}
+                                    y={lc + 13}
+                                    fontSize={CHART_FONT.sankeyValue}
                                     textAnchor={anchor}
                                     className="fill-gray-500 dark:fill-gray-400"
                                 >

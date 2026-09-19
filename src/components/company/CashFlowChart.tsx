@@ -13,6 +13,7 @@ import { FinancialStatement } from './analysis/types';
 import { filterStatementsByViewMode, formatChartYAxis, buildPeriodLabel } from '@/lib/utils/chartUtils';
 import { ChartViewToggle } from './shared/ChartViewToggle';
 import { ChartQuarterTick } from './shared/ChartQuarterTick';
+import { CHART_FONT } from '@/components/charts/chartTheme';
 import { ChartTooltip } from './shared/ChartTooltip';
 import { MetricToggleButtons, toggleMetric as toggle } from './shared/MetricToggleButtons';
 
@@ -114,9 +115,9 @@ export default function CashFlowChart({ statements }: CashFlowChartProps) {
                 <ResponsiveContainer width="100%" height={320}>
                     <BarChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: viewMode === 'quarterly' ? 8 : 5 }} barGap={2}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" className="dark:stroke-gray-700" />
-                        <XAxis dataKey="date" tick={viewMode === 'quarterly' ? <ChartQuarterTick chartData={chartData} /> : { fontSize: 11, fill: '#6B7280', fontWeight: 500 }}
+                        <XAxis dataKey="date" tick={viewMode === 'quarterly' ? <ChartQuarterTick chartData={chartData} /> : { fontSize: CHART_FONT.axis, fill: '#6B7280', fontWeight: 500 }}
                             axisLine={false} tickLine={false} interval="preserveStartEnd" dy={viewMode === 'annual' ? 6 : 0} height={viewMode === 'quarterly' ? 44 : 24} />
-                        <YAxis tickFormatter={formatChartYAxis} tick={{ fontSize: 12, fill: '#6B7280' }} axisLine={false} tickLine={false} width={55} domain={[yMin, 'auto']} />
+                        <YAxis tickFormatter={formatChartYAxis} tick={{ fontSize: CHART_FONT.axis, fill: '#6B7280' }} axisLine={false} tickLine={false} width={55} domain={[yMin, 'auto']} />
                         <Tooltip content={<ChartTooltip metrics={METRICS} />} cursor={{ fill: 'rgba(107, 114, 128, 0.05)' }} />
                         <ReferenceLine y={0} stroke="#9CA3AF" />
                         <Bar dataKey="operatingCF" name="Operating CF" fill="#F59E0B" radius={[2, 2, 0, 0]} maxBarSize={40}

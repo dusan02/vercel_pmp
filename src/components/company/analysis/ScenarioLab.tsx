@@ -13,6 +13,7 @@ import {
     Area,
 } from 'recharts';
 import type { RatioStats } from './types';
+import { CHART_FONT } from '@/components/charts/chartTheme';
 import { GROWTH_CAP, PE_DERATING_THRESHOLD, PE_DERATING_PREMIUM } from './scenarioLab/format';
 import { useScenarioModel } from './scenarioLab/useScenarioModel';
 import { ScenarioTooltip } from './scenarioLab/ScenarioTooltip';
@@ -410,13 +411,13 @@ export function ScenarioLab({
                                 domain={['dataMin', 'dataMax']}
                                 ticks={yearTicks}
                                 tickFormatter={(val) => new Date(val).getUTCFullYear().toString()}
-                                tick={{ fontSize: 10, fill: '#9CA3AF' }}
+                                tick={{ fontSize: CHART_FONT.axis, fill: '#9CA3AF' }}
                                 axisLine={false}
                                 tickLine={false}
                                 minTickGap={60}
                             />
                             <YAxis
-                                tick={{ fontSize: 11, fill: '#9CA3AF' }}
+                                tick={{ fontSize: CHART_FONT.axis, fill: '#9CA3AF' }}
                                 axisLine={false}
                                 tickLine={false}
                                 width={55}
@@ -424,7 +425,7 @@ export function ScenarioLab({
                                 tickFormatter={(v: number) => fmtCompact(v)}
                             />
                             <Tooltip content={<ScenarioTooltip />} />
-                            <ReferenceLine x={m.chartData.find(d => d.projection !== null && d.historical !== null)?.timestamp ?? m.chartData.find(d => d.bear !== null && d.historical !== null)?.timestamp ?? ''} stroke="#9CA3AF" strokeDasharray="3 3" label={{ value: 'Today', fontSize: 10, fill: '#9CA3AF', position: 'insideTopLeft' }} />
+                            <ReferenceLine x={m.chartData.find(d => d.projection !== null && d.historical !== null)?.timestamp ?? m.chartData.find(d => d.bear !== null && d.historical !== null)?.timestamp ?? ''} stroke="#9CA3AF" strokeDasharray="3 3" label={{ value: 'Today', fontSize: CHART_FONT.annotation, fill: '#9CA3AF', position: 'insideTopLeft' }} />
                             <Line
                                 type="monotone"
                                 dataKey="historical"

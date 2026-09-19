@@ -12,6 +12,7 @@ import {
   Tooltip,
   Legend,
 } from 'recharts';
+import { CHART_FONT } from '@/components/charts/chartTheme';
 
 interface HistoryPoint { date: string; price: number; }
 interface ImpliedPoint { date: string; impliedPrice: number; isForecast?: boolean; }
@@ -168,10 +169,10 @@ export function CorrelationChart({ priceHistory, impliedPS, impliedPE, corrPS, c
         <ResponsiveContainer width="100%" height={320}>
           <ComposedChart data={mergedData} margin={{ top: 8, right: 16, left: 8, bottom: 24 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" className="dark:stroke-gray-700" />
-            <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} tickFormatter={formatDateTick} angle={-30} textAnchor="end" height={40} />
-            <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} width={48} tickFormatter={(v: number) => v.toFixed(0)} domain={['auto', 'auto']} />
+            <XAxis dataKey="date" tick={{ fontSize: CHART_FONT.axis, fill: '#9ca3af' }} axisLine={false} tickLine={false} tickFormatter={formatDateTick} angle={-30} textAnchor="end" height={40} />
+            <YAxis tick={{ fontSize: CHART_FONT.axis, fill: '#9ca3af' }} axisLine={false} tickLine={false} width={48} tickFormatter={(v: number) => v.toFixed(0)} domain={['auto', 'auto']} />
             <Tooltip content={<CustomTooltip />} />
-            <Legend wrapperStyle={{ fontSize: 10 }} />
+            <Legend wrapperStyle={{ fontSize: CHART_FONT.annotation }} />
 
             <Area
               type="monotone"

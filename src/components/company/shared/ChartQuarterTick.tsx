@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { CHART_FONT } from '@/components/charts/chartTheme';
+
 interface ChartQuarterTickProps {
     x?: number;
     y?: number;
@@ -12,7 +14,7 @@ export function ChartQuarterTick({ x = 0, y = 0, payload, index = 0, chartData }
     const val: string = payload?.value ?? '';
     const m = val.match(/Q(\d)'(\d{2})/);
     if (!m) {
-        return <text x={x} y={y + 12} textAnchor="middle" fill="#6B7280" fontSize={11}>{val}</text>;
+        return <text x={x} y={y + 12} textAnchor="middle" fill="#6B7280" fontSize={CHART_FONT.axis}>{val}</text>;
     }
     const q = `Q${m[1]}`;
     const year = `20${m[2]}`;
@@ -21,9 +23,9 @@ export function ChartQuarterTick({ x = 0, y = 0, payload, index = 0, chartData }
     const showYear = index === 0 || prevYear !== m[2];
     return (
         <g transform={`translate(${x},${y})`}>
-            <text x={0} y={14} textAnchor="middle" fill="#6B7280" fontSize={11} fontWeight={500}>{q}</text>
+            <text x={0} y={14} textAnchor="middle" fill="#6B7280" fontSize={CHART_FONT.axis} fontWeight={500}>{q}</text>
             {showYear && (
-                <text x={0} y={30} textAnchor="middle" fill="#9CA3AF" fontSize={10} fontWeight={500}>{year}</text>
+                <text x={0} y={30} textAnchor="middle" fill="#9CA3AF" fontSize={CHART_FONT.annotation} fontWeight={500}>{year}</text>
             )}
         </g>
     );

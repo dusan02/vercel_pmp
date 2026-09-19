@@ -14,6 +14,7 @@ import { FinancialStatement } from './analysis/types';
 import { filterStatementsByViewMode, buildPeriodLabel } from '@/lib/utils/chartUtils';
 import { ChartViewToggle } from './shared/ChartViewToggle';
 import { ChartQuarterTick } from './shared/ChartQuarterTick';
+import { CHART_FONT } from '@/components/charts/chartTheme';
 
 interface ShareDilutionChartProps {
     statements: FinancialStatement[];
@@ -118,12 +119,12 @@ export default function ShareDilutionChart({ statements }: ShareDilutionChartPro
                     <ComposedChart data={chartData} margin={{ top: 10, right: showBuyback ? 50 : 10, left: 10, bottom: viewMode === 'quarterly' ? 8 : 5 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" className="dark:stroke-gray-700" />
                         <XAxis dataKey="date"
-                            tick={viewMode === 'quarterly' ? <ChartQuarterTick chartData={chartData} /> : { fontSize: 11, fill: '#6B7280', fontWeight: 500 }}
+                            tick={viewMode === 'quarterly' ? <ChartQuarterTick chartData={chartData} /> : { fontSize: CHART_FONT.axis, fill: '#6B7280', fontWeight: 500 }}
                             axisLine={false} tickLine={false} interval="preserveStartEnd" dy={viewMode === 'annual' ? 6 : 0} height={viewMode === 'quarterly' ? 44 : 24} />
-                        {showShares && <YAxis yAxisId="left" tickFormatter={formatSharesAxis} tick={{ fontSize: 12, fill: '#6B7280' }} axisLine={false} tickLine={false} width={55} />}
+                        {showShares && <YAxis yAxisId="left" tickFormatter={formatSharesAxis} tick={{ fontSize: CHART_FONT.axis, fill: '#6B7280' }} axisLine={false} tickLine={false} width={55} />}
                         {showBuyback && (
                             <YAxis yAxisId="right" orientation="right" tickFormatter={(v: number) => `${v.toFixed(1)}%`}
-                                tick={{ fontSize: 11, fill: '#F59E0B' }} axisLine={false} tickLine={false} width={45} domain={buybackDomain} />
+                                tick={{ fontSize: CHART_FONT.axis, fill: '#F59E0B' }} axisLine={false} tickLine={false} width={45} domain={buybackDomain} />
                         )}
                         <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(107, 114, 128, 0.05)' }} />
                         {showShares && <ReferenceLine yAxisId="left" y={0} stroke="#9CA3AF" />}

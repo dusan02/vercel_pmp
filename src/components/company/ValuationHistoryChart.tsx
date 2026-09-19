@@ -12,6 +12,7 @@ import {
   Tooltip,
   ReferenceLine,
 } from 'recharts';
+import { CHART_FONT } from '@/components/charts/chartTheme';
 
 type ValuationPoint = {
   date: string;
@@ -409,7 +410,7 @@ export function ValuationHistoryChart({
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" className="dark:stroke-gray-700/60" />
             <XAxis
               dataKey="date"
-              tick={{ fontSize: 10, fill: '#9ca3af' }}
+              tick={{ fontSize: CHART_FONT.axis, fill: '#9ca3af' }}
               axisLine={false}
               tickLine={false}
               tickFormatter={formatXTick}
@@ -419,7 +420,7 @@ export function ValuationHistoryChart({
               interval="preserveStartEnd"
             />
             <YAxis
-              tick={{ fontSize: 10, fill: '#9ca3af' }}
+              tick={{ fontSize: CHART_FONT.axis, fill: '#9ca3af' }}
               axisLine={false}
               tickLine={false}
               width={44}
@@ -436,7 +437,7 @@ export function ValuationHistoryChart({
                 x={activeForecast[0]!.date}
                 stroke="#d1d5db"
                 strokeDasharray="4 2"
-                label={{ value: 'Forecast', position: 'insideTopLeft', fontSize: 9, fill: '#9ca3af' }}
+                label={{ value: 'Forecast', position: 'insideTopLeft', fontSize: CHART_FONT.annotation, fill: '#9ca3af' }}
               />
             )}
 

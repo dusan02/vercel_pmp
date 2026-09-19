@@ -11,6 +11,7 @@ import {
     ReferenceLine,
 } from 'recharts';
 import { useState, useMemo, useEffect } from 'react';
+import { CHART_FONT } from '@/components/charts/chartTheme';
 import type { RatioStats } from './analysis/types';
 
 interface HistoryPoint { date: string; value: number; }
@@ -248,13 +249,13 @@ export default function ValuationCharts({ ticker, peHistory, psHistory, current:
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" className="dark:stroke-gray-700" />
                         <XAxis
                             dataKey="date"
-                            tick={{ fontSize: 10, fill: '#9ca3af' }}
+                            tick={{ fontSize: CHART_FONT.axis, fill: '#9ca3af' }}
                             axisLine={false} tickLine={false}
                             tickFormatter={v => v.slice(0, 7)}
                             interval={Math.max(Math.floor(filteredHistory.length / 8) - 1, 0)}
                         />
                         <YAxis
-                            tick={{ fontSize: 10, fill: '#9ca3af' }}
+                            tick={{ fontSize: CHART_FONT.axis, fill: '#9ca3af' }}
                             axisLine={false} tickLine={false}
                             width={38}
                             scale={useLog ? 'log' : 'auto'}
@@ -267,27 +268,27 @@ export default function ValuationCharts({ ticker, peHistory, psHistory, current:
                         {/* P90 — Expensive zone upper boundary */}
                         {stats?.p90 && (
                             <ReferenceLine y={stats.p90} stroke="#ef4444" strokeWidth={1} strokeDasharray="4 2"
-                                label={{ value: `P90 ${stats.p90.toFixed(1)}×`, position: 'right', fontSize: 9, fill: '#ef4444' }} />
+                                label={{ value: `P90 ${stats.p90.toFixed(1)}×`, position: 'right', fontSize: CHART_FONT.annotation, fill: '#ef4444' }} />
                         )}
                         {/* P75 — subtle */}
                         {stats?.p75 && (
                             <ReferenceLine y={stats.p75} stroke="#f97316" strokeWidth={1} strokeDasharray="2 4"
-                                label={{ value: `P75`, position: 'right', fontSize: 8, fill: '#f97316' }} />
+                                label={{ value: `P75`, position: 'right', fontSize: CHART_FONT.annotation, fill: '#f97316' }} />
                         )}
                         {/* Median */}
                         {stats?.median && (
                             <ReferenceLine y={stats.median} stroke="#9ca3af" strokeWidth={1} strokeDasharray="4 2"
-                                label={{ value: `Median ${stats.median.toFixed(1)}×`, position: 'right', fontSize: 9, fill: '#9ca3af' }} />
+                                label={{ value: `Median ${stats.median.toFixed(1)}×`, position: 'right', fontSize: CHART_FONT.annotation, fill: '#9ca3af' }} />
                         )}
                         {/* P25 — subtle */}
                         {stats?.p25 && (
                             <ReferenceLine y={stats.p25} stroke="#34d399" strokeWidth={1} strokeDasharray="2 4"
-                                label={{ value: `P25`, position: 'right', fontSize: 8, fill: '#34d399' }} />
+                                label={{ value: `P25`, position: 'right', fontSize: CHART_FONT.annotation, fill: '#34d399' }} />
                         )}
                         {/* P10 — Cheap zone lower boundary */}
                         {stats?.p10 && (
                             <ReferenceLine y={stats.p10} stroke="#10b981" strokeWidth={1} strokeDasharray="4 2"
-                                label={{ value: `P10 ${stats.p10.toFixed(1)}×`, position: 'right', fontSize: 9, fill: '#10b981' }} />
+                                label={{ value: `P10 ${stats.p10.toFixed(1)}×`, position: 'right', fontSize: CHART_FONT.annotation, fill: '#10b981' }} />
                         )}
 
                         {/* Filled area + line */}

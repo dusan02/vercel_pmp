@@ -14,6 +14,7 @@ import { FinancialStatement } from './analysis/types';
 import { filterStatementsByViewMode, formatChartYAxis, buildPeriodLabel } from '@/lib/utils/chartUtils';
 import { ChartViewToggle } from './shared/ChartViewToggle';
 import { ChartQuarterTick } from './shared/ChartQuarterTick';
+import { CHART_FONT } from '@/components/charts/chartTheme';
 import { ChartTooltip } from './shared/ChartTooltip';
 import { MetricToggleButtons, toggleMetric as toggle } from './shared/MetricToggleButtons';
 
@@ -107,7 +108,7 @@ export default function DebtCashChart({ statements }: DebtCashChartProps) {
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" className="dark:stroke-gray-700" />
                         <XAxis
                             dataKey="date"
-                            tick={viewMode === 'quarterly' ? <ChartQuarterTick chartData={chartData} /> : { fontSize: 11, fill: '#6B7280', fontWeight: 500 }}
+                            tick={viewMode === 'quarterly' ? <ChartQuarterTick chartData={chartData} /> : { fontSize: CHART_FONT.axis, fill: '#6B7280', fontWeight: 500 }}
                             axisLine={false}
                             tickLine={false}
                             interval="preserveStartEnd"
@@ -116,7 +117,7 @@ export default function DebtCashChart({ statements }: DebtCashChartProps) {
                         />
                         <YAxis
                             tickFormatter={formatChartYAxis}
-                            tick={{ fontSize: 12, fill: '#6B7280' }}
+                            tick={{ fontSize: CHART_FONT.axis, fill: '#6B7280' }}
                             axisLine={false}
                             tickLine={false}
                             width={55}
