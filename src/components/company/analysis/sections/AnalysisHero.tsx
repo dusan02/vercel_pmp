@@ -19,6 +19,12 @@ interface AnalysisHeroProps {
   peRatio?: number | null;
   dividendYield?: number | null;
   roe?: number | null;
+  /** 52-week closing range (daily regularClose min/max) */
+  week52Low?: number | null;
+  week52High?: number | null;
+  /** Next earnings date (YYYY-MM-DD) + days until it */
+  earningsDate?: string | null;
+  earningsDays?: number | null;
 }
 
 export function AnalysisHero({
@@ -34,8 +40,22 @@ export function AnalysisHero({
   peRatio,
   dividendYield,
   roe,
+  week52Low,
+  week52High,
+  earningsDate,
+  earningsDays,
 }: AnalysisHeroProps) {
   const isClosed = marketSession === 'closed';
+  const earningsLabel =
+    earningsDate && earningsDays != null
+      ? earningsDays === 0
+        ? 'today'
+        : earningsDays === 1
+          ? 'tomorrow'
+          : `in ${earningsDays}d`
+      : earningsDate
+        ? new Date(earningsDate + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })
+        : null;
 
   // When the market is closed the API freezes changePct at 0.00 — compute the
   // last session's real move from the previous close instead. Without a
@@ -139,6 +159,22 @@ export function AnalysisHero({
           <span className="text-gray-600 dark:text-gray-400">
             <span className="text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-500">ROE </span>
             <strong className="font-semibold text-gray-900 dark:text-white">{roe.toFixed(1)}%</strong>
+          </span>
+        )}
+        {week52Low != null && week52High != null && (
+          <span className="text-gray-600 dark:text-gray-400" title="52-week range over daily closes">
+            <span className="text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-500">52wk </span>
+            <strong className="font-semibold text-gray-900 dark:text-white tabular-nums">
+              {week52Low === week52High
+                ? `$${formatPrice(week52Low)}`
+                : `$${formatPrice(week52Low)}–$${formatPrice(week52High)}`}
+            </strong>
+          </span>
+        )}
+        {earningsLabel && (
+          <span className="text-gray-600 dark:text-gray-400" title={earningsDate ? `Next earnings report: ${earningsDate}` : undefined}>
+            <span className="text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-500">Earnings </span>
+            <strong className="font-semibold text-indigo-600 dark:text-indigo-400">{earningsLabel}</strong>
           </span>
         )}
       </div>

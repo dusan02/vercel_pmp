@@ -141,9 +141,30 @@ export default function ValuationCharts({ ticker, peHistory, psHistory, current:
 
     // Upper bound must be the LARGER of p90*1.3 and max — Math.min here clipped
     // the actual line whenever max exceeded p90*1.3 (e.g. a spike above P90).
-    const yDomain: [number | 'auto', number | 'auto'] = (stats && stats.p10 && stats.p90 && stats.max)
+    const linearDomain: [number | 'auto', number | 'auto'] = (stats && stats.p10 && stats.p90 && stats.max)
         ? [Math.max(0, Math.floor(stats.p10 * 0.8)), Math.max(stats.p90 * 1.3, stats.max)]
         : [0, 'auto'];
+
+    // Wide ranges (a flat ~2× band with a 190× spike from near-zero earnings)
+    // squash the meaningful zone on a linear axis — switch to log so both the
+    // band and the spike stay readable. Log requires strictly positive data.
+    const useLog = stats != null && stats.min > 0 && stats.max / stats.min > 4;
+    const logTicks = useMemo(() => {
+        if (!useLog || !stats) return undefined;
+        const lo = Math.max(stats.min * 0.8, 0.01);
+        const hi = stats.max * 1.25;
+        const ticks: number[] = [];
+        for (let e = Math.floor(Math.log10(lo)); e <= Math.ceil(Math.log10(hi)); e++) {
+            for (const m of [1, 2, 5]) {
+                const v = m * 10 ** e;
+                if (v >= lo && v <= hi) ticks.push(v);
+            }
+        }
+        return ticks.length >= 2 ? ticks : undefined;
+    }, [useLog, stats]);
+    const yDomain: [number | 'auto', number | 'auto'] = useLog && stats
+        ? [Math.max(stats.min * 0.8, 0.01), stats.max * 1.25]
+        : linearDomain;
 
     if (!data) return (
         <div className="text-center text-gray-500 text-sm py-10">
@@ -236,8 +257,10 @@ export default function ValuationCharts({ ticker, peHistory, psHistory, current:
                             tick={{ fontSize: 10, fill: '#9ca3af' }}
                             axisLine={false} tickLine={false}
                             width={38}
+                            scale={useLog ? 'log' : 'auto'}
                             tickFormatter={v => `${v}×`}
                             domain={yDomain}
+                            {...(logTicks ? { ticks: logTicks } : {})}
                         />
                         <Tooltip content={<RatioTooltip />} cursor={{ stroke: '#9ca3af', strokeWidth: 1 }} />
 
@@ -288,7 +311,7 @@ export default function ValuationCharts({ ticker, peHistory, psHistory, current:
                 <span className="flex items-center gap-1.5"><span className="w-3 h-px border-t border-dashed border-emerald-500 inline-block" /> Cheap</span>
                 <span className="flex items-center gap-1.5"><span className="w-3 h-px border-t border-dashed border-gray-400 inline-block" /> Median</span>
                 <span className="flex items-center gap-1.5"><span className="w-3 h-px border-t border-dashed border-red-500 inline-block" /> Expensive</span>
-                <span className="flex items-center gap-1.5 sm:ml-auto text-gray-400 dark:text-gray-600">P10–P90 bands from {filteredHistory.length} weekly points — wide bands may reflect near-zero earnings periods.</span>
+                <span className="flex items-center gap-1.5 sm:ml-auto text-gray-400 dark:text-gray-600">P10–P90 bands from {filteredHistory.length} weekly points — wide bands may reflect near-zero earnings periods.{useLog ? ' Log scale.' : ''}</span>
             </div>
         </div>
     );

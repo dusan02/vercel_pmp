@@ -70,11 +70,20 @@ export function SeoTextSection({
 
   return (
     <section className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-700">
-      <div className="prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-400 [&_p]:max-w-prose [&_ul]:max-w-prose">
-        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-          About {companyName} ({ticker}) Stock
-        </h2>
-        <p>
+      <details className="group">
+        <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden flex items-center justify-between gap-3 py-1">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+            About {companyName} ({ticker}) Stock
+          </h2>
+          <svg
+            className="w-5 h-5 shrink-0 text-gray-400 transition-transform group-open:rotate-180"
+            fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </summary>
+        <div className="prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-400 [&_p]:max-w-prose [&_ul]:max-w-prose mt-4">
+          <p>
           {companyName} ({ticker}) is a US-listed stock{sectorText}. {priceText}{mcapText}.{' '}
           {healthText}. This page provides real-time pre-market pricing, earnings calendar,
           financial health analysis, and valuation metrics for {ticker} stock.
@@ -143,8 +152,9 @@ export function SeoTextSection({
           {companyName} ({ticker}) trades on{' '}
           {sector === 'Financial Services' ? 'NYSE' : 'NYSE/NASDAQ'}.
           Pre-market trading occurs 4:00 AM – 9:30 AM ET. Regular market hours are 9:30 AM – 4:00 PM ET.
-        </p>
-      </div>
+          </p>
+        </div>
+      </details>
     </section>
   );
 }

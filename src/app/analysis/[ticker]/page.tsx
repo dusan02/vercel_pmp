@@ -21,6 +21,7 @@ import { EarningsSection } from '@/components/company/analysis/sections/Earnings
 import { RecentMovesSection } from '@/components/company/analysis/sections/RecentMovesSection';
 import { RelatedStocksSection } from '@/components/company/analysis/sections/RelatedStocksSection';
 import { PmpScoreSection } from '@/components/company/analysis/sections/PmpScoreSection';
+import { VerdictStrip } from '@/components/company/analysis/sections/VerdictStrip';
 import { buildFlowPeriods, type StatementRow } from '@/components/company/analysis/sections/FinancialFlowsSection';
 import { PriceHistorySection } from '@/components/company/analysis/sections/PriceHistorySection';
 
@@ -294,10 +295,11 @@ export default async function AnalysisPage({ params }: PageProps) {
 
   // Fetch everything in parallel (independent queries)
   // Includes SSR pre-fetch of analysis API + history for instant client hydration
-  const [earningsData, recentMoves, sectorPeers, analysisData, historyData, flowStatements] = await Promise.all([
+  const [earningsData, recentMoves, sectorPeers, analysisData, historyData, flowStatements, week52, topNews] = await Promise.all([
     getEarningsForTicker(tickerUpper),
     getRecentSignificantMoves(tickerUpper),
     getSectorPeers(data?.sector, tickerUpper),
+    // SSR pre-fetch analysis API — eliminates client-side fetch waterfall
     // SSR pre-fetch analysis API — eliminates client-side fetch waterfall
     (async () => {
       try {
@@ -321,9 +323,44 @@ export default async function AnalysisPage({ params }: PageProps) {
       } catch { return null; }
     })(),
     getFinancialFlowsData(tickerUpper),
+    // 52-week closing range — DailyRef has no intraday H/L, so the honest
+    // range is over daily regular closes (labeled as such in the hero).
+    prisma.dailyRef.aggregate({
+      where: {
+        symbol: tickerUpper,
+        regularClose: { not: null },
+        date: { gte: new Date(Date.now() - 366 * 24 * 60 * 60 * 1000) },
+      },
+      _max: { regularClose: true },
+      _min: { regularClose: true },
+    }).catch(() => null),
+    // SSR pre-fetch top news headline — feeds the "what's happening" context
+    // strip when there is no AI mover insight.
+    (async () => {
+      try {
+        const res = await fetch(`http://127.0.0.1:${process.env.PORT || 3001}/api/analysis/${tickerUpper}/news`, {
+          signal: AbortSignal.timeout(5000),
+          next: { revalidate: 300 },
+        });
+        if (!res.ok) return null;
+        const json = await res.json();
+        const first = Array.isArray(json?.news) ? json.news[0] : null;
+        return first && first.headline
+          ? { headline: String(first.headline), source: first.source ? String(first.source) : null, datetime: typeof first.datetime === 'number' ? first.datetime : null, url: first.url ? String(first.url) : null }
+          : null;
+      } catch { return null; }
+    })(),
   ]);
 
   const marketSession = detectSession(nowET());
+
+  // One price truth: the headline % shown next to the live price must match
+  // the hero. When the market is closed lastChangePct freezes at 0.00, so the
+  // hero derives the % from lastPrice vs prevClose — mirror that here.
+  const displayChangePct =
+    marketSession === 'closed' && data?.lastPrice != null && data.lastPrice > 0 && data?.latestPrevClose != null && data.latestPrevClose > 0
+      ? (data.lastPrice / data.latestPrevClose - 1) * 100
+      : (data?.lastChangePct ?? null);
 
   // JSON-LD must escape "</" so a company name/description containing
   // "</script>" cannot break out of the script tag (XSS vector).
@@ -361,6 +398,15 @@ export default async function AnalysisPage({ params }: PageProps) {
     ? Math.ceil((new Date(nextEarnings.date + 'T12:00:00Z').getTime() - Date.now()) / 86_400_000)
     : null;
   const earningsTimeLabel = nextEarnings?.time === 'bmo' ? 'before market open' : nextEarnings?.time === 'amc' ? 'after market close' : '';
+
+  // Right rail has content only when at least one rail card can render —
+  // mirrors the null conditions inside AnalystConsensusSection/PmpScoreSection.
+  const pt = data?.finnhubPriceTarget;
+  const rec = data?.finnhubRecommendation;
+  const hasConsensus =
+    (pt != null && (pt.targetMean != null || pt.targetMedian != null)) ||
+    (rec != null && (rec.strongBuy != null || rec.buy != null || rec.hold != null));
+  const hasRail = hasConsensus || (data?.ewScoreSnapshots?.[0] != null);
 
   return (
     <>
@@ -417,6 +463,17 @@ export default async function AnalysisPage({ params }: PageProps) {
                 peRatio={data?.finnhubMetrics?.peRatio ?? null}
                 dividendYield={data?.finnhubMetrics?.dividendYield ?? null}
                 roe={data?.finnhubMetrics?.roe ?? null}
+                week52Low={week52?._min?.regularClose ?? null}
+                week52High={week52?._max?.regularClose ?? null}
+                earningsDate={nextEarnings?.date ?? null}
+                earningsDays={earningsDays}
+              />
+              <VerdictStrip
+                verdictText={data?.analysisCache?.verdictText ?? null}
+                healthScore={data?.analysisCache?.healthScore ?? null}
+                ewScore={data?.ewScoreSnapshots?.[0] ?? null}
+                priceTarget={data?.finnhubPriceTarget ?? null}
+                currentPrice={data?.lastPrice ?? null}
               />
               <MoverInsightSection
                 ticker={tickerUpper}
@@ -425,17 +482,26 @@ export default async function AnalysisPage({ params }: PageProps) {
                 aiConfidence={data?.aiConfidence ?? null}
                 isSbcAlert={data?.isSbcAlert ?? null}
                 changePct={data?.lastChangePct ?? null}
+                topNews={topNews}
+                earningsDate={nextEarnings?.date ?? null}
+                earningsDays={earningsDays}
+                lastMove={recentMoves[0] ?? null}
               />
             </div>
             <IntradayChart ticker={tickerUpper} />
           </div>
 
-          {/* Main column + right rail (consensus, scores, related) */}
-          <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-8">
+          {/* Main column + right rail (consensus, scores, related) — collapses
+              to a single column when the rail has nothing to show */}
+          <div className={hasRail ? 'lg:grid lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-8' : ''}>
             <div className="min-w-0">
 
           {/* Main price chart first — the biggest visual on the page */}
-          <PriceHistorySection ticker={tickerUpper} />
+          <PriceHistorySection
+            ticker={tickerUpper}
+            currentPrice={data?.lastPrice ?? null}
+            currentChangePct={displayChangePct}
+          />
 
           <CompanyOverviewSection
             description={data?.description}
@@ -447,15 +513,17 @@ export default async function AnalysisPage({ params }: PageProps) {
             </div>{/* /main column */}
 
             {/* Right rail — compact reference cards alongside the main flow */}
-            <aside className="mt-6 lg:mt-0">
-              <AnalystConsensusSection
-                priceTarget={data?.finnhubPriceTarget ?? null}
-                recommendation={data?.finnhubRecommendation ?? null}
-                fallbackPrice={data?.lastPrice ?? null}
-              />
+            {hasRail && (
+              <aside className="mt-6 lg:mt-0">
+                <AnalystConsensusSection
+                  priceTarget={data?.finnhubPriceTarget ?? null}
+                  recommendation={data?.finnhubRecommendation ?? null}
+                  fallbackPrice={data?.lastPrice ?? null}
+                />
 
-              <PmpScoreSection snapshot={data?.ewScoreSnapshots?.[0] ?? null} />
-            </aside>
+                <PmpScoreSection snapshot={data?.ewScoreSnapshots?.[0] ?? null} />
+              </aside>
+            )}
           </div>
 
           {/* Full interactive analysis — financial statement pairs

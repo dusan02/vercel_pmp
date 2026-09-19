@@ -1,3 +1,15 @@
+interface TopNews {
+  headline: string;
+  source: string | null;
+  datetime: number | null;
+  url: string | null;
+}
+
+interface LastMove {
+  date: Date;
+  changePct: number | null;
+}
+
 interface MoverInsightSectionProps {
   ticker: string;
   moversReason: string | null | undefined;
@@ -5,6 +17,19 @@ interface MoverInsightSectionProps {
   aiConfidence: number | null | undefined;
   isSbcAlert: boolean | null | undefined;
   changePct: number | null | undefined;
+  /** Fallback context when there is no AI insight: latest news headline */
+  topNews?: TopNews | null;
+  earningsDate?: string | null;
+  earningsDays?: number | null;
+  lastMove?: LastMove | null;
+}
+
+function newsAge(datetime: number | null): string | null {
+  if (datetime == null) return null;
+  const h = Math.floor((Date.now() - datetime * 1000) / 3_600_000);
+  if (h < 1) return 'just now';
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
 }
 
 export function MoverInsightSection({
@@ -14,9 +39,65 @@ export function MoverInsightSection({
   aiConfidence,
   isSbcAlert,
   changePct,
+  topNews,
+  earningsDate,
+  earningsDays,
+  lastMove,
 }: MoverInsightSectionProps) {
-  // Only show when there is an AI insight AND the stock is actually moving
-  if (!moversReason || changePct == null || Math.abs(changePct) < 2) return null;
+  const hasAiInsight = !!moversReason && changePct != null && Math.abs(changePct) >= 2;
+
+  // Fallback "what's happening" strip — the customer always gets an answer to
+  // "why should I care right now": latest headline, earnings countdown, or
+  // the last significant move, even when there is no AI mover insight.
+  if (!hasAiInsight) {
+    const earningsLabel =
+      earningsDate && earningsDays != null
+        ? earningsDays === 0
+          ? 'today'
+          : earningsDays === 1
+            ? 'tomorrow'
+            : `in ${earningsDays} days`
+        : null;
+    const hasContext = topNews || earningsLabel || lastMove;
+    if (!hasContext) return null;
+
+    const age = newsAge(topNews?.datetime ?? null);
+    return (
+      <section className="mb-6" aria-label="Market context">
+        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 px-4 py-3">
+          <h2 className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">
+            What&apos;s happening with {ticker}
+          </h2>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">
+            {topNews && (
+              <span className="text-gray-700 dark:text-gray-300 min-w-0">
+                {topNews.url ? (
+                  <a href={topNews.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline">
+                    {topNews.headline}
+                  </a>
+                ) : (
+                  topNews.headline
+                )}
+                <span className="text-gray-400 dark:text-gray-500">
+                  {' '}— {topNews.source ?? 'news'}{age ? `, ${age}` : ''}
+                </span>
+              </span>
+            )}
+            {earningsLabel && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 whitespace-nowrap">
+                Earnings {earningsLabel}
+              </span>
+            )}
+            {lastMove && lastMove.changePct != null && (
+              <span className="text-gray-500 dark:text-gray-400 text-xs whitespace-nowrap">
+                Last big move: {lastMove.changePct >= 0 ? '+' : ''}{lastMove.changePct.toFixed(1)}% on {lastMove.date.toISOString().slice(0, 10)}
+              </span>
+            )}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   const moveUp = changePct >= 0;
 

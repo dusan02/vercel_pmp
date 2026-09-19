@@ -105,6 +105,21 @@ function CustomTooltip({ active, payload, label }: any) {
   );
 }
 
+// ── Log-scale helpers ───────────────────────────────────────────────────────
+// Band geometry is multiplicative (intrinsic × 0.70–1.30), so a log scale
+// preserves the zone shapes while compressing extreme intrinsic spikes
+// (near-zero EPS → astronomical implied intrinsic, e.g. $1000 vs $350 price).
+function logTicks(lo: number, hi: number): number[] {
+  const ticks: number[] = [];
+  for (let e = Math.floor(Math.log10(lo)); e <= Math.ceil(Math.log10(hi)); e++) {
+    for (const m of [1, 2, 5]) {
+      const v = m * 10 ** e;
+      if (v >= lo && v <= hi) ticks.push(v);
+    }
+  }
+  return ticks;
+}
+
 // ── Split price line into colored segments ──────────────────────────────────
 function splitPriceByRelation(data: ValuationPoint[]) {
   const green: (number | null)[] = [];
@@ -231,6 +246,27 @@ export function ValuationHistoryChart({
 
   const { green, red } = useMemo(() => splitPriceByRelation(allData), [allData]);
   const bands = useMemo(() => buildBands(allData), [allData]);
+
+  // Y domain over all rendered series (price + band edges) — log scale needs
+  // an explicit positive domain; 'auto' with log produces degenerate bounds.
+  const { yDomain, yTicks, useLog } = useMemo(() => {
+    const values: number[] = [];
+    allData.forEach((d, i) => {
+      if (typeof d.price === 'number' && d.price > 0) values.push(d.price);
+      if (d.intrinsic > 0) values.push(d.intrinsic);
+      const b = bands[i];
+      if (b) for (const v of [b.sigOver, b.sigUnder]) if (v != null && v > 0) values.push(v);
+    });
+    if (values.length < 2) return { yDomain: ['auto', 'auto'] as const, yTicks: undefined, useLog: false };
+    const lo = Math.min(...values) * 0.85;
+    const hi = Math.max(...values) * 1.05;
+    // Log scale only when the range is wide enough to justify it; a narrow
+    // range (< 3×) reads better linear.
+    const wide = hi / lo > 3;
+    if (!wide) return { yDomain: [Math.max(0, lo), hi] as const, yTicks: undefined, useLog: false };
+    const ticks = logTicks(lo, hi);
+    return { yDomain: [lo, hi] as const, yTicks: ticks.length >= 2 ? ticks : undefined, useLog: true };
+  }, [allData, bands]);
 
   const chartData = useMemo(() =>
     allData.map((d, i) => ({
@@ -387,8 +423,10 @@ export function ValuationHistoryChart({
               axisLine={false}
               tickLine={false}
               width={44}
+              scale={useLog ? 'log' : 'auto'}
               tickFormatter={v => `$${v.toFixed(0)}`}
-              domain={['auto', 'auto']}
+              domain={yDomain as [number, number] | ['auto', 'auto']}
+              {...(yTicks ? { ticks: yTicks } : {})}
             />
             <Tooltip content={<CustomTooltip />} />
 

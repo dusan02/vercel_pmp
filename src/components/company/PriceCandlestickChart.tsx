@@ -26,6 +26,11 @@ interface ChartPoint extends Candle {
 
 interface PriceCandlestickChartProps {
   ticker: string;
+  /** Live/current quote to unify the header price with the page hero.
+   *  When provided it overrides the latest-candle close (which may be stale
+   *  or split-adjusted); the candle close stays visible as a dated reference. */
+  currentPrice?: number | null;
+  currentChangePct?: number | null;
 }
 
 const PERIODS = [
@@ -83,7 +88,7 @@ function CandleTooltip({ active, payload }: any) {
 }
 
 
-export function PriceCandlestickChart({ ticker }: PriceCandlestickChartProps) {
+export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct }: PriceCandlestickChartProps) {
   const [allCandles, setAllCandles] = useState<Candle[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -160,9 +165,13 @@ export function PriceCandlestickChart({ ticker }: PriceCandlestickChartProps) {
     const first = data[0]!;
     const last = data[data.length - 1]!;
     const change = last.c - first.o;
-    const changePct = first.o > 0 ? (change / first.o) * 100 : 0;
-    return { last: last.c, changePct, up: change >= 0 };
-  }, [data]);
+    const periodChangePct = first.o > 0 ? (change / first.o) * 100 : 0;
+    // One price truth: prefer the live quote (same source as the page hero);
+    // fall back to the latest candle close when no live quote exists.
+    const headline = currentPrice ?? last.c;
+    const changePct = currentChangePct ?? periodChangePct;
+    return { last: last.c, date: last.date, headline, changePct, up: changePct >= 0 };
+  }, [data, currentPrice, currentChangePct]);
 
   if (loading) {
     return (
@@ -185,16 +194,20 @@ export function PriceCandlestickChart({ ticker }: PriceCandlestickChartProps) {
       {/* Header: current price + period toggle */}
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
         {stats && (
-          <div className="flex items-baseline gap-2">
+          <div className="flex items-baseline gap-2 flex-wrap">
             <span className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
-              ${stats.last.toFixed(2)}
+              ${stats.headline.toFixed(2)}
             </span>
             <span
               className={`text-sm font-semibold ${stats.up ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
             >
-              {stats.changePct >= 0 ? '+' : ''}{stats.changePct.toFixed(2)}% ({period})
+              {stats.changePct >= 0 ? '+' : ''}{stats.changePct.toFixed(2)}%{currentChangePct == null ? ` (${period})` : ' (day)'}
             </span>
-            <span className="text-xs text-gray-500 dark:text-gray-400">last candle close — live price may differ</span>
+            {currentPrice != null && (
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                last candle ${stats.last.toFixed(2)} on {stats.date}
+              </span>
+            )}
           </div>
         )}
         <div className="flex items-center bg-gray-100 dark:bg-gray-700/50 rounded-lg p-0.5 gap-0.5">
