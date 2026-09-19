@@ -191,15 +191,15 @@ function Cell({ m }: { m: MetricCardDef }) {
             <span className="text-[10px] uppercase tracking-wide font-medium text-gray-500 dark:text-gray-400 truncate">
                 {m.label}
             </span>
-            <span className="flex items-baseline gap-1 shrink-0">
-                <span className={`text-[13px] font-semibold tabular-nums ${VALUE_COLORS[m.statusType]}`}>
+            <span className="flex items-baseline justify-end gap-1 shrink-0">
+                <span className={`text-[13px] font-semibold tabular-nums text-right ${VALUE_COLORS[m.statusType]}`}>
                     {m.value}
                 </span>
-                {m.statusLabel !== '-' && (
-                    <span className="hidden sm:inline text-[9px] font-medium text-gray-400 dark:text-gray-500 uppercase">
-                        {m.statusLabel}
-                    </span>
-                )}
+                {/* Fixed-width status column — keeps every value's right edge
+                    aligned across cells regardless of label length */}
+                <span className="hidden sm:inline-block w-11 whitespace-nowrap overflow-hidden text-left text-[9px] font-medium text-gray-400 dark:text-gray-500 uppercase">
+                    {m.statusLabel !== '-' ? m.statusLabel : ''}
+                </span>
             </span>
         </div>
     );
