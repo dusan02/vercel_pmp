@@ -1,6 +1,6 @@
 'use client';
 
-import { FinancialHealthTable } from './analysis/FinancialHealthTable';
+import { KeyMetricsTable } from './analysis/KeyMetricsTable';
 import { AnalysisControlsBar } from './analysis/AnalysisControlsBar';
 import { AnalysisCharts } from './AnalysisCharts';
 import { useAnalysis } from '../../hooks/useAnalysis';
@@ -22,8 +22,8 @@ export type {
  *
  * The SSR page renders the document header, company overview, price history,
  * analyst consensus and earnings. This tab renders the interactive parts
- * only: controls, the charts grid and the interpreted Key
- * Financial Metrics table.
+ * only: the dense Key Metrics table (directly under Price History),
+ * the charts grid and the controls bar.
  */
 export default function AnalysisTab({ ticker, initialAnalysisData, initialHistoryData, flowPeriods }: AnalysisTabProps & { initialAnalysisData?: any; initialHistoryData?: any; flowPeriods?: FlowPeriods | null | undefined }) {
     const {
@@ -104,12 +104,12 @@ export default function AnalysisTab({ ticker, initialAnalysisData, initialHistor
 
     return (
         <div className="space-y-6 p-4 bg-transparent dark:bg-gray-900 rounded-xl transition-all animate-fade-in">
-            {/* ── Charts Dashboard (2-Column Grid) — core content first ── */}
-            <AnalysisCharts ticker={ticker} data={data} flowPeriods={flowPeriods} />
+            {/* ── Key metrics — dense Finviz-style table directly under the
+                Price History chart so the numbers land before the detail charts ── */}
+            <KeyMetricsTable data={data} flowPeriods={flowPeriods} />
 
-            {/* ── Consolidated metrics table: scores, margins, ratios, quality
-                — sits below the charts as the detailed numbers behind them ── */}
-            <FinancialHealthTable data={data} flowPeriods={flowPeriods} />
+            {/* ── Charts Dashboard (2-Column Grid) — detail behind the numbers ── */}
+            <AnalysisCharts ticker={ticker} data={data} flowPeriods={flowPeriods} />
 
             {/* ── Controls: Last Updated + Refresh — utility chrome as footer ── */}
             <AnalysisControlsBar
