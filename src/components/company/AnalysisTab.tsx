@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { KeyMetricsTable } from './analysis/KeyMetricsTable';
 import { AnalysisControlsBar } from './analysis/AnalysisControlsBar';
 import { AnalysisCharts } from './AnalysisCharts';
@@ -26,6 +27,7 @@ export type {
  * the charts grid and the controls bar.
  */
 export default function AnalysisTab({ ticker, initialAnalysisData, initialHistoryData, flowPeriods }: AnalysisTabProps & { initialAnalysisData?: any; initialHistoryData?: any; flowPeriods?: FlowPeriods | null | undefined }) {
+    const router = useRouter();
     const {
         data,
         loading,
@@ -104,9 +106,10 @@ export default function AnalysisTab({ ticker, initialAnalysisData, initialHistor
 
     return (
         <div className="space-y-6 p-4 bg-transparent dark:bg-gray-900 rounded-xl transition-all animate-fade-in">
-            {/* ── Key metrics — dense Finviz-style table directly under the
-                Price History chart so the numbers land before the detail charts ── */}
-            <KeyMetricsTable data={data} flowPeriods={flowPeriods} />
+            {/* ── Key metrics — normally SSR'd at page level directly under
+                Price History (crawler-visible). Rendered here only when the
+                SSR prefetch missed and the data came from the client fetch ── */}
+            {!initialAnalysisData && <KeyMetricsTable data={data} flowPeriods={flowPeriods} />}
 
             {/* ── Charts Dashboard (2-Column Grid) — detail behind the numbers ── */}
             <AnalysisCharts ticker={ticker} data={data} flowPeriods={flowPeriods} />
@@ -115,7 +118,12 @@ export default function AnalysisTab({ ticker, initialAnalysisData, initialHistor
             <AnalysisControlsBar
                 updatedAt={data.updatedAt ?? null}
                 analyzing={analyzing}
-                onRefresh={runDeepAnalysis}
+                onRefresh={async () => {
+                    // router.refresh() re-renders the RSC tree so the page-level
+                    // Key Metrics table picks up the refreshed scores too.
+                    await runDeepAnalysis();
+                    router.refresh();
+                }}
             />
         </div>
     );

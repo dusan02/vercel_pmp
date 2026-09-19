@@ -72,7 +72,7 @@ export function AnalysisHero({
         <div className="flex items-center gap-3">
           <img
             src={`/api/logo/${encodeURIComponent(ticker)}?s=64&prefer=icon`}
-            alt={`${ticker} logo`}
+            alt={`${companyName} (${ticker}) logo`}
             width={48}
             height={48}
             className="rounded shrink-0 bg-gray-100 dark:bg-gray-800"

@@ -54,9 +54,9 @@ export function CompanyOverviewSection({
       <details className="group rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 px-4 py-3">
         <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
           <span className="flex items-center justify-between gap-3">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <h2 className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
               About {companyName}
-            </span>
+            </h2>
             {expandable && (
               <svg
                 className="w-4 h-4 shrink-0 text-gray-400 transition-transform group-open:rotate-180"

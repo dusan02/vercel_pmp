@@ -24,6 +24,8 @@ import { PmpScoreSection } from '@/components/company/analysis/sections/PmpScore
 import { VerdictStrip } from '@/components/company/analysis/sections/VerdictStrip';
 import { buildFlowPeriods, type StatementRow } from '@/components/company/analysis/sections/FinancialFlowsSection';
 import { PriceHistorySection } from '@/components/company/analysis/sections/PriceHistorySection';
+import { KeyMetricsTable } from '@/components/company/analysis/KeyMetricsTable';
+import { AnalysisFaqSection, buildAnalysisFaq } from '@/components/company/analysis/sections/AnalysisFaqSection';
 
 import { SeoTextSection } from '@/components/company/SeoTextSection';
 
@@ -300,7 +302,6 @@ export default async function AnalysisPage({ params }: PageProps) {
     getRecentSignificantMoves(tickerUpper),
     getSectorPeers(data?.sector, tickerUpper),
     // SSR pre-fetch analysis API — eliminates client-side fetch waterfall
-    // SSR pre-fetch analysis API — eliminates client-side fetch waterfall
     (async () => {
       try {
         const res = await fetch(`http://127.0.0.1:${process.env.PORT || 3001}/api/analysis/${tickerUpper}`, {
@@ -399,6 +400,40 @@ export default async function AnalysisPage({ params }: PageProps) {
     : null;
   const earningsTimeLabel = nextEarnings?.time === 'bmo' ? 'before market open' : nextEarnings?.time === 'amc' ? 'after market close' : '';
 
+  // FAQ items — shared between the visible section and the FAQPage JSON-LD
+  const faqItems = buildAnalysisFaq({
+    ticker: tickerUpper,
+    companyName,
+    price: data?.lastPrice ?? null,
+    changePct: displayChangePct,
+    marketSession,
+    healthScore: data?.analysisCache?.healthScore ?? null,
+    verdictText: data?.analysisCache?.verdictText ?? null,
+    peRatio: data?.finnhubMetrics?.peRatio ?? null,
+    valuationScore: data?.analysisCache?.valuationScore ?? null,
+    sector: data?.sector ?? null,
+    industry: data?.industry ?? null,
+    description: data?.description ?? null,
+    earningsDate: nextEarnings?.date ?? null,
+    earningsDays,
+  });
+
+  const faqSchema = faqItems.length
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: faqItems.map((item) => ({
+          '@type': 'Question',
+          name: item.q,
+          acceptedAnswer: { '@type': 'Answer', text: item.a },
+        })),
+      }
+    : null;
+
+  // Sankey/flow periods are needed by both the SSR metrics table and the
+  // client analysis tab — build once.
+  const flowPeriods = buildFlowPeriods(flowStatements);
+
   // Right rail has content only when at least one rail card can render —
   // mirrors the null conditions inside AnalystConsensusSection/PmpScoreSection.
   const pt = data?.finnhubPriceTarget;
@@ -412,6 +447,9 @@ export default async function AnalysisPage({ params }: PageProps) {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(breadcrumbSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(stockSchema) }} />
+      {faqSchema && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(faqSchema) }} />
+      )}
 
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Breadcrumb */}
@@ -528,6 +566,16 @@ export default async function AnalysisPage({ params }: PageProps) {
             )}
           </div>
 
+          {/* Key metrics — rendered at page level (not inside the ssr:false
+              tab) so the numbers land in SSR HTML for crawlers AND sit
+              directly under the Price History chart. When the SSR prefetch
+              failed, the client tab renders its own copy after fetching. */}
+          {analysisData && (
+            <div className="mb-6">
+              <KeyMetricsTable data={analysisData} flowPeriods={flowPeriods} />
+            </div>
+          )}
+
           {/* Full interactive analysis — financial statement pairs
               (history bar + structure sankey), valuation, health table */}
           <AnalysisTabClient
@@ -535,7 +583,7 @@ export default async function AnalysisPage({ params }: PageProps) {
             ticker={tickerUpper}
             initialAnalysisData={analysisData}
             initialHistoryData={historyData}
-            flowPeriods={buildFlowPeriods(flowStatements)}
+            flowPeriods={flowPeriods}
           />
 
           <p className="-mt-2 mb-6 text-xs text-gray-500 dark:text-gray-500">
@@ -563,6 +611,9 @@ export default async function AnalysisPage({ params }: PageProps) {
           <EarningsSection upcoming={earningsData.upcoming} recent={earningsData.recent} />
 
           <RecentMovesSection ticker={tickerUpper} moves={recentMoves} />
+
+          {/* FAQ — visible Q&As mirrored by the FAQPage JSON-LD above */}
+          <AnalysisFaqSection items={faqItems} ticker={tickerUpper} />
 
           {/* SEO text section — unique keyword-rich content for Google indexing */}
           <SeoTextSection
