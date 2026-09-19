@@ -75,8 +75,8 @@ curl -s https://premarketprice.com/analysis/AAPL | grep -c FinancialProduct  # �
 
 | Položka | Stav | Zdroj |
 |---|---|---|
-| Denná história P/E, P/S, EV/EBITDA, FCF yield | ✅ ~856K riadkov, 704 tickerov | `DailyValuationHistory` |
-| Percentile vs vlastná história | ✅ derivable | `DailyValuationHistory` |
+| Denná história P/E, P/S, EV/EBIT, FCF yield | ✅ ~856K riadkov, 704 tickerov | `DailyValuationHistory` — **TTM báza** (od opravy 2026-09; predtým evEbitda/fcfYield annual) |
+| Percentile vs vlastná história | ✅ `valuationHistoryStats` v `/api/analysis` response | `buildValuationHistory` + `summarizeSeries` v `services/analysis/valuationHistory.ts`; tooltipy v Key Metrics |
 | Sector/industry mediány | ✅ derivable | agregácia `FinnhubMetrics` podľa `Ticker.sector` |
 | EPS/FCF/EBITDA CAGR, share count, SBC história, ROIC/ROE trendy | ✅ | `FinancialStatement` (~43 periód/ticker) |
 | Analyst price targets, recommendation counts | ⚠️ tabuľky existujú, **0 riadkov na prod** | `FinnhubPriceTarget`, `FinnhubRecommendation` — sync pipeline nenaplnená |
@@ -85,3 +85,11 @@ curl -s https://premarketprice.com/analysis/AAPL | grep -c FinancialProduct  # �
 | Estimate revisions, one-off items, maint./growth capex split | ❌ žiadny zdroj | — |
 
 `humanPeInfo`/`humanDebtInfo` sa renderujú z `AnalysisCache` — stale texty sa prepíšu refresh cyklom (POST `/api/analysis/[ticker]`).
+
+**Historická valuation vrstva**:
+
+- `computeTTMAtDate` vracia TTM pre všetky polia (NI, rev, EBIT, OCF, CapEx) — `syncValuationHistory` píše všetky 4 násobky na TTM báze
+- **PO DEPLOYI spustiť na prod**: `npx tsx scripts/repair-valuation-history-ttm.ts` — prepočíta existujúce riadky na TTM (čistý lokálny recompute, žiadne API). Bez toho percentily pre evEbit/fcfYield rankujú TTM-current voči annual-histórii (mierne skreslené)
+- Percentilový kontext je v metric tooltipoch (`histTip`), nie v layoute — žiadny UI redesign
+- `metrics.evEbit` = vlastné EV/TTM-EBIT (D&A nemáme → EBIT, nie EBITDA); tabuľka labeluje `EV/EBIT`, Finnhub `evEbitda` ostáva fallback pod vlastným labelom
+- `metrics.fcfYield` = vlastné TTM FCF/mcap (predtým annual snapshot — LLY: 0.3% → 1.2%)

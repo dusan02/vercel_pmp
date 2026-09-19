@@ -16,14 +16,14 @@ import type { AnalysisData } from '@/components/company/analysis/types';
 
 const analysisCacheFindUnique = jest.fn();
 const statementFindMany = jest.fn();
-const valuationFindFirst = jest.fn();
+const valuationFindMany = jest.fn();
 const finnhubFindUnique = jest.fn();
 
 jest.mock('@/lib/db/prisma', () => ({
     prisma: {
         analysisCache: { findUnique: (...a: unknown[]) => analysisCacheFindUnique(...a) },
         financialStatement: { findMany: (...a: unknown[]) => statementFindMany(...a) },
-        dailyValuationHistory: { findFirst: (...a: unknown[]) => valuationFindFirst(...a) },
+        dailyValuationHistory: { findMany: (...a: unknown[]) => valuationFindMany(...a) },
         finnhubMetrics: { findUnique: (...a: unknown[]) => finnhubFindUnique(...a) },
         ticker: { findUnique: jest.fn() },
     },
@@ -60,6 +60,7 @@ function muData(overrides: Partial<AnalysisData> = {}): AnalysisData {
         metrics: {
             zScore: null, altmanZ: 10.01, debtRepaymentTime: null, debtRepaymentYears: 0.1,
             fcfYield: 0.025, currentEps: 44.2, currentPe: 23.0,
+            psRatio: 12.72, evEbit: 20.5,
             forwardPe: 5.9, forwardEps: 173, forwardImpliedGrowth: 291.4,
             fcfMargin: 0.29, fcfConversion: 0.52,
         },
@@ -195,6 +196,13 @@ const MU_STMTS = [
       sharesOutstanding: 1.123e9, retainedEarnings: 5e9 },
 ];
 
+// Sparse daily-history fixture — current ~23x should land mid-range.
+const MU_VALUATION_ROWS = [10, 15, 20, 25, 30].map((pe, i) => ({
+    date: new Date(Date.UTC(2025, 0, 2 + i)),
+    closePrice: 100 + i, marketCap: 114e9,
+    peRatio: pe, psRatio: 2 + i, evEbitda: 8 + i * 2, fcfYield: 0.01 + i * 0.005,
+}));
+
 describe('computeMetrics — P/E source of truth', () => {
     beforeEach(() => {
         jest.clearAllMocks();
@@ -203,9 +211,7 @@ describe('computeMetrics — P/E source of truth', () => {
             altmanZ: 10.01, debtRepaymentYears: 0.1, fcfMargin: 0.29, fcfConversion: 0.52,
         });
         statementFindMany.mockResolvedValue(MU_STMTS);
-        valuationFindFirst.mockResolvedValue({
-            closePrice: 1016.51, peRatio: 20.99, fcfYield: 0.0246,
-        });
+        valuationFindMany.mockResolvedValue(MU_VALUATION_ROWS);
         finnhubFindUnique.mockResolvedValue({
             peRatio: 129.3, netIncomePerShare: 7.86, forwardPe: 5.87,
             pegRatio: 0.12, priceFreeCashFlow: 43.8,
@@ -227,5 +233,63 @@ describe('computeMetrics — P/E source of truth', () => {
         expect(result!.metrics.currentEps).toBeCloseTo(44.2, 0);
         // forwardImpliedGrowth therefore measures vs OUR eps: 173/44.2 − 1 ≈ 291%
         expect(result!.metrics.forwardImpliedGrowth).toBeCloseTo(291, -1);
+    });
+
+    it('FCF yield uses own TTM FCF / market cap — same basis as FCF margin', async () => {
+        const result = await computeMetrics('MU', { lastPrice: 1016.51 });
+        // TTM FCF = 51.43 − 25.26 = 26.17B; mcap = 1016.51 × 1.142B = 1160.9B
+        // → 2.25%, not the stale annual snapshot (2.46%) nor Finnhub's inverse.
+        expect(result!.metrics.fcfYield).toBeCloseTo(26.17e9 / (1016.51 * 1.142e9), 6);
+    });
+});
+
+describe('valuation history stats — percentile vs own history', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+        analysisCacheFindUnique.mockResolvedValue({
+            symbol: 'MU', healthScore: 100, valuationScore: 55, profitabilityScore: 87,
+            altmanZ: 10.01, debtRepaymentYears: 0.1, fcfMargin: 0.29, fcfConversion: 0.52,
+        });
+        statementFindMany.mockResolvedValue(MU_STMTS);
+        valuationFindMany.mockResolvedValue(MU_VALUATION_ROWS);
+        finnhubFindUnique.mockResolvedValue({
+            peRatio: 129.3, netIncomePerShare: 7.86, forwardPe: 5.87,
+            pegRatio: 0.12, priceFreeCashFlow: 43.8,
+        });
+    });
+
+    it('ranks our TTM P/E against the stored series — not Finnhub\'s', async () => {
+        const result = await computeMetrics('MU', { lastPrice: 1016.51 });
+        const pe = result!.valuationHistoryStats!.pe;
+        expect(pe.current).toBeCloseTo(23.0, 0);
+        // history [10,15,20,25,30] → 3 of 5 below 23 → 60th percentile
+        expect(pe.percentile).toBeCloseTo(60, 0);
+        expect(pe.min).toBe(10);
+        expect(pe.max).toBe(30);
+        expect(pe.sampleSize).toBe(5);
+    });
+
+    it('returns null stats object when no history rows exist', async () => {
+        valuationFindMany.mockResolvedValue([]);
+        const result = await computeMetrics('MU', { lastPrice: 1016.51 });
+        expect(result!.valuationHistoryStats).toBeNull();
+    });
+});
+
+describe('summarizeSeries', () => {
+    it('computes percentile as share of history strictly below current', async () => {
+        const { summarizeSeries } = await import('@/services/analysis/valuationHistory');
+        const s = summarizeSeries([5, 10, 15, 20], 12, 10);
+        expect(s.percentile).toBe(50); // 5,10 below → 2/4
+        expect(s.median).toBe(12.5);
+    });
+
+    it('handles empty series and null current', async () => {
+        const { summarizeSeries } = await import('@/services/analysis/valuationHistory');
+        const empty = summarizeSeries([], 20, null);
+        expect(empty).toMatchObject({ percentile: null, sampleSize: 0, min: null });
+        const noCurrent = summarizeSeries([10, 20, 30], null, 3);
+        expect(noCurrent.percentile).toBeNull();
+        expect(noCurrent.min).toBe(10);
     });
 });

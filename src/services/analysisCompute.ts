@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db/prisma';
 import { computeTTM } from '@/lib/utils/ttm';
 import { applySplitAdjustments, applyPostSplitAdjustment } from '@/lib/utils/splitAdjustment';
 import { dedupeShareClasses } from '@/lib/companyNames';
+import { buildValuationHistory } from '@/services/analysis/valuationHistory';
 
 /**
  * Shared analysis computation used by both:
@@ -84,10 +85,14 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
         }
     }
 
-    const latestValuation = await prisma.dailyValuationHistory.findFirst({
+    // Full daily valuation history (asc) — feeds both the latest snapshot
+    // values and the historical percentile stats in one query.
+    const valuationRows = await prisma.dailyValuationHistory.findMany({
         where: { symbol },
-        orderBy: { date: 'desc' }
+        orderBy: { date: 'asc' },
+        select: { date: true, closePrice: true, marketCap: true, peRatio: true, psRatio: true, evEbitda: true, fcfYield: true },
     });
+    const latestValuation = valuationRows.length > 0 ? valuationRows[valuationRows.length - 1]! : null;
 
     // Fetch Finnhub pre-computed metrics (primary source for ratios)
     const finnhubMetrics = await prisma.finnhubMetrics.findUnique({ where: { symbol } });
@@ -95,11 +100,6 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
     const cached = analysis as any;
     const altmanZ = cached.altmanZ;
     const debtRepaymentYears = cached.debtRepaymentYears;
-    // FCF Yield: prefer valuation history, fallback to Finnhub P/FCF (inverse)
-    const fcfYield = latestValuation?.fcfYield
-        ?? (finnhubMetrics?.priceFreeCashFlow != null && finnhubMetrics.priceFreeCashFlow > 0
-            ? 1 / finnhubMetrics.priceFreeCashFlow
-            : null);
 
     // Snapshot variables MUST come from latestStmt (most recent quarter or annual)
     const totalDebt = latestStmt?.totalDebt ?? null;
@@ -147,6 +147,41 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
     if (currentPe !== null && currentEps !== null && currentEps <= 0) {
         currentPe = null;
     }
+
+    // Own TTM multiples — same basis as DailyValuationHistory rows, so the
+    // historical percentile below ranks like-for-like. Market cap prefers the
+    // ticker snapshot (same source the table uses), falls back to price×shares.
+    const mcapNow = (tickerRecord?.lastMarketCap && tickerRecord.lastMarketCap > 0)
+        ? tickerRecord.lastMarketCap * 1e9
+        : (effectivePrice > 0 && sharesOutstanding && sharesOutstanding > 0 ? effectivePrice * sharesOutstanding : null);
+    const currentPs = (mcapNow !== null && mcapNow > 0 && ttmRevenue !== null && ttmRevenue > 0)
+        ? mcapNow / ttmRevenue : null;
+    const evNow = (mcapNow !== null && totalDebt !== null && cash !== null)
+        ? mcapNow + totalDebt - cash : null;
+    const currentEvEbit = (evNow !== null && evNow > 0 && ttmEbit !== null && ttmEbit > 0)
+        ? evNow / ttmEbit : null;
+    const ttmFcf = (ttm.operatingCashFlow !== null && ttm.capex !== null)
+        ? ttm.operatingCashFlow - Math.abs(ttm.capex) : null;
+    const currentFcfYield = (ttmFcf !== null && mcapNow !== null && mcapNow > 0)
+        ? ttmFcf / mcapNow : null;
+
+    // FCF Yield: own TTM basis (same period as FCF margin). Fallbacks: latest
+    // daily snapshot, then Finnhub P/FCF inverse.
+    const fcfYield = currentFcfYield
+        ?? latestValuation?.fcfYield
+        ?? (finnhubMetrics?.priceFreeCashFlow != null && finnhubMetrics.priceFreeCashFlow > 0
+            ? 1 / finnhubMetrics.priceFreeCashFlow
+            : null);
+
+    // Historical percentile stats vs own 10Y daily history (our TTM basis).
+    const valuationHistoryStats = valuationRows.length > 0
+        ? buildValuationHistory(valuationRows, {
+            pe: currentPe,
+            ps: currentPs ?? latestValuation?.psRatio ?? null,
+            evEbit: currentEvEbit ?? latestValuation?.evEbitda ?? null,
+            fcfYield: currentFcfYield ?? latestValuation?.fcfYield ?? null,
+        })
+        : null;
 
     // Forward P/E & implied forward EPS (market-implied next-year earnings)
     const forwardPeRaw = finnhubMetrics?.forwardPe ?? null;
@@ -238,12 +273,15 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
             fcfYield,
             currentEps,
             currentPe,
+            psRatio: currentPs,
+            evEbit: currentEvEbit,
             forwardPe,
             forwardEps,
             forwardImpliedGrowth,
             fcfMargin: cached.fcfMargin,
             fcfConversion: cached.fcfConversion
         },
+        valuationHistoryStats,
         finnhub: finnhubMetrics ? {
             peRatio: finnhubMetrics.peRatio,
             forwardPe: finnhubMetrics.forwardPe,

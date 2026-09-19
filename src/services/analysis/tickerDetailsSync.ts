@@ -181,8 +181,10 @@ export async function syncValuationHistory(symbol: string): Promise<void> {
             let evEbitda = null; // Note: this is EV/EBIT (not EBITDA) — D&A not available from Finnhub
             let fcfYield = null;
 
-            // TTM P/E using shared utility (point-in-time)
-            const { netIncome: ttmNetIncome, revenue: ttmRevenue } = computeTTMAtDate(statements, date);
+            // TTM fundamentals at this date — all four multiples share the same
+            // TTM basis so historical percentiles compare like-for-like with the
+            // current values shown in Key Metrics.
+            const ttm = computeTTMAtDate(statements, date);
 
             const stmtsBeforeDate = statements.filter(s => s.endDate.getTime() <= date.getTime());
             const stmt = stmtsBeforeDate[0] || statements[statements.length - 1];
@@ -190,24 +192,26 @@ export async function syncValuationHistory(symbol: string): Promise<void> {
             if (stmt && stmt.sharesOutstanding) {
                 marketCap = closePrice * stmt.sharesOutstanding;
 
-                const effectiveNI = ttmNetIncome ?? stmt.netIncome;
+                const effectiveNI = ttm.netIncome ?? stmt.netIncome;
                 if (effectiveNI && effectiveNI > 0) {
                     peRatio = closePrice / (effectiveNI / stmt.sharesOutstanding);
                 }
 
-                const effectiveRev = ttmRevenue ?? stmt.revenue;
+                const effectiveRev = ttm.revenue ?? stmt.revenue;
                 if (effectiveRev && effectiveRev > 0) {
                     psRatio = closePrice / (effectiveRev / stmt.sharesOutstanding);
                 }
 
-                if (stmt.ebit && stmt.ebit > 0 && stmt.totalDebt !== null && stmt.cashAndEquivalents !== null) {
+                const effectiveEbit = ttm.ebit ?? stmt.ebit;
+                if (effectiveEbit && effectiveEbit > 0 && stmt.totalDebt !== null && stmt.cashAndEquivalents !== null) {
                     const ev = marketCap + stmt.totalDebt - stmt.cashAndEquivalents;
-                    evEbitda = ev / stmt.ebit;
+                    evEbitda = ev / effectiveEbit;
                 }
 
-                if (stmt.operatingCashFlow !== null && stmt.capex !== null && marketCap > 0) {
-                    const fcf = stmt.operatingCashFlow - Math.abs(stmt.capex);
-                    fcfYield = fcf / marketCap;
+                const effOcf = ttm.operatingCashFlow ?? stmt.operatingCashFlow;
+                const effCapex = ttm.capex ?? stmt.capex;
+                if (effOcf !== null && effCapex !== null && marketCap > 0) {
+                    fcfYield = (effOcf - Math.abs(effCapex)) / marketCap;
                 }
             }
 

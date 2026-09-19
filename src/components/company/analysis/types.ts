@@ -5,6 +5,9 @@
  * AnalysisTab.tsx, useAnalysis.ts, AnalysisCharts.tsx, and sub-components.
  */
 
+import type { ValuationHistoryStats } from '@/services/analysis/valuationHistory';
+export type { ValuationHistoryStat, ValuationHistoryStats } from '@/services/analysis/valuationHistory';
+
 // ── Financial statement (shared across all chart components) ────────────────
 
 export interface FinancialStatement {
@@ -50,12 +53,18 @@ export interface AnalysisMetrics {
     fcfYield: number | null;
     currentEps: number | null;
     currentPe: number | null;
+    /** Own TTM P/S (mcap / TTM revenue) — null when TTM revenue unavailable. */
+    psRatio: number | null;
+    /** Own TTM EV/EBIT — D&A not in our data, so EBIT not EBITDA. */
+    evEbit: number | null;
     forwardPe: number | null;
     forwardEps: number | null;
     forwardImpliedGrowth: number | null;
     fcfMargin: number | null;
     fcfConversion: number | null;
 }
+
+
 
 // ── Valuation summary (undervaluation %) ────────────────────────────────────
 
@@ -204,6 +213,9 @@ export interface AnalysisData {
     psHistory?: { date: string; value: number }[];
     valuationCurrent?: { pe: number | null; ps: number | null } | null;
     valuationStats?: { pe: RatioStats | null; ps: RatioStats | null } | null;
+
+    // Historical percentile stats vs own daily valuation history (TTM basis)
+    valuationHistoryStats?: ValuationHistoryStats | null;
 
     // EPS CAGR (historical, from per-share earnings history)
     epsCagr3y?: number | null;

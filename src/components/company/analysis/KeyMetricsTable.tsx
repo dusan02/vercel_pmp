@@ -1,8 +1,26 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { AnalysisData } from './types';
+import { AnalysisData, ValuationHistoryStat } from './types';
 import { MetricCardDef, StatusType, StatusBadge, VALUE_COLORS } from '../shared/MetricCard';
+
+function ordinalSuffix(n: number): string {
+    const s = ['th', 'st', 'nd', 'rd'];
+    const v = n % 100;
+    return n + (s[(v - 20) % 10] ?? s[v] ?? s[0] ?? 'th');
+}
+
+/** Tooltip suffix: "10Y range 5.5x–50.1x · 72nd percentile" (own TTM basis). */
+function histTip(stat: ValuationHistoryStat | undefined, unit: 'x' | '%'): string {
+    if (!stat || stat.percentile == null || stat.min == null || stat.max == null) return '';
+    const f = (v: number) => unit === '%'
+        ? `${(Math.abs(v * 100) < 0.05 ? 0 : v * 100).toFixed(1)}%`
+        : `${v.toFixed(1)}x`;
+    const yrs = stat.years != null && stat.years >= 1 ? `${Math.round(stat.years)}Y` : 'hist.';
+    const p = stat.percentile;
+    const pctText = p >= 99 ? 'highest in history' : p <= 1 ? 'lowest in history' : `${ordinalSuffix(Math.round(p))} pct`;
+    return ` — vs own ${yrs} history: ${f(stat.min)}–${f(stat.max)} · ${pctText}`;
+}
 
 interface EwScoreInput {
     totalScore: number | null;
@@ -66,7 +84,7 @@ export function buildMetrics(data: AnalysisData, ewScore?: Props['ewScore']) {
     const ourPb = (mcap != null && bs?.totalEquity != null && bs.totalEquity > 0) ? mcap / bs.totalEquity : null;
     const pbRatio = hasNegEquity ? null : pick(ourPb, fh?.pbRatio ?? null);
     const ourPs = (mcap != null && ttm?.revenue != null && ttm.revenue > 0) ? mcap / ttm.revenue : null;
-    const psRatio = pick(ourPs, fh?.psRatio ?? null);
+    const psRatio = pick(m?.psRatio ?? ourPs, fh?.psRatio ?? null);
 
     const altZ   = m?.altmanZ ?? m?.zScore ?? null;
     const debtRp = m?.debtRepaymentYears ?? m?.debtRepaymentTime ?? null;
@@ -96,7 +114,12 @@ export function buildMetrics(data: AnalysisData, ewScore?: Props['ewScore']) {
     // Forward P/E sanity-guarded the same way computeMetrics does (junk <1
     // values appear for illiquid names)
     const fpe = fh?.forwardPe != null && fh.forwardPe >= 1 ? fh.forwardPe : null;
-    const evEbitda = fh?.evEbitda ?? null;
+    // EV/EBIT: own TTM value (D&A not in our data → EBIT, not EBITDA). Finnhub's
+    // EV/EBITDA fills the gap but stays labeled as its own metric.
+    const evEbit = m?.evEbit ?? null;
+    const evEbitda = evEbit ?? fh?.evEbitda ?? null;
+    const evLabel = evEbit != null ? 'EV/EBIT' : 'EV/EBITDA';
+    const vh = data.valuationHistoryStats;
     // Finnhub's PEG derives from their own P/E basis. When their P/E diverges
     // >2× from our displayed TTM P/E, their PEG answers a different question —
     // showing it next to our P/E would be internally contradictory.
@@ -154,12 +177,12 @@ export function buildMetrics(data: AnalysisData, ewScore?: Props['ewScore']) {
 
     const valuation: MetricCardDef[] = [
         def('Market Cap', fmtB(mcap), 'neutral', '-', 'Current Market Capitalization'),
-        def('P/E (TTM)', pe != null ? `${pe.toFixed(1)}x` : 'N/A', pe == null ? 'neutral' : pe < 15 ? 'good' : pe <= 25 ? 'neutral' : pe <= 35 ? 'warn' : 'bad', pe == null ? '-' : pe < 15 ? 'Cheap' : pe <= 25 ? 'Fair' : 'Exp.', 'Price to Earnings'),
+        def('P/E (TTM)', pe != null ? `${pe.toFixed(1)}x` : 'N/A', pe == null ? 'neutral' : pe < 15 ? 'good' : pe <= 25 ? 'neutral' : pe <= 35 ? 'warn' : 'bad', pe == null ? '-' : pe < 15 ? 'Cheap' : pe <= 25 ? 'Fair' : 'Exp.', `Price / TTM EPS (own statements)${histTip(vh?.pe, 'x')}`),
         def('Forward P/E', fpe != null ? `${fpe.toFixed(1)}x` : 'N/A', fpe == null ? 'neutral' : fpe < 15 ? 'good' : fpe <= 25 ? 'neutral' : fpe <= 35 ? 'warn' : 'bad', fpe == null ? '-' : fpe < 15 ? 'Cheap' : fpe <= 25 ? 'Fair' : 'Exp.', 'Price / next-year EPS estimate — shows whether the TTM multiple is rich or just front-loading growth'),
-        def('EV/EBITDA', evEbitda != null ? `${evEbitda.toFixed(1)}x` : 'N/A', evEbitda == null ? 'neutral' : evEbitda < 12 ? 'good' : evEbitda <= 18 ? 'neutral' : evEbitda <= 25 ? 'warn' : 'bad', evEbitda == null ? '-' : evEbitda < 12 ? 'Cheap' : evEbitda <= 18 ? 'Fair' : 'Exp.', 'Enterprise value / EBITDA — capital-structure neutral, works where P/E distorts (debt, D&A)'),
-        def('P/S (TTM)', psRatio != null ? `${psRatio.toFixed(2)}x` : 'N/A', psRatio == null ? 'neutral' : psRatio < 2 ? 'good' : psRatio <= 5 ? 'neutral' : psRatio <= 10 ? 'warn' : 'bad', psRatio == null ? '-' : psRatio < 2 ? 'Cheap' : psRatio <= 5 ? 'Fair' : 'Exp.', 'Price to Sales'),
+        def(evLabel, evEbitda != null ? `${evEbitda.toFixed(1)}x` : 'N/A', evEbitda == null ? 'neutral' : evEbitda < 12 ? 'good' : evEbitda <= 18 ? 'neutral' : evEbitda <= 25 ? 'warn' : 'bad', evEbitda == null ? '-' : evEbitda < 12 ? 'Cheap' : evEbitda <= 18 ? 'Fair' : 'Exp.', `Enterprise value / ${evEbit != null ? 'TTM EBIT (D&A not in our data)' : 'EBITDA (Finnhub)'} — capital-structure neutral${histTip(vh?.evEbit, 'x')}`),
+        def('P/S (TTM)', psRatio != null ? `${psRatio.toFixed(2)}x` : 'N/A', psRatio == null ? 'neutral' : psRatio < 2 ? 'good' : psRatio <= 5 ? 'neutral' : psRatio <= 10 ? 'warn' : 'bad', psRatio == null ? '-' : psRatio < 2 ? 'Cheap' : psRatio <= 5 ? 'Fair' : 'Exp.', `Price / TTM Revenue (own statements)${histTip(vh?.ps, 'x')}`),
         def('P/B Ratio', pbRatio != null ? mul(pbRatio) : (hasNegEquity ? 'Neg. Equity' : 'N/A'), pbRatio == null ? (hasNegEquity ? 'warn' : 'neutral') : pbRatio < 3 ? 'good' : pbRatio < 8 ? 'warn' : 'bad', pbRatio == null ? (hasNegEquity ? 'Buybacks' : '-') : pbRatio < 3 ? 'Fair' : pbRatio < 8 ? 'Exp.' : 'V.Exp.', 'Price to Book Value. Neg. equity = heavy buybacks'),
-        def('FCF Yield', pct(fcfY), fcfY == null ? 'neutral' : fcfY > 0.05 ? 'good' : fcfY < 0 ? 'bad' : 'warn', fcfY == null ? '-' : fcfY > 0.05 ? 'Value' : fcfY < 0 ? 'Negative' : 'Low', 'FCF / Market Cap'),
+        def('FCF Yield', pct(fcfY), fcfY == null ? 'neutral' : fcfY > 0.05 ? 'good' : fcfY < 0 ? 'bad' : 'warn', fcfY == null ? '-' : fcfY > 0.05 ? 'Value' : fcfY < 0 ? 'Negative' : 'Low', `TTM FCF / Market Cap${histTip(vh?.fcfYield, '%')}`),
         def('PEG Ratio', peg != null ? `${peg.toFixed(2)}` : 'N/A', peg == null ? 'neutral' : peg < 1 ? 'good' : peg <= 2 ? 'neutral' : peg <= 3 ? 'warn' : 'bad', peg == null ? '-' : peg < 1 ? 'Cheap' : peg <= 2 ? 'Fair' : 'Exp.', 'Finnhub PEG — their P/E basis ÷ expected EPS growth. Suppressed when their P/E diverges >2× from our TTM P/E (different basis)'),
     ];
 

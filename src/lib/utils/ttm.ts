@@ -81,6 +81,9 @@ export function computeTTM(stmts: FinancialStatement[]): TTMResult {
 export function computeTTMAtDate(stmts: FinancialStatement[], date: Date): {
     netIncome: number | null;
     revenue: number | null;
+    ebit: number | null;
+    operatingCashFlow: number | null;
+    capex: number | null;
 } {
     // Sort descending by endDate to ensure latest-first ordering
     const sorted = [...stmts].sort((a, b) => b.endDate.getTime() - a.endDate.getTime());
@@ -100,34 +103,27 @@ export function computeTTMAtDate(stmts: FinancialStatement[], date: Date): {
         ? quarterlyBeforeDate.find(s => s.fiscalPeriod === latestQ.fiscalPeriod && s.fiscalYear === latestQ.fiscalYear! - 1)
         : null;
 
-    let netIncome: number | null = null;
-    let revenue: number | null = null;
-
-    if (latestQ && matchingFY && prevYearSameQ) {
-        const qNI = latestQ.netIncome;
-        const fyNI = matchingFY.netIncome;
-        const prevQNI = prevYearSameQ.netIncome;
-        if (qNI != null && fyNI != null && prevQNI != null) {
-            netIncome = qNI + fyNI - prevQNI;
-        }
-        const qRev = latestQ.revenue;
-        const fyRev = matchingFY.revenue;
-        const prevQRev = prevYearSameQ.revenue;
-        if (qRev != null && fyRev != null && prevQRev != null) {
-            revenue = qRev + fyRev - prevQRev;
-        }
-    }
-
-    // Fallback: use latest available FY value as TTM when primary formula
-    // failed (missing matching FY or prevYearSameQ). This is slightly stale
-    // but correct in magnitude.
+    // Fallback: latest available FY value when the primary formula can't run
+    // (missing matching FY or prevYearSameQ). Slightly stale, correct magnitude.
     const fallbackFY = annualBeforeDate[0] ?? null;
-    if (netIncome === null && fallbackFY?.netIncome != null) {
-        netIncome = fallbackFY.netIncome;
-    }
-    if (revenue === null && fallbackFY?.revenue != null) {
-        revenue = fallbackFY.revenue;
+
+    function field(name: 'netIncome' | 'revenue' | 'ebit' | 'operatingCashFlow' | 'capex'): number | null {
+        if (latestQ && matchingFY && prevYearSameQ) {
+            const q = latestQ[name];
+            const fy = matchingFY[name];
+            const pq = prevYearSameQ[name];
+            if (q != null && fy != null && pq != null) {
+                return q + fy - pq;
+            }
+        }
+        return fallbackFY?.[name] ?? null;
     }
 
-    return { netIncome, revenue };
+    return {
+        netIncome: field('netIncome'),
+        revenue: field('revenue'),
+        ebit: field('ebit'),
+        operatingCashFlow: field('operatingCashFlow'),
+        capex: field('capex'),
+    };
 }
