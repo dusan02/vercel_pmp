@@ -200,14 +200,15 @@ export function buildMetrics(data: AnalysisData) {
 // ── Dense metric cell — Finviz-style label:value pair. The dotted leader
 // guides the eye from label to value on wide grids; the ⓘ icon advertises
 // that the row has an explanation (native title tooltip). `primary` marks
-// each section's flagship metric with a subtle tint for faster scanning. ────
+// each section's flagship metric with a tint + heavier type so the eye lands
+// on P/E, ROIC, Revenue CAGR, Altman Z, Piotroski F and Net Debt first. ────
 function Cell({ m }: { m: MetricCardDef }) {
     return (
         <div
             className={`flex items-baseline justify-between gap-2 px-2.5 py-1.5 border-b border-gray-100 dark:border-gray-800/60 min-w-0 ${m.primary ? 'bg-blue-50/60 dark:bg-blue-900/10' : ''}`}
             title={m.hint}
         >
-            <span className="flex items-center gap-1 min-w-0 text-[10px] uppercase tracking-wide font-medium text-gray-500 dark:text-gray-400">
+            <span className={`flex items-center gap-1 min-w-0 text-[10px] uppercase tracking-wide ${m.primary ? 'font-semibold text-gray-600 dark:text-gray-300' : 'font-medium text-gray-500 dark:text-gray-400'}`}>
                 <span className="truncate">{m.label}</span>
                 {m.hint && (
                     <svg className="w-3 h-3 shrink-0 text-gray-300 dark:text-gray-600" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -215,14 +216,14 @@ function Cell({ m }: { m: MetricCardDef }) {
                     </svg>
                 )}
             </span>
-            <span aria-hidden="true" className="hidden sm:block flex-1 min-w-2 border-b border-dotted border-gray-300 dark:border-gray-600 -translate-y-[3px]" />
+            <span aria-hidden="true" className="hidden sm:block flex-1 min-w-2 mx-1 border-b border-dotted border-gray-300 dark:border-gray-600 -translate-y-[3px]" />
             <span className="flex items-baseline justify-end gap-1 shrink-0">
-                <span className={`text-[13px] font-semibold tabular-nums text-right ${VALUE_COLORS[m.statusType]}`}>
+                <span className={`text-[13px] ${m.primary ? 'font-bold' : 'font-semibold'} tabular-nums text-right ${VALUE_COLORS[m.statusType]}`}>
                     {m.value}
                 </span>
                 {/* Fixed-width status column — keeps every value's right edge
                     aligned across cells regardless of label length */}
-                <span className="hidden sm:inline-block w-11 whitespace-nowrap overflow-hidden text-left text-[9px] font-medium text-gray-400 dark:text-gray-500 uppercase">
+                <span className="hidden sm:inline-block w-11 whitespace-nowrap overflow-hidden text-left text-[9px] font-medium text-gray-600 dark:text-gray-400 uppercase">
                     {m.statusLabel !== '-' ? m.statusLabel : ''}
                 </span>
             </span>
@@ -288,13 +289,17 @@ export function KeyMetricsTable({ data }: Props) {
 
             <Group title="Balance Sheet" metrics={balanceSheet} />
 
-            {/* Verdict + human-readable callouts */}
+            {/* Verdict + human-readable callouts — tinted "takeaway" block so
+                the bottom line reads as the table's conclusion, not a stray note */}
             {(data.verdictText || data.humanDebtInfo || data.humanPeInfo) && (
-                <div className="mt-3 px-2.5 text-[11px] text-gray-500 dark:text-gray-400 space-y-1">
-                    {data.verdictText && <p className="leading-relaxed">{data.verdictText}</p>}
-                    {(data.humanDebtInfo || data.humanPeInfo) && (
-                        <p>{[data.humanDebtInfo, data.humanPeInfo].filter(Boolean).join(' · ')}</p>
-                    )}
+                <div className="mt-4 rounded-lg bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800/60 px-3 py-2.5">
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1">Takeaway</p>
+                    <div className="text-[11px] text-gray-600 dark:text-gray-300 space-y-1">
+                        {data.verdictText && <p className="leading-relaxed">{data.verdictText}</p>}
+                        {(data.humanDebtInfo || data.humanPeInfo) && (
+                            <p>{[data.humanDebtInfo, data.humanPeInfo].filter(Boolean).join(' · ')}</p>
+                        )}
+                    </div>
                 </div>
             )}
 
