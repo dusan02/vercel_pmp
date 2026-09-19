@@ -1,6 +1,6 @@
 // Version management - increment on layout/structure changes
 // Bump this whenever we ship caching changes to ensure clients drop stale caches
-const CACHE_VERSION = "2.0.4";
+const CACHE_VERSION = "2.0.5";
 const CACHE_NAME = `premarketprice-v${CACHE_VERSION}`;
 const STATIC_CACHE = `premarketprice-static-v${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `premarketprice-dynamic-v${CACHE_VERSION}`;
@@ -74,8 +74,18 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+// Dev hosts: never intercept requests. Dev servers serve changing content at
+// stable /_next/ chunk URLs — any cached response mixes module versions and
+// breaks the webpack/HMR runtime (undefined element types, reload loops).
+const IS_DEV_HOST =
+  location.hostname === "localhost" ||
+  location.hostname === "127.0.0.1" ||
+  location.hostname === "[::1]";
+
 // Fetch event - handle requests
 self.addEventListener("fetch", (event) => {
+  if (IS_DEV_HOST) return;
+
   const { request } = event;
   const url = new URL(request.url);
 

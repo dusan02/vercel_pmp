@@ -10,8 +10,16 @@ interface BeforeInstallPromptEvent extends Event {
 let deferredPrompt: BeforeInstallPromptEvent | null = null;
 let installButton: HTMLButtonElement | null = null;
 
+// Local dev must never run the SW — it intercepts /_next/ chunks and serves
+// stale module code, breaking webpack/HMR (undefined element types, reload loops).
+export function isDevHost(): boolean {
+  if (typeof window === 'undefined') return false;
+  const h = window.location.hostname;
+  return h === 'localhost' || h === '127.0.0.1' || h === '[::1]';
+}
+
 export async function registerServiceWorker() {
-  if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
+  if (typeof window === 'undefined' || !('serviceWorker' in navigator) || isDevHost()) {
     return;
   }
   

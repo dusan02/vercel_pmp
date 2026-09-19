@@ -67,6 +67,11 @@ export const usePWA = () => {
       // Ignore errors when checking for existing registration
     }
     
+    // Never register the SW on dev hosts — it would cache /_next/ chunks and
+    // serve stale module code (breaks webpack/HMR, causes reload loops).
+    const h = window.location.hostname;
+    if (h === 'localhost' || h === '127.0.0.1' || h === '[::1]') return;
+
     try {
       const registration = await navigator.serviceWorker.register('/sw.js');
       console.log('Service Worker registered:', registration);

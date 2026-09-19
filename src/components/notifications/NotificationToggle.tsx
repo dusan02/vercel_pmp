@@ -18,7 +18,9 @@ export function NotificationToggle({
     useEffect(() => {
         // Check current subscription status — register the SW first so this
         // works on pages that never mount the PWA hook (e.g. /premarket-movers).
-        if ('serviceWorker' in navigator && 'PushManager' in window) {
+        const h = window.location.hostname;
+        const isDevHost = h === 'localhost' || h === '127.0.0.1' || h === '[::1]';
+        if ('serviceWorker' in navigator && 'PushManager' in window && !isDevHost) {
             navigator.serviceWorker.register('/sw.js').then(registration => {
                 registration.pushManager.getSubscription().then(subscription => {
                     setIsSubscribed(!!subscription);
