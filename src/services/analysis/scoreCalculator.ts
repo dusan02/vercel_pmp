@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db/prisma';
 import { aiService } from '../aiService';
 import { NotificationService } from '../notificationService';
 import { computeTTM } from '@/lib/utils/ttm';
+import { computePillars } from './pillars';
 
 function ordinal(n: number): string {
     const s = ['th', 'st', 'nd', 'rd'];
@@ -58,13 +59,23 @@ export async function calculateScores(symbol: string): Promise<void> {
     // Fetch Finnhub pre-computed metrics for scoring
     const finnhubMetrics = await prisma.finnhubMetrics.findUnique({ where: { symbol } });
 
-    const latestValuation = !tickerData?.lastPrice ? await prisma.dailyValuationHistory.findFirst({
+    // latestValuation is also needed when Ticker lacks lastMarketCap —
+    // otherwise marketCap collapses to 0 and every valuation leg scores its
+    // missing-data points instead of the real ratio.
+    const latestValuation = (!tickerData?.lastPrice || !tickerData?.lastMarketCap) ? await prisma.dailyValuationHistory.findFirst({
         where: { symbol },
         orderBy: { date: 'desc' }
     }) : null;
 
     const currentPrice = tickerData?.lastPrice || latestValuation?.closePrice || 0;
-    const marketCap = tickerData?.lastMarketCap || latestValuation?.marketCap || (tickerData?.sharesOutstanding && currentPrice ? tickerData.sharesOutstanding * currentPrice : 0);
+    // Ticker.lastMarketCap is stored in BILLIONS — DailyValuationHistory and
+    // shares×price are absolute dollars. Mixing units inflated every
+    // valuation leg (LLY stored 100 while the real profile is ~40).
+    const marketCap = (tickerData?.lastMarketCap && tickerData.lastMarketCap > 0
+        ? tickerData.lastMarketCap * 1e9
+        : null)
+        ?? latestValuation?.marketCap
+        ?? (tickerData?.sharesOutstanding && currentPrice ? tickerData.sharesOutstanding * currentPrice : 0);
 
     // --- Altman Z-Score ---
     let altmanZ: number | null = null;
@@ -143,102 +154,39 @@ export async function calculateScores(symbol: string): Promise<void> {
         interestCoverage = latestStmt.ebit / Math.abs(latestStmt.interestExpense);
     }
 
-    // ─── HEALTH SCORE (0-100, 4 × 25pts) ────────────────────────────────
-    healthScore = 0;
-
-    if (altmanZ !== null) {
-        if (altmanZ > 3.0) healthScore += 25;
-        else if (altmanZ >= 2.0) healthScore += 18;
-        else if (altmanZ >= 1.5) healthScore += 10;
-        else healthScore += 3;
-    }
-
-    if (latestStmt.currentAssets && latestStmt.currentLiabilities && latestStmt.currentLiabilities > 0) {
-        const cr = latestStmt.currentAssets / latestStmt.currentLiabilities;
-        if (cr >= 2.0) healthScore += 25;
-        else if (cr >= 1.5) healthScore += 18;
-        else if (cr >= 1.0) healthScore += 12;
-        else if (cr >= 0.7) healthScore += 6;
-    }
-
-    if (interestCoverage !== null) {
-        if (interestCoverage > 10) healthScore += 25;
-        else if (interestCoverage > 5)  healthScore += 18;
-        else if (interestCoverage > 2)  healthScore += 10;
-        else if (interestCoverage > 0)  healthScore += 3;
-    } else {
-        healthScore += 25;
-    }
-
+    // ─── PILLAR INPUTS: Health ────────────────────────────────────────────
+    // Legs live in services/analysis/pillars.ts (shared with the read path).
+    const currentRatio = (latestStmt.currentAssets && latestStmt.currentLiabilities && latestStmt.currentLiabilities > 0)
+        ? latestStmt.currentAssets / latestStmt.currentLiabilities
+        : null;
+    const hasBalanceData = latestStmt.totalDebt !== null || latestStmt.cashAndEquivalents !== null;
     const currentNetDebt = (latestStmt.totalDebt || 0) - (latestStmt.cashAndEquivalents || 0);
-    if (latestStmt.totalDebt !== null || latestStmt.cashAndEquivalents !== null) {
-        if (currentNetDebt <= 0) {
-            healthScore += 25;
-        } else if (latestStmt.totalAssets && latestStmt.totalAssets > 0) {
-            const debtRatio = currentNetDebt / latestStmt.totalAssets;
-            if (debtRatio < 0.10) healthScore += 20;
-            else if (debtRatio < 0.30) healthScore += 12;
-            else if (debtRatio < 0.50) healthScore += 5;
-        }
-    }
+    const netCash = hasBalanceData ? currentNetDebt <= 0 : null;
+    const netDebtRatio = (hasBalanceData && currentNetDebt > 0 && latestStmt.totalAssets && latestStmt.totalAssets > 0)
+        ? currentNetDebt / latestStmt.totalAssets
+        : null;
 
-    healthScore = Math.max(0, Math.min(100, Math.round(healthScore)));
-
-    // ─── PROFITABILITY SCORE (0-100, 4 × 25pts) ─────────────────────────
-    profitabilityScore = 0;
-
-    // Use Finnhub pre-computed margins (returned as percentages) with fallback to XBRL
+    // ─── PILLAR INPUTS: Profitability (own TTM basis, Finnhub fallback) ───
+    // Revenue growth deliberately removed — it now lives in the Growth pillar.
     const fhNetMargin = finnhubMetrics?.netMargin != null ? finnhubMetrics.netMargin / 100 : null;
-    const fhGrossMargin = finnhubMetrics?.grossMargin != null ? finnhubMetrics.grossMargin / 100 : null;
     const fhRoe = finnhubMetrics?.roe != null ? finnhubMetrics.roe / 100 : null;
+    const fhOpMargin = finnhubMetrics?.operatingMargin != null ? finnhubMetrics.operatingMargin / 100 : null;
 
-    if (latestStmt.revenue && latestStmt.revenue > 0) {
-        // Net Margin: prefer Finnhub, fallback to XBRL
-        const netMargin = fhNetMargin ?? ((latestStmt.netIncome || 0) / latestStmt.revenue);
-        if (netMargin > 0.20)       profitabilityScore += 25;
-        else if (netMargin > 0.10)  profitabilityScore += 20;
-        else if (netMargin > 0.05)  profitabilityScore += 13;
-        else if (netMargin > 0)     profitabilityScore += 6;
+    const pillarNetMargin = (ttmNetIncome !== null && ttmRevenue !== null && ttmRevenue > 0)
+        ? ttmNetIncome / ttmRevenue
+        : (fhNetMargin ?? ((latestStmt.revenue && latestStmt.revenue > 0) ? (latestStmt.netIncome || 0) / latestStmt.revenue : null));
+    const pillarOpMargin = (ttmEbit !== null && ttmRevenue !== null && ttmRevenue > 0)
+        ? ttmEbit / ttmRevenue
+        : (fhOpMargin ?? ((latestStmt.revenue && latestStmt.revenue > 0 && latestStmt.ebit !== null) ? latestStmt.ebit / latestStmt.revenue : null));
+    const investedCapital = (latestStmt.totalEquity || 0) + (latestStmt.totalDebt || 0) - (latestStmt.cashAndEquivalents || 0);
+    const pillarRoic = (ttmEbit !== null && investedCapital > 0)
+        ? (ttmEbit * 0.79) / investedCapital  // NOPAT ≈ EBIT × (1 − 21% tax)
+        : null;
+    const pillarRoe = (latestStmt.totalEquity && latestStmt.totalEquity > 0)
+        ? (ttmNetIncome !== null ? ttmNetIncome / latestStmt.totalEquity : (fhRoe ?? ((latestStmt.netIncome || 0) / latestStmt.totalEquity)))
+        : null;
 
-        // Gross Margin: prefer Finnhub, fallback to XBRL
-        const grossMargin = fhGrossMargin ?? (latestStmt.grossProfit != null ? latestStmt.grossProfit / latestStmt.revenue : null);
-        if (grossMargin != null) {
-            if (grossMargin > 0.60)      profitabilityScore += 25;
-            else if (grossMargin > 0.40) profitabilityScore += 20;
-            else if (grossMargin > 0.25) profitabilityScore += 12;
-            else if (grossMargin > 0.10) profitabilityScore += 5;
-        }
-
-        // ROE: prefer Finnhub, fallback to XBRL (skip if negative equity)
-        const roe = (latestStmt.totalEquity && latestStmt.totalEquity > 0)
-            ? (fhRoe ?? ((latestStmt.netIncome || 0) / latestStmt.totalEquity))
-            : null;
-        if (roe != null) {
-            if (roe > 0.25)      profitabilityScore += 25;
-            else if (roe > 0.15) profitabilityScore += 20;
-            else if (roe > 0.08) profitabilityScore += 12;
-            else if (roe > 0)    profitabilityScore += 5;
-        }
-
-        const prevYearStmt = stmts.find(s =>
-            s.fiscalPeriod === latestStmt.fiscalPeriod &&
-            s.fiscalYear === latestStmt.fiscalYear - 1
-        ) || null;
-        if (prevYearStmt?.revenue && prevYearStmt.revenue > 0) {
-            const revenueGrowth = (latestStmt.revenue - prevYearStmt.revenue) / prevYearStmt.revenue;
-            if (revenueGrowth > 0.25)       profitabilityScore += 25;
-            else if (revenueGrowth > 0.10)  profitabilityScore += 20;
-            else if (revenueGrowth > 0)     profitabilityScore += 12;
-            else if (revenueGrowth > -0.10) profitabilityScore += 4;
-        } else {
-            profitabilityScore += 10;
-        }
-    }
-
-    profitabilityScore = Math.max(0, Math.min(100, Math.round(profitabilityScore)));
-
-    // ─── VALUATION SCORE (0-100, 4 × 25pts) ────────────────────────
-    valuationScore = 0;
+    // ─── PILLAR INPUTS: Valuation ────────────────────────────────────────
     let humanPeInfo: string | null = null;
 
     const allValuations = await prisma.dailyValuationHistory.findMany({
@@ -255,53 +203,24 @@ export async function calculateScores(symbol: string): Promise<void> {
         ? (currentPrice * latestStmt.sharesOutstanding) / effectiveNetIncome
         : (latestValuation?.peRatio || null);
 
+    let pePercentile: number | null = null;
     if (allValuations.length > 0 && currentPE !== null && currentPE > 0) {
         const index = allValuations.findIndex(v => v.peRatio !== null && v.peRatio >= currentPE);
-        const percentile = index === -1 ? 100 : (index / allValuations.length) * 100;
-        if (percentile < 20)      valuationScore += 25;
-        else if (percentile < 40) valuationScore += 20;
-        else if (percentile < 60) valuationScore += 12;
-        else if (percentile < 80) valuationScore += 5;
-        humanPeInfo = formatPePercentile(currentPE, percentile);
-    } else if (currentPE === null) {
-        valuationScore += 10;
+        pePercentile = index === -1 ? 100 : (index / allValuations.length) * 100;
+        humanPeInfo = formatPePercentile(currentPE, pePercentile);
     }
 
-    if (fcf !== null && marketCap > 0) {
-        const currentFcfYield = fcf / marketCap;
-        if (currentFcfYield > 0.08)      valuationScore += 25;
-        else if (currentFcfYield > 0.05) valuationScore += 20;
-        else if (currentFcfYield > 0.03) valuationScore += 12;
-        else if (currentFcfYield > 0)    valuationScore += 5;
-    } else {
-        valuationScore += 10;
-    }
+    const pillarFcfYield = (fcf !== null && marketCap > 0) ? fcf / marketCap : null;
 
     const effectiveRevenue = ttmRevenue ?? latestStmt.revenue;
-    // Prefer Finnhub P/S for scoring consistency
-    const currentPS = finnhubMetrics?.psRatio ?? ((effectiveRevenue && effectiveRevenue > 0 && marketCap > 0) ? marketCap / effectiveRevenue : null);
-    if (currentPS != null) {
-        if (currentPS < 2)       valuationScore += 25;
-        else if (currentPS < 5)  valuationScore += 20;
-        else if (currentPS < 10) valuationScore += 12;
-        else if (currentPS < 20) valuationScore += 5;
-    } else {
-        valuationScore += 10;
-    }
+    // Own TTM P/S first (matches the unified-source rule), Finnhub as fallback.
+    const pillarPs = ((effectiveRevenue && effectiveRevenue > 0 && marketCap > 0) ? marketCap / effectiveRevenue : null)
+        ?? finnhubMetrics?.psRatio ?? null;
 
     const effectiveEbit = ttmEbit ?? latestStmt.ebit;
-    if (effectiveEbit && effectiveEbit > 0 && marketCap > 0) {
-        const ev = marketCap + (latestStmt.totalDebt || 0) - (latestStmt.cashAndEquivalents || 0);
-        const evToEbit = ev / effectiveEbit;
-        if (evToEbit < 10)      valuationScore += 25;
-        else if (evToEbit < 15) valuationScore += 20;
-        else if (evToEbit < 25) valuationScore += 12;
-        else if (evToEbit < 40) valuationScore += 5;
-    } else {
-        valuationScore += 10;
-    }
-
-    valuationScore = Math.max(0, Math.min(100, Math.round(valuationScore)));
+    const pillarEvEbit = (effectiveEbit && effectiveEbit > 0 && marketCap > 0)
+        ? (marketCap + (latestStmt.totalDebt || 0) - (latestStmt.cashAndEquivalents || 0)) / effectiveEbit
+        : null;
 
     // ─── CAGR, Piotroski, Beneish ──────────────────────────────────
     let revenueCagr: number | null = null;
@@ -403,6 +322,57 @@ export async function calculateScores(symbol: string): Promise<void> {
         // Bound the final score to the plausible range
         beneishScore = Math.min(Math.max(beneishScore, -8), 8);
     }
+
+    // ─── PILLAR SCORES (shared definitions — services/analysis/pillars.ts) ─
+    // Growth inputs: EPS CAGR 5Y from annual statements + forward implied
+    // growth from Finnhub forward P/E (same sanity rules as computeMetrics).
+    let epsCagr5y: number | null = null;
+    if (latestAnnual && stmt5yAgoAnnual && yearsBack > 0) {
+        const sharesNow = latestAnnual.sharesOutstanding;
+        const sharesThen = stmt5yAgoAnnual.sharesOutstanding;
+        if (latestAnnual.netIncome && latestAnnual.netIncome > 0 && sharesNow && sharesNow > 0
+            && stmt5yAgoAnnual.netIncome && stmt5yAgoAnnual.netIncome > 0 && sharesThen && sharesThen > 0) {
+            const epsNow = latestAnnual.netIncome / sharesNow;
+            const epsThen = stmt5yAgoAnnual.netIncome / sharesThen;
+            if (epsNow > 0 && epsThen > 0) {
+                epsCagr5y = (Math.pow(epsNow / epsThen, 1 / yearsBack) - 1) * 100;
+            }
+        }
+    }
+    const fhForwardPe = finnhubMetrics?.forwardPe ?? null;
+    const ttmEps = (latestStmt.sharesOutstanding && latestStmt.sharesOutstanding > 0 && effectiveNetIncome && effectiveNetIncome > 0)
+        ? effectiveNetIncome / latestStmt.sharesOutstanding
+        : null;
+    const forwardImpliedGrowth = (fhForwardPe !== null && fhForwardPe >= 1 && currentPrice > 0 && ttmEps && ttmEps > 0)
+        ? ((currentPrice / fhForwardPe) / ttmEps - 1) * 100
+        : null;
+
+    const pillars = computePillars({
+        pePercentile,
+        fcfYield: pillarFcfYield,
+        psRatio: pillarPs,
+        evEbit: pillarEvEbit,
+        revenueCagr,
+        netIncomeCagr,
+        epsCagr5y,
+        forwardImpliedGrowth,
+        roic: pillarRoic,
+        roe: pillarRoe,
+        netMargin: pillarNetMargin,
+        operatingMargin: pillarOpMargin,
+        altmanZ,
+        currentRatio,
+        interestCoverage,
+        netCash,
+        debtRatio: netDebtRatio,
+        piotroski: piotroskiScore,
+        beneish: beneishScore,
+        fcfConversion,
+        marginStability,
+    });
+    healthScore = pillars.health.score;
+    profitabilityScore = pillars.profitability.score;
+    valuationScore = pillars.valuation.score;
 
     // ─── AI Verdict ────────────────────────────────────────────────
     try {

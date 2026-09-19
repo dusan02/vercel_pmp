@@ -3,6 +3,7 @@ import { computeTTM } from '@/lib/utils/ttm';
 import { applySplitAdjustments, applyPostSplitAdjustment } from '@/lib/utils/splitAdjustment';
 import { dedupeShareClasses } from '@/lib/companyNames';
 import { buildValuationHistory } from '@/services/analysis/valuationHistory';
+import { computePillars } from '@/services/analysis/pillars';
 
 /**
  * Shared analysis computation used by both:
@@ -233,6 +234,74 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
     const dilution5y = (currentShares && stmt5y?.sharesOutstanding)
         ? (currentShares / stmt5y.sharesOutstanding - 1) * 100 : null;
 
+    // ─── Pillar scores (radar) ────────────────────────────────────────────
+    // Shared leg definitions (services/analysis/pillars.ts) — recomputed
+    // read-time so all five axes sit on one as-of snapshot, independent of
+    // how stale the stored AnalysisCache health/profitability/valuation are.
+    const annualStmts = stmts.filter(s => s.fiscalPeriod === 'FY');
+    const latestAnnual = annualStmts[0] ?? null;
+    const stmt5yAgoAnnual = annualStmts[4] ?? annualStmts[annualStmts.length - 1] ?? null;
+    const yearsBack = annualStmts.length >= 5 ? 4 : (annualStmts.length - 1);
+    let epsCagr5y: number | null = null;
+    if (latestAnnual && stmt5yAgoAnnual && yearsBack > 0
+        && latestAnnual.netIncome && latestAnnual.netIncome > 0 && latestAnnual.sharesOutstanding && latestAnnual.sharesOutstanding > 0
+        && stmt5yAgoAnnual.netIncome && stmt5yAgoAnnual.netIncome > 0 && stmt5yAgoAnnual.sharesOutstanding && stmt5yAgoAnnual.sharesOutstanding > 0) {
+        const epsNow = latestAnnual.netIncome / latestAnnual.sharesOutstanding;
+        const epsThen = stmt5yAgoAnnual.netIncome / stmt5yAgoAnnual.sharesOutstanding;
+        if (epsNow > 0 && epsThen > 0) {
+            epsCagr5y = (Math.pow(epsNow / epsThen, 1 / yearsBack) - 1) * 100;
+        }
+    }
+
+    const investedCapital = (totalEquity || 0) + (totalDebt || 0) - (cash || 0);
+    const pillarNetMargin = (ttmNetIncome !== null && ttmRevenue !== null && ttmRevenue > 0)
+        ? ttmNetIncome / ttmRevenue
+        : (finnhubMetrics?.netMargin != null ? finnhubMetrics.netMargin / 100 : null);
+    const pillarOpMargin = (ttmEbit !== null && ttmRevenue !== null && ttmRevenue > 0)
+        ? ttmEbit / ttmRevenue
+        : (finnhubMetrics?.operatingMargin != null ? finnhubMetrics.operatingMargin / 100 : null);
+    const pillarRoe = (totalEquity !== null && totalEquity > 0)
+        ? (ttmNetIncome !== null ? ttmNetIncome / totalEquity
+            : (finnhubMetrics?.roe != null ? finnhubMetrics.roe / 100 : null))
+        : null;
+    const pillarRoic = (ttmEbit !== null && investedCapital > 0)
+        ? (ttmEbit * 0.79) / investedCapital
+        : null;
+    // Same convention as scoreCalculator: latest-statement EBIT / |interest|.
+    const pillarInterestCoverage = (latestStmt?.ebit != null && latestStmt.interestExpense != null && latestStmt.interestExpense !== 0)
+        ? latestStmt.ebit / Math.abs(latestStmt.interestExpense)
+        : (finnhubMetrics?.interestCoverage ?? null);
+    const pillarNetCash = (totalDebt !== null || cash !== null) ? (totalDebt || 0) - (cash || 0) <= 0 : null;
+    const pillarNetDebtRatio = (pillarNetCash === false && totalAssets !== null && totalAssets > 0)
+        ? ((totalDebt || 0) - (cash || 0)) / totalAssets
+        : null;
+
+    const pillars = computePillars({
+        pePercentile: valuationHistoryStats?.pe.percentile ?? null,
+        fcfYield: currentFcfYield ?? latestValuation?.fcfYield ?? null,
+        psRatio: currentPs ?? finnhubMetrics?.psRatio ?? null,
+        evEbit: currentEvEbit ?? null,
+        revenueCagr: cached.revenueCagr ?? null,
+        netIncomeCagr: cached.netIncomeCagr ?? null,
+        epsCagr5y,
+        forwardImpliedGrowth,
+        roic: pillarRoic,
+        roe: pillarRoe,
+        netMargin: pillarNetMargin,
+        operatingMargin: pillarOpMargin,
+        altmanZ: altmanZ ?? null,
+        // Own balance-sheet ratio first (matches scoreCalculator), Finnhub fallback.
+        currentRatio: ((currentAssets !== null && currentLiabilities !== null && currentLiabilities !== 0)
+            ? currentAssets / currentLiabilities : null) ?? finnhubMetrics?.currentRatio ?? null,
+        interestCoverage: pillarInterestCoverage,
+        netCash: pillarNetCash,
+        debtRatio: pillarNetDebtRatio,
+        piotroski: cached.piotroskiScore ?? null,
+        beneish: cached.beneishScore ?? null,
+        fcfConversion: cached.fcfConversion ?? null,
+        marginStability: cached.marginStability ?? null,
+    });
+
     return {
         ...analysis,
         statements: stmts,
@@ -282,6 +351,7 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
             fcfConversion: cached.fcfConversion
         },
         valuationHistoryStats,
+        pillars,
         finnhub: finnhubMetrics ? {
             peRatio: finnhubMetrics.peRatio,
             forwardPe: finnhubMetrics.forwardPe,

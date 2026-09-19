@@ -6,7 +6,9 @@
  */
 
 import type { ValuationHistoryStats } from '@/services/analysis/valuationHistory';
+import type { PillarScores } from '@/services/analysis/pillars';
 export type { ValuationHistoryStat, ValuationHistoryStats } from '@/services/analysis/valuationHistory';
+export type { Pillar, PillarLeg, PillarScores } from '@/services/analysis/pillars';
 
 // ── Financial statement (shared across all chart components) ────────────────
 
@@ -216,6 +218,9 @@ export interface AnalysisData {
 
     // Historical percentile stats vs own daily valuation history (TTM basis)
     valuationHistoryStats?: ValuationHistoryStats | null;
+
+    // Five-pillar profile (radar) — read-time computed, shared definitions
+    pillars?: PillarScores | null;
 
     // EPS CAGR (historical, from per-share earnings history)
     epsCagr3y?: number | null;

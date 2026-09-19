@@ -147,19 +147,26 @@ export function buildMetrics(data: AnalysisData, ewScore?: Props['ewScore']) {
         statusType: StatusType, statusLabel: string, hint: string
     ): MetricCardDef => ({ label, value, statusType, statusLabel, hint });
 
+    // Prefer read-time pillar scores (single snapshot, matches the radar);
+    // stored AnalysisCache values are the fallback until a refresh runs.
+    const healthVal = data.pillars?.health.score ?? data.healthScore;
+    const profVal = data.pillars?.profitability.score ?? data.profitabilityScore;
+    const valVal = data.pillars?.valuation.score ?? data.valuationScore;
+    const scoreBand = (v: number | null | undefined) =>
+        v == null ? 'neutral' as StatusType : v >= 75 ? 'good' : v >= 50 ? 'warn' : 'bad';
+    const scoreWord = (v: number | null | undefined) =>
+        v == null ? '-' : v >= 75 ? 'Strong' : v >= 50 ? 'Moderate' : 'Weak';
+
     const scores: MetricCardDef[] = [
-        def('Health', data.healthScore != null ? `${data.healthScore.toFixed(0)}/100` : 'N/A',
-            data.healthScore == null ? 'neutral' : data.healthScore >= 75 ? 'good' : data.healthScore >= 50 ? 'warn' : 'bad',
-            data.healthScore == null ? '-' : data.healthScore >= 75 ? 'Strong' : data.healthScore >= 50 ? 'Moderate' : 'Weak',
-            'Composite score across profitability, solvency, growth and quality'),
-        def('Profitability', data.profitabilityScore != null ? `${data.profitabilityScore.toFixed(0)}/100` : 'N/A',
-            data.profitabilityScore == null ? 'neutral' : data.profitabilityScore >= 75 ? 'good' : data.profitabilityScore >= 50 ? 'warn' : 'bad',
-            data.profitabilityScore == null ? '-' : data.profitabilityScore >= 75 ? 'Strong' : data.profitabilityScore >= 50 ? 'Moderate' : 'Weak',
-            'Margins, returns and cash-generation strength'),
-        def('Valuation', data.valuationScore != null ? `${data.valuationScore.toFixed(0)}/100` : 'N/A',
-            data.valuationScore == null ? 'neutral' : data.valuationScore >= 75 ? 'good' : data.valuationScore >= 50 ? 'warn' : 'bad',
-            data.valuationScore == null ? '-' : data.valuationScore >= 75 ? 'Strong' : data.valuationScore >= 50 ? 'Moderate' : 'Weak',
-            'How attractively the stock is priced vs fundamentals'),
+        def('Health', healthVal != null ? `${healthVal.toFixed(0)}/100` : 'N/A',
+            scoreBand(healthVal), scoreWord(healthVal),
+            'Balance-sheet strength: Altman Z, liquidity, interest burden, net cash/debt'),
+        def('Profitability', profVal != null ? `${profVal.toFixed(0)}/100` : 'N/A',
+            scoreBand(profVal), scoreWord(profVal),
+            'Margins and returns on capital: ROIC, ROE, net & operating margin'),
+        def('Valuation', valVal != null ? `${valVal.toFixed(0)}/100` : 'N/A',
+            scoreBand(valVal), scoreWord(valVal),
+            'How attractively the stock is priced vs fundamentals and own history'),
         // Early Winners composite — minimal numeric cell (the rail card's
         // full breakdown lives on /screener/early-winners)
         ...(ewScore?.totalScore != null && ewScore?.maxPossible != null && ewScore.maxPossible > 0 ? [(() => {

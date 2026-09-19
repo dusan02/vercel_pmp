@@ -25,6 +25,7 @@ import { CompanyOverviewSection } from '@/components/company/analysis/sections/C
 import { KeyInsightsSection } from '@/components/company/analysis/sections/KeyInsightsSection';
 import { MoverInsightSection } from '@/components/company/analysis/sections/MoverInsightSection';
 import { AnalystConsensusSection } from '@/components/company/analysis/sections/AnalystConsensusSection';
+import PillarsRadar from '@/components/company/analysis/PillarsRadar';
 import { EarningsSection } from '@/components/company/analysis/sections/EarningsSection';
 import { EarningsBanner } from '@/components/company/analysis/sections/EarningsBanner';
 import { RecentMovesSection } from '@/components/company/analysis/sections/RecentMovesSection';
@@ -175,15 +176,17 @@ export default async function AnalysisPage({ params }: PageProps) {
   // client analysis tab — build once.
   const flowPeriods = buildFlowPeriods(flowStatements);
 
-  // Right rail has content only when the consensus card can render —
-  // mirrors the null conditions inside AnalystConsensusSection. The EW
-  // score moved into the Key Metrics table as a minimal cell.
+  // Right rail = pillar profile radar (always present once analysis data
+  // loads) + analyst consensus when available. The EW score stays a Key
+  // Metrics cell — it is a quant timing signal, not a fundamental pillar.
   const pt = data?.finnhubPriceTarget;
   const rec = data?.finnhubRecommendation;
   const hasConsensus =
     (pt != null && (pt.targetMean != null || pt.targetMedian != null)) ||
     (rec != null && (rec.strongBuy != null || rec.buy != null || rec.hold != null));
-  const hasRail = hasConsensus;
+  const hasPillars = analysisData?.pillars != null
+    && (analysisData.statements?.length ?? 0) > 0;
+  const hasRail = hasConsensus || hasPillars;
   const ewScore = data?.ewScoreSnapshots?.[0] ?? null;
 
   return (
@@ -287,14 +290,17 @@ export default async function AnalysisPage({ params }: PageProps) {
 
             </div>{/* /main column */}
 
-            {/* Right rail — compact reference card alongside the main flow */}
+            {/* Right rail — profile radar first (top-right), consensus below */}
             {hasRail && (
-              <aside className="mt-6 lg:mt-0">
-                <AnalystConsensusSection
-                  priceTarget={data?.finnhubPriceTarget ?? null}
-                  recommendation={data?.finnhubRecommendation ?? null}
-                  fallbackPrice={data?.lastPrice ?? null}
-                />
+              <aside className="mt-6 lg:mt-0 space-y-6">
+                {hasPillars && <PillarsRadar pillars={analysisData!.pillars!} />}
+                {hasConsensus && (
+                  <AnalystConsensusSection
+                    priceTarget={data?.finnhubPriceTarget ?? null}
+                    recommendation={data?.finnhubRecommendation ?? null}
+                    fallbackPrice={data?.lastPrice ?? null}
+                  />
+                )}
               </aside>
             )}
           </div>

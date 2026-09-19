@@ -93,3 +93,15 @@ curl -s https://premarketprice.com/analysis/AAPL | grep -c FinancialProduct  # �
 - Percentilový kontext je v metric tooltipoch (`histTip`), nie v layoute — žiadny UI redesign
 - `metrics.evEbit` = vlastné EV/TTM-EBIT (D&A nemáme → EBIT, nie EBITDA); tabuľka labeluje `EV/EBIT`, Finnhub `evEbitda` ostáva fallback pod vlastným labelom
 - `metrics.fcfYield` = vlastné TTM FCF/mcap (predtým annual snapshot — LLY: 0.3% → 1.2%)
+
+## Pillar skóre (radar, 2026-09)
+
+- **`src/services/analysis/pillars.ts` = jediná definícia** všetkých 5 osí (4 legs × 25): Valuation, Growth, Profitability, Health, Quality. Zdieľajú ju `scoreCalculator` (zapisuje stored `healthScore`/`profitabilityScore`/`valuationScore` do `AnalysisCache`) aj `computeMetrics` (read-time `pillars` v `/api/analysis` response — radar vždy na jednom as-of snapshotte)
+- **Profitability NEOBSAHUJE revenue growth** — rast žije len v Growth osi (Rev/NI/EPS CAGR + fwd implied). Nové legs: ROIC, ROE, Net margin, Operating margin — vlastná TTM báza, Finnhub len fallback
+- **Quality** = Piotroski + Beneish + FCF conversion + margin stability; SBC/dilution/negative-NI sú len risk flagy v Key Metrics, nie scoring legs
+- Rebríkové prahy majú skutočnú nulu (žiadny `else 5` floor); chýbajúce dáta = 0 pts, výnimka: Valuation leg null → +10 a interestCoverage null → +25 (legacy konvencie, zachované zo scoreCalculatora)
+- **`PillarsRadar.tsx`** = right rail top (`/analysis/[ticker]`), pure SVG, leg breakdown cez native `<title>` + `<details>`. Radar je PROFIL, nie verdict — žiadny overall score
+- EW Score sa do radaru NEMIEŠA (quant timing signal, nie fundamental pillar) — ostáva bunkou v Scores riadku
+- EW quant engine má vlastný feature `profitabilityScore` (SEC margin stability) — kolízia názvov, nesúvisí s `AnalysisCache.profitabilityScore`
+- Stored `profitabilityScore` sa po deployi konverguje na novú definíciu cez refresh cyklus — počas prechodu screener/heatmap/leaderboards ukazujú mix starej/novej def; Scores riadok + radar používajú read-time pillars (vždy konzistentné)
+- **Opravený unit bug**: `Ticker.lastMarketCap` je v MILIARDÁCH — `scoreCalculator` ho používal raw → stored `valuationScore` bol pre tickery s lastMarketCap nafúknutý (LLY 100 namiesto 40); zároveň `latestValuation` sa fetchoval len bez `lastPrice` → tickery bez lastMarketCap mali marketCap=0 (MU: 3 legs po +10). Oprava: `×1e9` + fetch podmienka `!lastPrice || !lastMarketCap`
