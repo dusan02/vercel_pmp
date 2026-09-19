@@ -18,10 +18,17 @@ const AnalysisTab = dynamic(
   }
 );
 
-export function AnalysisTabClient({ ticker, initialAnalysisData, initialHistoryData, flowPeriods }: { ticker: string; initialAnalysisData?: unknown; initialHistoryData?: unknown; flowPeriods?: FlowPeriods | null }) {
+interface EwScoreLite {
+  totalScore: number | null;
+  maxPossible: number | null;
+  rank: number | null;
+  asOfDate: Date | string | null;
+}
+
+export function AnalysisTabClient({ ticker, initialAnalysisData, initialHistoryData, flowPeriods, ewScore }: { ticker: string; initialAnalysisData?: unknown; initialHistoryData?: unknown; flowPeriods?: FlowPeriods | null; ewScore?: EwScoreLite | null }) {
   useEffect(() => {
     event('analysis_view', { ticker });
   }, [ticker]);
 
-  return <AnalysisTab ticker={ticker} initialAnalysisData={initialAnalysisData} initialHistoryData={initialHistoryData} flowPeriods={flowPeriods} />;
+  return <AnalysisTab ticker={ticker} initialAnalysisData={initialAnalysisData} initialHistoryData={initialHistoryData} flowPeriods={flowPeriods} ewScore={ewScore} />;
 }

@@ -1,10 +1,7 @@
 /**
- * Tests for the Early Winners leaderboard fetch + score section rendering.
+ * Tests for the Early Winners leaderboard fetch.
  * Prisma is mocked — no live DB required.
  */
-import React from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
-
 const aggregate = jest.fn();
 const findMany = jest.fn();
 
@@ -16,8 +13,6 @@ jest.mock('@/lib/db/prisma', () => ({
 
 // eslint-disable-next-line import/first
 import { getLeaderboard, getEwLeaderboardRows } from '@/lib/seo/leaderboards';
-// eslint-disable-next-line import/first
-import { PmpScoreSection } from '@/components/company/analysis/sections/PmpScoreSection';
 
 const SNAP = {
   symbol: 'AAPL',
@@ -74,41 +69,5 @@ describe('getEwLeaderboardRows', () => {
       fundamentalsScore: 80.1,
       earningsBlocked: true,
     });
-  });
-});
-
-describe('PmpScoreSection', () => {
-  it('renders nothing when no snapshot exists (no crash, no fabricated score)', () => {
-    const html = renderToStaticMarkup(React.createElement(PmpScoreSection, { snapshot: null }));
-    expect(html).toBe('');
-  });
-
-  it('renders score, category pillars and BLOCKED earnings', () => {
-    const html = renderToStaticMarkup(
-      React.createElement(PmpScoreSection, { snapshot: { ...SNAP, ticker: undefined } as never }),
-    );
-    expect(html).toContain('72.5');
-    expect(html).toContain('Fundamentals');
-    expect(html).toContain('Earnings');
-    expect(html).toContain('Blocked'); // earnings BLOCKED, never shown as 0
-    expect(html).toContain('V5-B');
-  });
-
-  it('renders deterministic rationale bullets and the honest disclosure', () => {
-    const html = renderToStaticMarkup(
-      React.createElement(PmpScoreSection, { snapshot: { ...SNAP, ticker: undefined } as never }),
-    );
-    expect(html).toContain('Why this stock ranks here');
-    expect(html).toContain('revenue growth');
-    expect(html).toContain('Earnings consensus unavailable');
-    expect(html).toContain('not been established');
-    expect(html).not.toMatch(/backtested alpha|proven signal|expected returns|outperformance/i);
-  });
-
-  it('survives malformed rationaleJson', () => {
-    const bad = { ...SNAP, rationaleJson: '{not json', ticker: undefined } as never;
-    const html = renderToStaticMarkup(React.createElement(PmpScoreSection, { snapshot: bad }));
-    expect(html).toContain('72.5'); // still renders the score
-    expect(html).not.toContain('Why this stock ranks here');
   });
 });

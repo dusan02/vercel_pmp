@@ -29,7 +29,6 @@ import { EarningsSection } from '@/components/company/analysis/sections/Earnings
 import { EarningsBanner } from '@/components/company/analysis/sections/EarningsBanner';
 import { RecentMovesSection } from '@/components/company/analysis/sections/RecentMovesSection';
 import { RelatedStocksSection } from '@/components/company/analysis/sections/RelatedStocksSection';
-import { PmpScoreSection } from '@/components/company/analysis/sections/PmpScoreSection';
 import { VerdictStrip } from '@/components/company/analysis/sections/VerdictStrip';
 import { PriceHistorySection } from '@/components/company/analysis/sections/PriceHistorySection';
 import { KeyMetricsTable } from '@/components/company/analysis/KeyMetricsTable';
@@ -170,14 +169,16 @@ export default async function AnalysisPage({ params }: PageProps) {
   // client analysis tab — build once.
   const flowPeriods = buildFlowPeriods(flowStatements);
 
-  // Right rail has content only when at least one rail card can render —
-  // mirrors the null conditions inside AnalystConsensusSection/PmpScoreSection.
+  // Right rail has content only when the consensus card can render —
+  // mirrors the null conditions inside AnalystConsensusSection. The EW
+  // score moved into the Key Metrics table as a minimal cell.
   const pt = data?.finnhubPriceTarget;
   const rec = data?.finnhubRecommendation;
   const hasConsensus =
     (pt != null && (pt.targetMean != null || pt.targetMedian != null)) ||
     (rec != null && (rec.strongBuy != null || rec.buy != null || rec.hold != null));
-  const hasRail = hasConsensus || (data?.ewScoreSnapshots?.[0] != null);
+  const hasRail = hasConsensus;
+  const ewScore = data?.ewScoreSnapshots?.[0] ?? null;
 
   return (
     <>
@@ -280,7 +281,7 @@ export default async function AnalysisPage({ params }: PageProps) {
 
             </div>{/* /main column */}
 
-            {/* Right rail — compact reference cards alongside the main flow */}
+            {/* Right rail — compact reference card alongside the main flow */}
             {hasRail && (
               <aside className="mt-6 lg:mt-0">
                 <AnalystConsensusSection
@@ -288,8 +289,6 @@ export default async function AnalysisPage({ params }: PageProps) {
                   recommendation={data?.finnhubRecommendation ?? null}
                   fallbackPrice={data?.lastPrice ?? null}
                 />
-
-                <PmpScoreSection snapshot={data?.ewScoreSnapshots?.[0] ?? null} />
               </aside>
             )}
           </div>
@@ -300,7 +299,7 @@ export default async function AnalysisPage({ params }: PageProps) {
               failed, the client tab renders its own copy after fetching. */}
           {analysisData && (
             <div className="mb-6">
-              <KeyMetricsTable data={analysisData} flowPeriods={flowPeriods} />
+              <KeyMetricsTable data={analysisData} flowPeriods={flowPeriods} ewScore={ewScore} />
             </div>
           )}
 
@@ -312,6 +311,7 @@ export default async function AnalysisPage({ params }: PageProps) {
             initialAnalysisData={analysisData}
             initialHistoryData={historyData}
             flowPeriods={flowPeriods}
+            ewScore={ewScore}
           />
 
           <p className="-mt-2 mb-6 text-xs text-gray-500 dark:text-gray-500">

@@ -55,7 +55,7 @@ curl -s https://premarketprice.com/analysis/AAPL | grep -c FinancialProduct  # �
 
 ## Early Winners score pipeline
 
-- **Tok**: quant engine (separátna Postgres PIT DB, `QUANT_DB_URL`) → `npm run quant:score -- --as-of <dátum> --json-out <súbor>` → JSON sa prenesie na VPS → `scripts/import-ew-scores.ts` upsertne do `EwScoreSnapshot` (SQLite) → renderuje `/screener/early-winners` + `PmpScoreSection` na `/analysis/[ticker]`
+- **Tok**: quant engine (separátna Postgres PIT DB, `QUANT_DB_URL`) → `npm run quant:score -- --as-of <dátum> --json-out <súbor>` → JSON sa prenesie na VPS → `scripts/import-ew-scores.ts` upsertne do `EwScoreSnapshot` (SQLite) → renderuje `/screener/early-winners` + minimalistickú `EW Score` bunku v Key Metrics na `/analysis/[ticker]`
 - Engine sa **NEIMPORTUJE** do Next runtime (`src/lib/quant` je mimo app tsconfig); hranica = JSON kontrakt `ew-score-export/1` (validácia v `src/lib/earlywinners/score-import.ts`)
 - PM2: `cron-ew-score-import` denne 05:30 UTC, súbor cez `EW_EXPORT_PATH` (default `/var/www/premarketprice/data/ew-scores.json`) — importér bez súboru skončí exit 2, nič nerozbije
 - Importer je idempotentný na `(symbol, asOfDate)`; tickery mimo `Ticker` tabuľky (delisted z frozen universe) preskočí — produkt ukazuje len live tickery

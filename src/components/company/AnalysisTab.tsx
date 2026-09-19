@@ -26,7 +26,7 @@ export type {
  * only: the dense Key Metrics table (directly under Price History),
  * the charts grid and the controls bar.
  */
-export default function AnalysisTab({ ticker, initialAnalysisData, initialHistoryData, flowPeriods }: AnalysisTabProps & { initialAnalysisData?: any; initialHistoryData?: any; flowPeriods?: FlowPeriods | null | undefined }) {
+export default function AnalysisTab({ ticker, initialAnalysisData, initialHistoryData, flowPeriods, ewScore }: AnalysisTabProps & { initialAnalysisData?: any; initialHistoryData?: any; flowPeriods?: FlowPeriods | null | undefined; ewScore?: { totalScore: number | null; maxPossible: number | null; rank: number | null; asOfDate: Date | string | null } | null | undefined }) {
     const router = useRouter();
     const {
         data,
@@ -109,7 +109,7 @@ export default function AnalysisTab({ ticker, initialAnalysisData, initialHistor
             {/* ── Key metrics — normally SSR'd at page level directly under
                 Price History (crawler-visible). Rendered here only when the
                 SSR prefetch missed and the data came from the client fetch ── */}
-            {!initialAnalysisData && <KeyMetricsTable data={data} flowPeriods={flowPeriods} />}
+            {!initialAnalysisData && <KeyMetricsTable data={data} flowPeriods={flowPeriods} ewScore={ewScore} />}
 
             {/* ── Charts Dashboard (2-Column Grid) — detail behind the numbers ── */}
             <AnalysisCharts ticker={ticker} data={data} flowPeriods={flowPeriods} />

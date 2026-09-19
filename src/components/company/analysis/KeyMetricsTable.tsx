@@ -5,13 +5,22 @@ import { AnalysisData } from './types';
 import { MetricCardDef, StatusType, StatusBadge, VALUE_COLORS } from '../shared/MetricCard';
 import type { FlowPeriods } from './sections/FinancialFlowsSection';
 
+interface EwScoreInput {
+    totalScore: number | null;
+    maxPossible: number | null;
+    rank: number | null;
+    asOfDate: Date | string | null;
+}
+
 interface Props {
     data: AnalysisData;
     flowPeriods?: FlowPeriods | null | undefined;
+    /** Early Winners snapshot — renders as a minimal cell in the Scores group */
+    ewScore?: EwScoreInput | null | undefined;
 }
 
 // ── Build all metrics — same values/statuses as the old card grid ────────────
-function buildMetrics(data: AnalysisData, flowPeriods?: Props['flowPeriods']) {
+function buildMetrics(data: AnalysisData, flowPeriods?: Props['flowPeriods'], ewScore?: Props['ewScore']) {
     const m = data.metrics;
     const bs = data.balanceSheet;
     const mcap = data.ticker?.lastMarketCap ? data.ticker.lastMarketCap * 1e9 : null;
@@ -121,6 +130,19 @@ function buildMetrics(data: AnalysisData, flowPeriods?: Props['flowPeriods']) {
             data.valuationScore == null ? 'neutral' : data.valuationScore >= 75 ? 'good' : data.valuationScore >= 50 ? 'warn' : 'bad',
             data.valuationScore == null ? '-' : data.valuationScore >= 75 ? 'Strong' : data.valuationScore >= 50 ? 'Moderate' : 'Weak',
             'How attractively the stock is priced vs fundamentals'),
+        // Early Winners composite — minimal numeric cell (the rail card's
+        // full breakdown lives on /screener/early-winners)
+        ...(ewScore?.totalScore != null && ewScore?.maxPossible != null && ewScore.maxPossible > 0 ? [(() => {
+            const ratio = ewScore.totalScore! / ewScore.maxPossible!;
+            const asOf = ewScore.asOfDate ? new Date(ewScore.asOfDate).toISOString().slice(0, 10) : null;
+            return def(
+                'EW Score',
+                `${Number(ewScore.totalScore!.toFixed(1))}/${Number(ewScore.maxPossible!.toFixed(0))}`,
+                ratio >= 0.6 ? 'good' : ratio >= 0.45 ? 'warn' : 'neutral',
+                ewScore.rank != null ? `#${ewScore.rank}` : '-',
+                `Early Winners composite (V5-B, current data) — fundamentals + momentum + quality; earnings pillar excluded (no point-in-time consensus).${ewScore.rank != null ? ` Rank #${ewScore.rank} in the universe.` : ''}${asOf ? ` As of ${asOf}.` : ''} Full breakdown: /screener/early-winners`,
+            );
+        })()] : []),
     ];
 
     const valuation: MetricCardDef[] = [
@@ -224,13 +246,15 @@ function Group({ title, metrics, children }: { title: string; metrics: MetricCar
 }
 
 // ── Main export ──────────────────────────────────────────────────────────────
-export function KeyMetricsTable({ data, flowPeriods }: Props) {
+export function KeyMetricsTable({ data, flowPeriods, ewScore }: Props) {
     const { scores, valuation, profitability, growth, solvency, quality, balanceSheet, lossYears } = useMemo(
-        () => buildMetrics(data, flowPeriods),
-        [data, flowPeriods]
+        () => buildMetrics(data, flowPeriods, ewScore),
+        [data, flowPeriods, ewScore]
     );
 
-    const hasScores = data.healthScore != null || data.profitabilityScore != null || data.valuationScore != null;
+    const hasScores =
+        data.healthScore != null || data.profitabilityScore != null || data.valuationScore != null ||
+        (ewScore?.totalScore != null && ewScore?.maxPossible != null);
 
     return (
         <section
