@@ -12,15 +12,19 @@ if (!fs.existsSync(dataDir)) {
 }
 
 // Initialize database. timeout = SQLite busy_timeout: concurrent importers
-// (e.g. next build's page-data workers all running the schema bootstrap above)
-// wait for each other's locks instead of throwing SQLITE_BUSY.
+// wait for each other's locks instead of throwing SQLITE_BUSY — except a
+// lock-upgrade deadlock, which SQLite resolves by returning BUSY immediately
+// without consulting the busy handler. next build's page-data workers all run
+// this bootstrap against a fresh file at once, so the pragma+exec pair is
+// retried with backoff below.
 const db = new Database(dbPath, { timeout: 10000 });
 
 // Enable WAL mode for better performance
-db.pragma('journal_mode = WAL');
-
 // Create tables
-db.exec(`
+for (let attempt = 0; ; attempt++) {
+  try {
+    db.pragma('journal_mode = WAL');
+    db.exec(`
   CREATE TABLE IF NOT EXISTS stocks (
     ticker TEXT PRIMARY KEY,
     company_name TEXT,
@@ -78,6 +82,14 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
   CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
 `);
+    break;
+  } catch (e) {
+    const busy = (e as { code?: string }).code === 'SQLITE_BUSY';
+    if (!busy || attempt >= 50) throw e;
+    // Synchronous sleep — this module is sync-only (better-sqlite3)
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 50 + Math.floor(Math.random() * 150));
+  }
+}
 
 // Database helper functions
 export const dbHelpers = {
