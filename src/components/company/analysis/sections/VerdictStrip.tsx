@@ -1,8 +1,18 @@
 interface VerdictStripProps {
   /** Composite verdict label from AnalysisCache (e.g. "Neutral") */
   verdictText: string | null;
-  /** 0–100 financial health score */
+  /** 0–100 financial health score (fallback when pillars absent) */
   healthScore: number | null;
+  /** Five-pillar profile — when present, compact V/G/P/H/Q chips replace
+      the standalone health chip so the full profile is in the first
+      viewport even on mobile (radar sits below the price chart there). */
+  pillars?: {
+    valuation: { score: number };
+    growth: { score: number };
+    profitability: { score: number };
+    health: { score: number };
+    quality: { score: number };
+  } | null;
   /** Early Winners snapshot (totalScore/maxPossible + rank) */
   ewScore: {
     totalScore: number | null;
@@ -35,6 +45,12 @@ function verdictClasses(verdict: string | null): string {
   return 'bg-gray-50 dark:bg-gray-800/60 border-gray-200 dark:border-gray-700';
 }
 
+function pillarChipClass(score: number): string {
+  if (score >= 75) return 'text-emerald-600 dark:text-emerald-400';
+  if (score >= 50) return 'text-amber-600 dark:text-amber-400';
+  return 'text-rose-600 dark:text-rose-400';
+}
+
 function verdictTextClasses(verdict: string | null): string {
   const v = (verdict ?? '').toLowerCase();
   if (v.includes('attractive') || v.includes('buy') || v.includes('undervalued') || v.includes('strong'))
@@ -49,7 +65,7 @@ function verdictTextClasses(verdict: string | null): string {
  * be scattered (composite verdict text, health score, EW score) plus the
  * analyst target upside into a single glanceable strip under the hero.
  */
-export function VerdictStrip({ verdictText, healthScore, ewScore, priceTarget, currentPrice }: VerdictStripProps) {
+export function VerdictStrip({ verdictText, healthScore, ewScore, priceTarget, currentPrice, pillars }: VerdictStripProps) {
   const target = priceTarget?.targetMean ?? priceTarget?.targetMedian ?? null;
   const upside =
     target != null && currentPrice != null && currentPrice > 0
@@ -70,7 +86,22 @@ export function VerdictStrip({ verdictText, healthScore, ewScore, priceTarget, c
             </strong>
           </div>
         )}
-        {healthScore != null && (
+        {pillars ? (
+          <span className="flex items-center gap-x-2.5 text-sm" title="Five-pillar profile — Valuation, Growth, Profitability, Health, Quality">
+            {([
+              ['V', pillars.valuation.score, 'Valuation'],
+              ['G', pillars.growth.score, 'Growth'],
+              ['P', pillars.profitability.score, 'Profitability'],
+              ['H', pillars.health.score, 'Financial Health'],
+              ['Q', pillars.quality.score, 'Quality'],
+            ] as const).map(([ch, score, name]) => (
+              <span key={ch} title={`${name}: ${score}/100`} className="tabular-nums">
+                <span className="text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-400">{ch} </span>
+                <strong className={`font-semibold ${pillarChipClass(score)}`}>{score}</strong>
+              </span>
+            ))}
+          </span>
+        ) : healthScore != null && (
           <span className="text-sm text-gray-600 dark:text-gray-300">
             <span className="text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-400">Health </span>
             <strong className="font-semibold text-gray-900 dark:text-white tabular-nums">{Math.round(healthScore)}/100</strong>

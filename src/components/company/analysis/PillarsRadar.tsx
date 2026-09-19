@@ -1,4 +1,5 @@
 import type { PillarScores } from './types';
+import { pillarSummary } from '@/services/analysis/pillars';
 
 /**
  * Five-axis profile radar: Valuation · Growth · Profitability · Health · Quality.
@@ -125,6 +126,10 @@ export default function PillarsRadar({ pillars }: { pillars: PillarScores }) {
                     );
                 })}
             </svg>
+
+            <p className="mt-1 text-xs leading-relaxed text-gray-600 dark:text-gray-300">
+                {pillarSummary(pillars)}
+            </p>
 
             <details className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                 <summary className="cursor-pointer select-none font-medium hover:text-gray-700 dark:hover:text-gray-200">

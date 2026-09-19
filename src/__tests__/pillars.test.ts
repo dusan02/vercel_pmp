@@ -1,4 +1,4 @@
-import { computePillars, type PillarInputs } from '@/services/analysis/pillars';
+import { computePillars, pillarSummary, type PillarInputs } from '@/services/analysis/pillars';
 
 const base: PillarInputs = {
     pePercentile: null, fcfYield: null, psRatio: null, evEbit: null,
@@ -96,5 +96,40 @@ describe('computePillars — leg metadata for "Why?" breakdowns', () => {
     it('boundary: ROE exactly 0.25 falls into the 20 band (strict >)', () => {
         const p = computePillars({ ...base, roe: 0.25 });
         expect(p.profitability.legs.find(l => l.key === 'roe')!.points).toBe(20);
+    });
+});
+
+describe('pillarSummary', () => {
+    it('names strong and weak pillars', () => {
+        // LLY-like: strong profitability+growth, weak valuation
+        const p = computePillars({
+            ...base,
+            pePercentile: 90, fcfYield: 0.01, psRatio: 30, evEbit: 50,   // V → 0-ish... pct 90→0, fcfY→5? let me just set high
+            roic: 0.4, roe: 0.8, netMargin: 0.35, operatingMargin: 0.45, // P → 100
+            revenueCagr: 25, netIncomeCagr: 30, epsCagr5y: 40, forwardImpliedGrowth: 35, // G → 100
+            piotroski: 5, beneish: -1.8, fcfConversion: 0.6, marginStability: 0.12, // Q → 15+12+15+12 = 54
+            altmanZ: 2.5, currentRatio: 1.2, interestCoverage: 3, netCash: false, debtRatio: 0.35, // H → 18+12+10+5 = 45 → also weak!
+        });
+        const s = pillarSummary(p);
+        expect(s).toContain('profitability');
+        expect(s).toContain('growth');
+        expect(s).toContain('valuation');
+    });
+
+    it('fully moderate profile → balanced sentence', () => {
+        const p = computePillars({
+            ...base,
+            pePercentile: 55, fcfYield: 0.04, psRatio: 8, evEbit: 20, // 12+12+12+12=48→weak... need ≥50
+        });
+        // Just check the balanced branch directly via constructed scores
+        const balanced = {
+            valuation: { key: 'valuation' as const, label: 'Valuation', score: 60, legs: [] },
+            growth: { key: 'growth' as const, label: 'Growth', score: 60, legs: [] },
+            profitability: { key: 'profitability' as const, label: 'Profitability', score: 60, legs: [] },
+            health: { key: 'health' as const, label: 'Financial Health', score: 60, legs: [] },
+            quality: { key: 'quality' as const, label: 'Quality', score: 60, legs: [] },
+        };
+        expect(pillarSummary(balanced)).toBe('Balanced profile — no dimension clearly leads or lags.');
+        expect(p.growth.score).toBe(0); // sanity
     });
 });

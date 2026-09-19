@@ -153,6 +153,20 @@ export default async function AnalysisPage({ params }: PageProps) {
     ? Math.ceil((new Date(nextEarnings.date + 'T12:00:00Z').getTime() - Date.now()) / 86_400_000)
     : null;
 
+  // Pillar-derived values — one consistent source feeding hero, verdict,
+  // FAQ, insights and the radar. Stored AnalysisCache scores are the
+  // fallback while the cache refresh converges to the new definitions.
+  const pillarVals = analysisData?.pillars ?? null;
+  const pillarHealth = pillarVals?.health.score ?? null;
+  const pillarValuation = pillarVals?.valuation.score ?? null;
+  const pillarRoeVal = pillarVals?.profitability.legs.find((l: { key: string }) => l.key === 'roe')?.value;
+  const pillarRoePct = pillarRoeVal != null ? pillarRoeVal * 100 : null;
+  // KeyInsights reads valuationScore off the cache object — override with
+  // the fresh pillar value so prose and radar can't disagree.
+  const insightsCache = data?.analysisCache
+    ? { ...data.analysisCache, valuationScore: pillarValuation ?? data.analysisCache.valuationScore }
+    : null;
+
   // FAQ items — shared between the visible section and the FAQPage JSON-LD
   const faqItems = buildAnalysisFaq({
     ticker: tickerUpper,
@@ -160,10 +174,10 @@ export default async function AnalysisPage({ params }: PageProps) {
     price: data?.lastPrice ?? null,
     changePct: displayChangePct,
     marketSession,
-    healthScore: data?.analysisCache?.healthScore ?? null,
+    healthScore: pillarHealth ?? data?.analysisCache?.healthScore ?? null,
     verdictText: data?.analysisCache?.verdictText ?? null,
     peRatio: displayPeRatio,
-    valuationScore: data?.analysisCache?.valuationScore ?? null,
+    valuationScore: pillarValuation ?? data?.analysisCache?.valuationScore ?? null,
     sector: data?.sector ?? null,
     industry: data?.industry ?? null,
     description: data?.description ?? null,
@@ -238,7 +252,7 @@ export default async function AnalysisPage({ params }: PageProps) {
                 prevClose={data?.latestPrevClose ?? null}
                 peRatio={displayPeRatio}
                 dividendYield={data?.finnhubMetrics?.dividendYield ?? null}
-                roe={data?.finnhubMetrics?.roe ?? null}
+                roe={pillarRoePct ?? data?.finnhubMetrics?.roe ?? null}
                 week52Low={week52?._min?.regularClose ?? null}
                 week52High={week52?._max?.regularClose ?? null}
                 earningsDate={nextEarnings?.date ?? null}
@@ -246,7 +260,8 @@ export default async function AnalysisPage({ params }: PageProps) {
               />
               <VerdictStrip
                 verdictText={data?.analysisCache?.verdictText ?? null}
-                healthScore={data?.analysisCache?.healthScore ?? null}
+                healthScore={pillarHealth ?? data?.analysisCache?.healthScore ?? null}
+                pillars={pillarVals}
                 ewScore={data?.ewScoreSnapshots?.[0] ?? null}
                 priceTarget={data?.finnhubPriceTarget ?? null}
                 currentPrice={data?.lastPrice ?? null}
@@ -339,9 +354,9 @@ export default async function AnalysisPage({ params }: PageProps) {
             companyName={companyName}
             changePct={data?.lastChangePct ?? null}
             marketSession={marketSession}
-            cache={data?.analysisCache ?? null}
+            cache={insightsCache}
             peRatio={displayPeRatio}
-            roe={data?.finnhubMetrics?.roe ?? null}
+            roe={pillarRoePct ?? data?.finnhubMetrics?.roe ?? null}
             dividendYield={data?.finnhubMetrics?.dividendYield ?? null}
             earningsDays={earningsDays}
             moversReason={data?.moversReason ?? null}
@@ -364,7 +379,7 @@ export default async function AnalysisPage({ params }: PageProps) {
             marketCap={data?.lastMarketCap ?? null}
             sector={data?.sector ?? null}
             industry={data?.industry ?? null}
-            healthScore={data?.analysisCache?.healthScore ?? null}
+            healthScore={pillarHealth ?? data?.analysisCache?.healthScore ?? null}
             hasEarnings={earningsData.upcoming.length > 0 || earningsData.recent.length > 0}
             hasValuation={!!data?.analysisCache}
             hasFinancials={!!data?.analysisCache}

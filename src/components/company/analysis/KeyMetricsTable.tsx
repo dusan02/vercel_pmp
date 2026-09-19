@@ -149,24 +149,33 @@ export function buildMetrics(data: AnalysisData, ewScore?: Props['ewScore']) {
 
     // Prefer read-time pillar scores (single snapshot, matches the radar);
     // stored AnalysisCache values are the fallback until a refresh runs.
-    const healthVal = data.pillars?.health.score ?? data.healthScore;
-    const profVal = data.pillars?.profitability.score ?? data.profitabilityScore;
-    const valVal = data.pillars?.valuation.score ?? data.valuationScore;
+    const p = data.pillars ?? null;
+    const healthVal = p?.health.score ?? data.healthScore;
+    const profVal = p?.profitability.score ?? data.profitabilityScore;
+    const valVal = p?.valuation.score ?? data.valuationScore;
+    const growthVal = p?.growth.score ?? null;
+    const qualityVal = p?.quality.score ?? null;
     const scoreBand = (v: number | null | undefined) =>
         v == null ? 'neutral' as StatusType : v >= 75 ? 'good' : v >= 50 ? 'warn' : 'bad';
     const scoreWord = (v: number | null | undefined) =>
         v == null ? '-' : v >= 75 ? 'Strong' : v >= 50 ? 'Moderate' : 'Weak';
 
     const scores: MetricCardDef[] = [
-        def('Health', healthVal != null ? `${healthVal.toFixed(0)}/100` : 'N/A',
-            scoreBand(healthVal), scoreWord(healthVal),
-            'Balance-sheet strength: Altman Z, liquidity, interest burden, net cash/debt'),
-        def('Profitability', profVal != null ? `${profVal.toFixed(0)}/100` : 'N/A',
-            scoreBand(profVal), scoreWord(profVal),
-            'Margins and returns on capital: ROIC, ROE, net & operating margin'),
         def('Valuation', valVal != null ? `${valVal.toFixed(0)}/100` : 'N/A',
             scoreBand(valVal), scoreWord(valVal),
             'How attractively the stock is priced vs fundamentals and own history'),
+        ...(growthVal != null ? [def('Growth', `${growthVal.toFixed(0)}/100`,
+            scoreBand(growthVal), scoreWord(growthVal),
+            'Revenue/NI/EPS CAGR + forward implied growth')] : []),
+        def('Profitability', profVal != null ? `${profVal.toFixed(0)}/100` : 'N/A',
+            scoreBand(profVal), scoreWord(profVal),
+            'Margins and returns on capital: ROIC, ROE, net & operating margin'),
+        def('Health', healthVal != null ? `${healthVal.toFixed(0)}/100` : 'N/A',
+            scoreBand(healthVal), scoreWord(healthVal),
+            'Balance-sheet strength: Altman Z, liquidity, interest burden, net cash/debt'),
+        ...(qualityVal != null ? [def('Quality', `${qualityVal.toFixed(0)}/100`,
+            scoreBand(qualityVal), scoreWord(qualityVal),
+            'Earnings quality: Piotroski, Beneish, FCF conversion, margin stability')] : []),
         // Early Winners composite — minimal numeric cell (the rail card's
         // full breakdown lives on /screener/early-winners)
         ...(ewScore?.totalScore != null && ewScore?.maxPossible != null && ewScore.maxPossible > 0 ? [(() => {

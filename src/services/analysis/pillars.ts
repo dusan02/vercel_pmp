@@ -283,3 +283,31 @@ export function computePillars(i: PillarInputs): PillarScores {
         ]),
     };
 }
+
+/**
+ * One-line plain-English read of the profile — shown under the radar.
+ * Names only the extremes (≥75 strong / <50 weak); a fully moderate
+ * profile gets a balanced sentence instead of five band words.
+ */
+export function pillarSummary(p: PillarScores): string {
+    const order: PillarKey[] = ['valuation', 'growth', 'profitability', 'health', 'quality'];
+    const name: Record<PillarKey, string> = {
+        valuation: 'valuation',
+        growth: 'growth',
+        profitability: 'profitability',
+        health: 'financial health',
+        quality: 'earnings quality',
+    };
+    const all = order.map(k => p[k]);
+    const strong = all.filter(x => x.score >= 75).sort((a, b) => b.score - a.score);
+    const weak = all.filter(x => x.score < 50).sort((a, b) => a.score - b.score);
+    if (strong.length === 0 && weak.length === 0) {
+        return 'Balanced profile — no dimension clearly leads or lags.';
+    }
+    const join = (xs: string[]) =>
+        xs.length <= 2 ? xs.join(' and ') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`;
+    const parts: string[] = [];
+    if (strong.length > 0) parts.push(`Strong ${join(strong.map(x => name[x.key]))}`);
+    if (weak.length > 0) parts.push(`${join(weak.map(x => name[x.key]))} lag${weak.length > 1 ? '' : 's'} behind`);
+    return parts.join('; ') + '.';
+}
