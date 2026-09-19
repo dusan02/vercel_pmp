@@ -27,17 +27,17 @@ export interface FlowPeriod {
 
 const C = {
     revenue: '#3b82f6',   // blue-500
-    cogs: '#94a3b8',      // slate-400
+    cogs: '#fa8072',      // salmon — cost item
     grossProfit: '#10b981', // emerald-500
-    opex: '#f43f5e',      // rose-500
+    opex: '#fa8072',      // salmon — cost item
     ebit: '#059669',      // emerald-600
-    intTax: '#fb7185',    // rose-400
+    intTax: '#fda4a1',    // light salmon — secondary deduction
     netIncome: '#047857', // emerald-700
-    loss: '#e11d48',      // rose-600
+    loss: '#e11d48',      // rose-600 — a loss is an outcome, not a cost
     ocf: '#3b82f6',
-    capex: '#f59e0b',     // amber-500
+    capex: '#fa8072',     // salmon — cost item
     fcf: '#10b981',
-    sbc: '#8b5cf6',       // violet-500
+    sbc: '#fda4a1',       // light salmon — secondary deduction
     trueFcf: '#047857',
     // balance sheet
     cash: '#38bdf8',      // sky-400
