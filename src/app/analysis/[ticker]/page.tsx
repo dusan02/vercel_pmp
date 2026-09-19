@@ -487,6 +487,15 @@ export default async function AnalysisPage({ params }: PageProps) {
                 earningsDays={earningsDays}
                 lastMove={recentMoves[0] ?? null}
               />
+              {/* Company intro fills the leftover space under the hero —
+                  first sentence visible, rest behind a native expander */}
+              <CompanyOverviewSection
+                companyName={companyName}
+                description={data?.description}
+                headquarters={data?.headquarters}
+                employees={data?.employees}
+                websiteUrl={data?.websiteUrl}
+              />
             </div>
             <IntradayChart ticker={tickerUpper} />
           </div>
@@ -501,13 +510,6 @@ export default async function AnalysisPage({ params }: PageProps) {
             ticker={tickerUpper}
             currentPrice={data?.lastPrice ?? null}
             currentChangePct={displayChangePct}
-          />
-
-          <CompanyOverviewSection
-            description={data?.description}
-            headquarters={data?.headquarters}
-            employees={data?.employees}
-            websiteUrl={data?.websiteUrl}
           />
 
             </div>{/* /main column */}
