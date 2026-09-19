@@ -151,6 +151,8 @@ export interface FinnhubMetrics {
     beta: number | null;
     pegRatio: number | null;
     priceFreeCashFlow: number | null;
+    /** When this Finnhub snapshot was last fetched — shown as the metrics as-of date */
+    fetchedAt: string;
 }
 
 // ── Main AnalysisData payload ───────────────────────────────────────────────

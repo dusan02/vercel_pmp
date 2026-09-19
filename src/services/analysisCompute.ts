@@ -268,6 +268,7 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
             beta: finnhubMetrics.beta,
             pegRatio: finnhubMetrics.pegRatio,
             priceFreeCashFlow: finnhubMetrics.priceFreeCashFlow,
+            fetchedAt: finnhubMetrics.fetchedAt,
         } : null
     };
 }
