@@ -109,15 +109,15 @@ function buildMetrics(data: AnalysisData, flowPeriods?: Props['flowPeriods']) {
     ): MetricCardDef => ({ label, value, statusType, statusLabel, hint });
 
     const scores: MetricCardDef[] = [
-        def('Health Score', data.healthScore != null ? `${data.healthScore.toFixed(0)}/100` : 'N/A',
+        def('Health', data.healthScore != null ? `${data.healthScore.toFixed(0)}/100` : 'N/A',
             data.healthScore == null ? 'neutral' : data.healthScore >= 75 ? 'good' : data.healthScore >= 50 ? 'warn' : 'bad',
             data.healthScore == null ? '-' : data.healthScore >= 75 ? 'Strong' : data.healthScore >= 50 ? 'Moderate' : 'Weak',
             'Composite score across profitability, solvency, growth and quality'),
-        def('Profitability Score', data.profitabilityScore != null ? `${data.profitabilityScore.toFixed(0)}/100` : 'N/A',
+        def('Profitability', data.profitabilityScore != null ? `${data.profitabilityScore.toFixed(0)}/100` : 'N/A',
             data.profitabilityScore == null ? 'neutral' : data.profitabilityScore >= 75 ? 'good' : data.profitabilityScore >= 50 ? 'warn' : 'bad',
             data.profitabilityScore == null ? '-' : data.profitabilityScore >= 75 ? 'Strong' : data.profitabilityScore >= 50 ? 'Moderate' : 'Weak',
             'Margins, returns and cash-generation strength'),
-        def('Valuation Score', data.valuationScore != null ? `${data.valuationScore.toFixed(0)}/100` : 'N/A',
+        def('Valuation', data.valuationScore != null ? `${data.valuationScore.toFixed(0)}/100` : 'N/A',
             data.valuationScore == null ? 'neutral' : data.valuationScore >= 75 ? 'good' : data.valuationScore >= 50 ? 'warn' : 'bad',
             data.valuationScore == null ? '-' : data.valuationScore >= 75 ? 'Strong' : data.valuationScore >= 50 ? 'Moderate' : 'Weak',
             'How attractively the stock is priced vs fundamentals'),
