@@ -278,8 +278,8 @@ function Group({ title, metrics, children }: { title: string; metrics: MetricCar
     if (!metrics.length) return null;
     return (
         <div>
-            <div className="flex items-center justify-between px-2.5 pt-3 pb-1">
-                <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">
+            <div className="flex items-center justify-between gap-2 mt-3 px-2.5 py-1.5 rounded-md bg-gray-100/80 dark:bg-gray-800/70">
+                <h3 className="text-[11px] font-bold uppercase tracking-widest text-gray-700 dark:text-gray-200">
                     {title}
                 </h3>
                 {children}
