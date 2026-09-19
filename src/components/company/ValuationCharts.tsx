@@ -12,6 +12,7 @@ import {
 } from 'recharts';
 import { useState, useMemo, useEffect } from 'react';
 import { CHART_FONT } from '@/components/charts/chartTheme';
+import { ChartBody, ChartControls, ChartPlot, ChartFootnote } from './shared/ChartFrame';
 import type { RatioStats } from './analysis/types';
 
 interface HistoryPoint { date: string; value: number; }
@@ -62,12 +63,12 @@ function StatPill({ label, value, highlight }: { label: string; value: number | 
                : highlight === 'red'   ? 'text-red-500 dark:text-red-400'
                : 'text-gray-800 dark:text-gray-200';
     return (
-        <div className="flex flex-col items-center px-2 sm:px-3 py-1.5 sm:py-2 bg-gray-50 dark:bg-gray-800/60 rounded-lg min-w-[52px] sm:min-w-[64px]">
-            <span className={`text-xs sm:text-sm font-bold tabular-nums ${col}`}>
+        <span className="flex items-baseline gap-1 shrink-0">
+            <span className="text-gray-500 dark:text-gray-500">{label}</span>
+            <span className={`font-semibold tabular-nums ${col}`}>
                 {value !== null ? `${value.toFixed(1)}×` : '—'}
             </span>
-            <span className="text-[10px] sm:text-[10px] text-gray-500 dark:text-gray-500 mt-0.5">{label}</span>
-        </div>
+        </span>
     );
 }
 
@@ -174,11 +175,11 @@ export default function ValuationCharts({ ticker, peHistory, psHistory, current:
     );
 
     return (
-        <div className="space-y-4">
+        <ChartBody>
             {/* Controls row */}
-            <div className="flex flex-wrap items-center gap-3">
+            <ChartControls>
                 {/* Metric toggle */}
-                <div className="bg-gray-100 dark:bg-gray-800 p-1 rounded-lg inline-flex">
+                <div className="bg-gray-100 dark:bg-gray-800 p-1 rounded-lg inline-flex shrink-0">
                     {METRICS.map(m => (
                         <button key={m.id} onClick={() => setMetric(m.id)}
                             className={`text-[10px] px-3 py-1 rounded font-medium transition-colors ${
@@ -191,7 +192,7 @@ export default function ValuationCharts({ ticker, peHistory, psHistory, current:
                     ))}
                 </div>
                 {/* Period toggle — only show periods that have data */}
-                <div className="flex gap-1">
+                <div className="flex gap-1 shrink-0">
                     {availablePeriods.map(p => (
                         <button key={p.id} onClick={() => setPeriod(p.id)}
                             className={`text-[10px] px-2.5 py-1 rounded font-medium transition-colors ${
@@ -206,35 +207,20 @@ export default function ValuationCharts({ ticker, peHistory, psHistory, current:
                 </div>
                 {/* Valuation badge */}
                 {valBadge && (
-                    <span className={`ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-full ${valBadge.color}`}>
+                    <span className={`ml-auto shrink-0 text-[10px] font-semibold px-2.5 py-1 rounded-full ${valBadge.color}`}>
                         {valBadge.label}
                     </span>
                 )}
-            </div>
-
-            {/* Current + Stats pills */}
-            <div className="flex flex-wrap gap-1.5 sm:gap-2 items-end">
-                {/* Current value — prominent */}
-                <div className="flex flex-col mr-1 sm:mr-2">
-                    <span className="text-[10px] text-gray-500 uppercase tracking-wide">Current {cfg.label.split(' ')[0]}</span>
-                    <span className="text-xl sm:text-2xl font-bold tabular-nums" style={{ color: cfg.color }}>
-                        {current !== null && current !== undefined ? `${current.toFixed(1)}×` : '—'}
-                    </span>
-                </div>
-                <StatPill label="Median" value={stats?.median ?? null} />
-                <StatPill label="P10 (cheap)" value={stats?.p10 ?? null} highlight="green" />
-                <StatPill label="P25" value={stats?.p25 ?? null} />
-                <StatPill label="P75" value={stats?.p75 ?? null} />
-                <StatPill label="P90 (exp.)" value={stats?.p90 ?? null} highlight="red" />
-            </div>
+            </ChartControls>
 
             {/* Chart */}
             {filteredHistory.length === 0 ? (
-                <div className="text-center text-gray-500 text-sm py-12 bg-gray-50 dark:bg-gray-800/30 rounded-lg">
-                    No {cfg.label} data for this period.
-                </div>
+                <ChartPlot className="flex items-center justify-center bg-gray-50 dark:bg-gray-800/30 rounded-lg">
+                    <p className="text-center text-gray-500 text-sm">No {cfg.label} data for this period.</p>
+                </ChartPlot>
             ) : (
-                <ResponsiveContainer width="100%" height={320}>
+                <ChartPlot>
+                    <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={filteredHistory} margin={{ top: 8, right: 56, left: 8, bottom: 24 }}>
                         <defs>
                             <linearGradient id="peGrad" x1="0" y1="0" x2="0" y2="1">
@@ -304,17 +290,35 @@ export default function ValuationCharts({ ticker, peHistory, psHistory, current:
                             isAnimationActive={false}
                         />
                     </ComposedChart>
-                </ResponsiveContainer>
+                    </ResponsiveContainer>
+                </ChartPlot>
             )}
 
-            {/* Legend */}
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] sm:text-[10px] text-gray-500 dark:text-gray-500">
-                <span className="flex items-center gap-1.5"><span className="w-3 h-px border-t border-dashed border-emerald-500 inline-block" /> Cheap</span>
-                <span className="flex items-center gap-1.5"><span className="w-3 h-px border-t border-dashed border-gray-400 inline-block" /> Median</span>
-                <span className="flex items-center gap-1.5"><span className="w-3 h-px border-t border-dashed border-red-500 inline-block" /> Expensive</span>
-                <span className="flex items-center gap-1.5 sm:ml-auto text-gray-400 dark:text-gray-600">P10–P90 bands from {filteredHistory.length} weekly points — wide bands may reflect near-zero earnings periods.{useLog ? ' Log scale.' : ''}</span>
-            </div>
-        </div>
+            <ChartFootnote>
+                {/* Current + percentile stats — compact nowrap row */}
+                <div className="flex items-center gap-3 overflow-x-auto flex-nowrap text-[10px]">
+                    <span className="flex items-baseline gap-1 shrink-0">
+                        <span className="text-gray-500 uppercase tracking-wide">Current {cfg.label.split(' ')[0]}</span>
+                        <span className="text-sm font-bold tabular-nums" style={{ color: cfg.color }}>
+                            {current !== null && current !== undefined ? `${current.toFixed(1)}×` : '—'}
+                        </span>
+                    </span>
+                    <StatPill label="Median" value={stats?.median ?? null} />
+                    <StatPill label="P10" value={stats?.p10 ?? null} highlight="green" />
+                    <StatPill label="P25" value={stats?.p25 ?? null} />
+                    <StatPill label="P75" value={stats?.p75 ?? null} />
+                    <StatPill label="P90" value={stats?.p90 ?? null} highlight="red" />
+                </div>
+
+                {/* Legend */}
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-gray-500 dark:text-gray-500">
+                    <span className="flex items-center gap-1.5"><span className="w-3 h-px border-t border-dashed border-emerald-500 inline-block" /> Cheap</span>
+                    <span className="flex items-center gap-1.5"><span className="w-3 h-px border-t border-dashed border-gray-400 inline-block" /> Median</span>
+                    <span className="flex items-center gap-1.5"><span className="w-3 h-px border-t border-dashed border-red-500 inline-block" /> Expensive</span>
+                    <span className="flex items-center gap-1.5 sm:ml-auto text-gray-400 dark:text-gray-600">P10–P90 bands · {filteredHistory.length} weekly points{useLog ? ' · Log scale' : ''}</span>
+                </div>
+            </ChartFootnote>
+        </ChartBody>
     );
 }
 

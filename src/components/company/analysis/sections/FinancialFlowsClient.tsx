@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import SankeyChart, { SankeyNode, SankeyLink, sankeyViewBoxWidth } from '@/components/charts/SankeyChart';
+import { ChartBody, ChartControls, ChartPlot, ChartFootnote } from '@/components/company/shared/ChartFrame';
 
 export interface FlowPeriod {
     label: string;
@@ -341,23 +342,23 @@ export function SankeyCell({ kind, annual, quarterly }: { kind: FlowKind; annual
     const svgW = slot ? Math.max(560, slot.w) : viewW;
     const chartH = slot ? Math.max(240, Math.floor(slot.h * (viewW / svgW))) : 300;
     return (
-        <div className="h-full flex flex-col">
-            {annual && quarterly && (
-                <div className="flex gap-1.5 mb-3 shrink-0">
-                    {[annual, quarterly].map((p) => (
-                        <button
-                            key={p!.label}
-                            onClick={() => setPeriod(p)}
-                            className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium border transition-colors ${period === p
-                                ? 'bg-blue-600 text-white border-blue-600'
-                                : 'bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-blue-400'}`}
-                        >
-                            {p!.label}
-                        </button>
-                    ))}
-                </div>
-            )}
-            <div className="relative flex-1 min-h-[240px]">
+        <ChartBody>
+            {/* Fixed-height controls band — rendered even when a single period
+                leaves it empty, so plot tops align with the paired bar chart */}
+            <ChartControls>
+                {annual && quarterly && [annual, quarterly].map((p) => (
+                    <button
+                        key={p!.label}
+                        onClick={() => setPeriod(p)}
+                        className={`shrink-0 px-2.5 py-0.5 rounded-full text-[11px] font-medium border transition-colors ${period === p
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-blue-400'}`}
+                    >
+                        {p!.label}
+                    </button>
+                ))}
+            </ChartControls>
+            <ChartPlot minHeight={240}>
                 <div ref={boxRef} className="h-full overflow-x-auto">
                     <SankeyChart columns={spec.columns} links={spec.links} total={spec.total} formatValue={fmt$} height={chartH} />
                 </div>
@@ -366,7 +367,8 @@ export function SankeyCell({ kind, annual, quarterly }: { kind: FlowKind; annual
                         <span className="text-gray-400 text-sm leading-none">→</span>
                     </div>
                 )}
-            </div>
-        </div>
+            </ChartPlot>
+            <ChartFootnote />
+        </ChartBody>
     );
 }

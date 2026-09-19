@@ -13,6 +13,7 @@ import {
   ReferenceLine,
 } from 'recharts';
 import { CHART_FONT } from '@/components/charts/chartTheme';
+import { ChartBody, ChartControls, ChartPlot, ChartFootnote } from './shared/ChartFrame';
 
 type ValuationPoint = {
   date: string;
@@ -157,7 +158,7 @@ function buildBands(data: ValuationPoint[]) {
 }
 
 // ── Badge ──────────────────────────────────────────────────────────────────
-function Badge({ label, value, color }: { label: string; value: string; color: 'green' | 'blue' | 'amber' | 'gray' }) {
+function Badge({ label, value, color, compact }: { label: string; value: string; color: 'green' | 'blue' | 'amber' | 'gray'; compact?: boolean }) {
   const cls = {
     green: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
     blue: 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800',
@@ -166,7 +167,7 @@ function Badge({ label, value, color }: { label: string; value: string; color: '
   }[color];
 
   return (
-    <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium ${cls}`}>
+    <div className={`flex items-center gap-1.5 rounded-full border font-medium ${compact ? 'px-2 py-0.5 text-[10px]' : 'px-3 py-1.5 text-xs'} ${cls}`}>
       <span className="text-gray-500 dark:text-gray-400">{label}</span>
       <span className="font-bold">{value}</span>
     </div>
@@ -337,65 +338,16 @@ export function ValuationHistoryChart({
   const headlineColor = isUndervalued ? 'bg-gray-800 dark:bg-gray-200' : isFairValue ? 'bg-gray-400' : isSignificantlyOvervalued ? 'bg-red-700' : 'bg-red-500';
 
   return (
-    <div className="space-y-4">
-      {/* Headline + Toggle */}
-      <div className="flex items-start justify-between gap-2 flex-wrap">
-        <p className="text-sm text-gray-700 dark:text-gray-300 flex-1 min-w-0">
-          <span className={`inline-block w-3 h-3 rounded-sm mr-1.5 align-middle ${currentUv == null ? 'bg-gray-300' : headlineColor}`} />
-          {ticker && <strong>{ticker}</strong>} {currentUv == null
-            ? `has insufficient earnings data for P/E-based valuation. Try P/S mode.`
-            : isFairValue
-            ? `is trading close to its intrinsic value (within ±5%).`
-            : isUndervalued
-            ? `is cheaper now than it has been on average over the past 5 years.`
-            : isSignificantlyOvervalued
-            ? `is significantly overvalued — price far exceeds intrinsic value (50%+ deviation).`
-            : `is more expensive now than it has been on average over the past 5 years.`}
-        </p>
-        <div className="flex items-center gap-1.5">
-          <span className="text-[10px] text-gray-500 dark:text-gray-500 hidden sm:inline">Auto = PE preferred, PS fallback</span>
-          <MetricToggle mode={metricMode} onChange={setMetricMode} />
-        </div>
-      </div>
-
-      {/* Forecast explanation */}
-      {activeForecast.length > 0 && (
-        <p className="text-[10px] text-gray-500 dark:text-gray-500 leading-relaxed">
-          <span className="font-semibold">Forecast:</span> Forward intrinsic value projected from recent per-share trend (clamped ±10%/quarter). Dashed line = projected range.
-        </p>
-      )}
-
-      {/* Summary badges */}
-      <div className="flex flex-wrap gap-2">
-        <Badge
-          label="History Conclusion"
-          value={verdict}
-          color={verdict === 'Very Attractive' ? 'green' : verdict === 'Attractive' ? 'blue' : verdict === 'Fair Value' ? 'gray' : verdict === 'Significantly Overvalued' ? 'amber' : 'gray'}
-        />
-        <Badge
-          label="Current Valuation"
-          value={currentUv != null ? `${Math.abs(currentUv).toFixed(0)}% ${isUndervalued ? 'undervalued' : isFairValue ? 'fair value' : 'overvalued'}` : 'n/a'}
-          color={isUndervalued ? 'green' : isFairValue ? 'gray' : isSignificantlyOvervalued ? 'amber' : 'gray'}
-        />
-        {avg5y != null && (
-          <Badge
-            label="5-Year Average"
-            value={`${Math.abs(avg5y).toFixed(0)}% ${avg5y > 0 ? 'undervaluation' : 'overvaluation'}`}
-            color="blue"
-          />
-        )}
-        {cagr != null && (
-          <Badge
-            label="Average Value Growth"
-            value={`${cagr.toFixed(0)}%`}
-            color="amber"
-          />
-        )}
-      </div>
+    <ChartBody>
+      {/* Controls — single fixed-height band */}
+      <ChartControls className="justify-end">
+        <span className="text-[10px] text-gray-500 dark:text-gray-500 mr-auto truncate">Auto = PE preferred, PS fallback</span>
+        <MetricToggle mode={metricMode} onChange={setMetricMode} />
+      </ChartControls>
 
       {/* Chart */}
-      <div className="relative w-full bg-white dark:bg-gray-900 rounded-xl" style={{ height: 320 }}>
-        <ResponsiveContainer width="100%" height={320}>
+      <ChartPlot className="bg-white dark:bg-gray-900 rounded-xl">
+        <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 24 }}>
             <defs>
               <linearGradient id="overGrad" x1="0" y1="0" x2="0" y2="1">
@@ -528,8 +480,59 @@ export function ValuationHistoryChart({
           priceValue={last?.price ?? 0}
           undervaluationPct={currentUv}
         />
-      </div>
-    </div>
+      </ChartPlot>
+
+      <ChartFootnote>
+        {/* Verdict — the card's conclusion, kept next to the summary badges */}
+        <p className="text-[11px] font-medium text-gray-700 dark:text-gray-300 leading-snug">
+          <span className={`inline-block w-2.5 h-2.5 rounded-sm mr-1.5 align-middle ${currentUv == null ? 'bg-gray-300' : headlineColor}`} />
+          {ticker && <strong>{ticker}</strong>} {currentUv == null
+            ? `has insufficient earnings data for P/E-based valuation. Try P/S mode.`
+            : isFairValue
+            ? `is trading close to its intrinsic value (within ±5%).`
+            : isUndervalued
+            ? `is cheaper now than it has been on average over the past 5 years.`
+            : isSignificantlyOvervalued
+            ? `is significantly overvalued — price far exceeds intrinsic value (50%+ deviation).`
+            : `is more expensive now than it has been on average over the past 5 years.`}
+        </p>
+
+        {/* Summary badges — compact single row */}
+        <div className="flex flex-wrap gap-1.5">
+          <Badge compact
+            label="History"
+            value={verdict}
+            color={verdict === 'Very Attractive' ? 'green' : verdict === 'Attractive' ? 'blue' : verdict === 'Fair Value' ? 'gray' : verdict === 'Significantly Overvalued' ? 'amber' : 'gray'}
+          />
+          <Badge compact
+            label="Current"
+            value={currentUv != null ? `${Math.abs(currentUv).toFixed(0)}% ${isUndervalued ? 'undervalued' : isFairValue ? 'fair' : 'overvalued'}` : 'n/a'}
+            color={isUndervalued ? 'green' : isFairValue ? 'gray' : isSignificantlyOvervalued ? 'amber' : 'gray'}
+          />
+          {avg5y != null && (
+            <Badge compact
+              label="5Y Avg"
+              value={`${Math.abs(avg5y).toFixed(0)}% ${avg5y > 0 ? 'underval.' : 'overval.'}`}
+              color="blue"
+            />
+          )}
+          {cagr != null && (
+            <Badge compact
+              label="Value Growth"
+              value={`${cagr.toFixed(0)}%`}
+              color="amber"
+            />
+          )}
+        </div>
+
+        {/* Forecast explanation */}
+        {activeForecast.length > 0 && (
+          <p className="text-[10px] text-gray-400 dark:text-gray-500 leading-snug">
+            Forecast: forward intrinsic from per-share trend (±10%/quarter clamp) — dashed line = projected range.
+          </p>
+        )}
+      </ChartFootnote>
+    </ChartBody>
   );
 }
 

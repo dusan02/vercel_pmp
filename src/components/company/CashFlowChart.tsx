@@ -15,6 +15,7 @@ import { ChartViewToggle } from './shared/ChartViewToggle';
 import { ChartQuarterTick } from './shared/ChartQuarterTick';
 import { CHART_FONT } from '@/components/charts/chartTheme';
 import { ChartTooltip } from './shared/ChartTooltip';
+import { ChartBody, ChartControls, ChartPlot, ChartFootnote } from './shared/ChartFrame';
 import { MetricToggleButtons, toggleMetric as toggle } from './shared/MetricToggleButtons';
 
 interface CashFlowChartProps {
@@ -102,17 +103,17 @@ export default function CashFlowChart({ statements }: CashFlowChartProps) {
     const visibleMetrics = METRICS.filter(m => availableMetrics.includes(m.key));
 
     return (
-        <div className="w-full h-full flex flex-col">
-            <div className="flex flex-wrap gap-2 items-center justify-between mb-4">
+        <ChartBody>
+            <ChartControls className="justify-between">
                 <ChartViewToggle viewMode={viewMode} onChange={setViewMode} />
                 <MetricToggleButtons
                     metrics={visibleMetrics}
                     selected={selectedMetrics}
                     onToggle={k => setSelectedMetrics(prev => toggle(prev, k))}
                 />
-            </div>
-            <div className="w-full" style={{ minHeight: 260 }}>
-                <ResponsiveContainer width="100%" height={320}>
+            </ChartControls>
+            <ChartPlot>
+                <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: viewMode === 'quarterly' ? 8 : 5 }} barGap={2}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" className="dark:stroke-gray-700" />
                         <XAxis dataKey="date" tick={viewMode === 'quarterly' ? <ChartQuarterTick chartData={chartData} /> : { fontSize: CHART_FONT.axis, fill: '#6B7280', fontWeight: 500 }}
@@ -132,7 +133,8 @@ export default function CashFlowChart({ statements }: CashFlowChartProps) {
                             hide={!selectedMetrics.includes('sbc')} isAnimationActive={false} />
                     </BarChart>
                 </ResponsiveContainer>
-            </div>
-        </div>
+            </ChartPlot>
+            <ChartFootnote />
+        </ChartBody>
     );
 }

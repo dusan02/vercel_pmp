@@ -16,6 +16,7 @@ import { ChartViewToggle } from './shared/ChartViewToggle';
 import { ChartQuarterTick } from './shared/ChartQuarterTick';
 import { CHART_FONT } from '@/components/charts/chartTheme';
 import { ChartTooltip } from './shared/ChartTooltip';
+import { ChartBody, ChartControls, ChartPlot, ChartFootnote } from './shared/ChartFrame';
 import { MetricToggleButtons, toggleMetric as toggle } from './shared/MetricToggleButtons';
 
 interface DebtCashChartProps {
@@ -81,9 +82,9 @@ export default function DebtCashChart({ statements }: DebtCashChartProps) {
     const isNetCash = !!(latestData && latestData.cash != null && latestData.totalDebt != null && latestData.cash > latestData.totalDebt);
 
     return (
-        <div className="w-full h-full flex flex-col">
-            <div className="flex flex-wrap gap-2 items-center justify-between mb-4">
-                <div className="flex items-center gap-2 flex-wrap">
+        <ChartBody>
+            <ChartControls className="justify-between">
+                <div className="flex items-center gap-2">
                     <ChartViewToggle viewMode={viewMode} onChange={setViewMode} />
                     {isNetCash && (
                         <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
@@ -96,10 +97,10 @@ export default function DebtCashChart({ statements }: DebtCashChartProps) {
                     selected={selectedMetrics}
                     onToggle={k => setSelectedMetrics(prev => toggle(prev, k))}
                 />
-            </div>
+            </ChartControls>
 
-            <div className="w-full" style={{ minHeight: 280 }}>
-                <ResponsiveContainer width="100%" height={320}>
+            <ChartPlot>
+                <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart
                         data={chartData}
                         margin={{ top: 10, right: 10, left: 10, bottom: viewMode === 'quarterly' ? 8 : 5 }}
@@ -157,7 +158,8 @@ export default function DebtCashChart({ statements }: DebtCashChartProps) {
                         />
                     </ComposedChart>
                 </ResponsiveContainer>
-            </div>
-        </div>
+            </ChartPlot>
+            <ChartFootnote />
+        </ChartBody>
     );
 }

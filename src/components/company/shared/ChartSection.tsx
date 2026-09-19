@@ -30,7 +30,7 @@ export function ChartSection({
                 </div>
                 <div className="min-w-0">
                     <H className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">{title}</H>
-                    <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 line-clamp-2">{subtitle}</p>
+                    <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate" title={subtitle}>{subtitle}</p>
                 </div>
             </div>
             {hasData ? <div className="flex-1 min-h-0">{children}</div> : (

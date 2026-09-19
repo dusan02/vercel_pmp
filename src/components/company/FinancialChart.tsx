@@ -14,6 +14,7 @@ import { ChartViewToggle } from './shared/ChartViewToggle';
 import { ChartQuarterTick } from './shared/ChartQuarterTick';
 import { CHART_FONT } from '@/components/charts/chartTheme';
 import { ChartTooltip } from './shared/ChartTooltip';
+import { ChartBody, ChartControls, ChartPlot, ChartFootnote } from './shared/ChartFrame';
 import { MetricToggleButtons, toggleMetric } from './shared/MetricToggleButtons';
 import type { FinancialStatement } from './analysis/types';
 
@@ -79,19 +80,18 @@ export default function FinancialChart({ statements }: FinancialChartProps) {
     }
 
     return (
-        <div className="w-full h-full flex flex-col">
-            <div className="flex flex-wrap gap-2 items-center justify-between mb-4">
+        <ChartBody>
+            <ChartControls className="justify-between">
                 <ChartViewToggle viewMode={viewMode} onChange={setViewMode} />
                 <MetricToggleButtons
                     metrics={AVAILABLE_METRICS}
                     selected={selectedMetrics}
                     onToggle={k => setSelectedMetrics(prev => toggleMetric(prev, k))}
                 />
-            </div>
+            </ChartControls>
 
-            {/* Chart */}
-            <div className="w-full" style={{ minHeight: 260 }}>
-                <ResponsiveContainer width="100%" height={320}>
+            <ChartPlot>
+                <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                         data={chartData}
                         margin={{ top: 10, right: 10, left: 10, bottom: viewMode === 'quarterly' ? 8 : 5 }}
@@ -127,8 +127,9 @@ export default function FinancialChart({ statements }: FinancialChartProps) {
                             hide={!selectedMetrics.includes('ebit')} isAnimationActive={false} />
                     </BarChart>
                 </ResponsiveContainer>
-            </div>
+            </ChartPlot>
 
-        </div>
+            <ChartFootnote />
+        </ChartBody>
     );
 }

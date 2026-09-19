@@ -14,6 +14,7 @@ import { FinancialStatement } from './analysis/types';
 import { filterStatementsByViewMode, buildPeriodLabel } from '@/lib/utils/chartUtils';
 import { ChartViewToggle } from './shared/ChartViewToggle';
 import { ChartQuarterTick } from './shared/ChartQuarterTick';
+import { ChartBody, ChartControls, ChartPlot, ChartFootnote } from './shared/ChartFrame';
 import { CHART_FONT } from '@/components/charts/chartTheme';
 
 interface ShareDilutionChartProps {
@@ -97,11 +98,17 @@ export default function ShareDilutionChart({ statements }: ShareDilutionChartPro
     const maxBuyback = Math.max(...chartData.map(d => d.buybackRatio != null ? Math.abs(d.buybackRatio) : 0), 1);
     const buybackDomain = [-maxBuyback * 1.2, maxBuyback * 1.2];
 
+    const firstShares = chartData[0]?.shares;
+    const lastShares = chartData[chartData.length - 1]?.shares;
+    const sharesDelta = (firstShares != null && lastShares != null && firstShares > 0)
+        ? ((lastShares - firstShares) / firstShares) * 100
+        : null;
+
     return (
-        <div className="w-full h-full flex flex-col">
-            <div className="flex flex-wrap gap-2 items-center justify-between mb-4">
+        <ChartBody>
+            <ChartControls className="justify-between">
                 <ChartViewToggle viewMode={viewMode} onChange={setViewMode} />
-                <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                <div className="flex gap-1.5 sm:gap-2">
                     <button onClick={() => setShowShares(!showShares)}
                         className={`text-[10px] px-2 py-1 rounded font-medium transition-all ${showShares ? 'text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 bg-gray-200 dark:bg-gray-700'}`}
                         style={{ backgroundColor: showShares ? '#3B82F6' : undefined }}>
@@ -113,9 +120,9 @@ export default function ShareDilutionChart({ statements }: ShareDilutionChartPro
                         Buyback Ratio %{showBuyback && <span className="ml-1">✓</span>}
                     </button>
                 </div>
-            </div>
-            <div className="w-full" style={{ minHeight: 260 }}>
-                <ResponsiveContainer width="100%" height={320}>
+            </ChartControls>
+            <ChartPlot>
+                <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={chartData} margin={{ top: 10, right: showBuyback ? 50 : 10, left: 10, bottom: viewMode === 'quarterly' ? 8 : 5 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" className="dark:stroke-gray-700" />
                         <XAxis dataKey="date"
@@ -135,7 +142,18 @@ export default function ShareDilutionChart({ statements }: ShareDilutionChartPro
                         )}
                     </ComposedChart>
                 </ResponsiveContainer>
-            </div>
-        </div>
+            </ChartPlot>
+            <ChartFootnote>
+                {sharesDelta != null && (
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400">
+                        Share count {sharesDelta > 0 ? 'up' : 'down'}{' '}
+                        <span className={`font-semibold ${sharesDelta > 0 ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                            {sharesDelta > 0 ? '+' : ''}{sharesDelta.toFixed(1)}%
+                        </span>{' '}
+                        since {chartData[0]!.date} — {sharesDelta > 0 ? 'net dilution' : 'net buybacks'} over the shown period
+                    </p>
+                )}
+            </ChartFootnote>
+        </ChartBody>
     );
 }
