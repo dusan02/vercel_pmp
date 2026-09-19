@@ -12,6 +12,8 @@ export interface MetricCardDef {
     statusType: StatusType;
     source?: 'computed' | 'finnhub' | undefined;
     progress?: number; // 0-100%
+    /** Visual anchor — the flagship metric of its section gets a subtle tint */
+    primary?: boolean;
 }
 
 // ─── Shared constants ────────────────────────────────────────────

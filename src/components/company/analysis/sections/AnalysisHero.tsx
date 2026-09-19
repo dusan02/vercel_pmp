@@ -25,6 +25,23 @@ interface AnalysisHeroProps {
   /** Next earnings date (YYYY-MM-DD) + days until it */
   earningsDate?: string | null;
   earningsDays?: number | null;
+  /** Composite model verdict label (e.g. "Neutral") from AnalysisCache */
+  verdict?: string | null;
+  /** Early Winners composite snapshot — compact cell in the stats strip */
+  ewScore?: {
+    totalScore: number | null;
+    maxPossible: number | null;
+    rank: number | null;
+  } | null;
+}
+
+function verdictColor(v: string): string {
+  const s = v.toLowerCase();
+  if (s.includes('attractive') || s.includes('buy') || s.includes('undervalued') || s.includes('strong'))
+    return 'text-emerald-600 dark:text-emerald-400';
+  if (s.includes('overvalued') || s.includes('sell') || s.includes('weak') || s.includes('avoid'))
+    return 'text-red-600 dark:text-red-400';
+  return 'text-gray-800 dark:text-gray-200';
 }
 
 export function AnalysisHero({
@@ -44,6 +61,8 @@ export function AnalysisHero({
   week52High,
   earningsDate,
   earningsDays,
+  verdict,
+  ewScore,
 }: AnalysisHeroProps) {
   const isClosed = marketSession === 'closed';
   const earningsLabel =
@@ -135,8 +154,26 @@ export function AnalysisHero({
         )}
         {industry && <> · Industry: {industry}</>}
       </p>
-      {/* Key stats strip — fills the hero cell with always-available data */}
-      <div className="mt-3 grid grid-cols-2 gap-x-5 gap-y-1.5 text-sm sm:flex sm:flex-wrap sm:gap-y-1">
+      {/* Key stats strip — bordered band so the header reads as one
+          structured unit, not loose text under the title */}
+      <div className="mt-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/60 px-3 py-2 grid grid-cols-2 gap-x-5 gap-y-1.5 text-sm sm:flex sm:flex-wrap sm:gap-y-1">
+        {verdict && (
+          <span className="text-gray-600 dark:text-gray-400">
+            <span className="text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-500">Verdict </span>
+            <strong className={`font-semibold ${verdictColor(verdict)}`}>{verdict}</strong>
+          </span>
+        )}
+        {ewScore?.totalScore != null && ewScore?.maxPossible != null && (
+          <span className="text-gray-600 dark:text-gray-400" title="Early Winners composite score (V5-B, current data) — fundamentals + momentum + quality">
+            <span className="text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-500">EW Score </span>
+            <strong className="font-semibold text-gray-900 dark:text-white tabular-nums">
+              {ewScore.totalScore.toFixed(0)}/{ewScore.maxPossible.toFixed(0)}
+            </strong>
+            {ewScore.rank != null && (
+              <span className="text-gray-500 dark:text-gray-400"> · #{ewScore.rank}</span>
+            )}
+          </span>
+        )}
         {marketCap != null && (
           <span className="text-gray-600 dark:text-gray-400">
             <span className="text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-500">Mkt Cap </span>

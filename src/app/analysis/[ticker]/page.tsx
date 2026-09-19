@@ -30,7 +30,6 @@ import { EarningsSection } from '@/components/company/analysis/sections/Earnings
 import { EarningsBanner } from '@/components/company/analysis/sections/EarningsBanner';
 import { RecentMovesSection } from '@/components/company/analysis/sections/RecentMovesSection';
 import { RelatedStocksSection } from '@/components/company/analysis/sections/RelatedStocksSection';
-import { VerdictStrip } from '@/components/company/analysis/sections/VerdictStrip';
 import { PriceHistorySection } from '@/components/company/analysis/sections/PriceHistorySection';
 import { KeyMetricsTable } from '@/components/company/analysis/KeyMetricsTable';
 import { AnalysisFaqSection, buildAnalysisFaq, buildFaqSchema } from '@/components/company/analysis/sections/AnalysisFaqSection';
@@ -258,14 +257,8 @@ export default async function AnalysisPage({ params }: PageProps) {
                 week52High={week52?._max?.regularClose ?? null}
                 earningsDate={nextEarnings?.date ?? null}
                 earningsDays={earningsDays}
-              />
-              <VerdictStrip
-                verdictText={data?.analysisCache?.verdictText ?? null}
-                healthScore={pillarHealth ?? data?.analysisCache?.healthScore ?? null}
-                pillars={pillarVals}
-                ewScore={data?.ewScoreSnapshots?.[0] ?? null}
-                priceTarget={data?.finnhubPriceTarget ?? null}
-                currentPrice={data?.lastPrice ?? null}
+                verdict={data?.analysisCache?.verdictText ?? null}
+                ewScore={ewScore}
               />
               <MoverInsightSection
                 ticker={tickerUpper}
@@ -278,15 +271,6 @@ export default async function AnalysisPage({ params }: PageProps) {
                 earningsDate={nextEarnings?.date ?? null}
                 earningsDays={earningsDays}
                 lastMove={recentMoves[0] ?? null}
-              />
-              {/* Company intro fills the leftover space under the hero —
-                  first sentence visible, rest behind a native expander */}
-              <CompanyOverviewSection
-                companyName={companyName}
-                description={data?.description}
-                headquarters={data?.headquarters}
-                employees={data?.employees}
-                websiteUrl={data?.websiteUrl}
               />
             </div>
             {hasPillars
@@ -306,13 +290,34 @@ export default async function AnalysisPage({ params }: PageProps) {
             currentChangePct={displayChangePct}
           />
 
+          {/* Company blurb — lives in the rail when there is one; inline
+              fallback keeps it rendered for tickers with no analysis data */}
+          {!hasRail && (
+            <div className="mt-6">
+              <CompanyOverviewSection
+                companyName={companyName}
+                description={data?.description}
+                headquarters={data?.headquarters}
+                employees={data?.employees}
+                websiteUrl={data?.websiteUrl}
+              />
+            </div>
+          )}
+
             </div>{/* /main column */}
 
             {/* Right rail — intraday chart (swapped for the radar above),
-                analyst consensus below when available */}
+                then the About card, then analyst consensus when available */}
             {hasRail && (
               <aside className="mt-6 lg:mt-0 space-y-6">
                 {hasPillars && <IntradayChart ticker={tickerUpper} />}
+                <CompanyOverviewSection
+                  companyName={companyName}
+                  description={data?.description}
+                  headquarters={data?.headquarters}
+                  employees={data?.employees}
+                  websiteUrl={data?.websiteUrl}
+                />
                 {hasConsensus && (
                   <AnalystConsensusSection
                     priceTarget={data?.finnhubPriceTarget ?? null}
@@ -330,7 +335,7 @@ export default async function AnalysisPage({ params }: PageProps) {
               failed, the client tab renders its own copy after fetching. */}
           {analysisData && (
             <div className="mb-6">
-              <KeyMetricsTable data={analysisData} ewScore={ewScore} />
+              <KeyMetricsTable data={analysisData} />
             </div>
           )}
 

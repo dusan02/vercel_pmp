@@ -109,7 +109,7 @@ export default function AnalysisTab({ ticker, initialAnalysisData, initialHistor
             {/* ── Key metrics — normally SSR'd at page level directly under
                 Price History (crawler-visible). Rendered here only when the
                 SSR prefetch missed and the data came from the client fetch ── */}
-            {!initialAnalysisData && <KeyMetricsTable data={data} ewScore={ewScore} />}
+            {!initialAnalysisData && <KeyMetricsTable data={data} />}
 
             {/* ── Charts Dashboard (2-Column Grid) — detail behind the numbers ── */}
             <AnalysisCharts ticker={ticker} data={data} flowPeriods={flowPeriods} />
