@@ -203,11 +203,9 @@ export function buildMetrics(data: AnalysisData) {
 // each section's flagship metric with a tint + heavier type so the eye lands
 // on P/E, ROIC, Revenue CAGR, Altman Z, Piotroski F and Net Debt first. ────
 function Cell({ m }: { m: MetricCardDef }) {
-    return (
-        <div
-            className={`flex items-baseline justify-between gap-2 px-2.5 py-1.5 border-b border-gray-100 dark:border-gray-800/60 min-w-0 ${m.primary ? 'bg-blue-50/60 dark:bg-blue-900/10' : ''}`}
-            title={m.hint}
-        >
+    const cellCls = `px-2.5 py-1.5 border-b border-gray-100 dark:border-gray-800/60 min-w-0 ${m.primary ? 'bg-blue-50/60 dark:bg-blue-900/10' : ''}`;
+    const row = (
+        <>
             <span className={`flex items-center gap-1 min-w-0 text-[10px] uppercase tracking-wide ${m.primary ? 'font-semibold text-gray-600 dark:text-gray-300' : 'font-medium text-gray-500 dark:text-gray-400'}`}>
                 <span className="truncate">{m.label}</span>
                 {m.hint && (
@@ -227,7 +225,22 @@ function Cell({ m }: { m: MetricCardDef }) {
                     {m.statusLabel !== '-' ? m.statusLabel : ''}
                 </span>
             </span>
-        </div>
+        </>
+    );
+    // Native title tooltips are unreachable on touch — <details> gives a
+    // disclosure toggle for free (tap, keyboard, SR) without JS state.
+    if (!m.hint) {
+        return <div className={`${cellCls} flex items-baseline justify-between gap-2`}>{row}</div>;
+    }
+    return (
+        <details className={`${cellCls} group`} title={m.hint}>
+            <summary className="flex items-baseline justify-between gap-2 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
+                {row}
+            </summary>
+            <p className="mt-1.5 text-[10px] leading-snug text-gray-500 dark:text-gray-400 normal-case tracking-normal">
+                {m.hint}
+            </p>
+        </details>
     );
 }
 

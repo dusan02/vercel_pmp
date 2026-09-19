@@ -66,6 +66,12 @@ function scoreTextClass(score: number): string {
     return 'fill-rose-600 dark:fill-rose-400';
 }
 
+function chipScoreClass(score: number): string {
+    if (score >= 75) return 'text-emerald-600 dark:text-emerald-400';
+    if (score >= 50) return 'text-amber-600 dark:text-amber-400';
+    return 'text-rose-600 dark:text-rose-400';
+}
+
 function scoreDotClass(score: number): string {
     if (score >= 75) return 'fill-emerald-500';
     if (score >= 50) return 'fill-amber-500';
@@ -172,5 +178,32 @@ export default function PillarsRadar({ pillars }: { pillars: PillarScores }) {
                 </ul>
             </details>
         </section>
+    );
+}
+
+/** One-line chip strip — "V 40 · G 87 · P 100 · H 67 · Q 54". Rendered only
+    below `lg` (call site uses lg:hidden): on desktop the radar card carries
+    the profile, on mobile it sits ~1100px deep behind the price chart, so
+    the chips keep the five-axis profile in the first viewport. */
+export function PillarChips({ pillars }: { pillars: PillarScores }) {
+    return (
+        <div className="flex flex-wrap items-center gap-1.5" aria-label="Profile scores">
+            <span className="text-[9px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mr-0.5">
+                Profile
+            </span>
+            {AXIS_ORDER.map(k => {
+                const p = pillars[k];
+                return (
+                    <span
+                        key={k}
+                        title={`${p.label}: ${p.score}/100`}
+                        className="inline-flex items-baseline gap-1 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/60 px-1.5 py-0.5"
+                    >
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">{k[0]}</span>
+                        <span className={`text-[11px] font-bold tabular-nums ${chipScoreClass(p.score)}`}>{p.score}</span>
+                    </span>
+                );
+            })}
+        </div>
     );
 }

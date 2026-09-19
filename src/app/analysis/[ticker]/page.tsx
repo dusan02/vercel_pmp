@@ -25,7 +25,7 @@ import { CompanyOverviewSection } from '@/components/company/analysis/sections/C
 import { KeyInsightsSection } from '@/components/company/analysis/sections/KeyInsightsSection';
 import { MoverInsightSection } from '@/components/company/analysis/sections/MoverInsightSection';
 import { AnalystConsensusSection } from '@/components/company/analysis/sections/AnalystConsensusSection';
-import PillarsRadar from '@/components/company/analysis/PillarsRadar';
+import PillarsRadar, { PillarChips } from '@/components/company/analysis/PillarsRadar';
 import { EarningsSection } from '@/components/company/analysis/sections/EarningsSection';
 import { EarningsBanner } from '@/components/company/analysis/sections/EarningsBanner';
 import { RecentMovesSection } from '@/components/company/analysis/sections/RecentMovesSection';
@@ -260,6 +260,14 @@ export default async function AnalysisPage({ params }: PageProps) {
                 verdict={data?.analysisCache?.verdictText ?? null}
                 ewScore={ewScore}
               />
+              {/* Mobile-only profile chips — the radar card sits deep in the
+                  scroll stack on small screens, so the five scores surface
+                  right under the hero instead. Hidden on lg+ (radar covers). */}
+              {hasPillars && (
+                <div className="lg:hidden">
+                  <PillarChips pillars={analysisData!.pillars!} />
+                </div>
+              )}
               <MoverInsightSection
                 ticker={tickerUpper}
                 moversReason={data?.moversReason ?? null}
