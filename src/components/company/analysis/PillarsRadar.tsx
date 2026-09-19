@@ -35,8 +35,25 @@ function point(i: number, radius: number): [number, number] {
     return [CX + radius * Math.cos(a), CY + radius * Math.sin(a)];
 }
 
-function polygonPoints(values: number[]): string {
-    return values.map((v, i) => point(i, (v / 100) * R).join(',')).join(' ');
+/** Closed Catmull-Rom spline through the vertices — softer organic shape
+    instead of a straight-edged pentagon (curve still passes through the
+    exact score points). */
+function smoothClosedPath(values: number[]): string {
+    const pts = values.map((v, i) => point(i, (v / 100) * R));
+    const n = pts.length;
+    let d = `M ${pts[0]![0].toFixed(2)},${pts[0]![1].toFixed(2)}`;
+    for (let i = 0; i < n; i++) {
+        const p0 = pts[(i - 1 + n) % n]!;
+        const p1 = pts[i]!;
+        const p2 = pts[(i + 1) % n]!;
+        const p3 = pts[(i + 2) % n]!;
+        const c1x = p1[0] + (p2[0] - p0[0]) / 6;
+        const c1y = p1[1] + (p2[1] - p0[1]) / 6;
+        const c2x = p2[0] - (p3[0] - p1[0]) / 6;
+        const c2y = p2[1] - (p3[1] - p1[1]) / 6;
+        d += ` C ${c1x.toFixed(2)},${c1y.toFixed(2)} ${c2x.toFixed(2)},${c2y.toFixed(2)} ${p2[0].toFixed(2)},${p2[1].toFixed(2)}`;
+    }
+    return d + ' Z';
 }
 
 function ringPoints(frac: number): string {
@@ -94,9 +111,9 @@ export default function PillarsRadar({ pillars }: { pillars: PillarScores }) {
                     const [x, y] = point(i, R);
                     return <line key={k} x1={CX} y1={CY} x2={x} y2={y} className="stroke-gray-200 dark:stroke-gray-700" strokeWidth="0.7" />;
                 })}
-                {/* value polygon */}
-                <polygon
-                    points={polygonPoints(values)}
+                {/* value polygon — smooth spline through the score points */}
+                <path
+                    d={smoothClosedPath(values)}
                     className="fill-emerald-500/15 stroke-emerald-500"
                     strokeWidth="1.8"
                     strokeLinejoin="round"

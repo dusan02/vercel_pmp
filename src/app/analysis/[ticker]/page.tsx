@@ -236,8 +236,9 @@ export default async function AnalysisPage({ params }: PageProps) {
             />
           )}
 
-          {/* Hero + mover insight + today's intraday side by side — the "now"
-              context stays together, no dead space under the title */}
+          {/* Hero + profile radar side by side — the five-axis profile is
+              the top-right anchor of the page. Intraday moves to the rail
+              below; when there's no analysis data it keeps this slot. */}
           <div className="mb-6 lg:grid lg:grid-cols-[minmax(0,1fr)_24rem] lg:gap-6 lg:items-start">
             <div className="min-w-0">
               <AnalysisHero
@@ -288,7 +289,9 @@ export default async function AnalysisPage({ params }: PageProps) {
                 websiteUrl={data?.websiteUrl}
               />
             </div>
-            <IntradayChart ticker={tickerUpper} />
+            {hasPillars
+              ? <PillarsRadar pillars={analysisData!.pillars!} />
+              : <IntradayChart ticker={tickerUpper} />}
           </div>
 
           {/* Main column + right rail (consensus, scores, related) — collapses
@@ -305,10 +308,11 @@ export default async function AnalysisPage({ params }: PageProps) {
 
             </div>{/* /main column */}
 
-            {/* Right rail — profile radar first (top-right), consensus below */}
+            {/* Right rail — intraday chart (swapped for the radar above),
+                analyst consensus below when available */}
             {hasRail && (
               <aside className="mt-6 lg:mt-0 space-y-6">
-                {hasPillars && <PillarsRadar pillars={analysisData!.pillars!} />}
+                {hasPillars && <IntradayChart ticker={tickerUpper} />}
                 {hasConsensus && (
                   <AnalystConsensusSection
                     priceTarget={data?.finnhubPriceTarget ?? null}
