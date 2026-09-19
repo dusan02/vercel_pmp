@@ -107,6 +107,20 @@ export function buildAnalysisFaq({
   return items.slice(0, 6);
 }
 
+/** FAQPage JSON-LD — mirrors the visible items above (Google requirement). */
+export function buildFaqSchema(items: FaqItem[]) {
+  if (!items.length) return null;
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: items.map((item) => ({
+      '@type': 'Question',
+      name: item.q,
+      acceptedAnswer: { '@type': 'Answer', text: item.a },
+    })),
+  };
+}
+
 export function AnalysisFaqSection({ items, ticker }: { items: FaqItem[]; ticker: string }) {
   if (!items.length) return null;
   return (
