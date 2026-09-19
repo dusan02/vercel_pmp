@@ -10,6 +10,7 @@ export function useFavorites() {
   const {
     preferences,
     hasConsent,
+    isLoaded,
     addFavorite: addPrefFavorite,
     removeFavorite: removePrefFavorite,
     toggleFavorite: togglePrefFavorite,
@@ -60,11 +61,13 @@ export function useFavorites() {
       }
     }
 
-    // Run sync when session becomes available
-    if (session?.user?.id) {
+    // Run sync when session becomes available — but only after local
+    // preferences have loaded, otherwise an empty default list would take
+    // the "fetch from DB" branch and wipe locally stored favorites.
+    if (session?.user?.id && isLoaded) {
       syncFavorites();
     }
-  }, [session?.user?.id]); // Only run on session change/login
+  }, [session?.user?.id, isLoaded]); // Only run on session change/login
 
   // Add favorite
   const addFavorite = useCallback(async (ticker: string) => {
