@@ -84,6 +84,11 @@ export function AnalysisHero({
       ? (price / prevClose - 1) * 100
       : null;
   const displayPct = isClosed ? lastSessionPct : changePct;
+  const hasStats = verdict != null
+    || (ewScore?.totalScore != null && ewScore?.maxPossible != null)
+    || marketCap != null || peRatio != null
+    || (dividendYield != null && dividendYield > 0) || roe != null
+    || (week52Low != null && week52High != null) || earningsLabel != null;
 
   return (
     <div className="mb-4 lg:mb-0">
@@ -155,7 +160,9 @@ export function AnalysisHero({
         {industry && <> · Industry: {industry}</>}
       </p>
       {/* Key stats strip — bordered band so the header reads as one
-          structured unit, not loose text under the title */}
+          structured unit, not loose text under the title. Hidden entirely
+          when the ticker has no stats (otherwise an empty bordered box). */}
+      {hasStats && (
       <div className="mt-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/60 px-3 py-2 grid grid-cols-2 gap-x-5 gap-y-1.5 text-sm sm:flex sm:flex-wrap sm:gap-y-1">
         {verdict && (
           <span className="text-gray-600 dark:text-gray-400">
@@ -215,6 +222,7 @@ export function AnalysisHero({
           </span>
         )}
       </div>
+      )}
     </div>
   );
 }

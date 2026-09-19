@@ -199,7 +199,6 @@ export default async function AnalysisPage({ params }: PageProps) {
     (rec != null && (rec.strongBuy != null || rec.buy != null || rec.hold != null));
   const hasPillars = analysisData?.pillars != null
     && (analysisData.statements?.length ?? 0) > 0;
-  const hasRail = hasConsensus || hasPillars;
   const ewScore = data?.ewScoreSnapshots?.[0] ?? null;
 
   return (
@@ -235,11 +234,13 @@ export default async function AnalysisPage({ params }: PageProps) {
             />
           )}
 
-          {/* Hero + profile radar side by side — the five-axis profile is
-              the top-right anchor of the page. Intraday moves to the rail
-              below; when there's no analysis data it keeps this slot. */}
-          <div className="mb-6 lg:grid lg:grid-cols-[minmax(0,1fr)_24rem] lg:gap-6 lg:items-start">
-            <div className="min-w-0">
+          {/* One grid for the whole top of the page. The left column spans
+              both rows so hero → news → price history flow continuously —
+              no dead space under the hero when the radar card is taller.
+              Rail: radar (top-right anchor) → intraday → about → consensus.
+              Mobile stacks in DOM order: hero, news, price history, then rail. */}
+          <div className="mb-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_24rem]">
+            <div className="min-w-0 lg:row-span-2">
               <AnalysisHero
                 ticker={tickerUpper}
                 companyName={companyName}
@@ -272,28 +273,21 @@ export default async function AnalysisPage({ params }: PageProps) {
                 earningsDays={earningsDays}
                 lastMove={recentMoves[0] ?? null}
               />
+              <div className="mt-6">
+                <PriceHistorySection
+                  ticker={tickerUpper}
+                  currentPrice={data?.lastPrice ?? null}
+                  currentChangePct={displayChangePct}
+                />
+              </div>
             </div>
-            {hasPillars
-              ? <PillarsRadar pillars={analysisData!.pillars!} />
-              : <IntradayChart ticker={tickerUpper} />}
-          </div>
-
-          {/* Main column + right rail (consensus, scores, related) — collapses
-              to a single column when the rail has nothing to show */}
-          <div className={hasRail ? 'lg:grid lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-8' : ''}>
-            <div className="min-w-0">
-
-          {/* Main price chart first — the biggest visual on the page */}
-          <PriceHistorySection
-            ticker={tickerUpper}
-            currentPrice={data?.lastPrice ?? null}
-            currentChangePct={displayChangePct}
-          />
-
-          {/* Company blurb — lives in the rail when there is one; inline
-              fallback keeps it rendered for tickers with no analysis data */}
-          {!hasRail && (
-            <div className="mt-6">
+            <div className="lg:col-start-2">
+              {hasPillars
+                ? <PillarsRadar pillars={analysisData!.pillars!} />
+                : <IntradayChart ticker={tickerUpper} />}
+            </div>
+            <div className="lg:col-start-2 space-y-6">
+              {hasPillars && <IntradayChart ticker={tickerUpper} />}
               <CompanyOverviewSection
                 companyName={companyName}
                 description={data?.description}
@@ -301,32 +295,14 @@ export default async function AnalysisPage({ params }: PageProps) {
                 employees={data?.employees}
                 websiteUrl={data?.websiteUrl}
               />
-            </div>
-          )}
-
-            </div>{/* /main column */}
-
-            {/* Right rail — intraday chart (swapped for the radar above),
-                then the About card, then analyst consensus when available */}
-            {hasRail && (
-              <aside className="mt-6 lg:mt-0 space-y-6">
-                {hasPillars && <IntradayChart ticker={tickerUpper} />}
-                <CompanyOverviewSection
-                  companyName={companyName}
-                  description={data?.description}
-                  headquarters={data?.headquarters}
-                  employees={data?.employees}
-                  websiteUrl={data?.websiteUrl}
+              {hasConsensus && (
+                <AnalystConsensusSection
+                  priceTarget={data?.finnhubPriceTarget ?? null}
+                  recommendation={data?.finnhubRecommendation ?? null}
+                  fallbackPrice={data?.lastPrice ?? null}
                 />
-                {hasConsensus && (
-                  <AnalystConsensusSection
-                    priceTarget={data?.finnhubPriceTarget ?? null}
-                    recommendation={data?.finnhubRecommendation ?? null}
-                    fallbackPrice={data?.lastPrice ?? null}
-                  />
-                )}
-              </aside>
-            )}
+              )}
+            </div>
           </div>
 
           {/* Key metrics — rendered at page level (not inside the ssr:false
