@@ -2,7 +2,6 @@
 
 import { FinancialHealthTable } from './analysis/FinancialHealthTable';
 import { AnalysisControlsBar } from './analysis/AnalysisControlsBar';
-import { CompareToolbar } from './analysis/CompareToolbar';
 import { AnalysisCharts } from './AnalysisCharts';
 import { useAnalysis } from '../../hooks/useAnalysis';
 import { LoadingSkeleton } from './analysis/LoadingSkeleton';
@@ -23,8 +22,8 @@ export type {
  *
  * The SSR page renders the document header, company overview, price history,
  * analyst consensus and earnings. This tab renders the interactive parts
- * only: controls, compare toolbar, the charts grid and the interpreted Key
- * Financial Metrics table (with compare column).
+ * only: controls, the charts grid and the interpreted Key
+ * Financial Metrics table.
  */
 export default function AnalysisTab({ ticker, initialAnalysisData, initialHistoryData, flowPeriods }: AnalysisTabProps & { initialAnalysisData?: any; initialHistoryData?: any; flowPeriods?: FlowPeriods | null | undefined }) {
     const {
@@ -32,16 +31,8 @@ export default function AnalysisTab({ ticker, initialAnalysisData, initialHistor
         loading,
         analyzing,
         error,
-        compareWith,
-        compareInput,
-        secondaryData,
-        loadingCompare,
-        compareError,
         analysisStep,
-        setCompareInput,
         runDeepAnalysis,
-        handleAddComparison,
-        handleRemoveComparison,
     } = useAnalysis(ticker, initialAnalysisData, initialHistoryData);
 
     if (loading) return <LoadingSkeleton analysisStep={analysisStep} />;
@@ -116,27 +107,9 @@ export default function AnalysisTab({ ticker, initialAnalysisData, initialHistor
             {/* ── Charts Dashboard (2-Column Grid) — core content first ── */}
             <AnalysisCharts ticker={ticker} data={data} flowPeriods={flowPeriods} />
 
-            {/* ── Compare — sits directly above the table whose column it fills ── */}
-            <CompareToolbar
-                ticker={ticker}
-                compareWith={compareWith}
-                compareInput={compareInput}
-                loadingCompare={loadingCompare}
-                compareError={compareError}
-                peers={data.peers}
-                onCompareInput={setCompareInput}
-                onAddComparison={handleAddComparison}
-                onRemoveComparison={handleRemoveComparison}
-            />
-
             {/* ── Consolidated metrics table: scores, margins, ratios, quality
                 — sits below the charts as the detailed numbers behind them ── */}
-            <FinancialHealthTable
-                data={data}
-                compareWith={compareWith}
-                secondaryData={secondaryData}
-                flowPeriods={flowPeriods}
-            />
+            <FinancialHealthTable data={data} flowPeriods={flowPeriods} />
 
             {/* ── Controls: Last Updated + Refresh — utility chrome as footer ── */}
             <AnalysisControlsBar

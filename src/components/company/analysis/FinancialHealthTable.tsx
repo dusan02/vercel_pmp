@@ -4,8 +4,9 @@ import { CompactMetricRow, MetricCardDef, StatusType, StatusBadge } from '../sha
 
 interface Props {
     data: AnalysisData;
-    compareWith: string;
-    secondaryData: AnalysisData | null;
+    /** Optional compare ticker — renders a "vs TICKER" secondary value per row */
+    compareWith?: string;
+    secondaryData?: AnalysisData | null;
     flowPeriods?: import('./sections/FinancialFlowsSection').FlowPeriods | null | undefined;
 }
 
@@ -246,7 +247,7 @@ function MetricGrid({ title, metrics, compareWith, children }: { title: string, 
 }
 
 // ── Main export ──────────────────────────────────────────────────────────────
-export function FinancialHealthTable({ data, compareWith, secondaryData, flowPeriods }: Props) {
+export function FinancialHealthTable({ data, compareWith = '', secondaryData = null, flowPeriods }: Props) {
     const { scores, solvency, profitability, growth, valuation, quality, balanceSheet, lossYears } = useMemo(
         () => buildMetrics(data, secondaryData, compareWith, flowPeriods),
         [data, secondaryData, compareWith, flowPeriods]

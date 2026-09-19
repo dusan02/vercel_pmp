@@ -49,15 +49,9 @@ export function useAnalysis(ticker: string, initialAnalysisData?: any, initialHi
     const [analyzing, setAnalyzing] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const [compareWith, setCompareWith] = useState<string>('');
-    const [compareInput, setCompareInput] = useState<string>('');
-    const [secondaryData, setSecondaryData] = useState<AnalysisData | null>(null);
-    const [loadingCompare, setLoadingCompare] = useState(false);
-    const [compareError, setCompareError] = useState<string | null>(null);
     const [analysisStep, setAnalysisStep] = useState<string>('');
     const autoTriggered = useRef<string | null>(null);
     const fetchIdRef = useRef(0);
-    const compareReqIdRef = useRef(0);
     // Tracks the ticker whose responses may still mutate state — stale-ticker
     // responses (user switched tickers mid-flight) are discarded.
     const tickerRef = useRef(ticker);
@@ -85,7 +79,7 @@ export function useAnalysis(ticker: string, initialAnalysisData?: any, initialHi
         return () => clearInterval(timer);
     }, [analyzing]);
 
-    const fetchAnalysis = useCallback(async (compare?: string) => {
+    const fetchAnalysis = useCallback(async () => {
         const reqTicker = ticker;
         const controller = new AbortController();
         // Abort the previous in-flight request (prevents duplicate network work)
@@ -93,65 +87,35 @@ export function useAnalysis(ticker: string, initialAnalysisData?: any, initialHi
         abortRef.current = controller;
         // Track the latest request so stale responses are discarded
         const reqId = ++fetchIdRef.current;
-        const isCompare = !!compare;
         try {
-            // Only show full-page loading skeleton for primary fetches,
-            // not for compare requests (which use loadingCompare instead)
-            if (!isCompare) {
-                setLoading(true);
-            }
-            if (!isCompare) setError(null);
-            const url = compare
-                ? `/api/analysis/${ticker}?compare=${encodeURIComponent(compare)}`
-                : `/api/analysis/${ticker}`;
+            setLoading(true);
+            setError(null);
 
             // Fetch main analysis + history (for correlation/valuation charts) in parallel
-            // Skip history fetch for compare requests — secondary data doesn't need charts
-            const [res, histRes] = isCompare
-                ? await Promise.all([fetch(url, { signal: controller.signal }), Promise.resolve(undefined as Response | undefined)])
-                : await Promise.all([
-                      fetch(url, { signal: controller.signal }),
-                      fetch(`/api/analysis/${ticker}/history`, { signal: controller.signal }),
-                  ]);
+            const [res, histRes] = await Promise.all([
+                fetch(`/api/analysis/${ticker}`, { signal: controller.signal }),
+                fetch(`/api/analysis/${ticker}/history`, { signal: controller.signal }),
+            ]);
 
             // Ticker changed while this request was in flight → discard entirely
             if (tickerRef.current !== reqTicker) return;
 
             if (!res.ok) {
                 if (reqId !== fetchIdRef.current) return; // stale
-                if (isCompare) {
-                    // A failed compare must NEVER clear the primary analysis
-                    setSecondaryData(null);
-                    setCompareError(res.status === 404
-                        ? `No analysis data available for ${compare}.`
-                        : `Comparison failed (${res.status}). Please try again.`);
+                setData(null);
+                if (res.status === 404) {
+                    setError('No analysis data available for this ticker.');
                 } else {
-                    setData(null);
-                    setSecondaryData(null);
-                    if (res.status === 404) {
-                        setError('No analysis data available for this ticker.');
-                    } else {
-                        setError(`Analysis request failed (${res.status}). Please try again.`);
-                    }
+                    setError(`Analysis request failed (${res.status}). Please try again.`);
                 }
                 return;
             }
             const json = await res.json();
             if (tickerRef.current !== reqTicker) return;
-            const histJson = !isCompare && histRes && histRes.ok ? await histRes.json().catch(() => ({})) : {};
+            const histJson = histRes && histRes.ok ? await histRes.json().catch(() => ({})) : {};
 
             // Discard if a newer request was started
             if (reqId !== fetchIdRef.current) return;
-
-            if (isCompare) {
-                // COMPARE REQUESTS MUST NOT TOUCH PRIMARY STATE.
-                // The compare response's `primary` payload lacks /history extras,
-                // so spreading it over `data` would wipe the chart series.
-                const secondary = json?.secondary ?? null;
-                setSecondaryData(secondary ? { ...secondary, finnhub: secondary.finnhub ?? null } : null);
-                setCompareError(secondary ? null : `No analysis data available for ${compare}.`);
-                return;
-            }
 
             // Fields sourced from /history endpoint
             const historyExtras = {
@@ -179,34 +143,23 @@ export function useAnalysis(ticker: string, initialAnalysisData?: any, initialHi
             if (json && json.primary) {
                 // Pass through finnhub data from API response
                 setData({ ...json.primary, ...historyExtras, peers: json.peers || [], finnhub: json.primary.finnhub ?? null });
-                setSecondaryData(json.secondary ? { ...json.secondary, finnhub: json.secondary.finnhub ?? null } : null);
-                setCompareError(null);
             } else {
                 setData(json ? { ...json, ...historyExtras, finnhub: json.finnhub ?? null } : null);
-                setSecondaryData(null);
             }
         } catch (err) {
             if (err instanceof DOMException && err.name === 'AbortError') return;
             if (tickerRef.current !== reqTicker) return;
             if (reqId !== fetchIdRef.current) return; // stale
             console.error(err);
-            if (!isCompare) {
-                setError('Could not load analysis data. Please try again later.');
-            } else {
-                setCompareError('Could not load comparison data.');
-            }
+            setError('Could not load analysis data. Please try again later.');
         } finally {
-            if (reqId === fetchIdRef.current && !isCompare) {
+            if (reqId === fetchIdRef.current) {
                 setLoading(false);
             }
         }
     }, [ticker]);
 
     useEffect(() => {
-        // Reset comparison state when ticker changes
-        setCompareWith('');
-        setCompareInput('');
-        setSecondaryData(null);
         autoTriggered.current = null;
         // Skip initial fetch if we have SSR data — it will be refreshed in background
         if (ssrData) {
@@ -225,33 +178,6 @@ export function useAnalysis(ticker: string, initialAnalysisData?: any, initialHi
             runDeepAnalysis();
         }
     }, [loading, data, analyzing, error, ticker]);
-
-    const handleAddComparison = async (symbol?: string) => {
-        const target = (symbol || compareInput).toUpperCase().trim();
-        if (!target) return;
-        if (target === ticker) {
-            setCompareError('Cannot compare a ticker with itself.');
-            return;
-        }
-        const myId = ++compareReqIdRef.current;
-        setCompareWith(target);
-        setCompareError(null);
-        setLoadingCompare(true);
-        try {
-            await fetchAnalysis(target);
-        } finally {
-            // Only the latest compare request may clear the loading flag
-            if (myId === compareReqIdRef.current) setLoadingCompare(false);
-        }
-    };
-
-    const handleRemoveComparison = () => {
-        setCompareWith('');
-        setCompareInput('');
-        setSecondaryData(null);
-        setCompareError(null);
-        fetchAnalysis();
-    };
 
     const runDeepAnalysis = async () => {
         const reqTicker = ticker;
@@ -283,15 +209,7 @@ export function useAnalysis(ticker: string, initialAnalysisData?: any, initialHi
         loading,
         analyzing,
         error,
-        compareWith,
-        compareInput,
-        secondaryData,
-        loadingCompare,
-        compareError,
         analysisStep,
-        setCompareInput,
         runDeepAnalysis,
-        handleAddComparison,
-        handleRemoveComparison
     };
 }
