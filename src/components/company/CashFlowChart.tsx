@@ -22,6 +22,7 @@ interface CashFlowChartProps {
 
 const METRICS = [
     { key: 'operatingCF', label: 'Operating CF', color: '#F59E0B' },
+    { key: 'capex', label: 'CapEx', color: '#64748B' },
     { key: 'freeCF', label: 'Free Cash Flow', color: '#3B82F6' },
     { key: 'netIncome', label: 'Net Income', color: '#10B981' },
     { key: 'sbc', label: 'SBC', color: '#EC4899' },
@@ -37,13 +38,16 @@ export default function CashFlowChart({ statements }: CashFlowChartProps) {
         const hasSbc = statements.some(s => s.sbc !== null && s.sbc !== 0);
         const result: string[] = ['netIncome'];
         if (hasOperatingCF) result.push('operatingCF');
+        if (hasCapex) result.push('capex');
         // Only show freeCF if we have BOTH operating CF and capex
         if (hasOperatingCF && hasCapex) result.push('freeCF');
         if (hasSbc) result.push('sbc');
         return result;
     }, [statements]);
 
-    const [selectedMetrics, setSelectedMetrics] = useState<string[]>(['operatingCF', 'freeCF', 'netIncome']);
+    // CapEx defaults ON — it's the visible bridge between OCF and FCF
+    // (same component the paired sankey decomposes).
+    const [selectedMetrics, setSelectedMetrics] = useState<string[]>(['operatingCF', 'capex', 'freeCF', 'netIncome']);
 
     // Sync selectedMetrics with availableMetrics on mount / when availability changes
     useEffect(() => {
@@ -66,7 +70,7 @@ export default function CashFlowChart({ statements }: CashFlowChartProps) {
             const ni = s.netIncome !== null ? s.netIncome / 1e6 : null;
             const sbc = s.sbc !== null ? s.sbc / 1e6 : null;
             const label = buildPeriodLabel(s.fiscalPeriod, s.fiscalYear);
-            return { name: label, date: label, operatingCF: ocf, freeCF: fcf, netIncome: ni, sbc };
+            return { name: label, date: label, operatingCF: ocf, capex, freeCF: fcf, netIncome: ni, sbc };
         });
     }, [statements, viewMode]);
 
@@ -74,6 +78,7 @@ export default function CashFlowChart({ statements }: CashFlowChartProps) {
         const allVals = chartData.flatMap(d => {
             const vals: number[] = [];
             if (selectedMetrics.includes('operatingCF') && d.operatingCF != null) vals.push(d.operatingCF);
+            if (selectedMetrics.includes('capex') && d.capex != null) vals.push(d.capex);
             if (selectedMetrics.includes('freeCF') && d.freeCF != null) vals.push(d.freeCF);
             if (selectedMetrics.includes('netIncome') && d.netIncome != null) vals.push(d.netIncome);
             if (selectedMetrics.includes('sbc') && d.sbc != null) vals.push(d.sbc);
@@ -116,6 +121,8 @@ export default function CashFlowChart({ statements }: CashFlowChartProps) {
                         <ReferenceLine y={0} stroke="#9CA3AF" />
                         <Bar dataKey="operatingCF" name="Operating CF" fill="#F59E0B" radius={[2, 2, 0, 0]} maxBarSize={40}
                             hide={!selectedMetrics.includes('operatingCF')} isAnimationActive={false} />
+                        <Bar dataKey="capex" name="CapEx" fill="#64748B" radius={[2, 2, 0, 0]} maxBarSize={40}
+                            hide={!selectedMetrics.includes('capex')} isAnimationActive={false} />
                         <Bar dataKey="freeCF" name="Free Cash Flow" fill="#3B82F6" radius={[2, 2, 0, 0]} maxBarSize={40}
                             hide={!selectedMetrics.includes('freeCF')} isAnimationActive={false} />
                         <Bar dataKey="netIncome" name="Net Income" fill="#10B981" radius={[2, 2, 0, 0]} maxBarSize={40}
