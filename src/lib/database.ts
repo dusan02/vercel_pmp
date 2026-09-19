@@ -11,8 +11,10 @@ if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
 }
 
-// Initialize database
-const db = new Database(dbPath);
+// Initialize database. timeout = SQLite busy_timeout: concurrent importers
+// (e.g. next build's page-data workers all running the schema bootstrap above)
+// wait for each other's locks instead of throwing SQLITE_BUSY.
+const db = new Database(dbPath, { timeout: 10000 });
 
 // Enable WAL mode for better performance
 db.pragma('journal_mode = WAL');
