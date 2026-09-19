@@ -60,3 +60,28 @@ curl -s https://premarketprice.com/analysis/AAPL | grep -c FinancialProduct  # �
 - PM2: `cron-ew-score-import` denne 05:30 UTC, súbor cez `EW_EXPORT_PATH` (default `/var/www/premarketprice/data/ew-scores.json`) — importér bez súboru skončí exit 2, nič nerozbije
 - Importer je idempotentný na `(symbol, asOfDate)`; tickery mimo `Ticker` tabuľky (delisted z frozen universe) preskočí — produkt ukazuje len live tickery
 - Skóre sú **V5-B current-data** — EARNINGS stĺpec je BLOCKED (žiadne PIT consensus dáta), nikdy nie 0. Neprezentovať ako backtest ani V5-C výsledok
+
+## Key Metrics dátová vrstva (audit 2026-09)
+
+**Unified-source pravidlá** (porušenie spôsobilo MU: P/E 129x Finnhub vs náš TTM 23x; FCF margin 29% TTM vs True FCF 1.9% FY):
+
+- **P/E**: production source = vlastný TTM (`price × shares / TTM netIncome` v `computeMetrics` → `metrics.currentPe`). `finnhubMetrics.peRatio` je len diagnostika — môže sedieť na stale EPS báze. Rovnaký zdroj používa `scoreCalculator` (valuation score + percentile) aj `displayPeRatio` v `page.tsx` (hero, FAQ, schema)
+- **Flow metriky**: Operating margin, CapEx/Rev, SBC/Rev, FCF margin, True FCF margin — všetky TTM cez `computeTTM` (polia `operatingCashFlow`, `capex`, `sbc` exportované v `ttm`). True FCF = `(TTM OCF − |TTM CapEx| − TTM SBC) / TTM Rev` = FCF margin − SBC/Rev
+- **PEG**: Finnhub `pegRatio` sa zobrazuje len ak ich `peRatio` nediverguje >2× od nášho `currentPe` (iný basis → internally contradictory). Growth basis Finnhub PEG nie je zdokumentovaný — vlastný PEG neimplementovať bez vyjasnenia definície
+- **Percentile text**: `formatPePercentile` v `scoreCalculator` — absolútne extrémy dostávajú explicitné wordingy, nikdy "top 0%"
+- **Konzistencia chránená testom**: `src/__tests__/keyMetricsConsistency.test.ts` — reconciliácia P/E↔EPS, FCF↔True FCF, shared TTM báza, PEG suppression, percentile wording
+
+**Dostupnosť dát** (prod DB, 2026-09):
+
+| Položka | Stav | Zdroj |
+|---|---|---|
+| Denná história P/E, P/S, EV/EBITDA, FCF yield | ✅ ~856K riadkov, 704 tickerov | `DailyValuationHistory` |
+| Percentile vs vlastná história | ✅ derivable | `DailyValuationHistory` |
+| Sector/industry mediány | ✅ derivable | agregácia `FinnhubMetrics` podľa `Ticker.sector` |
+| EPS/FCF/EBITDA CAGR, share count, SBC história, ROIC/ROE trendy | ✅ | `FinancialStatement` (~43 periód/ticker) |
+| Analyst price targets, recommendation counts | ⚠️ tabuľky existujú, **0 riadkov na prod** | `FinnhubPriceTarget`, `FinnhubRecommendation` — sync pipeline nenaplnená |
+| Forward estimates | ⚠️ len ~26 riadkov s `epsEstimate` | `EarningsCalendar` |
+| Precomputed percentiles | ⚠️ schéma existuje, 0 riadkov | `ValuationPercentiles` |
+| Estimate revisions, one-off items, maint./growth capex split | ❌ žiadny zdroj | — |
+
+`humanPeInfo`/`humanDebtInfo` sa renderujú z `AnalysisCache` — stale texty sa prepíšu refresh cyklom (POST `/api/analysis/[ticker]`).

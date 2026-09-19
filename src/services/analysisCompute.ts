@@ -121,24 +121,24 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
     const ttmGrossProfit = ttm.grossProfit;
     const ttmSbc = ttm.sbc;
 
-    // P/E: prefer Finnhub pre-computed, fallback to our TTM calculation
+    // P/E: our own TTM EPS is the production source. Finnhub's peRatio can be
+    // computed on a stale EPS basis — e.g. MU showed 129x (FY-ago EPS) while
+    // fresh statements gave ~23x. Finnhub stays exported as diagnostics only.
     const effectivePrice = tickerRecord?.lastPrice || latestValuation?.closePrice || 0;
     const effectiveNI = ttmNetIncome ?? latestStmt?.netIncome ?? null;
-    let currentPe: number | null = finnhubMetrics?.peRatio ?? null;
-    // Finnhub returns 0 (not null) for loss-makers — 0x P/E is meaningless
-    if (currentPe !== null && currentPe <= 0) currentPe = null;
-    if (currentPe === null && effectivePrice > 0 && sharesOutstanding && sharesOutstanding > 0 && effectiveNI && effectiveNI > 0) {
+    let currentPe: number | null = null;
+    if (effectivePrice > 0 && sharesOutstanding && sharesOutstanding > 0 && effectiveNI && effectiveNI > 0) {
         currentPe = (effectivePrice * sharesOutstanding) / effectiveNI;
     }
     if (currentPe === null) {
         currentPe = latestValuation?.peRatio || null;
     }
 
-    // EPS: prefer Finnhub, fallback to our calculation
-    let currentEps = finnhubMetrics?.netIncomePerShare ?? null;
-    if (currentEps === null && ttmNetIncome !== null && sharesOutstanding !== null && sharesOutstanding > 0) {
-        currentEps = ttmNetIncome / sharesOutstanding;
-    }
+    // EPS: same NI basis as P/E — mixing Finnhub EPS with our P/E would break
+    // the price/EPS reconciliation the UI asserts.
+    const currentEps = (effectiveNI !== null && effectiveNI > 0 && sharesOutstanding !== null && sharesOutstanding > 0)
+        ? effectiveNI / sharesOutstanding
+        : finnhubMetrics?.netIncomePerShare ?? null;
 
     // P/E is meaningless for loss-making companies (negative TTM EPS).
     // Finnhub's "normalized" P/E can be a large positive number while the
@@ -225,7 +225,10 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
             netIncome: ttmNetIncome,
             revenue: ttmRevenue,
             ebit: ttmEbit,
-            grossProfit: ttmGrossProfit
+            grossProfit: ttmGrossProfit,
+            operatingCashFlow: ttm.operatingCashFlow,
+            capex: ttm.capex,
+            sbc: ttmSbc
         },
         metrics: {
             zScore: altmanZ,

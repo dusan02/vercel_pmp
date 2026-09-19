@@ -3,6 +3,24 @@ import { aiService } from '../aiService';
 import { NotificationService } from '../notificationService';
 import { computeTTM } from '@/lib/utils/ttm';
 
+function ordinal(n: number): string {
+    const s = ['th', 'st', 'nd', 'rd'];
+    const v = n % 100;
+    return n + (s[(v - 20) % 10] ?? s[v] ?? s[0] ?? 'th');
+}
+
+/**
+ * Human-readable P/E percentile vs the stock's own valuation history.
+ * percentile = share of history strictly below the current P/E (0–100).
+ * Exported for the consistency tests.
+ */
+export function formatPePercentile(currentPE: number, percentile: number): string {
+    const pe = `${currentPE.toFixed(1)}x`;
+    if (percentile >= 99) return `Current P/E of ${pe} is the highest in available history.`;
+    if (percentile <= 1) return `Current P/E of ${pe} is the lowest in available history.`;
+    return `Current P/E of ${pe} sits at the ${ordinal(Math.round(percentile))} percentile of its historical range.`;
+}
+
 /**
  * Calculate health, profitability, and valuation scores.
  * Computes Altman Z-Score, Piotroski F-Score, Beneish M-Score, FCF metrics,
@@ -230,10 +248,12 @@ export async function calculateScores(symbol: string): Promise<void> {
     });
 
     const effectiveNetIncome = ttmNetIncome ?? latestStmt.netIncome;
-    // Prefer Finnhub P/E for scoring consistency with UI
-    const currentPE = finnhubMetrics?.peRatio ?? ((currentPrice > 0 && latestStmt.sharesOutstanding && effectiveNetIncome && effectiveNetIncome > 0)
+    // P/E source must match the UI (price / own TTM EPS). Finnhub's peRatio can
+    // sit on a stale EPS basis — using it here once produced percentile=100 and
+    // a "top 0%" label while our own valuation history showed ~21x.
+    const currentPE = (currentPrice > 0 && latestStmt.sharesOutstanding && effectiveNetIncome && effectiveNetIncome > 0)
         ? (currentPrice * latestStmt.sharesOutstanding) / effectiveNetIncome
-        : (latestValuation?.peRatio || null));
+        : (latestValuation?.peRatio || null);
 
     if (allValuations.length > 0 && currentPE !== null && currentPE > 0) {
         const index = allValuations.findIndex(v => v.peRatio !== null && v.peRatio >= currentPE);
@@ -242,7 +262,7 @@ export async function calculateScores(symbol: string): Promise<void> {
         else if (percentile < 40) valuationScore += 20;
         else if (percentile < 60) valuationScore += 12;
         else if (percentile < 80) valuationScore += 5;
-        humanPeInfo = `Current P/E is in the ${percentile > 50 ? 'top' : 'bottom'} ${percentile > 50 ? (100 - percentile).toFixed(0) : percentile.toFixed(0)}% of historical values.`;
+        humanPeInfo = formatPePercentile(currentPE, percentile);
     } else if (currentPE === null) {
         valuationScore += 10;
     }

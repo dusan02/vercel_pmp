@@ -3,7 +3,6 @@
 import React, { useMemo } from 'react';
 import { AnalysisData } from './types';
 import { MetricCardDef, StatusType, StatusBadge, VALUE_COLORS } from '../shared/MetricCard';
-import type { FlowPeriods } from './sections/FinancialFlowsSection';
 
 interface EwScoreInput {
     totalScore: number | null;
@@ -14,13 +13,12 @@ interface EwScoreInput {
 
 interface Props {
     data: AnalysisData;
-    flowPeriods?: FlowPeriods | null | undefined;
     /** Early Winners snapshot — renders as a minimal cell in the Scores group */
     ewScore?: EwScoreInput | null | undefined;
 }
 
-// ── Build all metrics — same values/statuses as the old card grid ────────────
-function buildMetrics(data: AnalysisData, flowPeriods?: Props['flowPeriods'], ewScore?: Props['ewScore']) {
+// ── Build all metrics — every flow metric shares the same TTM as-of period ───
+export function buildMetrics(data: AnalysisData, ewScore?: Props['ewScore']) {
     const m = data.metrics;
     const bs = data.balanceSheet;
     const mcap = data.ticker?.lastMarketCap ? data.ticker.lastMarketCap * 1e9 : null;
@@ -99,18 +97,27 @@ function buildMetrics(data: AnalysisData, flowPeriods?: Props['flowPeriods'], ew
     // values appear for illiquid names)
     const fpe = fh?.forwardPe != null && fh.forwardPe >= 1 ? fh.forwardPe : null;
     const evEbitda = fh?.evEbitda ?? null;
-    const peg = fh?.pegRatio ?? null;
+    // Finnhub's PEG derives from their own P/E basis. When their P/E diverges
+    // >2× from our displayed TTM P/E, their PEG answers a different question —
+    // showing it next to our P/E would be internally contradictory.
+    const fhPe = fh?.peRatio ?? null;
+    const peDivergent = fhPe != null && pe != null && pe > 0 && (fhPe / pe > 2 || fhPe / pe < 0.5);
+    const peg = !peDivergent ? (fh?.pegRatio ?? null) : null;
 
-    // Flow-period metrics (latest FY or derived quarter) — the same source the
-    // sankey charts use, so numbers stay consistent across the page
-    const fp = flowPeriods?.annual ?? flowPeriods?.quarterly ?? null;
-    const fpPct = (num: number | null | undefined, den: number | null | undefined) =>
-        num != null && den != null && den !== 0 ? num / den : null;
-    const opMargin = fpPct(fp?.ebit, fp?.revenue);
-    const trueFcfM = fp?.ocf != null && fp?.capex != null
-        ? fpPct(fp.ocf - Math.abs(fp.capex) - (fp.sbc ?? 0), fp.revenue) : null;
-    const capexRev = fp?.capex != null ? fpPct(Math.abs(fp.capex), fp.revenue) : null;
-    const sbcRev = fpPct(fp?.sbc, fp?.revenue);
+    // Flow metrics — all TTM, one as-of period. Using the sankey period here
+    // once produced a contradiction: FCF margin 29% (TTM) next to True FCF
+    // 1.9% (last FY, a capex-heavy year). Same basis for every row now.
+    const ttmRev = ttm?.revenue ?? null;
+    const ttmOcf = ttm?.operatingCashFlow ?? null;
+    const ttmCapex = ttm?.capex ?? null;
+    const ttmSbc = ttm?.sbc ?? null;
+    const safeDiv = (num: number | null | undefined, den: number | null | undefined) =>
+        num != null && den != null && den > 0 ? num / den : null;
+    const opMargin = safeDiv(ttm?.ebit, ttmRev);
+    const trueFcfM = (ttmOcf != null && ttmCapex != null)
+        ? safeDiv(ttmOcf - Math.abs(ttmCapex) - (ttmSbc ?? 0), ttmRev) : null;
+    const capexRev = ttmCapex != null ? safeDiv(Math.abs(ttmCapex), ttmRev) : null;
+    const sbcRev = safeDiv(ttmSbc, ttmRev);
 
     const def = (
         label: string, value: string,
@@ -153,18 +160,18 @@ function buildMetrics(data: AnalysisData, flowPeriods?: Props['flowPeriods'], ew
         def('P/S (TTM)', psRatio != null ? `${psRatio.toFixed(2)}x` : 'N/A', psRatio == null ? 'neutral' : psRatio < 2 ? 'good' : psRatio <= 5 ? 'neutral' : psRatio <= 10 ? 'warn' : 'bad', psRatio == null ? '-' : psRatio < 2 ? 'Cheap' : psRatio <= 5 ? 'Fair' : 'Exp.', 'Price to Sales'),
         def('P/B Ratio', pbRatio != null ? mul(pbRatio) : (hasNegEquity ? 'Neg. Equity' : 'N/A'), pbRatio == null ? (hasNegEquity ? 'warn' : 'neutral') : pbRatio < 3 ? 'good' : pbRatio < 8 ? 'warn' : 'bad', pbRatio == null ? (hasNegEquity ? 'Buybacks' : '-') : pbRatio < 3 ? 'Fair' : pbRatio < 8 ? 'Exp.' : 'V.Exp.', 'Price to Book Value. Neg. equity = heavy buybacks'),
         def('FCF Yield', pct(fcfY), fcfY == null ? 'neutral' : fcfY > 0.05 ? 'good' : fcfY < 0 ? 'bad' : 'warn', fcfY == null ? '-' : fcfY > 0.05 ? 'Value' : fcfY < 0 ? 'Negative' : 'Low', 'FCF / Market Cap'),
-        def('PEG Ratio', peg != null ? `${peg.toFixed(2)}` : 'N/A', peg == null ? 'neutral' : peg < 1 ? 'good' : peg <= 2 ? 'neutral' : peg <= 3 ? 'warn' : 'bad', peg == null ? '-' : peg < 1 ? 'Cheap' : peg <= 2 ? 'Fair' : 'Exp.', 'P/E relative to growth — reads precise but hinges entirely on the growth estimate'),
+        def('PEG Ratio', peg != null ? `${peg.toFixed(2)}` : 'N/A', peg == null ? 'neutral' : peg < 1 ? 'good' : peg <= 2 ? 'neutral' : peg <= 3 ? 'warn' : 'bad', peg == null ? '-' : peg < 1 ? 'Cheap' : peg <= 2 ? 'Fair' : 'Exp.', 'Finnhub PEG — their P/E basis ÷ expected EPS growth. Suppressed when their P/E diverges >2× from our TTM P/E (different basis)'),
     ];
 
     const profitability: MetricCardDef[] = [
         def('ROIC', roic != null ? pct(roic) : 'N/A', roic == null ? 'neutral' : roic > 0.15 ? 'good' : roic > 0.08 ? 'warn' : 'bad', roic == null ? '-' : roic > 0.15 ? 'Moat' : roic > 0.08 ? 'Avg' : 'Low', 'NOPAT (EBIT less ~21% tax) / invested capital (equity + debt − cash). Flagship quality metric — durable >15% signals a moat'),
         def('ROE', roe != null ? pct(roe) : (hasNegEquity ? 'Neg. Equity' : 'N/A'), roe == null ? (hasNegEquity ? 'warn' : 'neutral') : roe > 0.20 ? 'good' : roe > 0.10 ? 'warn' : 'bad', roe == null ? (hasNegEquity ? 'Buybacks' : '-') : roe > 0.2 ? 'Strong' : roe > 0.1 ? 'Avg' : 'Weak', 'Return on Equity. Neg. equity = heavy buybacks'),
         def('Gross Margin', pct(grossMar), grossMar == null ? 'neutral' : grossMar > 0.50 ? 'good' : grossMar > 0.30 ? 'warn' : 'bad', grossMar == null ? '-' : grossMar > 0.5 ? 'Premium' : grossMar > 0.3 ? 'Avg' : 'Low', 'Gross Profit / Revenue'),
-        def('Operating Margin', pct(opMargin), opMargin == null ? 'neutral' : opMargin > 0.25 ? 'good' : opMargin > 0.10 ? 'warn' : 'bad', opMargin == null ? '-' : opMargin > 0.25 ? 'High' : opMargin > 0.10 ? 'Avg' : 'Low', 'EBIT / Revenue (latest period)'),
+        def('Operating Margin', pct(opMargin), opMargin == null ? 'neutral' : opMargin > 0.25 ? 'good' : opMargin > 0.10 ? 'warn' : 'bad', opMargin == null ? '-' : opMargin > 0.25 ? 'High' : opMargin > 0.10 ? 'Avg' : 'Low', 'TTM EBIT / TTM Revenue'),
         def('Net Margin', pct(netMar), netMar == null ? 'neutral' : netMar > 0.10 ? 'good' : netMar > 0.05 ? 'warn' : 'bad', netMar == null ? '-' : netMar > 0.1 ? 'High' : netMar > 0.05 ? 'Avg' : 'Low', 'Net Income / Revenue'),
         def('FCF Margin', pct(fcfMar), fcfMar == null ? 'neutral' : fcfMar > 0.15 ? 'good' : fcfMar > 0.08 ? 'warn' : 'bad', fcfMar == null ? '-' : fcfMar > 0.15 ? 'High' : fcfMar > 0.08 ? 'Avg' : 'Low', 'FCF / Revenue'),
         def('FCF Conversion', pct(fcfCon), fcfCon == null ? 'neutral' : fcfCon > 0.80 ? 'good' : fcfCon > 0.50 ? 'warn' : 'bad', fcfCon == null ? '-' : fcfCon > 0.8 ? 'Strong' : fcfCon > 0.5 ? 'Avg' : 'Poor', 'FCF / Net Income'),
-        def('True FCF Margin', pct(trueFcfM), trueFcfM == null ? 'neutral' : trueFcfM > 0.12 ? 'good' : trueFcfM > 0.05 ? 'warn' : 'bad', trueFcfM == null ? '-' : trueFcfM > 0.12 ? 'High' : trueFcfM > 0.05 ? 'Avg' : 'Low', '(OCF − CapEx − SBC) / Revenue — SBC treated as a real cost'),
+        def('True FCF Margin', pct(trueFcfM), trueFcfM == null ? 'neutral' : trueFcfM > 0.12 ? 'good' : trueFcfM > 0.05 ? 'warn' : 'bad', trueFcfM == null ? '-' : trueFcfM > 0.12 ? 'High' : trueFcfM > 0.05 ? 'Avg' : 'Low', 'TTM (OCF − CapEx − SBC) / TTM Revenue — SBC treated as a real cost'),
     ];
 
     const growth: MetricCardDef[] = [
@@ -172,7 +179,7 @@ function buildMetrics(data: AnalysisData, flowPeriods?: Props['flowPeriods'], ew
         def('Net Income CAGR', niCagr != null ? `${niCagr.toFixed(1)}%` : 'N/A', niCagr == null ? 'neutral' : niCagr > 15 ? 'good' : niCagr > 5 ? 'warn' : 'bad', niCagr == null ? '-' : niCagr > 15 ? 'High' : niCagr > 5 ? 'Ok' : 'Low', 'Compound annual net income growth (up to 5Y depending on data availability)'),
         def('Dilution (5Y)', dil != null ? `${dil > 0 ? '+' : ''}${dil.toFixed(1)}%` : 'N/A', dil == null ? 'neutral' : dil < -2 ? 'good' : dil <= 2 ? 'neutral' : dil <= 10 ? 'warn' : 'bad', dil == null ? '-' : dil < -2 ? 'Buybacks' : dil <= 2 ? 'Flat' : 'Dilutive', 'Share count change over 5Y'),
         def('SBC / Net Income', sbc != null ? `${sbc.toFixed(1)}%` : 'N/A', sbc == null ? 'neutral' : sbc < 10 ? 'good' : sbc < 20 ? 'warn' : 'bad', sbc == null ? '-' : sbc < 10 ? 'Low' : sbc < 20 ? 'Med' : 'High', 'Stock-based comp/Net income. >30% = dilution risk'),
-        def('SBC / Revenue', pct(sbcRev), sbcRev == null ? 'neutral' : sbcRev < 0.03 ? 'good' : sbcRev < 0.08 ? 'warn' : 'bad', sbcRev == null ? '-' : sbcRev < 0.03 ? 'Low' : sbcRev < 0.08 ? 'Med' : 'High', 'Stock-based comp / Revenue (latest period)'),
+        def('SBC / Revenue', pct(sbcRev), sbcRev == null ? 'neutral' : sbcRev < 0.03 ? 'good' : sbcRev < 0.08 ? 'warn' : 'bad', sbcRev == null ? '-' : sbcRev < 0.03 ? 'Low' : sbcRev < 0.08 ? 'Med' : 'High', 'TTM stock-based comp / TTM Revenue'),
     ];
 
     const solvency: MetricCardDef[] = [
@@ -189,7 +196,7 @@ function buildMetrics(data: AnalysisData, flowPeriods?: Props['flowPeriods'], ew
         def('Piotroski F-Score', pio != null ? `${pio}/9` : 'N/A', pio == null ? 'neutral' : pio >= 7 ? 'good' : pio >= 4 ? 'warn' : 'bad', pio == null ? '-' : pio >= 7 ? 'Strong' : pio >= 4 ? 'Avg' : 'Weak', 'Financial strength 0–9. >7 Strong'),
         def('Beneish M-Score', ben != null ? ben.toFixed(2) : 'N/A', ben == null ? 'neutral' : ben < -2.22 ? 'good' : ben < -1.78 ? 'warn' : 'bad', ben == null ? '-' : ben < -2.22 ? 'Safe' : ben < -1.78 ? 'Gray zone' : 'Risky', 'Earnings manipulation risk. < -2.22 Safe'),
         def('Margin Volatility', mv != null ? `${(mv * 100).toFixed(1)}%` : 'N/A', mv == null ? 'neutral' : mv < 0.08 ? 'good' : mv < 0.15 ? 'warn' : 'bad', mv == null ? '-' : mv < 0.08 ? 'Stable' : mv < 0.15 ? 'Avg' : 'Volatile', 'EBIT margin std deviation. Lower = stable'),
-        def('Capex / Revenue', pct(capexRev), capexRev == null ? 'neutral' : capexRev < 0.05 ? 'good' : capexRev < 0.15 ? 'warn' : 'bad', capexRev == null ? '-' : capexRev < 0.05 ? 'Asset-light' : capexRev < 0.15 ? 'Avg' : 'Heavy', 'Capital intensity — high % = capital-hungry business'),
+        def('Capex / Revenue', pct(capexRev), capexRev == null ? 'neutral' : capexRev < 0.05 ? 'good' : capexRev < 0.15 ? 'warn' : 'bad', capexRev == null ? '-' : capexRev < 0.05 ? 'Asset-light' : capexRev < 0.15 ? 'Avg' : 'Heavy', 'TTM CapEx / TTM Revenue — high % = capital-hungry business'),
     ];
 
     const balanceSheet: MetricCardDef[] = [
@@ -246,10 +253,10 @@ function Group({ title, metrics, children }: { title: string; metrics: MetricCar
 }
 
 // ── Main export ──────────────────────────────────────────────────────────────
-export function KeyMetricsTable({ data, flowPeriods, ewScore }: Props) {
+export function KeyMetricsTable({ data, ewScore }: Props) {
     const { scores, valuation, profitability, growth, solvency, quality, balanceSheet, lossYears } = useMemo(
-        () => buildMetrics(data, flowPeriods, ewScore),
-        [data, flowPeriods, ewScore]
+        () => buildMetrics(data, ewScore),
+        [data, ewScore]
     );
 
     const hasScores =

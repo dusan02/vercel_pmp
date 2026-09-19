@@ -126,6 +126,12 @@ export default async function AnalysisPage({ params }: PageProps) {
       ? (data.lastPrice / data.latestPrevClose - 1) * 100
       : (data?.lastChangePct ?? null);
 
+  // Unified P/E: price / own TTM EPS (via /api/analysis compute). Finnhub's
+  // peRatio only fills in when the analysis pipeline has no data at all.
+  const displayPeRatio = analysisData
+    ? (analysisData.metrics?.currentPe ?? null)
+    : (data?.finnhubMetrics?.peRatio ?? null);
+
   const breadcrumbSchema = generateBreadcrumbSchema([
     { name: 'Home', url: baseUrl },
     { name: 'Stocks', url: `${baseUrl}/stocks` },
@@ -155,7 +161,7 @@ export default async function AnalysisPage({ params }: PageProps) {
     marketSession,
     healthScore: data?.analysisCache?.healthScore ?? null,
     verdictText: data?.analysisCache?.verdictText ?? null,
-    peRatio: data?.finnhubMetrics?.peRatio ?? null,
+    peRatio: displayPeRatio,
     valuationScore: data?.analysisCache?.valuationScore ?? null,
     sector: data?.sector ?? null,
     industry: data?.industry ?? null,
@@ -227,7 +233,7 @@ export default async function AnalysisPage({ params }: PageProps) {
                 industry={data?.industry ?? null}
                 marketSession={marketSession}
                 prevClose={data?.latestPrevClose ?? null}
-                peRatio={data?.finnhubMetrics?.peRatio ?? null}
+                peRatio={displayPeRatio}
                 dividendYield={data?.finnhubMetrics?.dividendYield ?? null}
                 roe={data?.finnhubMetrics?.roe ?? null}
                 week52Low={week52?._min?.regularClose ?? null}
@@ -299,7 +305,7 @@ export default async function AnalysisPage({ params }: PageProps) {
               failed, the client tab renders its own copy after fetching. */}
           {analysisData && (
             <div className="mb-6">
-              <KeyMetricsTable data={analysisData} flowPeriods={flowPeriods} ewScore={ewScore} />
+              <KeyMetricsTable data={analysisData} ewScore={ewScore} />
             </div>
           )}
 
@@ -328,7 +334,7 @@ export default async function AnalysisPage({ params }: PageProps) {
             changePct={data?.lastChangePct ?? null}
             marketSession={marketSession}
             cache={data?.analysisCache ?? null}
-            peRatio={data?.finnhubMetrics?.peRatio ?? null}
+            peRatio={displayPeRatio}
             roe={data?.finnhubMetrics?.roe ?? null}
             dividendYield={data?.finnhubMetrics?.dividendYield ?? null}
             earningsDays={earningsDays}

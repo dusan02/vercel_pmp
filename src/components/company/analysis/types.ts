@@ -113,6 +113,9 @@ export interface TTMData {
     revenue: number | null;
     ebit: number | null;
     grossProfit: number | null;
+    operatingCashFlow: number | null;
+    capex: number | null;
+    sbc: number | null;
 }
 
 // ── Correlation ─────────────────────────────────────────────────────────────
