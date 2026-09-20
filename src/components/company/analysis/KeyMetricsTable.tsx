@@ -239,6 +239,50 @@ export function buildMetrics(data: AnalysisData) {
     return { valuation, profitability, growth, solvency, quality, balanceSheet, market, perShare, lossYears: niYrs };
 }
 
+// ── Letter grades — report-card style. Per-metric grade derives from the
+// existing 4-level status judgment (good/neutral/warn/bad → A/B/C/D); finer
+// +/- granularity would need per-metric grade functions. Card headers use
+// the pillar score mapped to the full A+..E scale. ─────────────────────────
+const GRADE_STYLES: Record<'A' | 'B' | 'C' | 'D', string> = {
+    A: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800/60',
+    B: 'bg-lime-50 text-lime-700 border-lime-200 dark:bg-lime-900/20 dark:text-lime-300 dark:border-lime-800/60',
+    C: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800/60',
+    D: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-900/20 dark:text-rose-300 dark:border-rose-800/60',
+};
+
+function statusGrade(t: StatusType): 'A' | 'B' | 'C' | 'D' {
+    return t === 'good' ? 'A' : t === 'neutral' ? 'B' : t === 'warn' ? 'C' : 'D';
+}
+
+function scoreToGrade(score: number): string {
+    if (score >= 90) return 'A+';
+    if (score >= 80) return 'A';
+    if (score >= 70) return 'B+';
+    if (score >= 60) return 'B';
+    if (score >= 50) return 'C';
+    if (score >= 40) return 'D+';
+    if (score >= 30) return 'D';
+    return 'E';
+}
+
+function scoreGradeStyle(score: number): string {
+    if (score >= 70) return GRADE_STYLES.A;
+    if (score >= 50) return GRADE_STYLES.B;
+    if (score >= 30) return GRADE_STYLES.C;
+    return GRADE_STYLES.D;
+}
+
+function GradeChip({ grade, cls, title }: { grade: string; cls: string; title?: string }) {
+    return (
+        <span
+            title={title}
+            className={`inline-flex items-center justify-center w-5 h-5 rounded border text-[10px] font-bold leading-none shrink-0 ${cls}`}
+        >
+            {grade}
+        </span>
+    );
+}
+
 // ── Dense metric cell — Finviz-style label:value pair. The dotted leader
 // guides the eye from label to value on wide grids; the ⓘ icon advertises
 // that the row has an explanation (native title tooltip). `primary` marks
@@ -259,16 +303,16 @@ function Cell({ m }: { m: MetricCardDef }) {
             </span>
             <span aria-hidden="true" className="hidden sm:block flex-1 min-w-2 mx-1 border-b border-dotted border-gray-300 dark:border-gray-600 -translate-y-[3px]" />
             <span className="flex items-baseline justify-end gap-1.5 shrink-0">
-                {/* Fixed-width status column precedes the value, so the number
-                    is always the rightmost element and every value shares the
-                    card's right edge. Status is right-aligned to hug its
-                    number; column is wide enough for the longest labels. */}
-                <span className="hidden sm:inline-block w-16 whitespace-nowrap overflow-hidden text-right text-[9px] font-medium text-gray-600 dark:text-gray-400 uppercase">
-                    {m.statusLabel !== '-' ? m.statusLabel : ''}
-                </span>
                 <span className={`text-[13px] ${m.primary ? 'font-bold' : 'font-semibold'} tabular-nums text-right ${missing ? 'text-gray-400 dark:text-gray-500' : VALUE_COLORS[m.statusType]}`}>
                     {missing ? '—' : m.value}
                 </span>
+                {/* Fixed-width grade chip = uniform right edge; word status
+                    stays reachable via the chip's title tooltip. */}
+                {m.statusLabel !== '-' ? (
+                    <GradeChip grade={statusGrade(m.statusType)} cls={GRADE_STYLES[statusGrade(m.statusType)]} title={m.statusLabel} />
+                ) : (
+                    <span className="w-5 h-5 shrink-0" aria-hidden="true" />
+                )}
             </span>
         </>
     );
@@ -312,14 +356,14 @@ function Tile({ m }: { m: MetricCardDef }) {
                     </svg>
                 )}
             </span>
-            <span className={`mt-1 text-[15px] font-bold tabular-nums leading-tight ${missing ? 'text-gray-400 dark:text-gray-500' : VALUE_COLORS[m.statusType]}`}>
-                {missing ? '—' : m.value}
-            </span>
-            {m.statusLabel !== '-' && (
-                <span className="text-[9px] font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">
-                    {m.statusLabel}
+            <span className="mt-1 flex items-baseline gap-1.5">
+                <span className={`text-[15px] font-bold tabular-nums leading-tight ${missing ? 'text-gray-400 dark:text-gray-500' : VALUE_COLORS[m.statusType]}`}>
+                    {missing ? '—' : m.value}
                 </span>
-            )}
+                {m.statusLabel !== '-' && (
+                    <GradeChip grade={statusGrade(m.statusType)} cls={GRADE_STYLES[statusGrade(m.statusType)]} title={m.statusLabel} />
+                )}
+            </span>
         </>
     );
     const cls = 'px-3 py-2 flex flex-col items-start min-w-0 bg-white dark:bg-[#15171e]';
@@ -368,8 +412,9 @@ function PillarCard({ title, score, metrics, children }: { title: string; score?
                 <span className="flex items-center gap-1.5">
                     {children}
                     {score != null && (
-                        <span className={`text-sm font-bold tabular-nums leading-none ${scoreColor(score)}`} aria-label={`${title} score ${score} out of 100`}>
-                            {score}<span className="text-[10px] font-medium text-gray-400 dark:text-gray-500">/100</span>
+                        <span className="flex items-center gap-1" aria-label={`${title} score ${score} out of 100, grade ${scoreToGrade(score)}`}>
+                            <span className={`text-[11px] font-semibold tabular-nums ${scoreColor(score)}`}>{score}</span>
+                            <GradeChip grade={scoreToGrade(score)} cls={scoreGradeStyle(score)} />
                         </span>
                     )}
                 </span>
@@ -419,8 +464,9 @@ export function KeyMetricsTable({ data }: Props) {
                             Valuation
                         </h3>
                         {data.pillars?.valuation.score != null && (
-                            <span className={`text-sm font-bold tabular-nums leading-none ${scoreColor(data.pillars.valuation.score)}`} aria-label={`Valuation score ${data.pillars.valuation.score} out of 100`}>
-                                {data.pillars.valuation.score}<span className="text-[10px] font-medium text-gray-400 dark:text-gray-500">/100</span>
+                            <span className="flex items-center gap-1" aria-label={`Valuation score ${data.pillars.valuation.score} out of 100, grade ${scoreToGrade(data.pillars.valuation.score)}`}>
+                                <span className={`text-[11px] font-semibold tabular-nums ${scoreColor(data.pillars.valuation.score)}`}>{data.pillars.valuation.score}</span>
+                                <GradeChip grade={scoreToGrade(data.pillars.valuation.score)} cls={scoreGradeStyle(data.pillars.valuation.score)} />
                             </span>
                         )}
                     </div>

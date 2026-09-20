@@ -79,9 +79,9 @@ describe('Key Metrics — pillar layout', () => {
     it('shows the pillar score in each card header — same value as the radar', () => {
         const data = fixture();
         const html = render(data);
-        // Growth score = 20+0+12+12 = 44 → must appear as "44/100"
-        expect(html).toContain(`${data.pillars!.growth.score}<span`);
-        expect(html).toContain(`${data.pillars!.valuation.score}<span`);
+        // Growth score = 20+0+12+12 = 44 → must appear in the header's aria-label
+        expect(html).toContain(`Growth score ${data.pillars!.growth.score} out of 100`);
+        expect(html).toContain(`Valuation score ${data.pillars!.valuation.score} out of 100`);
     });
 
     it('missing metrics keep their row and render as —', () => {
