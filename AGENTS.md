@@ -33,6 +33,12 @@
 - **`NEXT_PUBLIC_*` hodnoty sa bake-ujú do bundle pri builde** — v CI ich má smoke-test job ako env (secrets `NEXT_PUBLIC_GA_ID`/`NEXT_PUBLIC_VAPID_PUBLIC_KEY` s public-literal fallbackmi — sú to verejné hodnoty z JS bundle). Pri pridaní novej `NEXT_PUBLIC_*` env treba ju doplniť aj do `ci.yml`, inak sa na produkcii potichu rozbije príslušná feature
 - **`vps-deploy.sh` nereštartuje `pmp-polygon-worker`** — po zmene `src/workers/**` treba manuálne `ssh root@89.185.250.213 'pm2 restart pmp-polygon-worker'` (worker beží cez tsx, nepotrebuje Next build)
 
+## Analytika (GSC/GA4) a traffic
+
+- **Report skripty**: `scripts/gsc-report.ts` a `scripts/ga4-report.ts` cez SA kľúč `~/.config/pmp/gcp-service-account.json` (env `GOOGLE_APPLICATION_CREDENTIALS`). GA4 `PROPERTY_ID=517675266` (measurement `G-VQ1P6MDRRW`, v `.env.local` ako `GA4_PROPERTY_ID`). GA4 Admin API je v GCP projekte `47392532694` disabled — property ID sa nedá vylistovať programovo
+- **GA4 reserved-param pasca (fixnuté 2026-09-20)**: parametre `source`/`medium`/`campaign` v `event()` prepisujú atribúciu celej session (164 sess/28d spadlo do "Unassigned" ako `heatmap / (not set)`). V eventoch používame `click_source` — pri pridávaní nových eventov nikdy neposielať rezervované názvy
+- **~76 % GA4 "traffic" je scraping farma** (audit 2026-09-20): Singapore/Čína, `(direct)/(none)`, sessions bez pageviews — headless browseri + priame hity na `/api/stocks`, `/api/heatmap`, `/api/indices/*` (replayujú frontend cally, vidno v nginx access logu). Reálna návštevnosť ~30–40 sess/deň; hlavný organický zdroj = **Bing ~4× Google** (GSC ~8 klikov/28d, pos ~66); AI referrers (chatgpt/copilot/perplexity) ~70 sess/28d. Čitateľ GA4 reportov má vždy kontrolovať krajinu/pageviews, nie raw sessions
+
 ## Dátové zdroje cien
 
 - **Polygon Starter ($29/mo) = 15-min delayed** — `lastTrade`/`lastQuote` v snapshotoch sú prázdné, len `min` bary oneskorené ~15 min. Real-time vyžaduje Advanced ($199/mo)
