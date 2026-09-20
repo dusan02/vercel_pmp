@@ -121,7 +121,42 @@ overiť skutočný stav v kóde/produkcii.
 
 ---
 
-## 5. Krížové poznámky
+## 5. Favorites/Watchlist review (`?tab=favorites`)
+
+### GPT netrafil
+- Row click → `/analysis/[ticker]` **existuje** (`FavoritesSection` →
+  `mobile-nav-change` event).
+- Jeho navrhovaný Favorites/Portfolio split **už je realita** — Favorites
+  nemá quantity; Portfolio má quantity, position value, daily P&L,
+  sector/stock distribučné grafy.
+- Predpokladá anonymný produkt — **auth existuje** (next-auth,
+  `/api/user/favorites` DB sync pri login).
+- Alerts prezentuje ako novú infra — **push + email pipeline beží**:
+  `Subscription` tabuľka, `/api/notifications/subscribe|unsubscribe`,
+  webpush + transporter, `notifyQualityBreakout` už odchádza. Chýbajú len
+  per-ticker pravidlá + evaluator.
+
+### Nesúhlasím / vlastný návrh
+- **EW Score stĺpec vo Favorites** — EW score má coverage len cez quant
+  import (podmnožina universe) → null hodnoty by vyzerali ako bug.
+  Preferujem Overall + V + Q (plná coverage cez AnalysisCache), EW len
+  keď existuje.
+- **"Príliš jednoduchá na vlastnú položku navigácie"** — tab nav je lacná;
+  skutočný problém je prázdny retention loop, nie miesto v navi.
+- **Portfolio rozšírenie (avg cost, total P&L, dividendy, currency)** —
+  transakčný ledger je väčší zásah; daily P&L + quantity stačia. Scope držať.
+- **Alerts**: začať dvoma pravidlami (earnings ≤7 dní, score-change
+  threshold) cez existujúci NotificationService — nie plný rule builder.
+
+### Lacné upgrades (odblokované persistom pilierov)
+- Score stĺpce (Overall/V/Q) — join `AnalysisCache` na favorite tickers.
+- Earnings stĺpec — `EarningsCalendar` join.
+- "Change since last visit" — localStorage snapshot diff, žiadny backend.
+- Copy "Watchlist" reframing — kozmetické.
+
+---
+
+## 6. Krížové poznámky
 
 ### Konvergencia troch auditov
 Analysis page, heatmap a screener review všetky končili na rovnakom
