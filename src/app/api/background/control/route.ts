@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getBackgroundService } from '@/lib/backgroundService';
+import { getCronAuth } from '@/lib/cronAuth';
 
 export async function POST(request: NextRequest) {
+  const auth = await getCronAuth(request);
+  if (!auth.success) {
+    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const { action } = await request.json();
     const service = getBackgroundService();
