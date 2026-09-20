@@ -230,15 +230,19 @@ export async function syncFinancials(symbol: string): Promise<void> {
         });
 
         // Corroboration baseline for the EPS-derived shares fallback: share
-        // counts drift slowly, so a derived count >50% off the symbol's
-        // existing median means the EPS came from a mismatched context (YTD
-        // vs quarterly EPS etc.) — write null rather than garbage.
-        const existingShareRows = await prisma.financialStatement.findMany({
-            where: { symbol, sharesOutstanding: { not: null, gt: 0 } },
-            select: { sharesOutstanding: true },
+        // counts drift slowly, so a derived count >40% off the trusted current
+        // count (Ticker.sharesOutstanding — Finnhub profile, not XBRL) means
+        // the EPS came from a mismatched context (PM: Finnhub reports EPS=1
+        // for Q1'26 → ni/1 = 2.44B garbage vs real ~1.56B). Null beats garbage.
+        const tickerRow = await prisma.ticker.findUnique({
+            where: { symbol },
+            select: { sharesOutstanding: true, lastMarketCap: true, lastPrice: true },
         });
-        const sortedShares = existingShareRows.map(r => r.sharesOutstanding!).sort((a, b) => a - b);
-        const medianShares = sortedShares.length > 0 ? sortedShares[Math.floor(sortedShares.length / 2)]! : null;
+        const trustedShares = (tickerRow?.sharesOutstanding && tickerRow.sharesOutstanding > 0)
+            ? tickerRow.sharesOutstanding
+            : (tickerRow?.lastMarketCap && tickerRow.lastMarketCap > 0 && tickerRow?.lastPrice && tickerRow.lastPrice > 0
+                ? tickerRow.lastMarketCap * 1e9 / tickerRow.lastPrice
+                : null);
 
         for (const timeframe of timeframes) {
             const url = `https://finnhub.io/api/v1/stock/financials-reported?symbol=${symbol}&freq=${timeframe}&token=${FINNHUB_API_KEY}`;
@@ -385,7 +389,7 @@ export async function syncFinancials(symbol: string): Promise<void> {
                     ]);
                     if (eps && eps !== 0 && netIncome !== null && netIncome !== 0) {
                         const derived = Math.abs(netIncome / eps);
-                        sharesOutstandingRaw = (medianShares == null || Math.abs(derived / medianShares - 1) <= 0.5)
+                        sharesOutstandingRaw = (trustedShares == null || Math.abs(derived / trustedShares - 1) <= 0.4)
                             ? derived : null;
                     }
                 }
