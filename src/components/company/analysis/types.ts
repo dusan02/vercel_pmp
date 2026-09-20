@@ -146,6 +146,7 @@ export interface FinnhubMetrics {
     pbRatio: number | null;
     psRatio: number | null;
     evEbitda: number | null;
+    evSales: number | null;
     grossMargin: number | null;
     operatingMargin: number | null;
     netMargin: number | null;
@@ -161,10 +162,12 @@ export interface FinnhubMetrics {
     revenuePerShare: number | null;
     netIncomePerShare: number | null;
     bookValuePerShare: number | null;
+    cashPerShare: number | null;
     freeCashFlowPerShare: number | null;
     dividendYield: number | null;
     payoutRatio: number | null;
     beta: number | null;
+    assetTurnover: number | null;
     pegRatio: number | null;
     priceFreeCashFlow: number | null;
     /** When this Finnhub snapshot was last fetched — shown as the metrics as-of date */

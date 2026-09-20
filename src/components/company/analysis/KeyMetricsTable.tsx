@@ -130,6 +130,18 @@ export function buildMetrics(data: AnalysisData) {
     const sbcRev = safeDiv(ttmSbc, ttmRev);
 
     const pfcf = fh?.priceFreeCashFlow ?? null;
+    // Finnhub-only fields — no own-statement source, shown as fetched
+    // (percent-basis fields get /100 so they share the decimal convention
+    // used by pct(); ratio/$ fields display raw)
+    const evSales = fh?.evSales ?? null;
+    const divY = fh?.dividendYield ?? null;
+    const payout = fh?.payoutRatio ?? null;
+    const beta = fh?.beta ?? null;
+    const roa = fh?.roa != null ? fh.roa / 100 : null;
+    const quick = fh?.quickRatio ?? null;
+    const aturn = fh?.assetTurnover ?? null;
+    const cps = fh?.cashPerShare ?? null;
+    const bvps = fh?.bookValuePerShare ?? null;
     // epsCagr5y reaches the payload only inside the pillars legs (computeMetrics
     // feeds it to the radar but doesn't export it top-level) — read the leg
     // value so this table shows exactly what the radar scored.
@@ -152,10 +164,14 @@ export function buildMetrics(data: AnalysisData) {
         def('FCF Yield', pct(fcfY), fcfY == null ? 'neutral' : fcfY > 0.05 ? 'good' : fcfY < 0 ? 'bad' : 'warn', fcfY == null ? '-' : fcfY > 0.05 ? 'Value' : fcfY < 0 ? 'Negative' : 'Low', `TTM FCF / Market Cap${histTip(vh?.fcfYield, '%')}`),
         def('P/S (TTM)', psRatio != null ? `${psRatio.toFixed(2)}x` : 'N/A', psRatio == null ? 'neutral' : psRatio < 2 ? 'good' : psRatio <= 5 ? 'neutral' : psRatio <= 10 ? 'warn' : 'bad', psRatio == null ? '-' : psRatio < 2 ? 'Cheap' : psRatio <= 5 ? 'Fair' : 'Exp.', `Price / TTM Revenue (own statements)${histTip(vh?.ps, 'x')}`),
         def(evLabel, evEbitda != null ? `${evEbitda.toFixed(1)}x` : 'N/A', evEbitda == null ? 'neutral' : evEbitda < 12 ? 'good' : evEbitda <= 18 ? 'neutral' : evEbitda <= 25 ? 'warn' : 'bad', evEbitda == null ? '-' : evEbitda < 12 ? 'Cheap' : evEbitda <= 18 ? 'Fair' : 'Exp.', `Enterprise value / ${evEbit != null ? 'TTM EBIT (D&A not in our data)' : 'EBITDA (Finnhub)'} — capital-structure neutral${histTip(vh?.evEbit, 'x')}`),
+        def('EV/Sales', evSales != null ? `${evSales.toFixed(1)}x` : 'N/A', evSales == null ? 'neutral' : evSales < 2 ? 'good' : evSales <= 5 ? 'neutral' : evSales <= 10 ? 'warn' : 'bad', evSales == null ? '-' : evSales < 2 ? 'Cheap' : evSales <= 5 ? 'Fair' : evSales <= 10 ? 'Exp.' : 'V.Exp.', 'Enterprise Value / TTM Revenue (Finnhub) — capital-structure neutral sales multiple'),
         def('Forward P/E', fpe != null ? `${fpe.toFixed(1)}x` : 'N/A', fpe == null ? 'neutral' : fpe < 15 ? 'good' : fpe <= 25 ? 'neutral' : fpe <= 35 ? 'warn' : 'bad', fpe == null ? '-' : fpe < 15 ? 'Cheap' : fpe <= 25 ? 'Fair' : 'Exp.', 'Price / next-year EPS estimate — shows whether the TTM multiple is rich or just front-loading growth'),
         def('P/B Ratio', pbRatio != null ? mul(pbRatio) : (hasNegEquity ? 'Neg. Equity' : 'N/A'), pbRatio == null ? (hasNegEquity ? 'warn' : 'neutral') : pbRatio < 3 ? 'good' : pbRatio < 8 ? 'warn' : 'bad', pbRatio == null ? (hasNegEquity ? 'Buybacks' : '-') : pbRatio < 3 ? 'Fair' : pbRatio < 8 ? 'Exp.' : 'V.Exp.', 'Price to Book Value. Neg. equity = heavy buybacks'),
         def('PEG Ratio', peg != null ? `${peg.toFixed(2)}` : 'N/A', peg == null ? 'neutral' : peg < 1 ? 'good' : peg <= 2 ? 'neutral' : peg <= 3 ? 'warn' : 'bad', peg == null ? '-' : peg < 1 ? 'Cheap' : peg <= 2 ? 'Fair' : 'Exp.', 'Finnhub PEG — their P/E basis ÷ expected EPS growth. Suppressed when their P/E diverges >2× from our TTM P/E (different basis)'),
+        def('Dividend Yield', divY != null ? `${divY.toFixed(2)}%` : 'N/A', divY == null ? 'neutral' : divY <= 0 ? 'neutral' : divY < 6 ? 'good' : 'warn', divY == null ? '-' : divY <= 0 ? 'None' : divY < 6 ? 'Pays' : 'High', 'TTM dividend yield (Finnhub) — annual dividends / price. None = no dividend; very high yield can signal distress'),
+        def('Payout Ratio', payout != null ? `${payout.toFixed(1)}%` : 'N/A', payout == null ? 'neutral' : payout < 0 || payout > 90 ? 'bad' : payout <= 60 ? 'good' : 'warn', payout == null ? '-' : payout < 0 || payout > 90 ? 'Unsust.' : payout <= 60 ? 'Safe' : 'High', 'Dividends / Net Income (Finnhub) — share of earnings paid out; >90% or negative = unsustainable'),
         def('Market Cap', fmtB(mcap), 'neutral', '-', 'Current Market Capitalization'),
+        def('Beta', beta != null ? beta.toFixed(2) : 'N/A', beta == null ? 'neutral' : beta <= 1.2 ? 'neutral' : beta <= 1.8 ? 'warn' : 'bad', beta == null ? '-' : beta < 0.8 ? 'Defensive' : beta <= 1.2 ? 'Market' : beta <= 1.8 ? 'Volatile' : 'H.Vol', 'Price sensitivity vs the market (Finnhub) — 1.0 moves with market, >1.2 amplifies swings'),
     ];
 
     const growth: MetricCardDef[] = [
@@ -171,6 +187,7 @@ export function buildMetrics(data: AnalysisData) {
     const profitability: MetricCardDef[] = [
         def('ROIC', roic != null ? pct(roic) : 'N/A', roic == null ? 'neutral' : roic > 0.15 ? 'good' : roic > 0.08 ? 'warn' : 'bad', roic == null ? '-' : roic > 0.15 ? 'Moat' : roic > 0.08 ? 'Avg' : 'Low', 'NOPAT (EBIT less ~21% tax) / invested capital (equity + debt − cash). Flagship quality metric — durable >15% signals a moat', true),
         def('ROE', roe != null ? pct(roe) : (hasNegEquity ? 'Neg. Equity' : 'N/A'), roe == null ? (hasNegEquity ? 'warn' : 'neutral') : roe > 0.20 ? 'good' : roe > 0.10 ? 'warn' : 'bad', roe == null ? (hasNegEquity ? 'Buybacks' : '-') : roe > 0.2 ? 'Strong' : roe > 0.1 ? 'Avg' : 'Weak', 'Return on Equity. Neg. equity = heavy buybacks'),
+        def('ROA', roa != null ? pct(roa) : 'N/A', roa == null ? 'neutral' : roa > 0.10 ? 'good' : roa > 0.05 ? 'warn' : 'bad', roa == null ? '-' : roa > 0.1 ? 'Strong' : roa > 0.05 ? 'Avg' : 'Weak', 'Return on Assets (Finnhub) — Net Income / Total Assets; how efficiently assets produce profit'),
         def('Net Margin', pct(netMar), netMar == null ? 'neutral' : netMar > 0.10 ? 'good' : netMar > 0.05 ? 'warn' : 'bad', netMar == null ? '-' : netMar > 0.1 ? 'High' : netMar > 0.05 ? 'Avg' : 'Low', 'Net Income / Revenue'),
         def('Operating Margin', pct(opMargin), opMargin == null ? 'neutral' : opMargin > 0.25 ? 'good' : opMargin > 0.10 ? 'warn' : 'bad', opMargin == null ? '-' : opMargin > 0.25 ? 'High' : opMargin > 0.10 ? 'Avg' : 'Low', 'TTM EBIT / TTM Revenue'),
         def('Gross Margin', pct(grossMar), grossMar == null ? 'neutral' : grossMar > 0.50 ? 'good' : grossMar > 0.30 ? 'warn' : 'bad', grossMar == null ? '-' : grossMar > 0.5 ? 'Premium' : grossMar > 0.3 ? 'Avg' : 'Low', 'Gross Profit / Revenue'),
@@ -181,6 +198,7 @@ export function buildMetrics(data: AnalysisData) {
     const solvency: MetricCardDef[] = [
         def('Altman Z-Score', altZ != null ? altZ.toFixed(2) : 'N/A', altZ == null ? 'neutral' : altZ > 3 ? 'good' : altZ < 1.8 ? 'bad' : 'warn', altZ == null ? '-' : altZ > 3 ? 'Safe' : altZ < 1.8 ? 'Distress' : 'Gray zone', 'Bankruptcy risk. >3 Safe, <1.8 Distress', true),
         def('Current Ratio', mul(cr), cr == null ? 'neutral' : cr > 2 ? 'good' : cr > 1 ? 'warn' : 'bad', cr == null ? '-' : cr > 2 ? 'High' : cr > 1 ? 'Ok' : 'Low', 'Current Assets/Liabilities'),
+        def('Quick Ratio', quick != null ? mul(quick) : 'N/A', quick == null ? 'neutral' : quick > 1 ? 'good' : quick > 0.5 ? 'warn' : 'bad', quick == null ? '-' : quick > 1 ? 'High' : quick > 0.5 ? 'Ok' : 'Low', '(Current Assets − Inventory) / Current Liabilities (Finnhub) — stricter liquidity test, excludes inventory'),
         def('Interest Coverage', intCov != null ? `${intCov.toFixed(1)}x` : 'N/A', intCov == null ? 'neutral' : intCov > 10 ? 'good' : intCov > 3 ? 'warn' : 'bad', intCov == null ? '-' : intCov > 10 ? 'Strong' : intCov > 3 ? 'Ok' : 'Risky', 'EBIT/Interest. >10 Strong'),
         def('Debt Repayment', yr(debtRp), debtRp == null ? 'neutral' : debtRp <= 3 ? 'good' : debtRp > 10 ? 'bad' : 'warn', debtRp == null ? '-' : debtRp <= 3 ? 'Fast' : debtRp > 10 ? 'Slow' : 'Avg', 'Years to repay net debt via FCF'),
         def('Net Debt/EBIT', nde != null ? (nde < 0 ? 'Net Cash' : `${nde.toFixed(1)}x`) : 'N/A', nde == null ? 'neutral' : nde < 4 ? (nde < 2 ? 'good' : 'warn') : 'bad', nde == null ? '-' : nde < 2 ? 'Low' : nde < 4 ? 'Med' : 'High', 'Leverage. <2x Low, >4x High'),
@@ -194,6 +212,7 @@ export function buildMetrics(data: AnalysisData) {
         def('FCF Conversion', pct(fcfCon), fcfCon == null ? 'neutral' : fcfCon > 0.80 ? 'good' : fcfCon > 0.50 ? 'warn' : 'bad', fcfCon == null ? '-' : fcfCon > 0.8 ? 'Strong' : fcfCon > 0.5 ? 'Avg' : 'Poor', 'FCF / Net Income'),
         def('Margin Stability', mv != null ? `${(mv * 100).toFixed(1)}%` : 'N/A', mv == null ? 'neutral' : mv < 0.08 ? 'good' : mv < 0.15 ? 'warn' : 'bad', mv == null ? '-' : mv < 0.08 ? 'Stable' : mv < 0.15 ? 'Avg' : 'Volatile', 'EBIT margin std deviation. Lower = stable'),
         def('Capex / Revenue', pct(capexRev), capexRev == null ? 'neutral' : capexRev < 0.05 ? 'good' : capexRev < 0.15 ? 'warn' : 'bad', capexRev == null ? '-' : capexRev < 0.05 ? 'Asset-light' : capexRev < 0.15 ? 'Avg' : 'Heavy', 'TTM CapEx / TTM Revenue — high % = capital-hungry business'),
+        def('Asset Turnover', aturn != null ? `${aturn.toFixed(2)}x` : 'N/A', aturn == null ? 'neutral' : aturn > 1 ? 'good' : aturn > 0.5 ? 'warn' : 'bad', aturn == null ? '-' : aturn > 1 ? 'High' : aturn > 0.5 ? 'Avg' : 'Low', 'Revenue / Total Assets (Finnhub) — how efficiently the asset base generates sales'),
     ];
 
     const balanceSheet: MetricCardDef[] = [
@@ -202,6 +221,8 @@ export function buildMetrics(data: AnalysisData) {
         def('Net Debt', fmtB(bs?.netDebt), bs?.netDebt != null && bs.netDebt < 0 ? 'good' : 'neutral', bs?.netDebt != null && bs.netDebt < 0 ? 'Net Cash' : '-', 'Total Debt minus Cash. Negative = Net Cash position', true),
         def('Total Equity', fmtB(bs?.totalEquity), 'neutral', '-', "Shareholders' equity (book value)"),
         def('Asset / Liability', bs?.assetToLiability != null ? `${bs.assetToLiability.toFixed(2)}x` : 'N/A', bs?.assetToLiability == null ? 'neutral' : bs.assetToLiability >= 2 ? 'good' : bs.assetToLiability >= 1 ? 'warn' : 'bad', bs?.assetToLiability == null ? '-' : bs.assetToLiability >= 2 ? 'Solid' : bs.assetToLiability >= 1 ? 'Adequate' : 'Risky', 'Total Assets / Total Liabilities'),
+        def('Cash / Share', cps != null ? `$${cps.toFixed(2)}` : 'N/A', 'neutral', '-', 'Cash & short-term investments per share (Finnhub)'),
+        def('Book Value / Share', bvps != null ? `$${bvps.toFixed(2)}` : 'N/A', bvps == null ? 'neutral' : bvps < 0 ? 'warn' : 'neutral', bvps == null ? '-' : bvps < 0 ? 'Neg.' : '-', "Shareholders' equity per share (Finnhub). Negative = accumulated losses / heavy buybacks"),
     ];
 
     return { valuation, profitability, growth, solvency, quality, balanceSheet, lossYears: niYrs };
