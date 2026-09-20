@@ -83,18 +83,25 @@ export class SocialDistributorService {
                 const ogImageUrl = this.generateOgImageUrl(mover);
                 const imageBuffer = await this.fetchImageBuffer(ogImageUrl);
 
-                if (!imageBuffer) {
-                    throw new Error(`Failed to fetch OG image for ${mover.symbol}`);
+                // 4b. Upload media to X — best-effort. The Free tier has no
+                // v1.1 media upload (402), so attachment failure must not
+                // kill the tweet: the analysis link still unfurls to our OG
+                // card via the page's opengraph-image.
+                let media: { media_ids: [string] } | undefined;
+                if (imageBuffer) {
+                    try {
+                        const mediaId = await twitterClient.v1.uploadMedia(imageBuffer, { type: 'png' });
+                        media = { media_ids: [mediaId] };
+                    } catch {
+                        console.warn(`⚠️ SocialDistributorService: media upload failed for ${mover.symbol}, posting text-only`);
+                    }
                 }
-
-                // 4b. Upload media to X
-                const mediaId = await twitterClient.v1.uploadMedia(imageBuffer, { type: 'png' });
 
                 // 4c. Post tweet
                 const tweetText = `${mover.socialCopy}\n\nView Analysis: https://premarketprice.com/analysis/${mover.symbol}`;
                 await twitterClient.v2.tweet({
                     text: tweetText,
-                    media: { media_ids: [mediaId] }
+                    ...(media ? { media } : {})
                 });
 
                 // 4d. Mark as posted today (TTL 24h)
