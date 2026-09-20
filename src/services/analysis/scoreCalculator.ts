@@ -4,6 +4,7 @@ import { NotificationService } from '../notificationService';
 import { computeTTM } from '@/lib/utils/ttm';
 import { computePillars } from './pillars';
 import { isSuspiciousShareCount } from '@/lib/utils/shareCount';
+import { applySplitAdjustments, applyPostSplitAdjustment } from '@/lib/utils/splitAdjustment';
 
 export interface CalculateScoresOptions {
     /** Skip the AI verdict call (backfills/bulk jobs — keeps stored verdictText). */
@@ -66,6 +67,15 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
 
     // Fetch Finnhub pre-computed metrics for scoring
     const finnhubMetrics = await prisma.finnhubMetrics.findUnique({ where: { symbol } });
+
+    // Split-adjust statement share counts exactly like the read path —
+    // unadjusted pre-split counts corrupt epsCagr5y (NVDA/GOOGL diverged).
+    const tenYearsAgo = new Date();
+    tenYearsAgo.setFullYear(tenYearsAgo.getFullYear() - 10);
+    try {
+        await applySplitAdjustments(stmts, symbol, tenYearsAgo);
+        applyPostSplitAdjustment(stmts, tickerData?.sharesOutstanding ?? null);
+    } catch { /* non-critical — same as read path */ }
 
     // latestValuation feeds the pillar-leg fallbacks (P/E, FCF yield) — the
     // read path has the same rows via valuationRows, so fetch unconditionally.
