@@ -108,7 +108,9 @@ curl -s https://premarketprice.com/analysis/AAPL | grep -c FinancialProduct  # �
 
 ## Feature freeze (od 2026-09-20 deploy `48637e31`)
 
-Stav: **Ship → Measure → Learn**. Žiadny nový feature development kým neprejdú 30-dňové metriky (GSC CTR/positions, Movers→Analysis CTR, returning users, engagement per surface).
+Stav: **Ship → Measure → Learn**. Žiadny nový feature development kým neprejdú 30-dňové metriky (GSC CTR/positions, returning users, engagement per surface).
+
+**Core funnel hypothesis (mierať, neoptimalizovať):** mover impression → mover click → Analysis visit → ďalšia akcia (ďalší ticker / favorite / return visit). Movers→Analysis CTR je metrika #0 — ak je nízky, problém nie je v features ale v tom, či ľudia chcú "prečo" za "čo sa hýbe". Ďalšie signály: Analysis→next-page rate, Mover→Favorite, alert signup (keď existuje), return rate.
 
 **Post-freeze backlog (priorita):**
 - P0/P1: identity/account layer (predpoklad alertingu) → alerting experiment; LIVE/DELAYED data transparency; EW freshness monitoring; missing-data score inflation (+10/+25 leg konvencie — correctness issue, nie feature)
