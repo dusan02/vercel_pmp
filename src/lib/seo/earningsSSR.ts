@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db/prisma';
+import { getDateET } from '@/lib/utils/dateET';
 
 export interface EarningsSSRRow {
   ticker: string;
@@ -14,6 +15,20 @@ export interface EarningsSSRRow {
   marketCap: number | null;
   percentChange: number | null;
   hasReported: boolean;
+  // Enriched at read time (join Ticker/AnalysisCache/EwScoreSnapshot/DailyRef).
+  // EarningsCalendar.marketCap/.percentChange columns are never written by
+  // the Finnhub sync — these fields are the live replacements.
+  sector: string | null;
+  stdDev20d: number | null;        // typical daily move proxy (own 20d σ)
+  earningsDayMovePct: number | null; // DailyRef-derived move on the report day (bmo) or next session (amc)
+  overallScore: number | null;
+  valuationScore: number | null;
+  growthScore: number | null;
+  profitabilityScore: number | null;
+  healthScore: number | null;
+  qualityScore: number | null;
+  ewScore: number | null;
+  ewMaxPossible: number | null;
 }
 
 export interface EarningsSSRGroup {
@@ -61,7 +76,134 @@ function rowFromDB(e: {
     marketCap: e.marketCap ?? null,
     percentChange: e.percentChange ?? null,
     hasReported: e.epsActual != null || e.revenueActual != null,
+    sector: null,
+    stdDev20d: null,
+    earningsDayMovePct: null,
+    overallScore: null,
+    valuationScore: null,
+    growthScore: null,
+    profitabilityScore: null,
+    healthScore: null,
+    qualityScore: null,
+    ewScore: null,
+    ewMaxPossible: null,
   };
+}
+
+/**
+ * Read-time enrichment: joins Ticker (marketCap/sector/stdDev20d),
+ * AnalysisCache (pillar scores), EwScoreSnapshot (latest), and DailyRef
+ * (earnings-day move) onto SSR rows. All batched `IN` queries — bounded
+ * by the row count of the requested range, no per-row fetches.
+ *
+ * Day-move semantics: a BMO report's reaction lands in that day's regular
+ * session; an AMC report's lands in the NEXT trading day — we take the
+ * first DailyRef strictly after the report date for amc/dmt rows.
+ */
+async function enrichEarningsRows(
+  rows: EarningsSSRRow[],
+  rangeStart: string,
+  rangeEnd: string,
+): Promise<void> {
+  if (rows.length === 0) return;
+  const symbols = [...new Set(rows.map((r) => r.ticker))];
+  // DailyRef window: report dates + up to 5d after range end (amc next-session move).
+  const refStart = new Date(rangeStart + 'T00:00:00Z');
+  const refEnd = new Date(rangeEnd + 'T00:00:00Z');
+  refEnd.setUTCDate(refEnd.getUTCDate() + 5);
+
+  const mcapLookback = new Date(Date.now() - 14 * 86400_000);
+  const [tickers, mcaps, caches, ews, dailyRefs] = await Promise.all([
+    prisma.ticker.findMany({
+      where: { symbol: { in: symbols } },
+      select: { symbol: true, sector: true, stdDevReturn20d: true },
+    }),
+    // DailyValuationHistory is the live market-cap source (Ticker.lastMarketCap
+    // and EarningsCalendar.marketCap are both unpopulated).
+    prisma.dailyValuationHistory.findMany({
+      where: { symbol: { in: symbols }, date: { gte: mcapLookback }, marketCap: { not: null } },
+      orderBy: { date: 'desc' },
+      select: { symbol: true, marketCap: true },
+    }),
+    prisma.analysisCache.findMany({
+      where: { symbol: { in: symbols } },
+      select: {
+        symbol: true, overallScore: true, valuationScore: true, growthScore: true,
+        profitabilityScore: true, healthScore: true, qualityScore: true,
+      },
+    }),
+    prisma.ewScoreSnapshot.findMany({
+      where: { symbol: { in: symbols } },
+      orderBy: { asOfDate: 'desc' },
+      select: { symbol: true, totalScore: true, maxPossible: true },
+    }),
+    prisma.dailyRef.findMany({
+      where: {
+        symbol: { in: symbols },
+        regularClose: { not: null },
+        date: { gte: refStart, lte: refEnd },
+      },
+      orderBy: { date: 'asc' },
+      select: { symbol: true, date: true, previousClose: true, regularClose: true },
+    }),
+  ]);
+
+  const tickerBy = new Map(tickers.map((t) => [t.symbol, t]));
+  const cacheBy = new Map(caches.map((c) => [c.symbol, c]));
+  const ewBy = new Map<string, { totalScore: number; maxPossible: number }>();
+  for (const e of ews) {
+    if (!ewBy.has(e.symbol)) ewBy.set(e.symbol, e); // desc order — first wins
+  }
+  const mcapBy = new Map<string, number>();
+  for (const m of mcaps) {
+    if (!mcapBy.has(m.symbol) && m.marketCap !== null) mcapBy.set(m.symbol, m.marketCap);
+  }
+  // DailyRef.date is ET-midnight (stored 04:00/05:00 UTC) while
+  // EarningsCalendar.date is UTC-midnight — match by ET date string.
+  const refsBy = new Map<string, { dateStr: string; previousClose: number; regularClose: number | null }[]>();
+  for (const r of dailyRefs) {
+    const arr = refsBy.get(r.symbol) ?? [];
+    arr.push({ dateStr: getDateET(r.date), previousClose: r.previousClose, regularClose: r.regularClose });
+    refsBy.set(r.symbol, arr);
+  }
+
+  for (const row of rows) {
+    const t = tickerBy.get(row.ticker);
+    if (t) {
+      row.sector = t.sector;
+      row.stdDev20d = t.stdDevReturn20d;
+    }
+    row.marketCap = row.marketCap ?? mcapBy.get(row.ticker) ?? null;
+    const c = cacheBy.get(row.ticker);
+    if (c) {
+      row.overallScore = c.overallScore;
+      row.valuationScore = c.valuationScore;
+      row.growthScore = c.growthScore;
+      row.profitabilityScore = c.profitabilityScore;
+      row.healthScore = c.healthScore;
+      row.qualityScore = c.qualityScore;
+    }
+    const ew = ewBy.get(row.ticker);
+    if (ew) {
+      row.ewScore = Math.round(ew.totalScore);
+      row.ewMaxPossible = Math.round(ew.maxPossible);
+    }
+
+    // Earnings-day move only for reported rows.
+    if (row.hasReported) {
+      const refs = refsBy.get(row.ticker);
+      if (refs && refs.length > 0) {
+        const afterReport = row.time === 'bmo'
+          ? refs.find((r) => r.dateStr === row.date)
+          : refs.find((r) => r.dateStr > row.date); // amc/dmt → next session
+        if (afterReport && afterReport.previousClose > 0 && afterReport.regularClose !== null) {
+          row.earningsDayMovePct =
+            ((afterReport.regularClose - afterReport.previousClose) / afterReport.previousClose) * 100;
+          row.percentChange = row.percentChange ?? row.earningsDayMovePct;
+        }
+      }
+    }
+  }
 }
 
 export interface EarningsWeekDay {
@@ -127,6 +269,7 @@ export async function getEarningsWeekMap(
 export async function getEarningsRange(
   startDate: string,
   endDate: string,
+  opts?: { enrich?: boolean },
 ): Promise<EarningsSSRGroup[]> {
   try {
     const start = new Date(startDate + 'T00:00:00Z');
@@ -141,11 +284,22 @@ export async function getEarningsRange(
 
     // Group by date
     const byDate = new Map<string, EarningsSSRRow[]>();
+    const allRows: EarningsSSRRow[] = [];
     for (const r of rows) {
       const parsed = rowFromDB(r);
       const existing = byDate.get(parsed.date) ?? [];
       existing.push(parsed);
       byDate.set(parsed.date, existing);
+      allRows.push(parsed);
+    }
+
+    if (opts?.enrich) {
+      try {
+        await enrichEarningsRows(allRows, startDate, endDate);
+      } catch (e) {
+        // Enrichment is additive — never block the earnings list on it.
+        console.warn('[earningsSSR] enrichment failed, continuing without:', e);
+      }
     }
 
     // Build groups for each date in range

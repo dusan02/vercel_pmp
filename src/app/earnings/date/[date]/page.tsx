@@ -4,6 +4,9 @@ import { StructuredData } from '@/components/StructuredData';
 import Link from 'next/link';
 import { getEarningsRange, type EarningsSSRRow, type EarningsSSRGroup } from '@/lib/seo/earningsSSR';
 import { formatPercent } from '@/lib/utils/heatmapFormat';
+import {
+  formatEps, formatRevenue, formatMcap, timeLabel, timeColor, FeaturedEarningsCard,
+} from '@/components/earnings/EarningsShared';
 import { notFound } from 'next/navigation';
 import { getEligibleAnalysisSet } from '@/lib/seo/eligibleTickers';
 
@@ -51,46 +54,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   });
 }
 
-function formatEps(value: number | null): string {
-  if (value == null) return '-';
-  return `$${value.toFixed(2)}`;
-}
-
-function formatRevenue(value: number | null): string {
-  if (value == null) return '-';
-  if (value >= 1e12) return `$${(value / 1e12).toFixed(2)}T`;
-  if (value >= 1e9) return `$${(value / 1e9).toFixed(2)}B`;
-  if (value >= 1e6) return `$${(value / 1e6).toFixed(0)}M`;
-  return `$${value.toFixed(0)}`;
-}
-
 function formatDateDisplay(dateStr: string): string {
   const d = new Date(dateStr + 'T12:00:00Z');
   return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-}
-
-function timeLabel(time: string): string {
-  switch (time) {
-    case 'bmo': return 'Pre-Market';
-    case 'amc': return 'After-Hours';
-    case 'dmt': return 'During Market';
-    default: return 'TBD';
-  }
-}
-
-function timeColor(time: string): string {
-  switch (time) {
-    case 'bmo': return 'text-yellow-600 dark:text-yellow-400';
-    case 'amc': return 'text-purple-600 dark:text-purple-400';
-    default: return 'text-gray-500';
-  }
 }
 
 export default async function EarningsDatePage({ params }: PageProps) {
   const { date } = await params;
   if (!isValidDate(date)) notFound();
 
-  const groups = await getEarningsRange(date, date);
+  const groups = await getEarningsRange(date, date, { enrich: true });
   const group = groups[0];
 
   if (!group || group.total === 0) {
@@ -127,6 +100,19 @@ export default async function EarningsDatePage({ params }: PageProps) {
   const upcomingCount = allRows.length - reportedCount;
   const eligibleAnalysis = await getEligibleAnalysisSet();
 
+  // Daily briefing stats
+  const bmoCount = group.preMarket.length;
+  const amcCount = group.afterMarket.length;
+  const largeCapCount = allRows.filter(r => (r.marketCap ?? 0) >= 10e9).length;
+  const withEstimatesCount = allRows.filter(r => r.epsEstimate !== null).length;
+
+  // Featured: largest by market cap among rows with estimates (fallback: largest overall)
+  const withEstimates = allRows.filter(r => r.epsEstimate !== null);
+  const featuredPool = withEstimates.length > 0 ? withEstimates : allRows;
+  const featured = [...featuredPool]
+    .sort((a, b) => (b.marketCap ?? 0) - (a.marketCap ?? 0))
+    .slice(0, 3);
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Breadcrumbs */}
@@ -150,8 +136,25 @@ export default async function EarningsDatePage({ params }: PageProps) {
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">
             {group.total} earnings — {upcomingCount} upcoming, {reportedCount} already reported.
+            {' '}{bmoCount > 0 && `${bmoCount} pre-market`}{bmoCount > 0 && amcCount > 0 && ' · '}{amcCount > 0 && `${amcCount} after-hours`}
+            {largeCapCount > 0 && ` · ${largeCapCount} large-cap${largeCapCount > 1 ? 's' : ''} (≥$10B)`}
+            {withEstimatesCount > 0 && ` · ${withEstimatesCount} with EPS estimates`}
           </p>
         </div>
+
+        {/* Featured earnings — largest/most consequential reports of the day */}
+        {featured.length > 0 && (featured[0]?.marketCap ?? 0) >= 1e9 && (
+          <section className="mb-6">
+            <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-3">
+              Featured earnings
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {featured.map((r) => (
+                <FeaturedEarningsCard key={`feat-${r.ticker}-${r.date}`} row={r} eligible={eligibleAnalysis} />
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Earnings table */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
@@ -167,6 +170,9 @@ export default async function EarningsDatePage({ params }: PageProps) {
                   <th className="px-3 py-2">Surprise</th>
                   <th className="px-3 py-2">Rev Est.</th>
                   <th className="px-3 py-2">Rev Actual</th>
+                  <th className="px-3 py-2">Mkt Cap</th>
+                  <th className="px-3 py-2">Move</th>
+                  <th className="px-3 py-2">PMP</th>
                 </tr>
               </thead>
               <tbody>
@@ -198,6 +204,19 @@ export default async function EarningsDatePage({ params }: PageProps) {
                       <td className="px-3 py-2 tabular-nums text-slate-600 dark:text-slate-400">{formatRevenue(row.revenueEstimate)}</td>
                       <td className="px-3 py-2 tabular-nums text-slate-700 dark:text-slate-300">
                         {row.hasReported ? formatRevenue(row.revenueActual) : '-'}
+                      </td>
+                      <td className="px-3 py-2 tabular-nums text-slate-600 dark:text-slate-400">{formatMcap(row.marketCap) || '-'}</td>
+                      <td className={`px-3 py-2 tabular-nums font-semibold ${
+                        row.earningsDayMovePct !== null
+                          ? row.earningsDayMovePct >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+                          : 'text-slate-400'
+                      }`}>
+                        {row.hasReported && row.earningsDayMovePct !== null ? formatPercent(row.earningsDayMovePct) : '-'}
+                      </td>
+                      <td className="px-3 py-2 tabular-nums">
+                        {row.overallScore !== null ? (
+                          <span className="font-semibold text-slate-700 dark:text-slate-200">{Math.round(row.overallScore)}</span>
+                        ) : '-'}
                       </td>
                     </tr>
                   );
