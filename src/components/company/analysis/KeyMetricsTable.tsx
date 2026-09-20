@@ -170,8 +170,21 @@ export function buildMetrics(data: AnalysisData) {
         def('PEG Ratio', peg != null ? `${peg.toFixed(2)}` : 'N/A', peg == null ? 'neutral' : peg < 1 ? 'good' : peg <= 2 ? 'neutral' : peg <= 3 ? 'warn' : 'bad', peg == null ? '-' : peg < 1 ? 'Cheap' : peg <= 2 ? 'Fair' : 'Exp.', 'Finnhub PEG — their P/E basis ÷ expected EPS growth. Suppressed when their P/E diverges >2× from our TTM P/E (different basis)'),
         def('Dividend Yield', divY != null ? `${divY.toFixed(2)}%` : 'N/A', divY == null ? 'neutral' : divY <= 0 ? 'neutral' : divY < 6 ? 'good' : 'warn', divY == null ? '-' : divY <= 0 ? 'None' : divY < 6 ? 'Pays' : 'High', 'TTM dividend yield (Finnhub) — annual dividends / price. None = no dividend; very high yield can signal distress'),
         def('Payout Ratio', payout != null ? `${payout.toFixed(1)}%` : 'N/A', payout == null ? 'neutral' : payout < 0 || payout > 90 ? 'bad' : payout <= 60 ? 'good' : 'warn', payout == null ? '-' : payout < 0 || payout > 90 ? 'Unsust.' : payout <= 60 ? 'Safe' : 'High', 'Dividends / Net Income (Finnhub) — share of earnings paid out; >90% or negative = unsustainable'),
+    ];
+
+    // Market context — Beta moved out of Valuation (it describes price
+    // behaviour vs the market, not cheapness). Market Cap sits beside it.
+    const market: MetricCardDef[] = [
         def('Market Cap', fmtB(mcap), 'neutral', '-', 'Current Market Capitalization'),
         def('Beta', beta != null ? beta.toFixed(2) : 'N/A', beta == null ? 'neutral' : beta <= 1.2 ? 'neutral' : beta <= 1.8 ? 'warn' : 'bad', beta == null ? '-' : beta < 0.8 ? 'Defensive' : beta <= 1.2 ? 'Market' : beta <= 1.8 ? 'Volatile' : 'H.Vol', 'Price sensitivity vs the market (Finnhub) — 1.0 moves with market, >1.2 amplifies swings'),
+    ];
+
+    // Per-share snapshot — absolute amounts rather than ratios
+    const niPs = fh?.netIncomePerShare ?? null;
+    const perShare: MetricCardDef[] = [
+        def('EPS (TTM)', niPs != null ? `$${niPs.toFixed(2)}` : 'N/A', 'neutral', '-', 'TTM net income per share (Finnhub)'),
+        def('Cash / Share', cps != null ? `$${cps.toFixed(2)}` : 'N/A', 'neutral', '-', 'Cash & short-term investments per share (Finnhub)'),
+        def('Book Value / Share', bvps != null ? `$${bvps.toFixed(2)}` : 'N/A', bvps == null ? 'neutral' : bvps < 0 ? 'warn' : 'neutral', bvps == null ? '-' : bvps < 0 ? 'Neg.' : '-', "Shareholders' equity per share (Finnhub). Negative = accumulated losses / heavy buybacks"),
     ];
 
     const growth: MetricCardDef[] = [
@@ -221,11 +234,9 @@ export function buildMetrics(data: AnalysisData) {
         def('Net Debt', fmtB(bs?.netDebt), bs?.netDebt != null && bs.netDebt < 0 ? 'good' : 'neutral', bs?.netDebt != null && bs.netDebt < 0 ? 'Net Cash' : '-', 'Total Debt minus Cash. Negative = Net Cash position', true),
         def('Total Equity', fmtB(bs?.totalEquity), 'neutral', '-', "Shareholders' equity (book value)"),
         def('Asset / Liability', bs?.assetToLiability != null ? `${bs.assetToLiability.toFixed(2)}x` : 'N/A', bs?.assetToLiability == null ? 'neutral' : bs.assetToLiability >= 2 ? 'good' : bs.assetToLiability >= 1 ? 'warn' : 'bad', bs?.assetToLiability == null ? '-' : bs.assetToLiability >= 2 ? 'Solid' : bs.assetToLiability >= 1 ? 'Adequate' : 'Risky', 'Total Assets / Total Liabilities'),
-        def('Cash / Share', cps != null ? `$${cps.toFixed(2)}` : 'N/A', 'neutral', '-', 'Cash & short-term investments per share (Finnhub)'),
-        def('Book Value / Share', bvps != null ? `$${bvps.toFixed(2)}` : 'N/A', bvps == null ? 'neutral' : bvps < 0 ? 'warn' : 'neutral', bvps == null ? '-' : bvps < 0 ? 'Neg.' : '-', "Shareholders' equity per share (Finnhub). Negative = accumulated losses / heavy buybacks"),
     ];
 
-    return { valuation, profitability, growth, solvency, quality, balanceSheet, lossYears: niYrs };
+    return { valuation, profitability, growth, solvency, quality, balanceSheet, market, perShare, lossYears: niYrs };
 }
 
 // ── Dense metric cell — Finviz-style label:value pair. The dotted leader
@@ -287,6 +298,65 @@ function scoreColor(score: number): string {
     return 'text-rose-600 dark:text-rose-400';
 }
 
+// ── Valuation tile — used only inside the large Valuation card. Number is
+// dominant, status is a muted caption (no badge chrome). ────────────────────
+function Tile({ m }: { m: MetricCardDef }) {
+    const missing = m.value === 'N/A';
+    const inner = (
+        <>
+            <span className="flex items-center gap-1 text-[9px] uppercase tracking-wide font-medium text-gray-500 dark:text-gray-400 min-w-0">
+                <span className="truncate">{m.label}</span>
+                {m.hint && (
+                    <svg className="w-3 h-3 shrink-0 text-gray-300 dark:text-gray-600" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                )}
+            </span>
+            <span className={`mt-1 text-[15px] font-bold tabular-nums leading-tight ${missing ? 'text-gray-400 dark:text-gray-500' : VALUE_COLORS[m.statusType]}`}>
+                {missing ? '—' : m.value}
+            </span>
+            {m.statusLabel !== '-' && (
+                <span className="text-[9px] font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                    {m.statusLabel}
+                </span>
+            )}
+        </>
+    );
+    const cls = 'px-3 py-2 flex flex-col items-start min-w-0 bg-white dark:bg-[#15171e]';
+    if (!m.hint) return <div className={cls}>{inner}</div>;
+    return (
+        <details className={`${cls} group`} title={m.hint}>
+            <summary className="flex flex-col items-start cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden w-full">
+                {inner}
+            </summary>
+            <p className="mt-1 text-[10px] leading-snug text-gray-500 dark:text-gray-400 normal-case tracking-normal">
+                {m.hint}
+            </p>
+        </details>
+    );
+}
+
+// ── P/E vs own history — thin percentile bar inside the Valuation card ─────
+function HistBar({ stat }: { stat: ValuationHistoryStat | undefined }) {
+    if (!stat || stat.percentile == null || stat.min == null || stat.max == null) return null;
+    const p = stat.percentile;
+    const label = p >= 67 ? 'Above average' : p <= 33 ? 'Below average' : 'In range';
+    const barColor = p >= 67 ? 'bg-rose-400 dark:bg-rose-500' : p <= 33 ? 'bg-emerald-400 dark:bg-emerald-500' : 'bg-amber-400 dark:bg-amber-500';
+    const yrs = stat.years != null && stat.years >= 1 ? `${Math.round(stat.years)}Y` : 'hist.';
+    const pctText = p >= 99 ? 'highest in history' : p <= 1 ? 'lowest in history' : `${ordinalSuffix(Math.round(p))} pct`;
+    return (
+        <div className="mt-2 px-3 pb-2">
+            <div className="flex items-baseline justify-between gap-2 text-[9px] uppercase tracking-wide font-medium text-gray-500 dark:text-gray-400">
+                <span>P/E vs own {yrs} history</span>
+                <span className="text-gray-600 dark:text-gray-300">{label} · {pctText}</span>
+            </div>
+            <div className="mt-1 h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                <div className={`h-full rounded-full ${barColor}`} style={{ width: `${Math.min(100, Math.max(0, p))}%` }} />
+            </div>
+        </div>
+    );
+}
+
 function PillarCard({ title, score, metrics, children }: { title: string; score?: number | null; metrics: MetricCardDef[]; children?: React.ReactNode }) {
     if (!metrics.length) return null;
     return (
@@ -313,10 +383,11 @@ function PillarCard({ title, score, metrics, children }: { title: string; score?
 
 // ── Main export ──────────────────────────────────────────────────────────────
 export function KeyMetricsTable({ data }: Props) {
-    const { valuation, profitability, growth, solvency, quality, balanceSheet, lossYears } = useMemo(
+    const { valuation, profitability, growth, solvency, quality, balanceSheet, market, perShare, lossYears } = useMemo(
         () => buildMetrics(data),
         [data]
     );
+    const peStat = data.valuationHistoryStats?.pe;
 
     return (
         <section
@@ -331,24 +402,54 @@ export function KeyMetricsTable({ data }: Props) {
                 </div>
                 <div>
                     <h2 className="text-base font-bold text-gray-900 dark:text-white tracking-tight">Key Metrics</h2>
-                    <p className="text-[11px] text-gray-500 dark:text-gray-400">Grouped by the five pillars — the same inputs behind the profile radar</p>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400">Financial snapshot — pillar inputs plus per-share and market context</p>
                 </div>
             </div>
 
-            {/* 5 pillar cards + balance-sheet context. sm: 2-col, xl: 3-col;
-                items-start lets cards hug their content instead of stretching
-                to the tallest card in the row. */}
-            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3 items-start">
-                <PillarCard title="Valuation" score={data.pillars?.valuation.score ?? null} metrics={valuation} />
-                <PillarCard title="Growth" score={data.pillars?.growth.score ?? null} metrics={growth} />
-                <PillarCard title="Profitability" score={data.pillars?.profitability.score ?? null} metrics={profitability} />
-                <PillarCard title="Financial Health" score={data.pillars?.health.score ?? null} metrics={solvency} />
-                <PillarCard title="Quality" score={data.pillars?.quality.score ?? null} metrics={quality}>
-                    {lossYears > 0 && (
-                        <StatusBadge label={`${lossYears} Loss Years (10Y)`} type={lossYears <= 2 ? 'warn' : 'bad'} />
-                    )}
-                </PillarCard>
-                <PillarCard title="Balance Sheet" metrics={balanceSheet} />
+            {/* Financial-snapshot dashboard — hierarchical card sizes so the
+                section reads in seconds instead of a wall of equal rows:
+                Valuation gets the full-width large card (metric tiles + P/E
+                history bar), pillar pairs share medium rows, and the small
+                row holds per-share / balance-sheet / market context. */}
+            <div className="space-y-3">
+                {/* ── Large: Valuation ─────────────────────────────────── */}
+                <div className="rounded-xl border border-gray-200/80 dark:border-gray-800/80 overflow-hidden">
+                    <div className="flex items-center justify-between gap-2 px-3 py-2 bg-gray-50/90 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800/60">
+                        <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-600 dark:text-gray-300">
+                            Valuation
+                        </h3>
+                        {data.pillars?.valuation.score != null && (
+                            <span className={`text-sm font-bold tabular-nums leading-none ${scoreColor(data.pillars.valuation.score)}`} aria-label={`Valuation score ${data.pillars.valuation.score} out of 100`}>
+                                {data.pillars.valuation.score}<span className="text-[10px] font-medium text-gray-400 dark:text-gray-500">/100</span>
+                            </span>
+                        )}
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-px bg-gray-100 dark:bg-gray-800/60">
+                        {valuation.map((m) => <Tile key={m.label} m={m} />)}
+                    </div>
+                    <HistBar stat={peStat} />
+                </div>
+
+                {/* ── Medium: pillar pairs ─────────────────────────────── */}
+                <div className="grid sm:grid-cols-2 gap-3 items-start">
+                    <PillarCard title="Profitability" score={data.pillars?.profitability.score ?? null} metrics={profitability} />
+                    <PillarCard title="Financial Health" score={data.pillars?.health.score ?? null} metrics={solvency} />
+                </div>
+                <div className="grid sm:grid-cols-2 gap-3 items-start">
+                    <PillarCard title="Growth" score={data.pillars?.growth.score ?? null} metrics={growth} />
+                    <PillarCard title="Quality" score={data.pillars?.quality.score ?? null} metrics={quality}>
+                        {lossYears > 0 && (
+                            <StatusBadge label={`${lossYears} Loss Years (10Y)`} type={lossYears <= 2 ? 'warn' : 'bad'} />
+                        )}
+                    </PillarCard>
+                </div>
+
+                {/* ── Small: context cards ─────────────────────────────── */}
+                <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3 items-start">
+                    <PillarCard title="Per Share" metrics={perShare} />
+                    <PillarCard title="Balance Sheet" metrics={balanceSheet} />
+                    <PillarCard title="Market" metrics={market} />
+                </div>
             </div>
 
             {/* Verdict + human-readable callouts — tinted "takeaway" block so
