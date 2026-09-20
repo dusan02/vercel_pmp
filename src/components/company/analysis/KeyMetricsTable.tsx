@@ -226,14 +226,16 @@ function Cell({ m }: { m: MetricCardDef }) {
                 )}
             </span>
             <span aria-hidden="true" className="hidden sm:block flex-1 min-w-2 mx-1 border-b border-dotted border-gray-300 dark:border-gray-600 -translate-y-[3px]" />
-            <span className="flex items-baseline justify-end gap-1 shrink-0">
+            <span className="flex items-baseline justify-end gap-1.5 shrink-0">
+                {/* Fixed-width status column precedes the value, so the number
+                    is always the rightmost element and every value shares the
+                    card's right edge. Status is right-aligned to hug its
+                    number; column is wide enough for the longest labels. */}
+                <span className="hidden sm:inline-block w-16 whitespace-nowrap overflow-hidden text-right text-[9px] font-medium text-gray-600 dark:text-gray-400 uppercase">
+                    {m.statusLabel !== '-' ? m.statusLabel : ''}
+                </span>
                 <span className={`text-[13px] ${m.primary ? 'font-bold' : 'font-semibold'} tabular-nums text-right ${missing ? 'text-gray-400 dark:text-gray-500' : VALUE_COLORS[m.statusType]}`}>
                     {missing ? '—' : m.value}
-                </span>
-                {/* Fixed-width status column — keeps every value's right edge
-                    aligned across cells regardless of label length */}
-                <span className="hidden sm:inline-block w-11 whitespace-nowrap overflow-hidden text-left text-[9px] font-medium text-gray-600 dark:text-gray-400 uppercase">
-                    {m.statusLabel !== '-' ? m.statusLabel : ''}
                 </span>
             </span>
         </>
