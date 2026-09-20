@@ -451,14 +451,14 @@ export function KeyMetricsTable({ data }: Props) {
                 </div>
             </div>
 
-            {/* Financial-snapshot dashboard — hierarchical card sizes so the
-                section reads in seconds instead of a wall of equal rows:
-                Valuation gets the full-width large card (metric tiles + P/E
-                history bar), pillar pairs share medium rows, and the small
-                row holds per-share / balance-sheet / market context. */}
-            <div className="space-y-3">
-                {/* ── Large: Valuation ─────────────────────────────────── */}
-                <div className="rounded-xl border border-gray-200/80 dark:border-gray-800/80 overflow-hidden">
+            {/* Financial-snapshot dashboard — masonry-style proportions:
+                Valuation is the biggest block (2/3 width, metric tiles + P/E
+                history bar) sharing row one with Profitability. The other
+                pillar cards form the second tier and the per-share /
+                balance-sheet / market context cards the small third tier. */}
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 items-start">
+                {/* ── Large: Valuation (2/3 width) ─────────────────────── */}
+                <div className="sm:col-span-2 rounded-xl border border-gray-200/80 dark:border-gray-800/80 overflow-hidden">
                     <div className="flex items-center justify-between gap-2 px-3 py-2 bg-gray-50/90 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800/60">
                         <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-600 dark:text-gray-300">
                             Valuation
@@ -470,32 +470,26 @@ export function KeyMetricsTable({ data }: Props) {
                             </span>
                         )}
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-px bg-gray-100 dark:bg-gray-800/60">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-px bg-gray-100 dark:bg-gray-800/60">
                         {valuation.map((m) => <Tile key={m.label} m={m} />)}
                     </div>
                     <HistBar stat={peStat} />
                 </div>
 
-                {/* ── Medium: pillar pairs ─────────────────────────────── */}
-                <div className="grid sm:grid-cols-2 gap-3 items-start">
-                    <PillarCard title="Profitability" score={data.pillars?.profitability.score ?? null} metrics={profitability} />
-                    <PillarCard title="Financial Health" score={data.pillars?.health.score ?? null} metrics={solvency} />
-                </div>
-                <div className="grid sm:grid-cols-2 gap-3 items-start">
-                    <PillarCard title="Growth" score={data.pillars?.growth.score ?? null} metrics={growth} />
-                    <PillarCard title="Quality" score={data.pillars?.quality.score ?? null} metrics={quality}>
-                        {lossYears > 0 && (
-                            <StatusBadge label={`${lossYears} Loss Years (10Y)`} type={lossYears <= 2 ? 'warn' : 'bad'} />
-                        )}
-                    </PillarCard>
-                </div>
+                {/* ── Medium: remaining pillar cards ───────────────────── */}
+                <PillarCard title="Profitability" score={data.pillars?.profitability.score ?? null} metrics={profitability} />
+                <PillarCard title="Financial Health" score={data.pillars?.health.score ?? null} metrics={solvency} />
+                <PillarCard title="Growth" score={data.pillars?.growth.score ?? null} metrics={growth} />
+                <PillarCard title="Quality" score={data.pillars?.quality.score ?? null} metrics={quality}>
+                    {lossYears > 0 && (
+                        <StatusBadge label={`${lossYears} Loss Years (10Y)`} type={lossYears <= 2 ? 'warn' : 'bad'} />
+                    )}
+                </PillarCard>
 
                 {/* ── Small: context cards ─────────────────────────────── */}
-                <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3 items-start">
-                    <PillarCard title="Per Share" metrics={perShare} />
-                    <PillarCard title="Balance Sheet" metrics={balanceSheet} />
-                    <PillarCard title="Market" metrics={market} />
-                </div>
+                <PillarCard title="Per Share" metrics={perShare} />
+                <PillarCard title="Balance Sheet" metrics={balanceSheet} />
+                <PillarCard title="Market" metrics={market} />
             </div>
 
             {/* Verdict + human-readable callouts — tinted "takeaway" block so
