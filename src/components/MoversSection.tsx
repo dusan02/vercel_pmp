@@ -25,12 +25,45 @@ interface MoverData {
     latestMoversRVOL: number | null;
     moversReason: string | null;
     moversCategory: string | null;
+    analysis?: MoverAnalysis | null;
 }
+
+interface MoverAnalysis {
+    zScore: number | null;
+    rvol: number | null;
+    sigmaLevel: 'normal' | 'unusual' | 'very_unusual' | 'extreme';
+    marketChangePct: number | null;
+    sectorChangePct: number | null;
+    excessMovePct: number | null;
+    attribution: 'stock' | 'sector' | 'market' | 'mixed';
+    catalyst: {
+        type: string;
+        status: 'found' | 'none' | 'unavailable';
+        confidence: 'high' | 'medium' | 'low';
+        label: string;
+        explanation: string;
+        evidence: { source: string; headline: string; url?: string | null; publishedAt: string }[];
+    };
+    pillars: {
+        valuation: number | null; growth: number | null; profitability: number | null;
+        health: number | null; quality: number | null; overall: number | null; ewScore: number | null;
+    } | null;
+}
+
+type MoversTab = 'all' | 'unusual' | 'explained' | 'unexplained';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
+const SESSION_LABELS: Record<string, string> = {
+    pre: 'Premarket',
+    live: 'Regular session',
+    after: 'After hours',
+    closed: 'Market closed',
+};
+
 export function MoversSection({ onTileClick, initialData }: { onTileClick?: (ticker: string) => void; initialData?: any[] | undefined }) {
     const [selectedSector, setSelectedSector] = React.useState<string | null>(null);
+    const [activeTab, setActiveTab] = React.useState<MoversTab>('all');
     const isDesktop = useMediaQuery('(min-width: 1024px)');
     const { data, error, isLoading, mutate } = useSWR('/api/stocks/movers?limit=50', fetcher, {
         refreshInterval: 30000, // Refresh every 30 seconds for better real-time experience
@@ -62,11 +95,19 @@ export function MoversSection({ onTileClick, initialData }: { onTileClick?: (tic
     }, [movers]);
 
     const filteredMovers = useMemo(() => {
-        if (!selectedSector) return movers;
-        return movers
-            .filter(m => m.sector === selectedSector)
-            .sort((a, b) => Math.abs(b.latestMoversZScore ?? 0) - Math.abs(a.latestMoversZScore ?? 0));
-    }, [movers, selectedSector]);
+        let list = movers;
+        if (selectedSector) list = list.filter(m => m.sector === selectedSector);
+        switch (activeTab) {
+            case 'unusual':
+                return [...list].sort((a, b) => Math.abs(b.latestMoversZScore ?? 0) - Math.abs(a.latestMoversZScore ?? 0));
+            case 'explained':
+                return list.filter(m => m.analysis?.catalyst?.status === 'found');
+            case 'unexplained':
+                return list.filter(m => m.analysis && m.analysis.catalyst.status !== 'found');
+            default:
+                return list; // keep API significance ordering
+        }
+    }, [movers, selectedSector, activeTab]);
 
     const gainers = useMemo(() => filteredMovers.filter(m => (m.lastChangePct || 0) >= 0), [filteredMovers]);
     const losers = useMemo(() => filteredMovers.filter(m => (m.lastChangePct || 0) < 0), [filteredMovers]);
@@ -107,11 +148,70 @@ export function MoversSection({ onTileClick, initialData }: { onTileClick?: (tic
             );
         };
 
+        const sigmaLabel = absZ >= 5 ? 'Extreme' : absZ >= 3 ? 'Very unusual' : absZ >= 2 ? 'Unusual' : '';
         return (
             <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold border ${colorClass}`}>
                 <Zap size={10} fill="currentColor" />
-                <span>Z: {zscore > 0 ? '+' : ''}{zscore.toFixed(1)}</span>
+                <span>{absZ.toFixed(1)}σ{sigmaLabel ? ` ${sigmaLabel}` : ''}</span>
                 {renderConfidenceMeter()}
+            </div>
+        );
+    };
+
+    const renderContextLine = (a: MoverAnalysis) => {
+        const fmt = (v: number | null) => v === null ? '—' : `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`;
+        return (
+            <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-slate-500 tabular-nums">
+                <span>Sector <span className="font-semibold text-slate-600">{fmt(a.sectorChangePct)}</span></span>
+                <span>Mkt <span className="font-semibold text-slate-600">{fmt(a.marketChangePct)}</span></span>
+                {a.excessMovePct !== null && (
+                    <span>Excess <span className={`font-semibold ${a.excessMovePct >= 0 ? 'text-green-600' : 'text-red-500'}`}>{fmt(a.excessMovePct)}</span></span>
+                )}
+            </div>
+        );
+    };
+
+    const renderCatalyst = (a: MoverAnalysis) => {
+        const c = a.catalyst;
+        if (!c) return null;
+        const dot = c.confidence === 'high' ? 'bg-green-500' : c.confidence === 'medium' ? 'bg-amber-500' : 'bg-slate-400';
+        const evidence = c.evidence?.find(e => e.url);
+        return (
+            <div className="mt-1.5 text-[11px] leading-snug">
+                <div className="flex items-center gap-1.5 font-semibold text-slate-700">
+                    <span className={`w-1.5 h-1.5 rounded-full ${dot}`} />
+                    <span>{c.label}</span>
+                    {c.status === 'found' && c.confidence !== 'high' && (
+                        <span className="text-[9px] font-medium text-slate-400 uppercase tracking-wide">
+                            {c.confidence === 'medium' ? 'likely' : 'weak'}
+                        </span>
+                    )}
+                </div>
+                {c.explanation && (
+                    <div className="text-slate-500 mt-0.5">{c.explanation}</div>
+                )}
+                {evidence?.url && (
+                    <a href={evidence.url} target="_blank" rel="noopener noreferrer"
+                        onClick={e => e.stopPropagation()}
+                        className="text-blue-500 hover:underline inline-block mt-0.5 truncate max-w-full">
+                        {evidence.headline}
+                    </a>
+                )}
+            </div>
+        );
+    };
+
+    const renderPillarStrip = (a: MoverAnalysis) => {
+        const p = a.pillars;
+        if (!p) return null;
+        const seg = (label: string, v: number | null) => v === null ? null : `${label} ${Math.round(v)}`;
+        const parts = [seg('V', p.valuation), seg('G', p.growth), seg('P', p.profitability), seg('H', p.health), seg('Q', p.quality)].filter(Boolean);
+        if (parts.length === 0) return null;
+        return (
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] tabular-nums text-slate-500">
+                <span className="font-semibold text-slate-400 uppercase tracking-wide">PMP</span>
+                {parts.map((s, i) => <span key={i} className="font-medium">{s}</span>)}
+                {p.ewScore !== null && <span className="font-semibold text-indigo-500">EW {p.ewScore}</span>}
             </div>
         );
     };
@@ -203,19 +303,21 @@ export function MoversSection({ onTileClick, initialData }: { onTileClick?: (tic
                                     {renderCategoryBadge(mover.moversCategory)}
                                 </div>
 
-                                {/* Row 2: AI Reason */}
-                                <div className={`mt-1.5 text-[11px] leading-tight font-medium ${!mover.moversReason
-                                    ? 'text-slate-300 italic'
-                                    : mover.lastChangePct && mover.lastChangePct >= 2
-                                        ? 'text-green-700'
-                                        : mover.lastChangePct && mover.lastChangePct <= -2
-                                            ? 'text-red-600'
-                                            : 'text-slate-500'
-                                    }`}>
-                                    {mover.moversReason
-                                        ? `"${mover.moversReason}"`
-                                        : 'Analyzing market catalyst...'}
-                                </div>
+                                {/* Row 2: deterministic catalyst (primary) or AI reason */}
+                                {mover.analysis ? renderCatalyst(mover.analysis) : (
+                                    <div className={`mt-1.5 text-[11px] leading-tight font-medium ${!mover.moversReason
+                                        ? 'text-slate-300 italic'
+                                        : mover.lastChangePct && mover.lastChangePct >= 2
+                                            ? 'text-green-700'
+                                            : mover.lastChangePct && mover.lastChangePct <= -2
+                                                ? 'text-red-600'
+                                                : 'text-slate-500'
+                                        }`}>
+                                        {mover.moversReason
+                                            ? `"${mover.moversReason}"`
+                                            : 'Analyzing market catalyst...'}
+                                    </div>
+                                )}
                             </div>
 
                             <div className="flex flex-col items-end min-w-[70px] shrink-0">
@@ -230,11 +332,17 @@ export function MoversSection({ onTileClick, initialData }: { onTileClick?: (tic
                             </div>
                         </div>
 
-                        {/* Row 3: Metric Badges */}
+                        {/* Row 3: Metric Badges + context + pillars */}
                         <div className="flex flex-wrap gap-2 items-center">
                             {renderZScoreBadge(mover.latestMoversZScore)}
                             {renderRVOLBadge(mover.latestMoversRVOL)}
                         </div>
+                        {mover.analysis && (
+                            <div className="mt-1.5">
+                                {renderContextLine(mover.analysis)}
+                                {renderPillarStrip(mover.analysis)}
+                            </div>
+                        )}
                     </div>
                 </div>
             </motion.div>
@@ -248,10 +356,15 @@ export function MoversSection({ onTileClick, initialData }: { onTileClick?: (tic
                     <h2 className="flex items-center gap-3 text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white m-0 relative -top-1.5">
                         <SectionIcon type="zap" size={28} className="text-gray-900 dark:text-white shrink-0" />
                         <span>Movers</span>
+                        {data?.session && (
+                            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200 self-center">
+                                {SESSION_LABELS[data.session] ?? data.session}
+                            </span>
+                        )}
                     </h2>
                     <p className="text-xs text-slate-500 flex items-center gap-1.5">
                         <Info size={12} />
-                        Stocks with significant statistical deviations (Z-Score &amp; RVOL)
+                        Statistically unusual moves vs each stock&apos;s own volatility — with the likely catalyst when detected
                     </p>
                 </div>
 
@@ -281,6 +394,27 @@ export function MoversSection({ onTileClick, initialData }: { onTileClick?: (tic
                         <RefreshCw className={`${isLoading ? 'animate-spin' : ''}`} size={20} />
                     </button>
                 </div>
+            </div>
+
+            {/* Tabs: All / Most Unusual / Explained / Unexplained */}
+            <div className="flex gap-1.5 flex-wrap px-1">
+                {([
+                    ['all', 'All'],
+                    ['unusual', 'Most Unusual'],
+                    ['explained', 'Explained'],
+                    ['unexplained', 'Unexplained'],
+                ] as [MoversTab, string][]).map(([key, label]) => (
+                    <button
+                        key={key}
+                        onClick={() => setActiveTab(key)}
+                        className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${activeTab === key
+                                ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900'
+                                : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400 dark:bg-transparent dark:text-slate-400 dark:border-white/10'
+                            }`}
+                    >
+                        {label}
+                    </button>
+                ))}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -351,6 +485,9 @@ export function MoversSection({ onTileClick, initialData }: { onTileClick?: (tic
                             </p>
                         </div>
                     </div>
+                    <p className="text-[11px] text-slate-400 mt-4 leading-relaxed">
+                        Each mover is then checked for a likely catalyst — earnings surprises, company news and analyst actions — ranked deterministically by proximity and relevance. &quot;No obvious catalyst detected&quot; is a valid result: we never invent an explanation when the evidence is not there. Sector/market context shows how much of the move is stock-specific (Excess) vs. riding the tape.
+                    </p>
                 </div>
             </div>
         </div>

@@ -3,6 +3,8 @@ import { prisma } from '@/lib/db/prisma';
 import { getDateET, nowET, createETDate } from '@/lib/utils/dateET';
 import { detectSession } from '@/lib/utils/timeUtils';
 import { calculatePercentChange } from '@/lib/utils/priceResolver';
+import { analyzeMovers, MoverAnalysis } from '@/services/movers/analyze';
+import { getCachedData, setCachedData } from '@/lib/redis/operations';
 
 /**
  * API Endpoint to fetch top market movers
@@ -185,11 +187,49 @@ export async function GET(request: NextRequest) {
 
         const finalMovers = enrichedMovers.slice(0, limit);
 
-        console.log(`✅ [MoversAPI] Returning ${finalMovers.length} movers (session: ${session})`);
+        // ── Step 6: Movers 2.0 analysis — sigma level, market/sector context,
+        // deterministic catalyst detection, pillar strip. List-level Redis cache
+        // (~90s) bounds the per-ticker Finnhub fetches; analysis failure never
+        // blocks the movers payload (degrades to analysis:null).
+        let analysisBySymbol = new Map<string, MoverAnalysis>();
+        let marketChangePct: number | null = null;
+        try {
+            const dateET = getDateET(etNow);
+            const cacheKey = `movers:analysis:${dateET}:${session}`;
+            let cached: Record<string, MoverAnalysis> | null = null;
+            try { cached = await getCachedData(cacheKey); } catch { }
+            if (cached && typeof cached === 'object') {
+                analysisBySymbol = new Map(Object.entries(cached));
+                marketChangePct = Object.values(cached)[0]?.marketChangePct ?? null;
+            } else {
+                const inputs = finalMovers.map(m => ({
+                    symbol: m.symbol,
+                    sector: m.sector,
+                    changePct: m.lastChangePct,
+                    zScore: m.latestMoversZScore,
+                    rvol: m.latestMoversRVOL,
+                }));
+                analysisBySymbol = await analyzeMovers(inputs);
+                marketChangePct = Object.values(Object.fromEntries(analysisBySymbol))[0]?.marketChangePct ?? null;
+                try {
+                    await setCachedData(cacheKey, Object.fromEntries(analysisBySymbol), 90);
+                } catch { }
+            }
+        } catch (e) {
+            console.warn('[MoversAPI] analysis enrichment failed, continuing without:', e);
+        }
+
+        const moversOut = finalMovers.map(m => ({
+            ...m,
+            analysis: analysisBySymbol.get(m.symbol) ?? null,
+        }));
+
+        console.log(`✅ [MoversAPI] Returning ${moversOut.length} movers (session: ${session})`);
 
         return NextResponse.json({
-            movers: finalMovers,
+            movers: moversOut,
             session,
+            marketChangePct,
             timestamp: new Date().toISOString()
         });
 
