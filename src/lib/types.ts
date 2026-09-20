@@ -35,7 +35,9 @@ export interface StockData {
   yearChange?: number;
   healthScore?: number;
   valuationScore?: number;
+  growthScore?: number;
   profitabilityScore?: number;
+  qualityScore?: number;
   piotroskiScore?: number;
   altmanZ?: number;
   beneishScore?: number;

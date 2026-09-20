@@ -1,17 +1,24 @@
 import type { Metadata } from 'next';
+import { cache } from 'react';
 import Link from 'next/link';
 import { generatePageMetadata } from '@/lib/seo/metadata';
-import { detectSession, mapToRedisSession } from '@/lib/utils/timeUtils';
-import { formatMarketCapDiff, formatPercent, formatPrice } from '@/lib/utils/heatmapFormat';
+import { formatPercent, formatPrice } from '@/lib/utils/heatmapFormat';
 import { formatSectorName } from '@/lib/utils/format';
-import { getDateET, getManyLastWithDate, getRankedSymbols } from '@/lib/redis/ranking';
 import { SsrMoverLinksCombined } from '@/components/seo/SsrMoverLinks';
 import { getPremarketDateSummaries } from '@/lib/seo/premarketArchive';
 import { getEligibleAnalysisSet } from '@/lib/seo/eligibleTickers';
 import { prisma } from '@/lib/db/prisma';
 import { NotificationToggle } from '@/components/notifications/NotificationToggle';
+import { getMoversData, type MoverRecord } from '@/services/movers/getMovers';
+import { SIGMA_LABELS, type SigmaLevel } from '@/services/movers/classify';
 
 export const revalidate = 60;
+
+/**
+ * Shared per-request mover fetch — generateMetadata and the page render both
+ * use this so the title snippet and the table come from ONE pipeline call.
+ */
+const getMovers = cache(() => getMoversData(50, 2.0));
 
 function getTodayFormatted(): string {
   return new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
@@ -25,21 +32,20 @@ export async function generateMetadata(): Promise<Metadata> {
   const today = getTodayFormatted();
   let moversSnippet = '';
   try {
-    const [gainers, losers] = await Promise.all([
-      getTopMovers('desc', 1),
-      getTopMovers('asc', 1),
-    ]);
+    const { movers } = await getMovers();
+    const gainers = movers.filter(m => (m.lastChangePct ?? 0) > 0);
+    const losers = movers.filter(m => (m.lastChangePct ?? 0) < 0);
     const parts: string[] = [];
-    if (gainers[0]?.changePct != null) parts.push(`${gainers[0].symbol} +${gainers[0].changePct.toFixed(1)}%`);
-    if (losers[0]?.changePct != null) parts.push(`${losers[0].symbol} ${losers[0].changePct.toFixed(1)}%`);
+    if (gainers[0]) parts.push(`${gainers[0].symbol} +${gainers[0].lastChangePct.toFixed(1)}%`);
+    if (losers[0]) parts.push(`${losers[0].symbol} ${losers[0].lastChangePct.toFixed(1)}%`);
     if (parts.length > 0) moversSnippet = `: ${parts.join(', ')}`;
   } catch {
-    // Redis unavailable at build/render — fall back to static title
+    // Data unavailable at build/render — fall back to static title
   }
   return generatePageMetadata({
     title: `Premarket Movers Today${moversSnippet} (${getTodayShort()})`,
     description:
-      `Biggest pre-market stock movers for ${today} — top gainers and losers ranked by % change with Z-scores and momentum insights. Real-time data from NYSE & NASDAQ.`,
+      `Biggest pre-market stock movers for ${today} — top gainers and losers ranked by % change with Z-scores, catalysts and momentum insights. Real-time data from NYSE & NASDAQ.`,
     path: '/premarket-movers',
     keywords: ['premarket movers', 'stocks moving today', 'premarket gainers and losers', 'stock movers today', 'biggest stock movers premarket', 'stocks moving premarket'],
     languages: {
@@ -50,49 +56,80 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
-type MoverRow = {
-  symbol: string;
-  name?: string;
-  sector?: string;
-  industry?: string;
-  price?: number;
-  changePct?: number;
-  marketCapDiff?: number;
-  zscore?: number;
-  rvol?: number;
-  reason?: string;
-  category?: string;
+const SIGMA_BADGE: Record<SigmaLevel, string> = {
+  extreme: 'bg-purple-500/10 text-purple-400 border-purple-500/30',
+  very_unusual: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
+  unusual: 'bg-sky-500/10 text-sky-400 border-sky-500/30',
+  normal: 'bg-slate-500/10 text-slate-400 border-slate-500/30',
 };
 
-async function getTopMovers(order: 'asc' | 'desc', limit: number): Promise<MoverRow[]> {
-  const detected = detectSession();
-  const mapped =
-    detected === 'closed' ? 'after' : (detected as 'pre' | 'live' | 'after');
-  const session = mapToRedisSession(mapped) ?? 'after';
-  const date = getDateET();
+const CONFIDENCE_DOT: Record<string, string> = {
+  high: 'bg-emerald-500',
+  medium: 'bg-amber-500',
+  low: 'bg-slate-400',
+};
 
-  const symbols = await getRankedSymbols(date, session, 'chg', order, 0, limit);
-  const last = await getManyLastWithDate(date, session, symbols);
-
-  return symbols.map((symbol) => {
-    const d = last.get(symbol) ?? {};
-    return {
-      symbol,
-      name: d.name,
-      sector: d.sector,
-      industry: d.industry,
-      price: d.p,
-      changePct: d.change_pct,
-      marketCapDiff: d.cap_diff,
-      zscore: d.z,
-      rvol: d.v,
-      reason: d.reason,
-      category: d.cat
-    };
-  }).filter(r => order === 'desc' ? (r.changePct ?? 0) > 0.01 : (r.changePct ?? 0) < -0.01);
+function CatalystCell({ mover }: { mover: MoverRecord }) {
+  const a = mover.analysis;
+  if (!a) {
+    // Degraded path: LLM prose from the worker pipeline
+    return mover.moversReason ? (
+      <div className="text-xs text-slate-600 dark:text-slate-400 max-w-[260px]">
+        <span className="font-bold opacity-50 mr-1">{mover.moversCategory}:</span>
+        {mover.moversReason}
+      </div>
+    ) : (
+      <span className="text-xs text-slate-400 italic">Analyzing…</span>
+    );
+  }
+  const ev = a.catalyst.evidence.find(e => e.url);
+  return (
+    <div className="text-xs max-w-[260px]">
+      <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
+        {a.catalyst.status === 'found' && (
+          <span className={`inline-block w-1.5 h-1.5 rounded-full ${CONFIDENCE_DOT[a.catalyst.confidence]}`} title={`${a.catalyst.confidence} confidence`} />
+        )}
+        <span className="font-medium">{a.catalyst.status === 'found' ? a.catalyst.label : 'No clear catalyst detected'}</span>
+        {ev?.url && (
+          <a href={ev.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline shrink-0">[src]</a>
+        )}
+      </div>
+      {(a.sectorChangePct !== null || a.marketChangePct !== null) && (
+        <div className="text-[10px] text-slate-400 mt-0.5 tabular-nums">
+          {a.sectorChangePct !== null && `Sector ${a.sectorChangePct >= 0 ? '+' : ''}${a.sectorChangePct.toFixed(1)}%`}
+          {a.sectorChangePct !== null && a.marketChangePct !== null && ' · '}
+          {a.marketChangePct !== null && `Mkt ${a.marketChangePct >= 0 ? '+' : ''}${a.marketChangePct.toFixed(1)}%`}
+          {a.excessMovePct !== null && ` · Excess ${a.excessMovePct >= 0 ? '+' : ''}${a.excessMovePct.toFixed(1)}%`}
+        </div>
+      )}
+    </div>
+  );
 }
 
-function MoversTable({ title, rows, eligibleAnalysis }: { title: string; rows: MoverRow[]; eligibleAnalysis: Set<string> }) {
+function PillarCell({ mover }: { mover: MoverRecord }) {
+  const p = mover.analysis?.pillars;
+  if (!p) return <span className="text-xs text-slate-400">—</span>;
+  const cell = (label: string, v: number | null) =>
+    v === null ? null : (
+      <span key={label} className="tabular-nums" title={`${label} score`}>
+        <span className="text-slate-400">{label}</span>{' '}
+        <span className="font-semibold text-slate-700 dark:text-slate-300">{Math.round(v)}</span>
+      </span>
+    );
+  return (
+    <div className="text-[10px] leading-4 flex flex-wrap gap-x-1.5 max-w-[150px]">
+      {cell('V', p.valuation)}{cell('G', p.growth)}{cell('P', p.profitability)}{cell('H', p.health)}{cell('Q', p.quality)}
+      {p.ewScore !== null && p.ewMaxPossible !== null && (
+        <span className="tabular-nums" title="Early Winners composite score (V5-B, current data)">
+          <span className="text-slate-400">EW</span>{' '}
+          <span className="font-semibold text-slate-700 dark:text-slate-300">{Math.round(p.ewScore)}/{Math.round(p.ewMaxPossible)}</span>
+        </span>
+      )}
+    </div>
+  );
+}
+
+function MoversTable({ title, rows, eligibleAnalysis }: { title: string; rows: MoverRecord[]; eligibleAnalysis: Set<string> }) {
   return (
     <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
       <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800">
@@ -108,13 +145,14 @@ function MoversTable({ title, rows, eligibleAnalysis }: { title: string; rows: M
               <th className="px-4 py-2">Sector</th>
               <th className="px-4 py-2">Price</th>
               <th className="px-4 py-2">% Change</th>
-              <th className="px-4 py-2 text-center">Score (Z)</th>
-              <th className="px-4 py-2">Insight</th>
+              <th className="px-4 py-2 text-center">σ</th>
+              <th className="px-4 py-2">Catalyst</th>
+              <th className="px-4 py-2">PMP</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((r) => {
-              const pct = r.changePct ?? 0;
+              const pct = r.lastChangePct ?? 0;
               const color =
                 pct > 0
                   ? 'text-emerald-600 dark:text-emerald-400'
@@ -124,6 +162,8 @@ function MoversTable({ title, rows, eligibleAnalysis }: { title: string; rows: M
 
               const sector = r.sector || 'Other';
               const sectorHref = `/sectors/${encodeURIComponent(sector)}`;
+              const sigma = r.analysis?.sigmaLevel ?? 'normal';
+              const z = r.latestMoversZScore;
 
               return (
                 <tr
@@ -151,37 +191,28 @@ function MoversTable({ title, rows, eligibleAnalysis }: { title: string; rows: M
                     </Link>
                   </td>
                   <td className="px-4 py-2 tabular-nums text-slate-700 dark:text-slate-300">
-                    {formatPrice(r.price)}
+                    {formatPrice(r.lastPrice)}
                   </td>
                   <td className={`px-4 py-2 tabular-nums font-semibold ${color}`}>
                     {formatPercent(pct)}
                   </td>
                   <td className="px-4 py-2 text-center">
-                    <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${Math.abs(r.zscore || 0) > 2.5 ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : 'text-slate-500'}`}>
-                      {r.zscore?.toFixed(1) || '0.0'}
+                    <span
+                      className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold border ${SIGMA_BADGE[sigma]}`}
+                      title={`Z-score ${z?.toFixed(1) ?? '—'} — ${SIGMA_LABELS[sigma]}`}
+                    >
+                      {z !== null ? `${Math.abs(z).toFixed(1)}σ` : '—'}
                     </span>
                   </td>
-                  <td className="px-4 py-2 text-xs">
-                    {r.reason ? (
-                      <div className="max-w-[200px] truncate" title={r.reason}>
-                        <span className="font-bold opacity-50 mr-1">{r.category}:</span>
-                        {r.reason}
-                      </div>
-                    ) : (
-                      <span className="text-slate-500 italic">Analyzing...</span>
-                    )}
+                  <td className="px-4 py-2">
+                    <CatalystCell mover={r} />
+                  </td>
+                  <td className="px-4 py-2">
+                    <PillarCell mover={r} />
                   </td>
                 </tr>
               );
             })}
-
-            {rows.length === 0 && (
-              <tr>
-                <td className="px-4 py-6 text-slate-600 dark:text-slate-400" colSpan={6}>
-                  No data available yet. (Redis rank indexes may still be warming up.)
-                </td>
-              </tr>
-            )}
           </tbody>
         </table>
       </div>
@@ -190,12 +221,27 @@ function MoversTable({ title, rows, eligibleAnalysis }: { title: string; rows: M
 }
 
 export default async function PremarketMoversPage() {
-  const [gainers, losers, archiveDates, eligibleAnalysis] = await Promise.all([
-    getTopMovers('desc', 50),
-    getTopMovers('asc', 50),
+  // Movers 2.0 shared pipeline — identical records as /api/stocks/movers.
+  // A failure here must NOT render as "no movers": keep a distinct
+  // temporarily-unavailable state (page is ISR 60s, self-heals).
+  let moversData: Awaited<ReturnType<typeof getMovers>> | null = null;
+  let dataError = false;
+  try {
+    moversData = await getMovers();
+  } catch (e) {
+    console.error('[premarket-movers] mover pipeline failed:', e);
+    dataError = true;
+  }
+
+  const [archiveDates, eligibleAnalysis] = await Promise.all([
     getPremarketDateSummaries(14),
     getEligibleAnalysisSet(),
   ]);
+
+  const movers = moversData?.movers ?? [];
+  const session = moversData?.session ?? 'closed';
+  const gainers = movers.filter(m => (m.lastChangePct ?? 0) > 0.01);
+  const losers = movers.filter(m => (m.lastChangePct ?? 0) < -0.01);
 
   // Fetch tickers with significant moves for /movers/[symbol] links
   let moverTickers: { symbol: string; name: string | null }[] = [];
@@ -248,13 +294,13 @@ export default async function PremarketMoversPage() {
       ...gainers.slice(0, 10).map((r, i) => ({
         '@type': 'ListItem',
         position: i + 1,
-        name: `${r.name ?? r.symbol} (${r.symbol}) — ${formatPercent(r.changePct ?? 0)}`,
+        name: `${r.name ?? r.symbol} (${r.symbol}) — ${formatPercent(r.lastChangePct ?? 0)}`,
         url: `${baseUrl}/analysis/${r.symbol}`,
       })),
       ...losers.slice(0, 10).map((r, i) => ({
         '@type': 'ListItem',
         position: 11 + i,
-        name: `${r.name ?? r.symbol} (${r.symbol}) — ${formatPercent(r.changePct ?? 0)}`,
+        name: `${r.name ?? r.symbol} (${r.symbol}) — ${formatPercent(r.lastChangePct ?? 0)}`,
         url: `${baseUrl}/analysis/${r.symbol}`,
       })),
     ],
@@ -278,7 +324,7 @@ export default async function PremarketMoversPage() {
         acceptedAnswer: {
           '@type': 'Answer',
           text: topGainer && topLoser
-            ? `As of ${today}, the top pre-market gainer is ${topGainer.name ?? topGainer.symbol} (${topGainer.symbol}) at ${formatPercent(topGainer.changePct ?? 0)}, and the biggest decliner is ${topLoser.name ?? topLoser.symbol} (${topLoser.symbol}) at ${formatPercent(topLoser.changePct ?? 0)}.`
+            ? `As of ${today}, the top pre-market gainer is ${topGainer.name ?? topGainer.symbol} (${topGainer.symbol}) at ${formatPercent(topGainer.lastChangePct ?? 0)}, and the biggest decliner is ${topLoser.name ?? topLoser.symbol} (${topLoser.symbol}) at ${formatPercent(topLoser.lastChangePct ?? 0)}.`
             : 'Premarket rankings update continuously during the 4:00–9:30 AM ET session.',
         },
       },
@@ -287,7 +333,7 @@ export default async function PremarketMoversPage() {
         name: 'What does the Z-Score on this page mean?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'The Z-Score measures how unusual a stock’s move is relative to its recent history. A Z-Score above 2.5 marks a statistically significant deviation, filtering out routine noise.',
+          text: 'The σ column shows each stock’s Z-Score — how unusual its move is relative to recent history. A Z-Score above 2.0 marks a statistically significant deviation, with tiers from unusual to extreme, filtering out routine noise.',
         },
       },
       {
@@ -312,8 +358,8 @@ export default async function PremarketMoversPage() {
           </h1>
           <p className="mt-3 text-slate-600 dark:text-slate-300 max-w-3xl leading-relaxed">
             The biggest pre-market movers ranked by percentage change.
-            {topGainer && ` Top gainer: ${topGainer.name ?? topGainer.symbol} (${topGainer.symbol}) at ${formatPercent(topGainer.changePct ?? 0)}.`}
-            {topLoser && ` Biggest decliner: ${topLoser.name ?? topLoser.symbol} (${topLoser.symbol}) at ${formatPercent(topLoser.changePct ?? 0)}.`}
+            {topGainer && ` Top gainer: ${topGainer.name ?? topGainer.symbol} (${topGainer.symbol}) at ${formatPercent(topGainer.lastChangePct ?? 0)}.`}
+            {topLoser && ` Biggest decliner: ${topLoser.name ?? topLoser.symbol} (${topLoser.symbol}) at ${formatPercent(topLoser.lastChangePct ?? 0)}.`}
           </p>
         </div>
 
@@ -325,7 +371,7 @@ export default async function PremarketMoversPage() {
               Pre-market trading occurs between 4:00 AM and 9:30 AM Eastern Time, before the regular US stock market session opens. During this window, stocks can move significantly in response to overnight news, earnings announcements, economic data releases, and global market developments. The movers listed below represent the most actively changing stocks across NYSE and NASDAQ.
             </p>
             <p>
-              The <strong>Z-Score</strong> column measures how unusual each stock's move is relative to its recent history — a Z-Score above 2.5 indicates a statistically significant deviation. The <strong>Insight</strong> column provides context on why each stock is moving, drawn from earnings reports, analyst actions, and news catalysts.
+              The <strong>σ</strong> column measures how unusual each stock's move is relative to its recent history — a Z-Score above 2.0 indicates a statistically significant deviation, with tiers ranging from unusual to extreme. The <strong>Catalyst</strong> column provides context on why each stock is moving — earnings reports, analyst actions, and news — alongside market- and sector-relative attribution. The <strong>PMP</strong> column shows each stock's fundamental profile across Valuation, Growth, Profitability, Financial Health and Quality.
             </p>
             <p>
               Use this page alongside the <Link className="text-blue-600 dark:text-blue-400 hover:underline" href="/heatmap">Market Heatmap</Link> for sector-level context, or dive into individual <Link className="text-blue-600 dark:text-blue-400 hover:underline" href="/screener">stock pages</Link> for comprehensive analysis including valuation scores and financial health metrics. Check the <Link className="text-blue-600 dark:text-blue-400 hover:underline" href="/earnings">Earnings Calendar</Link> to see if today's movers are earnings-related.
@@ -360,10 +406,23 @@ export default async function PremarketMoversPage() {
           </section>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <MoversTable title="Top Gainers" rows={gainers} eligibleAnalysis={eligibleAnalysis} />
-          <MoversTable title="Top Losers" rows={losers} eligibleAnalysis={eligibleAnalysis} />
-        </div>
+        {/* Three honest states — never claim "no movers" when data is missing */}
+        {dataError ? (
+          <div className="mb-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-8 text-center text-slate-500 dark:text-slate-400">
+            Live mover data is temporarily unavailable. Please check back shortly.
+          </div>
+        ) : movers.length === 0 ? (
+          <div className="mb-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-8 text-center text-slate-500 dark:text-slate-400">
+            {session === 'closed'
+              ? 'Live mover data is available during market sessions.'
+              : 'No unusual movers detected right now.'}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <MoversTable title="Top Gainers" rows={gainers} eligibleAnalysis={eligibleAnalysis} />
+            <MoversTable title="Top Losers" rows={losers} eligibleAnalysis={eligibleAnalysis} />
+          </div>
+        )}
 
         {/* Push/email digest subscribe — daily premarket movers at ~08:00 ET */}
         <div className="mt-6 max-w-md">
@@ -454,7 +513,7 @@ export default async function PremarketMoversPage() {
               <h3 className="font-semibold text-slate-700 dark:text-slate-300">Which stocks are moving the most in premarket today?</h3>
               <p>
                 {topGainer && topLoser
-                  ? `As of ${today}, the top pre-market gainer is ${topGainer.name ?? topGainer.symbol} (${topGainer.symbol}) at ${formatPercent(topGainer.changePct ?? 0)}, and the biggest decliner is ${topLoser.name ?? topLoser.symbol} (${topLoser.symbol}) at ${formatPercent(topLoser.changePct ?? 0)}.`
+                  ? `As of ${today}, the top pre-market gainer is ${topGainer.name ?? topGainer.symbol} (${topGainer.symbol}) at ${formatPercent(topGainer.lastChangePct ?? 0)}, and the biggest decliner is ${topLoser.name ?? topLoser.symbol} (${topLoser.symbol}) at ${formatPercent(topLoser.lastChangePct ?? 0)}.`
                   : 'Premarket rankings update continuously during the 4:00–9:30 AM ET session.'}
               </p>
             </div>

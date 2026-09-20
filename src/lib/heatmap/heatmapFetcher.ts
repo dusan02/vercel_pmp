@@ -23,7 +23,9 @@ export interface TickerInfo {
   latestMoversRVOL: number | null;
   healthScore: number | null;
   valuationScore: number | null;
+  growthScore: number | null;
   profitabilityScore: number | null;
+  qualityScore: number | null;
   piotroskiScore: number | null;
   altmanZ: number | null;
   beneishScore: number | null;
@@ -84,7 +86,9 @@ export async function fetchTickers(maxTickers: number): Promise<{
         select: {
           healthScore: true,
           valuationScore: true,
+          growthScore: true,
           profitabilityScore: true,
+          qualityScore: true,
           piotroskiScore: true,
           altmanZ: true,
           beneishScore: true,
@@ -137,7 +141,9 @@ export async function fetchTickers(maxTickers: number): Promise<{
       latestMoversRVOL: t.latestMoversRVOL,
       healthScore: t.analysisCache?.healthScore ?? null,
       valuationScore: t.analysisCache?.valuationScore ?? null,
+      growthScore: t.analysisCache?.growthScore ?? null,
       profitabilityScore: t.analysisCache?.profitabilityScore ?? null,
+      qualityScore: t.analysisCache?.qualityScore ?? null,
       piotroskiScore: t.analysisCache?.piotroskiScore ?? null,
       altmanZ: t.analysisCache?.altmanZ ?? null,
       beneishScore: t.analysisCache?.beneishScore ?? null,

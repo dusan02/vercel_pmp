@@ -12,7 +12,9 @@ export type HeatmapMetric =
   // Scores (own computations, AnalysisCache)
   | 'health'         // AnalysisCache.healthScore (0-100)
   | 'valuation'      // AnalysisCache.valuationScore (0-100)
+  | 'growth'         // AnalysisCache.growthScore (0-100)
   | 'profitability'  // AnalysisCache.profitabilityScore (0-100)
+  | 'quality'        // AnalysisCache.qualityScore (0-100)
   | 'piotroski'      // AnalysisCache.piotroskiScore (0-9)
   | 'altman'         // AnalysisCache.altmanZ (higher = safer)
   | 'beneish'        // AnalysisCache.beneishScore (lower = better, inverted)
@@ -60,7 +62,9 @@ export type CompanyNode = {
   weekChange?: number | undefined;
   healthScore?: number | undefined;
   valuationScore?: number | undefined;
+  growthScore?: number | undefined;
   profitabilityScore?: number | undefined;
+  qualityScore?: number | undefined;
   piotroskiScore?: number | undefined;
   zScore?: number | undefined;
   /** 1-month / YTD / 1-year % change (DailyValuationHistory closes) */

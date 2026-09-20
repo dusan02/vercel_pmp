@@ -59,8 +59,11 @@ export default async function BlogIndexPage() {
       take: 30,
       select: { date: true, overviewJson: true },
     });
-  } catch {
-    snapshots = [];
+  } catch (e) {
+    // Build-time prerender has no DB — empty fallback is intentional there.
+    // At runtime, rethrow so ISR serves the last-good page instead of
+    // caching a transient DB failure as a valid "No reports yet" state.
+    if (process.env.NEXT_PHASE !== 'phase-production-build') throw e;
   }
 
   return (

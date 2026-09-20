@@ -70,7 +70,9 @@ function scaleConfig(
     case 'year':          return { domain: [-40, -20, 0, 20, 40], range: percentScales.month.range };
     case 'health':
     case 'valuation':
-    case 'profitability': return scoreScale;
+    case 'growth':
+    case 'profitability':
+    case 'quality':       return scoreScale;
     case 'piotroski':     return piotroskiScale;
     case 'altman':        return altmanScale;
     case 'beneish':       return beneishScale;
