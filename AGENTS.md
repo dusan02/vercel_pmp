@@ -105,3 +105,19 @@ curl -s https://premarketprice.com/analysis/AAPL | grep -c FinancialProduct  # �
 - EW quant engine má vlastný feature `profitabilityScore` (SEC margin stability) — kolízia názvov, nesúvisí s `AnalysisCache.profitabilityScore`
 - Stored `profitabilityScore` sa po deployi konverguje na novú definíciu cez refresh cyklus — počas prechodu screener/heatmap/leaderboards ukazujú mix starej/novej def; Scores riadok + radar používajú read-time pillars (vždy konzistentné)
 - **Opravený unit bug**: `Ticker.lastMarketCap` je v MILIARDÁCH — `scoreCalculator` ho používal raw → stored `valuationScore` bol pre tickery s lastMarketCap nafúknutý (LLY 100 namiesto 40); zároveň `latestValuation` sa fetchoval len bez `lastPrice` → tickery bez lastMarketCap mali marketCap=0 (MU: 3 legs po +10). Oprava: `×1e9` + fetch podmienka `!lastPrice || !lastMarketCap`
+
+## Feature freeze (od 2026-09-20 deploy `48637e31`)
+
+Stav: **Ship → Measure → Learn**. Žiadny nový feature development kým neprejdú 30-dňové metriky (GSC CTR/positions, Movers→Analysis CTR, returning users, engagement per surface).
+
+**Post-freeze backlog (priorita):**
+- P0/P1: identity/account layer (predpoklad alertingu) → alerting experiment; LIVE/DELAYED data transparency; EW freshness monitoring; missing-data score inflation (+10/+25 leg konvencie — correctness issue, nie feature)
+- P2: sector-relative normalization; `/premarket/[symbol]` → Analysis/Movers linking; monetizácia
+
+**Zakázané počas freeze:** nové piliere/radar vizuály, ďalšie stock page typy, AI chat, crypto/forex, mobile app, community, zložitejší portfolio tracker, SEO pages navyše.
+
+**Známe akceptované riziká (monitorovať, nefixovať):**
+- TV overlay = ~60–80% batch coverage, zvyšok ticho na 15-min Polygon; zdravie = `⚡ TV overlay: N/M` lines v `polygon-worker-out-*.log`, 0 cooldownov
+- `ew-scores.json` = externý manuálny export; importer beží denne, ale freshness závisí od upstream mtime — kontrolovať `ls -la data/ew-scores.json`
+- SQLite single-writer — prvý scaling bottleneck pri raste traffic; migrácia na Postgres až pri dôkaze loadu
+- Homepage SSR self-fetchuje vlastné API (`localhost:3001`) — náchylné na cold-start timeouty
