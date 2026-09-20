@@ -67,13 +67,12 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
     // Fetch Finnhub pre-computed metrics for scoring
     const finnhubMetrics = await prisma.finnhubMetrics.findUnique({ where: { symbol } });
 
-    // latestValuation is also needed when Ticker lacks lastMarketCap —
-    // otherwise marketCap collapses to 0 and every valuation leg scores its
-    // missing-data points instead of the real ratio.
-    const latestValuation = (!tickerData?.lastPrice || !tickerData?.lastMarketCap) ? await prisma.dailyValuationHistory.findFirst({
+    // latestValuation feeds the pillar-leg fallbacks (P/E, FCF yield) — the
+    // read path has the same rows via valuationRows, so fetch unconditionally.
+    const latestValuation = await prisma.dailyValuationHistory.findFirst({
         where: { symbol },
         orderBy: { date: 'desc' }
-    }) : null;
+    });
 
     const currentPrice = tickerData?.lastPrice || latestValuation?.closePrice || 0;
     // Ticker.lastMarketCap is stored in BILLIONS — DailyValuationHistory and
@@ -159,16 +158,15 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
     }
 
     // --- Interest Coverage ---
-    let interestCoverage: number | null = null;
-    if (latestStmt.ebit !== null && latestStmt.interestExpense !== null && latestStmt.interestExpense !== 0) {
-        interestCoverage = latestStmt.ebit / Math.abs(latestStmt.interestExpense);
-    }
+    const interestCoverage = (latestStmt.ebit !== null && latestStmt.interestExpense !== null && latestStmt.interestExpense !== 0)
+        ? latestStmt.ebit / Math.abs(latestStmt.interestExpense)
+        : (finnhubMetrics?.interestCoverage ?? null);
 
     // ─── PILLAR INPUTS: Health ────────────────────────────────────────────
     // Legs live in services/analysis/pillars.ts (shared with the read path).
-    const currentRatio = (latestStmt.currentAssets && latestStmt.currentLiabilities && latestStmt.currentLiabilities > 0)
+    const currentRatio = ((latestStmt.currentAssets && latestStmt.currentLiabilities && latestStmt.currentLiabilities > 0)
         ? latestStmt.currentAssets / latestStmt.currentLiabilities
-        : null;
+        : null) ?? finnhubMetrics?.currentRatio ?? null;
     const hasBalanceData = latestStmt.totalDebt !== null || latestStmt.cashAndEquivalents !== null;
     const currentNetDebt = (latestStmt.totalDebt || 0) - (latestStmt.cashAndEquivalents || 0);
     const netCash = hasBalanceData ? currentNetDebt <= 0 : null;
@@ -184,16 +182,16 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
 
     const pillarNetMargin = (ttmNetIncome !== null && ttmRevenue !== null && ttmRevenue > 0)
         ? ttmNetIncome / ttmRevenue
-        : (fhNetMargin ?? ((latestStmt.revenue && latestStmt.revenue > 0) ? (latestStmt.netIncome || 0) / latestStmt.revenue : null));
+        : fhNetMargin;
     const pillarOpMargin = (ttmEbit !== null && ttmRevenue !== null && ttmRevenue > 0)
         ? ttmEbit / ttmRevenue
-        : (fhOpMargin ?? ((latestStmt.revenue && latestStmt.revenue > 0 && latestStmt.ebit !== null) ? latestStmt.ebit / latestStmt.revenue : null));
+        : fhOpMargin;
     const investedCapital = (latestStmt.totalEquity || 0) + (latestStmt.totalDebt || 0) - (latestStmt.cashAndEquivalents || 0);
     const pillarRoic = (ttmEbit !== null && investedCapital > 0)
         ? (ttmEbit * 0.79) / investedCapital  // NOPAT ≈ EBIT × (1 − 21% tax)
         : null;
     const pillarRoe = (latestStmt.totalEquity && latestStmt.totalEquity > 0)
-        ? (ttmNetIncome !== null ? ttmNetIncome / latestStmt.totalEquity : (fhRoe ?? ((latestStmt.netIncome || 0) / latestStmt.totalEquity)))
+        ? (ttmNetIncome !== null ? ttmNetIncome / latestStmt.totalEquity : fhRoe)
         : null;
 
     // ─── PILLAR INPUTS: Valuation ────────────────────────────────────────
@@ -206,18 +204,32 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
     });
 
     const effectiveNetIncome = ttmNetIncome ?? latestStmt.netIncome;
-    // Corrupt-statement guard: EPS-derived share counts (ni/round-EPS) must
-    // not feed P/E — the read path uses the same isSuspiciousShareCount rule.
-    const stmtShares = (latestStmt.sharesOutstanding && latestStmt.sharesOutstanding > 0
-        && !isSuspiciousShareCount(latestStmt.sharesOutstanding, latestStmt.netIncome, tickerData?.sharesOutstanding))
-        ? latestStmt.sharesOutstanding
-        : (tickerData?.sharesOutstanding && tickerData.sharesOutstanding > 0 ? tickerData.sharesOutstanding : null);
+    // Corrupt-statement guard — identical to the read path's sharesOutstanding:
+    // suspicious counts are replaced by the trusted Ticker count, but a
+    // missing count stays missing (never substituted).
+    const rawStmtShares = latestStmt.sharesOutstanding ?? null;
+    const stmtShares = isSuspiciousShareCount(rawStmtShares, latestStmt.netIncome, tickerData?.sharesOutstanding)
+        ? (tickerData?.sharesOutstanding ?? null)
+        : rawStmtShares;
+    // mcapNow mirrors the read path exactly (lastMarketCap → price×guarded
+    // shares) — pillar legs rank like-for-like with /analysis/[ticker].
+    const mcapNow = (tickerData?.lastMarketCap && tickerData.lastMarketCap > 0)
+        ? tickerData.lastMarketCap * 1e9
+        : (currentPrice > 0 && stmtShares && stmtShares > 0 ? currentPrice * stmtShares : null);
+    // EPS on the same NI/share basis as P/E; Finnhub EPS is the read path's
+    // fallback when own shares are unusable.
+    const currentEps = (effectiveNetIncome !== null && effectiveNetIncome > 0 && stmtShares !== null && stmtShares > 0)
+        ? effectiveNetIncome / stmtShares
+        : (finnhubMetrics?.netIncomePerShare ?? null);
     // P/E source must match the UI (price / own TTM EPS). Finnhub's peRatio can
     // sit on a stale EPS basis — using it here once produced percentile=100 and
     // a "top 0%" label while our own valuation history showed ~21x.
-    const currentPE = (currentPrice > 0 && stmtShares && effectiveNetIncome && effectiveNetIncome > 0)
+    let currentPE = (currentPrice > 0 && stmtShares && stmtShares > 0 && effectiveNetIncome && effectiveNetIncome > 0)
         ? (currentPrice * stmtShares) / effectiveNetIncome
         : (latestValuation?.peRatio || null);
+    // Same loss-maker guard as the read path: no positive P/E next to a
+    // negative TTM EPS.
+    if (currentPE !== null && currentEps !== null && currentEps <= 0) currentPE = null;
 
     let pePercentile: number | null = null;
     if (allValuations.length > 0 && currentPE !== null && currentPE > 0) {
@@ -226,16 +238,21 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
         humanPeInfo = formatPePercentile(currentPE, pePercentile);
     }
 
-    const pillarFcfYield = (fcf !== null && marketCap > 0) ? fcf / marketCap : null;
+    // fcfYield leg: own TTM basis, then the latest daily snapshot (read path).
+    const pillarFcfYield = (fcf !== null && mcapNow !== null && mcapNow > 0)
+        ? fcf / mcapNow
+        : (latestValuation?.fcfYield ?? null);
 
-    const effectiveRevenue = ttmRevenue ?? latestStmt.revenue;
     // Own TTM P/S first (matches the unified-source rule), Finnhub as fallback.
-    const pillarPs = ((effectiveRevenue && effectiveRevenue > 0 && marketCap > 0) ? marketCap / effectiveRevenue : null)
-        ?? finnhubMetrics?.psRatio ?? null;
+    const pillarPs = (mcapNow !== null && mcapNow > 0 && ttmRevenue !== null && ttmRevenue > 0)
+        ? mcapNow / ttmRevenue
+        : (finnhubMetrics?.psRatio ?? null);
 
-    const effectiveEbit = ttmEbit ?? latestStmt.ebit;
-    const pillarEvEbit = (effectiveEbit && effectiveEbit > 0 && marketCap > 0)
-        ? (marketCap + (latestStmt.totalDebt || 0) - (latestStmt.cashAndEquivalents || 0)) / effectiveEbit
+    const evNow = (mcapNow !== null && mcapNow > 0 && latestStmt.totalDebt !== null && latestStmt.cashAndEquivalents !== null)
+        ? mcapNow + latestStmt.totalDebt - latestStmt.cashAndEquivalents
+        : null;
+    const pillarEvEbit = (evNow !== null && evNow > 0 && ttmEbit !== null && ttmEbit > 0)
+        ? evNow / ttmEbit
         : null;
 
     // ─── CAGR, Piotroski, Beneish ──────────────────────────────────
@@ -360,16 +377,13 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
         }
     }
     const fhForwardPe = finnhubMetrics?.forwardPe ?? null;
-    // stmtShares = guarded latest-statement count (trusted Ticker count when
-    // the statement row is corrupt/null) — same basis as the read path.
-    const ttmEps = (stmtShares && stmtShares > 0 && effectiveNetIncome && effectiveNetIncome > 0)
-        ? effectiveNetIncome / stmtShares
-        : null;
-    const forwardImpliedGrowth = (fhForwardPe !== null && fhForwardPe >= 1 && currentPrice > 0 && ttmEps && ttmEps > 0)
-        ? ((currentPrice / fhForwardPe) / ttmEps - 1) * 100
+    // Forward implied 1Y growth = (price/forwardP E) / currentEps − 1, where
+    // currentEps carries the Finnhub fallback — identical to the read path.
+    const forwardImpliedGrowth = (fhForwardPe !== null && fhForwardPe >= 1 && currentPrice > 0 && currentEps !== null && currentEps > 0)
+        ? ((currentPrice / fhForwardPe) / currentEps - 1) * 100
         : null;
 
-    const pillars = computePillars({
+    const pillarsInput = {
         pePercentile,
         fcfYield: pillarFcfYield,
         psRatio: pillarPs,
@@ -391,7 +405,9 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
         beneish: beneishScore,
         fcfConversion,
         marginStability,
-    });
+    };
+    if (process.env.DEBUG_PILLARS) console.log(`[pillars-input:${symbol}]`, JSON.stringify(pillarsInput));
+    const pillars = computePillars(pillarsInput);
     healthScore = pillars.health.score;
     profitabilityScore = pillars.profitability.score;
     valuationScore = pillars.valuation.score;

@@ -298,7 +298,7 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
         ? ((totalDebt || 0) - (cash || 0)) / totalAssets
         : null;
 
-    const pillars = computePillars({
+    const pillarsInput = {
         pePercentile: valuationHistoryStats?.pe.percentile ?? null,
         fcfYield: currentFcfYield ?? latestValuation?.fcfYield ?? null,
         psRatio: currentPs ?? finnhubMetrics?.psRatio ?? null,
@@ -322,7 +322,9 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
         beneish: cached.beneishScore ?? null,
         fcfConversion: cached.fcfConversion ?? null,
         marginStability: cached.marginStability ?? null,
-    });
+    };
+    if (process.env.DEBUG_PILLARS) console.log(`[pillars-input:${symbol}]`, JSON.stringify(pillarsInput));
+    const pillars = computePillars(pillarsInput);
 
     return {
         ...analysis,
