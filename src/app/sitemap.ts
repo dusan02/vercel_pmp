@@ -349,7 +349,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       });
     }
   } catch (e) {
-    // Fallback: ignore date pages if the date util or DB fails
+    // Build prerender has no DB — empty sections are expected there. At runtime
+    // rethrow: silently dropping date/earnings URLs lets ISR cache a gutted
+    // sitemap, while a throw keeps the last good version (ticker-guard rule).
+    if (process.env.NEXT_PHASE === 'phase-production-build') {
+      console.warn('[sitemap] date sections skipped during build prerender');
+    } else {
+      throw e;
+    }
   }
 
   // -------------------------------------------------------
@@ -376,8 +383,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: snap.date.startsWith('weekly-') ? 0.75 : 0.7,
       });
     }
-  } catch {
-    // Fallback: no blog date pages if DB unavailable
+  } catch (e) {
+    // Same rule as the archive/earnings block above.
+    if (process.env.NEXT_PHASE === 'phase-production-build') {
+      console.warn('[sitemap] blog date pages skipped during build prerender');
+    } else {
+      throw e;
+    }
   }
 
   return [
