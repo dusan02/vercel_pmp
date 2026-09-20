@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { SortKey } from '@/hooks/useSortableData';
 import { MobileSortHeader } from './mobile/MobileSortHeader';
 
@@ -34,6 +34,8 @@ interface UniversalTableProps<T> {
     tfootRows?: React.ReactNode;
     /** Callback for when a row is clicked */
     onRowClick?: (item: T) => void;
+    /** Pin the first column while scrolling horizontally */
+    stickyFirst?: boolean;
 }
 
 export function UniversalTable<T>({
@@ -49,8 +51,24 @@ export function UniversalTable<T>({
     forceTable = false,
     footer,
     tfootRows,
-    onRowClick
+    onRowClick,
+    stickyFirst = false
 }: UniversalTableProps<T>) {
+
+    const scrollRef = useRef<HTMLDivElement>(null);
+    // Whether more columns exist beyond the scrollport's right edge —
+    // drives the right-edge fade that advertises horizontal scroll.
+    const [canScrollRight, setCanScrollRight] = useState(false);
+    useEffect(() => {
+        const el = scrollRef.current;
+        if (!el) return;
+        const update = () => setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 2);
+        update();
+        const ro = new ResizeObserver(update);
+        ro.observe(el);
+        window.addEventListener('resize', update);
+        return () => { ro.disconnect(); window.removeEventListener('resize', update); };
+    }, [data]);
 
     if (isLoading) {
         return (
@@ -115,8 +133,14 @@ export function UniversalTable<T>({
                 </div>
             )}
 
-            {/* Desktop Table View */}
-            <div className={`${showMobileCards ? 'hidden lg:block' : ''} overflow-x-auto`}>
+            {/* Desktop Table View — relative wrapper hosts the scroll fade;
+                the inner div is the actual horizontal scrollport */}
+            <div className={`${showMobileCards ? 'hidden lg:block' : ''} relative`}>
+            <div
+                ref={scrollRef}
+                onScroll={() => setCanScrollRight(scrollRef.current != null && scrollRef.current.scrollLeft + scrollRef.current.clientWidth < scrollRef.current.scrollWidth - 2)}
+                className="overflow-x-auto pmp-table-scroll"
+            >
                 <table className="pmp-universal-table w-full border-collapse">
                     <colgroup>
                         {columns.map((col) => (
@@ -135,6 +159,7 @@ export function UniversalTable<T>({
                                         ${col.sortable ? 'cursor-pointer hover:bg-blue-200/70 dark:hover:bg-white/10 transition-colors select-none' : ''}
                                         ${col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left'}
                                         ${col.className || ''}
+                                        ${stickyFirst ? 'first:sticky first:left-0 first:z-20' : ''}
                                         ${col.sortable && sortKey === col.key ? 'active-sort' : ''}
                                     `.trim()}
                                     onClick={() => col.sortable && handleSort(col.key)}
@@ -173,6 +198,7 @@ export function UniversalTable<T>({
                                                 className={`
                                                     py-3 px-3 first:pl-4 last:pr-4 text-sm text-[var(--clr-text)]
                                                     ${col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left'}
+                                                    ${stickyFirst ? 'first:sticky first:left-0 first:z-10 first:bg-white first:dark:bg-slate-800 first:border-r first:border-gray-100 first:dark:border-gray-700 first:group-hover:bg-gray-50 first:dark:group-hover:bg-white/5' : ''}
                                                     ${col.className || ''}
                                                 `.trim()}
                                                 onClick={(e) => {
@@ -198,6 +224,15 @@ export function UniversalTable<T>({
                         {tfootRows}
                     </tbody>
                 </table>
+            </div>
+            {/* Right-edge fade — visible only while more columns exist beyond
+                the scrollport; advertises that the table scrolls */}
+            {canScrollRight && (
+                <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-y-0 right-0 w-12 z-30 bg-gradient-to-l from-white dark:from-slate-800 to-transparent"
+                />
+            )}
             </div>
         </div>
     );

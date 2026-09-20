@@ -74,7 +74,6 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
       key: 'sector',
       header: 'Sector',
       align: 'left',
-      className: 'hidden md:table-cell',
       render: (r) => <span className="text-xs text-gray-600 dark:text-gray-300">{r.ticker?.sector || '-'}</span>
     },
     {
@@ -103,7 +102,6 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
       header: <>Market Cap <SortIcon field="ticker.lastMarketCap" /></>,
       align: 'right',
       sortable: true,
-      className: 'hidden sm:table-cell',
       render: (r) => <span className="text-gray-700 dark:text-gray-200">{r.ticker?.lastMarketCap ? formatBillions(r.ticker.lastMarketCap) : '-'}</span>
     },
     {
@@ -111,7 +109,6 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
       header: <>MCap Δ <SortIcon field="ticker.lastMarketCapDiff" /></>,
       align: 'right',
       sortable: true,
-      className: 'hidden xl:table-cell',
       render: (r) => {
         const d = r.ticker?.marketCapDiff ?? null;
         return (
@@ -133,7 +130,6 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
       header: <>Value <SortIcon field="valuationScore" /></>,
       align: 'right',
       sortable: true,
-      className: 'hidden md:table-cell',
       render: (r) => <span className={scoreColor(r.valuationScore)}>{r.valuationScore !== null ? r.valuationScore.toFixed(0) : '-'}</span>
     },
     {
@@ -141,7 +137,6 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
       header: <>Growth <SortIcon field="growthScore" /></>,
       align: 'right',
       sortable: true,
-      className: 'hidden md:table-cell',
       render: (r) => <span className={scoreColor(r.growthScore)}>{r.growthScore !== null ? r.growthScore.toFixed(0) : '-'}</span>
     },
     {
@@ -149,7 +144,6 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
       header: <>Profit. <SortIcon field="profitabilityScore" /></>,
       align: 'right',
       sortable: true,
-      className: 'hidden lg:table-cell',
       render: (r) => <span className={scoreColor(r.profitabilityScore)}>{r.profitabilityScore !== null ? r.profitabilityScore.toFixed(0) : '-'}</span>
     },
     {
@@ -157,7 +151,6 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
       header: <>Health <SortIcon field="healthScore" /></>,
       align: 'right',
       sortable: true,
-      className: 'hidden lg:table-cell',
       render: (r) => <span className={scoreColor(r.healthScore)}>{r.healthScore !== null ? r.healthScore.toFixed(0) : '-'}</span>
     },
     {
@@ -165,7 +158,6 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
       header: <>Quality <SortIcon field="qualityScore" /></>,
       align: 'right',
       sortable: true,
-      className: 'hidden lg:table-cell',
       render: (r) => <span className={scoreColor(r.qualityScore)}>{r.qualityScore !== null ? r.qualityScore.toFixed(0) : '-'}</span>
     },
     {
@@ -173,7 +165,6 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
       header: <>Altman Z <SortIcon field="altmanZ" /></>,
       align: 'right',
       sortable: true,
-      className: 'hidden lg:table-cell',
       render: (r) => {
         const z = altmanZLabel(r.altmanZ);
         return <span className={z.color}>{r.altmanZ !== null ? r.altmanZ.toFixed(2) : '-'}</span>;
@@ -184,7 +175,6 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
       header: <>Piotroski <SortIcon field="piotroskiScore" /></>,
       align: 'right',
       sortable: true,
-      className: 'hidden lg:table-cell',
       render: (r) => {
         const p = piotroskiLabel(r.piotroskiScore);
         return <span className={p.color}>{r.piotroskiScore !== null ? `${r.piotroskiScore}/9` : '-'}</span>;
@@ -195,7 +185,6 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
       header: <>Beneish M <SortIcon field="beneishScore" /></>,
       align: 'right',
       sortable: true,
-      className: 'hidden xl:table-cell',
       render: (r) => {
         const b = beneishLabel(r.beneishScore);
         return <span className={b.color}>{r.beneishScore !== null ? r.beneishScore.toFixed(2) : '-'}</span>;
@@ -206,7 +195,6 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
       header: <>FCF Margin <SortIcon field="fcfMargin" /></>,
       align: 'right',
       sortable: true,
-      className: 'hidden xl:table-cell',
       render: (r) => {
         const f = fcfMarginLabel(r.fcfMargin);
         return <span className={f.color}>{r.fcfMargin !== null ? `${(r.fcfMargin * 100).toFixed(1)}%` : '-'}</span>;
@@ -463,6 +451,7 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
           ascending={sortOrder === 'asc'}
           onSort={(key) => handleSort(key as string)}
           onRowClick={(r) => handleTickerClick(r.symbol)}
+          stickyFirst
           renderMobileCard={(r) => (
             <div
               onClick={() => handleTickerClick(r.symbol)}
@@ -498,6 +487,33 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
             </div>
           )}
         />
+
+        {/* Mobile: the cards are the browse view, but they only surface the
+            six scores — every other column stays reachable behind this
+            disclosure as the real table with horizontal scroll. */}
+        <div className="lg:hidden border-t border-gray-100 dark:border-slate-700">
+          <details className="group">
+            <summary className="flex items-center justify-between px-4 py-3 text-sm font-medium text-blue-600 dark:text-blue-400 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
+              <span>Show full table — all {columns.length} columns</span>
+              <ChevronDown size={16} className="transition-transform group-open:rotate-180" />
+            </summary>
+            <div className="px-2 pb-3">
+              <UniversalTable
+                data={results}
+                columns={columns}
+                keyExtractor={(r) => r.symbol}
+                isLoading={loading}
+                emptyMessage="No companies match the selected filters."
+                sortKey={sortField as any}
+                ascending={sortOrder === 'asc'}
+                onSort={(key) => handleSort(key as string)}
+                onRowClick={(r) => handleTickerClick(r.symbol)}
+                forceTable
+                stickyFirst
+              />
+            </div>
+          </details>
+        </div>
 
         {/* Pagination */}
         {totalPages > 1 && (

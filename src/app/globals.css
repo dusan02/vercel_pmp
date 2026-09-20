@@ -383,6 +383,28 @@
     padding-right: 0.95rem;
   }
 
+  /* UniversalTable horizontal scrollport — a styled scrollbar keeps the
+     scroll affordance visible on platforms that hide overlay scrollbars */
+  .pmp-table-scroll::-webkit-scrollbar {
+    height: 10px;
+  }
+  .pmp-table-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .pmp-table-scroll::-webkit-scrollbar-thumb {
+    background-color: rgba(100, 116, 139, 0.45);
+    border-radius: 8px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  .dark .pmp-table-scroll::-webkit-scrollbar-thumb {
+    background-color: rgba(148, 163, 184, 0.35);
+  }
+  .pmp-table-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(100, 116, 139, 0.45) transparent;
+  }
+
   /* Portfolio Table Column Widths */
   .portfolio-table th,
   .portfolio-table td {
