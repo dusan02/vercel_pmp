@@ -1,0 +1,149 @@
+# GPT review — nesúhlasy, vlastné návrhy, otvorené otázky
+
+Living document. Zapisujem body, kde sa Devinova analýza líši od externých
+GPT auditov (či už preto, že GPT hodnotil neaktuálny/indexovaný stav, alebo
+mám odlišný produktový názor), a úlohy kde nie je jasné správne riešenie.
+
+Pravidlo: GPT audity **nie sú autoritatívny opis live UI** — vždy najprv
+overiť skutočný stav v kóde/produkcii.
+
+---
+
+## 1. Analysis page review (`/analysis/PM`)
+
+### GPT netrafil
+- Popisoval stránku **bez radaru** — radar je live v hero sekcii vpravo hore
+  (na žiadosť užívateľa, nie defaultu).
+- Hodnotil dáta, ktoré boli v čase auditu rozbité (ROE 575% pri negatívnom
+  equity, dilution +56%, net margin mismatch) — jeho "dáta 9/10" ranking bol
+  na corrupt číslach. Už opravené a deploynuté (`57d3c7d2`).
+
+### Otvorené
+- **EW Score formula audit** — transformácia 5-pillar → EW score zatiaľ bez
+  auditu; externý review ju označil ako audit item. Nesúlazť s `overallScore`
+  (priemer pilierov) — to sú dva rôzne produkty.
+- **"Verdict" naming** — zvážiť "Model stance" / "Profile" namiesto
+  verdict-framingu (radar má robiť profil, nie verdikt — rozhodnutie
+  užívateľa z predošlého threadu).
+
+---
+
+## 2. Homepage / analysis tab review
+
+### GPT netrafil
+- Hodnotil **verejne indexované meta texty**, nie live app.
+- Heatmapa **je** homepage (prvý default tab) — GPT ju považoval za chýbajúcu.
+- Movers→Analysis loop (`onTileClick` → `handleMobileNavChange`) existuje.
+- Search (`GlobalStockSearch`) existuje — ticker aj company name.
+- "Killer features" 2, 5, 6 z jeho zoznamu = existujúci screener.
+
+### Nesúhlasím / vlastný návrh
+- **Nahradiť H1 "Track US Stocks Before the Market Opens"** — SEO riziko,
+  premarket keywords nesú organic traffic. Môj návrh: H1 nechať, positioning
+  doplniť do subheadline + "How we analyze" explainer (implementované).
+  Finálne copy rozhodnutie je na užívateľovi.
+- **"Today" dashboard s indexmi (S&P/Nasdaq/Dow)** — indexy nie sú v Ticker
+  universe; nový dátový zdroj pre 3 čísla = zlý pomer cena/hodnota.
+- **Default view = Valuation×Quality scatter** — pre retail používateľa
+  abstraktné. Lepší default: Overall heatmap, scatter ako sekundárny view.
+- **"Odmyslím dátové chyby"** — nemôže; rozbité dáta by score-map
+  zdiskreditovali. Dáta sa najprv opravujú, potom sa stavia vizuál.
+
+### Implementované z review
+- "Fundamental Opportunities" strip (Q≥75 ∧ V≥55 ∧ O≥65, top 6 →
+  `/analysis/[ticker]`).
+- "How we analyze stocks" explainer (5 pilierov, server-rendered).
+
+### Otvorené
+- **Fundamental score heatmap** — dimension toggle (Overall/V/G/P/H/Q) na
+  existujúcej treemape. Odblokované persistom pilierov, neimplementované.
+- **Valuation×Quality scatter** — sekundárny view, až po trakcii heatmapy.
+
+---
+
+## 3. Screener review (`?tab=screener`)
+
+### GPT netrafil (~40% "chýbajúcich" vecí existovalo)
+- Reset all → `resetFilters` + `hasActiveFilters` (`useScreener.ts`).
+- URL reprezentuje filter → query sync existuje.
+- SEO landing pages → 10 `/screener/[slug]` leaderboardov už bežalo.
+- Score stĺpce + row click → `/analysis/[ticker]` existovali.
+- Market cap filter → `MARKET_CAP_PRESETS`.
+
+### Nesúhlasím / vlastný návrh
+- **AND/OR query builder** — power-user feature pre ~1% používateľov;
+  komplikuje query layer aj UI. Presety pokryjú ~90% prípadov lacnejšie.
+  Odložené (nie zamietnuté — ak bude dopyt, pridať).
+- **Ďalších 30 raw metrík** — súhlas s GPT-ovým vlastným varovaním:
+  5 pilierov + existujúce advanced filtre stačia.
+- **Save screen cross-device** — vyžaduje účty; localStorage varianta je
+  lacná v2. Odložené.
+- **Historical valuation filter (P/E percentile ≤ 40)** — zaujímavé,
+  `DailyValuationHistory` má dáta, ale vyžaduje precompute. V2.
+
+### Implementované z review
+- Persist `growthScore`/`qualityScore`/`overallScore` + indexy.
+- `minGrowth`/`minQuality`/`minOverall` (+ max) filtre v API a UI.
+- 5-dim score stĺpce, preset chips.
+- Nové kombinované `/screener/[slug]` definície (quality-compounders,
+  quality-at-reasonable-price, growth-at-reasonable-price, cash-machines,
+  strong-balance-sheets, …) — automaticky v sitemape cez `LEADERBOARDS`.
+
+### Otvorené
+- **"Why it qualifies"** — zvýrazniť v row, ktoré filtre stock prešiel.
+  Lacné, dobré pre UX. Čiastočne pokryté score stĺpcami, explicitný
+  breakdown nie je.
+
+---
+
+## 4. Blog/Reports review
+
+### GPT netrafil
+- Tickery v reportoch **už linkujú** na `/analysis/TICKER`.
+- Sentiment badge, NewsArticle JSON-LD, earnings-by-day — všetko existuje.
+- `/api/blog/ai-insights` je **orphan route** — LLM interpretácia bola
+  kedysi plánovaná, `OPENAI_API_KEY` v prode nie je, route nikde nevolaná.
+
+### Nesúhlasím / vlastný návrh
+- **LLM interpretácia reportov** — nie. Deterministický "Market takeaway"
+  (template z existujúcich štatistík) je pre tento use-case lepší: žiadne
+  halucinácie, žiadne API náklady, auditovateľné. ~50 riadkov logiky.
+  Orphan `ai-insights` route vymazať.
+- **URL migrácia `/blog/` → `/reports/`** — zbytočné SEO riziko; stačí
+  rebrand labelu v navigácii (Blog → Reports), URL zostáva.
+- Manuálne články / clickbait — súhlas s GPT, zabilo by dôveryhodnosť.
+
+### Pending (odblokované persistom pilierov)
+- Deterministický "Market takeaway" + "What moved" bloky v daily reporte.
+- Nav label Blog → Reports (URL `/blog/` zostáva).
+- Weekly earnings: "Key earnings" sekcia (large-cap top 5–8).
+- "Stocks worth investigating" — top movers × Quality score join.
+
+---
+
+## 5. Krížové poznámky
+
+### Konvergencia troch auditov
+Analysis page, heatmap a screener review všetky končili na rovnakom
+blockeri: Growth/Quality nie sú persistované. Vyriešené (schema +
+write-path + backfill 695/695, read/write parita overená na PM/GOOGL/NVDA).
+
+### Read/write parity — ako overovať
+`DEBUG_PILLARS=1` dumpuje pillar inputs v oboch cestách
+(`analysisCompute.ts` + `scoreCalculator.ts`). `scripts/dbg-pillars.ts TICKER`
+porovná read vs write na jednej DB. Povedzme divergence mimo PM:
+- `take: 120` vs 10y filter v stmts query — `marginStability` môže u
+  tickerov s >30y dát vyjsť inak, ale je to cached leg → konzistentné.
+- `marketCap` má v write path extra `latestValuation.marketCap` fallback
+  (pre Altman/verdict) — pillar legs používajú read-parity `mcapNow`.
+
+### Rozhodnutia čakajúce na užívateľa
+- **Positioning copy** (H1/hero) — SEO riziko vs. presnejší positioning;
+  moje odporúčanie: augment, nie replace.
+- **PM `forwardImpliedGrowth` = n/a** — Q1'26 stmt má po repaire
+  `sharesOutstanding=null`, Finnhub nemá `netIncomePerShare`. Alternatíva:
+  trusted Ticker count ako fallback pre *latest* statement v oboch cestách
+  (radar G30→50). Zvolený konzervatívny variant (null sa nesubstituuje).
+- **Save screen cross-device** — závisí na účtoch/auth rozhodnutí.
+- **`overallScore` = plain mean** — možná váhovaná varianta neskôr;
+  nezáleží na EW score pipeline (oddelené).
