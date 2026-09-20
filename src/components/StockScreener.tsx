@@ -22,6 +22,9 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
     minHealth, maxHealth, setMinHealth, setMaxHealth,
     minProfit, maxProfit, setMinProfit, setMaxProfit,
     minValue, maxValue, setMinValue, setMaxValue,
+    minGrowth, maxGrowth, setMinGrowth, setMaxGrowth,
+    minQuality, maxQuality, setMinQuality, setMaxQuality,
+    minOverall, maxOverall, setMinOverall, setMaxOverall,
     minAltman, setMinAltman,
     minPiotroski, setMinPiotroski,
     maxBeneish, setMaxBeneish,
@@ -33,7 +36,7 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
     industries,
     marketCapPreset, setMarketCapPreset,
     sortField, sortOrder, handleSort, setSort,
-    resetFilters, hasActiveFilters,
+    resetFilters, hasActiveFilters, applyPreset,
   } = screener;
 
   const handleTickerClick = (ticker: string) => {
@@ -119,27 +122,51 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
       }
     },
     {
-      key: 'healthScore',
-      header: <>Health <SortIcon field="healthScore" /></>,
+      key: 'overallScore',
+      header: <>Overall <SortIcon field="overallScore" /></>,
       align: 'right',
       sortable: true,
-      render: (r) => <span className={scoreColor(r.healthScore)}>{r.healthScore !== null ? r.healthScore.toFixed(0) : '-'}</span>
+      render: (r) => <span className={`font-bold ${scoreColor(r.overallScore)}`}>{r.overallScore !== null ? r.overallScore.toFixed(0) : '-'}</span>
+    },
+    {
+      key: 'valuationScore',
+      header: <>Value <SortIcon field="valuationScore" /></>,
+      align: 'right',
+      sortable: true,
+      className: 'hidden md:table-cell',
+      render: (r) => <span className={scoreColor(r.valuationScore)}>{r.valuationScore !== null ? r.valuationScore.toFixed(0) : '-'}</span>
+    },
+    {
+      key: 'growthScore',
+      header: <>Growth <SortIcon field="growthScore" /></>,
+      align: 'right',
+      sortable: true,
+      className: 'hidden md:table-cell',
+      render: (r) => <span className={scoreColor(r.growthScore)}>{r.growthScore !== null ? r.growthScore.toFixed(0) : '-'}</span>
     },
     {
       key: 'profitabilityScore',
       header: <>Profit. <SortIcon field="profitabilityScore" /></>,
       align: 'right',
       sortable: true,
-      className: 'hidden md:table-cell',
+      className: 'hidden lg:table-cell',
       render: (r) => <span className={scoreColor(r.profitabilityScore)}>{r.profitabilityScore !== null ? r.profitabilityScore.toFixed(0) : '-'}</span>
     },
     {
-      key: 'valuationScore',
-      header: <>Valuation <SortIcon field="valuationScore" /></>,
+      key: 'healthScore',
+      header: <>Health <SortIcon field="healthScore" /></>,
       align: 'right',
       sortable: true,
-      className: 'hidden md:table-cell',
-      render: (r) => <span className={scoreColor(r.valuationScore)}>{r.valuationScore !== null ? r.valuationScore.toFixed(0) : '-'}</span>
+      className: 'hidden lg:table-cell',
+      render: (r) => <span className={scoreColor(r.healthScore)}>{r.healthScore !== null ? r.healthScore.toFixed(0) : '-'}</span>
+    },
+    {
+      key: 'qualityScore',
+      header: <>Quality <SortIcon field="qualityScore" /></>,
+      align: 'right',
+      sortable: true,
+      className: 'hidden lg:table-cell',
+      render: (r) => <span className={scoreColor(r.qualityScore)}>{r.qualityScore !== null ? r.qualityScore.toFixed(0) : '-'}</span>
     },
     {
       key: 'altmanZ',
@@ -210,7 +237,28 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
           )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-x-4 gap-y-4">
+        {/* Quick screens — one-tap preset combinations */}
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mr-1">Quick screens:</span>
+          {[
+            { label: 'Quality Compounders', preset: { minQuality: 80, minProfit: 75, minGrowth: 60, sort: 'qualityScore:desc' } },
+            { label: 'Quality at Reasonable Price', preset: { minQuality: 75, minValue: 60, sort: 'overallScore:desc' } },
+            { label: 'Growth at Reasonable Price', preset: { minGrowth: 75, minValue: 60, sort: 'growthScore:desc' } },
+            { label: 'Strong Balance Sheets', preset: { minHealth: 80, minAltman: 3, sort: 'healthScore:desc' } },
+            { label: 'Cash Machines', preset: { minFcfMargin: 0.15, minProfit: 60, sort: 'overallScore:desc' } },
+            { label: 'Top Overall', preset: { minOverall: 75, sort: 'overallScore:desc' } },
+          ].map((p) => (
+            <button
+              key={p.label}
+              onClick={() => applyPreset(p.preset)}
+              className="text-xs px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-4">
           {/* Search — symbol or company name */}
           <div className="flex flex-col gap-1.5">
             <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Search</label>
@@ -226,11 +274,25 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
             </div>
           </div>
           <DualRangeSlider
-            label="Health Score"
+            label="Overall"
             min={0} max={100}
-            valueMin={minHealth} valueMax={maxHealth}
-            onChangeMin={setMinHealth} onChangeMax={setMaxHealth}
-            accentColor="blue"
+            valueMin={minOverall} valueMax={maxOverall}
+            onChangeMin={setMinOverall} onChangeMax={setMaxOverall}
+            accentColor="amber"
+          />
+          <DualRangeSlider
+            label="Valuation"
+            min={0} max={100}
+            valueMin={minValue} valueMax={maxValue}
+            onChangeMin={setMinValue} onChangeMax={setMaxValue}
+            accentColor="violet"
+          />
+          <DualRangeSlider
+            label="Growth"
+            min={0} max={100}
+            valueMin={minGrowth} valueMax={maxGrowth}
+            onChangeMin={setMinGrowth} onChangeMax={setMaxGrowth}
+            accentColor="sky"
           />
           <DualRangeSlider
             label="Profitability"
@@ -240,11 +302,18 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
             accentColor="emerald"
           />
           <DualRangeSlider
-            label="Valuation"
+            label="Health"
             min={0} max={100}
-            valueMin={minValue} valueMax={maxValue}
-            onChangeMin={setMinValue} onChangeMax={setMaxValue}
-            accentColor="violet"
+            valueMin={minHealth} valueMax={maxHealth}
+            onChangeMin={setMinHealth} onChangeMax={setMaxHealth}
+            accentColor="blue"
+          />
+          <DualRangeSlider
+            label="Quality"
+            min={0} max={100}
+            valueMin={minQuality} valueMax={maxQuality}
+            onChangeMin={setMinQuality} onChangeMax={setMaxQuality}
+            accentColor="rose"
           />
           <div className="flex flex-col gap-1.5 min-w-[160px]">
             <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Sort By</label>
@@ -407,23 +476,20 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
                 </div>
                 <span className="text-xs font-mono text-gray-500">{r.ticker?.lastMarketCap ? formatBillions(r.ticker.lastMarketCap) : '-'}</span>
               </div>
-              <div className="grid grid-cols-4 gap-2 text-center">
-                <div>
-                  <div className="text-[10px] text-gray-400 uppercase">Health</div>
-                  <div className={`font-bold text-sm ${scoreColor(r.healthScore)}`}>{r.healthScore !== null ? r.healthScore.toFixed(0) : '-'}</div>
-                </div>
-                <div>
-                  <div className="text-[10px] text-gray-400 uppercase">Profit</div>
-                  <div className={`font-bold text-sm ${scoreColor(r.profitabilityScore)}`}>{r.profitabilityScore !== null ? r.profitabilityScore.toFixed(0) : '-'}</div>
-                </div>
-                <div>
-                  <div className="text-[10px] text-gray-400 uppercase">Value</div>
-                  <div className={`font-bold text-sm ${scoreColor(r.valuationScore)}`}>{r.valuationScore !== null ? r.valuationScore.toFixed(0) : '-'}</div>
-                </div>
-                <div>
-                  <div className="text-[10px] text-gray-400 uppercase">Altman</div>
-                  <div className={`font-bold text-sm ${altmanZLabel(r.altmanZ).color}`}>{r.altmanZ !== null ? r.altmanZ.toFixed(1) : '-'}</div>
-                </div>
+              <div className="grid grid-cols-6 gap-1 text-center">
+                {([
+                  ['All', r.overallScore],
+                  ['Val', r.valuationScore],
+                  ['Grw', r.growthScore],
+                  ['Prof', r.profitabilityScore],
+                  ['Hlt', r.healthScore],
+                  ['Qual', r.qualityScore],
+                ] as [string, number | null][]).map(([lbl, v]) => (
+                  <div key={lbl}>
+                    <div className="text-[10px] text-gray-400 uppercase">{lbl}</div>
+                    <div className={`font-bold text-sm ${scoreColor(v)}`}>{v !== null ? v.toFixed(0) : '-'}</div>
+                  </div>
+                ))}
               </div>
               <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700 flex justify-between text-xs text-gray-500">
                 <span>{r.ticker?.sector || '-'}</span>

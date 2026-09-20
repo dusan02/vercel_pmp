@@ -332,6 +332,9 @@ model AnalysisCache {
   healthScore         Float?
   profitabilityScore  Float?
   valuationScore      Float?
+  growthScore         Float?
+  qualityScore        Float?
+  overallScore        Float?
   verdictText         String?
   piotroskiScore      Int?
   beneishScore        Float?
@@ -352,6 +355,9 @@ model AnalysisCache {
 
   @@index([healthScore])
   @@index([valuationScore])
+  @@index([growthScore])
+  @@index([qualityScore])
+  @@index([overallScore])
 }
 
 model Subscription {

@@ -26,6 +26,9 @@ export interface LeaderboardDef {
   order: 'asc' | 'desc';
   /** Optional minimum value filter (e.g. exclude negative P/E) */
   minValue?: number;
+  /** Extra conditions on the metric relation — combined screens like
+   *  "quality ≥75 AND valuation ≥60". Merged into the metric `is` filter. */
+  extraWhere?: Record<string, unknown>;
   format: (v: number) => string;
   /** 1–2 intro paragraphs rendered above the table (crawlable). */
   intro: string[];
@@ -233,6 +236,135 @@ export const LEADERBOARDS: LeaderboardDef[] = [
     ],
   },
   {
+    slug: 'best-overall',
+    title: 'Best Overall Stocks — Highest Composite Fundamental Score',
+    h1: 'Best Overall Stocks',
+    description:
+      'US stocks ranked by overall fundamental score — the mean of our five 0–100 pillar scores: valuation, growth, profitability, financial health and quality. Updated daily.',
+    keywords: ['best stocks overall', 'highest rated stocks', 'best fundamental stocks', 'top scored stocks', 'strongest companies'],
+    metricLabel: 'Overall score',
+    source: 'analysisCache',
+    field: 'overallScore',
+    order: 'desc',
+    format: (v) => String(Math.round(v)),
+    intro: [
+      'The overall score is the simple mean of five equally-weighted pillars — valuation (cheapness vs own history), growth (revenue/EPS trajectory), profitability (returns and margins), financial health (balance-sheet strength) and quality (earnings reliability).',
+      'A high overall score means a company performs well across all five dimensions — not that the stock is a buy. Use it as a starting point, then review the per-pillar breakdown on the analysis page.',
+    ],
+    faq: [
+      { q: 'How is the overall score calculated?', a: 'It is the arithmetic mean of five 0–100 pillar scores: valuation, growth, profitability, financial health and quality. Each pillar itself sums four 25-point checks.' },
+      { q: 'Is the overall score the same as the Early Winners score?', a: 'No — Early Winners is a separate quant composite (V5-B methodology) with different inputs and weights. The overall score is a transparent mean of the five analysis pillars shown on every stock page.' },
+    ],
+  },
+  {
+    slug: 'highest-quality',
+    title: 'Highest Quality Stocks — Strongest Earnings Reliability',
+    h1: 'Highest Quality Stocks',
+    description:
+      'US stocks ranked by quality score: Piotroski F-score, Beneish M-score (earnings manipulation risk), FCF conversion and margin stability. Updated daily.',
+    keywords: ['high quality stocks', 'quality stocks', 'earnings quality', 'piotroski beneish screen', 'reliable earnings stocks'],
+    metricLabel: 'Quality score',
+    source: 'analysisCache',
+    field: 'qualityScore',
+    order: 'desc',
+    format: (v) => String(Math.round(v)),
+    intro: [
+      'The quality score (0–100) sums four checks: Piotroski F-score (fundamental improvement), Beneish M-score (earnings-manipulation risk), free-cash-flow conversion (earnings backed by cash) and margin stability (predictable operations).',
+      'High-quality companies show consistent, cash-backed profits — this is a screen for reliability, not cheapness. Pair it with the valuation score to find quality at a reasonable price.',
+    ],
+    faq: [
+      { q: 'What makes a stock "high quality"?', a: 'Strong Piotroski F-score, low Beneish M-score (low manipulation risk), high FCF conversion and stable margins — signs that reported earnings are real and repeatable.' },
+      { q: 'Does high quality mean a good investment?', a: 'Not by itself — quality says nothing about the price you pay. Combine it with the valuation score for a fuller picture.' },
+    ],
+  },
+  {
+    slug: 'highest-growth',
+    title: 'Highest Growth Stocks — Fastest Revenue & EPS Expansion',
+    h1: 'Highest Growth Stocks',
+    description:
+      'US stocks ranked by growth score: revenue CAGR, net-income CAGR, 5-year EPS CAGR and forward implied growth. Updated daily.',
+    keywords: ['highest growth stocks', 'fastest growing stocks', 'revenue growth stocks', 'eps growth screen', 'growth stock screener'],
+    metricLabel: 'Growth score',
+    source: 'analysisCache',
+    field: 'growthScore',
+    order: 'desc',
+    format: (v) => String(Math.round(v)),
+    intro: [
+      'The growth score (0–100) sums four checks: multi-year revenue CAGR, net-income CAGR, 5-year EPS CAGR and forward implied growth derived from the forward P/E.',
+      'High growth scores flag companies expanding fast — but say nothing about valuation or durability. The analysis page shows each growth leg separately.',
+    ],
+    faq: [
+      { q: 'What counts as a high growth score?', a: 'Scores of 75+ typically mean strong double-digit compounded growth across revenue, earnings and EPS over the last ~5 years plus positive forward expectations.' },
+      { q: 'Is a high growth score risky?', a: 'Growth screens surface fast growers, including cyclicals at peak earnings — check the health and quality pillars before drawing conclusions.' },
+    ],
+  },
+  {
+    slug: 'quality-compounders',
+    title: 'Quality Compounders — High Quality, Profitability and Growth',
+    h1: 'Quality Compounders',
+    description:
+      'US stocks passing a combined screen: quality ≥ 80, profitability ≥ 75 and growth ≥ 60. Updated daily.',
+    keywords: ['quality compounders', 'quality growth stocks', 'compounders screen', 'high quality profitable stocks', 'compounding stocks'],
+    metricLabel: 'Quality score',
+    source: 'analysisCache',
+    field: 'qualityScore',
+    order: 'desc',
+    extraWhere: { qualityScore: { gte: 80 }, profitabilityScore: { gte: 75 }, growthScore: { gte: 60 } },
+    format: (v) => String(Math.round(v)),
+    intro: [
+      'Quality compounders are companies that score at least 80/100 on quality, 75/100 on profitability and 60/100 on growth — reliable, cash-backed earnings that are still expanding.',
+      'The screen deliberately ignores valuation: some of these names may be expensive. Check the valuation pillar on each analysis page before treating any entry as attractive.',
+    ],
+    faq: [
+      { q: 'What is a quality compounder?', a: 'A company combining high earnings quality (cash-backed profits, low manipulation risk) with strong profitability and continued growth — the classic "compounder" profile.' },
+      { q: 'Why is valuation not part of this screen?', a: 'It is intentionally quality-first. Cheapness is a separate pillar — see the "quality at a reasonable price" screen for the value-aware variant.' },
+    ],
+  },
+  {
+    slug: 'quality-at-reasonable-price',
+    title: 'Quality Stocks at a Reasonable Price — Quality ≥75, Valuation ≥60',
+    h1: 'Quality Stocks at a Reasonable Price',
+    description:
+      'US stocks passing a combined screen: quality ≥ 75 and valuation ≥ 60 — reliable fundamentals that are not historically expensive. Updated daily.',
+    keywords: ['quality at reasonable price', 'qarp stocks', 'cheap quality stocks', 'undervalued quality stocks', 'quality value screen'],
+    metricLabel: 'Overall score',
+    source: 'analysisCache',
+    field: 'overallScore',
+    order: 'desc',
+    extraWhere: { qualityScore: { gte: 75 }, valuationScore: { gte: 60 } },
+    format: (v) => String(Math.round(v)),
+    intro: [
+      'This screen combines the two pillars investors most often want together: quality ≥ 75 (reliable, cash-backed earnings) and valuation ≥ 60 (not expensive versus the stock’s own history).',
+      'It is the classic "quality at a reasonable price" idea expressed in our five-pillar framework — sorted by overall score so the most balanced names appear first.',
+    ],
+    faq: [
+      { q: 'What does the valuation score measure here?', a: 'Cheapness relative to the stock’s own 5-year valuation history plus absolute multiples (FCF yield, P/S, EV/EBIT) — not a cross-sector comparison.' },
+      { q: 'Is this a buy list?', a: 'No — it is a screening starting point. Fundamental scores describe the business and its price relative to history, not future returns.' },
+    ],
+  },
+  {
+    slug: 'growth-at-reasonable-price',
+    title: 'Growth Stocks at a Reasonable Price — Growth ≥75, Valuation ≥60',
+    h1: 'Growth Stocks at a Reasonable Price',
+    description:
+      'US stocks passing a combined screen: growth ≥ 75 and valuation ≥ 60 — fast-growing companies that are not historically expensive. Updated daily.',
+    keywords: ['growth at reasonable price', 'garp stocks', 'cheap growth stocks', 'undervalued growth stocks', 'growth value screen'],
+    metricLabel: 'Overall score',
+    source: 'analysisCache',
+    field: 'overallScore',
+    order: 'desc',
+    extraWhere: { growthScore: { gte: 75 }, valuationScore: { gte: 60 } },
+    format: (v) => String(Math.round(v)),
+    intro: [
+      'GARP — growth at a reasonable price — combines growth ≥ 75 (strong revenue, earnings and EPS expansion) with valuation ≥ 60 (not expensive versus the stock’s own history).',
+      'The combination filters out both speculative growth and stagnant value traps; the table is sorted by overall score across all five pillars.',
+    ],
+    faq: [
+      { q: 'What is GARP?', a: 'Growth at a reasonable price — a screen for companies growing quickly that are not trading at extreme valuations. Here: growth pillar ≥75 and valuation pillar ≥60.' },
+      { q: 'Are these stocks cheap?', a: 'Relatively — valuation ≥60 means cheaper than most of the stock’s own history, not necessarily cheap in absolute terms.' },
+    ],
+  },
+  {
     slug: 'early-winners',
     title: 'Early Winners — Top Stocks by PMP Composite Score',
     h1: 'Early Winners',
@@ -279,9 +411,12 @@ export interface LeaderboardRow {
  * its source relation (nulls last), only priced tickers.
  */
 export async function getLeaderboardRows(def: LeaderboardDef, limit = 50): Promise<LeaderboardRow[]> {
-  const metricWhere: Record<string, unknown> = def.minValue != null
-    ? { [def.field]: { gt: def.minValue } }
-    : { [def.field]: { not: null } };
+  const metricWhere: Record<string, unknown> = {
+    ...(def.minValue != null
+      ? { [def.field]: { gt: def.minValue } }
+      : { [def.field]: { not: null } }),
+    ...(def.extraWhere ?? {}),
+  };
 
   // Dynamic keys make Prisma's return type unusable — keep it untyped and
   // map explicitly below.

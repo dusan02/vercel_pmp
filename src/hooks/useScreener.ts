@@ -26,6 +26,9 @@ export function useScreener({
             healthScore: r.healthScore ?? null,
             profitabilityScore: r.profitabilityScore ?? null,
             valuationScore: r.valuationScore ?? null,
+            growthScore: r.growthScore ?? null,
+            qualityScore: r.qualityScore ?? null,
+            overallScore: r.overallScore ?? null,
             altmanZ: r.altmanZ ?? null,
             piotroskiScore: r.piotroskiScore ?? null,
             beneishScore: null,
@@ -63,6 +66,12 @@ export function useScreener({
     const [maxProfit, setMaxProfit] = useState<number>(100);
     const [minValue, setMinValue] = useState<number>(defaultMinValue);
     const [maxValue, setMaxValue] = useState<number>(100);
+    const [minGrowth, setMinGrowth] = useState<number>(0);
+    const [maxGrowth, setMaxGrowth] = useState<number>(100);
+    const [minQuality, setMinQuality] = useState<number>(0);
+    const [maxQuality, setMaxQuality] = useState<number>(100);
+    const [minOverall, setMinOverall] = useState<number>(0);
+    const [maxOverall, setMaxOverall] = useState<number>(100);
     const [minAltman, setMinAltman] = useState<number>(0);
     const [minPiotroski, setMinPiotroski] = useState<number>(0);
     const [maxBeneish, setMaxBeneish] = useState<number>(10); // 10 = effectively no filter (most scores are < 10)
@@ -81,6 +90,9 @@ export function useScreener({
         minHealth: defaultMinHealth, maxHealth: 100,
         minProfit: defaultMinProfit, maxProfit: 100,
         minValue: defaultMinValue, maxValue: 100,
+        minGrowth: 0, maxGrowth: 100,
+        minQuality: 0, maxQuality: 100,
+        minOverall: 0, maxOverall: 100,
         minAltman: 0,
         minPiotroski: 0, maxBeneish: 10,
         minFcfMargin: -100, maxDebtRepayment: 350,
@@ -97,6 +109,9 @@ export function useScreener({
                 minHealth, maxHealth,
                 minProfit, maxProfit,
                 minValue, maxValue,
+                minGrowth, maxGrowth,
+                minQuality, maxQuality,
+                minOverall, maxOverall,
                 minAltman,
                 minPiotroski, maxBeneish,
                 minFcfMargin, maxDebtRepayment,
@@ -108,7 +123,7 @@ export function useScreener({
             });
         }, 400);
         return () => clearTimeout(timer);
-    }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minAltman, minPiotroski, maxBeneish, minFcfMargin, maxDebtRepayment, selectedSector, selectedIndustry, searchQuery, marketCapPreset, sortField, sortOrder]);
+    }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minGrowth, maxGrowth, minQuality, maxQuality, minOverall, maxOverall, minAltman, minPiotroski, maxBeneish, minFcfMargin, maxDebtRepayment, selectedSector, selectedIndustry, searchQuery, marketCapPreset, sortField, sortOrder]);
 
     const fetchResults = useCallback(async () => {
         setLoading(true);
@@ -120,6 +135,12 @@ export function useScreener({
                 maxProfitability: debouncedFilters.maxProfit.toString(),
                 minValuation: debouncedFilters.minValue.toString(),
                 maxValuation: debouncedFilters.maxValue.toString(),
+                minGrowth: debouncedFilters.minGrowth.toString(),
+                maxGrowth: debouncedFilters.maxGrowth.toString(),
+                minQuality: debouncedFilters.minQuality.toString(),
+                maxQuality: debouncedFilters.maxQuality.toString(),
+                minOverall: debouncedFilters.minOverall.toString(),
+                maxOverall: debouncedFilters.maxOverall.toString(),
                 minAltman: debouncedFilters.minAltman.toString(),
                 sort: `${debouncedFilters.sortField}:${debouncedFilters.sortOrder}`,
                 limit: initialLimit.toString(),
@@ -164,7 +185,7 @@ export function useScreener({
     // Reset page on filter change (immediate, not debounced)
     useEffect(() => {
         setPage(1);
-    }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minAltman, minPiotroski, maxBeneish, minFcfMargin, maxDebtRepayment, selectedSector, marketCapPreset, sortField, sortOrder]);
+    }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minGrowth, maxGrowth, minQuality, maxQuality, minOverall, maxOverall, minAltman, minPiotroski, maxBeneish, minFcfMargin, maxDebtRepayment, selectedSector, marketCapPreset, sortField, sortOrder]);
 
     // Restore filters from URL on mount (shareable screener state).
     // ONLY on the standalone /screener page — the homepage embed lives under
@@ -184,6 +205,12 @@ export function useScreener({
         if (sp.has('maxProfit')) setMaxProfit(num('maxProfit', 100));
         if (sp.has('minValue')) setMinValue(num('minValue', 0));
         if (sp.has('maxValue')) setMaxValue(num('maxValue', 100));
+        if (sp.has('minGrowth')) setMinGrowth(num('minGrowth', 0));
+        if (sp.has('maxGrowth')) setMaxGrowth(num('maxGrowth', 100));
+        if (sp.has('minQuality')) setMinQuality(num('minQuality', 0));
+        if (sp.has('maxQuality')) setMaxQuality(num('maxQuality', 100));
+        if (sp.has('minOverall')) setMinOverall(num('minOverall', 0));
+        if (sp.has('maxOverall')) setMaxOverall(num('maxOverall', 100));
         if (sp.has('minAltman')) setMinAltman(num('minAltman', 0));
         if (sp.has('minPiotroski')) setMinPiotroski(num('minPiotroski', 0));
         if (sp.has('maxBeneish')) setMaxBeneish(num('maxBeneish', 10));
@@ -211,6 +238,12 @@ export function useScreener({
         if (maxProfit !== 100) sp.set('maxProfit', maxProfit.toString());
         if (minValue !== 0) sp.set('minValue', minValue.toString());
         if (maxValue !== 100) sp.set('maxValue', maxValue.toString());
+        if (minGrowth !== 0) sp.set('minGrowth', minGrowth.toString());
+        if (maxGrowth !== 100) sp.set('maxGrowth', maxGrowth.toString());
+        if (minQuality !== 0) sp.set('minQuality', minQuality.toString());
+        if (maxQuality !== 100) sp.set('maxQuality', maxQuality.toString());
+        if (minOverall !== 0) sp.set('minOverall', minOverall.toString());
+        if (maxOverall !== 100) sp.set('maxOverall', maxOverall.toString());
         if (minAltman !== 0) sp.set('minAltman', minAltman.toString());
         if (minPiotroski > 0) sp.set('minPiotroski', minPiotroski.toString());
         if (maxBeneish < 10) sp.set('maxBeneish', maxBeneish.toString());
@@ -223,7 +256,7 @@ export function useScreener({
         if (sortField !== 'healthScore' || sortOrder !== 'desc') sp.set('sort', `${sortField}:${sortOrder}`);
         const qs = sp.toString();
         window.history.replaceState(null, '', qs ? `${window.location.pathname}?${qs}` : window.location.pathname);
-    }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minAltman, minPiotroski, maxBeneish, minFcfMargin, maxDebtRepayment, selectedSector, marketCapPreset, sortField, sortOrder]);
+    }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minGrowth, maxGrowth, minQuality, maxQuality, minOverall, maxOverall, minAltman, minPiotroski, maxBeneish, minFcfMargin, maxDebtRepayment, selectedSector, marketCapPreset, sortField, sortOrder]);
 
     const handleSort = (field: string) => {
         if (sortField === field) {
@@ -243,6 +276,9 @@ export function useScreener({
         setMinHealth(0); setMaxHealth(100);
         setMinProfit(0); setMaxProfit(100);
         setMinValue(0); setMaxValue(100);
+        setMinGrowth(0); setMaxGrowth(100);
+        setMinQuality(0); setMaxQuality(100);
+        setMinOverall(0); setMaxOverall(100);
         setMinAltman(0);
         setMinPiotroski(0);
         setMaxBeneish(10);
@@ -260,8 +296,35 @@ export function useScreener({
         minHealth !== 0 || maxHealth !== 100 ||
         minProfit !== 0 || maxProfit !== 100 ||
         minValue !== 0 || maxValue !== 100 ||
+        minGrowth !== 0 || maxGrowth !== 100 ||
+        minQuality !== 0 || maxQuality !== 100 ||
+        minOverall !== 0 || maxOverall !== 100 ||
         minAltman !== 0 || selectedSector !== '' || marketCapPreset !== 'all' ||
         minPiotroski > 0 || maxBeneish < 10 || minFcfMargin > -100 || maxDebtRepayment < 350;
+
+    /** Apply a named quick-screen preset (sets multiple filters atomically). */
+    const applyPreset = (preset: {
+        minValue?: number; minGrowth?: number; minProfit?: number;
+        minHealth?: number; minQuality?: number; minOverall?: number;
+        minAltman?: number; minFcfMargin?: number; marketCapPreset?: string;
+        sort?: string;
+    }) => {
+        resetFilters();
+        if (preset.minValue !== undefined) setMinValue(preset.minValue);
+        if (preset.minGrowth !== undefined) setMinGrowth(preset.minGrowth);
+        if (preset.minProfit !== undefined) setMinProfit(preset.minProfit);
+        if (preset.minHealth !== undefined) setMinHealth(preset.minHealth);
+        if (preset.minQuality !== undefined) setMinQuality(preset.minQuality);
+        if (preset.minOverall !== undefined) setMinOverall(preset.minOverall);
+        if (preset.minAltman !== undefined) setMinAltman(preset.minAltman);
+        if (preset.minFcfMargin !== undefined) setMinFcfMargin(preset.minFcfMargin);
+        if (preset.marketCapPreset !== undefined) setMarketCapPreset(preset.marketCapPreset);
+        if (preset.sort) {
+            const [f, o] = preset.sort.split(':');
+            if (f) setSortField(f);
+            if (o === 'asc' || o === 'desc') setSortOrder(o);
+        }
+    };
 
     return {
         results, pagination, loading, page, setPage,
@@ -269,6 +332,9 @@ export function useScreener({
         minHealth, maxHealth, setMinHealth, setMaxHealth,
         minProfit, maxProfit, setMinProfit, setMaxProfit,
         minValue, maxValue, setMinValue, setMaxValue,
+        minGrowth, maxGrowth, setMinGrowth, setMaxGrowth,
+        minQuality, maxQuality, setMinQuality, setMaxQuality,
+        minOverall, maxOverall, setMinOverall, setMaxOverall,
         minAltman, setMinAltman,
         minPiotroski, setMinPiotroski,
         maxBeneish, setMaxBeneish,
@@ -282,6 +348,6 @@ export function useScreener({
         // sort
         sortField, sortOrder, handleSort, setSort,
         // utils
-        resetFilters, hasActiveFilters,
+        resetFilters, hasActiveFilters, applyPreset,
     };
 }

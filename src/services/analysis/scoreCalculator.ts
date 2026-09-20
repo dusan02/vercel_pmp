@@ -3,6 +3,14 @@ import { aiService } from '../aiService';
 import { NotificationService } from '../notificationService';
 import { computeTTM } from '@/lib/utils/ttm';
 import { computePillars } from './pillars';
+import { isSuspiciousShareCount } from '@/lib/utils/shareCount';
+
+export interface CalculateScoresOptions {
+    /** Skip the AI verdict call (backfills/bulk jobs — keeps stored verdictText). */
+    skipVerdict?: boolean;
+    /** Skip quality-breakout notifications (backfills must not spam alerts). */
+    skipNotify?: boolean;
+}
 
 function ordinal(n: number): string {
     const s = ['th', 'st', 'nd', 'rd'];
@@ -27,7 +35,7 @@ export function formatPePercentile(currentPE: number, percentile: number): strin
  * Computes Altman Z-Score, Piotroski F-Score, Beneish M-Score, FCF metrics,
  * and generates an AI investment verdict. Persists results to AnalysisCache.
  */
-export async function calculateScores(symbol: string): Promise<void> {
+export async function calculateScores(symbol: string, opts: CalculateScoresOptions = {}): Promise<void> {
     const stmts = await prisma.financialStatement.findMany({
         where: { symbol },
         orderBy: { endDate: 'desc' },
@@ -196,11 +204,17 @@ export async function calculateScores(symbol: string): Promise<void> {
     });
 
     const effectiveNetIncome = ttmNetIncome ?? latestStmt.netIncome;
+    // Corrupt-statement guard: EPS-derived share counts (ni/round-EPS) must
+    // not feed P/E — the read path uses the same isSuspiciousShareCount rule.
+    const stmtShares = (latestStmt.sharesOutstanding && latestStmt.sharesOutstanding > 0
+        && !isSuspiciousShareCount(latestStmt.sharesOutstanding, latestStmt.netIncome, tickerData?.sharesOutstanding))
+        ? latestStmt.sharesOutstanding
+        : (tickerData?.sharesOutstanding && tickerData.sharesOutstanding > 0 ? tickerData.sharesOutstanding : null);
     // P/E source must match the UI (price / own TTM EPS). Finnhub's peRatio can
     // sit on a stale EPS basis — using it here once produced percentile=100 and
     // a "top 0%" label while our own valuation history showed ~21x.
-    const currentPE = (currentPrice > 0 && latestStmt.sharesOutstanding && effectiveNetIncome && effectiveNetIncome > 0)
-        ? (currentPrice * latestStmt.sharesOutstanding) / effectiveNetIncome
+    const currentPE = (currentPrice > 0 && stmtShares && effectiveNetIncome && effectiveNetIncome > 0)
+        ? (currentPrice * stmtShares) / effectiveNetIncome
         : (latestValuation?.peRatio || null);
 
     let pePercentile: number | null = null;
@@ -373,9 +387,14 @@ export async function calculateScores(symbol: string): Promise<void> {
     healthScore = pillars.health.score;
     profitabilityScore = pillars.profitability.score;
     valuationScore = pillars.valuation.score;
+    const growthScore = pillars.growth.score;
+    const qualityScore = pillars.quality.score;
+    // Composite = plain mean of the five 0–100 pillar scores. Distinct from
+    // the Early Winners EW score (quant engine, different scale/coverage).
+    const overallScore = (healthScore + profitabilityScore + valuationScore + growthScore + qualityScore) / 5;
 
     // ─── AI Verdict ────────────────────────────────────────────────
-    try {
+    if (!opts.skipVerdict) try {
         const aiVerdict = await aiService.generateInvestmentVerdict({
             ticker: symbol,
             scores: { H: healthScore, P: profitabilityScore, V: valuationScore },
@@ -386,7 +405,7 @@ export async function calculateScores(symbol: string): Promise<void> {
 
     // ─── Signal Detection & Notification ───────────────────────────
     let lastQualitySignalAt: Date | undefined;
-    if (altmanZ !== null && altmanZ > 3.0 && healthScore > 80) {
+    if (!opts.skipNotify && altmanZ !== null && altmanZ > 3.0 && healthScore > 80) {
         const existingCache: any = await (prisma.analysisCache as any).findUnique({
             where: { symbol },
             select: { lastQualitySignalAt: true }
@@ -406,7 +425,9 @@ export async function calculateScores(symbol: string): Promise<void> {
     await (prisma.analysisCache as any).upsert({
         where: { symbol },
         update: {
-            healthScore, profitabilityScore, valuationScore, verdictText,
+            healthScore, profitabilityScore, valuationScore,
+            ...(opts.skipVerdict ? {} : { verdictText }),
+            growthScore, qualityScore, overallScore,
             piotroskiScore, beneishScore, interestCoverage, revenueCagr, netIncomeCagr,
             altmanZ, debtRepaymentYears, fcfMargin, fcfConversion,
             humanDebtInfo, humanPeInfo, marginStability, negativeNiYears,
@@ -414,6 +435,7 @@ export async function calculateScores(symbol: string): Promise<void> {
         },
         create: {
             symbol, healthScore, profitabilityScore, valuationScore, verdictText,
+            growthScore, qualityScore, overallScore,
             piotroskiScore, beneishScore, interestCoverage, revenueCagr, netIncomeCagr,
             altmanZ, debtRepaymentYears, fcfMargin, fcfConversion,
             humanDebtInfo, humanPeInfo, marginStability, negativeNiYears,

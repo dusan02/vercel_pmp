@@ -29,6 +29,12 @@ export async function GET(request: Request) {
     const maxHealth = searchParams.get('maxHealth') ? parseFloat(searchParams.get('maxHealth')!) : undefined;
     const maxProfitability = searchParams.get('maxProfitability') ? parseFloat(searchParams.get('maxProfitability')!) : undefined;
     const maxValuation = searchParams.get('maxValuation') ? parseFloat(searchParams.get('maxValuation')!) : undefined;
+    const minGrowth = searchParams.get('minGrowth') ? parseFloat(searchParams.get('minGrowth')!) : undefined;
+    const maxGrowth = searchParams.get('maxGrowth') ? parseFloat(searchParams.get('maxGrowth')!) : undefined;
+    const minQuality = searchParams.get('minQuality') ? parseFloat(searchParams.get('minQuality')!) : undefined;
+    const maxQuality = searchParams.get('maxQuality') ? parseFloat(searchParams.get('maxQuality')!) : undefined;
+    const minOverall = searchParams.get('minOverall') ? parseFloat(searchParams.get('minOverall')!) : undefined;
+    const maxOverall = searchParams.get('maxOverall') ? parseFloat(searchParams.get('maxOverall')!) : undefined;
     const sector = searchParams.get('sector') || undefined;
     const industry = searchParams.get('industry') || undefined;
     // Search: symbol or company name (case-insensitive contains)
@@ -46,7 +52,7 @@ export async function GET(request: Request) {
     const sortOrder = (parts[1] === 'asc' ? 'asc' : 'desc') as 'asc' | 'desc';
 
     // Build cache key from query params
-    const cacheKey = `screener:${minHealth || ''}:${maxHealth || ''}:${minProfitability || ''}:${maxProfitability || ''}:${minValuation || ''}:${maxValuation || ''}:${minAltman || ''}:${minPiotroski || ''}:${maxBeneish || ''}:${minFcfMargin || ''}:${maxDebtRepayment || ''}:${sector || ''}:${industry || ''}:${q || ''}:${minMarketCap || ''}:${maxMarketCap || ''}:${page}:${limit}:${sortParams}`;
+    const cacheKey = `screener:${minHealth || ''}:${maxHealth || ''}:${minProfitability || ''}:${maxProfitability || ''}:${minValuation || ''}:${maxValuation || ''}:${minGrowth || ''}:${maxGrowth || ''}:${minQuality || ''}:${maxQuality || ''}:${minOverall || ''}:${maxOverall || ''}:${minAltman || ''}:${minPiotroski || ''}:${maxBeneish || ''}:${minFcfMargin || ''}:${maxDebtRepayment || ''}:${sector || ''}:${industry || ''}:${q || ''}:${minMarketCap || ''}:${maxMarketCap || ''}:${page}:${limit}:${sortParams}`;
     try {
         const cached = await getCachedData(cacheKey);
         if (cached) return NextResponse.json(cached);
@@ -76,7 +82,7 @@ export async function GET(request: Request) {
         // ── Fundamental filters apply on the AnalysisCache relation ──
         // When any score filter is active, tickers without analysis are
         // excluded automatically (they cannot match a score condition).
-        const hasScoreFilter = [minHealth, maxHealth, minProfitability, maxProfitability, minValuation, maxValuation, minAltman, minPiotroski, maxBeneish, minFcfMargin, maxDebtRepayment].some((v) => v !== undefined);
+        const hasScoreFilter = [minHealth, maxHealth, minProfitability, maxProfitability, minValuation, maxValuation, minGrowth, maxGrowth, minQuality, maxQuality, minOverall, maxOverall, minAltman, minPiotroski, maxBeneish, minFcfMargin, maxDebtRepayment].some((v) => v !== undefined);
         if (hasScoreFilter) {
             const ac: any = {};
             if (minHealth !== undefined || maxHealth !== undefined) {
@@ -94,6 +100,21 @@ export async function GET(request: Request) {
                 if (minValuation !== undefined) ac.valuationScore.gte = minValuation;
                 if (maxValuation !== undefined) ac.valuationScore.lte = maxValuation;
             }
+            if (minGrowth !== undefined || maxGrowth !== undefined) {
+                ac.growthScore = {};
+                if (minGrowth !== undefined) ac.growthScore.gte = minGrowth;
+                if (maxGrowth !== undefined) ac.growthScore.lte = maxGrowth;
+            }
+            if (minQuality !== undefined || maxQuality !== undefined) {
+                ac.qualityScore = {};
+                if (minQuality !== undefined) ac.qualityScore.gte = minQuality;
+                if (maxQuality !== undefined) ac.qualityScore.lte = maxQuality;
+            }
+            if (minOverall !== undefined || maxOverall !== undefined) {
+                ac.overallScore = {};
+                if (minOverall !== undefined) ac.overallScore.gte = minOverall;
+                if (maxOverall !== undefined) ac.overallScore.lte = maxOverall;
+            }
             if (minAltman !== undefined) ac.altmanZ = { gte: minAltman };
             if (minPiotroski !== undefined) ac.piotroskiScore = { gte: minPiotroski };
             // Beneish: lower = better. maxBeneish means "show only companies with Beneish <= X"
@@ -108,7 +129,7 @@ export async function GET(request: Request) {
 
         // Build Prisma orderBy — score fields live on analysisCache, market
         // fields on ticker. Nulls (tickers without analysis) always last.
-        const SCORE_FIELDS = new Set(['healthScore', 'profitabilityScore', 'valuationScore', 'altmanZ', 'piotroskiScore', 'beneishScore', 'fcfMargin', 'debtRepaymentYears']);
+        const SCORE_FIELDS = new Set(['healthScore', 'profitabilityScore', 'valuationScore', 'growthScore', 'qualityScore', 'overallScore', 'altmanZ', 'piotroskiScore', 'beneishScore', 'fcfMargin', 'debtRepaymentYears']);
         const sortFieldSafe = sortParams.split(':')[0] || 'ticker.lastMarketCap';
 
         let orderBy: any;
@@ -133,6 +154,9 @@ export async function GET(request: Request) {
                             healthScore: true,
                             profitabilityScore: true,
                             valuationScore: true,
+                            growthScore: true,
+                            qualityScore: true,
+                            overallScore: true,
                             altmanZ: true,
                             piotroskiScore: true,
                             beneishScore: true,
@@ -166,6 +190,9 @@ export async function GET(request: Request) {
             healthScore: t.analysisCache?.healthScore ?? null,
             profitabilityScore: t.analysisCache?.profitabilityScore ?? null,
             valuationScore: t.analysisCache?.valuationScore ?? null,
+            growthScore: t.analysisCache?.growthScore ?? null,
+            qualityScore: t.analysisCache?.qualityScore ?? null,
+            overallScore: t.analysisCache?.overallScore ?? null,
             altmanZ: t.analysisCache?.altmanZ ?? null,
             piotroskiScore: t.analysisCache?.piotroskiScore ?? null,
             beneishScore: t.analysisCache?.beneishScore ?? null,

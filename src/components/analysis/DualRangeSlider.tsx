@@ -43,6 +43,9 @@ export function DualRangeSlider({
     blue: { fill: 'bg-blue-500', thumb: '[&::-webkit-slider-thumb]:bg-blue-600 [&::-moz-range-thumb]:bg-blue-600', text: 'text-blue-600 dark:text-blue-400' },
     emerald: { fill: 'bg-emerald-500', thumb: '[&::-webkit-slider-thumb]:bg-emerald-600 [&::-moz-range-thumb]:bg-emerald-600', text: 'text-emerald-600 dark:text-emerald-400' },
     violet: { fill: 'bg-violet-500', thumb: '[&::-webkit-slider-thumb]:bg-violet-600 [&::-moz-range-thumb]:bg-violet-600', text: 'text-violet-600 dark:text-violet-400' },
+    amber: { fill: 'bg-amber-500', thumb: '[&::-webkit-slider-thumb]:bg-amber-600 [&::-moz-range-thumb]:bg-amber-600', text: 'text-amber-600 dark:text-amber-400' },
+    sky: { fill: 'bg-sky-500', thumb: '[&::-webkit-slider-thumb]:bg-sky-600 [&::-moz-range-thumb]:bg-sky-600', text: 'text-sky-600 dark:text-sky-400' },
+    rose: { fill: 'bg-rose-500', thumb: '[&::-webkit-slider-thumb]:bg-rose-600 [&::-moz-range-thumb]:bg-rose-600', text: 'text-rose-600 dark:text-rose-400' },
   };
   const s: AccentStyle = styles[accentColor] ?? { fill: 'bg-blue-500', thumb: '[&::-webkit-slider-thumb]:bg-blue-600 [&::-moz-range-thumb]:bg-blue-600', text: 'text-blue-600 dark:text-blue-400' };
 

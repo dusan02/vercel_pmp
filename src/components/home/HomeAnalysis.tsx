@@ -4,9 +4,11 @@ import React, { useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import AnalysisTab from '../company/AnalysisTab';
 import { IntradayChart } from '../company/IntradayChart';
-import { Search, ExternalLink } from 'lucide-react';
+import { Search, ExternalLink, ArrowRight } from 'lucide-react';
 import { SectionIcon } from '../SectionIcon';
 import { formatPrice, formatPercent, formatMarketCap } from '@/lib/utils/format';
+import { scoreColor } from '@/lib/utils/screener';
+import type { ScreenerResult } from '@/lib/utils/screener';
 
 interface HomeAnalysisProps {
     activeTicker?: string | null;
@@ -76,6 +78,19 @@ export function HomeAnalysis({ activeTicker: propTicker, onTickerChange }: HomeA
 
     const trendingTickers = ['NVDA', 'TSLA', 'AAPL', 'MSFT', 'AMD', 'META'];
 
+    // Fundamental Opportunities — quality names not expensive vs own history.
+    // Only fetched while no ticker is selected (the empty-state surface).
+    const [opportunities, setOpportunities] = useState<ScreenerResult[]>([]);
+    useEffect(() => {
+        if (activeTicker) return;
+        let cancelled = false;
+        fetch('/api/analysis/screener?minQuality=75&minValuation=55&minOverall=65&limit=6&sort=overallScore:desc')
+            .then(r => r.json())
+            .then(d => { if (!cancelled && Array.isArray(d?.results)) setOpportunities(d.results); })
+            .catch(() => {});
+        return () => { cancelled = true; };
+    }, [activeTicker]);
+
     return (
         <div className="flex flex-col gap-6 animate-fade-in pb-20 lg:pb-0">
             {/* Compact Header Row: Icon + Title + Search bar inline */}
@@ -126,21 +141,75 @@ export function HomeAnalysis({ activeTicker: propTicker, onTickerChange }: HomeA
                 </div>
             </div>
 
-            {/* Empty state — just search bar (Google-like). Shown when no ticker
-                is selected (direct tab click). When a ticker is selected (from
-                Heatmap, Screener, or search), the full analysis renders below. */}
+            {/* Empty state — discovery surface: search hint + opportunities +
+                the five-pillar explainer. Shown when no ticker is selected. */}
             {!activeTicker && (
-                <div className="flex flex-col items-center justify-center py-20 lg:py-32 text-center">
-                    <div className="mb-6">
-                        <Search size={64} className="text-gray-300 dark:text-gray-600 mx-auto" strokeWidth={1.5} />
+                <div className="space-y-6">
+                    <div className="flex flex-col items-center justify-center py-10 text-center">
+                        <Search size={48} className="text-gray-300 dark:text-gray-600 mb-4" strokeWidth={1.5} />
+                        <h3 className="text-xl sm:text-2xl font-bold text-gray-700 dark:text-gray-300 mb-2">
+                            Search for a stock to analyze
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md">
+                            Every stock gets a five-dimensional fundamental profile — pick one below or search above.
+                        </p>
                     </div>
-                    <h3 className="text-xl sm:text-2xl font-bold text-gray-700 dark:text-gray-300 mb-2">
-                        Search for a stock to analyze
-                    </h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md">
-                        Enter a ticker symbol above or pick a trending stock to see real-time
-                        pre-market prices, charts, financial health, and more.
-                    </p>
+
+                    {/* Fundamental Opportunities — quality ≥75, valuation ≥55, overall ≥65 */}
+                    {opportunities.length > 0 && (
+                        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
+                            <div className="flex items-center justify-between mb-4">
+                                <div>
+                                    <h3 className="text-base font-bold text-gray-900 dark:text-white">Fundamental Opportunities</h3>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Quality ≥75 · Valuation ≥55 · sorted by overall score</p>
+                                </div>
+                                <Link href="/screener/quality-at-reasonable-price" className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline shrink-0">
+                                    Full screen <ArrowRight size={12} />
+                                </Link>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                                {opportunities.map((r) => (
+                                    <button
+                                        key={r.symbol}
+                                        onClick={() => setTicker(r.symbol)}
+                                        className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-gray-50 dark:hover:bg-gray-800/60 transition-colors text-left"
+                                    >
+                                        <img src={`/api/logo/${encodeURIComponent(r.symbol)}?s=64&prefer=icon`} alt="" width={28} height={28} className="rounded shrink-0 bg-gray-100 dark:bg-gray-700" loading="lazy" />
+                                        <div className="min-w-0 flex-1">
+                                            <div className="font-semibold text-sm text-gray-900 dark:text-white">{r.symbol}</div>
+                                            <div className="text-[11px] text-gray-400 truncate">{r.ticker?.name || ''}</div>
+                                        </div>
+                                        <div className="flex gap-1.5 shrink-0">
+                                            {([r.valuationScore, r.growthScore, r.profitabilityScore, r.healthScore, r.qualityScore] as (number | null)[]).map((v, i) => (
+                                                <span key={i} className={`text-[10px] font-bold tabular-nums ${scoreColor(v)}`}>{v !== null ? Math.round(v) : '–'}</span>
+                                            ))}
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                            <p className="mt-3 text-[10px] text-gray-400 dark:text-gray-500">Columns: Valuation · Growth · Profitability · Health · Quality</p>
+                        </div>
+                    )}
+
+                    {/* How we analyze — five-pillar explainer */}
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
+                        <h3 className="text-base font-bold text-gray-900 dark:text-white mb-1">How we analyze stocks</h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Every stock gets a 0–100 profile across five equally-weighted pillars.</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                            {[
+                                ['Valuation', 'Is the stock cheap vs its own 5-year history?'],
+                                ['Growth', 'How fast are revenue, earnings and EPS expanding?'],
+                                ['Profitability', 'How efficiently does it turn revenue into profit?'],
+                                ['Financial Health', 'Can the balance sheet withstand stress?'],
+                                ['Quality', 'Are reported earnings reliable and cash-backed?'],
+                            ].map(([name, desc]) => (
+                                <div key={name} className="rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 p-3">
+                                    <div className="text-xs font-bold text-gray-900 dark:text-white mb-1">{name}</div>
+                                    <div className="text-[11px] text-gray-500 dark:text-gray-400 leading-snug">{desc}</div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 </div>
             )}
 

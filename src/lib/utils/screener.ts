@@ -3,6 +3,9 @@ export interface ScreenerResult {
     healthScore: number | null;
     profitabilityScore: number | null;
     valuationScore: number | null;
+    growthScore: number | null;
+    qualityScore: number | null;
+    overallScore: number | null;
     altmanZ: number | null;
     piotroskiScore: number | null;
     beneishScore: number | null;
@@ -54,6 +57,12 @@ export const SECTORS = [
 ];
 
 export const SORT_OPTIONS = [
+    { value: 'overallScore:desc', label: 'Overall Score ↓' },
+    { value: 'overallScore:asc', label: 'Overall Score ↑' },
+    { value: 'growthScore:desc', label: 'Growth ↓' },
+    { value: 'growthScore:asc', label: 'Growth ↑' },
+    { value: 'qualityScore:desc', label: 'Quality ↓' },
+    { value: 'qualityScore:asc', label: 'Quality ↑' },
     { value: 'healthScore:desc', label: 'Health Score ↓' },
     { value: 'healthScore:asc', label: 'Health Score ↑' },
     { value: 'profitabilityScore:desc', label: 'Profitability ↓' },
