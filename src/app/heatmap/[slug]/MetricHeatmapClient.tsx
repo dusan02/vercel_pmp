@@ -17,7 +17,7 @@ export default function MetricHeatmapClient({ metric }: { metric: HeatmapMetric 
 
   const handleTileClick = useCallback(
     (company: CompanyNode) => {
-      event('ticker_click', { ticker: company.symbol, source: 'heatmap_metric' });
+      event('ticker_click', { ticker: company.symbol, click_source: 'heatmap_metric' });
       router.push(`/analysis/${company.symbol.toUpperCase()}`);
     },
     [router],

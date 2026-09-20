@@ -119,7 +119,7 @@ export function useFavorites() {
     event('favorite_toggle', {
       ticker,
       enabled,
-      source: 'favorites_section'
+      click_source: 'favorites_section'
     });
 
     if (isFav) {
