@@ -322,7 +322,12 @@ export async function getEarningsRange(
     return groups;
   } catch (error) {
     console.error('[earningsSSR] Failed to fetch earnings range:', error);
-    return [];
+    // Build-time prerender has no DB — return empty there (ISR regenerates
+    // with real data on first request). At RUNTIME throw instead of returning
+    // [] so a transient DB error can't get ISR-cached as "No earnings
+    // scheduled" (keeps last good version / surfaces as 500).
+    if (process.env.NEXT_PHASE === 'phase-production-build') return [];
+    throw error;
   }
 }
 

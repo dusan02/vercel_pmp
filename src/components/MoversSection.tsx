@@ -422,6 +422,14 @@ export function MoversSection({ onTileClick, initialData }: { onTileClick?: (tic
                 ))}
             </div>
 
+            {/* API failure ≠ no movers — distinguish error from empty state */}
+            {error && movers.length === 0 && (
+                <div className="text-center p-6 text-slate-500 bg-slate-50 border border-dashed border-slate-300 rounded-2xl">
+                    Market movers data is temporarily unavailable.{' '}
+                    <button onClick={() => mutate()} className="text-blue-500 hover:underline font-medium">Retry</button>
+                </div>
+            )}
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Gainers Column */}
                 <div>
@@ -434,7 +442,7 @@ export function MoversSection({ onTileClick, initialData }: { onTileClick?: (tic
                             {gainers.map((mover, index) => renderMoverCard(mover, index))}
                         </AnimatePresence>
                     </div>
-                    {gainers.length === 0 && !isLoading && (
+                    {gainers.length === 0 && !isLoading && !error && (
                         <div className="text-center p-8 text-slate-400 bg-slate-50 border border-dashed border-slate-200 rounded-2xl mt-3">
                             No significant gainers.
                         </div>
@@ -452,7 +460,7 @@ export function MoversSection({ onTileClick, initialData }: { onTileClick?: (tic
                             {losers.map((mover, index) => renderMoverCard(mover, index))}
                         </AnimatePresence>
                     </div>
-                    {losers.length === 0 && !isLoading && (
+                    {losers.length === 0 && !isLoading && !error && (
                         <div className="text-center p-8 text-slate-400 bg-slate-50 border border-dashed border-slate-200 rounded-2xl mt-3">
                             No significant losers.
                         </div>

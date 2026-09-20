@@ -21,9 +21,9 @@ import { getCachedData, setCachedData } from '@/lib/redis/operations';
 export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
-        const limit = parseInt(searchParams.get('limit') || '10', 10);
+        const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '10', 10) || 10, 1), 100);
         // Threshold: 2.0 = statistically significant (2 std dev above mean).
-        const minZScore = parseFloat(searchParams.get('minZ') || '2.0');
+        const minZScore = Math.min(Math.max(parseFloat(searchParams.get('minZ') || '2.0') || 2.0, 0), 50);
 
         console.log(`🔍 [MoversAPI] Fetching top ${limit} movers (minZ: ${minZScore})...`);
 

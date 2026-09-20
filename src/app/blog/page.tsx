@@ -5,7 +5,7 @@ import { prisma } from '@/lib/db/prisma';
 export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: 'Premarket Reports & Market Insights | PreMarketPrice Blog',
+  title: 'Premarket Reports & Market Insights | Blog',
   description: 'Daily premarket reports with top gainers, losers, biggest market cap movers, and earnings calendar. Free stock market analysis updated every trading day.',
   alternates: {
     canonical: 'https://premarketprice.com/blog',

@@ -342,7 +342,7 @@ export async function analyzeMovers(inputs: MoverInput[]): Promise<Map<string, M
         (Math.abs(b.zScore ?? 0) + (b.rvol ?? 0)) - (Math.abs(a.zScore ?? 0) + (a.rvol ?? 0)));
     const deepSet = new Set(ranked.slice(0, MAX_DEEP_ANALYZE).map(i => i.symbol));
 
-    for (const m of inputs) {
+    const processOne = async (m: MoverInput) => {
         const sectorChangePct = m.sector ? (ctx.sectorChangePct.get(m.sector) ?? null) : null;
         const attr = attributeMove(m.changePct, sectorChangePct, ctx.marketChangePct);
         const catalyst = deepSet.has(m.symbol)
@@ -381,6 +381,13 @@ export async function analyzeMovers(inputs: MoverInput[]): Promise<Map<string, M
             pillars,
             analyzedAt: now.toISOString(),
         });
+    };
+
+    // Bounded concurrency: chunks of 6 → ≤12 concurrent Finnhub calls
+    // (free tier ~30/s), worst-case latency ~4 sequential chunks.
+    const CHUNK = 6;
+    for (let i = 0; i < inputs.length; i += CHUNK) {
+        await Promise.all(inputs.slice(i, i + CHUNK).map(processOne));
     }
     return results;
 }

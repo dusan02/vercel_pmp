@@ -42,7 +42,10 @@ export function GlobalBottomNav() {
   if (pathname === '/') return null;
 
   return (
-    <nav
+    <>
+      {/* Spacer clears the fixed 64px bar so it doesn't cover footer content on mobile */}
+      <div className="h-16 lg:hidden" aria-hidden="true" />
+      <nav
       aria-label="Mobile navigation"
       className="lg:hidden fixed bottom-0 left-0 w-full border-t border-gray-200 dark:border-gray-800 z-[110] bg-white dark:bg-[#0f0f0f]"
       style={{
@@ -77,6 +80,7 @@ export function GlobalBottomNav() {
           );
         })}
       </div>
-    </nav>
+      </nav>
+    </>
   );
 }

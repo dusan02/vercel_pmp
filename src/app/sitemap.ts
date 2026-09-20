@@ -323,11 +323,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       );
     }
 
-    // Future 30 days: earnings calendar
-    for (let i = 0; i < 30; i++) {
-      const date = new Date(todayET);
-      date.setDate(date.getDate() + i);
-      const dateStr = date.toISOString().split('T')[0];
+    // Future 30 days: earnings calendar — only dates that actually have
+    // earnings rows (empty dates render noindex; listing them here would
+    // contradict the robots signal).
+    const end = new Date(todayET + 'T00:00:00Z');
+    end.setUTCDate(end.getUTCDate() + 30);
+    const endStr = end.toISOString().split('T')[0] ?? '';
+    const earningDates = await prisma.earningsCalendar.findMany({
+      where: {
+        date: {
+          gte: new Date(todayET + 'T00:00:00Z'),
+          lte: new Date(endStr + 'T23:59:59Z'),
+        },
+      },
+      select: { date: true },
+      distinct: ['date'],
+    });
+    for (const row of earningDates) {
+      const dateStr = row.date.toISOString().split('T')[0];
       earningsPages.push({
         url: `${baseUrl}/earnings/date/${dateStr}`,
         lastModified: currentDate,
