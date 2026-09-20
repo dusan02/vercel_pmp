@@ -2,9 +2,10 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { generatePageMetadata } from '@/lib/seo/metadata';
 import { detectSession, mapToRedisSession } from '@/lib/utils/timeUtils';
-import { formatMarketCapDiff, formatPercent, formatPrice } from '@/lib/utils/heatmapFormat';
+import { formatCompactNumber, formatMarketCapDiff, formatPercent, formatPrice } from '@/lib/utils/heatmapFormat';
 import { formatSectorName } from '@/lib/utils/format';
 import { getDateET, getManyLastWithDate, getRankedSymbols } from '@/lib/redis/ranking';
+import { prisma } from '@/lib/db/prisma';
 import { SsrMoverLinks } from '@/components/seo/SsrMoverLinks';
 import { getEligibleAnalysisSet } from '@/lib/seo/eligibleTickers';
 import { getPremarketDateSummaries } from '@/lib/seo/premarketArchive';
@@ -33,6 +34,8 @@ type Row = {
   price?: number;
   changePct?: number;
   marketCapDiff?: number;
+  volume?: number | null;
+  rvol?: number | null;
 };
 
 async function getRows(limit: number): Promise<Row[]> {
@@ -45,6 +48,19 @@ async function getRows(limit: number): Promise<Row[]> {
   const symbols = await getRankedSymbols(date, session, 'chg', 'desc', 0, limit);
   const last = await getManyLastWithDate(date, session, symbols);
 
+  // Absolute volume isn't in the Redis `last` payload (v = rvol) — pull
+  // Ticker.lastVolume for the ranked symbols; degrade to null on DB failure.
+  const volumeBySymbol = new Map<string, number>();
+  try {
+    const tickers = await prisma.ticker.findMany({
+      where: { symbol: { in: symbols } },
+      select: { symbol: true, lastVolume: true },
+    });
+    for (const t of tickers) {
+      if (t.lastVolume && t.lastVolume > 0) volumeBySymbol.set(t.symbol, t.lastVolume);
+    }
+  } catch {}
+
   return symbols.map((symbol) => {
     const d = last.get(symbol) ?? {};
     return {
@@ -54,6 +70,8 @@ async function getRows(limit: number): Promise<Row[]> {
       price: d.p,
       changePct: d.change_pct,
       marketCapDiff: d.cap_diff,
+      volume: volumeBySymbol.get(symbol) ?? null,
+      rvol: typeof d.v === 'number' && d.v > 0 ? d.v : null,
     };
   }).filter(r => (r.changePct ?? 0) > 0.01);
 }
@@ -127,6 +145,7 @@ export default async function GainersPage() {
                   <th className="px-4 py-2">Sector</th>
                   <th className="px-4 py-2">Price</th>
                   <th className="px-4 py-2">% Change</th>
+                  <th className="px-4 py-2">Vol</th>
                   <th className="px-4 py-2">MCap Δ</th>
                 </tr>
               </thead>
@@ -163,6 +182,14 @@ export default async function GainersPage() {
                       <td className="px-4 py-2 tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">
                         {formatPercent(pct)}
                       </td>
+                      <td className="px-4 py-2 tabular-nums text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                        {r.volume ? formatCompactNumber(r.volume) : '—'}
+                        {r.rvol != null && r.rvol >= 1.5 && (
+                          <span className="ml-1.5 text-[10px] font-semibold text-blue-500 dark:text-blue-400">
+                            {r.rvol.toFixed(1)}×
+                          </span>
+                        )}
+                      </td>
                       <td className="px-4 py-2 tabular-nums text-slate-700 dark:text-slate-300">
                         {formatMarketCapDiff(r.marketCapDiff)}
                       </td>
@@ -172,7 +199,7 @@ export default async function GainersPage() {
 
                 {rows.length === 0 && (
                   <tr>
-                    <td className="px-4 py-6 text-slate-600 dark:text-slate-400" colSpan={6}>
+                    <td className="px-4 py-6 text-slate-600 dark:text-slate-400" colSpan={7}>
                       No data available yet.
                     </td>
                   </tr>

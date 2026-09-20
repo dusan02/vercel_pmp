@@ -10,6 +10,7 @@ import { CustomDropdown } from './CustomDropdown';
 import { SectionIcon } from './SectionIcon';
 import { getCompanyName } from '@/lib/companyNames';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { formatCompactNumber } from '@/lib/utils/heatmapFormat';
 
 /**
  * Mover data structure from API
@@ -21,6 +22,7 @@ interface MoverData {
     sector: string | null;
     lastPrice: number | null;
     lastChangePct: number | null;
+    lastVolume?: number | null;
     latestMoversZScore: number | null;
     latestMoversRVOL: number | null;
     moversReason: string | null;
@@ -334,6 +336,11 @@ export function MoversSection({ onTileClick, initialData }: { onTileClick?: (tic
                                         ? `${mover.lastChangePct >= 0 ? '+' : ''}${mover.lastChangePct.toFixed(2)}%`
                                         : '0.00%'}
                                 </div>
+                                {mover.lastVolume != null && mover.lastVolume > 0 && (
+                                    <span className="text-[10px] text-slate-400 dark:text-slate-500 tabular-nums mt-0.5 whitespace-nowrap">
+                                        Vol {formatCompactNumber(mover.lastVolume)}
+                                    </span>
+                                )}
                             </div>
                         </div>
 

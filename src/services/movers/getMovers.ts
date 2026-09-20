@@ -25,6 +25,7 @@ export interface MoverRecord {
     sector: string | null;
     lastPrice: number;
     lastChangePct: number;
+    lastVolume: number | null;
     latestMoversZScore: number | null;
     latestMoversRVOL: number | null;
     moversReason: string | null;
@@ -67,6 +68,7 @@ export async function getMoversData(limit: number, minZScore: number): Promise<M
             sector: true,
             lastPrice: true,
             lastChangePct: true,
+            lastVolume: true,
             latestPrevClose: true,
             lastPriceUpdated: true,
             updatedAt: true,
@@ -183,6 +185,7 @@ export async function getMoversData(limit: number, minZScore: number): Promise<M
             sector: m.sector,
             lastPrice: currentPrice,
             lastChangePct,
+            lastVolume: m.lastVolume ?? null,
             latestMoversZScore: m.latestMoversZScore,
             latestMoversRVOL: m.latestMoversRVOL,
             moversReason: m.moversReason,

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { cache } from 'react';
 import Link from 'next/link';
 import { generatePageMetadata } from '@/lib/seo/metadata';
-import { formatPercent, formatPrice } from '@/lib/utils/heatmapFormat';
+import { formatCompactNumber, formatPercent, formatPrice } from '@/lib/utils/heatmapFormat';
 import { formatSectorName } from '@/lib/utils/format';
 import { getEligibleAnalysisSet } from '@/lib/seo/eligibleTickers';
 import { getMoversData, type MoverRecord } from '@/services/movers/getMovers';
@@ -63,6 +63,7 @@ function ZhMoversTable({
               <th className="px-4 py-2">板块</th>
               <th className="px-4 py-2">价格</th>
               <th className="px-4 py-2">涨跌幅</th>
+              <th className="px-4 py-2">成交量</th>
               <th className="px-4 py-2 text-center">σ</th>
               <th className="px-4 py-2">催化剂</th>
             </tr>
@@ -92,6 +93,14 @@ function ZhMoversTable({
                   <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{formatSectorName(r.sector || 'Other')}</td>
                   <td className="px-4 py-2 tabular-nums text-slate-700 dark:text-slate-300">{formatPrice(r.lastPrice)}</td>
                   <td className={`px-4 py-2 tabular-nums font-semibold ${color}`}>{formatPercent(pct)}</td>
+                  <td className="px-4 py-2 tabular-nums text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                    {r.lastVolume && r.lastVolume > 0 ? formatCompactNumber(r.lastVolume) : '—'}
+                    {r.latestMoversRVOL != null && r.latestMoversRVOL >= 1.5 && (
+                      <span className="ml-1.5 text-[10px] font-semibold text-blue-500 dark:text-blue-400">
+                        {r.latestMoversRVOL.toFixed(1)}×
+                      </span>
+                    )}
+                  </td>
                   <td className="px-4 py-2 text-center">
                     <span
                       className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold border ${SIGMA_BADGE[sigma]}`}

@@ -150,6 +150,7 @@ export default async function PremarketLosersDatePage({ params }: PageProps) {
                   <th className="px-4 py-2">Sector</th>
                   <th className="px-4 py-2">Price</th>
                   <th className="px-4 py-2">% Change</th>
+                  <th className="px-4 py-2" title="Relative volume vs normal for this time of day">RVOL</th>
                 </tr>
               </thead>
               <tbody>
@@ -172,12 +173,15 @@ export default async function PremarketLosersDatePage({ params }: PageProps) {
                       </td>
                       <td className="px-4 py-2 tabular-nums text-slate-700 dark:text-slate-300">{formatPrice(r.price ?? undefined)}</td>
                       <td className="px-4 py-2 tabular-nums font-semibold text-rose-600 dark:text-rose-400">{formatPercent(r.changePct ?? 0)}</td>
+                      <td className="px-4 py-2 tabular-nums text-slate-700 dark:text-slate-300">
+                        {r.rvol != null && r.rvol > 0 ? `${r.rvol.toFixed(1)}×` : '—'}
+                      </td>
                     </tr>
                   );
                 })}
                 {rows.length === 0 && (
                   <tr>
-                    <td className="px-4 py-8 text-center text-slate-500" colSpan={5}>
+                    <td className="px-4 py-8 text-center text-slate-500" colSpan={6}>
                       No pre-market data available for this date. Data is available for recent trading days only.
                     </td>
                   </tr>

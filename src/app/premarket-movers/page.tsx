@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { cache } from 'react';
 import Link from 'next/link';
 import { generatePageMetadata } from '@/lib/seo/metadata';
-import { formatPercent, formatPrice } from '@/lib/utils/heatmapFormat';
+import { formatCompactNumber, formatPercent, formatPrice } from '@/lib/utils/heatmapFormat';
 import { formatSectorName } from '@/lib/utils/format';
 import { SsrMoverLinksCombined } from '@/components/seo/SsrMoverLinks';
 import { getPremarketDateSummaries } from '@/lib/seo/premarketArchive';
@@ -145,6 +145,7 @@ function MoversTable({ title, rows, eligibleAnalysis }: { title: string; rows: M
               <th className="px-4 py-2">Sector</th>
               <th className="px-4 py-2">Price</th>
               <th className="px-4 py-2">% Change</th>
+              <th className="px-4 py-2">Vol</th>
               <th className="px-4 py-2 text-center">σ</th>
               <th className="px-4 py-2">Catalyst</th>
               <th className="px-4 py-2">PMP</th>
@@ -195,6 +196,14 @@ function MoversTable({ title, rows, eligibleAnalysis }: { title: string; rows: M
                   </td>
                   <td className={`px-4 py-2 tabular-nums font-semibold ${color}`}>
                     {formatPercent(pct)}
+                  </td>
+                  <td className="px-4 py-2 tabular-nums text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                    {r.lastVolume && r.lastVolume > 0 ? formatCompactNumber(r.lastVolume) : '—'}
+                    {r.latestMoversRVOL != null && r.latestMoversRVOL >= 1.5 && (
+                      <span className="ml-1.5 text-[10px] font-semibold text-blue-500 dark:text-blue-400">
+                        {r.latestMoversRVOL.toFixed(1)}×
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-2 text-center">
                     <span
