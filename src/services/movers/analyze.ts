@@ -33,6 +33,7 @@ export interface MoverPillars {
     quality: number | null;
     overall: number | null;
     ewScore: number | null;
+    ewMaxPossible: number | null;
 }
 
 export interface MoverAnalysis {
@@ -363,6 +364,7 @@ export async function analyzeMovers(inputs: MoverInput[]): Promise<Map<string, M
             profitability: c.profitabilityScore, health: c.healthScore,
             quality: c.qualityScore, overall: c.overallScore,
             ewScore: ew ? Math.round(ew.totalScore) : null,
+            ewMaxPossible: ew ? Math.round(ew.maxPossible) : null,
         } : null;
 
         results.set(m.symbol, {

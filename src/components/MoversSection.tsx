@@ -35,7 +35,7 @@ interface MoverAnalysis {
     marketChangePct: number | null;
     sectorChangePct: number | null;
     excessMovePct: number | null;
-    attribution: 'stock' | 'sector' | 'market' | 'mixed';
+    attribution: 'stock' | 'sector' | 'market' | 'mixed' | 'unknown';
     catalyst: {
         type: string;
         status: 'found' | 'none' | 'unavailable';
@@ -46,7 +46,8 @@ interface MoverAnalysis {
     };
     pillars: {
         valuation: number | null; growth: number | null; profitability: number | null;
-        health: number | null; quality: number | null; overall: number | null; ewScore: number | null;
+        health: number | null; quality: number | null; overall: number | null;
+        ewScore: number | null; ewMaxPossible: number | null;
     } | null;
 }
 
@@ -211,7 +212,11 @@ export function MoversSection({ onTileClick, initialData }: { onTileClick?: (tic
             <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] tabular-nums text-slate-500">
                 <span className="font-semibold text-slate-400 uppercase tracking-wide">PMP</span>
                 {parts.map((s, i) => <span key={i} className="font-medium">{s}</span>)}
-                {p.ewScore !== null && <span className="font-semibold text-indigo-500">EW {p.ewScore}</span>}
+                {p.ewScore !== null && (
+                    <span className="font-semibold text-indigo-500">
+                        EW {p.ewScore}{p.ewMaxPossible !== null && p.ewMaxPossible !== 100 ? `/${p.ewMaxPossible}` : ''}
+                    </span>
+                )}
             </div>
         );
     };

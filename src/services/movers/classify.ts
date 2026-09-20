@@ -38,7 +38,7 @@ export const SIGMA_LABELS: Record<SigmaLevel, string> = {
 };
 
 // ─── Attribution: stock vs sector vs market ─────────────────────────────────
-export type MoveAttribution = 'stock' | 'sector' | 'market' | 'mixed';
+export type MoveAttribution = 'stock' | 'sector' | 'market' | 'mixed' | 'unknown';
 
 export interface AttributionResult {
     attribution: MoveAttribution;
@@ -91,6 +91,10 @@ export function attributeMove(
     if (sector !== null && Math.abs(sector) >= 2 && Math.abs(excess!) >= SECTOR_BAND
         && Math.abs(sector) >= 0.3 * Math.abs(stock)) {
         return { attribution: 'mixed', excessMovePct: excess };
+    }
+    // No sector/market comp at all → don't claim 'stock-specific' (overclaim).
+    if (excess === null) {
+        return { attribution: 'unknown', excessMovePct: null };
     }
     return { attribution: 'stock', excessMovePct: excess };
 }

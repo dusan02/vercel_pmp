@@ -65,6 +65,11 @@ describe('attributeMove', () => {
         expect(r.attribution).toBe('stock');
         expect(r.excessMovePct).toBeCloseTo(6.6);
     });
+    it('no sector/market comp at all → unknown, not claimed stock-specific', () => {
+        const r = attributeMove(7.0, null, null);
+        expect(r.attribution).toBe('unknown');
+        expect(r.excessMovePct).toBeNull();
+    });
     it('handles null inputs without crashing', () => {
         expect(attributeMove(null, null, null).excessMovePct).toBeNull();
         expect(attributeMove(undefined, 1, 0.5).attribution).toBe('mixed');
