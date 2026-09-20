@@ -129,56 +129,70 @@ export function buildMetrics(data: AnalysisData) {
     const capexRev = ttmCapex != null ? safeDiv(Math.abs(ttmCapex), ttmRev) : null;
     const sbcRev = safeDiv(ttmSbc, ttmRev);
 
+    const pfcf = fh?.priceFreeCashFlow ?? null;
+    // epsCagr5y reaches the payload only inside the pillars legs (computeMetrics
+    // feeds it to the radar but doesn't export it top-level) — read the leg
+    // value so this table shows exactly what the radar scored.
+    const epsCagr = data.epsCagr5y
+        ?? data.pillars?.growth.legs.find(l => l.key === 'epsCagr5y')?.value
+        ?? null;
+    const fwdGrowth = m?.forwardImpliedGrowth ?? null;
+
     const def = (
         label: string, value: string,
         statusType: StatusType, statusLabel: string, hint: string,
         primary = false
     ): MetricCardDef => ({ label, value, statusType, statusLabel, hint, primary });
 
+    // Grouped by the five pillars — the first rows of each group are the
+    // actual leg inputs that produce that pillar's radar score.
     const valuation: MetricCardDef[] = [
-        def('Market Cap', fmtB(mcap), 'neutral', '-', 'Current Market Capitalization'),
         def('P/E (TTM)', pe != null ? `${pe.toFixed(1)}x` : 'N/A', pe == null ? 'neutral' : pe < 15 ? 'good' : pe <= 25 ? 'neutral' : pe <= 35 ? 'warn' : 'bad', pe == null ? '-' : pe < 15 ? 'Cheap' : pe <= 25 ? 'Fair' : 'Exp.', `Price / TTM EPS (own statements)${histTip(vh?.pe, 'x')}`, true),
-        def('Forward P/E', fpe != null ? `${fpe.toFixed(1)}x` : 'N/A', fpe == null ? 'neutral' : fpe < 15 ? 'good' : fpe <= 25 ? 'neutral' : fpe <= 35 ? 'warn' : 'bad', fpe == null ? '-' : fpe < 15 ? 'Cheap' : fpe <= 25 ? 'Fair' : 'Exp.', 'Price / next-year EPS estimate — shows whether the TTM multiple is rich or just front-loading growth'),
-        def(evLabel, evEbitda != null ? `${evEbitda.toFixed(1)}x` : 'N/A', evEbitda == null ? 'neutral' : evEbitda < 12 ? 'good' : evEbitda <= 18 ? 'neutral' : evEbitda <= 25 ? 'warn' : 'bad', evEbitda == null ? '-' : evEbitda < 12 ? 'Cheap' : evEbitda <= 18 ? 'Fair' : 'Exp.', `Enterprise value / ${evEbit != null ? 'TTM EBIT (D&A not in our data)' : 'EBITDA (Finnhub)'} — capital-structure neutral${histTip(vh?.evEbit, 'x')}`),
-        def('P/S (TTM)', psRatio != null ? `${psRatio.toFixed(2)}x` : 'N/A', psRatio == null ? 'neutral' : psRatio < 2 ? 'good' : psRatio <= 5 ? 'neutral' : psRatio <= 10 ? 'warn' : 'bad', psRatio == null ? '-' : psRatio < 2 ? 'Cheap' : psRatio <= 5 ? 'Fair' : 'Exp.', `Price / TTM Revenue (own statements)${histTip(vh?.ps, 'x')}`),
-        def('P/B Ratio', pbRatio != null ? mul(pbRatio) : (hasNegEquity ? 'Neg. Equity' : 'N/A'), pbRatio == null ? (hasNegEquity ? 'warn' : 'neutral') : pbRatio < 3 ? 'good' : pbRatio < 8 ? 'warn' : 'bad', pbRatio == null ? (hasNegEquity ? 'Buybacks' : '-') : pbRatio < 3 ? 'Fair' : pbRatio < 8 ? 'Exp.' : 'V.Exp.', 'Price to Book Value. Neg. equity = heavy buybacks'),
+        def('P/FCF', pfcf != null ? `${pfcf.toFixed(1)}x` : 'N/A', pfcf == null ? 'neutral' : pfcf < 0 ? 'bad' : pfcf < 15 ? 'good' : pfcf <= 30 ? 'neutral' : pfcf <= 45 ? 'warn' : 'bad', pfcf == null ? '-' : pfcf < 0 ? 'Neg. FCF' : pfcf < 15 ? 'Cheap' : pfcf <= 30 ? 'Fair' : 'Exp.', 'Price / Free Cash Flow per share (Finnhub). Inverse of FCF yield — negative when FCF is negative'),
         def('FCF Yield', pct(fcfY), fcfY == null ? 'neutral' : fcfY > 0.05 ? 'good' : fcfY < 0 ? 'bad' : 'warn', fcfY == null ? '-' : fcfY > 0.05 ? 'Value' : fcfY < 0 ? 'Negative' : 'Low', `TTM FCF / Market Cap${histTip(vh?.fcfYield, '%')}`),
+        def('P/S (TTM)', psRatio != null ? `${psRatio.toFixed(2)}x` : 'N/A', psRatio == null ? 'neutral' : psRatio < 2 ? 'good' : psRatio <= 5 ? 'neutral' : psRatio <= 10 ? 'warn' : 'bad', psRatio == null ? '-' : psRatio < 2 ? 'Cheap' : psRatio <= 5 ? 'Fair' : 'Exp.', `Price / TTM Revenue (own statements)${histTip(vh?.ps, 'x')}`),
+        def(evLabel, evEbitda != null ? `${evEbitda.toFixed(1)}x` : 'N/A', evEbitda == null ? 'neutral' : evEbitda < 12 ? 'good' : evEbitda <= 18 ? 'neutral' : evEbitda <= 25 ? 'warn' : 'bad', evEbitda == null ? '-' : evEbitda < 12 ? 'Cheap' : evEbitda <= 18 ? 'Fair' : 'Exp.', `Enterprise value / ${evEbit != null ? 'TTM EBIT (D&A not in our data)' : 'EBITDA (Finnhub)'} — capital-structure neutral${histTip(vh?.evEbit, 'x')}`),
+        def('Forward P/E', fpe != null ? `${fpe.toFixed(1)}x` : 'N/A', fpe == null ? 'neutral' : fpe < 15 ? 'good' : fpe <= 25 ? 'neutral' : fpe <= 35 ? 'warn' : 'bad', fpe == null ? '-' : fpe < 15 ? 'Cheap' : fpe <= 25 ? 'Fair' : 'Exp.', 'Price / next-year EPS estimate — shows whether the TTM multiple is rich or just front-loading growth'),
+        def('P/B Ratio', pbRatio != null ? mul(pbRatio) : (hasNegEquity ? 'Neg. Equity' : 'N/A'), pbRatio == null ? (hasNegEquity ? 'warn' : 'neutral') : pbRatio < 3 ? 'good' : pbRatio < 8 ? 'warn' : 'bad', pbRatio == null ? (hasNegEquity ? 'Buybacks' : '-') : pbRatio < 3 ? 'Fair' : pbRatio < 8 ? 'Exp.' : 'V.Exp.', 'Price to Book Value. Neg. equity = heavy buybacks'),
         def('PEG Ratio', peg != null ? `${peg.toFixed(2)}` : 'N/A', peg == null ? 'neutral' : peg < 1 ? 'good' : peg <= 2 ? 'neutral' : peg <= 3 ? 'warn' : 'bad', peg == null ? '-' : peg < 1 ? 'Cheap' : peg <= 2 ? 'Fair' : 'Exp.', 'Finnhub PEG — their P/E basis ÷ expected EPS growth. Suppressed when their P/E diverges >2× from our TTM P/E (different basis)'),
-    ];
-
-    const profitability: MetricCardDef[] = [
-        def('ROIC', roic != null ? pct(roic) : 'N/A', roic == null ? 'neutral' : roic > 0.15 ? 'good' : roic > 0.08 ? 'warn' : 'bad', roic == null ? '-' : roic > 0.15 ? 'Moat' : roic > 0.08 ? 'Avg' : 'Low', 'NOPAT (EBIT less ~21% tax) / invested capital (equity + debt − cash). Flagship quality metric — durable >15% signals a moat', true),
-        def('ROE', roe != null ? pct(roe) : (hasNegEquity ? 'Neg. Equity' : 'N/A'), roe == null ? (hasNegEquity ? 'warn' : 'neutral') : roe > 0.20 ? 'good' : roe > 0.10 ? 'warn' : 'bad', roe == null ? (hasNegEquity ? 'Buybacks' : '-') : roe > 0.2 ? 'Strong' : roe > 0.1 ? 'Avg' : 'Weak', 'Return on Equity. Neg. equity = heavy buybacks'),
-        def('Gross Margin', pct(grossMar), grossMar == null ? 'neutral' : grossMar > 0.50 ? 'good' : grossMar > 0.30 ? 'warn' : 'bad', grossMar == null ? '-' : grossMar > 0.5 ? 'Premium' : grossMar > 0.3 ? 'Avg' : 'Low', 'Gross Profit / Revenue'),
-        def('Operating Margin', pct(opMargin), opMargin == null ? 'neutral' : opMargin > 0.25 ? 'good' : opMargin > 0.10 ? 'warn' : 'bad', opMargin == null ? '-' : opMargin > 0.25 ? 'High' : opMargin > 0.10 ? 'Avg' : 'Low', 'TTM EBIT / TTM Revenue'),
-        def('Net Margin', pct(netMar), netMar == null ? 'neutral' : netMar > 0.10 ? 'good' : netMar > 0.05 ? 'warn' : 'bad', netMar == null ? '-' : netMar > 0.1 ? 'High' : netMar > 0.05 ? 'Avg' : 'Low', 'Net Income / Revenue'),
-        def('FCF Margin', pct(fcfMar), fcfMar == null ? 'neutral' : fcfMar > 0.15 ? 'good' : fcfMar > 0.08 ? 'warn' : 'bad', fcfMar == null ? '-' : fcfMar > 0.15 ? 'High' : fcfMar > 0.08 ? 'Avg' : 'Low', 'FCF / Revenue'),
-        def('FCF Conversion', pct(fcfCon), fcfCon == null ? 'neutral' : fcfCon > 0.80 ? 'good' : fcfCon > 0.50 ? 'warn' : 'bad', fcfCon == null ? '-' : fcfCon > 0.8 ? 'Strong' : fcfCon > 0.5 ? 'Avg' : 'Poor', 'FCF / Net Income'),
-        def('True FCF Margin', pct(trueFcfM), trueFcfM == null ? 'neutral' : trueFcfM > 0.12 ? 'good' : trueFcfM > 0.05 ? 'warn' : 'bad', trueFcfM == null ? '-' : trueFcfM > 0.12 ? 'High' : trueFcfM > 0.05 ? 'Avg' : 'Low', 'TTM (OCF − CapEx − SBC) / TTM Revenue — SBC treated as a real cost'),
+        def('Market Cap', fmtB(mcap), 'neutral', '-', 'Current Market Capitalization'),
     ];
 
     const growth: MetricCardDef[] = [
         def('Revenue CAGR', rCagr != null ? `${rCagr.toFixed(1)}%` : 'N/A', rCagr == null ? 'neutral' : rCagr > 15 ? 'good' : rCagr > 5 ? 'warn' : 'bad', rCagr == null ? '-' : rCagr > 15 ? 'High' : rCagr > 5 ? 'Ok' : 'Low', 'Compound annual revenue growth (up to 5Y depending on data availability)', true),
         def('Net Income CAGR', niCagr != null ? `${niCagr.toFixed(1)}%` : 'N/A', niCagr == null ? 'neutral' : niCagr > 15 ? 'good' : niCagr > 5 ? 'warn' : 'bad', niCagr == null ? '-' : niCagr > 15 ? 'High' : niCagr > 5 ? 'Ok' : 'Low', 'Compound annual net income growth (up to 5Y depending on data availability)'),
+        def('EPS CAGR (5Y)', epsCagr != null ? `${epsCagr.toFixed(1)}%` : 'N/A', epsCagr == null ? 'neutral' : epsCagr > 15 ? 'good' : epsCagr > 5 ? 'warn' : 'bad', epsCagr == null ? '-' : epsCagr > 15 ? 'High' : epsCagr > 5 ? 'Ok' : 'Low', 'Compound annual EPS growth over up to 5Y of per-share earnings (own statements). Null when either endpoint EPS ≤ 0'),
+        def('Forward Growth', fwdGrowth != null ? `${fwdGrowth.toFixed(1)}%` : 'N/A', fwdGrowth == null ? 'neutral' : fwdGrowth > 30 ? 'good' : fwdGrowth > 15 ? 'warn' : fwdGrowth > 0 ? 'neutral' : 'bad', fwdGrowth == null ? '-' : fwdGrowth > 30 ? 'High' : fwdGrowth > 15 ? 'Med' : fwdGrowth > 0 ? 'Low' : 'Decl.', 'Implied 1Y EPS growth from forward P/E vs our TTM EPS. Sparse — only where forward estimates exist'),
         def('Dilution (5Y)', dil != null ? `${dil > 0 ? '+' : ''}${dil.toFixed(1)}%` : 'N/A', dil == null ? 'neutral' : dil < -2 ? 'good' : dil <= 2 ? 'neutral' : dil <= 10 ? 'warn' : 'bad', dil == null ? '-' : dil < -2 ? 'Buybacks' : dil <= 2 ? 'Flat' : 'Dilutive', 'Share count change over 5Y'),
         def('SBC / Net Income', sbc != null ? `${sbc.toFixed(1)}%` : 'N/A', sbc == null ? 'neutral' : sbc < 10 ? 'good' : sbc < 20 ? 'warn' : 'bad', sbc == null ? '-' : sbc < 10 ? 'Low' : sbc < 20 ? 'Med' : 'High', 'Stock-based comp/Net income. >30% = dilution risk'),
         def('SBC / Revenue', pct(sbcRev), sbcRev == null ? 'neutral' : sbcRev < 0.03 ? 'good' : sbcRev < 0.08 ? 'warn' : 'bad', sbcRev == null ? '-' : sbcRev < 0.03 ? 'Low' : sbcRev < 0.08 ? 'Med' : 'High', 'TTM stock-based comp / TTM Revenue'),
     ];
 
+    const profitability: MetricCardDef[] = [
+        def('ROIC', roic != null ? pct(roic) : 'N/A', roic == null ? 'neutral' : roic > 0.15 ? 'good' : roic > 0.08 ? 'warn' : 'bad', roic == null ? '-' : roic > 0.15 ? 'Moat' : roic > 0.08 ? 'Avg' : 'Low', 'NOPAT (EBIT less ~21% tax) / invested capital (equity + debt − cash). Flagship quality metric — durable >15% signals a moat', true),
+        def('ROE', roe != null ? pct(roe) : (hasNegEquity ? 'Neg. Equity' : 'N/A'), roe == null ? (hasNegEquity ? 'warn' : 'neutral') : roe > 0.20 ? 'good' : roe > 0.10 ? 'warn' : 'bad', roe == null ? (hasNegEquity ? 'Buybacks' : '-') : roe > 0.2 ? 'Strong' : roe > 0.1 ? 'Avg' : 'Weak', 'Return on Equity. Neg. equity = heavy buybacks'),
+        def('Net Margin', pct(netMar), netMar == null ? 'neutral' : netMar > 0.10 ? 'good' : netMar > 0.05 ? 'warn' : 'bad', netMar == null ? '-' : netMar > 0.1 ? 'High' : netMar > 0.05 ? 'Avg' : 'Low', 'Net Income / Revenue'),
+        def('Operating Margin', pct(opMargin), opMargin == null ? 'neutral' : opMargin > 0.25 ? 'good' : opMargin > 0.10 ? 'warn' : 'bad', opMargin == null ? '-' : opMargin > 0.25 ? 'High' : opMargin > 0.10 ? 'Avg' : 'Low', 'TTM EBIT / TTM Revenue'),
+        def('Gross Margin', pct(grossMar), grossMar == null ? 'neutral' : grossMar > 0.50 ? 'good' : grossMar > 0.30 ? 'warn' : 'bad', grossMar == null ? '-' : grossMar > 0.5 ? 'Premium' : grossMar > 0.3 ? 'Avg' : 'Low', 'Gross Profit / Revenue'),
+        def('FCF Margin', pct(fcfMar), fcfMar == null ? 'neutral' : fcfMar > 0.15 ? 'good' : fcfMar > 0.08 ? 'warn' : 'bad', fcfMar == null ? '-' : fcfMar > 0.15 ? 'High' : fcfMar > 0.08 ? 'Avg' : 'Low', 'FCF / Revenue'),
+        def('True FCF Margin', pct(trueFcfM), trueFcfM == null ? 'neutral' : trueFcfM > 0.12 ? 'good' : trueFcfM > 0.05 ? 'warn' : 'bad', trueFcfM == null ? '-' : trueFcfM > 0.12 ? 'High' : trueFcfM > 0.05 ? 'Avg' : 'Low', 'TTM (OCF − CapEx − SBC) / TTM Revenue — SBC treated as a real cost'),
+    ];
+
     const solvency: MetricCardDef[] = [
         def('Altman Z-Score', altZ != null ? altZ.toFixed(2) : 'N/A', altZ == null ? 'neutral' : altZ > 3 ? 'good' : altZ < 1.8 ? 'bad' : 'warn', altZ == null ? '-' : altZ > 3 ? 'Safe' : altZ < 1.8 ? 'Distress' : 'Gray zone', 'Bankruptcy risk. >3 Safe, <1.8 Distress', true),
+        def('Current Ratio', mul(cr), cr == null ? 'neutral' : cr > 2 ? 'good' : cr > 1 ? 'warn' : 'bad', cr == null ? '-' : cr > 2 ? 'High' : cr > 1 ? 'Ok' : 'Low', 'Current Assets/Liabilities'),
         def('Interest Coverage', intCov != null ? `${intCov.toFixed(1)}x` : 'N/A', intCov == null ? 'neutral' : intCov > 10 ? 'good' : intCov > 3 ? 'warn' : 'bad', intCov == null ? '-' : intCov > 10 ? 'Strong' : intCov > 3 ? 'Ok' : 'Risky', 'EBIT/Interest. >10 Strong'),
+        def('Debt Repayment', yr(debtRp), debtRp == null ? 'neutral' : debtRp <= 3 ? 'good' : debtRp > 10 ? 'bad' : 'warn', debtRp == null ? '-' : debtRp <= 3 ? 'Fast' : debtRp > 10 ? 'Slow' : 'Avg', 'Years to repay net debt via FCF'),
         def('Net Debt/EBIT', nde != null ? (nde < 0 ? 'Net Cash' : `${nde.toFixed(1)}x`) : 'N/A', nde == null ? 'neutral' : nde < 4 ? (nde < 2 ? 'good' : 'warn') : 'bad', nde == null ? '-' : nde < 2 ? 'Low' : nde < 4 ? 'Med' : 'High', 'Leverage. <2x Low, >4x High'),
         def('Debt/Equity', dte != null ? `${dte.toFixed(2)}x` : 'N/A', dte == null ? 'neutral' : dte < 1 ? 'good' : dte < 2 ? 'warn' : 'bad', dte == null ? '-' : dte < 1 ? 'Low' : dte < 2 ? 'Med' : 'High', '<1 Conservative, >2 Risky'),
-        def('Current Ratio', mul(cr), cr == null ? 'neutral' : cr > 2 ? 'good' : cr > 1 ? 'warn' : 'bad', cr == null ? '-' : cr > 2 ? 'High' : cr > 1 ? 'Ok' : 'Low', 'Current Assets/Liabilities'),
         def('Cash / Debt', cashDebt === Infinity ? 'No Debt' : cashDebt != null ? `${cashDebt.toFixed(2)}x` : 'N/A', cashDebt == null ? 'neutral' : cashDebt === Infinity || cashDebt >= 1 ? 'good' : cashDebt >= 0.3 ? 'warn' : 'bad', cashDebt == null ? '-' : cashDebt === Infinity ? 'Clean' : cashDebt >= 1 ? 'Covered' : cashDebt >= 0.3 ? 'Partial' : 'Thin', 'Cash covers how much of total debt. >1 = could repay all debt from cash'),
-        def('Debt Repayment', yr(debtRp), debtRp == null ? 'neutral' : debtRp <= 3 ? 'good' : debtRp > 10 ? 'bad' : 'warn', debtRp == null ? '-' : debtRp <= 3 ? 'Fast' : debtRp > 10 ? 'Slow' : 'Avg', 'Years to repay net debt via FCF'),
     ];
 
     const quality: MetricCardDef[] = [
         def('Piotroski F-Score', pio != null ? `${pio}/9` : 'N/A', pio == null ? 'neutral' : pio >= 7 ? 'good' : pio >= 4 ? 'warn' : 'bad', pio == null ? '-' : pio >= 7 ? 'Strong' : pio >= 4 ? 'Avg' : 'Weak', 'Financial strength 0–9. >7 Strong', true),
         def('Beneish M-Score', ben != null ? ben.toFixed(2) : 'N/A', ben == null ? 'neutral' : ben < -2.22 ? 'good' : ben < -1.78 ? 'warn' : 'bad', ben == null ? '-' : ben < -2.22 ? 'Safe' : ben < -1.78 ? 'Gray zone' : 'Risky', 'Earnings manipulation risk. < -2.22 Safe'),
-        def('Margin Volatility', mv != null ? `${(mv * 100).toFixed(1)}%` : 'N/A', mv == null ? 'neutral' : mv < 0.08 ? 'good' : mv < 0.15 ? 'warn' : 'bad', mv == null ? '-' : mv < 0.08 ? 'Stable' : mv < 0.15 ? 'Avg' : 'Volatile', 'EBIT margin std deviation. Lower = stable'),
+        def('FCF Conversion', pct(fcfCon), fcfCon == null ? 'neutral' : fcfCon > 0.80 ? 'good' : fcfCon > 0.50 ? 'warn' : 'bad', fcfCon == null ? '-' : fcfCon > 0.8 ? 'Strong' : fcfCon > 0.5 ? 'Avg' : 'Poor', 'FCF / Net Income'),
+        def('Margin Stability', mv != null ? `${(mv * 100).toFixed(1)}%` : 'N/A', mv == null ? 'neutral' : mv < 0.08 ? 'good' : mv < 0.15 ? 'warn' : 'bad', mv == null ? '-' : mv < 0.08 ? 'Stable' : mv < 0.15 ? 'Avg' : 'Volatile', 'EBIT margin std deviation. Lower = stable'),
         def('Capex / Revenue', pct(capexRev), capexRev == null ? 'neutral' : capexRev < 0.05 ? 'good' : capexRev < 0.15 ? 'warn' : 'bad', capexRev == null ? '-' : capexRev < 0.05 ? 'Asset-light' : capexRev < 0.15 ? 'Avg' : 'Heavy', 'TTM CapEx / TTM Revenue — high % = capital-hungry business'),
     ];
 
@@ -199,7 +213,8 @@ export function buildMetrics(data: AnalysisData) {
 // each section's flagship metric with a tint + heavier type so the eye lands
 // on P/E, ROIC, Revenue CAGR, Altman Z, Piotroski F and Net Debt first. ────
 function Cell({ m }: { m: MetricCardDef }) {
-    const cellCls = `px-2.5 py-1.5 border-b border-gray-100 dark:border-gray-800/60 min-w-0 ${m.primary ? 'bg-blue-50/60 dark:bg-blue-900/10' : ''}`;
+    const missing = m.value === 'N/A';
+    const cellCls = `px-3 py-1.5 min-w-0 ${m.primary ? 'bg-blue-50/60 dark:bg-blue-900/10' : ''}`;
     const row = (
         <>
             <span className={`flex items-center gap-1 min-w-0 text-[10px] uppercase tracking-wide ${m.primary ? 'font-semibold text-gray-600 dark:text-gray-300' : 'font-medium text-gray-500 dark:text-gray-400'}`}>
@@ -212,8 +227,8 @@ function Cell({ m }: { m: MetricCardDef }) {
             </span>
             <span aria-hidden="true" className="hidden sm:block flex-1 min-w-2 mx-1 border-b border-dotted border-gray-300 dark:border-gray-600 -translate-y-[3px]" />
             <span className="flex items-baseline justify-end gap-1 shrink-0">
-                <span className={`text-[13px] ${m.primary ? 'font-bold' : 'font-semibold'} tabular-nums text-right ${VALUE_COLORS[m.statusType]}`}>
-                    {m.value}
+                <span className={`text-[13px] ${m.primary ? 'font-bold' : 'font-semibold'} tabular-nums text-right ${missing ? 'text-gray-400 dark:text-gray-500' : VALUE_COLORS[m.statusType]}`}>
+                    {missing ? '—' : m.value}
                 </span>
                 {/* Fixed-width status column — keeps every value's right edge
                     aligned across cells regardless of label length */}
@@ -240,18 +255,33 @@ function Cell({ m }: { m: MetricCardDef }) {
     );
 }
 
-// ── Section: header row + wrapped grid of cells ──────────────────────────────
-function Group({ title, metrics, children }: { title: string; metrics: MetricCardDef[]; children?: React.ReactNode }) {
+// ── Pillar card: name + pillar score (same value as the radar) + a vertical
+// metric list. Every value shares the card's right edge; missing metrics keep
+// their row and render as a muted '—'. ──────────────────────────────────────
+function scoreColor(score: number): string {
+    if (score >= 75) return 'text-emerald-600 dark:text-emerald-400';
+    if (score >= 50) return 'text-amber-600 dark:text-amber-400';
+    return 'text-rose-600 dark:text-rose-400';
+}
+
+function PillarCard({ title, score, metrics, children }: { title: string; score?: number | null; metrics: MetricCardDef[]; children?: React.ReactNode }) {
     if (!metrics.length) return null;
     return (
-        <div>
-            <div className="flex items-center justify-between gap-2 mt-3 px-2.5 py-1.5 rounded-md bg-gray-100/80 dark:bg-gray-800/70">
-                <h3 className="text-[11px] font-bold uppercase tracking-widest text-gray-700 dark:text-gray-200">
+        <div className="rounded-xl border border-gray-200/80 dark:border-gray-800/80 overflow-hidden">
+            <div className="flex items-center justify-between gap-2 px-3 py-2 bg-gray-50/90 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800/60">
+                <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-600 dark:text-gray-300">
                     {title}
                 </h3>
-                {children}
+                <span className="flex items-center gap-1.5">
+                    {children}
+                    {score != null && (
+                        <span className={`text-sm font-bold tabular-nums leading-none ${scoreColor(score)}`} aria-label={`${title} score ${score} out of 100`}>
+                            {score}<span className="text-[10px] font-medium text-gray-400 dark:text-gray-500">/100</span>
+                        </span>
+                    )}
+                </span>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+            <div className="divide-y divide-gray-100 dark:divide-gray-800/60">
                 {metrics.map((m) => <Cell key={m.label} m={m} />)}
             </div>
         </div>
@@ -270,7 +300,7 @@ export function KeyMetricsTable({ data }: Props) {
             aria-label="Key financial metrics"
             className="bg-white dark:bg-[#15171e] rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-gray-100 dark:border-gray-800/80 p-4 sm:p-5"
         >
-            <div className="flex items-center gap-2.5 mb-1">
+            <div className="flex items-center gap-2.5 mb-3">
                 <div className="p-1.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-lg flex-shrink-0">
                     <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
@@ -278,25 +308,25 @@ export function KeyMetricsTable({ data }: Props) {
                 </div>
                 <div>
                     <h2 className="text-base font-bold text-gray-900 dark:text-white tracking-tight">Key Metrics</h2>
-                    <p className="text-[11px] text-gray-500 dark:text-gray-400">Valuation, profitability, growth, financial health and quality — one consistent as-of period</p>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400">Grouped by the five pillars — the same inputs behind the profile radar</p>
                 </div>
             </div>
 
-            <Group title="Valuation" metrics={valuation} />
-
-            <Group title="Profitability & Cash Flow" metrics={profitability} />
-
-            <Group title="Growth & Dilution" metrics={growth} />
-
-            <Group title="Financial Health" metrics={solvency} />
-
-            <Group title="Quality & Risk" metrics={quality}>
-                {lossYears > 0 && (
-                    <StatusBadge label={`${lossYears} Loss Years (10Y)`} type={lossYears <= 2 ? 'warn' : 'bad'} />
-                )}
-            </Group>
-
-            <Group title="Balance Sheet" metrics={balanceSheet} />
+            {/* 5 pillar cards + balance-sheet context. sm: 2-col, xl: 3-col;
+                items-start lets cards hug their content instead of stretching
+                to the tallest card in the row. */}
+            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3 items-start">
+                <PillarCard title="Valuation" score={data.pillars?.valuation.score ?? null} metrics={valuation} />
+                <PillarCard title="Growth" score={data.pillars?.growth.score ?? null} metrics={growth} />
+                <PillarCard title="Profitability" score={data.pillars?.profitability.score ?? null} metrics={profitability} />
+                <PillarCard title="Financial Health" score={data.pillars?.health.score ?? null} metrics={solvency} />
+                <PillarCard title="Quality" score={data.pillars?.quality.score ?? null} metrics={quality}>
+                    {lossYears > 0 && (
+                        <StatusBadge label={`${lossYears} Loss Years (10Y)`} type={lossYears <= 2 ? 'warn' : 'bad'} />
+                    )}
+                </PillarCard>
+                <PillarCard title="Balance Sheet" metrics={balanceSheet} />
+            </div>
 
             {/* Verdict + human-readable callouts — tinted "takeaway" block so
                 the bottom line reads as the table's conclusion, not a stray note */}
