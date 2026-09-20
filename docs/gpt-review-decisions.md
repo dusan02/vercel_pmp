@@ -156,7 +156,47 @@ overiť skutočný stav v kóde/produkcii.
 
 ---
 
-## 6. Krížové poznámky
+## 6. Movers 2.0 spec (`?tab=movers`)
+
+### Čo špec predpokladal vs. realita
+- "Add z-score / volume anomaly" — **už existuje**: worker počíta
+  `latestMoversZScore` (log-return vs 20d σ) a `latestMoversRVOL`
+  (expected-volume curve) per tick → DB. Špec §2/§4 = hotové.
+- "Use Polygon indices for market context" — indices route je Yahoo-backed;
+  AGENTS zakazuje Yahoo polling. **Market proxy = universe median**
+  (všetky fresh `lastChangePct`), sector = median sektora (≥3 tickery).
+- "Do not use an LLM" — LLM prose (`moversReason`, socialCopy) **zostáva**
+  ako sekundárna vrstva z existujúceho `cron-movers-insights`;
+  deterministická klasifikácia je record-of-truth pre
+  category/confidence/evidence. Nezmazal som ho — produkčne sa osvedčil.
+- "Persist mover analysis" — implementované **ephemeral** (Redis list cache
+  90s + per-ticker news cache 15/30 min), nie DB stĺpec. Analysis je
+  funkcia aktuálneho session okna; persistovanie by mrazilo stale
+  kontext. Rate-limit bounded: deep catalyst detection len top-20.
+
+### Odchýlky od špecu (vedomé)
+- **Z-score ostáva own-20d** — market/sector sa nevnárajú do z (jak špec
+  naznačuje "expected_return"), ale ako **excess move + attribution**
+  (stock − max(sector, market)). Čistejšie a zlučiteľné s existujúcim
+  worker pipeline.
+- **Taby**: All / Most Unusual / Explained / Unexplained — vynechané
+  "Biggest Movers" a "Volume" taby (significance ordering už kombinuje
+  |z|+|chg|/2+rvol; |chg| sort = existujúci filter, RVOL tab má malú
+  diferenciu voči "Most Unusual").
+- **`attribution='unknown'`** (pridané navyše voči špecu) — keď chýba
+  sector aj market comp (stale universe, víkend), nehlásime 'stock'.
+- **EW score zobrazuje `totalScore/maxPossible` frakciu** (EW 52/65),
+  konzistentne s `AnalysisHero`, nie normalizované na 100.
+
+### Edge: session=closed / víkend
+- Movers route vracia `[]` mimo session (staleness guard 24h — pre-existing).
+- Universe context má prázdne fresh rows → `marketChangePct=null`,
+  `attribution='unknown'` — honest degradation, pipeline samotná beží
+  (overené priamo na prod: WBD acquisition medium, ACN/PEP earnings).
+
+---
+
+## 7. Krížové poznámky
 
 ### Konvergencia troch auditov
 Analysis page, heatmap a screener review všetky končili na rovnakom
