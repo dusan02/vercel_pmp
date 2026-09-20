@@ -188,6 +188,42 @@ overiť skutočný stav v kóde/produkcii.
 - **EW score zobrazuje `totalScore/maxPossible` frakciu** (EW 52/65),
   konzistentne s `AnalysisHero`, nie normalizované na 100.
 
+---
+
+## 6b. Earnings review (`/earnings`)
+
+### GPT netrafil
+- **`percentChange` a `marketCap` už sú v schéme** `EarningsCalendar` aj v
+  `EarningsSSRRow` — ale Finnhub `/calendar/earnings` sync ich **nikdy
+  nezapisuje** (prod coverage 0/228). Nie je to chýbajúci stĺpec v UI,
+  sú to dead columns → riešenie je read-time enrich (Ticker/DailyRef
+  join), nie "pridať stĺpec".
+- Surprise% sa **už renderuje**; link → `/analysis/TICKER` pre eligible
+  tickery existuje; denné stránky `/earnings/date/[date]` existujú a
+  prázdne dni majú `noindex` (dobrá SEO hygiena, nie "thin pages").
+- Existujú **dve paralelné pipelines**: DB `EarningsCalendar` (Finnhub,
+  všetky tickery) vs `/api/earnings-calendar` (Polygon, len 360 tracked,
+  má marketCap/percentChange/fiscalPeriod). SSR stránky živí DB; Polygon
+  route používa len `EarningsCalendar.tsx` komponent (home tab?).
+
+### Vlastné rozhodnutia
+- **Enrich pri čítaní** (`earningsSSR`), nie fix syncu — Ticker.marketCap
+  je čerstvejší a nezávisí na crone.
+- **Price reaction** = `DailyRef[symbol, date]`: `(regularClose −
+  previousClose)/previousClose`; pre `amc` reporty je reakcia nasledujúci
+  trading day → DailyRef nasledujúceho dňa. Honest "earnings-day move",
+  nie live cena.
+- **Volatility** = `Ticker.stdDevReturn20d` ako "typical daily move"
+  proxy — implied move z options nemáme (žiadny options feed),
+  "historical earnings-day move" je follow-up (per-event history join).
+- **"Expected EPS growth"** vynechané — EarningsCalendar nemá
+  predchádzajúci kvartál; FinancialStatement quarterly join je možný
+  follow-up, ale nie v tomto batchi.
+- **Featured ranking** = marketCap × (has estimates) — deterministic,
+  nie "importance score" kombinujúci EW/pillars (tie sa zobrazujú vedľa,
+  netvoria rank — vyhýba sa zdvojenému názoru "PMP hovorí že toto je
+  dôležité").
+
 ### Edge: session=closed / víkend
 - Movers route vracia `[]` mimo session (staleness guard 24h — pre-existing).
 - Universe context má prázdne fresh rows → `marketChangePct=null`,
