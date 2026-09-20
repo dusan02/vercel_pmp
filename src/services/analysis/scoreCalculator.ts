@@ -88,7 +88,9 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
     // --- Altman Z-Score ---
     let altmanZ: number | null = null;
     if (latestStmt.totalAssets && latestStmt.totalAssets > 0) {
-        const sharesOutstanding = latestStmt.sharesOutstanding || tickerData?.sharesOutstanding;
+        const sharesOutstanding = isSuspiciousShareCount(latestStmt.sharesOutstanding, latestStmt.netIncome, tickerData?.sharesOutstanding)
+            ? tickerData?.sharesOutstanding
+            : (latestStmt.sharesOutstanding || tickerData?.sharesOutstanding);
         const marketValueOfEquity = sharesOutstanding && sharesOutstanding > 0 && currentPrice > 0
             ? sharesOutstanding * currentPrice
             : marketCap;
@@ -342,8 +344,12 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
     // growth from Finnhub forward P/E (same sanity rules as computeMetrics).
     let epsCagr5y: number | null = null;
     if (latestAnnual && stmt5yAgoAnnual && yearsBack > 0) {
-        const sharesNow = latestAnnual.sharesOutstanding;
-        const sharesThen = stmt5yAgoAnnual.sharesOutstanding;
+        // Same guard as the read path: corrupt EPS-derived counts are treated
+        // as missing (leg skipped) — never substituted, never trusted.
+        const sharesNow = !isSuspiciousShareCount(latestAnnual.sharesOutstanding, latestAnnual.netIncome, tickerData?.sharesOutstanding)
+            ? latestAnnual.sharesOutstanding : null;
+        const sharesThen = !isSuspiciousShareCount(stmt5yAgoAnnual.sharesOutstanding, stmt5yAgoAnnual.netIncome, tickerData?.sharesOutstanding)
+            ? stmt5yAgoAnnual.sharesOutstanding : null;
         if (latestAnnual.netIncome && latestAnnual.netIncome > 0 && sharesNow && sharesNow > 0
             && stmt5yAgoAnnual.netIncome && stmt5yAgoAnnual.netIncome > 0 && sharesThen && sharesThen > 0) {
             const epsNow = latestAnnual.netIncome / sharesNow;
@@ -354,8 +360,10 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
         }
     }
     const fhForwardPe = finnhubMetrics?.forwardPe ?? null;
-    const ttmEps = (latestStmt.sharesOutstanding && latestStmt.sharesOutstanding > 0 && effectiveNetIncome && effectiveNetIncome > 0)
-        ? effectiveNetIncome / latestStmt.sharesOutstanding
+    // stmtShares = guarded latest-statement count (trusted Ticker count when
+    // the statement row is corrupt/null) — same basis as the read path.
+    const ttmEps = (stmtShares && stmtShares > 0 && effectiveNetIncome && effectiveNetIncome > 0)
+        ? effectiveNetIncome / stmtShares
         : null;
     const forwardImpliedGrowth = (fhForwardPe !== null && fhForwardPe >= 1 && currentPrice > 0 && ttmEps && ttmEps > 0)
         ? ((currentPrice / fhForwardPe) / ttmEps - 1) * 100
