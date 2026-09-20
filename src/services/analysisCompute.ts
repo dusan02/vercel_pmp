@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db/prisma';
 import { computeTTM } from '@/lib/utils/ttm';
 import { applySplitAdjustments, applyPostSplitAdjustment } from '@/lib/utils/splitAdjustment';
+import { isSuspiciousShareCount } from '@/lib/utils/shareCount';
 import { dedupeShareClasses } from '@/lib/companyNames';
 import { buildValuationHistory } from '@/services/analysis/valuationHistory';
 import { computePillars } from '@/services/analysis/pillars';
@@ -76,11 +77,15 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
     const latestStmt = stmts[0] || null;
 
     // Post-split shares adjustment for Finnhub statements not updated after a recent split
+    // trustedShares = Ticker-level current count — corroborates per-statement
+    // sharesOutstanding (the Finnhub EPS fallback can write ni/EPS garbage).
+    let trustedShares = tickerRecord?.sharesOutstanding ?? null;
     if (stmts.length > 0) {
         const tickerInfo = tickerRecord ?? await prisma.ticker.findUnique({
             where: { symbol },
             select: { sharesOutstanding: true },
         });
+        trustedShares = trustedShares ?? tickerInfo?.sharesOutstanding ?? null;
         if (tickerInfo?.sharesOutstanding) {
             applyPostSplitAdjustment(stmts, tickerInfo.sharesOutstanding);
         }
@@ -111,8 +116,20 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
     const totalLiabilities = latestStmt?.totalLiabilities ?? null;
     const currentAssets = latestStmt?.currentAssets ?? null;
     const currentLiabilities = latestStmt?.currentLiabilities ?? null;
-    const sharesOutstanding = latestStmt?.sharesOutstanding ?? null;
+    // Corrupted-shares guard: when a statement's count carries the
+    // netIncome/integer signature (bad EPS fallback) and deviates >30% from
+    // the trusted Ticker count, substitute the trusted count for the LATEST
+    // statement (it IS the current count). Historical rows can't be repaired
+    // this way — their endpoints are nulled below rather than showing garbage.
+    const rawShares = latestStmt?.sharesOutstanding ?? null;
+    const sharesOutstanding = isSuspiciousShareCount(rawShares, latestStmt?.netIncome ?? null, trustedShares)
+        ? trustedShares
+        : rawShares;
     const sbcSnapshot = latestStmt?.sbc ?? null;
+    const saneShares = (s: { sharesOutstanding: number | null; netIncome: number | null } | undefined | null) =>
+        isSuspiciousShareCount(s?.sharesOutstanding, s?.netIncome ?? null, trustedShares)
+            ? null
+            : (s?.sharesOutstanding ?? null);
 
     // TTM via shared utility (latestQ + FY - sameQ_prevYear)
     const ttm = computeTTM(stmts);
@@ -201,10 +218,12 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
         : null;
 
     // Prefer Finnhub pre-computed ratios, fallback to our calculations
-    const debtToEquity = finnhubMetrics?.debtEquityRatio ?? ((totalDebt !== null && totalEquity !== null && totalEquity !== 0)
-        ? totalDebt / totalEquity : null);
-    const currentRatio = finnhubMetrics?.currentRatio ?? ((currentAssets !== null && currentLiabilities !== null && currentLiabilities !== 0)
-        ? currentAssets / currentLiabilities : null);
+    // Own-statement ratios first, Finnhub as fallback — the pillar radar and
+    // Key Metrics must read the same number for the same metric.
+    const debtToEquity = ((totalDebt !== null && totalEquity !== null && totalEquity !== 0)
+        ? totalDebt / totalEquity : null) ?? finnhubMetrics?.debtEquityRatio ?? null;
+    const currentRatio = ((currentAssets !== null && currentLiabilities !== null && currentLiabilities !== 0)
+        ? currentAssets / currentLiabilities : null) ?? finnhubMetrics?.currentRatio ?? null;
     const assetToLiability = (totalAssets !== null && totalLiabilities !== null && totalLiabilities !== 0)
         ? totalAssets / totalLiabilities : null;
     const netDebtToEbit = (netDebt !== null && ttmEbit !== null && ttmEbit !== 0)
@@ -213,12 +232,16 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
         ? ttmSbc / ttmRevenue : null;
     const sbcRatio = (ttmSbc !== null && ttmNetIncome !== null && ttmNetIncome > 0)
         ? (ttmSbc / ttmNetIncome) * 100 : null;
-    const interestCoverage = finnhubMetrics?.interestCoverage ?? null;
+    // Own-first (latest-statement EBIT / |interest|), Finnhub fallback — same
+    // convention the pillar radar uses, so Key Metrics and radar can't diverge.
+    const interestCoverage = (latestStmt?.ebit != null && latestStmt.interestExpense != null && latestStmt.interestExpense !== 0)
+        ? latestStmt.ebit / Math.abs(latestStmt.interestExpense)
+        : (finnhubMetrics?.interestCoverage ?? null);
 
     // Calculate Dilution (Share Count change)
     // Compare same fiscal period one year (or 5 years) earlier — not just any
     // statement older than N days. This matches ShareDilutionChart logic.
-    const currentShares = latestStmt?.sharesOutstanding ?? null;
+    const currentShares = sharesOutstanding; // guarded — corrupt counts replaced by Ticker-level count
     const currentFP = latestStmt?.fiscalPeriod ?? null;
     const currentFY = latestStmt?.fiscalYear ?? null;
 
@@ -229,10 +252,10 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
         ? stmts.find(s => s.fiscalPeriod === currentFP && s.fiscalYear === currentFY - 5)
         : stmts.find(s => s.endDate < new Date(Date.now() - 5 * 365 * 24 * 60 * 60 * 1000));
 
-    const dilution1y = (currentShares && stmt1y?.sharesOutstanding)
-        ? (currentShares / stmt1y.sharesOutstanding - 1) * 100 : null;
-    const dilution5y = (currentShares && stmt5y?.sharesOutstanding)
-        ? (currentShares / stmt5y.sharesOutstanding - 1) * 100 : null;
+    const dilution1y = (currentShares && saneShares(stmt1y))
+        ? (currentShares / saneShares(stmt1y)! - 1) * 100 : null;
+    const dilution5y = (currentShares && saneShares(stmt5y))
+        ? (currentShares / saneShares(stmt5y)! - 1) * 100 : null;
 
     // ─── Pillar scores (radar) ────────────────────────────────────────────
     // Shared leg definitions (services/analysis/pillars.ts) — recomputed
@@ -243,11 +266,13 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
     const stmt5yAgoAnnual = annualStmts[4] ?? annualStmts[annualStmts.length - 1] ?? null;
     const yearsBack = annualStmts.length >= 5 ? 4 : (annualStmts.length - 1);
     let epsCagr5y: number | null = null;
+    const epsNowShares = saneShares(latestAnnual);
+    const epsThenShares = saneShares(stmt5yAgoAnnual);
     if (latestAnnual && stmt5yAgoAnnual && yearsBack > 0
-        && latestAnnual.netIncome && latestAnnual.netIncome > 0 && latestAnnual.sharesOutstanding && latestAnnual.sharesOutstanding > 0
-        && stmt5yAgoAnnual.netIncome && stmt5yAgoAnnual.netIncome > 0 && stmt5yAgoAnnual.sharesOutstanding && stmt5yAgoAnnual.sharesOutstanding > 0) {
-        const epsNow = latestAnnual.netIncome / latestAnnual.sharesOutstanding;
-        const epsThen = stmt5yAgoAnnual.netIncome / stmt5yAgoAnnual.sharesOutstanding;
+        && latestAnnual.netIncome && latestAnnual.netIncome > 0 && epsNowShares && epsNowShares > 0
+        && stmt5yAgoAnnual.netIncome && stmt5yAgoAnnual.netIncome > 0 && epsThenShares && epsThenShares > 0) {
+        const epsNow = latestAnnual.netIncome / epsNowShares;
+        const epsThen = stmt5yAgoAnnual.netIncome / epsThenShares;
         if (epsNow > 0 && epsThen > 0) {
             epsCagr5y = (Math.pow(epsNow / epsThen, 1 / yearsBack) - 1) * 100;
         }
@@ -267,10 +292,7 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
     const pillarRoic = (ttmEbit !== null && investedCapital > 0)
         ? (ttmEbit * 0.79) / investedCapital
         : null;
-    // Same convention as scoreCalculator: latest-statement EBIT / |interest|.
-    const pillarInterestCoverage = (latestStmt?.ebit != null && latestStmt.interestExpense != null && latestStmt.interestExpense !== 0)
-        ? latestStmt.ebit / Math.abs(latestStmt.interestExpense)
-        : (finnhubMetrics?.interestCoverage ?? null);
+    const pillarInterestCoverage = interestCoverage;
     const pillarNetCash = (totalDebt !== null || cash !== null) ? (totalDebt || 0) - (cash || 0) <= 0 : null;
     const pillarNetDebtRatio = (pillarNetCash === false && totalAssets !== null && totalAssets > 0)
         ? ((totalDebt || 0) - (cash || 0)) / totalAssets
@@ -348,7 +370,8 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
             forwardEps,
             forwardImpliedGrowth,
             fcfMargin: cached.fcfMargin,
-            fcfConversion: cached.fcfConversion
+            fcfConversion: cached.fcfConversion,
+            interestCoverage
         },
         valuationHistoryStats,
         pillars,

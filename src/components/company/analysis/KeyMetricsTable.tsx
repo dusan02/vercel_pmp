@@ -49,18 +49,14 @@ export function buildMetrics(data: AnalysisData) {
     const fh = data.finnhub;
     const hasNegEquity = bs?.totalEquity != null && bs.totalEquity <= 0;
 
-    // One consistent source per metric family: when our normalized statements
-    // are fresh (<= ~5 months), our own TTM/snapshot math wins so every row
-    // shares the same as-of period. Finnhub fills gaps and covers tickers whose
-    // statements are stale — its snapshot can be newer than our last sync.
-    const STMT_FRESH_MS = 150 * 86_400_000;
-    const stmtAge = (stmts: typeof data.statements) => {
-        const d = stmts?.[0]?.endDate ? new Date(stmts[0].endDate).getTime() : NaN;
-        return Number.isNaN(d) ? Infinity : Date.now() - d;
-    };
-    const fresh = stmtAge(data.statements) < STMT_FRESH_MS;
+    // One consistent source per metric: our own TTM/snapshot math always wins
+    // when computable, so every row shares the same as-of period AND matches
+    // the pillar radar (which is always own-statement based). Finnhub fills
+    // gaps only — it computes on its own basis, so preferring it when our
+    // statements age past a threshold produced two different numbers for the
+    // same metric on one page (PM: net margin 27.9 vs radar 26.7).
     const pick = <T,>(ours: T | null, fhVal: T | null): T | null =>
-        fresh ? (ours ?? fhVal) : (fhVal ?? ours);
+        ours ?? fhVal;
 
     // ROE: own TTM when statements are fresh, else Finnhub (returns %).
     // If equity is negative, ROE is misleading — show 'Neg. Equity' instead
@@ -79,7 +75,7 @@ export function buildMetrics(data: AnalysisData) {
 
     const altZ   = m?.altmanZ ?? m?.zScore ?? null;
     const debtRp = m?.debtRepaymentYears ?? m?.debtRepaymentTime ?? null;
-    const intCov = fh?.interestCoverage ?? data.interestCoverage ?? null;
+    const intCov = m?.interestCoverage ?? fh?.interestCoverage ?? null;
     const cr     = pick(bs?.currentRatio ?? null, fh?.currentRatio ?? null);
     const nde    = bs?.netDebtToEbit ?? null;
     const dte    = pick(bs?.debtToEquity ?? null, fh?.debtEquityRatio ?? null);

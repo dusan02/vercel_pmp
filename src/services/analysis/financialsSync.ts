@@ -229,6 +229,17 @@ export async function syncFinancials(symbol: string): Promise<void> {
             create: { symbol, name: symbol },
         });
 
+        // Corroboration baseline for the EPS-derived shares fallback: share
+        // counts drift slowly, so a derived count >50% off the symbol's
+        // existing median means the EPS came from a mismatched context (YTD
+        // vs quarterly EPS etc.) — write null rather than garbage.
+        const existingShareRows = await prisma.financialStatement.findMany({
+            where: { symbol, sharesOutstanding: { not: null, gt: 0 } },
+            select: { sharesOutstanding: true },
+        });
+        const sortedShares = existingShareRows.map(r => r.sharesOutstanding!).sort((a, b) => a - b);
+        const medianShares = sortedShares.length > 0 ? sortedShares[Math.floor(sortedShares.length / 2)]! : null;
+
         for (const timeframe of timeframes) {
             const url = `https://finnhub.io/api/v1/stock/financials-reported?symbol=${symbol}&freq=${timeframe}&token=${FINNHUB_API_KEY}`;
             
@@ -362,9 +373,10 @@ export async function syncFinancials(symbol: string): Promise<void> {
                     'us-gaap_StockholdersEquity', 'us-gaap_StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest', 'us-gaap_PartnerCapital'
                 ]);
 
-                let sharesOutstandingRaw = extract(report, 'ic', [
-                    'us-gaap_WeightedAverageNumberOfDilutedSharesOutstanding', 'us-gaap_WeightedAverageNumberOfSharesOutstandingBasic'
-                ]) ?? extract(report, 'bs', ['dei_EntityCommonStockSharesOutstanding']);
+                let sharesOutstandingRaw = extract(report, 'bs', ['dei_EntityCommonStockSharesOutstanding'])
+                    ?? extract(report, 'ic', [
+                        'us-gaap_WeightedAverageNumberOfDilutedSharesOutstanding', 'us-gaap_WeightedAverageNumberOfSharesOutstandingBasic'
+                    ]);
 
                 // Fallback: derive shares from NetIncome / EPS (e.g. GOOGL reports EPS but not shares count)
                 if (sharesOutstandingRaw === null || sharesOutstandingRaw <= 0) {
@@ -372,7 +384,9 @@ export async function syncFinancials(symbol: string): Promise<void> {
                         'us-gaap_EarningsPerShareDiluted', 'us-gaap_EarningsPerShareBasic'
                     ]);
                     if (eps && eps !== 0 && netIncome !== null && netIncome !== 0) {
-                        sharesOutstandingRaw = Math.abs(netIncome / eps);
+                        const derived = Math.abs(netIncome / eps);
+                        sharesOutstandingRaw = (medianShares == null || Math.abs(derived / medianShares - 1) <= 0.5)
+                            ? derived : null;
                     }
                 }
 

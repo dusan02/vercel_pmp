@@ -64,6 +64,8 @@ export interface AnalysisMetrics {
     forwardImpliedGrowth: number | null;
     fcfMargin: number | null;
     fcfConversion: number | null;
+    /** Own-statement EBIT / |interest expense|, Finnhub fallback. */
+    interestCoverage?: number | null;
 }
 
 

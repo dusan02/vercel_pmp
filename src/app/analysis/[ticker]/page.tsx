@@ -119,11 +119,14 @@ export default async function AnalysisPage({ params }: PageProps) {
   const marketSession = detectSession(nowET());
 
   // One price truth: the headline % shown next to the live price must match
-  // the hero. When the market is closed lastChangePct freezes at 0.00, so the
-  // hero derives the % from lastPrice vs prevClose — mirror that here.
+  // the hero. When the market is closed, Ticker.latestPrevClose is the NEXT
+  // session's reference (== the last close itself → 0.00% lie), so derive the
+  // last-session move from the DailyRef row that actually closed.
+  const lastClosedRef = data?.lastClosedRef ?? null;
+  const lastSessionPrevClose = lastClosedRef?.previousClose ?? data?.latestPrevClose ?? null;
   const displayChangePct =
-    marketSession === 'closed' && data?.lastPrice != null && data.lastPrice > 0 && data?.latestPrevClose != null && data.latestPrevClose > 0
-      ? (data.lastPrice / data.latestPrevClose - 1) * 100
+    marketSession === 'closed' && lastClosedRef?.regularClose != null && lastClosedRef.previousClose != null && lastClosedRef.previousClose > 0
+      ? (lastClosedRef.regularClose / lastClosedRef.previousClose - 1) * 100
       : (data?.lastChangePct ?? null);
 
   // Unified P/E: price / own TTM EPS (via /api/analysis compute). Finnhub's
@@ -160,6 +163,11 @@ export default async function AnalysisPage({ params }: PageProps) {
   const pillarValuation = pillarVals?.valuation.score ?? null;
   const pillarRoeVal = pillarVals?.profitability.legs.find((l: { key: string }) => l.key === 'roe')?.value;
   const pillarRoePct = pillarRoeVal != null ? pillarRoeVal * 100 : null;
+  // Negative shareholder equity makes ROE meaningless — Finnhub still reports
+  // a number (PM: 575.4%), so the fallback must be suppressed, not filled.
+  const negEquity = analysisData?.balanceSheet?.totalEquity != null
+    && analysisData.balanceSheet.totalEquity <= 0;
+  const roeStat = negEquity ? null : (pillarRoePct ?? data?.finnhubMetrics?.roe ?? null);
   // KeyInsights reads valuationScore off the cache object — override with
   // the fresh pillar value so prose and radar can't disagree.
   const insightsCache = data?.analysisCache
@@ -249,10 +257,10 @@ export default async function AnalysisPage({ params }: PageProps) {
                 sector={data?.sector ?? null}
                 industry={data?.industry ?? null}
                 marketSession={marketSession}
-                prevClose={data?.latestPrevClose ?? null}
+                prevClose={lastSessionPrevClose}
                 peRatio={displayPeRatio}
                 dividendYield={data?.finnhubMetrics?.dividendYield ?? null}
-                roe={pillarRoePct ?? data?.finnhubMetrics?.roe ?? null}
+                roe={roeStat}
                 week52Low={week52?._min?.regularClose ?? null}
                 week52High={week52?._max?.regularClose ?? null}
                 earningsDate={nextEarnings?.date ?? null}
@@ -274,7 +282,7 @@ export default async function AnalysisPage({ params }: PageProps) {
                 moversCategory={data?.moversCategory ?? null}
                 aiConfidence={data?.aiConfidence ?? null}
                 isSbcAlert={data?.isSbcAlert ?? null}
-                changePct={data?.lastChangePct ?? null}
+                changePct={displayChangePct}
                 topNews={topNews}
                 earningsDate={nextEarnings?.date ?? null}
                 earningsDays={earningsDays}
@@ -340,11 +348,11 @@ export default async function AnalysisPage({ params }: PageProps) {
           <KeyInsightsSection
             ticker={tickerUpper}
             companyName={companyName}
-            changePct={data?.lastChangePct ?? null}
+            changePct={displayChangePct}
             marketSession={marketSession}
             cache={insightsCache}
             peRatio={displayPeRatio}
-            roe={pillarRoePct ?? data?.finnhubMetrics?.roe ?? null}
+            roe={roeStat}
             dividendYield={data?.finnhubMetrics?.dividendYield ?? null}
             earningsDays={earningsDays}
             moversReason={data?.moversReason ?? null}
@@ -363,7 +371,7 @@ export default async function AnalysisPage({ params }: PageProps) {
             ticker={tickerUpper}
             companyName={companyName}
             price={data?.lastPrice ?? null}
-            changePct={data?.lastChangePct ?? null}
+            changePct={displayChangePct}
             marketCap={data?.lastMarketCap ?? null}
             sector={data?.sector ?? null}
             industry={data?.industry ?? null}

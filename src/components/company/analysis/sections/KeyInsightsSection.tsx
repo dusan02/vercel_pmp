@@ -63,7 +63,9 @@ export function KeyInsightsSection({
         ? "in today's pre-market session"
         : marketSession === 'after'
           ? 'in after-hours trading'
-          : 'today';
+          : marketSession === 'closed'
+            ? 'at the last close'
+            : 'today';
     insights.push(
       moversReason
         ? `${ticker} is ${dir} ${pct} ${sess} — ${moversReason}.`

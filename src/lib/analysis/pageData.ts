@@ -9,7 +9,12 @@ const API_BASE = `http://127.0.0.1:${process.env.PORT || 3001}`;
 // the page render — it used to run twice per request.
 export const getTickerData = cache(async function getTickerData(symbol: string) {
   try {
-    return await prisma.ticker.findUnique({
+    // lastClosedRef = the latest DailyRef row that actually closed. Ticker.
+    // latestPrevClose is the NEXT session's reference (== the last close
+    // itself), so price/prevClose degenerates to 0.00% on weekends — the
+    // closed-session move needs the row that carried the real close.
+    const [ticker, lastClosedRef] = await Promise.all([
+      prisma.ticker.findUnique({
       where: { symbol },
       select: {
         symbol: true,
@@ -92,7 +97,14 @@ export const getTickerData = cache(async function getTickerData(symbol: string) 
           },
         },
       },
-    });
+      }),
+      prisma.dailyRef.findFirst({
+        where: { symbol, regularClose: { not: null, gt: 0 }, previousClose: { gt: 0 } },
+        orderBy: { date: 'desc' },
+        select: { previousClose: true, regularClose: true },
+      }),
+    ]);
+    return ticker ? { ...ticker, lastClosedRef } : ticker;
   } catch (e) {
     // CI build prerenders without a real DB — treat as missing rather than
     // failing the build. At runtime a DB error must surface as 500, not be
