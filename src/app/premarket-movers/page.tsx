@@ -2,16 +2,14 @@ import type { Metadata } from 'next';
 import { cache } from 'react';
 import Link from 'next/link';
 import { generatePageMetadata } from '@/lib/seo/metadata';
-import { formatCompactNumber, formatPercent, formatPrice } from '@/lib/utils/heatmapFormat';
-import { formatSectorName } from '@/lib/utils/format';
+import { formatPercent } from '@/lib/utils/heatmapFormat';
 import { SsrMoverLinksCombined } from '@/components/seo/SsrMoverLinks';
 import { getPremarketDateSummaries } from '@/lib/seo/premarketArchive';
 import { getEligibleAnalysisSet } from '@/lib/seo/eligibleTickers';
 import { prisma } from '@/lib/db/prisma';
 import { NotificationToggle } from '@/components/notifications/NotificationToggle';
-import CompanyLogo from '@/components/CompanyLogo';
-import { getMoversData, type MoverRecord } from '@/services/movers/getMovers';
-import { SIGMA_LABELS, type SigmaLevel } from '@/services/movers/classify';
+import { MoversExplorer } from '@/components/movers/MoversExplorer';
+import { getMoversData } from '@/services/movers/getMovers';
 
 export const revalidate = 60;
 
@@ -55,184 +53,6 @@ export async function generateMetadata(): Promise<Metadata> {
       'x-default': '/premarket-movers',
     },
   });
-}
-
-const SIGMA_BADGE: Record<SigmaLevel, string> = {
-  extreme: 'bg-purple-500/10 text-purple-400 border-purple-500/30',
-  very_unusual: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
-  unusual: 'bg-sky-500/10 text-sky-400 border-sky-500/30',
-  normal: 'bg-slate-500/10 text-slate-400 border-slate-500/30',
-};
-
-const CONFIDENCE_DOT: Record<string, string> = {
-  high: 'bg-emerald-500',
-  medium: 'bg-amber-500',
-  low: 'bg-slate-400',
-};
-
-function CatalystCell({ mover }: { mover: MoverRecord }) {
-  const a = mover.analysis;
-  if (!a) {
-    // Degraded path: LLM prose from the worker pipeline
-    return mover.moversReason ? (
-      <div className="text-xs text-slate-600 dark:text-slate-400">
-        <span className="font-bold opacity-50 mr-1">{mover.moversCategory}:</span>
-        {mover.moversReason}
-      </div>
-    ) : (
-      <span className="text-xs text-slate-400 italic">Analyzing…</span>
-    );
-  }
-  const ev = a.catalyst.evidence.find(e => e.url);
-  return (
-    <div className="text-xs">
-      <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
-        {a.catalyst.status === 'found' && (
-          <span className={`inline-block w-1.5 h-1.5 rounded-full ${CONFIDENCE_DOT[a.catalyst.confidence]}`} title={`${a.catalyst.confidence} confidence`} />
-        )}
-        <span className="font-medium">{a.catalyst.status === 'found' ? a.catalyst.label : 'No clear catalyst detected'}</span>
-        {ev?.url && (
-          <a href={ev.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline shrink-0">[src]</a>
-        )}
-      </div>
-      {(a.sectorChangePct !== null || a.marketChangePct !== null) && (
-        <div className="text-[10px] text-slate-400 mt-0.5 tabular-nums">
-          {a.sectorChangePct !== null && `Sector ${a.sectorChangePct >= 0 ? '+' : ''}${a.sectorChangePct.toFixed(1)}%`}
-          {a.sectorChangePct !== null && a.marketChangePct !== null && ' · '}
-          {a.marketChangePct !== null && `Mkt ${a.marketChangePct >= 0 ? '+' : ''}${a.marketChangePct.toFixed(1)}%`}
-          {a.excessMovePct !== null && ` · Excess ${a.excessMovePct >= 0 ? '+' : ''}${a.excessMovePct.toFixed(1)}%`}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function PillarStrip({ mover }: { mover: MoverRecord }) {
-  const p = mover.analysis?.pillars;
-  if (!p) return null;
-  const cell = (label: string, v: number | null) =>
-    v === null ? null : (
-      <span key={label} className="tabular-nums" title={`${label} score`}>
-        <span className="text-slate-400">{label}</span>{' '}
-        <span className="font-semibold text-slate-700 dark:text-slate-300">{Math.round(v)}</span>
-      </span>
-    );
-  return (
-    <div className="text-[10px] leading-4 flex flex-wrap gap-x-1.5 mt-1">
-      {cell('V', p.valuation)}{cell('G', p.growth)}{cell('P', p.profitability)}{cell('H', p.health)}{cell('Q', p.quality)}
-      {p.ewScore !== null && p.ewMaxPossible !== null && (
-        <span className="tabular-nums" title="Early Winners composite score (V5-B, current data)">
-          <span className="text-slate-400">EW</span>{' '}
-          <span className="font-semibold text-slate-700 dark:text-slate-300">{Math.round(p.ewScore)}/{Math.round(p.ewMaxPossible)}</span>
-        </span>
-      )}
-    </div>
-  );
-}
-
-function MoversTable({ title, rows, eligibleAnalysis }: { title: string; rows: MoverRecord[]; eligibleAnalysis: Set<string> }) {
-  return (
-    <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
-      <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800">
-        <h2 className="font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
-      </div>
-
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-50 dark:bg-slate-950">
-            <tr className="text-left text-slate-600 dark:text-slate-400">
-              <th className="px-3 py-2">Stock</th>
-              <th className="px-3 py-2 text-right">Price</th>
-              <th className="px-3 py-2 text-right">Vol</th>
-              <th className="px-3 py-2 text-center">σ</th>
-              <th className="px-3 py-2">Catalyst</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => {
-              const pct = r.lastChangePct ?? 0;
-              const color =
-                pct > 0
-                  ? 'text-emerald-600 dark:text-emerald-400'
-                  : pct < 0
-                    ? 'text-rose-600 dark:text-rose-400'
-                    : 'text-slate-600 dark:text-slate-400';
-
-              const sector = r.sector || 'Other';
-              const sectorHref = `/sectors/${encodeURIComponent(sector)}`;
-              const sigma = r.analysis?.sigmaLevel ?? 'normal';
-              const z = r.latestMoversZScore;
-
-              return (
-                <tr
-                  key={r.symbol}
-                  className="border-t border-slate-100 dark:border-slate-800 hover:bg-slate-50/60 dark:hover:bg-slate-950/60 align-top"
-                >
-                  {/* Stock: logo + ticker + company + sector stacked */}
-                  <td className="px-3 py-2.5">
-                    <div className="flex items-center gap-2 font-semibold text-slate-900 dark:text-slate-100 leading-tight">
-                      <CompanyLogo ticker={r.symbol} size={22} className="rounded" />
-                      {eligibleAnalysis.has(r.symbol) ? (
-                        <Link className="hover:underline" href={`/analysis/${r.symbol}`}>
-                          {r.symbol}
-                        </Link>
-                      ) : (
-                        r.symbol
-                      )}
-                    </div>
-                    {r.name && (
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 max-w-[130px] truncate" title={r.name}>
-                        {r.name}
-                      </div>
-                    )}
-                    <Link
-                      className="block text-[10px] text-slate-400 dark:text-slate-500 hover:underline leading-tight mt-0.5"
-                      href={sectorHref}
-                    >
-                      {formatSectorName(sector)}
-                    </Link>
-                  </td>
-                  {/* Price + % change stacked, right aligned */}
-                  <td className="px-3 py-2.5 text-right whitespace-nowrap">
-                    <div className="tabular-nums text-slate-700 dark:text-slate-300 leading-tight">
-                      {formatPrice(r.lastPrice)}
-                    </div>
-                    <div className={`tabular-nums font-semibold leading-tight mt-0.5 ${color}`}>
-                      {formatPercent(pct)}
-                    </div>
-                  </td>
-                  {/* Volume + RVOL stacked, right aligned */}
-                  <td className="px-3 py-2.5 text-right whitespace-nowrap">
-                    <div className="tabular-nums text-slate-700 dark:text-slate-300 leading-tight">
-                      {r.lastVolume && r.lastVolume > 0 ? formatCompactNumber(r.lastVolume) : '—'}
-                    </div>
-                    {r.latestMoversRVOL != null && r.latestMoversRVOL >= 1.5 && (
-                      <div className="text-[10px] font-semibold text-blue-500 dark:text-blue-400 leading-tight mt-0.5">
-                        {r.latestMoversRVOL.toFixed(1)}×
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-3 py-2.5 text-center">
-                    <span
-                      className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold border ${SIGMA_BADGE[sigma]}`}
-                      title={`Z-score ${z?.toFixed(1) ?? '—'} — ${SIGMA_LABELS[sigma]}`}
-                    >
-                      {z !== null ? `${Math.abs(z).toFixed(1)}σ` : '—'}
-                    </span>
-                  </td>
-                  {/* Catalyst + pillar strip stacked */}
-                  <td className="px-3 py-2.5">
-                    <CatalystCell mover={r} />
-                    <PillarStrip mover={r} />
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </section>
-  );
 }
 
 export default async function PremarketMoversPage() {
@@ -433,10 +253,11 @@ export default async function PremarketMoversPage() {
               : 'No unusual movers detected right now.'}
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <MoversTable title="Top Gainers" rows={gainers} eligibleAnalysis={eligibleAnalysis} />
-            <MoversTable title="Top Losers" rows={losers} eligibleAnalysis={eligibleAnalysis} />
-          </div>
+          <MoversExplorer
+            gainers={gainers}
+            losers={losers}
+            eligibleSymbols={[...eligibleAnalysis]}
+          />
         )}
 
         {/* Push/email digest subscribe — daily premarket movers at ~08:00 ET */}

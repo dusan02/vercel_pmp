@@ -1,0 +1,408 @@
+'use client';
+
+import React, { useMemo, useState } from 'react';
+import Link from 'next/link';
+import CompanyLogo from '@/components/CompanyLogo';
+import { formatCompactNumber, formatPercent, formatPrice } from '@/lib/utils/heatmapFormat';
+import { formatSectorName } from '@/lib/utils/format';
+import { SIGMA_LABELS, type SigmaLevel } from '@/services/movers/classify';
+import type { MoverRecord } from '@/services/movers/getMovers';
+import { event } from '@/lib/ga';
+
+// ─── Filters ────────────────────────────────────────────────────────────────
+interface MoversFilters {
+  minPct: number;
+  minSigma: number;
+  minRvol: number;
+  catalyst: 'any' | 'confirmed' | 'earnings' | 'analyst' | 'none';
+  minExcess: number;
+  minQuality: number;
+  showMicrocaps: boolean;
+}
+
+const DEFAULT_FILTERS: MoversFilters = {
+  minPct: 0,
+  minSigma: 0,
+  minRvol: 0,
+  catalyst: 'any',
+  minExcess: 0,
+  minQuality: 0,
+  showMicrocaps: false,
+};
+
+const CATALYST_OPTIONS: { value: MoversFilters['catalyst']; label: string }[] = [
+  { value: 'any', label: 'Any catalyst' },
+  { value: 'confirmed', label: 'Confirmed only' },
+  { value: 'earnings', label: 'Earnings' },
+  { value: 'analyst', label: 'Analyst action' },
+  { value: 'none', label: 'No catalyst' },
+];
+
+const EARNINGS_TYPES = new Set(['earnings_beat', 'earnings_miss', 'earnings_mixed', 'earnings_release']);
+const ANALYST_TYPES = new Set(['analyst_upgrade', 'analyst_downgrade', 'analyst_action']);
+
+function isMicrocap(m: MoverRecord): boolean {
+  const dollarVol = (m.lastVolume ?? 0) * (m.lastPrice ?? 0);
+  return (m.lastPrice ?? 0) < 5 || dollarVol < 1_000_000;
+}
+
+function matchesFilters(m: MoverRecord, f: MoversFilters): boolean {
+  if (!f.showMicrocaps && isMicrocap(m)) return false;
+  if (f.minPct > 0 && Math.abs(m.lastChangePct ?? 0) < f.minPct) return false;
+  if (f.minSigma > 0 && Math.abs(m.latestMoversZScore ?? 0) < f.minSigma) return false;
+  if (f.minRvol > 0 && (m.latestMoversRVOL ?? 0) < f.minRvol) return false;
+  if (f.minExcess > 0 && Math.abs(m.analysis?.excessMovePct ?? 0) < f.minExcess) return false;
+  if (f.minQuality > 0 && (m.analysis?.pillars?.quality ?? 0) < f.minQuality) return false;
+  if (f.catalyst !== 'any') {
+    const c = m.analysis?.catalyst;
+    if (f.catalyst === 'confirmed' && !(c?.status === 'found' && c.confidence === 'high')) return false;
+    if (f.catalyst === 'earnings' && !EARNINGS_TYPES.has(c?.type ?? '')) return false;
+    if (f.catalyst === 'analyst' && !ANALYST_TYPES.has(c?.type ?? '')) return false;
+    if (f.catalyst === 'none' && c?.status === 'found') return false;
+  }
+  return true;
+}
+
+// ─── Signal score for the "Most interesting" strip ──────────────────────────
+// Objective synthesis: statistical significance + volume + idiosyncrasy +
+// catalyst presence. Not investment advice — just ranked unusualness.
+function signalScore(m: MoverRecord): number {
+  const z = Math.abs(m.latestMoversZScore ?? 0);
+  const rvol = Math.min(m.latestMoversRVOL ?? 0, 10);
+  const excess = Math.abs(m.analysis?.excessMovePct ?? 0) / 3;
+  const catalystBonus = m.analysis?.catalyst.status === 'found' ? 3 : 0;
+  return z * 2 + rvol + excess + catalystBonus;
+}
+
+// ─── Cell renderers ─────────────────────────────────────────────────────────
+const SIGMA_BADGE: Record<SigmaLevel, string> = {
+  extreme: 'bg-purple-500/10 text-purple-400 border-purple-500/30',
+  very_unusual: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
+  unusual: 'bg-sky-500/10 text-sky-400 border-sky-500/30',
+  normal: 'bg-slate-500/10 text-slate-400 border-slate-500/30',
+};
+
+const CONFIDENCE_DOT: Record<string, string> = {
+  high: 'bg-emerald-500',
+  medium: 'bg-amber-500',
+  low: 'bg-slate-400',
+};
+
+function CatalystCell({ mover }: { mover: MoverRecord }) {
+  const a = mover.analysis;
+  if (!a) {
+    return mover.moversReason ? (
+      <div className="text-xs text-slate-600 dark:text-slate-400">
+        <span className="font-bold opacity-50 mr-1">{mover.moversCategory}:</span>
+        {mover.moversReason}
+      </div>
+    ) : (
+      <span className="text-xs text-slate-400 italic">Analyzing…</span>
+    );
+  }
+  const c = a.catalyst;
+  const ev = c.evidence.find(e => e.url);
+  const statusLabel =
+    c.status === 'found'
+      ? c.label
+      : c.status === 'unavailable'
+        ? 'Catalyst data unavailable'
+        : 'No catalyst found in available sources';
+  return (
+    <div className="text-xs">
+      <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
+        {c.status === 'found' && (
+          <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${CONFIDENCE_DOT[c.confidence]}`} title={`${c.confidence} confidence`} />
+        )}
+        <span className={`font-medium ${c.status !== 'found' ? 'text-slate-400 dark:text-slate-500' : ''}`}>
+          {statusLabel}
+        </span>
+        {ev?.url && (
+          <a href={ev.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline shrink-0">[src]</a>
+        )}
+      </div>
+      {(a.sectorChangePct !== null || a.marketChangePct !== null) && (
+        <div className="text-[10px] text-slate-400 mt-0.5 tabular-nums">
+          {a.sectorChangePct !== null && `Sector ${a.sectorChangePct >= 0 ? '+' : ''}${a.sectorChangePct.toFixed(1)}%`}
+          {a.sectorChangePct !== null && a.marketChangePct !== null && ' · '}
+          {a.marketChangePct !== null && `Mkt ${a.marketChangePct >= 0 ? '+' : ''}${a.marketChangePct.toFixed(1)}%`}
+          {a.excessMovePct !== null && ` · Excess ${a.excessMovePct >= 0 ? '+' : ''}${a.excessMovePct.toFixed(1)}%`}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PillarStrip({ mover }: { mover: MoverRecord }) {
+  const p = mover.analysis?.pillars;
+  if (!p) return null;
+  const cell = (label: string, name: string, v: number | null) =>
+    v === null ? null : (
+      <span key={label} className="tabular-nums" title={`${name} score`}>
+        <span className="text-slate-400">{label}</span>{' '}
+        <span className="font-semibold text-slate-700 dark:text-slate-300">{Math.round(v)}</span>
+      </span>
+    );
+  return (
+    <div className="text-[10px] leading-4 flex flex-wrap gap-x-1.5 mt-1">
+      {cell('V', 'Valuation', p.valuation)}{cell('G', 'Growth', p.growth)}{cell('P', 'Profitability', p.profitability)}{cell('H', 'Health', p.health)}{cell('Q', 'Quality', p.quality)}
+      {p.ewScore !== null && p.ewMaxPossible !== null && (
+        <span className="tabular-nums" title="Early Winners composite score (V5-B, current data)">
+          <span className="text-slate-400">EW</span>{' '}
+          <span className="font-semibold text-slate-700 dark:text-slate-300">{Math.round(p.ewScore)}/{Math.round(p.ewMaxPossible)}</span>
+        </span>
+      )}
+    </div>
+  );
+}
+
+function MoversTable({ title, rows, eligibleAnalysis }: { title: string; rows: MoverRecord[]; eligibleAnalysis: Set<string> }) {
+  return (
+    <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+      <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800">
+        <h2 className="font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-slate-50 dark:bg-slate-950">
+            <tr className="text-left text-slate-600 dark:text-slate-400">
+              <th className="px-3 py-2">Stock</th>
+              <th className="px-3 py-2 text-right">Move</th>
+              <th className="px-3 py-2 text-center" title="Z-score — how unusual the move is vs the stock's own volatility">σ</th>
+              <th className="px-3 py-2">Catalyst</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => {
+              const pct = r.lastChangePct ?? 0;
+              const color =
+                pct > 0
+                  ? 'text-emerald-600 dark:text-emerald-400'
+                  : pct < 0
+                    ? 'text-rose-600 dark:text-rose-400'
+                    : 'text-slate-600 dark:text-slate-400';
+
+              const sector = r.sector || 'Other';
+              const sectorHref = `/sectors/${encodeURIComponent(sector)}`;
+              const sigma = r.analysis?.sigmaLevel ?? 'normal';
+              const z = r.latestMoversZScore;
+              const rvol = r.latestMoversRVOL;
+
+              return (
+                <tr
+                  key={r.symbol}
+                  className="border-t border-slate-100 dark:border-slate-800 hover:bg-slate-50/60 dark:hover:bg-slate-950/60 align-top"
+                >
+                  {/* Stock: logo + ticker + company + sector stacked */}
+                  <td className="px-3 py-2.5">
+                    <div className="flex items-center gap-2 font-semibold text-slate-900 dark:text-slate-100 leading-tight">
+                      <CompanyLogo ticker={r.symbol} size={22} className="rounded" />
+                      {eligibleAnalysis.has(r.symbol) ? (
+                        <Link className="hover:underline" href={`/analysis/${r.symbol}`}>
+                          {r.symbol}
+                        </Link>
+                      ) : (
+                        r.symbol
+                      )}
+                    </div>
+                    {r.name && (
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 max-w-[130px] truncate" title={r.name}>
+                        {r.name}
+                      </div>
+                    )}
+                    <Link
+                      className="block text-[10px] text-slate-400 dark:text-slate-500 hover:underline leading-tight mt-0.5"
+                      href={sectorHref}
+                    >
+                      {formatSectorName(sector)}
+                    </Link>
+                  </td>
+                  {/* Move: % change dominant, price + volume/RVOL underneath */}
+                  <td className="px-3 py-2.5 text-right whitespace-nowrap">
+                    <div className={`tabular-nums font-bold text-base leading-tight ${color}`}>
+                      {formatPercent(pct)}
+                    </div>
+                    <div className="tabular-nums text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5">
+                      {formatPrice(r.lastPrice)}
+                    </div>
+                    <div className="tabular-nums text-[10px] text-slate-400 leading-tight mt-0.5">
+                      {r.lastVolume && r.lastVolume > 0 ? `${formatCompactNumber(r.lastVolume)} vol` : ''}
+                      {rvol != null && rvol >= 1.5 && (
+                        <span className={`ml-1 font-semibold ${rvol >= 5 ? 'text-blue-600 dark:text-blue-400' : 'text-blue-500/80 dark:text-blue-400/80'}`} title={`Relative volume ${rvol.toFixed(1)}× normal`}>
+                          {rvol.toFixed(1)}×
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  {/* σ: badge + plain-language tier */}
+                  <td className="px-3 py-2.5 text-center">
+                    <span
+                      className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold border ${SIGMA_BADGE[sigma]}`}
+                      title={`Z-score ${z?.toFixed(1) ?? '—'} — the move is ${Math.abs(z ?? 0).toFixed(1)} standard deviations from this stock's normal daily move`}
+                    >
+                      {z !== null ? `${Math.abs(z).toFixed(1)}σ` : '—'}
+                    </span>
+                    <div className="text-[9px] text-slate-400 dark:text-slate-500 leading-tight mt-0.5">
+                      {SIGMA_LABELS[sigma]}
+                    </div>
+                  </td>
+                  {/* Catalyst + pillar strip stacked */}
+                  <td className="px-3 py-2.5">
+                    <CatalystCell mover={r} />
+                    <PillarStrip mover={r} />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+// ─── Most interesting strip ─────────────────────────────────────────────────
+function InterestingCard({ mover }: { mover: MoverRecord }) {
+  const pct = mover.lastChangePct ?? 0;
+  const color = pct >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
+  const z = mover.latestMoversZScore;
+  const rvol = mover.latestMoversRVOL;
+  const excess = mover.analysis?.excessMovePct ?? null;
+  const catalystLabel = mover.analysis?.catalyst.status === 'found' ? mover.analysis.catalyst.label : null;
+
+  return (
+    <Link
+      href={`/analysis/${mover.symbol}`}
+      className="flex-shrink-0 min-w-[190px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-sm transition-all"
+    >
+      <div className="flex items-center gap-1.5">
+        <CompanyLogo ticker={mover.symbol} size={18} className="rounded" />
+        <span className="font-bold text-sm text-slate-900 dark:text-slate-100">{mover.symbol}</span>
+        <span className={`ml-auto tabular-nums font-bold text-sm ${color}`}>{formatPercent(pct)}</span>
+      </div>
+      {catalystLabel && (
+        <div className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400 mt-1 truncate" title={catalystLabel}>
+          🟢 {catalystLabel}
+        </div>
+      )}
+      <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-1.5 text-[10px] tabular-nums text-slate-500 dark:text-slate-400">
+        {z !== null && <span title="Z-score vs own volatility">📊 {Math.abs(z).toFixed(1)}σ</span>}
+        {rvol != null && rvol >= 1.5 && <span title="Relative volume">📈 {rvol.toFixed(1)}× RVOL</span>}
+        {excess !== null && <span title="Move vs sector/market">⚡ {excess >= 0 ? '+' : ''}{excess.toFixed(1)}% vs sector</span>}
+      </div>
+    </Link>
+  );
+}
+
+// ─── Explorer ───────────────────────────────────────────────────────────────
+interface MoversExplorerProps {
+  gainers: MoverRecord[];
+  losers: MoverRecord[];
+  eligibleSymbols: string[];
+}
+
+export function MoversExplorer({ gainers, losers, eligibleSymbols }: MoversExplorerProps) {
+  const [filters, setFilters] = useState<MoversFilters>(DEFAULT_FILTERS);
+  const eligibleAnalysis = useMemo(() => new Set(eligibleSymbols), [eligibleSymbols]);
+
+  const allMovers = useMemo(() => [...gainers, ...losers], [gainers, losers]);
+
+  const interesting = useMemo(() =>
+    allMovers
+      .filter(m => !isMicrocap(m))
+      .sort((a, b) => signalScore(b) - signalScore(a))
+      .slice(0, 4),
+    [allMovers]);
+
+  const filteredGainers = useMemo(() => gainers.filter(m => matchesFilters(m, filters)), [gainers, filters]);
+  const filteredLosers = useMemo(() => losers.filter(m => matchesFilters(m, filters)), [losers, filters]);
+  const hiddenMicrocaps = useMemo(
+    () => (filters.showMicrocaps ? 0 : allMovers.filter(m => isMicrocap(m) && matchesFilters(m, { ...filters, showMicrocaps: true })).length),
+    [allMovers, filters]);
+
+  const filtersActive = JSON.stringify(filters) !== JSON.stringify(DEFAULT_FILTERS);
+  const set = <K extends keyof MoversFilters>(k: K, v: MoversFilters[K]) => {
+    setFilters(prev => ({ ...prev, [k]: v }));
+    event('movers_filter', { filter_key: k, filter_value: String(v) });
+  };
+
+  const inputCls = 'w-16 px-2 py-1 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-700 dark:text-slate-300 tabular-nums';
+
+  return (
+    <div>
+      {/* Signal synthesis — objective top movers, not investment advice */}
+      {interesting.length > 0 && (
+        <section className="mb-6">
+          <div className="flex items-center gap-2 mb-2">
+            <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wide">🔥 Most interesting</h2>
+            <span className="text-[10px] text-slate-400">ranked by σ, relative volume, sector excess and catalyst strength</span>
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-1">
+            {interesting.map(m => <InterestingCard key={m.symbol} mover={m} />)}
+          </div>
+        </section>
+      )}
+
+      {/* Combinable filters — turns the list into a mini research tool */}
+      <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-4 py-3">
+        <span className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">Filters</span>
+        <label className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
+          |%| ≥
+          <input type="number" min="0" step="1" className={inputCls} value={filters.minPct || ''} placeholder="0"
+            onChange={e => set('minPct', parseFloat(e.target.value) || 0)} />
+        </label>
+        <label className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
+          σ ≥
+          <input type="number" min="0" step="0.5" className={inputCls} value={filters.minSigma || ''} placeholder="0"
+            onChange={e => set('minSigma', parseFloat(e.target.value) || 0)} />
+        </label>
+        <label className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
+          RVOL ≥
+          <input type="number" min="0" step="0.5" className={inputCls} value={filters.minRvol || ''} placeholder="0"
+            onChange={e => set('minRvol', parseFloat(e.target.value) || 0)} />
+        </label>
+        <label className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
+          Excess ≥
+          <input type="number" min="0" step="1" className={inputCls} value={filters.minExcess || ''} placeholder="0"
+            onChange={e => set('minExcess', parseFloat(e.target.value) || 0)} />
+        </label>
+        <label className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
+          Quality ≥
+          <input type="number" min="0" max="100" step="5" className={inputCls} value={filters.minQuality || ''} placeholder="0"
+            onChange={e => set('minQuality', parseFloat(e.target.value) || 0)} />
+        </label>
+        <select
+          className="px-2 py-1 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-700 dark:text-slate-300"
+          value={filters.catalyst}
+          onChange={e => set('catalyst', e.target.value as MoversFilters['catalyst'])}
+        >
+          {CATALYST_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+        <label className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 cursor-pointer" title="Show stocks priced under $5 or under $1M dollar volume">
+          <input type="checkbox" checked={filters.showMicrocaps} onChange={e => set('showMicrocaps', e.target.checked)} className="rounded" />
+          Microcaps
+        </label>
+        <span className="ml-auto text-xs font-semibold text-slate-600 dark:text-slate-400 tabular-nums">
+          {filteredGainers.length + filteredLosers.length} stock{filteredGainers.length + filteredLosers.length !== 1 ? 's' : ''} match
+        </span>
+        {filtersActive && (
+          <button onClick={() => setFilters(DEFAULT_FILTERS)} className="text-xs text-blue-500 hover:underline">
+            Reset
+          </button>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <MoversTable title="Top Gainers" rows={filteredGainers} eligibleAnalysis={eligibleAnalysis} />
+        <MoversTable title="Top Losers" rows={filteredLosers} eligibleAnalysis={eligibleAnalysis} />
+      </div>
+
+      {hiddenMicrocaps > 0 && (
+        <p className="mt-3 text-xs text-slate-400 dark:text-slate-500">
+          {hiddenMicrocaps} microcap mover{hiddenMicrocaps !== 1 ? 's' : ''} hidden (&lt;$5 or &lt;$1M volume) — enable “Microcaps” above to include them.
+        </p>
+      )}
+    </div>
+  );
+}
