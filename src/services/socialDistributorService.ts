@@ -67,10 +67,11 @@ export class SocialDistributorService {
             return results;
         }
 
-        // 3. Setup Twitter client
-        const twitterClient = this.getTwitterClient();
-        if (!twitterClient) {
-            console.warn('⚠️ SocialDistributorService: Twitter credentials missing, skipping actual posting');
+        // 3. Setup poster — Buffer (preferred: Buffer holds the X API
+        // relationship, so no X credits needed) with direct X API fallback.
+        const poster = await this.getPoster();
+        if (!poster) {
+            console.warn('⚠️ SocialDistributorService: No posting channel configured (BUFFER_ACCESS_TOKEN or TWITTER_*), skipping');
             return results;
         }
 
@@ -78,31 +79,8 @@ export class SocialDistributorService {
         for (const mover of toPost) {
             try {
                 console.log(`🐦 SocialDistributorService: Posting alpha signal for ${mover.symbol}...`);
-
-                // 4a. Generate OG Image (fetch from our own API)
-                const ogImageUrl = this.generateOgImageUrl(mover);
-                const imageBuffer = await this.fetchImageBuffer(ogImageUrl);
-
-                // 4b. Upload media to X — best-effort. The Free tier has no
-                // v1.1 media upload (402), so attachment failure must not
-                // kill the tweet: the analysis link still unfurls to our OG
-                // card via the page's opengraph-image.
-                let media: { media_ids: [string] } | undefined;
-                if (imageBuffer) {
-                    try {
-                        const mediaId = await twitterClient.v1.uploadMedia(imageBuffer, { type: 'png' });
-                        media = { media_ids: [mediaId] };
-                    } catch {
-                        console.warn(`⚠️ SocialDistributorService: media upload failed for ${mover.symbol}, posting text-only`);
-                    }
-                }
-
-                // 4c. Post tweet
                 const tweetText = `${mover.socialCopy}\n\nView Analysis: https://premarketprice.com/analysis/${mover.symbol}`;
-                await twitterClient.v2.tweet({
-                    text: tweetText,
-                    ...(media ? { media } : {})
-                });
+                await poster(mover, tweetText);
 
                 // 4d. Mark as posted today (TTL 24h)
                 const lockKey = `social:posted:${date}:${mover.symbol}`;
@@ -138,6 +116,79 @@ export class SocialDistributorService {
             accessToken: process.env.TWITTER_ACCESS_TOKEN,
             accessSecret: process.env.TWITTER_ACCESS_SECRET,
         });
+    }
+
+    /**
+     * Posting channel resolver.
+     * - BUFFER_ACCESS_TOKEN set → post through Buffer (their API covers the
+     *   X relationship; our account's X credits are bypassed entirely).
+     * - Otherwise direct X API (requires paid credits on the X side).
+     */
+    private bufferProfileId: string | null | undefined;
+
+    private async getPoster(): Promise<((mover: any, text: string) => Promise<void>) | null> {
+        if (process.env.BUFFER_ACCESS_TOKEN) {
+            const profileId = await this.getBufferXProfileId();
+            if (profileId) return (_mover, text) => this.postViaBuffer(profileId, text);
+            console.warn('⚠️ SocialDistributorService: BUFFER_ACCESS_TOKEN set but no X channel found in Buffer');
+        }
+
+        const twitterClient = this.getTwitterClient();
+        if (!twitterClient) return null;
+
+        return async (mover, text) => {
+            const ogImageUrl = this.generateOgImageUrl(mover);
+            const imageBuffer = await this.fetchImageBuffer(ogImageUrl);
+
+            // Media upload is best-effort — Free tier has no v1.1 media
+            // upload (402), and the analysis link unfurls to our OG card
+            // via the page's opengraph-image anyway.
+            let media: { media_ids: [string] } | undefined;
+            if (imageBuffer) {
+                try {
+                    const mediaId = await twitterClient.v1.uploadMedia(imageBuffer, { type: 'png' });
+                    media = { media_ids: [mediaId] };
+                } catch {
+                    console.warn(`⚠️ SocialDistributorService: media upload failed for ${mover.symbol}, posting text-only`);
+                }
+            }
+            await twitterClient.v2.tweet({ text, ...(media ? { media } : {}) });
+        };
+    }
+
+    /** First X (twitter) channel connected to the Buffer account. Cached per process. */
+    private async getBufferXProfileId(): Promise<string | null> {
+        if (this.bufferProfileId !== undefined) return this.bufferProfileId;
+        try {
+            const res = await fetch(`https://api.bufferapp.com/1/profiles.json?access_token=${process.env.BUFFER_ACCESS_TOKEN}`);
+            if (!res.ok) {
+                console.warn(`⚠️ SocialDistributorService: Buffer profiles fetch failed (${res.status})`);
+                return (this.bufferProfileId = null);
+            }
+            const profiles = await res.json();
+            const xProfile = (profiles as any[]).find(p => p.service === 'twitter' || p.service === 'x');
+            this.bufferProfileId = (xProfile?.id as string | undefined) ?? null;
+        } catch (e) {
+            console.warn('⚠️ SocialDistributorService: Buffer profiles fetch error', e);
+            this.bufferProfileId = null;
+        }
+        return this.bufferProfileId;
+    }
+
+    private async postViaBuffer(profileId: string, text: string): Promise<void> {
+        const res = await fetch(`https://api.bufferapp.com/1/updates/create.json?access_token=${process.env.BUFFER_ACCESS_TOKEN}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                'profile_ids[]': profileId,
+                text,
+                now: 'true',
+            }).toString(),
+        });
+        if (!res.ok) {
+            const body = await res.text();
+            throw new Error(`Buffer post failed (${res.status}): ${body.slice(0, 200)}`);
+        }
     }
 
     private generateOgImageUrl(ticker: any): string {
