@@ -157,7 +157,7 @@ export class SocialDistributorService {
         // Direct Bluesky via AT Protocol — free, no Buffer needed. Skipped
         // when a bluesky Buffer channel already covers it (no double-posts).
         if (process.env.BLUESKY_HANDLE && process.env.BLUESKY_APP_PASSWORD && !bufferCoversBluesky) {
-            posters.push((_mover, text) => this.postViaBluesky(text));
+            posters.push((mover, text) => this.postViaBluesky(text, mover));
         }
 
         if (posters.length === 0) {
@@ -282,23 +282,78 @@ export class SocialDistributorService {
         return this.bskySession!;
     }
 
-    /** Facets make URLs in the text clickable — byte offsets, not char offsets. */
+    /** Facets make URLs and #hashtags clickable — byte offsets, not char offsets. */
     private bskyLinkFacets(text: string) {
         const encoder = new TextEncoder();
         const facets = [];
-        const re = /https?:\/\/[^\s]+/g;
+        const byteOffset = (charIdx: number) => encoder.encode(text.slice(0, charIdx)).length;
         let m: RegExpExecArray | null;
-        while ((m = re.exec(text)) !== null) {
-            const byteStart = encoder.encode(text.slice(0, m.index)).length;
+
+        const linkRe = /https?:\/\/[^\s]+/g;
+        while ((m = linkRe.exec(text)) !== null) {
             facets.push({
-                index: { byteStart, byteEnd: byteStart + encoder.encode(m[0]).length },
+                index: { byteStart: byteOffset(m.index), byteEnd: byteOffset(m.index + m[0].length) },
                 features: [{ $type: 'app.bsky.richtext.facet#link', uri: m[0] }],
+            });
+        }
+        const tagRe = /#([A-Za-z0-9_]+)/g;
+        while ((m = tagRe.exec(text)) !== null) {
+            facets.push({
+                index: { byteStart: byteOffset(m.index), byteEnd: byteOffset(m.index + m[0].length) },
+                features: [{ $type: 'app.bsky.richtext.facet#tag', tag: m[1] }],
             });
         }
         return facets;
     }
 
-    private async postViaBluesky(text: string): Promise<void> {
+    /**
+     * Bluesky doesn't unfurl links — a link-preview card must be attached
+     * explicitly as app.bsky.embed.external with the image uploaded as a blob.
+     */
+    private async bskyBuildExternalEmbed(mover: any) {
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+        const publicUrl = `https://premarketprice.com/analysis/${mover.symbol}`;
+        const ogImageUrl = `${appUrl}/analysis/${mover.symbol}/opengraph-image`;
+
+        const imgRes = await fetch(ogImageUrl);
+        if (!imgRes.ok) return null;
+        const imgBytes = await imgRes.arrayBuffer();
+        if (imgBytes.byteLength > 950_000) return null; // Bluesky thumb limit ≈ 1MB
+
+        const session = this.bskySession ?? (await this.createBskySession());
+        const upRes = await fetch('https://bsky.social/xrpc/com.atproto.repo.uploadBlob', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'image/png',
+                Authorization: `Bearer ${session.accessJwt}`,
+            },
+            body: imgBytes,
+        });
+        if (!upRes.ok) return null;
+        const { blob } = await upRes.json();
+
+        const pct = mover.lastChangePct;
+        const pctStr = pct != null ? `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%` : '';
+        return {
+            $type: 'app.bsky.embed.external',
+            external: {
+                uri: publicUrl,
+                title: `${mover.symbol} Stock Analysis | PreMarketPrice`,
+                description: `${mover.name || mover.symbol} · $${(mover.lastPrice || 0).toFixed(2)} ${pctStr} · ${mover.sector || 'Stock'}`.slice(0, 300),
+                thumb: blob,
+            },
+        };
+    }
+
+    private async postViaBluesky(text: string, mover: any): Promise<void> {
+        // Best-effort OG card — if image fetch/upload fails, post text-only.
+        let embed: any = null;
+        try {
+            embed = await this.bskyBuildExternalEmbed(mover);
+        } catch (e) {
+            console.warn(`⚠️ SocialDistributorService: Bluesky embed failed for ${mover.symbol}, posting text-only`, e);
+        }
+
         const attempt = async (): Promise<Response> => {
             const session = this.bskySession ?? (await this.createBskySession());
             return fetch('https://bsky.social/xrpc/com.atproto.repo.createRecord', {
@@ -316,6 +371,7 @@ export class SocialDistributorService {
                         createdAt: new Date().toISOString(),
                         langs: ['en'],
                         facets: this.bskyLinkFacets(text),
+                        ...(embed ? { embed } : {}),
                     },
                 }),
             });
