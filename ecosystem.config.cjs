@@ -196,6 +196,28 @@ module.exports = {
       autorestart: false,
     },
     {
+      name: "cron-reset-movers",
+      script: "scripts/trigger-reset-movers.ts",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
+      cwd: __dirname,
+      instances: 1,
+      exec_mode: "fork",
+      env: {
+        NODE_ENV: "production",
+        BASE_URL: "http://127.0.0.1:3001",
+        CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || envVars.CRON_SECRET || process.env.CRON_SECRET_KEY || process.env.CRON_SECRET,
+      },
+      error_file: path.join(__dirname, "logs", "pm2", "cron-reset-movers-error.log"),
+      out_file: path.join(__dirname, "logs", "pm2", "cron-reset-movers-out.log"),
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      // Weekdays 05:50 server time (Europe/Prague) — clears stale moversReason/
+      // category/socialCopy before the trading day, 10 min before
+      // cron-update-ticker-stats (06:00). Without this, !moversReason filter in
+      // aiMoversService permanently blocks insight regeneration.
+      cron_restart: "50 5 * * 1-5",
+      autorestart: false,
+    },
+    {
       name: "post-market-daily-reset",
       script: "scripts/post-market-reset.ts",
       interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
