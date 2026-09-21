@@ -74,7 +74,7 @@ function CatalystCell({ mover }: { mover: MoverRecord }) {
   if (!a) {
     // Degraded path: LLM prose from the worker pipeline
     return mover.moversReason ? (
-      <div className="text-xs text-slate-600 dark:text-slate-400 max-w-[260px]">
+      <div className="text-xs text-slate-600 dark:text-slate-400">
         <span className="font-bold opacity-50 mr-1">{mover.moversCategory}:</span>
         {mover.moversReason}
       </div>
@@ -84,7 +84,7 @@ function CatalystCell({ mover }: { mover: MoverRecord }) {
   }
   const ev = a.catalyst.evidence.find(e => e.url);
   return (
-    <div className="text-xs max-w-[260px]">
+    <div className="text-xs">
       <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
         {a.catalyst.status === 'found' && (
           <span className={`inline-block w-1.5 h-1.5 rounded-full ${CONFIDENCE_DOT[a.catalyst.confidence]}`} title={`${a.catalyst.confidence} confidence`} />
@@ -106,9 +106,9 @@ function CatalystCell({ mover }: { mover: MoverRecord }) {
   );
 }
 
-function PillarCell({ mover }: { mover: MoverRecord }) {
+function PillarStrip({ mover }: { mover: MoverRecord }) {
   const p = mover.analysis?.pillars;
-  if (!p) return <span className="text-xs text-slate-400">—</span>;
+  if (!p) return null;
   const cell = (label: string, v: number | null) =>
     v === null ? null : (
       <span key={label} className="tabular-nums" title={`${label} score`}>
@@ -117,7 +117,7 @@ function PillarCell({ mover }: { mover: MoverRecord }) {
       </span>
     );
   return (
-    <div className="text-[10px] leading-4 flex flex-wrap gap-x-1.5 max-w-[150px]">
+    <div className="text-[10px] leading-4 flex flex-wrap gap-x-1.5 mt-1">
       {cell('V', p.valuation)}{cell('G', p.growth)}{cell('P', p.profitability)}{cell('H', p.health)}{cell('Q', p.quality)}
       {p.ewScore !== null && p.ewMaxPossible !== null && (
         <span className="tabular-nums" title="Early Winners composite score (V5-B, current data)">
@@ -140,15 +140,11 @@ function MoversTable({ title, rows, eligibleAnalysis }: { title: string; rows: M
         <table className="w-full text-sm">
           <thead className="bg-slate-50 dark:bg-slate-950">
             <tr className="text-left text-slate-600 dark:text-slate-400">
-              <th className="px-4 py-2">Ticker</th>
-              <th className="px-4 py-2">Company</th>
-              <th className="px-4 py-2">Sector</th>
-              <th className="px-4 py-2">Price</th>
-              <th className="px-4 py-2">% Change</th>
-              <th className="px-4 py-2">Vol</th>
-              <th className="px-4 py-2 text-center">σ</th>
-              <th className="px-4 py-2">Catalyst</th>
-              <th className="px-4 py-2">PMP</th>
+              <th className="px-3 py-2">Stock</th>
+              <th className="px-3 py-2 text-right">Price</th>
+              <th className="px-3 py-2 text-right">Vol</th>
+              <th className="px-3 py-2 text-center">σ</th>
+              <th className="px-3 py-2">Catalyst</th>
             </tr>
           </thead>
           <tbody>
@@ -169,55 +165,63 @@ function MoversTable({ title, rows, eligibleAnalysis }: { title: string; rows: M
               return (
                 <tr
                   key={r.symbol}
-                  className="border-t border-slate-100 dark:border-slate-800 hover:bg-slate-50/60 dark:hover:bg-slate-950/60"
+                  className="border-t border-slate-100 dark:border-slate-800 hover:bg-slate-50/60 dark:hover:bg-slate-950/60 align-top"
                 >
-                  <td className="px-4 py-2 font-semibold">
-                    {eligibleAnalysis.has(r.symbol) ? (
-                      <Link className="hover:underline" href={`/analysis/${r.symbol}`}>
-                        {r.symbol}
-                      </Link>
-                    ) : (
-                      <span>{r.symbol}</span>
+                  {/* Stock: ticker + company + sector stacked */}
+                  <td className="px-3 py-2.5">
+                    <div className="font-semibold text-slate-900 dark:text-slate-100 leading-tight">
+                      {eligibleAnalysis.has(r.symbol) ? (
+                        <Link className="hover:underline" href={`/analysis/${r.symbol}`}>
+                          {r.symbol}
+                        </Link>
+                      ) : (
+                        r.symbol
+                      )}
+                    </div>
+                    {r.name && (
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 max-w-[130px] truncate" title={r.name}>
+                        {r.name}
+                      </div>
                     )}
-                  </td>
-                  <td className="px-4 py-2 text-slate-700 dark:text-slate-300">
-                    {r.name ?? ''}
-                  </td>
-                  <td className="px-4 py-2">
                     <Link
-                      className="text-slate-700 dark:text-slate-300 hover:underline"
+                      className="block text-[10px] text-slate-400 dark:text-slate-500 hover:underline leading-tight mt-0.5"
                       href={sectorHref}
                     >
                       {formatSectorName(sector)}
                     </Link>
                   </td>
-                  <td className="px-4 py-2 tabular-nums text-slate-700 dark:text-slate-300">
-                    {formatPrice(r.lastPrice)}
+                  {/* Price + % change stacked, right aligned */}
+                  <td className="px-3 py-2.5 text-right whitespace-nowrap">
+                    <div className="tabular-nums text-slate-700 dark:text-slate-300 leading-tight">
+                      {formatPrice(r.lastPrice)}
+                    </div>
+                    <div className={`tabular-nums font-semibold leading-tight mt-0.5 ${color}`}>
+                      {formatPercent(pct)}
+                    </div>
                   </td>
-                  <td className={`px-4 py-2 tabular-nums font-semibold ${color}`}>
-                    {formatPercent(pct)}
-                  </td>
-                  <td className="px-4 py-2 tabular-nums text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                    {r.lastVolume && r.lastVolume > 0 ? formatCompactNumber(r.lastVolume) : '—'}
+                  {/* Volume + RVOL stacked, right aligned */}
+                  <td className="px-3 py-2.5 text-right whitespace-nowrap">
+                    <div className="tabular-nums text-slate-700 dark:text-slate-300 leading-tight">
+                      {r.lastVolume && r.lastVolume > 0 ? formatCompactNumber(r.lastVolume) : '—'}
+                    </div>
                     {r.latestMoversRVOL != null && r.latestMoversRVOL >= 1.5 && (
-                      <span className="ml-1.5 text-[10px] font-semibold text-blue-500 dark:text-blue-400">
+                      <div className="text-[10px] font-semibold text-blue-500 dark:text-blue-400 leading-tight mt-0.5">
                         {r.latestMoversRVOL.toFixed(1)}×
-                      </span>
+                      </div>
                     )}
                   </td>
-                  <td className="px-4 py-2 text-center">
+                  <td className="px-3 py-2.5 text-center">
                     <span
-                      className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold border ${SIGMA_BADGE[sigma]}`}
+                      className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold border ${SIGMA_BADGE[sigma]}`}
                       title={`Z-score ${z?.toFixed(1) ?? '—'} — ${SIGMA_LABELS[sigma]}`}
                     >
                       {z !== null ? `${Math.abs(z).toFixed(1)}σ` : '—'}
                     </span>
                   </td>
-                  <td className="px-4 py-2">
+                  {/* Catalyst + pillar strip stacked */}
+                  <td className="px-3 py-2.5">
                     <CatalystCell mover={r} />
-                  </td>
-                  <td className="px-4 py-2">
-                    <PillarCell mover={r} />
+                    <PillarStrip mover={r} />
                   </td>
                 </tr>
               );
