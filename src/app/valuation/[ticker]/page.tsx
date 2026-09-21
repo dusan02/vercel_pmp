@@ -10,6 +10,7 @@ import {
   getValuationHistory,
 } from '@/lib/seo/eligibleValuation';
 import { ValuationSeoText } from '@/components/company/ValuationSeoText';
+import { TrackPageEvent } from '@/components/analytics/TrackPageEvent';
 
 export const revalidate = 3600; // 1 hour — valuation history updates daily
 
@@ -274,6 +275,7 @@ export default async function ValuationPage({ params }: PageProps) {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+      <TrackPageEvent name="view_item" params={{ item_id: tickerUpper, item_type: 'valuation' }} />
 
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Breadcrumb */}

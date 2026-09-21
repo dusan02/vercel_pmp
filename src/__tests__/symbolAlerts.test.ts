@@ -143,7 +143,7 @@ describe('notifyTrackedMove delivery', () => {
         });
         expect(sendMock).toHaveBeenCalledTimes(2);
         const payload = JSON.parse(sendMock.mock.calls[0][1]);
-        expect(payload.url).toBe('/premarket/NVDA');
+        expect(payload.url).toBe('/premarket/NVDA?src=alert');
         expect(payload.title).toContain('NVDA');
         expect(payload.title).toContain('+5.8%');
         expect(payload.body).toContain('Earnings');

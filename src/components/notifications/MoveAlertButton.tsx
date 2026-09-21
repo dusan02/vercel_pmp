@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Bell, BellRing } from 'lucide-react';
+import { event } from '@/lib/ga';
 
 /**
  * Compact per-ticker move alert toggle — "Track" step of the product loop.
@@ -75,6 +76,7 @@ export function MoveAlertButton({ symbol }: { symbol: string }) {
                     );
                 }
                 setState('off');
+                event('unsubscribe_alert', { symbol: symbol.toUpperCase() });
                 return;
             }
 
@@ -98,7 +100,10 @@ export function MoveAlertButton({ symbol }: { symbol: string }) {
                 })
             });
 
-            if (res.ok) setState('on');
+            if (res.ok) {
+                setState('on');
+                event('subscribe_alert', { symbol: symbol.toUpperCase() });
+            }
         } catch (error) {
             console.error('Move alert toggle failed:', error);
             if (state === 'off') alert('Push notification permission denied or failed.');

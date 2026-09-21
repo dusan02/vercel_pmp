@@ -140,7 +140,7 @@ export class NotificationService {
                 try {
                     await webpush.sendNotification(
                         { endpoint: alert.endpoint, keys: { p256dh: alert.p256dh, auth: alert.auth } },
-                        JSON.stringify({ title, body, url: `/premarket/${symbol}` }),
+                        JSON.stringify({ title, body, url: `/premarket/${symbol}?src=alert` }),
                     );
                     sent++;
                     console.log(`[Push] Tracked-move alert sent for ${symbol} to ${alert.id}`);
@@ -192,7 +192,7 @@ export class NotificationService {
                     try {
                         await webpush.sendNotification(
                             { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-                            JSON.stringify({ title, body, url: '/premarket-movers' }),
+                            JSON.stringify({ title, body, url: '/premarket-movers?src=digest' }),
                         );
                         console.log(`[Push] Digest sent to ${sub.id}`);
                     } catch (pushErr: any) {

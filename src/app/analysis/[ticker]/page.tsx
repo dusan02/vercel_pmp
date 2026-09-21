@@ -21,6 +21,7 @@ import {
 import { buildStockSchema } from '@/lib/seo/analysisSchemas';
 import { buildFlowPeriods } from '@/components/company/analysis/sections/FinancialFlowsSection';
 import { AnalysisHero } from '@/components/company/analysis/sections/AnalysisHero';
+import { TrackPageEvent } from '@/components/analytics/TrackPageEvent';
 import { CompanyOverviewSection } from '@/components/company/analysis/sections/CompanyOverviewSection';
 import { KeyInsightsSection } from '@/components/company/analysis/sections/KeyInsightsSection';
 import { MoverInsightSection } from '@/components/company/analysis/sections/MoverInsightSection';
@@ -218,6 +219,7 @@ export default async function AnalysisPage({ params }: PageProps) {
       {faqSchema && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(faqSchema) }} />
       )}
+      <TrackPageEvent name="view_item" params={{ item_id: tickerUpper, item_type: 'analysis' }} />
 
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Breadcrumb */}

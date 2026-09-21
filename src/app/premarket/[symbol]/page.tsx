@@ -8,6 +8,7 @@ import { formatPercent, formatPrice, formatMarketCapDiff } from '@/lib/utils/hea
 import { formatSectorName } from '@/lib/utils/format';
 import ShareButtons from '@/components/ShareButtons';
 import { MoveAlertButton } from '@/components/notifications/MoveAlertButton';
+import { TrackPageEvent } from '@/components/analytics/TrackPageEvent';
 import { IntradayChart } from '@/components/company/IntradayChart';
 
 // Revalidate every 5 minutes — mover data is fairly stable post-session
@@ -262,6 +263,7 @@ export default async function MoverSymbolPage({ params }: PageProps) {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(financeSchema) }} />
+      <TrackPageEvent name="view_item" params={{ item_id: tickerUpper, item_type: 'premarket' }} />
 
       <div className="min-h-screen bg-white dark:bg-slate-900">
         {/* Breadcrumb */}

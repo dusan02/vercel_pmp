@@ -3,6 +3,9 @@
  *
  * Usage:
  *   npx tsx scripts/ga4-report.ts --property 123456789 [--days 28] [--dim country|newVsReturning|sessionSource|date|pagePath]
+ *   npx tsx scripts/ga4-report.ts --mode funnel [--days 7]
+ *     Prints the product funnel: entry pages → stock pages → alert
+ *     subscribe → push return, plus all tracked custom events.
  *
  * Env:
  *   GOOGLE_APPLICATION_CREDENTIALS — path to SA key (default ~/.config/pmp/gcp-service-account.json)
@@ -15,6 +18,97 @@ function arg(flag: string, def: string): string {
   return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : def;
 }
 
+const API = 'https://analyticsdata.googleapis.com/v1beta/properties';
+
+async function runReport(token: string, propertyId: string, body: any) {
+  const res = await fetch(`${API}/${propertyId}:runReport`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    console.error(`GA4 API error ${res.status}:`, await res.text());
+    process.exit(1);
+  }
+  return res.json();
+}
+
+/** Funnel mode: sessions bucketed by page type + custom event counts. */
+async function funnel(propertyId: string, days: number) {
+  const token = await getAccessToken(['https://www.googleapis.com/auth/analytics.readonly']);
+  const range = { startDate: `${days}daysAgo`, endDate: 'today' };
+
+  // Stage 1-3: sessions by landing path
+  const pages = await runReport(token, propertyId, {
+    dateRanges: [range],
+    dimensions: [{ name: 'pagePath' }],
+    metrics: [{ name: 'sessions' }, { name: 'engagedSessions' }],
+    orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
+    limit: 1000,
+  });
+
+  const buckets: [string, RegExp][] = [
+    ['Home (/)', /^\/$/],
+    ['Movers/gainers/losers', /^\/(premarket-movers|gainers|losers|unusual-volume)/],
+    ['Heatmap', /^\/heatmap/],
+    ['Stock pages (analysis/valuation/premarket/financials)', /^\/(analysis|valuation|premarket|financials)\/.+/],
+    ['Screener', /^\/screener/],
+    ['Blog', /^\/blog/],
+    ['Chinese locale', /^\/zh/],
+  ];
+  const counts = new Map<string, { s: number; e: number }>();
+  let other = { s: 0, e: 0 };
+  for (const r of pages.rows ?? []) {
+    const path = r.dimensionValues?.[0]?.value ?? '';
+    const s = parseInt(r.metricValues?.[0]?.value ?? '0', 10);
+    const e = parseInt(r.metricValues?.[1]?.value ?? '0', 10);
+    const hit = buckets.find(([, re]) => re.test(path));
+    if (hit) {
+      const c = counts.get(hit[0]) ?? { s: 0, e: 0 };
+      c.s += s; c.e += e;
+      counts.set(hit[0], c);
+    } else {
+      other.s += s; other.e += e;
+    }
+  }
+
+  console.log(`\n=== GA4 funnel — last ${days} days ===\n`);
+  console.log('PAGE STAGES'.padEnd(62) + 'sessions  engaged');
+  console.log('-'.repeat(80));
+  for (const [label] of buckets) {
+    const c = counts.get(label);
+    if (c) console.log(label.padEnd(62) + String(c.s).padStart(8) + String(c.e).padStart(8));
+  }
+  console.log('(other)'.padEnd(62) + String(other.s).padStart(8) + String(other.e).padStart(8));
+
+  // Events
+  const events = await runReport(token, propertyId, {
+    dateRanges: [range],
+    dimensions: [{ name: 'eventName' }],
+    metrics: [{ name: 'eventCount' }, { name: 'totalUsers' }],
+    dimensionFilter: {
+      filter: {
+        fieldName: 'eventName',
+        inListFilter: {
+          values: ['view_item', 'subscribe_alert', 'unsubscribe_alert', 'push_return', 'heatmap_change', 'ticker_click', 'favorite_toggle'],
+        },
+      },
+    },
+    orderBys: [{ metric: { metricName: 'eventCount' }, desc: true }],
+  });
+
+  console.log('\nFUNNEL EVENTS'.padEnd(40) + 'count  users');
+  console.log('-'.repeat(55));
+  for (const r of events.rows ?? []) {
+    console.log(
+      (r.dimensionValues?.[0]?.value ?? '').padEnd(40) +
+      String(r.metricValues?.[0]?.value ?? '0').padStart(6) +
+      String(r.metricValues?.[1]?.value ?? '0').padStart(7)
+    );
+  }
+  console.log('');
+}
+
 async function main() {
   const propertyId = arg('--property', process.env.GA4_PROPERTY_ID ?? '');
   if (!propertyId) {
@@ -22,6 +116,10 @@ async function main() {
     process.exit(1);
   }
   const days = parseInt(arg('--days', '28'), 10);
+  if (arg('--mode', '') === 'funnel') {
+    await funnel(propertyId, days);
+    return;
+  }
   const dim = arg('--dim', 'country');
   const token = await getAccessToken(['https://www.googleapis.com/auth/analytics.readonly']);
 

@@ -11,6 +11,7 @@ import { GAListener } from '@/components/GAListener'
 import { ChunkLoadRecovery } from '@/components/ChunkLoadRecovery'
 import { WebVitalsReporter } from '@/components/WebVitalsReporter'
 import { GA_ID } from '@/lib/ga'
+import { PushAttribution } from '@/components/analytics/PushAttribution'
 import { ThemeEffect } from '@/components/ThemeEffect'
 import { DevCacheClear } from '@/components/DevCacheClear'
 import { Footer } from '@/components/layout/Footer'
@@ -269,6 +270,7 @@ export default function RootLayout({
             <ThemeEffect />
             <ErrorBoundaryWrapper>
               {children}
+              <PushAttribution />
             </ErrorBoundaryWrapper>
             <Footer />
             <GlobalBottomNav />

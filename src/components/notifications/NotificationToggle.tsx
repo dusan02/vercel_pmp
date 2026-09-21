@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Bell, BellOff, Mail, ShieldCheck } from 'lucide-react';
+import { event } from '@/lib/ga';
 
 export function NotificationToggle({
     symbol,
@@ -95,6 +96,7 @@ export function NotificationToggle({
             if (res.ok) {
                 setIsSubscribed(true);
                 setShowEmailInput(false);
+                event('subscribe_alert', { symbol: symbol ? symbol.toUpperCase() : 'digest' });
             }
         } catch (error) {
             console.error('Failed to subscribe:', error);
@@ -122,6 +124,7 @@ export function NotificationToggle({
                     { method: 'DELETE' }
                 );
                 setIsSubscribed(false);
+                event('unsubscribe_alert', { symbol: symbol.toUpperCase() });
             } else {
                 // Full opt-out — broadcast + all symbol alerts + browser push.
                 await fetch(`/api/notifications/subscribe?endpoint=${encodeURIComponent(subscription.endpoint)}`, {
@@ -129,6 +132,7 @@ export function NotificationToggle({
                 });
                 await subscription.unsubscribe();
                 setIsSubscribed(false);
+                event('unsubscribe_alert', { symbol: 'digest' });
             }
         } catch (error) {
             console.error('Failed to unsubscribe:', error);
