@@ -6,6 +6,7 @@ import CompanyLogo from '@/components/CompanyLogo';
 import { formatCompactNumber, formatPercent, formatPrice } from '@/lib/utils/heatmapFormat';
 import { formatSectorName } from '@/lib/utils/format';
 import { SIGMA_LABELS, type SigmaLevel } from '@/services/movers/classify';
+import { isMicrocap } from '@/services/movers/liquidity';
 import type { MoverRecord } from '@/services/movers/getMovers';
 import { event } from '@/lib/ga';
 
@@ -40,11 +41,6 @@ const CATALYST_OPTIONS: { value: MoversFilters['catalyst']; label: string }[] = 
 
 const EARNINGS_TYPES = new Set(['earnings_beat', 'earnings_miss', 'earnings_mixed', 'earnings_release']);
 const ANALYST_TYPES = new Set(['analyst_upgrade', 'analyst_downgrade', 'analyst_action']);
-
-function isMicrocap(m: MoverRecord): boolean {
-  const dollarVol = (m.lastVolume ?? 0) * (m.lastPrice ?? 0);
-  return (m.lastPrice ?? 0) < 5 || dollarVol < 1_000_000;
-}
 
 function matchesFilters(m: MoverRecord, f: MoversFilters): boolean {
   if (!f.showMicrocaps && isMicrocap(m)) return false;

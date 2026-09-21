@@ -10,6 +10,7 @@ import { prisma } from '@/lib/db/prisma';
 import { NotificationToggle } from '@/components/notifications/NotificationToggle';
 import { MoversExplorer } from '@/components/movers/MoversExplorer';
 import { getMoversData } from '@/services/movers/getMovers';
+import { isMicrocap } from '@/services/movers/liquidity';
 
 export const revalidate = 60;
 
@@ -32,8 +33,9 @@ export async function generateMetadata(): Promise<Metadata> {
   let moversSnippet = '';
   try {
     const { movers } = await getMovers();
-    const gainers = movers.filter(m => (m.lastChangePct ?? 0) > 0);
-    const losers = movers.filter(m => (m.lastChangePct ?? 0) < 0);
+    // Liquid movers only — a +400% penny stock must not become the <title>.
+    const gainers = movers.filter(m => (m.lastChangePct ?? 0) > 0 && !isMicrocap(m));
+    const losers = movers.filter(m => (m.lastChangePct ?? 0) < 0 && !isMicrocap(m));
     const parts: string[] = [];
     if (gainers[0]) parts.push(`${gainers[0].symbol} +${gainers[0].lastChangePct.toFixed(1)}%`);
     if (losers[0]) parts.push(`${losers[0].symbol} ${losers[0].lastChangePct.toFixed(1)}%`);
@@ -77,6 +79,10 @@ export default async function PremarketMoversPage() {
   const session = moversData?.session ?? 'closed';
   const gainers = movers.filter(m => (m.lastChangePct ?? 0) > 0.01);
   const losers = movers.filter(m => (m.lastChangePct ?? 0) < -0.01);
+  // Liquid-only variants drive the headline/JSON-LD copy — a $0.00 penny
+  // mover must not become the page title or the FAQ's "top gainer".
+  const liquidGainers = gainers.filter(m => !isMicrocap(m));
+  const liquidLosers = losers.filter(m => !isMicrocap(m));
 
   // Fetch tickers with significant moves for /movers/[symbol] links
   let moverTickers: { symbol: string; name: string | null }[] = [];
@@ -111,8 +117,8 @@ export default async function PremarketMoversPage() {
   }
 
   const today = getTodayFormatted();
-  const topGainer = gainers[0];
-  const topLoser = losers[0];
+  const topGainer = liquidGainers[0];
+  const topLoser = liquidLosers[0];
 
   // JSON-LD must escape "</" so names can't break out of the script tag (XSS).
   const toJsonLd = (schema: object) => JSON.stringify(schema).replace(/</g, '\\u003c');
@@ -124,15 +130,15 @@ export default async function PremarketMoversPage() {
     name: `Premarket stock movers — ${today}`,
     description: `Top pre-market gainers and losers for ${today}, ranked by percentage change.`,
     itemListOrder: 'https://schema.org/ItemListOrderDescending',
-    numberOfItems: Math.min(20, gainers.length + losers.length),
+    numberOfItems: Math.min(20, liquidGainers.length + liquidLosers.length),
     itemListElement: [
-      ...gainers.slice(0, 10).map((r, i) => ({
+      ...liquidGainers.slice(0, 10).map((r, i) => ({
         '@type': 'ListItem',
         position: i + 1,
         name: `${r.name ?? r.symbol} (${r.symbol}) — ${formatPercent(r.lastChangePct ?? 0)}`,
         url: `${baseUrl}/analysis/${r.symbol}`,
       })),
-      ...losers.slice(0, 10).map((r, i) => ({
+      ...liquidLosers.slice(0, 10).map((r, i) => ({
         '@type': 'ListItem',
         position: 11 + i,
         name: `${r.name ?? r.symbol} (${r.symbol}) — ${formatPercent(r.lastChangePct ?? 0)}`,
