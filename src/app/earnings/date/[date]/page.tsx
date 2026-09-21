@@ -14,6 +14,14 @@ const baseUrl = 'https://premarketprice.com';
 
 export const revalidate = 300;
 
+// An EMPTY generateStaticParams makes this dynamic route ISR-eligible in
+// Next 15/16 — without it the page stream-renders on EVERY request (no-store,
+// absent from the ISR manifest). [] prerenders nothing at build; params
+// render on demand and are ISR-cached for `revalidate` seconds.
+export async function generateStaticParams() {
+  return [];
+}
+
 interface PageProps {
   params: Promise<{ date: string }>;
 }

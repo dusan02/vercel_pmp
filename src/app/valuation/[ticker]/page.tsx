@@ -13,6 +13,14 @@ import { ValuationSeoText } from '@/components/company/ValuationSeoText';
 
 export const revalidate = 3600; // 1 hour — valuation history updates daily
 
+// An EMPTY generateStaticParams makes this dynamic route ISR-eligible in
+// Next 15/16 — without it the page stream-renders on EVERY request (no-store,
+// absent from the ISR manifest). [] prerenders nothing at build; params
+// render on demand and are ISR-cached for `revalidate` seconds.
+export async function generateStaticParams() {
+  return [];
+}
+
 interface PageProps {
   params: Promise<{ ticker: string }>;
 }
@@ -43,10 +51,10 @@ async function getTickerBasicData(symbol: string) {
   }
 }
 
-// NOTE: deliberately NO generateStaticParams — in this deployment (custom
-// server + standalone output) prerendered params end up missing from the
-// runtime manifest and 404, and CI builds render with no real DB so
-// degraded/empty output gets baked. ISR renders on demand instead.
+// The empty generateStaticParams above is deliberate: in this deployment
+// (custom server + standalone output) prerendered params end up missing from
+// the runtime manifest and 404, and CI builds render with no real DB so
+// degraded/empty output gets baked. All params render on demand instead.
 
 // --- Statistical helpers ---
 

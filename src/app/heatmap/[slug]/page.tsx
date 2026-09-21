@@ -6,9 +6,15 @@ import { getMetricPage, METRIC_PAGES } from '@/lib/heatmap/metricPages';
 import { toJsonLd } from '@/lib/seo/jsonLd';
 import MetricHeatmapClient from './MetricHeatmapClient';
 
-// Same pattern as /screener/[slug]: no generateStaticParams (prerendered
-// params 404 in this deployment), ISR renders on demand instead.
 export const revalidate = 3600;
+
+// An EMPTY generateStaticParams makes this dynamic route ISR-eligible in
+// Next 15/16 — without it the page stream-renders on EVERY request (no-store,
+// absent from the ISR manifest). [] prerenders nothing at build; params
+// render on demand and are ISR-cached for `revalidate` seconds.
+export async function generateStaticParams() {
+  return [];
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;

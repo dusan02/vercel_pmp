@@ -42,20 +42,25 @@ const NewsSection = dynamic(() => import('@/components/company/analysis/NewsSect
 
 export const revalidate = 60;
 
+/**
+ * An EMPTY generateStaticParams is what actually makes this dynamic route
+ * ISR-eligible in Next 15/16: without it, [ticker] renders via streaming SSR
+ * on EVERY request (no-store, absent from the ISR manifest). Returning []
+ * prerenders nothing at build time — all params render on demand against the
+ * live DB and are then ISR-cached for `revalidate` seconds.
+ * The list stays empty deliberately: this is the heaviest page (6 parallel
+ * data fetches incl. 2 HTTP self-calls); prerendering ~200 tickers at build
+ * time made the build fragile (Next retries 3× at 60 s per page).
+ */
+export async function generateStaticParams() {
+  return [];
+}
+
 interface PageProps {
   params: Promise<{ ticker: string }>;
 }
 
 const baseUrl = 'https://premarketprice.com';
-
-/**
- * NOTE: deliberately NO generateStaticParams here. This is the heaviest page
- * (6 parallel data fetches incl. 2 HTTP self-calls); prerendering ~200 tickers
- * at build time made the build fragile — one slow DB window during export
- * (Next retries 3× at 60 s per page) failed the whole build and took
- * production down. With ISR (revalidate = 60) pages render on demand and are
- * cached — same SEO output, no build-time export risk.
- */
 
 // JSON-LD must escape "</" so a company name/description containing
 // "</script>" cannot break out of the script tag (XSS vector).

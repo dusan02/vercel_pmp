@@ -12,6 +12,14 @@ import { IntradayChart } from '@/components/company/IntradayChart';
 // Revalidate every 5 minutes — mover data is fairly stable post-session
 export const revalidate = 300;
 
+// An EMPTY generateStaticParams makes this dynamic route ISR-eligible in
+// Next 15/16 — without it the page stream-renders on EVERY request (no-store,
+// absent from the ISR manifest). [] prerenders nothing at build; params
+// render on demand and are ISR-cached for `revalidate` seconds.
+export async function generateStaticParams() {
+  return [];
+}
+
 const baseUrl = 'https://premarketprice.com';
 
 // Minimum number of significant moves in the last 30 days for a page to be
@@ -149,11 +157,11 @@ function formatDateShort(date: Date): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-// NOTE: deliberately NO generateStaticParams — in this deployment (custom
-// server + standalone output) prerendered params end up missing from the
-// runtime manifest and 404. Worse, the CI artifact build renders with no
+// The empty generateStaticParams above is deliberate: in this deployment
+// (custom server + standalone output) prerendered params end up missing from
+// the runtime manifest and 404. Worse, the CI artifact build renders with no
 // real DB, so notFound() results get BAKED as permanent static 404 pages.
-// With ISR the pages render on demand against the live DB instead.
+// All params render on demand against the live DB instead.
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { symbol } = await params;

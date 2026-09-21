@@ -7,10 +7,15 @@ import { formatPrice, formatPercent } from '@/lib/utils/heatmapFormat';
 import { formatSectorName } from '@/lib/utils/format';
 import { toJsonLd } from '@/lib/seo/jsonLd';
 
-// NOTE: deliberately NO generateStaticParams — in this deployment (custom
-// server + standalone output) prerendered params end up missing from the
-// runtime manifest and 404. With ISR the pages render on demand instead.
 export const revalidate = 3600; // 1 hour — underlying data refreshes daily anyway
+
+// An EMPTY generateStaticParams makes this dynamic route ISR-eligible in
+// Next 15/16 — without it the page stream-renders on EVERY request (no-store,
+// absent from the ISR manifest). [] prerenders nothing at build; params
+// render on demand and are ISR-cached for `revalidate` seconds.
+export async function generateStaticParams() {
+  return [];
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
