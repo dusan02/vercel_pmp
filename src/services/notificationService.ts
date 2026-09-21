@@ -113,6 +113,54 @@ export class NotificationService {
     }
 
     /**
+     * Per-ticker move alert — sent only to endpoints that subscribed to this
+     * symbol via SymbolAlert (no broadcast). Stale push endpoints (404/410)
+     * are removed so the alert list self-heals.
+     *
+     * Returns delivery stats so the caller can distinguish "no subscribers"
+     * from "total transient failure" — the latter must NOT be treated as
+     * delivered (dedup claim gets released for a retry on the next tick).
+     */
+    static async notifyTrackedMove(
+        symbol: string,
+        move: { changePct: number; zScore: number | null; sigmaLabel: string; reason?: string | null },
+    ): Promise<{ subscribers: number; sent: number; failed: number }> {
+        try {
+            const alerts = await (prisma as any).symbolAlert.findMany({ where: { symbol } });
+            if (alerts.length === 0) return { subscribers: 0, sent: 0, failed: 0 };
+
+            const sign = move.changePct >= 0 ? '+' : '';
+            const title = `${symbol} ${sign}${move.changePct.toFixed(1)}% — ${move.sigmaLabel} move`;
+            const sigmaSuffix = move.zScore != null ? ` (σ ${move.zScore.toFixed(1)})` : '';
+            const body = move.reason ? `${move.reason}${sigmaSuffix}` : `Unusual move detected${sigmaSuffix}`;
+
+            let sent = 0;
+            let failed = 0;
+            for (const alert of alerts) {
+                try {
+                    await webpush.sendNotification(
+                        { endpoint: alert.endpoint, keys: { p256dh: alert.p256dh, auth: alert.auth } },
+                        JSON.stringify({ title, body, url: `/premarket/${symbol}` }),
+                    );
+                    sent++;
+                    console.log(`[Push] Tracked-move alert sent for ${symbol} to ${alert.id}`);
+                } catch (pushErr: any) {
+                    failed++;
+                    if (pushErr?.statusCode === 404 || pushErr?.statusCode === 410) {
+                        await (prisma as any).symbolAlert.delete({ where: { id: alert.id } }).catch(() => {});
+                    } else {
+                        console.error(`[Push] Tracked-move failed for ${alert.id}:`, pushErr?.statusCode ?? pushErr);
+                    }
+                }
+            }
+            return { subscribers: alerts.length, sent, failed };
+        } catch (error) {
+            console.error('[NotificationService] notifyTrackedMove failed:', error);
+            return { subscribers: -1, sent: 0, failed: 0 };
+        }
+    }
+
+    /**
      * Daily premarket movers digest — top gainers/losers pushed to all
      * subscribers (web push + email when SMTP is configured).
      */

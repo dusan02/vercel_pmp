@@ -4,9 +4,13 @@ import React, { useState, useEffect } from 'react';
 import { Bell, BellOff, Mail, ShieldCheck } from 'lucide-react';
 
 export function NotificationToggle({
+    symbol,
     title = 'Quality Alerts',
     subtitle = 'Never miss a Safe Zone breakout.',
 }: {
+    /** When set, this toggle manages a per-ticker move alert (SymbolAlert)
+     *  instead of the broadcast digest/breakout subscription. */
+    symbol?: string;
     title?: string;
     subtitle?: string;
 }) {
@@ -22,12 +26,32 @@ export function NotificationToggle({
         const isDevHost = h === 'localhost' || h === '127.0.0.1' || h === '[::1]';
         if ('serviceWorker' in navigator && 'PushManager' in window && !isDevHost) {
             navigator.serviceWorker.register('/sw.js').then(registration => {
-                registration.pushManager.getSubscription().then(subscription => {
-                    setIsSubscribed(!!subscription);
+                registration.pushManager.getSubscription().then(async subscription => {
+                    if (!subscription) {
+                        setIsSubscribed(false);
+                        return;
+                    }
+                    if (!symbol) {
+                        setIsSubscribed(true);
+                        return;
+                    }
+                    // Per-symbol state — ask the backend which symbols this
+                    // endpoint watches (endpoint identity = push endpoint).
+                    try {
+                        const res = await fetch(
+                            `/api/notifications/subscribe?endpoint=${encodeURIComponent(subscription.endpoint)}`
+                        );
+                        if (res.ok) {
+                            const data = await res.json();
+                            setIsSubscribed(
+                                Array.isArray(data.symbols) && data.symbols.includes(symbol.toUpperCase())
+                            );
+                        }
+                    } catch { }
                 });
             }).catch(() => {});
         }
-    }, []);
+    }, [symbol]);
 
     const urlBase64ToUint8Array = (base64String: string) => {
         const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -63,7 +87,8 @@ export function NotificationToggle({
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     subscription: subscription.toJSON(),
-                    email: email || null
+                    email: email || null,
+                    symbol: symbol || null
                 })
             });
 
@@ -84,12 +109,24 @@ export function NotificationToggle({
         try {
             const registration = await navigator.serviceWorker.ready;
             const subscription = await registration.pushManager.getSubscription();
-            if (subscription) {
-                // Notify backend to delete the subscription
+            if (!subscription) {
+                setIsSubscribed(false);
+                return;
+            }
+
+            if (symbol) {
+                // Per-symbol unsubscribe — remove only this SymbolAlert row.
+                // The browser push subscription stays alive for other symbols.
+                await fetch(
+                    `/api/notifications/subscribe?endpoint=${encodeURIComponent(subscription.endpoint)}&symbol=${encodeURIComponent(symbol)}`,
+                    { method: 'DELETE' }
+                );
+                setIsSubscribed(false);
+            } else {
+                // Full opt-out — broadcast + all symbol alerts + browser push.
                 await fetch(`/api/notifications/subscribe?endpoint=${encodeURIComponent(subscription.endpoint)}`, {
                     method: 'DELETE'
                 });
-
                 await subscription.unsubscribe();
                 setIsSubscribed(false);
             }
@@ -112,7 +149,7 @@ export function NotificationToggle({
                 </div>
 
                 <button
-                    onClick={() => isSubscribed ? unsubscribe() : setShowEmailInput(!showEmailInput)}
+                    onClick={() => isSubscribed ? unsubscribe() : symbol ? subscribe() : setShowEmailInput(!showEmailInput)}
                     disabled={loading}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${isSubscribed
                         ? 'bg-white text-blue-600 shadow-sm border border-blue-100'
@@ -151,7 +188,7 @@ export function NotificationToggle({
                         onClick={subscribe}
                         className="w-full bg-blue-600 text-white py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-blue-700 transition-colors"
                     >
-                        Activate Multi-Channel Alerts
+                        {symbol ? 'Activate Move Alerts' : 'Activate Multi-Channel Alerts'}
                     </button>
                 </div>
             )}

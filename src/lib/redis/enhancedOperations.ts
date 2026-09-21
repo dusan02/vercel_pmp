@@ -100,6 +100,41 @@ export class EnhancedRedisOperations {
   }
 
   /**
+   * Atomic set-if-not-exists (SET NX EX). Returns true when the caller
+   * claimed the key, false when it already existed. Used for alert dedup —
+   * only the first writer wins, so a repeated event can't double-notify.
+   */
+  async setNx(key: string, ttl: number, value: string): Promise<boolean> {
+    try {
+      const redisAvailable = await this.ensureRedisAvailable();
+
+      if (redisAvailable) {
+        const result = await redisClient.set(key, value, { NX: true, EX: ttl });
+        return result === 'OK';
+      }
+    } catch (error) {
+      console.warn(`⚠️ Redis setNx failed for ${key}, using fallback:`, error);
+    }
+
+    // Fallback: emulate NX via localStorage (get-then-set, single-process safe)
+    try {
+      const existing = safeGetItem(this.getFallbackKey(key));
+      if (existing) {
+        const parsed = JSON.parse(existing);
+        if (parsed.expires > Date.now()) return false;
+      }
+      safeSetItem(this.getFallbackKey(key), JSON.stringify({
+        value,
+        expires: Date.now() + (ttl * 1000)
+      }));
+      return true;
+    } catch (fallbackError) {
+      console.error(`❌ Fallback setNx failed for ${key}:`, fallbackError);
+      return false;
+    }
+  }
+
+  /**
    * Get value with automatic fallback
    */
   async get(key: string, options: CacheOptions = {}): Promise<string | null> {

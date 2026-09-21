@@ -24,6 +24,7 @@ import { processBatchWithConcurrency } from '@/lib/batchProcessor';
 
 import { polygonCircuitBreaker, __IS_TEST__, sleep, PolygonSnapshot, IngestResult } from './shared';
 import { fetchPolygonSnapshot, normalizeSnapshot, upsertToDB } from './core';
+import { maybeNotifyTrackedMove } from '@/services/alerts/trackedMoveAlerts';
 import { checkStaticLock, resolvePrevCloses, loadRegularCloses, loadFrozenPrices } from './prevCloseResolver';
 import { batchLoadLastChangePct, batchLoadTickerStats } from './batchStatsLoader';
 
@@ -173,7 +174,7 @@ export async function ingestBatch(
 
         const cachedLastChangePct = lastChangePctMap.get(symbol);
         const stats = statsMap.get(symbol);
-        const { success: dbSuccess, effectiveChangePct, effectivePrice, marketCap, marketCapDiff, zScore, rvol } = await upsertToDB(
+        const { success: dbSuccess, effectiveChangePct, effectivePrice, marketCap, marketCapDiff, zScore, rvol, priceUpdated } = await upsertToDB(
           symbol, session, normalized, previousClose, shares, isStaticUpdateLocked, cachedLastChangePct, stats, force
         );
 
@@ -191,7 +192,7 @@ export async function ingestBatch(
         // Get ticker info for name/sector
         const ticker = await prisma.ticker.findUnique({
           where: { symbol },
-          select: { name: true, sector: true, industry: true }
+          select: { name: true, sector: true, industry: true, moversReason: true }
         });
 
         // Update rank indexes
@@ -207,6 +208,19 @@ export async function ingestBatch(
           zscore: zScore,
           rvol: rvol
         }, false);
+
+        // Tracked-move alerts — fire-and-forget, must never block ingest.
+        // Only when the Ticker row got a real price update (not weekend-frozen
+        // or stale-data skip) so alerts reflect live moves only.
+        if (dbSuccess && priceUpdated) {
+          void maybeNotifyTrackedMove({
+            symbol,
+            zScore,
+            changePct: effectiveChangePct,
+            dateET: calendarDateETStr,
+            reason: ticker?.moversReason ?? null,
+          }).catch(() => {});
+        }
 
         // Check and update stats cache (min/max)
         const checkAndUpdateStats = async (field: 'price' | 'cap' | 'capdiff' | 'chg', value: number) => {

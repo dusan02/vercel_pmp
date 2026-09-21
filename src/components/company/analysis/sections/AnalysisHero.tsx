@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { formatPrice, formatPercent, formatMarketCap } from '@/lib/utils/format';
 import { AddToWatchlist } from '@/components/company/AddToWatchlist';
+import { MoveAlertButton } from '@/components/notifications/MoveAlertButton';
 
 interface AnalysisHeroProps {
   ticker: string;
@@ -109,6 +110,7 @@ export function AnalysisHero({
             </h1>
           </div>
           <AddToWatchlist ticker={ticker} />
+          <MoveAlertButton symbol={ticker} />
         </div>
       </div>
       {/* Price line — separate row */}

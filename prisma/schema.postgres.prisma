@@ -363,6 +363,23 @@ model Subscription {
   updatedAt DateTime @updatedAt
 }
 
+// Per-ticker move alerts. Kept separate from Subscription on purpose:
+// Subscription = browser push endpoint opted into broadcasts (digest),
+// SymbolAlert = what that endpoint watches (one endpoint → N symbols).
+// Keys are denormalized here so alert-only users never join the digest list.
+model SymbolAlert {
+  id        String   @id @default(cuid())
+  endpoint  String
+  symbol    String
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([endpoint, symbol])
+  @@index([symbol])
+}
+
 model ValuationHistory {
   id         String   @id @default(cuid())
   symbol     String

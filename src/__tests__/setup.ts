@@ -22,7 +22,7 @@ jest.mock('@/lib/redis/client', () => ({
 // Mock fetch for API tests
 global.fetch = jest.fn();
 
-// Mock localStorage
+// Mock localStorage — only in DOM environments (node-env test files have no window)
 const localStorageMock = {
   getItem: jest.fn(),
   setItem: jest.fn(),
@@ -31,25 +31,31 @@ const localStorageMock = {
   length: 0,
   key: jest.fn()
 };
-Object.defineProperty(window, 'localStorage', {
-  value: localStorageMock
-});
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, 'localStorage', {
+    value: localStorageMock
+  });
+}
 
 // Mock navigator.vibrate
-Object.defineProperty(navigator, 'vibrate', {
-  value: jest.fn(),
-  writable: true
-});
+if (typeof navigator !== 'undefined') {
+  Object.defineProperty(navigator, 'vibrate', {
+    value: jest.fn(),
+    writable: true
+  });
+}
 
 // Mock window.visualViewport
-Object.defineProperty(window, 'visualViewport', {
-  value: {
-    height: window.innerHeight,
-    addEventListener: jest.fn(),
-    removeEventListener: jest.fn()
-  },
-  writable: true
-});
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, 'visualViewport', {
+    value: {
+      height: window.innerHeight,
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn()
+    },
+    writable: true
+  });
+}
 
 // Mock ResizeObserver
 global.ResizeObserver = jest.fn().mockImplementation(() => ({

@@ -34,8 +34,8 @@ export async function upsertToDB(
   lastChangePctFromCache: number | null | undefined = undefined,
   stats?: { avgVolume20d: number | null; avgReturn20d: number | null; stdDevReturn20d: number | null },
   force: boolean = false
-): Promise<{ success: boolean; effectiveChangePct: number; effectivePrice: number; marketCap: number; marketCapDiff: number; zScore: number; rvol: number }> {
-  if (!normalized) return { success: false, effectiveChangePct: 0, effectivePrice: 0, marketCap: 0, marketCapDiff: 0, zScore: 0, rvol: 0 };
+): Promise<{ success: boolean; effectiveChangePct: number; effectivePrice: number; marketCap: number; marketCapDiff: number; zScore: number; rvol: number; priceUpdated: boolean }> {
+  if (!normalized) return { success: false, effectiveChangePct: 0, effectivePrice: 0, marketCap: 0, marketCapDiff: 0, zScore: 0, rvol: 0, priceUpdated: false };
 
   try {
     const dateET = getDateET();
@@ -83,7 +83,7 @@ export async function upsertToDB(
                 await redisClient.sRem('universe:sp500', symbol);
                 await redisClient.sRem('universe:pmp', symbol);
               }
-              return { success: false, effectiveChangePct: 0, effectivePrice: 0, marketCap: 0, marketCapDiff: 0, zScore: 0, rvol: 0 };
+              return { success: false, effectiveChangePct: 0, effectivePrice: 0, marketCap: 0, marketCapDiff: 0, zScore: 0, rvol: 0, priceUpdated: false };
             }
 
             metadataUpdate = {
@@ -230,7 +230,7 @@ export async function upsertToDB(
         });
       }
 
-      return { success: true, effectiveChangePct: changePctToUse, effectivePrice, marketCap, marketCapDiff, zScore, rvol };
+      return { success: true, effectiveChangePct: changePctToUse, effectivePrice, marketCap, marketCapDiff, zScore, rvol, priceUpdated: false };
     }
 
     // Guard latestPrevClose from being overwritten with stale data
@@ -369,9 +369,9 @@ export async function upsertToDB(
       }
     }
 
-  return { success: true, effectiveChangePct: changePctToUse, effectivePrice, marketCap, marketCapDiff, zScore, rvol };
+  return { success: true, effectiveChangePct: changePctToUse, effectivePrice, marketCap, marketCapDiff, zScore, rvol, priceUpdated: !isWeekendFrozen };
   } catch (error) {
     console.error(`Error upserting ${symbol} to DB:`, error);
-    return { success: false, effectiveChangePct: normalized ? normalized.changePct : 0, effectivePrice: normalized ? normalized.price : 0, marketCap: 0, marketCapDiff: 0, zScore: 0, rvol: 0 };
+    return { success: false, effectiveChangePct: normalized ? normalized.changePct : 0, effectivePrice: normalized ? normalized.price : 0, marketCap: 0, marketCapDiff: 0, zScore: 0, rvol: 0, priceUpdated: false };
   }
 }

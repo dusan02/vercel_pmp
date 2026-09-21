@@ -7,6 +7,7 @@ import { getCompanyName } from '@/lib/companyNames';
 import { formatPercent, formatPrice, formatMarketCapDiff } from '@/lib/utils/heatmapFormat';
 import { formatSectorName } from '@/lib/utils/format';
 import ShareButtons from '@/components/ShareButtons';
+import { MoveAlertButton } from '@/components/notifications/MoveAlertButton';
 import { IntradayChart } from '@/components/company/IntradayChart';
 
 // Revalidate every 5 minutes — mover data is fairly stable post-session
@@ -283,10 +284,13 @@ export default async function MoverSymbolPage({ params }: PageProps) {
               <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
                 {companyName} ({tickerUpper}) Premarket Movers
               </h1>
-              <ShareButtons
-                url={`${baseUrl}/premarket/${tickerUpper}`}
-                title={`${companyName} (${tickerUpper}) Premarket Movers | PreMarketPrice`}
-              />
+              <div className="flex items-center gap-2 shrink-0">
+                <MoveAlertButton symbol={tickerUpper} />
+                <ShareButtons
+                  url={`${baseUrl}/premarket/${tickerUpper}`}
+                  title={`${companyName} (${tickerUpper}) Premarket Movers | PreMarketPrice`}
+                />
+              </div>
             </div>
             <p className="mt-3 text-slate-600 dark:text-slate-300 max-w-3xl leading-relaxed">
               Pre-market price movements and significant market activity for {companyName} ({`$${tickerUpper}`}).

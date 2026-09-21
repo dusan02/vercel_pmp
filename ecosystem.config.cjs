@@ -110,6 +110,9 @@ module.exports = {
         // Redis — must match the API's Redis (port 6380 in production)
         REDIS_URL: envVars.REDIS_URL || "redis://127.0.0.1:6380",
         USE_LOCAL_REDIS: "true",
+        // VAPID keys for tracked-move push alerts (worker-side webpush)
+        VAPID_PUBLIC_KEY: envVars.VAPID_PUBLIC_KEY,
+        VAPID_PRIVATE_KEY: envVars.VAPID_PRIVATE_KEY,
       },
       error_file: path.join(__dirname, "logs", "pm2", "polygon-worker-error.log"),
       out_file: path.join(__dirname, "logs", "pm2", "polygon-worker-out.log"),
