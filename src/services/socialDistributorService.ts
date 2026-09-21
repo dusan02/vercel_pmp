@@ -124,13 +124,15 @@ export class SocialDistributorService {
      *   X relationship; our account's X credits are bypassed entirely).
      * - Otherwise direct X API (requires paid credits on the X side).
      */
-    private bufferProfileId: string | null | undefined;
+    private bufferChannelIds: string[] | null | undefined;
 
     private async getPoster(): Promise<((mover: any, text: string) => Promise<void>) | null> {
         if (process.env.BUFFER_ACCESS_TOKEN) {
-            const profileId = await this.getBufferXProfileId();
-            if (profileId) return (_mover, text) => this.postViaBuffer(profileId, text);
-            console.warn('⚠️ SocialDistributorService: BUFFER_ACCESS_TOKEN set but no X channel found in Buffer');
+            const channelIds = await this.getBufferChannelIds();
+            if (channelIds && channelIds.length > 0) {
+                return (_mover, text) => this.postViaBuffer(channelIds, text);
+            }
+            console.warn('⚠️ SocialDistributorService: BUFFER_ACCESS_TOKEN set but no channels found in Buffer');
         }
 
         const twitterClient = this.getTwitterClient();
@@ -156,39 +158,66 @@ export class SocialDistributorService {
         };
     }
 
-    /** First X (twitter) channel connected to the Buffer account. Cached per process. */
-    private async getBufferXProfileId(): Promise<string | null> {
-        if (this.bufferProfileId !== undefined) return this.bufferProfileId;
-        try {
-            const res = await fetch(`https://api.bufferapp.com/1/profiles.json?access_token=${process.env.BUFFER_ACCESS_TOKEN}`);
-            if (!res.ok) {
-                console.warn(`⚠️ SocialDistributorService: Buffer profiles fetch failed (${res.status})`);
-                return (this.bufferProfileId = null);
-            }
-            const profiles = await res.json();
-            const xProfile = (profiles as any[]).find(p => p.service === 'twitter' || p.service === 'x');
-            this.bufferProfileId = (xProfile?.id as string | undefined) ?? null;
-        } catch (e) {
-            console.warn('⚠️ SocialDistributorService: Buffer profiles fetch error', e);
-            this.bufferProfileId = null;
-        }
-        return this.bufferProfileId;
+    private async bufferGraphql(query: string, variables?: Record<string, unknown>): Promise<any> {
+        const res = await fetch('https://api.buffer.com', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${process.env.BUFFER_ACCESS_TOKEN}`,
+            },
+            body: JSON.stringify({ query, variables }),
+        });
+        if (!res.ok) throw new Error(`Buffer API HTTP ${res.status}`);
+        return res.json();
     }
 
-    private async postViaBuffer(profileId: string, text: string): Promise<void> {
-        const res = await fetch(`https://api.bufferapp.com/1/updates/create.json?access_token=${process.env.BUFFER_ACCESS_TOKEN}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({
-                'profile_ids[]': profileId,
-                text,
-                now: 'true',
-            }).toString(),
-        });
-        if (!res.ok) {
-            const body = await res.text();
-            throw new Error(`Buffer post failed (${res.status}): ${body.slice(0, 200)}`);
+    /** Connected Buffer channels we post to (twitter/x, threads, bluesky). Cached per process. */
+    private async getBufferChannelIds(): Promise<string[] | null> {
+        if (this.bufferChannelIds !== undefined) return this.bufferChannelIds;
+        try {
+            const account = await this.bufferGraphql('query { account { organizations { id } } }');
+            const orgId = account?.data?.account?.organizations?.[0]?.id;
+            if (!orgId) return (this.bufferChannelIds = null);
+
+            const channels = await this.bufferGraphql(
+                'query($orgId: ID!) { channels(input: { organizationId: $orgId }) { id service } }',
+                { orgId }
+            );
+            const wanted = new Set(['twitter', 'x', 'threads', 'bluesky']);
+            this.bufferChannelIds = (channels?.data?.channels ?? [])
+                .filter((c: any) => wanted.has(c.service))
+                .map((c: any) => c.id as string);
+        } catch (e) {
+            console.warn('⚠️ SocialDistributorService: Buffer channel lookup failed', e);
+            this.bufferChannelIds = null;
         }
+        return this.bufferChannelIds ?? null;
+    }
+
+    /** Publish immediately (shareNow) to all connected channels. Throws if every channel fails. */
+    private async postViaBuffer(channelIds: string[], text: string): Promise<void> {
+        let successes = 0;
+        let lastError: unknown;
+        for (const channelId of channelIds) {
+            const res = await this.bufferGraphql(
+                `mutation($channelId: ID!, $text: String!) {
+                  createPost(input: { channelId: $channelId, text: $text, schedulingType: automatic, mode: shareNow }) {
+                    ... on PostActionSuccess { post { id status } }
+                    ... on MutationError { message }
+                  }
+                }`,
+                { channelId, text }
+            ).catch(e => ({ __error: e }));
+
+            const err = (res as any)?.__error ?? res?.errors?.[0]?.message ?? res?.data?.createPost?.message;
+            if (err) {
+                console.warn(`⚠️ SocialDistributorService: Buffer post to channel ${channelId} failed:`, err);
+                lastError = err;
+            } else {
+                successes++;
+            }
+        }
+        if (successes === 0) throw new Error(`Buffer post failed on all channels: ${String(lastError).slice(0, 200)}`);
     }
 
     private generateOgImageUrl(ticker: any): string {
