@@ -124,21 +124,54 @@ export class SocialDistributorService {
      *   X relationship; our account's X credits are bypassed entirely).
      * - Otherwise direct X API (requires paid credits on the X side).
      */
-    private bufferChannelIds: string[] | null | undefined;
+    private bufferChannels: { id: string; service: string }[] | null | undefined;
 
     private async getPoster(): Promise<((mover: any, text: string) => Promise<void>) | null> {
+        const posters: ((mover: any, text: string) => Promise<void>)[] = [];
+
+        // Buffer channels (X, Threads, Bluesky if connected there)
+        let bufferCoversBluesky = false;
         if (process.env.BUFFER_ACCESS_TOKEN) {
-            const channelIds = await this.getBufferChannelIds();
-            if (channelIds && channelIds.length > 0) {
-                return (_mover, text) => this.postViaBuffer(channelIds, text);
+            const channels = await this.getBufferChannels();
+            if (channels.length > 0) {
+                bufferCoversBluesky = channels.some(c => c.service === 'bluesky');
+                posters.push((_mover, text) => this.postViaBuffer(channels.map(c => c.id), text));
+            } else {
+                console.warn('⚠️ SocialDistributorService: BUFFER_ACCESS_TOKEN set but no channels found in Buffer');
             }
-            console.warn('⚠️ SocialDistributorService: BUFFER_ACCESS_TOKEN set but no channels found in Buffer');
         }
 
-        const twitterClient = this.getTwitterClient();
-        if (!twitterClient) return null;
+        // Direct Bluesky via AT Protocol — free, no Buffer needed. Skipped
+        // when a bluesky Buffer channel already covers it (no double-posts).
+        if (process.env.BLUESKY_HANDLE && process.env.BLUESKY_APP_PASSWORD && !bufferCoversBluesky) {
+            posters.push((_mover, text) => this.postViaBluesky(text));
+        }
 
+        if (posters.length === 0) {
+            const twitterClient = this.getTwitterClient();
+            if (!twitterClient) return null;
+            posters.push(this.getTwitterPoster(twitterClient));
+        }
+
+        // Composite: run all channels, fail only if every one fails.
         return async (mover, text) => {
+            let ok = 0;
+            let lastError: unknown;
+            for (const post of posters) {
+                try {
+                    await post(mover, text);
+                    ok++;
+                } catch (e) {
+                    console.warn('⚠️ SocialDistributorService: channel post failed', e);
+                    lastError = e;
+                }
+            }
+            if (ok === 0) throw lastError;
+        };
+    }
+
+    private getTwitterPoster(twitterClient: TwitterApi) {
+        return async (mover: any, text: string) => {
             const ogImageUrl = this.generateOgImageUrl(mover);
             const imageBuffer = await this.fetchImageBuffer(ogImageUrl);
 
@@ -172,26 +205,25 @@ export class SocialDistributorService {
     }
 
     /** Connected Buffer channels we post to (twitter/x, threads, bluesky). Cached per process. */
-    private async getBufferChannelIds(): Promise<string[] | null> {
-        if (this.bufferChannelIds !== undefined) return this.bufferChannelIds;
+    private async getBufferChannels(): Promise<{ id: string; service: string }[]> {
+        if (this.bufferChannels !== undefined) return this.bufferChannels ?? [];
         try {
             const account = await this.bufferGraphql('query { account { organizations { id } } }');
             const orgId = account?.data?.account?.organizations?.[0]?.id;
-            if (!orgId) return (this.bufferChannelIds = null);
+            if (!orgId) return (this.bufferChannels = null) ?? [];
 
             const channels = await this.bufferGraphql(
                 'query($orgId: OrganizationId!) { channels(input: { organizationId: $orgId }) { id service } }',
                 { orgId }
             );
             const wanted = new Set(['twitter', 'x', 'threads', 'bluesky']);
-            this.bufferChannelIds = (channels?.data?.channels ?? [])
-                .filter((c: any) => wanted.has(c.service))
-                .map((c: any) => c.id as string);
+            this.bufferChannels = (channels?.data?.channels ?? [])
+                .filter((c: any) => wanted.has(c.service));
         } catch (e) {
             console.warn('⚠️ SocialDistributorService: Buffer channel lookup failed', e);
-            this.bufferChannelIds = null;
+            this.bufferChannels = null;
         }
-        return this.bufferChannelIds ?? null;
+        return this.bufferChannels ?? [];
     }
 
     /** Publish immediately (shareNow) to all connected channels. Throws if every channel fails. */
@@ -218,6 +250,71 @@ export class SocialDistributorService {
             }
         }
         if (successes === 0) throw new Error(`Buffer post failed on all channels: ${String(lastError).slice(0, 200)}`);
+    }
+
+    // ─── Bluesky (AT Protocol) ──────────────────────────────────────────────
+    private bskySession: { accessJwt: string; did: string } | null = null;
+
+    private async createBskySession(): Promise<{ accessJwt: string; did: string }> {
+        const res = await fetch('https://bsky.social/xrpc/com.atproto.server.createSession', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                identifier: process.env.BLUESKY_HANDLE,
+                password: process.env.BLUESKY_APP_PASSWORD,
+            }),
+        });
+        if (!res.ok) throw new Error(`Bluesky session failed (${res.status}): ${(await res.text()).slice(0, 200)}`);
+        this.bskySession = await res.json();
+        return this.bskySession!;
+    }
+
+    /** Facets make URLs in the text clickable — byte offsets, not char offsets. */
+    private bskyLinkFacets(text: string) {
+        const encoder = new TextEncoder();
+        const facets = [];
+        const re = /https?:\/\/[^\s]+/g;
+        let m: RegExpExecArray | null;
+        while ((m = re.exec(text)) !== null) {
+            const byteStart = encoder.encode(text.slice(0, m.index)).length;
+            facets.push({
+                index: { byteStart, byteEnd: byteStart + encoder.encode(m[0]).length },
+                features: [{ $type: 'app.bsky.richtext.facet#link', uri: m[0] }],
+            });
+        }
+        return facets;
+    }
+
+    private async postViaBluesky(text: string): Promise<void> {
+        const attempt = async (): Promise<Response> => {
+            const session = this.bskySession ?? (await this.createBskySession());
+            return fetch('https://bsky.social/xrpc/com.atproto.repo.createRecord', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${session.accessJwt}`,
+                },
+                body: JSON.stringify({
+                    repo: session.did,
+                    collection: 'app.bsky.feed.post',
+                    record: {
+                        $type: 'app.bsky.feed.post',
+                        text,
+                        createdAt: new Date().toISOString(),
+                        langs: ['en'],
+                        facets: this.bskyLinkFacets(text),
+                    },
+                }),
+            });
+        };
+
+        let res = await attempt();
+        if (res.status === 401 || res.status === 400) {
+            // Token may be expired — refresh session and retry once.
+            this.bskySession = null;
+            res = await attempt();
+        }
+        if (!res.ok) throw new Error(`Bluesky post failed (${res.status}): ${(await res.text()).slice(0, 200)}`);
     }
 
     private generateOgImageUrl(ticker: any): string {
