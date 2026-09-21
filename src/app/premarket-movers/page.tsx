@@ -9,6 +9,7 @@ import { getPremarketDateSummaries } from '@/lib/seo/premarketArchive';
 import { getEligibleAnalysisSet } from '@/lib/seo/eligibleTickers';
 import { prisma } from '@/lib/db/prisma';
 import { NotificationToggle } from '@/components/notifications/NotificationToggle';
+import CompanyLogo from '@/components/CompanyLogo';
 import { getMoversData, type MoverRecord } from '@/services/movers/getMovers';
 import { SIGMA_LABELS, type SigmaLevel } from '@/services/movers/classify';
 
@@ -167,9 +168,10 @@ function MoversTable({ title, rows, eligibleAnalysis }: { title: string; rows: M
                   key={r.symbol}
                   className="border-t border-slate-100 dark:border-slate-800 hover:bg-slate-50/60 dark:hover:bg-slate-950/60 align-top"
                 >
-                  {/* Stock: ticker + company + sector stacked */}
+                  {/* Stock: logo + ticker + company + sector stacked */}
                   <td className="px-3 py-2.5">
-                    <div className="font-semibold text-slate-900 dark:text-slate-100 leading-tight">
+                    <div className="flex items-center gap-2 font-semibold text-slate-900 dark:text-slate-100 leading-tight">
+                      <CompanyLogo ticker={r.symbol} size={22} className="rounded" />
                       {eligibleAnalysis.has(r.symbol) ? (
                         <Link className="hover:underline" href={`/analysis/${r.symbol}`}>
                           {r.symbol}
