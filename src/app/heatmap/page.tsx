@@ -6,7 +6,7 @@ import Link from 'next/link';
 import ResponsiveMarketHeatmap from '@/components/ResponsiveMarketHeatmap';
 import type { CompanyNode } from '@/lib/heatmap/types';
 import { useHeatmapMetric } from '@/hooks/useHeatmapMetric';
-import { HeatmapMetricButtons } from '@/components/HeatmapMetricButtons';
+import { HeatmapMetricChips } from '@/components/HeatmapMetricChips';
 import { HEATMAP_METRICS, isHeatmapMetric } from '@/lib/heatmap/metricValue';
 import { METRIC_PAGES } from '@/lib/heatmap/metricPages';
 import { HeatmapMethodology } from '@/components/HeatmapMethodology';
@@ -160,14 +160,8 @@ export default function HeatmapPage() {
             </p>
           </div>
 
-          {/* Heatmap Metric Buttons - moved here by user request */}
-          <div className="ml-2">
-            <HeatmapMetricButtons 
-              metric={metric} 
-              onMetricChange={setMetric}
-              variant="dark"
-            />
-          </div>
+          {/* Metric chips live in the strip below the header — one tap,
+              no dropdown round-trip (screener-style filters) */}
 
           {/* Score methodology — ⓘ opens a floating panel; content stays in DOM for crawlers */}
           <details className="relative group">
@@ -213,6 +207,12 @@ export default function HeatmapPage() {
           </button>
         </div>
       </div>
+
+      {/* Metric chip strip — screener-style one-tap filters */}
+      <div className="px-2 py-1 flex-shrink-0 bg-black border-b border-gray-800">
+        <HeatmapMetricChips metric={metric} onMetricChange={setMetric} />
+      </div>
+
       <div 
         className="flex-1 min-h-0 relative w-full"
         style={{ overflow: 'hidden', width: '100%' }}
