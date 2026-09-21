@@ -180,7 +180,7 @@ export class SocialDistributorService {
             if (!orgId) return (this.bufferChannelIds = null);
 
             const channels = await this.bufferGraphql(
-                'query($orgId: ID!) { channels(input: { organizationId: $orgId }) { id service } }',
+                'query($orgId: OrganizationId!) { channels(input: { organizationId: $orgId }) { id service } }',
                 { orgId }
             );
             const wanted = new Set(['twitter', 'x', 'threads', 'bluesky']);
@@ -200,7 +200,7 @@ export class SocialDistributorService {
         let lastError: unknown;
         for (const channelId of channelIds) {
             const res = await this.bufferGraphql(
-                `mutation($channelId: ID!, $text: String!) {
+                `mutation($channelId: ChannelId!, $text: String!) {
                   createPost(input: { channelId: $channelId, text: $text, schedulingType: automatic, mode: shareNow }) {
                     ... on PostActionSuccess { post { id status } }
                     ... on MutationError { message }
