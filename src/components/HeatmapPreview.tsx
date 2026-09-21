@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { SectionIcon } from './SectionIcon';
 import { useHeatmapMetric } from '@/hooks/useHeatmapMetric';
-import { HeatmapMetricButtons } from './HeatmapMetricButtons';
+import { HeatmapMetricChips } from './HeatmapMetricChips';
 import { HeatmapViewButton } from './HeatmapViewButton';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { GlobalStockSearch } from './GlobalStockSearch';
@@ -79,12 +79,16 @@ export function HeatmapPreview({ activeView, wrapperClass, onTileClick, onTileHo
             </div>
           )}
           <div className="flex items-center gap-3 ml-auto shrink-0">
-            <HeatmapMetricButtons
-              metric={metric}
-              onMetricChange={setMetric}
-            />
             <HeatmapViewButton />
           </div>
+        </div>
+      )}
+
+      {/* Metric chip strip — one-tap filters above the map (desktop only;
+          mobile has its own selector inside MobileTreemapNew) */}
+      {isDesktop && (
+        <div className="px-4 mb-3">
+          <HeatmapMetricChips metric={metric} onMetricChange={setMetric} />
         </div>
       )}
 

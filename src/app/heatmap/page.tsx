@@ -210,7 +210,7 @@ export default function HeatmapPage() {
 
       {/* Metric chip strip — screener-style one-tap filters */}
       <div className="px-2 py-1 flex-shrink-0 bg-black border-b border-gray-800">
-        <HeatmapMetricChips metric={metric} onMetricChange={setMetric} />
+        <HeatmapMetricChips metric={metric} onMetricChange={setMetric} variant="dark" />
       </div>
 
       <div 

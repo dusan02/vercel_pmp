@@ -18,14 +18,17 @@ interface HeatmapMetricChipsProps {
   metric: HeatmapMetric;
   onMetricChange: (metric: HeatmapMetric) => void;
   className?: string;
+  variant?: 'light' | 'dark'; // 'light' for light background (homepage), 'dark' for dark background (heatmap page)
 }
 
 export function HeatmapMetricChips({
   metric,
   onMetricChange,
   className = '',
+  variant = 'light',
 }: HeatmapMetricChipsProps) {
   const [mounted, setMounted] = useState(false);
+  const isDark = variant === 'dark';
 
   useEffect(() => {
     setMounted(true);
@@ -34,7 +37,7 @@ export function HeatmapMetricChips({
   // Render placeholder during SSR to avoid hydration mismatch
   if (!mounted) {
     return (
-      <div className={`h-7 bg-slate-800/60 rounded-lg animate-pulse ${className}`} aria-hidden="true" />
+      <div className={`h-7 rounded-lg animate-pulse ${isDark ? 'bg-slate-800/60' : 'bg-slate-200'} ${className}`} aria-hidden="true" />
     );
   }
 
@@ -52,7 +55,7 @@ export function HeatmapMetricChips({
     >
       {HEATMAP_METRIC_GROUPS.map((group) => (
         <div key={group} className="flex items-center gap-1.5 flex-shrink-0">
-          <span className="text-[9px] uppercase tracking-wider text-gray-500 font-semibold select-none">
+          <span className={`text-[9px] uppercase tracking-wider font-semibold select-none ${isDark ? 'text-gray-500' : 'text-slate-400'}`}>
             {group}
           </span>
           {HEATMAP_METRICS.filter((m) => m.group === group).map((m) => {
@@ -66,7 +69,9 @@ export function HeatmapMetricChips({
                 className={`flex-shrink-0 px-2.5 py-1 rounded-full border text-[11px] font-semibold transition-colors ${
                   active
                     ? 'bg-green-600 border-green-600 text-white'
-                    : 'border-gray-600 text-gray-300 hover:border-gray-400 hover:text-white bg-transparent'
+                    : isDark
+                      ? 'border-gray-600 text-gray-300 hover:border-gray-400 hover:text-white bg-transparent'
+                      : 'border-slate-300 text-slate-600 hover:border-slate-500 hover:text-slate-900 bg-white'
                 }`}
               >
                 {m.label}
