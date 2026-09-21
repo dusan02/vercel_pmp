@@ -256,18 +256,21 @@ export async function fetchPerfRefCloses(
   await Promise.all(targets.map(async ({ key, target }) => {
     const lo = new Date(target.getTime() - 7 * DAY);
     const hi = new Date(target.getTime() + 1 * DAY);
+    // NOTE: no `closePrice` negation in `where` — with ~1000 symbols the
+    // `in` list exceeds SQLite's variable limit and a `not`/`gt` filter
+    // prevents Prisma from splitting the query into batches. The JS filter
+    // below already drops null/≤0 closes, so the SQL filter was redundant.
     const rows = await prisma.dailyValuationHistory.findMany({
       where: {
         symbol: { in: tickerSymbols },
         date: { gte: lo, lte: hi },
-        closePrice: { not: null, gt: 0 },
       },
       select: { symbol: true, date: true, closePrice: true },
       orderBy: { date: 'asc' },
     });
     const map = result[key];
     for (const r of rows) {
-      if (r.closePrice == null || r.date > target) continue;
+      if (r.closePrice == null || r.closePrice <= 0 || r.date > target) continue;
       map.set(r.symbol, r.closePrice); // ascending → last write wins = closest ≤ target
     }
   }));
