@@ -7,6 +7,7 @@ import { getEarningsRange, type EarningsSSRRow, type EarningsSSRGroup } from '@/
 import { getEligibleAnalysisSet } from '@/lib/seo/eligibleTickers';
 import { getDateET } from '@/lib/utils/dateET';
 import { formatPercent } from '@/lib/utils/heatmapFormat';
+import { toJsonLd } from '@/lib/seo/jsonLd';
 import {
   formatEps, formatRevenue, formatMcap, timeLabel, timeColor, FeaturedEarningsCard,
 } from '@/components/earnings/EarningsShared';
@@ -22,7 +23,7 @@ const WeeklyEarningsCalendar = dynamic(
 export const revalidate = 300; // 5 min - SSR earnings content
 
 export const metadata: Metadata = generatePageMetadata({
-  title: 'Earnings Calendar',
+  title: 'Earnings Calendar — Today & Upcoming Reports',
   description: 'Track today\'s earnings calendar and upcoming earnings reports for US companies. Get real-time earnings announcements, EPS estimates, and revenue forecasts. Browse by date with our interactive calendar.',
   path: '/earnings',
   keywords: [
@@ -182,8 +183,27 @@ export default async function EarningsPage() {
     .sort((a, b) => (b.marketCap ?? 0) - (a.marketCap ?? 0))
     .slice(0, 3);
 
+  // ItemList of the largest upcoming reports — only eligible tickers (they have live /analysis pages)
+  const earningsItemList = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: `Upcoming earnings — week of ${todayStr}`,
+    numberOfItems: Math.min(allRows.filter((r) => eligibleSet.has(r.ticker)).length, 15),
+    itemListElement: allRows
+      .filter((r) => eligibleSet.has(r.ticker))
+      .sort((a, b) => (b.marketCap ?? 0) - (a.marketCap ?? 0))
+      .slice(0, 15)
+      .map((r, i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        name: `${r.companyName ?? r.ticker} (${r.ticker}) earnings — ${r.date}`,
+        url: `${baseUrl}/analysis/${r.ticker}`,
+      })),
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(earningsItemList) }} />
       {/* Breadcrumbs */}
       <nav className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">

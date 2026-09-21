@@ -1,8 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { generatePageMetadata } from '@/lib/seo/metadata';
+import { toJsonLd } from '@/lib/seo/jsonLd';
 import { LEADERBOARDS } from '@/lib/seo/leaderboards';
 import StockScreener from '@/components/StockScreener';
+
+const baseUrl = 'https://premarketprice.com';
 
 export const revalidate = 600;
 
@@ -26,8 +29,29 @@ export const metadata: Metadata = generatePageMetadata({
 });
 
 export default async function ScreenerPage() {
+  // CollectionPage + ItemList of the curated leaderboard screens (matches on-page links)
+  const collectionSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: 'Stock Screener — All US Stocks',
+    description: 'Filter 1,000+ US stocks by financial health, profitability, valuation, Altman Z-Score, Piotroski F-Score, Beneish M-Score and sector.',
+    url: `${baseUrl}/screener`,
+    mainEntity: {
+      '@type': 'ItemList',
+      name: 'Popular stock screens',
+      numberOfItems: LEADERBOARDS.length,
+      itemListElement: LEADERBOARDS.map((l, i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        name: l.h1,
+        url: `${baseUrl}/screener/${l.slug}`,
+      })),
+    },
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-900">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(collectionSchema) }} />
       <div className="container-screener mx-auto py-8 px-4">
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Stock Screener — All US Stocks</h1>

@@ -19,12 +19,12 @@ const baseUrl = 'https://premarketprice.com';
 // (?tab=analysis&ticker=X, ?tab=allStocks) are 301-redirected by middleware
 // to canonical URLs, so per-tab metadata here added little SEO value anyway.
 export const metadata: Metadata = {
-  title: 'Premarket Movers Today — Real-Time Pre-Market Prices | PreMarketPrice',
-  description: 'Track real-time pre-market stock prices, market movers, earnings calendar, and interactive heatmap for 1,000+ US stocks on NYSE and NASDAQ.',
+  title: 'Premarket Movers Today — Live Pre-Market Prices | PreMarketPrice',
+  description: 'Track live pre-market stock prices, market movers, earnings calendar, and interactive heatmap for 1,000+ US stocks on NYSE and NASDAQ.',
   alternates: { canonical: baseUrl },
   openGraph: {
-    title: 'PreMarketPrice — Real-Time Pre-Market Stock Prices & Market Data',
-    description: 'Track real-time pre-market stock prices, market movers, earnings calendar, and interactive heatmap for 1,000+ US stocks on NYSE and NASDAQ.',
+    title: 'PreMarketPrice — Live Pre-Market Stock Prices & Market Data',
+    description: 'Track live pre-market stock prices, market movers, earnings calendar, and interactive heatmap for 1,000+ US stocks on NYSE and NASDAQ.',
     url: baseUrl,
     siteName: 'PreMarketPrice',
     images: [{ url: `${baseUrl}/og-image.png`, width: 1200, height: 630 }],
@@ -33,8 +33,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'PreMarketPrice — Real-Time Pre-Market Stock Prices',
-    description: 'Track real-time pre-market stock prices for 1,000+ US stocks.',
+    title: 'PreMarketPrice — Live Pre-Market Stock Prices',
+    description: 'Track live pre-market stock prices for 1,000+ US stocks.',
     images: [`${baseUrl}/og-image.png`],
   },
   robots: { index: true, follow: true },
