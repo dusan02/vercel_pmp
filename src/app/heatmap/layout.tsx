@@ -5,7 +5,7 @@ import { toJsonLd } from '@/lib/seo/jsonLd';
 export const metadata: Metadata = generatePageMetadata({
   title: 'Market Heatmap',
   description:
-    'Interactive stock market heatmap for 700+ US stocks. Color tiles by day/week/month/YTD/1-year performance, P/E, PEG, P/S, EV/EBITDA, dividend yield, ROE, health scores, and more — organized by sector.',
+    'Interactive stock market heatmap for 1,000+ US stocks. Color tiles by day/week/month/YTD/1-year performance, P/E, PEG, P/S, EV/EBITDA, dividend yield, ROE, health scores, and more — organized by sector.',
   path: '/heatmap',
   keywords: [
     'market heatmap',

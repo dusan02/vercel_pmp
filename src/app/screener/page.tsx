@@ -9,7 +9,7 @@ export const revalidate = 600;
 export const metadata: Metadata = generatePageMetadata({
   title: 'Stock Screener — All US Stocks',
   description:
-    'Browse all US stocks and filter by financial health score, profitability, valuation, Altman Z-score, Piotroski F-Score, Beneish M-Score, FCF margin, debt and sector. Search 600+ companies and find the best investment opportunities.',
+    'Browse all US stocks and filter by financial health score, profitability, valuation, Altman Z-score, Piotroski F-Score, Beneish M-Score, FCF margin, debt and sector. Search 1,000+ companies and find the best investment opportunities.',
   path: '/screener',
   keywords: [
     'stock screener',
@@ -32,7 +32,7 @@ export default async function ScreenerPage() {
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Stock Screener — All US Stocks</h1>
           <p className="mt-2 text-slate-600 dark:text-slate-300 max-w-3xl">
-            Browse the full list of 600+ US stocks or filter by financial health, profitability,
+            Browse the full list of 1,000+ US stocks or filter by financial health, profitability,
             valuation, Altman Z-score, Piotroski F-Score, Beneish M-Score, FCF margin, debt and sector.
             Click any company for a full analysis breakdown.
           </p>
@@ -79,7 +79,7 @@ export default async function ScreenerPage() {
           <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-3">Stock screener — filter all US stocks by fundamentals</h2>
           <div className="prose prose-sm dark:prose-invert max-w-none text-slate-600 dark:text-slate-300 leading-relaxed">
             <p>
-              This screener covers the complete PreMarketPrice universe — 600+ US-listed companies
+              This screener covers the complete PreMarketPrice universe — 1,000+ US-listed companies
               with live pre-market and regular-session prices. By default it shows the full stock
               list sorted by market capitalization; use the filters to narrow it down to exactly
               the companies you want to research.

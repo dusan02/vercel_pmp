@@ -22,7 +22,7 @@ export async function GET() {
 
 > Real-time pre-market stock prices, market movers, earnings calendar, and data-driven stock analysis for US-listed companies (NYSE, NASDAQ). Free, no paywall.
 
-PreMarketPrice tracks 300+ US stocks during the pre-market session (4:00 AM – 9:30 AM ET), publishing live prices, percentage changes, market-cap moves, and per-ticker fundamental analysis. Data is updated continuously during market hours.
+PreMarketPrice tracks 1,000+ US stocks during the pre-market session (4:00 AM – 9:30 AM ET), publishing live prices, percentage changes, market-cap moves, and per-ticker fundamental analysis. Data is updated continuously during market hours.
 
 ## Main pages
 

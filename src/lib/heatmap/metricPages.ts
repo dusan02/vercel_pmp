@@ -25,7 +25,7 @@ export const METRIC_PAGES: MetricPageDef[] = [
     metric: 'pe',
     titleTag: 'P/E Ratio Heatmap — US Stocks by Valuation',
     description:
-      'Live P/E ratio heatmap of 700+ US stocks grouped by sector. Spot the cheapest and most expensive companies at a glance — tile size is market cap, color is trailing P/E.',
+      'Live P/E ratio heatmap of 1,000+ US stocks grouped by sector. Spot the cheapest and most expensive companies at a glance — tile size is market cap, color is trailing P/E.',
     h1: 'P/E Ratio Heatmap',
     intro:
       'The price-to-earnings (P/E) ratio divides a company\'s share price by its trailing twelve-month earnings per share — the market\'s price tag for each dollar of profit. On this heatmap, every tile is a US-listed company sized by market cap and colored by its P/E ratio, so whole sectors can be compared for expensiveness in a single view.',

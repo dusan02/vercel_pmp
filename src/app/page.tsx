@@ -20,11 +20,11 @@ const baseUrl = 'https://premarketprice.com';
 // to canonical URLs, so per-tab metadata here added little SEO value anyway.
 export const metadata: Metadata = {
   title: 'Premarket Movers Today — Real-Time Pre-Market Prices | PreMarketPrice',
-  description: 'Track real-time pre-market stock prices, market movers, earnings calendar, and interactive heatmap for 300+ US stocks on NYSE and NASDAQ.',
+  description: 'Track real-time pre-market stock prices, market movers, earnings calendar, and interactive heatmap for 1,000+ US stocks on NYSE and NASDAQ.',
   alternates: { canonical: baseUrl },
   openGraph: {
     title: 'PreMarketPrice — Real-Time Pre-Market Stock Prices & Market Data',
-    description: 'Track real-time pre-market stock prices, market movers, earnings calendar, and interactive heatmap for 300+ US stocks on NYSE and NASDAQ.',
+    description: 'Track real-time pre-market stock prices, market movers, earnings calendar, and interactive heatmap for 1,000+ US stocks on NYSE and NASDAQ.',
     url: baseUrl,
     siteName: 'PreMarketPrice',
     images: [{ url: `${baseUrl}/og-image.png`, width: 1200, height: 630 }],
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'PreMarketPrice — Real-Time Pre-Market Stock Prices',
-    description: 'Track real-time pre-market stock prices for 300+ US stocks.',
+    description: 'Track real-time pre-market stock prices for 1,000+ US stocks.',
     images: [`${baseUrl}/og-image.png`],
   },
   robots: { index: true, follow: true },
@@ -210,7 +210,7 @@ export default async function Page() {
               Track US Stocks Before the Market Opens
             </h1>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Real-time pre-market prices, earnings, analysis for 700+ NYSE & NASDAQ stocks — no sign-up needed
+              Real-time pre-market prices, earnings, analysis for 1,000+ NYSE & NASDAQ stocks — no sign-up needed
             </p>
           </div>
           <div className="flex gap-3 text-sm">

@@ -20,7 +20,7 @@ const PLANS: Plan[] = [
     period: 'forever',
     description: 'Everything you need to track pre-market movers and stay informed.',
     features: [
-      'Real-time pre-market prices for 300+ US stocks',
+      'Real-time pre-market prices for 1,000+ US stocks',
       'Market heatmap with sector breakdown',
       'Top gainers & losers',
       'Earnings calendar',

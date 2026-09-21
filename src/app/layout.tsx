@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     default: 'PreMarketPrice - Real-time Stock Data & Earnings Calendar',
     template: '%s | PreMarketPrice',
   },
-  description: 'Real-time pre-market live stock prices for US stocks traded on NYSE, NASDAQ, and other US exchanges. Track pre-market movements, earnings calendar, and market analysis for 300+ US companies. Get live stock prices, market cap changes, and earnings reports for S&P 500 companies.',
+  description: 'Real-time pre-market live stock prices for US stocks traded on NYSE, NASDAQ, and other US exchanges. Track pre-market movements, earnings calendar, and market analysis for 1,000+ US companies. Get live stock prices, market cap changes, and earnings reports for S&P 500 companies.',
   keywords: [
     'US stocks',
     'NYSE stocks',
@@ -79,7 +79,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'PreMarketPrice - Real-time Stock Data & Earnings Calendar',
-    description: 'Real-time pre-market live stock prices for US stocks traded on NYSE, NASDAQ, and other US exchanges. Track pre-market movements, earnings calendar, and market analysis for 300+ US companies.',
+    description: 'Real-time pre-market live stock prices for US stocks traded on NYSE, NASDAQ, and other US exchanges. Track pre-market movements, earnings calendar, and market analysis for 1,000+ US companies.',
     url: 'https://premarketprice.com',
     siteName: 'PreMarketPrice',
     images: [
@@ -96,7 +96,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'PreMarketPrice - Real-time Stock Data & Earnings Calendar',
-    description: 'Real-time pre-market live stock prices for US stocks traded on NYSE, NASDAQ, and other US exchanges. Track pre-market movements, earnings calendar, and market analysis for 300+ US companies.',
+    description: 'Real-time pre-market live stock prices for US stocks traded on NYSE, NASDAQ, and other US exchanges. Track pre-market movements, earnings calendar, and market analysis for 1,000+ US companies.',
     images: ['/og-image.png'],
     creator: '@premarketprice',
   },
@@ -232,7 +232,7 @@ export default function RootLayout({
               name: 'PreMarketPrice',
               url: 'https://premarketprice.com',
               logo: 'https://premarketprice.com/og-image.png',
-              description: 'Real-time pre-market live stock prices for US stocks traded on NYSE, NASDAQ, and other US exchanges. Track pre-market movements, earnings calendar, and market analysis for 300+ US companies.',
+              description: 'Real-time pre-market live stock prices for US stocks traded on NYSE, NASDAQ, and other US exchanges. Track pre-market movements, earnings calendar, and market analysis for 1,000+ US companies.',
               sameAs: [
                 'https://twitter.com/premarketprice',
                 'https://www.linkedin.com/company/premarketprice',
@@ -253,7 +253,7 @@ export default function RootLayout({
               '@type': 'WebSite',
               name: 'PreMarketPrice',
               url: 'https://premarketprice.com',
-              description: 'Real-time pre-market live stock prices for US stocks traded on NYSE, NASDAQ, and other US exchanges. Track pre-market movements, earnings calendar, and market analysis for 300+ US companies.',
+              description: 'Real-time pre-market live stock prices for US stocks traded on NYSE, NASDAQ, and other US exchanges. Track pre-market movements, earnings calendar, and market analysis for 1,000+ US companies.',
               potentialAction: {
                 '@type': 'SearchAction',
                 target: {
