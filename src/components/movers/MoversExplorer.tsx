@@ -59,15 +59,41 @@ function matchesFilters(m: MoverRecord, f: MoversFilters): boolean {
   return true;
 }
 
-// ─── Signal score for the "Most interesting" strip ──────────────────────────
-// Objective synthesis: statistical significance + volume + idiosyncrasy +
-// catalyst presence. Not investment advice — just ranked unusualness.
-function signalScore(m: MoverRecord): number {
-  const z = Math.abs(m.latestMoversZScore ?? 0);
-  const rvol = Math.min(m.latestMoversRVOL ?? 0, 10);
-  const excess = Math.abs(m.analysis?.excessMovePct ?? 0) / 3;
-  const catalystBonus = m.analysis?.catalyst.status === 'found' ? 3 : 0;
-  return z * 2 + rvol + excess + catalystBonus;
+// ─── Standout superlatives ──────────────────────────────────────────────────
+// Each card answers a different "why is this interesting" — distinct symbols
+// preferred so the strip shows variety, not one ticker four times.
+interface Standout {
+  emoji: string;
+  label: string;
+  stat: string;
+  mover: MoverRecord;
+}
+
+function computeStandouts(movers: MoverRecord[]): Standout[] {
+  const liquid = movers.filter(m => !isMicrocap(m));
+  const used = new Set<string>();
+  const pick = (sorted: MoverRecord[]): MoverRecord | undefined =>
+    sorted.find(m => !used.has(m.symbol)) ?? sorted[0];
+
+  const byAbsMove = [...liquid].sort((a, b) => Math.abs(b.lastChangePct ?? 0) - Math.abs(a.lastChangePct ?? 0));
+  const bySigma = [...liquid].filter(m => m.latestMoversZScore !== null).sort((a, b) => Math.abs(b.latestMoversZScore!) - Math.abs(a.latestMoversZScore!));
+  const byRvol = [...liquid].filter(m => (m.latestMoversRVOL ?? 0) >= 1.5).sort((a, b) => (b.latestMoversRVOL ?? 0) - (a.latestMoversRVOL ?? 0));
+  const byExcess = [...liquid].filter(m => m.analysis?.excessMovePct !== null && m.analysis?.excessMovePct !== undefined)
+    .sort((a, b) => Math.abs(b.analysis!.excessMovePct!) - Math.abs(a.analysis!.excessMovePct!));
+
+  const out: Standout[] = [];
+  const add = (emoji: string, label: string, stat: (m: MoverRecord) => string, sorted: MoverRecord[]) => {
+    const m = pick(sorted);
+    if (!m) return;
+    used.add(m.symbol);
+    out.push({ emoji, label, stat: stat(m), mover: m });
+  };
+
+  add('🔥', 'Largest move', m => formatPercent(Math.abs(m.lastChangePct ?? 0)), byAbsMove);
+  add('📊', 'Most unusual', m => `${Math.abs(m.latestMoversZScore!).toFixed(1)}σ`, bySigma);
+  add('📈', 'Highest RVOL', m => `${(m.latestMoversRVOL ?? 0).toFixed(1)}× vol`, byRvol);
+  add('⚡', 'Biggest vs sector', m => `${(m.analysis!.excessMovePct!) >= 0 ? '+' : ''}${m.analysis!.excessMovePct!.toFixed(1)}% excess`, byExcess);
+  return out;
 }
 
 // ─── Cell renderers ─────────────────────────────────────────────────────────
@@ -258,35 +284,34 @@ function MoversTable({ title, rows, eligibleAnalysis }: { title: string; rows: M
   );
 }
 
-// ─── Most interesting strip ─────────────────────────────────────────────────
-function InterestingCard({ mover }: { mover: MoverRecord }) {
+// ─── Standout strip ─────────────────────────────────────────────────────────
+function StandoutCard({ s }: { s: Standout }) {
+  const { mover } = s;
   const pct = mover.lastChangePct ?? 0;
   const color = pct >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
-  const z = mover.latestMoversZScore;
-  const rvol = mover.latestMoversRVOL;
-  const excess = mover.analysis?.excessMovePct ?? null;
   const catalystLabel = mover.analysis?.catalyst.status === 'found' ? mover.analysis.catalyst.label : null;
 
   return (
     <Link
       href={`/analysis/${mover.symbol}`}
-      className="flex-shrink-0 min-w-[190px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-sm transition-all"
+      className="flex-1 min-w-[170px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-sm transition-all"
     >
-      <div className="flex items-center gap-1.5">
+      <div className="text-[10px] font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+        {s.emoji} {s.label}
+      </div>
+      <div className="flex items-center gap-1.5 mt-1">
         <CompanyLogo ticker={mover.symbol} size={18} className="rounded" />
         <span className="font-bold text-sm text-slate-900 dark:text-slate-100">{mover.symbol}</span>
         <span className={`ml-auto tabular-nums font-bold text-sm ${color}`}>{formatPercent(pct)}</span>
       </div>
+      <div className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 tabular-nums mt-0.5">
+        {s.stat}
+      </div>
       {catalystLabel && (
-        <div className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400 mt-1 truncate" title={catalystLabel}>
-          🟢 {catalystLabel}
+        <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 truncate" title={catalystLabel}>
+          {catalystLabel}
         </div>
       )}
-      <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-1.5 text-[10px] tabular-nums text-slate-500 dark:text-slate-400">
-        {z !== null && <span title="Z-score vs own volatility">📊 {Math.abs(z).toFixed(1)}σ</span>}
-        {rvol != null && rvol >= 1.5 && <span title="Relative volume">📈 {rvol.toFixed(1)}× RVOL</span>}
-        {excess !== null && <span title="Move vs sector/market">⚡ {excess >= 0 ? '+' : ''}{excess.toFixed(1)}% vs sector</span>}
-      </div>
     </Link>
   );
 }
@@ -298,21 +323,24 @@ interface MoversExplorerProps {
   eligibleSymbols: string[];
 }
 
+type MoversView = 'gainers' | 'losers' | 'active';
+
 export function MoversExplorer({ gainers, losers, eligibleSymbols }: MoversExplorerProps) {
   const [filters, setFilters] = useState<MoversFilters>(DEFAULT_FILTERS);
+  const [view, setView] = useState<MoversView>('gainers');
   const eligibleAnalysis = useMemo(() => new Set(eligibleSymbols), [eligibleSymbols]);
 
   const allMovers = useMemo(() => [...gainers, ...losers], [gainers, losers]);
 
-  const interesting = useMemo(() =>
-    allMovers
-      .filter(m => !isMicrocap(m))
-      .sort((a, b) => signalScore(b) - signalScore(a))
-      .slice(0, 4),
-    [allMovers]);
+  const standouts = useMemo(() => computeStandouts(allMovers), [allMovers]);
 
   const filteredGainers = useMemo(() => gainers.filter(m => matchesFilters(m, filters)), [gainers, filters]);
   const filteredLosers = useMemo(() => losers.filter(m => matchesFilters(m, filters)), [losers, filters]);
+  const mostActive = useMemo(() =>
+    [...filteredGainers, ...filteredLosers]
+      .sort((a, b) => ((b.lastVolume ?? 0) * (b.lastPrice ?? 0)) - ((a.lastVolume ?? 0) * (a.lastPrice ?? 0)))
+      .slice(0, 25),
+    [filteredGainers, filteredLosers]);
   const hiddenMicrocaps = useMemo(
     () => (filters.showMicrocaps ? 0 : allMovers.filter(m => isMicrocap(m) && matchesFilters(m, { ...filters, showMicrocaps: true })).length),
     [allMovers, filters]);
@@ -327,15 +355,12 @@ export function MoversExplorer({ gainers, losers, eligibleSymbols }: MoversExplo
 
   return (
     <div>
-      {/* Signal synthesis — objective top movers, not investment advice */}
-      {interesting.length > 0 && (
+      {/* Standout movers — each card answers a different "why interesting" */}
+      {standouts.length > 0 && (
         <section className="mb-6">
-          <div className="flex items-center gap-2 mb-2">
-            <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wide">🔥 Most interesting</h2>
-            <span className="text-[10px] text-slate-400">ranked by σ, relative volume, sector excess and catalyst strength</span>
-          </div>
+          <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wide mb-2">Today's standout movers</h2>
           <div className="flex gap-3 overflow-x-auto pb-1">
-            {interesting.map(m => <InterestingCard key={m.symbol} mover={m} />)}
+            {standouts.map(s => <StandoutCard key={s.label} s={s} />)}
           </div>
         </section>
       )}
@@ -389,9 +414,34 @@ export function MoversExplorer({ gainers, losers, eligibleSymbols }: MoversExplo
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* View tabs — all three tables stay in the DOM (SEO links intact),
+          only the active one is visible */}
+      <div className="flex gap-1.5 mb-3">
+        {([
+          ['gainers', `Gainers ${filteredGainers.length}`],
+          ['losers', `Losers ${filteredLosers.length}`],
+          ['active', `Most Active ${mostActive.length}`],
+        ] as [MoversView, string][]).map(([key, label]) => (
+          <button
+            key={key}
+            onClick={() => { setView(key); event('movers_view', { view: key }); }}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-colors ${view === key
+                ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900'
+                : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400 dark:bg-transparent dark:text-slate-400 dark:border-white/10'
+              }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      <div className={view === 'gainers' ? '' : 'hidden'}>
         <MoversTable title="Top Gainers" rows={filteredGainers} eligibleAnalysis={eligibleAnalysis} />
+      </div>
+      <div className={view === 'losers' ? '' : 'hidden'}>
         <MoversTable title="Top Losers" rows={filteredLosers} eligibleAnalysis={eligibleAnalysis} />
+      </div>
+      <div className={view === 'active' ? '' : 'hidden'}>
+        <MoversTable title="Most Active" rows={mostActive} eligibleAnalysis={eligibleAnalysis} />
       </div>
 
       {hiddenMicrocaps > 0 && (

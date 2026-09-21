@@ -3,7 +3,6 @@ import { cache } from 'react';
 import Link from 'next/link';
 import { generatePageMetadata } from '@/lib/seo/metadata';
 import { formatPercent } from '@/lib/utils/heatmapFormat';
-import { SsrMoverLinksCombined } from '@/components/seo/SsrMoverLinks';
 import { getPremarketDateSummaries } from '@/lib/seo/premarketArchive';
 import { getEligibleAnalysisSet } from '@/lib/seo/eligibleTickers';
 import { prisma } from '@/lib/db/prisma';
@@ -204,28 +203,28 @@ export default async function PremarketMoversPage() {
           </p>
         </div>
 
-        {/* SEO Content: Understanding premarket movers */}
-        <section className="mb-8 max-w-4xl">
-          <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-3">Understanding Premarket Stock Movers</h2>
-          <div className="text-sm text-slate-600 dark:text-slate-400 space-y-3 leading-relaxed">
-            <p>
-              Pre-market trading occurs between 4:00 AM and 9:30 AM Eastern Time, before the regular US stock market session opens. During this window, stocks can move significantly in response to overnight news, earnings announcements, economic data releases, and global market developments. The movers listed below represent the most actively changing stocks across NYSE and NASDAQ.
-            </p>
-            <p>
-              The <strong>σ</strong> column measures how unusual each stock's move is relative to its recent history — a Z-Score above 2.0 indicates a statistically significant deviation, with tiers ranging from unusual to extreme. The <strong>Catalyst</strong> column provides context on why each stock is moving — earnings reports, analyst actions, and news — alongside market- and sector-relative attribution. The <strong>PMP</strong> column shows each stock's fundamental profile across Valuation, Growth, Profitability, Financial Health and Quality.
-            </p>
-            <p>
-              Use this page alongside the <Link className="text-blue-600 dark:text-blue-400 hover:underline" href="/heatmap">Market Heatmap</Link> for sector-level context, or dive into individual <Link className="text-blue-600 dark:text-blue-400 hover:underline" href="/screener">stock pages</Link> for comprehensive analysis including valuation scores and financial health metrics. Check the <Link className="text-blue-600 dark:text-blue-400 hover:underline" href="/earnings">Earnings Calendar</Link> to see if today's movers are earnings-related.
-            </p>
+        {/* Three honest states — never claim "no movers" when data is missing */}
+        {dataError ? (
+          <div className="mb-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-8 text-center text-slate-500 dark:text-slate-400">
+            Live mover data is temporarily unavailable. Please check back shortly.
           </div>
-        </section>
+        ) : movers.length === 0 ? (
+          <div className="mb-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-8 text-center text-slate-500 dark:text-slate-400">
+            {session === 'closed'
+              ? 'Live mover data is available during market sessions.'
+              : 'No unusual movers detected right now.'}
+          </div>
+        ) : (
+          <MoversExplorer
+            gainers={gainers}
+            losers={losers}
+            eligibleSymbols={[...eligibleAnalysis]}
+          />
+        )}
 
-        {/* SSR discovery section — ticker links from DB (independent of Redis) */}
-        <SsrMoverLinksCombined />
-
-        {/* Mover insight pages — /movers/[symbol] */}
+        {/* Mover insight pages — /premarket/[symbol] */}
         {moverTickers.length > 0 && (
-          <section className="mb-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
+          <section className="mt-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
             <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
               Mover Insight Pages
             </h2>
@@ -245,25 +244,6 @@ export default async function PremarketMoversPage() {
               ))}
             </div>
           </section>
-        )}
-
-        {/* Three honest states — never claim "no movers" when data is missing */}
-        {dataError ? (
-          <div className="mb-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-8 text-center text-slate-500 dark:text-slate-400">
-            Live mover data is temporarily unavailable. Please check back shortly.
-          </div>
-        ) : movers.length === 0 ? (
-          <div className="mb-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-8 text-center text-slate-500 dark:text-slate-400">
-            {session === 'closed'
-              ? 'Live mover data is available during market sessions.'
-              : 'No unusual movers detected right now.'}
-          </div>
-        ) : (
-          <MoversExplorer
-            gainers={gainers}
-            losers={losers}
-            eligibleSymbols={[...eligibleAnalysis]}
-          />
         )}
 
         {/* Push/email digest subscribe — daily premarket movers at ~08:00 ET */}
@@ -342,6 +322,22 @@ export default async function PremarketMoversPage() {
             </div>
           </section>
         )}
+
+        {/* Educational content — moved below the data: visitors come for movers, not docs */}
+        <section className="mt-8 max-w-4xl">
+          <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-3">How to Read Premarket Movers</h2>
+          <div className="text-sm text-slate-600 dark:text-slate-400 space-y-3 leading-relaxed">
+            <p>
+              Pre-market trading occurs between 4:00 AM and 9:30 AM Eastern Time, before the regular US stock market session opens. During this window, stocks can move significantly in response to overnight news, earnings announcements, economic data releases, and global market developments. The movers listed above represent the most actively changing stocks across NYSE and NASDAQ.
+            </p>
+            <p>
+              The <strong>σ</strong> column measures how unusual each stock's move is relative to its recent history — a Z-Score above 2.0 indicates a statistically significant deviation, with tiers ranging from unusual to extreme. The <strong>Catalyst</strong> column provides context on why each stock is moving — earnings reports, analyst actions, and news — alongside market- and sector-relative attribution. The <strong>PMP</strong> column shows each stock's fundamental profile across Valuation, Growth, Profitability, Financial Health and Quality.
+            </p>
+            <p>
+              Use this page alongside the <Link className="text-blue-600 dark:text-blue-400 hover:underline" href="/heatmap">Market Heatmap</Link> for sector-level context, or dive into individual <Link className="text-blue-600 dark:text-blue-400 hover:underline" href="/screener">stock pages</Link> for comprehensive analysis including valuation scores and financial health metrics. Check the <Link className="text-blue-600 dark:text-blue-400 hover:underline" href="/earnings">Earnings Calendar</Link> to see if today's movers are earnings-related.
+            </p>
+          </div>
+        </section>
 
         {/* Visible FAQ — mirrors the FAQPage JSON-LD (required by Google guidelines) */}
         <section className="mt-8 max-w-4xl">
