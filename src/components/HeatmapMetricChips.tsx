@@ -19,6 +19,7 @@ interface HeatmapMetricChipsProps {
   onMetricChange: (metric: HeatmapMetric) => void;
   className?: string;
   variant?: 'light' | 'dark'; // 'light' for light background (homepage), 'dark' for dark background (heatmap page)
+  orientation?: 'horizontal' | 'vertical'; // 'vertical' for side rail (chips wrap under group labels)
 }
 
 export function HeatmapMetricChips({
@@ -26,9 +27,11 @@ export function HeatmapMetricChips({
   onMetricChange,
   className = '',
   variant = 'light',
+  orientation = 'horizontal',
 }: HeatmapMetricChipsProps) {
   const [mounted, setMounted] = useState(false);
   const isDark = variant === 'dark';
+  const isVertical = orientation === 'vertical';
 
   useEffect(() => {
     setMounted(true);
@@ -49,15 +52,18 @@ export function HeatmapMetricChips({
 
   return (
     <div
-      className={`flex items-center gap-x-3 gap-y-1 overflow-x-auto whitespace-nowrap scrollbar-none md:flex-wrap md:overflow-visible ${className}`}
+      className={isVertical
+        ? `flex flex-col gap-3 ${className}`
+        : `flex items-center gap-x-3 gap-y-1 overflow-x-auto whitespace-nowrap scrollbar-none md:flex-wrap md:overflow-visible ${className}`}
       role="group"
       aria-label="Heatmap metric"
     >
       {HEATMAP_METRIC_GROUPS.map((group) => (
-        <div key={group} className="flex items-center gap-1.5 flex-shrink-0">
+        <div key={group} className={isVertical ? 'flex flex-col gap-1' : 'flex items-center gap-1.5 flex-shrink-0'}>
           <span className={`text-[9px] uppercase tracking-wider font-semibold select-none ${isDark ? 'text-gray-500' : 'text-slate-400'}`}>
             {group}
           </span>
+          <div className={isVertical ? 'flex flex-wrap gap-1' : 'contents'}>
           {HEATMAP_METRICS.filter((m) => m.group === group).map((m) => {
             const active = m.id === metric;
             return (
@@ -78,6 +84,7 @@ export function HeatmapMetricChips({
               </button>
             );
           })}
+          </div>
         </div>
       ))}
     </div>

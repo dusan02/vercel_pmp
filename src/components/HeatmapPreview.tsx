@@ -84,17 +84,17 @@ export function HeatmapPreview({ activeView, wrapperClass, onTileClick, onTileHo
         </div>
       )}
 
-      {/* Metric chip strip — one-tap filters above the map (desktop only;
-          mobile has its own selector inside MobileTreemapNew) */}
-      {isDesktop && (
-        <div className="px-4 mb-3">
-          <HeatmapMetricChips metric={metric} onMetricChange={setMetric} />
-        </div>
-      )}
+      {/* Content row — left metric rail (desktop) + map keeps full 600px height */}
+      <div className={isDesktop ? 'flex items-stretch' : 'flex-1 flex flex-col'}>
+        {isDesktop && (
+          <aside className="w-48 shrink-0 pl-4 pr-2 py-1 overflow-y-auto max-h-[600px] scrollbar-thin">
+            <HeatmapMetricChips metric={metric} onMetricChange={setMetric} orientation="vertical" />
+          </aside>
+        )}
 
       {/* Content Wrapper - simplified: removed unnecessary inner div */}
       <div
-        className={`relative w-full bg-black overflow-hidden group heatmap-preview-container border-none outline-none ${isDesktop ? 'heatmap-preview-desktop h-[600px]' : 'flex-1'
+        className={`relative ${isDesktop ? 'flex-1' : 'w-full'} bg-black overflow-hidden group heatmap-preview-container border-none outline-none ${isDesktop ? 'heatmap-preview-desktop h-[600px]' : 'flex-1'
           }`}
         style={isDesktop ? { cursor: 'pointer', border: 'none', outline: 'none' } : { cursor: 'pointer', border: 'none', outline: 'none' }}
         onClick={handleBackgroundClick}
@@ -117,6 +117,7 @@ export function HeatmapPreview({ activeView, wrapperClass, onTileClick, onTileHo
           }}
           onTileHover={(company) => onTileHover?.(company ? company.symbol : null)}
         />
+      </div>
       </div>
 
       {/* Score methodology — small print under the map; crawlable via <details> */}
