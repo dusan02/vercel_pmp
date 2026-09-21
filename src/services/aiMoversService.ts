@@ -208,7 +208,7 @@ Return strictly valid JSON:
 {
   "reason": "1-sentence specific analytical reason",
   "category": "Earnings|Guidance|M&A|Macro|Legal|Product|Technical|Sector",
-  "socialCopy": "Max 200-char post: start with 📈 (up) or 📉 (down), $${symbol} cashtag, the % move, one key stat (Z-score or RVOL), the catalyst in a few words. Add 🚨 only for |Z|>=4 or RVOL>=5. End with 1-2 relevant hashtags like #Stocks. No URLs, no price targets, no advice.",
+  "socialCopy": "Max 200-char post on 2-3 short lines separated by \\n. Line 1: 📈 (up) or 📉 (down) + $${symbol} cashtag + % move + short catalyst phrase. Line 2: key stat like 'RVOL 4.2x' or 'Z-score 3.1σ'. Add 🚨 only for |Z|>=4 or RVOL>=5. End with #${symbol} plus 1 relevant hashtag like #Stocks. No URLs, no price targets, no advice.",
   "isSbcAlert": false,
   "aiConfidence": 85
 }`.trim();
