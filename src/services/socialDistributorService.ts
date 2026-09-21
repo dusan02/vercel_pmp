@@ -79,7 +79,16 @@ export class SocialDistributorService {
         for (const mover of toPost) {
             try {
                 console.log(`🐦 SocialDistributorService: Posting alpha signal for ${mover.symbol}...`);
-                const tweetText = `${mover.socialCopy}\n\nView Analysis: https://premarketprice.com/analysis/${mover.symbol}`;
+                // socialCopy was generated earlier — its embedded % can be
+                // stale vs the live lastChangePct shown on the OG card.
+                // Patch every % token to the live value so text and image match.
+                let copy = mover.socialCopy!;
+                const livePct = mover.lastChangePct;
+                if (livePct != null) {
+                    const liveStr = `${livePct >= 0 ? '+' : ''}${livePct.toFixed(2)}%`;
+                    copy = copy.replace(/[+-]?\d+(?:\.\d+)?\s*%/g, liveStr);
+                }
+                const tweetText = `${copy}\n\nFull breakdown: https://premarketprice.com/analysis/${mover.symbol}`;
                 await poster(mover, tweetText);
 
                 // 4d. Mark as posted today (TTL 24h)

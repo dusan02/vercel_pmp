@@ -22,7 +22,6 @@ export function getSectorFromSic(sicCode: string | number | undefined | null): s
   if ((code >= 3570 && code <= 3579) || // Computer and Office Equipment
       (code >= 3600 && code <= 3699) || // Electronic & Other Electrical Equipment
       (code >= 3810 && code <= 3829) || // Search, Detection, Navigation, Instruments
-      (code >= 4800 && code <= 4899) || // Communications
       (code >= 7370 && code <= 7389) || // Computer Programming, Data Processing, etc.
       (code >= 5060 && code <= 5065) || // Wholesale - Electronic Parts
       code === 8711) {                  // Engineering Services
