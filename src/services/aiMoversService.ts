@@ -208,7 +208,7 @@ Return strictly valid JSON:
 {
   "reason": "1-sentence specific analytical reason",
   "category": "Earnings|Guidance|M&A|Macro|Legal|Product|Technical|Sector",
-  "socialCopy": "Catchy 160-char post with $${symbol} and relevant hashtags",
+  "socialCopy": "Max 200-char post: start with 📈 (up) or 📉 (down), $${symbol} cashtag, the % move, one key stat (Z-score or RVOL), the catalyst in a few words. Add 🚨 only for |Z|>=4 or RVOL>=5. End with 1-2 relevant hashtags like #Stocks. No URLs, no price targets, no advice.",
   "isSbcAlert": false,
   "aiConfidence": 85
 }`.trim();
@@ -299,6 +299,12 @@ Return strictly valid JSON:
 
             if (!response.ok) throw new Error(`Gemini API error: ${response.status} ${await response.text()}`);
             const data = await response.json();
+            const usage = data.usageMetadata;
+            if (usage) {
+                // gemini-2.5-flash: $0.30/M input, $2.50/M output (incl. thinking)
+                const cost = (usage.promptTokenCount * 0.30 + (usage.candidatesTokenCount + (usage.thoughtsTokenCount || 0)) * 2.50) / 1e6;
+                console.log(`💰 AiMoversService: Gemini usage in=${usage.promptTokenCount} out=${usage.candidatesTokenCount} think=${usage.thoughtsTokenCount || 0} est=$${cost.toFixed(5)}`);
+            }
             const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
             if (!text) return null;
 

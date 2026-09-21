@@ -87,6 +87,10 @@ export class SocialDistributorService {
                 if (livePct != null) {
                     const liveStr = `${livePct >= 0 ? '+' : ''}${livePct.toFixed(2)}%`;
                     copy = copy.replace(/[+-]?\d+(?:\.\d+)?\s*%/g, liveStr);
+                    // Older stored copy has no emoji — prepend a directional one
+                    if (!/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(copy)) {
+                        copy = `${livePct >= 0 ? '📈' : '📉'} ${copy}`;
+                    }
                 }
                 const tweetText = `${copy}\n\nFull breakdown: https://premarketprice.com/analysis/${mover.symbol}`;
                 await poster(mover, tweetText);
