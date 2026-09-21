@@ -43,11 +43,11 @@ export function buildAnalysisFaq({
 }: AnalysisFaqInput): FaqItem[] {
   const items: FaqItem[] = [];
   const sessionLabel =
-    marketSession === 'premarket'
+    marketSession === 'pre' || marketSession === 'premarket'
       ? 'in pre-market trading'
-      : marketSession === 'postmarket'
+      : marketSession === 'after' || marketSession === 'postmarket'
         ? 'in after-hours trading'
-        : marketSession === 'open'
+        : marketSession === 'live' || marketSession === 'open'
           ? 'in the regular session'
           : 'at the last market close';
 

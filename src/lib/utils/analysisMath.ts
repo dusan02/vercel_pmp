@@ -4,6 +4,26 @@
 
 export type PerSharePoint = { date: string; value: number };
 
+export function summarizeLossYears(statements: {
+  fiscalPeriod?: string | null;
+  fiscalYear?: number | null;
+  netIncome?: number | null;
+  endDate?: Date | string;
+}[]) {
+  const annual = statements.filter(s => s.fiscalPeriod === 'FY' && s.fiscalYear != null
+    && Number.isFinite(s.fiscalYear) && s.netIncome != null && Number.isFinite(s.netIncome))
+    .sort((a, b) => new Date(b.endDate ?? 0).getTime() - new Date(a.endDate ?? 0).getTime());
+  const byYear = new Map<number, number>();
+  for (const s of annual) if (!byYear.has(s.fiscalYear!)) byYear.set(s.fiscalYear!, s.netIncome!);
+  const years = [...byYear.keys()].sort((a, b) => b - a).slice(0, 10);
+  return {
+    lossYears: years.filter(y => byYear.get(y)! < 0).length,
+    reportedYears: years.length,
+    firstYear: years.at(-1) ?? null,
+    lastYear: years[0] ?? null,
+  };
+}
+
 /**
  * Project forward n quarters using CAGR from recent history only (last 12 quarters = 3 years).
  * This avoids the "low-base effect" where early startup-era EPS inflates long-term CAGR.

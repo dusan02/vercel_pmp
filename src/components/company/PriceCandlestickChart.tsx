@@ -32,6 +32,7 @@ interface PriceCandlestickChartProps {
    *  or split-adjusted); the candle close stays visible as a dated reference. */
   currentPrice?: number | null;
   currentChangePct?: number | null;
+  changeLabel?: string;
 }
 
 const PERIODS = [
@@ -89,7 +90,7 @@ function CandleTooltip({ active, payload }: any) {
 }
 
 
-export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct }: PriceCandlestickChartProps) {
+export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, changeLabel = 'day' }: PriceCandlestickChartProps) {
   const [allCandles, setAllCandles] = useState<Candle[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -202,7 +203,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct }
             <span
               className={`text-sm font-semibold ${stats.up ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
             >
-              {stats.changePct >= 0 ? '+' : ''}{stats.changePct.toFixed(2)}%{currentChangePct == null ? ` (${period})` : ' (day)'}
+              {stats.changePct >= 0 ? '+' : ''}{stats.changePct.toFixed(2)}%{currentChangePct == null ? ` (${period})` : ` (${changeLabel})`}
             </span>
             {currentPrice != null && (
               <span className="text-xs text-gray-500 dark:text-gray-400">

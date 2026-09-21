@@ -6,10 +6,10 @@ import { generateCompanyMetadata, generateBreadcrumbSchema } from '@/lib/seo/met
 import { getCompanyName } from '@/lib/companyNames';
 import { AnalysisTabClient } from '@/components/company/AnalysisTabClient';
 import { getEarningsForTicker } from '@/lib/seo/earningsSSR';
-import { detectSession } from '@/lib/utils/timeUtils';
-import { nowET } from '@/lib/utils/dateET';
+import { summarizeLossYears } from '@/lib/utils/analysisMath';
 import {
   getTickerData,
+  getAnalysisQuote,
   getRecentSignificantMoves,
   getFinancialFlowsData,
   getSectorPeers,
@@ -66,12 +66,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const tickerUpper = ticker.toUpperCase();
   const data = await getTickerData(tickerUpper);
   const companyName = data?.name || getCompanyName(tickerUpper);
+  const quote = getAnalysisQuote(data);
 
   const metadata = generateCompanyMetadata({
     ticker: tickerUpper,
     companyName,
-    ...(data?.lastPrice != null ? { price: data.lastPrice } : {}),
-    ...(data?.lastChangePct != null ? { percentChange: data.lastChangePct } : {}),
+    ...(quote.price != null ? { price: quote.price } : {}),
+    ...(quote.changePct != null ? { percentChange: quote.changePct } : {}),
     ...(data?.lastMarketCap != null ? { marketCap: data.lastMarketCap } : {}),
     ...(data?.sector ? { sector: data.sector } : {}),
     ...(data?.industry ? { industry: data.industry } : {}),
@@ -116,18 +117,14 @@ export default async function AnalysisPage({ params }: PageProps) {
     prefetchTopNews(tickerUpper),
   ]);
 
-  const marketSession = detectSession(nowET());
+  const { price: displayPrice, changePct: displayChangePct, marketSession } = getAnalysisQuote(data);
 
   // One price truth: the headline % shown next to the live price must match
   // the hero. When the market is closed, Ticker.latestPrevClose is the NEXT
   // session's reference (== the last close itself → 0.00% lie), so derive the
   // last-session move from the DailyRef row that actually closed.
   const lastClosedRef = data?.lastClosedRef ?? null;
-  const lastSessionPrevClose = lastClosedRef?.previousClose ?? data?.latestPrevClose ?? null;
-  const displayChangePct =
-    marketSession === 'closed' && lastClosedRef?.regularClose != null && lastClosedRef.previousClose != null && lastClosedRef.previousClose > 0
-      ? (lastClosedRef.regularClose / lastClosedRef.previousClose - 1) * 100
-      : (data?.lastChangePct ?? null);
+  const lastSessionPrevClose = lastClosedRef?.previousClose ?? null;
 
   // Unified P/E: price / own TTM EPS (via /api/analysis compute). Finnhub's
   // peRatio only fills in when the analysis pipeline has no data at all.
@@ -178,7 +175,7 @@ export default async function AnalysisPage({ params }: PageProps) {
   const faqItems = buildAnalysisFaq({
     ticker: tickerUpper,
     companyName,
-    price: data?.lastPrice ?? null,
+    price: displayPrice,
     changePct: displayChangePct,
     marketSession,
     healthScore: pillarHealth ?? data?.analysisCache?.healthScore ?? null,
@@ -251,8 +248,8 @@ export default async function AnalysisPage({ params }: PageProps) {
               <AnalysisHero
                 ticker={tickerUpper}
                 companyName={companyName}
-                price={data?.lastPrice ?? null}
-                changePct={data?.lastChangePct ?? null}
+                price={displayPrice}
+                changePct={displayChangePct}
                 marketCap={data?.lastMarketCap ?? null}
                 sector={data?.sector ?? null}
                 industry={data?.industry ?? null}
@@ -261,8 +258,8 @@ export default async function AnalysisPage({ params }: PageProps) {
                 peRatio={displayPeRatio}
                 dividendYield={data?.finnhubMetrics?.dividendYield ?? null}
                 roe={roeStat}
-                week52Low={week52?._min?.regularClose ?? null}
-                week52High={week52?._max?.regularClose ?? null}
+                week52Low={week52?.low ?? null}
+                week52High={week52?.high ?? null}
                 earningsDate={nextEarnings?.date ?? null}
                 earningsDays={earningsDays}
                 verdict={data?.analysisCache?.verdictText ?? null}
@@ -290,8 +287,9 @@ export default async function AnalysisPage({ params }: PageProps) {
               />
               <PriceHistorySection
                 ticker={tickerUpper}
-                currentPrice={data?.lastPrice ?? null}
+                currentPrice={displayPrice}
                 currentChangePct={displayChangePct}
+                changeLabel={marketSession === 'closed' ? 'at last close' : marketSession === 'pre' ? 'pre-market' : marketSession === 'after' ? 'after-hours' : 'day'}
               />
             </div>
             <div className="min-w-0 space-y-6">
@@ -326,6 +324,24 @@ export default async function AnalysisPage({ params }: PageProps) {
             </div>
           )}
 
+          {/* Data-driven prose unique per ticker — sits directly under Key
+              Metrics so mobile readers hit "why it matters" before the long
+              interactive deep-dive (charts push it ~10k px down otherwise). */}
+          <KeyInsightsSection
+            ticker={tickerUpper}
+            companyName={companyName}
+            changePct={displayChangePct}
+            marketSession={marketSession}
+            cache={insightsCache}
+            lossHistory={summarizeLossYears(analysisData?.statements ?? [])}
+            peRatio={displayPeRatio}
+            roe={roeStat}
+            dividendYield={data?.finnhubMetrics?.dividendYield ?? null}
+            earningsDays={earningsDays}
+            moversReason={data?.moversReason ?? null}
+            moversCategory={data?.moversCategory ?? null}
+          />
+
           {/* Full interactive analysis — financial statement pairs
               (history bar + structure sankey), valuation, health table */}
           <AnalysisTabClient
@@ -343,22 +359,6 @@ export default async function AnalysisPage({ params }: PageProps) {
             {' '}— top 50 capital spenders compared.
           </p>
 
-          {/* Data-driven prose unique per ticker — the differentiator that gets
-              pages out of "Crawled – currently not indexed" */}
-          <KeyInsightsSection
-            ticker={tickerUpper}
-            companyName={companyName}
-            changePct={displayChangePct}
-            marketSession={marketSession}
-            cache={insightsCache}
-            peRatio={displayPeRatio}
-            roe={roeStat}
-            dividendYield={data?.finnhubMetrics?.dividendYield ?? null}
-            earningsDays={earningsDays}
-            moversReason={data?.moversReason ?? null}
-            moversCategory={data?.moversCategory ?? null}
-          />
-
           <EarningsSection upcoming={earningsData.upcoming} recent={earningsData.recent} />
 
           <RecentMovesSection ticker={tickerUpper} moves={recentMoves} />
@@ -370,7 +370,7 @@ export default async function AnalysisPage({ params }: PageProps) {
           <SeoTextSection
             ticker={tickerUpper}
             companyName={companyName}
-            price={data?.lastPrice ?? null}
+            price={displayPrice}
             changePct={displayChangePct}
             marketCap={data?.lastMarketCap ?? null}
             sector={data?.sector ?? null}

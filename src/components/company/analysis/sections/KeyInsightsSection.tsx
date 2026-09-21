@@ -1,3 +1,5 @@
+import type { summarizeLossYears } from '@/lib/utils/analysisMath';
+
 interface KeyInsightsCache {
   valuationScore: number | null;
   verdictText: string | null;
@@ -20,6 +22,7 @@ interface KeyInsightsSectionProps {
   changePct: number | null;
   marketSession: string;
   cache: KeyInsightsCache | null;
+  lossHistory?: ReturnType<typeof summarizeLossYears>;
   peRatio: number | null;
   roe: number | null;
   dividendYield: number | null;
@@ -45,6 +48,7 @@ export function KeyInsightsSection({
   changePct,
   marketSession,
   cache,
+  lossHistory,
   peRatio,
   roe,
   dividendYield,
@@ -182,9 +186,9 @@ export function KeyInsightsSection({
     );
   }
 
-  if (num(cache?.negativeNiYears) && cache.negativeNiYears > 0) {
+  if (lossHistory && lossHistory.lossYears > 0) {
     insights.push(
-      `${companyName} posted a net loss in ${cache.negativeNiYears} of the last four reporting years.`,
+      `${companyName} posted a net loss in ${lossHistory.lossYears} of ${lossHistory.reportedYears} available completed fiscal years (${lossHistory.firstYear}–${lossHistory.lastYear}).`,
     );
   }
 

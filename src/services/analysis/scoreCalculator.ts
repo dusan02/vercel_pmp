@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db/prisma';
 import { aiService } from '../aiService';
 import { NotificationService } from '../notificationService';
 import { computeTTM } from '@/lib/utils/ttm';
+import { summarizeLossYears } from '@/lib/utils/analysisMath';
 import { computePillars } from './pillars';
 import { isSuspiciousShareCount } from '@/lib/utils/shareCount';
 import { applySplitAdjustments, applyPostSplitAdjustment } from '@/lib/utils/splitAdjustment';
@@ -147,18 +148,13 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
     }
 
     // --- Quality Stats ---
-    let negativeNiYears = 0;
+    const negativeNiYears = summarizeLossYears(stmts).lossYears;
     const margins: number[] = [];
-    const yearlyNi: Record<number, number> = {};
     stmts.forEach(s => {
-        if (s.netIncome !== null) {
-            yearlyNi[s.fiscalYear] = (yearlyNi[s.fiscalYear] || 0) + s.netIncome;
-        }
         if (s.revenue && s.revenue > 0 && s.ebit !== null) {
             margins.push(s.ebit / s.revenue);
         }
     });
-    Object.values(yearlyNi).forEach(ni => { if (ni < 0) negativeNiYears++; });
 
     let marginStability: number | null = null;
     if (margins.length > 2) {

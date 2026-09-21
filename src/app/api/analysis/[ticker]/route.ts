@@ -156,7 +156,7 @@ export async function POST(
         // Invalidate Redis caches so next GET fetches fresh data
         try {
             const { del } = await import('@/lib/redis/operations');
-            await del([`analysis:cache:${symbol}`, `analysis:history:${symbol}`]);
+            await del([`analysis:cache:${symbol}`, `analysis:history:${symbol}`, `analysis:history:v2:${symbol}`]);
         } catch {}
 
         console.log(`[Analysis API] Deep analysis complete for ${symbol}`);

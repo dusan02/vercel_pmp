@@ -13,24 +13,48 @@
 import { buildMetrics } from '@/components/company/analysis/KeyMetricsTable';
 import { formatPePercentile } from '@/services/analysis/scoreCalculator';
 import type { AnalysisData } from '@/components/company/analysis/types';
+import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { KeyInsightsSection } from '@/components/company/analysis/sections/KeyInsightsSection';
+import { get52WeekRange, getAnalysisQuote } from '@/lib/analysis/pageData';
+import { summarizeLossYears } from '@/lib/utils/analysisMath';
+import { buildAnalysisFaq } from '@/components/company/analysis/sections/AnalysisFaqSection';
+import { GET as getHistory } from '@/app/api/analysis/[ticker]/history/route';
+import { generateCompanyMetadata } from '@/lib/seo/metadata';
+import robots from '@/app/robots';
+
+jest.mock('next/server', () => ({
+    NextResponse: { json: (body: unknown) => ({ json: async () => body }) },
+}));
+jest.mock('@/lib/redis/operations', () => ({
+    getCachedData: jest.fn().mockResolvedValue(null),
+    setCachedData: jest.fn(),
+    del: jest.fn(),
+}));
 
 const analysisCacheFindUnique = jest.fn();
 const statementFindMany = jest.fn();
 const valuationFindMany = jest.fn();
 const finnhubFindUnique = jest.fn();
+const valuationAggregate = jest.fn();
+const dailyRefAggregate = jest.fn();
 
 jest.mock('@/lib/db/prisma', () => ({
     prisma: {
         analysisCache: { findUnique: (...a: unknown[]) => analysisCacheFindUnique(...a) },
         financialStatement: { findMany: (...a: unknown[]) => statementFindMany(...a) },
-        dailyValuationHistory: { findMany: (...a: unknown[]) => valuationFindMany(...a) },
+        dailyValuationHistory: {
+            findMany: (...a: unknown[]) => valuationFindMany(...a),
+            aggregate: (...a: unknown[]) => valuationAggregate(...a),
+        },
+        dailyRef: { aggregate: (...a: unknown[]) => dailyRefAggregate(...a) },
         finnhubMetrics: { findUnique: (...a: unknown[]) => finnhubFindUnique(...a) },
         ticker: { findUnique: jest.fn() },
     },
 }));
 
 jest.mock('@/lib/utils/splitAdjustment', () => ({
-    applySplitAdjustments: jest.fn(),
+    applySplitAdjustments: jest.fn().mockResolvedValue([]),
     applyPostSplitAdjustment: jest.fn(),
 }));
 
@@ -273,6 +297,136 @@ describe('valuation history stats — percentile vs own history', () => {
         valuationFindMany.mockResolvedValue([]);
         const result = await computeMetrics('MU', { lastPrice: 1016.51 });
         expect(result!.valuationHistoryStats).toBeNull();
+    });
+});
+
+describe('Analysis audit regressions', () => {
+    it('uses official close and its reference for every closed-session quote', () => {
+        const data = { lastPrice: 334.87, lastChangePct: -0.37,
+            lastClosedRef: { regularClose: 336.13, previousClose: 337 } };
+        expect(getAnalysisQuote(data, 'closed')).toMatchObject({ price: 336.13 });
+        expect(getAnalysisQuote(data, 'closed').changePct).toBeCloseTo(-0.25816, 4);
+        for (const session of ['pre', 'live', 'after'] as const) {
+            expect(getAnalysisQuote(data, session)).toMatchObject({ price: 334.87, changePct: -0.37 });
+        }
+        expect(getAnalysisQuote({ ...data, lastClosedRef: null }, 'closed')).toMatchObject({ price: null, changePct: null });
+        expect(getAnalysisQuote({ ...data, lastClosedRef: { regularClose: 336.13, previousClose: 0 } }, 'closed'))
+            .toMatchObject({ price: 336.13, changePct: null });
+    });
+
+    it.each([['pre', 'pre-market trading'], ['live', 'regular session'], ['after', 'after-hours trading'], ['closed', 'last market close']])('labels %s correctly in FAQ and schema text', (marketSession, label) => {
+        const items = buildAnalysisFaq({ ticker: 'AAPL', companyName: 'Apple', price: 336.13, changePct: -0.26,
+            marketSession: marketSession!, healthScore: null, verdictText: null, peRatio: null,
+            valuationScore: null, sector: null, industry: null, description: null, earningsDate: null, earningsDays: null });
+        expect(items[0]?.a).toContain(label);
+    });
+
+    it('counts completed annual loss years only, not FY plus cumulative quarters', () => {
+        const statements = Array.from({ length: 10 }, (_, i) => ({
+            fiscalYear: 2025 - i, fiscalPeriod: 'FY', endDate: `${2025 - i}-12-31`, netIncome: i < 6 ? 100 : -100,
+        }));
+        expect(summarizeLossYears([
+            ...statements,
+            { fiscalYear: 2025, fiscalPeriod: 'Q1', netIncome: -1000 },
+            { fiscalYear: 2026, fiscalPeriod: 'Q1', netIncome: -1000 },
+            { fiscalYear: 2015, fiscalPeriod: 'FY', netIncome: -1000 },
+        ])).toEqual({ lossYears: 4, reportedYears: 10, firstYear: 2016, lastYear: 2025 });
+        expect(summarizeLossYears(statements.slice(0, 4)).lossYears).toBe(0);
+        expect(summarizeLossYears([]).reportedYears).toBe(0);
+    });
+
+    it('uses own TTM EPS in Per Share rather than a conflicting vendor EPS', () => {
+        expect(cell(buildMetrics(muData()).perShare, 'EPS (TTM)')?.value).toBe('$44.20');
+        const data = muData();
+        data.finnhub!.netIncomePerShare = null;
+        expect(cell(buildMetrics(data).perShare, 'EPS (TTM)')?.value).toBe('$44.20');
+        data.metrics.currentEps = null;
+        expect(cell(buildMetrics(data).perShare, 'EPS (TTM)')?.value).toBe('N/A');
+    });
+
+    it.each([-9e9, 0])('does not grade non-positive equity as low debt: %s', equity => {
+        const data = muData();
+        data.balanceSheet!.totalEquity = equity;
+        data.balanceSheet!.debtToEquity = -5.33;
+        const debt = buildMetrics(data).solvency.find(m => m.label === 'Debt/Equity');
+        expect(debt?.value).toBe('N/A');
+        expect(debt?.statusLabel).toBe('-');
+        expect(debt?.hint).toContain('non-positive equity');
+    });
+
+    it('does not rate a negative vendor debt/equity fallback as conservative', () => {
+        const data = muData({ balanceSheet: null });
+        data.finnhub!.debtEquityRatio = -5.33;
+        expect(cell(buildMetrics(data).solvency, 'Debt/Equity')?.value).toBe('N/A');
+    });
+
+    it('keeps high positive P/E in history and never calls an older valid row current', async () => {
+        statementFindMany.mockResolvedValue([]);
+        valuationFindMany.mockResolvedValue([
+            { date: new Date('2025-09-04'), peRatio: 196.48, psRatio: 10, closePrice: 300 },
+            { date: new Date('2026-09-18'), peRatio: 333.5, psRatio: 14.7, closePrice: 364.27 },
+        ]);
+        const result = await getHistory({} as Request, { params: Promise.resolve({ ticker: 'TSLA' }) });
+        const data = await result.json();
+        expect(data.current.pe).toBe(333.5);
+        expect(data.peHistory.at(-1)).toMatchObject({ value: 333.5 });
+        valuationFindMany.mockResolvedValue([
+            { date: new Date('2025-09-04'), peRatio: 196.48, psRatio: 10, closePrice: 300 },
+            { date: new Date('2026-09-18'), peRatio: null, psRatio: 14.7, closePrice: 364.27 },
+        ]);
+        const missing = await getHistory({} as Request, { params: Promise.resolve({ ticker: 'TSLA' }) });
+        expect((await missing.json()).current.pe).toBeNull();
+    });
+
+    it('gets a covered 52-week closing range from daily history', async () => {
+        valuationAggregate.mockResolvedValue({
+            _min: { closePrice: 293.41, date: new Date(Date.now() - 364 * 86400e3) },
+            _max: { closePrice: 481.57, date: new Date(Date.now() - 3 * 86400e3) },
+            _count: { closePrice: 250 },
+        });
+        expect(await get52WeekRange('AVGO')).toEqual({ low: 293.41, high: 481.57 });
+        expect(dailyRefAggregate).not.toHaveBeenCalled();
+    });
+
+    it('hides a short or stale range instead of labeling it 52WK', async () => {
+        for (const [days, count, lastDays] of [[9, 9, 1], [364, 250, 30], [364, 20, 1]]) {
+            valuationAggregate.mockResolvedValue({
+                _min: { closePrice: 339, date: new Date(Date.now() - days! * 86400e3) },
+                _max: { closePrice: 368, date: new Date(Date.now() - lastDays! * 86400e3) },
+                _count: { closePrice: count },
+            });
+            expect(await get52WeekRange('AVGO')).toBeNull();
+        }
+    });
+
+    it('does not describe a historical loss count as losses in the last four years', () => {
+        const html = renderToStaticMarkup(React.createElement(KeyInsightsSection, {
+            ticker: 'TSLA', companyName: 'Tesla', changePct: null, marketSession: 'closed',
+            cache: { valuationScore: 20, verdictText: 'Neutral', piotroskiScore: null, altmanZ: null,
+                beneishScore: null, revenueCagr: null, netIncomeCagr: null, fcfMargin: null,
+                debtRepaymentYears: null, interestCoverage: null, negativeNiYears: 4,
+                humanDebtInfo: null, humanPeInfo: null },
+            peRatio: 333.5, roe: null, dividendYield: null, earningsDays: null,
+            moversReason: null, moversCategory: null,
+        }));
+        expect(html).not.toContain('last four reporting years');
+    });
+
+    it('allows Next static assets while keeping internal routes out of crawler rules', () => {
+        const rules = robots().rules as { userAgent: string; allow?: string | string[]; disallow?: string[] }[];
+        const rule = rules.find(r => r.userAgent === '*')!;
+        const allowed = Array.isArray(rule.allow) ? rule.allow : [rule.allow];
+        expect(allowed).toContain('/_next/static/');
+        expect(allowed).toContain('/_next/image');
+        expect(rule.disallow).toEqual(expect.arrayContaining(['/api/', '/admin/']));
+    });
+
+    it('uses ticker-specific images for both Open Graph and Twitter', () => {
+        const metadata = generateCompanyMetadata({ ticker: 'AVGO', companyName: 'Broadcom' });
+        expect(metadata.openGraph?.images).toEqual(expect.arrayContaining([
+            expect.objectContaining({ url: 'https://premarketprice.com/analysis/AVGO/opengraph-image' }),
+        ]));
+        expect(metadata.twitter?.images).toEqual(['https://premarketprice.com/analysis/AVGO/opengraph-image']);
     });
 });
 

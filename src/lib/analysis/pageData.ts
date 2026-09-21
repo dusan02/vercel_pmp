@@ -2,6 +2,22 @@ import { cache } from 'react';
 import { prisma } from '@/lib/db/prisma';
 import { dedupeShareClasses } from '@/lib/companyNames';
 import type { StatementRow } from '@/components/company/analysis/sections/FinancialFlowsSection';
+import { detectSession } from '@/lib/utils/timeUtils';
+import { nowET } from '@/lib/utils/dateET';
+
+export const getAnalysisQuote = cache((data: {
+  lastPrice: number | null;
+  lastChangePct: number | null;
+  lastClosedRef?: { regularClose: number | null; previousClose: number | null } | null;
+} | null, marketSession = detectSession(nowET())) => {
+  const positive = (v: number | null | undefined) => v != null && Number.isFinite(v) && v > 0 ? v : null;
+  const price = positive(marketSession === 'closed' ? data?.lastClosedRef?.regularClose : data?.lastPrice);
+  const previousClose = positive(data?.lastClosedRef?.previousClose);
+  const changePct = marketSession === 'closed'
+    ? price != null && previousClose != null ? (price / previousClose - 1) * 100 : null
+    : price != null && data?.lastChangePct != null && Number.isFinite(data.lastChangePct) ? data.lastChangePct : null;
+  return { price, changePct, marketSession };
+});
 
 const API_BASE = `http://127.0.0.1:${process.env.PORT || 3001}`;
 
@@ -99,7 +115,7 @@ export const getTickerData = cache(async function getTickerData(symbol: string) 
       },
       }),
       prisma.dailyRef.findFirst({
-        where: { symbol, regularClose: { not: null, gt: 0 }, previousClose: { gt: 0 } },
+        where: { symbol, regularClose: { not: null, gt: 0 } },
         orderBy: { date: 'desc' },
         select: { previousClose: true, regularClose: true },
       }),
@@ -204,20 +220,24 @@ export async function getSectorPeers(sector: string | null | undefined, excludeS
 }
 
 /**
- * 52-week closing range — DailyRef has no intraday H/L, so the honest
- * range is over daily regular closes (labeled as such in the hero).
+ * 52-week closing range — use daily price history, not short-lived DailyRef.
+ * Hide incomplete or stale history rather than label a partial range 52WK.
  */
 export async function get52WeekRange(symbol: string) {
   try {
-    return await prisma.dailyRef.aggregate({
-      where: {
-        symbol,
-        regularClose: { not: null },
-        date: { gte: new Date(Date.now() - 366 * 24 * 60 * 60 * 1000) },
-      },
-      _max: { regularClose: true },
-      _min: { regularClose: true },
+    const now = Date.now();
+    const day = 86_400_000;
+    const cutoff = new Date(now - 365 * day);
+    const range = await prisma.dailyValuationHistory.aggregate({
+      where: { symbol, closePrice: { gt: 0 }, date: { gte: cutoff, lte: new Date(now) } },
+      _max: { closePrice: true, date: true },
+      _min: { closePrice: true, date: true },
+      _count: { closePrice: true },
     });
+    if (range._count.closePrice < 200 || !range._min.date || !range._max.date
+      || range._min.date.getTime() > cutoff.getTime() + 10 * day
+      || range._max.date.getTime() < now - 10 * day) return null;
+    return { low: range._min.closePrice, high: range._max.closePrice };
   } catch {
     return null;
   }

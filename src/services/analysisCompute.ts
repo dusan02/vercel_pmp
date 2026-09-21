@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db/prisma';
 import { computeTTM } from '@/lib/utils/ttm';
+import { summarizeLossYears } from '@/lib/utils/analysisMath';
 import { applySplitAdjustments, applyPostSplitAdjustment } from '@/lib/utils/splitAdjustment';
 import { isSuspiciousShareCount } from '@/lib/utils/shareCount';
 import { dedupeShareClasses } from '@/lib/companyNames';
@@ -328,6 +329,7 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
 
     return {
         ...analysis,
+        negativeNiYears: summarizeLossYears(stmts).lossYears,
         statements: stmts,
         balanceSheet: {
             totalDebt,

@@ -10,7 +10,9 @@
  *     values from the existing payload — nothing is recomputed client-side
  *  5. FCF Conversion lives under Quality (it moved out of Profitability)
  */
-import React from 'react';
+import React, { act, useState } from 'react';
+import { createRoot } from 'react-dom/client';
+import { useAnalysis } from '@/hooks/useAnalysis';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { KeyMetricsTable, buildMetrics } from '@/components/company/analysis/KeyMetricsTable';
 import { computePillars } from '@/services/analysis/pillars';
@@ -68,6 +70,43 @@ function render(data: AnalysisData): string {
     return renderToStaticMarkup(React.createElement(KeyMetricsTable, { data }));
 }
 
+describe('Analysis background refresh', () => {
+    beforeEach(() => {
+        jest.useFakeTimers();
+        Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+    });
+    afterEach(() => {
+        jest.useRealTimers();
+    });
+
+    it.each([200, 500])('preserves mounted chart state during refresh, including HTTP %s', async status => {
+        const data = fixture();
+        let finish!: (value: unknown) => void;
+        const response = new Promise(resolve => { finish = resolve; });
+        (global.fetch as jest.Mock).mockImplementation(() => response);
+        function Chart() {
+            const [period, setPeriod] = useState('Annual');
+            return React.createElement('button', { onClick: () => setPeriod('Quarterly') }, period);
+        }
+        function Harness() {
+            const result = useAnalysis('AVGO', data, {});
+            return result.loading || !result.data ? React.createElement('p', null, 'Loading') : React.createElement(Chart);
+        }
+        const container = document.createElement('div');
+        const root = createRoot(container);
+        try {
+            await act(async () => root.render(React.createElement(Harness)));
+            await act(async () => container.querySelector('button')!.click());
+            await act(async () => jest.advanceTimersByTime(5000));
+            expect(container.textContent).toBe('Quarterly');
+            await act(async () => finish({ ok: status === 200, status, json: async () => data }));
+            expect(container.textContent).toBe('Quarterly');
+        } finally {
+            await act(async () => root.unmount());
+        }
+    });
+});
+
 describe('Key Metrics — pillar layout', () => {
     it('renders all five pillar groups plus Balance Sheet', () => {
         const html = render(fixture());
@@ -102,6 +141,16 @@ describe('Key Metrics — pillar layout', () => {
         expect(html).toContain('20.4x');          // finnhub.priceFreeCashFlow
         expect(html).toContain('8.3%');           // epsCagr5y
         expect(html).toContain('7.4%');           // forwardImpliedGrowth
+    });
+
+    it('explains both grade scales and includes metric status in tap disclosures', () => {
+        const data = fixture();
+        data.finnhub!.beta = 1.5;
+        const doc = new DOMParser().parseFromString(render(data), 'text/html');
+        expect(doc.body.textContent).toContain('How grades work');
+        expect(doc.body.textContent).toContain('not an average');
+        const beta = Array.from(doc.querySelectorAll('details')).find(el => el.querySelector('summary')?.textContent?.includes('Beta'))!;
+        expect(beta.querySelector('p')?.textContent).toContain('Grade C: Volatile');
     });
 
     it('FCF Conversion sits in the Quality group, not Profitability', () => {

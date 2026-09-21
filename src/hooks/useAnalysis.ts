@@ -56,9 +56,21 @@ export function useAnalysis(ticker: string, initialAnalysisData?: any, initialHi
     // responses (user switched tickers mid-flight) are discarded.
     const tickerRef = useRef(ticker);
     const abortRef = useRef<AbortController | null>(null);
+    // Mirrors `data` for use inside fetchAnalysis — lets a background refresh
+    // skip the full loading state and keep the last good data on failure.
+    const dataRef = useRef<AnalysisData | null>(ssrData);
+    useEffect(() => { dataRef.current = data; }, [data]);
 
     useEffect(() => {
+        const switched = tickerRef.current !== ticker;
         tickerRef.current = ticker;
+        if (switched) {
+            // New ticker — drop the previous ticker's data so the loading
+            // state shows instead of stale charts from the other company.
+            dataRef.current = null;
+            setData(null);
+            setLoading(true);
+        }
     }, [ticker]);
 
     // Abort in-flight requests on unmount
@@ -88,7 +100,10 @@ export function useAnalysis(ticker: string, initialAnalysisData?: any, initialHi
         // Track the latest request so stale responses are discarded
         const reqId = ++fetchIdRef.current;
         try {
-            setLoading(true);
+            // Full loading state only when nothing is on screen yet — a
+            // background refresh keeps mounted charts (and their local
+            // state like the Annual/Quarterly toggle) alive.
+            if (!dataRef.current) setLoading(true);
             setError(null);
 
             // Fetch main analysis + history (for correlation/valuation charts) in parallel
@@ -102,6 +117,12 @@ export function useAnalysis(ticker: string, initialAnalysisData?: any, initialHi
 
             if (!res.ok) {
                 if (reqId !== fetchIdRef.current) return; // stale
+                if (dataRef.current) {
+                    // Background refresh failed — keep showing the last good
+                    // data instead of unmounting into the error screen.
+                    console.warn(`Analysis refresh failed (${res.status}); keeping previous data.`);
+                    return;
+                }
                 setData(null);
                 if (res.status === 404) {
                     setError('No analysis data available for this ticker.');
@@ -151,6 +172,10 @@ export function useAnalysis(ticker: string, initialAnalysisData?: any, initialHi
             if (tickerRef.current !== reqTicker) return;
             if (reqId !== fetchIdRef.current) return; // stale
             console.error(err);
+            if (dataRef.current) {
+                console.warn('Analysis refresh failed; keeping previous data.');
+                return;
+            }
             setError('Could not load analysis data. Please try again later.');
         } finally {
             if (reqId === fetchIdRef.current) {

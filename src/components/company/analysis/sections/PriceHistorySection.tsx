@@ -10,7 +10,7 @@ const PriceCandlestickChart = lazy(() => import('@/components/company/PriceCandl
  * The main price chart — 5Y weekly candlesticks rendered as a top-level,
  * full-width section (it was previously buried mid-page inside AnalysisTab).
  */
-export function PriceHistorySection({ ticker, currentPrice, currentChangePct }: { ticker: string; currentPrice?: number | null; currentChangePct?: number | null }) {
+export function PriceHistorySection({ ticker, currentPrice, currentChangePct, changeLabel }: { ticker: string; currentPrice?: number | null; currentChangePct?: number | null; changeLabel?: string }) {
     return (
         <div className="mb-6">
             <ChartErrorBoundary>
@@ -22,7 +22,7 @@ export function PriceHistorySection({ ticker, currentPrice, currentChangePct }: 
                     as="h2"
                 >
                     <Suspense fallback={<div className="flex justify-center items-center" style={{ height: 360 }}><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-500" /></div>}>
-                        <PriceCandlestickChart ticker={ticker} currentPrice={currentPrice ?? null} currentChangePct={currentChangePct ?? null} />
+                        <PriceCandlestickChart ticker={ticker} currentPrice={currentPrice ?? null} currentChangePct={currentChangePct ?? null} changeLabel={changeLabel ?? 'day'} />
                     </Suspense>
                 </ChartSection>
             </ChartErrorBoundary>

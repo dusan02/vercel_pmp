@@ -177,7 +177,7 @@ export function AnalysisCharts({ ticker, data, flowPeriods }: AnalysisChartsProp
                             ticker={ticker}
                             peHistory={data.peHistory ?? []}
                             psHistory={data.psHistory ?? []}
-                            current={data.valuationCurrent ?? null}
+                            current={{ pe: data.metrics.currentPe, ps: data.metrics.psRatio }}
                             stats={data.valuationStats ?? null}
                         />
                     </Suspense>

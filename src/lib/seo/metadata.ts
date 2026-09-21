@@ -112,7 +112,7 @@ export function generateCompanyMetadata({
   ].filter(Boolean).join(', ');
 
   const url = `${baseUrl}/analysis/${ticker}`;
-  const ogImage = `${baseUrl}/og-image.png`;
+  const ogImage = `${baseUrl}/analysis/${ticker}/opengraph-image`;
 
   return {
     title,

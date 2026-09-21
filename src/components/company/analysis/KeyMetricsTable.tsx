@@ -3,6 +3,7 @@
 import React, { useMemo } from 'react';
 import { AnalysisData, ValuationHistoryStat } from './types';
 import { MetricCardDef, StatusType, StatusBadge, VALUE_COLORS } from '../shared/MetricCard';
+import { summarizeLossYears } from '@/lib/utils/analysisMath';
 
 function ordinalSuffix(n: number): string {
     const s = ['th', 'st', 'nd', 'rd'];
@@ -78,7 +79,8 @@ export function buildMetrics(data: AnalysisData) {
     const intCov = m?.interestCoverage ?? fh?.interestCoverage ?? null;
     const cr     = pick(bs?.currentRatio ?? null, fh?.currentRatio ?? null);
     const nde    = bs?.netDebtToEbit ?? null;
-    const dte    = pick(bs?.debtToEquity ?? null, fh?.debtEquityRatio ?? null);
+    const rawDte = pick(bs?.debtToEquity ?? null, fh?.debtEquityRatio ?? null);
+    const dte = !hasNegEquity && rawDte != null && Number.isFinite(rawDte) && rawDte >= 0 ? rawDte : null;
     const cashDebt = (bs?.cash != null && bs?.totalDebt != null && bs.totalDebt > 0) ? bs.cash / bs.totalDebt : (bs?.totalDebt === 0 ? Infinity : null);
     const fcfMar = m?.fcfMargin ?? null;
     const fcfCon = m?.fcfConversion ?? null;
@@ -89,7 +91,7 @@ export function buildMetrics(data: AnalysisData) {
     const pio    = data.piotroskiScore ?? null;
     const ben    = data.beneishScore ?? null;
     const mv     = data.marginStability ?? null;
-    const niYrs  = data.negativeNiYears ?? 0;
+    const lossHistory = summarizeLossYears(data.statements ?? []);
     const dil    = bs?.dilution5y;
     const sbc    = bs?.sbcRatio;
     // ROIC — Finnhub's roicTTM is a premium field (never populated on our
@@ -180,9 +182,9 @@ export function buildMetrics(data: AnalysisData) {
     ];
 
     // Per-share snapshot — absolute amounts rather than ratios
-    const niPs = fh?.netIncomePerShare ?? null;
+    const niPs = m?.currentEps ?? fh?.netIncomePerShare ?? null;
     const perShare: MetricCardDef[] = [
-        def('EPS (TTM)', niPs != null ? `$${niPs.toFixed(2)}` : 'N/A', 'neutral', '-', 'TTM net income per share (Finnhub)'),
+        def('EPS (TTM)', niPs != null && Number.isFinite(niPs) ? `$${niPs.toFixed(2)}` : 'N/A', 'neutral', '-', m?.currentEps != null ? 'Own TTM net income / shares — same earnings basis as P/E' : 'TTM net income per share (Finnhub fallback)'),
         def('Cash / Share', cps != null ? `$${cps.toFixed(2)}` : 'N/A', 'neutral', '-', 'Cash & short-term investments per share (Finnhub)'),
         def('Book Value / Share', bvps != null ? `$${bvps.toFixed(2)}` : 'N/A', bvps == null ? 'neutral' : bvps < 0 ? 'warn' : 'neutral', bvps == null ? '-' : bvps < 0 ? 'Neg.' : '-', "Shareholders' equity per share (Finnhub). Negative = accumulated losses / heavy buybacks"),
     ];
@@ -215,7 +217,7 @@ export function buildMetrics(data: AnalysisData) {
         def('Interest Coverage', intCov != null ? `${intCov.toFixed(1)}x` : 'N/A', intCov == null ? 'neutral' : intCov > 10 ? 'good' : intCov > 3 ? 'warn' : 'bad', intCov == null ? '-' : intCov > 10 ? 'Strong' : intCov > 3 ? 'Ok' : 'Risky', 'EBIT/Interest. >10 Strong'),
         def('Debt Repayment', yr(debtRp), debtRp == null ? 'neutral' : debtRp <= 3 ? 'good' : debtRp > 10 ? 'bad' : 'warn', debtRp == null ? '-' : debtRp <= 3 ? 'Fast' : debtRp > 10 ? 'Slow' : 'Avg', 'Years to repay net debt via FCF'),
         def('Net Debt/EBIT', nde != null ? (nde < 0 ? 'Net Cash' : `${nde.toFixed(1)}x`) : 'N/A', nde == null ? 'neutral' : nde < 4 ? (nde < 2 ? 'good' : 'warn') : 'bad', nde == null ? '-' : nde < 2 ? 'Low' : nde < 4 ? 'Med' : 'High', 'Leverage. <2x Low, >4x High'),
-        def('Debt/Equity', dte != null ? `${dte.toFixed(2)}x` : 'N/A', dte == null ? 'neutral' : dte < 1 ? 'good' : dte < 2 ? 'warn' : 'bad', dte == null ? '-' : dte < 1 ? 'Low' : dte < 2 ? 'Med' : 'High', '<1 Conservative, >2 Risky'),
+        def('Debt/Equity', dte != null ? `${dte.toFixed(2)}x` : 'N/A', dte == null ? 'neutral' : dte < 1 ? 'good' : dte < 2 ? 'warn' : 'bad', dte == null ? '-' : dte < 1 ? 'Low' : dte < 2 ? 'Med' : 'High', 'Debt / Equity: <1 Conservative, >2 Risky. Not meaningful with non-positive equity; shown as unavailable rather than low debt.'),
         def('Cash / Debt', cashDebt === Infinity ? 'No Debt' : cashDebt != null ? `${cashDebt.toFixed(2)}x` : 'N/A', cashDebt == null ? 'neutral' : cashDebt === Infinity || cashDebt >= 1 ? 'good' : cashDebt >= 0.3 ? 'warn' : 'bad', cashDebt == null ? '-' : cashDebt === Infinity ? 'Clean' : cashDebt >= 1 ? 'Covered' : cashDebt >= 0.3 ? 'Partial' : 'Thin', 'Cash covers how much of total debt. >1 = could repay all debt from cash'),
     ];
 
@@ -236,7 +238,7 @@ export function buildMetrics(data: AnalysisData) {
         def('Asset / Liability', bs?.assetToLiability != null ? `${bs.assetToLiability.toFixed(2)}x` : 'N/A', bs?.assetToLiability == null ? 'neutral' : bs.assetToLiability >= 2 ? 'good' : bs.assetToLiability >= 1 ? 'warn' : 'bad', bs?.assetToLiability == null ? '-' : bs.assetToLiability >= 2 ? 'Solid' : bs.assetToLiability >= 1 ? 'Adequate' : 'Risky', 'Total Assets / Total Liabilities'),
     ];
 
-    return { valuation, profitability, growth, solvency, quality, balanceSheet, market, perShare, lossYears: niYrs };
+    return { valuation, profitability, growth, solvency, quality, balanceSheet, market, perShare, lossYears: lossHistory.lossYears, lossHistory };
 }
 
 // ── Letter grades — report-card style. Per-metric grade derives from the
@@ -327,6 +329,11 @@ function Cell({ m }: { m: MetricCardDef }) {
                 {row}
             </summary>
             <p className="mt-1.5 text-[10px] leading-snug text-gray-500 dark:text-gray-400 normal-case tracking-normal">
+                {m.statusLabel !== '-' && (
+                    <span className="block mb-0.5 font-semibold text-gray-600 dark:text-gray-300">
+                        Grade {statusGrade(m.statusType)}: {m.statusLabel}
+                    </span>
+                )}
                 {m.hint}
             </p>
         </details>
@@ -374,6 +381,11 @@ function Tile({ m }: { m: MetricCardDef }) {
                 {inner}
             </summary>
             <p className="mt-1 text-[10px] leading-snug text-gray-500 dark:text-gray-400 normal-case tracking-normal">
+                {m.statusLabel !== '-' && (
+                    <span className="block mb-0.5 font-semibold text-gray-600 dark:text-gray-300">
+                        Grade {statusGrade(m.statusType)}: {m.statusLabel}
+                    </span>
+                )}
                 {m.hint}
             </p>
         </details>
@@ -428,7 +440,7 @@ function PillarCard({ title, score, metrics, children }: { title: string; score?
 
 // ── Main export ──────────────────────────────────────────────────────────────
 export function KeyMetricsTable({ data }: Props) {
-    const { valuation, profitability, growth, solvency, quality, balanceSheet, market, perShare, lossYears } = useMemo(
+    const { valuation, profitability, growth, solvency, quality, balanceSheet, market, perShare, lossYears, lossHistory } = useMemo(
         () => buildMetrics(data),
         [data]
     );
@@ -482,7 +494,9 @@ export function KeyMetricsTable({ data }: Props) {
                 <PillarCard title="Growth" score={data.pillars?.growth.score ?? null} metrics={growth} />
                 <PillarCard title="Quality" score={data.pillars?.quality.score ?? null} metrics={quality}>
                     {lossYears > 0 && (
-                        <StatusBadge label={`${lossYears} Loss Years (10Y)`} type={lossYears <= 2 ? 'warn' : 'bad'} />
+                        <span title={`Completed fiscal years ${lossHistory.firstYear}–${lossHistory.lastYear}`}>
+                            <StatusBadge label={`${lossYears}/${lossHistory.reportedYears} Loss Years`} type={lossYears <= 2 ? 'warn' : 'bad'} />
+                        </span>
                     )}
                 </PillarCard>
 
@@ -505,6 +519,14 @@ export function KeyMetricsTable({ data }: Props) {
                     </div>
                 </div>
             )}
+
+            {/* Grade legend — the two scales are easy to conflate otherwise:
+                rows carry per-metric A–D, cards carry the pillar score's
+                A+–E. Stating it once here keeps every header self-explanatory. */}
+            <p className="mt-3 px-2.5 text-[10px] leading-snug text-gray-400 dark:text-gray-500">
+                <span className="font-semibold text-gray-500 dark:text-gray-400">How grades work:</span>
+                {' '}each metric is graded A–D against fixed thresholds (tap a row for the meaning). Card grades map the pillar score to A+–E — a card grade is that pillar&apos;s own score, not an average of the rows shown.
+            </p>
 
             {/* Shared as-of: statements period + ratio snapshot freshness */}
             {(data.statements?.[0]?.endDate || data.finnhub?.fetchedAt) && (

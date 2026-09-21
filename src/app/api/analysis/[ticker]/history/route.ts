@@ -15,7 +15,7 @@ export async function GET(
     const symbol = ticker.toUpperCase();
 
     // Check Redis cache first
-    const cacheKey = `analysis:history:${symbol}`;
+    const cacheKey = `analysis:history:v2:${symbol}`;
     try {
         const cached = await getCachedData(cacheKey);
         if (cached) {
@@ -46,10 +46,10 @@ export async function GET(
         const weekly = Array.from(weekMap.values()).sort((a, b) => a.date.getTime() - b.date.getTime());
 
         // Filter valid values for percentile calculation
-        // P/E < 3: likely stock split artifacts or data errors (adjusted shares vs pre-split price)
-        // P/E > 200: near-zero earnings spikes that distort bands (e.g. AMZN 2022-2023)
-        const VALID_PE = (v: number | null): v is number => v !== null && v > 3 && v < 200;
-        const VALID_PS = (v: number | null): v is number => v !== null && v > 0.3 && v < 200;
+        // Positive multiples remain valid even below 3 or above 200; extremes are not stale data.
+        // The chart uses a log scale for wide ranges rather than deleting recent observations.
+        const VALID_PE = (v: number | null): v is number => v !== null && Number.isFinite(v) && v > 0;
+        const VALID_PS = (v: number | null): v is number => v !== null && Number.isFinite(v) && v > 0;
 
         const peAllValues = rows.map(r => r.peRatio).filter(VALID_PE);
         const psAllValues = rows.map(r => r.psRatio).filter(VALID_PS);
@@ -63,13 +63,10 @@ export async function GET(
             .filter(r => VALID_PS(r.psRatio))
             .map(r => ({ date: r.date.toISOString().split('T')[0], value: parseFloat((r.psRatio as number).toFixed(2)) }));
 
-        // Current values (most recent row with valid data) — single reverse iteration
-        let latestPE: number | null = null;
-        let latestPS: number | null = null;
-        for (let i = rows.length - 1; i >= 0 && (latestPE === null || latestPS === null); i--) {
-            if (latestPE === null && VALID_PE(rows[i]!.peRatio)) latestPE = rows[i]!.peRatio;
-            if (latestPS === null && VALID_PS(rows[i]!.psRatio)) latestPS = rows[i]!.psRatio;
-        }
+        // Latest historical snapshot only — never relabel an older valid multiple as current.
+        const latest = rows.at(-1);
+        const latestPE = VALID_PE(latest?.peRatio ?? null) ? latest!.peRatio : null;
+        const latestPS = VALID_PS(latest?.psRatio ?? null) ? latest!.psRatio : null;
 
         // Price history (weekly) for Scenario Lab chart
         const priceHistory = weekly
@@ -412,7 +409,7 @@ export async function POST(
     const { ticker } = await params;
     const symbol = ticker.toUpperCase();
     try {
-        await del([`analysis:history:${symbol}`]);
+        await del([`analysis:history:${symbol}`, `analysis:history:v2:${symbol}`]);
     } catch {}
     return NextResponse.json({ ok: true });
 }

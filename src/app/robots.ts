@@ -6,11 +6,13 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: '*',
-        allow: '/',
+        // JS/CSS chunks and the image optimizer must stay crawlable so
+        // Googlebot can fully render pages; only ISR data endpoints stay out.
+        allow: ['/', '/_next/static/', '/_next/image'],
         disallow: [
           '/api/',
           '/admin/',
-          '/_next/',
+          '/_next/data/',
           '/security',
         ],
       },
