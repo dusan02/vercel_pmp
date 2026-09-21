@@ -15,13 +15,20 @@
  * Right after a session opens (live: ~9:30-9:45 ET, after: ~16:00-16:15),
  * `close`/`postmarket_close` still returns the PREVIOUS session's close
  * because today's bar doesn't exist yet. Overlaying that stamps prevClose
- * as the "live" price and produces fake 0% moves, so we skip quotes that
- * match prevClose and let Polygon's delayed minute bar through instead.
+ * as the "live" price and produces fake 0% moves.
+ *
+ * Ex-dividend days make this worse: TV serves the dividend-ADJUSTED
+ * previous close (e.g. META 665.225 vs raw close 665.75), which differs
+ * enough from prevClose to defeat an exact-match guard — the stock then
+ * shows a fake small move while actually +5%. Instead of comparing prices
+ * we check the bar timestamp (`time`/`premarket_time`/`postmarket_time`):
+ * a stale quote always carries yesterday's bar. The prevClose equality
+ * check stays as a fallback for quotes missing the timestamp.
  *
  * Opt-out: TV_OVERLAY=0
  */
 
-import { nsToMs } from '@/lib/utils/dateET';
+import { nsToMs, isSameETDay } from '@/lib/utils/dateET';
 import type { PolygonSnapshot } from './shared';
 
 type OverlaySession = 'pre' | 'live' | 'after';
@@ -33,10 +40,10 @@ const COOLDOWN_MS = 5 * 60 * 1000;
 const BATCH_SIZE = 100;
 const MAX_CONSECUTIVE_FAILURES = 5;
 
-const COLUMNS: Record<OverlaySession, { price: string; volume: string }> = {
-  pre: { price: 'premarket_close', volume: 'premarket_volume' },
-  live: { price: 'close', volume: 'volume' },
-  after: { price: 'postmarket_close', volume: 'postmarket_volume' },
+const COLUMNS: Record<OverlaySession, { price: string; volume: string; ts: string }> = {
+  pre: { price: 'premarket_close', volume: 'premarket_volume', ts: 'premarket_time' },
+  live: { price: 'close', volume: 'volume', ts: 'time' },
+  after: { price: 'postmarket_close', volume: 'postmarket_volume', ts: 'postmarket_time' },
 };
 
 let cooldownUntil = 0;
@@ -45,11 +52,11 @@ let consecutiveFailures = 0;
 async function fetchScanBatch(
   symbols: string[],
   session: OverlaySession,
-  out: Map<string, { price: number; volume?: number }>
+  out: Map<string, { price: number; volume?: number; barTimeMs?: number }>
 ): Promise<'ok' | 'rate_limited' | 'error'> {
-  const { price, volume } = COLUMNS[session];
+  const { price, volume, ts } = COLUMNS[session];
   const body = {
-    columns: ['name', price, volume],
+    columns: ['name', price, volume, ts],
     markets: ['america'],
     filter: [{ left: 'name', operation: 'in_range', right: symbols }],
   };
@@ -70,6 +77,7 @@ async function fetchScanBatch(
       const name = row?.d?.[0];
       const priceVal = row?.d?.[1];
       const volVal = row?.d?.[2];
+      const tsVal = row?.d?.[3];
       if (
         typeof name === 'string' &&
         typeof priceVal === 'number' &&
@@ -78,6 +86,10 @@ async function fetchScanBatch(
         out.set(name, {
           price: priceVal,
           ...(typeof volVal === 'number' && volVal > 0 ? { volume: volVal } : {}),
+          // TV returns epoch seconds; normalize to ms just in case
+          ...(typeof tsVal === 'number' && tsVal > 0
+            ? { barTimeMs: tsVal > 1e12 ? tsVal : tsVal * 1000 }
+            : {}),
         });
       }
     }
@@ -100,7 +112,7 @@ export async function applyRealtimeOverlay(
   if (process.env.TV_OVERLAY === '0' || process.env.YAHOO_OVERLAY === '0') return 0;
   if (Date.now() < cooldownUntil) return 0;
 
-  const quotes = new Map<string, { price: number; volume?: number }>();
+  const quotes = new Map<string, { price: number; volume?: number; barTimeMs?: number }>();
   let sawRateLimit = false;
 
   for (let i = 0; i < tickers.length; i += BATCH_SIZE) {
@@ -136,10 +148,15 @@ export async function applyRealtimeOverlay(
   for (const [symbol, q] of quotes) {
     // Stale-bar guard: TV's session field still shows the previous close
     // until the new bar appears (~15min into the session for the free feed).
-    // A quote identical to prevClose is indistinguishable from that stale
-    // state — skip it so Polygon's delayed min.c provides the real price.
-    const prevClose = prevCloseMap.get(symbol);
-    if (prevClose && Math.abs(q.price - prevClose) / prevClose < 0.0001) continue;
+    // Detect it via the bar timestamp — price comparison alone misses
+    // ex-dividend days where the stale value is the ADJUSTED prev close.
+    // Missing timestamp → fall back to the prevClose equality check only.
+    if (q.barTimeMs !== undefined) {
+      if (!isSameETDay(new Date(q.barTimeMs), new Date(nowMs))) continue;
+    } else {
+      const prevClose = prevCloseMap.get(symbol);
+      if (prevClose && Math.abs(q.price - prevClose) / prevClose < 0.0001) continue;
+    }
 
     const existing = byTicker.get(symbol);
     if (existing) {
