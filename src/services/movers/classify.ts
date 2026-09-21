@@ -142,7 +142,13 @@ const HEADLINE_RULES: [RegExp, CatalystType][] = [
     [/\b(earnings|eps|profit|results|quarter).*(miss|falls? short|below|disappoint)/i, 'earnings_miss'],
     [/\b(upgrade|upgraded|overweight|outperform|buy rating|price target (raised|increased|higher|boosted|lifted))/i, 'analyst_upgrade'],
     [/\b(downgrade|downgraded|underweight|underperform|sell rating|price target (cut|lowered|reduced|slashed))/i, 'analyst_downgrade'],
+    // Verb-first PT phrasing — "Wells Fargo raises price target" (the inverse
+    // word order of the patterns above and the most common headline form).
+    [/\b(rais|lift|boost|increas|hike).*(price target|\bpt\b)/i, 'analyst_upgrade'],
+    [/\b(cut|lower|reduc|slash|trim).*(price target|\bpt\b)/i, 'analyst_downgrade'],
     [/\b(initiated|initiation|coverage).*(buy|overweight|outperform|neutral|sell|underperform)/i, 'analyst_action'],
+    // Bare price-target mention with no direction word — still analyst evidence.
+    [/\bprice target\b/i, 'analyst_action'],
     [/\b(acqui[rs]|merger|merge with|takeover|buyout|to buy|to acquire)/i, 'acquisition'],
     [/\b(partnership|partners with|collaborat|alliance|teams up|joint venture)/i, 'partnership'],
     [/\b(contract|deal|order|agreement|award).*(worth|valued|billion|million|\$)/i, 'contract'],

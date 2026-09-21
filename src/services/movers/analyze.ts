@@ -130,8 +130,13 @@ const GRADE_TO_TYPE: Record<string, CatalystType> = {
     init: 'analyst_action', reit: 'analyst_action',
 };
 
+// The upgrade-downgrade endpoint is not on our Finnhub tier (permanent 403).
+// After the first 403 we stop calling it for the process lifetime — a tier
+// limit is not a data outage and must not poison the 'unavailable' status.
+let analystEndpointDisabled = false;
+
 async function fetchAnalystActions(symbol: string): Promise<FinnhubUpgradeRow[] | 'unavailable'> {
-    if (!FINNHUB_API_KEY) return 'unavailable';
+    if (!FINNHUB_API_KEY || analystEndpointDisabled) return [];
     const cacheKey = `movers:analyst:${symbol}`;
     try {
         const cached = await getCachedData(cacheKey);
@@ -145,6 +150,10 @@ async function fetchAnalystActions(symbol: string): Promise<FinnhubUpgradeRow[] 
             `https://finnhub.io/api/v1/stock/upgrade-downgrade?symbol=${symbol}&from=${from}&to=${to}&token=${FINNHUB_API_KEY}`,
             { signal: AbortSignal.timeout(5000) },
         );
+        if (res.status === 403) {
+            analystEndpointDisabled = true;
+            return [];
+        }
         if (!res.ok) return 'unavailable';
         const data = await res.json();
         const items = Array.isArray(data) ? data.slice(0, 10) : [];

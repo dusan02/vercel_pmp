@@ -96,6 +96,16 @@ export const getTickerData = cache(async function getTickerData(symbol: string) 
             fetchedAt: true,
           },
         },
+        finnhubInsiderTransactions: {
+          orderBy: { transactionDate: 'desc' },
+          take: 8,
+          select: {
+            change: true,
+            filingDate: true,
+            transactionDate: true,
+            transactionCode: true,
+          },
+        },
         ewScoreSnapshots: {
           orderBy: { asOfDate: 'desc' },
           take: 1,

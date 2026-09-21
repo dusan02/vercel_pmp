@@ -26,6 +26,7 @@ import { CompanyOverviewSection } from '@/components/company/analysis/sections/C
 import { KeyInsightsSection } from '@/components/company/analysis/sections/KeyInsightsSection';
 import { MoverInsightSection } from '@/components/company/analysis/sections/MoverInsightSection';
 import { AnalystConsensusSection } from '@/components/company/analysis/sections/AnalystConsensusSection';
+import { InsiderTransactionsSection } from '@/components/company/analysis/sections/InsiderTransactionsSection';
 import PillarsRadar, { PillarChips } from '@/components/company/analysis/PillarsRadar';
 import { EarningsSection } from '@/components/company/analysis/sections/EarningsSection';
 import { EarningsBanner } from '@/components/company/analysis/sections/EarningsBanner';
@@ -318,6 +319,9 @@ export default async function AnalysisPage({ params }: PageProps) {
                   fallbackPrice={data?.lastPrice ?? null}
                 />
               )}
+              <InsiderTransactionsSection
+                transactions={data?.finnhubInsiderTransactions ?? []}
+              />
             </div>
           </div>
 

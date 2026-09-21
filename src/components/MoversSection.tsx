@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react';
 import useSWR from 'swr';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Zap, TrendingUp, TrendingDown, RefreshCw, Info, AlertCircle } from 'lucide-react';
 import { SectionSkeleton } from './SectionSkeleton';
 import CompanyLogo from './CompanyLogo';
@@ -280,7 +280,6 @@ export function MoversSection({ onTileClick, initialData }: { onTileClick?: (tic
                 key={mover.symbol}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ delay: index * 0.05 }}
                 className={`group relative bg-white hover:bg-slate-50 border p-4 rounded-2xl transition-all shadow-sm hover:shadow-md ${isIdiosyncratic ? 'border-yellow-400 border-2' : 'border-slate-200'
                     }`}
@@ -445,9 +444,7 @@ export function MoversSection({ onTileClick, initialData }: { onTileClick?: (tic
                         Gainers <span className="text-sm font-normal text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full ml-1">{gainers.length}</span>
                     </h3>
                     <div className="grid gap-3">
-                        <AnimatePresence mode="popLayout">
-                            {gainers.map((mover, index) => renderMoverCard(mover, index))}
-                        </AnimatePresence>
+                        {gainers.map((mover, index) => renderMoverCard(mover, index))}
                     </div>
                     {gainers.length === 0 && !isLoading && !error && (
                         <div className="text-center p-8 text-slate-400 bg-slate-50 border border-dashed border-slate-200 rounded-2xl mt-3">
@@ -463,9 +460,7 @@ export function MoversSection({ onTileClick, initialData }: { onTileClick?: (tic
                         Losers <span className="text-sm font-normal text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full ml-1">{losers.length}</span>
                     </h3>
                     <div className="grid gap-3">
-                        <AnimatePresence mode="popLayout">
-                            {losers.map((mover, index) => renderMoverCard(mover, index))}
-                        </AnimatePresence>
+                        {losers.map((mover, index) => renderMoverCard(mover, index))}
                     </div>
                     {losers.length === 0 && !isLoading && !error && (
                         <div className="text-center p-8 text-slate-400 bg-slate-50 border border-dashed border-slate-200 rounded-2xl mt-3">

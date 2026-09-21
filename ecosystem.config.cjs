@@ -399,6 +399,26 @@ module.exports = {
       autorestart: false,
     },
     {
+      name: "cron-finnhub-sentiment-sync",
+      script: "scripts/sync-finnhub-sentiment.ts",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
+      cwd: __dirname,
+      instances: 1,
+      exec_mode: "fork",
+      env: {
+        NODE_ENV: "production",
+        DATABASE_URL: envVars.DATABASE_URL || process.env.DATABASE_URL,
+        REDIS_URL: envVars.REDIS_URL || "redis://127.0.0.1:6380",
+        FINNHUB_API_KEY: envVars.FINNHUB_API_KEY || process.env.FINNHUB_API_KEY,
+        USE_LOCAL_REDIS: "true",
+      },
+      error_file: path.join(__dirname, "logs", "pm2", "cron-finnhub-sentiment-sync-error.log"),
+      out_file: path.join(__dirname, "logs", "pm2", "cron-finnhub-sentiment-sync-out.log"),
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      cron_restart: "30 4 * * *", // Každý deň o 04:30 UTC (po metrics syncu)
+      autorestart: false,
+    },
+    {
       name: "pmp-health-monitor",
       script: "scripts/health-monitor.ts",
       interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
