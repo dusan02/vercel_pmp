@@ -139,6 +139,23 @@ export class SocialDistributorService {
      */
     private bufferChannels: { id: string; service: string }[] | null | undefined;
 
+    /**
+     * Social links carry per-channel UTM so GA4 can attribute clicks — apps
+     * strip referrers, so without UTM social traffic is invisible (shows as
+     * direct/(not set)).
+     */
+    private withChannelUtm(text: string, source: string): string {
+        return text.replace(
+            /https:\/\/premarketprice\.com\/analysis\/([A-Za-z]+)/g,
+            `https://premarketprice.com/analysis/$1?utm_source=${source}&utm_medium=social&utm_campaign=movers`
+        );
+    }
+
+    private utmSourceForService(service: string): string {
+        if (service === 'twitter' || service === 'x') return 'x';
+        return service; // threads, bluesky, …
+    }
+
     private async getPoster(): Promise<((mover: any, text: string) => Promise<void>) | null> {
         const posters: ((mover: any, text: string) => Promise<void>)[] = [];
 
@@ -148,7 +165,7 @@ export class SocialDistributorService {
             const channels = await this.getBufferChannels();
             if (channels.length > 0) {
                 bufferCoversBluesky = channels.some(c => c.service === 'bluesky');
-                posters.push((_mover, text) => this.postViaBuffer(channels.map(c => c.id), text));
+                posters.push((_mover, text) => this.postViaBuffer(channels, text));
             } else {
                 console.warn('⚠️ SocialDistributorService: BUFFER_ACCESS_TOKEN set but no channels found in Buffer');
             }
@@ -185,6 +202,7 @@ export class SocialDistributorService {
 
     private getTwitterPoster(twitterClient: TwitterApi) {
         return async (mover: any, text: string) => {
+            text = this.withChannelUtm(text, 'x');
             const ogImageUrl = this.generateOgImageUrl(mover);
             const imageBuffer = await this.fetchImageBuffer(ogImageUrl);
 
@@ -240,10 +258,11 @@ export class SocialDistributorService {
     }
 
     /** Publish immediately (shareNow) to all connected channels. Throws if every channel fails. */
-    private async postViaBuffer(channelIds: string[], text: string): Promise<void> {
+    private async postViaBuffer(channels: { id: string; service: string }[], text: string): Promise<void> {
         let successes = 0;
         let lastError: unknown;
-        for (const channelId of channelIds) {
+        for (const channel of channels) {
+            const channelText = this.withChannelUtm(text, this.utmSourceForService(channel.service));
             const res = await this.bufferGraphql(
                 `mutation($channelId: ChannelId!, $text: String!) {
                   createPost(input: { channelId: $channelId, text: $text, schedulingType: automatic, mode: shareNow }) {
@@ -251,7 +270,7 @@ export class SocialDistributorService {
                     ... on MutationError { message }
                   }
                 }`,
-                { channelId, text }
+                { channelId: channel.id, text: channelText }
             ).catch(e => ({ __error: e }));
 
             const err = (res as any)?.__error ?? res?.errors?.[0]?.message ?? res?.data?.createPost?.message;
@@ -312,7 +331,7 @@ export class SocialDistributorService {
      */
     private async bskyBuildExternalEmbed(mover: any) {
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-        const publicUrl = `https://premarketprice.com/analysis/${mover.symbol}`;
+        const publicUrl = `https://premarketprice.com/analysis/${mover.symbol}?utm_source=bluesky&utm_medium=social&utm_campaign=movers`;
         const ogImageUrl = `${appUrl}/analysis/${mover.symbol}/opengraph-image`;
 
         const imgRes = await fetch(ogImageUrl);
@@ -346,6 +365,7 @@ export class SocialDistributorService {
     }
 
     private async postViaBluesky(text: string, mover: any): Promise<void> {
+        text = this.withChannelUtm(text, 'bluesky');
         // Best-effort OG card — if image fetch/upload fails, post text-only.
         let embed: any = null;
         try {
