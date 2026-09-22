@@ -8,6 +8,7 @@ import {
   hasFinancialsData,
   getFinancialStatements,
 } from '@/lib/seo/eligibleFinancials';
+import { filterStatementsByViewMode } from '@/lib/utils/chartUtils';
 import { FinancialsSeoText } from '@/components/company/FinancialsSeoText';
 
 export const revalidate = 3600; // 1 hour
@@ -163,12 +164,22 @@ export default async function FinancialsPage({ params }: PageProps) {
 
   // Get annual statements (FY) for YoY comparison
   const annualStatements = validStatements.filter((s) => s.fiscalPeriod === 'FY');
-  // Get quarterly statements for the table
-  const quarterlyStatements = validStatements.filter((s) => s.fiscalPeriod !== 'FY');
+  // Quarterly source rows are YTD-cumulative (Q2 row = Q1+Q2). De-cumulate
+  // flow fields via the same helper the charts use, so the table shows real
+  // standalone quarters (Q4 is derived as FY − Q3 YTD when missing).
+  const quarterlyStatements = filterStatementsByViewMode(
+    validStatements as unknown as Parameters<typeof filterStatementsByViewMode>[0],
+    'quarterly',
+  ).sort(
+    (a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime(),
+  );
 
   // Use annual for trend commentary, quarterly for the table
   const trendData = annualStatements.length >= 2 ? annualStatements : validStatements;
-  const tableData = quarterlyStatements.length >= 4 ? quarterlyStatements : validStatements;
+  const tableData: typeof quarterlyStatements =
+    quarterlyStatements.length >= 4
+      ? quarterlyStatements
+      : (validStatements as unknown as typeof quarterlyStatements);
 
   // Take last 8 for the table
   const displayStatements = tableData.slice(-8);
@@ -330,9 +341,12 @@ export default async function FinancialsPage({ params }: PageProps) {
             </div>
 
             {/* Financial statements table */}
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
               Recent Financial Statements
             </h2>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">
+              Quarterly figures are standalone quarters, de-cumulated from YTD filings (Q4 = FY − Q3 YTD when not reported).
+            </p>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>

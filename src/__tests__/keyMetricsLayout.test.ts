@@ -6,7 +6,7 @@
  *     Health/Quality) plus the Balance Sheet context card
  *  2. Pillar header shows the same score as the radar (data.pillars)
  *  3. Missing metrics keep their row and render as '—', never disappear
- *  4. Pillar-leg metrics (P/FCF, EPS CAGR, Forward Growth) render real
+ *  4. Pillar-leg metrics (P/FCF, EPS CAGR, Implied EPS Growth) render real
  *     values from the existing payload — nothing is recomputed client-side
  *  5. FCF Conversion lives under Quality (it moved out of Profitability)
  */
@@ -129,13 +129,13 @@ describe('Key Metrics — pillar layout', () => {
         const html = render(data);
         // Row labels still present, values rendered as the muted dash
         expect(html).toContain('EPS CAGR (5Y)');
-        expect(html).toContain('Forward Growth');
+        expect(html).toContain('Implied EPS Growth');
         expect(html).toContain('—');
         // No raw "N/A" text leaks into the markup
         expect(html).not.toContain('>N/A<');
     });
 
-    it('renders P/FCF, EPS CAGR and Forward Growth from existing payload fields', () => {
+    it('renders P/FCF, EPS CAGR and Implied EPS Growth from existing payload fields', () => {
         const html = render(fixture());
         expect(html).toContain('P/FCF');
         expect(html).toContain('20.4x');          // finnhub.priceFreeCashFlow

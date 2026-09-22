@@ -246,17 +246,20 @@ export default async function ValuationPage({ params }: PageProps) {
   if (evEbitdaStats) scores.push(evEbitdaStats.currentPercentile);
   const avgPercentile = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 50;
 
+  // Percentiles describe position vs the stock's OWN history — frame it as
+  // "above/below its historical range", not as an absolute cheap/expensive
+  // verdict (a low-percentile stock can still be expensive vs peers).
   let verdict: string;
   if (avgPercentile >= 75) {
-    verdict = `${companyName} appears overvalued relative to its own historical valuation range, trading at elevated multiples across most metrics.`;
+    verdict = `${companyName} trades well above its own historical valuation range across most metrics.`;
   } else if (avgPercentile >= 55) {
-    verdict = `${companyName} appears slightly overvalued relative to its historical range, with most valuation metrics above their median levels.`;
+    verdict = `${companyName} trades above its historical valuation range, with most metrics above their median levels.`;
   } else if (avgPercentile >= 45) {
-    verdict = `${companyName} appears fairly valued relative to its historical range, with valuation metrics near their median levels.`;
+    verdict = `${companyName} trades near its historical valuation range, with most metrics close to their median levels.`;
   } else if (avgPercentile >= 25) {
-    verdict = `${companyName} appears undervalued relative to its historical range, with most valuation metrics below their median levels.`;
+    verdict = `${companyName} trades below its historical valuation range, with most metrics below their median levels.`;
   } else {
-    verdict = `${companyName} appears significantly undervalued relative to its historical range, trading at depressed multiples across most metrics.`;
+    verdict = `${companyName} trades well below its historical valuation range across most metrics.`;
   }
   summaryParts.push(verdict);
 

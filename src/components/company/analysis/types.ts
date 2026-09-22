@@ -29,6 +29,16 @@ export interface FinancialStatement {
     cashAndEquivalents: number | null;
     sharesOutstanding: number | null;
     sbc: number | null;
+    // Balance-sheet (point-in-time) fields — carried through de-cumulation
+    // untouched; used by the /financials table and balance-sheet charts.
+    totalAssets?: number | null;
+    totalLiabilities?: number | null;
+    totalEquity?: number | null;
+    currentAssets?: number | null;
+    currentLiabilities?: number | null;
+    retainedEarnings?: number | null;
+    interestExpense?: number | null;
+    netPPE?: number | null;
 }
 
 // ── Valuation percentile stats ──────────────────────────────────────────────
