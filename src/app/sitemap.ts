@@ -305,12 +305,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     const todayET = getDateET(new Date());
 
-    // Past 30 days: premarket-gainers & premarket-losers archives
-    for (let i = 0; i < 30; i++) {
-      const date = new Date(todayET);
-      date.setDate(date.getDate() - i);
-      const dateStr = date.toISOString().split('T')[0];
-      const isFresh = i === 0;
+    // Past 30 days: premarket-gainers & premarket-losers archives — but only
+    // dates that actually have data. Weekend/holiday dates render noindex;
+    // listing them in the sitemap would contradict the robots signal.
+    const since30 = new Date(todayET + 'T00:00:00Z');
+    since30.setUTCDate(since30.getUTCDate() - 30);
+    const datesWithData = await prisma.sessionPrice.findMany({
+      where: { session: 'pre', date: { gte: since30 } },
+      select: { date: true },
+      distinct: ['date'],
+    });
+    const dateSet = new Set(
+      datesWithData.map((r) => r.date.toISOString().split('T')[0]),
+    );
+    for (const dateStr of dateSet) {
+      if (!dateStr) continue;
+      const isFresh = dateStr === todayET;
       archivePages.push(
         {
           url: `${baseUrl}/premarket-gainers/${dateStr}`,

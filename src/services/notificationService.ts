@@ -95,8 +95,8 @@ export class NotificationService {
                                     </div>
                                     <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
                                     <p style="color: #9ca3af; font-size: 12px; text-align: center;">
-                                        Odeberáte upozornenia na Quality Breakouts z PreMarketPrice.<br>
-                                        <a href="${unsubscribeUrl}" style="color: #9ca3af; text-decoration: underline;">Odhlásiť sa</a>
+                                        You are receiving Quality Breakout alerts from PreMarketPrice.<br>
+                                        <a href="${unsubscribeUrl}" style="color: #9ca3af; text-decoration: underline;">Unsubscribe</a>
                                     </p>
                                 </div>
                             `

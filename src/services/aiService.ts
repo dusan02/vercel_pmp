@@ -3,7 +3,9 @@ export class AiService {
      * Generates a 1-sentence investment verdict based on a data snapshot.
      */
     async generateInvestmentVerdict(dataSnapshot: any): Promise<string | null> {
-        const prompt = `Si skúsený finančný analytik. Na základe poskytnutých dát napíš JEDNU stručnú, údernú vetu v slovenčine, ktorá zhodnotí investičnú atraktivitu firmy. Vyhni sa klišé, buď vecný.\n\nDATA:\n${JSON.stringify(dataSnapshot, null, 2)}`;
+        // English output — the site is EN-language; Slovak verdicts leaked into
+        // the page UI, FAQ section and FAQPage JSON-LD (mixed-language SEO issue).
+        const prompt = `You are an experienced financial analyst. Based on the provided data, write ONE concise, punchy sentence in English evaluating the company's investment attractiveness. Avoid clichés, be factual.\n\nDATA:\n${JSON.stringify(dataSnapshot, null, 2)}`;
 
         return this.callLLM(prompt);
     }
@@ -61,7 +63,7 @@ export class AiService {
                     messages: [
                         {
                             role: 'system',
-                            content: 'Si expertný finančný analytik.'
+                            content: 'You are an expert financial analyst.'
                         },
                         { role: 'user', content: prompt }
                     ],
