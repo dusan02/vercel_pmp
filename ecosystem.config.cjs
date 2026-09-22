@@ -419,6 +419,23 @@ module.exports = {
       autorestart: false,
     },
     {
+      name: "cron-insider-aggregates",
+      script: "scripts/compute-insider-aggregates.ts",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
+      cwd: __dirname,
+      instances: 1,
+      exec_mode: "fork",
+      env: {
+        NODE_ENV: "production",
+        DATABASE_URL: envVars.DATABASE_URL || process.env.DATABASE_URL,
+      },
+      error_file: path.join(__dirname, "logs", "pm2", "cron-insider-aggregates-error.log"),
+      out_file: path.join(__dirname, "logs", "pm2", "cron-insider-aggregates-out.log"),
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      cron_restart: "0 6 * * *", // Daily 06:00 UTC — after sentiment sync (04:30) finishes
+      autorestart: false,
+    },
+    {
       name: "pmp-health-monitor",
       script: "scripts/health-monitor.ts",
       interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",

@@ -33,6 +33,33 @@ interface InsiderRow {
   filingDate?: string;
   transactionDate?: string;
   transactionCode?: string;
+  name?: string;
+  share?: number;
+  transactionPrice?: number;
+  id?: string;            // SEC accession number
+  isDerivative?: boolean;
+}
+
+// Finnhub duplicates rows two ways: exact dup rows inside one filing, and the
+// same economic transaction reappearing under a different accession when a
+// Form 4/A amendment is filed. Exact dupes are dropped outright; for
+// cross-accession dupes the row with the latest filingDate wins (amendments
+// supersede originals). Legit split lots share name/date/code/change but
+// differ in price or resulting share, so both stay.
+function dedupeInsiderRows(rows: InsiderRow[]): InsiderRow[] {
+  const seen = new Set<string>();
+  const byEconKey = new Map<string, InsiderRow>();
+  for (const r of rows) {
+    const exactKey = [r.id, r.name, r.transactionDate, r.transactionCode, r.change, r.transactionPrice, r.share].join('|');
+    if (seen.has(exactKey)) continue;
+    seen.add(exactKey);
+    const econKey = [r.name, r.transactionDate, r.transactionCode, r.change, r.transactionPrice].join('|');
+    const prev = byEconKey.get(econKey);
+    if (!prev || (r.filingDate ?? '') > (prev.filingDate ?? '')) {
+      byEconKey.set(econKey, r);
+    }
+  }
+  return [...byEconKey.values()];
 }
 
 async function fetchJson(url: string): Promise<unknown | null> {
@@ -82,9 +109,9 @@ async function syncSymbol(symbol: string): Promise<{ rec: boolean; insider: bool
     `https://finnhub.io/api/v1/stock/insider-transactions?symbol=${symbol}&token=${FINNHUB_API_KEY}`,
   ) as { data?: InsiderRow[] } | null;
   const rows = Array.isArray(insiderData?.data)
-    ? insiderData!.data!
-        .filter(r => r.transactionDate && r.change != null)
-        .slice(0, INSIDER_KEEP)
+    ? dedupeInsiderRows(
+        insiderData!.data!.filter(r => r.transactionDate && r.change != null)
+      ).slice(0, INSIDER_KEEP)
     : [];
   if (insiderData?.data) {
     await prisma.finnhubInsiderTransaction.deleteMany({ where: { symbol } });
@@ -96,6 +123,11 @@ async function syncSymbol(symbol: string): Promise<{ rec: boolean; insider: bool
           filingDate: r.filingDate ?? '',
           transactionDate: r.transactionDate!,
           transactionCode: r.transactionCode ?? '?',
+          name: r.name ?? null,
+          share: r.share ?? null,
+          transactionPrice: r.transactionPrice ?? null,
+          filingId: r.id ?? null,
+          isDerivative: r.isDerivative ?? null,
         })),
       });
     }

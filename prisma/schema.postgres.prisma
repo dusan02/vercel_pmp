@@ -158,6 +158,7 @@ model Ticker {
   finnhubProfile       FinnhubProfile?
   finnhubPriceTarget   FinnhubPriceTarget?
   finnhubInsiderTransactions FinnhubInsiderTransaction[]
+  insiderAggregate            InsiderAggregate?
 
   @@index([sector])
   @@index([sharesOutstanding])
@@ -544,6 +545,13 @@ model FinnhubInsiderTransaction {
   transactionDate String
   transactionCode String
   
+  // Extended Finnhub fields (backfilled 2026-09)
+  name             String?
+  share            Float?
+  transactionPrice Float?
+  filingId         String?
+  isDerivative     Boolean?
+  
   // Metadata
   fetchedAt       DateTime @default(now())
   
@@ -552,6 +560,27 @@ model FinnhubInsiderTransaction {
   @@index([symbol])
   @@index([transactionDate])
   @@index([fetchedAt])
+}
+
+model InsiderAggregate {
+  symbol String @id
+
+  netBuyShares90d     Float?
+  netBuyValue90d      Float?
+  netBuyPct90d        Float?
+  buyShares90d        Float?
+  sellShares90d       Float?
+  buyValue90d         Float?
+  sellValue90d        Float?
+  largestBuyValue90d  Float?
+  largestSellValue90d Float?
+
+  uniqueBuyers14d  Int?
+  uniqueSellers14d Int?
+
+  computedAt DateTime @default(now())
+
+  ticker Ticker @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
 }
 
 model DailyBlogSnapshot {

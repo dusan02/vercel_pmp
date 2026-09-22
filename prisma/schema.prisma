@@ -160,6 +160,7 @@ model Ticker {
   finnhubPriceTarget         FinnhubPriceTarget?
   finnhubRecommendation      FinnhubRecommendation?
   finnhubInsiderTransactions FinnhubInsiderTransaction[]
+  insiderAggregate           InsiderAggregate?
 
   @@index([sector])
   @@index([sharesOutstanding])
@@ -552,6 +553,13 @@ model FinnhubInsiderTransaction {
   transactionDate String
   transactionCode String
 
+  // Extended Finnhub fields (backfilled 2026-09; null for pre-backfill rows)
+  name             String? // reporting person — enables unique-insider cluster metrics
+  share            Float? // insider's holdings AFTER this transaction
+  transactionPrice Float? // actual execution price (not current price)
+  filingId         String? // SEC accession number — dedup/amendment identity
+  isDerivative     Boolean? // derivative vs common-stock transaction
+
   // Metadata
   fetchedAt DateTime @default(now())
 
@@ -560,6 +568,32 @@ model FinnhubInsiderTransaction {
   @@index([symbol])
   @@index([transactionDate])
   @@index([fetchedAt])
+}
+
+// Materialized per-ticker insider aggregates — recomputed by cron from
+// FinnhubInsiderTransaction (P/S codes only). Read by the screener as
+// sortable columns; shares + value variants kept for debugging/analysis.
+model InsiderAggregate {
+  symbol String @id
+
+  // 90-day open-market window (P purchases, S sales)
+  netBuyShares90d     Float? // ΣP − Σ|S| in shares
+  netBuyValue90d      Float? // Σ(shares × transactionPrice), signed
+  netBuyPct90d        Float? // netBuyShares90d / sharesOutstanding (fraction)
+  buyShares90d        Float?
+  sellShares90d       Float?
+  buyValue90d         Float?
+  sellValue90d        Float?
+  largestBuyValue90d  Float?
+  largestSellValue90d Float?
+
+  // Cluster signal — distinct insider names, 14-day window
+  uniqueBuyers14d  Int?
+  uniqueSellers14d Int?
+
+  computedAt DateTime @default(now())
+
+  ticker Ticker @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
 }
 
 model FinnhubRecommendation {
@@ -611,13 +645,13 @@ model EwScoreSnapshot {
   symbol   String
   asOfDate DateTime
 
-  totalScore         Float
-  maxPossible        Float
-  fundamentalsScore  Float?
-  momentumScore      Float?
-  qualityScore       Float?
-  earningsBlocked    Boolean @default(true)
-  earningsScore      Float?
+  totalScore        Float
+  maxPossible       Float
+  fundamentalsScore Float?
+  momentumScore     Float?
+  qualityScore      Float?
+  earningsBlocked   Boolean @default(true)
+  earningsScore     Float?
 
   rank          Int?
   engineVersion String?

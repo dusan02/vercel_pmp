@@ -17,6 +17,13 @@ export interface ScreenerResult {
     netIncomeCagr: number | null;
     marginStability: number | null;
     lastQualitySignalAt: string | null;
+    // Insider activity aggregates (90d P/S window; null = no insider data)
+    insiderNetBuyPct90d: number | null;
+    insiderNetBuyValue90d: number | null;
+    insiderLargestBuyValue90d: number | null;
+    insiderLargestSellValue90d: number | null;
+    insiderUniqueBuyers14d: number | null;
+    insiderUniqueSellers14d: number | null;
     ticker: {
         name: string | null;
         sector: string | null;
@@ -78,6 +85,14 @@ export const SORT_OPTIONS = [
     { value: 'fcfMargin:desc', label: 'FCF Margin ↓' },
     { value: 'fcfMargin:asc', label: 'FCF Margin ↑' },
     { value: 'debtRepaymentYears:asc', label: 'Debt Repay ↑ (fastest)' },
+    { value: 'insider.netBuyPct90d:desc', label: 'Insider Net Buy % ↓ (90D)' },
+    { value: 'insider.netBuyPct90d:asc', label: 'Insider Net Sell % ↓ (90D)' },
+    { value: 'insider.netBuyValue90d:desc', label: 'Insider Net Buy $ ↓ (90D)' },
+    { value: 'insider.netBuyValue90d:asc', label: 'Insider Net Sell $ ↓ (90D)' },
+    { value: 'insider.largestBuyValue90d:desc', label: 'Largest Insider Buy ↓' },
+    { value: 'insider.largestSellValue90d:desc', label: 'Largest Insider Sell ↓' },
+    { value: 'insider.uniqueBuyers14d:desc', label: 'Insider Buyer Cluster ↓ (14D)' },
+    { value: 'insider.uniqueSellers14d:desc', label: 'Insider Seller Cluster ↓ (14D)' },
     { value: 'debtRepaymentYears:desc', label: 'Debt Repay ↓ (slowest)' },
     { value: 'ticker.lastMarketCap:desc', label: 'Market Cap ↓' },
     { value: 'ticker.lastMarketCap:asc', label: 'Market Cap ↑' },

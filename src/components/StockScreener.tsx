@@ -12,7 +12,7 @@ import {
   ScreenerResult, scoreColor, altmanZLabel, piotroskiLabel, beneishLabel, fcfMarginLabel, debtRepayLabel,
   SORT_OPTIONS, SECTORS, MARKET_CAP_PRESETS,
 } from '@/lib/utils/screener';
-import { formatBillions, formatMarketCapDiff } from '@/lib/utils/format';
+import { formatBillions, formatMarketCapDiff, formatCurrencyCompact } from '@/lib/utils/format';
 
 export default function StockScreener({ initialData }: { initialData?: any[] }) {
   const router = useRouter();
@@ -198,6 +198,62 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
       render: (r) => {
         const f = fcfMarginLabel(r.fcfMargin);
         return <span className={f.color}>{r.fcfMargin !== null ? `${(r.fcfMargin * 100).toFixed(1)}%` : '-'}</span>;
+      },
+    },
+    {
+      key: 'insider.netBuyValue90d',
+      header: <>Insider 90D <SortIcon field="insider.netBuyValue90d" /></>,
+      align: 'right',
+      sortable: true,
+      render: (r) => {
+        const v = r.insiderNetBuyValue90d;
+        if (v == null) return <span className="text-gray-400">-</span>;
+        const pct = r.insiderNetBuyPct90d;
+        return (
+          <span
+            className={`text-sm tabular-nums ${v >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
+            title={pct != null ? `Net open-market insider buying, 90D: ${formatCurrencyCompact(v, true)} (${(pct * 100).toFixed(3)}% of shares outstanding)` : `Net open-market insider buying, 90D: ${formatCurrencyCompact(v, true)}`}
+          >
+            {formatCurrencyCompact(v, true)}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'insider.largestBuyValue90d',
+      header: <>Top Buy <SortIcon field="insider.largestBuyValue90d" /></>,
+      align: 'right',
+      sortable: true,
+      render: (r) => r.insiderLargestBuyValue90d != null
+        ? <span className="text-sm tabular-nums text-green-600 dark:text-green-400" title="Largest single open-market insider purchase, 90D">{formatCurrencyCompact(r.insiderLargestBuyValue90d)}</span>
+        : <span className="text-gray-400">-</span>,
+    },
+    {
+      key: 'insider.largestSellValue90d',
+      header: <>Top Sell <SortIcon field="insider.largestSellValue90d" /></>,
+      align: 'right',
+      sortable: true,
+      render: (r) => r.insiderLargestSellValue90d != null
+        ? <span className="text-sm tabular-nums text-red-600 dark:text-red-400" title="Largest single open-market insider sale, 90D">{formatCurrencyCompact(r.insiderLargestSellValue90d)}</span>
+        : <span className="text-gray-400">-</span>,
+    },
+    {
+      key: 'insider.uniqueSellers14d',
+      header: <>Cluster 14D <SortIcon field="insider.uniqueSellers14d" /></>,
+      align: 'right',
+      sortable: true,
+      render: (r) => {
+        const b = r.insiderUniqueBuyers14d;
+        const s = r.insiderUniqueSellers14d;
+        if (b == null && s == null) return <span className="text-gray-400">-</span>;
+        if (!b && !s) return <span className="text-gray-400">-</span>;
+        return (
+          <span className="text-sm tabular-nums" title="Distinct insiders trading open-market in the last 14 days">
+            {b ? <span className="text-green-600 dark:text-green-400">{b}B</span> : null}
+            {b && s ? <span className="text-gray-400">·</span> : null}
+            {s ? <span className="text-red-600 dark:text-red-400">{s}S</span> : null}
+          </span>
+        );
       },
     },
   ], [sortField, sortOrder]);

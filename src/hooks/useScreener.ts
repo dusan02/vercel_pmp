@@ -40,6 +40,12 @@ export function useScreener({
             netIncomeCagr: null,
             marginStability: null,
             lastQualitySignalAt: null,
+            insiderNetBuyPct90d: r.insiderNetBuyPct90d ?? null,
+            insiderNetBuyValue90d: r.insiderNetBuyValue90d ?? null,
+            insiderLargestBuyValue90d: r.insiderLargestBuyValue90d ?? null,
+            insiderLargestSellValue90d: r.insiderLargestSellValue90d ?? null,
+            insiderUniqueBuyers14d: r.insiderUniqueBuyers14d ?? null,
+            insiderUniqueSellers14d: r.insiderUniqueSellers14d ?? null,
             ticker: r.ticker ? {
                 name: r.ticker.name ?? null,
                 sector: r.ticker.sector ?? null,

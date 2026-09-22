@@ -130,13 +130,19 @@ export async function GET(request: Request) {
         // Build Prisma orderBy — score fields live on analysisCache, market
         // fields on ticker. Nulls (tickers without analysis) always last.
         const SCORE_FIELDS = new Set(['healthScore', 'profitabilityScore', 'valuationScore', 'growthScore', 'qualityScore', 'overallScore', 'altmanZ', 'piotroskiScore', 'beneishScore', 'fcfMargin', 'debtRepaymentYears']);
-        const sortFieldSafe = sortParams.split(':')[0] || 'ticker.lastMarketCap';
+        // Insider aggregate sort fields (insider.<field> → insiderAggregate rel)
+        const INSIDER_FIELDS = new Set(['netBuyPct90d', 'netBuyValue90d', 'largestBuyValue90d', 'largestSellValue90d', 'uniqueBuyers14d', 'uniqueSellers14d']);
 
         let orderBy: any;
         if (sortField.startsWith('ticker.')) {
             const field = sortField.slice('ticker.'.length);
             // Base query is ticker.findMany — ticker fields are direct columns
             orderBy = { [field]: { sort: sortOrder, nulls: 'last' } };
+        } else if (sortField.startsWith('insider.')) {
+            const field = sortField.slice('insider.'.length);
+            orderBy = INSIDER_FIELDS.has(field)
+                ? { insiderAggregate: { [field]: { sort: sortOrder, nulls: 'last' } } }
+                : { lastMarketCap: { sort: 'desc', nulls: 'last' } };
         } else if (SCORE_FIELDS.has(sortField)) {
             orderBy = { analysisCache: { [sortField]: { sort: sortOrder, nulls: 'last' } } };
         } else {
@@ -162,6 +168,16 @@ export async function GET(request: Request) {
                             beneishScore: true,
                             fcfMargin: true,
                             debtRepaymentYears: true,
+                        },
+                    },
+                    insiderAggregate: {
+                        select: {
+                            netBuyPct90d: true,
+                            netBuyValue90d: true,
+                            largestBuyValue90d: true,
+                            largestSellValue90d: true,
+                            uniqueBuyers14d: true,
+                            uniqueSellers14d: true,
                         },
                     },
                 },
@@ -198,6 +214,12 @@ export async function GET(request: Request) {
             beneishScore: t.analysisCache?.beneishScore ?? null,
             fcfMargin: t.analysisCache?.fcfMargin ?? null,
             debtRepaymentYears: t.analysisCache?.debtRepaymentYears ?? null,
+            insiderNetBuyPct90d: t.insiderAggregate?.netBuyPct90d ?? null,
+            insiderNetBuyValue90d: t.insiderAggregate?.netBuyValue90d ?? null,
+            insiderLargestBuyValue90d: t.insiderAggregate?.largestBuyValue90d ?? null,
+            insiderLargestSellValue90d: t.insiderAggregate?.largestSellValue90d ?? null,
+            insiderUniqueBuyers14d: t.insiderAggregate?.uniqueBuyers14d ?? null,
+            insiderUniqueSellers14d: t.insiderAggregate?.uniqueSellers14d ?? null,
             ticker: {
                 name: t.name,
                 sector: t.sector,
