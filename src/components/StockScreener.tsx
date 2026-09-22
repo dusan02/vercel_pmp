@@ -13,6 +13,20 @@ import {
   SORT_OPTIONS, SECTORS, MARKET_CAP_PRESETS,
 } from '@/lib/utils/screener';
 import { formatBillions, formatMarketCapDiff, formatCurrencyCompact } from '@/lib/utils/format';
+import { useState, useEffect } from 'react';
+
+// Column views — thematic subsets of the full column set. The Company column
+// (ticker.name) is always first; views only switch the metric columns shown.
+// Filters/sort are view-independent — switching a tab never changes the dataset.
+const COLUMN_VIEWS = [
+  { id: 'overview', label: 'Overview', keys: ['ticker.name', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'overallScore', 'valuationScore', 'growthScore', 'profitabilityScore', 'healthScore', 'qualityScore'] },
+  { id: 'insiders', label: 'Insiders', keys: ['ticker.name', 'ticker.lastPrice', 'ticker.lastMarketCap', 'insider.netBuyValue90d', 'insider.largestBuyValue90d', 'insider.largestSellValue90d', 'insider.uniqueSellers14d', 'overallScore'] },
+  { id: 'risk', label: 'Risk & Quality', keys: ['ticker.name', 'altmanZ', 'piotroskiScore', 'beneishScore', 'fcfMargin', 'healthScore', 'qualityScore', 'overallScore'] },
+  { id: 'market', label: 'Market', keys: ['ticker.name', 'sector', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'ticker.lastMarketCapDiff'] },
+  { id: 'all', label: 'All columns', keys: null }, // null = every defined column
+] as const;
+
+type ColumnViewId = (typeof COLUMN_VIEWS)[number]['id'];
 
 export default function StockScreener({ initialData }: { initialData?: any[] }) {
   const router = useRouter();
@@ -50,7 +64,7 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
       : <ChevronDown size={12} className="inline ml-1 text-blue-500" />;
   };
 
-  const columns: ColumnDef<ScreenerResult>[] = useMemo(() => [
+  const allColumns: ColumnDef<ScreenerResult>[] = useMemo(() => [
     {
       key: 'ticker.name',
       header: <>Company <SortIcon field="ticker.name" /></>,
@@ -257,6 +271,32 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
       },
     },
   ], [sortField, sortOrder]);
+
+  // ── Column view tabs — persist the last used view (localStorage + a
+  // shareable ?view= param on the standalone /screener page). ────────────
+  const [columnView, setColumnView] = useState<ColumnViewId>('overview');
+  useEffect(() => {
+    const sp = new URLSearchParams(window.location.search);
+    const fromUrl = sp.get('view') as ColumnViewId | null;
+    const fromStore = localStorage.getItem('screener-column-view') as ColumnViewId | null;
+    const initial = fromUrl ?? fromStore;
+    if (initial && COLUMN_VIEWS.some(v => v.id === initial)) setColumnView(initial);
+  }, []);
+  useEffect(() => {
+    localStorage.setItem('screener-column-view', columnView);
+    if (window.location.pathname !== '/screener') return;
+    const sp = new URLSearchParams(window.location.search);
+    if (columnView === 'overview') sp.delete('view'); else sp.set('view', columnView);
+    const qs = sp.toString();
+    window.history.replaceState(null, '', qs ? `${window.location.pathname}?${qs}` : window.location.pathname);
+  }, [columnView]);
+
+  const columnMap = useMemo(() => new Map(allColumns.map(c => [c.key, c])), [allColumns]);
+  const columns = useMemo(() => {
+    const view = COLUMN_VIEWS.find(v => v.id === columnView);
+    if (!view || view.keys === null) return allColumns;
+    return (view.keys as readonly string[]).map(k => columnMap.get(k)).filter((c): c is ColumnDef<ScreenerResult> => !!c);
+  }, [allColumns, columnMap, columnView]);
 
   const totalPages = pagination?.totalPages || 1;
   const total = pagination?.total || 0;
@@ -497,6 +537,24 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
 
       {/* Results Table */}
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden">
+        {/* Column view tabs — switch metric columns without touching filters */}
+        <div className="flex items-center gap-1 px-3 pt-3 pb-0 overflow-x-auto" role="tablist" aria-label="Column views">
+          {COLUMN_VIEWS.map(v => (
+            <button
+              key={v.id}
+              role="tab"
+              aria-selected={columnView === v.id}
+              onClick={() => setColumnView(v.id)}
+              className={`px-3 py-1.5 text-xs font-medium rounded-t-lg whitespace-nowrap transition-colors border-b-2 ${
+                columnView === v.id
+                  ? 'text-blue-600 dark:text-blue-400 border-blue-500 bg-blue-50/60 dark:bg-blue-900/20'
+                  : 'text-gray-500 dark:text-gray-400 border-transparent hover:text-gray-700 dark:hover:text-gray-200'
+              }`}
+            >
+              {v.label}
+            </button>
+          ))}
+        </div>
         <UniversalTable
           data={results}
           columns={columns}
@@ -550,13 +608,13 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
         <div className="lg:hidden border-t border-gray-100 dark:border-slate-700">
           <details className="group">
             <summary className="flex items-center justify-between px-4 py-3 text-sm font-medium text-blue-600 dark:text-blue-400 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
-              <span>Show full table — all {columns.length} columns</span>
+              <span>Show full table — all {allColumns.length} columns</span>
               <ChevronDown size={16} className="transition-transform group-open:rotate-180" />
             </summary>
             <div className="px-2 pb-3">
               <UniversalTable
                 data={results}
-                columns={columns}
+                columns={allColumns}
                 keyExtractor={(r) => r.symbol}
                 isLoading={loading}
                 emptyMessage="No companies match the selected filters."
