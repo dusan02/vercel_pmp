@@ -5,7 +5,10 @@ import { generatePageMetadata } from '@/lib/seo/metadata';
 import { formatSectorName } from '@/lib/utils/format';
 
 // Keep this as a plain number literal so Next can statically analyze segment config.
-export const revalidate = 21600; // 6 hours
+// force-dynamic: CI artifact builds have no DB, so a build-time prerender would
+// ship an empty "No sector data" page that ISR then serves for up to 6h
+// (same class of bug as the gutted sitemap). The groupBy is cheap; render live.
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = generatePageMetadata({
   title: 'Stock Sectors',
