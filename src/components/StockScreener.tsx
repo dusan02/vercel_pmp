@@ -275,6 +275,32 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
   // ── Column view tabs — persist the last used view (localStorage + a
   // shareable ?view= param on the standalone /screener page). ────────────
   const [columnView, setColumnView] = useState<ColumnViewId>('overview');
+
+  // Secondary filters collapse — auto-opens when a non-primary filter is
+  // active (e.g. via quick screen or shared URL) so the badge isn't hiding
+  // an applied constraint.
+  const advancedFilterCount =
+    (minValue !== 0 || maxValue !== 100 ? 1 : 0) +
+    (minGrowth !== 0 || maxGrowth !== 100 ? 1 : 0) +
+    (minProfit !== 0 || maxProfit !== 100 ? 1 : 0) +
+    (minHealth !== 0 || maxHealth !== 100 ? 1 : 0) +
+    (minQuality !== 0 || maxQuality !== 100 ? 1 : 0) +
+    (selectedSector !== '' ? 1 : 0) +
+    (selectedIndustry !== '' ? 1 : 0) +
+    (marketCapPreset !== 'all' ? 1 : 0) +
+    (minAltman !== 0 ? 1 : 0) +
+    (minPiotroski > 0 ? 1 : 0) +
+    (maxBeneish < 10 ? 1 : 0) +
+    (minFcfMargin > -100 ? 1 : 0) +
+    (maxDebtRepayment < 350 ? 1 : 0);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const filtersAutoOpened = React.useRef(false);
+  useEffect(() => {
+    if (advancedFilterCount > 0 && !filtersAutoOpened.current) {
+      filtersAutoOpened.current = true;
+      setFiltersOpen(true);
+    }
+  }, [advancedFilterCount]);
   useEffect(() => {
     const sp = new URLSearchParams(window.location.search);
     const fromUrl = sp.get('view') as ColumnViewId | null;
@@ -342,8 +368,8 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
           ))}
         </div>
 
+        {/* Primary row — always visible: search, headline score filter, sort */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-4">
-          {/* Search — symbol or company name */}
           <div className="flex flex-col gap-1.5">
             <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Search</label>
             <div className="relative">
@@ -364,6 +390,47 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
             onChangeMin={setMinOverall} onChangeMax={setMaxOverall}
             accentColor="amber"
           />
+          <div className="flex flex-col gap-1.5 min-w-[160px]">
+            <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Sort By</label>
+            <select
+              value={`${sortField}:${sortOrder}`}
+              onChange={(e) => {
+                const parts = e.target.value.split(':');
+                const f = parts[0] ?? 'healthScore';
+                const o = (parts[1] === 'asc' ? 'asc' : 'desc') as 'asc' | 'desc';
+                setSort(f, o);
+              }}
+              className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all cursor-pointer"
+            >
+              {SORT_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-end pb-0.5">
+            <button
+              onClick={() => setFiltersOpen(o => !o)}
+              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border transition-colors ${
+                filtersOpen || advancedFilterCount > 0
+                  ? 'border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 bg-blue-50/60 dark:bg-blue-900/20'
+                  : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+              }`}
+              aria-expanded={filtersOpen}
+            >
+              <ChevronDown size={13} className={`transition-transform ${filtersOpen ? 'rotate-180' : ''}`} />
+              More filters
+              {advancedFilterCount > 0 && (
+                <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-bold leading-none">
+                  {advancedFilterCount}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Secondary filters — collapsed by default to keep the panel compact */}
+        {filtersOpen && (<>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-4 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
           <DualRangeSlider
             label="Valuation"
             min={0} max={100}
@@ -399,23 +466,6 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
             onChangeMin={setMinQuality} onChangeMax={setMaxQuality}
             accentColor="rose"
           />
-          <div className="flex flex-col gap-1.5 min-w-[160px]">
-            <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Sort By</label>
-            <select
-              value={`${sortField}:${sortOrder}`}
-              onChange={(e) => {
-                const parts = e.target.value.split(':');
-                const f = parts[0] ?? 'healthScore';
-                const o = (parts[1] === 'asc' ? 'asc' : 'desc') as 'asc' | 'desc';
-                setSort(f, o);
-              }}
-              className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all cursor-pointer"
-            >
-              {SORT_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
-          </div>
         </div>
 
         {/* Sector + Market Cap + Altman row */}
@@ -526,6 +576,7 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
             <span className="text-[10px] text-gray-400">0 = No debt, ≤3 Fast, ≤5 OK, &gt;5 Slow</span>
           </div>
         </div>
+        </>)}
       </div>
 
       {/* Results count */}
