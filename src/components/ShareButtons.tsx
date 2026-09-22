@@ -50,6 +50,19 @@ export default function ShareButtons({ url, title, description }: ShareButtonsPr
         </svg>
       </a>
 
+      {/* Bluesky */}
+      <a
+        href={`https://bsky.app/intent/compose?text=${shareTitle}%20${shareUrl}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Share on Bluesky"
+        className="p-1.5 rounded-lg text-gray-500 hover:text-sky-500 dark:text-gray-400 dark:hover:text-sky-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+      >
+        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 11.388c-.907-1.761-3.372-5.044-5.665-6.662-2.197-1.55-3.034-1.283-3.647-1.036C2.054 3.921 2 4.931 2 5.391v.252c.008 1.057.324 4.097.9 5.275.577.929 2.631 2.34 3.679 2.571-2.63.447-5.507 1.334-6.579 4.678 1.923-2.03 4.118-3.131 6.23-3.447 4.51-.675 6.769 2.082 6.769 2.082s2.259-2.757 6.769-2.082c2.112.316 4.307 1.417 6.23 3.447-1.072-3.344-3.949-4.231-6.579-4.678 1.048-.231 3.102-1.642 3.679-2.571.576-1.178.892-4.218.9-5.275v-.252c0-.46-.054-1.47-.688-1.7-.613-.247-1.45-.514-3.647 1.036C17.372 6.344 12.907 9.627 12 11.388z" />
+        </svg>
+      </a>
+
       {/* LinkedIn */}
       <a
         href={`https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}`}
