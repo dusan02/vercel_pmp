@@ -12,10 +12,12 @@ export class SocialDistributorService {
         const date = getDateET();
         const results = { posted: [] as string[], skipped: 0, errors: 0 };
 
-        // 0. Quota Management: Check daily limit (X API Free Tier safety)
+        // 0. Quota Management: quality over quantity — a few strong
+        // signals per day, not a bot stream (also leaves headroom under
+        // the X free-tier cap for manual posts).
         const quotaKey = `social:quota:daily:${date}`;
         const currentQuota = await redisClient.get(quotaKey);
-        const dailyLimit = 15;
+        const dailyLimit = 4;
 
         if (currentQuota && parseInt(currentQuota) >= dailyLimit) {
             console.log(`🚫 SocialDistributorService: Daily quota reached (${currentQuota}/${dailyLimit}). Skipping distribution.`);
@@ -30,11 +32,11 @@ export class SocialDistributorService {
                 socialCopy: { not: null },
                 OR: [
                     // Statistical outlier with volume confirmation
-                    { latestMoversZScore: { gte: 3.0 }, latestMoversRVOL: { gte: 2.0 } },
-                    { latestMoversZScore: { lte: -3.0 }, latestMoversRVOL: { gte: 2.0 } },
+                    { latestMoversZScore: { gte: 4.0 }, latestMoversRVOL: { gte: 2.0 } },
+                    { latestMoversZScore: { lte: -4.0 }, latestMoversRVOL: { gte: 2.0 } },
                     // Volume-driven mover without extreme z-score
-                    { latestMoversRVOL: { gte: 3.0 }, lastChangePct: { gte: 3.0 } },
-                    { latestMoversRVOL: { gte: 3.0 }, lastChangePct: { lte: -3.0 } },
+                    { latestMoversRVOL: { gte: 4.0 }, lastChangePct: { gte: 5.0 } },
+                    { latestMoversRVOL: { gte: 4.0 }, lastChangePct: { lte: -5.0 } },
                 ]
             },
             orderBy: [
@@ -56,7 +58,7 @@ export class SocialDistributorService {
 
             if (!alreadyPosted) {
                 toPost.push(mover);
-                if (toPost.length >= 3) break; // Maximum 3 posts per run
+                if (toPost.length >= 1) break; // 1 post per run — the 30-min cron provides natural spacing
             } else {
                 results.skipped++;
             }
