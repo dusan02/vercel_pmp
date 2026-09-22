@@ -275,7 +275,7 @@ export class SocialDistributorService {
 
             const err = (res as any)?.__error ?? res?.errors?.[0]?.message ?? res?.data?.createPost?.message;
             if (err) {
-                console.warn(`⚠️ SocialDistributorService: Buffer post to channel ${channelId} failed:`, err);
+                console.warn(`⚠️ SocialDistributorService: Buffer post to channel ${channel.id} (${channel.service}) failed:`, err);
                 lastError = err;
             } else {
                 successes++;
