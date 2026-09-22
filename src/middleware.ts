@@ -122,6 +122,12 @@ export async function middleware(request: NextRequest) {
   // Redirect homepage tab variants that have standalone pages (301)
   // GSC shows /?tab=movers collecting ~650 impressions split off the canonical
   // /premarket-movers — consolidate the signals onto the standalone URL.
+  //
+  // Cache-Control: no-cache — a bare 301 is heuristically cacheable forever by
+  // browsers; without this, clients pin the redirect and never re-check.
+  // Clear-Site-Data: "cache" — evicts stale browser-cache entries for the old
+  // ?tab=* HTML documents so cached copies of the pre-redirect page cannot be
+  // served again (fixes persistent stale-design reports).
   if (pathname === '/') {
     const tab = request.nextUrl.searchParams.get('tab');
     const tabTarget =
@@ -131,7 +137,10 @@ export async function middleware(request: NextRequest) {
       : tab === 'blog' ? '/blog'
       : null;
     if (tabTarget) {
-      return NextResponse.redirect(new URL(tabTarget, request.url), 301);
+      const redirect = NextResponse.redirect(new URL(tabTarget, request.url), 301);
+      redirect.headers.set('Cache-Control', 'no-cache');
+      redirect.headers.set('Clear-Site-Data', '"cache"');
+      return redirect;
     }
   }
 
