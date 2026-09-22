@@ -181,7 +181,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const pct = data.lastChangePct;
   const pctStr = pct != null ? ` (${pct >= 0 ? '+' : ''}${pct.toFixed(2)}% today)` : '';
-  const title = `${tickerUpper} Premarket Movers — ${short}${pctStr}`;
+  // Title must fit <=60 chars incl. " | PreMarketPrice" template suffix (17).
+  // Base budget: 43 chars. Drop the pct suffix first, then truncate name.
+  const baseTitle = `${tickerUpper} Premarket Movers — ${short}`;
+  const title = `${baseTitle}${pctStr}`.length <= 43
+    ? `${baseTitle}${pctStr}`
+    : baseTitle.length <= 43
+      ? baseTitle
+      : `${tickerUpper} Premarket Movers`;
   const description = `${short} (${tickerUpper}) pre-market movers — unusual pre-market, regular session, and after-hours price action with Z-scores and relative volume. ${moves.length} significant moves in the last 30 days.`;
 
   const metadata = generatePageMetadata({

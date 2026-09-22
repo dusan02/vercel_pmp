@@ -76,6 +76,13 @@ echo "=== Build complete ==="
 cat .next/BUILD_ID
 echo
 
+# Drop the build-time sitemap prerender — if DB queries failed during build
+# the prerendered body is the gutted fallback (~500 URLs instead of ~2400)
+# and ISR serves it until a restart. Deleting forces regeneration with real
+# DB data; the runtime guard in sitemap.ts throws rather than caching junk.
+rm -f .next/server/app/sitemap.xml* 2>/dev/null || true
+find .next/cache -name '*sitemap*' -delete 2>/dev/null || true
+
 echo "=== Restarting PM2 ==="
 if pm2 describe premarketprice > /dev/null 2>&1; then
   pm2 restart premarketprice --update-env 2>&1 | tail -3
@@ -123,6 +130,14 @@ echo "movers analysis links: $MOVERS_LINKS"
 if [ "$MOVERS_LINKS" -lt 15 ]; then
   echo "❌ /premarket-movers has only $MOVERS_LINKS analysis links — data pipeline broken"
   exit 1
+fi
+
+# Sitemap sanity — trigger regeneration (build prerender deleted above) and
+# verify DB-backed sections made it in. SEO regression ≠ outage → warn, not fail.
+SITEMAP_URLS=$(curl -s --max-time 60 http://localhost:3001/sitemap.xml | grep -o '<loc>' | wc -l || true)
+echo "sitemap URLs: $SITEMAP_URLS"
+if [ "$SITEMAP_URLS" -lt 1000 ]; then
+  echo "⚠️  WARNING: sitemap.xml has only $SITEMAP_URLS URLs (expected ~2400) — investigate sitemap.ts eligibility queries"
 fi
 
 echo "=== Done ==="

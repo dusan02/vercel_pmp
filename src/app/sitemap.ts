@@ -8,7 +8,11 @@ import { getEligibleFinancialsTickers } from '@/lib/seo/eligibleFinancials';
 import { LEADERBOARDS } from '@/lib/seo/leaderboards';
 import { METRIC_PAGES } from '@/lib/heatmap/metricPages';
 
-export const revalidate = 3600;
+// Never prerender at build time: CI builds have no DB, so a static bake would
+// ship a gutted sitemap as the ISR baseline (and the outage guard below would
+// then keep serving it as "last good version"). Per-request generation keeps
+// the sitemap always built against real data; crawler traffic is low-volume.
+export const dynamic = 'force-dynamic';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://premarketprice.com';

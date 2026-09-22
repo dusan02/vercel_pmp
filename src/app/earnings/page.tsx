@@ -23,7 +23,7 @@ const WeeklyEarningsCalendar = dynamic(
 export const revalidate = 300; // 5 min - SSR earnings content
 
 export const metadata: Metadata = generatePageMetadata({
-  title: 'Earnings Calendar — Today & Upcoming Reports',
+  title: 'Earnings Calendar — Today & Upcoming',
   description: 'Track today\'s earnings calendar and upcoming earnings reports for US companies. Get real-time earnings announcements, EPS estimates, and revenue forecasts. Browse by date with our interactive calendar.',
   path: '/earnings',
   keywords: [

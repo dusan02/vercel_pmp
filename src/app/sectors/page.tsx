@@ -17,6 +17,21 @@ export const metadata: Metadata = generatePageMetadata({
 
 type SectorRow = { sector: string; count: number };
 
+// Short SSR descriptions — gives each card real text content (was thin: ~300 chars total).
+const SECTOR_DESCRIPTIONS: Record<string, string> = {
+  Technology: 'Software, semiconductors, cloud, and hardware companies driving digital transformation.',
+  Healthcare: 'Pharma, biotech, medical devices, and health insurers — earnings and FDA catalysts.',
+  'Financial Services': 'Banks, insurers, asset managers, and fintech — sensitive to rates and credit cycles.',
+  'Consumer Cyclical': 'Retailers, automakers, travel, and leisure — track discretionary spending trends.',
+  Industrials: 'Aerospace, machinery, logistics, and construction — a read on the economic cycle.',
+  'Communication Services': 'Media, telecom, and social platforms — advertising and subscriber-driven revenue.',
+  'Consumer Defensive': 'Food, beverages, and household staples — stable demand through cycles.',
+  Energy: 'Oil, gas, and renewables — driven by commodity prices and OPEC+ decisions.',
+  Utilities: 'Regulated power and water providers — dividend-heavy, rate-sensitive defensives.',
+  'Real Estate': 'REITs and property companies — yields, occupancy, and interest-rate exposure.',
+  'Basic Materials': 'Miners, chemicals, and metals — leveraged to commodity and construction demand.',
+};
+
 async function getSectorCounts(): Promise<SectorRow[]> {
   const groups = await prisma.ticker.groupBy({
     by: ['sector'],
@@ -81,6 +96,11 @@ export default async function SectorsPage() {
                   <div className="text-sm text-slate-600 dark:text-slate-400 mt-1">
                     {s.count.toLocaleString('en-US')} tickers
                   </div>
+                  {SECTOR_DESCRIPTIONS[s.sector] && (
+                    <p className="text-xs text-slate-500 dark:text-slate-500 mt-2 leading-relaxed">
+                      {SECTOR_DESCRIPTIONS[s.sector]}
+                    </p>
+                  )}
                 </div>
                 <div className="text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300">
                   →
@@ -95,6 +115,34 @@ export default async function SectorsPage() {
             </div>
           )}
         </div>
+
+        {/* SSR explainer — internal links + indexable content */}
+        <section className="mt-10 max-w-3xl">
+          <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-3">
+            Why browse stocks by sector?
+          </h2>
+          <div className="space-y-3 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+            <p>
+              Sector classification groups companies with similar business models and risk drivers.
+              Stocks in the same sector tend to move together on macro news — rate decisions hit{' '}
+              <Link href="/sectors/Financial%20Services" className="text-blue-600 dark:text-blue-400 hover:underline">Financial Services</Link>{' '}
+              and{' '}
+              <Link href="/sectors/Real%20Estate" className="text-blue-600 dark:text-blue-400 hover:underline">Real Estate</Link>{' '}
+              hardest, while oil shocks concentrate in{' '}
+              <Link href="/sectors/Energy" className="text-blue-600 dark:text-blue-400 hover:underline">Energy</Link>.
+            </p>
+            <p>
+              Each sector page lists tracked tickers with links to their{' '}
+              <Link href="/stocks" className="text-blue-600 dark:text-blue-400 hover:underline">stock detail pages</Link>{' '}
+              including pre-market prices, valuation metrics, and financial statements. For a visual
+              overview of today&apos;s sector performance, see the{' '}
+              <Link href="/heatmap" className="text-blue-600 dark:text-blue-400 hover:underline">market heatmap</Link>,
+              or check today&apos;s biggest movers on the{' '}
+              <Link href="/premarket-movers" className="text-blue-600 dark:text-blue-400 hover:underline">pre-market movers</Link>{' '}
+              page.
+            </p>
+          </div>
+        </section>
       </div>
     </div>
   );

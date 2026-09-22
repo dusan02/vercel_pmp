@@ -77,6 +77,13 @@ rm -rf "$STAGE" "$TARBALL"
 if [ -d .next.prev/cache ]; then
   cp -al .next.prev/cache .next/cache
 fi
+# Drop the build-time sitemap prerender. CI builds run without a real DB, so
+# the artifact's sitemap.xml.body is the gutted fallback (~500 URLs instead
+# of ~2400) and ISR happily serves it until a restart. Deleting it forces
+# the first request to regenerate with real DB data; the runtime outage
+# guard in sitemap.ts throws instead of caching a gutted version.
+rm -f .next/server/app/sitemap.xml* 2>/dev/null || true
+find .next/cache -name '*sitemap*' -delete 2>/dev/null || true
 
 rollback() {
   echo "❌ Rolling back to previous build"
@@ -150,6 +157,20 @@ if [ "$MOVERS_LINKS" -lt 15 ]; then
   echo "❌ /premarket-movers has only $MOVERS_LINKS analysis links — data pipeline broken"
   rollback
   exit 1
+fi
+
+# Sitemap sanity — trigger regeneration (we deleted the build prerender
+# above) and verify it contains DB-backed sections. A gutted sitemap is an
+# SEO regression, not an outage, so warn loudly instead of rolling back.
+SITEMAP_URLS=0
+for i in $(seq 1 4); do
+  SITEMAP_URLS=$(curl -s --max-time 60 http://localhost:3001/sitemap.xml | grep -o '<loc>' | wc -l || true)
+  echo "sitemap URLs (try $i/4): $SITEMAP_URLS"
+  [ "$SITEMAP_URLS" -ge 1000 ] && break
+  [ "$i" -lt 4 ] && sleep 15
+done
+if [ "$SITEMAP_URLS" -lt 1000 ]; then
+  echo "⚠️  WARNING: sitemap.xml has only $SITEMAP_URLS URLs (expected ~2400) — DB sections missing, investigate sitemap.ts eligibility queries"
 fi
 
 echo "=== Done ==="

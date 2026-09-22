@@ -3,7 +3,7 @@ import { generatePageMetadata } from '@/lib/seo/metadata';
 import { toJsonLd } from '@/lib/seo/jsonLd';
 
 export const metadata: Metadata = generatePageMetadata({
-  title: 'Stock Market Heatmap — Performance by Sector',
+  title: 'Market Heatmap — Performance by Sector',
   description:
     'Interactive stock market heatmap for 1,000+ US stocks. Color tiles by day/week/month/YTD/1-year performance, P/E, PEG, P/S, EV/EBITDA, dividend yield, ROE, health scores, and more — organized by sector.',
   path: '/heatmap',

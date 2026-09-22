@@ -75,9 +75,17 @@ export function generateCompanyMetadata({
   const maxTitleLen = 60 - ` | ${siteName}`.length; // 60 total incl. suffix
   const withChange = `${ticker} Premarket Stock ${priceText}${changeText ? ` (${changeText})` : ''} — ${short}`;
   const withoutChange = `${ticker} Premarket Stock ${priceText} — ${short}`;
+  const noPrice = `${ticker} Premarket Stock Price — ${short}`;
+  // Hard cap: if even the shortest variant overflows, drop the company name.
   const title = priceText
-    ? (withChange.length <= maxTitleLen ? withChange : withoutChange)
-    : `${ticker} Premarket Stock Price — ${short}`;
+    ? (withChange.length <= maxTitleLen
+        ? withChange
+        : withoutChange.length <= maxTitleLen
+          ? withoutChange
+          : `${ticker} Premarket Stock ${priceText}`.length <= maxTitleLen
+            ? `${ticker} Premarket Stock ${priceText}`
+            : `${ticker} Premarket Stock`)
+    : (noPrice.length <= maxTitleLen ? noPrice : `${ticker} Premarket Stock Price`);
   const fullTitle = `${title} | ${siteName}`;
 
   // Keyword-rich description matching search intent
