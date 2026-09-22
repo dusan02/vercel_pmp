@@ -110,6 +110,27 @@ const CONFIDENCE_DOT: Record<string, string> = {
   low: 'bg-slate-400',
 };
 
+// Catalyst type → badge styling. Found catalysts get a colored chip so they
+// pop; "no catalyst" is deliberately muted/dashed — absence of a catalyst is
+// itself a signal worth scanning for.
+const CATALYST_BADGE = {
+  earnings: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30',
+  analyst: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30',
+  guidance: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30',
+  corporate: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30',
+  flow: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/30',
+};
+
+function catalystBadgeClass(type: string): string {
+  if (type.startsWith('earnings')) return CATALYST_BADGE.earnings;
+  if (type.startsWith('analyst')) return CATALYST_BADGE.analyst;
+  if (type.startsWith('guidance')) return CATALYST_BADGE.guidance;
+  if (['acquisition', 'partnership', 'contract', 'product', 'financing', 'restructuring', 'management', 'legal'].includes(type))
+    return CATALYST_BADGE.corporate;
+  if (['sector_move', 'market_move', 'unusual_volume'].includes(type)) return CATALYST_BADGE.flow;
+  return 'bg-slate-500/10 text-slate-500 dark:text-slate-400 border-slate-500/30';
+}
+
 function CatalystCell({ mover }: { mover: MoverRecord }) {
   const a = mover.analysis;
   if (!a) {
@@ -124,23 +145,31 @@ function CatalystCell({ mover }: { mover: MoverRecord }) {
   }
   const c = a.catalyst;
   const ev = c.evidence.find(e => e.url);
-  const statusLabel =
-    c.status === 'found'
-      ? c.label
-      : c.status === 'unavailable'
-        ? 'Catalyst data unavailable'
-        : 'No catalyst found in available sources';
   return (
     <div className="text-xs">
-      <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
-        {c.status === 'found' && (
-          <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${CONFIDENCE_DOT[c.confidence]}`} title={`${c.confidence} confidence`} />
+      <div className="flex items-center gap-1.5">
+        {c.status === 'found' ? (
+          <span
+            className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded border text-[10px] font-semibold ${catalystBadgeClass(c.type)}`}
+            title={c.explanation || c.label}
+          >
+            <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${CONFIDENCE_DOT[c.confidence]}`} title={`${c.confidence} confidence`} />
+            {c.label}
+          </span>
+        ) : c.status === 'unavailable' ? (
+          <span className="inline-block px-1.5 py-0.5 rounded border border-slate-300/60 dark:border-slate-600/60 text-[10px] text-slate-400 dark:text-slate-500">
+            Catalyst data unavailable
+          </span>
+        ) : (
+          <span
+            className="inline-block px-1.5 py-0.5 rounded border border-dashed border-slate-400/60 dark:border-slate-500/60 text-[10px] font-medium text-slate-400 dark:text-slate-500"
+            title="No obvious catalyst in Finnhub news, analyst actions, or earnings data — move may be flow-driven"
+          >
+            No catalyst found
+          </span>
         )}
-        <span className={`font-medium ${c.status !== 'found' ? 'text-slate-400 dark:text-slate-500' : ''}`}>
-          {statusLabel}
-        </span>
         {ev?.url && (
-          <a href={ev.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline shrink-0">[src]</a>
+          <a href={ev.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline shrink-0 text-[10px]">[src]</a>
         )}
       </div>
       {(a.sectorChangePct !== null || a.marketChangePct !== null) && (
@@ -155,30 +184,41 @@ function CatalystCell({ mover }: { mover: MoverRecord }) {
   );
 }
 
-function PillarStrip({ mover }: { mover: MoverRecord }) {
+function PillarDetail({ mover }: { mover: MoverRecord }) {
   const p = mover.analysis?.pillars;
-  if (!p) return null;
-  const cell = (label: string, name: string, v: number | null) =>
+  if (!p) return <span className="text-xs text-slate-400 italic">No quality scores available</span>;
+  const cell = (name: string, v: number | null) =>
     v === null ? null : (
-      <span key={label} className="tabular-nums" title={`${name} score`}>
-        <span className="text-slate-400">{label}</span>{' '}
+      <span key={name} className="tabular-nums">
+        <span className="text-slate-400">{name}</span>{' '}
         <span className="font-semibold text-slate-700 dark:text-slate-300">{Math.round(v)}</span>
       </span>
     );
   return (
-    <div className="text-[10px] leading-4 flex flex-wrap gap-x-1.5 mt-1">
-      {cell('V', 'Valuation', p.valuation)}{cell('G', 'Growth', p.growth)}{cell('P', 'Profitability', p.profitability)}{cell('H', 'Health', p.health)}{cell('Q', 'Quality', p.quality)}
+    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
+      {cell('Valuation', p.valuation)}{cell('Growth', p.growth)}{cell('Profitability', p.profitability)}{cell('Health', p.health)}{cell('Quality', p.quality)}
       {p.ewScore !== null && p.ewMaxPossible !== null && (
         <span className="tabular-nums" title="Early Winners composite score (V5-B, current data)">
-          <span className="text-slate-400">EW</span>{' '}
+          <span className="text-slate-400">EW Score</span>{' '}
           <span className="font-semibold text-slate-700 dark:text-slate-300">{Math.round(p.ewScore)}/{Math.round(p.ewMaxPossible)}</span>
         </span>
       )}
+      <Link href={`/analysis/${mover.symbol}`} className="ml-auto text-blue-500 hover:underline">
+        Full analysis →
+      </Link>
     </div>
   );
 }
 
 function MoversTable({ title, rows, eligibleAnalysis }: { title: string; rows: MoverRecord[]; eligibleAnalysis: Set<string> }) {
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const toggle = (sym: string) =>
+    setExpanded(prev => {
+      const next = new Set(prev);
+      if (next.has(sym)) next.delete(sym); else next.add(sym);
+      return next;
+    });
+
   return (
     <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
       <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800">
@@ -191,8 +231,9 @@ function MoversTable({ title, rows, eligibleAnalysis }: { title: string; rows: M
             <tr className="text-left text-slate-600 dark:text-slate-400">
               <th className="px-3 py-2">Stock</th>
               <th className="px-3 py-2 text-right">Move</th>
-              <th className="px-3 py-2 text-center" title="Z-score — how unusual the move is vs the stock's own volatility">σ</th>
+              <th className="px-3 py-2 text-center" title="σ (z-score) — how unusual today's move is relative to this stock's own volatility. A +9% move can be 'Normal' for a high-volatility stock.">σ</th>
               <th className="px-3 py-2">Catalyst</th>
+              <th className="w-8"></th>
             </tr>
           </thead>
           <tbody>
@@ -212,8 +253,8 @@ function MoversTable({ title, rows, eligibleAnalysis }: { title: string; rows: M
               const rvol = r.latestMoversRVOL;
 
               return (
+                <React.Fragment key={r.symbol}>
                 <tr
-                  key={r.symbol}
                   className="border-t border-slate-100 dark:border-slate-800 hover:bg-slate-50/60 dark:hover:bg-slate-950/60 align-top"
                 >
                   {/* Stock: logo + ticker + company + sector stacked */}
@@ -261,7 +302,7 @@ function MoversTable({ title, rows, eligibleAnalysis }: { title: string; rows: M
                   <td className="px-3 py-2.5 text-center">
                     <span
                       className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold border ${SIGMA_BADGE[sigma]}`}
-                      title={`Z-score ${z?.toFixed(1) ?? '—'} — the move is ${Math.abs(z ?? 0).toFixed(1)} standard deviations from this stock's normal daily move`}
+                      title={`σ (z-score) ${z?.toFixed(1) ?? '—'} — today's move is ${Math.abs(z ?? 0).toFixed(1)} standard deviations from this stock's typical daily move. It measures unusualness relative to the stock's own volatility, so a big % move can still be 'Normal' for a volatile stock.`}
                     >
                       {z !== null ? `${Math.abs(z).toFixed(1)}σ` : '—'}
                     </span>
@@ -269,12 +310,30 @@ function MoversTable({ title, rows, eligibleAnalysis }: { title: string; rows: M
                       {SIGMA_LABELS[sigma]}
                     </div>
                   </td>
-                  {/* Catalyst + pillar strip stacked */}
+                  {/* Catalyst */}
                   <td className="px-3 py-2.5">
                     <CatalystCell mover={r} />
-                    <PillarStrip mover={r} />
+                  </td>
+                  {/* Expand quality scores */}
+                  <td className="pr-2 py-2.5 align-top">
+                    <button
+                      onClick={() => toggle(r.symbol)}
+                      className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 text-xs px-1"
+                      title={expanded.has(r.symbol) ? 'Hide quality scores' : 'Show quality scores (V/G/P/H/Q/EW)'}
+                      aria-expanded={expanded.has(r.symbol)}
+                    >
+                      {expanded.has(r.symbol) ? '▾' : '▸'}
+                    </button>
                   </td>
                 </tr>
+                {expanded.has(r.symbol) && (
+                  <tr className="border-t border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60">
+                    <td colSpan={5} className="px-4 py-2.5">
+                      <PillarDetail mover={r} />
+                    </td>
+                  </tr>
+                )}
+                </React.Fragment>
               );
             })}
           </tbody>
@@ -405,7 +464,7 @@ export function MoversExplorer({ gainers, losers, eligibleSymbols }: MoversExplo
           Microcaps
         </label>
         <span className="ml-auto text-xs font-semibold text-slate-600 dark:text-slate-400 tabular-nums">
-          {filteredGainers.length + filteredLosers.length} stock{filteredGainers.length + filteredLosers.length !== 1 ? 's' : ''} match
+          {filteredGainers.length + filteredLosers.length} mover{filteredGainers.length + filteredLosers.length !== 1 ? 's' : ''} match{filtersActive ? ' your filters' : ''}
         </span>
         {filtersActive && (
           <button onClick={() => setFilters(DEFAULT_FILTERS)} className="text-xs text-blue-500 hover:underline">
