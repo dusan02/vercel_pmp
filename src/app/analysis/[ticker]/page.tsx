@@ -25,7 +25,6 @@ import { TrackPageEvent } from '@/components/analytics/TrackPageEvent';
 import { CompanyOverviewSection } from '@/components/company/analysis/sections/CompanyOverviewSection';
 import { KeyInsightsSection } from '@/components/company/analysis/sections/KeyInsightsSection';
 import { MoverInsightSection } from '@/components/company/analysis/sections/MoverInsightSection';
-import { AnalystConsensusSection } from '@/components/company/analysis/sections/AnalystConsensusSection';
 import { InsiderTransactionsSection } from '@/components/company/analysis/sections/InsiderTransactionsSection';
 import PillarsRadar, { PillarChips } from '@/components/company/analysis/PillarsRadar';
 import { EarningsSection } from '@/components/company/analysis/sections/EarningsSection';
@@ -202,13 +201,9 @@ export default async function AnalysisPage({ params }: PageProps) {
   const flowPeriods = buildFlowPeriods(flowStatements);
 
   // Right rail = pillar profile radar (always present once analysis data
-  // loads) + analyst consensus when available. The EW score stays a Key
-  // Metrics cell — it is a quant timing signal, not a fundamental pillar.
-  const pt = data?.finnhubPriceTarget;
-  const rec = data?.finnhubRecommendation;
-  const hasConsensus =
-    (pt != null && (pt.targetMean != null || pt.targetMedian != null)) ||
-    (rec != null && (rec.strongBuy != null || rec.buy != null || rec.hold != null));
+  // loads). Analyst consensus renders as a compact strip in the hero.
+  // The EW score stays a Key Metrics cell — it is a quant timing signal,
+  // not a fundamental pillar.
   const hasPillars = analysisData?.pillars != null
     && (analysisData.statements?.length ?? 0) > 0;
   const ewScore = data?.ewScoreSnapshots?.[0] ?? null;
@@ -272,6 +267,8 @@ export default async function AnalysisPage({ params }: PageProps) {
                 earningsDays={earningsDays}
                 verdict={data?.analysisCache?.verdictText ?? null}
                 ewScore={ewScore}
+                priceTarget={data?.finnhubPriceTarget ?? null}
+                recommendation={data?.finnhubRecommendation ?? null}
               />
               {/* Mobile-only profile chips — the radar card sits deep in the
                   scroll stack on small screens, so the five scores surface
@@ -312,13 +309,6 @@ export default async function AnalysisPage({ params }: PageProps) {
                 employees={data?.employees}
                 websiteUrl={data?.websiteUrl}
               />
-              {hasConsensus && (
-                <AnalystConsensusSection
-                  priceTarget={data?.finnhubPriceTarget ?? null}
-                  recommendation={data?.finnhubRecommendation ?? null}
-                  fallbackPrice={data?.lastPrice ?? null}
-                />
-              )}
             </div>
           </div>
 

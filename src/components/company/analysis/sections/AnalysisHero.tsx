@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { formatPrice, formatPercent, formatMarketCap } from '@/lib/utils/format';
 import { AddToWatchlist } from '@/components/company/AddToWatchlist';
 import { MoveAlertButton } from '@/components/notifications/MoveAlertButton';
+import { AnalystConsensusStrip } from '@/components/company/analysis/sections/AnalystConsensusSection';
+import type { PriceTargetData, RecommendationData } from '@/components/company/analysis/sections/AnalystConsensusSection';
 
 interface AnalysisHeroProps {
   ticker: string;
@@ -34,6 +36,9 @@ interface AnalysisHeroProps {
     maxPossible: number | null;
     rank: number | null;
   } | null;
+  /** Analyst consensus — rendered as a compact strip right of the sector line */
+  priceTarget?: PriceTargetData | null;
+  recommendation?: RecommendationData | null;
 }
 
 function verdictColor(v: string): string {
@@ -64,6 +69,8 @@ export function AnalysisHero({
   earningsDays,
   verdict,
   ewScore,
+  priceTarget,
+  recommendation,
 }: AnalysisHeroProps) {
   const isClosed = marketSession === 'closed';
   const earningsLabel =
@@ -146,21 +153,29 @@ export function AnalysisHero({
           </>
         )}
       </p>
-      {/* Sector + Industry — separate line */}
-      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-        {sector && (
-          <>
-            Sector:{' '}
-            <Link
-              href={`/sectors/${encodeURIComponent(sector)}`}
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              {sector}
-            </Link>
-          </>
-        )}
-        {industry && <> · Industry: {industry}</>}
-      </p>
+      {/* Sector + Industry + analyst consensus strip — one row; the strip
+          fills the empty space right of the sector line. */}
+      <div className="mt-1 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          {sector && (
+            <>
+              Sector:{' '}
+              <Link
+                href={`/sectors/${encodeURIComponent(sector)}`}
+                className="text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                {sector}
+              </Link>
+            </>
+          )}
+          {industry && <> · Industry: {industry}</>}
+        </p>
+        <AnalystConsensusStrip
+          priceTarget={priceTarget ?? null}
+          recommendation={recommendation ?? null}
+          fallbackPrice={price}
+        />
+      </div>
       {/* Key stats strip — bordered band so the header reads as one
           structured unit, not loose text under the title. Hidden entirely
           when the ticker has no stats (otherwise an empty bordered box). */}

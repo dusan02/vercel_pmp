@@ -92,27 +92,14 @@ function TargetRangeBar({
   );
 }
 
-export function AnalystConsensusSection({ priceTarget, recommendation, fallbackPrice }: AnalystConsensusSectionProps) {
-  const pt = priceTarget;
-  const rec = recommendation;
-  const hasPt = pt && (pt.targetMean != null || pt.targetMedian != null);
-  const hasRec = rec && (rec.strongBuy != null || rec.buy != null || rec.hold != null);
-  if (!hasPt && !hasRec) return null;
+const LABEL_BADGE: Record<string, string> = {
+  'Strong Buy': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+  Buy: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
+  Hold: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
+  Sell: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300',
+};
 
-  const target = pt?.targetMean ?? pt?.targetMedian ?? null;
-  const currentPrice = pt?.currentPrice ?? fallbackPrice ?? null;
-  const upside =
-    target != null && currentPrice != null && currentPrice > 0
-      ? (target / currentPrice - 1) * 100
-      : null;
-  const freshness = pt?.fetchedAt ?? rec?.fetchedAt;
-  const freshnessDate = freshness ? new Date(freshness) : null;
-  const freshnessStr =
-    freshnessDate && !isNaN(freshnessDate.getTime())
-      ? freshnessDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-      : null;
-
-  // Recommendation consensus
+function computeConsensus(rec: RecommendationData | null) {
   const sb = rec?.strongBuy ?? 0;
   const b = rec?.buy ?? 0;
   const h = rec?.hold ?? 0;
@@ -133,6 +120,95 @@ export function AnalystConsensusSection({ priceTarget, recommendation, fallbackP
             ? 'Sell'
             : 'Hold'
       : null;
+  return { sb, b, h, s, ss, totalAnalysts, buyPct, consensusLabel };
+}
+
+/** Compact one-line variant for the hero — sits right of the sector line. */
+export function AnalystConsensusStrip({ priceTarget, recommendation, fallbackPrice }: AnalystConsensusSectionProps) {
+  const pt = priceTarget;
+  const rec = recommendation;
+  const hasPt = pt && (pt.targetMean != null || pt.targetMedian != null);
+  const hasRec = rec && (rec.strongBuy != null || rec.buy != null || rec.hold != null);
+  if (!hasPt && !hasRec) return null;
+
+  const target = pt?.targetMean ?? pt?.targetMedian ?? null;
+  const currentPrice = pt?.currentPrice ?? fallbackPrice ?? null;
+  const upside =
+    target != null && currentPrice != null && currentPrice > 0
+      ? (target / currentPrice - 1) * 100
+      : null;
+  const { sb, b, h, s, ss, totalAnalysts, consensusLabel } = computeConsensus(rec);
+  const analysts = (pt?.numberOfAnalysts ?? 0) > 0 ? pt!.numberOfAnalysts : totalAnalysts > 0 ? totalAnalysts : null;
+  const segments: [number, string, string][] = [
+    [sb, 'bg-emerald-600', `Strong Buy: ${sb}`],
+    [b, 'bg-green-500', `Buy: ${b}`],
+    [h, 'bg-yellow-500', `Hold: ${h}`],
+    [s, 'bg-orange-500', `Sell: ${s}`],
+    [ss, 'bg-rose-600', `Strong Sell: ${ss}`],
+  ];
+
+  return (
+    <span
+      className="inline-flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-500 dark:text-gray-400"
+      title="Wall Street consensus estimates — not a PMP forecast"
+    >
+      <span className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500">Analysts</span>
+      {consensusLabel && (
+        <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${LABEL_BADGE[consensusLabel] ?? LABEL_BADGE.Hold}`}>
+          {consensusLabel}
+        </span>
+      )}
+      {analysts != null && (
+        <span className="tabular-nums">{analysts} analyst{analysts !== 1 ? 's' : ''}</span>
+      )}
+      {target != null && (
+        <span className="tabular-nums">
+          Target {formatPrice(target)}
+          {upside != null && (
+            <span className={upside >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}>
+              {' '}({formatPercent(upside)})
+            </span>
+          )}
+        </span>
+      )}
+      {totalAnalysts > 0 && (
+        <span
+          className="hidden sm:inline-flex h-1.5 w-16 rounded-full overflow-hidden"
+          role="img"
+          aria-label={`${consensusLabel ?? 'Analyst'} consensus — ${totalAnalysts} analysts`}
+        >
+          {segments.map(([count, color, title]) =>
+            count > 0 ? (
+              <span key={title} className={color} style={{ width: `${(count / totalAnalysts) * 100}%` }} title={title} />
+            ) : null,
+          )}
+        </span>
+      )}
+    </span>
+  );
+}
+
+export function AnalystConsensusSection({ priceTarget, recommendation, fallbackPrice }: AnalystConsensusSectionProps) {
+  const pt = priceTarget;
+  const rec = recommendation;
+  const hasPt = pt && (pt.targetMean != null || pt.targetMedian != null);
+  const hasRec = rec && (rec.strongBuy != null || rec.buy != null || rec.hold != null);
+  if (!hasPt && !hasRec) return null;
+
+  const target = pt?.targetMean ?? pt?.targetMedian ?? null;
+  const currentPrice = pt?.currentPrice ?? fallbackPrice ?? null;
+  const upside =
+    target != null && currentPrice != null && currentPrice > 0
+      ? (target / currentPrice - 1) * 100
+      : null;
+  const freshness = pt?.fetchedAt ?? rec?.fetchedAt;
+  const freshnessDate = freshness ? new Date(freshness) : null;
+  const freshnessStr =
+    freshnessDate && !isNaN(freshnessDate.getTime())
+      ? freshnessDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      : null;
+
+  const { sb, b, h, s, ss, totalAnalysts, buyPct, consensusLabel } = computeConsensus(rec);
 
   return (
     <div className="mb-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
