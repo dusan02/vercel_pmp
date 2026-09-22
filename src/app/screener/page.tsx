@@ -52,7 +52,7 @@ export default async function ScreenerPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-900">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(collectionSchema) }} />
-      <div className="container-screener mx-auto py-8 px-4">
+      <div className="container mx-auto py-8">
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Stock Screener — All US Stocks</h1>
           <p className="mt-2 text-slate-600 dark:text-slate-300 max-w-3xl">
