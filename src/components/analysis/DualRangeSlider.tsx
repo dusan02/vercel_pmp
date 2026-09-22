@@ -50,9 +50,9 @@ export function DualRangeSlider({
   const s: AccentStyle = styles[accentColor] ?? { fill: 'bg-blue-500', thumb: '[&::-webkit-slider-thumb]:bg-blue-600 [&::-moz-range-thumb]:bg-blue-600', text: 'text-blue-600 dark:text-blue-400' };
 
   return (
-    <div className="flex flex-col gap-1.5 min-w-[160px] flex-1">
+    <div className="flex flex-col gap-1 min-w-[110px] flex-1">
       <div className="flex items-center justify-between">
-        <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">
+        <label className="text-[10px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">
           {label}
         </label>
         <div className="flex items-center gap-1 text-[11px] font-semibold tabular-nums">

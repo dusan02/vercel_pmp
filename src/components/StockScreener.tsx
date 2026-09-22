@@ -275,32 +275,6 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
   // ── Column view tabs — persist the last used view (localStorage + a
   // shareable ?view= param on the standalone /screener page). ────────────
   const [columnView, setColumnView] = useState<ColumnViewId>('overview');
-
-  // Secondary filters collapse — auto-opens when a non-primary filter is
-  // active (e.g. via quick screen or shared URL) so the badge isn't hiding
-  // an applied constraint.
-  const advancedFilterCount =
-    (minValue !== 0 || maxValue !== 100 ? 1 : 0) +
-    (minGrowth !== 0 || maxGrowth !== 100 ? 1 : 0) +
-    (minProfit !== 0 || maxProfit !== 100 ? 1 : 0) +
-    (minHealth !== 0 || maxHealth !== 100 ? 1 : 0) +
-    (minQuality !== 0 || maxQuality !== 100 ? 1 : 0) +
-    (selectedSector !== '' ? 1 : 0) +
-    (selectedIndustry !== '' ? 1 : 0) +
-    (marketCapPreset !== 'all' ? 1 : 0) +
-    (minAltman !== 0 ? 1 : 0) +
-    (minPiotroski > 0 ? 1 : 0) +
-    (maxBeneish < 10 ? 1 : 0) +
-    (minFcfMargin > -100 ? 1 : 0) +
-    (maxDebtRepayment < 350 ? 1 : 0);
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const filtersAutoOpened = React.useRef(false);
-  useEffect(() => {
-    if (advancedFilterCount > 0 && !filtersAutoOpened.current) {
-      filtersAutoOpened.current = true;
-      setFiltersOpen(true);
-    }
-  }, [advancedFilterCount]);
   useEffect(() => {
     const sp = new URLSearchParams(window.location.search);
     const fromUrl = sp.get('view') as ColumnViewId | null;
@@ -330,8 +304,8 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
   return (
     <div className="space-y-4">
       {/* Filter Bar */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-5">
-        <div className="flex items-center gap-3 mb-4">
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4">
+        <div className="flex items-center gap-3 mb-3">
           <span className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Filters</span>
           <div className="flex-1 h-px bg-gray-100 dark:bg-gray-700" />
           {hasActiveFilters && (
@@ -348,7 +322,7 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
         </div>
 
         {/* Quick screens — one-tap preset combinations */}
-        <div className="flex flex-wrap items-center gap-2 mb-4">
+        <div className="flex flex-wrap items-center gap-1.5 mb-3">
           <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mr-1">Quick screens:</span>
           {[
             { label: 'Quality Compounders', preset: { minQuality: 80, minProfit: 75, minGrowth: 60, sort: 'qualityScore:desc' } },
@@ -361,25 +335,26 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
             <button
               key={p.label}
               onClick={() => applyPreset(p.preset)}
-              className="text-xs px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+              className="text-[11px] px-2.5 py-1 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
             >
               {p.label}
             </button>
           ))}
         </div>
 
-        {/* Primary row — always visible: search, headline score filter, sort */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Search</label>
+        {/* One dense grid — Finviz-style: all filters always visible,
+            tight label+control pairs, no dead space between rows. */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-x-3 gap-y-3">
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Search</label>
             <div className="relative">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
+              <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value.toUpperCase())}
                 placeholder="Ticker or company…"
-                className="w-full h-10 pl-9 pr-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all"
+                className="w-full h-8 pl-8 pr-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md text-xs text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all"
               />
             </div>
           </div>
@@ -390,47 +365,6 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
             onChangeMin={setMinOverall} onChangeMax={setMaxOverall}
             accentColor="amber"
           />
-          <div className="flex flex-col gap-1.5 min-w-[160px]">
-            <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Sort By</label>
-            <select
-              value={`${sortField}:${sortOrder}`}
-              onChange={(e) => {
-                const parts = e.target.value.split(':');
-                const f = parts[0] ?? 'healthScore';
-                const o = (parts[1] === 'asc' ? 'asc' : 'desc') as 'asc' | 'desc';
-                setSort(f, o);
-              }}
-              className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all cursor-pointer"
-            >
-              {SORT_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
-          </div>
-          <div className="flex items-end pb-0.5">
-            <button
-              onClick={() => setFiltersOpen(o => !o)}
-              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border transition-colors ${
-                filtersOpen || advancedFilterCount > 0
-                  ? 'border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 bg-blue-50/60 dark:bg-blue-900/20'
-                  : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-              }`}
-              aria-expanded={filtersOpen}
-            >
-              <ChevronDown size={13} className={`transition-transform ${filtersOpen ? 'rotate-180' : ''}`} />
-              More filters
-              {advancedFilterCount > 0 && (
-                <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-bold leading-none">
-                  {advancedFilterCount}
-                </span>
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* Secondary filters — collapsed by default to keep the panel compact */}
-        {filtersOpen && (<>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-4 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
           <DualRangeSlider
             label="Valuation"
             min={0} max={100}
@@ -466,16 +400,29 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
             onChangeMin={setMinQuality} onChangeMax={setMaxQuality}
             accentColor="rose"
           />
-        </div>
-
-        {/* Sector + Market Cap + Altman row */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-3 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Sector</label>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Sort By</label>
+            <select
+              value={`${sortField}:${sortOrder}`}
+              onChange={(e) => {
+                const parts = e.target.value.split(':');
+                const f = parts[0] ?? 'healthScore';
+                const o = (parts[1] === 'asc' ? 'asc' : 'desc') as 'asc' | 'desc';
+                setSort(f, o);
+              }}
+              className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md px-2 py-1.5 text-xs text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all cursor-pointer"
+            >
+              {SORT_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Sector</label>
             <select
               value={selectedSector}
               onChange={(e) => setSelectedSector(e.target.value)}
-              className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all cursor-pointer"
+              className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md px-2 py-1.5 text-xs text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all cursor-pointer"
             >
               <option value="">All Sectors</option>
               {SECTORS.map((s) => (
@@ -483,12 +430,12 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
               ))}
             </select>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Industry</label>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Industry</label>
             <select
               value={selectedIndustry}
               onChange={(e) => setSelectedIndustry(e.target.value)}
-              className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all cursor-pointer"
+              className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md px-2 py-1.5 text-xs text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all cursor-pointer"
             >
               <option value="">All Industries</option>
               {industries.map((ind) => (
@@ -496,20 +443,20 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
               ))}
             </select>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Market Cap</label>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Market Cap</label>
             <select
               value={marketCapPreset}
               onChange={(e) => setMarketCapPreset(e.target.value)}
-              className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all cursor-pointer"
+              className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md px-2 py-1.5 text-xs text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all cursor-pointer"
             >
               {MARKET_CAP_PRESETS.map((p) => (
                 <option key={p.id} value={p.id}>{p.label}</option>
               ))}
             </select>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Min Altman Z</label>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Min Altman Z</label>
             <input
               type="number"
               min="0"
@@ -517,15 +464,11 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
               value={minAltman || ''}
               onChange={(e) => setMinAltman(parseFloat(e.target.value) || 0)}
               placeholder="e.g. 3.0"
-              className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all"
+              className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md px-2 py-1.5 text-xs text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all"
             />
           </div>
-        </div>
-
-        {/* Advanced Filters — Piotroski, Beneish, FCF Margin, Debt Repayment */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-3 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Min Piotroski F (0–9)</label>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Min Piotroski F (0–9)</label>
             <input
               type="number"
               min="0"
@@ -534,36 +477,36 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
               value={minPiotroski || ''}
               onChange={(e) => setMinPiotroski(Math.min(9, Math.max(0, parseInt(e.target.value, 10) || 0)))}
               placeholder="e.g. 7"
-              className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all"
+              className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md px-2 py-1.5 text-xs text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all"
             />
             <span className="text-[10px] text-gray-400">≥7 Strong, 4–6 Avg, &lt;4 Weak</span>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Max Beneish M</label>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Max Beneish M</label>
             <input
               type="number"
               step="0.1"
               value={maxBeneish >= 10 ? '' : maxBeneish}
               onChange={(e) => setMaxBeneish(parseFloat(e.target.value) || 10)}
               placeholder="e.g. -1.78"
-              className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all"
+              className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md px-2 py-1.5 text-xs text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all"
             />
             <span className="text-[10px] text-gray-400">&lt;-2.22 Safe, -2.22 to -1.78 Grey, &gt;-1.78 Risky</span>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Min FCF Margin (%)</label>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Min FCF Margin (%)</label>
             <input
               type="number"
               step="1"
               value={minFcfMargin <= -100 ? '' : (minFcfMargin * 100).toFixed(0)}
               onChange={(e) => setMinFcfMargin(parseFloat(e.target.value) / 100 || -100)}
               placeholder="e.g. 5"
-              className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all"
+              className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md px-2 py-1.5 text-xs text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all"
             />
             <span className="text-[10px] text-gray-400">≥15% High, ≥5% Good, &lt;0% Negative</span>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Max Debt Repay (years)</label>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Max Debt Repay (years)</label>
             <input
               type="number"
               min="0"
@@ -571,12 +514,11 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
               value={maxDebtRepayment >= 350 ? '' : maxDebtRepayment}
               onChange={(e) => setMaxDebtRepayment(parseFloat(e.target.value) || 350)}
               placeholder="e.g. 5"
-              className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all"
+              className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md px-2 py-1.5 text-xs text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all"
             />
             <span className="text-[10px] text-gray-400">0 = No debt, ≤3 Fast, ≤5 OK, &gt;5 Slow</span>
           </div>
         </div>
-        </>)}
       </div>
 
       {/* Results count */}
