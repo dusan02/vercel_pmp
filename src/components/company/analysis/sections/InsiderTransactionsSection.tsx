@@ -36,8 +36,15 @@ export function InsiderTransactionsSection({ transactions }: InsiderTransactions
       <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
         Recent SEC Form 4 filings
       </p>
-      <ul className="divide-y divide-gray-100 dark:divide-gray-700">
+      {/* On lg the card renders full-width below the columns — split the
+          rows into two columns so the list stays compact instead of a tall
+          single column. */}
+      <ul className="lg:grid lg:grid-cols-2 lg:gap-x-8 lg:divide-y-0 divide-y divide-gray-100 dark:divide-gray-700">
         {visible.map((tx, i) => {
+          // On lg (2-col grid) items in the last visual row drop the bottom
+          // border. With an odd count the last row has 1 item, even has 2.
+          const lastRowSize = visible.length % 2 === 0 ? 2 : 1;
+          const inLastRow = i >= visible.length - lastRowSize;
           const meta = CODE_LABELS[tx.transactionCode] ?? { label: tx.transactionCode, direction: 'neutral' as const };
           // Fall back to the sign of `change` when the code is unknown.
           const direction = meta.direction !== 'neutral'
@@ -50,7 +57,7 @@ export function InsiderTransactionsSection({ transactions }: InsiderTransactions
                 ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300'
                 : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300';
           return (
-            <li key={`${tx.transactionDate}-${i}`} className="flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0">
+            <li key={`${tx.transactionDate}-${i}`} className={`flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0 lg:border-b lg:border-gray-100 lg:dark:border-gray-700 ${inLastRow ? 'lg:border-b-0' : ''}`}>
               <div className="min-w-0">
                 <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${badge}`}>
                   {direction === 'buy' ? 'Buy' : direction === 'sell' ? 'Sell' : meta.label}

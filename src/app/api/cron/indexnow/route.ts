@@ -45,6 +45,23 @@ async function buildDailyUrls(): Promise<string[]> {
     for (const m of movers) {
       urls.push(`${BASE}/premarket/${m.symbol}`, `${BASE}/analysis/${m.symbol}`);
     }
+
+    // Recently refreshed/new analyses — their analysis + valuation +
+    // financials pages changed, so Bing should re-crawl them. New tickers
+    // (added to the universe) surface here on their first AnalysisCache row.
+    const recent = await prisma.analysisCache.findMany({
+      where: { updatedAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
+      select: { symbol: true },
+      orderBy: { updatedAt: 'desc' },
+      take: 60,
+    });
+    for (const r of recent) {
+      urls.push(
+        `${BASE}/analysis/${r.symbol}`,
+        `${BASE}/valuation/${r.symbol}`,
+        `${BASE}/financials/${r.symbol}`,
+      );
+    }
   } catch {
     // DB unavailable — submit the core URLs only
   }

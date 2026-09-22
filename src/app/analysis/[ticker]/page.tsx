@@ -312,20 +312,20 @@ export default async function AnalysisPage({ params }: PageProps) {
                 employees={data?.employees}
                 websiteUrl={data?.websiteUrl}
               />
+              {hasConsensus && (
+                <AnalystConsensusSection
+                  priceTarget={data?.finnhubPriceTarget ?? null}
+                  recommendation={data?.finnhubRecommendation ?? null}
+                  fallbackPrice={data?.lastPrice ?? null}
+                />
+              )}
             </div>
           </div>
 
-          {/* Consensus + insider trade side-by-side under both columns —
-              keeps the rail from outgrowing the left stack (dead space under
-              the price chart) and gives both cards more horizontal room. */}
-          <div className="mb-6 grid gap-6 lg:grid-cols-2 lg:items-start">
-            {hasConsensus && (
-              <AnalystConsensusSection
-                priceTarget={data?.finnhubPriceTarget ?? null}
-                recommendation={data?.finnhubRecommendation ?? null}
-                fallbackPrice={data?.lastPrice ?? null}
-              />
-            )}
+          {/* Insider transactions get a full-width row — the filing list is
+              the tallest card, so pairing it with anything leaves dead space
+              under the shorter neighbour. */}
+          <div className="mb-6">
             <InsiderTransactionsSection
               transactions={data?.finnhubInsiderTransactions ?? []}
             />
