@@ -117,6 +117,12 @@ export default async function ScreenerPage() {
               industry and market-cap filters to build precisely the favorites list you need.
             </p>
             <p className="mt-3">
+              <strong>Insider activity:</strong> the screener also ranks stocks by real insider
+              trading — net open-market buying and selling over 90 days (SEC Form 4 codes P/S at
+              actual transaction prices), the largest single insider trades, and 14-day insider
+              clusters (distinct insiders buying or selling in the same window).
+            </p>
+            <p className="mt-3">
               Every stock links to a full analysis page with pre-market prices, intraday charts,
               earnings history and analyst consensus. Data refreshes continuously during the
               pre-market session (4:00 AM – 9:30 AM ET) and regular trading hours.

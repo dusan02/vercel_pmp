@@ -6,8 +6,9 @@
  */
 
 import { prisma } from '@/lib/db/prisma';
+import { formatCurrencyCompact } from '@/lib/utils/format';
 
-export type MetricSource = 'analysisCache' | 'finnhubMetrics' | 'ewScore';
+export type MetricSource = 'analysisCache' | 'finnhubMetrics' | 'ewScore' | 'insiderAggregate';
 
 export interface LeaderboardDef {
   slug: string;
@@ -385,6 +386,76 @@ export const LEADERBOARDS: LeaderboardDef[] = [
       { q: 'Why does the Earnings column show BLOCKED?', a: 'The earnings pillar requires historical point-in-time analyst consensus data, which is not currently available. Rather than fabricate a value, the score is computed without it and the pillar is explicitly marked as blocked.' },
       { q: 'Is this score backtested?', a: 'The underlying V5-B methodology has a frozen out-of-sample benchmark, but this current-data leaderboard is not itself a backtest — it is a daily snapshot for screening, not a promise of future returns.' },
       { q: 'How often is it updated?', a: 'Scores are recomputed as a batch from the latest available filings and price data and imported daily.' },
+    ],
+  },
+  {
+    slug: 'insider-buying',
+    title: 'Stocks With the Most Insider Buying — Last 90 Days',
+    h1: 'Stocks With the Most Insider Buying',
+    description:
+      'US stocks ranked by net open-market insider buying over the last 90 days — real SEC Form 4 purchases at actual transaction prices, aggregated daily.',
+    keywords: ['insider buying stocks', 'most insider buying', 'insider purchases', 'stocks insiders are buying', 'form 4 insider buying'],
+    metricLabel: 'Net insider buying (90D)',
+    source: 'insiderAggregate',
+    field: 'netBuyValue90d',
+    order: 'desc',
+    minValue: 0,
+    format: (v) => formatCurrencyCompact(v, true),
+    intro: [
+      'These US-listed companies saw the largest net open-market insider purchases over the last 90 days. We count only Form 4 transaction codes P (open-market purchase) and S (open-market sale) — stock grants, option exercises, tax withholdings and gifts are excluded because they are compensation mechanics, not a discretionary signal.',
+      'Dollar amounts use shares multiplied by the actual transaction price reported to the SEC — not today\'s price. Insider buying is one of the stronger public signals of management conviction, but a single purchase is still just one data point.',
+    ],
+    faq: [
+      { q: 'What counts as insider buying?', a: 'Only SEC Form 4 transaction code P — an open-market or private purchase of company shares by an officer, director or 10% owner. Grants (A), option exercises (M) and tax withholdings (F) are excluded.' },
+      { q: 'How is "net" insider buying computed?', a: 'Total dollars purchased (code P) minus total dollars sold (code S) over the trailing 90 days, valued at each transaction\'s reported execution price.' },
+      { q: 'Why does insider buying matter?', a: 'Insiders sell for many reasons (diversification, taxes, comp plans) but generally buy for one — they believe the stock is worth more than its price. Academic research consistently links open-market insider purchases to positive abnormal returns.' },
+      { q: 'How fresh is this data?', a: 'Form 4 filings must be submitted within two business days of the transaction. We sync filings daily and recompute the aggregates once per day.' },
+    ],
+  },
+  {
+    slug: 'insider-buying-percent',
+    title: 'Biggest Insider Buying by % of Shares Outstanding — 90 Days',
+    h1: 'Biggest Insider Buying by % of Shares Outstanding',
+    description:
+      'US stocks ranked by net insider buying as a percentage of shares outstanding over 90 days — a size-adjusted view of insider conviction across large and small caps.',
+    keywords: ['insider buying percentage', 'insider ownership change', 'insider accumulation', 'insider buying percent of float'],
+    metricLabel: 'Net buying % of shares out.',
+    source: 'insiderAggregate',
+    field: 'netBuyPct90d',
+    order: 'desc',
+    minValue: 0,
+    format: (v) => `${(v * 100).toFixed(2)}%`,
+    intro: [
+      'Dollar rankings favor mega-caps — a $300M insider purchase means more at a $5B company than at a $3T one. This leaderboard normalizes net open-market insider buying (Form 4 codes P and S, 90 days) by shares outstanding, surfacing companies where insiders moved a meaningful share of the company.',
+      'Small floats amplify this metric — a single large holder purchase can top the list. Pair it with the dollar-value leaderboard for the full picture.',
+    ],
+    faq: [
+      { q: 'Why rank by % of shares outstanding instead of dollars?', a: 'It removes the size bias: $10M of insider buying is routine at a mega-cap but a major conviction signal at a small-cap.' },
+      { q: 'What transactions are included?', a: 'SEC Form 4 codes P (open-market purchase) and S (open-market sale) over the trailing 90 days. Compensation-related codes (grants, option exercises, tax withholding) are excluded.' },
+      { q: 'Can this ranking be skewed?', a: 'Yes — companies with low share counts can jump to the top on a single transaction. Treat it as a discovery screen, not a ranking of conviction quality.' },
+    ],
+  },
+  {
+    slug: 'insider-selling',
+    title: 'Stocks With the Most Insider Selling — Last 90 Days',
+    h1: 'Stocks With the Most Insider Selling',
+    description:
+      'US stocks ranked by open-market insider selling over the last 90 days — real SEC Form 4 sales at actual transaction prices, aggregated daily.',
+    keywords: ['insider selling stocks', 'most insider selling', 'insider sales', 'stocks insiders are selling', 'form 4 insider selling'],
+    metricLabel: 'Insider selling (90D)',
+    source: 'insiderAggregate',
+    field: 'sellValue90d',
+    order: 'desc',
+    minValue: 0,
+    format: (v) => formatCurrencyCompact(v),
+    intro: [
+      'These companies saw the largest open-market insider sales over the last 90 days (SEC Form 4 code S), valued at each transaction\'s reported price. We exclude tax withholdings and option-exercise-and-sell combinations, which are mechanical rather than discretionary.',
+      'Context matters: insiders routinely sell for diversification and pre-arranged 10b5-1 plans. Heavy, clustered selling by multiple insiders is more informative than one large sale — check the insider cluster column in the screener for that signal.',
+    ],
+    faq: [
+      { q: 'Is insider selling a bad sign?', a: 'Not automatically. Executives hold concentrated positions and sell for diversification, taxes or pre-scheduled 10b5-1 plans. Sustained selling by multiple insiders in a short window is a stronger warning than a single sale.' },
+      { q: 'What sales are excluded?', a: 'Tax-withholding disposals (code F), option exercises (M) and gifts (G) are excluded — they are not discretionary open-market decisions.' },
+      { q: 'How is the dollar amount computed?', a: 'Shares sold multiplied by the actual execution price reported in each Form 4 filing — not the current market price.' },
     ],
   },
 ];
