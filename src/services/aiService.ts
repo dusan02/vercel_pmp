@@ -1,11 +1,13 @@
 export class AiService {
     /**
-     * Generates a 1-sentence investment verdict based on a data snapshot.
+     * Generates a 1-sentence fundamental takeaway based on a data snapshot.
      */
     async generateInvestmentVerdict(dataSnapshot: any): Promise<string | null> {
         // English output — the site is EN-language; Slovak verdicts leaked into
         // the page UI, FAQ section and FAQPage JSON-LD (mixed-language SEO issue).
-        const prompt = `You are an experienced financial analyst. Based on the provided data, write ONE concise, punchy sentence in English evaluating the company's investment attractiveness. Avoid clichés, be factual.\n\nDATA:\n${JSON.stringify(dataSnapshot, null, 2)}`;
+        // Descriptive, not advisory: interpret the data (incl. valuation vs the
+        // company's own historical range) but never issue buy/sell conclusions.
+        const prompt = `You are an experienced financial analyst. Based on the provided data, write ONE concise sentence in English summarizing the company's fundamental profile — its profitability, growth, financial health, and how the current valuation compares to its own historical range. Interpret the data, but do NOT give investment advice: no "attractive investment", "buy", "sell", "undervalued", or similar recommendation phrasing. Example tone: "Strong profitability and a healthy balance sheet, while the valuation trades above its historical range." Avoid clichés, be factual.\n\nDATA:\n${JSON.stringify(dataSnapshot, null, 2)}`;
 
         return this.callLLM(prompt);
     }
