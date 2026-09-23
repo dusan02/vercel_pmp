@@ -3,7 +3,7 @@
 import React, { useMemo } from 'react';
 import useSWR from 'swr';
 import { motion } from 'framer-motion';
-import { Zap, TrendingUp, TrendingDown, RefreshCw, Info, AlertCircle } from 'lucide-react';
+import { Zap, RefreshCw, Info, AlertCircle } from 'lucide-react';
 import { SectionSkeleton } from './SectionSkeleton';
 import CompanyLogo from './CompanyLogo';
 import { CustomDropdown } from './CustomDropdown';
@@ -67,6 +67,7 @@ const SESSION_LABELS: Record<string, string> = {
 export function MoversSection({ onTileClick, initialData }: { onTileClick?: (ticker: string) => void; initialData?: any[] | undefined }) {
     const [selectedSector, setSelectedSector] = React.useState<string | null>(null);
     const [activeTab, setActiveTab] = React.useState<MoversTab>('all');
+    const [direction, setDirection] = React.useState<'gainers' | 'losers'>('gainers');
     const isDesktop = useMediaQuery('(min-width: 1024px)');
     const { data, error, isLoading, mutate } = useSWR('/api/stocks/movers?limit=50', fetcher, {
         refreshInterval: 30000, // Refresh every 30 seconds for better real-time experience
@@ -436,38 +437,34 @@ export function MoversSection({ onTileClick, initialData }: { onTileClick?: (tic
                 </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Gainers Column */}
-                <div>
-                    <h3 className="text-lg font-bold text-green-500 mb-3 flex items-center gap-2 px-2">
-                        <TrendingUp size={20} />
-                        Gainers <span className="text-sm font-normal text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full ml-1">{gainers.length}</span>
-                    </h3>
-                    <div className="grid gap-3">
-                        {gainers.map((mover, index) => renderMoverCard(mover, index))}
-                    </div>
-                    {gainers.length === 0 && !isLoading && !error && (
-                        <div className="text-center p-8 text-slate-400 bg-slate-50 border border-dashed border-slate-200 rounded-2xl mt-3">
-                            No significant gainers.
-                        </div>
-                    )}
-                </div>
+            {/* Direction toggle — one focused list instead of two cramped
+                columns side-by-side (same pattern as /premarket-movers). */}
+            <div className="flex gap-1.5 px-1">
+                {([
+                    ['gainers', 'Gainers', gainers.length, 'text-green-600 dark:text-green-400'],
+                    ['losers', 'Losers', losers.length, 'text-red-500 dark:text-red-400'],
+                ] as const).map(([key, label, count, activeColor]) => (
+                    <button
+                        key={key}
+                        onClick={() => setDirection(key)}
+                        className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${direction === key
+                                ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900'
+                                : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400 dark:bg-transparent dark:text-slate-400 dark:border-white/10'
+                            }`}
+                    >
+                        <span className={direction === key ? '' : activeColor}>{label}</span>
+                        <span className="ml-1.5 text-[10px] font-normal opacity-70">{count}</span>
+                    </button>
+                ))}
+            </div>
 
-                {/* Losers Column */}
-                <div>
-                    <h3 className="text-lg font-bold text-red-500 mb-3 flex items-center gap-2 px-2">
-                        <TrendingDown size={20} />
-                        Losers <span className="text-sm font-normal text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full ml-1">{losers.length}</span>
-                    </h3>
-                    <div className="grid gap-3">
-                        {losers.map((mover, index) => renderMoverCard(mover, index))}
+            <div className="grid gap-3">
+                {(direction === 'gainers' ? gainers : losers).map((mover, index) => renderMoverCard(mover, index))}
+                {(direction === 'gainers' ? gainers : losers).length === 0 && !isLoading && !error && (
+                    <div className="text-center p-8 text-slate-400 bg-slate-50 border border-dashed border-slate-200 rounded-2xl">
+                        No significant {direction}.
                     </div>
-                    {losers.length === 0 && !isLoading && !error && (
-                        <div className="text-center p-8 text-slate-400 bg-slate-50 border border-dashed border-slate-200 rounded-2xl mt-3">
-                            No significant losers.
-                        </div>
-                    )}
-                </div>
+                )}
             </div>
 
             {/* Methodology Section */}
