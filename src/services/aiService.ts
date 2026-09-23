@@ -44,6 +44,12 @@ export class AiService {
 
             if (!response.ok) throw new Error(`Gemini API error: ${response.status} ${await response.text()}`);
             const data = await response.json();
+            const usage = data.usageMetadata;
+            if (usage) {
+                // gemini-2.5-flash: $0.30/M input, $2.50/M output (incl. thinking)
+                const cost = (usage.promptTokenCount * 0.30 + (usage.candidatesTokenCount + (usage.thoughtsTokenCount || 0)) * 2.50) / 1e6;
+                console.log(`💰 AiService: Gemini usage in=${usage.promptTokenCount} out=${usage.candidatesTokenCount} think=${usage.thoughtsTokenCount || 0} est=$${cost.toFixed(5)}`);
+            }
             const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
             return text ? text.trim() : null;
         } catch (error) {
