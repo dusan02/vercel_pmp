@@ -75,7 +75,9 @@ rm -rf "$STAGE" "$TARBALL"
 # Preserve the runtime ISR/fetch cache across swaps — hardlinks cost nothing
 # and keep revalidate windows warm instead of cold-starting every deploy.
 if [ -d .next.prev/cache ]; then
-  cp -al .next.prev/cache .next/cache
+  # -n (no-clobber): the CI artifact may already ship its own fetch-cache
+  # entries — colliding filenames must be skipped, not abort the swap.
+  cp -aln .next.prev/cache/. .next/cache/ 2>/dev/null || true
 fi
 # Drop the build-time sitemap prerender. CI builds run without a real DB, so
 # the artifact's sitemap.xml.body is the gutted fallback (~500 URLs instead
