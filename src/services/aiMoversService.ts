@@ -286,7 +286,7 @@ Return strictly valid JSON:
 
     private async callGemini(prompt: string, apiKey: string): Promise<MoverInsight | null> {
         try {
-            const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+            const model = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
             const response = await fetch(url, {
                 method: 'POST',
@@ -301,7 +301,7 @@ Return strictly valid JSON:
             const data = await response.json();
             const usage = data.usageMetadata;
             if (usage) {
-                // gemini-2.5-flash: $0.30/M input, $2.50/M output (incl. thinking)
+                // gemini-3.5-flash-lite: $0.30/M input, $2.50/M output (incl. thinking)
                 const cost = (usage.promptTokenCount * 0.30 + (usage.candidatesTokenCount + (usage.thoughtsTokenCount || 0)) * 2.50) / 1e6;
                 console.log(`💰 AiMoversService: Gemini usage in=${usage.promptTokenCount} out=${usage.candidatesTokenCount} think=${usage.thoughtsTokenCount || 0} est=$${cost.toFixed(5)}`);
             }
